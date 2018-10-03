@@ -2800,744 +2800,862 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                User user, boolean respectFrontendRoles, boolean createNewVersion,
                                boolean generateSystemEvent) throws DotDataException, DotSecurityException {
 
-        boolean validateEmptyFile = contentlet.getMap().get("_validateEmptyFile_") == null;
+        try {
+            boolean validateEmptyFile = contentlet.getMap().get("_validateEmptyFile_") == null;
 
-        String contentPushPublishDate = contentlet.getStringProperty("wfPublishDate");
-        String contentPushPublishTime = contentlet.getStringProperty("wfPublishTime");
-        String contentPushExpireDate = contentlet.getStringProperty("wfExpireDate");
-        String contentPushExpireTime = contentlet.getStringProperty("wfExpireTime");
+            String contentPushPublishDate = contentlet.getStringProperty("wfPublishDate");
+            String contentPushPublishTime = contentlet.getStringProperty("wfPublishTime");
+            String contentPushExpireDate = contentlet.getStringProperty("wfExpireDate");
+            String contentPushExpireTime = contentlet.getStringProperty("wfExpireTime");
 
-        contentPushPublishDate = UtilMethods.isSet(contentPushPublishDate)?contentPushPublishDate:"N/D";
-        contentPushPublishTime = UtilMethods.isSet(contentPushPublishTime)?contentPushPublishTime:"N/D";
-        contentPushExpireDate = UtilMethods.isSet(contentPushExpireDate)?contentPushExpireDate:"N/D";
-        contentPushExpireTime = UtilMethods.isSet(contentPushExpireTime)?contentPushExpireTime:"N/D";
+            contentPushPublishDate =
+                    UtilMethods.isSet(contentPushPublishDate) ? contentPushPublishDate : "N/D";
+            contentPushPublishTime =
+                    UtilMethods.isSet(contentPushPublishTime) ? contentPushPublishTime : "N/D";
+            contentPushExpireDate =
+                    UtilMethods.isSet(contentPushExpireDate) ? contentPushExpireDate : "N/D";
+            contentPushExpireTime =
+                    UtilMethods.isSet(contentPushExpireTime) ? contentPushExpireTime : "N/D";
 
+            ActivityLogger.logInfo(getClass(), "Saving Content",
+                    "StartDate: " + contentPushPublishDate + "; "
+                            + "EndDate: " + contentPushExpireDate + "; User:" + (user != null ? user
+                            .getUserId() : "Unknown")
+                            + "; ContentIdentifier: " + (contentlet != null ? contentlet
+                            .getIdentifier() : "Unknown"), contentlet.getHost());
 
-        ActivityLogger.logInfo(getClass(), "Saving Content", "StartDate: " +contentPushPublishDate+ "; "
-                + "EndDate: " +contentPushExpireDate + "; User:" + (user != null ? user.getUserId() : "Unknown")
-                + "; ContentIdentifier: " + (contentlet != null ? contentlet.getIdentifier() : "Unknown"), contentlet.getHost());
+            String syncMe =
+                    (UtilMethods.isSet(contentlet.getIdentifier())) ? contentlet.getIdentifier()
+                            : UUIDGenerator.generateUuid();
 
+            synchronized (syncMe) {
 
-        String syncMe = (UtilMethods.isSet(contentlet.getIdentifier())) ? contentlet.getIdentifier() : UUIDGenerator.generateUuid();
-
-        synchronized (syncMe) {
-
-            if(contentRelationships==null) {
-                contentRelationships = getAllRelationships(contentlet);
-            }
-
-
-            if(cats==null) {
-                cats = getExistingContentCategories(contentlet);
-            }
-
-            boolean saveWithExistingID=false;
-            String existingInode=null, existingIdentifier=null;
-            boolean changedURI=false;
-
-            Contentlet workingContentlet = contentlet;
-            try {
-                if (createNewVersion && contentlet != null && InodeUtils.isSet(contentlet.getInode())) {
-                    // maybe the user want to save new content with existing inode & identifier comming from somewhere
-                    // we need to check that the inode doesn't exists
-                    DotConnect dc=new DotConnect();
-                    dc.setSQL("select inode from contentlet where inode=?");
-                    dc.addParam(contentlet.getInode());
-                    if(dc.loadResults().size()>0){
-                        if(contentlet.getMap().get(Contentlet.DONT_VALIDATE_ME) != null){
-                            Logger.debug(this, "forcing checking with no version as the _dont_validate_me is set and inode exists");
-                            createNewVersion = false;
-                        }else{
-                            throw new DotContentletStateException("Contentlet must not exist already");
-                        }
-                    } else {
-                        saveWithExistingID=true;
-                        existingInode=contentlet.getInode();
-                        contentlet.setInode(null);
-
-                        Identifier ident=APILocator.getIdentifierAPI().find(contentlet.getIdentifier());
-                        if(ident==null || !UtilMethods.isSet(ident.getId())) {
-                            existingIdentifier=contentlet.getIdentifier();
-                            contentlet.setIdentifier(null);
-                        }
-                    }
+                if (contentRelationships == null) {
+                    contentRelationships = getAllRelationships(contentlet);
                 }
-                if (!createNewVersion && contentlet != null && !InodeUtils.isSet(contentlet.getInode()))
-                    throw new DotContentletStateException("Contentlet must exist already");
-                if (contentlet != null && contentlet.isArchived() && contentlet.getMap().get(Contentlet.DONT_VALIDATE_ME) == null)
-                    throw new DotContentletStateException("Unable to checkin an archived piece of content, please un-archive first");
-                if (!permissionAPI.doesUserHavePermission(InodeUtils.isSet(contentlet.getIdentifier()) ? contentlet : contentlet.getStructure(),
-                        PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles)) {
-                    List<Role> rolesPublish = permissionAPI.getRoles(contentlet.getStructure().getPermissionId(), PermissionAPI.PERMISSION_PUBLISH, "CMS Owner", 0, -1);
-                    List<Role> rolesWrite = permissionAPI.getRoles(contentlet.getStructure().getPermissionId(), PermissionAPI.PERMISSION_WRITE, "CMS Owner", 0, -1);
-                    Role cmsOwner = APILocator.getRoleAPI().loadCMSOwnerRole();
-                    boolean isCMSOwner = false;
-                    if (rolesPublish.size() > 0 || rolesWrite.size() > 0) {
-                        for (Role role : rolesPublish) {
-                            if (role.getId().equals(cmsOwner.getId())) {
-                                isCMSOwner = true;
-                                break;
+
+                if (cats == null) {
+                    cats = getExistingContentCategories(contentlet);
+                }
+
+                boolean saveWithExistingID = false;
+                String existingInode = null, existingIdentifier = null;
+                boolean changedURI = false;
+
+                Contentlet workingContentlet = contentlet;
+                try {
+                    if (createNewVersion && contentlet != null && InodeUtils
+                            .isSet(contentlet.getInode())) {
+                        // maybe the user want to save new content with existing inode & identifier comming from somewhere
+                        // we need to check that the inode doesn't exists
+                        DotConnect dc = new DotConnect();
+                        dc.setSQL("select inode from contentlet where inode=?");
+                        dc.addParam(contentlet.getInode());
+                        if (dc.loadResults().size() > 0) {
+                            if (contentlet.getMap().get(Contentlet.DONT_VALIDATE_ME) != null) {
+                                Logger.debug(this,
+                                        "forcing checking with no version as the _dont_validate_me is set and inode exists");
+                                createNewVersion = false;
+                            } else {
+                                throw new DotContentletStateException(
+                                        "Contentlet must not exist already");
+                            }
+                        } else {
+                            saveWithExistingID = true;
+                            existingInode = contentlet.getInode();
+                            contentlet.setInode(null);
+
+                            Identifier ident = APILocator.getIdentifierAPI()
+                                    .find(contentlet.getIdentifier());
+                            if (ident == null || !UtilMethods.isSet(ident.getId())) {
+                                existingIdentifier = contentlet.getIdentifier();
+                                contentlet.setIdentifier(null);
                             }
                         }
-                        if (!isCMSOwner) {
-                            for (Role role : rolesWrite) {
+                    }
+                    if (!createNewVersion && contentlet != null && !InodeUtils
+                            .isSet(contentlet.getInode()))
+                        throw new DotContentletStateException("Contentlet must exist already");
+                    if (contentlet != null && contentlet.isArchived()
+                            && contentlet.getMap().get(Contentlet.DONT_VALIDATE_ME) == null)
+                        throw new DotContentletStateException(
+                                "Unable to checkin an archived piece of content, please un-archive first");
+                    if (!permissionAPI.doesUserHavePermission(
+                            InodeUtils.isSet(contentlet.getIdentifier()) ? contentlet
+                                    : contentlet.getStructure(),
+                            PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles)) {
+                        List<Role> rolesPublish = permissionAPI
+                                .getRoles(contentlet.getStructure().getPermissionId(),
+                                        PermissionAPI.PERMISSION_PUBLISH, "CMS Owner", 0, -1);
+                        List<Role> rolesWrite = permissionAPI
+                                .getRoles(contentlet.getStructure().getPermissionId(),
+                                        PermissionAPI.PERMISSION_WRITE, "CMS Owner", 0, -1);
+                        Role cmsOwner = APILocator.getRoleAPI().loadCMSOwnerRole();
+                        boolean isCMSOwner = false;
+                        if (rolesPublish.size() > 0 || rolesWrite.size() > 0) {
+                            for (Role role : rolesPublish) {
                                 if (role.getId().equals(cmsOwner.getId())) {
                                     isCMSOwner = true;
                                     break;
                                 }
                             }
-                        }
-                        if (!isCMSOwner) {
+                            if (!isCMSOwner) {
+                                for (Role role : rolesWrite) {
+                                    if (role.getId().equals(cmsOwner.getId())) {
+                                        isCMSOwner = true;
+                                        break;
+                                    }
+                                }
+                            }
+                            if (!isCMSOwner) {
+                                this.throwSecurityException(contentlet, user);
+                            }
+                        } else {
+
                             this.throwSecurityException(contentlet, user);
                         }
-                    } else {
-
-                        this.throwSecurityException(contentlet, user);
                     }
-                }
-                if (createNewVersion && (contentRelationships == null || cats == null))
-                    throw new IllegalArgumentException(
-                            "The categories, and content relationships cannot be null when trying to checkin. The method was called improperly");
-                try {
-                    validateContentlet(contentlet, contentRelationships, cats);
+                    if (createNewVersion && (contentRelationships == null || cats == null))
+                        throw new IllegalArgumentException(
+                                "The categories, and content relationships cannot be null when trying to checkin. The method was called improperly");
+                    try {
+                        validateContentlet(contentlet, contentRelationships, cats);
 
-                } catch (DotContentletValidationException ve) {
-                    throw ve;
-                }
+                    } catch (DotContentletValidationException ve) {
+                        throw ve;
+                    }
 
-                if(contentlet.getMap().get(Contentlet.DONT_VALIDATE_ME) == null) {
-                    canLock(contentlet, user);
-                }
-                contentlet.setModUser(user.getUserId());
-                // start up workflow
-                WorkflowAPI wapi  = APILocator.getWorkflowAPI();
-                WorkflowProcessor workflow=null;
+                    if (contentlet.getMap().get(Contentlet.DONT_VALIDATE_ME) == null) {
+                        canLock(contentlet, user);
+                    }
+                    contentlet.setModUser(user.getUserId());
+                    // start up workflow
+                    WorkflowAPI wapi = APILocator.getWorkflowAPI();
+                    WorkflowProcessor workflow = null;
 
-                if(contentlet.getMap().get(Contentlet.DISABLE_WORKFLOW)==null &&
-                        (null == contentlet.getMap().get(Contentlet.WORKFLOW_IN_PROGRESS) ||
-                                Boolean.FALSE.equals(contentlet.getMap().get(Contentlet.WORKFLOW_IN_PROGRESS))
-                        ))  {
-                    workflow = wapi.fireWorkflowPreCheckin(contentlet,user);
-                }
+                    if (contentlet.getMap().get(Contentlet.DISABLE_WORKFLOW) == null &&
+                            (null == contentlet.getMap().get(Contentlet.WORKFLOW_IN_PROGRESS) ||
+                                    Boolean.FALSE.equals(contentlet.getMap()
+                                            .get(Contentlet.WORKFLOW_IN_PROGRESS))
+                            )) {
+                        workflow = wapi.fireWorkflowPreCheckin(contentlet, user);
+                    }
 
-                workingContentlet = contentlet;
-                if(createNewVersion)
-                    workingContentlet = findWorkingContentlet(contentlet);
-                String workingContentletInode = (workingContentlet==null) ? "" : workingContentlet.getInode();
+                    workingContentlet = contentlet;
+                    if (createNewVersion)
+                        workingContentlet = findWorkingContentlet(contentlet);
+                    String workingContentletInode =
+                            (workingContentlet == null) ? "" : workingContentlet.getInode();
 
-                boolean priority = contentlet.isLowIndexPriority();
+                    boolean priority = contentlet.isLowIndexPriority();
 
-                Boolean dontValidateMe = (Boolean)contentlet.getMap().get(Contentlet.DONT_VALIDATE_ME);
-                Boolean disableWorkflow = (Boolean)contentlet.getMap().get(Contentlet.DISABLE_WORKFLOW);
+                    Boolean dontValidateMe = (Boolean) contentlet.getMap()
+                            .get(Contentlet.DONT_VALIDATE_ME);
+                    Boolean disableWorkflow = (Boolean) contentlet.getMap()
+                            .get(Contentlet.DISABLE_WORKFLOW);
 
-                boolean isNewContent = false;
-                if(!InodeUtils.isSet(workingContentletInode)){
-                    isNewContent = true;
-                }
+                    boolean isNewContent = false;
+                    if (!InodeUtils.isSet(workingContentletInode)) {
+                        isNewContent = true;
+                    }
 
-                if (contentlet.getLanguageId() == 0) {
-                    Language defaultLanguage = languageAPI.getDefaultLanguage();
-                    contentlet.setLanguageId(defaultLanguage.getId());
-                }
+                    if (contentlet.getLanguageId() == 0) {
+                        Language defaultLanguage = languageAPI.getDefaultLanguage();
+                        contentlet.setLanguageId(defaultLanguage.getId());
+                    }
 
-                contentlet.setModUser(user != null ? user.getUserId() : "");
+                    contentlet.setModUser(user != null ? user.getUserId() : "");
 
-                if (contentlet.getOwner() == null || contentlet.getOwner().length() < 1) {
-                    contentlet.setOwner(user.getUserId());
-                }
+                    if (contentlet.getOwner() == null || contentlet.getOwner().length() < 1) {
+                        contentlet.setOwner(user.getUserId());
+                    }
 
-                // check contentlet Host
-                User sysuser = APILocator.getUserAPI().getSystemUser();
-                if (!UtilMethods.isSet(contentlet.getHost())) {
-                    contentlet.setHost(APILocator.getHostAPI().findSystemHost(sysuser, true).getIdentifier());
-                }
-                if (!UtilMethods.isSet(contentlet.getFolder())) {
-                    contentlet.setFolder(FolderAPI.SYSTEM_FOLDER);
-                }
+                    // check contentlet Host
+                    User sysuser = APILocator.getUserAPI().getSystemUser();
+                    if (!UtilMethods.isSet(contentlet.getHost())) {
+                        contentlet.setHost(APILocator.getHostAPI().findSystemHost(sysuser, true)
+                                .getIdentifier());
+                    }
+                    if (!UtilMethods.isSet(contentlet.getFolder())) {
+                        contentlet.setFolder(FolderAPI.SYSTEM_FOLDER);
+                    }
 
-                Contentlet contentletRaw=contentlet;
+                    Contentlet contentletRaw = contentlet;
 
-                if ( contentlet.getMap().get( "_use_mod_date" ) != null ) {
+                    if (contentlet.getMap().get("_use_mod_date") != null) {
                     /*
                      When a content is sent using the remote push publishing we want to respect the modification
                      dates the content already had.
                      */
-                    contentlet.setModDate( (Date) contentlet.getMap().get( "_use_mod_date" ) );
-                } else {
-                    contentlet.setModDate( new Date() );
-                }
+                        contentlet.setModDate((Date) contentlet.getMap().get("_use_mod_date"));
+                    } else {
+                        contentlet.setModDate(new Date());
+                    }
 
-                // Keep the 5 properties BEFORE store the contentlet on DB.
-                contentPushPublishDate = contentlet.getStringProperty("wfPublishDate");
-                contentPushPublishTime = contentlet.getStringProperty("wfPublishTime");
-                contentPushExpireDate = contentlet.getStringProperty("wfExpireDate");
-                contentPushExpireTime = contentlet.getStringProperty("wfExpireTime");
-                String contentPushNeverExpire = contentlet.getStringProperty("wfNeverExpire");
-                String contentWhereToSend = contentlet.getStringProperty("whereToSend");
-                String forcePush = contentlet.getStringProperty("forcePush");
+                    // Keep the 5 properties BEFORE store the contentlet on DB.
+                    contentPushPublishDate = contentlet.getStringProperty("wfPublishDate");
+                    contentPushPublishTime = contentlet.getStringProperty("wfPublishTime");
+                    contentPushExpireDate = contentlet.getStringProperty("wfExpireDate");
+                    contentPushExpireTime = contentlet.getStringProperty("wfExpireTime");
+                    String contentPushNeverExpire = contentlet.getStringProperty("wfNeverExpire");
+                    String contentWhereToSend = contentlet.getStringProperty("whereToSend");
+                    String forcePush = contentlet.getStringProperty("forcePush");
 
                 /*
                  For HTMLPages get the url of the page sent by the user, we use the Contentlet object to
                  move around that url but we DON'T want what url saved in the contentlet table, the URL
                  for HTMLPages must be retrieve it from the Identifier.
                  */
-                String htmlPageURL = null;
+                    String htmlPageURL = null;
 
-                if ( contentlet.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE ) {
-                    //Getting the URL saved on the contentlet form
-                    htmlPageURL = contentletRaw.getStringProperty( HTMLPageAssetAPI.URL_FIELD );
-                    //Clean-up the contentlet object, we don' want to persist this URL in the db
-                    removeURLFromContentlet( contentlet );
+                    if (contentlet.getStructure().getStructureType()
+                            == Structure.STRUCTURE_TYPE_HTMLPAGE) {
+                        //Getting the URL saved on the contentlet form
+                        htmlPageURL = contentletRaw.getStringProperty(HTMLPageAssetAPI.URL_FIELD);
+                        //Clean-up the contentlet object, we don' want to persist this URL in the db
+                        removeURLFromContentlet(contentlet);
 
-                    //Verify if the template needs to be update for all versions of the content page
-                    updateTemplateInAllLanguageVersions(contentlet, user);
-                }
+                        //Verify if the template needs to be update for all versions of the content page
+                        updateTemplateInAllLanguageVersions(contentlet, user);
+                    }
 
-                boolean structureHasAHostField = hasAHostField(contentlet.getStructureInode());
+                    boolean structureHasAHostField = hasAHostField(contentlet.getStructureInode());
 
-                //Preparing the tags info to be related to this contentlet
-                HashMap<String, String> tagsValues = new HashMap<>();
-                String tagsHost = Host.SYSTEM_HOST;
+                    //Preparing the tags info to be related to this contentlet
+                    HashMap<String, String> tagsValues = new HashMap<>();
+                    String tagsHost = Host.SYSTEM_HOST;
 
-                List<Field> fields = FieldsCache.getFieldsByStructureInode(contentlet.getStructureInode());
-                for ( Field field : fields ) {
-                    if ( field.getFieldType().equals(Field.FieldType.TAG.toString()) ) {
+                    List<Field> fields = FieldsCache
+                            .getFieldsByStructureInode(contentlet.getStructureInode());
+                    for (Field field : fields) {
+                        if (field.getFieldType().equals(Field.FieldType.TAG.toString())) {
 
-                        String value = null;
-                        if ( contentlet.getStringProperty(field.getVelocityVarName()) != null ) {
-                            value = contentlet.getStringProperty(field.getVelocityVarName()).trim();
-                        }
-
-                        if ( UtilMethods.isSet(value) ) {
-
-                            if ( structureHasAHostField ) {
-                                Host host = null;
-                                try {
-                                    host = APILocator.getHostAPI().find(contentlet.getHost(), user, true);
-                                } catch ( Exception e ) {
-                                    Logger.error(this, "Unable to get contentlet host", e);
-                                }
-                                if ( (!UtilMethods.isSet(host) || !UtilMethods.isSet(host.getInode()))
-                                        || host.getIdentifier().equals(Host.SYSTEM_HOST) ) {
-                                    tagsHost = Host.SYSTEM_HOST;
-                                } else {
-                                    tagsHost = host.getIdentifier();
-                                }
+                            String value = null;
+                            if (contentlet.getStringProperty(field.getVelocityVarName()) != null) {
+                                value = contentlet.getStringProperty(field.getVelocityVarName())
+                                        .trim();
                             }
 
-                            //Add these tags to a temporal list in order to relate them later to this contentlet
-                            tagsValues.put(field.getVelocityVarName(), value);
+                            if (UtilMethods.isSet(value)) {
 
-                            //We should not store the tags inside the field, the relation must only exist on the tag_inode table
-                            contentlet.setStringProperty(field.getVelocityVarName(), "");
+                                if (structureHasAHostField) {
+                                    Host host = null;
+                                    try {
+                                        host = APILocator.getHostAPI()
+                                                .find(contentlet.getHost(), user, true);
+                                    } catch (Exception e) {
+                                        Logger.error(this, "Unable to get contentlet host", e);
+                                    }
+                                    if ((!UtilMethods.isSet(host) || !UtilMethods
+                                            .isSet(host.getInode()))
+                                            || host.getIdentifier().equals(Host.SYSTEM_HOST)) {
+                                        tagsHost = Host.SYSTEM_HOST;
+                                    } else {
+                                        tagsHost = host.getIdentifier();
+                                    }
+                                }
+
+                                //Add these tags to a temporal list in order to relate them later to this contentlet
+                                tagsValues.put(field.getVelocityVarName(), value);
+
+                                //We should not store the tags inside the field, the relation must only exist on the tag_inode table
+                                contentlet.setStringProperty(field.getVelocityVarName(), "");
+                            }
                         }
                     }
-                }
 
-                if(saveWithExistingID)
-                    contentlet = contentFactory.save(contentlet, existingInode);
-                else
-                    contentlet = contentFactory.save(contentlet);
+                    //This takes the values that have been marked to be null and applies that to the real properties that get saved.
+                    contentlet = applyNullProperties(contentlet);
 
-
-                //Relate the tags with the saved contentlet
-                for ( Entry<String, String> tagEntry : tagsValues.entrySet() ) {
-                    //From the given CSV tags names list search for the tag objects and if does not exist create them
-                    List<Tag> list = tagAPI.getTagsInText(tagEntry.getValue(), tagsHost);
-                    for ( Tag tag : list ) {
-                        //Relate the found/created tag with this contentlet
-                        tagAPI.addContentletTagInode(tag, contentlet.getInode(), tagEntry.getKey());
-                    }
-                }
-
-                if (!InodeUtils.isSet(contentlet.getIdentifier())) {
-
-                    //Adding back temporarily the page URL to the contentlet, is needed in order to create a proper Identifier
-                    addURLToContentlet( contentlet, htmlPageURL );
-
-                    Treeable parent;
-                    if ( UtilMethods.isSet( contentletRaw.getFolder() ) && !contentletRaw.getFolder().equals( FolderAPI.SYSTEM_FOLDER ) ) {
-                        parent = APILocator.getFolderAPI().find( contentletRaw.getFolder(), sysuser, false );
-                    } else {
-                        parent = APILocator.getHostAPI().find( contentlet.getHost(), sysuser, false );
-                    }
-                    Identifier ident;
-                    final Contentlet contPar=contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET?contentletRaw:contentlet;
-                    if(existingIdentifier!=null)
-                        ident = APILocator.getIdentifierAPI().createNew(contPar, parent, existingIdentifier);
+                    if (saveWithExistingID)
+                        contentlet = contentFactory.save(contentlet, existingInode);
                     else
-                        ident = APILocator.getIdentifierAPI().createNew(contPar, parent );
+                        contentlet = contentFactory.save(contentlet);
 
-                    //Clean-up the contentlet object again..., we don' want to persist this URL in the db
-                    removeURLFromContentlet( contentlet );
-
-                    contentlet.setIdentifier(ident.getId() );
-                    contentlet = contentFactory.save(contentlet);
-                } else {
-
-                    Identifier ident = APILocator.getIdentifierAPI().find(contentlet);
-
-                    String oldURI=ident.getURI();
-
-                    // make sure the identifier is removed from cache
-                    // because changes here may affect URI then IdentifierCache
-                    // can't remove it
-                    CacheLocator.getIdentifierCache().removeFromCacheByVersionable(contentlet);
-
-                    ident.setHostId(contentlet.getHost());
-                    if(contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET){
-                        try {
-                            if(contentletRaw.getBinary(FileAssetAPI.BINARY_FIELD) == null){
-                                String binaryIdentifier = contentletRaw.getIdentifier() != null ? contentletRaw.getIdentifier() : "";
-                                String binarynode = contentletRaw.getInode() != null ? contentletRaw.getInode() : "";;
-                                throw new FileAssetValidationException("Unable to validate field: " + FileAssetAPI.BINARY_FIELD
-                                        + " identifier: " + binaryIdentifier
-                                        + " inode: " + binarynode);
-                            } else {
-                                ident.setAssetName(contentletRaw.getBinary(FileAssetAPI.BINARY_FIELD).getName());
-                            }
-                        } catch (IOException e) {
-                            Logger.error( this.getClass(), "Error handling Binary Field.", e );
+                    //Relate the tags with the saved contentlet
+                    for (Entry<String, String> tagEntry : tagsValues.entrySet()) {
+                        //From the given CSV tags names list search for the tag objects and if does not exist create them
+                        List<Tag> list = tagAPI.getTagsInText(tagEntry.getValue(), tagsHost);
+                        for (Tag tag : list) {
+                            //Relate the found/created tag with this contentlet
+                            tagAPI.addContentletTagInode(tag, contentlet.getInode(),
+                                    tagEntry.getKey());
                         }
-                    } else if ( contentlet.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE ) {
-                        ident.setAssetName( htmlPageURL );
                     }
-                    if(UtilMethods.isSet(contentletRaw.getFolder()) && !contentletRaw.getFolder().equals(FolderAPI.SYSTEM_FOLDER)){
-                        Folder folder = APILocator.getFolderAPI().find(contentletRaw.getFolder(), sysuser, false);
-                        Identifier folderIdent = APILocator.getIdentifierAPI().find(folder);
-                        ident.setParentPath(folderIdent.getPath());
+
+                    if (!InodeUtils.isSet(contentlet.getIdentifier())) {
+
+                        //Adding back temporarily the page URL to the contentlet, is needed in order to create a proper Identifier
+                        addURLToContentlet(contentlet, htmlPageURL);
+
+                        Treeable parent;
+                        if (UtilMethods.isSet(contentletRaw.getFolder()) && !contentletRaw
+                                .getFolder().equals(FolderAPI.SYSTEM_FOLDER)) {
+                            parent = APILocator.getFolderAPI()
+                                    .find(contentletRaw.getFolder(), sysuser, false);
+                        } else {
+                            parent = APILocator.getHostAPI()
+                                    .find(contentlet.getHost(), sysuser, false);
+                        }
+                        Identifier ident;
+                        final Contentlet contPar = contentlet.getStructure().getStructureType()
+                                == Structure.STRUCTURE_TYPE_FILEASSET ? contentletRaw : contentlet;
+                        if (existingIdentifier != null)
+                            ident = APILocator.getIdentifierAPI()
+                                    .createNew(contPar, parent, existingIdentifier);
+                        else
+                            ident = APILocator.getIdentifierAPI().createNew(contPar, parent);
+
+                        //Clean-up the contentlet object again..., we don' want to persist this URL in the db
+                        removeURLFromContentlet(contentlet);
+
+                        contentlet.setIdentifier(ident.getId());
+                        contentlet = contentFactory.save(contentlet);
+                    } else {
+
+                        Identifier ident = APILocator.getIdentifierAPI().find(contentlet);
+
+                        String oldURI = ident.getURI();
+
+                        // make sure the identifier is removed from cache
+                        // because changes here may affect URI then IdentifierCache
+                        // can't remove it
+                        CacheLocator.getIdentifierCache().removeFromCacheByVersionable(contentlet);
+
+                        ident.setHostId(contentlet.getHost());
+                        if (contentlet.getStructure().getStructureType()
+                                == Structure.STRUCTURE_TYPE_FILEASSET) {
+                            try {
+                                if (contentletRaw.getBinary(FileAssetAPI.BINARY_FIELD) == null) {
+                                    String binaryIdentifier =
+                                            contentletRaw.getIdentifier() != null ? contentletRaw
+                                                    .getIdentifier() : "";
+                                    String binarynode =
+                                            contentletRaw.getInode() != null ? contentletRaw
+                                                    .getInode() : "";
+                                    ;
+                                    throw new FileAssetValidationException(
+                                            "Unable to validate field: " + FileAssetAPI.BINARY_FIELD
+                                                    + " identifier: " + binaryIdentifier
+                                                    + " inode: " + binarynode);
+                                } else {
+                                    ident.setAssetName(
+                                            contentletRaw.getBinary(FileAssetAPI.BINARY_FIELD)
+                                                    .getName());
+                                }
+                            } catch (IOException e) {
+                                Logger.error(this.getClass(), "Error handling Binary Field.", e);
+                            }
+                        } else if (contentlet.getStructure().getStructureType()
+                                == Structure.STRUCTURE_TYPE_HTMLPAGE) {
+                            ident.setAssetName(htmlPageURL);
+                        }
+                        if (UtilMethods.isSet(contentletRaw.getFolder()) && !contentletRaw
+                                .getFolder().equals(FolderAPI.SYSTEM_FOLDER)) {
+                            Folder folder = APILocator.getFolderAPI()
+                                    .find(contentletRaw.getFolder(), sysuser, false);
+                            Identifier folderIdent = APILocator.getIdentifierAPI().find(folder);
+                            ident.setParentPath(folderIdent.getPath());
+                        } else {
+                            ident.setParentPath("/");
+                        }
+                        ident = APILocator.getIdentifierAPI().save(ident);
+
+                        changedURI = !oldURI.equals(ident.getURI());
                     }
-                    else {
-                        ident.setParentPath("/");
+
+                    APILocator.getVersionableAPI().setWorking(contentlet);
+
+                    if (workingContentlet == null) {
+                        workingContentlet = contentlet;
                     }
-                    ident=APILocator.getIdentifierAPI().save(ident);
 
-                    changedURI = ! oldURI.equals(ident.getURI());
-                }
+                    if (createNewVersion || (!createNewVersion && (contentRelationships != null
+                            || cats != null))) {
+                        moveContentDependencies(workingContentlet, contentlet, contentRelationships,
+                                cats, user, respectFrontendRoles);
+                    }
 
-                APILocator.getVersionableAPI().setWorking(contentlet);
+                    // Refreshing permissions
+                    if (hasAHostField(contentlet.getStructureInode()) && !isNewContent) {
+                        permissionAPI.resetPermissionReferences(contentlet);
+                    }
 
+                    // Publish once if needed and reindex once if needed. The publish
+                    // method reindexes.
+                    contentlet.setLowIndexPriority(priority);
 
-                if (workingContentlet == null) {
-                    workingContentlet = contentlet;
-                }
+                    //set again the don't validate me and disable workflow properties
+                    //if they were set
+                    if (dontValidateMe != null) {
+                        contentlet.setProperty(Contentlet.DONT_VALIDATE_ME, dontValidateMe);
+                    }
 
-                if (createNewVersion || (!createNewVersion && (contentRelationships != null || cats != null))) {
-                    moveContentDependencies(workingContentlet, contentlet, contentRelationships, cats, user, respectFrontendRoles);
-                }
+                    if (disableWorkflow != null) {
+                        contentlet.setProperty(Contentlet.DISABLE_WORKFLOW, disableWorkflow);
+                    }
 
-                // Refreshing permissions
-                if (hasAHostField(contentlet.getStructureInode()) && !isNewContent) {
-                    permissionAPI.resetPermissionReferences(contentlet);
-                }
+                    // http://jira.dotmarketing.net/browse/DOTCMS-1073
+                    // storing binary files in file system.
+                    Logger.debug(this, "ContentletAPIImpl : storing binary files in file system.");
 
-                // Publish once if needed and reindex once if needed. The publish
-                // method reindexes.
-                contentlet.setLowIndexPriority(priority);
+                    // Binary Files
+                    String newInode = contentlet.getInode();
+                    String oldInode = workingContentlet.getInode();
 
-                //set again the don't validate me and disable workflow properties
-                //if they were set
-                if(dontValidateMe != null){
-                    contentlet.setProperty(Contentlet.DONT_VALIDATE_ME, dontValidateMe);
-                }
+                    File newDir = new File(
+                            APILocator.getFileAssetAPI().getRealAssetsRootPath() + File.separator
+                                    + newInode.charAt(0)
+                                    + File.separator
+                                    + newInode.charAt(1) + File.separator + newInode);
+                    newDir.mkdirs();
 
-                if(disableWorkflow != null){
-                    contentlet.setProperty(Contentlet.DISABLE_WORKFLOW, disableWorkflow);
-                }
+                    File oldDir = null;
+                    if (UtilMethods.isSet(oldInode)) {
+                        oldDir = new File(APILocator.getFileAssetAPI().getRealAssetsRootPath()
+                                + File.separator + oldInode.charAt(0)
+                                + File.separator + oldInode.charAt(1)
+                                + File.separator + oldInode);
+                    }
 
-                // http://jira.dotmarketing.net/browse/DOTCMS-1073
-                // storing binary files in file system.
-                Logger.debug(this, "ContentletAPIImpl : storing binary files in file system.");
+                    File tmpDir = null;
+                    if (UtilMethods.isSet(oldInode)) {
+                        tmpDir = new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary()
+                                + File.separator + oldInode.charAt(0)
+                                + File.separator + oldInode.charAt(1)
+                                + File.separator + oldInode);
+                    }
 
+                    // List of files that we need to delete after iterate over all the fields.
+                    Set<File> fileListToDelete = Sets.newHashSet();
 
-                // Binary Files
-                String newInode = contentlet.getInode();
-                String oldInode = workingContentlet.getInode();
+                    // loop over the new field values
+                    // if we have a new temp file or a deleted file
+                    // do it to the new inode directory
+                    List<Field> structFields = FieldsCache
+                            .getFieldsByStructureInode(contentlet.getStructureInode());
+                    for (Field field : structFields) {
 
+                        if (Field.FieldType.BINARY.toString().equals(field.getFieldType())) {
+                            try {
 
-                File newDir = new File(APILocator.getFileAssetAPI().getRealAssetsRootPath() + File.separator
-                        + newInode.charAt(0)
-                        + File.separator
-                        + newInode.charAt(1) + File.separator + newInode);
-                newDir.mkdirs();
+                                String velocityVarNm = field.getVelocityVarName();
+                                File incomingFile = contentletRaw.getBinary(velocityVarNm);
+                                if (validateEmptyFile && incomingFile != null
+                                        && incomingFile.length() == 0 && !Config
+                                        .getBooleanProperty("CONTENT_ALLOW_ZERO_LENGTH_FILES",
+                                                false)) {
+                                    throw new DotContentletStateException(
+                                            "Cannot checkin 0 length file: " + incomingFile);
+                                }
+                                File binaryFieldFolder = new File(
+                                        newDir.getAbsolutePath() + File.separator + velocityVarNm);
 
-                File oldDir = null;
-                if(UtilMethods.isSet(oldInode)) {
-                    oldDir = new File(APILocator.getFileAssetAPI().getRealAssetsRootPath()
-                            + File.separator + oldInode.charAt(0)
-                            + File.separator + oldInode.charAt(1)
-                            + File.separator + oldInode);
-                }
-
-                File tmpDir = null;
-                if(UtilMethods.isSet(oldInode)) {
-                    tmpDir = new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary()
-                            + File.separator + oldInode.charAt(0)
-                            + File.separator + oldInode.charAt(1)
-                            + File.separator + oldInode);
-                }
-
-                // List of files that we need to delete after iterate over all the fields.
-                Set<File> fileListToDelete = Sets.newHashSet();
-
-                // loop over the new field values
-                // if we have a new temp file or a deleted file
-                // do it to the new inode directory
-                List<Field> structFields = FieldsCache.getFieldsByStructureInode(contentlet.getStructureInode());
-                for (Field field : structFields) {
-
-                    if(Field.FieldType.BINARY.toString().equals(field.getFieldType())) {
-                        try {
-
-                            String velocityVarNm = field.getVelocityVarName();
-                            File incomingFile = contentletRaw.getBinary(velocityVarNm);
-                            if(validateEmptyFile && incomingFile!=null && incomingFile.length()==0 && !Config.getBooleanProperty("CONTENT_ALLOW_ZERO_LENGTH_FILES", false)){
-                               throw new DotContentletStateException("Cannot checkin 0 length file: " + incomingFile );
-                            }
-                            File binaryFieldFolder = new File(newDir.getAbsolutePath() + File.separator + velocityVarNm);
-
-                            
-                            File metadata=null;
-                            if(contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET) {
-                                metadata=APILocator.getFileAssetAPI().getContentMetadataFile(contentlet.getInode());
-                            }
-
-                            // if the user has removed this  file via the ui
-                            if (incomingFile == null  || incomingFile.getAbsolutePath().contains("-removed-")){
-                                FileUtil.deltree(binaryFieldFolder);
-                                contentlet.setBinary(velocityVarNm, null);
-                                if(metadata!=null && metadata.exists())
-                                    metadata.delete();
-                                continue;
-                            }
-
-                            // if we have an incoming file
-                            else if (incomingFile.exists() ){
-                                String oldFileName  = incomingFile.getName();
-                                String newFileName  = (UtilMethods.isSet(contentlet.getStringProperty("fileName")) && contentlet.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET) ? contentlet.getStringProperty("fileName"): oldFileName;
-
-
-
-
-                                File oldFile = null;
-                                if(UtilMethods.isSet(oldInode)) {
-                                    //get old file
-                                    oldFile = new File(oldDir.getAbsolutePath()  + File.separator + velocityVarNm + File.separator +  oldFileName);
-
-                                    // do we have an inline edited file, if so use that
-                                    File editedFile = new File(tmpDir.getAbsolutePath()  + File.separator + velocityVarNm + File.separator + WebKeys.TEMP_FILE_PREFIX + oldFileName);
-                                    if(editedFile.exists()){
-                                        incomingFile = editedFile;
-                                    }
+                                File metadata = null;
+                                if (contentlet.getStructure().getStructureType()
+                                        == Structure.STRUCTURE_TYPE_FILEASSET) {
+                                    metadata = APILocator.getFileAssetAPI()
+                                            .getContentMetadataFile(contentlet.getInode());
                                 }
 
-                                File newFile = new File(newDir.getAbsolutePath()  + File.separator + velocityVarNm + File.separator +  newFileName);
-                                binaryFieldFolder.mkdirs();
-
-                                // we move files that have been newly uploaded or edited
-                                if(oldFile==null || !oldFile.equals(incomingFile)){
-                                    if(!createNewVersion){
-                                        // If we're calling a checkinWithoutVersioning method, 
-                                        // then folder needs to be cleaned up in order to add the new file in it.
-                                        // Otherwise we will have the old file and incoming file at the same time
-                                        FileUtil.deltree(binaryFieldFolder);
-                                        binaryFieldFolder.mkdirs();
-                                    }
-                                    // We want to copy (not move) cause the same file could be in
-                                    // another field and we don't want to delete it in the first time.
-                                    final boolean content_version_hard_link = Config
-                                            .getBooleanProperty("CONTENT_VERSION_HARD_LINK", true);
-                                    FileUtil.copyFile(incomingFile, newFile, content_version_hard_link, validateEmptyFile);
-                                    // add the incomingFile to a list of files that will be deleted
-                                    // after we iterate over all the fields.
-                                    fileListToDelete.add(incomingFile);
-
-                                    // delete old content metadata if exists
-                                    if(metadata!=null && metadata.exists())
+                                // if the user has removed this  file via the ui
+                                if (incomingFile == null || incomingFile.getAbsolutePath()
+                                        .contains("-removed-")) {
+                                    FileUtil.deltree(binaryFieldFolder);
+                                    contentlet.setBinary(velocityVarNm, null);
+                                    if (metadata != null && metadata.exists())
                                         metadata.delete();
+                                    continue;
+                                }
 
-                                } else if (oldFile.exists()) {
-                                    // otherwise, we copy the files as hardlinks
-                                    FileUtil.copyFile(oldFile, newFile);
+                                // if we have an incoming file
+                                else if (incomingFile.exists()) {
+                                    String oldFileName = incomingFile.getName();
+                                    String newFileName = (UtilMethods
+                                            .isSet(contentlet.getStringProperty("fileName"))
+                                            && contentlet.getStructure().getStructureType()
+                                            == Structure.STRUCTURE_TYPE_FILEASSET) ? contentlet
+                                            .getStringProperty("fileName") : oldFileName;
 
-                                    // try to get the content metadata from the old version
-                                    if (metadata != null) {
-                                        File oldMeta = APILocator.getFileAssetAPI()
-                                                .getContentMetadataFile(oldInode);
-                                        if (oldMeta.exists() && !oldMeta.equals(metadata)) {
-                                            if (metadata
-                                                    .exists()) {// unlikely to happend. deleting just in case
-                                                metadata.delete();
-                                            }
-                                            metadata.getParentFile().mkdirs();
-                                            FileUtil.copyFile(oldMeta, metadata);
+                                    File oldFile = null;
+                                    if (UtilMethods.isSet(oldInode)) {
+                                        //get old file
+                                        oldFile = new File(oldDir.getAbsolutePath() + File.separator
+                                                + velocityVarNm + File.separator + oldFileName);
+
+                                        // do we have an inline edited file, if so use that
+                                        File editedFile = new File(
+                                                tmpDir.getAbsolutePath() + File.separator
+                                                        + velocityVarNm + File.separator
+                                                        + WebKeys.TEMP_FILE_PREFIX + oldFileName);
+                                        if (editedFile.exists()) {
+                                            incomingFile = editedFile;
                                         }
                                     }
+
+                                    File newFile = new File(
+                                            newDir.getAbsolutePath() + File.separator
+                                                    + velocityVarNm + File.separator + newFileName);
+                                    binaryFieldFolder.mkdirs();
+
+                                    // we move files that have been newly uploaded or edited
+                                    if (oldFile == null || !oldFile.equals(incomingFile)) {
+                                        if (!createNewVersion) {
+                                            // If we're calling a checkinWithoutVersioning method,
+                                            // then folder needs to be cleaned up in order to add the new file in it.
+                                            // Otherwise we will have the old file and incoming file at the same time
+                                            FileUtil.deltree(binaryFieldFolder);
+                                            binaryFieldFolder.mkdirs();
+                                        }
+                                        // We want to copy (not move) cause the same file could be in
+                                        // another field and we don't want to delete it in the first time.
+                                        final boolean content_version_hard_link = Config
+                                                .getBooleanProperty("CONTENT_VERSION_HARD_LINK",
+                                                        true);
+                                        FileUtil.copyFile(incomingFile, newFile,
+                                                content_version_hard_link, validateEmptyFile);
+                                        // add the incomingFile to a list of files that will be deleted
+                                        // after we iterate over all the fields.
+                                        fileListToDelete.add(incomingFile);
+
+                                        // delete old content metadata if exists
+                                        if (metadata != null && metadata.exists())
+                                            metadata.delete();
+
+                                    } else if (oldFile.exists()) {
+                                        // otherwise, we copy the files as hardlinks
+                                        FileUtil.copyFile(oldFile, newFile);
+
+                                        // try to get the content metadata from the old version
+                                        if (metadata != null) {
+                                            File oldMeta = APILocator.getFileAssetAPI()
+                                                    .getContentMetadataFile(oldInode);
+                                            if (oldMeta.exists() && !oldMeta.equals(metadata)) {
+                                                if (metadata
+                                                        .exists()) {// unlikely to happend. deleting just in case
+                                                    metadata.delete();
+                                                }
+                                                metadata.getParentFile().mkdirs();
+                                                FileUtil.copyFile(oldMeta, metadata);
+                                            }
+                                        }
+                                    }
+                                    contentlet.setBinary(velocityVarNm, newFile);
                                 }
-                                contentlet.setBinary(velocityVarNm, newFile);
+                            } catch (FileNotFoundException e) {
+                                throw new DotContentletValidationException(
+                                        "Error occurred while processing the file:" + e
+                                                .getMessage(), e);
+                            } catch (IOException e) {
+                                throw new DotContentletValidationException(
+                                        "Error occurred while processing the file:" + e
+                                                .getMessage(), e);
                             }
-                        } catch (FileNotFoundException e) {
-                            throw new DotContentletValidationException("Error occurred while processing the file:" + e.getMessage(),e);
-                        } catch (IOException e) {
-                            throw new DotContentletValidationException("Error occurred while processing the file:" + e.getMessage(),e);
                         }
                     }
-                }
 
-                // These are the incomingFiles that were copied to a new location
-                // (cause new content inode) and now we need to delete to avoid duplicates.
-                for (File fileToDelete : fileListToDelete) {
-                    fileToDelete.delete();
-                }
+                    // These are the incomingFiles that were copied to a new location
+                    // (cause new content inode) and now we need to delete to avoid duplicates.
+                    for (File fileToDelete : fileListToDelete) {
+                        fileToDelete.delete();
+                    }
 
-                // lets update identifier's syspubdate & sysexpiredate
-                if ((contentlet != null) && InodeUtils.isSet(contentlet.getIdentifier())) {
-                    Structure st=contentlet.getStructure();
-                    if(UtilMethods.isSet(st.getPublishDateVar()) || UtilMethods.isSet(st.getExpireDateVar())) {
-                        Identifier ident=APILocator.getIdentifierAPI().find(contentlet);
-                        boolean save=false;
-                        if(UtilMethods.isSet(st.getPublishDateVar())) {
-                            Date pdate=contentletRaw.getDateProperty(st.getPublishDateVar());
-                            contentlet.setDateProperty(st.getPublishDateVar(), pdate);
-                            if((ident.getSysPublishDate()==null && pdate!=null) || // was null and now we have a value
-                                    (ident.getSysPublishDate()!=null && //wasn't null and now is null or different
-                                            (pdate==null || !pdate.equals(ident.getSysPublishDate())))) {
-                                ident.setSysPublishDate(pdate);
-                                save=true;
+                    // lets update identifier's syspubdate & sysexpiredate
+                    if ((contentlet != null) && InodeUtils.isSet(contentlet.getIdentifier())) {
+                        Structure st = contentlet.getStructure();
+                        if (UtilMethods.isSet(st.getPublishDateVar()) || UtilMethods
+                                .isSet(st.getExpireDateVar())) {
+                            Identifier ident = APILocator.getIdentifierAPI().find(contentlet);
+                            boolean save = false;
+                            if (UtilMethods.isSet(st.getPublishDateVar())) {
+                                Date pdate = contentletRaw.getDateProperty(st.getPublishDateVar());
+                                contentlet.setDateProperty(st.getPublishDateVar(), pdate);
+                                if ((ident.getSysPublishDate() == null && pdate != null) ||
+                                        // was null and now we have a value
+                                        (ident.getSysPublishDate() != null &&
+                                                //wasn't null and now is null or different
+                                                (pdate == null || !pdate
+                                                        .equals(ident.getSysPublishDate())))) {
+                                    ident.setSysPublishDate(pdate);
+                                    save = true;
+                                }
                             }
-                        }
-                        if(UtilMethods.isSet(st.getExpireDateVar())) {
-                            Date edate=contentletRaw.getDateProperty(st.getExpireDateVar());
-                            contentlet.setDateProperty(st.getExpireDateVar(), edate);
-                            if((ident.getSysExpireDate()==null && edate!=null) || // was null and now we have a value
-                                    (ident.getSysExpireDate()!=null && //wasn't null and now is null or different
-                                            (edate==null || !edate.equals(ident.getSysExpireDate())))) {
-                                ident.setSysExpireDate(edate);
-                                save=true;
+                            if (UtilMethods.isSet(st.getExpireDateVar())) {
+                                Date edate = contentletRaw.getDateProperty(st.getExpireDateVar());
+                                contentlet.setDateProperty(st.getExpireDateVar(), edate);
+                                if ((ident.getSysExpireDate() == null && edate != null) ||
+                                        // was null and now we have a value
+                                        (ident.getSysExpireDate() != null &&
+                                                //wasn't null and now is null or different
+                                                (edate == null || !edate
+                                                        .equals(ident.getSysExpireDate())))) {
+                                    ident.setSysExpireDate(edate);
+                                    save = true;
+                                }
                             }
-                        }
-                        if (!contentlet.isLive() && UtilMethods.isSet( st.getExpireDateVar() ) ) {//Verify if the structure have a Expire Date Field set
-                            if(contentlet.getMap().get(Contentlet.DONT_VALIDATE_ME) == null || !(Boolean)contentlet.getMap().get(Contentlet.DONT_VALIDATE_ME)){
-                                if(UtilMethods.isSet(ident.getSysExpireDate()) && ident.getSysExpireDate().before( new Date())) {
-                                    throw new DotContentletValidationException( "message.contentlet.expired" );
+                            if (!contentlet.isLive() && UtilMethods.isSet(st
+                                    .getExpireDateVar())) {//Verify if the structure have a Expire Date Field set
+                                if (contentlet.getMap().get(Contentlet.DONT_VALIDATE_ME) == null
+                                        || !(Boolean) contentlet.getMap()
+                                        .get(Contentlet.DONT_VALIDATE_ME)) {
+                                    if (UtilMethods.isSet(ident.getSysExpireDate()) && ident
+                                            .getSysExpireDate().before(new Date())) {
+                                        throw new DotContentletValidationException(
+                                                "message.contentlet.expired");
+                                    }
+                                }
+                            }
+                            if (save) {
+
+                                // publish/expire dates changed
+                                APILocator.getIdentifierAPI().save(ident);
+
+                                // we take all inodes associated with that identifier
+                                // remove them from cache and then reindex them
+                                HibernateUtil hu = new HibernateUtil(ContentletVersionInfo.class);
+                                hu.setQuery("from " + ContentletVersionInfo.class.getCanonicalName()
+                                        + " where identifier=?");
+                                hu.setParam(ident.getId());
+                                List<ContentletVersionInfo> list = hu.list();
+                                List<String> inodes = new ArrayList<String>();
+                                for (ContentletVersionInfo cvi : list) {
+                                    inodes.add(cvi.getWorkingInode());
+                                    if (UtilMethods.isSet(cvi.getLiveInode()) && !cvi
+                                            .getWorkingInode().equals(cvi.getLiveInode()))
+                                        inodes.add(cvi.getLiveInode());
+                                }
+                                for (String inode : inodes) {
+                                    CacheLocator.getContentletCache().remove(inode);
+                                    Contentlet ct = APILocator.getContentletAPI()
+                                            .find(inode, sysuser, false);
+                                    APILocator.getContentletIndexAPI().addContentToIndex(ct, false);
                                 }
                             }
                         }
-                        if(save) {
+                    }
 
-                            // publish/expire dates changed
-                            APILocator.getIdentifierAPI().save(ident);
+                    Structure hostStructure = CacheLocator.getContentTypeCache()
+                            .getStructureByVelocityVarName("Host");
+                    if ((contentlet != null) && InodeUtils.isSet(contentlet.getIdentifier())
+                            && contentlet.getStructureInode().equals(hostStructure.getInode())) {
+                        HostAPI hostAPI = APILocator.getHostAPI();
+                        hostAPI.updateCache(new Host(contentlet));
 
-                            // we take all inodes associated with that identifier
-                            // remove them from cache and then reindex them
-                            HibernateUtil hu=new HibernateUtil(ContentletVersionInfo.class);
-                            hu.setQuery("from "+ContentletVersionInfo.class.getCanonicalName()+" where identifier=?");
-                            hu.setParam(ident.getId());
-                            List<ContentletVersionInfo> list=hu.list();
-                            List<String> inodes=new ArrayList<String>();
-                            for(ContentletVersionInfo cvi : list) {
-                                inodes.add(cvi.getWorkingInode());
-                                if(UtilMethods.isSet(cvi.getLiveInode()) && !cvi.getWorkingInode().equals(cvi.getLiveInode()))
-                                    inodes.add(cvi.getLiveInode());
+                        ContentletCache cc = CacheLocator.getContentletCache();
+                        Identifier ident = APILocator.getIdentifierAPI().find(contentlet);
+                        List<Contentlet> contentlets = findAllVersions(ident, sysuser,
+                                respectFrontendRoles);
+                        for (Contentlet c : contentlets) {
+                            Host h = new Host(c);
+                            cc.remove(h.getHostname());
+                            cc.remove(h.getIdentifier());
+                        }
+
+                        hostAPI.updateMenuLinks(new Host(workingContentlet), new Host(contentlet));
+
+                        //update tag references
+                        String oldTagStorageId = "SYSTEM_HOST";
+                        if (workingContentlet.getMap().get("tagStorage") != null) {
+                            oldTagStorageId = workingContentlet.getMap().get("tagStorage")
+                                    .toString();
+                        }
+
+                        String newTagStorageId = "SYSTEM_HOST";
+                        if (contentlet.getMap().get("tagStorage") != null) {
+                            newTagStorageId = contentlet.getMap().get("tagStorage").toString();
+                        }
+                        tagAPI.updateTagReferences(contentlet.getIdentifier(), oldTagStorageId,
+                                newTagStorageId);
+                    }
+
+                    Identifier contIdent = APILocator.getIdentifierAPI().find(contentlet);
+                    if (contentlet.getStructure().getStructureType()
+                            == Structure.STRUCTURE_TYPE_FILEASSET) {
+                        //Parse file META-DATA
+                        File binFile = getBinaryFile(contentlet.getInode(),
+                                FileAssetAPI.BINARY_FIELD, user);
+                        if (binFile != null) {
+                            contentlet.setProperty(FileAssetAPI.FILE_NAME_FIELD, binFile.getName());
+                            if (!UtilMethods.isSet(contentlet
+                                    .getStringProperty(FileAssetAPI.DESCRIPTION))) {
+                                String desc = UtilMethods.getFileName(binFile.getName());
+                                contentlet.setProperty(FileAssetAPI.DESCRIPTION, desc);
                             }
-                            for(String inode : inodes) {
-                                CacheLocator.getContentletCache().remove(inode);
-                                Contentlet ct=APILocator.getContentletAPI().find(inode, sysuser, false);
-                                APILocator.getContentletIndexAPI().addContentToIndex(ct,false);
+                            Map<String, String> metaMap = APILocator.getFileAssetAPI()
+                                    .getMetaDataMap(contentlet, binFile);
+
+                            if (metaMap != null) {
+                                Gson gson = new GsonBuilder().disableHtmlEscaping().create();
+                                contentlet.setProperty(FileAssetAPI.META_DATA_FIELD,
+                                        gson.toJson(metaMap));
+                                contentlet = contentFactory.save(contentlet);
                             }
                         }
-                    }
-                }
 
-                Structure hostStructure = CacheLocator.getContentTypeCache().getStructureByVelocityVarName("Host");
-                if ((contentlet != null) && InodeUtils.isSet(contentlet.getIdentifier()) && contentlet.getStructureInode().equals(hostStructure.getInode())) {
-                    HostAPI hostAPI = APILocator.getHostAPI();
-                    hostAPI.updateCache(new Host(contentlet));
+                        // clear possible CSS cache
+                        CacheLocator.getCSSCache()
+                                .remove(contIdent.getHostId(), contIdent.getURI(), true);
+                        CacheLocator.getCSSCache()
+                                .remove(contIdent.getHostId(), contIdent.getURI(), false);
 
-                    ContentletCache cc = CacheLocator.getContentletCache();
-                    Identifier ident=APILocator.getIdentifierAPI().find(contentlet);
-                    List<Contentlet> contentlets = findAllVersions(ident, sysuser, respectFrontendRoles);
-                    for (Contentlet c : contentlets) {
-                        Host h = new Host(c);
-                        cc.remove(h.getHostname());
-                        cc.remove(h.getIdentifier());
+
                     }
 
-                    hostAPI.updateMenuLinks(new Host(workingContentlet), new Host(contentlet));
+                    // both file & page as content might trigger a menu cache flush
+                    if (contentlet.getStructure().getStructureType()
+                            == Structure.STRUCTURE_TYPE_FILEASSET
+                            || contentlet.getStructure().getStructureType()
+                            == Structure.STRUCTURE_TYPE_HTMLPAGE) {
+                        Host host = APILocator.getHostAPI().find(contIdent.getHostId(),
+                                APILocator.getUserAPI().getSystemUser(), false);
+                        Folder folder = APILocator.getFolderAPI()
+                                .findFolderByPath(contIdent.getParentPath(), host,
+                                        APILocator.getUserAPI().getSystemUser(), false);
 
-                    //update tag references
-                    String oldTagStorageId = "SYSTEM_HOST";
-                    if(workingContentlet.getMap().get("tagStorage")!=null) {
-                        oldTagStorageId = workingContentlet.getMap().get("tagStorage").toString();
-                    }
+                        boolean shouldRefresh =
+                                (contentlet.getStructure().getStructureType()
+                                        == Structure.STRUCTURE_TYPE_FILEASSET
+                                        && RefreshMenus.shouldRefreshMenus(
+                                        APILocator.getFileAssetAPI()
+                                                .fromContentlet(workingContentlet)
+                                        , APILocator.getFileAssetAPI().fromContentlet(contentlet),
+                                        isNewContent))
+                                        ||
+                                        (contentlet.getStructure().getStructureType()
+                                                == Structure.STRUCTURE_TYPE_HTMLPAGE
+                                                && RefreshMenus.shouldRefreshMenus(
+                                                APILocator.getHTMLPageAssetAPI()
+                                                        .fromContentlet(workingContentlet)
+                                                , APILocator.getHTMLPageAssetAPI()
+                                                        .fromContentlet(contentlet), isNewContent));
 
-                    String newTagStorageId = "SYSTEM_HOST";
-                    if(contentlet.getMap().get("tagStorage")!=null) {
-                        newTagStorageId = contentlet.getMap().get("tagStorage").toString();
-                    }
-                    tagAPI.updateTagReferences(contentlet.getIdentifier(), oldTagStorageId, newTagStorageId);
-                }
-
-                Identifier contIdent = APILocator.getIdentifierAPI().find(contentlet);
-                if(contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET){
-                    //Parse file META-DATA
-                    File binFile =  getBinaryFile(contentlet.getInode(), FileAssetAPI.BINARY_FIELD, user);
-                    if(binFile!=null){
-                        contentlet.setProperty(FileAssetAPI.FILE_NAME_FIELD, binFile.getName());
-                        if(!UtilMethods.isSet(contentlet.getStringProperty(FileAssetAPI.DESCRIPTION))){
-                            String desc = UtilMethods.getFileName(binFile.getName());
-                            contentlet.setProperty(FileAssetAPI.DESCRIPTION, desc);
-                        }
-                        Map<String, String> metaMap = APILocator.getFileAssetAPI().getMetaDataMap(contentlet, binFile);
-
-                        if(metaMap!=null) {
-                            Gson gson = new GsonBuilder().disableHtmlEscaping().create();
-                            contentlet.setProperty(FileAssetAPI.META_DATA_FIELD, gson.toJson(metaMap));
-                            contentlet = contentFactory.save(contentlet);
+                        if (shouldRefresh) {
+                            RefreshMenus.deleteMenu(folder);
+                            CacheLocator.getNavToolCache()
+                                    .removeNav(host.getIdentifier(), folder.getInode());
                         }
                     }
+                    boolean isLive = false;
+                    if (contentlet.getStructure().getStructureType()
+                            == Structure.STRUCTURE_TYPE_HTMLPAGE) {
+                        try {
+                            isLive = contentlet.isLive();
+                        } catch (DotStateException e) {
+                            // Cache miss, remove HTML page entry
+                            CacheLocator.getIdentifierCache()
+                                    .removeFromCacheByIdentifier(
+                                            contentlet.getIdentifier());
+                        }
 
-                    // clear possible CSS cache
-                    CacheLocator.getCSSCache().remove(contIdent.getHostId(), contIdent.getURI(), true);
-                    CacheLocator.getCSSCache().remove(contIdent.getHostId(), contIdent.getURI(), false);
+                        new PageLoader().invalidate(contentlet);
 
 
-                }
-
-                // both file & page as content might trigger a menu cache flush
-                if(contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET
-                        || contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_HTMLPAGE ) {
-                    Host host = APILocator.getHostAPI().find(contIdent.getHostId(), APILocator.getUserAPI().getSystemUser(), false);
-                    Folder folder = APILocator.getFolderAPI().findFolderByPath(contIdent.getParentPath(), host , APILocator.getUserAPI().getSystemUser(), false);
-
-                    boolean shouldRefresh=
-                            (contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET
-                                    && RefreshMenus.shouldRefreshMenus(APILocator.getFileAssetAPI().fromContentlet(workingContentlet)
-                                    ,APILocator.getFileAssetAPI().fromContentlet(contentlet), isNewContent))
-                                    ||
-                                    (contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_HTMLPAGE
-                                            && RefreshMenus.shouldRefreshMenus(APILocator.getHTMLPageAssetAPI().fromContentlet(workingContentlet)
-                                            ,APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet), isNewContent));
-
-                    if(shouldRefresh){
-                        RefreshMenus.deleteMenu(folder);
-                        CacheLocator.getNavToolCache().removeNav(host.getIdentifier(), folder.getInode());
-                    }
-                }
-                boolean isLive = false;
-                if (contentlet.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE) {
-                    try {
+                    } else {
                         isLive = contentlet.isLive();
-                    } catch (DotStateException e) {
-                        // Cache miss, remove HTML page entry
-                        CacheLocator.getIdentifierCache()
-                                .removeFromCacheByIdentifier(
-                                        contentlet.getIdentifier());
                     }
-                    
-                    new PageLoader().invalidate(contentlet);
-                    
-                    
-                    
-                } else {
-                    isLive = contentlet.isLive();
-                }
-                if (isLive) {
-                    publishAssociated(contentlet, isNewContent, createNewVersion);
-                } else {
-                    if (!isNewContent) {
-                        new ContentletLoader().invalidate(contentlet);
-     
+                    if (isLive) {
+                        publishAssociated(contentlet, isNewContent, createNewVersion);
+                    } else {
+                        if (!isNewContent) {
+                            new ContentletLoader().invalidate(contentlet);
+
+                        }
+
+                        indexAPI.addContentToIndex(contentlet);
                     }
 
-                    indexAPI.addContentToIndex(contentlet);
-                }
-
-                if(contentlet != null && contentlet.isVanityUrl()){
-                    //remove from cache
-                    VanityUrlServices.getInstance().invalidateVanityUrl(contentlet);
-                }
-
-                if(contentlet != null && contentlet.isKeyValue()){
-                    //remove from cache
-                    CacheLocator.getKeyValueCache().remove(contentlet);
-                }
-
-                if(structureHasAHostField && changedURI) {
-                    DotConnect dc=new DotConnect();
-                    dc.setSQL("select working_inode,live_inode from contentlet_version_info where identifier=? and lang<>?");
-                    dc.addParam(contentlet.getIdentifier());
-                    dc.addParam(contentlet.getLanguageId());
-                    List<Map<String,Object>> others = dc.loadResults();
-                    for(Map<String,Object> other : others) {
-                        String workingi=(String)other.get("working_inode");
-                        indexAPI.addContentToIndex(find(workingi,user,false));
-                        String livei=(String)other.get("live_inode");
-                        if(UtilMethods.isSet(livei) && !livei.equals(workingi))
-                            indexAPI.addContentToIndex(find(livei,user,false));
+                    if (contentlet != null && contentlet.isVanityUrl()) {
+                        //remove from cache
+                        VanityUrlServices.getInstance().invalidateVanityUrl(contentlet);
                     }
+
+                    if (contentlet != null && contentlet.isKeyValue()) {
+                        //remove from cache
+                        CacheLocator.getKeyValueCache().remove(contentlet);
+                    }
+
+                    if (structureHasAHostField && changedURI) {
+                        DotConnect dc = new DotConnect();
+                        dc.setSQL(
+                                "select working_inode,live_inode from contentlet_version_info where identifier=? and lang<>?");
+                        dc.addParam(contentlet.getIdentifier());
+                        dc.addParam(contentlet.getLanguageId());
+                        List<Map<String, Object>> others = dc.loadResults();
+                        for (Map<String, Object> other : others) {
+                            String workingi = (String) other.get("working_inode");
+                            indexAPI.addContentToIndex(find(workingi, user, false));
+                            String livei = (String) other.get("live_inode");
+                            if (UtilMethods.isSet(livei) && !livei.equals(workingi))
+                                indexAPI.addContentToIndex(find(livei, user, false));
+                        }
+                    }
+
+                    // Set the properties again after the store on DB and before the fire on an Actionlet.
+                    contentlet.setStringProperty("wfPublishDate", contentPushPublishDate);
+                    contentlet.setStringProperty("wfPublishTime", contentPushPublishTime);
+                    contentlet.setStringProperty("wfExpireDate", contentPushExpireDate);
+                    contentlet.setStringProperty("wfExpireTime", contentPushExpireTime);
+                    contentlet.setStringProperty("wfNeverExpire", contentPushNeverExpire);
+                    contentlet.setStringProperty("whereToSend", contentWhereToSend);
+                    contentlet.setStringProperty("forcePush", forcePush);
+
+                    //wapi.
+                    if (workflow != null) {
+                        workflow.setContentlet(contentlet);
+                        wapi.fireWorkflowPostCheckin(workflow);
+                    }
+
+                    DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
+                    Host host = APILocator.getHostAPI()
+                            .find(contIdent.getHostId(), user, respectFrontendRoles);
+
+                    new ContentletLoader().invalidate(contentlet);
+
+
+                } catch (Exception e) {
+                    if (createNewVersion && workingContentlet != null && UtilMethods
+                            .isSet(workingContentlet.getInode())) {
+                        APILocator.getVersionableAPI().setWorking(workingContentlet);
+                    }
+                    Logger.error(this, e.getMessage(), e);
+                    if (e instanceof DotDataException)
+                        throw (DotDataException) e;
+                    if (e instanceof DotSecurityException)
+                        throw (DotSecurityException) e;
+                    if (e instanceof DotContentletValidationException)
+                        throw (DotContentletValidationException) e;
+                    if (e instanceof DotContentletStateException)
+                        throw (DotContentletStateException) e;
+                    if (e instanceof DotWorkflowException)
+                        throw (DotWorkflowException) e;
+                    if (e instanceof Exception)
+                        throw new DotRuntimeException(e.getMessage(), e);
                 }
 
-                // Set the properties again after the store on DB and before the fire on an Actionlet.
-                contentlet.setStringProperty("wfPublishDate", contentPushPublishDate);
-                contentlet.setStringProperty("wfPublishTime", contentPushPublishTime);
-                contentlet.setStringProperty("wfExpireDate", contentPushExpireDate);
-                contentlet.setStringProperty("wfExpireTime", contentPushExpireTime);
-                contentlet.setStringProperty("wfNeverExpire", contentPushNeverExpire);
-                contentlet.setStringProperty("whereToSend", contentWhereToSend);
-                contentlet.setStringProperty("forcePush", forcePush);
 
-                //wapi.
-                if(workflow!=null) {
-                    workflow.setContentlet(contentlet);
-                    wapi.fireWorkflowPostCheckin(workflow);
-                }
+            } // end syncronized block
 
-                DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
-                Host host = APILocator.getHostAPI().find(contIdent.getHostId(), user, respectFrontendRoles);
-
-                new ContentletLoader().invalidate(contentlet);
-
-
-
-            } catch (Exception e) {
-                if(createNewVersion && workingContentlet!= null && UtilMethods.isSet(workingContentlet.getInode())){
-                    APILocator.getVersionableAPI().setWorking(workingContentlet);
-                }
-                Logger.error(this, e.getMessage(), e);
-                if(e instanceof DotDataException)
-                    throw (DotDataException)e;
-                if(e instanceof DotSecurityException)
-                    throw (DotSecurityException)e;
-                if(e instanceof DotContentletValidationException)
-                    throw (DotContentletValidationException)e;
-                if(e instanceof DotContentletStateException)
-                    throw (DotContentletStateException)e;
-                if(e instanceof DotWorkflowException)
-                    throw (DotWorkflowException)e;
-                if(e instanceof Exception)
-                    throw new DotRuntimeException(e.getMessage(),e);
+            if (contentlet.isFileAsset()) {
+                FileAsset asset = APILocator.getFileAssetAPI().fromContentlet(contentlet);
             }
 
+            ActivityLogger.logInfo(getClass(), "Content Saved",
+                    "StartDate: " + contentPushPublishDate + "; "
+                            + "EndDate: " + contentPushExpireDate + "; User:" + user.getUserId()
+                            + "; ContentIdentifier: " + contentlet.getIdentifier(),
+                    contentlet.getHost());
 
-        } // end syncronized block
+            //Create a System event for this contentlet
+            if (generateSystemEvent) {
 
-        if(contentlet.isFileAsset()){
-          FileAsset asset = APILocator.getFileAssetAPI().fromContentlet(contentlet);
+                this.pushSaveEvent(contentlet, createNewVersion);
+            }
+
+            return contentlet;
+
+        }finally {
+            contentlet.cleanupContentletMap();
         }
-        
-
-        
-        ActivityLogger.logInfo(getClass(), "Content Saved", "StartDate: " +contentPushPublishDate+ "; "
-                + "EndDate: " +contentPushExpireDate + "; User:" + user.getUserId() + "; ContentIdentifier: " + contentlet.getIdentifier(), contentlet.getHost());
-
-        //Create a System event for this contentlet
-        if ( generateSystemEvent ) {
-
-            this.pushSaveEvent(contentlet, createNewVersion);
-        }
-
-        return contentlet;
     }
 
     private void updateTemplateInAllLanguageVersions(final Contentlet contentlet, final User user)
@@ -3883,7 +4001,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * @throws DotSecurityException
      */
     @CloseDBIfOpened
-    public void copyProperties(Contentlet contentlet,Map<String, Object> properties,boolean checkIsUnique) throws DotContentletStateException,DotSecurityException {
+    public void copyProperties(final Contentlet contentlet, final Map<String, Object> properties, boolean checkIsUnique) throws DotContentletStateException,DotSecurityException {
         if(!InodeUtils.isSet(contentlet.getStructureInode())){
             Logger.warn(this,"Cannot copy properties to contentlet where structure inode < 1 : You must set the structure's inode");
             return;
@@ -3904,7 +4022,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
             if(property.getValue() == null)
                 continue;
-            if((!property.getKey().equals("recurrence"))&&!(property.getValue() instanceof String || property.getValue() instanceof Boolean ||property.getValue() instanceof File || property.getValue() instanceof Float || property.getValue() instanceof Integer || property.getValue() instanceof Date || property.getValue() instanceof Long || property.getValue() instanceof List || property.getValue() instanceof BigDecimal || property.getValue() instanceof Short || property.getValue() instanceof Double)){
+            if((!property.getKey().equals("recurrence")) &&
+                    !(
+                         property.getValue() instanceof Set || property.getValue() instanceof String || property.getValue() instanceof Boolean ||property.getValue() instanceof File ||
+                         property.getValue() instanceof Float || property.getValue() instanceof Integer || property.getValue() instanceof Date || property.getValue() instanceof Long ||
+                         property.getValue() instanceof List || property.getValue() instanceof BigDecimal || property.getValue() instanceof Short || property.getValue() instanceof Double
+                    )
+            ){
                 throw new DotContentletStateException("The map contains an invalid value: " + property.getValue().getClass());
             }
         }
@@ -3941,9 +4065,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     contentlet.setHost((String)value);
                 }else if(conVariable.equals(Contentlet.FOLDER_KEY)){
                     contentlet.setFolder((String)value);
+                }else if(conVariable.equals(Contentlet.NULL_PROPERTIES)){
+                    contentlet.setProperty(conVariable, value);
                 }else if(NEVER_EXPIRE.equals(conVariable)){
                     contentlet.setProperty(conVariable, value);
-                }else if(velFieldmap.get(conVariable) != null){
+                } else if(velFieldmap.get(conVariable) != null){
                     Field field = velFieldmap.get(conVariable);
                     if(isFieldTypeString(field))
                     {
@@ -3975,6 +4101,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
             } catch (IOException ioe) {
                 Logger.error(this,"IO Error in copying Binary File object ", ioe);
             }
+
+
         }
 
         // workflow
@@ -4043,13 +4171,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
             throw new DotContentletValidationException("The contentlet's Content Type Inode must be set");
         }
 
-        /*
-         By allowing this codes setting a null value, we will cause the property to vanish from the internal map.
-         meaning that the property will never be updated. it'll continue to hold its old value.
-        if(value==null || !UtilMethods.isSet(value.toString())) {
+        if(value == null || !UtilMethods.isSet(value.toString())) {
             contentlet.setProperty(field.getVelocityVarName(), null);
             return;
-        }*/
+        }
 
         if(field.getFieldType().equals(Field.FieldType.CATEGORY.toString()) || field.getFieldType().equals(Field.FieldType.CATEGORIES_TAB.toString())){
 
@@ -4272,24 +4397,31 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                         + "] has an invalid field.");
         List<Field> fields = FieldsCache.getFieldsByStructureInode(stInode);
         Structure structure = CacheLocator.getContentTypeCache().getStructureByInode(stInode);
-        Map<String, Object> conMap = contentlet.getMap();
-        for (Field field : fields) {
-            Object o = conMap.get(field.getVelocityVarName());
+        final Map<String, Object> conMap = contentlet.getMap();
+        final Set<String> nullValueProperties = contentlet.getNullProperties();
+        for (final Field field : fields) {
+            final Object o = (nullValueProperties.contains(field.getVelocityVarName()) ? null : conMap.get(field.getVelocityVarName()));
             if(o != null){
                 if(isFieldTypeString(field)){
                     if(!(o instanceof String)){
                         cve.addBadTypeField(field);
                         Logger.warn(this, "Value of field [" + field.getVelocityVarName() + "] must be of type String");
+                        hasError = true;
+                        continue;
                     }
                 }else if(isFieldTypeDate(field)){
                     if(!(o instanceof Date)){
                         cve.addBadTypeField(field);
                         Logger.warn(this, "Value of field [" + field.getVelocityVarName() + "] must be of type Date");
+                        hasError = true;
+                        continue;
                     }
                 }else if(isFieldTypeBoolean(field)){
                     if(!(o instanceof Boolean)){
                         cve.addBadTypeField(field);
                         Logger.warn(this, "Value of field [" + field.getVelocityVarName() + "] must be of type Boolean");
+                        hasError = true;
+                        continue;
                     }
                 }else if(isFieldTypeFloat(field)){
                     if(!(o instanceof Float)){
@@ -4302,12 +4434,16 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     if(!(o instanceof Long || o instanceof Integer)){
                         cve.addBadTypeField(field);
                         Logger.warn(this, "Value of field [" + field.getVelocityVarName() + "] must be of type Long or Integer");
+                        hasError = true;
+                        continue;
                     }
                     //  binary field validation
                 }else if(isFieldTypeBinary(field)){
                     if(!(o instanceof java.io.File)){
                         cve.addBadTypeField(field);
                         Logger.warn(this, "Value of field [" + field.getVelocityVarName() + "] must be of type File");
+                        hasError = true;
+                        continue;
                     }
                 }else if(isFieldTypeSystem(field) || isFieldTypeConstant(field)){
                 	// Do not validate system or constant field values
@@ -6141,6 +6277,18 @@ public class ESContentletAPIImpl implements ContentletAPI {
     @Override
     public int updateModDate(final Set<String> inodes, final User user) throws DotDataException {
        return contentFactory.updateModDate(inodes, user);
+    }
+
+    /**
+     *
+     * @param contentlet
+     * @return
+     */
+    private Contentlet applyNullProperties(final Contentlet contentlet){
+        contentlet.getNullProperties().forEach(s -> {
+            contentlet.setProperty(s, StringPool.BLANK);
+        });
+        return contentlet;
     }
 
 }
