@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { DragulaService } from 'ng2-dragula';
-import { filter, map, tap } from 'rxjs/operators';
+import { filter, map } from 'rxjs/operators';
 import { FieldDivider, ContentTypeField } from '@portlets/content-types/fields/shared';
 import * as _ from 'lodash';
 
@@ -49,54 +49,27 @@ export class FieldDragDropService {
                 }
             );
 
+        dragulaService.dropModel().subscribe((_data: DragulaDropModel) => {
+            if (this.currentColumnOvered) {
+                this.currentColumnOvered.classList.remove(
+                    FieldDragDropService.FIELD_ROW_BAG_CLASS_OVER
+                );
+            }
+        });
+
         this._fieldRowDropFromTarget = dragulaService.dropModel().pipe(
-            filter(
-                (data: DragulaDropModel) => data.name === FieldDragDropService.FIELD_ROW_BAG_NAME
-            ),
+            filter((data: DragulaDropModel) => this.isFieldBeingDragFromColumns(data)),
             map((data: DragulaDropModel) => data.targetModel)
         );
 
         this._fieldDropFromTarget = dragulaService.dropModel().pipe(
-            filter(
-                (data: DragulaDropModel) =>
-                    data.name === FieldDragDropService.FIELD_BAG_NAME &&
-                    (<HTMLElement>data.source).dataset.dragType === 'target'
-            ),
-            tap((_data: DragulaDropModel) => {
-                this.currentColumnOvered.classList.remove(
-                    FieldDragDropService.FIELD_ROW_BAG_CLASS_OVER
-                );
-            }),
-            map((data: DragulaDropModel) => {
-                return {
-                    item: data.item,
-                    source: {
-                        columnId: (<HTMLElement>data.source).dataset.columnid,
-                        model: data.sourceModel
-                    },
-                    target: {
-                        columnId: (<HTMLElement>data.target).dataset.columnid,
-                        model: data.targetModel
-                    }
-                };
-            })
+            filter((data: DragulaDropModel) => this.isDraggingExistingField(data)),
+            map((data: DragulaDropModel) => this.getDroppedFieldData(data))
         );
 
         this._fieldDropFromSource = dragulaService.dropModel().pipe(
-            filter(
-                (data: DragulaDropModel) =>
-                    data.name === FieldDragDropService.FIELD_BAG_NAME &&
-                    (<HTMLElement>data.source).dataset.dragType === 'source'
-            ),
-            map((data: DragulaDropModel) => {
-                return {
-                    item: data.item,
-                    target: {
-                        columnId: (<HTMLElement>data.target).dataset.columnid,
-                        model: data.targetModel
-                    }
-                };
-            })
+            filter((data: DragulaDropModel) => this.isDraggingNewField(data)),
+            map((data: DragulaDropModel) => this.getDroppedFieldData(data))
         );
     }
 
@@ -152,6 +125,35 @@ export class FieldDragDropService {
 
     get fieldRowDropFromTarget$(): Observable<any> {
         return this._fieldRowDropFromTarget;
+    }
+
+    private getDroppedFieldData(data: DragulaDropModel): DropFieldData {
+        return {
+            item: data.item,
+            source: {
+                columnId: (<HTMLElement>data.source).dataset.columnid,
+                model: data.sourceModel
+            },
+            target: {
+                columnId: (<HTMLElement>data.target).dataset.columnid,
+                model: data.targetModel
+            }
+        };
+    }
+
+    private isDraggingNewField(data: DragulaDropModel): boolean {
+        return data.name === FieldDragDropService.FIELD_BAG_NAME &&
+        (<HTMLElement>data.source).dataset.dragType === 'source';
+    }
+
+    private isDraggingExistingField(data: DragulaDropModel): boolean {
+        console.log(data.name === FieldDragDropService.FIELD_BAG_NAME);
+        return data.name === FieldDragDropService.FIELD_BAG_NAME &&
+        (<HTMLElement>data.source).dataset.dragType === 'target';
+    }
+
+    private isFieldBeingDragFromColumns(data: DragulaDropModel): boolean {
+        return data.name === FieldDragDropService.FIELD_ROW_BAG_NAME;
     }
 
     private isAColumnContainer(container: Element): boolean {
