@@ -3,13 +3,13 @@ package com.dotcms.content.elasticsearch.util;
 import com.dotcms.cluster.bean.Server;
 
 public class ESClientSetTransportConfTestCase {
-    private String transportHostFromExtSettings;
-    private String transportTCPPortFromExtSettings;
-    private Server currentServer;
-    private String expectedTransportHost;
-    private String expectedTransportTCPPort;
+    private final String transportHostFromExtSettings;
+    private final String transportTCPPortFromExtSettings;
+    private final Server currentServer;
+    private final String expectedTransportHost;
+    private final String expectedTransportTCPPort;
 
-    public ESClientSetTransportConfTestCase(String transportHostFromExtSettings, String transportTCPPortFromExtSettings, Server currentServer, String expectedTransportHost, String expectedTransportTCPPort) {
+    private ESClientSetTransportConfTestCase(String transportHostFromExtSettings, String transportTCPPortFromExtSettings, Server currentServer, String expectedTransportHost, String expectedTransportTCPPort) {
         this.transportHostFromExtSettings = transportHostFromExtSettings;
         this.transportTCPPortFromExtSettings = transportTCPPortFromExtSettings;
         this.currentServer = currentServer;
@@ -24,38 +24,38 @@ public class ESClientSetTransportConfTestCase {
         private String expectedTransportHost;
         private String expectedTransportTCPPort;
 
-        public Builder withTransportHostFromExtSettings(final String transportHostFromExtSettings) {
+        Builder withTransportHostFromExtSettings(final String transportHostFromExtSettings) {
             this.transportHostFromExtSettings = transportHostFromExtSettings;
             return this;
         }
 
-        public Builder withTransportTCPPortFromExtSettings(final String transportTCPPortFromExtSettings) {
+        Builder withTransportTCPPortFromExtSettings(final String transportTCPPortFromExtSettings) {
             this.transportTCPPortFromExtSettings = transportTCPPortFromExtSettings;
             return this;
         }
 
-        public Builder withCurrentServer(final Server currentServer) {
+        Builder withCurrentServer(final Server currentServer) {
             this.currentServer = currentServer;
             return this;
         }
 
-        public Builder withExpectedTransportHost(final String expectedTransportHost) {
+        Builder withExpectedTransportHost(final String expectedTransportHost) {
             this.expectedTransportHost = expectedTransportHost;
             return this;
         }
 
-        public Builder withExpectedTransportTCPPort(final String expectedTransportTCPPort) {
+        Builder withExpectedTransportTCPPort(final String expectedTransportTCPPort) {
             this.expectedTransportTCPPort = expectedTransportTCPPort;
             return this;
         }
 
-        public ESClientSetTransportConfTestCase build() {
+        ESClientSetTransportConfTestCase build() {
             return new ESClientSetTransportConfTestCase(transportHostFromExtSettings, transportTCPPortFromExtSettings,
                     currentServer, expectedTransportHost, expectedTransportTCPPort);
         }
     }
 
-    public String getTransportHostFromExtSettings() {
+    String getTransportHostFromExtSettings() {
         return transportHostFromExtSettings;
     }
 
@@ -63,15 +63,15 @@ public class ESClientSetTransportConfTestCase {
         return transportTCPPortFromExtSettings;
     }
 
-    public Server getCurrentServer() {
+    Server getCurrentServer() {
         return currentServer;
     }
 
-    public String getExpectedTransportHost() {
+    String getExpectedTransportHost() {
         return expectedTransportHost;
     }
 
-    public String getExpectedTransportTCPPort() {
+    String getExpectedTransportTCPPort() {
         return expectedTransportTCPPort;
     }
 }

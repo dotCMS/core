@@ -1,7 +1,5 @@
 package com.dotcms.content.elasticsearch.util;
 
-import com.dotcms.cluster.bean.Server;
-
 import java.nio.file.Path;
 
 class ESClientTestCase {

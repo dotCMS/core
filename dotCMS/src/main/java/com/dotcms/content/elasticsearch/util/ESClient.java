@@ -368,7 +368,7 @@ public class ESClient {
 
             final Server currentServer = serverAPI.getCurrentServer();
 
-            String bindAddr = bindAddressFromProperty != null ? bindAddressFromProperty : currentServer.getIpAddress();
+            final String bindAddr = bindAddressFromProperty != null ? bindAddressFromProperty : currentServer.getIpAddress();
 
             externalSettings.put(ES_TRANSPORT_HOST, bindAddr);
 

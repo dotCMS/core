@@ -149,7 +149,7 @@ public class ESClientIntegrationTest {
     public void testSetTransportConfToSettings(final ESClientSetTransportConfTestCase testCase) throws DotDataException {
         final Settings.Builder settings = Settings.builder();
         settings.put(ES_TRANSPORT_HOST, testCase.getTransportHostFromExtSettings());
-        settings.put(ServerPort.ES_TRANSPORT_TCP_PORT.getPropertyName(), testCase.getExpectedTransportTCPPort());
+        settings.put(ServerPort.ES_TRANSPORT_TCP_PORT.getPropertyName(), testCase.getTransportTCPPortFromExtSettings());
 
         final ClusterAPI clusterAPI = Mockito.mock(ClusterAPI.class);
         Mockito.when(clusterAPI.isESAutoWire()).thenReturn(true);
