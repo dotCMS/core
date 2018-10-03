@@ -17,6 +17,7 @@ class MockDragulaService {
     mock: Subject<any> = new Subject();
 
     dropModel = () => this.mock.asObservable().pipe(by('dropModel'));
+    dragend = () => this.mock.asObservable().pipe(by('dragend'));
     removeModel = () => this.mock.asObservable().pipe(by('removeModel'));
     over = () => this.mock.asObservable().pipe(by('over'));
     out = () => this.mock.asObservable().pipe(by('out'));
@@ -248,7 +249,7 @@ describe('FieldDragDropService', () => {
         expect(container3.classList.contains('row-columns__item--over')).toBe(true);
 
         this.dragulaService.emit({
-            val: 'dropModel',
+            val: 'dragend',
             payload: {
                 name: 'fields-bag',
                 source: {

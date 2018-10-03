@@ -49,13 +49,13 @@ export class FieldDragDropService {
                 }
             );
 
-        dragulaService.dropModel().subscribe((_data: DragulaDropModel) => {
-            if (this.currentColumnOvered) {
+        dragulaService.dragend()
+            .pipe(filter(() => !!this.currentColumnOvered))
+            .subscribe(() => {
                 this.currentColumnOvered.classList.remove(
                     FieldDragDropService.FIELD_ROW_BAG_CLASS_OVER
                 );
-            }
-        });
+            });
 
         this._fieldRowDropFromTarget = dragulaService.dropModel().pipe(
             filter((data: DragulaDropModel) => this.isFieldBeingDragFromColumns(data)),
@@ -142,14 +142,17 @@ export class FieldDragDropService {
     }
 
     private isDraggingNewField(data: DragulaDropModel): boolean {
-        return data.name === FieldDragDropService.FIELD_BAG_NAME &&
-        (<HTMLElement>data.source).dataset.dragType === 'source';
+        return (
+            data.name === FieldDragDropService.FIELD_BAG_NAME &&
+            (<HTMLElement>data.source).dataset.dragType === 'source'
+        );
     }
 
     private isDraggingExistingField(data: DragulaDropModel): boolean {
-        console.log(data.name === FieldDragDropService.FIELD_BAG_NAME);
-        return data.name === FieldDragDropService.FIELD_BAG_NAME &&
-        (<HTMLElement>data.source).dataset.dragType === 'target';
+        return (
+            data.name === FieldDragDropService.FIELD_BAG_NAME &&
+            (<HTMLElement>data.source).dataset.dragType === 'target'
+        );
     }
 
     private isFieldBeingDragFromColumns(data: DragulaDropModel): boolean {
