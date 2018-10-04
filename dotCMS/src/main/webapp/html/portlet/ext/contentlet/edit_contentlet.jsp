@@ -265,6 +265,9 @@
             	boolean fieldSetOpen = false;
                 int fieldCounter =0;
                 int i = legacyContenTType ? 0 : 2;
+                boolean rowOpen = true;
+                boolean columnOpen = true;
+
                 for (; i < fields.size(); i++) {
                     Field f = fields.get(i);
                     com.dotcms.contenttype.model.field.Field newField = new LegacyFieldTransformer(f).from();
@@ -276,19 +279,32 @@
                     <%}%>
 
 					<%if(newField instanceof RowField){%>
-						</div>
+						<%if(rowOpen){%>
+							</div>
+						<%}
+							rowOpen = true;
+						%>
 
 						<div class="editcontentlet__row">
                     <%} else if(newField instanceof ColumnField){%>
-						</span>
+						<%if(columnOpen){%>
+							</span>
+						<%}
+							columnOpen = true;
+						%>
 
 						<span class="editcontentlet__col">
                     <%} else if(f.getFieldType().equals(Field.FieldType.LINE_DIVIDER.toString())) {%>
                         <div class="lineDividerTitle"><%=f.getFieldName() %></div>
                     <%}else if(f.getFieldType().equals(Field.FieldType.TAB_DIVIDER.toString())) {
-                        tabDividerOpen = true;%>
-                            </div>
-                        </div>
+						tabDividerOpen = true;
+						rowOpen= false;
+						columnOpen= false;%>
+                        			</span> <!--Closing column-->
+								</div> <!--Closing row-->
+							</div>
+						</div>
+				
                         <div id="<%=f.getVelocityVarName()%>" class="custom-tab" dojoType="dijit.layout.ContentPane" title="<%=f.getFieldName()%>">
                             <div class="content-edit__advaced-form">
 
