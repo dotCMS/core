@@ -31,6 +31,10 @@ p-toolbar::ng-deep {
     width: 70px;
 }
 
+.toolbar__crumbtrail {
+    margin-left: $basic-padding * 3;
+}
+
 .toolbar__logo {
     left: 0;
     position: relative;

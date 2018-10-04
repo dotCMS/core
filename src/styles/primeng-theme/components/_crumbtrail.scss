@@ -1,0 +1,22 @@
+.ui-breadcrumb {
+    padding: 0;
+
+    ul li {
+        margin: 0;
+
+        &.ui-breadcrumb-chevron {
+            margin: 0 $basic-padding / 2;
+            font-size: $font-size-small;
+            color: $gray-light;
+        }
+
+        .ui-menuitem-link {
+            color: $gray;
+
+            &:hover {
+                color: $brand-primary;
+                text-decoration: underline;
+            }
+        }
+    }
+}
