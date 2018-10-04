@@ -26,28 +26,6 @@
         }
     }
 
-    .ui-tabview-nav {
-        .ui-state-default a {
-            color: $tabview-item-color;
-            padding: $tabview-item-padding;
-            height: $tabview-nav-height;
-            text-transform: uppercase;
-        }
-
-        li.ui-tabview-selected a {
-            color: $tabview-item-selected-color;
-            border-bottom: $tabview-item-selected-border;
-        }
-
-        li .ui-tabview-close {
-            color: $tabview-item-color;
-            margin: 0;
-            right: 0;
-            top: 0;
-            position: absolute;
-        }
-    }
-
     &.ui-corner-all {
         @extend #reset-border-radius;
     }
@@ -61,7 +39,42 @@
 
         li {
             margin: 0;
+
+            &.ui-tabview-selected a {
+                color: $tabview-item-selected-color;
+                border-bottom: $tabview-item-selected-border;
+            }
+
+            &.ui-state-default a {
+                color: $tabview-item-color;
+                padding: $tabview-item-padding;
+                height: $tabview-nav-height;
+                text-transform: uppercase;
+            }
+
+            &.ui-state-disabled {
+                background: none;
+
+                a {
+                    &:hover {
+                        background: none;
+                    }
+
+                    .ui-tabview-title {
+                        color: $tabview-item-disabled-color;
+                    }
+                }
+            }
+
+            .ui-tabview-close {
+                color: $tabview-item-color;
+                margin: 0;
+                right: 0;
+                top: 0;
+                position: absolute;
+            }
         }
+
     }
 
     .ui-tabview-panel {

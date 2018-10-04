@@ -32,6 +32,7 @@ import { AddVariableFormComponent } from '../content-type-fields-variables/add-v
 import { DotDialogAction } from '../../../../view/components/dot-dialog/dot-dialog.component';
 import { DragulaModule, DragulaService } from 'ng2-dragula';
 import * as _ from 'lodash';
+import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 @Component({
     selector: 'dot-content-type-fields-row',
     template: ''
@@ -58,26 +59,26 @@ class TestContentTypeFieldsPropertiesFormComponent {
     public destroy(): void {}
 }
 
-@Component({
-    selector: 'dot-dialog',
-    template: ''
-})
-class DotDialogComponent {
-    @Input()
-    header = '';
+// @Component({
+//     selector: 'dot-dialog',
+//     template: ''
+// })
+// class DotDialogComponent {
+//     @Input()
+//     header = '';
 
-    @Input()
-    show: boolean;
+//     @Input()
+//     show: boolean;
 
-    @Input()
-    ok: DotDialogAction;
+//     @Input()
+//     ok: DotDialogAction;
 
-    @Input()
-    cancel: DotDialogAction;
+//     @Input()
+//     cancel: DotDialogAction;
 
-    @Output()
-    close: EventEmitter<any> = new EventEmitter();
-}
+//     @Output()
+//     close: EventEmitter<any> = new EventEmitter();
+// }
 
 @Component({
     selector: 'dot-content-type-fields-tab',
@@ -142,7 +143,6 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
                 TestContentTypeFieldsRowComponent,
                 TestContentTypeFieldsPropertiesFormComponent,
                 TestDotContentTypeFieldsTabComponent,
-                DotDialogComponent
             ],
             imports: [
                 RouterTestingModule.withRoutes([
@@ -157,7 +157,8 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
                 BrowserAnimationsModule,
                 DotIconModule,
                 DotIconButtonModule,
-                ContentTypeFieldsAddRowModule
+                ContentTypeFieldsAddRowModule,
+                DotDialogModule
             ],
             providers: [
                 DragulaService,
@@ -332,7 +333,6 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
                 TestContentTypeFieldsRowComponent,
                 TestContentTypeFieldsPropertiesFormComponent,
                 TestDotContentTypeFieldsTabComponent,
-                DotDialogComponent,
                 TestHostComponent
             ],
             imports: [
@@ -348,7 +348,8 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
                 BrowserAnimationsModule,
                 DotIconModule,
                 DotIconButtonModule,
-                ContentTypeFieldsAddRowModule
+                ContentTypeFieldsAddRowModule,
+                DotDialogModule
             ],
             providers: [
                 DragulaService,
@@ -641,5 +642,25 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
         expect(comp.fieldRows[0].getFieldDivider().clazz).toEqual(
             'com.dotcms.contenttype.model.field.ImmutableRowField'
         );
+    });
+
+    it('it should disable field variable tab', () => {
+        comp.formData = {};
+        comp.displayDialog = true;
+        fixture.detectChanges();
+
+        const tabLinks = de.queryAll(By.css('.ui-tabview-nav li'));
+        expect(tabLinks[1].nativeElement.classList.contains('ui-state-disabled')).toBe(true);
+    });
+
+    it('it should NOT disable field variable tab', () => {
+        comp.formData = {
+            id: '123'
+        };
+        comp.displayDialog = true;
+        fixture.detectChanges();
+
+        const tabLinks = de.queryAll(By.css('.ui-tabview-nav li'));
+        expect(tabLinks[1].nativeElement.classList.contains('ui-state-disabled')).toBe(false);
     });
 });
