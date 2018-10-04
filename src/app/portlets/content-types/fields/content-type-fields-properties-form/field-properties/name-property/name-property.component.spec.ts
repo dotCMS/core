@@ -21,6 +21,7 @@ class TestFieldValidationMessageComponent {
 describe('NamePropertyComponent', () => {
     let comp: NamePropertyComponent;
     let fixture: ComponentFixture<NamePropertyComponent>;
+    let de: DebugElement;
 
     const messageServiceMock = new MockDotMessageService({
         'Default-Value': 'Default-Value'
@@ -34,6 +35,7 @@ describe('NamePropertyComponent', () => {
         });
 
         fixture = DOTTestBed.createComponent(NamePropertyComponent);
+        de = fixture.debugElement;
         comp = fixture.componentInstance;
 
         comp.property = {
@@ -79,27 +81,8 @@ describe('NamePropertyComponent', () => {
         expect(comp.group.controls['name']).toBe(fieldValidationmessage.componentInstance.field);
     });
 
-    it('should focus on input on load', () => {
-        spyOn(comp.name.nativeElement, 'focus');
-
-        comp.group = new FormGroup({
-            name: new FormControl('')
-        });
-
-        fixture.detectChanges();
-
-        expect(comp.name.nativeElement.focus).toHaveBeenCalledTimes(1);
-    });
-
-    it('should NOT focus on input on load', () => {
-        spyOn(comp.name.nativeElement, 'focus');
-
-        comp.group = new FormGroup({
-            name: new FormControl({ value: '', disabled: true })
-        });
-
-        fixture.detectChanges();
-
-        expect(comp.name.nativeElement.focus).not.toHaveBeenCalled();
+    it('should focus on input on load using the directive', () => {
+        const input = de.query(By.css('.name__input'));
+        expect(input.attributes.dotAutofocus).toBeDefined();
     });
 });

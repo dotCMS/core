@@ -1,21 +1,16 @@
-import { Directive, ElementRef, OnInit, Input } from '@angular/core';
+import { Directive, ElementRef, OnInit } from '@angular/core';
 
 @Directive({
     selector: '[dotAutofocus]'
 })
 export class DotAutofocusDirective implements OnInit {
-    @Input() condition: string;
-
-    private _autofocus;
     constructor(private el: ElementRef) {}
 
     ngOnInit() {
-        if (this._autofocus || typeof this._autofocus === 'undefined') {
+        if (!this.el.nativeElement.disabled) {
             setTimeout(() => {
                 this.el.nativeElement.focus();
             }, 100);
         }
     }
-
-
 }
