@@ -29,7 +29,6 @@ import { DotIconModule } from '@components/_common/dot-icon/dot-icon.module';
 import { HotkeysService } from 'angular2-hotkeys';
 import { TestHotkeysMock } from '../../../../test/hotkeys-service.mock';
 import { AddVariableFormComponent } from '../content-type-fields-variables/add-variable-form';
-import { DotDialogAction } from '../../../../view/components/dot-dialog/dot-dialog.component';
 import { DragulaModule, DragulaService } from 'ng2-dragula';
 import * as _ from 'lodash';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';

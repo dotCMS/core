@@ -35,7 +35,12 @@ export class FieldDragDropService {
                         this.currentColumnOvered = group.container;
                     }
 
-                    if (this.isANewColumnContainer(group.container)) {
+                    if (
+                        this.itShouldSetCurrentOveredContainer(
+                            <HTMLElement>group.container,
+                            <HTMLElement>group.source
+                        )
+                    ) {
                         this.currentColumnOvered.classList.remove(
                             FieldDragDropService.FIELD_ROW_BAG_CLASS_OVER
                         );
@@ -49,7 +54,8 @@ export class FieldDragDropService {
                 }
             );
 
-        dragulaService.dragend()
+        dragulaService
+            .dragend()
             .pipe(filter(() => !!this.currentColumnOvered))
             .subscribe(() => {
                 this.currentColumnOvered.classList.remove(
@@ -91,7 +97,7 @@ export class FieldDragDropService {
         const fieldBagOpts = this.dragulaService.find(FieldDragDropService.FIELD_BAG_NAME);
         if (!fieldBagOpts) {
             this.dragulaService.createGroup(FieldDragDropService.FIELD_BAG_NAME, {
-                copy: this.shouldCopy,
+                copy: this.shouldCopy.bind(this),
                 accepts: this.shouldAccepts,
                 moves: this.shouldMovesField,
                 copyItem: (item: any) => {
@@ -109,8 +115,8 @@ export class FieldDragDropService {
         const fieldRowBagOpts = this.dragulaService.find(FieldDragDropService.FIELD_ROW_BAG_NAME);
         if (!fieldRowBagOpts) {
             this.dragulaService.createGroup(FieldDragDropService.FIELD_ROW_BAG_NAME, {
-                copy: this.shouldCopy,
-                moves: this.shouldMoveRow
+                copy: this.shouldCopy.bind(this),
+                moves: this.shouldMoveRow.bind(this)
             });
         }
     }
@@ -144,7 +150,7 @@ export class FieldDragDropService {
     private isDraggingNewField(data: DragulaDropModel): boolean {
         return (
             data.name === FieldDragDropService.FIELD_BAG_NAME &&
-            (<HTMLElement>data.source).dataset.dragType === 'source'
+            this.isDraggingFromSource(<HTMLElement>data.source)
         );
     }
 
@@ -153,6 +159,10 @@ export class FieldDragDropService {
             data.name === FieldDragDropService.FIELD_BAG_NAME &&
             (<HTMLElement>data.source).dataset.dragType === 'target'
         );
+    }
+
+    private isDraggingFromSource(source: HTMLElement): boolean {
+        return source.dataset.dragType === 'source';
     }
 
     private isFieldBeingDragFromColumns(data: DragulaDropModel): boolean {
@@ -168,7 +178,7 @@ export class FieldDragDropService {
     }
 
     private shouldCopy(_el: HTMLElement, source: HTMLElement): boolean {
-        return source.dataset.dragType === 'source';
+        return this.isDraggingFromSource(source);
     }
 
     private shouldMoveRow(
@@ -180,7 +190,7 @@ export class FieldDragDropService {
         const isDragButton =
             handle.parentElement.classList.contains('row-header__drag') ||
             handle.classList.contains('row-header__drag');
-        return source.dataset.dragType === 'source' || isDragButton;
+        return this.isDraggingFromSource(source) || isDragButton;
     }
 
     private shouldAccepts(
@@ -199,6 +209,13 @@ export class FieldDragDropService {
         _sibling: HTMLElement
     ): boolean {
         return el.dataset.dragType !== 'not_field';
+    }
+
+    private itShouldSetCurrentOveredContainer(
+        container: HTMLElement,
+        source: HTMLElement
+    ): boolean {
+        return this.isANewColumnContainer(container) || this.isDraggingFromSource(source);
     }
 }
 

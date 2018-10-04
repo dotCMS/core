@@ -36,7 +36,6 @@
         flex-grow: 1;
         font-size: $font-size-small;
         justify-content: center;
-        margin-top: $basic-padding;
         min-height: $content-type-field-height;
         pointer-events: none;
         text-align: center;
@@ -76,14 +75,14 @@
         &:after {
             display: none;
         }
+
+        dot-content-type-field-dragabble-item:last-child {
+            margin-bottom: 0;
+        }
     }
 
     dot-content-type-field-dragabble-item {
         margin-bottom: $basic-padding;
-
-        &:last-child {
-            margin-bottom: 0;
-        }
     }
 
 }

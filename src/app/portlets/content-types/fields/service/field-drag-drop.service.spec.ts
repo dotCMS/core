@@ -219,34 +219,34 @@ describe('FieldDragDropService', () => {
     });
 
     it('should toggle class over class on over and drop events', () => {
+        const source = document.createElement('div');
+
         const container1 = document.createElement('div');
         container1.classList.add('row-columns__item');
 
         const container2 = document.createElement('div');
         container2.classList.add('row-columns__item');
 
-        const container3 = document.createElement('div');
-        container3.classList.add('row-columns__item');
 
         this.dragulaService.emit({
             val: 'over',
-            payload: { name: '', el: null, container: container1, source: null }
+            payload: { name: '', el: null, container: container1, source: source }
         });
 
         this.dragulaService.emit({
             val: 'over',
-            payload: { name: '', el: null, container: container2, source: null }
+            payload: { name: '', el: null, container: container2, source: source }
         });
 
         expect(container2.classList.contains('row-columns__item--over')).toBe(true);
 
         this.dragulaService.emit({
             val: 'over',
-            payload: { name: '', el: null, container: container3, source: null }
+            payload: { name: '', el: null, container: container2, source: source }
         });
 
-        expect(container2.classList.contains('row-columns__item--over')).toBe(false);
-        expect(container3.classList.contains('row-columns__item--over')).toBe(true);
+        expect(container1.classList.contains('row-columns__item--over')).toBe(false);
+        expect(container2.classList.contains('row-columns__item--over')).toBe(true);
 
         this.dragulaService.emit({
             val: 'dragend',
@@ -260,6 +260,6 @@ describe('FieldDragDropService', () => {
             }
         });
 
-        expect(container3.classList.contains('row-columns__item--over')).toBe(false);
+        expect(container2.classList.contains('row-columns__item--over')).toBe(false);
     });
 });
