@@ -74,6 +74,7 @@ import { IFrameModule } from '@components/_common/iframe';
 import { MdInputTextModule } from '@directives/md-inputtext/md-input-text.module';
 import { PushPublishContentTypesDialogModule } from '@components/_common/push-publish-dialog/push-publish-dialog.module';
 import { SearchableDropDownModule } from '@components/_common/searchable-dropdown';
+import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
 
 @NgModule({
     declarations: [
@@ -146,7 +147,8 @@ import { SearchableDropDownModule } from '@components/_common/searchable-dropdow
         DotWorkflowsSelectorFieldModule,
         DotPageSelectorModule,
         DotBaseTypeSelectorModule,
-        MdInputTextModule
+        MdInputTextModule,
+        DotAutofocusModule
     ],
     providers: [
         ContentTypeEditResolver,

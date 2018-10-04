@@ -21,10 +21,6 @@ export class NamePropertyComponent implements OnInit {
     constructor(public dotMessageService: DotMessageService) {}
 
     ngOnInit(): void {
-        if (!this.group.get('name').disabled) {
-            this.name.nativeElement.focus();
-        }
-
         this.dotMessageService
             .getMessages([
                 'contenttypes.field.properties.name.label',
