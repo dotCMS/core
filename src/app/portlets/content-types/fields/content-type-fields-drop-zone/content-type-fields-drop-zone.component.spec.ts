@@ -46,7 +46,7 @@ class TestContentTypeFieldsRowComponent {
 }
 
 @Component({
-    selector: 'dot-content-type-fields-properties-form ',
+    selector: 'dot-content-type-fields-properties-form',
     template: ''
 })
 class TestContentTypeFieldsPropertiesFormComponent {
@@ -54,6 +54,8 @@ class TestContentTypeFieldsPropertiesFormComponent {
     saveField: EventEmitter<any> = new EventEmitter();
     @Input()
     formFieldData: ContentTypeField;
+
+    public destroy(): void {}
 }
 
 @Component({
@@ -282,7 +284,7 @@ const removeSortOrder = (fieldRows: FieldRow[]) => {
     });
 };
 
-fdescribe('ContentTypeFieldsDropZoneComponent', () => {
+describe('ContentTypeFieldsDropZoneComponent', () => {
     let hostComp: TestHostComponent;
     let hostDe: DebugElement;
     let comp: ContentTypeFieldsDropZoneComponent;
@@ -482,7 +484,7 @@ fdescribe('ContentTypeFieldsDropZoneComponent', () => {
         this.testFieldDragDropService._fieldDropFromSource.next({
             item: fakeFields[8],
             target: {
-                columnId: '7',
+                columnId: '8',
                 model: [fakeFields[8]]
             }
         });
@@ -553,19 +555,23 @@ fdescribe('ContentTypeFieldsDropZoneComponent', () => {
     });
 
     it('should save all the new fields', fakeAsync(() => {
+
         let saveFields;
 
         becomeNewField(fakeFields[6]);
         becomeNewField(fakeFields[7]);
         becomeNewField(fakeFields[8]);
 
+        fakeFields[7].id = 'ng-1';
         fixture.detectChanges();
+
+        spyOn(comp.propertiesForm, 'destroy');
 
         // select the fields[8] as the current field
         this.testFieldDragDropService._fieldDropFromSource.next({
             item: fakeFields[8],
             target: {
-                columnId: '9',
+                columnId: fakeFields[7].id ,
                 model: [fakeFields[8]]
             }
         });
@@ -575,6 +581,7 @@ fdescribe('ContentTypeFieldsDropZoneComponent', () => {
         comp.saveFieldsHandler(fakeFields[8]);
 
         expect([fakeFields[6], fakeFields[7], fakeFields[8]]).toEqual(saveFields);
+        expect(comp.propertiesForm.destroy).toHaveBeenCalled();
     }));
 
     it('should save all updated fields', () => {
