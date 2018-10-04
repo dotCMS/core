@@ -10,17 +10,17 @@ public class DbRelationshipTransformer implements RelationshipTransformer{
 
 	final List<Map<String, Object>> results;
 
-	public DbRelationshipTransformer(List<Map<String, Object>> list){
+	public DbRelationshipTransformer(final List<Map<String, Object>> list){
 		this.results = list;
 	}
 
-	public DbRelationshipTransformer(Map<String, Object> map){
+	public DbRelationshipTransformer(final Map<String, Object> map){
 		this.results = ImmutableList.of(map);
 	}
 
 	@Override
 	public List<Relationship> asList() {
-		List<Relationship> newList = new ArrayList<>();
+		final List<Relationship> newList = new ArrayList<>();
 		for(Map<String,Object> map : results){
 			newList.add(fromMap(map));
 		}
@@ -32,9 +32,9 @@ public class DbRelationshipTransformer implements RelationshipTransformer{
 		return fromMap(results.get(0));
 	}
 
-	private static Relationship fromMap(Map<String, Object> map) {
+	private static Relationship fromMap(final Map<String, Object> map) {
 
-		Relationship var = new Relationship();
+		final Relationship var = new Relationship();
 		var.setInode((String) map.get("inode"));
 		var.setParentStructureInode((String) map.get("parent_structure_inode"));
 		var.setChildStructureInode((String) map.get("child_structure_inode"));

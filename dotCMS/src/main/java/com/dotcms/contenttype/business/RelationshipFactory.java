@@ -43,9 +43,9 @@ public interface RelationshipFactory {
 
     List<Tree> relatedContentTrees(final Relationship relationship, final Contentlet contentlet, final boolean hasParent) throws  DotDataException;
 
-    boolean isParent(final Relationship rel, final ContentTypeIf st);
+    boolean isParent(final Relationship relationship, final ContentTypeIf contentTypeIf);
 
-    boolean isChild(final Relationship rel, final ContentTypeIf st);
+    boolean isChild(final Relationship relationship, final ContentTypeIf contentTypeIf);
 
     boolean sameParentAndChild(final Relationship rel);
 

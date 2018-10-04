@@ -181,8 +181,8 @@ public class EditRelationshipAction extends DotPortletAction {
 					BeanUtils.copyProperties(relationship,relationshipForm);
 
 					if (!relationshipTypeValue.equals(relationship.getRelationTypeValue())) {
-						Relationship oRel = APILocator.getRelationshipAPI().byTypeValue(relationshipTypeValue);
-						if (oRel != null && InodeUtils.isSet(oRel.getInode()) && !oRel.getInode().equalsIgnoreCase(relationship.getInode())) {
+						Relationship oldRelationship = APILocator.getRelationshipAPI().byTypeValue(relationshipTypeValue);
+						if (oldRelationship != null && InodeUtils.isSet(oldRelationship.getInode()) && !oldRelationship.getInode().equalsIgnoreCase(relationship.getInode())) {
 							String message = "error.relationship.same.relation.exist";
 							SessionMessages.add(req, "error",message);
 							return false;

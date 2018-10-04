@@ -20,10 +20,10 @@ import org.junit.Test;
 
 public class RelationshipFactoryImplTest extends ContentTypeBaseTest{
 
-    private RelationshipFactory relationshipFactory = FactoryLocator.getRelationshipFactory();
+    private final RelationshipFactory relationshipFactory = FactoryLocator.getRelationshipFactory();
     private ContentType parentContentType = null;
     private ContentType childContentType = null;
-    private ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
+    private final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
 
     @Test
     public void testByTypeValue_RelationshipsShouldBeSameRegardlessCase_SameRelationship() {
@@ -108,7 +108,7 @@ public class RelationshipFactoryImplTest extends ContentTypeBaseTest{
         childContentType = contentTypeAPI.save(childContentType);
 
 
-        Relationship relationship = new Relationship();
+        final Relationship relationship = new Relationship();
         relationship.setParentStructureInode(parentContentType.id());
         relationship.setChildStructureInode(childContentType.id());
         relationship.setParentRelationName(parentContentType.name());

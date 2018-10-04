@@ -620,12 +620,9 @@ public class ContentsWebAPI implements ViewTool {
 
 	public List<Relationship> getRelationshipsOfContentlet(String contentletInode, boolean hasParent) throws DotDataException, DotSecurityException {
 		Contentlet cont = conAPI.find(contentletInode, user, true);
-		if(hasParent){
-			return FactoryLocator.getRelationshipFactory().byParent(cont.getContentType());
-		}
-		else{
-			return FactoryLocator.getRelationshipFactory().byChild(cont.getContentType());
-		}
+		return (hasParent)? FactoryLocator.getRelationshipFactory().byParent(cont.getContentType()):
+				FactoryLocator.getRelationshipFactory().byChild(cont.getContentType());
+
 	}
 
 	/**
