@@ -10,6 +10,7 @@ import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.common.reindex.ReindexThread;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -150,10 +151,13 @@ public class ReindexIndexAPITest{
             HibernateUtil.closeSession();
         }
 
+        // need this to run the rollback listener on defer journal mode
+        if (!ReindexThread.getInstance().isWorking()) {
 
+            ReindexThread.getInstance().unpause();
+        }
         // let any expected reindex finish
         DateUtil.sleep(1000);
-
 
         // make sure that the index is in the same state as before the failed transaction
         for(Contentlet c : origCons){
