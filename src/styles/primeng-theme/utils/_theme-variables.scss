@@ -31,7 +31,7 @@ $field-disabled-border-size: $field-border-size;
 $field-disabled-border-color: $gray-bg;
 
 // BUTTONS
-$button-border: 0;
+$button-border: solid 1px transparent;
 $button-padding: $field-padding * 3;
 $button-height: $field-height;
 $button-tiny-height: $field-tiny-height;

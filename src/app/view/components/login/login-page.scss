@@ -63,6 +63,10 @@
     margin: 0 0 rem-cal($basic-padding * 2);
 }
 
+.login__button {
+    margin-right: $basic-padding;
+}
+
 .signin {
     position: relative;
 

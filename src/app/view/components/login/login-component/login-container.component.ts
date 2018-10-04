@@ -4,7 +4,6 @@ import {
     LoginService,
     LoggerService,
     HttpCode,
-    ResponseView,
     User
 } from 'dotcms-js/dotcms-js';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
@@ -37,9 +36,9 @@ export class LoginContainerComponent {
     constructor(
         private dotRouterService: DotRouterService,
         private httprequestUtils: HttpRequestUtils,
-        private loggerService: LoggerService,
         private loginService: LoginService,
-        private dotLoadingIndicatorService: DotLoadingIndicatorService
+        private dotLoadingIndicatorService: DotLoadingIndicatorService,
+        private loggerService: LoggerService
     ) {
         // this.dotLoadingIndicatorService.hide();
         // TODO: change the httpRequestUtils.getQueryParams() with an NG2 method equivalent to QueryParams on NGRX.
@@ -70,11 +69,9 @@ export class LoginContainerComponent {
                     this.dotLoadingIndicatorService.hide();
                     this.dotRouterService.goToMain(user['editModeUrl']);
                 },
-                (error: ResponseView) => {
+                (error: any) => {
                     if (this.isBadRequestOrUnathorized(error.status)) {
-                        this.message =
-                            error.errorsMessages ||
-                            this.getErrorMessage(error.response.json().error);
+                        this.message = JSON.parse(error._body).errors[0].message;
                     } else {
                         this.loggerService.debug(error);
                     }
@@ -89,11 +86,6 @@ export class LoginContainerComponent {
      */
     showForgotPassword(): void {
         this.dotRouterService.goToForgotPassword();
-    }
-
-    private getErrorMessage(origMessage: string): string {
-        const split = origMessage.split(':');
-        return split[2];
     }
 
     private isBadRequestOrUnathorized(status: number) {
