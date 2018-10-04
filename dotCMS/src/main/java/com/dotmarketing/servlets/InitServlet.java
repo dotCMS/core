@@ -20,7 +20,6 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.init.DotInitScheduler;
 import com.dotmarketing.loggers.mbeans.Log4jConfig;
 import com.dotmarketing.menubuilders.RefreshMenus;
-import com.dotmarketing.osgi.OSGIProxyServlet;
 import com.dotmarketing.plugin.PluginLoader;
 import com.dotmarketing.portlets.contentlet.action.ImportAuditUtil;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
@@ -31,14 +30,12 @@ import com.dotmarketing.util.*;
 import com.liferay.portal.util.ReleaseInfo;
 import org.apache.commons.lang.SystemUtils;
 import org.apache.felix.framework.OSGIUtil;
-import org.apache.felix.http.proxy.DispatcherTracker;
+import org.apache.felix.framework.OSGIUtils;
 import org.apache.lucene.search.BooleanQuery;
-import org.osgi.framework.BundleContext;
 import org.quartz.SchedulerException;
 
 import javax.management.*;
 import javax.servlet.ServletConfig;
-import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import java.io.DataInputStream;
@@ -245,8 +242,7 @@ public class InitServlet extends HttpServlet {
         System.setProperty(WebKeys.DOTCMS_STARTED_UP, "true");
 
         //Initializing felix
-        initializeOsgi(config.getServletContext());
-        initOsgiProxyTracker(config.getServletContext());
+        OSGIUtils.initializeOsgi(config.getServletContext());
 
         // Record how long it took to start us up.
         try{
@@ -438,52 +434,6 @@ public class InitServlet extends HttpServlet {
             }
         }
 
-    }
-
-    /**
-     * Initialize the OSGI felix framework in case it was not already started
-     */
-    private void initializeOsgi(ServletContext context) {
-
-        //First verify if OSGI was already initialized
-        Boolean osgiInitialized = OSGIUtil.getInstance().isInitialized();
-        if (osgiInitialized) {
-            return;
-        }
-
-        if (!Config.getBooleanProperty(WebKeys.OSGI_ENABLED, true)) {
-            System.clearProperty(WebKeys.OSGI_ENABLED);
-            return;
-        }
-
-        OSGIUtil.getInstance().initializeFramework(context);
-    }
-
-    /**
-     * Sets the bundle context to the OSGIProxyServlet
-     */
-    private void initOsgiProxyTracker(ServletContext context) {
-
-        if (!Config.getBooleanProperty(WebKeys.OSGI_ENABLED, true)) {
-            System.clearProperty(WebKeys.OSGI_ENABLED);
-            return;
-        }
-
-        if (OSGIProxyServlet.bundleContext == null) {
-            Object bundleContext = context.getAttribute(BundleContext.class.getName());
-            if (bundleContext instanceof BundleContext) {
-                OSGIProxyServlet.bundleContext = (BundleContext) bundleContext;
-                try {
-                    OSGIProxyServlet.tracker =
-                            new DispatcherTracker(OSGIProxyServlet.bundleContext, null,
-                                    OSGIProxyServlet.servletConfig);
-                } catch (Exception e) {
-                    Logger.error(this, "Error loading HttpService.", e);
-                    return;
-                }
-                OSGIProxyServlet.tracker.open();
-            }
-        }
     }
 
 }

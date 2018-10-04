@@ -1,13 +1,6 @@
 package com.dotmarketing.portlets.folders.business;
 
-import static com.dotmarketing.business.APILocator.getPermissionAPI;
-import static com.liferay.util.StringPool.BLANK;
-
-import com.dotcms.api.system.event.Payload;
-import com.dotcms.api.system.event.SystemEventType;
-import com.dotcms.api.system.event.SystemEventsAPI;
-import com.dotcms.api.system.event.Visibility;
-import com.dotcms.api.system.event.VisibilityRoles;
+import com.dotcms.api.system.event.*;
 import com.dotcms.api.system.event.verifier.ExcludeOwnerVerifierBean;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
@@ -16,16 +9,8 @@ import com.dotcms.publisher.business.PublisherAPI;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.DotIdentifierStateException;
-import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.FactoryLocator;
-import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.*;
 import com.dotmarketing.business.PermissionAPI.PermissionableType;
-import com.dotmarketing.business.Permissionable;
-import com.dotmarketing.business.Role;
-import com.dotmarketing.business.Treeable;
 import com.dotmarketing.business.query.GenericQueryFactory.Query;
 import com.dotmarketing.business.query.QueryUtil;
 import com.dotmarketing.business.query.ValidationException;
@@ -46,19 +31,15 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import org.apache.commons.lang.StringUtils;
+
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
-import java.util.StringTokenizer;
-import java.util.TimeZone;
+import java.util.*;
 import java.util.stream.Collectors;
-import org.apache.commons.lang.StringUtils;
+
+import static com.dotmarketing.business.APILocator.getPermissionAPI;
+import static com.liferay.util.StringPool.BLANK;
 
 public class FolderAPIImpl implements FolderAPI  {
 
@@ -618,7 +599,7 @@ public class FolderAPIImpl implements FolderAPI  {
 	public Folder createFolders(String path, Host host, User user, boolean respectFrontEndPermissions) throws DotHibernateException,
 			DotSecurityException, DotDataException {
 
-		StringTokenizer st = new StringTokenizer(path, "/");
+		StringTokenizer st = new StringTokenizer(path, "/"); // todo: shouldn't use multiplaform path separator
 		StringBuffer sb = new StringBuffer("/");
 
 		Folder parent = null;
@@ -636,12 +617,9 @@ public class FolderAPIImpl implements FolderAPI  {
 				f.setFilesMasks("");
 				f.setHostId(host.getIdentifier());
 				f.setDefaultFileType(CacheLocator.getContentTypeCache().getStructureByVelocityVarName(APILocator.getFileAssetAPI().DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME).getInode());
-				Identifier newIdentifier = new Identifier();
-				if(!UtilMethods.isSet(parent)){
-					newIdentifier = APILocator.getIdentifierAPI().createNew(f, host);
-				}else{
-					newIdentifier = APILocator.getIdentifierAPI().createNew(f, parent);
-				}
+				final Identifier newIdentifier = !UtilMethods.isSet(parent)?
+						APILocator.getIdentifierAPI().createNew(f, host):
+						APILocator.getIdentifierAPI().createNew(f, parent);
 
 				f.setIdentifier(newIdentifier.getId());
 				save(f,  user,  respectFrontEndPermissions);

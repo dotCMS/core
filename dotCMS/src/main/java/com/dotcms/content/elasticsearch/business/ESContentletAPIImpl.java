@@ -511,14 +511,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if (!contentlet.isWorking())
             throw new DotContentletStateException("Only the working version can be published");
 
-        // writes the contentlet object to a file
-        HibernateUtil.addCommitListener( () -> {
-                try {
-                    indexAPI.addContentToIndex(contentlet, true, true);
-                } catch (DotHibernateException e) {
-                    Logger.error( this, e.getMessage(), e );
-                }
-        });
+        indexAPI.addContentToIndex(contentlet, true, true);
 
         // Publishes the files associated with the Contentlet
         List<Field> fields = FieldsCache.getFieldsByStructureInode(contentlet.getStructureInode());
@@ -3359,6 +3352,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
                             Gson gson = new GsonBuilder().disableHtmlEscaping().create();
                             contentlet.setProperty(FileAssetAPI.META_DATA_FIELD, gson.toJson(metaMap));
                             contentlet = contentFactory.save(contentlet);
+                            contentlet.setIndexPolicy(indexPolicy);
+                            contentlet.setIndexPolicyDependencies(indexPolicyDependencies);
                         }
                     }
 
@@ -3487,7 +3482,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         } // end syncronized block
 
-        if(contentlet.isFileAsset()){
+        if(contentlet.isFileAsset()){ // todo unsedcode
           FileAsset asset = APILocator.getFileAssetAPI().fromContentlet(contentlet);
         }
         
