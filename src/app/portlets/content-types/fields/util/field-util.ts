@@ -14,6 +14,7 @@ export const TAB_FIELD = {
 
 export class FieldUtil {
 
+    private static NG_ID_SEQUENCER = new Date().getTime();
     private static NG_ID__PREFIX = 'ng-';
     /**
      * Verify if the Field already exist
@@ -104,6 +105,6 @@ export class FieldUtil {
     }
 
     static createNGID(): string {
-        return `${FieldUtil.NG_ID__PREFIX}${new Date().getTime()}`;
+        return `${FieldUtil.NG_ID__PREFIX}${FieldUtil.NG_ID_SEQUENCER++}`;
     }
 }

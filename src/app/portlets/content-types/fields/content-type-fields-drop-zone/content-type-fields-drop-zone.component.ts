@@ -258,7 +258,7 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges {
             .filter((fieldDivider: FieldDivider) => fieldDivider instanceof FieldRow)
             .map((fieldDivider: FieldDivider) => (<FieldRow> fieldDivider).columns)
             .reduce((acc, val) => acc.concat(val), [])
-            .find((fieldColumn: FieldColumn) => fieldColumn.columnDivider.id === data.columnId);
+            .find((fieldColumn: FieldColumn) => fieldColumn.id === data.columnId);
 
         modelFieldColumn.fields = data.model;
     }
