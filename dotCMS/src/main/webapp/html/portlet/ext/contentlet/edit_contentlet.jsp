@@ -298,13 +298,17 @@
                         <div class="lineDividerTitle"><%=f.getFieldName() %></div>
                     <%}else if(f.getFieldType().equals(Field.FieldType.TAB_DIVIDER.toString())) {
 						tabDividerOpen = true;
-						rowOpen= false;
-						columnOpen= false;%>
+					%>
+							<%if (rowOpen) {%>
                         			</span> <!--Closing column-->
 								</div> <!--Closing row-->
+							<%
+								rowOpen= false;
+								columnOpen= false;
+							}%>
 							</div>
 						</div>
-				
+
                         <div id="<%=f.getVelocityVarName()%>" class="custom-tab" dojoType="dijit.layout.ContentPane" title="<%=f.getFieldName()%>">
                             <div class="content-edit__advaced-form">
 
@@ -433,7 +437,7 @@
                     <jsp:include page="/html/portlet/ext/contentlet/field/edit_field.jsp" />
                 <%}%>
             <%}
-			if (legacyContenTType) {
+			if (rowOpen) {
 			%>
 				</span>
 			</div>
