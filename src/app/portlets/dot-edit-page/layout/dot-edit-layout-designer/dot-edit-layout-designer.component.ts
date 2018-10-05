@@ -11,17 +11,17 @@ import * as _ from 'lodash';
 import { DotEditLayoutService } from '../../shared/services/dot-edit-layout.service';
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { DotRenderedPage } from '../../shared/models/dot-rendered-page.model';
-import { LoginService } from 'dotcms-js/core/login.service';
+import { LoginService } from 'dotcms-js/dotcms-js';
 import { DotLayoutSideBar } from '../../shared/models/dot-layout-sidebar.model';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { DotTheme } from '../../shared/models/dot-theme.model';
 import { DotThemesService } from '@services/dot-themes/dot-themes.service';
-import { Observable } from 'rxjs/Observable';
+import { Observable } from 'rxjs';
 import {
     DotHttpErrorManagerService,
     DotHttpErrorHandled
 } from '@services/dot-http-error-manager/dot-http-error-manager.service';
-import { tap } from 'rxjs/operators/tap';
+import { tap } from 'rxjs/operators';
 import { DotLayout } from '../../shared/models/dot-layout.model';
 
 @Component({
@@ -93,7 +93,7 @@ export class DotEditLayoutDesignerComponent implements OnInit {
      * Check if the template is a template or a layout by comparing the name of the template.
      * Templates with the name "anonymous_layout_TIMESTAMP" are layout assigned to an specific page.
      *
-     * @returns {boolean}
+     * @returns boolean
      * @memberof DotEditLayoutDesignerComponent
      */
     isLayout(): boolean {
@@ -179,7 +179,7 @@ export class DotEditLayoutDesignerComponent implements OnInit {
 
     /**
      * Handle the changes in the Theme Selector component.
-     * @param {DotTheme} theme
+     * @param DotTheme theme
      *
      * @memberof DotEditLayoutDesignerComponent
      */

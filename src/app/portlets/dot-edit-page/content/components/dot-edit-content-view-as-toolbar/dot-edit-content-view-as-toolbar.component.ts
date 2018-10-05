@@ -14,7 +14,7 @@ import { DotDevice } from '@models/dot-device/dot-device.model';
 import { DotRenderedPageState } from '../../../shared/models/dot-rendered-page-state.model';
 import { PageMode } from '../../../shared/models/page-mode.enum';
 import { DotMessageService } from '@services/dot-messages-service';
-import { Observable } from 'rxjs/Observable';
+import { Observable } from 'rxjs';
 import { DotLicenseService } from '@services/dot-license/dot-license.service';
 
 @Component({
@@ -67,7 +67,7 @@ export class DotEditContentViewAsToolbarComponent implements OnInit, OnChanges {
     /**
      * Handle the changes in Persona Selector.
      *
-     * @param {DotPersona} persona
+     * @param DotPersona persona
      * @memberof DotEditContentViewAsToolbarComponent
      */
     changePersonaHandler(persona: DotPersona): void {
@@ -78,7 +78,7 @@ export class DotEditContentViewAsToolbarComponent implements OnInit, OnChanges {
     /**
      * Handle changes in Language Selector.
      *
-     * @param {DotLanguage} language
+     * @param DotLanguage language
      * @memberof DotEditContentViewAsToolbarComponent
      */
     changeLanguageHandler(language: DotLanguage): void {
@@ -89,7 +89,7 @@ export class DotEditContentViewAsToolbarComponent implements OnInit, OnChanges {
     /**
      * Handle changes in Device Selector.
      *
-     * @param {DotDevice} device
+     * @param DotDevice device
      * @memberof DotEditContentViewAsToolbarComponent
      */
     changeDeviceHandler(device: DotDevice): void {

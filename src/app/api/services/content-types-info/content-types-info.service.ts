@@ -99,8 +99,8 @@ export class ContentTypesInfoService {
     /**
      * Return an icon class base on the content type name
      *
-     * @param {string} type
-     * @returns {string}
+     * @param string type
+     * @returns string
      *
      * @memberof ContentTypesInfoService
      */
@@ -111,8 +111,8 @@ export class ContentTypesInfoService {
     /**
      * Return an icon class property base on the content type name
      *
-     * @param {string} type
-     * @returns {string}
+     * @param string type
+     * @returns string
      * @memberof ContentTypesInfoService
      */
     getClazz(type: string): string {
@@ -122,8 +122,8 @@ export class ContentTypesInfoService {
     /**
      * Return the label property base on the content type name
      *
-     * @param {string} type
-     * @returns {string}
+     * @param string type
+     * @returns string
      * @memberof ContentTypesInfoService
      */
     getLabel(type: string): string {

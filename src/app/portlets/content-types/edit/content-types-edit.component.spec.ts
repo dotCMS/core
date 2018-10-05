@@ -63,7 +63,7 @@ class TestContentTypesFormComponent {
     fields: ContentTypeField[];
     // tslint:disable-next-line:no-output-on-prefix
     @Output()
-    submit: EventEmitter<any> = new EventEmitter();
+    onSubmit: EventEmitter<any> = new EventEmitter();
 
     resetForm = jasmine.createSpy('resetForm');
 
@@ -78,6 +78,8 @@ class TestContentTypesFormComponent {
 export class TestDotMenuComponent {
     @Input()
     icon: string;
+    @Input()
+    float: boolean;
     @Input()
     model: MenuItem[];
 }
@@ -266,7 +268,7 @@ describe('ContentTypesEditComponent create mode', () => {
             spyOn(crudService, 'postData').and.returnValue(observableOf([responseContentType]));
             spyOn(location, 'replaceState').and.returnValue(observableOf([responseContentType]));
 
-            contentTypeForm.triggerEventHandler('submit', mockContentType);
+            contentTypeForm.triggerEventHandler('onSubmit', mockContentType);
 
             expect(crudService.postData).toHaveBeenCalledWith('v1/contenttype', mockContentType);
             expect(comp.data).toEqual(responseContentType, 'set data with response');
@@ -281,7 +283,7 @@ describe('ContentTypesEditComponent create mode', () => {
             spyOn(dotRouterService, 'gotoPortlet');
             spyOn(dotHttpErrorManagerService, 'handle').and.callThrough();
 
-            contentTypeForm.triggerEventHandler('submit', mockContentType);
+            contentTypeForm.triggerEventHandler('onSubmit', mockContentType);
             expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('/content-types-angular');
             expect(dotHttpErrorManagerService.handle).toHaveBeenCalledTimes(1);
         });
@@ -399,14 +401,17 @@ describe('ContentTypesEditComponent edit mode', () => {
         expect(dialog.componentInstance.visible).toBeTruthy();
     });
 
-    it('should open dialog on edit button click', () => {
+    it('should send notifications to add rows & tab divider', () => {
         const dotEventsService = fixture.debugElement.injector.get(DotEventsService);
         spyOn(dotEventsService, 'notify');
-        const addRowButton: DebugElement = fixture.debugElement.query(By.css('#form-add-row'));
-        expect(addRowButton.nativeElement.outerText).toBe('Add rows');
-        addRowButton.nativeNode.click();
-        fixture.detectChanges();
+
+        comp.contentTypeActions[0].command();
+        expect(comp.contentTypeActions[0].label).toBe('Add rows');
         expect(dotEventsService.notify).toHaveBeenCalledWith('add-row');
+
+        comp.contentTypeActions[1].command();
+        expect(comp.contentTypeActions[1].label).toBe('Add tab');
+        expect(dotEventsService.notify).toHaveBeenCalledWith('add-tab-divider');
     });
 
     it('should close the dialog', () => {
@@ -478,7 +483,7 @@ describe('ContentTypesEditComponent edit mode', () => {
         expect(comp.fields).toEqual(fieldsReturnByServer);
     });
 
-    it("should handle 403 when user doesn't have permission to save feld", () => {
+    it('should handle 403 when user doesn\'t have permission to save feld', () => {
         const newFieldsAdded: ContentTypeField[] = [
             {
                 name: 'field 1',
@@ -569,7 +574,7 @@ describe('ContentTypesEditComponent edit mode', () => {
 
             spyOn(crudService, 'putData').and.returnValue(observableOf(responseContentType));
 
-            contentTypeForm.triggerEventHandler('submit', fakeContentType);
+            contentTypeForm.triggerEventHandler('onSubmit', fakeContentType);
 
             expect(crudService.putData).toHaveBeenCalledWith(
                 'v1/contenttype/id/1234567890',
@@ -585,7 +590,7 @@ describe('ContentTypesEditComponent edit mode', () => {
                 observableThrowError(mockResponseView(403))
             );
 
-            contentTypeForm.triggerEventHandler('submit', fakeContentType);
+            contentTypeForm.triggerEventHandler('onSubmit', fakeContentType);
 
             expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('/content-types-angular');
             expect(dotHttpErrorManagerService.handle).toHaveBeenCalledTimes(1);

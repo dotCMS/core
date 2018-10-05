@@ -1,6 +1,6 @@
 import { pluck } from 'rxjs/operators';
 import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs/Observable';
+import { Observable } from 'rxjs';
 import { DotDevice } from '@models/dot-device/dot-device.model';
 import { CoreWebService } from 'dotcms-js/dotcms-js';
 import { RequestMethod } from '@angular/http';
@@ -16,7 +16,7 @@ export class DotDevicesService {
 
     /**
      * Return available devices.
-     * @returns {Observable<DotDevice[]>}
+     * @returns Observable<DotDevice[]>
      * @memberof DotDevicesService
      */
     get(): Observable<DotDevice[]> {

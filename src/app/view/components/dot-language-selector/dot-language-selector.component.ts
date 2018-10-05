@@ -31,7 +31,7 @@ export class DotLanguageSelectorComponent implements OnInit {
 
     /**
      * Track changes in the dropdown
-     * @param {DotLanguage} language
+     * @param DotLanguage language
      */
     change(language: DotLanguage): void {
         this.selected.emit(language);

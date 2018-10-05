@@ -33,7 +33,7 @@ export class ToolbarUserComponent implements OnInit {
     ) {}
 
     ngOnInit(): void {
-        this.dotMessageService.getMessages(['my-account']).subscribe((res) => {
+        this.dotMessageService.getMessages(['my-account', 'login-as', 'Logout', 'logout-as']).subscribe((res) => {
             this.i18nMessages = res;
         });
 
@@ -45,7 +45,7 @@ export class ToolbarUserComponent implements OnInit {
     /**
      * Call the logout service and clear the user session
      *
-     * @returns {boolean}
+     * @returns boolean
      * @memberof ToolbarUserComponent
      */
     logout(): boolean {
@@ -61,7 +61,7 @@ export class ToolbarUserComponent implements OnInit {
     /**
      * Call the logout as service and clear the user login as
      *
-     * @param {any} $event
+     * @param any $event
      * @memberof ToolbarUserComponent
      */
     logoutAs($event): void {
@@ -83,7 +83,7 @@ export class ToolbarUserComponent implements OnInit {
     /**
      * Toggle show/hide login as dialog
      *
-     * @returns {boolean}
+     * @returns boolean
      * @memberof ToolbarUserComponent
      */
     tooggleLoginAs(): boolean {
@@ -95,7 +95,7 @@ export class ToolbarUserComponent implements OnInit {
     /**
      * Toggle show/hide my acccont menu
      *
-     * @returns {boolean}
+     * @returns boolean
      * @memberof ToolbarUserComponent
      */
     toggleMyAccount(): boolean {

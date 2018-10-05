@@ -40,11 +40,12 @@ export class ContentTypesFormComponent implements OnInit {
 
     @Input()
     data: any;
+
     @Input()
     fields: ContentTypeField[];
 
     @Output()
-    submit: EventEmitter<any> = new EventEmitter();
+    onSubmit: EventEmitter<any> = new EventEmitter();
 
     canSave = false;
     dateVarOptions: SelectItem[] = [];
@@ -101,8 +102,8 @@ export class ContentTypesFormComponent implements OnInit {
     /**
      * Update expireDateVar and publishDateVar fields base on selection
      *
-     * @param {any} $event
-     * @param {any} field
+     * @param any $event
+     * @param any field
      * @memberof ContentTypesFormComponent
      */
     handleDateVarChange($event, field): void {
@@ -116,7 +117,7 @@ export class ContentTypesFormComponent implements OnInit {
     /**
      * Check if the form is in edit mode
      *
-     * @returns {boolean}
+     * @returns boolean
      * @memberof ContentTypesFormComponent
      */
     isEditMode(): boolean {
@@ -144,7 +145,7 @@ export class ContentTypesFormComponent implements OnInit {
      */
     submitForm(): void {
         if (this.canSave) {
-            this.submit.emit({
+            this.onSubmit.emit({
                 ...this.form.value,
                 workflow: this.form.getRawValue().workflow
             });

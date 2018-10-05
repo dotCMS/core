@@ -205,8 +205,7 @@ describe('ContentTypesPortletComponent', () => {
         });
 
         spyOn(crudService, 'delete').and.returnValue(observableOf(mockContentType));
-
-        comp.rowActions[0].menuItem.command(mockContentType);
+        comp.rowActions[2].menuItem.command(mockContentType);
 
         fixture.detectChanges();
 
@@ -216,9 +215,9 @@ describe('ContentTypesPortletComponent', () => {
     it('should have remove, push publish and Add to bundle actions to the list item', () => {
         fixture.detectChanges();
         expect(comp.rowActions.map((action) => action.menuItem.label)).toEqual([
-            'Delete',
             'Push Publish',
-            'Add to bundle'
+            'Add to bundle',
+            'Delete'
         ]);
     });
 
@@ -246,8 +245,8 @@ describe('ContentTypesPortletComponent', () => {
         fixture.detectChanges();
 
         expect(comp.rowActions.map((action) => action.menuItem.label)).toEqual([
-            'Delete',
-            'Add to bundle'
+            'Add to bundle',
+            'Delete'
         ]);
     });
 
@@ -268,7 +267,7 @@ describe('ContentTypesPortletComponent', () => {
         expect(comp.pushPublishIdentifier).not.toBeDefined();
         expect(de.query(By.css('p-dialog'))).toBeNull();
 
-        comp.rowActions[1].menuItem.command(mockContentType);
+        comp.rowActions[0].menuItem.command(mockContentType);
         fixture.detectChanges();
 
         expect(de.query(By.css('p-dialog'))).toBeDefined();
@@ -292,7 +291,7 @@ describe('ContentTypesPortletComponent', () => {
         expect(comp.addToBundleIdentifier).not.toBeDefined();
         expect(de.query(By.css('p-dialog'))).toBeNull();
 
-        comp.rowActions[2].menuItem.command(mockContentType);
+        comp.rowActions[1].menuItem.command(mockContentType);
         fixture.detectChanges();
 
         expect(de.query(By.css('p-dialog'))).toBeDefined();
@@ -351,10 +350,30 @@ describe('ContentTypesPortletComponent', () => {
         spyOn(dotHttpErrorManagerService, 'handle').and.callThrough();
         spyOn(crudService, 'delete').and.returnValue(observableThrowError(forbiddenError));
 
-        comp.rowActions[0].menuItem.command(mockContentType);
+        comp.rowActions[2].menuItem.command(mockContentType);
 
         fixture.detectChanges();
 
         expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(forbiddenError);
+    });
+
+    it('should not show remove option if content type is defaultType', () => {
+        fixture.detectChanges();
+        const shouldShow = comp.rowActions[2].shouldShow({
+            fixed: false,
+            defaultType: true
+        });
+
+        expect(shouldShow).toBeFalsy();
+    });
+
+    it('should show remove option', () => {
+        fixture.detectChanges();
+        const shouldShow = comp.rowActions[2].shouldShow({
+            fixed: false,
+            defaultType: false
+        });
+
+        expect(shouldShow).toBeTruthy();
     });
 });

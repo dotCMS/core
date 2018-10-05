@@ -27,7 +27,7 @@ export class DotAlertConfirmService {
      * Confirm wrapper method of ConfirmService
      * Add both accept and reject labels into confirmation object
      *
-     * @param {DotAlertConfirm} dialogModel
+     * @param DotAlertConfirm dialogModel
      * @memberof DotAlertConfirmService
      */
     confirm(dialogModel: DotAlertConfirm): void {
@@ -47,7 +47,7 @@ export class DotAlertConfirmService {
      * Confirm wrapper method of ConfirmService
      * Add both accept and reject labels into confirmation object
      *
-     * @param {DotAlertConfirm} confirmation
+     * @param DotAlertConfirm confirmation
      * @memberof DotAlertConfirmService
      */
     alert(dialogModel: DotAlertConfirm): void {

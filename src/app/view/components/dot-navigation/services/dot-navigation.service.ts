@@ -4,7 +4,7 @@ import { Router, NavigationEnd, Event } from '@angular/router';
 import { Observable, BehaviorSubject } from 'rxjs';
 import { filter, switchMap, map, flatMap, toArray, tap } from 'rxjs/operators';
 
-import { Auth } from 'dotcms-js/core/login.service';
+import { Auth } from 'dotcms-js/dotcms-js';
 import { DotcmsEventsService, LoginService } from 'dotcms-js/dotcms-js';
 
 import { DotMenu, DotMenuItem } from '@models/navigation';
@@ -145,7 +145,7 @@ export class DotNavigationService {
     /**
      * Navigate to portlet by id
      *
-     * @param {string} url
+     * @param string url
      * @memberof DotNavigationService
      */
     goTo(url: string): void {
@@ -172,7 +172,7 @@ export class DotNavigationService {
     /**
      * Reload current portlet
      *
-     * @param {string} id
+     * @param string id
      * @memberof DotNavigationService
      */
     reloadCurrentPortlet(id: string): void {
@@ -194,7 +194,7 @@ export class DotNavigationService {
     /**
      * Set menu open base on the id of the menulink
      *
-     * @param {string} id
+     * @param string id
      * @memberof DotNavigationService
      */
     setOpen(id: string): void {
@@ -209,7 +209,7 @@ export class DotNavigationService {
     }
 
     onNavigationEnd(): Observable<Event> {
-        return this.router.events.filter((event: Event) => event instanceof NavigationEnd);
+        return this.router.events.pipe(filter((event: Event) => event instanceof NavigationEnd));
     }
 
     private addMenuLinks(menu: DotMenu[]): DotMenu[] {

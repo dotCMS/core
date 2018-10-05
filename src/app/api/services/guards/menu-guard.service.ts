@@ -37,8 +37,8 @@ export class MenuGuardService implements CanActivate {
     /**
      * Check if User has access to the requested route (url) based on the Menu, otherwise go to the 'First Portlet' and return false.
      *
-     * @param {string} url
-     * @returns {boolean}
+     * @param string url
+     * @returns boolean
      */
     private canAccessPortlet(url: string): Observable<boolean> {
         return this.dotMenuService.isPortletInMenu(url).pipe(

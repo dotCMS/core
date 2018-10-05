@@ -1,7 +1,7 @@
 import { toArray, filter, pluck, mergeMap } from 'rxjs/operators';
 import { CoreWebService, ApiRoot } from 'dotcms-js/dotcms-js';
 import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs/Observable';
+import { Observable } from 'rxjs';
 import { RequestMethod } from '@angular/http';
 import { DotEnvironment } from '@models/dot-environment/dot-environment';
 import { AjaxActionResponseView } from '@models/ajax-action-response/ajax-action-response';
@@ -34,7 +34,7 @@ export class PushPublishService {
 
     /**
      * Get push publish environments.
-     * @returns {Observable<DotEnvironment[]>}
+     * @returns Observable<DotEnvironment[]>
      * @memberof PushPublishService
      */
     getEnvironments(): Observable<DotEnvironment[]> {
@@ -54,9 +54,9 @@ export class PushPublishService {
 
     /**
      * Push publish asset to specified environment.
-     * @param {string} contentTypeId
-     * @param {*} formValue
-     * @returns {Observable<AjaxActionResponseView>}
+     * @param string contentTypeId
+     * @param * formValue
+     * @returns Observable<AjaxActionResponseView>
      * @memberof PushPublishService
      */
     pushPublishContent(

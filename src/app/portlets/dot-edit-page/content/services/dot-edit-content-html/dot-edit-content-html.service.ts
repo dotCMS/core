@@ -87,9 +87,9 @@ export class DotEditContentHtmlService {
     /**
      * Load code into iframe
      *
-     * @param {string} editPageHTML
-     * @param {ElementRef} iframeEl
-     * @returns {Promise<any>}
+     * @param string editPageHTML
+     * @param ElementRef iframeEl
+     * @returns Promise<any>
      * @memberof DotEditContentHtmlService
      */
     renderPage(pageState: DotRenderedPageState, iframeEl: ElementRef): Promise<any> {
@@ -114,8 +114,8 @@ export class DotEditContentHtmlService {
     /**
      * Initalize edit content mode
      *
-     * @param {string} editPageHTML
-     * @param {ElementRef} iframeEl
+     * @param string editPageHTML
+     * @param ElementRef iframeEl
      * @memberof DotEditContentHtmlService
      */
     initEditMode(pageState: DotRenderedPageState, iframeEl: ElementRef): void {
@@ -127,7 +127,7 @@ export class DotEditContentHtmlService {
     /**
      * Remove a contentlet from the DOM by inode and update the page model
      *
-     * @param {string} inode
+     * @param string inode
      * @memberof DotEditContentHtmlService
      */
     removeContentlet(container: DotPageContainer, content: DotPageContent): void {
@@ -146,7 +146,7 @@ export class DotEditContentHtmlService {
     /**
      * Render contentlet in the DOM after edition.
      *
-     * @param {*} contentlet
+     * @param * contentlet
      * @memberof DotEditContentHtmlService
      */
     renderEditedContentlet(contentlet: DotPageContent): void {
@@ -181,7 +181,7 @@ export class DotEditContentHtmlService {
     /**
      * Render a contrentlet in the DOM after add it
      *
-     * @param {*} contentlet
+     * @param * contentlet
      * @memberof DotEditContentHtmlService
      */
     renderAddedContentlet(contentlet: DotPageContent): void {
@@ -197,7 +197,7 @@ export class DotEditContentHtmlService {
     /**
      * Render a form in the DOM after add it
      *
-     * @param {ContentType} form
+     * @param ContentType form
      * @memberof DotEditContentHtmlService
      */
     renderAddedForm(form: ContentType): Observable<DotPageContainer[]> {
@@ -243,7 +243,7 @@ export class DotEditContentHtmlService {
     /**
      * Set the container id where a contentlet will be added
      *
-     * @param {string} identifier
+     * @param string identifier
      * @memberof DotEditContentHtmlService
      */
     setContainterToAppendContentlet(pageContainer: DotPageContainer): void {
@@ -254,7 +254,7 @@ export class DotEditContentHtmlService {
     /**
      * Set listener for Iframe body changes to change container's height
      *
-     * @param {DotLayout} pageLayout
+     * @param DotLayout pageLayout
      * @memberof DotEditContentHtmlService
      */
     setContaintersChangeHeightListener(pageLayout: DotLayout): void {
@@ -276,7 +276,7 @@ export class DotEditContentHtmlService {
     /**
      * Set the same height to containers in the same row
      *
-     * @param {DotLayout} pageLayout
+     * @param DotLayout pageLayout
      * @memberof DotEditContentHtmlService
      */
     setContaintersSameHeight(pageLayout: DotLayout): void {
@@ -299,7 +299,7 @@ export class DotEditContentHtmlService {
     /**
      * Return the page model
      *
-     * @returns {*}
+     * @returns *
      * @memberof DotEditContentHtmlService
      */
     getContentModel(): DotPageContainer[] {

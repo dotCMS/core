@@ -1,6 +1,6 @@
 import { mergeMap, flatMap, map, tap, toArray } from 'rxjs/operators';
 import { DotWorkflowService } from './../../../../api/services/dot-workflow/dot-workflow.service';
-import { Observable } from 'rxjs/Observable';
+import { Observable } from 'rxjs';
 import { DotWorkflow } from './../../../../shared/models/dot-workflow/dot-workflow.model';
 import { Component, OnInit, forwardRef } from '@angular/core';
 import { SelectItem } from 'primeng/components/common/selectitem';
@@ -35,7 +35,7 @@ export class DotWorkflowsSelectorFieldComponent implements ControlValueAccessor,
 
     /**
      * Set the function to be called when the control receives a change event.
-     * @param {any} fn
+     * @param any fn
      * @memberof SearchableDropdownComponent
      */
     registerOnChange(fn): void {
@@ -64,7 +64,7 @@ export class DotWorkflowsSelectorFieldComponent implements ControlValueAccessor,
     /**
      * Update value on change of the multiselect
      *
-     * @param {string[]} value
+     * @param string[] value
      * @memberof DotWorkflowsSelectorFieldComponent
      */
     handleChange(value: string[]): void {
@@ -74,8 +74,8 @@ export class DotWorkflowsSelectorFieldComponent implements ControlValueAccessor,
     /**
      * Check if the item in the template is archived
      *
-     * @param {string} id
-     * @returns {boolean}
+     * @param string id
+     * @returns boolean
      * @memberof DotWorkflowsSelectorFieldComponent
      */
     isWorkflowArchive(id: string): boolean {
@@ -86,7 +86,7 @@ export class DotWorkflowsSelectorFieldComponent implements ControlValueAccessor,
     /**
      * Set disable state.
      *
-     * @param {boolean} isDisabled
+     * @param boolean isDisabled
      * @memberof DotWorkflowsSelectorFieldComponent
      */
     setDisabledState(isDisabled: boolean): void {
@@ -95,7 +95,7 @@ export class DotWorkflowsSelectorFieldComponent implements ControlValueAccessor,
 
     /**
      * Write a new value to the element
-     * @param {*} value
+     * @param * value
      * @memberof SearchableDropdownComponent
      */
     writeValue(value: string[]): void {

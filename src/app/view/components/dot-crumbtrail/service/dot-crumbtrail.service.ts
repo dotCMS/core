@@ -6,9 +6,7 @@ import {
 import { map, switchMap, filter, take } from 'rxjs/operators';
 import { NavigationEnd, Router, ActivatedRoute, Data } from '@angular/router';
 import { DotMenu, DotMenuItem } from '../../../../shared/models/navigation';
-import { Observable } from 'rxjs/Observable';
-import { Subject } from 'rxjs/Subject';
-import { BehaviorSubject } from 'rxjs/BehaviorSubject';
+import { Observable, BehaviorSubject, Subject } from 'rxjs';
 
 @Injectable()
 export class DotCrumbtrailService {
@@ -80,9 +78,13 @@ export class DotCrumbtrailService {
         const data: Data = this.getData();
 
         let currentData: any = data;
-        this.dataMatch[sectionKey].split('.').forEach((key) => (currentData = currentData[key]));
 
-        return currentData;
+        if (this.dataMatch[sectionKey]) {
+            this.dataMatch[sectionKey].split('.').forEach((key) => (currentData = currentData[key]));
+            return currentData;
+        } else {
+            return null;
+        }
     }
 
     private getData(): Data {
@@ -104,10 +106,14 @@ export class DotCrumbtrailService {
         return this.getMenuLabel(portletId).pipe(
             map((crumbTrail: DotCrumb[]) => {
                 if (sections.length > 1) {
-                    crumbTrail.push({
-                        label: this.getCrumbtrailSection(sections[0]),
-                        url: ''
-                    });
+                    const sectionLabel = this.getCrumbtrailSection(sections[0]);
+
+                    if (sectionLabel) {
+                        crumbTrail.push({
+                            label: sectionLabel,
+                            url: ''
+                        });
+                    }
                 }
 
                 return crumbTrail;

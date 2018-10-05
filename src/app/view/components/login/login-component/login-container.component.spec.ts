@@ -10,7 +10,7 @@ import { async } from '@angular/core/testing';
 import { LoginComponent } from './login.component';
 import { By } from '@angular/platform-browser';
 import { DOTTestBed } from '../../../../test/dot-test-bed';
-import { LoginService } from 'dotcms-js/core/login.service';
+import { LoginService } from 'dotcms-js/dotcms-js';
 import { LoginServiceMock } from '../../../../test/login-service.mock';
 
 describe('LoginContainerComponent', () => {

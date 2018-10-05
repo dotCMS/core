@@ -1,11 +1,11 @@
 import { pluck } from 'rxjs/operators';
 import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs/Observable';
-import { CoreWebService } from 'dotcms-js/core/core-web.service';
+import { Observable } from 'rxjs';
 import { RequestMethod } from '@angular/http';
 import { DotPageContainer } from '../../shared/models/dot-page-container.model';
 import { DotPageContent } from '../../shared/models/dot-page-content.model';
 import { ContentType } from '../../../content-types/shared/content-type.model';
+import { CoreWebService } from 'dotcms-js/dotcms-js';
 
 @Injectable()
 export class DotContainerContentletService {
@@ -14,9 +14,9 @@ export class DotContainerContentletService {
     /**
      * Get the HTML of a contentlet inside a container
      *
-     * @param {DotPageContainer} container
-     * @param {DotPageContent} content
-     * @returns {Observable<string>}
+     * @param DotPageContainer container
+     * @param DotPageContent content
+     * @returns Observable<string>
      * @memberof DotContainerContentletService
      */
     getContentletToContainer(
@@ -34,9 +34,9 @@ export class DotContainerContentletService {
     /**
      * Get the HTML of a form inside a container
      *
-     * @param {DotPageContainer} container
-     * @param {ContentType} form
-     * @returns {Observable<string>}
+     * @param DotPageContainer container
+     * @param ContentType form
+     * @returns Observable<string>
      * @memberof DotContainerContentletService
      */
     getFormToContainer(

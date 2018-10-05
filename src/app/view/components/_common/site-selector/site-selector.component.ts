@@ -109,7 +109,7 @@ export class SiteSelectorComponent implements OnInit, OnChanges, OnDestroy {
 
     /**
      * Call when the global serach changed
-     * @param {any} filter
+     * @param any filter
      * @memberof SiteSelectorComponent
      */
     handleFilterChange(filter): void {
@@ -118,7 +118,7 @@ export class SiteSelectorComponent implements OnInit, OnChanges, OnDestroy {
 
     /**
      * Call when the current page changed
-     * @param {any} event
+     * @param any event
      * @memberof SiteSelectorComponent
      */
     handlePageChange(event): void {
@@ -127,8 +127,8 @@ export class SiteSelectorComponent implements OnInit, OnChanges, OnDestroy {
 
     /**
      * Call to load a new page.
-     * @param {string} [filter='']
-     * @param {number} [page=1]
+     * @param string [filter='']
+     * @param number [page=1]
      * @memberof SiteSelectorComponent
      */
     getSitesList(filter = '', offset = 0): void {
@@ -146,7 +146,7 @@ export class SiteSelectorComponent implements OnInit, OnChanges, OnDestroy {
 
     /**
      * Call when the selected site changed and the change event is emmited
-     * @param {Site} site
+     * @param Site site
      * @memberof SiteSelectorComponent
      */
     siteChange(site: Site): void {

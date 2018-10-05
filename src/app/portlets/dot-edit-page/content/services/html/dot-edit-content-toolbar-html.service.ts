@@ -37,7 +37,7 @@ export class DotEditContentToolbarHtmlService {
     /**
      * Add custom HTML buttons to the containers div
      *
-     * @param {Document} doc
+     * @param Document doc
      * @memberof DotEditContentToolbarHtmlService
      */
     addContainerToolbar(doc: Document): void {
@@ -77,7 +77,7 @@ export class DotEditContentToolbarHtmlService {
     /**
      * Edit contentlet html to add button and content
      *
-     * @param {Document} doc
+     * @param Document doc
      * @memberof DotEditContentToolbarHtmlService
      */
     addContentletMarkup(doc: Document): void {

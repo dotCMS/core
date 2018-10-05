@@ -20,7 +20,7 @@ export class DotIframeService {
     /**
      * Get reload action
      *
-     * @returns {Observable<any>}
+     * @returns Observable<any>
      * @memberof DotIframeService
      */
     reloaded(): Observable<any> {
@@ -30,7 +30,7 @@ export class DotIframeService {
     /**
      * Get reload colors action
      *
-     * @returns {Observable<any>}
+     * @returns Observable<any>
      * @memberof DotIframeService
      */
     reloadedColors(): Observable<any> {
@@ -40,7 +40,7 @@ export class DotIframeService {
     /**
      * Get functions to run in the iframe window
      *
-     * @returns {Observable<string>}
+     * @returns Observable<string>
      * @memberof DotIframeService
      */
     ran(): Observable<string> {
@@ -53,7 +53,7 @@ export class DotIframeService {
     /**
      * Trigger function to run
      *
-     * @param {string} name
+     * @param string name
      * @memberof DotIframeService
      */
     run(name: string): void {
@@ -65,7 +65,7 @@ export class DotIframeService {
     /**
      * Run a function to reload the data in the portlet
      *
-     * @param {string} portlet
+     * @param string portlet
      * @memberof DotIframeService
      */
     reloadData(portlet: string): void {

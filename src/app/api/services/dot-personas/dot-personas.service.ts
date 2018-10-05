@@ -1,7 +1,7 @@
 import { pluck } from 'rxjs/operators';
 import { Injectable } from '@angular/core';
 import { DotPersona } from '@models/dot-persona/dot-persona.model';
-import { Observable } from 'rxjs/Observable';
+import { Observable } from 'rxjs';
 import { RequestMethod } from '@angular/http';
 import { CoreWebService } from 'dotcms-js/dotcms-js';
 
@@ -16,7 +16,7 @@ export class DotPersonasService {
 
     /**
      * Return Personas.
-     * @returns {Observable<DotLanguage[]>}
+     * @returns Observable<DotLanguage[]>
      * @memberof DotPersonasService
      */
     get(): Observable<DotPersona[]> {

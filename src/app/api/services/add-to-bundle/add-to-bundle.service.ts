@@ -1,7 +1,7 @@
 import { pluck, mergeMap } from 'rxjs/operators';
 import { CoreWebService, ApiRoot } from 'dotcms-js/dotcms-js';
 import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs/Observable';
+import { Observable } from 'rxjs';
 import { RequestMethod } from '@angular/http';
 import { DotCurrentUser } from '@models/dot-current-user/dot-current-user';
 import { DotBundle } from '@models/dot-bundle/dot-bundle';
@@ -27,7 +27,7 @@ export class AddToBundleService {
 
     /**
      * Get bundle items
-     * @returns {Observable<any[]>}
+     * @returns Observable<any[]>
      * @memberof AddToBundleService
      */
     getBundles(): Observable<any[]> {
@@ -45,9 +45,9 @@ export class AddToBundleService {
 
     /**
      * Add to bundle asset with specified name and id
-     * @param {string} ruleId
-     * @param {DotBundle} bundleData
-     * @returns {Observable<AjaxActionResponseView>}
+     * @param string ruleId
+     * @param DotBundle bundleData
+     * @returns Observable<AjaxActionResponseView>
      * @memberof AddToBundleService
      */
     addToBundle(

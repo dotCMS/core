@@ -67,7 +67,7 @@ export class DotActionButtonComponent implements OnInit, OnChanges {
     /**
      * Check if the component have options for the sub menu
      *
-     * @returns {boolean}
+     * @returns boolean
      * @memberof DotActionButtonComponent
      */
     isHaveOptions(): boolean {
@@ -77,7 +77,7 @@ export class DotActionButtonComponent implements OnInit, OnChanges {
     /**
      * Handle the click to the main button
      *
-     * @param {any} $event
+     * @param any $event
      * @memberof DotActionButtonComponent
      */
     buttonOnClick($event): void {

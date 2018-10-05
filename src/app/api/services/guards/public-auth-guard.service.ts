@@ -1,7 +1,7 @@
 import { map } from 'rxjs/operators';
 import { Injectable } from '@angular/core';
 import { CanActivate, ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
-import { Observable } from 'rxjs/Observable';
+import { Observable } from 'rxjs';
 import { LoginService } from 'dotcms-js/dotcms-js';
 import { DotRouterService } from '../dot-router/dot-router.service';
 
@@ -14,9 +14,9 @@ export class PublicAuthGuardService implements CanActivate {
 
     /**
      * Guard checks is the User is logged in to redirect to the First Portlet otherwise approve the route request.
-     * @param {ActivatedRouteSnapshot} route
-     * @param {RouterStateSnapshot} state
-     * @returns {Observable<boolean>}
+     * @param ActivatedRouteSnapshot route
+     * @param RouterStateSnapshot state
+     * @returns Observable<boolean>
      */
     canActivate(_route: ActivatedRouteSnapshot, _state: RouterStateSnapshot): Observable<boolean> {
         return this.loginService.isLogin$.pipe(

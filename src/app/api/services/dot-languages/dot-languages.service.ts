@@ -1,6 +1,6 @@
 import { pluck } from 'rxjs/operators';
 import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs/Observable';
+import { Observable } from 'rxjs';
 import { DotLanguage } from '@models/dot-language/dot-language.model';
 import { RequestMethod } from '@angular/http';
 import { CoreWebService } from 'dotcms-js/dotcms-js';
@@ -16,7 +16,7 @@ export class DotLanguagesService {
 
     /**
      * Return languages.
-     * @returns {Observable<DotLanguage[]>}
+     * @returns Observable<DotLanguage[]>
      * @memberof DotLanguagesService
      */
     get(contentInode?: string): Observable<DotLanguage[]> {

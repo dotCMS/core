@@ -51,7 +51,7 @@ export class DotDeviceSelectorComponent implements OnInit {
 
     /**
      * Track changes in the dropwdow
-     * @param {DotDevice} device
+     * @param DotDevice device
      */
     change(device: DotDevice) {
         this.selected.emit(device);

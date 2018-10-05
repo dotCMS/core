@@ -1,4 +1,4 @@
-import { async, ComponentFixture, fakeAsync, tick } from '@angular/core/testing';
+import { async, ComponentFixture } from '@angular/core/testing';
 import { DOTTestBed } from '../../../../test/dot-test-bed';
 import { DebugElement, Component} from '@angular/core';
 import { ContentTypeFieldsTabComponent } from './';
@@ -74,20 +74,44 @@ describe('ContentTypeFieldsTabComponent', () => {
 
     it('should render component', () => {
         const deleteBtn = de.query(By.css('dot-icon-button-tooltip')).componentInstance;
-        const labelInput = de.query(By.css('input')).nativeElement;
+        const labelInput = de.query(By.css('div')).nativeElement;
 
         expect(deleteBtn.tooltipText).toBe('delete text');
         expect(labelInput.outerHTML).toContain(tabField.name);
     });
 
-    it('should emit change evt', fakeAsync(() => {
+    it('should emit change evt with onBlur & keyUp.enter', () => {
         spyOn(comp.editTab, 'emit');
-        const labelInput = de.query(By.css('input')).nativeElement;
-        labelInput.value = 'label changed';
-        labelInput.dispatchEvent(new Event('input'));
-        tick();
-        expect(comp.editTab.emit).toHaveBeenCalledWith(tabField);
-    }));
+        const labelInput = de.query(By.css('.tab__label'));
+
+        labelInput.triggerEventHandler('input', {
+            target: {
+                textContent: 'hello world'
+            }
+        });
+
+        labelInput.triggerEventHandler('blur', {});
+
+        labelInput.triggerEventHandler('input', {
+            target: {
+                textContent: 'hello world changed'
+            }
+        });
+
+        labelInput.triggerEventHandler('keyup.enter', {});
+
+        hostFixture.detectChanges();
+
+        expect(comp.editTab.emit).toHaveBeenCalledWith({
+            ...tabField,
+            name: 'hello world'
+        });
+
+        expect(comp.editTab.emit).toHaveBeenCalledWith({
+            ...tabField,
+            name: 'hello world changed'
+        });
+    });
 
     it('should emit delete evt', () => {
         spyOn(dotDialogService, 'confirm').and.callFake((conf) => {

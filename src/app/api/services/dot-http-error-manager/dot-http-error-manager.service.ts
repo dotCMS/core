@@ -1,4 +1,4 @@
-import { Observable } from 'rxjs/Observable';
+import { Observable } from 'rxjs';
 import { DotRouterService } from '../dot-router/dot-router.service';
 import { DotMessageService } from '../dot-messages-service';
 import { Injectable } from '@angular/core';
@@ -42,8 +42,8 @@ export class DotHttpErrorManagerService {
     /**
      * Handle the http error message and return a true if it did a redirect
      *
-     * @param {ResponseView} err
-     * @returns {Observable<boolean>}
+     * @param ResponseView err
+     * @returns Observable<boolean>
      * @memberof DotHttpErrorManagerService
      */
     handle(err: ResponseView): Observable<DotHttpErrorHandled> {

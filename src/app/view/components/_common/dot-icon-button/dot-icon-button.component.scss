@@ -8,6 +8,24 @@
 }
 
 :host {
+    &[float] {
+        button {
+            background-color: $brand-primary;
+            border-radius: 50%;
+            box-shadow: $md-shadow-1;
+            height: $button-height;
+            width: $button-height;
+
+            &:hover {
+                background-color: $brand-primary_mod;
+            }
+        }
+
+        dot-icon::ng-deep .material-icons {
+            color: $white;
+        }
+    }
+
     &[tiny] button {
         @include tiny-button;
     }

@@ -3,7 +3,6 @@ import { FieldDragDropService } from './field-drag-drop.service';
 import { DragulaService } from 'ng2-dragula';
 import { Subject, Observable } from 'rxjs';
 import { filter, map } from 'rxjs/operators';
-import { fakeAsync, tick } from '@angular/core/testing';
 
 const by = (opt: string) => (source: Observable<any>) => {
     return source.pipe(
@@ -18,6 +17,7 @@ class MockDragulaService {
     mock: Subject<any> = new Subject();
 
     dropModel = () => this.mock.asObservable().pipe(by('dropModel'));
+    dragend = () => this.mock.asObservable().pipe(by('dragend'));
     removeModel = () => this.mock.asObservable().pipe(by('removeModel'));
     over = () => this.mock.asObservable().pipe(by('over'));
     out = () => this.mock.asObservable().pipe(by('out'));
@@ -127,133 +127,139 @@ describe('FieldDragDropService', () => {
         expect(this.fieldDragDropService.setFieldRowBagOptions).toHaveBeenCalledTimes(1);
     });
 
-    it(
-        'should emit fieldDropFromSource',
-        fakeAsync(() => {
-            this.fieldDragDropService.fieldDropFromSource$.subscribe(() => {
-                this.fieldDropFromSource = true;
-            });
+    it('should emit fieldDropFromSource', () => {
+        this.fieldDragDropService.fieldDropFromSource$.subscribe(() => {
+            this.fieldDropFromSource = true;
+        });
 
-            this.dragulaService.emit({
-                val: 'dropModel',
-                payload: {
-                    name: 'fields-bag',
-                    source: {
-                        dataset: {
-                            dragType: 'source'
-                        }
+        this.dragulaService.emit({
+            val: 'dropModel',
+            payload: {
+                name: 'fields-bag',
+                source: {
+                    dataset: {
+                        dragType: 'source'
+                    }
+                },
+                target: {
+                    dataset: {
+                        columnid: '123'
                     }
                 }
-            });
+            }
+        });
 
-            tick();
+        expect(this.fieldDropFromSource).toBe(true);
+    });
 
-            expect(this.fieldDropFromSource).toBe(true);
-        })
-    );
+    it('should emit fieldDropFromTarget', () => {
+        this.fieldDragDropService.fieldDropFromTarget$.subscribe(() => {
+            this.fieldDropFromTarget = true;
+        });
 
-    it(
-        'should emit fieldDropFromTarget',
-        fakeAsync(() => {
-            this.fieldDragDropService.fieldDropFromTarget$.subscribe(() => {
-                this.fieldDropFromTarget = true;
-            });
-
-            this.dragulaService.emit({
-                val: 'dropModel',
-                payload: {
-                    name: 'fields-bag',
-                    source: {
-                        dataset: {
-                            dragType: 'target'
-                        }
+        this.dragulaService.emit({
+            val: 'dropModel',
+            payload: {
+                name: 'fields-bag',
+                container: document.createElement('div'),
+                source: {
+                    dataset: {
+                        dragType: 'target'
+                    }
+                },
+                target: {
+                    dataset: {
+                        columnid: '123'
                     }
                 }
-            });
+            }
+        });
 
-            tick();
+        expect(this.fieldDropFromTarget).toBe(true);
+    });
 
-            expect(this.fieldDropFromTarget).toBe(true);
-        })
-    );
+    it('should emit fieldRowDropFromTarget', () => {
+        this.fieldDragDropService.fieldRowDropFromTarget$.subscribe(() => {
+            this.fieldRowDropFromTarget = true;
+        });
 
-    it(
-        'should emit fieldRowDropFromSource',
-        fakeAsync(() => {
-            this.fieldDragDropService.fieldRowDropFromSource$.subscribe(() => {
-                this.fieldRowDropFromSource = true;
-            });
-
-            this.dragulaService.emit({
-                val: 'dropModel',
-                payload: {
-                    name: 'fields-row-bag',
-                    source: {
-                        dataset: {
-                            dragType: 'source'
-                        }
+        this.dragulaService.emit({
+            val: 'dropModel',
+            payload: {
+                name: 'fields-row-bag',
+                source: {
+                    dataset: {
+                        dragType: 'source'
                     }
                 }
-            });
+            }
+        });
 
-            tick();
+        expect(this.fieldRowDropFromTarget).toBe(true);
+    });
 
-            expect(this.fieldRowDropFromSource).toBe(true);
-        })
-    );
+    it('should emit fieldRowDropFromTarget', () => {
+        this.fieldDragDropService.fieldRowDropFromTarget$.subscribe(() => {
+            this.fieldRowDropFromTarget = true;
+        });
 
-    it(
-        'should emit fieldRowDropFromTarget',
-        fakeAsync(() => {
-            this.fieldDragDropService.fieldRowDropFromTarget$.subscribe(() => {
-                this.fieldRowDropFromTarget = true;
-            });
-
-            this.dragulaService.emit({
-                val: 'dropModel',
-                payload: {
-                    name: 'fields-row-bag',
-                    source: {
-                        dataset: {
-                            dragType: 'target'
-                        }
+        this.dragulaService.emit({
+            val: 'dropModel',
+            payload: {
+                name: 'fields-row-bag',
+                source: {
+                    dataset: {
+                        dragType: 'target'
                     }
                 }
-            });
+            }
+        });
 
-            tick();
+        expect(true).toBe(this.fieldRowDropFromTarget);
+    });
 
-            expect(true).toBe(this.fieldRowDropFromTarget);
-        })
-    );
+    it('should toggle class over class on over and drop events', () => {
+        const source = document.createElement('div');
 
-    it(
-        'should toggle class to the target',
-        fakeAsync(() => {
-            const el = document.createElement('div');
-            el.classList.add('row-columns__item');
+        const container1 = document.createElement('div');
+        container1.classList.add('row-columns__item');
 
-            this.dragulaService.emit({
-                val: 'over',
-                payload: {
-                    name: '',
-                    container: el
+        const container2 = document.createElement('div');
+        container2.classList.add('row-columns__item');
+
+
+        this.dragulaService.emit({
+            val: 'over',
+            payload: { name: '', el: null, container: container1, source: source }
+        });
+
+        this.dragulaService.emit({
+            val: 'over',
+            payload: { name: '', el: null, container: container2, source: source }
+        });
+
+        expect(container2.classList.contains('row-columns__item--over')).toBe(true);
+
+        this.dragulaService.emit({
+            val: 'over',
+            payload: { name: '', el: null, container: container2, source: source }
+        });
+
+        expect(container1.classList.contains('row-columns__item--over')).toBe(false);
+        expect(container2.classList.contains('row-columns__item--over')).toBe(true);
+
+        this.dragulaService.emit({
+            val: 'dragend',
+            payload: {
+                name: 'fields-bag',
+                source: {
+                    dataset: {
+                        dragType: 'target'
+                    }
                 }
-            });
+            }
+        });
 
-            tick();
-            expect(el.classList.contains('row-columns__item--over')).toBe(true);
-
-            this.dragulaService.emit({
-                val: 'out',
-                payload: {
-                    name: '',
-                    container: el
-                }
-            });
-
-            tick();
-            expect(el.classList.contains('row-columns__item--over')).toBe(false);
-        })
-    );
+        expect(container2.classList.contains('row-columns__item--over')).toBe(false);
+    });
 });

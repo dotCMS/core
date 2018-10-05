@@ -45,7 +45,7 @@ export class DotPersonaSelectorComponent implements OnInit {
 
     /**
      * Track changes in the dropwdow
-     * @param {DotPersona} persona
+     * @param DotPersona persona
      */
     change(persona: DotPersona) {
         this.selected.emit(persona);

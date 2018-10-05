@@ -36,7 +36,7 @@ export class DotIframeEventsHandler {
     /**
      * Handle custom events from the iframe portlets
      *
-     * @param {CustomEvent} event
+     * @param CustomEvent event
      * @memberof DotIframeEventsHandler
      */
     handle(event: CustomEvent): void {

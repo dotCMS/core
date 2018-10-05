@@ -1,7 +1,7 @@
 import { map, pluck } from 'rxjs/operators';
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { Observable } from 'rxjs/Observable';
+import { Observable } from 'rxjs';
 import { DotRenderedPageState } from '../../shared/models/dot-rendered-page-state.model';
 
 @Component({

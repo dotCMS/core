@@ -11,7 +11,6 @@ import { LoginServiceMock } from '../../../../test/login-service.mock';
 import { RouterTestingModule } from '@angular/router/testing';
 import { FieldVariablesServiceMock, mockFieldVariables } from '../../../../test/field-variable-service.mock';
 import { FieldVariablesService } from '../service/field-variables.service';
-import { Observable } from 'rxjs/Observable';
 
 @Component({
     selector: 'dot-add-variable-form',
@@ -62,7 +61,7 @@ describe('ContentTypeFieldsVariablesComponent', () => {
     });
 
     it('should load the component with no rows', () => {
-        spyOn(fieldVariableService, 'load').and.returnValue(Observable.of([]));
+        spyOn(fieldVariableService, 'load').and.returnValue([]);
 
         fixture.detectChanges();
 

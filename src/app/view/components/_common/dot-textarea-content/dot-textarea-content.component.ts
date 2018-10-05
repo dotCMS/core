@@ -68,7 +68,7 @@ export class DotTextareaContentComponent implements OnInit, ControlValueAccessor
     /**
      * Update the value and form control
      *
-     * @param {any} value
+     * @param any value
      * @memberof DotTextareaContentComponent
      */
     onModelChange(value) {
@@ -86,7 +86,7 @@ export class DotTextareaContentComponent implements OnInit, ControlValueAccessor
     /**
      * Update model with external value
      *
-     * @param {string} value
+     * @param string value
      * @memberof DotTextareaContentComponent
      */
     writeValue(value: string): void {
@@ -98,7 +98,7 @@ export class DotTextareaContentComponent implements OnInit, ControlValueAccessor
     /**
      * Set the call callback to update value on model change
      *
-     * @param {any} fn
+     * @param any fn
      * @memberof DotTextareaContentComponent
      */
     registerOnChange(fn): void {

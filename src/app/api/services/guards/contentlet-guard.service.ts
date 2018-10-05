@@ -1,7 +1,7 @@
 import { map } from 'rxjs/operators';
 import { Injectable } from '@angular/core';
 import { CanActivateChild, ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
-import { Observable } from 'rxjs/Observable';
+import { Observable } from 'rxjs';
 import { DotContentletService } from '../dot-contentlet/dot-contentlet.service';
 import { DotNavigationService } from '@components/dot-navigation/services/dot-navigation.service';
 
@@ -25,8 +25,8 @@ export class ContentletGuardService implements CanActivateChild {
     /**
      * Check if User has access to the requested route (url) based on the Content Type, otherwise return to the 'First Portlet'.
      *
-     * @param {string} url
-     * @returns {boolean}
+     * @param string url
+     * @returns boolean
      */
     canAccessContentType(url: string): Observable<boolean> {
         return this.dotContentletService.isContentTypeInMenu(url).pipe(

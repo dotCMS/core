@@ -4,8 +4,7 @@ import { BreadcrumbModule } from 'primeng/primeng';
 import { DotCrumbtrailService, DotCrumb } from './service/dot-crumbtrail.service';
 import { Injectable, DebugElement } from '@angular/core';
 import { By } from '@angular/platform-browser';
-import { Subject } from 'rxjs/Subject';
-import { Observable } from 'rxjs/Observable';
+import { Observable, Subject } from 'rxjs';
 
 @Injectable()
 class MockDotCrumbtrailService {

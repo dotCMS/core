@@ -7,7 +7,6 @@ import { Type, Provider, Injector, ReflectiveInjector, LOCALE_ID } from '@angula
 import {
     ApiRoot,
     BrowserUtil,
-    Config,
     CoreWebService,
     DotcmsConfig,
     DotcmsEventsService,
@@ -39,7 +38,6 @@ export class DOTTestBed {
             { provide: LOCALE_ID, useValue: {} },
             ApiRoot,
             BrowserUtil,
-            Config,
             ConfirmationService,
             CoreWebService,
             DotContentletEditorService,

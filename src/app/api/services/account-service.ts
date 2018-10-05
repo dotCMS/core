@@ -1,7 +1,7 @@
-import { CoreWebService, ResponseView } from 'dotcms-js/dotcms-js';
-import { Observable } from 'rxjs/Observable';
+import { Observable } from 'rxjs';
 import { RequestMethod } from '@angular/http';
 import { Injectable } from '@angular/core';
+import { CoreWebService, ResponseView } from 'dotcms-js/dotcms-js';
 
 @Injectable()
 export class AccountService {

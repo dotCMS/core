@@ -13,7 +13,7 @@ import { DotRenderedPageState } from '@portlets/dot-edit-page/shared/models/dot-
 import { mockDotRenderedPage } from '../../../../test/dot-rendered-page.mock';
 import { DotClipboardUtil } from '../../../../api/util/clipboard/ClipboardUtil';
 import { SiteServiceMock } from '../../../../test/site-service.mock';
-import { SiteService } from '../../../../../../node_modules/dotcms-js/dotcms-js';
+import { SiteService } from 'dotcms-js/dotcms-js';
 
 const messageServiceMock = new MockDotMessageService({
     'dot.common.message.pageurl.copied.clipboard': 'Copied to clipboard',

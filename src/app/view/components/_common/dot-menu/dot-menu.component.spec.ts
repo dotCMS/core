@@ -4,23 +4,24 @@ import { DotMenuComponent } from './dot-menu.component';
 import { DebugElement } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { CommonModule } from '@angular/common';
-import { ButtonModule } from 'primeng/primeng';
+import { DotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 
 describe('DotMenuComponent', () => {
     let component: DotMenuComponent;
     let fixture: ComponentFixture<DotMenuComponent>;
+    let button: DebugElement;
 
     beforeEach(() => {
         TestBed.configureTestingModule({
             declarations: [DotMenuComponent],
-            imports: [CommonModule, ButtonModule]
+            imports: [CommonModule, DotIconButtonModule]
         }).compileComponents();
     });
 
     beforeEach(() => {
         fixture = TestBed.createComponent(DotMenuComponent);
         component = fixture.componentInstance;
-        fixture.detectChanges();
+        component.float = true;
         component.model = [
             {
                 command: () => {},
@@ -32,11 +33,24 @@ describe('DotMenuComponent', () => {
                 disabled: true
             }
         ];
+        fixture.detectChanges();
+        button = fixture.debugElement.query(By.css('.dot-menu__button'));
+    });
+
+    it('should set the button to float', () => {
+        expect(button.attributes.float).toBeDefined();
+
+        component.float = false;
+        fixture.detectChanges();
+        button = fixture.debugElement.query(By.css('.dot-menu__button'));
+
+        expect(button.attributes.float).not.toBeDefined();
     });
 
     it('should set visible to true and show the menu list', () => {
-        const button: DebugElement = fixture.debugElement.query(By.css('.dot-menu__button'));
-        button.triggerEventHandler('click', {});
+        button.triggerEventHandler('click', {
+            preventDefault: () => {}
+        });
         fixture.detectChanges();
 
         const menulist: DebugElement = fixture.debugElement.query(By.css('.dot-menu__list'));
@@ -46,8 +60,9 @@ describe('DotMenuComponent', () => {
     });
 
     it('should close menus when click the button', () => {
-        const button: DebugElement = fixture.debugElement.query(By.css('.dot-menu__button'));
-        button.triggerEventHandler('click', {});
+        button.triggerEventHandler('click', {
+            preventDefault: () => {}
+        });
         fixture.detectChanges();
 
         const menulist: DebugElement = fixture.debugElement.query(By.css('.dot-menu__list'));
@@ -62,11 +77,16 @@ describe('DotMenuComponent', () => {
 
     it('should execute the command on the selected menu item and hide the menu', () => {
         spyOn(component.model[0], 'command');
-        const button: DebugElement = fixture.debugElement.query(By.css('.dot-menu__button'));
-        button.triggerEventHandler('click', {});
+
+        button.triggerEventHandler('click', {
+            preventDefault: () => {}
+        });
         fixture.detectChanges();
+
         const menuItem: DebugElement = fixture.debugElement.query(By.css('.dot-menu-item__link'));
-        menuItem.triggerEventHandler('click', {});
+        menuItem.triggerEventHandler('click', {
+            preventDefault: () => {}
+        });
 
         expect(component.model[0].command).toHaveBeenCalled();
         expect(component.visible).toBeFalsy();
@@ -74,13 +94,17 @@ describe('DotMenuComponent', () => {
 
     it('should NOT exceute the command on the selected menu item if is disabled', () => {
         spyOn(component.model[1], 'command');
-        const button: DebugElement = fixture.debugElement.query(By.css('.dot-menu__button'));
-        button.triggerEventHandler('click', {});
+        button.triggerEventHandler('click', {
+            preventDefault: () => {}
+        });
+
         fixture.detectChanges();
         const menuItems: DebugElement[] = fixture.debugElement.queryAll(
             By.css('.dot-menu-item__link')
         );
-        menuItems[1].triggerEventHandler('click', {});
+        menuItems[1].triggerEventHandler('click', {
+            preventDefault: () => {}
+        });
 
         expect(component.model[1].command).not.toHaveBeenCalled();
     });

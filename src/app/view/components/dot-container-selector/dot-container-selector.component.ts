@@ -33,7 +33,7 @@ export class DotContainerSelectorComponent implements OnInit {
     /**
      * Called when the selected site changed and the change event is emmited
      *
-     * @param {DotContainer} container
+     * @param DotContainer container
      * @memberof DotContainerSelectorComponent
      */
     containerChange(container: DotContainer): void {
@@ -48,7 +48,7 @@ export class DotContainerSelectorComponent implements OnInit {
     /**
      * Call to handle filter containers from list
      *
-     * @param {string} filter
+     * @param string filter
      * @memberof DotContainerSelectorComponent
      */
     handleFilterChange(filter: string): void {
@@ -57,7 +57,7 @@ export class DotContainerSelectorComponent implements OnInit {
 
     /**
      * Call when the current page changed
-     * @param {any} event
+     * @param any event
      * @memberof DotContainerSelectorComponent
      */
     handlePageChange(event: any): void {
@@ -66,7 +66,7 @@ export class DotContainerSelectorComponent implements OnInit {
 
     /**
      * Remove container item from selected containers and emit selected containers
-     * @param {number} i
+     * @param number i
      * @memberof DotContainerSelectorComponent
      */
     removeContainerItem(i: number): void {
@@ -77,8 +77,8 @@ export class DotContainerSelectorComponent implements OnInit {
     /**
      * Check if a container was already added to the list
      *
-     * @param {DotContainer} container
-     * @returns {boolean}
+     * @param DotContainer container
+     * @returns boolean
      * @memberof DotContainerSelectorComponent
      */
     isContainerSelected(dotContainer: DotContainer): boolean {

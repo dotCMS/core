@@ -1,10 +1,10 @@
 import { pluck } from 'rxjs/operators';
 import * as _ from 'lodash';
-import { CoreWebService, LoginService, User } from 'dotcms-js/dotcms-js';
 import { FormatDateService } from './format-date-service';
 import { Injectable } from '@angular/core';
 import { Observable, Subject } from 'rxjs';
 import { RequestMethod } from '@angular/http';
+import { LoginService, CoreWebService, User } from 'dotcms-js/dotcms-js';
 
 @Injectable()
 export class DotMessageService {
@@ -44,8 +44,8 @@ export class DotMessageService {
     /**
      * Return the message key value, formatted if more values are passed.
      *
-     * @param {string} key
-     * @returns {string}
+     * @param string key
+     * @returns string
      * @memberof DotMessageService
      */
     get(key: string, ...args: string[]): string {
@@ -60,7 +60,7 @@ export class DotMessageService {
 
     /**
      * Get the messages objects as an Observable
-     * @returns {Observable<any>}
+     * @returns Observable<any>
      */
     get messageMap$(): Observable<any> {
         return this._messageMap$.asObservable();
@@ -69,7 +69,7 @@ export class DotMessageService {
     /**
      * Public method to get messages, will get from cache or the server.
      * @param keys
-     * @returns {any}
+     * @returns any
      */
     public getMessages(keys: String[]): Observable<any> {
         return Observable.create((observer) => {

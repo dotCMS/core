@@ -3,7 +3,7 @@ import { Injectable } from '@angular/core';
 import { CoreWebService } from 'dotcms-js/dotcms-js';
 import { RequestMethod } from '@angular/http';
 import { DotPageContainer } from '@portlets/dot-edit-page/shared/models/dot-page-container.model';
-import { Observable } from 'rxjs/Observable';
+import { Observable } from 'rxjs';
 
 @Injectable()
 export class DotEditPageService {
@@ -12,9 +12,9 @@ export class DotEditPageService {
     /**
      * Save a page's content
      *
-     * @param {string} pageId
-     * @param {DotPageContainer[]} content
-     * @returns {Observable<string>}
+     * @param string pageId
+     * @param DotPageContainer[] content
+     * @returns Observable<string>
      * @memberof DotContainerContentletService
      */
     save(pageId: string, content: DotPageContainer[]): Observable<string> {

@@ -1,7 +1,7 @@
 import { pluck } from 'rxjs/operators';
 import { CoreWebService } from 'dotcms-js/dotcms-js';
 import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs/Observable';
+import { Observable } from 'rxjs';
 import { RequestMethod } from '@angular/http';
 import { DotRenderedPage } from '@portlets/dot-edit-page/shared/models/dot-rendered-page.model';
 import { PageMode } from '@portlets/dot-edit-page/shared/models/page-mode.enum';
@@ -22,9 +22,9 @@ export class DotRenderHTMLService {
     /**
      * Get the page HTML in edit mode
      *
-     * @param {string} url
-     * @param {DotEditPageViewAs} viewAsConfig
-     * @returns {Observable<DotRenderedPage>}
+     * @param string url
+     * @param DotEditPageViewAs viewAsConfig
+     * @returns Observable<DotRenderedPage>
      * @memberof DotRenderHTMLService
      */
     getEdit(url: string, viewAsConfig?: DotEditPageViewAs): Observable<DotRenderedPage> {
@@ -38,9 +38,9 @@ export class DotRenderHTMLService {
     /**
      * Get the page HTML in preview mode
      *
-     * @param {string} url
-     * @param {DotEditPageViewAs} viewAsConfig
-     * @returns {Observable<DotRenderedPage>}
+     * @param string url
+     * @param DotEditPageViewAs viewAsConfig
+     * @returns Observable<DotRenderedPage>
      * @memberof DotRenderHTMLService
      */
     getPreview(url: string, viewAsConfig?: DotEditPageViewAs): Observable<DotRenderedPage> {
@@ -54,9 +54,9 @@ export class DotRenderHTMLService {
     /**
      * Get the page HTML in live mode
      *
-     * @param {string} url
-     * @param {DotEditPageViewAs} viewAsConfig
-     * @returns {Observable<DotRenderedPage>}
+     * @param string url
+     * @param DotEditPageViewAs viewAsConfig
+     * @returns Observable<DotRenderedPage>
      * @memberof DotRenderHTMLService
      */
     getLive(url: string, viewAsConfig?: DotEditPageViewAs): Observable<DotRenderedPage> {

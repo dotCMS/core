@@ -93,7 +93,7 @@ export class PushPublishContentTypesDialogComponent implements OnInit {
     /**
      * When form is submitted
      * If form is valid then call pushPublishService with contentTypeId and form value params
-     * @param {any} $event
+     * @param any $event
      * @memberof PushPublishContentTypesDialogComponent
      */
     submitPushAction(_event): void {

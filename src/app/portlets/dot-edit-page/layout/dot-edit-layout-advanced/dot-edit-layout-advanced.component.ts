@@ -45,7 +45,7 @@ export class DotEditLayoutAdvancedComponent implements OnInit {
     /**
      * Bind custom event from the iframe
      *
-     * @param {any} $event
+     * @param any $event
      * @memberof DotEditLayoutAdvancedComponent
      */
     onLoad($event): void {

@@ -1,4 +1,10 @@
-<input type="text" [(ngModel)]="fieldTab.getFieldDivider().name" (ngModelChange)="changeLabel()"/>
+<div
+    class="tab__label"
+    contenteditable="true"
+    [textContent]="label"
+    (input)="label=$event.target.textContent"
+    (blur)="changeLabel()"
+    (keyup.enter)="changeLabel()"></div>
 <dot-icon-button-tooltip
     tiny
     class="field__actions-delete"

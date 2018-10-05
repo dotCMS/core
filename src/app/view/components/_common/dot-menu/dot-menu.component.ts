@@ -18,9 +18,15 @@ import { MenuItem } from 'primeng/primeng';
 export class DotMenuComponent {
     @Input()
     icon: string;
+
     @Input()
     model: MenuItem[];
+
+    @Input()
+    float: boolean;
+
     visible = false;
+
     constructor() {}
 
     /**
@@ -49,7 +55,7 @@ export class DotMenuComponent {
      * funtion or prevent the default behavior if the item is disable.
      *
      * @param $event
-     * @param {MenuItem} item
+     * @param MenuItem item
      *
      * @memberof DotMenuComponent
      */

@@ -106,7 +106,7 @@ export class DotEditLayoutGridComponent implements OnInit, ControlValueAccessor 
     /**
      * Return ng-grid model.
      *
-     * @returns {DotLayoutBody}
+     * @returns DotLayoutBody
      * @memberof DotEditLayoutGridComponent
      */
     getModel(): DotLayoutBody {
@@ -126,7 +126,7 @@ export class DotEditLayoutGridComponent implements OnInit, ControlValueAccessor 
     /**
      * Removes the given index to the gridBoxes Array after the user confirms.
      *
-     * @param {number} index
+     * @param number index
      * @memberof DotEditLayoutGridComponent
      */
     onRemoveContainer(index: number): void {
@@ -157,7 +157,7 @@ export class DotEditLayoutGridComponent implements OnInit, ControlValueAccessor 
     /**
      * Set the function to be called when the control receives a change event.
      *
-     * @param {*} fn
+     * @param * fn
      * @memberof DotEditLayoutGridComponent
      */
     registerOnChange(fn: any): void {
@@ -178,7 +178,7 @@ export class DotEditLayoutGridComponent implements OnInit, ControlValueAccessor 
     /**
      * Write a new value to the element
      *
-     * @param {DotLayoutBody} value
+     * @param DotLayoutBody value
      * @memberof DotEditLayoutGridComponent
      */
     writeValue(value: DotLayoutBody): void {

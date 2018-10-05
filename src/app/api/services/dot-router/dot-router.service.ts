@@ -21,7 +21,7 @@ export class DotRouterService {
     /**
      * Reload the current iframe portlet;
      *
-     * @param {string} id
+     * @param string id
      * @memberof DotRouterService
      */
     reloadCurrentPortlet(id?: string): void {
@@ -31,9 +31,9 @@ export class DotRouterService {
     /**
      * Go to edit page
      *
-     * @param {string} url
-     * @param {string} [languageId]
-     * @returns {Promise<boolean>}
+     * @param string url
+     * @param string [languageId]
+     * @returns Promise<boolean>
      * @memberof DotRouterService
      */
     goToEditPage(url: string, languageId?: string): Promise<boolean> {
@@ -45,8 +45,8 @@ export class DotRouterService {
     /**
      * Go to edit contentlet
      *
-     * @param {string} inode
-     * @returns {Promise<boolean>}
+     * @param string inode
+     * @returns Promise<boolean>
      * @memberof DotRouterService
      */
     goToEditContentlet(inode: string): Promise<boolean> {
@@ -56,8 +56,8 @@ export class DotRouterService {
     /**
      * Go to edit workflow task
      *
-     * @param {string} inode
-     * @returns {Promise<boolean>}
+     * @param string inode
+     * @returns Promise<boolean>
      * @memberof DotRouterService
      */
     goToEditTask(inode: string): Promise<boolean> {
@@ -67,8 +67,8 @@ export class DotRouterService {
     /**
      * Go to first porlet unless userEditPageRedirect is passed or previousSavedURL is set
      *
-     * @param {string} [userEditPageRedirect]
-     * @returns {Promise<boolean>}
+     * @param string [userEditPageRedirect]
+     * @returns Promise<boolean>
      * @memberof DotRouterService
      */
     goToMain(userEditPageRedirect?: string): Promise<boolean> {
@@ -105,7 +105,7 @@ export class DotRouterService {
 
     /**
      * Check if Portlet is based on a JSP/iframe page
-     * @returns {boolean}
+     * @returns boolean
      * @memberof DotRouterService
      */
     isJSPPortlet(): boolean {
@@ -115,7 +115,7 @@ export class DotRouterService {
     /**
      * Check if the current route is an edit page
      *
-     * @returns {boolean}
+     * @returns boolean
      * @memberof DotRouterService
      */
     isEditPage(): boolean {

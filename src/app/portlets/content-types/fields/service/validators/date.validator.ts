@@ -12,7 +12,7 @@ const format = {
  * Validate defaultValue for date field, date_time Field and time field
  *
  * @export
- * @param {FormControl} formControl
+ * @param FormControl formControl
  * @returns
  */
 export function validateDateDefaultValue(formControl: FormControl) {

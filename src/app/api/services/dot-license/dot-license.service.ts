@@ -2,7 +2,7 @@ import { pluck, map } from 'rxjs/operators';
 import { Injectable } from '@angular/core';
 import { RequestMethod } from '@angular/http';
 import { CoreWebService } from 'dotcms-js/dotcms-js';
-import { Observable } from 'rxjs/Observable';
+import { Observable } from 'rxjs';
 
 /**
  * Handle license information of current logged in user
@@ -20,7 +20,7 @@ export class DotLicenseService {
     /**
      * Gets if current user has an enterprise license
      *
-     * @returns {Observable<boolean>}
+     * @returns Observable<boolean>
      * @memberof DotLicenseService
      */
     isEnterprise(): Observable<boolean> {

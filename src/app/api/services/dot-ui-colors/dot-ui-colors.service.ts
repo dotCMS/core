@@ -17,7 +17,7 @@ export class DotUiColorsService {
     /**
      * Set css variables colors
      *
-     * @param {DotUiColors} colors
+     * @param DotUiColors colors
      * @memberof DotUiColorsService
      */
     setColors(el: HTMLElement, colors?: DotUiColors): void {

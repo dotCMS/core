@@ -2,7 +2,7 @@ import { pluck } from 'rxjs/operators';
 import { RequestMethod } from '@angular/http';
 import { Injectable } from '@angular/core';
 
-import { Observable } from 'rxjs/Observable';
+import { Observable } from 'rxjs';
 
 import { CoreWebService } from 'dotcms-js/dotcms-js';
 
@@ -20,8 +20,8 @@ export class PageViewService {
 
     /**
      * Will do a POST request and save the PageView layout object
-     * @param {PageView} pageView
-     * @returns {Observable<any>}
+     * @param PageView pageView
+     * @returns Observable<any>
      * @memberof PageViewService
      */
     save(pageIdentifier: string, dotLayout: DotLayout): Observable<DotRenderedPage> {

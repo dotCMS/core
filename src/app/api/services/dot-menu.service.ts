@@ -11,7 +11,7 @@ import {
 } from 'rxjs/operators';
 import { CoreWebService } from 'dotcms-js/dotcms-js';
 import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs/Observable';
+import { Observable } from 'rxjs';
 import { RequestMethod } from '@angular/http';
 import { DotMenu, DotMenuItem } from '@models/navigation';
 
@@ -26,8 +26,8 @@ export class DotMenuService {
     /**
      * Get the url for the iframe porlet from the menu object
      *
-     * @param {string} id
-     * @returns {Observable<string>}
+     * @param string id
+     * @returns Observable<string>
      * @memberof DotMenuService
      */
     getUrlById(id: string): Observable<string> {
@@ -41,8 +41,8 @@ export class DotMenuService {
     /**
      * Check if a portlet exist in the current loaded menu
      *
-     * @param {string} url
-     * @returns {Observable<boolean>}
+     * @param string url
+     * @returns Observable<boolean>
      * @memberof DotMenuService
      */
     isPortletInMenu(menuId: string): Observable<boolean> {
@@ -57,7 +57,7 @@ export class DotMenuService {
     /**
      * Load and set menu from endpoint
      *
-     * @returns {Observable<DotMenu[]>}
+     * @returns Observable<DotMenu[]>
      * @memberof DotMenuService
      */
     loadMenu(): Observable<DotMenu[]> {
@@ -80,7 +80,7 @@ export class DotMenuService {
     /**
      * Clear the "cache" in the menu and reloads
      *
-     * @returns {Observable<DotMenu[]>}
+     * @returns Observable<DotMenu[]>
      * @memberof DotMenuService
      */
     reloadMenu(): Observable<DotMenu[]> {

@@ -11,7 +11,6 @@ import { DragulaService } from 'ng2-dragula';
 import { DotIconModule } from '@components/_common/dot-icon/dot-icon.module';
 
 describe('ContentTypesFieldsListComponent', () => {
-    let comp: ContentTypesFieldsListComponent;
     let fixture: ComponentFixture<ContentTypesFieldsListComponent>;
     let de: DebugElement;
 
@@ -23,7 +22,6 @@ describe('ContentTypesFieldsListComponent', () => {
         });
 
         fixture = DOTTestBed.createComponent(ContentTypesFieldsListComponent);
-        comp = fixture.componentInstance;
         de = fixture.debugElement;
     }));
 
@@ -41,6 +39,10 @@ describe('ContentTypesFieldsListComponent', () => {
             },
             {
                 label: 'Image'
+            },
+            {
+                label: 'Tab Divider',
+                id: 'tab_divider'
             }
         ];
 
@@ -49,14 +51,12 @@ describe('ContentTypesFieldsListComponent', () => {
         const fieldDragDropService = fixture.debugElement.injector.get(FieldDragDropService);
         spyOn(fieldDragDropService, 'setFieldBagOptions');
 
-        comp.ngOnInit();
-
         fixture.detectChanges();
 
         const itemsElements = de.queryAll(By.css('li'));
 
-        expect(itemsData.length).toEqual(itemsElements.length);
-        itemsData.forEach((fieldType, index) =>
+        expect(itemsElements.length).toEqual((itemsData.length - 1));
+        itemsData.filter(item => item.id !== 'tab_divider').forEach((fieldType, index) =>
             expect(itemsElements[index].nativeElement.textContent).toContain(fieldType.label)
         );
 

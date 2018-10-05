@@ -1,5 +1,5 @@
 import { Component, OnInit, ViewChild, ViewEncapsulation } from '@angular/core';
-import { Folder } from 'dotcms-js/core/treeable/shared/folder.model';
+import { Folder } from 'dotcms-js/dotcms-js';
 import {
     FileService,
     FolderService,

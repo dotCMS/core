@@ -37,8 +37,8 @@ export class DotSubNavComponent {
     /**
      * Handle click event in a menu sub item
      *
-     * @param {MouseEvent} $event
-     * @param {DotMenuItem} item
+     * @param MouseEvent $event
+     * @param DotMenuItem item
      * @memberof DotSubNavComponent
      */
     onItemClick($event: MouseEvent, item: DotMenuItem): void {

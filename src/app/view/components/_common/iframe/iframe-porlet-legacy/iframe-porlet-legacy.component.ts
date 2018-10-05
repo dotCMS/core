@@ -52,7 +52,7 @@ export class IframePortletLegacyComponent implements OnInit {
     /**
      * Handle the custom events emmited by the iframe
      *
-     * @param {any} $event
+     * @param any $event
      * @memberof IframePortletLegacyComponent
      */
     onCustomEvent($event: CustomEvent): void {
@@ -159,7 +159,7 @@ export class IframePortletLegacyComponent implements OnInit {
 
     /**
      * This function set isLoading to true, to remove the Legacy Iframe from the DOM while the src attribute is updated.
-     * @param {string} nextUrl
+     * @param string nextUrl
      */
     private setUrl(nextUrl: string): void {
         this.dotLoadingIndicatorService.show();

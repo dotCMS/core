@@ -119,7 +119,8 @@ export class NgGridItem implements OnInit, OnDestroy, DoCheck {
         this._userConfig = v;
 
         const configObject = Object.assign({}, NgGridItem.CONST_DEFAULT_CONFIG, v);
-        for (const x in NgGridItem.CONST_DEFAULT_CONFIG) if (configObject[x] == null) configObject[x] = NgGridItem.CONST_DEFAULT_CONFIG[x];
+        for (const x in NgGridItem.CONST_DEFAULT_CONFIG)
+            if (configObject[x] == null) configObject[x] = NgGridItem.CONST_DEFAULT_CONFIG[x];
 
         this.setConfig(configObject);
 
@@ -225,7 +226,8 @@ export class NgGridItem implements OnInit, OnDestroy, DoCheck {
 
     public ngOnInit(): void {
         this._renderer.setElementClass(this._ngEl.nativeElement, 'grid-item', true);
-        if (this._ngGrid.autoStyle) this._renderer.setElementStyle(this._ngEl.nativeElement, 'position', 'absolute');
+        if (this._ngGrid.autoStyle)
+            this._renderer.setElementStyle(this._ngEl.nativeElement, 'position', 'absolute');
         this._recalculateDimensions();
         this._recalculatePosition();
 
@@ -388,10 +390,13 @@ export class NgGridItem implements OnInit, OnDestroy, DoCheck {
         this._minRows = !isNaN(config.minRows) && isFinite(config.minRows) ? config.minRows : 0;
 
         this.minWidth = !isNaN(config.minWidth) && isFinite(config.minWidth) ? config.minWidth : 0;
-        this.minHeight = !isNaN(config.minHeight) && isFinite(config.minHeight) ? config.minHeight : 0;
+        this.minHeight =
+            !isNaN(config.minHeight) && isFinite(config.minHeight) ? config.minHeight : 0;
 
-        if (this._minCols > 0 && this._maxCols > 0 && this._minCols > this._maxCols) this._minCols = 0;
-        if (this._minRows > 0 && this._maxRows > 0 && this._minRows > this._maxRows) this._minRows = 0;
+        if (this._minCols > 0 && this._maxCols > 0 && this._minCols > this._maxCols)
+            this._minCols = 0;
+        if (this._minRows > 0 && this._maxRows > 0 && this._minRows > this._maxRows)
+            this._minRows = 0;
 
         if (this._added) {
             this._ngGrid.updateItem(this);
@@ -473,20 +478,44 @@ export class NgGridItem implements OnInit, OnDestroy, DoCheck {
             case 'up':
             case 'left':
             default:
-                this._renderer.setElementStyle(this._ngEl.nativeElement, 'left', this._elemLeft + 'px');
-                this._renderer.setElementStyle(this._ngEl.nativeElement, 'top', this._elemTop + 'px');
+                this._renderer.setElementStyle(
+                    this._ngEl.nativeElement,
+                    'left',
+                    this._elemLeft + 'px'
+                );
+                this._renderer.setElementStyle(
+                    this._ngEl.nativeElement,
+                    'top',
+                    this._elemTop + 'px'
+                );
                 this._renderer.setElementStyle(this._ngEl.nativeElement, 'right', null);
                 this._renderer.setElementStyle(this._ngEl.nativeElement, 'bottom', null);
                 break;
             case 'right':
-                this._renderer.setElementStyle(this._ngEl.nativeElement, 'right', this._elemLeft + 'px');
-                this._renderer.setElementStyle(this._ngEl.nativeElement, 'top', this._elemTop + 'px');
+                this._renderer.setElementStyle(
+                    this._ngEl.nativeElement,
+                    'right',
+                    this._elemLeft + 'px'
+                );
+                this._renderer.setElementStyle(
+                    this._ngEl.nativeElement,
+                    'top',
+                    this._elemTop + 'px'
+                );
                 this._renderer.setElementStyle(this._ngEl.nativeElement, 'left', null);
                 this._renderer.setElementStyle(this._ngEl.nativeElement, 'bottom', null);
                 break;
             case 'down':
-                this._renderer.setElementStyle(this._ngEl.nativeElement, 'left', this._elemLeft + 'px');
-                this._renderer.setElementStyle(this._ngEl.nativeElement, 'bottom', this._elemTop + 'px');
+                this._renderer.setElementStyle(
+                    this._ngEl.nativeElement,
+                    'left',
+                    this._elemLeft + 'px'
+                );
+                this._renderer.setElementStyle(
+                    this._ngEl.nativeElement,
+                    'bottom',
+                    this._elemTop + 'px'
+                );
                 this._renderer.setElementStyle(this._ngEl.nativeElement, 'right', null);
                 this._renderer.setElementStyle(this._ngEl.nativeElement, 'top', null);
                 break;
@@ -538,14 +567,18 @@ export class NgGridItem implements OnInit, OnDestroy, DoCheck {
         if (this._minCols > 0 && newSize.x < this._minCols) newSize.x = this._minCols;
         if (this._minRows > 0 && newSize.y < this._minRows) newSize.y = this._minRows;
 
-        const itemWidth = newSize.x * this._ngGrid.colWidth + (this._ngGrid.marginLeft + this._ngGrid.marginRight) * (newSize.x - 1);
+        const itemWidth =
+            newSize.x * this._ngGrid.colWidth +
+            (this._ngGrid.marginLeft + this._ngGrid.marginRight) * (newSize.x - 1);
         if (itemWidth < this.minWidth)
             newSize.x = Math.ceil(
                 (this.minWidth + this._ngGrid.marginRight + this._ngGrid.marginLeft) /
                     (this._ngGrid.colWidth + this._ngGrid.marginRight + this._ngGrid.marginLeft)
             );
 
-        const itemHeight = newSize.y * this._ngGrid.rowHeight + (this._ngGrid.marginTop + this._ngGrid.marginBottom) * (newSize.y - 1);
+        const itemHeight =
+            newSize.y * this._ngGrid.rowHeight +
+            (this._ngGrid.marginTop + this._ngGrid.marginBottom) * (newSize.y - 1);
         if (itemHeight < this.minHeight)
             newSize.y = Math.ceil(
                 (this.minHeight + this._ngGrid.marginBottom + this._ngGrid.marginTop) /
@@ -566,7 +599,9 @@ export class NgGridItem implements OnInit, OnDestroy, DoCheck {
 
         if (!element.document || !element.ownerDocument) return false;
 
-        const matches: NodeListOf<any> = (element.document || element.ownerDocument).querySelectorAll(selector);
+        const matches: NodeListOf<any> = (
+            element.document || element.ownerDocument
+        ).querySelectorAll(selector);
         for (let i = matches.length - 1; i >= 0; i--) {
             if (matches.item(i) === element) {
                 return true;
@@ -578,11 +613,13 @@ export class NgGridItem implements OnInit, OnDestroy, DoCheck {
 
     private _recalculatePosition(): void {
         const x: number =
-            (this._ngGrid.colWidth + this._ngGrid.marginLeft + this._ngGrid.marginRight) * (this._currentPosition.col - 1) +
+            (this._ngGrid.colWidth + this._ngGrid.marginLeft + this._ngGrid.marginRight) *
+                (this._currentPosition.col - 1) +
             this._ngGrid.marginLeft +
             this._ngGrid.screenMargin;
         const y: number =
-            (this._ngGrid.rowHeight + this._ngGrid.marginTop + this._ngGrid.marginBottom) * (this._currentPosition.row - 1) +
+            (this._ngGrid.rowHeight + this._ngGrid.marginTop + this._ngGrid.marginBottom) *
+                (this._currentPosition.row - 1) +
             this._ngGrid.marginTop;
 
         this.setPosition(x, y);
@@ -593,9 +630,11 @@ export class NgGridItem implements OnInit, OnDestroy, DoCheck {
         if (this._size.y < this._ngGrid.minRows) this._size.y = this._ngGrid.minRows;
 
         const newWidth: number =
-            this._ngGrid.colWidth * this._size.x + (this._ngGrid.marginLeft + this._ngGrid.marginRight) * (this._size.x - 1);
+            this._ngGrid.colWidth * this._size.x +
+            (this._ngGrid.marginLeft + this._ngGrid.marginRight) * (this._size.x - 1);
         const newHeight: number =
-            this._ngGrid.rowHeight * this._size.y + (this._ngGrid.marginTop + this._ngGrid.marginBottom) * (this._size.y - 1);
+            this._ngGrid.rowHeight * this._size.y +
+            (this._ngGrid.marginTop + this._ngGrid.marginBottom) * (this._size.y - 1);
 
         const w: number = Math.max(this.minWidth, this._ngGrid.minWidth, newWidth);
         const h: number = Math.max(this.minHeight, this._ngGrid.minHeight, newHeight);
@@ -606,7 +645,11 @@ export class NgGridItem implements OnInit, OnDestroy, DoCheck {
     private _getMousePosition(e: any): NgGridRawPosition {
         if (e.originalEvent && e.originalEvent.touches) {
             const oe: any = e.originalEvent;
-            e = oe.touches.length ? oe.touches[0] : oe.changedTouches.length ? oe.changedTouches[0] : e;
+            e = oe.touches.length
+                ? oe.touches[0]
+                : oe.changedTouches.length
+                    ? oe.changedTouches[0]
+                    : e;
         } else if (e.touches) {
             e = e.touches.length ? e.touches[0] : e.changedTouches.length ? e.changedTouches[0] : e;
         }
@@ -668,16 +711,24 @@ export class NgGridItem implements OnInit, OnDestroy, DoCheck {
                 ); // tslint:disable-line:indent
             case 'topright':
                 return (
-                    mousePos.left < this._elemWidth && mousePos.left > this._elemWidth - this._borderSize && mousePos.top < this._borderSize
+                    mousePos.left < this._elemWidth &&
+                    mousePos.left > this._elemWidth - this._borderSize &&
+                    mousePos.top < this._borderSize
                 ); // tslint:disable-line:indent
             case 'topleft':
                 return mousePos.left < this._borderSize && mousePos.top < this._borderSize;
             case 'right':
-                return mousePos.left < this._elemWidth && mousePos.left > this._elemWidth - this._borderSize;
+                return (
+                    mousePos.left < this._elemWidth &&
+                    mousePos.left > this._elemWidth - this._borderSize
+                );
             case 'left':
                 return mousePos.left < this._borderSize;
             case 'bottom':
-                return mousePos.top < this._elemHeight && mousePos.top > this._elemHeight - this._borderSize;
+                return (
+                    mousePos.top < this._elemHeight &&
+                    mousePos.top > this._elemHeight - this._borderSize
+                );
             case 'top':
                 return mousePos.top < this._borderSize;
             default:

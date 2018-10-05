@@ -20,7 +20,7 @@ export class DotEditPageDataService {
     /**
      * Return the object in cache and clean
      *
-     * @returns {DotRenderedPageState}
+     * @returns DotRenderedPageState
      * @memberof DotEditPageDataService
      */
     getAndClean(): DotRenderedPageState {

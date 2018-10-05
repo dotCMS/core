@@ -46,7 +46,7 @@ export class DotWorkflowTaskComponent implements AfterViewInit {
     /**
      * Habdle custom event from the dot-workflow-task-detail
      *
-     * @param {CustomEvent} $event
+     * @param CustomEvent $event
      * @memberof DotWorkflowTaskComponent
      */
     onCustomEvent($event: CustomEvent): void {

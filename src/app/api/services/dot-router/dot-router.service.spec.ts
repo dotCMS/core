@@ -1,7 +1,7 @@
 import { DotRouterService } from './dot-router.service';
 import { DOTTestBed } from '../../../test/dot-test-bed';
 import { RouterTestingModule } from '@angular/router/testing';
-import { LoginService } from 'dotcms-js/core/login.service';
+import { LoginService } from 'dotcms-js/dotcms-js';
 import { Router } from '@angular/router';
 import { async } from '@angular/core/testing';
 

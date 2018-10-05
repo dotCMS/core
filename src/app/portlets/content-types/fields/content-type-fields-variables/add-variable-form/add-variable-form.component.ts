@@ -1,4 +1,4 @@
-import { Component, OnInit, Output, EventEmitter } from '@angular/core';
+import { Component, OnInit, Output, EventEmitter, ViewChild, ElementRef } from '@angular/core';
 import { FormGroup, FormControl, Validators, FormBuilder } from '@angular/forms';
 import { DotMessageService } from '../../../../../api/services/dot-messages-service';
 import { FieldVariable } from '..';
@@ -9,6 +9,7 @@ import { FieldVariable } from '..';
     templateUrl: './add-variable-form.component.html'
 })
 export class AddVariableFormComponent implements OnInit {
+    @ViewChild('key') keyField: ElementRef;
 
     @Output() saveVariable = new EventEmitter<FieldVariable>();
 
@@ -27,10 +28,7 @@ export class AddVariableFormComponent implements OnInit {
             .subscribe((messages: {[key: string]: string}) => {
                 this.messages = messages;
             });
-        this.form = this.fb.group({
-            key: new FormControl('', Validators.required),
-            value: new FormControl('', Validators.required)
-        });
+        this.form = this.getNewForm();
     }
 
     /**
@@ -43,6 +41,14 @@ export class AddVariableFormComponent implements OnInit {
             value: this.form.controls.value.value
         };
         this.saveVariable.emit(variable);
-        this.form.reset();
+        this.form = this.getNewForm();
+        this.keyField.nativeElement.focus();
+    }
+
+    private getNewForm(): FormGroup {
+        return this.fb.group({
+            key: new FormControl('', Validators.required),
+            value: new FormControl('', Validators.required)
+        });
     }
 }

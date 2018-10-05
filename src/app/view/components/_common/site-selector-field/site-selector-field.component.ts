@@ -39,7 +39,7 @@ export class SiteSelectorFieldComponent implements ControlValueAccessor {
 
     /**
      * Set the function to be called when the control receives a change event.
-     * @param {any} fn
+     * @param any fn
      * @memberof SearchableDropdownComponent
      */
     registerOnChange(fn): void {
@@ -65,7 +65,7 @@ export class SiteSelectorFieldComponent implements ControlValueAccessor {
 
     /**
      * Write a new value to the element
-     * @param {*} value
+     * @param * value
      * @memberof SearchableDropdownComponent
      */
     writeValue(value: string): void {

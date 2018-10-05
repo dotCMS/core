@@ -25,7 +25,6 @@
 </div>
 
 <dot-dialog
-    #dotDialog
     [show]="displayDialog"
     [ok]="saveDialogAction"
     [cancel]="closeDialogAction"
@@ -40,11 +39,10 @@
                 #fieldPropertiesForm>
             </dot-content-type-fields-properties-form>
         </p-tabPanel>
-        <p-tabPanel [header]="i18nMessages['contenttypes.dropzone.tab.variables']">
+        <p-tabPanel [header]="i18nMessages['contenttypes.dropzone.tab.variables']" [disabled]="!formData?.id">
             <ng-template pTemplate="content">
                 <dot-content-type-fields-variables [field]="currentField"></dot-content-type-fields-variables>
             </ng-template>
         </p-tabPanel>
     </p-tabView>
-
 </dot-dialog>

@@ -21,8 +21,8 @@ export class DotEditLayoutService {
     /**
      * Take an DotPageView and return an array of DotLayoutGridBox
      *
-     * @param {DotLayoutBody} dotLayoutBody
-     * @returns {DotLayoutGridBox[]}
+     * @param DotLayoutBody dotLayoutBody
+     * @returns DotLayoutGridBox[]
      */
     getDotLayoutGridBox(dotLayoutBody: DotLayoutBody): DotLayoutGridBox[] {
         const grid: DotLayoutGridBox[] = [];
@@ -53,8 +53,8 @@ export class DotEditLayoutService {
     /**
      * Take an array of DotLayoutGridBox and return a DotLayoutBody.
      *
-     * @param {DotLayoutGridBox[]} grid
-     * @returns {DotLayoutBody}
+     * @param DotLayoutGridBox[] grid
+     * @returns DotLayoutBody
      */
     getDotLayoutBody(grid: DotLayoutGridBox[]): DotLayoutBody {
         return <DotLayoutBody>{
@@ -70,8 +70,8 @@ export class DotEditLayoutService {
 
     /**
      * Remove the extra attributes that come from the server and are not longer needed in DotLayoutBody.
-     * @param {DotLayoutBody} grid
-     * @returns {DotLayoutBody}
+     * @param DotLayoutBody grid
+     * @returns DotLayoutBody
      */
     cleanupDotLayoutBody(grid: DotLayoutBody): DotLayoutBody {
         return this.getDotLayoutBody(this.getDotLayoutGridBox(grid));
@@ -80,8 +80,8 @@ export class DotEditLayoutService {
     /**
      * Take an array of DotPageContainer and return a DotContainerColumnBox.
      *
-     * @param {DotPageContainer[]} containers
-     * @returns {DotContainerColumnBox[]}
+     * @param DotPageContainer[] containers
+     * @returns DotContainerColumnBox[]
      */
     getDotLayoutSidebar(containers: DotPageContainer[]): DotContainerColumnBox[] {
         return containers.map((dotPageContainer: DotPageContainer) => {

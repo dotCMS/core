@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { Observable } from 'rxjs/Observable';
+import { Observable } from 'rxjs';
 
 import { DotMenu, DotMenuItem } from '@models/navigation';
 import { DotNavigationService } from './services/dot-navigation.service';
@@ -22,8 +22,8 @@ export class DotNavigationComponent implements OnInit {
     /**
      * Change or refresh the portlets
      *
-     * @param {*} event click event
-     * @param {string} id menu item id
+     * @param * event click event
+     * @param string id menu item id
      * @memberof MainNavigationComponent
      */
     onItemClick($event: { originalEvent: MouseEvent; data: DotMenuItem }): void {
@@ -37,7 +37,7 @@ export class DotNavigationComponent implements OnInit {
     /**
      * Set isOpen to the passed DotMenu item
      *
-     * @param {DotMenu} currentItem
+     * @param DotMenu currentItem
      * @memberof DotNavigationComponent
      */
     onMenuClick(event: { originalEvent: MouseEvent; data: DotMenu }): void {

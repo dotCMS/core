@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { CoreWebService } from 'dotcms-js/dotcms-js';
-import { Observable } from 'rxjs/Observable';
+import { Observable } from 'rxjs';
 import { DotCurrentUser } from '@models/dot-current-user/dot-current-user';
 import { RequestMethod } from '@angular/http';
 
@@ -13,7 +13,7 @@ export class DotCurrentUserService {
     // TODO: We need to update the LoginService to get the userId in the User object
     /**
      * Get logged user and userId.
-     * @returns {Observable<DotCurrentUser>}
+     * @returns Observable<DotCurrentUser>
      * @memberof DotCurrentUserService
      */
     getCurrentUser(): Observable<DotCurrentUser> {

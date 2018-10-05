@@ -1,13 +1,13 @@
 <form [formGroup]="form" class="content-type__form" id="content-type-form" novalidate (keyup.enter)="submitForm()">
     <div class="form__group">
-        <span dotMdInputtext label="{{ nameFieldLabel }}">
-            <input pInputText type="text" id="content-type-form-name" name="name" formControlName="name" tabindex="1" #name class="mousetrap" />
+        <span dotMdInputtext [label]="nameFieldLabel">
+            <input pInputText type="text" id="content-type-form-name" name="name" formControlName="name" tabindex="1" #name dotAutofocus />
         </span>
         <dot-field-validation-message [message]="dotMessageService.get('dot.common.message.field.required', nameFieldLabel)" [field]="form.get('name')"></dot-field-validation-message>
     </div>
     <div class="form__group">
-        <span dotMdInputtext label="{{ dotMessageService.get('contenttypes.form.label.description') }}">
-            <input pInputText type="text" id="content-type-form-description" name="description" formControlName="description" tabindex="2" class="mousetrap" />
+        <span dotMdInputtext [label]="dotMessageService.get('contenttypes.form.label.description')">
+            <input pInputText type="text" id="content-type-form-description" name="description" formControlName="description" tabindex="2" />
         </span>
     </div>
     <div class="form__group">
@@ -35,8 +35,8 @@
     </div>
     <div class="form__group" *ngIf="form.get('urlMapPattern')">
         <dot-icon-button class="content-type-form-url-pattern" icon="help_outline" (click)="hint.toggle($event)"></dot-icon-button>
-        <span dotMdInputtext label="{{ dotMessageService.get('contenttypes.form.label.URL.pattern') }}">
-            <input pInputText type="text" id="content-type-form-url-map-pattern" name="urlMapPattern" formControlName="urlMapPattern" tabindex="8" class="mousetrap" />
+        <span dotMdInputtext [label]="dotMessageService.get('contenttypes.form.label.URL.pattern')">
+            <input pInputText type="text" id="content-type-form-url-map-pattern" name="urlMapPattern" formControlName="urlMapPattern" tabindex="8" />
         </span>
     </div>
 </form>

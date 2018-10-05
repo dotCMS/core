@@ -33,6 +33,7 @@ import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot
     templateUrl: 'content-types.component.html'
 })
 export class ContentTypesPortletComponent implements OnInit {
+
     @ViewChild('listing')
     listing: ListingDataTableComponent;
     public contentTypeColumns: DataTableColumn[];
@@ -79,6 +80,7 @@ export class ContentTypesPortletComponent implements OnInit {
     ) {}
 
     ngOnInit() {
+
         observableForkJoin(
             this.dotMessageService.getMessages(this.i18nKeys),
             this.dotContentletService.getAllContentTypes(),
@@ -89,7 +91,6 @@ export class ContentTypesPortletComponent implements OnInit {
         ).subscribe((res) => {
             const baseTypes: StructureTypeView[] = res[1];
             const rowActionsMap = {
-                delete: true,
                 pushPublish: res[2] && res[3],
                 addToBundle: res[2]
             };
@@ -118,26 +119,14 @@ export class ContentTypesPortletComponent implements OnInit {
         this.listing.loadFirstPage();
     }
 
-    private createRowActions(rowActionsMap: any): DotDataTableAction[] {
-        const listingActions: DotDataTableAction[] = [];
-
-        if (rowActionsMap.delete) {
-            listingActions.push({
-                menuItem: {
-                    label: this.dotMessageService.get('contenttypes.action.delete'),
-                    command: (item) => this.removeConfirmation(item),
-                    icon: 'delete'
-                },
-                shouldShow: (item) => !item.fixed
-            });
-        }
-
+    private getPublishActions(pushPublish: boolean, addToBundle: boolean): DotDataTableAction[] {
+        const actions: DotDataTableAction[] = [];
         /*
             Only show Push Publish action if DotCMS instance have the appropriate license and there are
             push publish environments created.
         */
-        if (rowActionsMap.pushPublish) {
-            listingActions.push({
+       if (pushPublish) {
+            actions.push({
                 menuItem: {
                     label: this.dotMessageService.get('contenttypes.content.push_publish'),
                     command: (item) => this.pushPublishContentType(item)
@@ -145,14 +134,32 @@ export class ContentTypesPortletComponent implements OnInit {
             });
         }
 
-        if (rowActionsMap.addToBundle) {
-            listingActions.push({
+        if (addToBundle) {
+            actions.push({
                 menuItem: {
                     label: this.dotMessageService.get('contenttypes.content.add_to_bundle'),
                     command: (item) => this.addToBundleContentType(item)
                 }
             });
         }
+
+        return actions;
+    }
+
+    private createRowActions(rowActionsMap: any): DotDataTableAction[] {
+        const listingActions: DotDataTableAction[] = [
+            ...this.getPublishActions(rowActionsMap.pushPublish, rowActionsMap.addToBundle)
+        ];
+
+        listingActions.push({
+            menuItem: {
+                label: this.dotMessageService.get('contenttypes.action.delete'),
+                command: (item) => this.removeConfirmation(item),
+                icon: 'delete'
+            },
+            shouldShow: (item) =>  !item.fixed && !item.defaultType
+        });
+
 
         /*
             If we have more than one action it means that we'll show the contextual menu and we don't want icons there

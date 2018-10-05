@@ -51,10 +51,20 @@
                     </div>
                     <div class="form__group">
                         <dot-loading-indicator></dot-loading-indicator>
-                        <button dotMdRipple pButton id="login-component-login-submit-button" *ngIf="!isLoginInProgress"
-                                (click)="logInUser()" [label]="loginButton"></button>
-                        <button pButton secondary id="login-component-show-fogot-password-button" *ngIf="!isLoginInProgress"
-                                (click)="showForgotPassword()" [label]="forgotPasswordButton"></button>
+                        <button
+                            dotMdRipple
+                            pButton
+                            id="login-component-login-submit-button"
+                            *ngIf="!isLoginInProgress"
+                            (click)="logInUser()"
+                            [label]="loginButton"
+                            class="login__button"></button>
+                        <button
+                            pButton
+                            secondary
+                            id="login-component-show-fogot-password-button" *ngIf="!isLoginInProgress"
+                            (click)="showForgotPassword()"
+                            [label]="forgotPasswordButton"></button>
                     </div>
                 </div>
             </div>
