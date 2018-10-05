@@ -13,7 +13,6 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
-import com.dotmarketing.util.DateUtil;
 import com.liferay.portal.model.User;
 
 import java.util.ArrayList;
@@ -79,8 +78,10 @@ public class FiltersUtil {
 
         //Save the contentlet
         contentlet.setIndexPolicy(IndexPolicy.FORCE);
+        contentlet.setIndexPolicyDependencies(IndexPolicy.FORCE);
         contentlet = contentletAPI.checkin(contentlet, contentTypePermissions, user, true);
         contentlet.setIndexPolicy(IndexPolicy.FORCE);
+        contentlet.setIndexPolicyDependencies(IndexPolicy.FORCE);
 
         return contentlet;
     }
@@ -108,9 +109,9 @@ public class FiltersUtil {
             throws DotSecurityException, DotDataException {
 
         vanityURL.setIndexPolicy(IndexPolicy.FORCE);
+        vanityURL.setIndexPolicyDependencies(IndexPolicy.FORCE);
+        vanityURL.setBoolProperty(Contentlet.IS_TEST_MODE, true);
         contentletAPI.unpublish(vanityURL, user, false);
-
-        DateUtil.sleep( 1000);
     }
 
     /**

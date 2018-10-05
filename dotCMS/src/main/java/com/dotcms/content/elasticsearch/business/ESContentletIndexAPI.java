@@ -26,6 +26,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.gson.Gson;
+import com.liferay.util.StringPool;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
@@ -51,8 +52,15 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static com.dotmarketing.util.StringUtils.builder;
+
 public class ESContentletIndexAPI implements ContentletIndexAPI{
 
+
+	private static final int    TIMEOUT_INDEX_WAIT_FOR_DEFAULT = 30000;
+	private static final String TIMEOUT_INDEX_WAIT_FOR         = "TIMEOUT_INDEX_WAIT_FOR";
+	private static final int    TIME_INDEX_FORCE_DEFAULT 	   = 30000;
+	private static final String TIMEOUT_INDEX_FORCE      	   = "TIMEOUT_INDEX_FORCE";
 	private static DistributedJournalAPI<String> journalAPI = null;
 	private static final ESIndexAPI esIndexApi       = new ESIndexAPI();
     private static final ESMappingAPIImpl mappingAPI = new ESMappingAPIImpl();
@@ -411,7 +419,9 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 		}
 	}
 
-
+	/**
+	 * Add ReindexRunnable runnable
+	 */
 	private class AddReindexRunnable extends ReindexRunnable {
 
 		public AddReindexRunnable(final List<Contentlet> reindexIds, final Action action, final BulkRequestBuilder bulk, final boolean reindexOnly) {
@@ -479,7 +489,7 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 				new ESClient().getClient().prepareBulk() : bulk;
 
 		final long timeOutMillis                    = Config
-				.getLongProperty("TIMEOUT_INDEX_FORCE", 30000);
+				.getLongProperty(TIMEOUT_INDEX_FORCE, TIME_INDEX_FORCE_DEFAULT);
 
 		// we want to wait until the content is already indexed
 		bulkRequestBuilder.setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
@@ -496,7 +506,7 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 		final BulkRequestBuilder bulkRequestBuilder = (bulk==null)?
 				new ESClient().getClient().prepareBulk() : bulk;
 		final long timeOutMillis                    = Config
-				.getLongProperty("TIMEOUT_INDEX_WAIT_FOR", 30000);
+				.getLongProperty(TIMEOUT_INDEX_WAIT_FOR, TIMEOUT_INDEX_WAIT_FOR_DEFAULT);
 
 		// we want to wait until the content is already indexed
 		bulkRequestBuilder.setRefreshPolicy(WriteRequest.RefreshPolicy.WAIT_UNTIL);
@@ -645,64 +655,155 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 	}
 
 	private void removeContentFromIndex(final Contentlet content, final boolean onlyLive, final List<Relationship> relationships) throws DotHibernateException {
-		ReindexRunnable indexRunner = new ReindexRunnable(content, ReindexRunnable.Action.REMOVING, null) {
-	            public void run() {
-	        	    try {
-	            	    String id=content.getIdentifier()+"_"+content.getLanguageId();
-	            	    Client client=new ESClient().getClient();
-	            	    BulkRequestBuilder bulk=client.prepareBulk();
-	            	    IndiciesInfo info=APILocator.getIndiciesAPI().loadIndicies();
 
-	            	    bulk.add(client.prepareDelete(info.live, "content", id));
-	            	    if(info.reindex_live!=null)
-	            	        bulk.add(client.prepareDelete(info.reindex_live, "content", id));
+		final boolean    indexIsNotDefer   	  = IndexPolicy.DEFER != content.getIndexPolicy();
 
-	        	        if(!onlyLive) {
+		try {
 
-	        	            // here we search for relationship fields pointing to this
-	        	            // content to be deleted. Those contentlets are reindexed
-	        	            // to avoid left those fields making noise in the index
-	        	            for(Relationship rel : relationships) {
-	        	                String q = "";
-	        	                boolean isSameStructRelationship = rel.getParentStructureInode().equalsIgnoreCase(rel.getChildStructureInode());
+			if (indexIsNotDefer) {
 
-	        	                if(isSameStructRelationship)
-	        	                    q = "+type:content +(" + rel.getRelationTypeValue() + "-parent:" + content.getIdentifier() + " " +
-	        	                        rel.getRelationTypeValue() + "-child:" + content.getIdentifier() + ") ";
-	        	                else
-	        	                    q = "+type:content +" + rel.getRelationTypeValue() + ":" + content.getIdentifier();
+				this.handleRemoveIndexNotDefer(content, onlyLive, relationships);
+			} else {
+				// add a commit listener to index the contentlet if the entire
+				// transaction finish clean
+				HibernateUtil.addCommitListener(content.getInode() + ReindexRunnable.Action.REMOVING,
+						new RemoveReindexRunnable(content, onlyLive, relationships));
+			}
+		} catch (DotDataException | DotSecurityException | DotMappingException e1) {
+			throw new DotHibernateException(e1.getMessage(), e1);
+		}
+	} // removeContentFromIndex.
 
-	        	                List<Contentlet> related = APILocator.getContentletAPI().search(q, -1, 0, null, APILocator.getUserAPI().getSystemUser(), false);
-	        	                indexContentletList(bulk, related, false);
-	        	            }
+	private void handleRemoveIndexNotDefer(final Contentlet content,
+										   final boolean onlyLive,
+										   final List<Relationship> relationships)
+			throws DotSecurityException, DotMappingException, DotDataException {
 
-	        	            bulk.add(client.prepareDelete(info.working, "content", id));
-	        	            if(info.reindex_working!=null)
-	        	                bulk.add(client.prepareDelete(info.reindex_working, "content", id));
-	        	        }
+		removeContentAndProcessDependencies(content, relationships,
+				onlyLive, content.getIndexPolicy(), content.getIndexPolicyDependencies());
+	} // handleRemoveIndexNotDefer.
 
-	                    bulk.execute().actionGet();
+	/**
+	 * Remove ReindexRunnable runnable
+	 */
+	private class RemoveReindexRunnable extends ReindexRunnable {
 
-	        	    }
-	        	    catch(Exception ex) {
-	        	        throw new ElasticsearchException(ex.getMessage(),ex);
-	        	    }
-	            }
-	        };
+		private final Contentlet         contentlet;
+		private final boolean            onlyLive;
+		private final List<Relationship> relationships;
 
-	        HibernateUtil.addCommitListener(content.getInode()+ReindexRunnable.Action.REMOVING,indexRunner);
+		public RemoveReindexRunnable(final Contentlet contentlet, final boolean onlyLive,
+									 final List<Relationship> relationships) {
+
+			super(contentlet, ReindexRunnable.Action.REMOVING, null);
+			this.contentlet    = contentlet;
+			this.onlyLive      = onlyLive;
+			this.relationships = relationships;
+		}
+
+		public void run() {
+
+			try {
+				removeContentAndProcessDependencies(this.contentlet, this.relationships,
+						this.onlyLive, IndexPolicy.DEFER, IndexPolicy.DEFER);
+			} catch(Exception ex) {
+				throw new ElasticsearchException(ex.getMessage(),ex);
+			}
+		}
 	}
-	
+
+	private void removeContentAndProcessDependencies(final Contentlet contentlet, final List<Relationship> relationships,
+													 final boolean onlyLive, final IndexPolicy indexPolicy, final IndexPolicy indexPolicyDependencies)
+			throws DotDataException, DotSecurityException, DotMappingException {
+
+		final String id         = builder(contentlet.getIdentifier(), StringPool.UNDERLINE, contentlet.getLanguageId()).toString();
+		final Client client     = new ESClient().getClient();
+		final IndiciesInfo info = APILocator.getIndiciesAPI().loadIndicies();
+		final BulkRequestBuilder bulk = client.prepareBulk();
+
+
+		// we want to wait until the content is already indexed
+		switch (indexPolicy) {
+			case FORCE:
+				bulk.setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
+				bulk.setTimeout(TimeValue.timeValueMillis(Config
+						.getLongProperty(TIMEOUT_INDEX_FORCE, TIME_INDEX_FORCE_DEFAULT)));
+				break;
+
+			case WAIT_FOR:
+				bulk.setRefreshPolicy(WriteRequest.RefreshPolicy.WAIT_UNTIL);
+				bulk.setTimeout(TimeValue.timeValueMillis(Config
+						.getLongProperty(TIMEOUT_INDEX_WAIT_FOR, TIMEOUT_INDEX_WAIT_FOR_DEFAULT)));
+				break;
+		}
+
+		bulk.add(client.prepareDelete(info.live, "content", id));
+
+		if (info.reindex_live != null) {
+
+			bulk.add(client.prepareDelete(info.reindex_live, "content", id));
+		}
+
+		if(!onlyLive) {
+
+			// here we search for relationship fields pointing to this
+			// content to be deleted. Those contentlets are reindexed
+			// to avoid left those fields making noise in the index
+			if (UtilMethods.isSet(relationships)) {
+				reindexDependenciesForDeletedContent(contentlet, relationships,
+						bulk, indexPolicyDependencies);
+			}
+
+			bulk.add(client.prepareDelete(info.working, "content", id));
+			if(info.reindex_working!=null) {
+				bulk.add(client.prepareDelete(info.reindex_working, "content", id));
+			}
+		}
+
+		bulk.execute().actionGet();
+	}
+
+	private void reindexDependenciesForDeletedContent(final Contentlet contentlet, final List<Relationship> relationships,
+													  final BulkRequestBuilder bulk, final IndexPolicy indexPolicy) throws DotDataException, DotSecurityException, DotMappingException {
+
+		for (final Relationship relationship : relationships) {
+
+			final boolean isSameStructRelationship = relationship.getParentStructureInode().equalsIgnoreCase(relationship.getChildStructureInode());
+
+			final String query = (isSameStructRelationship) ?
+					builder("+type:content +(", relationship.getRelationTypeValue(), "-parent:", contentlet.getIdentifier(), StringPool.SPACE,
+							relationship.getRelationTypeValue(), "-child:", contentlet.getIdentifier(), ") ").toString() :
+					builder("+type:content +", relationship.getRelationTypeValue(), ":", contentlet.getIdentifier()).toString();
+
+			final List<Contentlet> related = APILocator.getContentletAPI().search
+					(query, -1, 0, null, APILocator.getUserAPI().getSystemUser(), false);
+
+			switch (indexPolicy) {
+
+				case WAIT_FOR:
+					indexContentListWaitFor(related, bulk, false);
+					break;
+				case FORCE:
+					indexContentListNow(related, bulk, false);
+					break;
+				default: // DEFER
+					indexContentletList(bulk, related, false);
+					break;
+			}
+		}
+	}
+
+	@CloseDBIfOpened
 	public void removeContentFromIndex(final Contentlet content, final boolean onlyLive) throws DotHibernateException {
 
 	    if(content==null || !UtilMethods.isSet(content.getIdentifier())) return;
 
 	    List<Relationship> relationships;
-      try {
-        relationships = FactoryLocator.getRelationshipFactory().byContentType(content.getStructure());
-      } catch (DotDataException e) {
-        throw new DotHibernateException(e.getMessage(),e);
-      }
+		try {
+			relationships = FactoryLocator.getRelationshipFactory().byContentType(content.getStructure());
+		} catch (DotDataException e) {
+			throw new DotHibernateException(e.getMessage(),e);
+		}
 	    // add a commit listener to index the contentlet if the entire
         // transaction finish clean
         removeContentFromIndex(content, onlyLive, relationships);

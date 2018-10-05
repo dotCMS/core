@@ -180,4 +180,28 @@ public class StringUtilsTest {
                                                   "<html>\n"
         ));
     }
+
+    @Test
+    public void test_Null_Sequence() {
+
+        assertEquals("", StringUtils.builder().toString());
+        assertEquals("", StringUtils.builder(null).toString());
+        assertEquals("", StringUtils.builder(null, null, null, null).toString());
+    }
+
+    @Test
+    public void test_Valid_Sequences() {
+
+        assertEquals("hello world 2", StringUtils.builder("hello", " ", "world", " ", "2").toString());
+        assertEquals("hello world 2", StringUtils.builder("hello", " ", "world").append(" ").append(2).toString());
+        assertEquals("hello world 2", StringUtils.builder("hello", " ", "world", " ", 2).toString());
+    }
+
+    @Test
+    public void test_Valid_and_Invalid_Sequences() {
+
+        assertEquals("hello world 2", StringUtils.builder("hello", " ", null, null, "world", null, " ", null, "2").toString());
+        assertEquals("hello world 2", StringUtils.builder(null, "hello", " ", null, null, "world", null).append(" ").append(2).toString());
+        assertEquals("hello world 2", StringUtils.builder("hello", null, " ", null, "world", null, " ", 2).toString());
+    }
 }
