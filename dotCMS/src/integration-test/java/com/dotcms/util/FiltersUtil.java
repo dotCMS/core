@@ -79,9 +79,11 @@ public class FiltersUtil {
         //Save the contentlet
         contentlet.setIndexPolicy(IndexPolicy.FORCE);
         contentlet.setIndexPolicyDependencies(IndexPolicy.FORCE);
+        contentlet.setBoolProperty(Contentlet.IS_TEST_MODE, true);
         contentlet = contentletAPI.checkin(contentlet, contentTypePermissions, user, true);
         contentlet.setIndexPolicy(IndexPolicy.FORCE);
         contentlet.setIndexPolicyDependencies(IndexPolicy.FORCE);
+        contentlet.setBoolProperty(Contentlet.IS_TEST_MODE, true);
 
         return contentlet;
     }
@@ -94,6 +96,8 @@ public class FiltersUtil {
 
         //Publish Vanity Url
         contentlet.setIndexPolicy(IndexPolicy.FORCE);
+        contentlet.setIndexPolicyDependencies(IndexPolicy.FORCE);
+        contentlet.setBoolProperty(Contentlet.IS_TEST_MODE, true);
         contentletAPI.publish(contentlet, user, false);
         try {
             Thread.sleep(500);
