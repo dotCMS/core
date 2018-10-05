@@ -18,8 +18,10 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
 import com.liferay.portal.model.User;
+import org.apache.felix.framework.OSGIUtil;
 import org.elasticsearch.client.Client;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -56,6 +58,7 @@ public class ReindexIndexAPITest{
     public static void prepare () throws Exception {
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
+        OSGIUtil.getInstance().initializeFramework(Config.CONTEXT);
         contentletAPI = APILocator.getContentletAPI();
         user = APILocator.systemUser();
         contentTypeApi = (ContentTypeAPIImpl) APILocator.getContentTypeAPI(user);
@@ -157,7 +160,7 @@ public class ReindexIndexAPITest{
             ReindexThread.getInstance().unpause();
         }
         // let any expected reindex finish
-        DateUtil.sleep(1000);
+        DateUtil.sleep(5000);
 
         // make sure that the index is in the same state as before the failed transaction
         for(Contentlet c : origCons){
