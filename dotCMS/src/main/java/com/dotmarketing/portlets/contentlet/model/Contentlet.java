@@ -1103,11 +1103,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 */
 	@SuppressWarnings("unchecked")
 	private Set<String> getWritableNullProperties(){
-		final Set writableSet = (Set<String>)this.map.get(NULL_PROPERTIES);
-		if(writableSet != null){
-		   return writableSet;
-		}
-		return (Set<String>)map.put(NULL_PROPERTIES, ConcurrentHashMap.newKeySet());
+		return (Set<String>)map.putIfAbsent(NULL_PROPERTIES, ConcurrentHashMap.newKeySet());
 	}
 
 	/**
@@ -1123,7 +1119,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	/**
 	 * Since the Contentlet is kept in cache it makes sense removing certain values from the map
 	 */
-	public void cleanupContentletMap(){
+	public void cleanup(){
 		getWritableNullProperties().clear();
 	}
 

@@ -3654,7 +3654,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             return contentlet;
 
         }finally {
-            contentlet.cleanupContentletMap();
+            contentlet.cleanup();
         }
     }
 
@@ -6280,13 +6280,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     /**
-     *
+     * This method takes the properties that were once set as null an nullify the real properties
+     * By doing this right before save. We Will null the field values on the desired entries.
      * @param contentlet
      * @return
      */
     private Contentlet applyNullProperties(final Contentlet contentlet){
         contentlet.getNullProperties().forEach(s -> {
-            contentlet.setProperty(s, StringPool.BLANK);
+            contentlet.getMap().put(s, null);
         });
         return contentlet;
     }

@@ -1,10 +1,16 @@
 package com.dotcms.rest.exception.mapper;
 
+import static com.dotcms.exception.ExceptionUtil.ValidationError;
+import static com.dotcms.exception.ExceptionUtil.getRootCause;
+import static com.dotcms.exception.ExceptionUtil.mapValidationException;
+import static com.dotcms.util.CollectionsUtils.map;
+
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.rest.ErrorEntity;
 import com.dotcms.rest.ResponseEntityView;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.InvalidLicenseException;
@@ -16,16 +22,12 @@ import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
-
-import javax.servlet.http.HttpServletRequest;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-
-import static com.dotcms.exception.ExceptionUtil.*;
-import static com.dotcms.util.CollectionsUtils.map;
+import javax.servlet.http.HttpServletRequest;
 
 /**
  * Created by Oscar Arrieta on 8/27/15.
@@ -204,7 +206,7 @@ public final class ExceptionMapperUtil {
         final List<ErrorEntity> errorEntities = new ArrayList<>();
         try {
             final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
-            final User user = WebAPILocator.getUserWebAPI().getUser(request);
+            final User user = (request == null ? APILocator.systemUser() : WebAPILocator.getUserWebAPI().getUser(request));
             final Map<String, List<ValidationError>> contentValidationErrors =
                     mapValidationException(user, ve);
 
