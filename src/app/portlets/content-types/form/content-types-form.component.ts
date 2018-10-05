@@ -40,11 +40,12 @@ export class ContentTypesFormComponent implements OnInit {
 
     @Input()
     data: any;
+
     @Input()
     fields: ContentTypeField[];
 
     @Output()
-    submit: EventEmitter<any> = new EventEmitter();
+    onSubmit: EventEmitter<any> = new EventEmitter();
 
     canSave = false;
     dateVarOptions: SelectItem[] = [];
@@ -144,7 +145,7 @@ export class ContentTypesFormComponent implements OnInit {
      */
     submitForm(): void {
         if (this.canSave) {
-            this.submit.emit({
+            this.onSubmit.emit({
                 ...this.form.value,
                 workflow: this.form.getRawValue().workflow
             });

@@ -499,7 +499,7 @@ describe('ContentTypesFormComponent', () => {
         let data = null;
         spyOn(comp, 'submitForm').and.callThrough();
 
-        comp.submit.subscribe((res) => (data = res));
+        comp.onSubmit.subscribe((res) => (data = res));
         comp.submitForm();
 
         expect(comp.submitForm).toHaveBeenCalled();
@@ -521,12 +521,12 @@ describe('ContentTypesFormComponent', () => {
         ];
         fixture.detectChanges();
         spyOn(comp, 'submitForm').and.callThrough();
-        spyOn(comp.submit, 'emit');
+        spyOn(comp.onSubmit, 'emit');
 
         comp.submitForm();
 
         expect(comp.submitForm).toHaveBeenCalled();
-        expect(comp.submit.emit).not.toHaveBeenCalled();
+        expect(comp.onSubmit.emit).not.toHaveBeenCalled();
     });
 
     it('should have dot-page-selector component and right attrs', () => {
@@ -555,7 +555,7 @@ describe('ContentTypesFormComponent', () => {
             fixture.detectChanges();
             data = null;
             spyOn(comp, 'submitForm').and.callThrough();
-            comp.submit.subscribe((res) => (data = res));
+            comp.onSubmit.subscribe((res) => (data = res));
             comp.form.controls.name.setValue('A content type name');
             fixture.detectChanges();
         });
@@ -578,6 +578,7 @@ describe('ContentTypesFormComponent', () => {
                 workflow: ['d61a59e1-a49c-46f2-a929-db2b4bfa88b2']
             });
         });
+
         it('should submit form correctly on Enter', () => {
             const form = fixture.debugElement.query(By.css('form'));
             form.nativeElement.dispatchEvent(new KeyboardEvent('keyup', { key: 'Enter' }));

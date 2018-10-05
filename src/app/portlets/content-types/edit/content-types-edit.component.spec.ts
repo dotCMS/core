@@ -268,7 +268,7 @@ describe('ContentTypesEditComponent create mode', () => {
             spyOn(crudService, 'postData').and.returnValue(observableOf([responseContentType]));
             spyOn(location, 'replaceState').and.returnValue(observableOf([responseContentType]));
 
-            contentTypeForm.triggerEventHandler('submit', mockContentType);
+            contentTypeForm.triggerEventHandler('onSubmit', mockContentType);
 
             expect(crudService.postData).toHaveBeenCalledWith('v1/contenttype', mockContentType);
             expect(comp.data).toEqual(responseContentType, 'set data with response');
@@ -283,7 +283,7 @@ describe('ContentTypesEditComponent create mode', () => {
             spyOn(dotRouterService, 'gotoPortlet');
             spyOn(dotHttpErrorManagerService, 'handle').and.callThrough();
 
-            contentTypeForm.triggerEventHandler('submit', mockContentType);
+            contentTypeForm.triggerEventHandler('onSubmit', mockContentType);
             expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('/content-types-angular');
             expect(dotHttpErrorManagerService.handle).toHaveBeenCalledTimes(1);
         });
