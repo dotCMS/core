@@ -526,10 +526,12 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 */
 	public void setProperty( String fieldVarName, Object objValue) throws DotRuntimeException {
 		map.put(fieldVarName, objValue);
-		if(null == objValue){
-			addNullProperty(fieldVarName);
-		} else {
-            removeNullProperty(fieldVarName);
+		if (!NULL_PROPERTIES.equals(fieldVarName)) { // No need to keep track of the null property it self.
+			if (null == objValue) {
+				addNullProperty(fieldVarName);
+			} else {
+				removeNullProperty(fieldVarName);
+			}
 		}
 	}
 
