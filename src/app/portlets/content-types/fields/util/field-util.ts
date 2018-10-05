@@ -13,7 +13,6 @@ export const TAB_FIELD = {
 };
 
 export class FieldUtil {
-
     private static NG_ID_SEQUENCER = new Date().getTime();
     private static NG_ID__PREFIX = 'ng-';
     /**
@@ -72,7 +71,7 @@ export class FieldUtil {
         return Object.assign({}, TAB_FIELD);
     }
 
-    static splitFieldsByLineDivider(fields: ContentTypeField[]): ContentTypeField[][] {
+    static splitFieldsByRows(fields: ContentTypeField[]): ContentTypeField[][] {
         return FieldUtil.splitFieldsBy(fields, [ROW_FIELD.clazz, TAB_FIELD.clazz]);
     }
 
@@ -84,15 +83,17 @@ export class FieldUtil {
         const result: ContentTypeField[][] = [];
         let currentFields: ContentTypeField[];
 
-        fields.forEach((field) => {
+        fields.forEach((field: ContentTypeField) => {
             if (fieldClass.includes(field.clazz)) {
                 currentFields = [];
                 result.push(currentFields);
             }
 
-            // TODO: this code is for avoid error in edit mode when the content types dont has ROW_FIELD and COLUMN_FIELD,
-            // this happend when the content types is saved in old UI
-            // but I dont know if this it's the bets fix
+            /*
+                TODO: this code is for avoid error in edit mode when the content types don'thas
+                ROW_FIELD and COLUMN_FIELD, this happend when the content types is saved in old UI
+                but I dont know if this it's the bets fix
+            */
             if (!currentFields) {
                 currentFields = [];
                 result.push(currentFields);

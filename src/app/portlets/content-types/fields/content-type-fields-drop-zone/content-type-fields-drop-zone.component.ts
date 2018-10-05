@@ -347,20 +347,28 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges {
     }
 
     private getRowFields(fields: ContentTypeField[]): FieldDivider[] {
-        const splitFields: ContentTypeField[][] = FieldUtil.splitFieldsByLineDivider(fields);
+        const splitFields: ContentTypeField[][] = FieldUtil.splitFieldsByRows(fields);
+        const fieldRows: FieldDivider[] = [];
 
-        const fieldRows: FieldDivider[] = splitFields.map((fieldDivider) => {
+        splitFields.forEach((fieldDivider: ContentTypeField[]) => {
             if (FieldUtil.isTabDivider(fieldDivider[0])) {
                 const tabRow: FieldTab = new FieldTab(fieldDivider[0]);
-                return tabRow;
+                fieldRows.push(tabRow);
+                if (fieldDivider.length > 1) {
+                    fieldRows.push(this.generateRow(fieldDivider.slice(1)));
+                }
             } else {
-                const fieldRow: FieldRow = new FieldRow();
-                fieldRow.addFields(fieldDivider);
-                return fieldRow;
+                fieldRows.push(this.generateRow(fieldDivider));
             }
         });
 
         return fieldRows.length ? fieldRows : this.getEmptyRow();
+    }
+
+    private generateRow(fieldDivider: ContentTypeField[]): FieldRow {
+        const fieldRow: FieldRow = new FieldRow();
+        fieldRow.addFields(JSON.parse(JSON.stringify(fieldDivider)));
+        return fieldRow;
     }
 
     private getEmptyRow(): FieldDivider[] {
