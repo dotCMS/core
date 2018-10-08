@@ -1,20 +1,8 @@
 package com.dotmarketing.portlets.calendar.ajax;
 
-import java.io.File;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-
-import javax.servlet.http.HttpServletRequest;
-
+import com.dotcms.business.WrapInTransaction;
+import com.dotcms.rendering.velocity.viewtools.CommentsWebAPI;
+import com.dotcms.rendering.velocity.viewtools.DateViewWebAPI;
 import com.dotcms.repackage.org.directwebremoting.WebContext;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
 import com.dotmarketing.business.APILocator;
@@ -37,16 +25,14 @@ import com.dotmarketing.portlets.contentlet.business.DotContentletStateException
 import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
 import com.dotmarketing.portlets.contentlet.business.web.ContentletWebAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicyProvider;
 import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
-
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
-import com.dotcms.rendering.velocity.viewtools.CommentsWebAPI;
-import com.dotcms.rendering.velocity.viewtools.DateViewWebAPI;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.language.LanguageException;
@@ -55,6 +41,13 @@ import com.liferay.portal.model.User;
 import com.liferay.portal.util.Constants;
 import com.liferay.util.StringPool;
 import com.liferay.util.servlet.SessionMessages;
+
+import javax.servlet.http.HttpServletRequest;
+import java.io.File;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.*;
+import java.util.Map.Entry;
 
 /**
  * @author David
@@ -255,159 +248,151 @@ public class CalendarAjax {
 		}
 		return retList;
 	}
-	
-	public void publishEvent (String inode) throws PortalException, SystemException, DotDataException, DotSecurityException {
-		HibernateUtil.startTransaction();
-		WebContext ctx = WebContextFactory.get();
-		HttpServletRequest request = ctx.getHttpServletRequest();
+
+	@WrapInTransaction
+	public void publishEvent (final String inode) throws PortalException, SystemException, DotDataException, DotSecurityException {
+
+		final WebContext ctx = WebContextFactory.get();
+		final HttpServletRequest request = ctx.getHttpServletRequest();
 
 		//Retrieving the current user
-		User user = userAPI.getLoggedInUser(request);
-		boolean respectFrontendRoles = true;
+		final User user = userAPI.getLoggedInUser(request);
+		final boolean respectFrontendRoles = true;
+		final Event ev  = eventAPI.findbyInode(inode, user, respectFrontendRoles);
 
-		Event ev = eventAPI.findbyInode(inode, user, respectFrontendRoles); 
-		try{
+		try {
+
+			ev.setIndexPolicy(IndexPolicyProvider.getInstance().forSingleContent());
 			contAPI.publish(ev, user, respectFrontendRoles);
-		}catch(Exception e){Logger.error(this, e.getMessage());}
-		
-		HibernateUtil.closeAndCommitTransaction();
-		if(!contAPI.isInodeIndexed(ev.getInode())){
-			Logger.error(this, "Timed out while waiting for index to return");
+		} catch(Exception e) {
+			Logger.error(this, e.getMessage());
 		}
 	}
 
-	public Map<String,Object> unpublishEvent (String inode) throws PortalException, SystemException, DotDataException, DotSecurityException {
-		Map<String,Object> callbackData = new HashMap<String,Object>();//DOTCMS-5199
-		List<String> eventUnpublishErrors = new ArrayList<String>();
-		HibernateUtil.startTransaction();
-		WebContext ctx = WebContextFactory.get();
-		HttpServletRequest request = ctx.getHttpServletRequest();
+	@WrapInTransaction
+	public Map<String,Object> unpublishEvent (final String inode) throws PortalException, SystemException, DotDataException, DotSecurityException {
+
+		final Map<String,Object> callbackData   = new HashMap<>();//DOTCMS-5199
+		final List<String> eventUnpublishErrors = new ArrayList<>();
+		final WebContext ctx 					= WebContextFactory.get();
+		final HttpServletRequest request 		= ctx.getHttpServletRequest();
 
 		//Retrieving the current user
-		User user = userAPI.getLoggedInUser(request);
-		boolean respectFrontendRoles = true;
+		final User user = userAPI.getLoggedInUser(request);
+		final boolean respectFrontendRoles = true;
+		final Event ev = eventAPI.findbyInode(inode, user, respectFrontendRoles);
 
-		Event ev = eventAPI.findbyInode(inode, user, respectFrontendRoles); 
+		try {
 
-		try {	
+			ev.setIndexPolicy(IndexPolicyProvider.getInstance().forSingleContent());
 			contAPI.unpublish(ev, user, respectFrontendRoles);  
-		} catch (DotSecurityException e) {
+		} catch (DotSecurityException | DotDataException | DotContentletStateException e) {
 			eventUnpublishErrors.add(e.getLocalizedMessage());
-		} catch (DotDataException e) {
-			eventUnpublishErrors.add(e.getLocalizedMessage());
-		} catch (DotContentletStateException e) {
-			eventUnpublishErrors.add(e.getLocalizedMessage());
-		}finally{			
-			if(eventUnpublishErrors.size() > 0){
+		} finally{
+			if(eventUnpublishErrors.size() > 0) {
 				callbackData.put("eventUnpublishErrors", eventUnpublishErrors);								
 			}				
-		}
-		HibernateUtil.closeAndCommitTransaction();
-		if(!contAPI.isInodeIndexed(ev.getInode())){
-			Logger.error(this, "Timed out while waiting for index to return");
 		}
 
 		return callbackData;
 	}
 
-	public void archiveEvent (String inode) throws PortalException, SystemException, DotDataException, DotSecurityException {
-		HibernateUtil.startTransaction();
-		WebContext ctx = WebContextFactory.get();
-		HttpServletRequest request = ctx.getHttpServletRequest();
+	@WrapInTransaction
+	public void archiveEvent (final String inode) throws PortalException, SystemException, DotDataException, DotSecurityException {
+
+		final WebContext ctx = WebContextFactory.get();
+		final HttpServletRequest request = ctx.getHttpServletRequest();
 
 		//Retrieving the current user
-		User user = userAPI.getLoggedInUser(request);
-		boolean respectFrontendRoles = true;
+		final User user = userAPI.getLoggedInUser(request);
+		final boolean respectFrontendRoles = true;
 
-		Event ev = eventAPI.findbyInode(inode, user, respectFrontendRoles); 
-		try{
+		final Event ev = eventAPI.findbyInode(inode, user, respectFrontendRoles);
+		try {
+			ev.setIndexPolicy(IndexPolicyProvider.getInstance().forSingleContent());
 			contAPI.archive(ev, user, respectFrontendRoles);
-		}catch(Exception e){Logger.error(this, e.getMessage());}
-
-		HibernateUtil.closeAndCommitTransaction();
-		if(!contAPI.isInodeIndexed(ev.getInode())){
-			Logger.error(this, "Timed out while waiting for index to return");
+		}catch(Exception e){
+			Logger.error(this, e.getMessage());
 		}
 	}
-	
-	public void archiveDisconnectedEvent (String inode, boolean putBack) throws PortalException, SystemException, DotDataException, DotSecurityException {
-		HibernateUtil.startTransaction();
-		WebContext ctx = WebContextFactory.get();
-		HttpServletRequest request = ctx.getHttpServletRequest();
+
+	@WrapInTransaction
+	public void archiveDisconnectedEvent (final String inode, final boolean putBack) throws PortalException, SystemException, DotDataException, DotSecurityException {
+		final WebContext ctx = WebContextFactory.get();
+		final HttpServletRequest request = ctx.getHttpServletRequest();
 
 		//Retrieving the current user
-		User user = userAPI.getLoggedInUser(request);
-		boolean respectFrontendRoles = true;
+		final User user = userAPI.getLoggedInUser(request);
+		final boolean respectFrontendRoles = true;
 
-		Event ev = eventAPI.findbyInode(inode, user, respectFrontendRoles); 
-		if(putBack){
+		final Event ev = eventAPI.findbyInode(inode, user, respectFrontendRoles);
+		ev.setIndexPolicy(IndexPolicyProvider.getInstance().forSingleContent());
+
+		if(putBack) {
+
 			Event baseEvent = null;
-			try{
+			try {
 			   baseEvent =eventAPI.find(ev.getDisconnectedFrom(), false, user, respectFrontendRoles);
-			}catch(Exception e){
+			} catch(Exception e){
 				Logger.error(this, "Base event not found");
 			}
-			if(baseEvent!=null){
-				try{
-				  Date originalStartDate = ev.getOriginalStartDate();
+
+			if(baseEvent!=null) {
+				try {
+				  final Date originalStartDate = ev.getOriginalStartDate();
 				  baseEvent.deleteDateToIgnore(originalStartDate);
 				  APILocator.getContentletAPI().checkin(baseEvent, categoryAPI.getParents(baseEvent, user, true), perAPI.getPermissions(baseEvent), user, false);
-				}catch(Exception e){
+				} catch(Exception e){
 					Logger.error(this, "Could not put back event in recurrence");
 				}
 			}
 		}
+
 		contAPI.archive(ev, user, respectFrontendRoles);
-		
-		
-		HibernateUtil.closeAndCommitTransaction();
-		if(!contAPI.isInodeIndexed(ev.getInode())){
-			Logger.error(this, "Timed out while waiting for index to return");
-		}
 	}
 
 	
 	
 	
-
-	public void unarchiveEvent (String inode) throws PortalException, SystemException, DotDataException, DotSecurityException {
-		HibernateUtil.startTransaction();
-		WebContext ctx = WebContextFactory.get();
-		HttpServletRequest request = ctx.getHttpServletRequest();
+    @WrapInTransaction
+	public void unarchiveEvent (final String inode) throws PortalException, SystemException, DotDataException, DotSecurityException {
+		final WebContext ctx = WebContextFactory.get();
+		final HttpServletRequest request = ctx.getHttpServletRequest();
 
 		//Retrieving the current user
-		User user = userAPI.getLoggedInUser(request);
-		boolean respectFrontendRoles = true;
+		final User user = userAPI.getLoggedInUser(request);
+		final boolean respectFrontendRoles = true;
 
-		Event ev = eventAPI.findbyInode(inode, user, respectFrontendRoles); 
+		final Event ev = eventAPI.findbyInode(inode, user, respectFrontendRoles);
 		try{
-			
-			if(UtilMethods.isSet(ev.getDisconnectedFrom())){
+
+			ev.setIndexPolicy(IndexPolicyProvider.getInstance().forSingleContent());
+
+			if(UtilMethods.isSet(ev.getDisconnectedFrom())) {
 				Event baseEvent = null;
-				try{
+				try {
 				   baseEvent =eventAPI.find(ev.getDisconnectedFrom(), false, user, respectFrontendRoles);
-				}catch(Exception e){
+				} catch(Exception e){
 					Logger.error(this, "Base event not found");
 				}
-				if(baseEvent!=null){
-					try{
-						Date originalStartDate = ev.getOriginalStartDate();
+
+				if(baseEvent!=null) {
+					try {
+						final Date originalStartDate = ev.getOriginalStartDate();
 						baseEvent.addDateToIgnore(originalStartDate);
 						APILocator.getContentletAPI().checkin(baseEvent, categoryAPI.getParents(baseEvent, user, true), perAPI.getPermissions(baseEvent), user, false);
-					}catch(Exception e){
+					} catch(Exception e){
 						Logger.error(this, "Could not delete event from recurrence");
 					}
 				}
 			}
+
 			contAPI.unarchive(ev, user, respectFrontendRoles);
 			
-		}catch(Exception e){Logger.error(this, e.getMessage());}
-
-		HibernateUtil.closeAndCommitTransaction();
-		if(!contAPI.isInodeIndexed(ev.getInode())){
-			Logger.error(this, "Timed out while waiting for index to return");
+		} catch(Exception e){
+			Logger.error(this, e.getMessage());
 		}
-	}	
+	}
 
 
 
@@ -470,13 +455,12 @@ public class CalendarAjax {
 	}		
 	
 
-
-	public Map<String, Object> saveEvent(List<String> formData,
-			boolean isAutoSave, boolean isCheckin) throws LanguageException,
+    @WrapInTransaction
+	public Map<String, Object> saveEvent(final List<String> formData,
+			final boolean isAutoSave, final boolean isCheckin) throws LanguageException,
 			PortalException, SystemException, DotDataException,
 			DotSecurityException, java.text.ParseException {
 
-		HibernateUtil.startTransaction();
 		ContentletWebAPI contentletWebAPI = WebAPILocator.getContentletWebAPI();
 		int tempCount = 0;// To store multiple values opposite to a name. Ex: selected permissions & categories	
 		String newInode = "";
@@ -907,14 +891,8 @@ public class CalendarAjax {
 			}
 		}
 		
-		boolean savingRecurrence = false;
-		callbackData.put("referer", referer);	
-		HibernateUtil.closeAndCommitTransaction();
-		if(UtilMethods.isSet(newInode) && !savingRecurrence){
-			if(!contAPI.isInodeIndexed(newInode)){
-				Logger.error(this, "Timed out while waiting for index to return");
-			}
-		}
+		callbackData.put("referer", referer);
+
 		return callbackData;
 	}
 	

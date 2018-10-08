@@ -1,17 +1,14 @@
 package com.dotmarketing.portlets.contentlet.action;
 
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import org.apache.commons.collections.map.LRUMap;
+
+import java.util.*;
 
 public class ImportAuditUtil {
 
@@ -100,26 +97,33 @@ public class ImportAuditUtil {
        } 
        return  resultsList;
 	}
-	
-	public static ImportAuditResults loadAuditResults(String userId){
+
+	@CloseDBIfOpened
+	public static ImportAuditResults loadAuditResults(final String userId) {
+
 		DotConnect db = new DotConnect();
 		db.setSQL("SELECT id, start_date, userid, filename,last_inode FROM import_audit where status = ?");
 		db.addParam(STATUS_PENDING);
 		List<Map<String, Object>> imps;
+
 		try {
 			imps = db.loadObjectResults();
 		} catch (DotDataException e) {
 			Logger.error(ImportAuditUtil.class,e.getMessage(),e);
 			return null;
 		}
+
 		if(imps == null || imps.size() < 1){
 			return null;
 		}
+
 		ImportAuditResults ret = new ImportAuditResults();
 		List<Map<String, Object>> l = ret.getUserRecords();
-		Map<String, Object> map1 = new HashMap<String, Object>();
+
 		for (Map<String, Object> map : imps) {
-			if(UtilMethods.isSet(map.get("last_inode")) && APILocator.getContentletAPI().isInodeIndexed(map.get("last_inode").toString(),1)){
+			if(UtilMethods.isSet(map.get("last_inode")) &&
+					APILocator.getContentletAPI().isInodeIndexed(map.get("last_inode").toString(),1)) { // this seems to be ok
+
 				db.setSQL("UPDATE import_audit SET status=? where id=?");
 				db.addParam(STATUS_COMPLETED);
 				db.addParam(map.get("id"));
@@ -136,6 +140,7 @@ public class ImportAuditUtil {
 				}
 			}
 		}
+
 		ret.setUserRecords(l);
 		return ret;
 	}

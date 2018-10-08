@@ -17,6 +17,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.workflows.actionlet.SaveContentActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.SaveContentAsDraftActionlet;
@@ -135,12 +136,12 @@ public class WorkflowAPIMultiLanguageTest extends BaseWorkflowIntegrationTest {
         contentletEng.setStringProperty("txt",   "Test Save Text");
         contentletEng.setHost(Host.SYSTEM_HOST);
         contentletEng.setFolder(FolderAPI.SYSTEM_FOLDER);
+        contentletEng.setIndexPolicy(IndexPolicy.FORCE);
 
         // first save
         final Contentlet contentletEng1          = WorkflowAPIMultiLanguageTest.contentletAPI.checkin(contentletEng, user, false);
         WorkflowAPIMultiLanguageTest.contentlet.add(contentletEng1); // save it to remove later
 
-        contentletAPI.isInodeIndexed(contentletEng1.getInode());
 
 
         final Contentlet contentletSpanish      = new Contentlet();
@@ -153,33 +154,31 @@ public class WorkflowAPIMultiLanguageTest extends BaseWorkflowIntegrationTest {
         contentletSpanish.setHost(Host.SYSTEM_HOST);
         contentletSpanish.setFolder(FolderAPI.SYSTEM_FOLDER);
         contentletSpanish.setIdentifier(contentletEng1.getIdentifier());
+        contentletSpanish.setIndexPolicy(IndexPolicy.FORCE);
 
         // second save spanish
         final Contentlet contentletSpanish1      = WorkflowAPIMultiLanguageTest.contentletAPI.checkin(contentletSpanish, user, false);
         WorkflowAPIMultiLanguageTest.contentlet.add(contentletSpanish1);
-        contentletAPI.isInodeIndexed(contentletSpanish1.getInode());
 
         // triggering the save content action (action1) for the english content
         contentletEng1.setActionId(
                 WorkflowAPIMultiLanguageTest.schemeStepActionResult1.getAction().getId());
+        contentletEng1.setIndexPolicy(IndexPolicy.FORCE);
 
         final WorkflowProcessor processor1  =
                 WorkflowAPIMultiLanguageTest.workflowAPI.fireWorkflowPreCheckin(contentletEng1, user);
 
         WorkflowAPIMultiLanguageTest.workflowAPI.fireWorkflowPostCheckin(processor1);
 
-        contentletAPI.isInodeIndexed(processor1.getContentlet().getInode());
-
         // triggering the save content as draft action (action 2) for the spanish content (
         contentletSpanish1.setActionId(
                 WorkflowAPIMultiLanguageTest.workflowAction2.getId());
+        contentletSpanish1.setIndexPolicy(IndexPolicy.FORCE);
 
         final WorkflowProcessor processor2  =
                 WorkflowAPIMultiLanguageTest.workflowAPI.fireWorkflowPreCheckin(contentletSpanish1, user);
 
         WorkflowAPIMultiLanguageTest.workflowAPI.fireWorkflowPostCheckin(processor2);
-
-        contentletAPI.isInodeIndexed(processor2.getContentlet().getInode());
 
 
         // the contentletEng save by the action must be not null, should has a new version.

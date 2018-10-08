@@ -1,8 +1,5 @@
 package com.dotmarketing.portlets.linkchecker.business;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.LicenseTestUtil;
 import com.dotcms.datagen.HTMLPageDataGen;
@@ -14,12 +11,11 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.db.HibernateUtil;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.MultiTreeFactory;
 import com.dotmarketing.portlets.HTMLPageAssetUtil;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
@@ -32,13 +28,17 @@ import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * This class tests the Link Checker functionality provided in dotCMS. It
@@ -76,11 +76,12 @@ public class LinkCheckerAPITest extends IntegrationTestBase {
 
             host = new Host();
             host.setHostname("lickcheckertesthost"+uuid.replaceAll("-", "_")+".demo.dotcms.com");
+            host.setIndexPolicy(IndexPolicy.FORCE);
             host=APILocator.getHostAPI().save(host, sysuser, false);
-            APILocator.getContentletAPI().isInodeIndexed(host.getInode());
 
             host2 = new Host();
             host2.setHostname("lickcheckertesthost_2_"+uuid.replaceAll("-", "_")+".demo.dotcms.com");
+            host2.setIndexPolicy(IndexPolicy.FORCE);
             host2=APILocator.getHostAPI().save(host2, sysuser, false);
             APILocator.getContentletAPI().isInodeIndexed(host2.getInode());
 
@@ -207,8 +208,8 @@ public class LinkCheckerAPITest extends IntegrationTestBase {
         con.setStructureInode(structure.getInode());
         con.setStringProperty("html", sb.toString());
         con.setHost(host.getIdentifier());
+        con.setIndexPolicy(IndexPolicy.FORCE);
         con=APILocator.getContentletAPI().checkin(con, sysuser, false);
-        APILocator.getContentletAPI().isInodeIndexed(con.getInode());
 
         List<InvalidLink> invalids = APILocator.getLinkCheckerAPI().findInvalidLinks(con);
         assertTrue(invalids!=null);
@@ -259,8 +260,8 @@ public class LinkCheckerAPITest extends IntegrationTestBase {
         con.setStructureInode(structure.getInode());
         con.setStringProperty("html", sb.toString());
         con.setHost(host.getIdentifier());
+        con.setIndexPolicy(IndexPolicy.FORCE);
         con=APILocator.getContentletAPI().checkin(con, sysuser, false);
-        APILocator.getContentletAPI().isInodeIndexed(con.getInode());
 
         invalids = APILocator.getLinkCheckerAPI().findInvalidLinks(con);
         assertTrue(invalids!=null);
@@ -274,14 +275,14 @@ public class LinkCheckerAPITest extends IntegrationTestBase {
         con.setStructureInode(urlmapstructure.getInode());
         con.setStringProperty("a", "url1");
         con.setHost(host.getIdentifier());
+        con.setIndexPolicy(IndexPolicy.FORCE);
         con=APILocator.getContentletAPI().checkin(con, sysuser, false);
-        APILocator.getContentletAPI().isInodeIndexed(con.getInode());
 
         con=new Contentlet();
         con.setStructureInode(urlmapstructure.getInode());
         con.setStringProperty("a", "url2");
+        con.setIndexPolicy(IndexPolicy.FORCE);
         con=APILocator.getContentletAPI().checkin(con, sysuser, false);
-        APILocator.getContentletAPI().isInodeIndexed(con.getInode());
 
         extlinks=new String[] {
            "/test_mapped/url1","/test_mapped/url2/", // those should be good
@@ -297,8 +298,8 @@ public class LinkCheckerAPITest extends IntegrationTestBase {
         con.setStructureInode(structure.getInode());
         con.setStringProperty("html", sb.toString());
         con.setHost(host.getIdentifier());
+        con.setIndexPolicy(IndexPolicy.FORCE);
         con=APILocator.getContentletAPI().checkin(con, sysuser, false);
-        APILocator.getContentletAPI().isInodeIndexed(con.getInode());
 
         invalids = APILocator.getLinkCheckerAPI().findInvalidLinks(con);
         assertTrue(invalids!=null);
@@ -316,8 +317,8 @@ public class LinkCheckerAPITest extends IntegrationTestBase {
         				      "</body></html>");
         con.setStructureInode(structure.getInode());
         con.setHost(host.getIdentifier());
+        con.setIndexPolicy(IndexPolicy.FORCE);
         con=APILocator.getContentletAPI().checkin(con, sysuser, false);
-        APILocator.getContentletAPI().isInodeIndexed(con.getInode());
         MultiTree mtree=new MultiTree();
         mtree.setParent1(page1.getIdentifier());
         mtree.setParent2(container.getIdentifier());
@@ -393,8 +394,8 @@ public class LinkCheckerAPITest extends IntegrationTestBase {
         con.setStructureInode(structure.getInode());
         con.setStringProperty("html", sb.toString());
         con.setHost(host.getIdentifier());
+        con.setIndexPolicy(IndexPolicy.FORCE);
         con=APILocator.getContentletAPI().checkin(con, sysuser, false);
-        APILocator.getContentletAPI().isInodeIndexed(con.getInode());
 
         invalids = APILocator.getLinkCheckerAPI().findInvalidLinks(con);
         assertTrue(invalids!=null);
@@ -410,8 +411,8 @@ public class LinkCheckerAPITest extends IntegrationTestBase {
         				      "</body></html>");
         con.setStructureInode(structure.getInode());
         con.setHost(host2.getIdentifier());
+        con.setIndexPolicy(IndexPolicy.FORCE);
         con=APILocator.getContentletAPI().checkin(con, sysuser, false);
-        APILocator.getContentletAPI().isInodeIndexed(con.getInode());
 
         // now all those links should be broken
         invalids = APILocator.getLinkCheckerAPI().findInvalidLinks(con);

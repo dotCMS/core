@@ -14,12 +14,11 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.util.Logger;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.liferay.portal.model.User;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
-
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -28,7 +27,6 @@ import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 @RunWith(DataProviderRunner.class)
 public class ESUtilTest extends IntegrationTestBase {
@@ -66,6 +64,7 @@ public class ESUtilTest extends IntegrationTestBase {
             contentlet.setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId());
             contentlet.setStringProperty(field.variable(),
                     ESUtils.escape("this" + testValue + "has" + testValue + "specialchars"));
+            contentlet.setIndexPolicy(IndexPolicy.FORCE);
 
             contentlet = contentletAPI.checkin(contentlet, systemUser, false);
 
@@ -73,9 +72,6 @@ public class ESUtilTest extends IntegrationTestBase {
             final String escapedValue = ESUtils.escape(fieldValue);
             System.out.println("fieldValue = " + fieldValue);
             System.out.println("escapedValue = " + escapedValue);
-
-            boolean isInodeIndexed = contentletAPI.isInodeIndexed(contentlet.getInode());
-            Logger.info(this, "IsNodeIndexed: " + isInodeIndexed);
 
             final StringBuilder luceneQuery = new StringBuilder().append("+structureInode:")
                     .append(type.id())
@@ -110,14 +106,12 @@ public class ESUtilTest extends IntegrationTestBase {
             contentlet.setContentTypeId(type.id());
             contentlet.setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId());
             contentlet.setStringProperty(field.variable(), "this has spaces");
+            contentlet.setIndexPolicy(IndexPolicy.FORCE);
 
             contentlet = contentletAPI.checkin(contentlet, systemUser, false);
 
             final String fieldValue = contentlet.get(field.variable()).toString();
             final String escapedValue = ESUtils.escape(fieldValue);
-
-            boolean isInodeIndexed = contentletAPI.isInodeIndexed(contentlet.getInode());
-            Logger.info(this, "IsNodeIndexed: " + isInodeIndexed);
 
             final StringBuilder luceneQuery = new StringBuilder().append("+structureInode:")
                     .append(type.id())

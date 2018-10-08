@@ -1,5 +1,6 @@
 package com.dotcms.content.elasticsearch.business;
 
+import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -98,13 +99,52 @@ public interface ContentletIndexAPI {
 
 	void indexContentList(List<Contentlet> contentToIndex, BulkRequestBuilder bulk, boolean reindexOnly) throws DotDataException;
 
+	/**
+	 * This method is similar to the indexContentList, but it make searchable the content immediate
+	 * Important node: this is only for testing
+	 * @param contentToIndex
+	 * @param bulk
+	 * @param reindexOnly
+	 * @throws DotDataException
+	 */
+	@VisibleForTesting
+	void indexContentListNow(List<Contentlet> contentToIndex, BulkRequestBuilder bulk, boolean reindexOnly) throws DotDataException;
+
+	/**
+	 * This method is similar to the indexContentList, but it will wait until the contentlets are indexed to continue
+	 *
+	 * @param contentToIndex
+	 * @param bulk
+	 * @param reindexOnly
+	 * @throws DotDataException
+	 */
+	void indexContentListWaitFor(List<Contentlet> contentToIndex, BulkRequestBuilder bulk, boolean reindexOnly) throws DotDataException;
+
+
+	/**
+	 * This method stores the contentlets in a queue in order to be process (indexed) in a separated and deferred mechanism
+	 * (see: {@link com.dotmarketing.common.business.journal.DistributedJournalAPI} and {@link com.dotmarketing.common.reindex.ReindexThread})
+	 * When you use this method you do not really care about when the content is gonna be index.
+	 *
+	 * If you need to index a collection of contentlets and wait until they are done, use
+	 *
+	 * {@link #indexContentListWaitFor(List, BulkRequestBuilder, boolean)}
+	 *
+	 * If you need to index a collection of contentlets and be notified (listen until) when the indexing is done use
+	 *
+	 * {@link #indexContentList(List, BulkRequestBuilder, boolean, ActionListener)}
+	 *
+	 * @param contentToIndex {@link List}
+	 * @throws DotHibernateException
+	 */
+	public void indexContentListDeferred(final List<Contentlet> contentToIndex) throws DotHibernateException;
 
 	/**
 	 * Same of indexContentList, just including a listener that will be call when the indexing is done.
 	 * @param contentToIndex
 	 * @param bulk
 	 * @param reindexOnly
-	 * @param listener
+	 * @param listener    {@link ActionListener} implement it in order to be notified in async mode when the content indexing is done
 	 * @throws DotDataException
 	 */
 	void indexContentList(final List<Contentlet> contentToIndex,

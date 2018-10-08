@@ -1,31 +1,20 @@
 package com.dotcms.concurrent;
 
-import static com.dotcms.util.CollectionsUtils.map;
-
 import com.dotcms.util.ReflectionUtils;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.RejectedExecutionHandler;
-import java.util.concurrent.SynchronousQueue;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import static com.dotcms.util.CollectionsUtils.map;
 
 /**
  * Factory for concurrent {@link Executor} & {@link DotSubmitter}
@@ -74,11 +63,19 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
     public static final String BULK_ACTIONS_THREAD_POOL = "bulkActionsPool";
 
     /**
-     * Used to keep the instance of the JWT Service.
+     * Used to keep the instance of the submitter
      * Should be volatile to avoid thread-caching
      */
     private final Map<String, DotConcurrentImpl> submitterMap =
             new ConcurrentHashMap<>();
+
+    /**
+     * Keeps a concurrent delay queue (for subscribe or unsubscribe)
+     */
+    private final Map<Integer, BlockingQueue<DelayedDelegate>> delayQueueMap =
+            new ConcurrentHashMap<>();
+
+    private final DelayQueueConsumer delayQueueConsumer;
 
     private final int defaultPoolSize =
             Config.getIntProperty(DOTCMS_CONCURRENT_POOLSIZE, POOL_SIZE_VAL);
@@ -154,6 +151,20 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
 
     private DotConcurrentFactory () {
         // singleton
+        this.delayQueueConsumer = new DelayQueueConsumer();
+        this.delayQueueConsumer.start();
+    }
+
+    private void subscribeDelayQueue(final BlockingQueue<DelayedDelegate> delayedQueue) {
+
+        this.delayQueueMap.put(delayedQueue.hashCode(), delayedQueue);
+    }
+
+    private void unsubscribeDelayQueue(final BlockingQueue<DelayedDelegate> delayedQueue) {
+
+        if (null != delayedQueue) {
+            this.delayQueueMap.remove(delayedQueue.hashCode());
+        }
     }
 
     @Override
@@ -190,6 +201,15 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
         }
         dotConcurrent.shutdown();
         return true;
+    }
+
+    @Override
+    public void shutdownAndDestroy() {
+
+        this.delayQueueConsumer.stopQueue();
+        this.submitterMap.values().stream().forEach(DotSubmitter::shutdown);
+        this.submitterMap.clear();
+        this.delayQueueMap.clear();
     }
 
     @Override
@@ -304,9 +324,59 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
         return submitter;
     }
 
+    //// DelayQueueConsumer
+
+    /**
+     * This class is in charge of process all the delay queues
+     */
+    public class DelayQueueConsumer extends Thread {
+
+        private AtomicBoolean stop = new AtomicBoolean(false);
+
+        public DelayQueueConsumer() {
+            super();
+        }
+
+        public void stopQueue () {
+
+            this.stop.set(true);
+        }
+
+        @Override
+        public void run() {
+
+            while (!this.stop.get()) {
+
+                final Collection<BlockingQueue<DelayedDelegate>> delayedQueues =
+                        DotConcurrentFactory.this.delayQueueMap.values();
+
+                try {
+                    for (final BlockingQueue<DelayedDelegate> queue: delayedQueues) {
+
+                        final DelayedDelegate delayedDelegate = queue.take(); // keep in mind if a loop or pull could be better
+                        if (null != delayedDelegate) {
+
+                            delayedDelegate.executeDelegate();
+                        }
+                    }
+
+                    DateUtil.sleep(Config.getLongProperty("dotcms.concurrent.delayqueue.waitmillis", 100));
+                } catch (InterruptedException e) {
+                    Logger.error(DotConcurrentFactory.class, e.getMessage(), e);
+                    Thread.currentThread().interrupt();
+                } catch (Exception e) {
+                    Logger.error(DotConcurrentFactory.class, e.getMessage(), e);
+                }
+            }
+        }
+
+    } // DelayQueueConsumer.
+
+    /// DotSubmitter
     private final class DotConcurrentImpl implements DotSubmitter {
 
         private final ThreadPoolExecutor threadPoolExecutor;
+        private final BlockingQueue<DelayedDelegate> delayedQueue = new DelayQueue<>();
         private volatile boolean shutdown;
 
         /**
@@ -339,6 +409,8 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
                 this.threadPoolExecutor.allowCoreThreadTimeOut
                         (allowCoreThreadTimeOut);
             }
+
+            DotConcurrentFactory.this.subscribeDelayQueue (this.delayedQueue);
         } // DotConcurrentImpl.
 
         final BlockingQueue<Runnable> createQueue(final int queueCapacity) {
@@ -389,6 +461,39 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
         } // submit.
 
         @Override
+        public final void delay(final Runnable task, final long delay, final TimeUnit unit) {
+
+            try {
+                this.delayedQueue.put(new DelayedDelegate(()-> {
+
+                    this.submit(task);
+                }, delay, unit));
+            } catch (InterruptedException e) {
+                throw new DotConcurrentException(e.getMessage(), e);
+            }
+        }
+
+
+        @Override
+        public final Future<?> submit(final Runnable task, final long delay, final TimeUnit unit) {
+
+            return this.submit(() -> {
+
+                sleep(delay, unit);
+                task.run();
+            });
+        }
+
+        private void sleep(final long delay, final TimeUnit unit) {
+
+            try {
+                unit.sleep(delay);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
+
+        @Override
         public final <T> Future<T> submit(final Callable<T> task) {
 
             final ExecutorService executor =
@@ -408,6 +513,16 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
         } // submit.
 
         @Override
+        public final <T> Future<T> submit(final Callable<T> callable, final long delay, final TimeUnit unit) {
+
+            return this.submit(() -> {
+
+                sleep(delay, unit);
+                return callable.call();
+            });
+        }
+
+        @Override
         public int getActiveCount() {
 
             return this.threadPoolExecutor.getActiveCount();
@@ -418,13 +533,18 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
 
             this.threadPoolExecutor.shutdown();
             this.shutdown = true;
+            this.delayedQueue.clear();
+            DotConcurrentFactory.this.unsubscribeDelayQueue(this.delayedQueue);
         }
 
         @Override
         public List<Runnable> shutdownNow() {
 
+            this.delayedQueue.clear();
+            DotConcurrentFactory.this.unsubscribeDelayQueue(this.delayedQueue);
             this.shutdown = true;
             return this.threadPoolExecutor.shutdownNow();
+
         }
 
         @Override

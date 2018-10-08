@@ -1,13 +1,6 @@
 package com.dotcms.rest.api.v1.theme;
 
 
-import static com.dotmarketing.business.ThemeAPI.THEME_PNG;
-import static com.dotmarketing.business.ThemeAPI.THEME_THUMBNAIL_KEY;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-
 import com.dotcms.datagen.FileAssetDataGen;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
@@ -27,22 +20,26 @@ import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.UtilMethods;
-
-
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
-import javax.servlet.http.HttpServletRequest;
-import org.junit.BeforeClass;
-import org.junit.Test;
 import java.util.Map;
+
+import static com.dotmarketing.business.ThemeAPI.THEME_PNG;
+import static com.dotmarketing.business.ThemeAPI.THEME_THUMBNAIL_KEY;
+import static org.junit.Assert.*;
 
 public class ThemeResourceIntegrationTest {
 
@@ -160,8 +157,8 @@ public class ThemeResourceIntegrationTest {
             thumbnail = fileAssetDataGen.nextPersisted();
 
             //Publishing theme.png
+            thumbnail.setIndexPolicy(IndexPolicy.FORCE);
             contentletAPI.publish(thumbnail, user, false);
-            contentletAPI.isInodeIndexed(thumbnail.getInode(), true);
 
             final ThemeResource resource = new ThemeResource();
             final Response response = resource.findThemeById(getHttpRequest(), destinationFolder.getInode());

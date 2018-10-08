@@ -1,18 +1,6 @@
 package com.dotmarketing.quartz.job;
 
 import com.dotcms.business.CloseDBIfOpened;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-
-import javax.mail.MessagingException;
-
-import org.quartz.Job;
-import org.quartz.JobExecutionContext;
-import org.quartz.JobExecutionException;
-
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
@@ -24,6 +12,7 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicyProvider;
 import com.dotmarketing.portlets.structure.business.FieldAPI;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
@@ -31,12 +20,18 @@ import com.dotmarketing.portlets.structure.model.ContentletRelationships.Content
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.EmailUtils;
-import com.dotmarketing.util.InodeUtils;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.*;
 import com.liferay.portal.model.User;
+import org.quartz.Job;
+import org.quartz.JobExecutionContext;
+import org.quartz.JobExecutionException;
+
+import javax.mail.MessagingException;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
 /**
  * This job will queries a POP account for email and creates content.
@@ -251,13 +246,10 @@ public class ContentFromEmailJob implements Job {
 						contRel = retrieveRelationshipsData(contentlet,systemUser,email);
 
 						cats = new ArrayList<Category>();
-
+						contentlet.setIndexPolicy(IndexPolicyProvider.getInstance().forSingleContent()); // double check if this one is ok
 						Contentlet con = conAPI.checkin(contentlet, contRel,
 								cats, perAPI.getPermissions(contentlet, false, true), systemUser, false);
 
-						// When a large number of new mails with a number of replies come in.
-						// To relate the content based on lucene query, the new content created must be indexed.
-						conAPI.isInodeIndexed(con.getInode());
 					}
 				} catch (MessagingException e) {
 					Logger.error(this, e.getMessage());
