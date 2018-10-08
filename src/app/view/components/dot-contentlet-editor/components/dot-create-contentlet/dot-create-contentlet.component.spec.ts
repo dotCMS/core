@@ -19,6 +19,7 @@ describe('DotCreateContentletComponent', () => {
     let dotCreateContentletWrapper: DebugElement;
     let dotCreateContentletWrapperComponent: DotContentletWrapperComponent;
     let dotContentletEditorService: DotContentletEditorService;
+    let component: DotCreateContentletComponent;
 
     beforeEach(async(() => {
         DOTTestBed.configureTestingModule({
@@ -38,12 +39,14 @@ describe('DotCreateContentletComponent', () => {
     beforeEach(() => {
         fixture = DOTTestBed.createComponent(DotCreateContentletComponent);
         de = fixture.debugElement;
+        component = de.componentInstance;
         dotContentletEditorService = de.injector.get(DotContentletEditorService);
 
         fixture.detectChanges();
 
         dotCreateContentletWrapper = de.query(By.css('dot-contentlet-wrapper'));
         dotCreateContentletWrapperComponent = dotCreateContentletWrapper.componentInstance;
+        spyOn(component.close, 'emit');
     });
 
     describe('default', () => {
@@ -53,6 +56,7 @@ describe('DotCreateContentletComponent', () => {
 
         it('should emit close', () => {
             dotCreateContentletWrapper.triggerEventHandler('close', {});
+            expect(component.close.emit).toHaveBeenCalledTimes(1);
         });
 
         it('should have url in null', () => {
