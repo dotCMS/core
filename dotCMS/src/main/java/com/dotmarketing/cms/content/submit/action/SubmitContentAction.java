@@ -20,33 +20,24 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.util.DNSUtil;
-import com.dotmarketing.util.EmailUtils;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.RegEX;
-import com.dotmarketing.util.URLEncoder;
-import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.*;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.ejb.UserLocalManagerUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import com.liferay.util.servlet.UploadServletRequest;
+import org.apache.struts.Globals;
+import org.apache.struts.action.*;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-import org.apache.struts.Globals;
-import org.apache.struts.action.ActionErrors;
-import org.apache.struts.action.ActionForm;
-import org.apache.struts.action.ActionForward;
-import org.apache.struts.action.ActionMapping;
-import org.apache.struts.action.ActionMessage;
-import org.apache.struts.action.ActionMessages;
 
 /**
  * This Action manage the submit content save procedure
@@ -359,9 +350,7 @@ public class SubmitContentAction extends SecureAction{
 			session.setAttribute(Globals.MESSAGE_KEY, message);
 
 			HibernateUtil.closeAndCommitTransaction();
-			if(!APILocator.getContentletAPI().isInodeIndexed(contentlet.getInode())){
-				Logger.error(this, "Unable to index contentlet");
-			}
+
 			if (st.getStructureType()== Structure.STRUCTURE_TYPE_FORM ){
 				if(st.getFieldVar("formReturnPage")!= null && UtilMethods.isSet(st.getFieldVar("formReturnPage").getValues())){
 					af.setPath(st.getFieldVar("formReturnPage").getValues());

@@ -10,11 +10,7 @@ import com.dotcms.contenttype.model.field.ImmutableTextField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
-import com.dotcms.datagen.ContentletDataGen;
-import com.dotcms.datagen.FileAssetDataGen;
-import com.dotcms.datagen.FolderDataGen;
-import com.dotcms.datagen.HTMLPageDataGen;
-import com.dotcms.datagen.TemplateDataGen;
+import com.dotcms.datagen.*;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -24,6 +20,7 @@ import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
@@ -31,14 +28,14 @@ import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
-import java.io.File;
-import java.io.IOException;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.Arrays;
 
 import static org.junit.Assert.*;
 
@@ -221,8 +218,8 @@ public class ContentletUtilTest extends IntegrationTestBase {
             List<Category> contentletCategories = Arrays.asList( popularCategory, homeCategory );
 
             contentletAPI.validateContentlet( contentlet, contentletCategories  );
+            contentlet.setIndexPolicy(IndexPolicy.FORCE);
             contentlet = contentletAPI.checkin( contentlet, null, contentletCategories, user, false );
-            contentletAPI.isInodeIndexed( contentlet.getInode() );
 
             assertTrue( UtilMethods.isSet( contentlet.getInode() ) );
 

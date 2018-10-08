@@ -77,6 +77,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.workflows.business.BaseWorkflowIntegrationTest;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
@@ -984,6 +985,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
         contentlet.setHost(host.getIdentifier());
         contentlet.setLanguageId(languageAPI.getDefaultLanguage().getId());
         contentlet.setStringProperty("requiredField","anyValue");
+        contentlet.setIndexPolicy(IndexPolicy.FORCE);
 
         // Save the content
         contentlet = contentletAPI.checkin(contentlet, systemUser, false);

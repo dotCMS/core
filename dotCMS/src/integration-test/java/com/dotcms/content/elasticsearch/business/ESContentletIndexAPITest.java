@@ -1,32 +1,12 @@
 package com.dotcms.content.elasticsearch.business;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-
-import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.content.elasticsearch.util.ESClient;
+import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.datagen.HTMLPageDataGen;
 import com.dotcms.enterprise.publishing.sitesearch.SiteSearchResult;
 import com.dotcms.enterprise.publishing.sitesearch.SiteSearchResults;
 import com.dotcms.util.IntegrationTestInitService;
-
-import org.elasticsearch.action.search.SearchPhaseExecutionException;
-import org.elasticsearch.action.search.SearchRequestBuilder;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.client.Client;
-import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.index.query.QueryStringQueryBuilder;
-import org.elasticsearch.search.SearchHits;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.MultiTree;
@@ -41,6 +21,7 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
@@ -51,10 +32,30 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.sitesearch.business.SiteSearchAPI;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import org.apache.felix.framework.OSGIUtil;
+import org.elasticsearch.action.search.SearchPhaseExecutionException;
+import org.elasticsearch.action.search.SearchRequestBuilder;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.client.Client;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.index.query.QueryStringQueryBuilder;
+import org.elasticsearch.search.SearchHits;
+import org.junit.BeforeClass;
+import org.junit.Ignore;
+import org.junit.Test;
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
+
+import static org.junit.Assert.*;
 
 /**
  * @author Jonathan Gamba
@@ -72,6 +73,7 @@ public class ESContentletIndexAPITest extends IntegrationTestBase {
     public static void prepare () throws Exception {
     	//Setting web app environment
         IntegrationTestInitService.getInstance().init();
+        OSGIUtil.getInstance().initializeFramework(Config.CONTEXT);
 
         HostAPI hostAPI = APILocator.getHostAPI();
         LanguageAPI languageAPI = APILocator.getLanguageAPI();
@@ -100,6 +102,63 @@ public class ESContentletIndexAPITest extends IntegrationTestBase {
                 "and argus reduce to the stem ... (illustrating the case where the stem is " +
                 "not itself a word or root) but arguments reduce to the stem .....";
     }
+
+
+    @Test
+    public void test_indexContentList_with_diff_refresh_strategies () throws Exception {
+
+        final List<Contentlet>   contentlets = APILocator.getContentletAPI().findAllContent(0, 100)
+                .stream().filter(Objects::nonNull).collect(Collectors.toList());
+
+        assertNotNull(contentlets);
+        assertTrue(contentlets.size() >= 50);
+
+        final List<Contentlet>   contentletsDefaultRefresh    = contentlets.subList(0, 15);
+        final List<Contentlet>   contentletsImmediateRefresh  = contentlets.subList(15, 30);
+        final List<Contentlet>   contentletsWaitForRefresh    = contentlets.subList(30, 50);
+
+        assertNotNull(contentletsDefaultRefresh);
+        assertTrue(contentletsDefaultRefresh.size() > 0);
+
+        assertNotNull(contentletsImmediateRefresh);
+        assertTrue(contentletsImmediateRefresh.size() > 0);
+
+        assertNotNull(contentletsWaitForRefresh);
+        assertTrue(contentletsWaitForRefresh.size() > 0);
+
+        contentletsImmediateRefresh.stream().forEach(contentlet -> contentlet.setIndexPolicy(IndexPolicy.FORCE));
+        contentletsWaitForRefresh.stream().forEach(contentlet -> contentlet.setIndexPolicy(IndexPolicy.WAIT_FOR));
+
+
+        APILocator.getContentletIndexAPI().indexContentList(contentlets, null, false);
+
+        for (final Contentlet contentlet : contentletsDefaultRefresh) {
+
+            if (null != contentlet.getInode()) {
+                final boolean exists = APILocator.getContentletAPI().indexCount("+identifier:" + contentlet.getIdentifier(), user, false) > 0;
+                System.out.println(contentlet.getIdentifier() + " with default strategy was indexed: " + exists);
+            }
+        }
+
+        for (final Contentlet contentlet : contentletsImmediateRefresh) {
+
+            if (null != contentlet.getInode()) {
+                final boolean exists = APILocator.getContentletAPI().indexCount("+identifier:" + contentlet.getIdentifier(), user, false) > 0;
+                System.out.println(contentlet.getIdentifier() + " with immediate strategy was indexed: " + exists);
+                assertTrue(contentlet.getIdentifier() + " with immediate strategy was indexed: " + exists, exists);
+            }
+        }
+
+        for (final Contentlet contentlet : contentletsWaitForRefresh) {
+
+            if (null != contentlet.getInode()) {
+                final boolean exists = APILocator.getContentletAPI().indexCount("+identifier:" + contentlet.getIdentifier(), user, false) > 0;
+                System.out.println(contentlet.getIdentifier() + " with wait for strategy was indexed: " + exists);
+                assertTrue(contentlet.getIdentifier() + " with wait for strategy was indexed: " + exists, exists);
+            }
+        }
+    }
+
 
     /**
      * Testing the {@link ContentletIndexAPI#createContentIndex(String)}, {@link ContentletIndexAPI#delete(String)} and
@@ -333,6 +392,7 @@ public class ESContentletIndexAPITest extends IntegrationTestBase {
         try {
 
             //And add it to the index
+            testContentlet.setIndexPolicy(IndexPolicy.FORCE);
             indexAPI.addContentToIndex( testContentlet );
 
             //We are just making time in order to let it apply the index
@@ -385,10 +445,8 @@ public class ESContentletIndexAPITest extends IntegrationTestBase {
 
         try {
             //And add it to the index
+            testContentlet.setIndexPolicy(IndexPolicy.FORCE);
             indexAPI.addContentToIndex( testContentlet );
-
-            //We are just making time in order to let it apply the index
-            contentletAPI.isInodeIndexed( testContentlet.getInode(), true );
 
             //Verify if it was added to the index
             String query = "+structureName:" + testStructure.getVelocityVarName() + " +deleted:false +live:true";
@@ -611,10 +669,15 @@ public class ESContentletIndexAPITest extends IntegrationTestBase {
 	    	testContent.setStructureInode( testStructure.getInode() );
 	    	testContent.setHost( defaultHost.getIdentifier() );
 	    	testContent.setLanguageId(1);
+	    	testContent.setIndexPolicy(IndexPolicy.FORCE);
+	    	testContent.setIndexPolicyDependencies(IndexPolicy.FORCE);
 
 	    	contentletAPI.setContentletProperty( testContent, field, "03/05/2014" );
 
 	    	testContent = contentletAPI.checkin( testContent, null, permissionAPI.getPermissions( testStructure ), user, false );
+
+            testContent.setIndexPolicy(IndexPolicy.FORCE);
+            testContent.setIndexPolicyDependencies(IndexPolicy.FORCE);
 	    	APILocator.getVersionableAPI().setLive(testContent);
 
 			//And add it to the index

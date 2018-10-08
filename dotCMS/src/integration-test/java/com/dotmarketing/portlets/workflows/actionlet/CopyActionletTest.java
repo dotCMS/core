@@ -1,9 +1,5 @@
 package com.dotmarketing.portlets.workflows.actionlet;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
@@ -23,15 +19,9 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
-import com.dotmarketing.portlets.workflows.actionlet.copy.AbstractContentletValidationStrategy;
-import com.dotmarketing.portlets.workflows.actionlet.copy.ContentValidationStrategy;
-import com.dotmarketing.portlets.workflows.actionlet.copy.FileAssetValidationStrategy;
-import com.dotmarketing.portlets.workflows.actionlet.copy.FormValidationStrategy;
-import com.dotmarketing.portlets.workflows.actionlet.copy.HtmlPageValidationStrategy;
-import com.dotmarketing.portlets.workflows.actionlet.copy.PersonaValidationStrategy;
-import com.dotmarketing.portlets.workflows.actionlet.copy.VanityUrlValidationStrategy;
-import com.dotmarketing.portlets.workflows.actionlet.copy.WidgetValidationStrategy;
+import com.dotmarketing.portlets.workflows.actionlet.copy.*;
 import com.dotmarketing.portlets.workflows.actionlet.event.CopyActionletEvent;
 import com.dotmarketing.portlets.workflows.business.BaseWorkflowIntegrationTest;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
@@ -40,17 +30,14 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import java.util.*;
+import java.util.stream.Collectors;
+
+import static org.junit.Assert.*;
 
 public class CopyActionletTest extends BaseWorkflowIntegrationTest {
 
@@ -160,6 +147,7 @@ public class CopyActionletTest extends BaseWorkflowIntegrationTest {
         contentlet1.setBoolProperty(CopyActionlet.NOTIFY_SYNC_COPY_EVENT,
                 true);
 
+        contentlet1.setIndexPolicy(IndexPolicy.FORCE);
         final WorkflowProcessor processor =
                 workflowAPI.fireWorkflowPreCheckin(contentlet1, user);
 
@@ -168,7 +156,6 @@ public class CopyActionletTest extends BaseWorkflowIntegrationTest {
         assertNotNull(contentletCopy);
         assertNotNull(contentletCopy.getIdentifier());
         assertNotNull(contentletCopy.getInode());
-        contentletAPI.isInodeIndexed(contentletCopy.getInode());
 
         final Contentlet contentlet2 = contentletAPI.findContentletByIdentifier
                 (contentletCopy.getIdentifier(),

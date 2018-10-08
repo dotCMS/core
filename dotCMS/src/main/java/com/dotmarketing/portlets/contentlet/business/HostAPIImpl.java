@@ -26,6 +26,7 @@ import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicyProvider;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.links.business.MenuLinkAPI;
@@ -385,23 +386,26 @@ public class HostAPIImpl implements HostAPI {
         if(host != null){
             hostCache.remove(host);
         }
-        Contentlet c;
+
+        Contentlet contentletHost;
         try {
-            c = APILocator.getContentletAPI().checkout(host.getInode(), user, respectFrontendRoles);
+            contentletHost = APILocator.getContentletAPI().checkout(host.getInode(), user, respectFrontendRoles);
         } catch (DotContentletStateException e) {
 
-            c = new Contentlet();
-            c.setStructureInode(hostType().inode() );
+            contentletHost = new Contentlet();
+            contentletHost.setStructureInode(hostType().inode() );
         }
-        c.getMap().put(Contentlet.DONT_VALIDATE_ME, host.getMap().get(Contentlet.DONT_VALIDATE_ME));
-        APILocator.getContentletAPI().copyProperties(c, host.getMap());
-        c.setInode("");
-        c = APILocator.getContentletAPI().checkin(c, user, respectFrontendRoles);
+
+        contentletHost.getMap().put(Contentlet.DONT_VALIDATE_ME, host.getMap().get(Contentlet.DONT_VALIDATE_ME));
+        APILocator.getContentletAPI().copyProperties(contentletHost, host.getMap());
+        contentletHost.setInode("");
+        contentletHost.setIndexPolicy(host.getIndexPolicy());
+        contentletHost = APILocator.getContentletAPI().checkin(contentletHost, user, respectFrontendRoles);
 
         if(host.isWorking() || host.isLive()){
-            APILocator.getVersionableAPI().setLive(c);
+            APILocator.getVersionableAPI().setLive(contentletHost);
         }
-        Host savedHost =  new Host(c);
+        Host savedHost =  new Host(contentletHost);
 
         updateDefaultHost(host, user, respectFrontendRoles);
         hostCache.clearAliasCache();
@@ -772,17 +776,17 @@ public class HostAPIImpl implements HostAPI {
             }
         }
 
+        contentlet.setIndexPolicy(IndexPolicyProvider.getInstance().forSingleContent());
         APILocator.getContentletAPI().archive(contentlet, user, respectFrontendRoles);
         host.setModDate(new Date ());
         hostCache.clearAliasCache();
 
-        HibernateUtil.addCommitListener(() -> this.sendArchiveSiteSystemEvent(contentlet));
+        HibernateUtil.addCommitListener(() -> this.sendArchiveSiteSystemEvent(contentlet), 1000);
     }
 
     private void sendArchiveSiteSystemEvent (final Contentlet contentlet) {
 
         try {
-            APILocator.getContentletAPI().isInodeIndexedArchived(contentlet.getInode());
             this.systemEventsAPI.pushAsync(SystemEventType.ARCHIVE_SITE, new Payload(contentlet, Visibility.PERMISSION,
                     String.valueOf(PermissionAPI.PERMISSION_READ)));
         } catch (DotDataException e) {
@@ -806,7 +810,7 @@ public class HostAPIImpl implements HostAPI {
         APILocator.getContentletAPI().unarchive(contentlet, user, respectFrontendRoles);
         host.setModDate(new Date ());
         hostCache.clearAliasCache();
-        HibernateUtil.addCommitListener(() -> this.sendUnArchiveSiteSystemEvent(contentlet));
+        HibernateUtil.addCommitListener(() -> this.sendUnArchiveSiteSystemEvent(contentlet), 1000);
     }
 
     private void sendUnArchiveSiteSystemEvent (final Contentlet contentlet) {

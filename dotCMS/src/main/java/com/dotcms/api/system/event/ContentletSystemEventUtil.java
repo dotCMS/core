@@ -1,11 +1,14 @@
 package com.dotcms.api.system.event;
 
 import com.dotcms.api.system.event.verifier.ExcludeOwnerVerifierBean;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.util.Logger;
 
 /**
  * This Util class provided methods to record different events link with the several types of
@@ -179,12 +182,15 @@ public class ContentletSystemEventUtil {
      * @return
      */
     private SystemEventType getSystemEventType(Contentlet contentlet, String methodName) {
-        String contentType = getType(contentlet);
-        String eventName = String.format("%s_%s", methodName, contentType);
 
         try {
+
+            final String contentType = getType(contentlet);
+            final String eventName = String.format("%s_%s", methodName, contentType);
+
             return SystemEventType.valueOf(eventName.toUpperCase());
-        }catch(IllegalArgumentException e){
+        }catch(IllegalArgumentException | IllegalStateException e) {
+            Logger.debug(this, e.getMessage(), e);
             return null;
         }
     }
@@ -192,10 +198,18 @@ public class ContentletSystemEventUtil {
     private String getType(Contentlet contentlet) {
         if (contentlet.isHost()){
             return SITE_EVENT_SUFFIX;
-        }else if (contentlet.getStructure() != null && contentlet.getStructure().getName() != null){
-            return contentlet.getStructure().getName().replace(" ", "_").toUpperCase();
-        }else{
-            throw new IllegalStateException("The Content type is null");
+        }else {
+            try {
+
+                final ContentType contentType = contentlet.getContentType();
+                if (contentType != null && contentType.name() != null) { // todo: double check if this is the same of contentlet.getStructure().getName()
+                    return contentType.name().replace(" ", "_").toUpperCase();
+                } else {
+                    throw new IllegalStateException("The Content type is null");
+                }
+            } catch (DotStateException e) {
+                throw new IllegalStateException(e.getMessage(), e);
+            }
         }
     }
 

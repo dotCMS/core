@@ -1,7 +1,5 @@
 package com.dotcms.content.elasticsearch.business;
 
-import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.datetimeFormat;
-
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
@@ -14,13 +12,7 @@ import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.util.I18NMessage;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.FactoryLocator;
-import com.dotmarketing.business.IdentifierAPI;
-import com.dotmarketing.business.IdentifierCache;
-import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.*;
 import com.dotmarketing.business.query.ComplexCriteria;
 import com.dotmarketing.business.query.Criteria;
 import com.dotmarketing.business.query.GenericQueryFactory.Query;
@@ -49,38 +41,18 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.business.WorkFlowFactory;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.DateUtil;
-import com.dotmarketing.util.InodeUtils;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.NumberUtil;
-import com.dotmarketing.util.RegEX;
-import com.dotmarketing.util.RegExMatch;
-import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.*;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.primitives.Ints;
 import com.liferay.portal.model.User;
-import java.io.Serializable;
-import java.io.StringWriter;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.StringTokenizer;
 import org.apache.commons.lang.StringUtils;
 import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.search.SearchPhaseExecutionException;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.Client;
+import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.QueryStringQueryBuilder;
@@ -94,6 +66,18 @@ import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortOrder;
 import org.springframework.util.NumberUtils;
 
+import java.io.Serializable;
+import java.io.StringWriter;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.*;
+import java.util.Calendar;
+import java.util.function.Consumer;
+
+import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.datetimeFormat;
+
 /**
  * Implementation class for the {@link ContentletFactory} interface. This class
  * represents the data layer used to query contentlet data from the database.
@@ -106,9 +90,10 @@ import org.springframework.util.NumberUtils;
 public class ESContentFactoryImpl extends ContentletFactory {
 
     private static final String[] ES_FIELDS = {"inode", "identifier"};
-    private ContentletCache cc ;
-	private ESClient client;
-	private LanguageAPI langAPI;
+    private final ContentletCache contentletCache;
+	private final ESClient client;
+	private final LanguageAPI languageAPI;
+	private final IndiciesAPI indiciesAPI;
 
 	private static final Contentlet cache404Content= new Contentlet();
 	public static final String CACHE_404_CONTENTLET="CACHE_404_CONTENTLET";
@@ -118,10 +103,11 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	 * Elastic index.
 	 */
 	public ESContentFactoryImpl() {
-	    cc = CacheLocator.getContentletCache();
-	    langAPI =  APILocator.getLanguageAPI();
-		client = new ESClient();
-		cache404Content.setInode(CACHE_404_CONTENTLET);
+        this.contentletCache = CacheLocator.getContentletCache();
+        this.languageAPI     =  APILocator.getLanguageAPI();
+        this.client          = new ESClient();
+        this.indiciesAPI     = APILocator.getIndiciesAPI();
+        this.cache404Content.setInode(CACHE_404_CONTENTLET);
 	}
 
 	@Override
@@ -165,7 +151,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
         dc.addParam(structureInode);
         dc.loadResult();
         //we could do a select here to figure out exactly which guys to evict
-        cc.clearCache();
+        contentletCache.clearCache();
 	}
 
 	@Override
@@ -178,7 +164,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
         dc.addParam(structureInode);
         dc.loadResults();
         //we could do a select here to figure out exactly which guys to evict
-        cc.clearCache();
+        contentletCache.clearCache();
         CacheLocator.getIdentifierCache().clearCache();
 	}
 
@@ -565,7 +551,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
         //Now workflows, and versions
         List<String> identsDeleted = new ArrayList<String>();
         for (Contentlet con : contentlets) {
-            cc.remove(con.getInode());
+            contentletCache.remove(con.getInode());
 
             // delete workflow task for contentlet
             WorkFlowFactory wff = FactoryLocator.getWorkFlowFactory();
@@ -732,7 +718,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
         db.addParam(conInode);
         db.getResult();
 
-        cc.remove(conInode);
+        contentletCache.remove(conInode);
         com.dotmarketing.portlets.contentlet.business.Contentlet c =
                 (com.dotmarketing.portlets.contentlet.business.Contentlet) InodeFactory.getInode(conInode, com.dotmarketing.portlets.contentlet.business.Contentlet.class);
         //Checking contentlet exists inode > 0
@@ -744,7 +730,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
 	@Override
 	protected Contentlet find(String inode) throws ElasticsearchException, DotStateException, DotDataException, DotSecurityException {
-		Contentlet con = cc.get(inode);
+		Contentlet con = contentletCache.get(inode);
 		if (con != null && InodeUtils.isSet(con.getInode())) {
 			if(CACHE_404_CONTENTLET.equals(con.getInode())){
 				return null;
@@ -759,11 +745,11 @@ public class ESContentFactoryImpl extends ContentletFactory {
                 throw e;
         }
         if(fatty == null){
-        	cc.add(inode, cache404Content);
+        	contentletCache.add(inode, cache404Content);
             return null;
         }else{
             Contentlet c = convertFatContentletToContentlet(fatty);
-            cc.add(c.getInode(), c);
+            contentletCache.add(c.getInode(), c);
             return c;
         }
 	}
@@ -815,7 +801,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
         else{
             for (com.dotmarketing.portlets.contentlet.business.Contentlet fatty : fatties) {
                 Contentlet content = convertFatContentletToContentlet(fatty);
-                cc.add(String.valueOf(content.getInode()), content);
+                contentletCache.add(String.valueOf(content.getInode()), content);
                 cons.add(content);
             }
         }
@@ -868,7 +854,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
         List<Contentlet> result = new ArrayList<Contentlet>();
         for (com.dotmarketing.portlets.contentlet.business.Contentlet fatty : fatties) {
             Contentlet content = convertFatContentletToContentlet(fatty);
-            cc.add(String.valueOf(content.getInode()), content);
+            contentletCache.add(String.valueOf(content.getInode()), content);
             result.add(convertFatContentletToContentlet(fatty));
         }
         return result;
@@ -929,7 +915,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	    ArrayList<Contentlet> result = new ArrayList<Contentlet>();
         ArrayList<String> inodesNotFound = new ArrayList<String>();
         for (String i : inodes) {
-            Contentlet c = cc.get(i);
+            Contentlet c = contentletCache.get(i);
             if(c != null && InodeUtils.isSet(c.getInode())){
                 result.add(c);
             } else {
@@ -960,7 +946,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
             for (com.dotmarketing.portlets.contentlet.business.Contentlet fatty : fatties) {
                 Contentlet con = convertFatContentletToContentlet(fatty);
                 result.add(con);
-                cc.add(con.getInode(), con);
+                contentletCache.add(con.getInode(), con);
             }
             HibernateUtil.getSession().clear();
         }
@@ -1026,7 +1012,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
         List<com.dotmarketing.portlets.contentlet.business.Contentlet> fatties = hu.list();
         for (com.dotmarketing.portlets.contentlet.business.Contentlet fatty : fatties) {
             Contentlet con = convertFatContentletToContentlet(fatty);
-            cc.add(String.valueOf(con.getInode()), con);
+            contentletCache.add(String.valueOf(con.getInode()), con);
             cons.add(con);
         }
         return cons;
@@ -1105,7 +1091,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
         }
 
         if (languageId == 0) {
-            languageId = langAPI.getDefaultLanguage().getId();
+            languageId = languageAPI.getDefaultLanguage().getId();
             condition.append(" and contentletvi.lang = ").append(languageId);
         }else if(languageId == -1){
             Logger.debug(this, "LanguageId is -1 so we will not use a language to pull contentlets");
@@ -1132,7 +1118,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
         List<Contentlet> result = new ArrayList<Contentlet>();
         for (com.dotmarketing.portlets.contentlet.business.Contentlet fatty : fatties) {
             Contentlet content = convertFatContentletToContentlet(fatty);
-            cc.add(content.getInode(), content);
+            contentletCache.add(content.getInode(), content);
             result.add(content);
         }
         return result;
@@ -1146,7 +1132,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
         if (!UtilMethods.isSet(orderby) || orderby.equals("tree_order")) {
             orderby = " multi_tree.tree_order ";
         }
-        languageId = (languageId==0) ?  langAPI.getDefaultLanguage().getId() : languageId;
+        languageId = (languageId==0) ?  languageAPI.getDefaultLanguage().getId() : languageId;
         
 
         condition
@@ -1210,7 +1196,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
         List<Contentlet> result = new ArrayList<Contentlet>();
         for (com.dotmarketing.portlets.contentlet.business.Contentlet fatty : fatties) {
             Contentlet content = convertFatContentletToContentlet(fatty);
-            cc.add(content.getInode(), content);
+            contentletCache.add(content.getInode(), content);
             result.add(content);
         }
         return result;
@@ -1265,14 +1251,14 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	}
 
 	@Override
-	protected long indexCount(String query) {
-	    String qq=findAndReplaceQueryDates(translateQuery(query, null).getQuery());
+	protected long indexCount(final String query) {
+	    final String qq = findAndReplaceQueryDates(translateQuery(query, null).getQuery());
 
 	    // we check the query to figure out wich indexes to hit
         String indexToHit;
         IndiciesInfo info;
         try {
-            info=APILocator.getIndiciesAPI().loadIndicies();
+            info = APILocator.getIndiciesAPI().loadIndicies();
         }
         catch(DotDataException ee) {
             Logger.fatal(this, "Can't get indicies information",ee);
@@ -1283,13 +1269,98 @@ public class ESContentFactoryImpl extends ContentletFactory {
         else
             indexToHit=info.working;
 
-        Client client=new ESClient().getClient();
-        QueryStringQueryBuilder qb = QueryBuilders.queryStringQuery(qq);
-        SearchRequestBuilder searchRequestBuilder = client.prepareSearch().setSize(0);
+        final Client client              = this.client.getClient();
+        final QueryStringQueryBuilder qb = QueryBuilders.queryStringQuery(qq);
+        final SearchRequestBuilder searchRequestBuilder = client.prepareSearch().setSize(0);
         searchRequestBuilder.setQuery(qb);
         searchRequestBuilder.setIndices(indexToHit);
         return searchRequestBuilder.execute().actionGet().getHits().getTotalHits();
 	}
+
+    @Override
+    protected long indexCount(final String query,
+                        final long timeoutMillis) {
+
+        final String queryStringQuery =
+                findAndReplaceQueryDates(translateQuery(query, null).getQuery());
+
+        // we check the query to figure out wich indexes to hit
+        IndiciesInfo info;
+
+        try {
+
+            info = this.indiciesAPI.loadIndicies();
+        } catch(DotDataException ee) {
+            Logger.fatal(this, "Can't get indicies information",ee);
+            return 0;
+        }
+
+        final Client client = this.client.getClient();
+        final QueryStringQueryBuilder queryStringQueryBuilder =
+                QueryBuilders.queryStringQuery(queryStringQuery);
+        final SearchRequestBuilder searchRequestBuilder =
+                client.prepareSearch().setSize(0);
+
+        searchRequestBuilder.setTimeout(TimeValue.timeValueMillis(timeoutMillis));
+        searchRequestBuilder.setQuery(queryStringQueryBuilder);
+        searchRequestBuilder.setIndices(
+                query.contains("+live:true") && !query.contains("+deleted:true")? info.live: info.working);
+
+        return searchRequestBuilder.execute().actionGet().getHits().getTotalHits();
+    }
+
+    @Override
+    protected void indexCount(final String query,
+                              final long timeoutMillis,
+                              final Consumer<Long> indexCountSuccess,
+                              final Consumer<Exception> indexCountFailure) {
+
+        final String queryStringQuery =
+                findAndReplaceQueryDates(translateQuery(query, null).getQuery());
+
+        // we check the query to figure out wich indexes to hit
+        IndiciesInfo info;
+
+        try {
+
+            info=APILocator.getIndiciesAPI().loadIndicies();
+        } catch(DotDataException ee) {
+            Logger.fatal(this, "Can't get indicies information",ee);
+            if (null != indexCountFailure) {
+
+                indexCountFailure.accept(ee);
+            }
+            return;
+        }
+
+        final Client client = this.client.getClient();
+        final QueryStringQueryBuilder queryStringQueryBuilder =
+                QueryBuilders.queryStringQuery(queryStringQuery);
+        final SearchRequestBuilder searchRequestBuilder =
+                client.prepareSearch().setSize(0);
+
+        searchRequestBuilder.setQuery(queryStringQueryBuilder);
+        searchRequestBuilder.setIndices(
+                query.contains("+live:true") && !query.contains("+deleted:true")? info.live: info.working);
+        searchRequestBuilder.setTimeout(TimeValue.timeValueMillis(timeoutMillis));
+
+        searchRequestBuilder.execute(new ActionListener<SearchResponse>() {
+            @Override
+            public void onResponse(SearchResponse searchResponse) {
+
+                indexCountSuccess.accept(searchResponse.getHits().getTotalHits());
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+
+                if (null != indexCountFailure) {
+
+                    indexCountFailure.accept(e);
+                }
+            }
+        });
+    }
 
     /**
      * It will call createRequest with null as sortBy parameter
@@ -1509,7 +1580,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
                 int counter = 1;
                 for (final ContentletSearch indexedContentlet : contentlets) {
                     // IMPORTANT: Remove contentlet from cache first
-                    cc.remove(indexedContentlet.getInode());
+                    contentletCache.remove(indexedContentlet.getInode());
 
                     final Contentlet content = find(indexedContentlet.getInode());
 
@@ -1606,8 +1677,8 @@ public class ESContentFactoryImpl extends ContentletFactory {
             content.setFolder(contentlet.getFolder());
         }
 
-        cc.remove(content.getInode());
-        cc.add(content.getInode(), content);
+        contentletCache.remove(content.getInode());
+        contentletCache.add(content.getInode(), content);
         HibernateUtil.evict(content);
 
         return content;
@@ -1666,7 +1737,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
         dc.loadResult();
         for(HashMap<String, String> ident:contentInodes){
              String inode = ident.get("inode");
-             cc.remove(inode);
+             contentletCache.remove(inode);
              Contentlet content = find(inode);
              new ESContentletIndexAPI().addContentToIndex(content);
         }
@@ -2267,7 +2338,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
         }
 
         for (String inodeToFlush : inodesToFlush) {
-            cc.remove(inodeToFlush);
+            contentletCache.remove(inodeToFlush);
         }
     }
 
@@ -2428,7 +2499,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
         final int count = batchResult.stream().reduce(0, Integer::sum);
 
         for(final String inode :inodes){
-           cc.remove(inode);
+            contentletCache.remove(inode);
         }
 
         return count;

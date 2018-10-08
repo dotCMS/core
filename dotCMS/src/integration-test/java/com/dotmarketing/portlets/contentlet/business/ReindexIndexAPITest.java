@@ -1,26 +1,8 @@
 package com.dotmarketing.portlets.contentlet.business;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import javax.servlet.http.HttpServletRequest;
-
-import org.elasticsearch.client.Client;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.content.elasticsearch.util.ESClient;
-import com.dotcms.contenttype.business.ContentTypeAPIImpl;
-import com.dotcms.contenttype.business.ContentTypeFactory;
-import com.dotcms.contenttype.business.ContentTypeFactoryImpl;
-import com.dotcms.contenttype.business.FieldAPIImpl;
-import com.dotcms.contenttype.business.FieldFactoryImpl;
+import com.dotcms.contenttype.business.*;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHttpRequest;
@@ -28,14 +10,30 @@ import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.common.reindex.ReindexThread;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.ContentletBaseTest;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.DateUtil;
 import com.liferay.portal.model.User;
+import org.apache.felix.framework.OSGIUtil;
+import org.elasticsearch.client.Client;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+import javax.servlet.http.HttpServletRequest;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Created by Jonathan Gamba.
@@ -60,6 +58,7 @@ public class ReindexIndexAPITest{
     public static void prepare () throws Exception {
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
+        OSGIUtil.getInstance().initializeFramework(Config.CONTEXT);
         contentletAPI = APILocator.getContentletAPI();
         user = APILocator.systemUser();
         contentTypeApi = (ContentTypeAPIImpl) APILocator.getContentTypeAPI(user);
@@ -109,6 +108,7 @@ public class ReindexIndexAPITest{
 
             // create a new piece of content backed by the map created above
             Contentlet content = new Contentlet(map);
+            content.setIndexPolicy(IndexPolicy.FORCE);
 
             // check in the content
             content= contentletAPI.checkin(content,user, respectFrontendRoles);
@@ -117,10 +117,10 @@ public class ReindexIndexAPITest{
             assertTrue( content.isWorking());
             assertFalse( content.isLive());
             // publish the content
+            content.setIndexPolicy(IndexPolicy.FORCE);
             contentletAPI.publish(content, user, respectFrontendRoles);
             assertTrue( content.isLive());
             origCons.add(content);
-            contentletAPI.isInodeIndexed(content.getInode(),true);
         }
 
         //commit it index
@@ -138,7 +138,9 @@ public class ReindexIndexAPITest{
             List<Contentlet> checkedOut=contentletAPI.checkout(origCons, user, respectFrontendRoles);
             for(Contentlet c : checkedOut){
                 c.setStringProperty("title", c.getStringProperty("title") + " new");
+                c.setIndexPolicy(IndexPolicy.FORCE);
                 c = contentletAPI.checkin(c,user, respectFrontendRoles);
+                c.setIndexPolicy(IndexPolicy.FORCE);
                 contentletAPI.publish(c, user, respectFrontendRoles);
                 assertTrue( c.isLive());
             }
@@ -152,15 +154,13 @@ public class ReindexIndexAPITest{
             HibernateUtil.closeSession();
         }
 
+        // need this to run the rollback listener on defer journal mode
+        if (!ReindexThread.getInstance().isWorking()) {
 
-        // let any expected reindex finish
-        try {
-            Thread.sleep(1000);
-        } catch (InterruptedException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            ReindexThread.getInstance().unpause();
         }
-
+        // let any expected reindex finish
+        DateUtil.sleep(5000);
 
         // make sure that the index is in the same state as before the failed transaction
         for(Contentlet c : origCons){
