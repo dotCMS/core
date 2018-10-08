@@ -312,8 +312,13 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
     public void save(final Relationship relationship) throws DotDataException {
 
         if(UtilMethods.isSet(relationship.getInode())){
-            updateInodeInDB(relationship);
-            updateRelationshipInDB(relationship);
+            if(relationshipExists(relationship.getInode())){
+                insertInodeInDB(relationship);
+                insertRelationshipInDB(relationship);
+            } else {
+                updateInodeInDB(relationship);
+                updateRelationshipInDB(relationship);
+            }
         } else{
             relationship.setInode(UUIDGenerator.generateUuid());
             insertInodeInDB(relationship);
@@ -328,6 +333,14 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
         catch(Exception e){
             Logger.error(this.getClass(), e.getMessage(),e);
         }
+    }
+
+    private boolean relationshipExists(final String inode) throws DotDataException {
+        final List<Map<String, Object>> results = new DotConnect()
+                .setSQL(sql.FIND_BY_INODE)
+                .addParam(inode)
+                .loadObjectResults();
+        return results.isEmpty();
     }
 
     private void insertInodeInDB(final Relationship relationship) throws DotDataException{
