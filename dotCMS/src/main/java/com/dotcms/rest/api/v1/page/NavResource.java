@@ -140,10 +140,9 @@ public class NavResource {
                 throw new DoesNotExistException("dot.common.http.error.404.header");
             }
 
-            final ObjectMapper mapper = new ObjectMapper();
-            final String json = mapper.writeValueAsString(navMap);
 
-            return Response.ok(new ResponseEntityView(json)).build(); // 200
+
+            return Response.ok(new ResponseEntityView(navMap)).build(); // 200
         } catch (Exception e) {
             Logger.error(this.getClass(),
                     "Exception on NavResource exception message: " + e.getMessage(), e);
