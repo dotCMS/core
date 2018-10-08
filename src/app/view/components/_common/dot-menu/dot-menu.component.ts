@@ -35,7 +35,9 @@ export class DotMenuComponent {
      *
      * @memberof DotMenuComponent
      */
-    toggle(): void {
+    toggle($event: MouseEvent): void {
+        $event.stopPropagation();
+
         this.visible = !this.visible;
         if (this.visible) {
             // Skip 1 because the event bubbling capture the document.click

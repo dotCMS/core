@@ -49,7 +49,7 @@ describe('DotMenuComponent', () => {
 
     it('should set visible to true and show the menu list', () => {
         button.triggerEventHandler('click', {
-            preventDefault: () => {}
+            stopPropagation: () => {}
         });
         fixture.detectChanges();
 
@@ -61,7 +61,7 @@ describe('DotMenuComponent', () => {
 
     it('should close menus when click the button', () => {
         button.triggerEventHandler('click', {
-            preventDefault: () => {}
+            stopPropagation: () => {}
         });
         fixture.detectChanges();
 
@@ -69,7 +69,9 @@ describe('DotMenuComponent', () => {
 
         expect(menulist).not.toBeNull();
 
-        button.triggerEventHandler('click', {});
+        button.triggerEventHandler('click', {
+            stopPropagation: () => {}
+        });
         fixture.detectChanges();
 
         expect(component.visible).toBeFalsy();
@@ -79,13 +81,13 @@ describe('DotMenuComponent', () => {
         spyOn(component.model[0], 'command');
 
         button.triggerEventHandler('click', {
-            preventDefault: () => {}
+            stopPropagation: () => {}
         });
         fixture.detectChanges();
 
         const menuItem: DebugElement = fixture.debugElement.query(By.css('.dot-menu-item__link'));
         menuItem.triggerEventHandler('click', {
-            preventDefault: () => {}
+            stopPropagation: () => {}
         });
 
         expect(component.model[0].command).toHaveBeenCalled();
@@ -95,7 +97,7 @@ describe('DotMenuComponent', () => {
     it('should NOT exceute the command on the selected menu item if is disabled', () => {
         spyOn(component.model[1], 'command');
         button.triggerEventHandler('click', {
-            preventDefault: () => {}
+            stopPropagation: () => {}
         });
 
         fixture.detectChanges();
