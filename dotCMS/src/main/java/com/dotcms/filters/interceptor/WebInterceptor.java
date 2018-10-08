@@ -38,6 +38,8 @@ public interface WebInterceptor extends Serializable {
 	/**
 	 * In case you want to apply this filter just to some subset of path's
 	 * return them here. Null means accept all.
+	 * <p><strong>NOTE:</strong> All paths should be lowercase as we lower case the requested URI when the filters
+	 * are evaluated.</p>
 	 *
 	 * @return A String array containing the paths.
 	 */
