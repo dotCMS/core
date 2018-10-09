@@ -62,7 +62,16 @@ public interface ContentletAPIPreHook {
 	public default boolean findContentletForLanguage(long languageId, Identifier contentletId){
       return true;
     }
-	
+
+	/**
+	 * Returns all live Contentlet Object for a given identifier
+	 * @param contentletId
+	 * @return
+	 */
+	public default boolean findAllLangContentlets(String contentletId){
+		return true;
+	}
+
 	/**
 	 * Returns all Contentlets for a specific structure
 	 * @param structure

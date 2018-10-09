@@ -59,6 +59,13 @@ public interface ContentletAPIPostHook {
 	 * @param returnValue - value returned by primary API Method
 	 */
 	public default void findContentletForLanguage(long languageId, Identifier contentletId,Contentlet returnValue){}
+
+
+	/**
+	 * Returns all live Contentlet Object for a given identifier
+	 * @param contentletId
+	 */
+	public default void findAllLangContentlets(String contentletId) {};
 	
 	/**
 	 * Returns all Contentlets for a specific structure
