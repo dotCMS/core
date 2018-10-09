@@ -1,7 +1,5 @@
 package com.dotcms.publisher.assets.business;
 
-import java.util.List;
-
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.publisher.assets.bean.PushedAsset;
@@ -9,6 +7,8 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.UtilMethods;
+
+import java.util.List;
 
 public class PushedAssetsAPIImpl implements PushedAssetsAPI {
 
@@ -98,9 +98,9 @@ public class PushedAssetsAPIImpl implements PushedAssetsAPI {
 	
 	@CloseDBIfOpened
 	@Override
-	public PushedAsset getLastPushForAsset(String assetId, String environmentId, String endpointIds)  throws DotDataException{
+	public PushedAsset getLastPushForAsset(final String assetId, final String environmentId, final String endpointIds)  throws DotDataException{
 
-		if(!UtilMethods.isSet(environmentId) ||!UtilMethods.isSet(assetId)) {
+		if(!UtilMethods.isSet(environmentId) || !UtilMethods.isSet(assetId)) {
 			return null;
 		}
 
