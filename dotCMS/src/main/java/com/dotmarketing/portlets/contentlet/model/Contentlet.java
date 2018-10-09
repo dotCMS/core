@@ -33,6 +33,7 @@ import com.dotmarketing.tag.model.TagInode;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.model.User;
 import java.io.File;
 import java.io.IOException;
@@ -45,6 +46,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.commons.lang.builder.ToStringBuilder;
@@ -83,9 +85,10 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
     public static final String SORT_ORDER_KEY = "sortOrder";
     public static final String HOST_KEY = "host";
     public static final String FOLDER_KEY = "folder";
-    public static final String WORKFLOW_ACTION_KEY = "wfActionId";
-    public static final String WORKFLOW_ASSIGN_KEY = "wfActionAssign";
-    public static final String WORKFLOW_COMMENTS_KEY = "wfActionComments";
+	public static final String NULL_PROPERTIES = "nullProperties";
+	public static final String WORKFLOW_ACTION_KEY = "wfActionId";
+	public static final String WORKFLOW_ASSIGN_KEY = "wfActionAssign";
+	public static final String WORKFLOW_COMMENTS_KEY = "wfActionComments";
 	public static final String WORKFLOW_BULK_KEY = "wfActionBulk";
 
     public static final String DONT_VALIDATE_ME = "_dont_validate_me";
@@ -108,7 +111,8 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 
 	private transient ContentType contentType;
     protected Map<String, Object> map = new ContentletHashMap();
-    private boolean lowIndexPriority = false;
+
+	private boolean lowIndexPriority = false;
 
     private transient ContentletAPI contentletAPI;
     private transient UserAPI userAPI;
@@ -204,9 +208,10 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 		setLanguageId(0);
 		setContentTypeId("");
 		setSortOrder(0);
-		setDisabledWysiwyg(new ArrayList<String>());
+		setDisabledWysiwyg(new ArrayList<>());
 		this.indexPolicy = IndexPolicy.DEFER;
-    }
+		getWritableNullProperties();
+	}
 
     @Override
     public String getName() {
@@ -595,6 +600,13 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 */
 	public void setProperty( String fieldVarName, Object objValue) throws DotRuntimeException {
 		map.put(fieldVarName, objValue);
+		if (!NULL_PROPERTIES.equals(fieldVarName)) { // No need to keep track of the null property it self.
+			if (null == objValue) {
+				addNullProperty(fieldVarName);
+			} else {
+				removeNullProperty(fieldVarName);
+			}
+		}
 	}
 
 	/**
@@ -1142,6 +1154,51 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 			}
 		}
 	}
+
+	/**
+	 * This method is used to keep track of the null values added to the internal map
+	 * @param property
+	 */
+	@SuppressWarnings("unchecked")
+	private void addNullProperty(final String property){
+		getWritableNullProperties().add(property);
+	}
+
+	/**
+	 * .
+	 * @param property
+	 */
+	@SuppressWarnings("unchecked")
+	private void removeNullProperty(final String property){
+		getWritableNullProperties().remove(property);
+	}
+
+	/**
+	 * Convenience method to get access to the null values set that is kept within the map
+	 * @return
+	 */
+	@SuppressWarnings("unchecked")
+	private Set<String> getWritableNullProperties(){
+		return (Set<String>)map.putIfAbsent(NULL_PROPERTIES, ConcurrentHashMap.newKeySet());
+	}
+
+	/**
+	 * This method returns an immutable copy of the null properties set to the properties map
+	 * @return
+	 */
+	@SuppressWarnings("unchecked")
+	public Set<String> getNullProperties(){
+		final Set<String> set = (Set<String>)this.map.get(NULL_PROPERTIES);
+		return ImmutableSet.copyOf(set);
+	}
+
+	/**
+	 * Since the Contentlet is kept in cache it makes sense removing certain values from the map
+	 */
+	public void cleanup(){
+		getWritableNullProperties().clear();
+	}
+
 
 	private class ContentletHashMap extends ConcurrentHashMap<String, Object> {
 		 /**
