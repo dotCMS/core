@@ -1,6 +1,8 @@
 package com.dotmarketing.portlets.contentlet.ajax;
 
 import static com.dotcms.exception.ExceptionUtil.getRootCause;
+import static com.dotcms.util.CollectionsUtils.map;
+import static com.dotcms.util.CollectionsUtils.toImmutableList;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
@@ -28,7 +30,12 @@ import com.dotmarketing.business.PublishStateException;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.db.HibernateUtil;
-import com.dotmarketing.exception.*;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotHibernateException;
+import com.dotmarketing.exception.DotLanguageException;
+import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.exception.InvalidLicenseException;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -1649,6 +1656,13 @@ public class ContentletAjax {
 				}
 			}
 
+
+		  if(UtilMethods.isSet(contentlet) && UtilMethods.isSet(contentlet.getIdentifier())){
+		    callbackData.put("allLangContentlets",
+					findAllLangContentlets(contentlet.getIdentifier())
+		    );
+		  }
+
 			// everything Ok? then commit
 			HibernateUtil.closeAndCommitTransaction();
 
@@ -2347,5 +2361,15 @@ public class ContentletAjax {
 
 		return callbackData;
 	}
+
+
+	private List<Map<String,String>> findAllLangContentlets(final String contentletIdentifier){
+
+		return conAPI.findAllLangContentlets(contentletIdentifier).stream().map(contentlet ->  {
+			return map("inode",contentlet.getInode(),
+			           "languageId",contentlet.getLanguageId()+"");
+		}).collect(toImmutableList());
+	}
+
 }
 

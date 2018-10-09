@@ -824,6 +824,23 @@ function trimString(str) {
 
 //String.prototype.trim = trimString;
 
+function queryStringUrlReplacement(url, param, value)
+{
+    var re = new RegExp("[\\?&]" + param + "=([^&#]*)", "i"), match = re.exec(url), delimiter, newString;
+
+    if (match === null) {
+        // append new param
+        var hasQuestionMark = /\?/.test(url);
+        delimiter = hasQuestionMark ? "&" : "?";
+        newString = url + delimiter + param + "=" + value;
+    } else {
+        delimiter = match[0].charAt(0);
+        newString = url.replace(re, delimiter + param + "=" + value);
+    }
+
+    return newString;
+}
+
 //Event related functions
 
 function isRightClick (event) {
