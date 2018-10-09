@@ -1,6 +1,8 @@
 package com.dotmarketing.portlets.contentlet.ajax;
 
 import static com.dotcms.exception.ExceptionUtil.getRootCause;
+import static com.dotcms.util.CollectionsUtils.map;
+import static com.dotcms.util.CollectionsUtils.toImmutableList;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
@@ -15,7 +17,6 @@ import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.keyvalue.model.KeyValue;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
-import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.LogTime;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -2363,12 +2364,11 @@ public class ContentletAjax {
 
 
 	private List<Map<String,String>> findAllLangContentlets(final String contentletIdentifier){
+
 		return conAPI.findAllLangContentlets(contentletIdentifier).stream().map(contentlet ->  {
-		   final Map <String,String> map = new HashMap<>();
-		    map.put("inode",contentlet.getInode());
-			map.put("languageId",contentlet.getLanguageId()+"");
-		   return map;
-		}).collect(CollectionsUtils.toImmutableList());
+			return map("inode",contentlet.getInode(),
+			           "languageId",contentlet.getLanguageId()+"");
+		}).collect(toImmutableList());
 	}
 
 }
