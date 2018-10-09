@@ -65,10 +65,10 @@ public interface ContentletAPIPreHook {
 
 	/**
 	 * Returns all live Contentlet Object for a given identifier
-	 * @param contentletId
+	 * @param identifier
 	 * @return
 	 */
-	public default boolean findAllLangContentlets(String contentletId){
+	public default boolean findAllLangContentlets(String identifier){
 		return true;
 	}
 

@@ -75,10 +75,10 @@ public interface ContentletAPI {
 
 	/**
 	 * Returns all working Contentlet instances if available for all languages.
- 	 * @param contentletId
+ 	 * @param identifier
 	 * @return
 	 */
-	public List<Contentlet> findAllLangContentlets(final String contentletId);
+	public List<Contentlet> findAllLangContentlets(final String identifier);
 	
 	/**
 	 * Returns all Contentlets for a specific structure

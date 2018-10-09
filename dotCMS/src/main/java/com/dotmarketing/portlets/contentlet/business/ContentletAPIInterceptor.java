@@ -792,20 +792,20 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 	}
 
 	@Override
-	public List<Contentlet> findAllLangContentlets(String contentletId) {
+	public List<Contentlet> findAllLangContentlets(String identifier) {
 
         for(ContentletAPIPreHook pre : preHooks){
-            boolean preResult = pre.findAllLangContentlets(contentletId);
+            boolean preResult = pre.findAllLangContentlets(identifier);
             if(!preResult){
                 Logger.error(this, "The following prehook failed " + pre.getClass().getName());
                 throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
             }
         }
 
-        final List<Contentlet> contentlets = conAPI.findAllLangContentlets(contentletId);
+        final List<Contentlet> contentlets = conAPI.findAllLangContentlets(identifier);
 
         for(ContentletAPIPostHook post : postHooks){
-            post.findAllLangContentlets(contentletId);
+            post.findAllLangContentlets(identifier);
         }
 
         return contentlets;

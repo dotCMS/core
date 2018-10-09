@@ -299,13 +299,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     @CloseDBIfOpened
     @Override
-    public List<Contentlet> findAllLangContentlets(final String contentletId) {
+    public List<Contentlet> findAllLangContentlets(final String identifier) {
         final List<Language> languages = languageAPI.getLanguages();
-        final Identifier identifier = new Identifier();
-        identifier.setId(contentletId);
+        final Identifier identifierObject = new Identifier();
+        identifierObject.setId(identifier);
         return languages.stream().map(l -> {
                     try {
-                        return findContentletForLanguage(l.getId(), identifier);
+                        return findContentletForLanguage(l.getId(), identifierObject);
                     } catch (Exception e) {
                         Logger.error(this,"No working contentlet found for language");
                     }
