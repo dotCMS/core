@@ -1,21 +1,51 @@
 package com.dotmarketing.portlets.contentlet.business;
 
+import static com.dotcms.util.CollectionsUtils.map;
+import static java.io.File.separator;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
-import com.dotcms.contenttype.model.field.*;
+import com.dotcms.contenttype.model.field.DataTypes;
+import com.dotcms.contenttype.model.field.DateTimeField;
+import com.dotcms.contenttype.model.field.FieldBuilder;
+import com.dotcms.contenttype.model.field.ImmutableBinaryField;
+import com.dotcms.contenttype.model.field.ImmutableTextField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
-import com.dotcms.datagen.*;
+import com.dotcms.datagen.ContainerDataGen;
+import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.FileAssetDataGen;
+import com.dotcms.datagen.FolderDataGen;
+import com.dotcms.datagen.HTMLPageDataGen;
+import com.dotcms.datagen.StructureDataGen;
+import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.mock.request.MockInternalRequest;
 import com.dotcms.mock.response.BaseResponse;
 import com.dotcms.rendering.velocity.services.VelocityResourceKey;
 import com.dotcms.rendering.velocity.services.VelocityType;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
-import com.dotmarketing.beans.*;
-import com.dotmarketing.business.*;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
+import com.dotmarketing.beans.MultiTree;
+import com.dotmarketing.beans.Permission;
+import com.dotmarketing.beans.Tree;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.DotCacheException;
+import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -46,12 +76,39 @@ import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.tag.model.Tag;
-import com.dotmarketing.util.*;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.DateUtil;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
+import com.dotmarketing.util.UUIDGenerator;
+import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.io.Files;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.StringReader;
+import java.io.StringWriter;
+import java.nio.charset.Charset;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.context.InternalContextAdapterImpl;
@@ -59,19 +116,6 @@ import org.apache.velocity.runtime.parser.node.SimpleNode;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Ignore;
 import org.junit.Test;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.*;
-import java.nio.charset.Charset;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.*;
-
-import static com.dotcms.util.CollectionsUtils.map;
-import static java.io.File.separator;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.*;
 
 /**
  * Created by Jonathan Gamba.
@@ -484,15 +528,14 @@ public class ContentletAPITest extends ContentletBaseTest {
         host1.setLanguageId(defLang);
         host1 = APILocator.getHostAPI().save(host1, user, false);
         contentletAPI.isInodeIndexed(host1.getInode());
-        
+
         Host host2=new Host();
         host2.setHostname("copy.contentlet.t2_"+System.currentTimeMillis());
         host2.setDefault(false);
         host2.setLanguageId(defLang);
         host2 = APILocator.getHostAPI().save(host2, user, false);
         contentletAPI.isInodeIndexed(host2.getInode());
-        
-        
+
         java.io.File bin=new java.io.File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary() + separator
                 + UUIDGenerator.generateUuid() + separator + "hello.txt");
         bin.getParentFile().mkdirs();
@@ -3015,7 +3058,7 @@ public class ContentletAPITest extends ContentletBaseTest {
 
         contentlet = contentletAPI.checkin(contentlet, user, false);
         contentletAPI.isInodeIndexed(contentlet.getInode());
-        
+
         contentlet = contentletAPI.find(contentlet.getInode(), user, false);
 		Date expireDate = contentlet.getDateProperty("expireDate");
         
@@ -4446,6 +4489,34 @@ public class ContentletAPITest extends ContentletBaseTest {
             }
         }
 
+    }
+
+    @Test
+    public void test_find_all_lang_contentlet_instances() {
+        //This is the Home Page which is supposed to be part o the starter kit and has both lang-versions.
+        final String identifier = "a9f30020-54ef-494e-92ed-645e757171c2";
+        final List<Contentlet> contentlets = new ArrayList<>(
+                contentletAPI.findAllLangContentlets(identifier));
+
+        Comparator<Contentlet> comparator
+                = Comparator.comparingLong(Contentlet::getLanguageId);
+
+        Collections.sort(contentlets, comparator);
+
+        assertEquals(contentlets.get(0).getLanguageId(), 1L);
+        assertEquals(contentlets.get(0).getIdentifier(), identifier);
+        assertEquals(contentlets.get(1).getLanguageId(), 2L);
+        assertEquals(contentlets.get(1).getIdentifier(), identifier);
+    }
+
+    @Test
+    public void test_find_all_lang_contentlet_instances_invalid_identifier() {
+
+        final String invalidIdentifier = "lol";
+        final List<Contentlet> contentlets = new ArrayList<>(
+                contentletAPI.findAllLangContentlets(invalidIdentifier));
+        assertNotNull(contentlets);
+        assertEquals(contentlets.size(), 0);
     }
 
     private File getBinaryAsset(String inode, String varName, String binaryName) {

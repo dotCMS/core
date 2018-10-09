@@ -243,6 +243,23 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     @CloseDBIfOpened
     @Override
+    public List<Contentlet> findAllLangContentlets(final String identifier) {
+        final List<Language> languages = languageAPI.getLanguages();
+        final Identifier identifierObject = new Identifier();
+        identifierObject.setId(identifier);
+        return languages.stream().map(l -> {
+                    try {
+                        return findContentletForLanguage(l.getId(), identifierObject);
+                    } catch (Exception e) {
+                        Logger.error(this,"No working contentlet found for language");
+                    }
+                    return null;
+                }
+        ).filter(Objects::nonNull).collect(CollectionsUtils.toImmutableList());
+    }
+
+    @CloseDBIfOpened
+    @Override
     public Contentlet findContentletByIdentifier(String identifier, boolean live, long languageId, User user, boolean respectFrontendRoles)throws DotDataException, DotSecurityException, DotContentletStateException {
         if(languageId<=0) {
             languageId=APILocator.getLanguageAPI().getDefaultLanguage().getId();
@@ -3147,7 +3164,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                             }
                             File binaryFieldFolder = new File(newDir.getAbsolutePath() + File.separator + velocityVarNm);
 
-                            
+
                             File metadata=null;
                             if(contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET) {
                                 metadata=APILocator.getFileAssetAPI().getContentMetadataFile(contentlet.getInode());
@@ -3188,7 +3205,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                 // we move files that have been newly uploaded or edited
                                 if(oldFile==null || !oldFile.equals(incomingFile)){
                                     if(!createNewVersion){
-                                        // If we're calling a checkinWithoutVersioning method, 
+                                        // If we're calling a checkinWithoutVersioning method,
                                         // then folder needs to be cleaned up in order to add the new file in it.
                                         // Otherwise we will have the old file and incoming file at the same time
                                         FileUtil.deltree(binaryFieldFolder);
@@ -3385,11 +3402,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                 .removeFromCacheByIdentifier(
                                         contentlet.getIdentifier());
                     }
-                    
+
                     new PageLoader().invalidate(contentlet);
-                    
-                    
-                    
+
+
+
                 } else {
                     isLive = contentlet.isLive();
                 }
@@ -3398,7 +3415,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 } else {
                     if (!isNewContent) {
                         new ContentletLoader().invalidate(contentlet);
-     
+
                     }
 
                     indexAPI.addContentToIndex(contentlet);
@@ -3476,9 +3493,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if(contentlet.isFileAsset()){
           FileAsset asset = APILocator.getFileAssetAPI().fromContentlet(contentlet);
         }
-        
 
-        
+
+
         ActivityLogger.logInfo(getClass(), "Content Saved", "StartDate: " +contentPushPublishDate+ "; "
                 + "EndDate: " +contentPushExpireDate + "; User:" + user.getUserId() + "; ContentIdentifier: " + contentlet.getIdentifier(), contentlet.getHost());
 
