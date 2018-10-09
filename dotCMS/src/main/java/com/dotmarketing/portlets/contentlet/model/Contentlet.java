@@ -2,7 +2,6 @@ package com.dotmarketing.portlets.contentlet.model;
 
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.util.ConversionUtils;
 import com.dotmarketing.beans.Host;
@@ -1185,7 +1184,8 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 * This method returns an immutable copy of the null properties set to the properties map
 	 * @return
 	 */
-	@JsonIgnore
+	@com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore
+	@com.fasterxml.jackson.annotation.JsonIgnore
 	@SuppressWarnings("unchecked")
 	public Set<String> getNullProperties(){
 		final Set<String> set = (Set<String>)this.map.get(NULL_PROPERTIES);
