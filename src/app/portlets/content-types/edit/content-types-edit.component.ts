@@ -1,6 +1,6 @@
-import { take, mergeMap, pluck } from 'rxjs/operators';
+import { take, mergeMap, pluck, takeUntil } from 'rxjs/operators';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Component, ViewChild, OnInit } from '@angular/core';
+import { Component, ViewChild, OnInit, OnDestroy } from '@angular/core';
 
 import { ContentType } from '../shared/content-type.model';
 import { ContentTypesFormComponent } from '../form';
@@ -19,6 +19,8 @@ import { ResponseView } from 'dotcms-js/dotcms-js';
 import { HotkeysService, Hotkey } from 'angular2-hotkeys';
 import { DotEventsService } from '@services/dot-events/dot-events.service';
 import { MenuItem } from 'primeng/primeng';
+import { Subject } from 'rxjs';
+
 
 /**
  * Portlet component for edit content types
@@ -32,7 +34,7 @@ import { MenuItem } from 'primeng/primeng';
     templateUrl: './content-types-edit.component.html',
     styleUrls: ['./content-types-edit.component.scss']
 })
-export class ContentTypesEditComponent implements OnInit {
+export class ContentTypesEditComponent implements OnInit, OnDestroy {
     @ViewChild('form')
     form: ContentTypesFormComponent;
     contentTypeActions: MenuItem[];
@@ -45,6 +47,8 @@ export class ContentTypesEditComponent implements OnInit {
     };
     messagesKey: { [key: string]: string } = {};
     editButtonLbl: string;
+
+    private destroy$: Subject<boolean> = new Subject<boolean>();
 
     constructor(
         private contentTypesInfoService: ContentTypesInfoService,
@@ -60,7 +64,7 @@ export class ContentTypesEditComponent implements OnInit {
     ) {}
 
     ngOnInit(): void {
-        this.route.data.pipe(pluck('contentType')).subscribe((contentType: ContentType) => {
+        this.route.data.pipe(pluck('contentType'), takeUntil(this.destroy$)).subscribe((contentType: ContentType) => {
             this.data = contentType;
 
             if (contentType.fields) {
@@ -108,6 +112,11 @@ export class ContentTypesEditComponent implements OnInit {
         if (!this.isEditMode()) {
             this.bindEscKey();
         }
+    }
+
+    ngOnDestroy(): void {
+        this.destroy$.next(true);
+        this.destroy$.complete();
     }
 
     /**

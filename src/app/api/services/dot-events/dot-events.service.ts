@@ -1,6 +1,6 @@
 import { filter } from 'rxjs/operators';
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable, Subject } from 'rxjs';
+import { Observable, Subject } from 'rxjs';
 import { DotEvent } from '@models/dot-event/dot-event';
 
 /**
@@ -9,7 +9,7 @@ import { DotEvent } from '@models/dot-event/dot-event';
  */
 @Injectable()
 export class DotEventsService {
-    private subject: Subject<DotEvent> = new BehaviorSubject({ name: '' });
+    private subject: Subject<DotEvent> = new Subject();
 
     constructor() {}
 

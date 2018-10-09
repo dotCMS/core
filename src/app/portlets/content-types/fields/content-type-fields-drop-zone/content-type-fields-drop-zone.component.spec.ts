@@ -662,4 +662,37 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
         const tabLinks = de.queryAll(By.css('.ui-tabview-nav li'));
         expect(tabLinks[1].nativeElement.classList.contains('ui-state-disabled')).toBe(false);
     });
+
+    it('should add FieldRow when them does not exists into a TabDivider', () => {
+        hostComp.fields = [
+            {
+                clazz: 'text',
+                id: '1',
+                name: 'field 1',
+                sortOrder: 1,
+                contentTypeId: '5b'
+            },
+            {
+                clazz: 'com.dotcms.contenttype.model.field.ImmutableTabDividerField',
+                id: '2',
+                name: 'field 2',
+                sortOrder: 2,
+                contentTypeId: '6b'
+            },
+            {
+                clazz: 'text',
+                id: '3',
+                name: 'field 3',
+                sortOrder: 3,
+                contentTypeId: '5b'
+            },
+        ];
+
+        fixture.detectChanges();
+
+        expect(comp.fieldRows.length).toEqual(3);
+        expect(comp.fieldRows[0] instanceof FieldRow).toBeTruthy();
+        expect(comp.fieldRows[1] instanceof FieldTab).toBeTruthy();
+        expect(comp.fieldRows[2] instanceof FieldRow).toBeTruthy();
+    });
 });

@@ -87,12 +87,12 @@ export class DotIframeService {
 
     private getFunctionToRefreshIframe(portlet: string): string {
         const mapOfFunctions = {
-            content: 'doSearch',
+            'content': 'doSearch',
             'site-browser': 'reloadContent',
             'vanity-urls': 'doSearch',
-            sites: 'refreshHostTable',
-            calendar: 'initializeCalendar',
-            workflow: 'doFilter'
+            'sites': 'refreshHostTable',
+            'calendar': 'initializeCalendar',
+            'workflow': 'doFilter'
         };
 
         return mapOfFunctions[portlet];

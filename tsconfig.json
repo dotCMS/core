@@ -57,6 +57,12 @@
       "dot-rules/*": [
         "dist/dot-rules/*"
       ]
+    //   "dotcms-js": [
+    //     "dist-lib/dotcms-js"
+    //   ],
+    //   "dotcms-js/*": [
+    //     "dist-lib/dotcms-js/*"
+    //   ]
     }
   }
 }

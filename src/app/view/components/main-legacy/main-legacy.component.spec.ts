@@ -9,6 +9,7 @@ import { By } from '@angular/platform-browser';
 import { DotIframeService } from '../_common/iframe/service/dot-iframe/dot-iframe.service';
 import { DotContentletEditorModule } from '../dot-contentlet-editor/dot-contentlet-editor.module';
 import { DotMenuService } from '@services/dot-menu.service';
+import { DotRouterService } from '@services/dot-router/dot-router.service';
 
 @Component({
     selector: 'dot-alert-confirm',
@@ -38,6 +39,7 @@ describe('MainComponentLegacyComponent', () => {
     let fixture: ComponentFixture<MainComponentLegacyComponent>;
     let de: DebugElement;
     let dotIframeService: DotIframeService;
+    let dotRouterService: DotRouterService;
 
     beforeEach(async(() => {
         DOTTestBed.configureTestingModule({
@@ -62,6 +64,7 @@ describe('MainComponentLegacyComponent', () => {
         fixture = DOTTestBed.createComponent(MainComponentLegacyComponent);
         de = fixture.debugElement;
         dotIframeService = de.injector.get(DotIframeService);
+        dotRouterService = de.injector.get(DotRouterService);
         spyOn(dotIframeService, 'reloadData');
         fixture.detectChanges();
     });
@@ -71,5 +74,17 @@ describe('MainComponentLegacyComponent', () => {
         expect(de.query(By.css('dot-toolbar')) !== null).toBe(true);
         expect(de.query(By.css('dot-main-nav')) !== null).toBe(true);
         expect(de.query(By.css('router-outlet')) !== null).toBe(true);
+    });
+
+    describe('Create Contentlet', () => {
+        it('should refresh the current portlet data', () => {
+            spyOnProperty(dotRouterService, 'currentPortlet', 'get').and.returnValue({
+                id: 'site-browser'
+            });
+            const createContentlet: DebugElement = de.query(By.css('dot-create-contentlet'));
+            createContentlet.triggerEventHandler('close', {});
+
+            expect(dotIframeService.reloadData).toHaveBeenCalledWith('site-browser');
+        });
     });
 });

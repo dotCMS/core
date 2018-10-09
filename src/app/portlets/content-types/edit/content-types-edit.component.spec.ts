@@ -63,7 +63,7 @@ class TestContentTypesFormComponent {
     fields: ContentTypeField[];
     // tslint:disable-next-line:no-output-on-prefix
     @Output()
-    submit: EventEmitter<any> = new EventEmitter();
+    onSubmit: EventEmitter<any> = new EventEmitter();
 
     resetForm = jasmine.createSpy('resetForm');
 
@@ -574,7 +574,7 @@ describe('ContentTypesEditComponent edit mode', () => {
 
             spyOn(crudService, 'putData').and.returnValue(observableOf(responseContentType));
 
-            contentTypeForm.triggerEventHandler('submit', fakeContentType);
+            contentTypeForm.triggerEventHandler('onSubmit', fakeContentType);
 
             expect(crudService.putData).toHaveBeenCalledWith(
                 'v1/contenttype/id/1234567890',
@@ -590,7 +590,7 @@ describe('ContentTypesEditComponent edit mode', () => {
                 observableThrowError(mockResponseView(403))
             );
 
-            contentTypeForm.triggerEventHandler('submit', fakeContentType);
+            contentTypeForm.triggerEventHandler('onSubmit', fakeContentType);
 
             expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('/content-types-angular');
             expect(dotHttpErrorManagerService.handle).toHaveBeenCalledTimes(1);

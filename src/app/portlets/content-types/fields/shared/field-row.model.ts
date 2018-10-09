@@ -65,14 +65,4 @@ export class FieldRow extends FieldDivider {
             this.columns.push(new FieldColumn(tabDividerFields));
         });
     }
-
-    /**
-     * Create first column
-     *
-     * @memberof FieldRow
-     */
-    addFirstColumn(): void {
-        this.columns[0] = new FieldColumn();
-        this.columns[0].columnDivider = { clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField' };
-    }
 }

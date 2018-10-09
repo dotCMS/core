@@ -7,7 +7,6 @@ import { By } from '@angular/platform-browser';
 import { PaginatorService } from '@services/paginator';
 import { MockDotMessageService } from '../../../../../test/dot-message-service.mock';
 import { DotMessageService } from '@services/dot-messages-service';
-import { MessageKeyDirective } from '@directives/message-keys/message-keys.directive';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
@@ -41,7 +40,7 @@ xdescribe('DotFormSelectorComponent', () => {
 
     beforeEach(async(() => {
         DOTTestBed.configureTestingModule({
-            declarations: [DotFormSelectorComponent, MessageKeyDirective],
+            declarations: [DotFormSelectorComponent],
             providers: [
                 {
                     provide: PaginatorService,

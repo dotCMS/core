@@ -33,7 +33,7 @@ export class ToolbarUserComponent implements OnInit {
     ) {}
 
     ngOnInit(): void {
-        this.dotMessageService.getMessages(['my-account']).subscribe((res) => {
+        this.dotMessageService.getMessages(['my-account', 'login-as', 'Logout', 'logout-as']).subscribe((res) => {
             this.i18nMessages = res;
         });
 

@@ -21,6 +21,7 @@
 
     .dot-menu-item__link,
     .dot-menu-item__link:visited {
+        cursor: pointer;
         color: $black;
         display: block;
         padding: $basic-padding;

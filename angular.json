@@ -222,33 +222,33 @@
       "projectType": "library",
       "prefix": "dot",
       "architect": {
-        "build": {
-          "builder": "@angular-devkit/build-ng-packagr:build",
-          "options": {
-            "tsConfig": "projects/dot-rules/tsconfig.lib.json",
-            "project": "projects/dot-rules/ng-package.json"
+          "build": {
+              "builder": "@angular-devkit/build-ng-packagr:build",
+              "options": {
+                  "tsConfig": "projects/dot-rules/tsconfig.lib.json",
+                  "project": "projects/dot-rules/ng-package.json"
+              }
+          },
+          "test": {
+              "builder": "@angular-devkit/build-angular:karma",
+              "options": {
+                  "main": "projects/dot-rules/src/test.ts",
+                  "tsConfig": "projects/dot-rules/tsconfig.spec.json",
+                  "karmaConfig": "projects/dot-rules/karma.conf.js"
+              }
+          },
+          "lint": {
+              "builder": "@angular-devkit/build-angular:tslint",
+              "options": {
+                  "tsConfig": [
+                      "projects/dot-rules/tsconfig.lib.json",
+                      "projects/dot-rules/tsconfig.spec.json"
+                  ],
+                  "exclude": [
+                      "**/node_modules/**"
+                  ]
+              }
           }
-        },
-        "test": {
-          "builder": "@angular-devkit/build-angular:karma",
-          "options": {
-            "main": "projects/dot-rules/src/test.ts",
-            "tsConfig": "projects/dot-rules/tsconfig.spec.json",
-            "karmaConfig": "projects/dot-rules/karma.conf.js"
-          }
-        },
-        "lint": {
-          "builder": "@angular-devkit/build-angular:tslint",
-          "options": {
-            "tsConfig": [
-              "projects/dot-rules/tsconfig.lib.json",
-              "projects/dot-rules/tsconfig.spec.json"
-            ],
-            "exclude": [
-              "**/node_modules/**"
-            ]
-          }
-        }
       }
     }
   },
