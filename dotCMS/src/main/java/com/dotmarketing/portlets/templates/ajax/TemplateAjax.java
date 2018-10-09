@@ -8,6 +8,7 @@ import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -55,7 +56,7 @@ public class TemplateAjax {
 		List<Template> fullListTemplates = new ArrayList<Template>();
 		List<Template> totalTemplates = new ArrayList<Template>();
 		Host host = hostAPI.find(query.get("hostId"), user, respectFrontendRoles);
-
+		
 		try{
 			String filter = query.get("fullTitle");
 			if(UtilMethods.isSet(filter)){
@@ -77,15 +78,14 @@ public class TemplateAjax {
                     totalTemplates.add(t);
                     countF=count-1;
 
-					if (UtilMethods.isSet(query.get("templateSelected"))) {
-						final Template templateSelected = templateAPI.findWorkingTemplate(query.get("templateSelected"),
-								APILocator.getUserAPI().getSystemUser(), respectFrontendRoles);
+                    final Template templateSelected = templateAPI.findWorkingTemplate(query.get("templateSelected"),
+                            APILocator.getUserAPI().getSystemUser(), respectFrontendRoles);
 
-						if (templateSelected.isAnonymous()) {
-							fullListTemplates.add(templateSelected);
-							totalTemplates.add(templateSelected);
-						}
-					}
+                    if (templateSelected!=null && templateSelected.isAnonymous()) {
+                        fullListTemplates.add(templateSelected);
+                        totalTemplates.add(templateSelected);
+                    }
+
                 }
 			    else {
 			        startF=start-1;
@@ -103,9 +103,8 @@ public class TemplateAjax {
 			}
 
 
-		}catch (DotDataException e) {
-			Logger.error(this, e.getMessage(), e);
-			throw new DotDataException(e.getMessage(), e);
+		}catch (Exception e) {
+			throw new DotRuntimeException(e.getMessage(), e);
 		}
 		//Collections.sort(fullListTemplates, new TemplateComparator(baseHostId));
 		Map<String, Object> results = new HashMap<String, Object>();

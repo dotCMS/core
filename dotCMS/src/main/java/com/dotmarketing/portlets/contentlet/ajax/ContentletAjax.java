@@ -1579,7 +1579,7 @@ public class ContentletAjax {
 						final Template previousTemplate = APILocator.getTemplateAPI().findWorkingTemplate(previousTemplateId,
 								systemUser, false);
 
-						if (previousTemplate.isAnonymous()) {
+						if (previousTemplate!=null && previousTemplate.isAnonymous()) {
 							APILocator.getTemplateAPI().delete(previousTemplate, systemUser, false);
 						}
 					}

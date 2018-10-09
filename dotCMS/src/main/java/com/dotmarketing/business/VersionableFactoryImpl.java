@@ -69,7 +69,12 @@ public class VersionableFactoryImpl extends VersionableFactory {
 		if(identifier.getAssetType().equals("contentlet")) {
 		    throw new DotDataException("Contentlets could have working versions for each language.");
 		}
-		VersionInfo vinfo = getVersionInfo(identifier.getId());
+        VersionInfo vinfo = getVersionInfo(identifier.getId());
+        if (vinfo == null) {
+            throw new DotDataException("No version info for identifier : " + id);
+        }
+
+		
 		Class<?> clazz = InodeUtils.getClassByDBType(identifier.getAssetType());
 		Versionable ver = null;
 		User user = this.userApi.getSystemUser();

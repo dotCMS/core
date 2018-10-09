@@ -261,6 +261,40 @@ public class TemplateAPITest extends IntegrationTestBase {
         }
     }
 
+    
+    
+    @Test
+    public void testFindWorkingTemplateNoNPE() throws DotDataException, DotSecurityException {
+
+
+        try {
+            Template t = templateAPI.findWorkingTemplate("NO_TEMPLATE",
+                    APILocator.getUserAPI().getSystemUser(), false);
+            
+            assertTrue(t==null);
+            
+        }
+        catch(NullPointerException e) {
+            assertTrue("getting non-existant working template should not throw an NPE", false);
+        }
+    }
+
+    @Test
+    public void testFindLiveTemplateNoNPE() throws DotDataException, DotSecurityException {
+
+
+        try {
+            Template t = templateAPI.findLiveTemplate("NO_TEMPLATE",
+                    APILocator.getUserAPI().getSystemUser(), false);
+            
+            assertTrue(t==null);
+            
+        }
+        catch(NullPointerException e) {
+            assertTrue("getting non-existant live template should not throw an NPE", false);
+        }
+    }
+    
     @Test
     public void testFindTemplatesAssignedTo() throws DotDataException, DotSecurityException {
         final List<Template> result = templateAPI.findTemplatesAssignedTo(host);

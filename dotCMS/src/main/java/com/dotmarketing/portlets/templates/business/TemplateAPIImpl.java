@@ -371,7 +371,8 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 
 	public Template findWorkingTemplate(String id, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 		VersionInfo info = APILocator.getVersionableAPI().getVersionInfo(id);
-		return find(info.getWorkingInode(), user, respectFrontendRoles);
+
+		return (info==null) ? null : find(info.getWorkingInode(), user, respectFrontendRoles);
 
 	}
 
@@ -401,7 +402,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 
 	public Template findLiveTemplate(String id, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 		VersionInfo info = APILocator.getVersionableAPI().getVersionInfo(id);
-		return find(info.getLiveInode(), user, respectFrontendRoles);
+		return (info==null) ? null : find(info.getLiveInode(), user, respectFrontendRoles);
 	}
 
 	@Override
