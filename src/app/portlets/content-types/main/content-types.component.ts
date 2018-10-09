@@ -157,7 +157,7 @@ export class ContentTypesPortletComponent implements OnInit {
                 command: (item) => this.removeConfirmation(item),
                 icon: 'delete'
             },
-            shouldShow: (item) =>  !item.fixed && !item.defaultType
+            shouldShow: (item) =>  !item.fixed
         });
 
 

@@ -13,7 +13,7 @@ export class DotCrumbtrailService {
     private URL_EXCLUDES = ['/content-types-angular/create/content'];
     private crumbTrail: Subject<DotCrumb[]> = new BehaviorSubject([]);
 
-    private dataMatch = {
+    private portletsTitlePathFinder = {
         'content-types-angular': 'contentType.name',
         'edit-page': 'content.page.title'
     };
@@ -26,8 +26,13 @@ export class DotCrumbtrailService {
         this.dotNavigationService
             .onNavigationEnd()
             .pipe(
-                map((event: NavigationEnd) => event.url),
-                filter((url: string) => !this.URL_EXCLUDES.includes(url)),
+                map((event: NavigationEnd) => {
+                    if (this.URL_EXCLUDES.includes(event.url)) {
+                        return this.splitURL(event.url)[0];
+                    } else {
+                     return event.url;
+                    }
+                }),
                 switchMap(this.getCrumbtrail.bind(this))
             )
             .subscribe((crumbTrail: DotCrumb[]) => this.crumbTrail.next(crumbTrail));
@@ -79,12 +84,8 @@ export class DotCrumbtrailService {
 
         let currentData: any = data;
 
-        if (this.dataMatch[sectionKey]) {
-            this.dataMatch[sectionKey].split('.').forEach((key) => (currentData = currentData[key]));
-            return currentData;
-        } else {
-            return null;
-        }
+        this.portletsTitlePathFinder[sectionKey].split('.').forEach((key) => (currentData = currentData[key]));
+        return currentData;
     }
 
     private getData(): Data {
@@ -105,20 +106,23 @@ export class DotCrumbtrailService {
 
         return this.getMenuLabel(portletId).pipe(
             map((crumbTrail: DotCrumb[]) => {
-                if (sections.length > 1) {
+                if (sections.length > 1 && this.isPortletTitleAvailable(url)) {
                     const sectionLabel = this.getCrumbtrailSection(sections[0]);
 
-                    if (sectionLabel) {
-                        crumbTrail.push({
-                            label: sectionLabel,
-                            url: ''
-                        });
-                    }
+                    crumbTrail.push({
+                        label: sectionLabel,
+                        url: ''
+                    });
                 }
 
                 return crumbTrail;
             })
         );
+    }
+
+    private isPortletTitleAvailable(url: string): boolean {
+        const sections: string[] = this.splitURL(url);
+        return !!this.portletsTitlePathFinder[sections[0]];
     }
 }
 
