@@ -49,4 +49,40 @@ public class ConversionUtilsTest extends UnitTestBase {
         Assert.assertEquals(18l, ConversionUtils.toLong(buffer, 0l));
 
     }
+
+    /**
+     * Testing the new Instance
+     *
+     */
+    @Test
+    public void toIntTest()  {
+
+
+        final Double        aDouble    = 9.0;
+        final Integer       integer    = 10;
+        final Float         aFloat     = 11.1f;
+        final Long          aLong      = 12l;
+        final BigInteger    bigInteger = BigInteger.valueOf(13l);
+        final BigDecimal    bigDecimal = new BigDecimal(14);
+        final String        string     = "15";
+        final CharSequence  sequence   = "16";
+        final StringBuilder builder    = new StringBuilder("17");
+        final StringBuffer  buffer     = new StringBuffer("18");
+
+
+        Assert.assertEquals(0, ConversionUtils.toInt(null, 0));
+        Assert.assertEquals(0, ConversionUtils.toInt("null", 0));
+        Assert.assertEquals(0, ConversionUtils.toInt(new Object(), 0));
+        Assert.assertEquals(9, ConversionUtils.toInt(aDouble, 0));
+        Assert.assertEquals(10, ConversionUtils.toInt(integer, 0));
+        Assert.assertEquals(11, ConversionUtils.toInt(aFloat, 0));
+        Assert.assertEquals(12, ConversionUtils.toInt(aLong, 0));
+        Assert.assertEquals(13, ConversionUtils.toInt(bigInteger, 0));
+        Assert.assertEquals(14, ConversionUtils.toInt(bigDecimal, 0));
+        Assert.assertEquals(15, ConversionUtils.toInt(string, 0));
+        Assert.assertEquals(16, ConversionUtils.toInt(sequence, 0));
+        Assert.assertEquals(17, ConversionUtils.toInt(builder, 0));
+        Assert.assertEquals(18, ConversionUtils.toInt(buffer, 0));
+
+    }
 }

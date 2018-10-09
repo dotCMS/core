@@ -1,7 +1,5 @@
 package com.dotmarketing.business;
 
-import static org.junit.Assert.*;
-
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.BaseContentType;
@@ -17,6 +15,7 @@ import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
@@ -27,12 +26,15 @@ import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Logger;
 import com.google.common.collect.Lists;
 import com.liferay.portal.model.User;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import static org.junit.Assert.*;
 
 /**
  * This class tests the creation, copy, update, verification and setting of
@@ -138,16 +140,16 @@ public class PermissionAPIIntegrationTest extends IntegrationTestBase {
         cont1.setStringProperty("testtext", "a test value");
         cont1.setHost(host.getIdentifier());
         cont1.setFolder(f4.getInode());
+        cont1.setIndexPolicy(IndexPolicy.FORCE);
         cont1=APILocator.getContentletAPI().checkin(cont1, systemUser, false);
-        APILocator.getContentletAPI().isInodeIndexed(cont1.getInode());
 
         Contentlet cont2=new Contentlet();
         cont2.setStructureInode(s.getInode());
         cont2.setStringProperty("testtext", "another test value");
         cont2.setHost(host.getIdentifier());
         cont2.setFolder(f4.getInode());
+        cont2.setIndexPolicy(IndexPolicy.FORCE);
         cont2=APILocator.getContentletAPI().checkin(cont2, systemUser, false);
-        APILocator.getContentletAPI().isInodeIndexed(cont2.getInode());
 
         permissionAPI.permissionIndividually(host, cont1, systemUser);
         permissionAPI.permissionIndividually(host, cont2, systemUser);

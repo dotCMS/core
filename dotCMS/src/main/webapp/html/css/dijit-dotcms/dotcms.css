@@ -11073,6 +11073,10 @@ a.category_higlighted, a.tag_higlighted {
   display: none;
 }
 
+#add_category_dialog .dijitContentPaneSingleChild {
+  overflow: unset;
+}
+
 .view-roles,
 .view-roles .portlet-sidebar {
   height: 100%;

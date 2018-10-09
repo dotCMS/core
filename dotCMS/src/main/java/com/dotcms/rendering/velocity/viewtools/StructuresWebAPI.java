@@ -247,33 +247,6 @@ public class StructuresWebAPI implements ViewTool {
 		return FactoryLocator.getRelationshipFactory().byContentType(st);
 	}
 
-	/**
-	 * This gets the list of all the relationship objects associated to the
-	 * structure of the contentlet
-	 *
-	 * @param cont
-	 *            The contentlet
-	 * @param hasParent
-	 *            true If you find the relations where the contentlet is parent,
-	 *            false If you find the relations where the contentlet is child
-	 * @return A list of relationship objects
-	 */
-	@Deprecated
-	public List<Relationship> getRelationshipsOfStructure(Structure st, boolean hasParent) {
-		return getRelationshipsOfStructure(st.getInode(), hasParent);
-	}
-
-	@Deprecated
-	public List<Relationship> getRelationshipsOfStructure(long structureInode, boolean hasParent) {
-		return getRelationshipsOfStructure(((Long) structureInode).toString(), hasParent);
-	}
-
-	@Deprecated
-	public List<Relationship> getRelationshipsOfStructure(String structureInode, boolean hasParent) {
-		Structure st = (Structure) InodeFactory.getInode(structureInode, Structure.class);
-		return FactoryLocator.getRelationshipFactory().byContentType(st, hasParent);
-	}
-
 	public boolean isFieldConstant(Field field){
 		return APILocator.getFieldAPI().isElementConstant(field);
 	}

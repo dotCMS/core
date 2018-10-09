@@ -12,10 +12,10 @@ public abstract class BundleFactory {
 
     protected static String INSERT_BUNDLE_ENVIRONMENT = "INSERT INTO publishing_bundle_environment VALUES (?,?,?)";
 
-    protected static String SELECT_UNSEND_BUNDLES = "SELECT * FROM publishing_bundle where publish_date is null and expire_date is null and owner = ?";
+    protected static String SELECT_UNSEND_BUNDLES = "SELECT * FROM publishing_bundle where publish_date is null and expire_date is null and owner = ? order by publish_date desc";
 
     protected static String SELECT_UNSEND_BUNDLES_LIKE_NAME = "SELECT * FROM publishing_bundle " +
-            "where publish_date is null and expire_date is null and owner = ? and UPPER(name) like UPPER(?)";
+            "where publish_date is null and expire_date is null and owner = ? and UPPER(name) like UPPER(?) order by publish_date desc";
 
     protected static String SELECT_BUNDLE_BY_NAME = "SELECT * FROM publishing_bundle where UPPER(name) = UPPER(?)";
 

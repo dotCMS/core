@@ -62,13 +62,17 @@ public class RelationshipAPIImpl implements RelationshipAPI {
 
     @CloseDBIfOpened
     @Override
-    public List<Relationship> byContentType(ContentTypeIf st, boolean hasParent) {
-        return this.relationshipFactory.byContentType(st, hasParent);
+    public List<Relationship> byContentType(ContentTypeIf st, boolean hasParent) throws DotDataException{
+        if(hasParent) {
+            return this.relationshipFactory.byParent(st);
+        }else{
+            return this.relationshipFactory.byChild(st);
+        }
     }
 
     @CloseDBIfOpened
     @Override
-    public List<Relationship> byContentType(ContentTypeIf type, String orderBy) {
+    public List<Relationship> byContentType(ContentTypeIf type, String orderBy){
         return this.relationshipFactory.byContentType(type, orderBy);
     }
 
@@ -121,10 +125,11 @@ public class RelationshipAPIImpl implements RelationshipAPI {
     @Override
     public void save(Relationship relationship, String inode) throws DotDataException {
         checkReadOnlyFields(relationship, inode);
-        this.relationshipFactory.save(relationship, inode);
+        this.relationshipFactory.save(relationship);
     }
 
-    private void checkReadOnlyFields(final Relationship relationship, final String inode) {
+    private void checkReadOnlyFields(final Relationship relationship, final String inode)
+            throws DotDataException {
         if (UtilMethods.isSet(inode) && UtilMethods.isSet(relationship)) {
 
             //Check if the relationship already exists
@@ -153,8 +158,7 @@ public class RelationshipAPIImpl implements RelationshipAPI {
     @WrapInTransaction
     @Override
     public void create(Relationship relationship) throws DotDataException {
-        final String inode = UUIDGenerator.generateUuid();
-        this.relationshipFactory.save(relationship, inode);
+        this.relationshipFactory.save(relationship);
     }
 
     @WrapInTransaction

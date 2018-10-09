@@ -1,7 +1,5 @@
 package com.dotmarketing.portlets.files.action;
 
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
-
 import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
@@ -15,9 +13,9 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.WebAssetException;
 import com.dotmarketing.portal.struts.DotPortletAction;
-import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicyProvider;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.files.struts.FileForm;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
@@ -39,16 +37,19 @@ import com.liferay.util.ParamUtil;
 import com.liferay.util.StringPool;
 import com.liferay.util.servlet.SessionMessages;
 import com.liferay.util.servlet.UploadPortletRequest;
+import org.apache.struts.action.ActionForm;
+import org.apache.struts.action.ActionMapping;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
-import org.apache.struts.action.ActionForm;
-import org.apache.struts.action.ActionMapping;
+
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
 
 /**
  * @author Maria
@@ -289,10 +290,10 @@ public class UploadMultipleFilesAction extends DotPortletAction {
 										.workflowActionComments(StringPool.BLANK)
 										.workflowAssignKey(StringPool.BLANK)
 										.categories(Collections.emptyList())
+										.indexPolicy(IndexPolicyProvider.getInstance().forSingleContent())
 										.generateSystemEvent(Boolean.FALSE).build());
 
                         HibernateUtil.closeAndCommitTransaction();
-						APILocator.getContentletAPI().isInodeIndexed(contentlet.getInode());
 
                     }
 

@@ -15,6 +15,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.workflows.actionlet.SaveContentActionlet;
 import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
@@ -183,13 +184,12 @@ public class SaveContentActionletTest extends BaseWorkflowIntegrationTest {
                 this.schemeStepActionResult.getAction().getId());
         contentlet1.setStringProperty("title", "Test Save 2");
         contentlet1.setStringProperty("txt",   "Test Save Text 2");
+        contentlet1.setIndexPolicy(IndexPolicy.FORCE);
 
         final WorkflowProcessor processor  =
                 SaveContentActionletTest.workflowAPI.fireWorkflowPreCheckin(contentlet1, user);
 
         SaveContentActionletTest.workflowAPI.fireWorkflowPostCheckin(processor);
-
-        contentletAPI.isInodeIndexed(processor.getContentlet().getInode());
 
         final Contentlet contentlet2  = SaveContentActionletTest.contentletAPI.findContentletByIdentifier
                 (SaveContentActionletTest.contentlet.getIdentifier(),
@@ -230,6 +230,7 @@ public class SaveContentActionletTest extends BaseWorkflowIntegrationTest {
                 this.schemeStepActionResult.getAction().getId());
         contentlet1.setStringProperty("title", "Test Save 2");
         contentlet1.setStringProperty("txt",   "Test Save Text 2");
+        contentlet1.setIndexPolicy(IndexPolicy.FORCE);
 
         final Contentlet contentlet2  =
                 SaveContentActionletTest.workflowAPI.fireContentWorkflow(contentlet1,
@@ -237,8 +238,6 @@ public class SaveContentActionletTest extends BaseWorkflowIntegrationTest {
                         .modUser(user)
                         .workflowActionId(this.schemeStepActionResult.getAction().getId())
                         .generateSystemEvent(false).build());
-
-        contentletAPI.isInodeIndexed(contentlet2.getInode());
 
         final Contentlet contentlet3  = SaveContentActionletTest.contentletAPI.findContentletByIdentifier
                 (SaveContentActionletTest.contentlet2.getIdentifier(),

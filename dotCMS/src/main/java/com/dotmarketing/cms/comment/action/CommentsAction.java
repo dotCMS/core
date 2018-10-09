@@ -25,35 +25,21 @@ import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicyProvider;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.InodeUtils;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.VelocityUtil;
-import com.dotmarketing.util.WebKeys;
+import com.dotmarketing.util.*;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.util.Html;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import org.apache.struts.Globals;
+import org.apache.struts.action.*;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import org.apache.struts.Globals;
-import org.apache.struts.action.ActionErrors;
-import org.apache.struts.action.ActionForm;
-import org.apache.struts.action.ActionForward;
-import org.apache.struts.action.ActionMapping;
-import org.apache.struts.action.ActionMessage;
-import org.apache.struts.action.ActionMessages;
+import java.util.*;
 
 
 
@@ -258,7 +244,7 @@ public class CommentsAction extends SecureAction {
 			List<Permission> pers = perAPI.getPermissions(commentsStructure);
 
 
-
+			contentletComment.setIndexPolicy(IndexPolicyProvider.getInstance().forSingleContent());
 
 			// new workflows
 			if(UtilMethods.isSet(commentsOptions.get("commentsModeration"))){
@@ -266,9 +252,6 @@ public class CommentsAction extends SecureAction {
 						contentletComment.setActionId(APILocator.getWorkflowAPI().findEntryAction(contentletComment, user).getId());
 				contentletComment.setStringProperty(Contentlet.WORKFLOW_COMMENTS_KEY, commentsForm.getComment());
 			}
-
-
-
 
 
 
@@ -328,9 +311,7 @@ public class CommentsAction extends SecureAction {
 			String userEmail = commentsForm.getEmail();
 			String userComment = commentsForm.getComment();
 			HibernateUtil.closeAndCommitTransaction();
-			if(!conAPI.isInodeIndexed(contentletComment.getInode())){
-				Logger.error(this, "Problem indexing comment content");
-			}
+
 			sendCommentEmails(contentletIdentifier, relationName, request, referrer,userName,userEmail,userComment,commentQuestion, commentsOptions);
 
 			ActionForward forward = new ActionForward(referrer);

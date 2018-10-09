@@ -43,7 +43,7 @@ public class BundleFactoryImpl extends BundleFactory {
 
     @Override
     public List<Bundle> findUnsendBundles ( String userId ) throws DotDataException {
-        return findUnsendBundles( userId, -1, 0 );
+        return findUnsendBundles( userId, 100, 0 );
     }
 
     @Override

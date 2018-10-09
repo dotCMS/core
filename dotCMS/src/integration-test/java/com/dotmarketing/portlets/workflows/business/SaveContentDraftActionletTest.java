@@ -21,6 +21,7 @@ import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Relationship;
@@ -154,22 +155,21 @@ public class SaveContentDraftActionletTest extends BaseWorkflowIntegrationTest {
 
 
         // first save
+        contentlet.setIndexPolicy(IndexPolicy.FORCE);
         final Contentlet contentlet1 = SaveContentDraftActionletTest.contentletAPI.checkin(contentlet, user, false);
         SaveContentDraftActionletTest.contentlet = contentlet1;
 
         contentlet1.setStringProperty("title", "Test Save 1");
         contentlet1.setStringProperty("txt", "Test Save Text 1");
 
-        contentletAPI.isInodeIndexed(contentlet1.getInode());
-
+        contentlet1.setIndexPolicy(IndexPolicy.FORCE);
         final Contentlet contentlet2 = SaveContentDraftActionletTest.contentletAPI.checkout(contentlet1.getInode(), user, false);
 
         contentlet2.setStringProperty("title", "Test Save 2");
         contentlet2.setStringProperty("txt", "Test Save Text 2");
 
+        contentlet2.setIndexPolicy(IndexPolicy.FORCE);
         final Contentlet contentlet3 = SaveContentDraftActionletTest.contentletAPI.checkin(contentlet2, user, false);
-
-        contentletAPI.isInodeIndexed(contentlet3.getInode());
 
         final Contentlet contentlet4 = SaveContentDraftActionletTest.contentletAPI.
                 find(contentlet3.getInode(), user, false);
@@ -227,7 +227,7 @@ public class SaveContentDraftActionletTest extends BaseWorkflowIntegrationTest {
         contentlet.setStringProperty("txt",   "Test Saves Text");
         contentlet.setHost(Host.SYSTEM_HOST);
         contentlet.setFolder(FolderAPI.SYSTEM_FOLDER);
-
+        contentlet.setIndexPolicy(IndexPolicy.FORCE);
         // first save
         final Contentlet contentlet1 = SaveContentDraftActionletTest.contentletAPI.checkin(contentlet, user, false);
         SaveContentDraftActionletTest.contentlet2 = contentlet1;
@@ -235,16 +235,14 @@ public class SaveContentDraftActionletTest extends BaseWorkflowIntegrationTest {
         contentlet1.setStringProperty("title", "Test Saves 2");
         contentlet1.setStringProperty("txt", "Test Saves Text 2");
 
-        contentletAPI.isInodeIndexed(contentlet1.getInode());
 
         final Contentlet contentlet2 = SaveContentDraftActionletTest.contentletAPI.checkout(contentlet1.getInode(), user, false);
 
         contentlet2.setStringProperty("title", "Test Saves 2");
         contentlet2.setStringProperty("txt", "Test Saves Text 2");
 
+        contentlet2.setIndexPolicy(IndexPolicy.FORCE);
         final Contentlet contentlet3 = SaveContentDraftActionletTest.contentletAPI.checkin(contentlet2, user, false);
-
-        contentletAPI.isInodeIndexed(contentlet3.getInode());
 
         final Contentlet contentlet4 = SaveContentDraftActionletTest.contentletAPI.
                 find(contentlet3.getInode(), user, false);

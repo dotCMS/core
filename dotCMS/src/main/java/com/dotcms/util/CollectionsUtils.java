@@ -6,10 +6,7 @@ import org.elasticsearch.common.collect.MapBuilder;
 
 import java.io.Serializable;
 import java.util.*;
-import java.util.function.BiConsumer;
-import java.util.function.BinaryOperator;
-import java.util.function.Function;
-import java.util.function.Supplier;
+import java.util.function.*;
 import java.util.stream.Collector;
 
 /**
@@ -25,7 +22,60 @@ import java.util.stream.Collector;
 @SuppressWarnings("serial")
 public class CollectionsUtils implements Serializable {
 
-	/**
+    /**
+     * Split out the collection in ArrayList of ArrayList that satisfied each Predicate
+     * it means all the items on collections that match the predicate 0 for instance will be stored in the first list of the final returned list, for instance:
+     *
+     * <pre>
+     *
+     *
+     *     List listOfList = partition (Arrays.asList("hello","hello","hi","yeah","hi","hello", (s) -> s.equals("hi"), (s) -> s.equals("hello"), (s) -> s.equals("yeah"))
+     *
+     *     System.out.println(listOfList.get(0));  // will print hi, hi
+     *     System.out.println(listOfList.get(1));  // will print hello, hello,hello
+     *     System.out.println(listOfList.get(2));  // will print yeah
+     * </pre>
+     *
+     * If there is not any match for a predicate, the corresponding list will be returned empty
+     * @param collection
+     * @param predicates
+     * @param <T>
+     * @return
+     */
+    public static <T> List<List<T>> partition(final Collection<T> collection, final Predicate<T>... predicates) {
+
+        final List<List<T>> partitions = new ArrayList<>(predicates.length);
+        fill(partitions, predicates.length, CollectionsUtils::list);
+
+        for (final T item : collection) {
+
+            for (int i = 0; i < predicates.length; ++i) {
+
+                final Predicate<T> predicate = predicates[i];
+                if (predicate.test(item)) {
+
+                    partitions.get(i).add(item);
+                }
+            }
+        }
+
+        return partitions;
+    } // partition.
+
+    /**
+     * Fills the collection will the supplier
+     * @param collection {@link Collection}
+     * @param <T>
+     */
+    public static <T> void fill(final Collection<T> collection, final int size, final Supplier<T> supplier) {
+
+        for (int i = 0; i < size; i++) {
+
+            collection.add(supplier.get());
+        }
+    } // fillList.
+
+    /**
 	 * Returns the object in the {@link Map} specified by its key. If it doesn't
 	 * exist, returns its default value.
 	 * 

@@ -1,11 +1,5 @@
 package com.dotmarketing.tag.business;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
@@ -17,6 +11,7 @@ import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.personas.business.PersonaAPI;
 import com.dotmarketing.portlets.structure.business.StructureAPI;
@@ -25,10 +20,13 @@ import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.tag.model.TagInode;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-import java.util.Date;
-import java.util.List;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import java.util.Date;
+import java.util.List;
+
+import static org.junit.Assert.*;
 
 /**
  * Test the functionality of TagAPI class
@@ -605,7 +603,9 @@ public class TagAPITest extends IntegrationTestBase {
 			String hostName = "testtagapiHost_" + System.currentTimeMillis();
 			host.setProperty(Host.HOST_NAME_KEY, hostName);
 			host.setLanguageId(langAPI.getDefaultLanguage().getId());
+			host.setIndexPolicy(IndexPolicy.FORCE);
 			host = conAPI.checkin(host, testUser, false);
+			host.setIndexPolicy(IndexPolicy.FORCE);
 			conAPI.publish(host, testUser, false);
 			assertTrue(conAPI.isInodeIndexed(host.getInode()));
 			assertTrue(conAPI.isInodeIndexed(host.getInode(), true));
@@ -618,7 +618,9 @@ public class TagAPITest extends IntegrationTestBase {
 			newHost = hostAPI.findByName(hostName, systemUser, false);
 			host.setProperty(Host.TAG_STORAGE, newHost.getIdentifier());
 			host.setInode(null);
+			host.setIndexPolicy(IndexPolicy.FORCE);
 			host = conAPI.checkin(host, testUser, false);
+			host.setIndexPolicy(IndexPolicy.FORCE);
 			conAPI.publish(host, testUser, false);
 			assertTrue(conAPI.isInodeIndexed(host.getInode()));
 			assertTrue(conAPI.isInodeIndexed(host.getInode(), true));

@@ -1,25 +1,8 @@
 package com.dotmarketing.cms.content.submit.util;
 
-import java.io.File;
-import java.io.IOException;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.FactoryLocator;
-import com.dotmarketing.business.NoSuchUserException;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.RelationshipAPI;
-import com.dotmarketing.business.Role;
-import com.dotmarketing.business.RoleAPI;
-import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.business.*;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -29,13 +12,13 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicyProvider;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.structure.business.FieldAPI;
-
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.FieldVariable;
 import com.dotmarketing.portlets.structure.model.Relationship;
@@ -43,14 +26,15 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.model.WorkflowComment;
 import com.dotmarketing.portlets.workflows.model.WorkflowHistory;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
-import com.dotmarketing.util.InodeUtils;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilHTML;
-import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.VelocityUtil;
+import com.dotmarketing.util.*;
 import com.dotmarketing.util.WebKeys.WorkflowStatuses;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
+
+import java.io.File;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.*;
 
 /**
  * This Util class generate the content
@@ -457,6 +441,7 @@ public class SubmitContentUtil {
 		 * Set the content values
 		 */
 		contentlet = SubmitContentUtil.setAllFields(st.getVelocityVarName(), parametersName, values);
+		contentlet.setIndexPolicy(IndexPolicyProvider.getInstance().forSingleContent());
 
 
 		/**

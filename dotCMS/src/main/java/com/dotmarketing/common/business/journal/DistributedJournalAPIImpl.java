@@ -149,9 +149,23 @@ public class DistributedJournalAPIImpl<T> implements DistributedJournalAPI<T> {
 
 	@WrapInTransaction
 	@Override
+	public void addReindexHighPriority(final String identifier) throws DotDataException {
+
+		this.distributedJournalFactory.addReindexHighPriority(identifier);
+	}
+
+	@WrapInTransaction
+	@Override
 	public int addIdentifierReindex(final Set<String> ids) throws DotDataException {
 
 		return this.distributedJournalFactory.addIdentifierReindex(ids);
+	}
+
+	@WrapInTransaction
+	@Override
+	public int addReindexHighPriority(final Set<String> ids) throws DotDataException {
+
+		return this.distributedJournalFactory.addReindexHighPriority(ids);
 	}
 
 	@WrapInTransaction

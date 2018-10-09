@@ -254,27 +254,20 @@ public class ESClient {
      * @return settings object to be used for initializing ES node
      */
 	public Builder getESNodeSettings() throws Exception {
-        Server currentServer;
-        String serverId;
-
         // Load settings from elasticsearch-override.yml
         final Builder externalSettings = getExtSettingsBuilder();
 
-        // Get current server
-        final ServerAPI serverAPI      = APILocator.getServerAPI();
-        currentServer = serverAPI.getCurrentServer();
-
         // Add transport.host and transport.tcp.port to the settings
-        setTransportConfToSettings(currentServer, externalSettings);
+        setTransportConfToSettings(externalSettings);
 
         // Add http.host and http.port to the settings if http.enabled=true
-        setHttpConfToSettings(currentServer, externalSettings);
+        setHttpConfToSettings(externalSettings);
 
         // update server with tcp transport address and port
-        updateServerTransportConfFromSettings(currentServer, externalSettings);
+        updateServerTransportConfFromSettings(externalSettings);
 
         // update server with http port
-        updateServerHttpConfFromSettings(currentServer, externalSettings);
+        updateServerHttpConfFromSettings(externalSettings);
 
         // set comma-separated list of address:port to settings
         setUnicastHostsToSettings(externalSettings);
@@ -282,7 +275,7 @@ public class ESClient {
         return externalSettings;
 	}
 
-    private void updateServerTransportConfFromSettings(Server currentServer, final Builder externalSettings) {
+    private void updateServerTransportConfFromSettings(final Builder externalSettings) throws DotDataException {
 
         if (!UtilMethods
                 .isSet(externalSettings.get(ServerPort.ES_TRANSPORT_TCP_PORT.getPropertyName()))) {
@@ -291,6 +284,8 @@ public class ESClient {
 
         final int transportTCPPort = Integer.parseInt(externalSettings
             .get(ServerPort.ES_TRANSPORT_TCP_PORT.getPropertyName()));
+
+        final Server currentServer = serverAPI.getCurrentServer();
 
         Server currentServerWithTransportSettings = Server.builder(currentServer)
             .withIpAddress(externalSettings.get(ES_TRANSPORT_HOST)).withEsTransportTcpPort(transportTCPPort).build();
@@ -303,7 +298,7 @@ public class ESClient {
         }
     }
 
-    private void updateServerHttpConfFromSettings(Server currentServer, final Builder externalSettings) {
+    private void updateServerHttpConfFromSettings(final Builder externalSettings) throws DotDataException {
 
 	    if(!UtilMethods.isSet(externalSettings.get(ServerPort.ES_HTTP_PORT.getPropertyName()))) {
 	        return;
@@ -311,6 +306,8 @@ public class ESClient {
 
         final int httpPort = Integer.parseInt(externalSettings
             .get(ServerPort.ES_HTTP_PORT.getPropertyName()));
+
+        final Server currentServer = serverAPI.getCurrentServer();
 
         Server currentServerWithPort = Server.builder(currentServer).withEsHttpPort(httpPort).build();
 
@@ -325,25 +322,30 @@ public class ESClient {
 
     /**
      *
-     * @param currentServer
      * @param externalSettings
      * @return
      */
-    private void setHttpConfToSettings(final Server currentServer, final Builder externalSettings) {
+    @VisibleForTesting
+    void setHttpConfToSettings(final Builder externalSettings) throws DotDataException {
         if(clusterAPI.isESAutoWire()) {
-            String httpPort;
+            String httpPort = externalSettings.get(ServerPort.ES_HTTP_PORT.getPropertyName());
 
-            final String bindAddr = externalSettings.get("transport.host");
             if (UtilMethods.isSet(externalSettings.get("http.enabled")) && (Boolean
                 .parseBoolean(externalSettings.get("http.enabled")))) {
-                httpPort =
-                    UtilMethods.isSet(currentServer.getEsHttpPort()) ? currentServer.getEsHttpPort()
-                        .toString()
-                        : ClusterFactory.getNextAvailablePort(currentServer.getServerId(), ServerPort.ES_HTTP_PORT,
-                            externalSettings);
+
+                if(!UtilMethods.isSet(httpPort)) {
+                    final Server currentServer = serverAPI.getCurrentServer();
+
+                    httpPort =
+                            UtilMethods.isSet(currentServer.getEsHttpPort()) ? currentServer.getEsHttpPort()
+                                    .toString()
+                                    : ClusterFactory.getNextAvailablePort(currentServer.getServerId(), ServerPort.ES_HTTP_PORT,
+                                    externalSettings);
+
+                }
 
                 if (!UtilMethods.isSet(externalSettings.get("http.host"))) {
-                    externalSettings.put("http.host", bindAddr);
+                    externalSettings.put("http.host", externalSettings.get("transport.host"));
                 }
 
                 externalSettings.put(ServerPort.ES_HTTP_PORT.getPropertyName(), httpPort);
@@ -353,35 +355,38 @@ public class ESClient {
 
     /**
      *
-     * @param currentServer
      * @param externalSettings
      */
     @VisibleForTesting
-    protected void setTransportConfToSettings(final Server currentServer, final Builder externalSettings) {
+    void setTransportConfToSettings(final Builder externalSettings) throws DotDataException {
         if(clusterAPI.isESAutoWire()) {
-            String bindAddressFromProperty;
-            String bindAddr;
-            String transportTCPPort;
-            bindAddressFromProperty = externalSettings.get(ES_TRANSPORT_HOST);
+            String bindAddressFromProperty = externalSettings.get(ES_TRANSPORT_HOST);
 
             if (UtilMethods.isSet(bindAddressFromProperty)) {
                 bindAddressFromProperty = validateAddress(bindAddressFromProperty);
             }
 
-            bindAddr = bindAddressFromProperty != null ? bindAddressFromProperty : currentServer.getIpAddress();
+            final Server currentServer = serverAPI.getCurrentServer();
+
+            final String bindAddr = bindAddressFromProperty != null ? bindAddressFromProperty : currentServer.getIpAddress();
 
             externalSettings.put(ES_TRANSPORT_HOST, bindAddr);
 
-            transportTCPPort = UtilMethods.isSet(currentServer.getEsTransportTcpPort())
-                ? Integer.toString(currentServer.getEsTransportTcpPort())
-                : getNextAvailableESPort(currentServer.getServerId(), bindAddr, externalSettings);
+            String transportTCPPort = externalSettings.get(ServerPort.ES_TRANSPORT_TCP_PORT.getPropertyName());
+
+            if(!UtilMethods.isSet(transportTCPPort)) {
+                transportTCPPort = UtilMethods.isSet(currentServer.getEsTransportTcpPort())
+                        ? Integer.toString(currentServer.getEsTransportTcpPort())
+                        : getNextAvailableESPort(currentServer.getServerId(), bindAddr, externalSettings);
+            }
 
             externalSettings.put(ServerPort.ES_TRANSPORT_TCP_PORT.getPropertyName(), transportTCPPort);
         }
     }
 
     @Nullable
-    private String validateAddress(String bindAddressFromProperty) {
+    @VisibleForTesting
+    protected String validateAddress(String bindAddressFromProperty) {
         try {
             InetAddress addr = InetAddress.getByName(bindAddressFromProperty);
             if (ClusterFactory.isValidIP(bindAddressFromProperty)) {

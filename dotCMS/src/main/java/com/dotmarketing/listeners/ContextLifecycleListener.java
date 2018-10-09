@@ -1,5 +1,6 @@
 package com.dotmarketing.listeners;
 
+import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.util.AsciiArt;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.reindex.ReindexThread;
@@ -45,6 +46,12 @@ public class ContextLifecycleListener implements ServletContextListener {
         } catch (Exception e) {
             Logger.error(this, "A error ocurred trying to shutdown the Cache subsystem.");
         }
+
+		try {
+			DotConcurrentFactory.getInstance().shutdownAndDestroy();
+		} catch (Exception e) {
+			Logger.error(this, "A error ocurred trying to shutdown the DotConcurrent subsystem.");
+		}
 
 		Logger.info(this, "Finished shuting down.");
 

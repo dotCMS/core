@@ -113,7 +113,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -781,7 +780,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		HibernateUtil.closeAndCommitTransaction();
 
 		if(UtilMethods.isSet(req.getAttribute("inodeToWaitOn"))){
-			if(!conAPI.isInodeIndexed(req.getAttribute("inodeToWaitOn").toString())){
+			if(!conAPI.isInodeIndexed(req.getAttribute("inodeToWaitOn").toString())){ // todo: not sure about this one, might introduce a timeout
 				Logger.error(this, "Timedout waiting on index to return");
 			}
 		}
@@ -3046,7 +3045,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 				addlQry = " +deleted:false ";
 
 			for(Contentlet c : contentToIndexAfterCommit){
-				conAPI.isInodeIndexed(c.getInode()+addlQry);
+				conAPI.isInodeIndexed(c.getInode()+addlQry); // this looks necessary
 			}
 		}
 

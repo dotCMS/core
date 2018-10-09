@@ -1,31 +1,13 @@
 package com.dotmarketing.portlets.structure.business;
 
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.io.FileNotFoundException;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-
-import javax.servlet.http.HttpServletRequest;
-
 import com.dotcms.datagen.HTMLPageDataGen;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.beans.Inode;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.db.HibernateUtil;
@@ -34,7 +16,9 @@ import com.dotmarketing.factories.MultiTreeFactory;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
@@ -44,6 +28,18 @@ import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.servlets.test.ServletTestRunner;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+
+import javax.servlet.http.HttpServletRequest;
+import java.io.FileNotFoundException;
+import java.net.URL;
+import java.util.Date;
+
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class URLMapTest {
 
@@ -60,6 +56,8 @@ public class URLMapTest {
 	@Before
 	public void createAssets() throws Exception {
 		try {
+
+			HibernateUtil.setAsyncCommitListenersFinalization(false);
 
 			user = APILocator.getUserAPI().getSystemUser();
 			Host demoHost = APILocator.getHostAPI().findByName("demo.dotcms.com", user, false);
@@ -124,7 +122,14 @@ public class URLMapTest {
 			contentletAPI.setContentletProperty( widget, widgetTitle, "newsTestWidget" );
 			contentletAPI.setContentletProperty( widget, widgetCode, "$URLMapContent.story" );
 
+			widget.setIndexPolicy(IndexPolicy.FORCE);
+			widget.setIndexPolicyDependencies(IndexPolicy.FORCE);
+			widget.setBoolProperty(Contentlet.IS_TEST_MODE, true);
 			widget = contentletAPI.checkin( widget, null, permissionAPI.getPermissions( simpleWidgetSt ), user, false );
+			widget.setIndexPolicy(IndexPolicy.FORCE);
+            widget.setIndexPolicyDependencies(IndexPolicy.FORCE);
+			widget.setBoolProperty(Contentlet.IS_TEST_MODE, true);
+            contentletAPI.publish(widget, user, false);
 			APILocator.getVersionableAPI().setLive(widget);
 
 			// add the widget to the detail page
@@ -211,8 +216,14 @@ public class URLMapTest {
 			contentletAPI.setContentletProperty( englishContent, headline, "the-gas-price" );
 			contentletAPI.setContentletProperty( englishContent, story, "the-gas-price" );
 			contentletAPI.setContentletProperty( englishContent, urlTitle, "the-gas-price" );
-
+			englishContent.setIndexPolicy(IndexPolicy.FORCE);
+            englishContent.setIndexPolicyDependencies(IndexPolicy.FORCE);
+			englishContent.setBoolProperty(Contentlet.IS_TEST_MODE, true);
 			englishContent = contentletAPI.checkin( englishContent, null, permissionAPI.getPermissions( testSt ), user, false );
+			englishContent.setIndexPolicy(IndexPolicy.FORCE);
+            englishContent.setIndexPolicyDependencies(IndexPolicy.FORCE);
+			englishContent.setBoolProperty(Contentlet.IS_TEST_MODE, true);
+            contentletAPI.publish(englishContent, user, false);
 			APILocator.getVersionableAPI().setLive(englishContent);
 
 			// SPANISH CONTENT
@@ -226,8 +237,15 @@ public class URLMapTest {
 			contentletAPI.setContentletProperty( spanishContent, headline, "el-precio-del-gas" );
 			contentletAPI.setContentletProperty( spanishContent, story, "el-precio-del-gas" );
 			contentletAPI.setContentletProperty( spanishContent, urlTitle, "el-precio-del-gas" );
+			spanishContent.setIndexPolicy(IndexPolicy.FORCE);
+            spanishContent.setIndexPolicyDependencies(IndexPolicy.FORCE);
+			spanishContent.setBoolProperty(Contentlet.IS_TEST_MODE, true);
 
 			spanishContent = contentletAPI.checkin( spanishContent, null, permissionAPI.getPermissions( testSt ), user, false );
+			spanishContent.setIndexPolicy(IndexPolicy.FORCE);
+            spanishContent.setIndexPolicyDependencies(IndexPolicy.FORCE);
+			spanishContent.setBoolProperty(Contentlet.IS_TEST_MODE, true);
+            contentletAPI.publish(spanishContent, user, false);
 			APILocator.getVersionableAPI().setLive(spanishContent);
 
 			HibernateUtil.closeAndCommitTransaction();
@@ -280,9 +298,20 @@ public class URLMapTest {
 	public void deleteAssets() throws Exception {
        try{
         	HibernateUtil.startTransaction();
-        	if(testFolder!=null) APILocator.getFolderAPI().delete(testFolder, user, false);
-        	if(testSt!=null) APILocator.getStructureAPI().delete(testSt, user);
+
+        	if(testFolder!=null) {
+
+        		APILocator.getFolderAPI().delete(testFolder, user, false);
+			}
+
+        	if(testSt!=null) {
+
+        		APILocator.getStructureAPI().delete(testSt, user);
+			}
+
         	if(widget!=null){
+
+				widget.getContentType(); // preloa the contenttype
 				APILocator.getContentletAPI().archive(widget, user, false);
         		APILocator.getContentletAPI().delete(widget, user, false);
 			}
