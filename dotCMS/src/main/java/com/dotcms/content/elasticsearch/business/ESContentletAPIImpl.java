@@ -966,7 +966,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
 
         return APILocator.getHTMLPageAssetAPI().fromContentlet(this.findContentletByIdentifier(ident, live, languageId, user, frontRoles));
-        
+
     }
 
     /**
@@ -2747,6 +2747,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                User user, boolean respectFrontendRoles, boolean createNewVersion,
                                boolean generateSystemEvent) throws DotDataException, DotSecurityException {
 
+    try{
         boolean validateEmptyFile = contentlet.getMap().get("_validateEmptyFile_") == null;
 
         String contentPushPublishDate = contentlet.getStringProperty("wfPublishDate");
@@ -3485,6 +3486,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
 
         return contentlet;
+        }finally{
+          contentlet.cleanup();
+        }
     }
 
     private void updateTemplateInAllLanguageVersions(final Contentlet contentlet, final User user)
@@ -3846,7 +3850,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * @throws DotSecurityException
      */
     @CloseDBIfOpened
-    public void copyProperties(Contentlet contentlet,Map<String, Object> properties,boolean checkIsUnique) throws DotContentletStateException,DotSecurityException {
+    public void copyProperties(final Contentlet contentlet, final Map<String, Object> properties, boolean checkIsUnique) throws DotContentletStateException,DotSecurityException {
         if(!InodeUtils.isSet(contentlet.getStructureInode())){
             Logger.warn(this,"Cannot copy properties to contentlet where structure inode < 1 : You must set the structure's inode");
             return;
@@ -3867,7 +3871,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
             if(property.getValue() == null)
                 continue;
-            if((!property.getKey().equals("recurrence"))&&!(property.getValue() instanceof String || property.getValue() instanceof Boolean ||property.getValue() instanceof File || property.getValue() instanceof Float || property.getValue() instanceof Integer || property.getValue() instanceof Date || property.getValue() instanceof Long || property.getValue() instanceof List || property.getValue() instanceof BigDecimal || property.getValue() instanceof Short || property.getValue() instanceof Double)){
+            if((!property.getKey().equals("recurrence")) &&
+                    !(
+                         property.getValue() instanceof Set || property.getValue() instanceof String || property.getValue() instanceof Boolean ||property.getValue() instanceof File ||
+                         property.getValue() instanceof Float || property.getValue() instanceof Integer || property.getValue() instanceof Date || property.getValue() instanceof Long ||
+                         property.getValue() instanceof List || property.getValue() instanceof BigDecimal || property.getValue() instanceof Short || property.getValue() instanceof Double
+                    )
+            ){
                 throw new DotContentletStateException("The map contains an invalid value: " + property.getValue().getClass());
             }
         }
@@ -3904,9 +3914,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     contentlet.setHost((String)value);
                 }else if(conVariable.equals(Contentlet.FOLDER_KEY)){
                     contentlet.setFolder((String)value);
+                }else if(conVariable.equals(Contentlet.NULL_PROPERTIES)){
+                    contentlet.setProperty(conVariable, value);
                 }else if(NEVER_EXPIRE.equals(conVariable)){
                     contentlet.setProperty(conVariable, value);
-                }else if(velFieldmap.get(conVariable) != null){
+                } else if(velFieldmap.get(conVariable) != null){
                     Field field = velFieldmap.get(conVariable);
                     if(isFieldTypeString(field))
                     {
@@ -3938,6 +3950,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
             } catch (IOException ioe) {
                 Logger.error(this,"IO Error in copying Binary File object ", ioe);
             }
+
+
         }
 
         // workflow
@@ -4006,7 +4020,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             throw new DotContentletValidationException("The contentlet's Content Type Inode must be set");
         }
 
-        if(value==null || !UtilMethods.isSet(value.toString())) {
+        if(value == null || !UtilMethods.isSet(value.toString())) {
             contentlet.setProperty(field.getVelocityVarName(), null);
             return;
         }
@@ -4079,6 +4093,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 try{
                     contentlet.setLongProperty(field.getVelocityVarName(),new Long((String)value));
                 }catch (Exception e) {
+                    //If we throw this exception here.. the contentlet will never get to the validateContentlet Method
                     throw new DotContentletStateException("Unable to set string value as a Long");
                 }
             }
@@ -4231,24 +4246,31 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                         + "] has an invalid field.");
         List<Field> fields = FieldsCache.getFieldsByStructureInode(stInode);
         Structure structure = CacheLocator.getContentTypeCache().getStructureByInode(stInode);
-        Map<String, Object> conMap = contentlet.getMap();
-        for (Field field : fields) {
-            Object o = conMap.get(field.getVelocityVarName());
+        final Map<String, Object> conMap = contentlet.getMap();
+        final Set<String> nullValueProperties = contentlet.getNullProperties();
+        for (final Field field : fields) {
+            final Object o = (nullValueProperties.contains(field.getVelocityVarName()) ? null : conMap.get(field.getVelocityVarName()));
             if(o != null){
                 if(isFieldTypeString(field)){
                     if(!(o instanceof String)){
                         cve.addBadTypeField(field);
                         Logger.warn(this, "Value of field [" + field.getVelocityVarName() + "] must be of type String");
+                        hasError = true;
+                        continue;
                     }
                 }else if(isFieldTypeDate(field)){
                     if(!(o instanceof Date)){
                         cve.addBadTypeField(field);
                         Logger.warn(this, "Value of field [" + field.getVelocityVarName() + "] must be of type Date");
+                        hasError = true;
+                        continue;
                     }
                 }else if(isFieldTypeBoolean(field)){
                     if(!(o instanceof Boolean)){
                         cve.addBadTypeField(field);
                         Logger.warn(this, "Value of field [" + field.getVelocityVarName() + "] must be of type Boolean");
+                        hasError = true;
+                        continue;
                     }
                 }else if(isFieldTypeFloat(field)){
                     if(!(o instanceof Float)){
@@ -4261,12 +4283,16 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     if(!(o instanceof Long || o instanceof Integer)){
                         cve.addBadTypeField(field);
                         Logger.warn(this, "Value of field [" + field.getVelocityVarName() + "] must be of type Long or Integer");
+                        hasError = true;
+                        continue;
                     }
                     //  binary field validation
                 }else if(isFieldTypeBinary(field)){
                     if(!(o instanceof java.io.File)){
                         cve.addBadTypeField(field);
                         Logger.warn(this, "Value of field [" + field.getVelocityVarName() + "] must be of type File");
+                        hasError = true;
+                        continue;
                     }
                 }else if(isFieldTypeSystem(field) || isFieldTypeConstant(field)){
                 	// Do not validate system or constant field values
@@ -6089,6 +6115,19 @@ public class ESContentletAPIImpl implements ContentletAPI {
         } catch (DotHibernateException e) {
             throw new DotRuntimeException(e);
         }
+    }
+
+    /**
+     * This method takes the properties that were once set as null an nullify the real properties
+     * By doing this right before save. We Will null the field values on the desired entries.
+     * @param contentlet
+     * @return
+     */
+    private Contentlet applyNullProperties(final Contentlet contentlet){
+        contentlet.getNullProperties().forEach(s -> {
+            contentlet.getMap().put(s, null);
+        });
+        return contentlet;
     }
 
 }
