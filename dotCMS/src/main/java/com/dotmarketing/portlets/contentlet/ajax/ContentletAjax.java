@@ -37,6 +37,7 @@ import com.dotmarketing.portlets.contentlet.business.DotContentletValidationExce
 import com.dotmarketing.portlets.contentlet.business.DotLockException;
 import com.dotmarketing.portlets.contentlet.business.web.ContentletWebAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicyProvider;
 import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.fileassets.business.FileAssetValidationException;
@@ -73,6 +74,7 @@ import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
+import com.google.common.base.CharMatcher;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.language.LanguageException;
@@ -524,7 +526,7 @@ public class ContentletAjax {
 	@SuppressWarnings("rawtypes")
 	@LogTime
 	public List searchContentletsByUser(String structureInode, List<String> fields, List<String> categories, boolean showDeleted, boolean filterSystemHost, boolean filterUnpublish, boolean filterLocked, int page, String orderBy,int perPage, final User currentUser, HttpSession sess,String  modDateFrom, String modDateTo) throws DotStateException, DotDataException, DotSecurityException {
-		if(perPage < 1){
+    		if(perPage < 1){
 			perPage = Config.getIntProperty("PER_PAGE", 40);
 		}
 		if(!InodeUtils.isSet(structureInode)) {
@@ -748,7 +750,10 @@ public class ContentletAjax {
 									fieldValue = fieldValue.replaceFirst("\"", "");
 									fieldValue = fieldValue.substring(0, fieldValue.length()-1);
 								}
-								luceneQuery.append("+" + st.getVelocityVarName() + "." + fieldVelocityVarName + ":" + (hasQuotes ? "\"":wildCard) + ESUtils.escape(fieldValue.toString()) + (hasQuotes ? "\"":wildCard) + " ");
+
+								luceneQuery.append("+" + st.getVelocityVarName() + "." + fieldVelocityVarName + ":" + (hasQuotes ? "\"":wildCard) +
+                                        (hasQuotes && CharMatcher.WHITESPACE.matchesAnyOf(fieldValue.toString())? fieldValue: ESUtils.escape(fieldValue.toString())) +
+                                        (hasQuotes ? "\"":wildCard) + " ");
 							}
 							else{
 								String[] splitValues = fieldValue.split(",");
@@ -1780,11 +1785,7 @@ public class ContentletAjax {
 		    }
 
 		}
-		if(!isAutoSave){
-			if(InodeUtils.isSet(newInode) && !conAPI.isInodeIndexed(newInode)){
-				Logger.error(this, "Timed Out waiting for index to return");
-			}
-		}
+
 		callbackData.put("referer", referer);
 
 		return callbackData;
@@ -2028,6 +2029,9 @@ public class ContentletAjax {
 			}
 
 			conAPI.validateContentlet(cont, contentRelationships, APILocator.getCategoryAPI().getParents(cont, user, false));
+
+			cont.setIndexPolicy(IndexPolicyProvider.getInstance().forSingleContent());
+
 			if(isPublish){//DOTCMS-5514
 				conAPI.checkin(cont, contentRelationships,
 						APILocator.getCategoryAPI().getParents(cont, user, false),

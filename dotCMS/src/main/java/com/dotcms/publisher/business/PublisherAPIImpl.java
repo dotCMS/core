@@ -287,7 +287,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 		  //Triggering event listener
 		  try {
 
-			  HibernateUtil.addCommitListener(() -> this.sendQueueElements(bundleId));
+			  HibernateUtil.addCommitListener(() -> this.sendQueueElements(bundleId), 1000);
 		  } catch (DotHibernateException e) {
 			  Logger.error(this, e.getMessage(), e);
 		  }

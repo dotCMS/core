@@ -1489,6 +1489,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				}
 			}
 		}
+
 		return workflowAction;
 	}
 

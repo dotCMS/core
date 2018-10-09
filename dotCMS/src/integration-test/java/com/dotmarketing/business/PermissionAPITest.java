@@ -14,6 +14,7 @@ import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
@@ -30,21 +31,14 @@ import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.ejb.UserTestUtil;
 import com.liferay.portal.model.User;
-
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.FileWriter;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /**
  * This class tests the creation, copy, update, verification and setting of
@@ -463,8 +457,8 @@ public class PermissionAPITest extends IntegrationTestBase {
             cont1.setStringProperty("testtext", "a test value");
             cont1.setHost(hh.getIdentifier());
             cont1.setFolder(f2.getInode());
+            cont1.setIndexPolicy(IndexPolicy.FORCE);
             cont1=APILocator.getContentletAPI().checkin(cont1, sysuser, false);
-            APILocator.getContentletAPI().isInodeIndexed(cont1.getInode());
 
             permissionAPI.permissionIndividually(permissionAPI.findParentPermissionable(f1), f1, sysuser);
             assertTrue(permissionAPI.findParentPermissionable(cont1).equals(f1));
@@ -531,8 +525,8 @@ public class PermissionAPITest extends IntegrationTestBase {
             ca.setBinary(FileAssetAPI.BINARY_FIELD, cadata);
             ca.setHost(hh.getIdentifier());
             ca.setFolder(folderA.getInode());
+            ca.setIndexPolicy(IndexPolicy.FORCE);
             ca=APILocator.getContentletAPI().checkin(ca, sysuser, false);
-            APILocator.getContentletAPI().isInodeIndexed(ca.getInode());
 
             Contentlet cb=new Contentlet();
             cb.setStructureInode(FileAssetStInode);
@@ -543,8 +537,8 @@ public class PermissionAPITest extends IntegrationTestBase {
             cb.setBinary(FileAssetAPI.BINARY_FIELD, cbdata);
             cb.setHost(hh.getIdentifier());
             cb.setFolder(b.getInode());
+            cb.setIndexPolicy(IndexPolicy.FORCE);
             cb=APILocator.getContentletAPI().checkin(cb, sysuser, false);
-            APILocator.getContentletAPI().isInodeIndexed(cb.getInode());
 
             Contentlet cc=new Contentlet();
             cc.setStructureInode(FileAssetStInode);
@@ -555,8 +549,8 @@ public class PermissionAPITest extends IntegrationTestBase {
             cc.setBinary(FileAssetAPI.BINARY_FIELD, ccdata);
             cc.setHost(hh.getIdentifier());
             cc.setFolder(c.getInode());
+            cc.setIndexPolicy(IndexPolicy.FORCE);
             cc=APILocator.getContentletAPI().checkin(cc, sysuser, false);
-            APILocator.getContentletAPI().isInodeIndexed(cc.getInode());
 
             // get them into cache
             permissionAPI.getPermissions(folderA);   permissionAPI.getPermissions(ca);
@@ -637,8 +631,8 @@ public class PermissionAPITest extends IntegrationTestBase {
             cont1=new Contentlet();
             cont1.setStructureInode(s.getInode());
             cont1.setStringProperty("testtext", "a test value");
+            cont1.setIndexPolicy(IndexPolicy.FORCE);
             cont1=APILocator.getContentletAPI().checkin(cont1, sysuser, false);
-            APILocator.getContentletAPI().isInodeIndexed(cont1.getInode());
 
             permissionAPI.getPermissions(cont1); // to cache
 

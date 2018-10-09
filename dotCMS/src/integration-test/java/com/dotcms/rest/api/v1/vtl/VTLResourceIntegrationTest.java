@@ -12,6 +12,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.io.Files;
@@ -31,6 +32,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Map;
 
 import static com.dotcms.rest.api.v1.vtl.VTLResource.VTL_PATH;
 import static org.junit.Assert.assertEquals;
@@ -87,7 +89,7 @@ public class VTLResourceIntegrationTest {
         final Host demoSite = APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false);
 
         final Folder vtlFolder = APILocator.getFolderAPI()
-                .createFolders(VTL_PATH + testCase.getFolderName(),
+                .createFolders(VTL_PATH + "/" + testCase.getFolderName(),
                         demoSite,
                         APILocator.systemUser(), false);
 
@@ -97,6 +99,9 @@ public class VTLResourceIntegrationTest {
 
             final FileAssetDataGen fileAssetDataGen = new FileAssetDataGen(vtlFolder, getVTLFile);
             final Contentlet getVTLFileAsset = fileAssetDataGen.nextPersisted();
+            getVTLFileAsset.setIndexPolicy(IndexPolicy.FORCE);
+            getVTLFileAsset.setIndexPolicyDependencies(IndexPolicy.FORCE);
+            getVTLFileAsset.setBoolProperty(Contentlet.IS_TEST_MODE, true);
             APILocator.getContentletAPI().publish(getVTLFileAsset, systemUser, false);
 
             final HttpServletRequest request = mock(HttpServletRequest.class);
@@ -121,7 +126,9 @@ public class VTLResourceIntegrationTest {
                 getOutput = objectMapper.writeValueAsString(response.getEntity());
             } else {
                 expectedOutput = testCase.getExpectedOutput();
-                getOutput = (String) response.getEntity();
+                getOutput      = Map.class.isInstance(response.getEntity())?
+                    (String) Map.class.cast(response.getEntity()).get("message"):
+                    response.getEntity().toString();
             }
 
             assertEquals(expectedOutput, getOutput);

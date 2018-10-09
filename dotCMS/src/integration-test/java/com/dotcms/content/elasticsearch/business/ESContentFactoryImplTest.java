@@ -3,8 +3,10 @@ package com.dotcms.content.elasticsearch.business;
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import org.elasticsearch.search.SearchHit;
@@ -14,10 +16,9 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public class ESContentFactoryImplTest extends IntegrationTestBase {
 	
@@ -35,7 +36,43 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
     }*/
     
     final ESContentFactoryImpl instance = new ESContentFactoryImpl();
-    
+
+    @Test
+    public void test_indexCount_not_found_async() throws Exception {
+
+        instance.indexCount("+inode:xxx", 1000,
+                (Long count)-> {
+
+                    assertEquals(Long.valueOf(0), count);
+                },
+                (e)-> {
+                    fail(e.getMessage());
+                });
+    }
+
+    @Test
+    public void test_indexCount_found_async() throws Exception {
+
+        final Optional<Contentlet> optionalContentlet = APILocator.getContentletAPI().findAllContent(0, 40)
+                .stream().filter(Objects::nonNull).collect(Collectors.toList()).stream().findFirst();
+
+        if (optionalContentlet.isPresent()) {
+
+            final Contentlet contentlet = optionalContentlet.get();
+            contentlet.setIndexPolicy(IndexPolicy.FORCE);
+            APILocator.getContentletIndexAPI().addContentToIndex(optionalContentlet.get());
+
+            instance.indexCount("+inode:"+optionalContentlet.get().getInode(), 1000,
+                    (Long count) -> {
+
+                        assertEquals(Long.valueOf(1), count);
+                    },
+                    (e) -> {
+                        fail(e.getMessage());
+                    });
+        }
+    }
+
     @Test
     public void findContentlets() throws Exception {
         DotConnect dc=new DotConnect();

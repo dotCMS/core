@@ -1,7 +1,5 @@
 package com.dotcms.content.elasticsearch.business;
 
-import static com.dotcms.exception.ExceptionUtil.getLocalizedMessageOrDefault;
-
 import com.dotcms.api.system.event.ContentletSystemEventUtil;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
@@ -27,20 +25,8 @@ import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.services.VanityUrlServices;
 import com.dotcms.system.event.local.type.content.CommitListenerEvent;
 import com.dotcms.util.CollectionsUtils;
-import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.beans.MultiTree;
-import com.dotmarketing.beans.Permission;
-import com.dotmarketing.beans.Tree;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.DotCacheAdministrator;
-import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.FactoryLocator;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.RelationshipAPI;
-import com.dotmarketing.business.Role;
-import com.dotmarketing.business.Treeable;
+import com.dotmarketing.beans.*;
+import com.dotmarketing.business.*;
 import com.dotmarketing.business.query.GenericQueryFactory.Query;
 import com.dotmarketing.business.query.QueryUtil;
 import com.dotmarketing.business.query.ValidationException;
@@ -53,11 +39,7 @@ import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.FlushCacheRunnable;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.db.LocalTransaction;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotHibernateException;
-import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.exception.InvalidLicenseException;
+import com.dotmarketing.exception.*;
 import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.factories.MultiTreeFactory;
 import com.dotmarketing.factories.PublishFactory;
@@ -66,17 +48,11 @@ import com.dotmarketing.menubuilders.RefreshMenus;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.containers.model.Container;
-import com.dotmarketing.portlets.contentlet.business.BinaryFileFilter;
-import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
-import com.dotmarketing.portlets.contentlet.business.ContentletCache;
-import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
-import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
-import com.dotmarketing.portlets.contentlet.business.DotLockException;
-import com.dotmarketing.portlets.contentlet.business.DotReindexStateException;
-import com.dotmarketing.portlets.contentlet.business.HostAPI;
+import com.dotmarketing.portlets.contentlet.business.*;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
@@ -104,21 +80,7 @@ import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.dotmarketing.tag.business.TagAPI;
 import com.dotmarketing.tag.model.Tag;
-import com.dotmarketing.util.ActivityLogger;
-import com.dotmarketing.util.AdminLogger;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.ConfigUtils;
-import com.dotmarketing.util.DateUtil;
-import com.dotmarketing.util.InodeUtils;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.PageMode;
-import com.dotmarketing.util.PaginatedArrayList;
-import com.dotmarketing.util.RegEX;
-import com.dotmarketing.util.RegExMatch;
-import com.dotmarketing.util.TrashUtils;
-import com.dotmarketing.util.UUIDGenerator;
-import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.WebKeys;
+import com.dotmarketing.util.*;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.liferay.portal.NoSuchUserException;
@@ -129,36 +91,25 @@ import com.liferay.util.FileUtil;
 import com.liferay.util.StringPool;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.xml.DomDriver;
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.Serializable;
-import java.math.BigDecimal;
-import java.nio.file.Files;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import org.apache.commons.lang.StringUtils;
 import org.elasticsearch.action.search.SearchPhaseExecutionException;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.springframework.beans.BeanUtils;
+
+import java.io.*;
+import java.math.BigDecimal;
+import java.nio.file.Files;
+import java.text.SimpleDateFormat;
+import java.util.*;
+import java.util.Calendar;
+import java.util.Map.Entry;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
+import static com.dotcms.exception.ExceptionUtil.getLocalizedMessageOrDefault;
 
 /**
  * Implementation class for the {@link ContentletAPI} interface.
@@ -527,7 +478,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             //Generate a System Event for this publish operation
             HibernateUtil.addCommitListener(
-                    () -> this.contentletSystemEventUtil.pushPublishEvent(contentlet));
+                    () -> this.contentletSystemEventUtil.pushPublishEvent(contentlet), 1000);
 
             if ( localTransaction ) {
                 HibernateUtil.commitTransaction();
@@ -560,14 +511,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if (!contentlet.isWorking())
             throw new DotContentletStateException("Only the working version can be published");
 
-        // writes the contentlet object to a file
-        HibernateUtil.addCommitListener( () -> {
-                try {
-                    indexAPI.addContentToIndex(contentlet, true, true);
-                } catch (DotHibernateException e) {
-                    Logger.error( this, e.getMessage(), e );
-                }
-        });
+        indexAPI.addContentToIndex(contentlet, true, true);
 
         // Publishes the files associated with the Contentlet
         List<Field> fields = FieldsCache.getFieldsByStructureInode(contentlet.getStructureInode());
@@ -1828,7 +1772,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     private void sendDeleteEvent (final Contentlet contentlet) throws DotHibernateException {
-        HibernateUtil.addCommitListener(() -> this.contentletSystemEventUtil.pushDeleteEvent(contentlet));
+        HibernateUtil.addCommitListener(() -> this.contentletSystemEventUtil.pushDeleteEvent(contentlet), 1000);
     }
 
     /**
@@ -2037,6 +1981,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 throw new DotSecurityException("User: " + (user != null ? user.getUserId() : "Unknown") + " does not " +
                         "have permission to edit the contentlet with Identifier [" + contentlet.getIdentifier() + "]");
             }
+            final IndexPolicy  indexPolicy             = contentlet.getIndexPolicy();
+            final IndexPolicy  indexPolicyDependencies = contentlet.getIndexPolicyDependencies();
             final Contentlet workingContentlet = findContentletByIdentifier(contentlet.getIdentifier(), false, contentlet.getLanguageId(), user, respectFrontendRoles);
             Contentlet liveContentlet = null;
             try{
@@ -2073,6 +2019,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 APILocator.getVersionableAPI().setDeleted(workingContentlet, true);
 
                 // Updating lucene index
+                workingContentlet.setIndexPolicy(indexPolicy);
+                workingContentlet.setIndexPolicyDependencies(indexPolicyDependencies);
                 indexAPI.addContentToIndex(workingContentlet);
 
                 if(contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET) {
@@ -2091,12 +2039,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                 publishRelatedHtmlPages(contentlet);
 
-
                 if (contentlet.isHTMLPage()) {
                     CacheLocator.getHTMLPageCache().remove(contentlet.getInode());
                 }
-                
-                HibernateUtil.addCommitListener(() -> this.contentletSystemEventUtil.pushArchiveEvent(workingContentlet));
+
+                HibernateUtil.addCommitListener(() -> this.contentletSystemEventUtil.pushArchiveEvent(workingContentlet), 1000);
 
             } else {
                 throw new DotContentletStateException("Contentlet with Identifier '" + contentlet.getIdentifier() +
@@ -2318,19 +2265,23 @@ public class ESContentletAPIImpl implements ContentletAPI {
     @WrapInTransaction
     @Override
     public void unpublish(Contentlet contentlet, User user,boolean respectFrontendRoles) throws DotDataException,DotSecurityException, DotContentletStateException {
-        if(contentlet.getInode().equals(""))
+
+        if(contentlet.getInode().equals("")) {
             throw new DotContentletStateException(CAN_T_CHANGE_STATE_OF_CHECKED_OUT_CONTENT);
-        if(!permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_PUBLISH, user, respectFrontendRoles)){
-            throw new DotSecurityException("User: " + (user != null ? user.getUserId() : "Unknown") + " cannot unpublish Contentlet");
         }
 
+        if(!permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_PUBLISH, user, respectFrontendRoles)) {
+            throw new DotSecurityException("User: " + (user != null ? user.getUserId() : "Unknown") + " cannot unpublish Contentlet");
+        }
 
         unpublish(contentlet, user);
     }
 
 
     private void unpublish(Contentlet contentlet, User user) throws DotDataException,DotSecurityException, DotContentletStateException {
-        if(contentlet == null || !UtilMethods.isSet(contentlet.getInode())){
+
+        if(contentlet == null || !UtilMethods.isSet(contentlet.getInode())) {
+
             throw new DotContentletStateException(CAN_T_CHANGE_STATE_OF_CHECKED_OUT_CONTENT);
         }
 
@@ -2377,7 +2328,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             new ContentletLoader().invalidate(contentlet, PageMode.LIVE);
             publishRelatedHtmlPages(contentlet);
 
-            HibernateUtil.addCommitListener(() -> this.contentletSystemEventUtil.pushUnpublishEvent(contentlet));
+            HibernateUtil.addCommitListener(() -> this.contentletSystemEventUtil.pushUnpublishEvent(contentlet), 1000);
 
             /*
             Triggers a local system event when this contentlet commit listener is executed,
@@ -2465,7 +2416,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             new ContentletLoader().invalidate(contentlet);
             publishRelatedHtmlPages(contentlet);
 
-            HibernateUtil.addCommitListener(() -> this.sendUnArchiveContentSystemEvent(contentlet));
+            HibernateUtil.addCommitListener(() -> this.sendUnArchiveContentSystemEvent(contentlet), 1000);
         } catch(DotDataException | DotStateException| DotSecurityException e) {
             ActivityLogger.logInfo(getClass(), "Error Unarchiving Content", "StartDate: " +contentPushPublishDate+ "; "
                     + "EndDate: " +contentPushExpireDate + "; User:" + (user != null ? user.getUserId() : "Unknown")
@@ -2480,7 +2431,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     private void sendUnArchiveContentSystemEvent (final Contentlet contentlet) {
 
-            APILocator.getContentletAPI().isInodeIndexed(contentlet.getInode());
             this.contentletSystemEventUtil.pushUnArchiveEvent(contentlet);
     }
 
@@ -2507,7 +2457,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     @WrapInTransaction
     @Override
-    public void deleteRelatedContent(Contentlet contentlet,Relationship relationship, boolean hasParent, User user, boolean respectFrontendRoles)throws DotDataException, DotSecurityException,DotContentletStateException {
+    public void deleteRelatedContent(final Contentlet contentlet, final Relationship relationship, final boolean hasParent, final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException,DotContentletStateException {
         if(!permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_EDIT, user, respectFrontendRoles)){
             throw new DotSecurityException("User: " + (user != null ? user.getUserId() : "Unknown") + " cannot edit Contentlet");
         }
@@ -2522,7 +2472,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
         // We need to refresh all related contentlets, because currently the system does not
         // update the contentlets that lost the relationship (when the user remove a relationship).
         if(cons != null) {
-            for (Contentlet relatedContentlet : cons) {
+            for (final Contentlet relatedContentlet : cons) {
+                relatedContentlet.setIndexPolicy(contentlet.getIndexPolicyDependencies());
+                relatedContentlet.setIndexPolicyDependencies(contentlet.getIndexPolicyDependencies());
                 refreshNoDeps(relatedContentlet);
             }
         }
@@ -2617,8 +2569,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 }
 
                 if(!child){// when we change the order we need to index all the sibling content
-                    for(Contentlet con : getSiblings(c.getIdentifier())){
-                        refreshNoDeps(con);
+                    for(final Contentlet contentletSibling : getSiblings(c.getIdentifier())){
+                        contentletSibling.setIndexPolicy(contentlet.getIndexPolicyDependencies());
+                        refreshNoDeps(contentletSibling);
                     }
                 }
             }
@@ -3035,10 +2988,17 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     }
                 }
 
-                if(saveWithExistingID)
+                final IndexPolicy indexPolicy             = contentlet.getIndexPolicy();
+                final IndexPolicy indexPolicyDependencies = contentlet.getIndexPolicyDependencies();
+
+                if(saveWithExistingID) {
                     contentlet = contentFactory.save(contentlet, existingInode);
-                else
+                } else {
                     contentlet = contentFactory.save(contentlet);
+                }
+
+                contentlet.setIndexPolicy(indexPolicy);
+                contentlet.setIndexPolicyDependencies(indexPolicyDependencies);
 
 
                 //Relate the tags with the saved contentlet
@@ -3074,6 +3034,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                     contentlet.setIdentifier(ident.getId() );
                     contentlet = contentFactory.save(contentlet);
+                    contentlet.setIndexPolicy(indexPolicy);
+                    contentlet.setIndexPolicyDependencies(indexPolicyDependencies);
                 } else {
 
                     Identifier ident = APILocator.getIdentifierAPI().find(contentlet);
@@ -3395,6 +3357,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
                             Gson gson = new GsonBuilder().disableHtmlEscaping().create();
                             contentlet.setProperty(FileAssetAPI.META_DATA_FIELD, gson.toJson(metaMap));
                             contentlet = contentFactory.save(contentlet);
+                            contentlet.setIndexPolicy(indexPolicy);
+                            contentlet.setIndexPolicyDependencies(indexPolicyDependencies);
                         }
                     }
 
@@ -3459,7 +3423,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     VanityUrlServices.getInstance().invalidateVanityUrl(contentlet);
                 }
 
-                if(contentlet != null && contentlet.isKeyValue()){
+                    if(contentlet != null && contentlet.isKeyValue()){
                     //remove from cache
                     CacheLocator.getKeyValueCache().remove(contentlet);
                 }
@@ -3523,7 +3487,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         } // end syncronized block
 
-        if(contentlet.isFileAsset()){
+        if(contentlet.isFileAsset()){ // todo unsedcode
           FileAsset asset = APILocator.getFileAssetAPI().fromContentlet(contentlet);
         }
 
@@ -3585,7 +3549,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     private void pushSaveEvent (final Contentlet eventContentlet, final boolean eventCreateNewVersion) throws DotHibernateException {
 
-        HibernateUtil.addCommitListener(() -> this.contentletSystemEventUtil.pushSaveEvent(eventContentlet, eventCreateNewVersion));
+        HibernateUtil.addCommitListener(() -> this.contentletSystemEventUtil.pushSaveEvent(eventContentlet, eventCreateNewVersion), 100);
     }
 
     private List<Category> getExistingContentCategories(Contentlet contentlet)
@@ -3670,22 +3634,23 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    private void moveContentDependencies(Contentlet fromContentlet, Contentlet toContentlet, ContentletRelationships contentRelationships, List<Category> categories, User user,boolean respect) throws DotDataException, DotSecurityException{
+    private void moveContentDependencies(final Contentlet fromContentlet, final Contentlet toContentlet, ContentletRelationships contentRelationships, List<Category> categories, final User user, final boolean respect) throws DotDataException, DotSecurityException{
 
         //Handles Categories
-        List<Category> categoriesUserCannotRemove = new ArrayList<Category>();
+        final List<Category> categoriesUserCannotRemove = new ArrayList<>();
         if(categories == null){
-            categories = new ArrayList<Category>();
+            categories = new ArrayList<>();
         }
         //Find categories which the user can't use.  A user cannot remove a category they cannot use
-        List<Category> cats = categoryAPI.getParents(fromContentlet, APILocator.getUserAPI().getSystemUser(), true);
-        for (Category category : cats) {
+        final List<Category> cats = categoryAPI.getParents(fromContentlet, APILocator.getUserAPI().getSystemUser(), true);
+        for (final Category category : cats) {
             if(!categoryAPI.canUseCategory(category, user, false)){
                 if(!categories.contains(category)){
                     categoriesUserCannotRemove.add(category);
                 }
             }
         }
+
         categories = permissionAPI.filterCollection(categories, PermissionAPI.PERMISSION_USE, respect, user);
         categories.addAll(categoriesUserCannotRemove);
 
@@ -3696,46 +3661,48 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if(contentRelationships == null){
             contentRelationships = new ContentletRelationships(toContentlet);
         }
-        List<Relationship> rels = FactoryLocator.getRelationshipFactory().byContentType(fromContentlet.getStructure());
-        for (Relationship r : rels) {
-            if(FactoryLocator.getRelationshipFactory().sameParentAndChild(r)) {
+
+        final List<Relationship> relationships = FactoryLocator.getRelationshipFactory().byContentType(fromContentlet.getStructure());
+        for (final Relationship relationship : relationships) {
+
+            if(FactoryLocator.getRelationshipFactory().sameParentAndChild(relationship)) {
                 ContentletRelationshipRecords selectedRecords = null;
 
                 //First all relationships as parent
-                for(ContentletRelationshipRecords records : contentRelationships.getRelationshipsRecords()) {
-                    if(records.getRelationship().getInode().equalsIgnoreCase(r.getInode()) && records.isHasParent()) {
+                for(final ContentletRelationshipRecords records : contentRelationships.getRelationshipsRecords()) {
+                    if(records.getRelationship().getInode().equalsIgnoreCase(relationship.getInode()) && records.isHasParent()) {
                         selectedRecords = records;
                         break;
                     }
                 }
                 if (selectedRecords == null) {
-                    selectedRecords = contentRelationships.new ContentletRelationshipRecords(r, true);
-                    contentRelationships.getRelationshipsRecords().add(contentRelationships.new ContentletRelationshipRecords(r, true));
+                    selectedRecords = contentRelationships.new ContentletRelationshipRecords(relationship, true);
+                    contentRelationships.getRelationshipsRecords().add(contentRelationships.new ContentletRelationshipRecords(relationship, true));
                 }
 
                 //Adding to the list all the records the user was not able to see becuase permissions forcing them into the relationship
-                List<Contentlet> cons = getRelatedContentFromIndex(fromContentlet, r, true, APILocator.getUserAPI().getSystemUser(), true);
-                for (Contentlet contentlet : cons) {
+                List<Contentlet> relatedContentlets = getRelatedContentFromIndex(fromContentlet, relationship, true, APILocator.getUserAPI().getSystemUser(), true);
+                for (final Contentlet contentlet : relatedContentlets) {
                     if (!permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ, user, false)) {
                         selectedRecords.getRecords().add(0, contentlet);
                     }
                 }
 
                 //Then all relationships as child
-                for(ContentletRelationshipRecords records : contentRelationships.getRelationshipsRecords()) {
-                    if(records.getRelationship().getInode().equalsIgnoreCase(r.getInode()) && !records.isHasParent()) {
+                for(final ContentletRelationshipRecords records : contentRelationships.getRelationshipsRecords()) {
+                    if(records.getRelationship().getInode().equalsIgnoreCase(relationship.getInode()) && !records.isHasParent()) {
                         selectedRecords = records;
                         break;
                     }
                 }
                 if (selectedRecords == null) {
-                    selectedRecords = contentRelationships.new ContentletRelationshipRecords(r, false);
-                    contentRelationships.getRelationshipsRecords().add(contentRelationships.new ContentletRelationshipRecords(r, false));
+                    selectedRecords = contentRelationships.new ContentletRelationshipRecords(relationship, false);
+                    contentRelationships.getRelationshipsRecords().add(contentRelationships.new ContentletRelationshipRecords(relationship, false));
                 }
 
                 //Adding to the list all the records the user was not able to see becuase permissions forcing them into the relationship
-                cons = getRelatedContentFromIndex(fromContentlet, r, false, APILocator.getUserAPI().getSystemUser(), true);
-                for (Contentlet contentlet : cons) {
+                relatedContentlets = getRelatedContentFromIndex(fromContentlet, relationship, false, APILocator.getUserAPI().getSystemUser(), true);
+                for (final Contentlet contentlet : relatedContentlets) {
                     if (!permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ, user, false)) {
                         selectedRecords.getRecords().add(0, contentlet);
                     }
@@ -3745,21 +3712,21 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 ContentletRelationshipRecords selectedRecords = null;
 
                 //First all relationships as parent
-                for(ContentletRelationshipRecords records : contentRelationships.getRelationshipsRecords()) {
-                    if(records.getRelationship().getInode().equalsIgnoreCase(r.getInode())) {
+                for(final ContentletRelationshipRecords records : contentRelationships.getRelationshipsRecords()) {
+                    if(records.getRelationship().getInode().equalsIgnoreCase(relationship.getInode())) {
                         selectedRecords = records;
                         break;
                     }
                 }
-                boolean hasParent = FactoryLocator.getRelationshipFactory().isParent(r, fromContentlet.getStructure());
+                final boolean hasParent = FactoryLocator.getRelationshipFactory().isParent(relationship, fromContentlet.getStructure());
                 if (selectedRecords == null) {
-                    selectedRecords = contentRelationships.new ContentletRelationshipRecords(r, hasParent);
-                    contentRelationships.getRelationshipsRecords().add(contentRelationships.new ContentletRelationshipRecords(r, hasParent));
+                    selectedRecords = contentRelationships.new ContentletRelationshipRecords(relationship, hasParent);
+                    contentRelationships.getRelationshipsRecords().add(contentRelationships.new ContentletRelationshipRecords(relationship, hasParent));
                 }
 
                 //Adding to the list all the records the user was not able to see because permissions forcing them into the relationship
-                List<Contentlet> cons = getRelatedContentFromIndex(fromContentlet, r, APILocator.getUserAPI().getSystemUser(), true);
-                for (Contentlet contentlet : cons) {
+                final List<Contentlet> relatedContentlets = getRelatedContentFromIndex(fromContentlet, relationship, APILocator.getUserAPI().getSystemUser(), true);
+                for (final Contentlet contentlet : relatedContentlets) {
                     if (!permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ, user, false)) {
                         selectedRecords.getRecords().add(0, contentlet);
                     }
@@ -3767,7 +3734,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
         }
 
-        for (ContentletRelationshipRecords cr : contentRelationships.getRelationshipsRecords()) {
+        for (final ContentletRelationshipRecords cr : contentRelationships.getRelationshipsRecords()) {
             relateContent(toContentlet, cr, APILocator.getUserAPI().getSystemUser(), true);
         }
     }
@@ -5403,7 +5370,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     private void sendCopyEvent (final Contentlet contentlet) throws DotHibernateException {
 
-        HibernateUtil.addCommitListener(() -> this.contentletSystemEventUtil.pushCopyEvent(contentlet));
+        HibernateUtil.addCommitListener(() -> this.contentletSystemEventUtil.pushCopyEvent(contentlet), 1000);
     }
 
     @WrapInTransaction
@@ -5638,33 +5605,45 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return isInodeIndexedWithQuery(luceneQuery, -1);
     }
 
-    private boolean isInodeIndexedWithQuery(String luceneQuery, int secondsToWait) {
+    private final List<Integer> fibonacciMapping = Arrays.asList(1, 2, 3, 5, 8, 13, 21, 34, 55); // it is around 14 + 9 (by the timeout delay) seconds, enough to wait
 
-        int limit = 300;
-        if (-1 != secondsToWait) {
-            limit = (secondsToWait / 10);
+    private boolean isInodeIndexedWithQuery(final String luceneQuery,
+                                            final int milliSecondsToWait) {
+
+        final long indexTimeOut    = Config.getLongProperty("TIMEOUT_INDEX_COUNT", 1000);
+        final long millistoWait    = Config.getLongProperty("IS_NODE_INDEXED_INDEX_MILLIS_WAIT", 100);
+        final int limit            = - 1 != milliSecondsToWait?milliSecondsToWait: 300;
+        boolean   found            = false;
+        int       counter          = 0;
+        int       fibonacciIndex   = 0;
+
+        if (this.contentFactory.indexCount(luceneQuery, indexTimeOut) > 0) {
+
+            if (ConfigUtils.isDevMode()) {
+                Logger.info(this, ()-> "******>>>>>> Index count found in the fist hit for the query: " + luceneQuery);
+            }
+            found = true;
+        } else {
+
+            while (counter < limit && fibonacciIndex < this.fibonacciMapping.size()) {
+
+                counter += millistoWait * this.fibonacciMapping.get(fibonacciIndex++); // 100, 200, 300, 500, 800, 1300, 2100, 3400 ...
+                DateUtil.sleep(counter);
+
+                try {
+
+                    found = this.contentFactory.indexCount(luceneQuery, indexTimeOut) > 0;
+                } catch (Exception e) {
+                    Logger.error(this.getClass(), e.getMessage(), e);
+                    return false;
+                }
+
+                if (found) {
+                    break;
+                }
+            }
         }
-        long lc=0;
-        boolean found = false;
-        int counter = 0;
-        while (counter < limit) {
-            try {
-                lc = contentFactory.indexCount(luceneQuery);
-            } catch (Exception e) {
-                Logger.error(this.getClass(), e.getMessage(), e);
-                return false;
-            }
-            if (lc > 0) {
-                found = true;
-                break;
-            }
-            try {
-                Thread.sleep(100);
-            } catch (Exception e) {
-                Logger.debug(this, "Cannot sleep : ", e);
-            }
-            counter++;
-        }
+
         return found;
     }
 
@@ -6126,6 +6105,16 @@ public class ESContentletAPIImpl implements ContentletAPI {
     @Override
     public Contentlet checkin(final Contentlet contentlet, final ContentletDependencies contentletDependencies) throws DotSecurityException, DotDataException {
 
+        if (null != contentletDependencies.getIndexPolicy()) {
+
+            contentlet.setIndexPolicy(contentletDependencies.getIndexPolicy());
+        }
+
+        if (null != contentletDependencies.getIndexPolicyDependencies()) {
+
+            contentlet.setIndexPolicyDependencies(contentletDependencies.getIndexPolicyDependencies());
+        }
+
         return checkin(contentlet, contentletDependencies.getRelationships(), contentletDependencies.getCategories(), null, contentletDependencies.getModUser(),
                 contentletDependencies.isRespectAnonymousPermissions(), contentletDependencies.isGenerateSystemEvent());
     }
@@ -6137,16 +6126,27 @@ public class ESContentletAPIImpl implements ContentletAPI {
      *
      * @param contentlet Contentlet to be processed by the Commit listener event
      */
-    private void triggerCommitListenerEvent(Contentlet contentlet) {
+    private void triggerCommitListenerEvent(final Contentlet contentlet) {
 
         try {
-            HibernateUtil.addCommitListener(new FlushCacheRunnable() {
-                public void run() {
+            if (!contentlet.getBoolProperty(Contentlet.IS_TEST_MODE)) {
+
+                HibernateUtil.addCommitListener(new FlushCacheRunnable() {
+                    public void run() {
+                        //Triggering event listener when this commit listener is executed
+                        APILocator.getLocalSystemEventsAPI()
+                                .asyncNotify(new CommitListenerEvent(contentlet));
+                    }
+                });
+            } else {
+
+                HibernateUtil.addCommitListener(()-> {
                     //Triggering event listener when this commit listener is executed
                     APILocator.getLocalSystemEventsAPI()
-                            .asyncNotify(new CommitListenerEvent(contentlet));
-                }
-            });
+                            .notify(new CommitListenerEvent(contentlet));
+                }, 1001);
+            }
+
         } catch (DotHibernateException e) {
             throw new DotRuntimeException(e);
         }

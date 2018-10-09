@@ -11,13 +11,13 @@
 
 	String currentContentTypeId = request.getParameter("structure_id") != null ? request.getParameter("structure_id") : "all";
 	RelationshipForm relationshipForm = (RelationshipForm) request.getAttribute("RelationshipForm");
-	Relationship relationship = APILocator.getRelationshipAPI().byInode(relationshipForm.getInode());
-	boolean disabled = false;
-	if(relationship.isFixed()){
-		disabled = true;
-	}
 	boolean isUpdate = false;
-	if (UtilMethods.isSet(relationship.getInode())) {
+	boolean disabled = false;
+	if(UtilMethods.isSet(relationshipForm.getInode())){
+		Relationship relationship = APILocator.getRelationshipAPI().byInode(relationshipForm.getInode());
+		if(relationship.isFixed()){
+			disabled = true;
+		}
 	    isUpdate = true;
 	}
 

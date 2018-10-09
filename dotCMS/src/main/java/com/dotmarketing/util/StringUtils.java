@@ -1,12 +1,11 @@
 package com.dotmarketing.util;
 
-import static org.apache.commons.lang.StringUtils.split;
-
 import com.dotcms.repackage.com.google.common.base.CaseFormat;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONArray;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
 import com.dotcms.repackage.org.jsoup.Jsoup;
 import com.liferay.util.StringPool;
+
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -14,6 +13,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
+
+import static org.apache.commons.lang.StringUtils.split;
 
 public class StringUtils {
 
@@ -228,4 +229,57 @@ public class StringUtils {
 
         return patternCacheMap.get(pattern).matcher(string).matches();
     }
+
+    /**
+     * Abbreviate for StringBuilder
+     * @return StringBuilder
+     */
+    public static StringBuilder builder () {
+
+        return new StringBuilder();
+    }
+
+    /**
+     * Abbreviate for StringBuilder
+     * @param sequences (optional array of sequences)
+     * @return StringBuilder
+     */
+    public static StringBuilder builder (final CharSequence... sequences) {
+
+        final StringBuilder builder = new StringBuilder();
+
+        if (null != sequences) {
+
+            for (final CharSequence charSequence: sequences) {
+
+                if (null != charSequence) {
+                    builder.append(charSequence);
+                }
+            }
+        }
+
+        return builder;
+    } // builder.
+
+    /**
+     * Abbreviate for StringBuilder
+     * @param objects (optional array of Object, the toString will be append to the builder)
+     * @return StringBuilder
+     */
+    public static StringBuilder builder (final Object... objects) {
+
+        final StringBuilder builder = new StringBuilder();
+
+        if (null != objects) {
+
+            for (final Object object: objects) {
+
+                if (null != object) {
+                    builder.append(object.toString());
+                }
+            }
+        }
+
+        return builder;
+    } // builder.
 }

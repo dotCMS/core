@@ -1,13 +1,13 @@
 package com.dotmarketing.common.business.journal;
 
-import java.sql.Connection;
-import java.util.List;
-
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.common.business.journal.DistributedJournalAPI.DateType;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Config;
+
+import java.sql.Connection;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -188,9 +188,24 @@ public abstract class DistributedJournalFactory<T> {
 	protected abstract void addIdentifierReindex(String id) throws DotDataException;
 
 	/**
+	 * Adds an identifier to be reindexed with the highest priority
+	 * @param id String
+	 * @throws DotDataException
+	 */
+	protected abstract void addReindexHighPriority(String id) throws DotDataException;
+
+
+	/**
 	 * Adds an list of identifiers to be reindexed.
 	 * @param ids
 	 * @throws DotDataException
 	 */
 	protected abstract int addIdentifierReindex(Set<String> ids) throws DotDataException;
+
+	/**
+	 * Adds an list of identifiers to be reindexed with the highest priority.
+	 * @param identifiers
+	 * @throws DotDataException
+	 */
+	protected abstract int addReindexHighPriority(Set<String> identifiers) throws DotDataException;
 }

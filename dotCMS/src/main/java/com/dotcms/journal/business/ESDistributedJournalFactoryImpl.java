@@ -498,37 +498,61 @@ public class ESDistributedJournalFactoryImpl<T> extends DistributedJournalFactor
 
 
     @Override
+    protected void addReindexHighPriority(final String identifier) throws DotDataException {
+
+        new DotConnect().setSQL(REINDEX_JOURNAL_INSERT)
+                .addParam(identifier)
+                .addParam(identifier)
+                .addParam(REINDEX_JOURNAL_PRIORITY_CONTENT_REINDEX)
+                .addParam(REINDEX_ACTION_REINDEX_OBJECT)
+                .addParam(new Date())
+                .loadResult();
+    } // addReindexHighPriority.
+
+
+    @Override
     protected int addIdentifierReindex(final Set<String> identifiers) throws DotDataException {
 
+        return this.addIdentifierReindex(identifiers, REINDEX_JOURNAL_PRIORITY_STRUCTURE_REINDEX);
+    }
+
+    @Override
+    protected  int addReindexHighPriority(final Set<String> identifiers) throws DotDataException {
+
+        return this.addIdentifierReindex(identifiers, REINDEX_JOURNAL_PRIORITY_CONTENT_REINDEX);
+    }
+
+    private int addIdentifierReindex(final Set<String> identifiers, final int prority) throws DotDataException {
+
         if(identifiers.isEmpty()){
-           return 0;
+            return 0;
         }
 
         final List<Params> insertParams = new ArrayList<>(identifiers.size());
         final Date date = DbConnectionFactory.now();
         for(final String identifier:identifiers){
             insertParams.add(
-                 new Params(
-                         identifier,
-                         identifier,
-                         REINDEX_JOURNAL_PRIORITY_STRUCTURE_REINDEX,
-                         REINDEX_ACTION_REINDEX_OBJECT,
-                         date
-                 )
+                    new Params(
+                            identifier,
+                            identifier,
+                            prority,
+                            REINDEX_ACTION_REINDEX_OBJECT,
+                            date
+                    )
             );
         }
 
         final List<Integer> batchResult =
                 Ints.asList(
                         new DotConnect().executeBatch(REINDEX_JOURNAL_INSERT,
-                        insertParams,
-                        (preparedStatement, params) -> {
-                            preparedStatement.setString(1, String.class.cast(params.get(0)));
-                            preparedStatement.setString(2, String.class.cast(params.get(1)));
-                            preparedStatement.setInt(3, Integer.class.cast(params.get(2)));
-                            preparedStatement.setInt(4, Integer.class.cast(params.get(3)));
-                            preparedStatement.setObject(5,  Date.class.cast(params.get(4)));
-                        })
+                                insertParams,
+                                (preparedStatement, params) -> {
+                                    preparedStatement.setString(1, String.class.cast(params.get(0)));
+                                    preparedStatement.setString(2, String.class.cast(params.get(1)));
+                                    preparedStatement.setInt(3, Integer.class.cast(params.get(2)));
+                                    preparedStatement.setInt(4, Integer.class.cast(params.get(3)));
+                                    preparedStatement.setObject(5,  Date.class.cast(params.get(4)));
+                                })
                 );
 
         final int rowsAffected = batchResult.stream().reduce(0, Integer::sum);

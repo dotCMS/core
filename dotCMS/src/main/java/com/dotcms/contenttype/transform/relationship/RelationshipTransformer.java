@@ -10,4 +10,5 @@ public interface RelationshipTransformer {
 
 	List<Relationship> asList();
 
+	Relationship from();
 }
