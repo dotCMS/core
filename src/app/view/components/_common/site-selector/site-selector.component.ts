@@ -64,8 +64,6 @@ export class SiteSelectorComponent implements OnInit, OnChanges, OnDestroy {
         private dotEventsService: DotEventsService
     ) {}
 
-    propagateChange = (_: any) => {};
-
     ngOnInit(): void {
         this.paginationService.url = 'v1/site';
 
@@ -169,5 +167,7 @@ export class SiteSelectorComponent implements OnInit, OnChanges, OnDestroy {
 
     private setCurrentSiteAsDefault() {
         this.currentSite = of(this.siteService.currentSite);
+
+        this.change.next(this.siteService.currentSite);
     }
 }

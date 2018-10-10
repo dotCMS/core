@@ -211,10 +211,10 @@ describe('SiteSelectorComponent', () => {
         paginatorService.totalRecords = 2;
         spyOn(paginatorService, 'getWithOffset').and.returnValue(observableOf([]));
 
-        fixture.detectChanges();
-
         let result: any;
-        comp.currentSite.subscribe((res) => (result = res));
+        comp.change.subscribe((res) => (result = res));
+
+        fixture.detectChanges();
 
         expect(result).toEqual(mockSites[0]);
     });
