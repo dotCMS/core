@@ -798,12 +798,8 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 
 	    if(content==null || !UtilMethods.isSet(content.getIdentifier())) return;
 
-	    List<Relationship> relationships;
-		try {
-			relationships = FactoryLocator.getRelationshipFactory().byContentType(content.getStructure());
-		} catch (DotDataException e) {
-			throw new DotHibernateException(e.getMessage(),e);
-		}
+	    List<Relationship> relationships = FactoryLocator.getRelationshipFactory().byContentType(content.getStructure());
+
 	    // add a commit listener to index the contentlet if the entire
         // transaction finish clean
         removeContentFromIndex(content, onlyLive, relationships);

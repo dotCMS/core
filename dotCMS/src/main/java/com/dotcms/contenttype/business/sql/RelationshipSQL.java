@@ -17,8 +17,46 @@ public abstract class RelationshipSQL {
 		return instance;
 	}
 
-	public static final String DELETE_RELATIONSHIP="delete from relationship where parent_structure_inode = ? or child_structure_inode=?";
+	public static final String DELETE_RELATIONSHIP_BY_PARENT_OR_CHILD_INODE="delete from relationship where parent_structure_inode = ? or child_structure_inode=?";
+
+	public static final String SELECT_ALL_FIELDS = "select inode, parent_structure_inode, child_structure_inode, "
+			+ "parent_relation_name, child_relation_name, relation_type_value, cardinality, "
+			+ "parent_required, child_required, fixed from relationship";
+
+	public static final String FIND_BY_INODE = SELECT_ALL_FIELDS + " where inode = ?";
+
+	public static final String FIND_BY_PARENT_INODE = SELECT_ALL_FIELDS + " where parent_structure_inode = ?";
+
+	public static final String FIND_BY_CHILD_INODE = SELECT_ALL_FIELDS + " where child_structure_inode = ?";
+
+	public static final String ORDER_BY = " order by ?";
 	
-	
-	
+	public static final String FIND_BY_PARENT_OR_CHILD_INODE = SELECT_ALL_FIELDS
+			+ " where parent_structure_inode = ? or child_structure_inode = ?";
+
+	public static final String FIND_BY_TYPE_VALUE = SELECT_ALL_FIELDS + " where lower(relation_type_value) = ?";
+
+	public static final String INSERT_INODE = "insert into inode (inode, idate, owner, type) values (?,?,?,'relationship')";
+
+	public static final String INSERT_RELATIONSHIP = "insert into relationship (inode, parent_structure_inode, child_structure_inode, "
+			+ "parent_relation_name, child_relation_name, relation_type_value, cardinality, "
+			+ "parent_required, child_required, fixed) values(?,?,?,?,?,?,?,?,?,?)";
+
+	public static final String UPDATE_INODE = "update inode set inode = ?, idate = ?, owner = ? where inode = ? and type='relationship'";
+
+	public static final String UPDATE_RELATIONSHIP = "update relationship set parent_structure_inode = ?,"
+			+ " child_structure_inode = ?, parent_relation_name = ?, child_relation_name = ?,"
+			+ " relation_type_value = ?, cardinality = ?, parent_required = ?, child_required = ?, "
+			+ " fixed = ? where inode = ?";
+
+	public static final String DELETE_RELATIONSHIP_BY_INODE = "delete from relationship where inode = ?";
+
+	public static final String DELETE_INODE = "delete from inode where inode = ? and type='relationship'";
+
+	public static final String SELECT_MAX_TREE_ORDER = "select max(tree_order) as tree_order from tree"
+			+ " where parent = ? and relation_type = ?";
+
+	public static final String SELECT_ONE_SIDE_RELATIONSHIP = "select * from relationship where ((child_structure_inode = ?"
+			+ " and child_relation_name is null) or (parent_structure_inode = ?"
+			+ " and parent_relation_name is null)) order by parent_relation_name";
 }

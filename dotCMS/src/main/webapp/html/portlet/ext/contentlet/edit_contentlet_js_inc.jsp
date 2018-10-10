@@ -535,8 +535,26 @@
         if(data["contentletInode"] != null && isInodeSet(data["contentletInode"])){
             $('contentletInode').value = data["contentletInode"];
             currentContentletInode = data["contentletInode"];
-            contentAdmin.contentletInode=data["contentletInode"];
-            contentAdmin.contentletIdentifier=data["contentletIdentifier"];
+            contentAdmin.contentletInode = data["contentletInode"];
+            contentAdmin.contentletIdentifier = data["contentletIdentifier"];
+
+            //After a save operation we need to update the underlying url associated to the language on the dropdown.
+            //if we don't it'll continue to show the pre-popoulate lang dialog.
+            let allLangContentlets = data["allLangContentlets"];
+			if((typeof (storeData) != 'undefined') && allLangContentlets){
+			// Pretty much every lang-contentlets instance is retrieved here.
+			// So we match them with the lang displayed on the dropdown and update the underlying url.
+                var arrayLength = allLangContentlets.length;
+                for (let i = 0; i < arrayLength; i++) {
+                    let contentlet = allLangContentlets[i];
+                    let entry = storeData.items.filter(item => item.id[0] == contentlet.languageId);
+                    if(entry){
+                        let url = entry[0].value[0];
+                        let newUrl = queryStringUrlReplacement(url, 'inode', contentlet.inode);
+                        entry[0].value[0] = newUrl;
+                    }
+                }
+			}
         }
 
         dijit.byId('savingContentDialog').hide();

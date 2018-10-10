@@ -10,16 +10,17 @@ import static com.dotmarketing.portlets.contentlet.business.DotContentletValidat
 import static com.dotmarketing.portlets.contentlet.business.DotContentletValidationException.VALIDATION_FAILED_REQUIRED_REL;
 import static com.dotmarketing.portlets.contentlet.business.DotContentletValidationException.VALIDATION_FAILED_UNIQUE;
 
-import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.exception.DotDataValidationException;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ValidationException;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DoesNotExistException;
+import com.dotmarketing.exception.DotDataValidationException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.InvalidLicenseException;
+import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetValidationException;
@@ -66,6 +67,7 @@ public class ExceptionUtil {
                     AlreadyExistException.class,
                     IllegalArgumentException.class,
                     DotStateException.class,
+                    DotContentletStateException.class,
                     DotDataValidationException.class,
                     ValidationException.class,
                     BadRequestException.class,
