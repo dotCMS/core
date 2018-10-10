@@ -69,12 +69,10 @@ public class VersionableFactoryImpl extends VersionableFactory {
 		if(identifier.getAssetType().equals("contentlet")) {
 		    throw new DotDataException("Contentlets could have working versions for each language.");
 		}
-        VersionInfo vinfo = getVersionInfo(identifier.getId());
-        if (vinfo == null) {
-            throw new DotDataException("No version info for identifier : " + id);
-        }
-
-		
+		VersionInfo vinfo = getVersionInfo(identifier.getId());
+		if(!UtilMethods.isSet(vinfo)){
+			throw new DotDataException("No version info for identifier : " + id);
+		}
 		Class<?> clazz = InodeUtils.getClassByDBType(identifier.getAssetType());
 		Versionable ver = null;
 		User user = this.userApi.getSystemUser();
@@ -155,7 +153,7 @@ public class VersionableFactoryImpl extends VersionableFactory {
 		}
 		return ver;
 	}
-	
+
 	@Override
 	protected Versionable findDeletedVersion(String id) throws DotDataException, DotStateException {
 		Identifier identifier = iapi.find(id);
@@ -272,7 +270,7 @@ public class VersionableFactoryImpl extends VersionableFactory {
         }else if(contv!=null ){
         	return contv;
         }
-        
+
     	contv = findContentletVersionInfoInDB(identifier, lang);
         if(contv!=null && UtilMethods.isSet(contv.getIdentifier())){
         	this.icache.addContentletVersionInfoToCache(contv);
@@ -284,7 +282,7 @@ public class VersionableFactoryImpl extends VersionableFactory {
         	this.icache.addContentletVersionInfoToCache(contv);
 			return null;
         }
-        
+
         return contv;
     }
 
@@ -400,7 +398,7 @@ public class VersionableFactoryImpl extends VersionableFactory {
 	 * APIs before performing a database lookup. This approach allows the
 	 * information to be obtained by checking the cache first instead of going
 	 * directly to the database, which is more expensive.
-	 * 
+	 *
 	 * @return The set of classes representing the objects that need to be
 	 *         looked up using their respective APIs before performing a
 	 *         database query.

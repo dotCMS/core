@@ -56,7 +56,7 @@ public class TemplateAjax {
 		List<Template> fullListTemplates = new ArrayList<Template>();
 		List<Template> totalTemplates = new ArrayList<Template>();
 		Host host = hostAPI.find(query.get("hostId"), user, respectFrontendRoles);
-		
+
 		try{
 			String filter = query.get("fullTitle");
 			if(UtilMethods.isSet(filter)){
@@ -78,18 +78,19 @@ public class TemplateAjax {
                     totalTemplates.add(t);
                     countF=count-1;
 
-                    final Template templateSelected = templateAPI.findWorkingTemplate(query.get("templateSelected"),
-                            APILocator.getUserAPI().getSystemUser(), respectFrontendRoles);
+					if (UtilMethods.isSet(query.get("templateSelected"))) {
+						final Template templateSelected = templateAPI.findWorkingTemplate(query.get("templateSelected"),
+								APILocator.getUserAPI().getSystemUser(), respectFrontendRoles);
 
-                    if (templateSelected!=null && templateSelected.isAnonymous()) {
-                        fullListTemplates.add(templateSelected);
-                        totalTemplates.add(templateSelected);
-                    }
-
-                }
-			    else {
-			        startF=start-1;
-			    }
+						if (UtilMethods.isSet(templateSelected) && templateSelected.isAnonymous()) {
+							fullListTemplates.add(templateSelected);
+							totalTemplates.add(templateSelected);
+						}
+					}
+				}
+				else {
+					startF=start-1;
+				}
 
 				fullListTemplates.addAll(templateAPI.findTemplatesUserCanUse(user, host.getIdentifier(), filter, true, startF, countF));
 				totalTemplates.addAll(templateAPI.findTemplatesUserCanUse(user, host.getIdentifier(), filter, true, 0, 1000));
