@@ -541,7 +541,7 @@
             //After a save operation we need to update the underlying url associated to the language on the dropdown.
             //if we don't it'll continue to show the pre-popoulate lang dialog.
             let allLangContentlets = data["allLangContentlets"];
-			if(storeData && allLangContentlets ){
+			if((typeof (storeData) != 'undefined') && allLangContentlets){
 			// Pretty much every lang-contentlets instance is retrieved here.
 			// So we match them with the lang displayed on the dropdown and update the underlying url.
                 var arrayLength = allLangContentlets.length;
