@@ -3064,7 +3064,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                 final IndexPolicy indexPolicy             = contentlet.getIndexPolicy();
                 final IndexPolicy indexPolicyDependencies = contentlet.getIndexPolicyDependencies();
-
+                contentlet = applyNullProperties(contentlet);
                 if(saveWithExistingID) {
                     contentlet = contentFactory.save(contentlet, existingInode);
                 } else {
