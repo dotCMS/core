@@ -11,7 +11,6 @@ import { ApiRoot } from 'dotcms-js/dotcms-js';
 import { ServerSideFieldModel, ServerSideTypeModel } from './ServerSideFieldModel';
 import { CoreWebService } from 'dotcms-js/dotcms-js';
 import { SiteService } from 'dotcms-js/dotcms-js';
-import { LoggerService } from 'dotcms-js/dotcms-js';
 import { CwError } from 'dotcms-js/dotcms-js';
 import { I18nService } from './system/locale/I18n';
 
@@ -238,6 +237,7 @@ export const DEFAULT_RULE: IRule = {
   ruleActions: {}
 };
 
+// @dynamic
 @Injectable()
 export class RuleService {
   ruleActionTypes$: BehaviorSubject<ServerSideTypeModel[]> = new BehaviorSubject([]);
@@ -246,17 +246,17 @@ export class RuleService {
   _ruleActionTypes: { [key: string]: ServerSideTypeModel } = {};
   _conditionTypes: { [key: string]: ServerSideTypeModel } = {};
 
+  protected _actionsEndpointUrl: string;
+  // tslint:disable-next-line:no-unused-variable
+  protected _ruleActions: { [key: string]: ActionModel } = {};
+  // tslint:disable-next-line:no-unused-variable
+  protected _conditions: { [key: string]: ConditionModel } = {};
+
   private _rulesEndpointUrl: string;
-  private _actionsEndpointUrl: string;
   private _conditionTypesEndpointUrl: string;
   private _ruleActionTypesEndpointUrl: string;
 
   private _rules$: Subject<RuleModel[]> = new Subject();
-
-  // tslint:disable-next-line:no-unused-variable
-  private _ruleActions: { [key: string]: ActionModel } = {};
-  // tslint:disable-next-line:no-unused-variable
-  private _conditions: { [key: string]: ConditionModel } = {};
 
   private _ruleActionTypesAry: ServerSideTypeModel[] = [];
   private _conditionTypesAry: ServerSideTypeModel[] = [];
@@ -265,7 +265,7 @@ export class RuleService {
 
   public _errors$: Subject<any> = new Subject();
 
-  fromServerRulesTransformFn(ruleMap): RuleModel[] {
+  static fromServerRulesTransformFn(ruleMap): RuleModel[] {
     return Object.keys(ruleMap).map((id: string) => {
       const r: IRule = ruleMap[id];
       r.id = id;
@@ -273,7 +273,7 @@ export class RuleService {
     });
   }
 
-  fromClientRuleTransformFn(rule: RuleModel): any {
+  static fromClientRuleTransformFn(rule: RuleModel): any {
     const sendRule = Object.assign({}, DEFAULT_RULE, rule);
     sendRule.key = rule.key;
     delete sendRule.id;
@@ -295,7 +295,7 @@ export class RuleService {
     return sendRule;
   }
 
-  private removeMeta(entity: any): void {
+  static removeMeta(entity: any): void {
     Object.keys(entity).forEach(key => {
       if (key[0] === '_') {
         delete entity[key];
@@ -303,7 +303,7 @@ export class RuleService {
     });
   }
 
-  private alphaSort(key): (a, b) => number {
+  static alphaSort(key): (a, b) => number {
     return (a, b) => {
       let x;
       if (a[key] > b[key]) {

@@ -94,10 +94,11 @@ export class ServersideCondition {
     @Input() componentInstance: ServerSideFieldModel;
     @Output()
     parameterValueChange: EventEmitter<{ name: string; value: string }> = new EventEmitter(false);
+    islast = null;
 
     _inputs: Array<any>;
     private _resources: I18nService;
-    private _rhArgCount: boolean;
+    _rhArgCount: boolean;
 
     private _errorMessageFormatters = {
         minLength: 'Input must be at least ${len} characters long.',

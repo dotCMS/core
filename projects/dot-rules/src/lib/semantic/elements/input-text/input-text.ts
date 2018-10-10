@@ -20,16 +20,6 @@ import * as _ from 'lodash';
   selector: 'cw-input-text',
   template: `
     <div flex layout="row" layout-wrap class="ui fluid input"  [ngClass]="{disabled: disabled, icon: icon, required: required}">
-    <!--<input flex-->
-           <!--type="{{type}}"-->
-           <!--[value]="value"-->
-           <!--[disabled]="disabled"-->
-           <!--[readonly]="readonly"-->
-           <!--tabindex="{{tabIndex || ''}}"-->
-           <!--placeholder="{{placeholder}}"-->
-           <!--(blur)="onBlur($event)"-->
-           <!--(change)="$event.stopPropagation()"-->
-           <!--(input)="onChange($event.target.value)" />-->
       <input  pInputText
              type="{{type}}"
              [value]="value"

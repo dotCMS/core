@@ -160,7 +160,7 @@ export class RuleEngineComponent {
         }
     }
 
-    setFieldFilter(field: string, value: string = null): void {
+    setFieldFilter(field: string, value: boolean = null): void {
         // remove old status
         const re = new RegExp(field + ':[\\w]*');
         this.filterText = this.filterText.replace(re, ''); // whitespace issues: "blah:foo enabled:false mahRule"

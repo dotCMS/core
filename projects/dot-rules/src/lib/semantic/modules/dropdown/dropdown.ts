@@ -54,7 +54,7 @@ export class Dropdown implements ControlValueAccessor {
   @Output() touch: EventEmitter<any> = new EventEmitter();
   @Output() enter: EventEmitter<boolean> = new EventEmitter(false);
 
-  private _modelValue: string;
+  modelValue: string;
 
   private _optionsAry: InputOption[] = [];
   private _options: BehaviorSubject<InputOption[]>;
@@ -82,11 +82,7 @@ export class Dropdown implements ControlValueAccessor {
 
   @Input()
   set value(value: string) {
-    this._modelValue = value;
-  }
-
-  get modelValue() {
-    return this._modelValue;
+    this.modelValue = value;
   }
 
   get options() {
@@ -102,8 +98,8 @@ export class Dropdown implements ControlValueAccessor {
   }
 
   writeValue(value: any): void {
-    this._modelValue = _.isEmpty(value) ? '' : value;
-    this.applyValue(this._modelValue);
+    this.modelValue = _.isEmpty(value) ? '' : value;
+    this.applyValue(this.modelValue);
   }
 
   registerOnChange(fn): void {
@@ -145,7 +141,7 @@ export class Dropdown implements ControlValueAccessor {
   addOption(option: InputOption): void {
     this._optionsAry = this._optionsAry.concat(option);
     this._options.next(this._optionsAry);
-    if (option.value === this._modelValue) {
+    if (option.value === this.modelValue) {
       this.refreshDisplayText(option.label);
     }
   }
@@ -168,7 +164,7 @@ export class Dropdown implements ControlValueAccessor {
    * @param value
    */
   onChangeSemantic(value): void {
-    this._modelValue = value;
+    this.modelValue = value;
     this.fireChange(value);
   }
 

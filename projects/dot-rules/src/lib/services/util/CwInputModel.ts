@@ -38,7 +38,7 @@ const VALIDATIONS = {
     },
     required: {
         key: 'required',
-        providerFn: (constraint: TypeConstraint) => CustomValidators.required()
+        providerFn: (_constraint: TypeConstraint) => CustomValidators.required()
     }
 };
 
@@ -147,7 +147,7 @@ export class CwInputDefinition {
 }
 
 export class CwSpacerInputDefinition extends CwInputDefinition {
-    private flex;
+    protected flex;
 
     constructor(flex: number) {
         super({}, 'spacer', null, null, null);

@@ -14,6 +14,7 @@ import * as _ from 'lodash';
  * Angular 2 wrapper around Semantic UI Input Element.
  * @see http://semantic-ui.com/elements/input.html
  */
+// @dynamic
 @Component({
     changeDetection: ChangeDetectionStrategy.OnPush,
     // host: { role: 'text' },
@@ -25,8 +26,7 @@ import * as _ from 'lodash';
                 [placeholder]="placeholder" [disabled]="disabled" [tabindex]="tabIndex || ''"></p-calendar>`
 })
 export class InputDate implements ControlValueAccessor {
-    private  DEFAULT_VALUE: Date;
-
+    private static DEFAULT_VALUE: Date;
     @Input() placeholder = '';
     @Input() type = '';
     @Input() value = '';
@@ -41,7 +41,6 @@ export class InputDate implements ControlValueAccessor {
     errorMessage: string;
     onChange: Function;
     onTouched: Function;
-
     modelValue: Date;
 
     private static _defaultValue(): Date {

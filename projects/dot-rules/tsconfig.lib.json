@@ -11,11 +11,21 @@
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "importHelpers": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
     "types": [],
     "lib": [
       "dom",
       "es2015"
-    ]
+    ],
+      "paths": {
+          "dot-layout-grid/*": [
+              "../../dist-lib/dot-layout-grid/*"
+          ],
+          "dotcms-js/dotcms-js": [
+              "../projects/dotcms-js/src/public_api"
+          ]
+      }
   },
   "angularCompilerOptions": {
     "annotateForClosureCompiler": true,

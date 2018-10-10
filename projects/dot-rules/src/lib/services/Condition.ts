@@ -12,7 +12,7 @@ import { HttpCode } from 'dotcms-js/dotcms-js';
 import { LoggerService } from 'dotcms-js/dotcms-js';
 
 // tslint:disable-next-line:no-unused-variable
-const noop = (...arg: any[]) => {};
+// const noop = (...arg: any[]) => {};
 
 @Injectable()
 export class ConditionService {
@@ -63,7 +63,7 @@ export class ConditionService {
             map((res: Response) => {
                 return res.json();
             }),
-            catchError((err: any, source: Observable<any>) => {
+            catchError((err: any, _source: Observable<any>) => {
                 if (err && err.status === HttpCode.NOT_FOUND) {
                     this.loggerService.info('Could not retrieve Condition Types: URL not valid.');
                 } else if (err) {
@@ -141,7 +141,7 @@ export class ConditionService {
             const body = JSON.stringify(json);
             const save = this._http
                 .put(this._baseUrl + '/' + model.key, body, opts).pipe(
-                map((res: Response) => {
+                map((_res: Response) => {
                     return model;
                 }));
             return save.pipe(catchError(this._catchRequestError('save')));
@@ -152,7 +152,7 @@ export class ConditionService {
         const opts = this._apiRoot.getDefaultRequestOptions();
         const remove = this._http
             .delete(this._baseUrl + '/' + model.key, opts).pipe(
-            map((res: Response) => {
+            map((_res: Response) => {
                 return model;
             }));
         return remove.pipe(catchError(this._catchRequestError('remove')));

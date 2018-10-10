@@ -58,7 +58,6 @@ const I8N_BASE = 'api.sites.ruleengine';
     <cw-input-text
         flex
         class="cw-latLong"
-        [type]="text"
         [value]="getRadiusInPreferredUnit() | number:'1.0-0'"
         [readonly]="true">
     </cw-input-text>
@@ -69,7 +68,6 @@ const I8N_BASE = 'api.sites.ruleengine';
     <cw-input-text
         flex
         class="cw-radius"
-        [type]="text"
         [value]="getLatLong()"
         [readonly]="true">
     </cw-input-text>

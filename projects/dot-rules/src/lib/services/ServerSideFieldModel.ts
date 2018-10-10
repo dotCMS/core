@@ -26,8 +26,8 @@ export class ServerSideFieldModel extends CwModel {
 
     constructor(
         key: string,
-        type: ServerSideTypeModel,
-        priority = 1,
+        _type: ServerSideTypeModel,
+        _priority = 1,
         public loggerService?: LoggerService
     ) {
         super(key);

@@ -113,10 +113,10 @@ const rsrc = {
         </div>
       </div>
       <div class="ui vertical menu" *ngIf="showMoreMenu">
-        <a class="item" *ngIf="(rule.id || rule.key) &&  !apiRoot.hideRulePushOptions"
+        <a class="item" *ngIf="(rule._id || rule.key) &&  !apiRoot.hideRulePushOptions"
           (click)="showAddToBundleDialog = true; $event.stopPropagation()">Add to bundle</a>
 
-        <a class="item" *ngIf="environmentStores.length > 0 && (rule.id || rule.key) &&  !apiRoot.hideRulePushOptions"
+        <a class="item" *ngIf="environmentStores.length > 0 && (rule._id || rule.key) &&  !apiRoot.hideRulePushOptions"
           (click)="showPushPublishDialog = true; $event.stopPropagation()">Push Publish</a>
         <a class="item" (click)="deleteRuleClicked($event)">Delete rule</a>
       </div>
@@ -199,25 +199,25 @@ class RuleComponent {
     updateConditionParameter: EventEmitter<ConditionActionEvent> = new EventEmitter(false);
     @Output() updateConditionOperator: EventEmitter<ConditionActionEvent> = new EventEmitter(false);
 
-    private _updateEnabledStateDelay: EventEmitter<{
-        type: string;
-        payload: { rule: RuleModel; value: boolean };
-    }> = new EventEmitter(false);
-
-    private hideFireOn: boolean;
     formModel: FormGroup;
-
-    private fireOn: any;
-    private _rsrcCache: { [key: string]: Observable<string> };
-
+    fireOn: any;
     // tslint:disable-next-line:no-unused-variable
     showMoreMenu = false;
     // tslint:disable-next-line:no-unused-variable
     showAddToBundleDialog = false;
     // tslint:disable-next-line:no-unused-variable
     showPushPublishDialog = false;
-    private actionTypePlaceholder = '';
-    private conditionTypePlaceholder = '';
+    hideFireOn: boolean;
+    actionTypePlaceholder = '';
+    conditionTypePlaceholder = '';
+
+    private _updateEnabledStateDelay: EventEmitter<{
+        type: string;
+        payload: { rule: RuleModel; value: boolean };
+    }> = new EventEmitter(false);
+
+
+    private _rsrcCache: { [key: string]: Observable<string> };
 
     constructor(
         private _user: UserModel,

@@ -128,9 +128,9 @@ export class I18nService {
         const path = msgKey.split('.');
         const cNode = this.root.$descendant(path);
         if (!cNode.$isLoaded() && !cNode.$isLoading()) {
-            const promise = new Promise((resolve, reject) => {
+            const promise = new Promise((resolve, _reject) => {
                 this.makeRequest(path.join('/')).pipe(
-                    catchError((err: any, source: Observable<any>) => {
+                    catchError((err: any, _source: Observable<any>) => {
                         if (err && err.status === HttpCode.NOT_FOUND) {
                             this.loggerService.debug('Missing Resource: \'', msgKey, '\'');
                         } else {
