@@ -58,7 +58,7 @@ export class LazyVerify {
    * @param properties Array of strings that represent keys to check for
    * @param allowMissing If true this test will fail if the object has a key that is not specified in properties,
    * but will not fail if a key is not present on the object.
-   * @returns {boolean}
+   *
    */
   static hasOnly(object, properties = [], allowMissing = false ) {
     let keys = Object.keys(object);
@@ -80,7 +80,7 @@ export class LazyVerify {
    * The object has all the specified keys, and perhaps others.
    * @param object anything that works with Object.keys
    * @param properties Array of strings that represent keys to check for
-   * @returns {boolean}
+   *
    */
   static hasAll(object, properties= []) {
     let keys = Object.keys(object);
