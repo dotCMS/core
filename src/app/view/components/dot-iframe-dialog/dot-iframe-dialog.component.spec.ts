@@ -11,7 +11,7 @@ import { LoginService } from 'dotcms-js/dotcms-js';
 import { LoginServiceMock } from '../../../test/login-service.mock';
 import { RouterTestingModule } from '@angular/router/testing';
 import { IframeComponent } from '../_common/iframe/iframe-component';
-import { DotIconModule } from '../_common/dot-icon/dot-icon.module';
+import { DotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 
 let component: DotIframeDialogComponent;
 let de: DebugElement;
@@ -29,7 +29,7 @@ const getTestConfig = (hostComponent) => {
             BrowserAnimationsModule,
             IFrameModule,
             RouterTestingModule,
-            DotIconModule
+            DotIconButtonModule
         ],
         providers: [
             {
@@ -105,7 +105,7 @@ describe('DotIframeDialogComponent', () => {
             dialogComponent = dialog.componentInstance;
             dotIframe = de.query(By.css('dot-iframe'));
             closeButton = de.query(
-                By.css('.ui-dialog-titlebar-icon.ui-dialog-titlebar-close.dialog__close')
+                By.css('.dialog__close')
             );
         });
 
@@ -199,7 +199,11 @@ describe('DotIframeDialogComponent', () => {
                 expect(dialogComponent.dismissableMask).toEqual(false, 'dismissableMask');
                 expect(dialogComponent.closable).toEqual(false, 'closable');
                 expect(dialogComponent.modal).toEqual(true, 'modal');
-                expect(dialogComponent.header).toBe('This is a header');
+            });
+
+            it('should have header', () => {
+                const header: DebugElement = de.query(By.css('p-header'));
+                expect(header.nativeElement.textContent).toContain('This is a header');
             });
 
             it('it should have custom close button', () => {

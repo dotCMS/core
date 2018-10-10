@@ -20,19 +20,18 @@
         .ui-dialog-titlebar {
             background-color: $gray-bg;
             border-bottom: solid 1px $gray-bg;
-            height: 70px;
             opacity: 0;
         }
+    }
+
+    p-header {
+        align-items: center;
+        display: flex;
+        justify-content: space-between;
     }
 }
 
 .dialog__iframe {
     width: 100%;
     height: 80vh;
-}
-
-.dialog__close {
-    position: absolute;
-    right: $basic-padding * 2;
-    top: -44px;
 }

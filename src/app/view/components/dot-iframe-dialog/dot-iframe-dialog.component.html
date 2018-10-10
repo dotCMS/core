@@ -1,11 +1,8 @@
-
-
 <p-dialog
     #dialog
     class="dialog"
     [dismissableMask]="false"
     [closable]="false"
-    [header]="header"
     [draggable]="false"
     [visible]="show"
     [dismissableMask]="true"
@@ -13,9 +10,11 @@
     [modal]="true"
     [styleClass]="header?.length > 0 ? 'ui-dialog-titlebar-animate' : ''">
 
-    <a href="#" (click)="onClose($event)" role="button" class="ui-dialog-titlebar-icon ui-dialog-titlebar-close dialog__close">
-        <dot-icon name="clear"></dot-icon>
-    </a>
+    <p-header>
+        {{ header }}
+        <dot-icon-button big icon="close" (click)="onClose($event)" class="dialog__close"></dot-icon-button>
+    </p-header>
+
     <dot-iframe
         class="dialog__iframe"
         [src]="url"

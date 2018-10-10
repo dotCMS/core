@@ -29,7 +29,6 @@ $brand-background: var(--color-background);
 
 // Basic stuffs
 $border-radius: 2px;
-$icon-size: 16px;
 $basic-padding: 8px;
 $field-height: 36px;
 $field-tiny-height: 28px;
@@ -45,6 +44,11 @@ $font-size-small: 12px;
 $body-text: Roboto, "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
 $body-font-size-base: $font-size-medium;
 $body-font-color: $black;
+
+// ICONS
+$md-icon-size-normal: 18px;
+$md-icon-size-tiny: 14px;
+$md-icon-size-big: 24px;
 
 // ANIMATION
 $basic-speed: 100ms;
@@ -85,7 +89,6 @@ $container-lg: (975px + $gutter-width);
 $container-xl: (1381px + $gutter-width);
 
 // MATERIAL DESIGN
-$md-icon-size: 18px;
 $md-shadow-1: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
 $md-shadow-2: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
 $md-shadow-3: 0 10px 24px 0 rgba(0, 0, 0, 0.2);
