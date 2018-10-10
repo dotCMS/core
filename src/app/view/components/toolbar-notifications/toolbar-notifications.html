@@ -1,3 +1,6 @@
+
+<span *ngIf="notificationsUnreadCount" class="badge" id="dot-toolbar-notifications-badge">{{ notificationsUnreadCount }}</span>   
+
 <dot-dropdown-component
         id="dot-toolbar-notifications"
         icon="notifications"
@@ -6,7 +9,6 @@
         position="right"
         (open)="iframeOverlayService.show()"
         (close)="iframeOverlayService.hide()">
-    <span *ngIf="notificationsUnreadCount" class="badge" id="dot-toolbar-notifications-badge">{{ notificationsUnreadCount }}</span>
 
     <div class="toolbar-notifications">
         <div class="toolbar-notifications__heading">
