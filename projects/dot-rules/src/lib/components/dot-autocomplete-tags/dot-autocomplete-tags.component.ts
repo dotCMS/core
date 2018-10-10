@@ -45,7 +45,7 @@ export class DotAutocompleteTagsComponent implements OnInit {
     this.onChange.emit(this.value);
   }
 
-  removeItem(item: any) {
+  removeItem(_item: any) {
     this.onChange.emit(this.value);
   }
 }

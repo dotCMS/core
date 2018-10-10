@@ -29,3 +29,4 @@ export * from './lib/services/GoogleMapService';
 export * from './lib/services/Rule';
 export * from './lib/services/bundle-service';
 export * from './lib/services/system/locale/I18n';
+export * from './lib/components/dot-autocomplete-tags/dot-autocomplete-tags.module';
