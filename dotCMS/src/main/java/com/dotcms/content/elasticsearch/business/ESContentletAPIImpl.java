@@ -2982,6 +2982,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     }
                 }
 
+                contentlet = applyNullProperties(contentlet);
+
                 if(saveWithExistingID)
                     contentlet = contentFactory.save(contentlet, existingInode);
                 else
