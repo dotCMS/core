@@ -33,7 +33,7 @@ public interface RelationshipAPI {
   void deleteByContent(Contentlet contentlet, Relationship relationship, List<Contentlet> relatedContentlets)
       throws DotDataException;
 
-  List<Relationship> byContentType(ContentTypeIf st, boolean hasParent);
+  List<Relationship> byContentType(ContentTypeIf st, boolean hasParent) throws DotDataException;
 
   List<Tree> relatedContentTrees(Relationship relationship, Contentlet contentlet) throws DotDataException;
 

@@ -26,6 +26,7 @@ import com.dotmarketing.logConsole.model.LogMapperRow;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.rules.util.RulesImportExportUtil;
+import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil;
 import com.dotmarketing.startup.runalways.Task00004LoadStarter;
 import com.liferay.portal.SystemException;
@@ -122,7 +123,8 @@ public class ImportExportUtil {
     private File workflowSchemaFile = null;
     private File ruleFile = null;
     private List<File> contentTypeJson = new ArrayList<File>();
-
+    private List<File> relationshipXML = new ArrayList<File>();
+    
     private static final String CHARSET = UtilMethods.getCharsetConfiguration();
     private static final String SYSTEM_FOLDER_PATH = "/System folder";
 
@@ -322,6 +324,8 @@ public class ImportExportUtil {
             	workflowSchemaFile = _importFile;
             }else if(_importFile.getName().contains("RuleImportExportObject.json")){
                 ruleFile = _importFile;
+            }else if (_importFile.getName().contains("com.dotmarketing.portlets.structure.model.Relationship")){
+                relationshipXML.add(new File(_importFile.getPath()));
             }else if(_importFile.getName().endsWith(".xml")){
                 try {
                     doXMLFileImport(_importFile, out);
@@ -554,12 +558,20 @@ public class ImportExportUtil {
 
             HibernateUtil.closeSession();
 
+            for (File file : relationshipXML) {
+                try{
+                    doXMLFileImport(file, out);
+                } catch (Exception e) {
+                    Logger.error(this, "Unable to load relationships from " + file.getName() + " : " + e.getMessage(), e);
+                }
+            }
+
             // We have all identifiers, structures and users. Ready to import contentlets!
             for (File file : contentletsXML) {
                 try{
                     doXMLFileImport(file, out);
                 } catch (Exception e) {
-                    Logger.error(this, "Unable to load hosts from " + file.getName() + " : " + e.getMessage(), e);
+                    Logger.error(this, "Unable to load contentlets from " + file.getName() + " : " + e.getMessage(), e);
                 }
             }
         } catch (Exception e) {
@@ -1289,6 +1301,8 @@ public class ImportExportUtil {
                 String id;
                 if (_importClass.equals(Identifier.class)){
                     id = "id";
+                }else if (_importClass.equals(Relationship.class)){
+                    id = "inode";
                 }else{
                     _dh = new HibernateUtil(_importClass);
                     id = HibernateUtil.getSession().getSessionFactory().getClassMetadata(_importClass).getIdentifierPropertyName();
@@ -1332,13 +1346,16 @@ public class ImportExportUtil {
                                 }
 
                             } else {
-                                HibernateUtil.startTransaction();
-                                Logger.debug(this, "Saving the object: " +
-                                        obj.getClass() + ", with the id: " + prop);
+                                if(obj instanceof Relationship){
+                                  LocalTransaction.wrap(() -> APILocator.getRelationshipAPI().create(Relationship.class.cast(obj)));
+                                } else {
+                                    HibernateUtil.startTransaction();
+                                    Logger.debug(this, "Saving the object: " +
+                                            obj.getClass() + ", with the id: " + prop);
+                                    HibernateUtil.saveWithPrimaryKey(obj, prop);
 
-								HibernateUtil.saveWithPrimaryKey(obj, prop);
-
-                                HibernateUtil.closeAndCommitTransaction();
+                                    HibernateUtil.closeAndCommitTransaction();
+                                }
                             }
                         } catch (Exception e) {
                             try {
