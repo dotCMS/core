@@ -277,6 +277,7 @@ public class TemplateAPITest extends IntegrationTestBase {
         }
         catch(NullPointerException e) {
             Logger.error(this, "getting non-existant template should not throw an NPE", e);
+            assertTrue("getting non-existant template should not throw an NPE", false);
         }
     }
 
@@ -293,6 +294,7 @@ public class TemplateAPITest extends IntegrationTestBase {
         }
         catch(NullPointerException e) {
             Logger.error(this, "getting non-existant template should not throw an NPE", e);
+            assertTrue("getting non-existant template should not throw an NPE", false);
         }
     }
     
