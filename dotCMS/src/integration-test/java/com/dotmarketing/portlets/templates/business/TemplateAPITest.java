@@ -22,6 +22,7 @@ import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.InodeUtils;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
@@ -264,6 +265,42 @@ public class TemplateAPITest extends IntegrationTestBase {
         }
     }
 
+    
+    
+    @Test
+    public void testFindWorkingTemplateNoNPE() throws DotDataException, DotSecurityException {
+
+
+        try {
+            final Template template = templateAPI.findWorkingTemplate("NO_TEMPLATE",
+                    APILocator.getUserAPI().getSystemUser(), false);
+
+            assertNull(template);
+
+        }
+        catch(NullPointerException e) {
+            Logger.error(this, "getting non-existant template should not throw an NPE", e);
+            assertTrue("getting non-existant template should not throw an NPE", false);
+        }
+    }
+
+    @Test
+    public void testFindLiveTemplateNoNPE() throws DotDataException, DotSecurityException {
+
+
+        try {
+            final Template template = templateAPI.findLiveTemplate("NO_TEMPLATE",
+                    APILocator.getUserAPI().getSystemUser(), false);
+
+            assertNull(template);
+            
+        }
+        catch(NullPointerException e) {
+            Logger.error(this, "getting non-existant template should not throw an NPE", e);
+            assertTrue("getting non-existant template should not throw an NPE", false);
+        }
+    }
+    
     @Test
     public void testFindTemplatesAssignedTo() throws DotDataException, DotSecurityException {
         final List<Template> result = templateAPI.findTemplatesAssignedTo(host);

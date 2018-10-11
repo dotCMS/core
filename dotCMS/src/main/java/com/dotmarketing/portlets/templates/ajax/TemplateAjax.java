@@ -8,6 +8,7 @@ import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -81,15 +82,15 @@ public class TemplateAjax {
 						final Template templateSelected = templateAPI.findWorkingTemplate(query.get("templateSelected"),
 								APILocator.getUserAPI().getSystemUser(), respectFrontendRoles);
 
-						if (templateSelected.isAnonymous()) {
+						if (UtilMethods.isSet(templateSelected) && templateSelected.isAnonymous()) {
 							fullListTemplates.add(templateSelected);
 							totalTemplates.add(templateSelected);
 						}
 					}
-                }
-			    else {
-			        startF=start-1;
-			    }
+				}
+				else {
+					startF=start-1;
+				}
 
 				fullListTemplates.addAll(templateAPI.findTemplatesUserCanUse(user, host.getIdentifier(), filter, true, startF, countF));
 				totalTemplates.addAll(templateAPI.findTemplatesUserCanUse(user, host.getIdentifier(), filter, true, 0, 1000));
@@ -103,9 +104,8 @@ public class TemplateAjax {
 			}
 
 
-		}catch (DotDataException e) {
-			Logger.error(this, e.getMessage(), e);
-			throw new DotDataException(e.getMessage(), e);
+		}catch (Exception e) {
+			throw new DotRuntimeException(e.getMessage(), e);
 		}
 		//Collections.sort(fullListTemplates, new TemplateComparator(baseHostId));
 		Map<String, Object> results = new HashMap<String, Object>();
