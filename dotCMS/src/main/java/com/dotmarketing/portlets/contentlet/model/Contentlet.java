@@ -1177,7 +1177,9 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 */
 	@SuppressWarnings("unchecked")
 	private Set<String> getWritableNullProperties(){
-		return (Set<String>)map.putIfAbsent(NULL_PROPERTIES, ConcurrentHashMap.newKeySet());
+		return (Set<String>)map.computeIfAbsent(NULL_PROPERTIES, s -> {
+			return ConcurrentHashMap.newKeySet();
+		});
 	}
 
 	/**
@@ -1189,6 +1191,9 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	@SuppressWarnings("unchecked")
 	public Set<String> getNullProperties(){
 		final Set<String> set = (Set<String>)this.map.get(NULL_PROPERTIES);
+		if(null == set){
+		   return ImmutableSet.of();
+		}
 		return ImmutableSet.copyOf(set);
 	}
 
