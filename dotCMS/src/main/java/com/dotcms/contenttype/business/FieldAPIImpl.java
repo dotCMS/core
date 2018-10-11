@@ -43,15 +43,19 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionLevel;
+import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.quartz.job.DeleteFieldJobHelper;
 import com.dotmarketing.util.ActivityLogger;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 import java.util.List;
 import java.util.Optional;
 import org.apache.commons.lang.StringUtils;
@@ -70,6 +74,7 @@ public class FieldAPIImpl implements FieldAPI {
   private final PermissionAPI permissionAPI;
   private final ContentletAPI contentletAPI;
   private final UserAPI userAPI;
+  private final RelationshipAPI relationshipAPI;
 
   private final FieldFactory fieldFactory = new FieldFactoryImpl();
 
@@ -77,17 +82,18 @@ public class FieldAPIImpl implements FieldAPI {
       this(APILocator.getPermissionAPI(),
           APILocator.getContentletAPI(),
           APILocator.getUserAPI(),
-          DeleteFieldJobHelper.INSTANCE);
+          APILocator.getRelationshipAPI());
   }
 
   @VisibleForTesting
   public FieldAPIImpl(final PermissionAPI perAPI,
                         final ContentletAPI conAPI,
                         final UserAPI userAPI,
-                        final DeleteFieldJobHelper deleteFieldJobHelper) {
-      this.permissionAPI = perAPI;
-      this.contentletAPI = conAPI;
-      this.userAPI = userAPI;
+                        final RelationshipAPI relationshipAPI) {
+      this.permissionAPI   = perAPI;
+      this.contentletAPI   = conAPI;
+      this.userAPI         = userAPI;
+      this.relationshipAPI = relationshipAPI;
   }
 
   @WrapInTransaction
@@ -110,7 +116,13 @@ public class FieldAPIImpl implements FieldAPI {
                         fieldFactory.moveSortOrderBackward(type.id(), oldField.sortOrder(), field.sortOrder());
                     }
                 }
-	    	} catch(NotFoundInDbException e) {
+
+                //if oldField is a relationshipField and the new field modifies an existing
+                // relationship, this relationship has to be unlinked to add the new one later
+                if (oldField instanceof RelationshipField) {
+                    removeRelationshipLink(oldField, type);
+                }
+            } catch(NotFoundInDbException e) {
 	    		//Do nothing as Starter comes with id but field is unexisting yet
 	    	}
 	    }else {
@@ -118,6 +130,13 @@ public class FieldAPIImpl implements FieldAPI {
         }
 
 		Field result = fieldFactory.save(field);
+
+        //if RelationshipField, Relationship record must be added/updated
+        if (field instanceof RelationshipField) {
+              Relationship relationship = getRelationshipForField(field, contentTypeAPI, type);
+
+              relationshipAPI.save(relationship);
+        }
 		//update Content Type mod_date to detect the changes done on the field
 		contentTypeAPI.updateModDate(type);
 		
@@ -147,6 +166,90 @@ public class FieldAPIImpl implements FieldAPI {
 
       return result;
 	}
+
+    /**
+     * Verify if a relationship already exists for this field. Otherwise, a new relationship object
+     * is created
+     */
+    @VisibleForTesting
+    Relationship getRelationshipForField(Field field, ContentTypeAPI contentTypeAPI,
+            ContentType type) throws DotDataException {
+        Relationship relationship;
+
+       final StringBuilder fullFieldVariable = new StringBuilder(type.variable()).append(StringPool.PERIOD).append(field.variable());
+
+        try {
+            final int cardinality = Integer.parseInt(field.values());
+
+            //check if cardinality is valid
+            if (cardinality < 0 || cardinality >= RELATIONSHIP_CARDINALITY.values().length){
+                throw new DotDataException("Cardinality value is incorrect");
+            }
+
+            //we need to find the id of the related structure using the velocityVarName set in the relationType
+            ContentType relatedContentType = contentTypeAPI.find(field.relationType().split("\\.")[0]);
+
+            relationship = relationshipAPI
+                    .byTypeValue(field.relationType(), true);
+
+            //verify if the relationship already exists
+            if (UtilMethods.isSet(relationship) && UtilMethods.isSet(relationship.getInode())) {
+
+                //check which side of the relationship is being updated (parent or child)
+                if (UtilMethods.isSet(relationship.getChildStructureInode()) && relationship
+                        .getChildStructureInode().equals(type.id())) {
+                    String[] relationTypeValue = relationship.getRelationTypeValue()
+                            .split(StringPool.DASH);
+                    //parent is updated
+                    relationship.setParentStructureInode(relatedContentType.id());
+                    relationship.setParentRelationName(
+                            relatedContentType.name().replaceAll("\\s", "_")
+                                    .replaceAll("[^a-zA-Z0-9\\_]", ""));
+
+                    relationship.setRelationTypeValue(
+                            relationTypeValue[0] + StringPool.DASH + fullFieldVariable.toString());
+                    relationship.setParentRequired(field.required());
+
+                    //only one side of the relationship can be required
+                    if (field.required()) {
+                        relationship.setChildRequired(false);
+                    }
+                } else {
+                    //child is updated
+                    relationship.setChildStructureInode(relatedContentType.id());
+                    relationship.setChildRelationName(
+                            relatedContentType.name().replaceAll("\\s", "_")
+                                    .replaceAll("[^a-zA-Z0-9\\_]", ""));
+                    relationship.setChildRequired(field.required());
+
+                    //only one side of the relationship can be required
+                    if (field.required()) {
+                        relationship.setParentRequired(false);
+                    }
+                }
+                relationship.setCardinality(cardinality);
+
+            } else {
+                //otherwise, a new relationship will be created
+                relationship = new Relationship();
+                relationship.setChildStructureInode(relatedContentType.id());
+                relationship.setChildRelationName(relatedContentType.name().replaceAll("\\s", "_")
+                        .replaceAll("[^a-zA-Z0-9\\_]", ""));
+                relationship.setCardinality(cardinality);
+                relationship.setRelationTypeValue(fullFieldVariable.toString());
+                relationship.setChildRequired(field.required());
+            }
+
+
+        } catch (Exception e) {
+            //we need to capture any error found during relationship creation
+            //(ie.: NumberFormatException, NullPointerException, ArrayOutOfBoundException)
+            Logger.error(this, "Error saving relationship for field: " + field.variable(), e);
+            throw new DotDataException(e);
+        }
+
+        return relationship;
+    }
 
   @WrapInTransaction
   @Override
@@ -197,7 +300,8 @@ public class FieldAPIImpl implements FieldAPI {
 	              !(field instanceof HiddenField) &&
 	        	  !(field instanceof LineDividerField) &&
 	        	  !(field instanceof TabDividerField) &&
-	        	  !(field instanceof RelationshipsTabField) &&
+                  !(field instanceof RelationshipsTabField) &&
+	        	  !(field instanceof RelationshipField) &&
 	        	  !(field instanceof PermissionTabField) &&
 	        	  !(field instanceof HostFolderField) &&
 	        	  structure != null
@@ -227,6 +331,11 @@ public class FieldAPIImpl implements FieldAPI {
 	    	  this.permissionAPI.resetChildrenPermissionReferences(structure);
 	      }
 
+          //if RelationshipField, Relationship record must be updated/deleted
+          if (field instanceof RelationshipField) {
+              removeRelationshipLink(field, type);
+          }
+
 	      // rebuild contentlets indexes
 	      if(field.indexed()){
 	        contentletAPI.reindex(structure);
@@ -236,7 +345,63 @@ public class FieldAPIImpl implements FieldAPI {
   }
 
 
-  @CloseDBIfOpened
+    /**
+     * Remove one-sided relationship when the field is deleted
+     * @param field
+     * @param type
+     * @throws DotDataException
+     */
+    private void removeRelationshipLink(Field field, ContentType type)
+            throws DotDataException {
+
+        final StringBuilder fullFieldVariable = new StringBuilder(type.variable()).append(StringPool.PERIOD).append(field.variable());
+        final Relationship relationship = relationshipAPI
+                .byTypeValue(fullFieldVariable.toString(), true);
+
+        if (UtilMethods.isSet(relationship) && UtilMethods.isSet(relationship.getInode())){
+
+            //it's a one-sided relationship and must be deleted
+            if (!UtilMethods.isSet(relationship.getChildStructureInode()) || !UtilMethods.isSet(relationship.getParentStructureInode())) {
+                relationshipAPI.delete(relationship);
+            } else{
+                //the relationship must be updated, removing one side of the relationship
+                if (UtilMethods.isSet(relationship.getChildStructureInode()) && relationship.getChildStructureInode().equals(type.id())){
+                    unlinkParent(relationship);
+                } else {
+                    unlinkChild(relationship);
+                }
+
+                relationship.setRelationTypeValue(relationship.getRelationTypeValue()
+                        .replaceAll(fullFieldVariable.toString(), "")
+                        .replaceAll(StringPool.DASH, ""));
+
+                relationshipAPI.save(relationship);
+            }
+        }
+    }
+
+    /**
+     *
+     * @param relationship
+     */
+    private void unlinkParent(Relationship relationship) {
+        relationship.setParentRequired(false);
+        relationship.setParentRelationName(null);
+        relationship.setParentStructureInode(null);
+    }
+
+    /**
+     *
+     * @param relationship
+     */
+    private void unlinkChild(Relationship relationship) {
+        relationship.setChildRequired(false);
+        relationship.setChildRelationName(null);
+        relationship.setChildStructureInode(null);
+    }
+
+
+    @CloseDBIfOpened
   @Override
   public List<Field> byContentTypeId(final String typeId) throws DotDataException {
     return fieldFactory.byContentTypeId(typeId);

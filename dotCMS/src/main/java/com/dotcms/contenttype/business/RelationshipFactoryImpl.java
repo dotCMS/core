@@ -24,7 +24,7 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
-
+import com.liferay.util.StringPool;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -115,36 +115,46 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
         }
         return new DbRelationshipTransformer(results).asList();
     }
+
     @Override
     public  Relationship byTypeValue(final String typeValue){
+        return byTypeValue(typeValue, false);
+    }
+
+    @Override
+    public  Relationship byTypeValue(final String typeValue, boolean like){
         if(typeValue==null) {
             return null;
         }
-		Relationship rel = null;
-		try {
-			rel = cache.getRelationshipByName(typeValue);
-			if(rel != null && rel.getRelationTypeValue().equals(typeValue))
-				return rel;
-		} catch (DotCacheException e) {
-			Logger.debug(this.getClass(), "Unable to access the cache to obtain the relationship", e);
-		}
 
-        List<Map<String, Object>> results = new ArrayList<Map<String, Object>>();
+        List<Map<String, Object>> results;
+
+        Relationship rel = null;
         try {
-        final DotConnect dc = new DotConnect();
-        dc.setSQL(sql.FIND_BY_TYPE_VALUE);
-        dc.addParam(typeValue.toLowerCase());
-        results = dc.loadObjectResults();
-        if (results.size() == 0) {
-         return rel;
-        }
+            final DotConnect dc = new DotConnect();
+
+
+            if (like){
+                dc.setSQL(sql.FIND_BY_TYPE_VALUE_LIKE);
+                dc.addParam(StringPool.PERCENT + typeValue.toLowerCase() +  StringPool.PERCENT);
+            } else{
+                dc.setSQL(sql.FIND_BY_TYPE_VALUE);
+                dc.addParam(typeValue.toLowerCase());
+            }
+
+            results = dc.loadObjectResults();
+            if (results.size() == 0) {
+             return null;
+            }
+
+            rel = new DbRelationshipTransformer(results).from();
+
+            if(rel!= null && InodeUtils.isSet(rel.getInode())){
+                cache.putRelationshipByInode(rel);
+            }
+
         } catch (DotDataException e) {
             Logger.error(this,"Error getting relationships with typeValue: " + typeValue.toLowerCase(),e);
-        }
-        rel = new DbRelationshipTransformer(results).from();
-
-		if(rel!= null && InodeUtils.isSet(rel.getInode())){
-            cache.putRelationshipByInode(rel);
         }
 
 		return rel;
@@ -205,7 +215,6 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
 
         return relationships;
     }
-
     @Override
     public  List<Contentlet> dbRelatedContent(final Relationship relationship, final Contentlet contentlet) throws DotDataException {
         final String stInode = contentlet.getContentTypeId();
@@ -256,7 +265,7 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
     @Override
     public  List<Tree> relatedContentTrees(final Relationship relationship, final Contentlet contentlet) throws  DotDataException {
         final String stInode = contentlet.getContentTypeId();
-        List<Tree> matches = new ArrayList<Tree>();
+        List<Tree> matches = new ArrayList<>();
         if (relationship.getParentStructureInode().equalsIgnoreCase(stInode)) {
             matches = relatedContentTrees(relationship, contentlet, true);
         } else if (relationship.getChildStructureInode().equalsIgnoreCase(stInode)) {
@@ -267,8 +276,8 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
     @Override
     @SuppressWarnings("deprecation")
 	public  List<Tree> relatedContentTrees(final Relationship relationship, final Contentlet contentlet, final boolean hasParent) throws  DotDataException {
-        final List<Tree> matches = new ArrayList<Tree>();
-        List<Tree> trees = new ArrayList<Tree>();
+        final List<Tree> matches = new ArrayList<>();
+        List<Tree> trees;
         final Identifier iden = APILocator.getIdentifierAPI().find(contentlet);
         if (hasParent) {
             trees = TreeFactory.getTreesByParentAndRelationType(iden, relationship.getRelationTypeValue());
@@ -325,10 +334,10 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
             insertRelationshipInDB(relationship);
         }
 
-        CacheLocator.getRelationshipCache().removeRelationshipByInode(relationship);
+        cache.removeRelationshipByInode(relationship);
         try{
-            CacheLocator.getRelationshipCache().removeRelationshipsByStruct(relationship.getParentStructure());
-            CacheLocator.getRelationshipCache().removeRelationshipsByStruct(relationship.getChildStructure());
+            cache.removeRelationshipsByStruct(relationship.getParentStructure());
+            cache.removeRelationshipsByStruct(relationship.getChildStructure());
         }
         catch(Exception e){
             Logger.error(this.getClass(), e.getMessage(),e);
@@ -418,10 +427,10 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
             TreeFactory.deleteTreesByRelationType(relationship.getRelationTypeValue());
         }
 
-        CacheLocator.getRelationshipCache().removeRelationshipByInode(relationship);
+        cache.removeRelationshipByInode(relationship);
         try {
-            CacheLocator.getRelationshipCache().removeRelationshipsByStruct(relationship.getParentStructure());
-            CacheLocator.getRelationshipCache().removeRelationshipsByStruct(relationship.getChildStructure());
+            cache.removeRelationshipsByStruct(relationship.getParentStructure());
+            cache.removeRelationshipsByStruct(relationship.getChildStructure());
         } catch (DotCacheException e) {
             Logger.error(this.getClass(), e.getMessage(), e);
 

@@ -60,6 +60,10 @@ import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.primitives.Ints;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
+import java.util.Arrays;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
 import java.io.Serializable;
 import java.io.StringWriter;
 import java.sql.Connection;
@@ -75,7 +79,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.StringTokenizer;
-import java.util.function.Consumer;
 import org.apache.commons.lang.StringUtils;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.ActionListener;
@@ -1459,26 +1462,30 @@ public class ESContentFactoryImpl extends ContentletFactory {
             	sortBy = sortBy.toLowerCase();
             	if(sortBy.endsWith("-order")) {
             	    // related content ordering
-            	    int ind0=sortBy.indexOf('-'); // relationships tipicaly have a format stname1-stname2
-            	    int ind1=ind0>0 ? sortBy.indexOf('-',ind0+1) : -1;
-            	    if(ind1>0) {
-            	        String relName=sortBy.substring(0, ind1);
-            	        if((ind1+1)<sortBy.length()) {
-                	        String identifier=sortBy.substring(ind1+1, sortBy.length()-6);
-                            if (UtilMethods.isSet(identifier)) {
-                                final Script script = new Script(
-                                    Script.DEFAULT_SCRIPT_TYPE,
-                                    "expert_scripts",
-                                    "related",
-                                    Collections.emptyMap(),
-                                    ImmutableMap.of("relName", relName, "identifier", identifier));
+            	    // relationships tipically have a format velocityVarName-stname1-stname2
+            	    if(sortBy.indexOf('-')>0) {
 
-                                srb.addSort(
-                                    SortBuilders
-                                        .scriptSort(script, ScriptSortBuilder.ScriptSortType.NUMBER)
-                                        .order(SortOrder.ASC));
-                            }
-            	        }
+            	        final String[] sortByArray = sortBy.split(StringPool.DASH);
+                        final String identifier = Arrays
+                                .stream(sortByArray, 3, sortByArray.length - 1)
+                                .collect(Collectors.joining(StringPool.DASH));
+                        final String relName = Arrays.stream(sortByArray, 0, 3)
+                                .collect(Collectors.joining(StringPool.DASH));
+
+                        if (UtilMethods.isSet(identifier)) {
+                            final Script script = new Script(
+                                Script.DEFAULT_SCRIPT_TYPE,
+                                "expert_scripts",
+                                "related",
+                                Collections.emptyMap(),
+                                ImmutableMap.of("relName", relName, "identifier", identifier));
+
+                            srb.addSort(
+                                SortBuilders
+                                    .scriptSort(script, ScriptSortBuilder.ScriptSortType.NUMBER)
+                                    .order(SortOrder.ASC));
+                        }
+
             	    }
             	}
             	else if(sortBy.startsWith("score")){

@@ -3,7 +3,6 @@ package com.dotcms.contenttype.transform.field;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.LegacyFieldTypes;
-import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -53,12 +52,7 @@ public class DbFieldTransformer implements FieldTransformer {
 			@Override
 			@Nullable
 			public String relationType() {
-
-				//TODO: Modify when UI changes on Relationships get ready
-				if (type().getCanonicalName().equals(RelationshipField.class.getCanonicalName())){
-					return variable() + "-Testcontenttype-Vimeo";
-				}
-				return null;
+				return StringUtils.nullEmptyStr((String) map.get("field_relation_type"));
 			}
 
 			@Override

@@ -15,7 +15,16 @@ public interface RelationshipAPI {
 
   Relationship byInode(String inode);
 
-  List<Relationship> byParent(ContentTypeIf parent) throws DotDataException;
+  /**
+   * Search a relationship by relationTypeValue. If like=true, it will search for a relationship
+   * that contains the string typeValue. Otherwise, the exact typeValue will be used.
+   * @param typeValue
+   * @param like
+   * @return
+   */
+    Relationship byTypeValue(String typeValue, boolean like);
+
+    List<Relationship> byParent(ContentTypeIf parent) throws DotDataException;
 
   List<Relationship> byChild(ContentTypeIf child) throws DotDataException;
 

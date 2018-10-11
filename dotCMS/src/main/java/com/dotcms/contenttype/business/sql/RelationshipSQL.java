@@ -36,6 +36,8 @@ public abstract class RelationshipSQL {
 
 	public static final String FIND_BY_TYPE_VALUE = SELECT_ALL_FIELDS + " where lower(relation_type_value) = ?";
 
+	public static final String FIND_BY_TYPE_VALUE_LIKE = SELECT_ALL_FIELDS + " where lower(relation_type_value) like (?)";
+
 	public static final String INSERT_INODE = "insert into inode (inode, idate, owner, type) values (?,?,?,'relationship')";
 
 	public static final String INSERT_RELATIONSHIP = "insert into relationship (inode, parent_structure_inode, child_structure_inode, "

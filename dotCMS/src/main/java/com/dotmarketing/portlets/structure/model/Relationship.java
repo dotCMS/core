@@ -6,12 +6,10 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.factories.InodeFactory;
-import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 
 
-
-public class Relationship extends Inode 
+public class Relationship extends Inode
 {
 	
 	private static final long serialVersionUID = 1L;
@@ -33,20 +31,22 @@ public class Relationship extends Inode
     }
 
 
-    public Relationship(Structure parentStructure, Structure childStructure, String parentRelationName, String childRelationName, int cardinality, boolean parentRequired, boolean childRequired){
-    	super.setType("relationship");	
-    	this.parentStructureInode = parentStructure.getInode();
-    	this.childStructureInode = childStructure.getInode();
-    	this.parentRelationName = parentRelationName;
-    	this.childRelationName = childRelationName;
-    	this.cardinality = cardinality;
-    	this.parentRequired = parentRequired;
-    	this.childRequired = childRequired;
-    	//TODO: Add field.velocityVarName
-    	this.relationTypeValue = parentRelationName.replaceAll(" ", "_") + "-" + childRelationName.replaceAll(" ", "_");
-    }
-    
-    
+	public Relationship(Structure parentStructure, Structure childStructure,
+			String parentRelationName, String childRelationName, int cardinality,
+			boolean parentRequired, boolean childRequired) {
+		super.setType("relationship");
+		this.parentStructureInode = parentStructure.getInode();
+		this.childStructureInode = childStructure.getInode();
+		this.parentRelationName = parentRelationName;
+		this.childRelationName = childRelationName;
+		this.cardinality = cardinality;
+		this.parentRequired = parentRequired;
+		this.childRequired = childRequired;
+		this.relationTypeValue = parentRelationName.replaceAll(" ", "_") + "-" + childRelationName
+				.replaceAll(" ", "_");
+	}
+
+
 	/**
 	 * @return Returns the cardinality.
 	 */
@@ -77,15 +77,19 @@ public class Relationship extends Inode
 	public String getChildStructureInode() {
 		return childStructureInode;
 	}
-	
-	public Structure getChildStructure () {
-	  try {
-        return new StructureTransformer(APILocator.getContentTypeAPI(APILocator.systemUser()).find(childStructureInode)).asStructure();
-      } catch (DotStateException | DotDataException | DotSecurityException e) {
-        throw new DotStateException("getChildStructure Struc not found, childStructureInode:" + childStructureInode, e);
 
-      }
-	  
+	public Structure getChildStructure() {
+		try {
+			return UtilMethods.isSet(childStructureInode) ? new StructureTransformer(
+					APILocator.getContentTypeAPI(APILocator.systemUser()).find(childStructureInode))
+					.asStructure() : null;
+		} catch (DotStateException | DotDataException | DotSecurityException e) {
+			throw new DotStateException(
+					"getChildStructure Struc not found, childStructureInode:" + childStructureInode,
+					e);
+
+		}
+
 	}
 	
 	/**
@@ -107,13 +111,17 @@ public class Relationship extends Inode
 		this.parentRelationName = parentRelationName;
 	}
 
-	public Structure getParentStructure () {
-      try {
-        return new StructureTransformer(APILocator.getContentTypeAPI(APILocator.systemUser()).find(parentStructureInode)).asStructure();
-      } catch (DotStateException | DotDataException | DotSecurityException e) {
-        throw new DotStateException("getParentStructure Struc not found, parentStructureInode:" + parentStructureInode, e);
+	public Structure getParentStructure() {
+		try {
+			return UtilMethods.isSet(parentStructureInode) ? new StructureTransformer(
+					APILocator.getContentTypeAPI(APILocator.systemUser())
+							.find(parentStructureInode))
+					.asStructure() : null;
+		} catch (DotStateException | DotDataException | DotSecurityException e) {
+			throw new DotStateException("getParentStructure Struc not found, parentStructureInode:"
+					+ parentStructureInode, e);
 
-      }
+		}
 	}
 	
 	/**

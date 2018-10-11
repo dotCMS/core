@@ -16,7 +16,6 @@ import com.dotcms.contenttype.model.field.ImmutableFieldVariable;
 import com.dotcms.contenttype.model.field.ImmutableFieldVariable.Builder;
 import com.dotcms.contenttype.model.field.LegacyFieldTypes;
 import com.dotcms.contenttype.model.field.OnePerContentType;
-import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.field.DbFieldTransformer;
@@ -227,13 +226,6 @@ public class FieldFactoryImpl implements FieldFactory {
       String tryVar = (throwAwayField.variable() == null)
           ? suggestVelocityVar(throwAwayField.name(), fieldsAlreadyAdded) : throwAwayField.variable();
       builder.variable(tryVar);
-
-      //TODO: Modify when UI changes on Relationships get ready
-      if (throwAwayField.type().getCanonicalName().equals(RelationshipField.class.getCanonicalName())){
-        builder.relationType(tryVar + "-Testcontenttype-Vimeo");
-      }
-
-
     }
     builder = FieldBuilder.builder(normalizeData(builder.build()));
 

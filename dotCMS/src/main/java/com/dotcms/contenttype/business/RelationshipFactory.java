@@ -21,6 +21,8 @@ public interface RelationshipFactory {
 
     List<Relationship> dbAll(String orderBy);
 
+    Relationship byTypeValue(String typeValue, boolean like);
+
     Relationship byTypeValue(final String typeValue);
 
     List<Relationship> byContentType(final String contentType);
