@@ -12,6 +12,7 @@ import com.dotcms.contenttype.model.field.CustomField;
 import com.dotcms.contenttype.model.field.DateField;
 import com.dotcms.contenttype.model.field.DateTimeField;
 import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.contenttype.model.field.FileField;
 import com.dotcms.contenttype.model.field.HiddenField;
@@ -170,6 +171,11 @@ public class FieldAPIImpl implements FieldAPI {
     /**
      * Verify if a relationship already exists for this field. Otherwise, a new relationship object
      * is created
+     * @param field
+     * @param contentTypeAPI
+     * @param type
+     * @return
+     * @throws DotDataException
      */
     @VisibleForTesting
     Relationship getRelationshipForField(Field field, ContentTypeAPI contentTypeAPI,
@@ -212,7 +218,11 @@ public class FieldAPIImpl implements FieldAPI {
 
                     //only one side of the relationship can be required
                     if (field.required()) {
+
+                        //setting as not required the other side of the relationship
                         relationship.setChildRequired(false);
+                        fieldFactory.save(FieldBuilder.builder(byContentTypeAndVar(relatedContentType,
+                                field.relationType().split("\\.")[1])).required(false).build());
                     }
                 } else {
                     //child is updated
@@ -224,7 +234,10 @@ public class FieldAPIImpl implements FieldAPI {
 
                     //only one side of the relationship can be required
                     if (field.required()) {
+                        //setting as not required the other side of the relationship
                         relationship.setParentRequired(false);
+                        fieldFactory.save(FieldBuilder.builder(byContentTypeAndVar(relatedContentType,
+                                field.relationType().split("\\.")[1])).required(false).build());
                     }
                 }
                 relationship.setCardinality(cardinality);

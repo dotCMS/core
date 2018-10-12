@@ -1,9 +1,11 @@
 package com.dotcms.contenttype.business;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.contenttype.model.field.Field;
@@ -683,6 +685,76 @@ public class FieldAPITest extends IntegrationTestBase {
         } finally {
             if (UtilMethods.isSet(parentContentType) && UtilMethods.isSet(parentContentType.id())) {
                 contentTypeAPI.delete(parentContentType);
+            }
+        }
+    }
+
+    @Test
+    public void testSaveRelationshipFieldBothSidesRequired()
+            throws DotSecurityException, DotDataException {
+        final long time = System.currentTimeMillis();
+
+        ContentType parentContentType = null;
+        ContentType childContentType  = null;
+        Relationship relationship;
+
+        try {
+            parentContentType = ContentTypeBuilder.builder(SimpleContentType.class).folder(
+                    FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST).name("parentContentType" + time)
+                    .variable("parentContentType" + time).owner(user.getUserId()).build();
+
+            parentContentType = contentTypeAPI.save(parentContentType);
+
+            childContentType = ContentTypeBuilder.builder(SimpleContentType.class).folder(
+                    FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST).name("childContentType" + time)
+                    .variable("childContentType" + time).owner(user.getUserId()).build();
+
+            childContentType = contentTypeAPI.save(childContentType);
+
+            //Adding a RelationshipField to the parent
+            Field field = FieldBuilder.builder(RelationshipField.class).name("newRel")
+                    .contentTypeId(parentContentType.id()).values("1").variable("newRel")
+                    .relationType(childContentType.variable()).required(true).build();
+
+
+            field = fieldAPI.save(field, user);
+
+            final StringBuilder fullFieldVar = new StringBuilder(parentContentType.variable()).append(StringPool.PERIOD)
+                    .append(field.variable());
+
+            relationship = relationshipAPI
+                    .byTypeValue(fullFieldVar.toString(), true);
+
+            assertNotNull(relationship);
+            assertTrue(relationship.isChildRequired());
+            assertFalse(relationship.isParentRequired());
+            assertTrue(field.required());
+
+            //Adding a RelationshipField to the child
+            Field secondField = FieldBuilder.builder(RelationshipField.class).name("otherSideRel")
+                    .contentTypeId(childContentType.id()).values("1").variable("otherSideRel")
+                    .relationType(fullFieldVar.toString()).required(true).build();
+
+            secondField = fieldAPI.save(secondField, user);
+
+            field = fieldAPI.find(field.id());
+
+            relationship = relationshipAPI
+                    .byTypeValue(fullFieldVar.toString(), true);
+
+            assertNotNull(relationship);
+            assertFalse(relationship.isChildRequired());
+            assertTrue(relationship.isParentRequired());
+            assertTrue(secondField.required());
+            assertFalse(field.required());
+
+        } finally {
+            if (UtilMethods.isSet(parentContentType) && UtilMethods.isSet(parentContentType.id())) {
+                contentTypeAPI.delete(parentContentType);
+            }
+
+            if (UtilMethods.isSet(childContentType) && UtilMethods.isSet(childContentType.id())) {
+                contentTypeAPI.delete(childContentType);
             }
         }
     }
