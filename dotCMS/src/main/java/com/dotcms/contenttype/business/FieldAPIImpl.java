@@ -180,11 +180,14 @@ public class FieldAPIImpl implements FieldAPI {
     @VisibleForTesting
     Relationship getRelationshipForField(Field field, ContentTypeAPI contentTypeAPI,
             ContentType type) throws DotDataException {
-        Relationship relationship;
+        Relationship relationship = null;
 
-       final StringBuilder fullFieldVariable = new StringBuilder(type.variable()).append(StringPool.PERIOD).append(field.variable());
+        final StringBuilder fullFieldVariable = new StringBuilder(type.variable())
+                .append(StringPool.PERIOD).append(field.variable());
 
         try {
+
+            final String[] relationType = field.relationType().split("\\.");
             final int cardinality = Integer.parseInt(field.values());
 
             //check if cardinality is valid
@@ -193,10 +196,13 @@ public class FieldAPIImpl implements FieldAPI {
             }
 
             //we need to find the id of the related structure using the velocityVarName set in the relationType
-            ContentType relatedContentType = contentTypeAPI.find(field.relationType().split("\\.")[0]);
+            ContentType relatedContentType = contentTypeAPI.find(relationType[0]);
 
-            relationship = relationshipAPI
-                    .byTypeValue(field.relationType(), true);
+            //checking if the relationship is against a content type or an existing relationship
+            if (relationType.length > 1){
+                relationship = relationshipAPI
+                        .byTypeValue(field.relationType(), true);
+            }
 
             //verify if the relationship already exists
             if (UtilMethods.isSet(relationship) && UtilMethods.isSet(relationship.getInode())) {
@@ -222,7 +228,7 @@ public class FieldAPIImpl implements FieldAPI {
                         //setting as not required the other side of the relationship
                         relationship.setChildRequired(false);
                         fieldFactory.save(FieldBuilder.builder(byContentTypeAndVar(relatedContentType,
-                                field.relationType().split("\\.")[1])).required(false).build());
+                                relationType[1])).required(false).build());
                     }
                 } else {
                     //child is updated
@@ -237,7 +243,7 @@ public class FieldAPIImpl implements FieldAPI {
                         //setting as not required the other side of the relationship
                         relationship.setParentRequired(false);
                         fieldFactory.save(FieldBuilder.builder(byContentTypeAndVar(relatedContentType,
-                                field.relationType().split("\\.")[1])).required(false).build());
+                                relationType[1])).required(false).build());
                     }
                 }
                 relationship.setCardinality(cardinality);
@@ -458,7 +464,10 @@ public class FieldAPIImpl implements FieldAPI {
   @WrapInTransaction
   @Override
   public void deleteFieldsByContentType(final ContentType type) throws DotDataException {
-    fieldFactory.deleteByContentType(type);
+      List<Field> fields = byContentTypeId(type.id());
+      for (Field field : fields) {
+          delete(field);
+      }
   }
 
   @Override

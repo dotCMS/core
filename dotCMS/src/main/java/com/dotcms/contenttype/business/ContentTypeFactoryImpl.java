@@ -416,6 +416,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
   private boolean dbDelete(ContentType type) throws DotDataException {
 
+    final FieldFactory fieldFactory = new FieldFactoryImpl();
     // default structure can't be deleted
     if (type.defaultType()) {
       throw new DotDataException("contenttype.delete.cannot.delete.default.type");
@@ -425,7 +426,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     }
 
     // deleting fields
-    APILocator.getContentTypeFieldAPI().deleteFieldsByContentType(type);
+    fieldFactory.deleteByContentType(type);
 
     // make sure folders don't refer to this structure as default fileasset structure
 

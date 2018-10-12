@@ -105,7 +105,7 @@ public class FieldAPITest extends IntegrationTestBase {
     }
 
     @Test
-    public void testSaveRelationshipField_when_newField_returns_newRelationshipObject()
+    public void testSaveOneSidedRelationshipField_returns_newRelationshipObject()
             throws DotSecurityException, DotDataException {
         final long time = System.currentTimeMillis();
         ContentType parentContentType = null;
@@ -719,8 +719,8 @@ public class FieldAPITest extends IntegrationTestBase {
 
             field = fieldAPI.save(field, user);
 
-            final StringBuilder fullFieldVar = new StringBuilder(parentContentType.variable()).append(StringPool.PERIOD)
-                    .append(field.variable());
+            final StringBuilder fullFieldVar = new StringBuilder(parentContentType.variable())
+                    .append(StringPool.PERIOD).append(field.variable());
 
             relationship = relationshipAPI
                     .byTypeValue(fullFieldVar.toString(), true);
@@ -739,8 +739,7 @@ public class FieldAPITest extends IntegrationTestBase {
 
             field = fieldAPI.find(field.id());
 
-            relationship = relationshipAPI
-                    .byTypeValue(fullFieldVar.toString(), true);
+            relationship = relationshipAPI.byTypeValue(fullFieldVar.toString(), true);
 
             assertNotNull(relationship);
             assertFalse(relationship.isChildRequired());
@@ -755,6 +754,47 @@ public class FieldAPITest extends IntegrationTestBase {
 
             if (UtilMethods.isSet(childContentType) && UtilMethods.isSet(childContentType.id())) {
                 contentTypeAPI.delete(childContentType);
+            }
+        }
+    }
+
+    @Test
+    public void testSaveOneSidedRelationship_when_theChildContentTypeIsRelatedWithAnotherContentType()
+            throws DotSecurityException, DotDataException {
+        final long time = System.currentTimeMillis();
+        ContentType parentContentType = null;
+        final ContentType existingContentType = contentTypeAPI.find("Youtube");
+        try {
+            parentContentType = ContentTypeBuilder.builder(SimpleContentType.class).folder(
+                    FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST).name("parentContentType" + time)
+                    .variable("parentContentType" + time).owner(user.getUserId()).build();
+
+            parentContentType = contentTypeAPI.save(parentContentType);
+
+            Field field = FieldBuilder.builder(RelationshipField.class).name("newRel")
+                    .contentTypeId(parentContentType.id()).values("1").variable("newRel")
+                    .relationType(existingContentType.variable()).build();
+
+            //One side of the relationship is set parentContentType --> Youtube
+            field = fieldAPI.save(field, user);
+
+            final StringBuilder fullFieldVar = new StringBuilder(parentContentType.variable())
+                    .append(StringPool.PERIOD).append(field.variable());
+
+            final Relationship relationship = relationshipAPI
+                    .byTypeValue(fullFieldVar.toString(), true);
+
+            assertNotNull(relationship);
+
+            assertNull(relationship.getParentStructureInode());
+            assertNull(relationship.getParentRelationName());
+            assertEquals(existingContentType.id(), relationship.getChildStructureInode());
+            assertEquals(existingContentType.name(), relationship.getChildRelationName());
+            assertEquals(1, relationship.getCardinality());
+            assertEquals(fullFieldVar.toString(), relationship.getRelationTypeValue());
+        } finally {
+            if (UtilMethods.isSet(parentContentType) && UtilMethods.isSet(parentContentType.id())) {
+                contentTypeAPI.delete(parentContentType);
             }
         }
     }
