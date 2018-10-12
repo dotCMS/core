@@ -65,7 +65,9 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
             }
             rel = new DbRelationshipTransformer(results).from();
         }catch (DotDataException e){
-		    Logger.error(this, "Error getting Relationship with inode: " + inode, e);
+		    if(!(e instanceof NotFoundInDbException)) {
+                Logger.error(this, "Error getting Relationship with inode: " + inode, e);
+            }
         }
 
         if(rel!= null && InodeUtils.isSet(rel.getInode())) {
