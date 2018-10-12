@@ -2095,7 +2095,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 				hasParent = key.indexOf("_P_") != -1;
 				inodesSt = (String) req.getParameter(key);
 				inodes = inodesSt.split(",");
-				relationship = (Relationship) InodeFactory.getInode(inodes[0], Relationship.class);
+				relationship = APILocator.getRelationshipAPI().byInode(inodes[0]);
 				contentletRelationshipRecords = new ContentletRelationships(null).new ContentletRelationshipRecords(relationship, hasParent);
 				records = new ArrayList<Contentlet>();
 
@@ -2141,7 +2141,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 
 				String[] inodes = inodesSt.split(",");
 
-				Relationship relationship = (Relationship) InodeFactory.getInode(inodes[0], Relationship.class);
+				Relationship relationship = APILocator.getRelationshipAPI().byInode(inodes[0]);
 				ContentletRelationshipRecords records = relationshipsData.new ContentletRelationshipRecords(relationship, hasParent);
 				ArrayList<Contentlet> cons = new ArrayList<Contentlet>();
 				for (String inode : inodes) {

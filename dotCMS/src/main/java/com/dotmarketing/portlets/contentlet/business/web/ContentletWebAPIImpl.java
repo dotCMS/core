@@ -1067,7 +1067,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 				hasParent = key.indexOf("_P_") != -1;
 				inodesSt = (String) contentletFormData.get(key);
 				inodes = inodesSt.split(",");
-				relationship = (Relationship) InodeFactory.getInode(inodes[0], Relationship.class);
+				relationship = APILocator.getRelationshipAPI().byInode(inodes[0]);
 				contentletRelationshipRecords = new ContentletRelationships(null).new ContentletRelationshipRecords(relationship, hasParent);
 				records = new ArrayList<Contentlet>();
 
@@ -1109,7 +1109,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 				}
 				String[] inodes = inodesSt.split(",");
 
-				Relationship relationship = (Relationship) InodeFactory.getInode(inodes[0], Relationship.class);
+				Relationship relationship = APILocator.getRelationshipAPI().byInode(inodes[0]);
 				ContentletRelationshipRecords records = relationshipsData.new ContentletRelationshipRecords(relationship, hasParent);
 				ArrayList<Contentlet> cons = new ArrayList<Contentlet>();
 				for (String inode : inodes) {
