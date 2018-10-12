@@ -1,9 +1,18 @@
 package com.dotcms.rendering.velocity.viewtools;
 
+import com.dotcms.rest.MapToContentletPopulator;
 import com.dotmarketing.business.Permissionable;
 import java.util.List;
 import java.util.Map;
 
+import com.dotmarketing.business.RelationshipAPI;
+import com.dotmarketing.portlets.categories.business.CategoryAPI;
+import com.dotmarketing.portlets.categories.model.Category;
+import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicyProvider;
+import com.dotmarketing.portlets.structure.model.Relationship;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.UtilMethods;
 import org.apache.velocity.tools.view.tools.ViewTool;
 
 import com.dotmarketing.business.APILocator;
@@ -26,6 +35,8 @@ import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.liferay.portal.model.User;
 
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.RELATIONSHIP_KEY;
+
 
 /**
  * This class is a thin wrapper - mostly read only, for the WorkflowAPI
@@ -34,7 +45,9 @@ import com.liferay.portal.model.User;
  */
 public class WorkflowTool implements ViewTool {
 
-	WorkflowAPI wapi = APILocator.getWorkflowAPI();
+	final WorkflowAPI wapi = APILocator.getWorkflowAPI();
+	final CategoryAPI categoryAPI = APILocator.getCategoryAPI();
+	final RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
 
 	public void init(Object obj) {
 
@@ -143,6 +156,31 @@ public class WorkflowTool implements ViewTool {
 	public WorkflowProcessor fireWorkflowNoCheckin(Contentlet contentlet, User user) throws DotDataException, DotWorkflowException,
 			DotContentletValidationException {
 		return wapi.fireWorkflowNoCheckin(contentlet,user);
+	}
+
+	public Contentlet fire(final String wfActionId, final Map<String, Object> properties, final User user)
+			throws DotSecurityException, DotDataException {
+		final MapToContentletPopulator mapToContentletPopulator = MapToContentletPopulator.INSTANCE;
+		Contentlet contentlet = new Contentlet();
+		contentlet = mapToContentletPopulator.populate(contentlet, properties);
+
+		final boolean ALLOW_FRONT_END_SAVING = Config
+				.getBooleanProperty("WORKFLOW_TOOL_ALLOW_FRONT_END_SAVING", false);
+
+		List<Category> cats = categoryAPI.getCategoriesFromContent(contentlet, user, ALLOW_FRONT_END_SAVING);
+
+		Map<Relationship, List<Contentlet>> relationships = (Map<Relationship, List<Contentlet>>)
+				contentlet.get(RELATIONSHIP_KEY);
+
+		final ContentletDependencies contentletDependencies = new ContentletDependencies.Builder()
+				.workflowActionId(wfActionId)
+				.respectAnonymousPermissions(ALLOW_FRONT_END_SAVING)
+				.modUser(user).categories(cats)
+				.relationships(relationshipAPI.getContentletRelationshipsFromMap(contentlet, relationships))
+				.indexPolicy(IndexPolicyProvider.getInstance().forSingleContent())
+				.build();
+
+		return wapi.fireContentWorkflow(contentlet, contentletDependencies);
 	}
 
 }
