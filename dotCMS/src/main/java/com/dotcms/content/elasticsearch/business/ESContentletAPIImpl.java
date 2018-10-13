@@ -1029,13 +1029,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
      */
     private IHTMLPage loadPageByIdentifier ( String ident, boolean live, Long languageId, User user, boolean frontRoles ) throws DotDataException, DotContentletStateException, DotSecurityException {
 
-        Identifier ii = APILocator.getIdentifierAPI().find(ident);
-        if ( ii.getAssetType().equals("contentlet") ) {
-            return APILocator.getHTMLPageAssetAPI().fromContentlet(APILocator.getContentletAPI().findContentletByIdentifier(ident, live, languageId, user, frontRoles));
-        } else {
-            return live ? (IHTMLPage) APILocator.getVersionableAPI().findLiveVersion(ii, user, frontRoles)
-                    : (IHTMLPage) APILocator.getVersionableAPI().findWorkingVersion(ii, user, frontRoles);
-        }
+
+        return APILocator.getHTMLPageAssetAPI().fromContentlet(this.findContentletByIdentifier(ident, live, languageId, user, frontRoles));
+        
     }
 
     /**
