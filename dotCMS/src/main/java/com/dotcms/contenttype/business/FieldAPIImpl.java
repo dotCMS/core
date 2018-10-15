@@ -200,8 +200,12 @@ public class FieldAPIImpl implements FieldAPI {
 
             //checking if the relationship is against a content type or an existing relationship
             if (relationType.length > 1){
-                relationship = relationshipAPI
-                        .byTypeValue(field.relationType(), true);
+                final List<Relationship> result = relationshipAPI
+                        .dbAllByTypeValue(field.relationType());
+
+                if (UtilMethods.isSet(result)){
+                    relationship = result.get(0);
+                }
             }
 
             //verify if the relationship already exists
@@ -373,9 +377,17 @@ public class FieldAPIImpl implements FieldAPI {
     private void removeRelationshipLink(Field field, ContentType type)
             throws DotDataException {
 
+        Relationship relationship = null;
+
         final StringBuilder fullFieldVariable = new StringBuilder(type.variable()).append(StringPool.PERIOD).append(field.variable());
-        final Relationship relationship = relationshipAPI
-                .byTypeValue(fullFieldVariable.toString(), true);
+
+        final List<Relationship> result = relationshipAPI
+                .dbAllByTypeValue(fullFieldVariable.toString());
+
+        if (UtilMethods.isSet(result)){
+            relationship = result.get(0);
+        }
+
 
         if (UtilMethods.isSet(relationship) && UtilMethods.isSet(relationship.getInode())){
 

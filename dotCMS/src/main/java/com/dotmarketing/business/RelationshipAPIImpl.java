@@ -42,8 +42,8 @@ public class RelationshipAPIImpl implements RelationshipAPI {
 
     @CloseDBIfOpened
     @Override
-    public Relationship byTypeValue(final String typeValue, final boolean like) {
-        return this.relationshipFactory.byTypeValue(typeValue, like);
+    public List<Relationship> dbAllByTypeValue(final String typeValue) {
+        return this.relationshipFactory.dbAllByTypeValue(typeValue);
     }
 
     @CloseDBIfOpened

@@ -10,6 +10,7 @@ import com.dotmarketing.beans.Tree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheException;
+import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -20,12 +21,14 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.transform.ContentletTransformer;
 import com.dotmarketing.portlets.structure.factories.RelationshipCache;
 import com.dotmarketing.portlets.structure.model.Relationship;
+import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -34,7 +37,7 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
 	private static final RelationshipSQL sql= RelationshipSQL.getInstance();
 
     private static final RelationshipCache cache = CacheLocator.getRelationshipCache();
-	
+
 	@Override
 	public void deleteByContentType(final ContentTypeIf type) throws DotDataException{
 	    new DotConnect()
@@ -118,33 +121,19 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
 
     @Override
     public  Relationship byTypeValue(final String typeValue){
-        return byTypeValue(typeValue, false);
-    }
-
-    @Override
-    public  Relationship byTypeValue(final String typeValue, boolean like){
         if(typeValue==null) {
             return null;
         }
-
-        List<Map<String, Object>> results;
-
         Relationship rel = null;
+
+        List<Map<String, Object>> results = new ArrayList<Map<String, Object>>();
         try {
             final DotConnect dc = new DotConnect();
-
-
-            if (like){
-                dc.setSQL(sql.FIND_BY_TYPE_VALUE_LIKE);
-                dc.addParam(StringPool.PERCENT + typeValue.toLowerCase() +  StringPool.PERCENT);
-            } else{
-                dc.setSQL(sql.FIND_BY_TYPE_VALUE);
-                dc.addParam(typeValue.toLowerCase());
-            }
-
+            dc.setSQL(sql.FIND_BY_TYPE_VALUE);
+            dc.addParam(typeValue.toLowerCase());
             results = dc.loadObjectResults();
             if (results.size() == 0) {
-             return null;
+                return rel;
             }
 
             rel = new DbRelationshipTransformer(results).from();
@@ -152,6 +141,36 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
             if(rel!= null && InodeUtils.isSet(rel.getInode())){
                 cache.putRelationshipByInode(rel);
             }
+
+        } catch (DotDataException e) {
+            Logger.error(this,"Error getting relationships with typeValue: " + typeValue.toLowerCase(),e);
+        }
+
+        return rel;
+    }
+
+    @Override
+    public List<Relationship> dbAllByTypeValue(final String typeValue){
+        if(typeValue==null) {
+            return Collections.emptyList();
+        }
+
+        List<Map<String, Object>> results;
+
+        List<Relationship> rel = null;
+        try {
+            final DotConnect dc = new DotConnect();
+            dc.setSQL(sql.FIND_BY_TYPE_VALUE_LIKE);
+            dc.addParam(StringPool.PERCENT + typeValue.toLowerCase() +  StringPool.PERCENT);
+
+            results = dc.loadObjectResults();
+            if (results.size() == 0) {
+             return Collections.emptyList();
+            }
+
+            rel = new DbRelationshipTransformer(results).asList();
+
+            rel.forEach(item -> cache.putRelationshipByInode(item));
 
         } catch (DotDataException e) {
             Logger.error(this,"Error getting relationships with typeValue: " + typeValue.toLowerCase(),e);
@@ -219,10 +238,14 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
     public  List<Contentlet> dbRelatedContent(final Relationship relationship, final Contentlet contentlet) throws DotDataException {
         final String stInode = contentlet.getContentTypeId();
 
-        final boolean selfJoinRelationship = relationship.getParentStructureInode().equalsIgnoreCase(stInode)
-            && relationship.getChildStructureInode().equalsIgnoreCase(stInode);
+        final boolean selfJoinRelationship =
+                null != relationship.getParentStructureInode() && relationship
+                        .getParentStructureInode().equalsIgnoreCase(stInode) && relationship
+                        .getChildStructureInode().equalsIgnoreCase(stInode);
 
-        final boolean hasParent = !selfJoinRelationship && relationship.getParentStructureInode().equalsIgnoreCase(stInode);
+        final boolean hasParent =
+                !selfJoinRelationship && null != relationship.getParentStructureInode()
+                        && relationship.getParentStructureInode().equalsIgnoreCase(stInode);
 
         return dbRelatedContent(relationship, contentlet, hasParent);
     }
@@ -266,9 +289,11 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
     public  List<Tree> relatedContentTrees(final Relationship relationship, final Contentlet contentlet) throws  DotDataException {
         final String stInode = contentlet.getContentTypeId();
         List<Tree> matches = new ArrayList<>();
-        if (relationship.getParentStructureInode().equalsIgnoreCase(stInode)) {
+        if (null != relationship.getParentStructureInode() && relationship.getParentStructureInode()
+                .equalsIgnoreCase(stInode)) {
             matches = relatedContentTrees(relationship, contentlet, true);
-        } else if (relationship.getChildStructureInode().equalsIgnoreCase(stInode)) {
+        } else if (null != relationship.getChildStructureInode() && relationship
+                .getChildStructureInode().equalsIgnoreCase(stInode)) {
             matches = relatedContentTrees(relationship, contentlet, false);
         }
         return matches;
@@ -295,17 +320,43 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
 
     @Override
     public  boolean isParent(final Relationship relationship, final ContentTypeIf contentTypeIf) {
-        if (relationship.getParentStructureInode().equalsIgnoreCase(contentTypeIf.id()) &&
-                !(relationship.getParentRelationName().equals(relationship.getChildRelationName()) && relationship.getChildStructureInode().equalsIgnoreCase(relationship.getParentStructureInode()))) {
+
+        //Sapply for both sided relationships
+        if (null != relationship.getParentStructureInode() && relationship.getParentStructureInode()
+                .equalsIgnoreCase(contentTypeIf.id()) &&
+                !(relationship.getParentRelationName().equals(relationship.getChildRelationName())
+                        && relationship.getChildStructureInode()
+                        .equalsIgnoreCase(relationship.getParentStructureInode()))){
             return true;
+        } else{
+            if (contentTypeIf instanceof Structure) {
+                Structure structure = (Structure) contentTypeIf;
+                if (relationship.getParentStructureInode() == null && relationship
+                        .getRelationTypeValue().toLowerCase()
+                        .contains(structure.getVelocityVarName().toLowerCase())) {
+                    return true;
+                }
+            }
         }
         return false;
     }
     @Override
     public  boolean isChild(final Relationship relationship, final ContentTypeIf contentTypeIf) {
-        if (relationship.getChildStructureInode().equalsIgnoreCase(contentTypeIf.id()) &&
-                !(relationship.getParentRelationName().equals(relationship.getChildRelationName()) && relationship.getChildStructureInode().equalsIgnoreCase(relationship.getParentStructureInode()))) {
+        if (null != relationship.getChildStructureInode() && relationship.getChildStructureInode()
+                .equalsIgnoreCase(contentTypeIf.id()) &&
+                !(relationship.getParentRelationName().equals(relationship.getChildRelationName())
+                        && relationship.getChildStructureInode()
+                        .equalsIgnoreCase(relationship.getParentStructureInode()))) {
             return true;
+        } else{
+            if (contentTypeIf instanceof Structure) {
+                Structure structure = (Structure) contentTypeIf;
+                if (relationship.getChildStructureInode() == null && relationship
+                        .getRelationTypeValue().toLowerCase()
+                        .contains(structure.getVelocityVarName().toLowerCase())) {
+                    return true;
+                }
+            }
         }
         return false;
     }

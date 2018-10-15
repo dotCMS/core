@@ -1116,7 +1116,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
         ContentletRelationships cRelationships = new ContentletRelationships(contentlet);
         Structure structure = contentlet.getStructure();
         List<ContentletRelationshipRecords> matches = cRelationships.getRelationshipsRecords();
-        List<Relationship> relationships = FactoryLocator.getRelationshipFactory().byContentType(structure);
+        List<Relationship> relationships = FactoryLocator.getRelationshipFactory()
+                .dbAllByTypeValue(structure.getVelocityVarName() + StringPool.PERIOD);
 
         for (Relationship relationship : relationships) {
 
@@ -1150,26 +1151,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 records.setRecords(contentletList);
                 matches.add(records);
 
-            } else
-            if (FactoryLocator.getRelationshipFactory().isChild(relationship, structure)) {
-
-                records = cRelationships.new ContentletRelationshipRecords(relationship, false);
+            } else {
+                records = cRelationships.new ContentletRelationshipRecords(relationship, FactoryLocator.getRelationshipFactory().isParent(relationship, structure));
                 try{
                     contentletList = getRelatedContent(contentlet, relationship, APILocator.getUserAPI().getSystemUser(), true);
                 } catch (DotSecurityException e) {
                     Logger.error(this,"Unable to get system user",e);
                 }
-                records.setRecords(contentletList);
-                matches.add(records);
 
-            } else
-            if (FactoryLocator.getRelationshipFactory().isParent(relationship, structure)) {
-                records = cRelationships.new ContentletRelationshipRecords(relationship, true);
-                try{
-                    contentletList = getRelatedContent(contentlet, relationship, APILocator.getUserAPI().getSystemUser(), true);
-                } catch (DotSecurityException e) {
-                    Logger.error(this,"Unable to get system user",e);
-                }
                 records.setRecords(contentletList);
                 matches.add(records);
             }
@@ -1299,7 +1288,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     private String getRelatedContentESQuery(Contentlet contentlet, Relationship rel) {
-        boolean isSameStructRelationship = rel.getParentStructureInode().equalsIgnoreCase(rel.getChildStructureInode());
+        boolean isSameStructRelationship =
+                null != rel.getParentStructureInode() && null != rel.getChildStructureInode() && rel
+                        .getParentStructureInode().equalsIgnoreCase(rel.getChildStructureInode());
         String q = "";
 
         if(isSameStructRelationship) {
@@ -1319,7 +1310,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     private String getRelatedContentESQuery(Contentlet contentlet,Relationship rel, boolean pullByParent) {
-        boolean isSameStructureRelationship = rel.getParentStructureInode().equalsIgnoreCase(rel.getChildStructureInode());
+        boolean isSameStructureRelationship =
+                null != rel.getParentStructureInode() && null != rel.getChildStructureInode() && rel
+                        .getParentStructureInode().equalsIgnoreCase(rel.getChildStructureInode());
         String q = "";
 
         if(isSameStructureRelationship) {
@@ -4579,7 +4572,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         boolean hasError = false;
 
-        String stInode = contentlet.getContentTypeId();
+        final ContentType contentType = contentlet.getContentType();
         DotContentletValidationException cve = new DotContentletValidationException(
                 "Contentlet's fields are not valid");
 
@@ -4597,14 +4590,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 //We need to validate that case
                 boolean isRelationshipParent = true;
 
-                if(rel.getParentStructureInode().equalsIgnoreCase(rel.getChildStructureInode())){
+                if(FactoryLocator.getRelationshipFactory().sameParentAndChild(rel)){
                     if(!cr.isHasParent()){
                         isRelationshipParent = false;
                     }
                 }
 
                 // if i am the parent
-                if (rel.getParentStructureInode().equalsIgnoreCase(stInode) && isRelationshipParent) {
+                if (FactoryLocator.getRelationshipFactory().isParent(rel,contentType) && isRelationshipParent) {
                     if (rel.isChildRequired() && cons.isEmpty()) {
                         hasError = true;
                         cve.addRequiredRelationship(rel, cons);
@@ -4633,7 +4626,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                 hasError = true;
                                 cve.addBadCardinalityRelationship(rel, cons);
                             }
-                            if (!con.getStructureInode().equalsIgnoreCase(
+                            if (null != rel.getChildStructureInode() && !con.getStructureInode().equalsIgnoreCase(
                                     rel.getChildStructureInode())) {
                                 hasError = true;
                                 cve.addInvalidContentRelationship(rel, cons);
@@ -4644,8 +4637,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                             Logger.error(this, "Unable to get system user", e);
                         }
                     }
-                } else if (rel.getChildStructureInode().equalsIgnoreCase(
-                        stInode)) {
+                } else if (FactoryLocator.getRelationshipFactory().isChild(rel, contentType)) {
                     if (rel.isParentRequired() && cons.isEmpty()) {
                         hasError = true;
                         cve.addRequiredRelationship(rel, cons);
@@ -4665,7 +4657,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                         cve.addBadCardinalityRelationship(rel, cons);
                     }
                     for (Contentlet con : cons) {
-                        if (!con.getStructureInode().equalsIgnoreCase(
+                        if (null != rel.getParentStructureInode() && !con.getStructureInode().equalsIgnoreCase(
                                 rel.getParentStructureInode())) {
                             hasError = true;
                             cve.addInvalidContentRelationship(rel, cons);

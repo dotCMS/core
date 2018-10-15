@@ -32,6 +32,7 @@
 <%@page import="com.dotmarketing.portlets.contentlet.business.ContentletAPI"%>
 <%@ page import="com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage"%>
 <%@ page import="com.dotmarketing.db.DbConnectionFactory" %>
+<%@ page import="com.liferay.util.StringPool" %>
 <!DOCTYPE html>
 <script type='text/javascript' src='/dwr/interface/LanguageAjax.js'></script>
 
@@ -335,7 +336,10 @@
                                 <%=f.getFieldName()%>:</span>
                             </div>
                             <div class="fieldValue">
-                                <% request.setAttribute("fieldRelationType", f.getFieldRelationType());%>
+                                <%
+                                    StringBuilder fullFieldVar = new StringBuilder(structure.getVelocityVarName())
+                                                        .append(StringPool.PERIOD).append(f.getVelocityVarName());
+                                    request.setAttribute("fieldRelationType", fullFieldVar.toString());%>
                                 <jsp:include page="/html/portlet/ext/contentlet/edit_contentlet_relationships.jsp"/>
                             </div>
                         <% }

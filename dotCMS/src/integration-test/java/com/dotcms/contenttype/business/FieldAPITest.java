@@ -130,11 +130,14 @@ public class FieldAPITest extends IntegrationTestBase {
             //One side of the relationship is set parentContentType --> childContentType
             field = fieldAPI.save(field, user);
 
-            final StringBuilder fullFieldVar = new StringBuilder(parentContentType.variable()).append(StringPool.PERIOD)
-                    .append(field.variable());
+            final StringBuilder fullFieldVar = new StringBuilder(parentContentType.variable())
+                    .append(StringPool.PERIOD).append(field.variable());
 
-            final Relationship relationship = relationshipAPI
-                    .byTypeValue(fullFieldVar.toString(), true);
+            final List<Relationship> results = relationshipAPI.dbAllByTypeValue(fullFieldVar.toString());
+
+            assertTrue(UtilMethods.isSet(results));
+
+            final Relationship relationship = results.get(0);
 
             assertNotNull(relationship);
 
@@ -197,8 +200,11 @@ public class FieldAPITest extends IntegrationTestBase {
             //Setting the other side of the relationship childContentType --> parentContentType
             secondField = fieldAPI.save(secondField, user);
 
-            final Relationship relationship = relationshipAPI
-                    .byTypeValue(fullFieldVar.toString(), true);
+            final List<Relationship> results = relationshipAPI.dbAllByTypeValue(fullFieldVar.toString());
+
+            assertTrue(UtilMethods.isSet(results));
+
+            final Relationship relationship = results.get(0);
 
             assertNotNull(relationship);
 
@@ -279,11 +285,17 @@ public class FieldAPITest extends IntegrationTestBase {
             final StringBuilder childFullFieldVar = new StringBuilder(childContentType.variable())
                     .append(StringPool.PERIOD).append(secondField.variable());
 
-            final Relationship relationshipOne = relationshipAPI
-                    .byTypeValue(fullFieldVar.toString(), true);
+            List<Relationship> results = relationshipAPI.dbAllByTypeValue(fullFieldVar.toString());
 
-            final Relationship relationshipTwo = relationshipAPI
-                    .byTypeValue(childFullFieldVar.toString(), true);
+            assertTrue(UtilMethods.isSet(results));
+
+            final Relationship relationshipOne = results.get(0);
+
+            results = relationshipAPI.dbAllByTypeValue(childFullFieldVar.toString());
+
+            assertTrue(UtilMethods.isSet(results));
+
+            final Relationship relationshipTwo = results.get(0);
 
             //both relationships must exist
             assertNotNull(relationshipOne);
@@ -381,11 +393,17 @@ public class FieldAPITest extends IntegrationTestBase {
             final StringBuilder childFullFieldVar = new StringBuilder(childContentType.variable())
                     .append(StringPool.PERIOD).append(secondField.variable());
 
-            final Relationship relationshipOne = relationshipAPI
-                    .byTypeValue(childFullFieldVar.toString(), true);
+            List<Relationship> results = relationshipAPI.dbAllByTypeValue(childFullFieldVar.toString());
 
-            final Relationship relationshipTwo = relationshipAPI
-                    .byTypeValue(fullFieldVar.toString(), true);
+            assertTrue(UtilMethods.isSet(results));
+
+            final Relationship relationshipOne = results.get(0);
+
+            results = relationshipAPI.dbAllByTypeValue(fullFieldVar.toString());
+
+            assertTrue(UtilMethods.isSet(results));
+
+            final Relationship relationshipTwo = results.get(0);
 
             //both relationships must exist
             assertNotNull(relationshipOne);
@@ -472,8 +490,11 @@ public class FieldAPITest extends IntegrationTestBase {
             fieldAPI.delete(secondField);
 
             //Getting the one-sided of the relationship parentContentType --> childContentType
-            final Relationship relationship = relationshipAPI
-                    .byTypeValue(fullFieldVar.toString(), true);
+            final List<Relationship> results = relationshipAPI.dbAllByTypeValue(fullFieldVar.toString());
+
+            assertTrue(UtilMethods.isSet(results));
+
+            final Relationship relationship = results.get(0);
 
 
             assertNotNull(relationship);
@@ -526,9 +547,8 @@ public class FieldAPITest extends IntegrationTestBase {
             //One side of the relationship is set parentContentType --> childContentType
             field = fieldAPI.save(field, user);
 
-            final StringBuilder fullFieldVar = new StringBuilder(parentContentType.variable()).append(StringPool.PERIOD)
-                    .append(field.variable());
-
+            final StringBuilder fullFieldVar = new StringBuilder(parentContentType.variable())
+                    .append(StringPool.PERIOD).append(field.variable());
 
             //Adding a RelationshipField to the child
             Field secondField = FieldBuilder.builder(RelationshipField.class).name("otherSideRel")
@@ -537,15 +557,18 @@ public class FieldAPITest extends IntegrationTestBase {
 
             secondField = fieldAPI.save(secondField, user);
 
-            final StringBuilder childFullFieldVar = new StringBuilder(childContentType.variable()).append(StringPool.PERIOD)
-                    .append(secondField.variable());
+            final StringBuilder childFullFieldVar = new StringBuilder(childContentType.variable())
+                    .append(StringPool.PERIOD).append(secondField.variable());
 
             //Removing parent field
             fieldAPI.delete(field);
 
             //Getting the one-sided relationship childContentType --> parentContentType
-            final Relationship relationship = relationshipAPI
-                    .byTypeValue(childFullFieldVar.toString(), true);
+            final List<Relationship> results = relationshipAPI.dbAllByTypeValue(childFullFieldVar.toString());
+
+            assertTrue(UtilMethods.isSet(results));
+
+            final Relationship relationship = results.get(0);
 
             assertNotNull(relationship);
 
@@ -603,11 +626,10 @@ public class FieldAPITest extends IntegrationTestBase {
             //Removing parent field
             fieldAPI.delete(field);
 
-            final Relationship relationship = relationshipAPI
-                    .byTypeValue(fullFieldVar.toString(), true);
+            final List<Relationship> results = relationshipAPI.dbAllByTypeValue(fullFieldVar.toString());
 
             //the relationship shouldn't exist
-            assertNull(relationship);
+            assertTrue(!UtilMethods.isSet(results));
 
         } finally {
             if (UtilMethods.isSet(parentContentType) && UtilMethods.isSet(parentContentType.id())) {
@@ -722,8 +744,11 @@ public class FieldAPITest extends IntegrationTestBase {
             final StringBuilder fullFieldVar = new StringBuilder(parentContentType.variable())
                     .append(StringPool.PERIOD).append(field.variable());
 
-            relationship = relationshipAPI
-                    .byTypeValue(fullFieldVar.toString(), true);
+            List<Relationship> results = relationshipAPI.dbAllByTypeValue(fullFieldVar.toString());
+
+            assertTrue(UtilMethods.isSet(results));
+
+            relationship = results.get(0);
 
             assertNotNull(relationship);
             assertTrue(relationship.isChildRequired());
@@ -739,7 +764,11 @@ public class FieldAPITest extends IntegrationTestBase {
 
             field = fieldAPI.find(field.id());
 
-            relationship = relationshipAPI.byTypeValue(fullFieldVar.toString(), true);
+            results = relationshipAPI.dbAllByTypeValue(fullFieldVar.toString());
+
+            assertTrue(UtilMethods.isSet(results));
+
+            relationship = results.get(0);
 
             assertNotNull(relationship);
             assertFalse(relationship.isChildRequired());
@@ -781,8 +810,11 @@ public class FieldAPITest extends IntegrationTestBase {
             final StringBuilder fullFieldVar = new StringBuilder(parentContentType.variable())
                     .append(StringPool.PERIOD).append(field.variable());
 
-            final Relationship relationship = relationshipAPI
-                    .byTypeValue(fullFieldVar.toString(), true);
+            final List<Relationship> results = relationshipAPI.dbAllByTypeValue(fullFieldVar.toString());
+
+            assertTrue(UtilMethods.isSet(results));
+
+            final Relationship relationship = results.get(0);
 
             assertNotNull(relationship);
 

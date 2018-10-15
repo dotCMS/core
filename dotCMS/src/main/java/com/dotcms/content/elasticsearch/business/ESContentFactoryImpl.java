@@ -1466,13 +1466,13 @@ public class ESContentFactoryImpl extends ContentletFactory {
             	    if(sortBy.indexOf('-')>0) {
 
             	        final String[] sortByArray = sortBy.split(StringPool.DASH);
-                        final String identifier = Arrays
+                        final String identifier = UtilMethods.isSet(sortByArray[1])?Arrays
                                 .stream(sortByArray, 3, sortByArray.length - 1)
-                                .collect(Collectors.joining(StringPool.DASH));
-                        final String relName = Arrays.stream(sortByArray, 0, 3)
-                                .collect(Collectors.joining(StringPool.DASH));
+                                .collect(Collectors.joining(StringPool.DASH)): null;
 
                         if (UtilMethods.isSet(identifier)) {
+                            final String relName = Arrays.stream(sortByArray, 0, 3)
+                                    .collect(Collectors.joining(StringPool.DASH));
                             final Script script = new Script(
                                 Script.DEFAULT_SCRIPT_TYPE,
                                 "expert_scripts",
