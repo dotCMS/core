@@ -45,7 +45,7 @@ public class CSSPreProcessServlet extends HttpServlet {
             boolean live = !WebAPILocator.getUserWebAPI().isLoggedToBackend(req);
             User user = WebAPILocator.getUserWebAPI().getLoggedInUser(req);
             String reqURI=req.getRequestURI();
-            String uri = reqURI.substring(reqURI.indexOf('/', 1));
+            String uri = reqURI.replace("/DOTSASS", "").replace("/DOTLESS","");
 
             /*
               First we need to figure it out the host of the requested file, not the current host.
@@ -81,11 +81,10 @@ public class CSSPreProcessServlet extends HttpServlet {
 
 
             // choose compiler based on the request URI
-            Class<? extends CSSCompiler> compilerClass = reqURI.startsWith("/DOTSASS/") ? SassCompiler.class
-                                           :  (reqURI.startsWith("/DOTLESS/") ? LessCompiler.class : null);
+            Class<? extends CSSCompiler> compilerClass =  Config.getBooleanProperty("USE_LIBSASS_FOR_SASS_COMPILATION", true) ? DotLibSassCompiler.class :  SassCompiler.class;
             
-            if(Config.getBooleanProperty("USE_LIBSASS_FOR_SASS_COMPILATION", true) && reqURI.startsWith("/DOTSASS/")) {
-                compilerClass = DotLibSassCompiler.class;
+            if(reqURI.startsWith("/DOTLESS/")) {
+                compilerClass = LessCompiler.class;
             }
             
             CSSCompiler compiler = compilerClass.getConstructor(Host.class,String.class,boolean.class).newInstance(host,uri,live);
