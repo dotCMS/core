@@ -1,5 +1,15 @@
 package com.dotcms.csspreproc;
 
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.Date;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 import com.dotcms.csspreproc.CachedCSS.ImportedAsset;
 import com.dotcms.enterprise.csspreproc.CSSCompiler;
 import com.dotcms.enterprise.csspreproc.DotLibSassCompiler;
@@ -12,7 +22,6 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.web.WebAPILocator;
-
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -21,71 +30,30 @@ import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.util.ArrayList;
-import java.util.Date;
 
 public class CSSPreProcessServlet extends HttpServlet {
     private static final long serialVersionUID = -3315180323197314439L;
 
+    private final Class<? extends CSSCompiler> DEFAULT_SASS_COMPILER =  Config.getBooleanProperty("USE_LIBSASS_FOR_SASS_COMPILATION", true) ? DotLibSassCompiler.class :  SassCompiler.class;
+    
+    
+    
+    
     @Override
     public void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         
         try {
-            Host host = WebAPILocator.getHostWebAPI().getCurrentHost(req);
-            boolean live = !WebAPILocator.getUserWebAPI().isLoggedToBackend(req);
-            User user = WebAPILocator.getUserWebAPI().getLoggedInUser(req);
-            String reqURI=req.getRequestURI();
-            String uri = reqURI.replace("/DOTSASS", "").replace("/DOTLESS","");
-
-            /*
-              First we need to figure it out the host of the requested file, not the current host.
-              We could be in host B and the file be living in host A
-            */
-            if ( uri.startsWith( "//" ) ) {
-
-                String tempURI = uri.replaceFirst( "//", "" );
-                String externalHost = tempURI.substring( 0, tempURI.indexOf( "/" ) );
-
-                //Avoid unnecessary queries, we may be already in the host where the file lives
-                if ( !externalHost.equals( host.getHostname() ) && !host.getAliases().contains( externalHost ) ) {
-
-                    Host fileHost = null;
-                    try {
-                        fileHost = APILocator.getHostAPI().findByName( externalHost, user, true );
-                        if ( !UtilMethods.isSet( fileHost ) || !InodeUtils.isSet( fileHost.getInode() ) ) {
-                            fileHost = APILocator.getHostAPI().findByAlias( externalHost, user, true );
-                        }
-                    } catch ( Exception e ) {
-                        Logger.error( CSSPreProcessServlet.class, "Error searching host [" + externalHost + "].", e );
-                    }
-
-                    if ( UtilMethods.isSet( fileHost ) && InodeUtils.isSet( fileHost.getInode() ) ) {
-                        host = fileHost;
-                    }
-                }
-
-                //Remove the host from the URI now that we have the host owner of the file
-                uri = uri.replace( "//" + externalHost, "" );
-
-            }
+            final Host host = WebAPILocator.getHostWebAPI().getCurrentHost(req);
+            final boolean live = !WebAPILocator.getUserWebAPI().isLoggedToBackend(req);
+            final User user = WebAPILocator.getUserWebAPI().getLoggedInUser(req);
+            final String origURI=req.getRequestURI();
+            final String uri = (origURI.endsWith(".dotsass"))  ? origURI : origURI.replace("/DOTSASS", "").replace("/DOTLESS","");
 
 
             // choose compiler based on the request URI
-            Class<? extends CSSCompiler> compilerClass =  Config.getBooleanProperty("USE_LIBSASS_FOR_SASS_COMPILATION", true) ? DotLibSassCompiler.class :  SassCompiler.class;
+            final Class<? extends CSSCompiler> compilerClass =  (origURI.startsWith("/DOTLESS/")) ? LessCompiler.class : DEFAULT_SASS_COMPILER;
             
-            if(reqURI.startsWith("/DOTLESS/")) {
-                compilerClass = LessCompiler.class;
-            }
             
             CSSCompiler compiler = compilerClass.getConstructor(Host.class,String.class,boolean.class).newInstance(host,uri,live);
             
@@ -134,14 +102,14 @@ public class CSSPreProcessServlet extends HttpServlet {
                         try {
                             compiler.compile();
                         }
-                        catch(Throwable ex) {
-                            Logger.error(this, "Error compiling "+host.getHostname()+":"+uri, ex);
+                        catch (Throwable ex) {
+                            Logger.error(this, "Error compiling " + host.getHostname() + ":" + uri, ex);
                             if (Config.getBooleanProperty("SHOW_SASS_ERRORS_ON_FRONTEND", true)) {
-                String err = ex.getMessage();
-                if (err != null) {
-                  err = err.replaceAll("io.bit3.jsass.CompilationException: ", "");
-                  resp.getWriter().println(err);
-                }
+                                String err = ex.getMessage();
+                                if (err != null) {
+                                    err = err.replaceAll("io.bit3.jsass.CompilationException: ", "");
+                                    resp.getWriter().println(err);
+                                }
                             }
                             throw new Exception(ex);
                         }
