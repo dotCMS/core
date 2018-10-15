@@ -74,11 +74,11 @@ public class VelocityPreviewMode extends VelocityModeHandler {
 
         long langId = WebAPILocator.getLanguageWebAPI().getLanguage(request).getId();
         IHTMLPage htmlPage = APILocator.getHTMLPageAssetAPI().findByIdLanguageFallback(id, langId, mode.showLive,user, mode.respectAnonPerms);
-        context.put("dotPageContent", new ContentMap(((Contentlet) htmlPage), user, mode, host, context));
+        context.put("dotPageContent", new ContentMap(((Contentlet) htmlPage), user, mode, host));
 
 
         new PageContextBuilder(htmlPage, user, PageMode.PREVIEW_MODE).addAll(context);
-        context.put("dotPageContent", new ContentMap(((Contentlet) htmlPage), user, mode, host, context));
+        context.put("dotPageContent", new ContentMap(((Contentlet) htmlPage), user, mode, host));
 
         request.setAttribute("velocityContext", context);
         try(final Writer outStr = new BufferedWriter(new OutputStreamWriter(out))){

@@ -105,7 +105,7 @@ public class ContentTool implements ViewTool {
     		if(c== null || !InodeUtils.isSet(c.getInode())){
     			return null;
     		}
-    		return new ContentMap(c, user, EDIT_OR_PREVIEW_MODE,currentHost,context);
+    		return new ContentMap(c, user, EDIT_OR_PREVIEW_MODE,currentHost);
 	    }
 	    catch(Throwable ex) {
             if(Config.getBooleanProperty("ENABLE_FRONTEND_STACKTRACE", false)) {
@@ -162,7 +162,7 @@ public class ContentTool implements ViewTool {
     	    
     	    PaginatedArrayList<Contentlet> cons = ContentUtils.pull(addDefaultsToQuery(query), offset, limit, sort, user, tmDate);
     	    for(Contentlet cc : cons) {
-    	    	ret.add(new ContentMap(cc,user,EDIT_OR_PREVIEW_MODE,currentHost,context));
+    	    	ret.add(new ContentMap(cc,user,EDIT_OR_PREVIEW_MODE,currentHost));
     	    }
     	    ret.setQuery(cons.getQuery());
     		return ret;
@@ -232,7 +232,7 @@ public class ContentTool implements ViewTool {
 		try {
     	    PaginatedArrayList<Contentlet> cons = ContentUtils.pullPerPage(addDefaultsToQuery(query), currentPage, contentsPerPage, sort, user, tmDate);
     	    for(Contentlet cc : cons) {
-    	    	ret.add(new ContentMap(cc,user,EDIT_OR_PREVIEW_MODE,currentHost,context));
+    	    	ret.add(new ContentMap(cc,user,EDIT_OR_PREVIEW_MODE,currentHost));
     	    }
     
     	    if(cons != null && cons.size() > 0){
@@ -390,7 +390,7 @@ public class ContentTool implements ViewTool {
     		List<Contentlet> cons = ContentUtils.pullRelated(relationshipName, contentletIdentifier, addDefaultsToQuery(condition), pullParents, limit, sort, user, tmDate);
     
     		for(Contentlet cc : cons) {
-    			ret.add(new ContentMap(cc,user,EDIT_OR_PREVIEW_MODE,currentHost,context));
+    			ret.add(new ContentMap(cc,user,EDIT_OR_PREVIEW_MODE,currentHost));
     		}
     		return ret;
 		}

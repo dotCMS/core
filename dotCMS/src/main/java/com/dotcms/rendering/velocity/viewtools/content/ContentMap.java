@@ -3,7 +3,9 @@
  */
 package com.dotcms.rendering.velocity.viewtools.content;
 
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.mock.response.BaseResponse;
 import com.dotcms.rendering.velocity.services.VelocityType;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.rendering.velocity.viewtools.ContentsWebAPI;
@@ -36,8 +38,12 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import javax.servlet.http.HttpServletRequest;
+
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.velocity.Template;
+import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.context.Context;
 
@@ -66,11 +72,11 @@ public class ContentMap {
 	private Host host;
 	private Structure structure;
 	private String title;
-	private Context context;
-    public ContentMap(Contentlet content, User user, PageMode mode, Host host, Context context) {
-        this( content,  user, !mode.showLive,  host,  context) ;
+
+    public ContentMap(Contentlet content, User user, PageMode mode, Host host) {
+        this( content,  user, !mode.showLive,  host) ;
     }
-	public ContentMap(Contentlet content, User user, boolean EDIT_OR_PREVIEW_MODE, Host host, Context context) {
+	public ContentMap(Contentlet content, User user, boolean EDIT_OR_PREVIEW_MODE, Host host) {
         this.content = content;
         this.conAPI = APILocator.getContentletAPI();
         this.perAPI = APILocator.getPermissionAPI();
@@ -78,7 +84,7 @@ public class ContentMap {
         this.user = user;
         this.EDIT_OR_PREVIEW_MODE = EDIT_OR_PREVIEW_MODE;
         this.host = host;
-        this.context = context;
+
 	}
 	
 	/**
@@ -129,7 +135,7 @@ public class ContentMap {
 			if(f==null){
 				if("host".equalsIgnoreCase(fieldVariableName)){
 					try{
-						return new ContentMap(conAPI.findContentletByIdentifier( content.getHost() ,!EDIT_OR_PREVIEW_MODE, APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, true ),user,EDIT_OR_PREVIEW_MODE,host,context);
+						return new ContentMap(conAPI.findContentletByIdentifier( content.getHost() ,!EDIT_OR_PREVIEW_MODE, APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, true ),user,EDIT_OR_PREVIEW_MODE,host);
 					}catch (IndexOutOfBoundsException e) {
 						Logger.debug(this, "Unable to get host on content");
 						return null;
@@ -249,7 +255,7 @@ public class ContentMap {
 			}else if(f != null && f.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString())){
 				if(FolderAPI.SYSTEM_FOLDER.equals(content.getFolder())){
 					try{
-						return new ContentMap(conAPI.findContentletByIdentifier( content.getHost() ,!EDIT_OR_PREVIEW_MODE, APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, true ),user,EDIT_OR_PREVIEW_MODE,host,context);
+						return new ContentMap(conAPI.findContentletByIdentifier( content.getHost() ,!EDIT_OR_PREVIEW_MODE, APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, true ),user,EDIT_OR_PREVIEW_MODE,host);
 					}catch (IndexOutOfBoundsException e) {
 						Logger.debug(this, "Unable to get host on content");
 						return null;
@@ -295,6 +301,8 @@ public class ContentMap {
 				StringWriter sw = new StringWriter();
 
 				template = ve.getTemplate((EDIT_OR_PREVIEW_MODE ? PageMode.PREVIEW_MODE.name():PageMode.LIVE.name()) + File.separator + content.getInode() + File.separator + f.getInode() + "." + VelocityType.FIELD.fileExtension);
+		        final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+				VelocityContext context = VelocityUtil.getWebContext(request, new BaseResponse().response());
 				template.merge(context, sw);
 				ret = sw.toString();
 			}

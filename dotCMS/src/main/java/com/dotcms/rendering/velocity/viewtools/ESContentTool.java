@@ -72,7 +72,7 @@ public class ESContentTool implements ViewTool {
 		for(Object x : cons){
 			Contentlet con = (Contentlet)x;
 
-			maps.add(new ContentMap(con, user, !mode.showLive,currentHost,context));
+			maps.add(new ContentMap(con, user, !mode.showLive,currentHost));
 		}
 		
 		return new ESSearchResults(cons.getResponse(), maps);
