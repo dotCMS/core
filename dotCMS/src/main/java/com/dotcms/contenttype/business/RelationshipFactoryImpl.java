@@ -104,8 +104,7 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
         orderBy = SQLUtil.sanitizeSortBy(orderBy);
 
 	    final DotConnect dc = new DotConnect();
-	    dc.setSQL(sql.SELECT_ALL_FIELDS + sql.ORDER_BY);
-	    dc.addParam(orderBy);
+	    dc.setSQL(sql.SELECT_ALL_FIELDS + " order by " + orderBy);
 
         List<Map<String, Object>> results = new ArrayList<Map<String, Object>>();
         try {
@@ -182,10 +181,9 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
         orderBy = SQLUtil.sanitizeSortBy(orderBy);
 
         final DotConnect dc = new DotConnect();
-        dc.setSQL(sql.FIND_BY_PARENT_OR_CHILD_INODE + sql.ORDER_BY);
+        dc.setSQL(sql.FIND_BY_PARENT_OR_CHILD_INODE + " order by " + orderBy);
         dc.addParam(contentTypeInode);
         dc.addParam(contentTypeInode);
-        dc.addParam(orderBy);
         List<Map<String, Object>> results;
         results = dc.loadObjectResults();
 
