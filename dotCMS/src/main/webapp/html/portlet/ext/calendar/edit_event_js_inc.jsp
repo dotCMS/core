@@ -148,7 +148,10 @@ function saveEvent(isAutoSave){
 %>
 
 <script type="text/javascript">
-	var startDate;
+
+    dojo.require("dojo.on");
+
+    var startDate;
 	var startDateYear;
 	var startDateMonth;
 	var startDateDay;
@@ -474,8 +477,9 @@ function saveEvent(isAutoSave){
 			hideMap();
 		}
 	}
-	
-	dojo.require.on(document.body,"keyup",checkEscapeKey);
+
+
+	dojo.on(document.body,"keyup",checkEscapeKey);
 
 
 	function hideEditButtonsRow() {

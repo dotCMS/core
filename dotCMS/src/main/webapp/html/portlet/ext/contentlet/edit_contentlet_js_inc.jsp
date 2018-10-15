@@ -584,9 +584,18 @@
             errorDisplayElement.show();
             return;
         }
-        
-        dijit.byId("versionsTab").attr("disabled", false);
-        dijit.byId("permissionsTab").attr("disabled", false);
+
+        var versionsTab = dijit.byId("versionsTab");
+
+        if(versionsTab){
+            versionsTab.attr("disabled", false);
+        }
+
+        var permissionsTab = dijit.byId("permissionsTab");
+
+        if(permissionsTab){
+            permissionsTab.attr("disabled", false);
+        }
 
 
         refreshActionPanel(data["contentletInode"]);
