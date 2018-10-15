@@ -1,7 +1,7 @@
 package com.dotcms.rest.api.v1.vtl;
 
 import com.dotcms.api.vtl.model.DotJSON;
-import com.dotcms.cache.DotJSONCacheStrategy;
+import com.dotcms.cache.DotJSONCache;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.repackage.javax.ws.rs.*;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
@@ -12,6 +12,7 @@ import com.dotcms.repackage.org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.api.v1.HTTPMethod;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.beans.Host;
@@ -40,7 +41,7 @@ import java.io.StringWriter;
 import java.util.Map;
 import java.util.Optional;
 
-import static com.dotcms.cache.DotJSONCacheStrategyFactory.getCacheStrategy;
+import static com.dotcms.cache.DotJSONCacheFactory.getCacheStrategy;
 
 @Path("/vtl")
 public class VTLResource {
@@ -82,8 +83,8 @@ public class VTLResource {
         final InitDataObject initDataObject = this.webResource.init
                 (pathParams, false, request, false, null);
 
-        final DotJSONCacheStrategy cacheStrategy = getCacheStrategy(HTTPMethod.GET);
-        final Optional<DotJSON> dotJSONOptional = cacheStrategy.get(request, initDataObject.getUser());
+        final DotJSONCache cache = getCacheStrategy(HTTPMethod.GET);
+        final Optional<DotJSON> dotJSONOptional = cache.get(request, initDataObject.getUser());
 
         if(dotJSONOptional.isPresent()) {
             return Response.ok(dotJSONOptional.get()).build();
@@ -97,10 +98,11 @@ public class VTLResource {
                     "queryParams", uriInfo.getQueryParameters());
 
             return evalVTLFile(request, response, getFileAsset, contextParams,
-                    initDataObject.getUser(), cacheStrategy);
+                    initDataObject.getUser(), cache);
         } catch(DotContentletStateException e) {
-            final String errorMessage = "Unable to find velocity file '" + HTTPMethod.GET.fileName + FILE_EXTENSION
-                    + "' under path '" + VTL_PATH + StringPool.SLASH + folderName + StringPool.SLASH + "'";
+            final String errorMessage = "Unable to find velocity file '" +
+                    HTTPMethod.GET.fileName() + FILE_EXTENSION + "' under path '" + VTL_PATH +
+                    StringPool.SLASH + folderName + StringPool.SLASH + "'";
             Logger.error(this, errorMessage, e);
             return ResponseUtil.mapExceptionResponse(new DotDataException(errorMessage));
         } catch(Exception e) {
@@ -138,7 +140,7 @@ public class VTLResource {
                     initDataObject.getUser(), getCacheStrategy(HTTPMethod.POST));
 
         } catch(DotContentletStateException e) {
-            final String errorMessage = "Unable to find velocity file '" + HTTPMethod.POST.fileName + FILE_EXTENSION
+            final String errorMessage = "Unable to find velocity file '" + HTTPMethod.POST.fileName() + FILE_EXTENSION
                     + "' under path '" + VTL_PATH + StringPool.SLASH + folderName + StringPool.SLASH + "'";
             Logger.error(this, errorMessage, e);
             return ResponseUtil.mapExceptionResponse(new DotDataException(errorMessage));
@@ -150,7 +152,7 @@ public class VTLResource {
 
     private Response evalVTLFile(final HttpServletRequest request, final HttpServletResponse response,
                                  final FileAsset getFileAsset, final Map<String, Object> contextParams,
-                                 final User user, final DotJSONCacheStrategy cacheStrategy)
+                                 final User user, final DotJSONCache cache)
             throws IOException {
         final org.apache.velocity.context.Context context = VelocityUtil.getInstance().getContext(request, response);
         contextParams.forEach(context::put);
@@ -160,45 +162,28 @@ public class VTLResource {
 
         try (final InputStream fileAssetIputStream = getFileAsset.getInputStream()) {
             VelocityUtil.getEngine().evaluate(context, evalResult, "", fileAssetIputStream);
-            DotJSON<String, String> dotJSON = (DotJSON<String, String>) context.get("dotJSON");
+            final DotJSON<String, String> dotJSON = (DotJSON<String, String>) context.get("dotJSON");
 
             if(dotJSON.size()==0) { // If dotJSON is not used let's return the raw evaluation of the velocity file
                 return Response.ok(evalResult.toString()).build();
             } else {
                 // let's add it to cache
-                cacheStrategy.addIfNeeded(request, user, dotJSON);
+                cache.add(request, user, dotJSON);
                 return Response.ok(dotJSON).build();
             }
         }
     }
 
-    private FileAsset getVTLFile(final HTTPMethod httpMethod, HttpServletRequest request, String folderName,
+    private FileAsset getVTLFile(final HTTPMethod httpMethod, HttpServletRequest request, final String folderName,
                                  final User user) throws DotDataException, DotSecurityException {
         Language currentLanguage = WebAPILocator.getLanguageWebAPI().getLanguage(request);
         final Host site = this.hostAPI.resolveHostName(request.getServerName(), APILocator.systemUser(), false);
         final String vtlFilePath = VTL_PATH + StringPool.SLASH + folderName + StringPool.SLASH
-                + httpMethod.fileName + FILE_EXTENSION;
+                + httpMethod.fileName() + FILE_EXTENSION;
         final Identifier identifier = identifierAPI.find(site, vtlFilePath);
         final Contentlet getFileContent = contentletAPI.findContentletByIdentifier(identifier.getId(), true,
                 currentLanguage.getId(), user, true);
         return APILocator.getFileAssetAPI().fromContentlet(getFileContent);
     }
 
-    public enum HTTPMethod {
-        GET("get"),
-        POST("post"),
-        PUT("put"),
-        PATCH("patch"),
-        DELETE("delete");
-
-        private String fileName;
-
-        HTTPMethod(String fileName) {
-            this.fileName = fileName;
-        }
-
-        public String fileName() {
-            return fileName;
-        }
-    }
 }
