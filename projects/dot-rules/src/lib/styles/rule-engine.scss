@@ -189,7 +189,17 @@ $finder-s-input: '.ui.input input';
     .cw-filter-links {
         font-size: .8em;
         color: $foreground-disabled;
+
+        span:first-child {
+            padding:0 4px 0 0;
+        }
+
+        span {
+            padding:0 4px;
+        }
     }
+
+
 
     .cw-filter-link {
         &.active {
@@ -209,6 +219,7 @@ $finder-s-input: '.ui.input input';
         margin: 0 2em 2em 2em;
         border: 1px solid $background-primary;
         border-radius: .5em;
+        background-color: #fff;
 
         .cw-header-actions {
             margin-right: .5em;
@@ -249,7 +260,7 @@ $finder-s-input: '.ui.input input';
         }
 
         > .cw-header {
-            background-color: $background-primary;
+            background-color: #fff;
             padding: .35em 0;
             border-top-left-radius: .5em;
             border-top-right-radius: .5em;
