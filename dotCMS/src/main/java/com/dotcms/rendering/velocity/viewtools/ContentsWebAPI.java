@@ -646,7 +646,7 @@ public class ContentsWebAPI implements ViewTool {
 	}
 
 	public boolean isParent(String contentletInode, String relationshipInode) throws DotDataException, DotSecurityException {
-		Relationship relationship = (Relationship) InodeFactory.getInode(relationshipInode, Relationship.class);
+		Relationship relationship = APILocator.getRelationshipAPI().byInode(relationshipInode);
 		Contentlet contentlet = conAPI.find(contentletInode, user, true);
 		return isParent(contentlet, relationship);
 	}
@@ -672,7 +672,7 @@ public class ContentsWebAPI implements ViewTool {
 	}
 
 	public boolean isChild(String contentletInode, String relationshipInode) throws DotDataException, DotSecurityException {
-		Relationship relationship = (Relationship) InodeFactory.getInode(relationshipInode, Relationship.class);
+		Relationship relationship = APILocator.getRelationshipAPI().byInode(relationshipInode);
 		Contentlet contentlet = conAPI.find(contentletInode, user, true);
 		return isChild(contentlet, relationship);
 	}

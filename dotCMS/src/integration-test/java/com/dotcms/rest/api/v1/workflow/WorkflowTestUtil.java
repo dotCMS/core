@@ -51,8 +51,8 @@ public abstract class WorkflowTestUtil {
     static final String ACTION_NAME_PREFIX = "action::";
     static final String CURRENT_STEP = "currentstep";
 
-    static final String SYSTEM_WORKFLOW = "System Workflow";
-    static final String DM_WORKFLOW = "Document Management";
+    public static final String SYSTEM_WORKFLOW = "System Workflow";
+    public static final String DM_WORKFLOW = "Document Management";
 
     static final String SAVE_AS_DRAFT = "Save as Draft";
     static final String SEND_FOR_REVIEW = "Send for Review";

@@ -1,5 +1,7 @@
 package com.dotcms.content.elasticsearch.business;
 
+import static com.dotcms.exception.ExceptionUtil.getLocalizedMessageOrDefault;
+
 import com.dotcms.api.system.event.ContentletSystemEventUtil;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
@@ -25,8 +27,20 @@ import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.services.VanityUrlServices;
 import com.dotcms.system.event.local.type.content.CommitListenerEvent;
 import com.dotcms.util.CollectionsUtils;
-import com.dotmarketing.beans.*;
-import com.dotmarketing.business.*;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
+import com.dotmarketing.beans.MultiTree;
+import com.dotmarketing.beans.Permission;
+import com.dotmarketing.beans.Tree;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.DotCacheAdministrator;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.RelationshipAPI;
+import com.dotmarketing.business.Role;
+import com.dotmarketing.business.Treeable;
 import com.dotmarketing.business.query.GenericQueryFactory.Query;
 import com.dotmarketing.business.query.QueryUtil;
 import com.dotmarketing.business.query.ValidationException;
@@ -39,7 +53,11 @@ import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.FlushCacheRunnable;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.db.LocalTransaction;
-import com.dotmarketing.exception.*;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotHibernateException;
+import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.exception.InvalidLicenseException;
 import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.factories.MultiTreeFactory;
 import com.dotmarketing.factories.PublishFactory;
@@ -48,7 +66,14 @@ import com.dotmarketing.menubuilders.RefreshMenus;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.containers.model.Container;
-import com.dotmarketing.portlets.contentlet.business.*;
+import com.dotmarketing.portlets.contentlet.business.BinaryFileFilter;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.contentlet.business.ContentletCache;
+import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
+import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
+import com.dotmarketing.portlets.contentlet.business.DotLockException;
+import com.dotmarketing.portlets.contentlet.business.DotReindexStateException;
+import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
@@ -81,7 +106,21 @@ import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.dotmarketing.tag.business.TagAPI;
 import com.dotmarketing.tag.model.Tag;
-import com.dotmarketing.util.*;
+import com.dotmarketing.util.ActivityLogger;
+import com.dotmarketing.util.AdminLogger;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.ConfigUtils;
+import com.dotmarketing.util.DateUtil;
+import com.dotmarketing.util.InodeUtils;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
+import com.dotmarketing.util.PaginatedArrayList;
+import com.dotmarketing.util.RegEX;
+import com.dotmarketing.util.RegExMatch;
+import com.dotmarketing.util.TrashUtils;
+import com.dotmarketing.util.UUIDGenerator;
+import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.liferay.portal.NoSuchUserException;
@@ -92,25 +131,38 @@ import com.liferay.util.FileUtil;
 import com.liferay.util.StringPool;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.xml.DomDriver;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.Serializable;
+import java.math.BigDecimal;
+import java.nio.file.Files;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Objects;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import org.apache.commons.lang.StringUtils;
 import org.elasticsearch.action.search.SearchPhaseExecutionException;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.springframework.beans.BeanUtils;
-
-import java.io.*;
-import java.math.BigDecimal;
-import java.nio.file.Files;
-import java.text.SimpleDateFormat;
-import java.util.*;
-import java.util.Calendar;
-import java.util.Map.Entry;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-
-import static com.dotcms.exception.ExceptionUtil.getLocalizedMessageOrDefault;
 
 /**
  * Implementation class for the {@link ContentletAPI} interface.
@@ -244,6 +296,28 @@ public class ESContentletAPIImpl implements ContentletAPI {
             Logger.debug(this,"No working contentlet found for language");
         }
         return con;
+    }
+
+    @CloseDBIfOpened
+    @Override
+    public List<Contentlet> findAllLangContentlets(final String identifier) {
+
+        final List<Language> languages = languageAPI.getLanguages();
+        final Identifier identifierObject = new Identifier();
+        identifierObject.setId(identifier);
+        return languages.stream().map(l -> {
+                    try {
+                        final ContentletVersionInfo contentletVersionInfo = APILocator.getVersionableAPI()
+                                .getContentletVersionInfo(identifier, l.getId());
+                        if (contentletVersionInfo != null && !contentletVersionInfo.isDeleted()) {
+                            return contentFactory.find(contentletVersionInfo.getWorkingInode());
+                        }
+                    } catch (Exception e) {
+                        Logger.error(this, "No working contentlet found for language");
+                    }
+                    return null;
+                }
+        ).filter(Objects::nonNull).collect(CollectionsUtils.toImmutableList());
     }
 
     @CloseDBIfOpened
@@ -2747,6 +2821,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                User user, boolean respectFrontendRoles, boolean createNewVersion,
                                boolean generateSystemEvent) throws DotDataException, DotSecurityException {
 
+    try{
         boolean validateEmptyFile = contentlet.getMap().get("_validateEmptyFile_") == null;
 
         String contentPushPublishDate = contentlet.getStringProperty("wfPublishDate");
@@ -2983,7 +3058,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                 final IndexPolicy indexPolicy             = contentlet.getIndexPolicy();
                 final IndexPolicy indexPolicyDependencies = contentlet.getIndexPolicyDependencies();
-
+                contentlet = applyNullProperties(contentlet);
                 if(saveWithExistingID) {
                     contentlet = contentFactory.save(contentlet, existingInode);
                 } else {
@@ -3152,7 +3227,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                             }
                             File binaryFieldFolder = new File(newDir.getAbsolutePath() + File.separator + velocityVarNm);
 
-                            
+
                             File metadata=null;
                             if(contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET) {
                                 metadata=APILocator.getFileAssetAPI().getContentMetadataFile(contentlet.getInode());
@@ -3193,7 +3268,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                 // we move files that have been newly uploaded or edited
                                 if(oldFile==null || !oldFile.equals(incomingFile)){
                                     if(!createNewVersion){
-                                        // If we're calling a checkinWithoutVersioning method, 
+                                        // If we're calling a checkinWithoutVersioning method,
                                         // then folder needs to be cleaned up in order to add the new file in it.
                                         // Otherwise we will have the old file and incoming file at the same time
                                         FileUtil.deltree(binaryFieldFolder);
@@ -3392,11 +3467,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                 .removeFromCacheByIdentifier(
                                         contentlet.getIdentifier());
                     }
-                    
+
                     new PageLoader().invalidate(contentlet);
-                    
-                    
-                    
+
+
+
                 } else {
                     isLive = contentlet.isLive();
                 }
@@ -3405,7 +3480,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 } else {
                     if (!isNewContent) {
                         new ContentletLoader().invalidate(contentlet);
-     
+
                     }
 
                     indexAPI.addContentToIndex(contentlet);
@@ -3483,9 +3558,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if(contentlet.isFileAsset()){ // todo unsedcode
           FileAsset asset = APILocator.getFileAssetAPI().fromContentlet(contentlet);
         }
-        
 
-        
+
+
         ActivityLogger.logInfo(getClass(), "Content Saved", "StartDate: " +contentPushPublishDate+ "; "
                 + "EndDate: " +contentPushExpireDate + "; User:" + user.getUserId() + "; ContentIdentifier: " + contentlet.getIdentifier(), contentlet.getHost());
 
@@ -3496,6 +3571,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
 
         return contentlet;
+        }finally{
+          contentlet.cleanup();
+        }
     }
 
     private void updateTemplateInAllLanguageVersions(final Contentlet contentlet, final User user)
@@ -3844,7 +3922,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * @throws DotSecurityException
      */
     @CloseDBIfOpened
-    public void copyProperties(Contentlet contentlet,Map<String, Object> properties,boolean checkIsUnique) throws DotContentletStateException,DotSecurityException {
+    public void copyProperties(final Contentlet contentlet, final Map<String, Object> properties, boolean checkIsUnique) throws DotContentletStateException,DotSecurityException {
         if(!InodeUtils.isSet(contentlet.getStructureInode())){
             Logger.warn(this,"Cannot copy properties to contentlet where structure inode < 1 : You must set the structure's inode");
             return;
@@ -3865,7 +3943,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
             if(property.getValue() == null)
                 continue;
-            if((!property.getKey().equals("recurrence"))&&!(property.getValue() instanceof String || property.getValue() instanceof Boolean ||property.getValue() instanceof File || property.getValue() instanceof Float || property.getValue() instanceof Integer || property.getValue() instanceof Date || property.getValue() instanceof Long || property.getValue() instanceof List || property.getValue() instanceof BigDecimal || property.getValue() instanceof Short || property.getValue() instanceof Double)){
+            if((!property.getKey().equals("recurrence")) &&
+                    !(
+                         property.getValue() instanceof Set || property.getValue() instanceof String || property.getValue() instanceof Boolean ||property.getValue() instanceof File ||
+                         property.getValue() instanceof Float || property.getValue() instanceof Integer || property.getValue() instanceof Date || property.getValue() instanceof Long ||
+                         property.getValue() instanceof List || property.getValue() instanceof BigDecimal || property.getValue() instanceof Short || property.getValue() instanceof Double
+                    )
+            ){
                 throw new DotContentletStateException("The map contains an invalid value: " + property.getValue().getClass());
             }
         }
@@ -3902,9 +3986,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     contentlet.setHost((String)value);
                 }else if(conVariable.equals(Contentlet.FOLDER_KEY)){
                     contentlet.setFolder((String)value);
+                }else if(conVariable.equals(Contentlet.NULL_PROPERTIES)){
+                    contentlet.setProperty(conVariable, value);
                 }else if(NEVER_EXPIRE.equals(conVariable)){
                     contentlet.setProperty(conVariable, value);
-                }else if(velFieldmap.get(conVariable) != null){
+                } else if(velFieldmap.get(conVariable) != null){
                     Field field = velFieldmap.get(conVariable);
                     if(isFieldTypeString(field))
                     {
@@ -3936,6 +4022,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
             } catch (IOException ioe) {
                 Logger.error(this,"IO Error in copying Binary File object ", ioe);
             }
+
+
         }
 
         // workflow
@@ -4004,7 +4092,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             throw new DotContentletValidationException("The contentlet's Content Type Inode must be set");
         }
 
-        if(value==null || !UtilMethods.isSet(value.toString())) {
+        if(value == null || !UtilMethods.isSet(value.toString())) {
             contentlet.setProperty(field.getVelocityVarName(), null);
             return;
         }
@@ -4077,6 +4165,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 try{
                     contentlet.setLongProperty(field.getVelocityVarName(),new Long((String)value));
                 }catch (Exception e) {
+                    //If we throw this exception here.. the contentlet will never get to the validateContentlet Method
                     throw new DotContentletStateException("Unable to set string value as a Long");
                 }
             }
@@ -4229,24 +4318,31 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                         + "] has an invalid field.");
         List<Field> fields = FieldsCache.getFieldsByStructureInode(stInode);
         Structure structure = CacheLocator.getContentTypeCache().getStructureByInode(stInode);
-        Map<String, Object> conMap = contentlet.getMap();
-        for (Field field : fields) {
-            Object o = conMap.get(field.getVelocityVarName());
+        final Map<String, Object> conMap = contentlet.getMap();
+        final Set<String> nullValueProperties = contentlet.getNullProperties();
+        for (final Field field : fields) {
+            final Object o = (nullValueProperties.contains(field.getVelocityVarName()) ? null : conMap.get(field.getVelocityVarName()));
             if(o != null){
                 if(isFieldTypeString(field)){
                     if(!(o instanceof String)){
                         cve.addBadTypeField(field);
                         Logger.warn(this, "Value of field [" + field.getVelocityVarName() + "] must be of type String");
+                        hasError = true;
+                        continue;
                     }
                 }else if(isFieldTypeDate(field)){
                     if(!(o instanceof Date)){
                         cve.addBadTypeField(field);
                         Logger.warn(this, "Value of field [" + field.getVelocityVarName() + "] must be of type Date");
+                        hasError = true;
+                        continue;
                     }
                 }else if(isFieldTypeBoolean(field)){
                     if(!(o instanceof Boolean)){
                         cve.addBadTypeField(field);
                         Logger.warn(this, "Value of field [" + field.getVelocityVarName() + "] must be of type Boolean");
+                        hasError = true;
+                        continue;
                     }
                 }else if(isFieldTypeFloat(field)){
                     if(!(o instanceof Float)){
@@ -4259,12 +4355,16 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     if(!(o instanceof Long || o instanceof Integer)){
                         cve.addBadTypeField(field);
                         Logger.warn(this, "Value of field [" + field.getVelocityVarName() + "] must be of type Long or Integer");
+                        hasError = true;
+                        continue;
                     }
                     //  binary field validation
                 }else if(isFieldTypeBinary(field)){
                     if(!(o instanceof java.io.File)){
                         cve.addBadTypeField(field);
                         Logger.warn(this, "Value of field [" + field.getVelocityVarName() + "] must be of type File");
+                        hasError = true;
+                        continue;
                     }
                 }else if(isFieldTypeSystem(field) || isFieldTypeConstant(field)){
                 	// Do not validate system or constant field values
@@ -6144,6 +6244,19 @@ public class ESContentletAPIImpl implements ContentletAPI {
     @Override
     public int updateModDate(final Set<String> inodes, final User user) throws DotDataException {
        return contentFactory.updateModDate(inodes, user);
+    }
+
+    /**
+     * This method takes the properties that were once set as null an nullify the real properties
+     * By doing this right before save. We Will null the field values on the desired entries.
+     * @param contentlet
+     * @return
+     */
+    private Contentlet applyNullProperties(final Contentlet contentlet){
+        contentlet.getNullProperties().forEach(s -> {
+            contentlet.getMap().put(s, null);
+        });
+        return contentlet;
     }
 
 }
