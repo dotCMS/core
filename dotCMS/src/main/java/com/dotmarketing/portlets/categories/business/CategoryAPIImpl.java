@@ -829,7 +829,7 @@ public class CategoryAPIImpl implements CategoryAPI {
     @Override
     public List<Category> getCategoriesFromContent(Contentlet contentlet, User user, boolean respectFrontendRoles)
 			throws DotDataException, DotSecurityException {
-		final List<Category> cats = new ArrayList<>();
+		final List<Category> categories = new ArrayList<>();
 
 		final List<com.dotmarketing.portlets.structure.model.Field> fields = new LegacyFieldTransformer(
 				APILocator.getContentTypeAPI(APILocator.systemUser()).
@@ -844,20 +844,20 @@ public class CategoryAPIImpl implements CategoryAPI {
 						Category category = APILocator.getCategoryAPI()
 								.find(categoryIdKeyOrVar, user, respectFrontendRoles);
 						if (category != null && InodeUtils.isSet(category.getCategoryId())) {
-							cats.add(category);
+							categories.add(category);
 						} else {
 							// try it as catKey
 							category = APILocator.getCategoryAPI()
 									.findByKey(categoryIdKeyOrVar, user, respectFrontendRoles);
 							if (category != null && InodeUtils
 									.isSet(category.getCategoryId())) {
-								cats.add(category);
+								categories.add(category);
 							} else {
 								try {
 									category = findByVariable(categoryIdKeyOrVar, user, respectFrontendRoles);
 
 									if (category != null && InodeUtils.isSet(category.getCategoryId())) {
-										cats.add(category);
+										categories.add(category);
 									}
 
 								} catch (DotDataException e) {
@@ -873,7 +873,7 @@ public class CategoryAPIImpl implements CategoryAPI {
 			}
 		}
 
-		return UtilMethods.isSet(cats)?cats:null;
+		return UtilMethods.isSet(categories)?categories:null;
     }
 
 
