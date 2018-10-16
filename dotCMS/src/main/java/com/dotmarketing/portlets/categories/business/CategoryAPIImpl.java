@@ -825,6 +825,7 @@ public class CategoryAPIImpl implements CategoryAPI {
 		return category;
 	}
 
+	@CloseDBIfOpened
     @Override
     public List<Category> getCategoriesFromContent(Contentlet contentlet, User user, boolean respectFrontendRoles)
 			throws DotDataException, DotSecurityException {
