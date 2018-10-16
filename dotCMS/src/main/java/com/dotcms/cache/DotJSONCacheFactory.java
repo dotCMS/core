@@ -15,7 +15,7 @@ public final class DotJSONCacheFactory {
         if(httpMethod.equals(HTTPMethod.GET)) {
             return new DotJSONCacheImpl();
         } else {
-            return new DotJSONNoCacheStrategyImpl();
+            return new NoDotJSONCache();
         }
     }
 }

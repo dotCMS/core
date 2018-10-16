@@ -10,7 +10,7 @@ import java.util.Optional;
  * No Cache implementation for HTTP methods that don't require cache
  */
 
-public class DotJSONNoCacheStrategyImpl extends DotJSONCache {
+public class NoDotJSONCache extends DotJSONCache {
     @Override
     public String getPrimaryGroup() {
         return null;

@@ -143,7 +143,7 @@ public class VTLResource {
         } catch(DotContentletStateException e) {
             final String errorMessage = "Unable to find velocity file '" + HTTPMethod.POST.fileName() + FILE_EXTENSION
                     + "' under path '" + VTL_PATH + StringPool.SLASH + folderName + StringPool.SLASH + "'";
-            Logger.error(this, errorMessage, e);
+            Logger.warn(this, errorMessage, e);
             return ResponseUtil.mapExceptionResponse(new DotDataException(errorMessage));
         } catch(Exception e) {
             Logger.error(this,"Exception on VTL endpoint. POST method: " + e.getMessage(), e);
@@ -175,9 +175,9 @@ public class VTLResource {
         }
     }
 
-    private FileAsset getVTLFile(final HTTPMethod httpMethod, HttpServletRequest request, final String folderName,
+    private FileAsset getVTLFile(final HTTPMethod httpMethod, final HttpServletRequest request, final String folderName,
                                  final User user) throws DotDataException, DotSecurityException {
-        Language currentLanguage = WebAPILocator.getLanguageWebAPI().getLanguage(request);
+        final Language currentLanguage = WebAPILocator.getLanguageWebAPI().getLanguage(request);
         final Host site = this.hostAPI.resolveHostName(request.getServerName(), APILocator.systemUser(), false);
         final String vtlFilePath = VTL_PATH + StringPool.SLASH + folderName + StringPool.SLASH
                 + httpMethod.fileName() + FILE_EXTENSION;
