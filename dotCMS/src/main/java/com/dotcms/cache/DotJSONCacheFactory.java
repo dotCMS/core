@@ -12,11 +12,10 @@ public final class DotJSONCacheFactory {
     private DotJSONCacheFactory() {}
 
     public static DotJSONCache getCacheStrategy(final HTTPMethod httpMethod) {
-        switch(httpMethod) {
-            case GET:
-                return new DotJSONCacheImpl();
-            default:
-                return new DotJSONNoCacheStrategyImpl();
+        if(httpMethod.equals(HTTPMethod.GET)) {
+            return new DotJSONCacheImpl();
+        } else {
+            return new DotJSONNoCacheStrategyImpl();
         }
     }
 }
