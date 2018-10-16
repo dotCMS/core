@@ -630,7 +630,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 				List<Contentlet> oldDocs;
 
 				StringBuilder q = new StringBuilder();
-				boolean isSameStructRelationship = rel.getParentStructureInode().equalsIgnoreCase(rel.getChildStructureInode());
+				boolean isSameStructRelationship = FactoryLocator.getRelationshipFactory().sameParentAndChild(rel);
 
 				if(isSameStructRelationship) {
 					q.append("+type:content +(").append(rel.getRelationTypeValue())
@@ -705,7 +705,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 
 			if(rel!=null && InodeUtils.isSet(rel.getInode())) {
 
-				boolean isSameStructRelationship = rel.getParentStructureInode().equals(rel.getChildStructureInode());
+				boolean isSameStructRelationship = FactoryLocator.getRelationshipFactory().sameParentAndChild(rel);
 
 				//Support for legacy relationships
 				propName = isSameStructRelationship ?

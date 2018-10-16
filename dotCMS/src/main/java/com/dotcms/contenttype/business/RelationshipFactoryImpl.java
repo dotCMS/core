@@ -2,6 +2,7 @@ package com.dotcms.contenttype.business;
 
 import com.dotcms.contenttype.business.sql.RelationshipSQL;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeIf;
 import com.dotcms.contenttype.transform.relationship.DbRelationshipTransformer;
 import com.dotcms.util.DotPreconditions;
@@ -202,29 +203,32 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
     public List<Relationship> byContentType(final String contentTypeInode, String orderBy){
 
         List<Relationship> relationships = new ArrayList<>();
-        ContentTypeIf contentTypeIf = null;
+        ContentType contentType;
         try {
-            contentTypeIf = APILocator.getContentTypeAPI(APILocator.systemUser()).find(contentTypeInode);
-            relationships = cache.getRelationshipsByType(contentTypeIf);
+            contentType = APILocator.getContentTypeAPI(APILocator.systemUser()).find(contentTypeInode);
+            relationships = cache.getRelationshipsByType(contentType);
             if(relationships != null && !relationships.isEmpty()) {
                 return relationships;
             }
 
-        orderBy = SQLUtil.sanitizeSortBy(orderBy);
+            final StringBuilder filter = new StringBuilder(StringPool.PERCENT)
+                    .append(contentType.variable()).append(StringPool.PERIOD)
+                    .append(StringPool.PERCENT);
 
-        final DotConnect dc = new DotConnect();
-        dc.setSQL(sql.FIND_BY_PARENT_OR_CHILD_INODE + sql.ORDER_BY);
-        dc.addParam(contentTypeInode);
-        dc.addParam(contentTypeInode);
-        dc.addParam(orderBy);
-        List<Map<String, Object>> results;
-        results = dc.loadObjectResults();
+            orderBy = SQLUtil.sanitizeSortBy(orderBy);
 
-        relationships = new DbRelationshipTransformer(results).asList();
+            final DotConnect dc = new DotConnect();
+            dc.setSQL(sql.FIND_BY_TYPE_VALUE_LIKE + sql.ORDER_BY);
+            dc.addParam(filter.toString().toLowerCase());
+            dc.addParam(orderBy);
+            List<Map<String, Object>> results;
+            results = dc.loadObjectResults();
 
-        if(!relationships.isEmpty()){
-            cache.putRelationshipsByType(contentTypeIf,relationships);
-        }
+            relationships = new DbRelationshipTransformer(results).asList();
+
+            if(!relationships.isEmpty()){
+                cache.putRelationshipsByType(contentType,relationships);
+            }
 
         } catch (DotCacheException e) {
             Logger.debug(this.getClass(), "Unable to access the cache to obtain the relationship", e);
@@ -364,10 +368,8 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
     }
     @Override
     public  boolean sameParentAndChild(final Relationship rel) {
-        if (rel.getChildStructureInode().equalsIgnoreCase(rel.getParentStructureInode()) ) {
-            return true;
-        }
-        return false;
+        return (null != rel.getChildStructureInode() && null != rel.getChildStructureInode() && rel
+                .getChildStructureInode().equalsIgnoreCase(rel.getParentStructureInode()));
     }
 
     @Override

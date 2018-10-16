@@ -1362,9 +1362,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     private String getRelatedContentESQuery(Contentlet contentlet, Relationship rel) {
-        boolean isSameStructRelationship =
-                null != rel.getParentStructureInode() && null != rel.getChildStructureInode() && rel
-                        .getParentStructureInode().equalsIgnoreCase(rel.getChildStructureInode());
+        boolean isSameStructRelationship = FactoryLocator.getRelationshipFactory().sameParentAndChild(rel);
         String q = "";
 
         if(isSameStructRelationship) {
@@ -1384,9 +1382,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     private String getRelatedContentESQuery(Contentlet contentlet,Relationship rel, boolean pullByParent) {
-        boolean isSameStructureRelationship =
-                null != rel.getParentStructureInode() && null != rel.getChildStructureInode() && rel
-                        .getParentStructureInode().equalsIgnoreCase(rel.getChildStructureInode());
+        boolean isSameStructureRelationship = FactoryLocator.getRelationshipFactory().sameParentAndChild(rel);
         String q = "";
 
         if(isSameStructureRelationship) {
@@ -2529,9 +2525,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if(!permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_EDIT, user, respectFrontendRoles)){
             throw new DotSecurityException("User: " + (user != null ? user.getUserId() : "Unknown") + " cannot edit Contentlet");
         }
-        List<Relationship> rels = FactoryLocator.getRelationshipFactory().byContentType(contentlet.getStructure());
+        List<Relationship> rels = FactoryLocator.getRelationshipFactory().byContentType(contentlet.getContentType());
         if(!rels.contains(relationship)){
-            throw new DotContentletStateException("Contentlet: " + (contentlet != null ? contentlet.getInode() : "Unknown") + " does not have passed in relationship");
+            throw new DotContentletStateException(
+                    "Error deleting existing relationships in contentlet: " + (contentlet != null
+                            ? contentlet.getInode() : "Unknown"));
         }
         List<Contentlet> cons = relationshipAPI.dbRelatedContent(relationship, contentlet, hasParent);
         cons = permissionAPI.filterCollection(cons, PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
@@ -2579,10 +2577,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
             throw new DotSecurityException("User: " + (user != null ? user.getUserId() : "Unknown")
                     + " cannot edit Contentlet: " + (contentlet != null ? contentlet.getInode() : "Unknown"));
         }
-        List<Relationship> rels = this.getRelationships(contentlet.getStructure());
+        List<Relationship> rels = this.getRelationships(contentlet.getContentType());
         if(!rels.contains(related.getRelationship())){
-            throw new DotContentletStateException("Contentlet: " + (contentlet != null ? contentlet.getInode() : "Unknown")
-                    + " does not have passed in relationship");
+            throw new DotContentletStateException(
+                    "Error adding relationships in contentlet:  " + (contentlet != null ? contentlet
+                            .getInode() : "Unknown"));
         }
 
         boolean child = !related.isHasParent();

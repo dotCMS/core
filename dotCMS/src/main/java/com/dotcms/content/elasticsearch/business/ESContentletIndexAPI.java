@@ -763,12 +763,15 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 		bulk.execute().actionGet();
 	}
 
-	private void reindexDependenciesForDeletedContent(final Contentlet contentlet, final List<Relationship> relationships,
-													  final BulkRequestBuilder bulk, final IndexPolicy indexPolicy) throws DotDataException, DotSecurityException, DotMappingException {
+	private void reindexDependenciesForDeletedContent(final Contentlet contentlet,
+			final List<Relationship> relationships,
+			final BulkRequestBuilder bulk, final IndexPolicy indexPolicy)
+			throws DotDataException, DotSecurityException, DotMappingException {
 
 		for (final Relationship relationship : relationships) {
 
-			final boolean isSameStructRelationship = relationship.getParentStructureInode().equalsIgnoreCase(relationship.getChildStructureInode());
+			final boolean isSameStructRelationship = FactoryLocator.getRelationshipFactory()
+					.sameParentAndChild(relationship);
 
 			final String query = (isSameStructRelationship) ?
 					builder("+type:content +(", relationship.getRelationTypeValue(), "-parent:", contentlet.getIdentifier(), StringPool.SPACE,
