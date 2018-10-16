@@ -68,6 +68,7 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
             Logger.debug(this, e.getMessage());
         } catch (DotDataException e){
                 Logger.error(this, "Error getting Relationship with inode: " + inode, e);
+                throw new RuntimeException(e);
         }
 
         if(rel!= null && InodeUtils.isSet(rel.getInode())) {
