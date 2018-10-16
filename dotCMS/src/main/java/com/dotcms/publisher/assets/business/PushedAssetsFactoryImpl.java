@@ -51,6 +51,14 @@ public class PushedAssetsFactoryImpl extends PushedAssetsFactory {
 	}
 
 	@Override
+	public void deletePushedAssetsByEnvironment(final String assetId, final String environmentId)  throws DotDataException {
+
+		new DotConnect().setSQL(DELETE_ASSETS_BY_ASSET_ID_AND_ENV)
+			.addParam(assetId).addParam(environmentId).loadResult();
+		cache.clearCache();
+	}
+
+	@Override
 	public void deletePushedAssetsByEnvironment(String environmentId)
 			throws DotDataException {
 		final DotConnect db = new DotConnect();
