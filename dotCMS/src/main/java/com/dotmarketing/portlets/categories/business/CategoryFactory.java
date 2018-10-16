@@ -40,6 +40,13 @@ public abstract class CategoryFactory {
 	 */
 	protected abstract Category findByKey(String key) throws DotDataException;
 
+	/**
+	 * This tries to get a Category object with the given variable from
+	 * @param variable
+	 * @return
+	 * @throws DotDataException
+	 */
+
 	protected abstract Category findByVar(String variable) throws DotDataException;
 
 	/**

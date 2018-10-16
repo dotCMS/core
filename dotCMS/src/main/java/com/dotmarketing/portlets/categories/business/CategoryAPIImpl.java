@@ -813,12 +813,14 @@ public class CategoryAPIImpl implements CategoryAPI {
 
 		final Category category = categoryFactory.findByVar(variable);
 
-		if(!InodeUtils.isSet(category.getCategoryId()))
+		if(!InodeUtils.isSet(category.getCategoryId())) {
 			return null;
+		}
 
-		if(!permissionAPI.doesUserHavePermission(category, PermissionAPI.PERMISSION_USE, user, respectFrontendRoles))
+		if(!permissionAPI.doesUserHavePermission(category, PermissionAPI.PERMISSION_USE, user, respectFrontendRoles)) {
 			throw new DotSecurityException("User doesn't have permission to use this category = " +
 					category.getInode());
+		}
 
 		return category;
 	}
@@ -834,9 +836,9 @@ public class CategoryAPIImpl implements CategoryAPI {
 
 		for (com.dotmarketing.portlets.structure.model.Field field : fields) {
 			if (field.getFieldType().equals(com.dotmarketing.portlets.structure.model.Field.FieldType.CATEGORY.toString())) {
-				String catValue = contentlet.getStringProperty(field.getVelocityVarName());
+				final String catValue = contentlet.getStringProperty(field.getVelocityVarName());
 				if (UtilMethods.isSet(catValue)) {
-					for (String categoryIdKeyOrVar : catValue.split("\\s*,\\s*")) {
+					for (final String categoryIdKeyOrVar : catValue.split("\\s*,\\s*")) {
 						// take it as catId
 						Category category = APILocator.getCategoryAPI()
 								.find(categoryIdKeyOrVar, user, respectFrontendRoles);

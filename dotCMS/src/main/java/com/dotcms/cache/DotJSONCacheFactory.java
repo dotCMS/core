@@ -7,7 +7,7 @@ import com.dotcms.rest.api.v1.HTTPMethod;
  * Factory class to return the proper {@link DotJSONCache} implementation based on the used {@link HTTPMethod}
  */
 
-public class DotJSONCacheFactory {
+public final class DotJSONCacheFactory {
 
     private DotJSONCacheFactory() {}
 

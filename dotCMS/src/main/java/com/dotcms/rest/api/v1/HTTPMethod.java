@@ -9,7 +9,7 @@ public enum HTTPMethod {
 
     private String fileName;
 
-    HTTPMethod(String fileName) {
+    HTTPMethod(final String fileName) {
         this.fileName = fileName;
     }
 

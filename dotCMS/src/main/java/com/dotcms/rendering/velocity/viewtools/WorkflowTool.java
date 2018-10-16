@@ -152,6 +152,16 @@ public class WorkflowTool implements ViewTool {
 		return workflowAPI.fireWorkflowNoCheckin(contentlet,user);
 	}
 
+	/**
+	 * Fires a Workflow Action identified by wfActionId using the given map of properties of a contentlet.
+	 * @param wfActionId Id of the action to perform
+	 * @param properties Map of properties of the contentlet to process
+	 * @param user User performing the action
+	 * @return the resulting content after performing the action
+	 * @throws DotSecurityException
+	 * @throws DotDataException
+	 */
+
 	public Contentlet fire(final String wfActionId, final Map<String, Object> properties, final User user)
 			throws DotSecurityException, DotDataException {
 		final MapToContentletPopulator mapToContentletPopulator = MapToContentletPopulator.INSTANCE;

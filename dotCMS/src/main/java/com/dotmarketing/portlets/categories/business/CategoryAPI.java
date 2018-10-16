@@ -509,8 +509,8 @@ public interface CategoryAPI {
 			throws DotSecurityException, DotDataException;
 
 	@CloseDBIfOpened
-	Category findByVariable(String variable, User user,
-							boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+	Category findByVariable(final String variable, final User user,
+							final boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
 	List<Category> getCategoriesFromContent(final Contentlet contentlet, final User user, boolean respectFrontendRoles ) throws DotDataException, DotSecurityException;
 }

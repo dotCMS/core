@@ -208,7 +208,7 @@ public class RelationshipAPIImpl implements RelationshipAPI {
     }
 
     @Override
-    public ContentletRelationships getContentletRelationshipsFromMap(Contentlet contentlet, Map<Relationship, List<Contentlet>> contentRelationships) {
+    public ContentletRelationships getContentletRelationshipsFromMap(Contentlet contentlet, final Map<Relationship, List<Contentlet>> contentRelationships) {
         return new ContentletRelationshipsTransformer(contentlet, contentRelationships).findFirst();
     }
 }

@@ -27,17 +27,17 @@ public class DotJSONNoCacheStrategyImpl extends DotJSONCache {
     }
 
     @Override
-    public void add(HttpServletRequest request, User user, DotJSON dotJSON) {
+    public void add(final HttpServletRequest request, final User user, final DotJSON dotJSON) {
         // no implementation
     }
 
     @Override
-    public Optional<DotJSON> get(HttpServletRequest request, User user) {
+    public Optional<DotJSON> get(final HttpServletRequest request, final User user) {
         return Optional.empty();
     }
 
     @Override
-    public void remove(DotJSONCacheKey dotJSONCacheKey) {
+    public void remove(final DotJSONCacheKey dotJSONCacheKey) {
         // no implementation
     }
 }
