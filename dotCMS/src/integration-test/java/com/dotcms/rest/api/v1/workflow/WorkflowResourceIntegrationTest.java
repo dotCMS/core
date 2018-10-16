@@ -30,6 +30,7 @@ import static com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil.
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
@@ -40,10 +41,24 @@ import static org.mockito.Mockito.when;
 
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.contenttype.business.FieldAPI;
+import com.dotcms.contenttype.model.field.CategoryField;
+import com.dotcms.contenttype.model.field.CheckboxField;
+import com.dotcms.contenttype.model.field.CustomField;
 import com.dotcms.contenttype.model.field.DataTypes;
+import com.dotcms.contenttype.model.field.DateField;
+import com.dotcms.contenttype.model.field.DateTimeField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
+import com.dotcms.contenttype.model.field.ImageField;
+import com.dotcms.contenttype.model.field.KeyValueField;
+import com.dotcms.contenttype.model.field.MultiSelectField;
+import com.dotcms.contenttype.model.field.RadioField;
+import com.dotcms.contenttype.model.field.SelectField;
+import com.dotcms.contenttype.model.field.TextAreaField;
 import com.dotcms.contenttype.model.field.TextField;
+import com.dotcms.contenttype.model.field.TimeField;
+import com.dotcms.contenttype.model.field.WysiwygField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.mock.response.MockAsyncResponse;
@@ -55,6 +70,7 @@ import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
+import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.workflow.form.BulkActionForm;
 import com.dotcms.workflow.form.FireActionForm;
@@ -90,6 +106,7 @@ import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -107,7 +124,9 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.servlet.http.HttpServletRequest;
+import org.apache.commons.lang.RandomStringUtils;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -955,7 +974,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
 
         // Add fields to the contentType
         final Field field =
-                FieldBuilder.builder(TextField.class).name("requiredField").variable("requiredField")
+                FieldBuilder.builder(TextField.class).name(REQUIRED_TEXT_FIELD_NAME).variable(REQUIRED_TEXT_FIELD_NAME)
                         .required(true)
                         .contentTypeId(contentType.id()).dataType(DataTypes.TEXT).build();
         contentType = contentTypeAPI.save(contentType, Collections.singletonList(field));
@@ -984,7 +1003,8 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
         contentlet.setStructureInode(contentType.inode());
         contentlet.setHost(host.getIdentifier());
         contentlet.setLanguageId(languageAPI.getDefaultLanguage().getId());
-        contentlet.setStringProperty("requiredField","anyValue");
+
+        contentlet.setStringProperty(REQUIRED_TEXT_FIELD_NAME,"anyValue");
         contentlet.setIndexPolicy(IndexPolicy.FORCE);
 
         // Save the content
@@ -1380,7 +1400,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
         final String saveAndPublishActionId = "b9d89c80-3d88-4311-8365-187323c96436";
         ContentType contentType = null;
         try {
-            // We create a contentType that is associated with the two workflows that come out of the box.
+            // We create a contentType that is associated with the two workflows that comes out of the box.
             contentType = createSampleContentType();
             Contentlet brandNewContentlet = null;
              try {
@@ -1388,7 +1408,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
                  final FireActionForm.Builder builder1 = new FireActionForm.Builder();
                  final Map <String,Object>contentletFormData = new HashMap<>();
                  contentletFormData.put("stInode", contentType.inode());
-                 contentletFormData.put("requiredField", "value-1");
+                 contentletFormData.put(REQUIRED_TEXT_FIELD_NAME, "value-1");
                  builder1.contentletFormData(contentletFormData);
 
                 final FireActionForm fireActionForm1 = new FireActionForm(builder1);
@@ -1402,13 +1422,13 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
                         .cast(response1.getEntity());
                 brandNewContentlet = Contentlet.class.cast(fireEntityView1.getEntity());
                 assertNotNull(brandNewContentlet);
-                assertEquals("value-1", brandNewContentlet.getMap().get("requiredField"));
+                assertEquals("value-1", brandNewContentlet.getMap().get(REQUIRED_TEXT_FIELD_NAME));
 
                  //Update Action
                 final FireActionForm.Builder builder2 = new FireActionForm.Builder();
                 final Map <String,Object>contentletFormData2 = new HashMap<>();
                 contentletFormData2.put("stInode", contentType.inode());
-                contentletFormData2.put("requiredField", "value-2");
+                contentletFormData2.put(REQUIRED_TEXT_FIELD_NAME, "value-2");
                 builder2.contentletFormData(contentletFormData2);
 
                 final FireActionForm fireActionForm2 = new FireActionForm(builder2);
@@ -1424,7 +1444,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
                 assertNotNull(updatedContentlet);
 
                 assertEquals(brandNewContentlet.getIdentifier(),updatedContentlet.getIdentifier());
-                assertEquals("value-2", updatedContentlet.getMap().get("requiredField"));
+                assertEquals("value-2", updatedContentlet.getMap().get(REQUIRED_TEXT_FIELD_NAME));
 
              }finally {
                 if(null != brandNewContentlet){
@@ -1440,5 +1460,472 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
         }
     }
 
+    static ImmutableMap <Class, DataTypes> fieldTypesMetaDataMap = new ImmutableMap.Builder<Class, DataTypes>()
+            //   .put(BinaryField.class, DataTypes.SYSTEM)
+            //   .put(CategoryField.class, DataTypes.SYSTEM)
+                .put(CheckboxField.class, DataTypes.TEXT)
+                .put(CustomField.class, DataTypes.LONG_TEXT)
+                .put(DateField.class, DataTypes.DATE)
+                .put(DateTimeField.class, DataTypes.DATE)
+            //   .put(FileField.class, DataTypes.TEXT)
+            //   .put(HiddenField.class, DataTypes.SYSTEM)
+            //   .put(HostFolderField.class,DataTypes.SYSTEM)
+                .put(ImageField.class,DataTypes.TEXT)
+                .put(KeyValueField.class,DataTypes.LONG_TEXT)
+            //   .put(LineDividerField.class,DataTypes.SYSTEM)
+                .put(MultiSelectField.class,DataTypes.LONG_TEXT)
+            //   .put(PermissionTabField.class,DataTypes.SYSTEM)
+                .put(RadioField.class,DataTypes.TEXT)
+            //   .put(RelationshipField.class,DataTypes.SYSTEM)
+            //   .put(RelationshipsTabField.class,  DataTypes.SYSTEM)
+                .put(SelectField.class, DataTypes.TEXT)
+            //   .put(TabDividerField.class, DataTypes.SYSTEM)
+            //   .put(TagField.class, DataTypes.SYSTEM)
+                .put(TextField.class, DataTypes.TEXT)
+                .put(TextAreaField.class, DataTypes.LONG_TEXT)
+                .put(TimeField.class, DataTypes.DATE)
+                .put(WysiwygField.class, DataTypes.LONG_TEXT)
+                .build();
 
+
+    private static final String SAVE_ACTION_ID = "ceca71a0-deee-4999-bd47-b01baa1bcfc8";
+    private static final String NON_REQUIRED_IMAGE_FIELD_NAME = "nonRequiredImageField";
+    private static final String NON_REQUIRED_IMAGE_VALUE= "/path/to/the/image/random.jpg";
+
+    private static final String REQUIRED_TEXT_FIELD_NAME = "requiredTextField";
+    private static final String REQUIRED_TEXT_FIELD_VALUE= "This Value is Required";
+
+    private static final String NON_REQUIRED_TEXT_FIELD_NAME = "nonRequiredTextField";
+    private static final String NON_REQUIRED_TEXT_FIELD_VALUE= "This Value isn't required";
+
+    private static final String REQUIRED_NUMERIC_TEXT_FIELD_NAME = "requiredNumericTextField";
+    private static final String REQUIRED_NUMERIC_TEXT_FIELD_VALUE= "0";
+
+    private static final String NON_REQUIRED_NUMERIC_TEXT_FIELD_NAME = "nonRequiredNumericTextField";
+    private static final String NON_REQUIRED_NUMERIC_TEXT_FIELD_VALUE= "0";
+
+    @Test
+    public void Test_Fire_Save_Remove_Image_Then_Verify_Fields_Were_Cleared_Issue_15340() throws Exception {
+
+        final User sysUser = APILocator.systemUser();
+        final FieldAPI fieldAPI = APILocator.getContentTypeFieldAPI();
+
+        ContentType contentType = null;
+        try {
+            // We create a contentType that is associated with the two workflows that come out of the box.
+            contentType = createSampleContentType();
+            Contentlet brandNewContentlet = null;
+            try {
+
+                //Lets add even more fields to the contentType.
+                Field imageField =
+                        FieldBuilder.builder(ImageField.class).name(NON_REQUIRED_IMAGE_FIELD_NAME).variable(NON_REQUIRED_IMAGE_FIELD_NAME)
+                                .required(false)
+                                .contentTypeId(contentType.id()).dataType(DataTypes.TEXT).build();
+
+                imageField = fieldAPI.save(imageField, sysUser);
+                final List<Field> fields = Stream.concat (
+                        Stream.of(imageField),contentType.fields().stream()).collect(
+                                CollectionsUtils.toImmutableList()
+                        );
+
+                contentType = contentTypeAPI.save(contentType, fields);
+
+                //Save Action (Creates the initial content)
+                final FireActionForm.Builder builder1 = new FireActionForm.Builder();
+                final Map <String,Object>contentletFormData = new HashMap<>();
+                contentletFormData.put("stInode", contentType.inode());
+                contentletFormData.put(REQUIRED_TEXT_FIELD_NAME, REQUIRED_TEXT_FIELD_VALUE);
+                contentletFormData.put(NON_REQUIRED_IMAGE_FIELD_NAME, NON_REQUIRED_IMAGE_VALUE);
+                builder1.contentletFormData(contentletFormData);
+
+                final FireActionForm fireActionForm1 = new FireActionForm(builder1);
+                final HttpServletRequest request1 = mock(HttpServletRequest.class);
+                final Response response1 = workflowResource
+                        .fireAction(request1, null, SAVE_ACTION_ID, fireActionForm1);
+
+                final int statusCode1 = response1.getStatus();
+                assertEquals(Status.OK.getStatusCode(), statusCode1);
+                final ResponseEntityView fireEntityView1 = ResponseEntityView.class
+                        .cast(response1.getEntity());
+                brandNewContentlet = Contentlet.class.cast(fireEntityView1.getEntity());
+                assertNotNull(brandNewContentlet);
+                assertEquals(REQUIRED_TEXT_FIELD_VALUE, brandNewContentlet.getMap().get(REQUIRED_TEXT_FIELD_NAME));
+                assertEquals(NON_REQUIRED_IMAGE_VALUE, brandNewContentlet.getMap().get(NON_REQUIRED_IMAGE_FIELD_NAME));
+
+                //Save Action (Creates the initial content)
+                final FireActionForm.Builder builder2 = new FireActionForm.Builder();
+                final Map <String,Object>contentletFormData2 = new HashMap<>();
+                contentletFormData2.put("stInode", contentType.inode());
+                // We're not sending this property here so we can verify it comes back without any modifications.
+                //contentletFormData.put("requiredField", "value-1");
+                //W're just marking the image null so we can get it removed.
+                contentletFormData2.put(NON_REQUIRED_IMAGE_FIELD_NAME, null);
+                builder2.contentletFormData(contentletFormData2);
+
+                final FireActionForm fireActionForm2 = new FireActionForm(builder2);
+                final HttpServletRequest request2 = mock(HttpServletRequest.class);
+                final Response response2 = workflowResource
+                        .fireAction(request2, brandNewContentlet.getInode(), SAVE_ACTION_ID, fireActionForm2);
+
+                final int statusCode2 = response2.getStatus();
+                assertEquals(Status.OK.getStatusCode(), statusCode2);
+                final ResponseEntityView fireEntityView2 = ResponseEntityView.class
+                        .cast(response2.getEntity());
+                Contentlet fetchedContentlet = Contentlet.class.cast(fireEntityView2.getEntity());
+                assertNotNull(fetchedContentlet);
+                assertEquals(REQUIRED_TEXT_FIELD_VALUE, fetchedContentlet.getMap().get(REQUIRED_TEXT_FIELD_NAME));
+
+                assertNull(fetchedContentlet.getMap().get(NON_REQUIRED_IMAGE_FIELD_NAME)); // Image.. still should be gone!
+
+                final Contentlet found = APILocator.getContentletAPI().find(fetchedContentlet.getInode(), sysUser,false);
+                assertNotNull(found);
+
+                assertEquals(REQUIRED_TEXT_FIELD_VALUE, found.getMap().get(REQUIRED_TEXT_FIELD_NAME));
+                assertNull(found.getMap().get(NON_REQUIRED_IMAGE_FIELD_NAME)); // Image.. still should be gone!
+                //if we send null we should get back null.
+
+            }finally {
+                if(null != brandNewContentlet){
+                    contentletAPI.archive(brandNewContentlet, APILocator.systemUser(), false);
+                    contentletAPI.delete(brandNewContentlet, APILocator.systemUser(), false);
+                }
+            }
+
+        }finally {
+            if(null != contentType){
+                contentTypeAPI.delete(contentType);
+            }
+        }
+    }
+
+
+    @Test
+    public void Test_Set_Value_on_All_NonRequired_Fields_Then_Fire_Save_Set_Null_Then_Verify_Fields_Were_Cleared_Issue_15340()
+            throws Exception {
+
+        ContentType contentType = null;
+        try {
+            // We create a contentType that is associated with the two workflows that come out of the box.
+            contentType = createLargeContentType(false);
+            Contentlet brandNewContentlet = null;
+
+            //Save Action (Creates the initial content)
+            final FireActionForm.Builder builder1 = new FireActionForm.Builder();
+            final Map <String,Object>contentletFormData = new HashMap<>();
+            contentletFormData.put("stInode", contentType.inode());
+            for(final Field field : contentType.fields()){
+                final Object value = generateValue(field);
+                if( null != value){
+                    contentletFormData.put(field.name(), value);
+                }
+            }
+            builder1.contentletFormData(contentletFormData);
+            final FireActionForm fireActionForm1 = new FireActionForm(builder1);
+            final HttpServletRequest request1 = mock(HttpServletRequest.class);
+            final Response response1 = workflowResource
+                    .fireAction(request1, null, SAVE_ACTION_ID, fireActionForm1);
+
+            final int statusCode1 = response1.getStatus();
+            assertEquals(Status.OK.getStatusCode(), statusCode1);
+            final ResponseEntityView fireEntityView1 = ResponseEntityView.class
+                    .cast(response1.getEntity());
+            brandNewContentlet = Contentlet.class.cast(fireEntityView1.getEntity());
+            assertNotNull(brandNewContentlet);
+
+            for(final Field field : contentType.fields()){
+                assertNotNull(brandNewContentlet.get(field.name()));
+            }
+
+            final FireActionForm.Builder builder2 = new FireActionForm.Builder();
+            final Map <String,Object>contentletFormData2 = new HashMap<>();
+            contentletFormData2.put("stInode", contentType.inode());
+            for(final Field field : contentType.fields()){
+                contentletFormData2.put(field.name(), null);
+            }
+            builder2.contentletFormData(contentletFormData2);
+            final FireActionForm fireActionForm2 = new FireActionForm(builder2);
+            final HttpServletRequest request2 = mock(HttpServletRequest.class);
+            final Response response2 = workflowResource
+                    .fireAction(request2, brandNewContentlet.getInode(), SAVE_ACTION_ID, fireActionForm2);
+
+            final int statusCode2 = response2.getStatus();
+            assertEquals(Status.OK.getStatusCode(), statusCode2);
+
+            final ResponseEntityView fireEntityView2 = ResponseEntityView.class
+                    .cast(response2.getEntity());
+            final Contentlet fetchedContentlet = Contentlet.class.cast(fireEntityView2.getEntity());
+            assertNotNull(fetchedContentlet);
+
+            for(final Field field : contentType.fields()){
+                assertNull(fetchedContentlet.get(field.name()));
+            }
+
+        } finally {
+            if (null != contentType) {
+                contentTypeAPI.delete(contentType);
+            }
+        }
+
+    }
+
+
+    /**
+     * This Test demostrates that the workflow resource is capable of performing an update on a subset of fields.
+     * @throws Exception
+     */
+    @Test
+    public void Test_Create_Instance_Of_Content_With_Mandatory_Fields_Then_Send_Partial_Number_Of_Required_Fields_Issue_15340()
+        throws Exception {
+        ContentType contentType = null;
+        try {
+            // This CT has a mix of required and non-required fields.
+            contentType = createMixedRequiredAndNonRequiredFieldsContentType();
+            Contentlet brandNewContentlet = null;
+
+            //Save Action (Creates the initial content)
+            final FireActionForm.Builder builder1 = new FireActionForm.Builder();
+            final Map <String,Object>contentletFormData = new HashMap<>();
+            contentletFormData.put("stInode", contentType.inode());
+            contentletFormData.put(REQUIRED_TEXT_FIELD_NAME, REQUIRED_TEXT_FIELD_VALUE);
+            contentletFormData.put(NON_REQUIRED_TEXT_FIELD_NAME, NON_REQUIRED_TEXT_FIELD_VALUE);
+
+            builder1.contentletFormData(contentletFormData);
+            final FireActionForm fireActionForm1 = new FireActionForm(builder1);
+            final HttpServletRequest request1 = mock(HttpServletRequest.class);
+            final Response response1 = workflowResource
+                    .fireAction(request1, null, SAVE_ACTION_ID, fireActionForm1);
+
+            final int statusCode1 = response1.getStatus();
+            assertEquals(Status.OK.getStatusCode(), statusCode1);
+            final ResponseEntityView fireEntityView1 = ResponseEntityView.class
+                    .cast(response1.getEntity());
+            brandNewContentlet = Contentlet.class.cast(fireEntityView1.getEntity());
+            assertNotNull(brandNewContentlet);
+
+            //Once the content has been created lets send another request with half the fields
+
+            final FireActionForm.Builder builder2 = new FireActionForm.Builder();
+
+            final String NON_REQUIRED_UPDATED_VALUE = "Non required updated value.";
+
+            final Map <String,Object>contentletFormData2 = new HashMap<>();
+            contentletFormData2.put("stInode", contentType.inode());
+            contentletFormData2.put(NON_REQUIRED_TEXT_FIELD_NAME, NON_REQUIRED_UPDATED_VALUE);
+            builder2.contentletFormData(contentletFormData2);
+
+            final FireActionForm fireActionForm2 = new FireActionForm(builder2);
+            final HttpServletRequest request2 = mock(HttpServletRequest.class);
+            final Response response2 = workflowResource
+                    .fireAction(request2, brandNewContentlet.getInode(), SAVE_ACTION_ID, fireActionForm2);
+
+            final int statusCode2 = response2.getStatus();
+            assertEquals(Status.OK.getStatusCode(), statusCode2);
+
+            //Now we need to test sending only required fields and not the nonRequired see if they get affected!!!
+
+            final ResponseEntityView fireEntityView2 = ResponseEntityView.class
+                    .cast(response2.getEntity());
+            final Contentlet fetchedContentlet = Contentlet.class.cast(fireEntityView2.getEntity());
+            assertNotNull(fetchedContentlet);
+
+            //This one got changed. It is expected since we are using the resource to modify its value.
+            assertEquals(NON_REQUIRED_UPDATED_VALUE, fetchedContentlet.getMap().get(NON_REQUIRED_TEXT_FIELD_NAME));
+            //This one should remain unchanged. since it never got send on the form.
+            assertEquals(REQUIRED_TEXT_FIELD_VALUE, fetchedContentlet.getMap().get(REQUIRED_TEXT_FIELD_NAME));
+
+
+            //Meaning the endpoint is flexible to modify a subset of fields. No need to send them all.
+        } finally {
+            if (null != contentType) {
+                contentTypeAPI.delete(contentType);
+            }
+        }
+    }
+
+    @Test
+    public void Test_Create_Instance_Of_Content_With_Numeric_Fields_Verify_Message_When_Setting_Invalid_Values_Issue_15340()
+            throws Exception {
+        ContentType contentType = null;
+        try {
+            // This CT has a mix of required and non-required fields.
+            contentType = createNumericRequiredAndNonRequiredFieldsContentType();
+            Contentlet brandNewContentlet = null;
+
+            //Save Action (Creates the initial content)
+            final FireActionForm.Builder builder1 = new FireActionForm.Builder();
+            final Map<String, Object> contentletFormData = new HashMap<>();
+            contentletFormData.put("stInode", contentType.inode());
+            contentletFormData.put(REQUIRED_NUMERIC_TEXT_FIELD_NAME, "0");
+            contentletFormData.put(NON_REQUIRED_NUMERIC_TEXT_FIELD_NAME, "0");
+
+            builder1.contentletFormData(contentletFormData);
+            final FireActionForm fireActionForm1 = new FireActionForm(builder1);
+            final HttpServletRequest request1 = mock(HttpServletRequest.class);
+            final Response response1 = workflowResource
+                    .fireAction(request1, null, SAVE_ACTION_ID, fireActionForm1);
+
+            final int statusCode1 = response1.getStatus();
+            assertEquals(Status.OK.getStatusCode(), statusCode1);
+
+            final ResponseEntityView fireEntityView1 = ResponseEntityView.class
+                    .cast(response1.getEntity());
+            brandNewContentlet = Contentlet.class.cast(fireEntityView1.getEntity());
+            assertNotNull(brandNewContentlet);
+
+            final FireActionForm.Builder builder2 = new FireActionForm.Builder();
+            final Map <String,Object>contentletFormData2 = new HashMap<>();
+            contentletFormData2.put("stInode", contentType.inode());
+            contentletFormData2.put(REQUIRED_NUMERIC_TEXT_FIELD_NAME, null);
+            contentletFormData2.put(NON_REQUIRED_NUMERIC_TEXT_FIELD_NAME, "0");
+            builder2.contentletFormData(contentletFormData2);
+
+            final FireActionForm fireActionForm2 = new FireActionForm(builder2);
+            final HttpServletRequest request2 = mock(HttpServletRequest.class);
+            final Response response2 = workflowResource
+                    .fireAction(request2, brandNewContentlet.getInode(), SAVE_ACTION_ID, fireActionForm2);
+
+            final int statusCode2 = response2.getStatus();
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), statusCode2);
+            final ResponseEntityView errorEntityView = ResponseEntityView.class.cast(response2.getEntity());
+            assertEquals(1, errorEntityView.getErrors().stream().filter(errorEntity -> "required".equals(errorEntity.getErrorCode())).count());
+
+        } finally {
+            if (null != contentType) {
+                contentTypeAPI.delete(contentType);
+            }
+        }
+    }
+
+    private ContentType createNumericRequiredAndNonRequiredFieldsContentType() throws Exception{
+        ContentType contentType;
+        final String ctPrefix = "NumericRequiredAndNonRequiredFieldsContentType";
+        final String newContentTypeName = ctPrefix + System.currentTimeMillis();
+
+        // Create ContentType
+        contentType = createContentTypeAndAssignPermissions(newContentTypeName,
+                BaseContentType.CONTENT, PermissionAPI.PERMISSION_READ, adminRole.getId());
+        final WorkflowScheme systemWorkflow = workflowAPI.findSystemWorkflowScheme();
+        final WorkflowScheme documentWorkflow = workflowAPI.findSchemeByName(DM_WORKFLOW);
+
+        final Field requiredField = FieldBuilder.builder(TextField.class)
+                .dataType(DataTypes.INTEGER)
+                .name(REQUIRED_NUMERIC_TEXT_FIELD_NAME).variable(REQUIRED_NUMERIC_TEXT_FIELD_NAME)
+                .required(true)
+                .contentTypeId(contentType.id()).build();
+
+        final Field nonRequiredField = FieldBuilder.builder(TextField.class)
+                .dataType(DataTypes.INTEGER)
+                .name(NON_REQUIRED_NUMERIC_TEXT_FIELD_NAME).variable(NON_REQUIRED_NUMERIC_TEXT_FIELD_NAME)
+                .required(false)
+                .contentTypeId(contentType.id()).build();
+
+        final List<Field> fields = Arrays.asList(requiredField, nonRequiredField);
+        contentType = contentTypeAPI.save(contentType, fields);
+
+        // Assign contentType to Workflows
+        workflowAPI.saveSchemeIdsForContentType(contentType,
+                Arrays.asList(
+                        systemWorkflow.getId(), documentWorkflow.getId()
+                )
+        );
+
+        return contentType;
+    }
+
+    private ContentType createMixedRequiredAndNonRequiredFieldsContentType() throws Exception{
+        ContentType contentType;
+        final String ctPrefix = "MixedRequiredAndNonRequiredFieldsContentType";
+        final String newContentTypeName = ctPrefix + System.currentTimeMillis();
+
+        // Create ContentType
+        contentType = createContentTypeAndAssignPermissions(newContentTypeName,
+                BaseContentType.CONTENT, PermissionAPI.PERMISSION_READ, adminRole.getId());
+        final WorkflowScheme systemWorkflow = workflowAPI.findSystemWorkflowScheme();
+        final WorkflowScheme documentWorkflow = workflowAPI.findSchemeByName(DM_WORKFLOW);
+
+        final Field requiredField = FieldBuilder.builder(TextField.class)
+                    .dataType(DataTypes.TEXT)
+                    .name(REQUIRED_TEXT_FIELD_NAME).variable(REQUIRED_TEXT_FIELD_NAME)
+                    .required(true)
+                    .contentTypeId(contentType.id()).build();
+
+        final Field nonRequiredField = FieldBuilder.builder(TextField.class)
+                .dataType(DataTypes.TEXT)
+                .name(NON_REQUIRED_TEXT_FIELD_NAME).variable(NON_REQUIRED_TEXT_FIELD_NAME)
+                .required(false)
+                .contentTypeId(contentType.id()).build();
+
+        final List<Field> fields = Arrays.asList(requiredField, nonRequiredField);
+        contentType = contentTypeAPI.save(contentType, fields);
+
+        // Assign contentType to Workflows
+        workflowAPI.saveSchemeIdsForContentType(contentType,
+                Arrays.asList(
+                        systemWorkflow.getId(), documentWorkflow.getId()
+                )
+        );
+
+        return contentType;
+    }
+
+    private ContentType createLargeContentType(final boolean required) throws Exception{
+        ContentType contentType;
+        final String ctPrefix = "LargeTestContentType";
+        final String newContentTypeName = ctPrefix + System.currentTimeMillis();
+
+        // Create ContentType
+        contentType = createContentTypeAndAssignPermissions(newContentTypeName,
+                BaseContentType.CONTENT, PermissionAPI.PERMISSION_READ, adminRole.getId());
+        final WorkflowScheme systemWorkflow = workflowAPI.findSystemWorkflowScheme();
+        final WorkflowScheme documentWorkflow = workflowAPI.findSchemeByName(DM_WORKFLOW);
+
+        final List<Field> fields = new ArrayList<>(contentType.fields());
+
+        for (final Class clazz : fieldTypesMetaDataMap.keySet()) {
+            final String fieldName = "_" + clazz.getCanonicalName();
+            final Field field = FieldBuilder.builder(clazz)
+                    .dataType(fieldTypesMetaDataMap.get(clazz))
+                    .name(fieldName).variable(fieldName)
+                    .required(required)
+                    .contentTypeId(contentType.id()
+            ).build();
+            fields.add(field);
+        }
+        contentType = contentTypeAPI.save(contentType, fields);
+
+        // Assign contentType to Workflows
+        workflowAPI.saveSchemeIdsForContentType(contentType,
+                Arrays.asList(
+                        systemWorkflow.getId(), documentWorkflow.getId()
+                )
+        );
+
+        return contentType;
+    }
+
+    private Object generateValue(final Field field){
+
+        if(field instanceof CategoryField){
+            return "Any";
+        }
+
+        if(field instanceof KeyValueField){
+            return "{key1:value, key2:value }";
+        }
+
+        final DataTypes dataType = field.dataType();
+        if(DataTypes.DATE == dataType){
+            return new Date();
+        }
+        if(DataTypes.LONG_TEXT == dataType) {
+            return RandomStringUtils.random(2500, true, false);
+        }
+        if(DataTypes.TEXT == dataType) {
+            return RandomStringUtils.random(100, true, false);
+        }
+
+        return null;
+
+    }
 }

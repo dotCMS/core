@@ -203,13 +203,13 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 		    Identifier ident=APILocator.getIdentifierAPI().find(template.getIdentifier());
 		    existingId = ident==null || !UtilMethods.isSet(ident.getId());
 		}
-	    
+
 	    if(template.isDrawed() && !UtilMethods.isSet(template.getDrawedBody())) {
 	        throw new DotStateException("Drawed template MUST have a drawed body:" + template);
-	        
+
 	    }
-	    
-	    
+
+
 
 	    if(UtilMethods.isSet(template.getInode())) {
     	    try {
@@ -371,7 +371,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 
 	public Template findWorkingTemplate(String id, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 		VersionInfo info = APILocator.getVersionableAPI().getVersionInfo(id);
-		return find(info.getWorkingInode(), user, respectFrontendRoles);
+		return (!UtilMethods.isSet(info)) ? null : find(info.getWorkingInode(), user, respectFrontendRoles);
 
 	}
 
@@ -401,7 +401,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 
 	public Template findLiveTemplate(String id, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 		VersionInfo info = APILocator.getVersionableAPI().getVersionInfo(id);
-		return find(info.getLiveInode(), user, respectFrontendRoles);
+		return (!UtilMethods.isSet(info)) ? null : find(info.getLiveInode(), user, respectFrontendRoles);
 	}
 
 	@Override
@@ -437,7 +437,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
     public void updateThemeWithoutVersioning(String templateInode, String theme) throws DotDataException{
     	templateFactory.updateThemeWithoutVersioning(templateInode, theme);
     }
-    
+
     /**
 	 * Method will replace user references of the given userId in templates
 	 * with the replacement user Id  
@@ -445,7 +445,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 	 * @param replacementUserId The user id of the replacement user
 	 * @throws DotDataException There is a data inconsistency
 	 * @throws DotStateException There is a data inconsistency
-	 * @throws DotSecurityException 
+	 * @throws DotSecurityException
 	 */
 	@WrapInTransaction
 	public void updateUserReferences(String userId, String replacementUserId)throws DotDataException, DotSecurityException{

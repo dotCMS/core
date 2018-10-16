@@ -1,6 +1,5 @@
 package com.dotcms.rest;
 
-import com.dotcms.business.CloseDB;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -9,7 +8,6 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -23,8 +21,6 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-import org.jetbrains.annotations.Nullable;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -143,10 +139,11 @@ public class MapToContentletPopulator  {
                     this.processHostOrFolderField(contentlet, type, value);
                 } else if (field.getFieldType().equals(FieldType.CATEGORY.toString())) {
 
-                    contentlet.setStringProperty(field.getVelocityVarName(), value.toString());
-                } else if ((field.getFieldType().equals(FieldType.FILE.toString()) || field
-                        .getFieldType().equals(FieldType.IMAGE.toString())) &&
-                        value.toString().startsWith("//")) {
+                    contentlet.setStringProperty(field.getVelocityVarName(),  value != null ? value.toString() : null);
+                } else if (
+                         (field.getFieldType().equals(FieldType.FILE.toString()) || field.getFieldType().equals(FieldType.IMAGE.toString()))
+                                 && (value != null && value.toString().startsWith("//"))
+                       ) {
 
                     this.processFileOrImageField(contentlet, value, field);
                 } else {
