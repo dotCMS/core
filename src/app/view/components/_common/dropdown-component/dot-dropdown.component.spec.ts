@@ -7,8 +7,7 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 @Component({
     selector: 'dot-test-host-component',
-    template:
-        `<dot-dropdown-component
+    template: `<dot-dropdown-component
             [gravatar]="gravatar"
             [icon]="icon"
             [title]="title"
@@ -41,6 +40,28 @@ class MockDotIconButtonComponent {
     disabled?: boolean;
 }
 
+function executeEnabled(
+    elem: DebugElement,
+    hostFixture: ComponentFixture<DotTestHostComponent>,
+    de: DebugElement,
+    comp: DotDropdownComponent
+) {
+    elem.nativeElement.click();
+    hostFixture.detectChanges();
+    const content = de.query(By.css('.dropdown-content'));
+    expect(content).toBeTruthy();
+    expect(elem).toBeTruthy();
+    expect(comp.toggle.emit).toHaveBeenCalledWith(true);
+}
+
+function executeDisabled(elem: DebugElement, de: DebugElement) {
+    elem.nativeElement.click();
+    tick(1);
+    const content = de.query(By.css('.dropdown-content'));
+    expect(content).toBeFalsy();
+    expect(elem).toBeTruthy();
+}
+
 describe('DotDropdownComponent', () => {
     let hostFixture: ComponentFixture<DotTestHostComponent>;
     let hostDe: DebugElement;
@@ -57,9 +78,7 @@ describe('DotDropdownComponent', () => {
                 MockDotIconButtonComponent,
                 DotTestHostComponent
             ],
-            imports: [
-                BrowserAnimationsModule
-            ]
+            imports: [BrowserAnimationsModule]
         });
 
         hostFixture = DOTTestBed.createComponent(DotTestHostComponent);
@@ -68,80 +87,64 @@ describe('DotDropdownComponent', () => {
 
         de = hostDe.query(By.css('dot-dropdown-component'));
         comp = de.componentInstance;
-    });
-
-    it(`should dot-icon button be enabled`, () => {
-        spyOn(comp.toggle, 'emit');
         hostComp.icon = 'icon';
-        hostComp.disabled = false;
-        hostFixture.detectChanges();
-        const button: DebugElement = de.query(By.css('dot-icon-button'));
-        button.nativeElement.click();
-        hostFixture.detectChanges();
-        const content: DebugElement = de.query(By.css('.dropdown-content'));
-        expect(button).toBeTruthy();
-        expect(content).toBeTruthy();
-        expect(button.attributes.disabled).toBe(null);
-        expect(comp.toggle.emit).toHaveBeenCalledWith(true);
+        hostComp.title = 'test';
+        hostComp.gravatar = 'test@test.com';
     });
 
-    it(`should dot-icon button be disabled --> null`, fakeAsync(() => {
-        hostComp.icon = 'icon';
-        hostComp.disabled = true;
-        hostFixture.detectChanges();
-        const button: DebugElement = de.query(By.css('dot-icon-button'));
-        button.nativeElement.click();
-        tick(1);
-        const content: DebugElement = de.query(By.css('.dropdown-content'));
-        expect(button).toBeTruthy();
-        expect(content).toBeFalsy();
-        expect(button.attributes.disabled).toBe('true');
-    }));
+    describe('Enabled', () => {
+        let button: DebugElement;
+        let titleButton: DebugElement;
+        let gravatar: DebugElement;
 
-    it(`should title button be enabled`, () => {
-        spyOn(comp.toggle, 'emit');
-        hostComp.title = 'test';
-        hostComp.disabled = false;
-        hostFixture.detectChanges();
-        const button: DebugElement = de.query(By.css('button'));
-        button.nativeElement.click();
-        hostFixture.detectChanges();
-        const content: DebugElement = de.query(By.css('.dropdown-content'));
-        expect(button).toBeTruthy();
-        expect(content).toBeTruthy();
-        expect(comp.toggle.emit).toHaveBeenCalledWith(true);
+        beforeEach(() => {
+            spyOn(comp.toggle, 'emit');
+            hostComp.disabled = false;
+            hostFixture.detectChanges();
+            button = de.query(By.css('dot-icon-button'));
+            titleButton = de.query(By.css('button'));
+            gravatar = de.query(By.css('dot-gravatar'));
+        });
+
+        it(`should dot-icon button be displayed & emit`, () => {
+            executeEnabled(button, hostFixture, de, comp);
+            expect(button.attributes.disabled).toBe(null);
+        });
+
+        it(`should title button be displayed & emit`, () => {
+            executeEnabled(titleButton, hostFixture, de, comp);
+        });
+
+        it(`should dot-gravatar be displayed & emit`, () => {
+            executeEnabled(gravatar, hostFixture, de, comp);
+        });
     });
 
-    it(`should title button be disabled`, fakeAsync(() => {
-        spyOn(comp.toggle, 'emit');
-        hostComp.title = 'test';
-        hostComp.disabled = true;
-        hostFixture.detectChanges();
-        const button: DebugElement = de.query(By.css('button'));
-        button.nativeElement.click();
-        tick(1);
-        const content: DebugElement = de.query(By.css('.dropdown-content'));
-        expect(button).toBeTruthy();
-        expect(content).toBeFalsy();
-        expect(comp.toggle.emit).not.toHaveBeenCalled();
-    }));
+    describe('Disabled', () => {
+        let button: DebugElement;
+        let titleButton: DebugElement;
+
+        beforeEach(() => {
+            spyOn(comp.toggle, 'emit');
+            hostComp.disabled = true;
+            hostFixture.detectChanges();
+            button = de.query(By.css('dot-icon-button'));
+            titleButton = de.query(By.css('button'));
+        });
+
+        it(`should dot-icon button not be displayed --> null`, fakeAsync(() => {
+            executeDisabled(button, de);
+            expect(button.attributes.disabled).toBe('true');
+        }));
+
+        it(`should title button not be displayed & not emit`, fakeAsync(() => {
+            executeDisabled(titleButton, de);
+            expect(comp.toggle.emit).not.toHaveBeenCalled();
+        }));
+    });
 
     it(`should hide the dropdown dialog`, () => {
         comp.closeIt();
         expect(comp.show).toBe(false);
     });
-
-    it(`should dot-gravatar be displayed`, () => {
-        spyOn(comp.toggle, 'emit');
-        hostComp.gravatar = 'test@test.com';
-        hostFixture.detectChanges();
-        const gravatar: DebugElement = de.query(By.css('dot-gravatar'));
-        gravatar.nativeElement.click();
-        hostFixture.detectChanges();
-        const content: DebugElement = de.query(By.css('.dropdown-content'));
-        expect(gravatar).toBeTruthy();
-        expect(content).toBeTruthy();
-        expect(comp.toggle.emit).toHaveBeenCalledWith(true);
-    });
-
 });
