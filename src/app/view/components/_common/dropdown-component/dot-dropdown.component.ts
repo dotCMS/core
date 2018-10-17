@@ -53,7 +53,7 @@ export class DotDropdownComponent implements OnChanges {
     constructor(private elementRef: ElementRef) {}
 
     ngOnChanges(changes: SimpleChanges): void {
-        if (changes.disabled) {
+        if (changes.disabled && this.icon) {
             this.disabled = changes.disabled.currentValue ? true : null;
         }
     }
