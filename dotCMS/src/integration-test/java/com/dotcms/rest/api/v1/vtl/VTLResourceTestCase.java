@@ -11,38 +11,43 @@ public class VTLResourceTestCase {
     private final String expectedJSON;
     private final String expectedOutput;
     private final int expectedException;
+    private final String userId;
 
-    public String getVtlFile() {
+    String getVtlFile() {
         return vtlFile;
     }
 
-    public String getFolderName() {
+    String getFolderName() {
         return folderName;
     }
 
-    public MultivaluedMap<String, String> getQueryParameters() {
+    MultivaluedMap<String, String> getQueryParameters() {
         return queryParameters;
     }
 
-    public String getPathParameters() {
+    String getPathParameters() {
         return pathParameters;
     }
 
-    public String getExpectedJSON() {
+    String getExpectedJSON() {
         return expectedJSON;
     }
 
-    public String getExpectedOutput() {
+    String getExpectedOutput() {
         return expectedOutput;
     }
 
-    public int getExpectedException() {
+    int getExpectedException() {
         return expectedException;
     }
 
-    public VTLResourceTestCase(final String vtlFile, final String folderName, final MultivaluedMap<String, String> queryParameters,
+    String getUserId() {
+        return userId;
+    }
+
+    private VTLResourceTestCase(final String vtlFile, final String folderName, final MultivaluedMap<String, String> queryParameters,
                                final String pathParameters, final String expectedJSON, final String expectedOutput,
-                               final int expectedException) {
+                               final int expectedException, final String user) {
         this.vtlFile = vtlFile;
         this.folderName = folderName;
         this.queryParameters = queryParameters;
@@ -50,6 +55,7 @@ public class VTLResourceTestCase {
         this.expectedJSON = expectedJSON;
         this.expectedOutput = expectedOutput;
         this.expectedException = expectedException;
+        this.userId = user;
     }
 
     public static class Builder {
@@ -60,45 +66,51 @@ public class VTLResourceTestCase {
         private String expectedJSON;
         private String expectedOutput;
         private int expectedException;
+        private String user = "system";
 
-        public Builder setVtlFile(final String vtlFile) {
+        Builder setVtlFile(final String vtlFile) {
             this.vtlFile = vtlFile;
             return this;
         }
 
-        public Builder setFolderName(final String folderName) {
+        Builder setFolderName(final String folderName) {
             this.folderName = folderName;
             return this;
         }
 
-        public Builder setQueryParameters(final MultivaluedMap<String, String> queryParameters) {
+        Builder setQueryParameters(final MultivaluedMap<String, String> queryParameters) {
             this.queryParameters = queryParameters;
             return this;
         }
 
-        public Builder setPathParameters(final String pathParameters) {
+        Builder setPathParameters(final String pathParameters) {
             this.pathParameters = pathParameters;
             return this;
         }
 
-        public Builder setExpectedJSON(final String expectedJSON) {
+        Builder setExpectedJSON(final String expectedJSON) {
             this.expectedJSON = expectedJSON;
             return this;
         }
 
-        public Builder setExpectedOutput(final String expectedOutput) {
+        Builder setExpectedOutput(final String expectedOutput) {
             this.expectedOutput = expectedOutput;
             return this;
         }
 
-        public Builder setExpectedException(final int expectedException) {
+        Builder setExpectedException(final int expectedException) {
             this.expectedException = expectedException;
             return this;
         }
 
-        public VTLResourceTestCase build() {
+        Builder setUser(final String user) {
+            this.user = user;
+            return this;
+        }
+
+        VTLResourceTestCase build() {
             return new VTLResourceTestCase(vtlFile, folderName, queryParameters, pathParameters ,expectedJSON,
-                    expectedOutput, expectedException);
+                    expectedOutput, expectedException, user);
         }
     }
 }
