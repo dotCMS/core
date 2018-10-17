@@ -55,7 +55,7 @@ public class PushedAssetsFactoryImpl extends PushedAssetsFactory {
 
 		new DotConnect().setSQL(DELETE_ASSETS_BY_ASSET_ID_AND_ENV)
 			.addParam(assetId).addParam(environmentId).loadResult();
-		cache.clearCache();
+		cache.removePushedAssetById(assetId, environmentId);
 	}
 
 	@Override
