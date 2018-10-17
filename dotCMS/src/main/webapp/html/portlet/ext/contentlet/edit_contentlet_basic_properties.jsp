@@ -45,8 +45,14 @@
 	String referer = (String) request.getAttribute("referer");
 	
 	Identifier id = null;
-	if(UtilMethods.isSet(contentlet.getIdentifier()))
-		id=APILocator.getIdentifierAPI().find(contentlet);
+	if(UtilMethods.isSet(contentlet.getIdentifier())){
+		id = APILocator.getIdentifierAPI().find(contentlet);
+	}else{
+	   final String identifier = (String)request.getAttribute("identifier");
+       if(UtilMethods.isSet(identifier)){
+		   id = APILocator.getIdentifierAPI().find(identifier);
+       }
+	}
 	
 	List<Language> languages = langAPI.getLanguages();
 	Language defaultLang = langAPI.getDefaultLanguage();
@@ -242,14 +248,13 @@
 				<script>
 					function changeLanguage(url){
 						url=url+"";
-						if(url.indexOf("_content_sibbling=")>-1 && currentContentletInode){
-                            var startSibblingParam = url.indexOf("_content_sibbling=");
+						if(url.indexOf("sibbling=")>-1 && currentContentletInode){
+                            var startSibblingParam = url.indexOf("sibbling=");
                             var paramEnd = url.indexOf("&", startSibblingParam);
                             var param = url.substring(startSibblingParam, paramEnd);
-
-                            url=url.replace(param,"_content_sibbling=" + currentContentletInode);						}
-						else if(url.indexOf("_content_sibbling=")<0){
-							url+="&_content_sibbling=" + currentContentletInode ;
+                             url=url.replace(param,"sibbling=" + currentContentletInode);
+                        } else if(url.indexOf("sibbling=")<0) {
+							url+="&sibbling=" + currentContentletInode ;
 						}
 
 						if(url.indexOf("lang=<%=contentletForm.getLanguageId()%>&") <0){
@@ -273,6 +278,7 @@
 
 					<script type="text/javascript">
 						<% StringBuffer buff = new StringBuffer();
+
 						   buff.append("{identifier:'id', label:'label',imageurl:'imageurl',items:[");
 
 						   boolean first=true;
@@ -280,23 +286,30 @@
 							   Contentlet langContentlet= new Contentlet();
 							   ContentletAPI conAPI = APILocator.getContentletAPI();
 							   try {
-								   if(id!=null)
-									langContentlet = conAPI.findContentletForLanguage(lang.getId(), id);
+								   if(id != null){
+									 langContentlet = conAPI.findContentletForLanguage(lang.getId(), id);
+								   }
 							   }
 							   catch(DotDataException e){
 								   Logger.warn(this,"Unable to find the contentlet with identifier " + contentlet.getIdentifier() + " and languageId " + lang.getId() );
 							   }
-							   final String value;
+
+							   String value;
 							   if(langContentlet != null && InodeUtils.isSet(langContentlet.getInode())) {
 								   value=editURL + "&lang="+ lang.getId() + "&inode=" + langContentlet.getInode();
 							   }
 							   else {
 								   value=editURL + "&lang="+ lang.getId() + "&inode=";
 							   }
-							   final String display=lang.getLanguage() + " (" + lang.getCountryCode().trim() + ")";
+
+							   if(null != id){
+							      value += "&identifier=" + id.getId();
+							   }
+
+							   final String display = lang.getLanguage() +  (UtilMethods.isSet(lang.getCountryCode()) ?  " (" + lang.getCountryCode().trim() + ")"  : "") ;
 
 							   if(!first) buff.append(","); else first=false;
-							   final String ccode=lang.getLanguageCode()  + "_" + lang.getCountryCode();
+							   final String ccode = lang.getLanguageCode()  + "_" + lang.getCountryCode();
 							   buff.append("{");
 							   buff.append("id:'" + lang.getId() + "',");
 							   buff.append("label:'"+display+"',");
@@ -332,7 +345,7 @@
 				</div>
 			<%} %>
 		 	<input type="hidden" name="languageId" id="languageId" 
-				value="<%= (contentlet.getLanguageId() != 0) ? contentlet.getLanguageId() + "" : ((UtilMethods.isSet(request.getParameter("lang"))) ? request.getParameter("lang") : defaultLang.getId()) %>">
+				value="<%= (contentlet.getLanguageId() != 0) ? contentlet.getLanguageId() + "" : ((UtilMethods.isSet(request.getParameter("lang"))) ? request.getParameter("lang") : defaultLang.getId() + "") %>">
 			<!-- END LANGUAGE -->
 
 

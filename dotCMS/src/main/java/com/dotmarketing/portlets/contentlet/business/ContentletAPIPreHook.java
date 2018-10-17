@@ -63,14 +63,6 @@ public interface ContentletAPIPreHook {
       return true;
     }
 
-	/**
-	 * Returns all live Contentlet Object for a given identifier
-	 * @param identifier
-	 * @return
-	 */
-	public default boolean findAllLangContentlets(String identifier){
-		return true;
-	}
 
 	/**
 	 * Returns all Contentlets for a specific structure

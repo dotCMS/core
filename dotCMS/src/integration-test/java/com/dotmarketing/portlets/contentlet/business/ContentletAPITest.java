@@ -110,8 +110,6 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -4658,34 +4656,6 @@ public class ContentletAPITest extends ContentletBaseTest {
     }
 
     @Test
-    public void test_find_all_lang_contentlet_instances(){
-         //This is the Home Page which is supposed to be part o the starter kit and has both lang-versions.
-         final String identifier  = "a9f30020-54ef-494e-92ed-645e757171c2";
-         final List<Contentlet> contentlets = new ArrayList<>(contentletAPI.findAllLangContentlets(identifier));
-
-        Comparator<Contentlet> comparator
-                = Comparator.comparingLong(Contentlet::getLanguageId);
-
-        Collections.sort(contentlets, comparator);
-
-         assertEquals(contentlets.get(0).getLanguageId(),1L);
-         assertEquals(contentlets.get(0).getIdentifier(),identifier);
-         assertEquals(contentlets.get(1).getLanguageId(),2L);
-         assertEquals(contentlets.get(1).getIdentifier(),identifier);
-    }
-
-    @Test
-    public void test_find_all_lang_contentlet_instances_invalid_identifier() {
-
-        final String invalidIdentifier  = "lol";
-        final List<Contentlet> contentlets = new ArrayList<>(contentletAPI.findAllLangContentlets(invalidIdentifier));
-        assertNotNull(contentlets);
-        assertEquals(contentlets.size(),0);
-
-    }
-
-
-        @Test
     public void test_update_mod_date_contentlet_expect_success() throws Exception {
         final int min = 1;
         final int max = 600;
