@@ -243,28 +243,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     @CloseDBIfOpened
     @Override
-    public List<Contentlet> findAllLangContentlets(final String identifier) {
-
-        final List<Language> languages = languageAPI.getLanguages();
-        final Identifier identifierObject = new Identifier();
-        identifierObject.setId(identifier);
-        return languages.stream().map(l -> {
-                    try {
-                        final ContentletVersionInfo contentletVersionInfo = APILocator.getVersionableAPI()
-                                .getContentletVersionInfo(identifier, l.getId());
-                        if (contentletVersionInfo != null && !contentletVersionInfo.isDeleted()) {
-                            return contentFactory.find(contentletVersionInfo.getWorkingInode());
-                        }
-                    } catch (Exception e) {
-                        Logger.error(this, "No working contentlet found for language");
-                    }
-                    return null;
-                }
-        ).filter(Objects::nonNull).collect(CollectionsUtils.toImmutableList());
-    }
-
-    @CloseDBIfOpened
-    @Override
     public Contentlet findContentletByIdentifier(String identifier, boolean live, long languageId, User user, boolean respectFrontendRoles)throws DotDataException, DotSecurityException, DotContentletStateException {
         if(languageId<=0) {
             languageId=APILocator.getLanguageAPI().getDefaultLanguage().getId();

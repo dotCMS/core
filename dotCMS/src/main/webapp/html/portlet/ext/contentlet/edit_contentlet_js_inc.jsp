@@ -551,6 +551,7 @@
                     if(entry){
                         let url = entry[0].value[0];
                         let newUrl = queryStringUrlReplacement(url, 'inode', contentlet.inode);
+                            newUrl = queryStringUrlReplacement(url, 'identifier', contentlet.identifier);
                         entry[0].value[0] = newUrl;
                     }
                 }

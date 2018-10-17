@@ -72,7 +72,6 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PortletURLUtil;
 import com.dotmarketing.util.UUIDGenerator;
-import com.dotmarketing.util.UtilHTML;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.PortalException;
@@ -310,7 +309,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 
 			} catch (Exception ae) {
 				if ((referer != null) && (referer.length() != 0)) {
-					if (ae.getMessage().equals(WebKeys.EDIT_ASSET_EXCEPTION)) {
+					if (null != ae.getMessage() && ae.getMessage().equals(WebKeys.EDIT_ASSET_EXCEPTION)) {
 						// The web asset edit threw an exception because it's
 						// locked so it should redirect back with message
 						java.util.Map<String, String[]> params = new java.util.HashMap<String, String[]>();
@@ -351,7 +350,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 
 			} catch (Exception ae) {
 				if ((referer != null) && (referer.length() != 0)) {
-					if (ae.getMessage().equals(WebKeys.EDIT_ASSET_EXCEPTION)) {
+					if (null != ae.getMessage() && ae.getMessage().equals(WebKeys.EDIT_ASSET_EXCEPTION)) {
 						// The web asset edit threw an exception because it's
 						// locked so it should redirect back with message
 						java.util.Map<String, String[]> params = new java.util.HashMap<String, String[]>();
@@ -369,7 +368,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 								WindowState.MAXIMIZED.toString(), params);
 
 						_sendToReferral(req, res, directorURL);
-					} else if (ae.getMessage().equals(WebKeys.USER_PERMISSIONS_EXCEPTION)) {
+					} else if (null != ae.getMessage() && ae.getMessage().equals(WebKeys.USER_PERMISSIONS_EXCEPTION)) {
 						_sendToReferral(req, res, referer);
 					} else {
 						_handleException(ae, req);
@@ -881,6 +880,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 				String.valueOf(APILocator.getLanguageAPI().getDefaultLanguage().getId()));
 		}
 
+		req.setAttribute("identifier", contentlet.getIdentifier());
 		// Asset Versions to list in the versions tab
 		req.setAttribute(WebKeys.VERSIONS_INODE_EDIT, contentlet);
 	}
@@ -1092,8 +1092,16 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 			httpReq.getSession().setAttribute(WebKeys.CONTENTLET_LAST_SEARCH, lastSearchMap);
 		}
 
-		if (null == contentType) {
-
+        if(null != contentType) {
+			//In case we failed to determine the structured out of the selectedStructure param
+			if (!UtilMethods.isSet(contentType.getInode()) && UtilMethods.isSet(req.getParameter("identifier"))) {
+				final String identifier = req.getParameter("identifier");
+				final Contentlet auxContentlet = conAPI
+						.findContentletByIdentifierAnyLanguage(identifier);
+				contentType = auxContentlet.getStructure();
+				contentlet.setStructureInode(contentType.getInode());
+			}
+		}else{
 			this.handleContentTypeNull((ActionRequestImpl) req, inode);
 		}
 		// Checking permissions to add new content of selected content type
