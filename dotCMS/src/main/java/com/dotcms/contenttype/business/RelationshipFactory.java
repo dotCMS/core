@@ -1,4 +1,5 @@
 package com.dotcms.contenttype.business;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeIf;
 import com.dotmarketing.beans.Tree;
 import com.dotmarketing.exception.DotDataException;
@@ -73,4 +74,6 @@ public interface RelationshipFactory {
     void addRelationship(final String parent, final String child, final String relationType)throws DotDataException;
 
     List<Relationship> getOneSidedRelationships(final ContentTypeIf contentType, final int limit, final int offset) throws DotDataException;
+
+    long getOneSidedRelationshipsCount(final ContentType contentType) throws DotDataException;
 }

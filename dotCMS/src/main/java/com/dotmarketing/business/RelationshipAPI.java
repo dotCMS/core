@@ -92,4 +92,6 @@ public interface RelationshipAPI {
 
   List<Relationship> getOneSidedRelationships(final ContentType contentType, final int limit,
           final int offset) throws DotDataException;
+
+  long getOneSidedRelationshipsCount(final ContentType contentType) throws DotDataException;
 }
