@@ -1,6 +1,7 @@
 package com.dotcms.rest.api.v1.relationships;
 
 import static com.dotcms.util.CollectionsUtils.map;
+import static com.dotcms.util.CollectionsUtils.toImmutableList;
 
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -15,6 +16,7 @@ import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.javax.ws.rs.core.Response.Status;
 import com.dotcms.repackage.org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
@@ -27,7 +29,10 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
+
+import java.util.Arrays;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 
@@ -51,6 +56,23 @@ public class RelationshipsResource {
 
         this.webResource = webResource;
 
+    }
+
+    @GET
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Path("cardinalities")
+    public final Response gerCardinality() throws Throwable {
+        Logger.debug(this, "Getting relationships cardinality");
+
+        return Response.ok(new ResponseEntityView(
+                Arrays.stream(WebKeys.Relationship.RELATIONSHIP_CARDINALITY.values())
+                      .map(cardinality -> map(
+                        "name", cardinality.name(),
+                        "id", cardinality.ordinal()))
+                      .collect(toImmutableList())
+        )).build();
     }
 
     @GET
