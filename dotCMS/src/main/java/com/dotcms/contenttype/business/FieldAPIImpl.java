@@ -255,6 +255,7 @@ public class FieldAPIImpl implements FieldAPI {
             } else {
                 //otherwise, a new relationship will be created
                 relationship = new Relationship();
+                relationship.setParentStructureInode(type.id());
                 relationship.setChildStructureInode(relatedContentType.id());
                 relationship.setChildRelationName(relatedContentType.name().replaceAll("\\s", "_")
                         .replaceAll("[^a-zA-Z0-9\\_]", ""));
