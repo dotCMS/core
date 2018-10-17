@@ -38,7 +38,7 @@ public class PublisherAPIImpl implements PublisherAPI {
 
         try {
 
-            List<IBundler> confBundlers = new ArrayList<IBundler>();
+            List<IBundler> confBundlers = new ArrayList<>();
 
             // init publishers
             for ( Class<Publisher> c : config.getPublishers() ) {

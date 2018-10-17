@@ -1,7 +1,5 @@
 package com.dotcms.publisher.assets.business;
 
-import java.util.List;
-
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.publisher.assets.bean.PushedAsset;
@@ -9,6 +7,8 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.UtilMethods;
+
+import java.util.List;
 
 public class PushedAssetsAPIImpl implements PushedAssetsAPI {
 
@@ -64,6 +64,22 @@ public class PushedAssetsAPIImpl implements PushedAssetsAPI {
 
 	@WrapInTransaction
 	@Override
+	public void deletePushedAssetsByEnvironment(final String assetId, final String environmentId)  throws DotDataException {
+
+		final List<PushedAsset> assets = pushedAssetsFactory.getPushedAssets(assetId, environmentId);
+
+		pushedAssetsFactory.deletePushedAssetsByEnvironment(assetId, environmentId);
+
+		// clear the deleted entries from the cache
+		if(UtilMethods.isSet(assets)) {
+			for (final PushedAsset asset : assets) {
+				CacheLocator.getPushedAssetsCache().removePushedAssetById(asset.getAssetId(), asset.getEnvironmentId());
+			}
+		}
+	}
+
+	@WrapInTransaction
+	@Override
 	public void deletePushedAssetsByEnvironment(String environmentId)
 			throws DotDataException {
 
@@ -98,9 +114,9 @@ public class PushedAssetsAPIImpl implements PushedAssetsAPI {
 	
 	@CloseDBIfOpened
 	@Override
-	public PushedAsset getLastPushForAsset(String assetId, String environmentId, String endpointIds)  throws DotDataException{
+	public PushedAsset getLastPushForAsset(final String assetId, final String environmentId, final String endpointIds)  throws DotDataException{
 
-		if(!UtilMethods.isSet(environmentId) ||!UtilMethods.isSet(assetId)) {
+		if(!UtilMethods.isSet(environmentId) || !UtilMethods.isSet(assetId)) {
 			return null;
 		}
 

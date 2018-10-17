@@ -1,16 +1,16 @@
 package com.dotcms.publisher.assets.business;
 
-import com.dotmarketing.db.DbConnectionFactory;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
 import com.dotcms.publisher.assets.bean.PushedAsset;
 import com.dotcms.publisher.util.PublisherUtil;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.UtilMethods;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 public class PushedAssetsFactoryImpl extends PushedAssetsFactory {
 	private PushedAssetsCache cache=CacheLocator.getPushedAssetsCache();
@@ -48,6 +48,14 @@ public class PushedAssetsFactoryImpl extends PushedAssetsFactory {
 		db.addParam(assetId);
 		db.loadResult();
 		cache.clearCache();
+	}
+
+	@Override
+	public void deletePushedAssetsByEnvironment(final String assetId, final String environmentId)  throws DotDataException {
+
+		new DotConnect().setSQL(DELETE_ASSETS_BY_ASSET_ID_AND_ENV)
+			.addParam(assetId).addParam(environmentId).loadResult();
+		cache.removePushedAssetById(assetId, environmentId);
 	}
 
 	@Override
@@ -142,11 +150,12 @@ public class PushedAssetsFactoryImpl extends PushedAssetsFactory {
 	}
 	
 	
-	public PushedAsset getLastPushForAsset(String assetId, String environmentId, String endpointIds)  throws DotDataException{
+	public PushedAsset getLastPushForAsset(final String assetId, final String environmentId, final String endpointIds)  throws DotDataException {
 		
 		PushedAsset asset = cache.getPushedAsset(assetId, environmentId);
-		if(asset==null){
-			DotConnect dc = new DotConnect();
+
+		if(null == asset ){
+			final DotConnect dc = new DotConnect();
 			if(DbConnectionFactory.isOracle()){
 				dc.setSQL(SELECT_ASSET_LAST_PUSHED_ORACLE);
 			} else {
@@ -156,17 +165,17 @@ public class PushedAssetsFactoryImpl extends PushedAssetsFactory {
 			dc.addParam(environmentId);
 			dc.addParam(endpointIds);
 			dc.setMaxRows(1);
-			List<Map<String, Object>> res = dc.loadObjectResults();
+
+			final List<Map<String, Object>> results = dc.loadObjectResults();
 	
-			for(Map<String, Object> row : res){
+			for(final Map<String, Object> row : results) {
+
 				asset = PublisherUtil.getPushedAssetByMap(row);
 				cache.add(asset);
 			}
 		}
 		
 		return asset;
-		
-		
 	}
 
 }
