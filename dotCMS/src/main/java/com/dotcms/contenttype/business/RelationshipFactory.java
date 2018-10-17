@@ -1,4 +1,5 @@
 package com.dotcms.contenttype.business;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeIf;
 import com.dotmarketing.beans.Tree;
 import com.dotmarketing.exception.DotDataException;
@@ -6,6 +7,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.structure.model.Relationship;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface RelationshipFactory {
 
@@ -22,6 +24,8 @@ public interface RelationshipFactory {
     List<Relationship> dbAll(String orderBy);
 
     Relationship byTypeValue(final String typeValue);
+
+    Optional<Relationship> byParentChildRelationName(ContentType contentType, String relationName);
 
     List<Relationship> dbAllByTypeValue(String typeValue);
 

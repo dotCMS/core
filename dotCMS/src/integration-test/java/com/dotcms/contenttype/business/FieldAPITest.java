@@ -2,7 +2,6 @@ package com.dotcms.contenttype.business;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -130,23 +129,19 @@ public class FieldAPITest extends IntegrationTestBase {
             //One side of the relationship is set parentContentType --> childContentType
             field = fieldAPI.save(field, user);
 
-            final StringBuilder fullFieldVar = new StringBuilder(parentContentType.variable())
-                    .append(StringPool.PERIOD).append(field.variable());
+            final String fullFieldVar =
+                    parentContentType.variable() + StringPool.PERIOD + field.variable();
 
-            final List<Relationship> results = relationshipAPI.dbAllByTypeValue(fullFieldVar.toString());
-
-            assertTrue(UtilMethods.isSet(results));
-
-            final Relationship relationship = results.get(0);
+            final Relationship relationship = relationshipAPI.byTypeValue(fullFieldVar);
 
             assertNotNull(relationship);
 
-            assertNull(relationship.getParentStructureInode());
             assertNull(relationship.getParentRelationName());
+            assertEquals(parentContentType.id(), relationship.getParentStructureInode());
             assertEquals(childContentType.id(), relationship.getChildStructureInode());
-            assertEquals(childContentType.name(), relationship.getChildRelationName());
+            assertEquals(field.variable(), relationship.getChildRelationName());
             assertEquals(1, relationship.getCardinality());
-            assertEquals(fullFieldVar.toString(), relationship.getRelationTypeValue());
+            assertEquals(fullFieldVar, relationship.getRelationTypeValue());
         } finally {
             if (UtilMethods.isSet(parentContentType) && UtilMethods.isSet(parentContentType.id())) {
                 contentTypeAPI.delete(parentContentType);
@@ -166,7 +161,6 @@ public class FieldAPITest extends IntegrationTestBase {
         ContentType parentContentType = null;
         ContentType childContentType  = null;
 
-        StringBuilder fullFieldVar;
         try {
             parentContentType = ContentTypeBuilder.builder(SimpleContentType.class).folder(
                     FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST).name("parentContentType" + time)
@@ -188,34 +182,28 @@ public class FieldAPITest extends IntegrationTestBase {
             //One side of the relationship is set parentContentType --> childContentType
             field = fieldAPI.save(field, user);
 
-            fullFieldVar = new StringBuilder(parentContentType.variable()).append(StringPool.PERIOD)
-                    .append(field.variable());
+            final String fullFieldVar =
+                    parentContentType.variable() + StringPool.PERIOD + field.variable();
 
 
             //Adding a RelationshipField to the child
-            Field secondField = FieldBuilder.builder(RelationshipField.class).name("otherSideRel")
+            final Field secondField = FieldBuilder.builder(RelationshipField.class).name("otherSideRel")
                     .contentTypeId(childContentType.id()).values("1").variable("otherSideRel")
-                    .relationType(fullFieldVar.toString()).build();
+                    .relationType(fullFieldVar).build();
 
             //Setting the other side of the relationship childContentType --> parentContentType
-            secondField = fieldAPI.save(secondField, user);
+            fieldAPI.save(secondField, user);
 
-            final List<Relationship> results = relationshipAPI.dbAllByTypeValue(fullFieldVar.toString());
-
-            assertTrue(UtilMethods.isSet(results));
-
-            final Relationship relationship = results.get(0);
+            final Relationship relationship = relationshipAPI.byTypeValue(fullFieldVar);
 
             assertNotNull(relationship);
 
             assertEquals(childContentType.id(), relationship.getChildStructureInode());
-            assertEquals(childContentType.name(), relationship.getChildRelationName());
+            assertEquals(field.variable(), relationship.getChildRelationName());
             assertEquals(parentContentType.id(), relationship.getParentStructureInode());
-            assertEquals(parentContentType.name(), relationship.getParentRelationName());
+            assertEquals(secondField.variable(), relationship.getParentRelationName());
             assertEquals(1, relationship.getCardinality());
-            assertEquals(fullFieldVar.append(StringPool.DASH).append(childContentType.variable())
-                            .append(StringPool.PERIOD).append(secondField.variable()).toString(),
-                    relationship.getRelationTypeValue());
+            assertEquals(fullFieldVar, relationship.getRelationTypeValue());
 
         } finally {
             if (UtilMethods.isSet(parentContentType) && UtilMethods.isSet(parentContentType.id())) {
@@ -228,7 +216,7 @@ public class FieldAPITest extends IntegrationTestBase {
         }
     }
 
-    @Test
+    @Test(expected = DotDataException.class)
     public void testSaveRelationshipField_when_replacingParentInABothSidedRelationship()
             throws DotSecurityException, DotDataException {
         final long time = System.currentTimeMillis();
@@ -266,61 +254,21 @@ public class FieldAPITest extends IntegrationTestBase {
             //One side of the relationship is set parentContentType --> childContentType
             field = fieldAPI.save(field, user);
 
-            final StringBuilder fullFieldVar = new StringBuilder(parentContentType.variable())
-                    .append(StringPool.PERIOD).append(field.variable());
+            final String fullFieldVar =
+                    parentContentType.variable() + StringPool.PERIOD + field.variable();
 
             //Adding a RelationshipField to the child
             //Setting the other side of the relationship childContentType --> parentContentType
             Field secondField = FieldBuilder.builder(RelationshipField.class).name("otherSideRel")
                     .contentTypeId(childContentType.id()).values("1").variable("otherSideRel")
-                    .relationType(fullFieldVar.toString()).build();
+                    .relationType(fullFieldVar).build();
 
             secondField = fieldAPI.save(secondField, user);
 
             //Setting a new relationship childContentType --> newParentContentType
             secondField = FieldBuilder.builder(secondField).relationType(newParentContentType.variable()).build();
 
-            secondField = fieldAPI.save(secondField, user);
-
-            final StringBuilder childFullFieldVar = new StringBuilder(childContentType.variable())
-                    .append(StringPool.PERIOD).append(secondField.variable());
-
-            List<Relationship> results = relationshipAPI.dbAllByTypeValue(fullFieldVar.toString());
-
-            assertTrue(UtilMethods.isSet(results));
-
-            final Relationship relationshipOne = results.get(0);
-
-            results = relationshipAPI.dbAllByTypeValue(childFullFieldVar.toString());
-
-            assertTrue(UtilMethods.isSet(results));
-
-            final Relationship relationshipTwo = results.get(0);
-
-            //both relationships must exist
-            assertNotNull(relationshipOne);
-            assertNotNull(relationshipTwo);
-
-            //we need to ensure they are different relationships
-            assertNotEquals(relationshipOne.getInode(), relationshipTwo.getInode());
-
-            //relationshipOne is a one-sided relationship(parentContentType --> childContentType)
-            assertEquals(childContentType.id(), relationshipOne.getChildStructureInode());
-            assertEquals(childContentType.name(), relationshipOne.getChildRelationName());
-            assertNull(relationshipOne.getParentStructureInode());
-            assertNull(relationshipOne.getParentRelationName());
-            assertEquals(1, relationshipOne.getCardinality());
-            assertEquals(fullFieldVar.toString(),
-                    relationshipOne.getRelationTypeValue());
-
-            //relationshipTwo is a one-sided relationship(childContentType --> newParentContentType)
-            assertEquals(newParentContentType.id(), relationshipTwo.getChildStructureInode());
-            assertEquals(newParentContentType.name(), relationshipTwo.getChildRelationName());
-            assertNull(relationshipTwo.getParentStructureInode());
-            assertNull(relationshipTwo.getParentRelationName());
-            assertEquals(1, relationshipTwo.getCardinality());
-            assertEquals(childFullFieldVar.toString(), relationshipTwo.getRelationTypeValue());
-
+            fieldAPI.save(secondField, user);
         } finally {
             if (UtilMethods.isSet(parentContentType) && UtilMethods.isSet(parentContentType.id())) {
                 contentTypeAPI.delete(parentContentType);
@@ -336,7 +284,7 @@ public class FieldAPITest extends IntegrationTestBase {
         }
     }
 
-    @Test
+    @Test(expected = DotDataException.class)
     public void testSaveRelationshipField_when_replacingChildInABothSidedRelationship()
             throws DotSecurityException, DotDataException {
         final long time = System.currentTimeMillis();
@@ -344,7 +292,6 @@ public class FieldAPITest extends IntegrationTestBase {
         ContentType parentContentType   = null;
         ContentType childContentType    = null;
         ContentType newChildContentType = null;
-
 
         try {
             parentContentType = ContentTypeBuilder.builder(SimpleContentType.class).folder(
@@ -374,60 +321,21 @@ public class FieldAPITest extends IntegrationTestBase {
             //One side of the relationship is set parentContentType --> childContentType
             field = fieldAPI.save(field, user);
 
-            final StringBuilder fullFieldVar = new StringBuilder(parentContentType.variable())
-                    .append(StringPool.PERIOD).append(field.variable());
+            final String fullFieldVar =
+                    parentContentType.variable() + StringPool.PERIOD + field.variable();
 
             //Adding a RelationshipField to the child
             //Setting the other side of the relationship childContentType --> parentContentType
             Field secondField = FieldBuilder.builder(RelationshipField.class).name("otherSideRel")
                     .contentTypeId(childContentType.id()).values("1").variable("otherSideRel")
-                    .relationType(fullFieldVar.toString()).build();
+                    .relationType(fullFieldVar).build();
 
-            secondField = fieldAPI.save(secondField, user);
+            fieldAPI.save(secondField, user);
 
             //Setting a new relationship parentContentType --> newChildContentType
             field = FieldBuilder.builder(field).relationType(newChildContentType.variable()).build();
 
             fieldAPI.save(field, user);
-
-            final StringBuilder childFullFieldVar = new StringBuilder(childContentType.variable())
-                    .append(StringPool.PERIOD).append(secondField.variable());
-
-            List<Relationship> results = relationshipAPI.dbAllByTypeValue(childFullFieldVar.toString());
-
-            assertTrue(UtilMethods.isSet(results));
-
-            final Relationship relationshipOne = results.get(0);
-
-            results = relationshipAPI.dbAllByTypeValue(fullFieldVar.toString());
-
-            assertTrue(UtilMethods.isSet(results));
-
-            final Relationship relationshipTwo = results.get(0);
-
-            //both relationships must exist
-            assertNotNull(relationshipOne);
-            assertNotNull(relationshipTwo);
-
-            //we need to ensure they are different relationships
-            assertNotEquals(relationshipOne.getInode(), relationshipTwo.getInode());
-
-            //relationshipOne is a one-sided relationship(childContentType --> parentContentType)
-            assertEquals(parentContentType.id(), relationshipOne.getParentStructureInode());
-            assertEquals(parentContentType.name(), relationshipOne.getParentRelationName());
-            assertNull(relationshipOne.getChildStructureInode());
-            assertNull(relationshipOne.getChildRelationName());
-            assertEquals(1, relationshipOne.getCardinality());
-            assertEquals(childFullFieldVar.toString(),
-                    relationshipOne.getRelationTypeValue());
-
-            //relationshipTwo is a one-sided relationship(parentContentType --> newChildContentType)
-            assertEquals(newChildContentType.id(), relationshipTwo.getChildStructureInode());
-            assertEquals(newChildContentType.name(), relationshipTwo.getChildRelationName());
-            assertNull(relationshipTwo.getParentStructureInode());
-            assertNull(relationshipTwo.getParentRelationName());
-            assertEquals(1, relationshipTwo.getCardinality());
-            assertEquals(fullFieldVar.toString(), relationshipTwo.getRelationTypeValue());
 
         } finally {
             if (UtilMethods.isSet(parentContentType) && UtilMethods.isSet(parentContentType.id())) {
@@ -453,7 +361,6 @@ public class FieldAPITest extends IntegrationTestBase {
         ContentType parentContentType = null;
         ContentType childContentType  = null;
 
-        StringBuilder fullFieldVar;
         try {
             parentContentType = ContentTypeBuilder.builder(SimpleContentType.class).folder(
                     FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST).name("parentContentType" + time)
@@ -475,14 +382,14 @@ public class FieldAPITest extends IntegrationTestBase {
             //One side of the relationship is set parentContentType --> childContentType
             field = fieldAPI.save(field, user);
 
-            fullFieldVar = new StringBuilder(parentContentType.variable()).append(StringPool.PERIOD)
-                    .append(field.variable());
+            final String fullFieldVar =
+                    parentContentType.variable() + StringPool.PERIOD + field.variable();
 
 
             //Adding a RelationshipField to the child
             Field secondField = FieldBuilder.builder(RelationshipField.class).name("otherSideRel")
                     .contentTypeId(childContentType.id()).values("1").variable("otherSideRel")
-                    .relationType(fullFieldVar.toString()).build();
+                    .relationType(fullFieldVar).build();
 
             secondField = fieldAPI.save(secondField, user);
 
@@ -490,22 +397,16 @@ public class FieldAPITest extends IntegrationTestBase {
             fieldAPI.delete(secondField);
 
             //Getting the one-sided of the relationship parentContentType --> childContentType
-            final List<Relationship> results = relationshipAPI.dbAllByTypeValue(fullFieldVar.toString());
-
-            assertTrue(UtilMethods.isSet(results));
-
-            final Relationship relationship = results.get(0);
-
+            final Relationship relationship = relationshipAPI.byTypeValue(fullFieldVar);
 
             assertNotNull(relationship);
 
             assertEquals(childContentType.id(), relationship.getChildStructureInode());
-            assertEquals(childContentType.name(), relationship.getChildRelationName());
-            assertNull(relationship.getParentStructureInode());
+            assertEquals(field.variable(), relationship.getChildRelationName());
+            assertEquals(parentContentType.id(), relationship.getParentStructureInode());
             assertNull(relationship.getParentRelationName());
             assertEquals(1, relationship.getCardinality());
-            assertEquals(fullFieldVar.toString(),
-                    relationship.getRelationTypeValue());
+            assertEquals(fullFieldVar, relationship.getRelationTypeValue());
 
         } finally {
             if (UtilMethods.isSet(parentContentType) && UtilMethods.isSet(parentContentType.id())) {
@@ -547,38 +448,30 @@ public class FieldAPITest extends IntegrationTestBase {
             //One side of the relationship is set parentContentType --> childContentType
             field = fieldAPI.save(field, user);
 
-            final StringBuilder fullFieldVar = new StringBuilder(parentContentType.variable())
-                    .append(StringPool.PERIOD).append(field.variable());
+            final String fullFieldVar =
+                    parentContentType.variable() + StringPool.PERIOD + field.variable();
 
             //Adding a RelationshipField to the child
             Field secondField = FieldBuilder.builder(RelationshipField.class).name("otherSideRel")
                     .contentTypeId(childContentType.id()).values("1").variable("otherSideRel")
-                    .relationType(fullFieldVar.toString()).build();
+                    .relationType(fullFieldVar).build();
 
             secondField = fieldAPI.save(secondField, user);
-
-            final StringBuilder childFullFieldVar = new StringBuilder(childContentType.variable())
-                    .append(StringPool.PERIOD).append(secondField.variable());
 
             //Removing parent field
             fieldAPI.delete(field);
 
             //Getting the one-sided relationship childContentType --> parentContentType
-            final List<Relationship> results = relationshipAPI.dbAllByTypeValue(childFullFieldVar.toString());
-
-            assertTrue(UtilMethods.isSet(results));
-
-            final Relationship relationship = results.get(0);
+            final Relationship relationship = relationshipAPI.byTypeValue(fullFieldVar);
 
             assertNotNull(relationship);
 
             assertEquals(parentContentType.id(), relationship.getParentStructureInode());
-            assertEquals(parentContentType.name(), relationship.getParentRelationName());
-            assertNull(relationship.getChildStructureInode());
+            assertEquals(secondField.variable(), relationship.getParentRelationName());
+            assertEquals(childContentType.id(), relationship.getChildStructureInode());
             assertNull(relationship.getChildRelationName());
             assertEquals(1, relationship.getCardinality());
-            assertEquals(childFullFieldVar.toString(),
-                    relationship.getRelationTypeValue());
+            assertEquals(fullFieldVar, relationship.getRelationTypeValue());
 
         } finally {
             if (UtilMethods.isSet(parentContentType) && UtilMethods.isSet(parentContentType.id())) {
@@ -620,16 +513,16 @@ public class FieldAPITest extends IntegrationTestBase {
             //One side of the relationship is set parentContentType --> childContentType
             field = fieldAPI.save(field, user);
 
-            final StringBuilder fullFieldVar = new StringBuilder(parentContentType.variable()).append(StringPool.PERIOD)
-                    .append(field.variable());
+            final String fullFieldVar =
+                    parentContentType.variable() + StringPool.PERIOD + field.variable();
 
             //Removing parent field
             fieldAPI.delete(field);
 
-            final List<Relationship> results = relationshipAPI.dbAllByTypeValue(fullFieldVar.toString());
+            final Relationship result = relationshipAPI.byTypeValue(fullFieldVar);
 
             //the relationship shouldn't exist
-            assertTrue(!UtilMethods.isSet(results));
+            assertTrue(!UtilMethods.isSet(result));
 
         } finally {
             if (UtilMethods.isSet(parentContentType) && UtilMethods.isSet(parentContentType.id())) {
@@ -741,14 +634,10 @@ public class FieldAPITest extends IntegrationTestBase {
 
             field = fieldAPI.save(field, user);
 
-            final StringBuilder fullFieldVar = new StringBuilder(parentContentType.variable())
-                    .append(StringPool.PERIOD).append(field.variable());
+            final String fullFieldVar =
+                    parentContentType.variable() + StringPool.PERIOD + field.variable();
 
-            List<Relationship> results = relationshipAPI.dbAllByTypeValue(fullFieldVar.toString());
-
-            assertTrue(UtilMethods.isSet(results));
-
-            relationship = results.get(0);
+            relationship = relationshipAPI.byTypeValue(fullFieldVar);
 
             assertNotNull(relationship);
             assertTrue(relationship.isChildRequired());
@@ -758,17 +647,13 @@ public class FieldAPITest extends IntegrationTestBase {
             //Adding a RelationshipField to the child
             Field secondField = FieldBuilder.builder(RelationshipField.class).name("otherSideRel")
                     .contentTypeId(childContentType.id()).values("1").variable("otherSideRel")
-                    .relationType(fullFieldVar.toString()).required(true).build();
+                    .relationType(fullFieldVar).required(true).build();
 
             secondField = fieldAPI.save(secondField, user);
 
             field = fieldAPI.find(field.id());
 
-            results = relationshipAPI.dbAllByTypeValue(fullFieldVar.toString());
-
-            assertTrue(UtilMethods.isSet(results));
-
-            relationship = results.get(0);
+            relationship = relationshipAPI.byTypeValue(fullFieldVar);
 
             assertNotNull(relationship);
             assertFalse(relationship.isChildRequired());
@@ -807,23 +692,18 @@ public class FieldAPITest extends IntegrationTestBase {
             //One side of the relationship is set parentContentType --> Youtube
             field = fieldAPI.save(field, user);
 
-            final StringBuilder fullFieldVar = new StringBuilder(parentContentType.variable())
-                    .append(StringPool.PERIOD).append(field.variable());
+            final String fullFieldVar =
+                    parentContentType.variable() + StringPool.PERIOD + field.variable();
 
-            final List<Relationship> results = relationshipAPI.dbAllByTypeValue(fullFieldVar.toString());
-
-            assertTrue(UtilMethods.isSet(results));
-
-            final Relationship relationship = results.get(0);
+            final Relationship relationship = relationshipAPI.byTypeValue(fullFieldVar);
 
             assertNotNull(relationship);
-
-            assertNull(relationship.getParentStructureInode());
             assertNull(relationship.getParentRelationName());
+            assertEquals(parentContentType.id(), relationship.getParentStructureInode());
             assertEquals(existingContentType.id(), relationship.getChildStructureInode());
-            assertEquals(existingContentType.name(), relationship.getChildRelationName());
+            assertEquals(field.variable(), relationship.getChildRelationName());
             assertEquals(1, relationship.getCardinality());
-            assertEquals(fullFieldVar.toString(), relationship.getRelationTypeValue());
+            assertEquals(fullFieldVar, relationship.getRelationTypeValue());
         } finally {
             if (UtilMethods.isSet(parentContentType) && UtilMethods.isSet(parentContentType.id())) {
                 contentTypeAPI.delete(parentContentType);

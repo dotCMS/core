@@ -12,6 +12,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.structure.model.Relationship;
 
 import java.util.List;
+import java.util.Optional;
 
 // THIS IS A FAKE API SO PEOPLE CAN FIND AND USE THE RELATIONSHIPFACTORY
 public class RelationshipAPIImpl implements RelationshipAPI {
@@ -38,6 +39,13 @@ public class RelationshipAPIImpl implements RelationshipAPI {
     @Override
     public Relationship byTypeValue(final String typeValue) {
         return this.relationshipFactory.byTypeValue(typeValue);
+    }
+
+    @CloseDBIfOpened
+    @Override
+    public Optional<Relationship> byParentChildRelationName(final ContentType contentType,
+            final String relationName) {
+        return this.relationshipFactory.byParentChildRelationName(contentType, relationName);
     }
 
     @CloseDBIfOpened

@@ -56,7 +56,6 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.liferay.portal.model.User;
-import com.liferay.util.StringPool;
 import java.util.List;
 import java.util.Optional;
 import org.apache.commons.lang.StringUtils;
@@ -118,10 +117,14 @@ public class FieldAPIImpl implements FieldAPI {
                     }
                 }
 
-                //if oldField is a relationshipField and the new field modifies an existing
-                // relationship, this relationship has to be unlinked to add the new one later
-                if (oldField instanceof RelationshipField) {
-                    removeRelationshipLink(oldField, type);
+                if (oldField instanceof RelationshipField){
+                    if (null != oldField.relationType() && null != field.relationType() && !oldField
+                            .relationType().equals(field.relationType())) {
+                        Logger.error(this,
+                                "Related content type cannot be modified. A new relationship field should be created instead");
+                        throw new DotDataException(
+                                "Related content type cannot be modified. A new relationship field should be created instead");
+                    }
                 }
             } catch(NotFoundInDbException e) {
 	    		//Do nothing as Starter comes with id but field is unexisting yet
@@ -181,12 +184,7 @@ public class FieldAPIImpl implements FieldAPI {
     Relationship getRelationshipForField(Field field, ContentTypeAPI contentTypeAPI,
             ContentType type) throws DotDataException {
         Relationship relationship = null;
-
-        final StringBuilder fullFieldVariable = new StringBuilder(type.variable())
-                .append(StringPool.PERIOD).append(field.variable());
-
         try {
-
             final String[] relationType = field.relationType().split("\\.");
             final int cardinality = Integer.parseInt(field.values());
 
@@ -200,35 +198,21 @@ public class FieldAPIImpl implements FieldAPI {
 
             //checking if the relationship is against a content type or an existing relationship
             if (relationType.length > 1){
-                final List<Relationship> result = relationshipAPI
-                        .dbAllByTypeValue(field.relationType());
-
-                if (UtilMethods.isSet(result)){
-                    relationship = result.get(0);
-                }
+                relationship = relationshipAPI.byTypeValue(field.relationType());
             }
 
             //verify if the relationship already exists
             if (UtilMethods.isSet(relationship) && UtilMethods.isSet(relationship.getInode())) {
 
+                final String relationName = field.variable();
                 //check which side of the relationship is being updated (parent or child)
-                if (UtilMethods.isSet(relationship.getChildStructureInode()) && relationship
-                        .getChildStructureInode().equals(type.id())) {
-                    String[] relationTypeValue = relationship.getRelationTypeValue()
-                            .split(StringPool.DASH);
+                if (relationship.getChildStructureInode().equals(type.id())) {
                     //parent is updated
-                    relationship.setParentStructureInode(relatedContentType.id());
-                    relationship.setParentRelationName(
-                            relatedContentType.name().replaceAll("\\s", "_")
-                                    .replaceAll("[^a-zA-Z0-9\\_]", ""));
-
-                    relationship.setRelationTypeValue(
-                            relationTypeValue[0] + StringPool.DASH + fullFieldVariable.toString());
+                    relationship.setParentRelationName(relationName);
                     relationship.setParentRequired(field.required());
 
                     //only one side of the relationship can be required
                     if (field.required()) {
-
                         //setting as not required the other side of the relationship
                         relationship.setChildRequired(false);
                         fieldFactory.save(FieldBuilder.builder(byContentTypeAndVar(relatedContentType,
@@ -236,10 +220,7 @@ public class FieldAPIImpl implements FieldAPI {
                     }
                 } else {
                     //child is updated
-                    relationship.setChildStructureInode(relatedContentType.id());
-                    relationship.setChildRelationName(
-                            relatedContentType.name().replaceAll("\\s", "_")
-                                    .replaceAll("[^a-zA-Z0-9\\_]", ""));
+                    relationship.setChildRelationName(relationName);
                     relationship.setChildRequired(field.required());
 
                     //only one side of the relationship can be required
@@ -254,14 +235,7 @@ public class FieldAPIImpl implements FieldAPI {
 
             } else {
                 //otherwise, a new relationship will be created
-                relationship = new Relationship();
-                relationship.setParentStructureInode(type.id());
-                relationship.setChildStructureInode(relatedContentType.id());
-                relationship.setChildRelationName(relatedContentType.name().replaceAll("\\s", "_")
-                        .replaceAll("[^a-zA-Z0-9\\_]", ""));
-                relationship.setCardinality(cardinality);
-                relationship.setRelationTypeValue(fullFieldVariable.toString());
-                relationship.setChildRequired(field.required());
+                relationship = new Relationship(type, relatedContentType, field);
             }
 
 
@@ -378,34 +352,23 @@ public class FieldAPIImpl implements FieldAPI {
     private void removeRelationshipLink(Field field, ContentType type)
             throws DotDataException {
 
-        Relationship relationship = null;
+        final Optional<Relationship> result = relationshipAPI
+                .byParentChildRelationName(type, field.variable());
 
-        final StringBuilder fullFieldVariable = new StringBuilder(type.variable()).append(StringPool.PERIOD).append(field.variable());
-
-        final List<Relationship> result = relationshipAPI
-                .dbAllByTypeValue(fullFieldVariable.toString());
-
-        if (UtilMethods.isSet(result)){
-            relationship = result.get(0);
-        }
-
-
-        if (UtilMethods.isSet(relationship) && UtilMethods.isSet(relationship.getInode())){
-
+        if (result.isPresent()) {
+            Relationship relationship = result.get();
             //it's a one-sided relationship and must be deleted
-            if (!UtilMethods.isSet(relationship.getChildStructureInode()) || !UtilMethods.isSet(relationship.getParentStructureInode())) {
+            if (!UtilMethods.isSet(relationship.getParentRelationName()) || !UtilMethods
+                    .isSet(relationship.getChildRelationName())) {
                 relationshipAPI.delete(relationship);
-            } else{
+            } else {
                 //the relationship must be updated, removing one side of the relationship
-                if (UtilMethods.isSet(relationship.getChildStructureInode()) && relationship.getChildStructureInode().equals(type.id())){
+                if (UtilMethods.isSet(relationship.getParentRelationName()) && relationship
+                        .getParentRelationName().equals(field.variable())) {
                     unlinkParent(relationship);
                 } else {
                     unlinkChild(relationship);
                 }
-
-                relationship.setRelationTypeValue(relationship.getRelationTypeValue()
-                        .replaceAll(fullFieldVariable.toString(), "")
-                        .replaceAll(StringPool.DASH, ""));
 
                 relationshipAPI.save(relationship);
             }
@@ -419,7 +382,6 @@ public class FieldAPIImpl implements FieldAPI {
     private void unlinkParent(Relationship relationship) {
         relationship.setParentRequired(false);
         relationship.setParentRelationName(null);
-        relationship.setParentStructureInode(null);
     }
 
     /**
@@ -429,7 +391,6 @@ public class FieldAPIImpl implements FieldAPI {
     private void unlinkChild(Relationship relationship) {
         relationship.setChildRequired(false);
         relationship.setChildRelationName(null);
-        relationship.setChildStructureInode(null);
     }
 
 

@@ -8,6 +8,7 @@ import com.dotmarketing.beans.Tree;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.structure.model.Relationship;
+import java.util.Optional;
 
 public interface RelationshipAPI {
 
@@ -21,6 +22,16 @@ public interface RelationshipAPI {
    * @return
    */
   List<Relationship> dbAllByTypeValue(final String typeValue);
+
+  /**
+   * Returns an {@link Optional} of {@link Relationship} for the given content type (parent or child)
+   * and the given relationName (child relation name or parent relation name)
+   * @param contentType
+   * @param relationName
+   * @return
+   */
+  Optional<Relationship> byParentChildRelationName(ContentType contentType,
+          String relationName);
 
     List<Relationship> byParent(ContentTypeIf parent) throws DotDataException;
 

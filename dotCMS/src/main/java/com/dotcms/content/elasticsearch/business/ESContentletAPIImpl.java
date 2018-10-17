@@ -1188,10 +1188,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
     public ContentletRelationships getAllRelationships(Contentlet contentlet)throws DotDataException {
 
         ContentletRelationships cRelationships = new ContentletRelationships(contentlet);
-        Structure structure = contentlet.getStructure();
+        ContentType structure = contentlet.getContentType();
         List<ContentletRelationshipRecords> matches = cRelationships.getRelationshipsRecords();
         List<Relationship> relationships = FactoryLocator.getRelationshipFactory()
-                .dbAllByTypeValue(structure.getVelocityVarName() + StringPool.PERIOD);
+                .dbAllByTypeValue(structure.variable() + StringPool.PERIOD);
 
         for (Relationship relationship : relationships) {
 
@@ -4725,8 +4725,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                 hasError = true;
                                 cve.addBadCardinalityRelationship(rel, cons);
                             }
-                            if (null != rel.getChildStructureInode() && !con.getStructureInode().equalsIgnoreCase(
-                                    rel.getChildStructureInode())) {
+                            if (!con.getStructureInode().equalsIgnoreCase(rel.getChildStructureInode())) {
                                 hasError = true;
                                 cve.addInvalidContentRelationship(rel, cons);
                             }
