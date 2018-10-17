@@ -25,6 +25,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.WORKFLOW_ASSIGN_KEY;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.WORKFLOW_COMMENTS_KEY;
+
 /**
  * Complete populator to populate a contentlet from a map (from a resources form) using all logic needed
  *
@@ -73,7 +76,7 @@ public class MapToContentletPopulator  {
         return stInode;
     }
 
-    protected void processMap(final Contentlet contentlet,
+    private void processMap(final Contentlet contentlet,
                               final Map<String, Object> map) throws DotDataException, DotSecurityException {
 
         final String stInode = this.getStInode(map);
@@ -93,6 +96,8 @@ public class MapToContentletPopulator  {
 
                 this.processIdentifier(contentlet, map);
 
+                this.processWorkflow(contentlet, map);
+
                 // build a field map for easy lookup
                 final Map<String, Field> fieldMap = new HashMap<>();
                 for (final Field field : new LegacyFieldTransformer(type.fields()).asOldFieldList()) {
@@ -107,6 +112,15 @@ public class MapToContentletPopulator  {
             }
         }
     } // processMap.
+
+    private void processWorkflow(final Contentlet contentlet, final Map<String,Object> map) {
+        if(map.containsKey(WORKFLOW_ASSIGN_KEY)) {
+            contentlet.setStringProperty(WORKFLOW_ASSIGN_KEY, String.valueOf(map.get(WORKFLOW_ASSIGN_KEY)));
+        }
+        if(map.containsKey(WORKFLOW_COMMENTS_KEY)) {
+            contentlet.setStringProperty(WORKFLOW_COMMENTS_KEY, String.valueOf(map.get(WORKFLOW_COMMENTS_KEY)));
+        }
+    }
 
     private void fillFields(final Contentlet contentlet,
                             final Map<String, Object> map,

@@ -1,9 +1,11 @@
 package com.dotmarketing.portlets.categories.business;
 
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.liferay.portal.model.User;
 import java.util.List;
 /**
@@ -505,4 +507,10 @@ public interface CategoryAPI {
 	 */
 	List<Category> findCategories(final ContentType contentType, final User user)
 			throws DotSecurityException, DotDataException;
+
+	@CloseDBIfOpened
+	Category findByVariable(final String variable, final User user,
+							final boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+
+	List<Category> getCategoriesFromContent(final Contentlet contentlet, final User user, boolean respectFrontendRoles ) throws DotDataException, DotSecurityException;
 }
