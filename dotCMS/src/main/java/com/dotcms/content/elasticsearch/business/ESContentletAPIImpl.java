@@ -4865,7 +4865,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    private Map<Relationship, List<Contentlet>> findContentRelationships(Contentlet contentlet) throws DotDataException{
+    private Map<Relationship, List<Contentlet>> findContentRelationships(Contentlet contentlet)
+            throws DotDataException, DotSecurityException {
         Map<Relationship, List<Contentlet>> contentRelationships = new HashMap<>();
         if(contentlet == null)
             return contentRelationships;

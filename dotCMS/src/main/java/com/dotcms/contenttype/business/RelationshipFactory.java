@@ -2,6 +2,7 @@ package com.dotcms.contenttype.business;
 import com.dotcms.contenttype.model.type.ContentTypeIf;
 import com.dotmarketing.beans.Tree;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.structure.model.Relationship;
 
@@ -31,13 +32,15 @@ public interface RelationshipFactory {
 
     List<Relationship> byContentType(final String contentTypeInode, String orderBy);
 
-    List<Contentlet> dbRelatedContent(final Relationship relationship, final Contentlet contentlet) throws DotDataException;
+    List<Contentlet> dbRelatedContent(final Relationship relationship, final Contentlet contentlet)
+            throws DotDataException, DotSecurityException;
 
     List<Contentlet> dbRelatedContent(final Relationship relationship, final Contentlet contentlet,
-            final boolean hasParent) throws  DotDataException;
+            final boolean hasParent) throws DotDataException, DotSecurityException;
 
     List<Contentlet> dbRelatedContent(final Relationship relationship, final Contentlet contentlet,
-            final boolean hasParent, final boolean live, final String orderBy) throws  DotDataException;
+            final boolean hasParent, final boolean live, final String orderBy)
+            throws DotDataException, DotSecurityException;
 
     List<Tree> relatedContentTrees(final Relationship relationship, final Contentlet contentlet) throws  DotDataException;
 
@@ -61,7 +64,7 @@ public interface RelationshipFactory {
             final String orderBy) throws DotDataException;
 
     List<Contentlet> dbRelatedContentByChild(final String childInode, final String relationType, final boolean live,
-            final String orderBy) throws DotDataException;
+            final String orderBy) throws DotDataException, DotSecurityException;
 
     int maxSortOrder(final String parentInode, final String relationType);
 

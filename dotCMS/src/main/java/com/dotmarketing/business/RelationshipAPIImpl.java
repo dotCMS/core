@@ -8,6 +8,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeIf;
 import com.dotmarketing.beans.Tree;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Relationship;
@@ -81,12 +82,14 @@ public class RelationshipAPIImpl implements RelationshipAPI {
 
     @CloseDBIfOpened
     @Override
-    public List<Contentlet> dbRelatedContent(Relationship relationship, Contentlet contentlet) throws DotDataException {
+    public List<Contentlet> dbRelatedContent(Relationship relationship, Contentlet contentlet)
+            throws DotDataException, DotSecurityException {
         return this.relationshipFactory.dbRelatedContent(relationship, contentlet);
     }
 
     @Override
-    public List<Contentlet> dbRelatedContent(Relationship relationship, Contentlet contentlet, boolean hasParent) throws DotDataException {
+    public List<Contentlet> dbRelatedContent(Relationship relationship, Contentlet contentlet, boolean hasParent)
+            throws DotDataException, DotSecurityException {
         return this.relationshipFactory.dbRelatedContent(relationship, contentlet, hasParent);
     }
 

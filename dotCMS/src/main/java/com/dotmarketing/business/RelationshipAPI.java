@@ -1,6 +1,7 @@
 package com.dotmarketing.business;
 
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotmarketing.exception.DotSecurityException;
 import java.util.List;
 import java.util.Map;
 
@@ -27,10 +28,11 @@ public interface RelationshipAPI {
 
   List<Relationship> byContentType(ContentTypeIf type, String orderBy);
 
-  List<Contentlet> dbRelatedContent(Relationship relationship, Contentlet contentlet) throws DotDataException;
+  List<Contentlet> dbRelatedContent(Relationship relationship, Contentlet contentlet)
+          throws DotDataException, DotSecurityException;
 
   List<Contentlet> dbRelatedContent(Relationship relationship, Contentlet contentlet,
-                                    boolean hasParent) throws  DotDataException;
+                                    boolean hasParent) throws DotDataException, DotSecurityException;
 
   void deleteByContent(Contentlet contentlet, Relationship relationship, List<Contentlet> relatedContentlets)
       throws DotDataException;
