@@ -655,4 +655,14 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
 
         return new DbRelationshipTransformer(dc.loadObjectResults()).asList();
     }
+
+    @Override
+    public long getOneSidedRelationshipsCount(final ContentType contentType) throws DotDataException {
+        DotConnect dc = new DotConnect();
+        dc.setSQL(sql.SELECT_ONE_SIDE_RELATIONSHIP_COUNT);
+        dc.addParam(contentType.id());
+        dc.addParam(contentType.id());
+        List<Map<String,String>> results = dc.loadResults();
+        return Long.parseLong(results.get(0).get("count(*)"));
+    }
 }

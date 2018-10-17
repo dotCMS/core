@@ -77,4 +77,6 @@ public interface RelationshipFactory {
     void addRelationship(final String parent, final String child, final String relationType)throws DotDataException;
 
     List<Relationship> getOneSidedRelationships(final ContentTypeIf contentType, final int limit, final int offset) throws DotDataException;
+
+    long getOneSidedRelationshipsCount(final ContentType contentType) throws DotDataException;
 }

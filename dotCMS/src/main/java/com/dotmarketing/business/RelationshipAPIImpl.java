@@ -186,4 +186,10 @@ public class RelationshipAPIImpl implements RelationshipAPI {
             final int limit, final int offset) throws DotDataException {
         return this.relationshipFactory.getOneSidedRelationships(contentType, limit, offset);
     }
+
+    @CloseDBIfOpened
+    @Override
+    public long getOneSidedRelationshipsCount(final ContentType contentType) throws DotDataException {
+        return this.relationshipFactory.getOneSidedRelationshipsCount(contentType);
+    }
 }

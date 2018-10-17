@@ -18,7 +18,7 @@ import java.util.stream.Collectors;
  * Paginator for relationships results
  * @author nollymar
  */
-public class RelationshipPaginator implements Paginator<Map<String, Object>> {
+public class RelationshipPaginator implements Paginator<Relationship> {
 
     private final RelationshipAPI relationshipAPI;
     public static final String CONTENT_TYPE_PARAM = "content_type";
@@ -33,19 +33,19 @@ public class RelationshipPaginator implements Paginator<Map<String, Object>> {
     }
 
     @Override
-    public PaginatedArrayList<Map<String, Object>> getItems(final User user, final int limit,
+    public PaginatedArrayList<Relationship> getItems(final User user, final int limit,
             final int offset, final Map<String, Object> params) throws PaginationException {
         try {
 
-            final PaginatedArrayList<Map<String, Object>> result = new PaginatedArrayList();
+            final PaginatedArrayList<Relationship> result = new PaginatedArrayList();
+            final ContentType contentType = (ContentType) params.get(CONTENT_TYPE_PARAM);
 
             final List<Relationship> relationships = relationshipAPI
-                    .getOneSidedRelationships((ContentType) params.get(CONTENT_TYPE_PARAM), limit, offset);
+                    .getOneSidedRelationships(contentType, limit, offset);
 
             //Adding one sided relationships
-            result.add(relationships.stream()
-                    .collect(Collectors.toMap(Relationship::getInode, r -> r)));
-
+            result.addAll(relationships);
+            result.setTotalResults(relationshipAPI.getOneSidedRelationshipsCount(contentType));
             return result;
         } catch (DotDataException e) {
             Logger.error(this, "Error getting relationships", e);
