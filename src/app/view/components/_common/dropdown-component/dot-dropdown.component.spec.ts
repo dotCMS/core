@@ -1,4 +1,4 @@
-import { ComponentFixture, tick, fakeAsync } from '@angular/core/testing';
+import { ComponentFixture, async } from '@angular/core/testing';
 import { Component, Input, DebugElement } from '@angular/core';
 import { DOTTestBed } from '../../../../test/dot-test-bed';
 import { DotDropdownComponent } from './dot-dropdown.component';
@@ -62,7 +62,6 @@ function executeEnabled(
 
 function executeDisabled(elem: DebugElement, de: DebugElement) {
     elem.nativeElement.click();
-    tick(1);
     const content = de.query(By.css('.dropdown-content'));
     expect(content).toBeFalsy();
     expect(elem).toBeTruthy();
@@ -76,7 +75,7 @@ describe('DotDropdownComponent', () => {
     let comp: DotDropdownComponent;
     let de: DebugElement;
 
-    beforeEach(() => {
+    beforeEach(async(() => {
         DOTTestBed.configureTestingModule({
             declarations: [
                 DotDropdownComponent,
@@ -93,7 +92,7 @@ describe('DotDropdownComponent', () => {
 
         de = hostDe.query(By.css('dot-dropdown-component'));
         comp = de.componentInstance;
-    });
+    }));
 
     describe('Enabled', () => {
         let button: DebugElement;
@@ -135,15 +134,15 @@ describe('DotDropdownComponent', () => {
             titleButton = de.query(By.css('button'));
         });
 
-        it(`should dot-icon button not be displayed --> null`, fakeAsync(() => {
+        it(`should dot-icon button not be displayed --> null`, () => {
             executeDisabled(button, de);
             expect(button.attributes.disabled).toBe('true');
-        }));
+        });
 
-        it(`should title button not be displayed & not emit`, fakeAsync(() => {
+        it(`should title button not be displayed & not emit`, () => {
             executeDisabled(titleButton, de);
             expect(comp.toggle.emit).not.toHaveBeenCalled();
-        }));
+        });
     });
 
     it(`should hide the dropdown dialog`, () => {
