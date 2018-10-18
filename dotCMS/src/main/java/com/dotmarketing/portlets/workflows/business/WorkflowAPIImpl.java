@@ -1236,6 +1236,19 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	@Override
 	@CloseDBIfOpened
+	public List<WorkflowAction> findBulkActions(final WorkflowStep step, final User user)
+			throws DotDataException, DotSecurityException {
+
+		if (null == step) {
+			return Collections.emptyList();
+		}
+		final List<WorkflowAction> actions = workFlowFactory.findActions(step);
+		return workflowActionUtils
+				.filterBulkActions(actions, user, RESPECT_FRONTEND_ROLES);
+	}
+
+	@Override
+	@CloseDBIfOpened
 	public List<WorkflowAction> findActions(final WorkflowStep step, final Role role, @Nullable final Permissionable permissionable) throws DotDataException,
            DotSecurityException {
 
