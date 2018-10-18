@@ -430,7 +430,7 @@ public  class WebResource {
      * @return a <code>Map</code> with the keys and values extracted from <code>params</code>
      */
 
-    private static Map<String, String> buildParamsMap(String params) {
+    public static Map<String, String> buildParamsMap(String params) {
 
         if (params.startsWith("/")) {
             params = params.substring(1);

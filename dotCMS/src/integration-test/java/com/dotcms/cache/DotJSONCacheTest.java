@@ -34,9 +34,9 @@ public class DotJSONCacheTest {
 
     @DataProvider
     public static Object[] addTestCases() {
-        final DotJSON<String, String> dotJSONZeroTTL = new DotJSON<>();
-        final DotJSON<String, Integer> dotJSONPositiveTTL = new DotJSON<>();
-        dotJSONPositiveTTL.put(DotJSON.CACHE_TTL_KEY, 1000);
+        final DotJSON dotJSONZeroTTL = new DotJSON();
+        final DotJSON dotJSONPositiveTTL = new DotJSON();
+        dotJSONPositiveTTL.put(DotJSON.CACHE_TTL_KEY, "1000");
 
         return new DotJSONCacheAddTestCase[] {
                 new Builder().cacheKey(null).shouldCache(false).build(),
@@ -47,8 +47,8 @@ public class DotJSONCacheTest {
 
     @DataProvider
     public static Object[] getTestCases() {
-        final DotJSON<String, Integer> dotJSON1000TTL = new DotJSON<>();
-        dotJSON1000TTL.put(DotJSON.CACHE_TTL_KEY, 500);
+        final DotJSON dotJSON1000TTL = new DotJSON();
+        dotJSON1000TTL.put(DotJSON.CACHE_TTL_KEY, "500");
 
         return new DotJSONCacheGetTestCase[] {
                 new DotJSONCacheGetTestCase.Builder().dotJSONToAdd(dotJSON1000TTL).cacheKeyToAdd(VALID_KEY)
@@ -110,7 +110,7 @@ public class DotJSONCacheTest {
 
         Mockito.doReturn(cacheKeyToGet).when(cache).getDotJSONCacheKey(request, user);
 
-        DotJSON<String, Integer> dotJSONFromCache;
+        DotJSON dotJSONFromCache;
 
         try {
             dotJSONFromCache = cache.get(request, user).get();

@@ -15,6 +15,7 @@ import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.v1.HTTPMethod;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.util.CollectionsUtils;
+import com.dotcms.util.DotPreconditions;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -29,12 +30,14 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.WebKeys;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
@@ -46,7 +49,7 @@ import static com.dotcms.cache.DotJSONCacheFactory.getCacheStrategy;
 @Path("/vtl")
 public class VTLResource {
 
-    private final WebResource webResource = new WebResource();
+    private final WebResource webResource;
     @VisibleForTesting
     static final String VTL_PATH = "/application/apivtl";
     private final HostAPI hostAPI;
@@ -55,14 +58,17 @@ public class VTLResource {
     private final String FILE_EXTENSION = ".vtl";
 
     public VTLResource() {
-        this(APILocator.getHostAPI(), APILocator.getIdentifierAPI(), APILocator.getContentletAPI());
+        this(APILocator.getHostAPI(), APILocator.getIdentifierAPI(), APILocator.getContentletAPI(),
+                new WebResource());
     }
 
     @VisibleForTesting
-    VTLResource(final HostAPI hostAPI, final IdentifierAPI identifierAPI, final ContentletAPI contentletAPI) {
+    VTLResource(final HostAPI hostAPI, final IdentifierAPI identifierAPI, final ContentletAPI contentletAPI,
+                final WebResource webResource) {
         this.hostAPI = hostAPI;
         this.identifierAPI = identifierAPI;
         this.contentletAPI = contentletAPI;
+        this.webResource = webResource;
     }
 
     /**
@@ -82,6 +88,8 @@ public class VTLResource {
 
         final InitDataObject initDataObject = this.webResource.init
                 (pathParams, false, request, false, null);
+
+        setUserInSession(request.getSession(false), initDataObject.getUser());
 
         final DotJSONCache cache = getCacheStrategy(HTTPMethod.GET);
         final Optional<DotJSON> dotJSONOptional = cache.get(request, initDataObject.getUser());
@@ -129,6 +137,8 @@ public class VTLResource {
         final InitDataObject initDataObject = this.webResource.init
                 (pathParams, false, request, false, null);
 
+        setUserInSession(request.getSession(false), initDataObject.getUser());
+
         try {
             final FileAsset vtlFile = getVTLFile(HTTPMethod.POST, request, folderName, initDataObject.getUser());
             final Map<String, Object> contextParams = CollectionsUtils.map(
@@ -151,6 +161,12 @@ public class VTLResource {
         }
     }
 
+    private void setUserInSession(final HttpSession session, final User user) {
+        DotPreconditions.checkNotNull(session);
+        DotPreconditions.checkNotNull(user);
+        session.setAttribute(WebKeys.CMS_USER, user);
+    }
+
     private Response evalVTLFile(final HttpServletRequest request, final HttpServletResponse response,
                                  final FileAsset getFileAsset, final Map<String, Object> contextParams,
                                  final User user, final DotJSONCache cache)
@@ -163,14 +179,14 @@ public class VTLResource {
 
         try (final InputStream fileAssetIputStream = getFileAsset.getInputStream()) {
             VelocityUtil.getEngine().evaluate(context, evalResult, "", fileAssetIputStream);
-            final DotJSON<String, String> dotJSON = (DotJSON<String, String>) context.get("dotJSON");
+            final DotJSON dotJSON = (DotJSON) context.get("dotJSON");
 
             if(dotJSON.size()==0) { // If dotJSON is not used let's return the raw evaluation of the velocity file
                 return Response.ok(evalResult.toString()).build();
             } else {
                 // let's add it to cache
                 cache.add(request, user, dotJSON);
-                return Response.ok(dotJSON).build();
+                return Response.ok(dotJSON.getMap()).build();
             }
         }
     }
