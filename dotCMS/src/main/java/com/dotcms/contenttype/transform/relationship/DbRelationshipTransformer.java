@@ -2,6 +2,7 @@ package com.dotcms.contenttype.transform.relationship;
 
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotcms.util.ConversionUtils;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import java.util.ArrayList;
 import java.util.List;
@@ -42,9 +43,9 @@ public class DbRelationshipTransformer implements RelationshipTransformer{
 		var.setParentRelationName((String) map.get("parent_relation_name"));
 		var.setChildRelationName((String) map.get("child_relation_name"));
 		var.setRelationTypeValue((String) map.get("relation_type_value"));
-		var.setFixed((Boolean) map.get("fixed"));
-		var.setParentRequired((Boolean) map.get("parent_required"));
-		var.setChildRequired((Boolean) map.get("child_required"));
+		var.setFixed(DbConnectionFactory.isDBTrue(map.get("fixed").toString()));
+		var.setParentRequired(DbConnectionFactory.isDBTrue(map.get("parent_required").toString()));
+		var.setChildRequired(DbConnectionFactory.isDBTrue(map.get("child_required").toString()));
 		var.setCardinality(ConversionUtils.toInt(map.get("cardinality"), 0));
 
 		return var;

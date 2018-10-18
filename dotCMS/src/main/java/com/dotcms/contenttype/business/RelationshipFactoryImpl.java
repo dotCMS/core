@@ -71,6 +71,7 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
             Logger.debug(this, e.getMessage());
         } catch (DotDataException e){
                 Logger.error(this, "Error getting Relationship with inode: " + inode, e);
+                throw new RuntimeException(e);
         }
 
         if(rel!= null && InodeUtils.isSet(rel.getInode())) {
@@ -109,8 +110,7 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
         orderBy = SQLUtil.sanitizeSortBy(orderBy);
 
 	    final DotConnect dc = new DotConnect();
-	    dc.setSQL(sql.SELECT_ALL_FIELDS + sql.ORDER_BY);
-	    dc.addParam(orderBy);
+	    dc.setSQL(sql.SELECT_ALL_FIELDS + " order by " + orderBy);
 
         List<Map<String, Object>> results = new ArrayList<Map<String, Object>>();
         try {
@@ -251,9 +251,8 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
             orderBy = SQLUtil.sanitizeSortBy(orderBy);
 
             final DotConnect dc = new DotConnect();
-            dc.setSQL(sql.FIND_BY_TYPE_VALUE_LIKE + sql.ORDER_BY);
+            dc.setSQL(sql.FIND_BY_TYPE_VALUE_LIKE + " order by " + orderBy);
             dc.addParam(filter.toString().toLowerCase());
-            dc.addParam(orderBy);
             List<Map<String, Object>> results;
             results = dc.loadObjectResults();
 

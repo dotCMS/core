@@ -2,7 +2,6 @@ package com.dotmarketing.portlets.contentlet.ajax;
 
 import static com.dotcms.exception.ExceptionUtil.getRootCause;
 import static com.dotcms.util.CollectionsUtils.map;
-import static com.dotcms.util.CollectionsUtils.toImmutableList;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
@@ -82,6 +81,7 @@ import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
 import com.google.common.base.CharMatcher;
+import com.google.common.collect.ImmutableList;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.language.LanguageException;
@@ -2363,12 +2363,37 @@ public class ContentletAjax {
 	}
 
 
-	private List<Map<String,String>> findAllLangContentlets(final String contentletIdentifier){
+	private List<Map<String, String>> findAllLangContentlets(final String contentletIdentifier) {
 
-		return conAPI.findAllLangContentlets(contentletIdentifier).stream().map(contentlet ->  {
-			return map("inode",contentlet.getInode(),
-			           "languageId",contentlet.getLanguageId()+"");
-		}).collect(toImmutableList());
+	    final Identifier identifier = new Identifier(contentletIdentifier);
+
+		final ImmutableList.Builder<Map<String, String>> builder = new ImmutableList.Builder<>();
+
+		final List<Language> allLanguages = langAPI.getLanguages();
+		allLanguages.forEach(language -> {
+
+			try {
+				final Contentlet contentlet = conAPI.findContentletForLanguage(language.getId(), identifier);
+				if (null != contentlet) {
+					builder.add(
+							map("inode", contentlet.getInode(),
+									"identifier", contentletIdentifier,
+									"languageId", language.getId() + "")
+					);
+				} else {
+					builder.add(
+							map("inode", "",
+									"identifier", contentletIdentifier,
+									"languageId", language.getId() + "")
+					);
+				}
+			} catch (DotDataException | DotSecurityException e) {
+			    Logger.error(ContentletAjax.class, String.format("Unable to get contentlet for identifier %s and language %s", contentletIdentifier, language), e);
+			}
+
+		});
+
+		return builder.build();
 	}
 
 }

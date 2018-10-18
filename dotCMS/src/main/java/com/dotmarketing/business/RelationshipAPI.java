@@ -2,11 +2,13 @@ package com.dotmarketing.business;
 
 import com.dotcms.contenttype.model.type.ContentType;
 import java.util.List;
+import java.util.Map;
 
 import com.dotcms.contenttype.model.type.ContentTypeIf;
 import com.dotmarketing.beans.Tree;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import java.util.Optional;
 
@@ -105,4 +107,7 @@ public interface RelationshipAPI {
           final int offset) throws DotDataException;
 
   long getOneSidedRelationshipsCount(final ContentType contentType) throws DotDataException;
+
+  ContentletRelationships getContentletRelationshipsFromMap(final Contentlet contentlet, final Map<Relationship,
+          List<Contentlet>> contentRelationships);
 }

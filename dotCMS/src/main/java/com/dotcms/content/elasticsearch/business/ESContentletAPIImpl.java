@@ -152,7 +152,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -296,28 +295,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
             Logger.debug(this,"No working contentlet found for language");
         }
         return con;
-    }
-
-    @CloseDBIfOpened
-    @Override
-    public List<Contentlet> findAllLangContentlets(final String identifier) {
-
-        final List<Language> languages = languageAPI.getLanguages();
-        final Identifier identifierObject = new Identifier();
-        identifierObject.setId(identifier);
-        return languages.stream().map(l -> {
-                    try {
-                        final ContentletVersionInfo contentletVersionInfo = APILocator.getVersionableAPI()
-                                .getContentletVersionInfo(identifier, l.getId());
-                        if (contentletVersionInfo != null && !contentletVersionInfo.isDeleted()) {
-                            return contentFactory.find(contentletVersionInfo.getWorkingInode());
-                        }
-                    } catch (Exception e) {
-                        Logger.error(this, "No working contentlet found for language");
-                    }
-                    return null;
-                }
-        ).filter(Objects::nonNull).collect(CollectionsUtils.toImmutableList());
     }
 
     @CloseDBIfOpened

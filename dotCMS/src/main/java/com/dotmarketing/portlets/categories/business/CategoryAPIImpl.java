@@ -5,6 +5,7 @@ import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.model.field.CategoryField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -14,6 +15,7 @@ import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -804,7 +806,79 @@ public class CategoryAPIImpl implements CategoryAPI {
 
 	}
 
-	/**
+	@CloseDBIfOpened
+	@Override
+	public Category findByVariable(final String variable, final User user,
+								   final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+
+		final Category category = categoryFactory.findByVar(variable);
+
+		if(!InodeUtils.isSet(category.getCategoryId())) {
+			return null;
+		}
+
+		if(!permissionAPI.doesUserHavePermission(category, PermissionAPI.PERMISSION_USE, user, respectFrontendRoles)) {
+			throw new DotSecurityException("User doesn't have permission to use this category = " +
+					category.getInode());
+		}
+
+		return category;
+	}
+
+	@CloseDBIfOpened
+    @Override
+    public List<Category> getCategoriesFromContent(Contentlet contentlet, User user, boolean respectFrontendRoles)
+			throws DotDataException, DotSecurityException {
+		final List<Category> categories = new ArrayList<>();
+
+		final List<com.dotmarketing.portlets.structure.model.Field> fields = new LegacyFieldTransformer(
+				APILocator.getContentTypeAPI(APILocator.systemUser()).
+						find(contentlet.getContentType().inode()).fields()).asOldFieldList();
+
+		for (com.dotmarketing.portlets.structure.model.Field field : fields) {
+			if (field.getFieldType().equals(com.dotmarketing.portlets.structure.model.Field.FieldType.CATEGORY.toString())) {
+				final String catValue = contentlet.getStringProperty(field.getVelocityVarName());
+				if (UtilMethods.isSet(catValue)) {
+					for (final String categoryIdKeyOrVar : catValue.split("\\s*,\\s*")) {
+						// take it as catId
+						Category category = APILocator.getCategoryAPI()
+								.find(categoryIdKeyOrVar, user, respectFrontendRoles);
+						if (category != null && InodeUtils.isSet(category.getCategoryId())) {
+							categories.add(category);
+						} else {
+							// try it as catKey
+							category = APILocator.getCategoryAPI()
+									.findByKey(categoryIdKeyOrVar, user, respectFrontendRoles);
+							if (category != null && InodeUtils
+									.isSet(category.getCategoryId())) {
+								categories.add(category);
+							} else {
+								try {
+									category = findByVariable(categoryIdKeyOrVar, user, respectFrontendRoles);
+
+									if (category != null && InodeUtils.isSet(category.getCategoryId())) {
+										categories.add(category);
+									}
+
+								} catch (DotDataException e) {
+									Logger.error(this, "Error finding category by variable. " +
+											"Var name: " + categoryIdKeyOrVar, e);
+								}
+
+							}
+						}
+
+					}
+				}
+			}
+		}
+
+		return UtilMethods.isSet(categories)?categories:null;
+    }
+
+
+
+    /**
 	 * given a field previously determined to be of type Category this method will look up the respective CategoryField type.
 	 * @param categoryField
 	 * @param user

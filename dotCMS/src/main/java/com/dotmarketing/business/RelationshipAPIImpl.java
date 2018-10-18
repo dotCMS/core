@@ -9,10 +9,15 @@ import com.dotcms.contenttype.model.type.ContentTypeIf;
 import com.dotmarketing.beans.Tree;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Relationship;
 
+import com.dotmarketing.portlets.structure.transform.ContentletRelationshipsTransformer;
+import com.dotmarketing.util.UUIDGenerator;
+import com.dotmarketing.util.UtilMethods;
 import java.util.List;
 import java.util.Optional;
+import java.util.Map;
 
 // THIS IS A FAKE API SO PEOPLE CAN FIND AND USE THE RELATIONSHIPFACTORY
 public class RelationshipAPIImpl implements RelationshipAPI {
@@ -191,5 +196,10 @@ public class RelationshipAPIImpl implements RelationshipAPI {
     @Override
     public long getOneSidedRelationshipsCount(final ContentType contentType) throws DotDataException {
         return this.relationshipFactory.getOneSidedRelationshipsCount(contentType);
+    }
+
+    @Override
+    public ContentletRelationships getContentletRelationshipsFromMap(Contentlet contentlet, final Map<Relationship, List<Contentlet>> contentRelationships) {
+        return new ContentletRelationshipsTransformer(contentlet, contentRelationships).findFirst();
     }
 }

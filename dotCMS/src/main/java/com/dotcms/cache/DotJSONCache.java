@@ -1,7 +1,10 @@
 package com.dotcms.cache;
 
 import com.dotcms.api.vtl.model.DotJSON;
+import com.dotcms.visitor.domain.Visitor;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Cachable;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.personas.model.IPersona;
 import com.dotmarketing.util.UtilMethods;
@@ -9,6 +12,7 @@ import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import org.apache.commons.lang.StringUtils;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.Optional;
 
 /**
@@ -78,21 +82,27 @@ public abstract class DotJSONCache implements Cachable {
     public abstract void clearCache();
 
     /**
-     * Adds a new entry to the cache.
+     * Adds a {@link DotJSON} to the cache using info obtained from the provided request and user.
+     * A {@link DotJSONCacheKey} is built out of the provided objects and used as cache key.
      *
-     * @param dotJSONCacheKey - The {@link DotJSONCacheKey} key.
-     * @param dotJSON - The {@link DotJSON} object.
+     * @param request - The {@link HttpServletRequest} to grab info from to build a {@link DotJSONCacheKey}.
+     * @param user - The {@link User} to include as part of the {@link DotJSONCacheKey}.
+     * @param dotJSON - The {@link DotJSON} object to add to cache.
      */
-    abstract public void add(DotJSONCacheKey dotJSONCacheKey, DotJSON dotJSON);
+    abstract public void add(final HttpServletRequest request, final User user, final DotJSON dotJSON);
 
     /**
      * Returns an {@link Optional<DotJSON>} object, with the value present or not depending on
-     * whether found in cache or not, or if object is expired according to {@link DotJSON#getCacheTTL()}
+     * whether the object is found in cache or not, or if object is expired according to {@link DotJSON#getCacheTTL()}
      *
-     * @param dotJSONCacheKey key used to retrieve a specific DotJSON from the cache.
+     * A {@link DotJSONCacheKey} is built out of the provided objects (request and user) and used as cache key to
+     * retrieve the entry
+     *
+     * @param request - The {@link HttpServletRequest} to grab info from to build a {@link DotJSONCacheKey}.
+     * @param user - The {@link User} to include as part of the {@link DotJSONCacheKey}.
      * @return
      */
-    abstract public Optional<DotJSON> get(DotJSONCacheKey dotJSONCacheKey);
+    abstract public Optional<DotJSON> get(final HttpServletRequest request, final User user);
 
     /**
      * Removes a page from the cache, along with all of its versions.
@@ -100,5 +110,19 @@ public abstract class DotJSONCache implements Cachable {
      * @param dotJSONCacheKey The {@link DotJSONCacheKey} key to remove.
      */
     abstract public void remove(DotJSONCacheKey dotJSONCacheKey);
+
+    DotJSONCache.DotJSONCacheKey getDotJSONCacheKey(final HttpServletRequest request, final User user) {
+        final Language language = WebAPILocator.getLanguageWebAPI().getLanguage(request);
+        IPersona persona = null;
+        final Optional<Visitor> visitor = APILocator.getVisitorAPI().getVisitor(request, false);
+
+        if (visitor.isPresent() && visitor.get().getPersona() != null) {
+            persona = visitor.get().getPersona();
+        }
+
+        final String requestURI = request.getRequestURI() + StringPool.QUESTION + request.getQueryString();
+
+        return new DotJSONCache.DotJSONCacheKey(user, language, requestURI, persona);
+    }
 
 }
