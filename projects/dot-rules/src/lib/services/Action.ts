@@ -3,7 +3,7 @@ import {from as observableFrom, empty as observableEmpty} from 'rxjs';
 
 import {mergeMap, reduce, catchError, map} from 'rxjs/operators';
 import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs/Rx';
+import { Observable } from 'rxjs';
 import { ApiRoot } from 'dotcms-js/dotcms-js';
 import { ServerSideTypeModel } from './ServerSideFieldModel';
 import { Http, Response } from '@angular/http';
@@ -112,7 +112,7 @@ export class ActionService {
         key: string,
         ruleActionTypes?: { [key: string]: ServerSideTypeModel }
     ): Observable<ActionModel> {
-        return this.makeRequest(key).pipe(map(json => {
+        return this.makeRequest(key).pipe(map((json: any) => {
             json.id = key;
             json.key = key;
             return ActionService.fromJson(ruleActionTypes[json.actionlet], json);

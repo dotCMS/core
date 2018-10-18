@@ -4,7 +4,7 @@ import {of as observableOf} from 'rxjs';
 import {map, mergeMap} from 'rxjs/operators';
 import {Injectable} from '@angular/core';
 import {RequestMethod} from '@angular/http';
-import {Observable, BehaviorSubject} from 'rxjs/Rx';
+import {Observable, BehaviorSubject} from 'rxjs';
 
 import {ApiRoot} from 'dotcms-js/dotcms-js';
 import {CoreWebService} from 'dotcms-js/dotcms-js';

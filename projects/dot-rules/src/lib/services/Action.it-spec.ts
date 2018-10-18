@@ -1,6 +1,6 @@
 import {} from 'jasmine';
 
-import { Observable, Subscription } from 'rxjs/Rx';
+import { Observable, Subscription } from 'rxjs';
 import { CwError } from 'dotcms-js/dotcms-js';
 
 import { RuleModel, RuleService, ActionModel } from './Rule';

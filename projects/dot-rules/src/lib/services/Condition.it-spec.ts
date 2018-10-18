@@ -9,8 +9,7 @@ import { I18nService } from './system/locale/I18n';
 
 import { CwError } from 'dotcms-js/dotcms-js';
 import { BrowserModule } from '@angular/platform-browser';
-import { Subscription } from 'rxjs';
-import { Observable } from 'rxjs/Rx';
+import { Subscription, Observable } from 'rxjs';
 import { ServerSideTypeModel } from './ServerSideFieldModel';
 
 const injector = ReflectiveInjector.resolveAndCreate([

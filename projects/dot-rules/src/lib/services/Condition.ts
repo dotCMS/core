@@ -3,7 +3,7 @@ import {from as observableFrom, empty as observableEmpty} from 'rxjs';
 
 import {reduce, mergeMap, catchError, map} from 'rxjs/operators';
 import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs/Rx';
+import { Observable } from 'rxjs';
 import { ApiRoot } from 'dotcms-js/dotcms-js';
 import { ServerSideTypeModel } from './ServerSideFieldModel';
 import { Http, Response } from '@angular/http';

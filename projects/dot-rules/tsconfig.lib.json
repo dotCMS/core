@@ -19,11 +19,8 @@
       "es2015"
     ],
       "paths": {
-          "dot-layout-grid/*": [
-              "../../dist-lib/dot-layout-grid/*"
-          ],
           "dotcms-js/dotcms-js": [
-              "../projects/dotcms-js/src/public_api"
+              "/projects/dotcms-js/src/public_api"
           ]
       }
   },
@@ -31,7 +28,7 @@
     "annotateForClosureCompiler": true,
     "skipTemplateCodegen": true,
     "strictMetadataEmit": true,
-    "fullTemplateTypeCheck": true,
+    "fullTemplateTypeCheck": false,
     "strictInjectionParameters": true,
     "enableResourceInlining": true
   },

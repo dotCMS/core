@@ -4,7 +4,7 @@ import {defer as observableDefer,  Observer } from 'rxjs';
 import {catchError, map} from 'rxjs/operators';
 import { Injectable } from '@angular/core';
 import { Http } from '@angular/http';
-import { Observable } from 'rxjs/Rx';
+import { Observable } from 'rxjs';
 
 import { ApiRoot } from 'dotcms-js/dotcms-js';
 import { Verify } from '../../validation/Verify';

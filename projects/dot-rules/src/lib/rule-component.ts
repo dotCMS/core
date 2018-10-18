@@ -9,7 +9,7 @@ import {
     ChangeDetectionStrategy
 } from '@angular/core';
 import { FormControl, Validators, FormGroup, FormBuilder } from '@angular/forms';
-import { Observable } from 'rxjs/Rx';
+import { Observable } from 'rxjs';
 
 import {
     RuleModel,

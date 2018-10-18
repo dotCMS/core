@@ -1,6 +1,6 @@
 // tslint:disable:typedef
 import { Injectable } from '@angular/core';
-import { BehaviorSubject } from 'rxjs/Rx';
+import { BehaviorSubject } from 'rxjs';
 
 window['mapsApi$'] = new BehaviorSubject({ ready: false });
 

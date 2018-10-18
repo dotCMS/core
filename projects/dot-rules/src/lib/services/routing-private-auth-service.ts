@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { CanActivate, ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
 import { RoutingService } from 'dotcms-js/dotcms-js';
-import { Observable, Observer } from 'rxjs/Rx';
+import { Observable, Observer } from 'rxjs';
 import { DotcmsConfig } from 'dotcms-js/dotcms-js';
 import { LoginService } from 'dotcms-js/dotcms-js';
 import { DotRouterService } from 'dotcms-js/dotcms-js';

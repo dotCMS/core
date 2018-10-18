@@ -2,9 +2,8 @@ import { Component, Input, Output, EventEmitter, ChangeDetectionStrategy } from 
 import { DecimalPipe } from '@angular/common';
 import { FormControl } from '@angular/forms';
 import { ServerSideFieldModel } from '../../services/ServerSideFieldModel';
-import { Observable } from 'rxjs';
+import { Observable, BehaviorSubject } from 'rxjs';
 import { I18nService } from '../.././services/system/locale/I18n';
-import { BehaviorSubject } from 'rxjs/Rx';
 import { LoggerService } from 'dotcms-js/dotcms-js';
 import { GCircle } from '../../models/gcircle.model';
 

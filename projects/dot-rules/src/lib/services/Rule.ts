@@ -5,7 +5,7 @@ import {mergeMap, reduce, map, tap} from 'rxjs/operators';
 // tslint:disable-next-line:max-file-line-count
 import { Injectable } from '@angular/core';
 import { RequestMethod } from '@angular/http';
-import { Observable, BehaviorSubject } from 'rxjs/Rx';
+import { Observable, BehaviorSubject } from 'rxjs';
 
 import { ApiRoot } from 'dotcms-js/dotcms-js';
 import { ServerSideFieldModel, ServerSideTypeModel } from './ServerSideFieldModel';

@@ -1,5 +1,5 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
-import { Observable } from 'rxjs/Rx';
+import { Observable } from 'rxjs';
 import { RuleModel, RULE_CREATE } from './services/Rule';
 import { I18nService } from './services/system/locale/I18n';
 import { CwFilter } from './services/util/CwFilter';

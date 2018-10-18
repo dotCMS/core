@@ -2,7 +2,7 @@
 import {from as observableFrom, empty as observableEmpty} from 'rxjs';
 
 import {reduce, mergeMap, catchError, map} from 'rxjs/operators';
-import { Observable } from 'rxjs/Rx';
+import { Observable } from 'rxjs';
 import { Http, Response } from '@angular/http';
 import { Injectable } from '@angular/core';
 import { ApiRoot } from 'dotcms-js/dotcms-js';
