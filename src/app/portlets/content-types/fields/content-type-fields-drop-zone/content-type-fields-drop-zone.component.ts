@@ -198,7 +198,6 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
             fieldId: this.formData.id,
             contentTypeId: this.formData.contentTypeId
         };
-        this.dialogActiveTab = null;
         this.toggleDialog();
     }
 
@@ -225,7 +224,7 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
         });
         this.displayDialog = false;
         this.formData = null;
-        this.dialogActiveTab = 0;
+        this.dialogActiveTab = null;
         this.propertiesForm.destroy();
     }
 
@@ -352,6 +351,7 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
 
     private toggleDialog(): void {
         this.displayDialog = !this.displayDialog;
+        this.dialogActiveTab = 0;
 
         if (!this.displayDialog) {
             this.propertiesForm.destroy();

@@ -201,7 +201,7 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
         dialog.close.emit();
         expect(comp.displayDialog).toBe(false);
         expect(comp.formData).toBe(null);
-        expect(comp.dialogActiveTab).toBe(0);
+        expect(comp.dialogActiveTab).toBe(null);
     });
 
     it('should emit removeFields event', fakeAsync(() => {

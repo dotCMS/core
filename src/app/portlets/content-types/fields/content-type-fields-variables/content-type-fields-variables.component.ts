@@ -22,6 +22,7 @@ export class ContentTypeFieldsVariablesComponent implements OnInit, OnChanges {
 
     fieldVariables: FieldVariable[] = [];
     messages: {[key: string]: string} = {};
+    canSaveFields: boolean[] | null[] = [];
 
     constructor(
         private dotHttpErrorManagerService: DotHttpErrorManagerService,
@@ -63,6 +64,7 @@ export class ContentTypeFieldsVariablesComponent implements OnInit, OnChanges {
         this.fieldVariablesService.delete(params)
             .subscribe(() => {
                 this.fieldVariables = this.fieldVariables.filter((_item: FieldVariable, index: number) => index !== fieldIndex);
+                this.canSaveFields.splice(fieldIndex, 1);
             }, (err: ResponseView) => {
                 this.dotHttpErrorManagerService.handle(err).subscribe();
             });
@@ -84,7 +86,8 @@ export class ContentTypeFieldsVariablesComponent implements OnInit, OnChanges {
                 if (typeof variableIndex !== 'undefined') {
                     this.fieldVariables = this.updateVariableCollection(savedVariable, variableIndex);
                 } else {
-                    this.fieldVariables = this.fieldVariables.concat(savedVariable);
+                    this.fieldVariables = [].concat(savedVariable, this.fieldVariables);
+                    this.canSaveFields = [].concat(null, this.canSaveFields);
                 }
             }, (err: ResponseView) => {
                 this.dotHttpErrorManagerService.handle(err).subscribe();
@@ -92,13 +95,12 @@ export class ContentTypeFieldsVariablesComponent implements OnInit, OnChanges {
     }
 
     /**
-     * Checks if a existing variable meets conditions to be updated
-     * @param {number} index
-     * @returns {boolean}
+     * Holds status if a existing variable meets conditions to be updated
+     * @param {any} event
      * @memberof ContentTypeFieldsVariablesComponent
      */
-    canSaveField(index: number): boolean {
-        return this.fieldVariables[index].key === '' || this.fieldVariables[index].value === '';
+    updateSaveButtons(event: any): void {
+        this.canSaveFields[event.index] = event.data.key.length > 0 && event.data.value.length > 0 ? null : true;
     }
 
     private initTableData(): void {

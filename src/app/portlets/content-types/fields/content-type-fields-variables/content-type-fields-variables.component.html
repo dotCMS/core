@@ -4,13 +4,14 @@
     [editable]="true"
     sortField="clazz"
     sortOrder=0
+    (onEditComplete)="updateSaveButtons($event)"
     >
     <p-column field="key" [header]="messages['contenttypes.field.variables.key_header.label']" [editable]="true"></p-column>
     <p-column field="value" [header]="messages['contenttypes.field.variables.value_header.label']" [editable]="true"></p-column>
     <p-column styleClass="content-type-fields__variables-actions" [header]="messages['contenttypes.field.variables.actions_header.label']" >
         <ng-template let-fieldVar="rowData" let-index="rowIndex" pTemplate="body">
-            <dot-icon-button icon="save" (click)="saveVariable(fieldVar, index)" [attr.disabled]="canSaveField(index) ? true : null"></dot-icon-button>
-            <dot-icon-button icon="delete" (click)="deleteVariable(index)"></dot-icon-button>
+            <dot-icon-button icon="delete_outline" (click)="deleteVariable(index)"></dot-icon-button>
+            <dot-icon-button icon="save" (click)="saveVariable(fieldVar, index)" [attr.disabled]="canSaveFields[index]"></dot-icon-button>
         </ng-template>
     </p-column>
     <ng-template pTemplate="emptymessage">
