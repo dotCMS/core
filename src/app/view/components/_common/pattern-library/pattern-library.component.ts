@@ -13,6 +13,7 @@ export class PatternLibraryComponent implements OnInit {
     lockerModel = false;
     radioVal1 = 'Option 4';
     checkboxVal1 = ['Option 4'];
+    dateFieldMinDate = new Date();
 
     constructor() {}
 
