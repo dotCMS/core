@@ -257,94 +257,76 @@ public class OrderMenuAction extends DotPortletAction {
 	private List<Treeable> _orderMenuItemsDragAndDrop(Map<String, String> items)
 			throws Exception {
 		List<Treeable> ret = new ArrayList<Treeable>();
-		try {
+        try {
 
-			HashMap<String, HashMap<Integer, String>> hashMap = new HashMap<String, HashMap<Integer, String>>();
-			for(String parameterName: items.keySet()) {
+            HashMap<String, HashMap<Integer, String>> hashMap = new HashMap<String, HashMap<Integer, String>>();
+            for (String parameterName : items.keySet()) {
 
-				if (parameterName.startsWith("list")) {
-					String value = items.get(parameterName);
-					// Restore square brackets which are NOT allowed in URLs
-					parameterName = parameterName.replaceAll("__", "[");
-					parameterName = parameterName.replaceAll("---", "]");
-					String smallParameterName = parameterName.substring(0,
-							parameterName.indexOf("["));
-					String indexString = parameterName.substring(
-							parameterName.indexOf("[") + 1,
-							parameterName.indexOf("]"));
-					int index = Integer.parseInt(indexString);
-					if (hashMap.get(smallParameterName) == null) {
-						HashMap<Integer, String> hashInodes = new HashMap<Integer, String>();
-						hashInodes.put(index, value);
-						hashMap.put(smallParameterName, hashInodes);
-					} else {
-						HashMap<Integer, String> hashInodes = hashMap
-								.get(smallParameterName);
-						hashInodes.put(index, value);
-					}
-				}
-			}
-			
-			try {
-    			for(String key:hashMap.keySet()) {
-    				HashMap<Integer, String> hashInodes = hashMap.get(key);
-    				for (int i = 0; i < hashInodes.size(); i++) {
-    					final String inode = hashInodes.get(i);
-    					ShortyId shorty = APILocator.getShortyAPI().getShorty(inode).orElse(null);
-    					if(shorty==null) {
-    					    continue;
-    					}
-    					else if (ShortType.FOLDER.equals(shorty.subType)) {
-    					    Folder f = APILocator.getFolderAPI().find(inode, user, false);
-    						f.setSortOrder(i);
-    						APILocator.getFolderAPI().save(f, user, false);
-    						ret.add(f);
-    					}
-    					else if (ShortType.LINKS.equals(shorty.subType)) {
-    						Link l = APILocator.getMenuLinkAPI().find(inode, user, false);
-    						l.setSortOrder(i);
-    						APILocator.getMenuLinkAPI().save(l, user, false);
-    						ret.add(l);
-    					}
-    					else if (ShortType.CONTENTLET.equals(shorty.subType)) {
-    					    final Contentlet c = APILocator.getContentletAPI().find(inode, user, false);
-    					    
-    					    // User must have publish on the pages in order to reorder them
-    					    APILocator.getPermissionAPI().checkPermission(c, PermissionLevel.PUBLISH, user);
-    
-    					    
-    					    c.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
-    					    c.setSortOrder(i);
-    				        c.setModDate(new Date());
-    						final Contentlet in = APILocator.getContentletAPI().checkinWithoutVersioning(c, null, null, null, APILocator.systemUser(), false);
-    
-    						ret.add(in);
-    
-    					}
-    				}
-    			}
-			}
-			catch(DotSecurityException dse) {
-	              APILocator.getNotificationAPI().generateNotification(
-	                      new I18NMessage("no-permissions-message"),
-	                      new I18NMessage(dse.getMessage()), 
-                          null, // no actions
-                          NotificationLevel.ERROR,
-                          NotificationType.GENERIC,
-                          user.getUserId(),
-                          user.getLocale());
-		
-			}
-			catch(Exception e){
-                APILocator.getNotificationAPI().generateNotification(
-                        new I18NMessage("error"),
-                        new I18NMessage(e.getMessage()), 
-                        null, // no actions
-                        NotificationLevel.ERROR,
-                        NotificationType.GENERIC,
-                        user.getUserId(),
-                        user.getLocale());
-			}
+                if (parameterName.startsWith("list")) {
+                    String value = items.get(parameterName);
+                    // Restore square brackets which are NOT allowed in URLs
+                    parameterName = parameterName.replaceAll("__", "[");
+                    parameterName = parameterName.replaceAll("---", "]");
+                    String smallParameterName = parameterName.substring(0, parameterName.indexOf("["));
+                    String indexString = parameterName.substring(parameterName.indexOf("[") + 1, parameterName.indexOf("]"));
+                    int index = Integer.parseInt(indexString);
+                    if (hashMap.get(smallParameterName) == null) {
+                        HashMap<Integer, String> hashInodes = new HashMap<Integer, String>();
+                        hashInodes.put(index, value);
+                        hashMap.put(smallParameterName, hashInodes);
+                    } else {
+                        HashMap<Integer, String> hashInodes = hashMap.get(smallParameterName);
+                        hashInodes.put(index, value);
+                    }
+                }
+            }
+
+            try {
+                for (String key : hashMap.keySet()) {
+                    HashMap<Integer, String> hashInodes = hashMap.get(key);
+                    for (int i = 0; i < hashInodes.size(); i++) {
+                        final String inode = hashInodes.get(i);
+                        ShortyId shorty = APILocator.getShortyAPI().getShorty(inode).orElse(null);
+                        if (shorty == null) {
+                            continue;
+                        } else if (ShortType.FOLDER.equals(shorty.subType)) {
+                            Folder f = APILocator.getFolderAPI().find(inode, user, false);
+                            f.setSortOrder(i);
+                            APILocator.getFolderAPI().save(f, user, false);
+                            ret.add(f);
+                        } else if (ShortType.LINKS.equals(shorty.subType)) {
+                            Link l = APILocator.getMenuLinkAPI().find(inode, user, false);
+                            l.setSortOrder(i);
+                            APILocator.getMenuLinkAPI().save(l, user, false);
+                            ret.add(l);
+                        } else if (ShortType.CONTENTLET.equals(shorty.subType)) {
+                            final Contentlet c = APILocator.getContentletAPI().find(inode, user, false);
+
+                            // User must have publish on the pages in order to reorder them
+                            APILocator.getPermissionAPI().checkPermission(c, PermissionLevel.PUBLISH, user);
+
+
+                            c.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
+                            c.setSortOrder(i);
+                            c.setModDate(new Date());
+                            final Contentlet in = APILocator.getContentletAPI().checkinWithoutVersioning(c, null, null, null,
+                                    APILocator.systemUser(), false);
+
+                            ret.add(in);
+
+                        }
+                    }
+                }
+            } catch (DotSecurityException dse) {
+                APILocator.getNotificationAPI().generateNotification(new I18NMessage("no-permissions-message"),
+                        new I18NMessage(dse.getMessage()), null, // no actions
+                        NotificationLevel.ERROR, NotificationType.GENERIC, user.getUserId(), user.getLocale());
+
+            } catch (Exception e) {
+                APILocator.getNotificationAPI().generateNotification(new I18NMessage("error"), new I18NMessage(e.getMessage()), null, // no
+                                                                                                                                      // actions
+                        NotificationLevel.ERROR, NotificationType.GENERIC, user.getUserId(), user.getLocale());
+            }
 			
 			
 
