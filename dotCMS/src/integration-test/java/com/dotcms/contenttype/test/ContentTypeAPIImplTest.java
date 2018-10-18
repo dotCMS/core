@@ -99,25 +99,25 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 		ImmutableSimpleContentType.Builder builder = ImmutableSimpleContentType.builder();
 		ContentType movie = builder.name("Movie").folder(APILocator.systemHost().getFolder()).build();
 
-		movie = ctApi.save(movie);
-
-		ImmutableTextField imdbid = ImmutableTextField.builder().name("imdbid").required(true).unique(true).build();
-		ImmutableTextField title = ImmutableTextField.builder().name("Title").indexed(true).required(true).build();
-		ImmutableDateField releaseDate = ImmutableDateField.builder().name("Release Date").variable("releaseDate").build();
-		ImmutableTextField poster = ImmutableTextField.builder().name("Poster").build();
-		ImmutableTextField runtime = ImmutableTextField.builder().name("Runtime").build();
-		ImmutableTextAreaField plot = ImmutableTextAreaField.builder().name("Plot").build();
-		ImmutableTextField boxOffice = ImmutableTextField.builder().name("Box Office").variable("boxOffice").build();
-		List<Field> fieldList = new ArrayList<>();
-		fieldList.add(imdbid);
-		fieldList.add(title);
-		fieldList.add(releaseDate);
-		fieldList.add(poster);
-		fieldList.add(runtime);
-		fieldList.add(plot);
-		fieldList.add(boxOffice);
-
 		try {
+			movie = ctApi.save(movie);
+
+			ImmutableTextField imdbid = ImmutableTextField.builder().name("imdbid").required(true).unique(true).build();
+			ImmutableTextField title = ImmutableTextField.builder().name("Title").indexed(true).required(true).build();
+			ImmutableDateField releaseDate = ImmutableDateField.builder().name("Release Date").variable("releaseDate").build();
+			ImmutableTextField poster = ImmutableTextField.builder().name("Poster").build();
+			ImmutableTextField runtime = ImmutableTextField.builder().name("Runtime").build();
+			ImmutableTextAreaField plot = ImmutableTextAreaField.builder().name("Plot").build();
+			ImmutableTextField boxOffice = ImmutableTextField.builder().name("Box Office").variable("boxOffice").build();
+			List<Field> fieldList = new ArrayList<>();
+			fieldList.add(imdbid);
+			fieldList.add(title);
+			fieldList.add(releaseDate);
+			fieldList.add(poster);
+			fieldList.add(runtime);
+			fieldList.add(plot);
+			fieldList.add(boxOffice);
+
 			ctApi.save(movie, fieldList);
 
 			final List<Field> fieldsRecovery = APILocator.getContentTypeFieldAPI().byContentTypeId(movie.id());
@@ -129,6 +129,9 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 		} catch (Exception e) {
 
 			fail("Should work");
+		} finally {
+
+			ctApi.delete(movie);
 		}
 	}
 
