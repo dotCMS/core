@@ -1,29 +1,11 @@
 package com.dotcms.contenttype.test;
 
-import static junit.framework.Assert.assertTrue;
-import static junit.framework.TestCase.assertEquals;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
 import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
-import com.dotcms.contenttype.model.field.DataTypes;
-import com.dotcms.contenttype.model.field.DateTimeField;
-import com.dotcms.contenttype.model.field.Field;
-import com.dotcms.contenttype.model.field.FieldBuilder;
-import com.dotcms.contenttype.model.field.FieldVariable;
-import com.dotcms.contenttype.model.field.ImmutableFieldVariable;
-import com.dotcms.contenttype.model.field.OnePerContentType;
-import com.dotcms.contenttype.model.field.TextField;
-import com.dotcms.contenttype.model.field.WysiwygField;
-import com.dotcms.contenttype.model.type.BaseContentType;
-import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.contenttype.model.type.ContentTypeBuilder;
-import com.dotcms.contenttype.model.type.Expireable;
-import com.dotcms.contenttype.model.type.UrlMapable;
+import com.dotcms.contenttype.model.field.*;
+import com.dotcms.contenttype.model.type.*;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
@@ -32,14 +14,7 @@ import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
-import java.io.File;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.nio.file.Files;
-import java.util.*;
-
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import com.tngtech.java.junit.dataprovider.DataProvider;
@@ -50,6 +25,21 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
+
+import java.io.File;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.UUID;
+
+import static junit.framework.Assert.assertTrue;
+import static junit.framework.TestCase.assertEquals;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.fail;
 
 @RunWith(DataProviderRunner.class)
 public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
@@ -99,6 +89,47 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 		fields = type.fields();
 		fields = type.fields();
 
+	}
+
+	// Based on: https://groups.google.com/forum/?pli=1#!topic/dotcms/2-0QrRJtppw
+	@Test
+	public void Test_Fields_without_contenttype_on_saving() throws Exception {
+
+		ContentTypeAPI ctApi = APILocator.getContentTypeAPI(APILocator.systemUser());
+		ImmutableSimpleContentType.Builder builder = ImmutableSimpleContentType.builder();
+		ContentType movie = builder.name("Movie").folder(APILocator.systemHost().getFolder()).build();
+
+		movie = ctApi.save(movie);
+
+		ImmutableTextField imdbid = ImmutableTextField.builder().name("imdbid").required(true).unique(true).build();
+		ImmutableTextField title = ImmutableTextField.builder().name("Title").indexed(true).required(true).build();
+		ImmutableDateField releaseDate = ImmutableDateField.builder().name("Release Date").variable("releaseDate").build();
+		ImmutableTextField poster = ImmutableTextField.builder().name("Poster").build();
+		ImmutableTextField runtime = ImmutableTextField.builder().name("Runtime").build();
+		ImmutableTextAreaField plot = ImmutableTextAreaField.builder().name("Plot").build();
+		ImmutableTextField boxOffice = ImmutableTextField.builder().name("Box Office").variable("boxOffice").build();
+		List<Field> fieldList = new ArrayList<>();
+		fieldList.add(imdbid);
+		fieldList.add(title);
+		fieldList.add(releaseDate);
+		fieldList.add(poster);
+		fieldList.add(runtime);
+		fieldList.add(plot);
+		fieldList.add(boxOffice);
+
+		try {
+			ctApi.save(movie, fieldList);
+
+			final List<Field> fieldsRecovery = APILocator.getContentTypeFieldAPI().byContentTypeId(movie.id());
+
+			for (final Field field : fieldsRecovery) {
+
+				assertEquals(movie.id(), field.contentTypeId());
+			}
+		} catch (Exception e) {
+
+			fail("Should work");
+		}
 	}
 
 	@Test
