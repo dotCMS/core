@@ -1,9 +1,12 @@
 package com.dotmarketing.portlets.folders.action;
 
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.notifications.bean.NotificationLevel;
+import com.dotcms.notifications.bean.NotificationType;
 import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
+import com.dotcms.util.I18NMessage;
 import com.dotcms.uuid.shorty.ShortType;
 import com.dotcms.uuid.shorty.ShortyId;
 
@@ -14,10 +17,13 @@ import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.PermissionLevel;
 import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.Treeable;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portal.struts.DotPortletAction;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
@@ -34,6 +40,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Iterator;
@@ -278,41 +285,68 @@ public class OrderMenuAction extends DotPortletAction {
 				}
 			}
 			
-			for(String key:hashMap.keySet()) {
-				HashMap<Integer, String> hashInodes = hashMap.get(key);
-				for (int i = 0; i < hashInodes.size(); i++) {
-					final String inode = hashInodes.get(i);
-					ShortyId shorty = APILocator.getShortyAPI().getShorty(inode).orElse(null);
-					if(shorty==null) {
-					    continue;
-					}
-					else if (ShortType.FOLDER.equals(shorty.subType)) {
-					    Folder f = APILocator.getFolderAPI().find(inode, user, false);
-						f.setSortOrder(i);
-						APILocator.getFolderAPI().save(f, user, false);
-						ret.add(f);
-					}
-					else if (ShortType.LINKS.equals(shorty.subType)) {
-						Link l = APILocator.getMenuLinkAPI().find(inode, user, false);
-						l.setSortOrder(i);
-						APILocator.getMenuLinkAPI().save(l, user, false);
-						ret.add(l);
-					}
-					else if (ShortType.CONTENTLET.equals(shorty.subType)) {
-					    final Contentlet c = APILocator.getContentletAPI().find(inode, user, false);
-					    final ContentletVersionInfo cvi = APILocator.getVersionableAPI().getContentletVersionInfo(c.getIdentifier(), c.getLanguageId());
-					    final Contentlet out = APILocator.getContentletAPI().checkout(cvi.getWorkingInode(), user,false);
-					    out.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
-					    out.setSortOrder(i);
-					    final boolean isLive = out.hasLiveVersion();
-						final Contentlet in = APILocator.getContentletAPI().checkin(out, user, false);
-						ret.add(in);
-						if(isLive) {
-						    APILocator.getContentletAPI().publish(in, user, false);
-						}
-					}
-				}
+			try {
+    			for(String key:hashMap.keySet()) {
+    				HashMap<Integer, String> hashInodes = hashMap.get(key);
+    				for (int i = 0; i < hashInodes.size(); i++) {
+    					final String inode = hashInodes.get(i);
+    					ShortyId shorty = APILocator.getShortyAPI().getShorty(inode).orElse(null);
+    					if(shorty==null) {
+    					    continue;
+    					}
+    					else if (ShortType.FOLDER.equals(shorty.subType)) {
+    					    Folder f = APILocator.getFolderAPI().find(inode, user, false);
+    						f.setSortOrder(i);
+    						APILocator.getFolderAPI().save(f, user, false);
+    						ret.add(f);
+    					}
+    					else if (ShortType.LINKS.equals(shorty.subType)) {
+    						Link l = APILocator.getMenuLinkAPI().find(inode, user, false);
+    						l.setSortOrder(i);
+    						APILocator.getMenuLinkAPI().save(l, user, false);
+    						ret.add(l);
+    					}
+    					else if (ShortType.CONTENTLET.equals(shorty.subType)) {
+    					    final Contentlet c = APILocator.getContentletAPI().find(inode, user, false);
+    					    
+    					    // User must have publish on the pages in order to reorder them
+    					    APILocator.getPermissionAPI().checkPermission(c, PermissionLevel.PUBLISH, user);
+    
+    					    
+    					    c.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
+    					    c.setSortOrder(i);
+    				        c.setModDate(new Date());
+    						final Contentlet in = APILocator.getContentletAPI().checkinWithoutVersioning(c, null, null, null, APILocator.systemUser(), false);
+    
+    						ret.add(in);
+    
+    					}
+    				}
+    			}
 			}
+			catch(DotSecurityException dse) {
+	              APILocator.getNotificationAPI().generateNotification(
+	                      new I18NMessage("no-permissions-message"),
+	                      new I18NMessage(dse.getMessage()), 
+                          null, // no actions
+                          NotificationLevel.ERROR,
+                          NotificationType.GENERIC,
+                          user.getUserId(),
+                          user.getLocale());
+		
+			}
+			catch(Exception e){
+                APILocator.getNotificationAPI().generateNotification(
+                        new I18NMessage("error"),
+                        new I18NMessage(e.getMessage()), 
+                        null, // no actions
+                        NotificationLevel.ERROR,
+                        NotificationType.GENERIC,
+                        user.getUserId(),
+                        user.getLocale());
+			}
+			
+			
 
 /*
 
