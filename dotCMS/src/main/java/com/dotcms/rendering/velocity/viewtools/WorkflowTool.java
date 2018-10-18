@@ -6,15 +6,12 @@ import java.util.List;
 import java.util.Map;
 
 import com.dotmarketing.business.RelationshipAPI;
-import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicyProvider;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.Config;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.PageMode;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
 
@@ -39,7 +36,6 @@ import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.liferay.portal.model.User;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
 
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.RELATIONSHIP_KEY;
 
@@ -56,8 +52,8 @@ public class WorkflowTool implements ViewTool {
 	private final RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
 	private User user;
 
-	public void init(Object initData) {
-		HttpServletRequest request = ((ViewContext) initData).getRequest();
+	public void init(final Object initData) {
+		final HttpServletRequest request = ((ViewContext) initData).getRequest();
 		user = getUser(request);
 	}
 

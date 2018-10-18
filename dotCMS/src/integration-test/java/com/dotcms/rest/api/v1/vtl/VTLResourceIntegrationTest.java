@@ -39,7 +39,6 @@ import java.util.Map;
 import static com.dotcms.rest.api.v1.vtl.VTLResource.VTL_PATH;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.*;
-import static org.mockito.Mockito.mock;
 
 @RunWith(DataProviderRunner.class)
 public class VTLResourceIntegrationTest {
@@ -130,7 +129,7 @@ public class VTLResourceIntegrationTest {
             final User requestingUser = APILocator.getUserAPI().loadUserById(testCase.getUserId(),
                     APILocator.systemUser(), false);
 
-            final WebResource webResource = Mockito.spy(WebResource.class);
+            final WebResource webResource = spy(WebResource.class);
             doReturn(requestingUser).when(webResource).getCurrentUser(request,
                     WebResource.buildParamsMap(testCase.getPathParameters()), false);
 
