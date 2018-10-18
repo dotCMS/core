@@ -4,6 +4,7 @@
     [editable]="true"
     sortField="clazz"
     sortOrder=0
+    (keydown.enter)="$event.stopPropagation()"
     (onEditComplete)="updateSaveButtons($event)"
     >
     <p-column field="key" [header]="messages['contenttypes.field.variables.key_header.label']" [editable]="true"></p-column>

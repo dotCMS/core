@@ -35,16 +35,18 @@ import { DotGlobalMessageModule } from './view/components/_common/dot-global-mes
 import { DotContentletEditorModule } from './view/components/dot-contentlet-editor/dot-contentlet-editor.module';
 import { DotWorkflowTaskDetailModule } from './view/components/dot-workflow-task-detail/dot-workflow-task-detail.module';
 import { DotCrumbtrailModule } from './view/components/dot-crumbtrail/dot-crumbtrail.module';
+import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 
 export const CUSTOM_MODULES = [
     DotActionButtonModule,
     DotContentletEditorModule,
     DotCrumbtrailModule,
-    DotWorkflowTaskDetailModule,
+    DotDialogModule,
     DotGlobalMessageModule,
-    DotIconModule,
     DotIconButtonModule,
+    DotIconModule,
     DotTextareaContentModule,
+    DotWorkflowTaskDetailModule,
     FieldValidationMessageModule,
     IFrameModule,
     ListingDataTableModule,

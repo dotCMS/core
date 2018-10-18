@@ -6,6 +6,7 @@ import { Routes, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { DotIconButtonModule } from '../dot-icon-button/dot-icon-button.module';
 import { MultiSelectModule, InputSwitchModule } from 'primeng/primeng';
+import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 
 const routes: Routes = [
     {
@@ -21,6 +22,7 @@ const routes: Routes = [
         ...NGFACES_MODULES,
         RouterModule.forChild(routes),
         DotIconButtonModule,
+        DotDialogModule,
         MultiSelectModule,
         InputSwitchModule
     ],

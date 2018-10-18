@@ -15,7 +15,7 @@ import { ContentTypeFieldsPropertiesFormComponent } from '../content-type-fields
 import { DotMessageService } from '@services/dot-messages-service';
 import { FieldUtil } from '../util/field-util';
 import { FieldPropertyService } from '../service/field-properties.service';
-import { DotDialogAction } from '@components/dot-dialog/dot-dialog.component';
+import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
 import { DotEventsService } from '@services/dot-events/dot-events.service';
 import { FieldDivider } from '@portlets/content-types/fields/shared/field-divider.interface';
 import { takeUntil, take } from 'rxjs/operators';
@@ -39,8 +39,8 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
     formData: ContentTypeField;
     currentFieldType: FieldType;
     currentField: FieldVariableParams;
-    closeDialogAction: DotDialogAction;
-    saveDialogAction: DotDialogAction;
+    dialogActions: DotDialogActions;
+
 
     @ViewChild('fieldPropertiesForm')
     propertiesForm: ContentTypeFieldsPropertiesFormComponent;
@@ -82,14 +82,16 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
             .subscribe((messages: { [key: string]: string }) => {
                 this.i18nMessages = messages;
 
-                this.closeDialogAction = {
-                    label: this.i18nMessages['contenttypes.dropzone.action.cancel'],
-                    action: () => {}
-                };
-                this.saveDialogAction = {
-                    label: this.i18nMessages['contenttypes.dropzone.action.save'],
-                    action: () => {
-                        this.propertiesForm.saveFieldProperties();
+                this.dialogActions = {
+                    accept: {
+                        action: () => {
+                            this.propertiesForm.saveFieldProperties();
+                        },
+                        label: this.i18nMessages['contenttypes.dropzone.action.save']
+                    },
+                    cancel: {
+                        label: this.i18nMessages['contenttypes.dropzone.action.cancel'],
+                        action: () => {}
                     }
                 };
             });

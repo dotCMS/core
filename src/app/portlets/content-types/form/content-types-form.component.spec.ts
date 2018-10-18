@@ -2,8 +2,8 @@ import { of as observableOf, Observable } from 'rxjs';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { By } from '@angular/platform-browser';
 import { ComponentFixture, async } from '@angular/core/testing';
-import { DebugElement, Injectable } from '@angular/core';
-import { ReactiveFormsModule, AbstractControl } from '@angular/forms';
+import { DebugElement, Injectable, Component, Input, forwardRef } from '@angular/core';
+import { ReactiveFormsModule, AbstractControl, ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { RouterTestingModule } from '@angular/router/testing';
 
 import {
@@ -24,7 +24,6 @@ import { LoginServiceMock } from '../../../test/login-service.mock';
 import { DotMessageService } from '@services/dot-messages-service';
 import { MockDotMessageService } from '../../../test/dot-message-service.mock';
 import { ContentTypesInfoService } from '@services/content-types-info';
-import { SiteSelectorFieldModule } from '@components/_common/site-selector-field/site-selector-field.module';
 import { SiteServiceMock } from '../../../test/site-service.mock';
 import { DotWorkflowService } from '@services/dot-workflow/dot-workflow.service';
 // tslint:disable-next-line:max-line-length
@@ -36,6 +35,27 @@ import { DotDirectivesModule } from '@shared/dot-directives.module';
 import { DotIconModule } from '@components/_common/dot-icon/dot-icon.module';
 import { DotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { MdInputTextModule } from '@directives/md-inputtext/md-input-text.module';
+
+@Component({
+    selector: 'dot-site-selector-field',
+    template: '',
+    providers: [
+        {
+            multi: true,
+            provide: NG_VALUE_ACCESSOR,
+            useExisting: forwardRef(() => DotSiteSelectorComponent)
+        }
+    ]
+})
+class DotSiteSelectorComponent implements ControlValueAccessor {
+    @Input() system;
+
+    writeValue() {}
+
+    registerOnChange() {}
+
+    registerOnTouched() {}
+}
 
 @Injectable()
 class MockDotLicenseService {
@@ -85,7 +105,7 @@ describe('ContentTypesFormComponent', () => {
         const siteServiceMock = new SiteServiceMock();
 
         DOTTestBed.configureTestingModule({
-            declarations: [ContentTypesFormComponent],
+            declarations: [ContentTypesFormComponent, DotSiteSelectorComponent],
             imports: [
                 RouterTestingModule.withRoutes([
                     { component: ContentTypesFormComponent, path: 'test' }
@@ -98,7 +118,6 @@ describe('ContentTypesFormComponent', () => {
                 OverlayPanelModule,
                 ReactiveFormsModule,
                 TabViewModule,
-                SiteSelectorFieldModule,
                 RouterTestingModule,
                 DotDirectivesModule,
                 DotPageSelectorModule,

@@ -1,5 +1,5 @@
 <dot-content-type-layout [contentTypeId]="data?.id" *ngIf="isEditMode()">
-    <div class="content-type__edit-header container-fluid" id="content-type-edit-header">
+    <div class="content-type__edit-header" id="content-type-edit-header">
         <div class="content-type__form-header-left">
 
             <div class="content-type__edit-title">
@@ -13,7 +13,7 @@
             </div>
         </div>
         <div class="content-type__edit-actions">
-            <button type="button" pButton secondary label="{{ messagesKey['contenttypes.action.edit'] }}" (click)="show = true" icon="fa fa-edit" id="form-edit-button"></button>
+            <button type="button" pButton secondary label="{{ messagesKey['contenttypes.action.edit'] }}" (click)="startFormDialog()" icon="fa fa-edit" id="form-edit-button"></button>
             <dot-menu [float]="true" icon="add" [model]="contentTypeActions"></dot-menu>
         </div>
     </div>
@@ -25,28 +25,19 @@
     </dot-content-type-fields-drop-zone>
 </dot-content-type-layout>
 
-<p-dialog
-    *ngIf="show"
-    modal="modal"
-    width="500"
-    styleClass="{{ 'baseType-' + data.baseType | lowercase}}"
+<dot-dialog
+    (hide)="onDialogHide()"
+    [actions]="dialogActions"
+    [closeable]="dialogCloseable"
+    [header]="templateInfo.header"
     [(visible)]="show"
-    [responsive]="true"
-    [resizable]="false"
-    [draggable]="false"
-    [closable]="isEditMode()">
-
-    <p-header>{{ templateInfo.header }}</p-header>
-
+>
     <dot-content-types-form
+        *ngIf="show"
         #form
         [fields]="fields"
         [data]="data"
+        (valid)="setDialogOkButtonState($event)"
         (onSubmit)="handleFormSubmit($event)">
     </dot-content-types-form>
-
-    <p-footer>
-        <button type="button" pButton label="Cancel" class="content-type__cancel cancel" (click)="cancelForm()"></button>
-        <button type="button" pButton class="content-type__save" [label]="isEditMode() ? messagesKey['contenttypes.action.update'] : messagesKey['contenttypes.action.create']" [disabled]="!form.canSave" (click)="form.submitForm()"></button>
-    </p-footer>
-</p-dialog>
+</dot-dialog>

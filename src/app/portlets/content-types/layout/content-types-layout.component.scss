@@ -29,6 +29,7 @@ $top-height: ($toolbar-height + $tabview-nav-height);
         flex-direction: column;
         flex-grow: 1;
         overflow: auto;
+        padding: $basic-padding * 2;
     }
 
     .content-type__fields-sidebar {

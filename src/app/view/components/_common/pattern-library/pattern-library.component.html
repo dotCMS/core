@@ -1,4 +1,21 @@
+<h3>Custom Components</h3>
+<p>
+    <button pButton (click)="dialogShow = true" label="Open Dialog"></button>
+</p>
 
+<p>
+    <button pButton (click)="dialog2Show = true" label="Open Dialog with beforeUnload"></button>
+</p>
+
+<dot-dialog [(visible)]="dialogShow" header="Hello Dialog">
+    <h1>Hello World</h1>
+</dot-dialog>
+
+<dot-dialog [(visible)]="dialog2Show" header="Hello Dialog" (beforeClose)="onBeforeClose($event)">
+    <h1>Hello World</h1>
+</dot-dialog>
+
+<h3>Form Fields</h3>
 <div class="pl__forms">
     <p-dropdown [options]="dropdownOptions"></p-dropdown>
     <p-dropdown tiny [options]="dropdownOptions"></p-dropdown>

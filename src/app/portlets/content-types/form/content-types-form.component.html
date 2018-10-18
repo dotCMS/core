@@ -1,9 +1,9 @@
 <form [formGroup]="form" class="content-type__form" id="content-type-form" novalidate (keyup.enter)="submitForm()">
     <div class="form__group">
-        <span dotMdInputtext [label]="nameFieldLabel">
+        <span dotMdInputtext [label]="nameFieldLabel | async">
             <input pInputText type="text" id="content-type-form-name" name="name" formControlName="name" tabindex="1" #name dotAutofocus />
         </span>
-        <dot-field-validation-message [message]="dotMessageService.get('dot.common.message.field.required', nameFieldLabel)" [field]="form.get('name')"></dot-field-validation-message>
+        <dot-field-validation-message [message]="dotMessageService.get('dot.common.message.field.required', nameFieldLabel | async)" [field]="form.get('name')"></dot-field-validation-message>
     </div>
     <div class="form__group">
         <span dotMdInputtext [label]="dotMessageService.get('contenttypes.form.label.description')">
@@ -22,11 +22,11 @@
     <div class="form__group">
         <div class="ui-g-6">
             <label for="content-type-form-publish-date-field" class="form__label">{{ dotMessageService.get('contenttypes.form.label.publish.date.field') }}</label>
-            <p-dropdown [options]="dateVarOptions" id="content-type-form-publish-date-field" name="publishDateVar" formControlName="publishDateVar" (onChange)="handleDateVarChange($event, 'publishDateVar')" [style]="{'min-width':'90px'}" tabindex="5"></p-dropdown>
+            <p-dropdown appendTo="body" [options]="dateVarOptions" id="content-type-form-publish-date-field" name="publishDateVar" formControlName="publishDateVar" (onChange)="handleDateVarChange($event, 'publishDateVar')" [style]="{'min-width':'90px'}" tabindex="5"></p-dropdown>
         </div>
         <div class="ui-g-6">
             <label for="content-type-form-expire-date-field" class="form__label">{{ dotMessageService.get('contenttypes.form.field.expire.date.field') }}</label>
-            <p-dropdown [options]="dateVarOptions" id="content-type-form-expire-date-field" name="expireDateVar" formControlName="expireDateVar" (onChange)="handleDateVarChange($event, 'expireDateVar')" [style]="{'min-width':'90px'}" tabindex="6"></p-dropdown>
+            <p-dropdown appendTo="body" [options]="dateVarOptions" id="content-type-form-expire-date-field" name="expireDateVar" formControlName="expireDateVar" (onChange)="handleDateVarChange($event, 'expireDateVar')" [style]="{'min-width':'90px'}" tabindex="6"></p-dropdown>
         </div>
     </div>
     <span class="form__group-hint" *ngIf="!dateVarOptions.length" id="field-dates-hint">{{ dotMessageService.get('contenttypes.form.message.no.date.fields.defined') }}</span>

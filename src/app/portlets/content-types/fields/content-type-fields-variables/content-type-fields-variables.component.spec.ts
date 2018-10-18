@@ -11,7 +11,7 @@ import { LoginServiceMock } from '../../../../test/login-service.mock';
 import { RouterTestingModule } from '@angular/router/testing';
 import { FieldVariablesServiceMock, mockFieldVariables } from '../../../../test/field-variable-service.mock';
 import { FieldVariablesService } from '../service/field-variables.service';
-import { of } from 'rxjs/internal/observable/of';
+import { of } from 'rxjs';
 
 @Component({
     selector: 'dot-add-variable-form',
@@ -62,7 +62,7 @@ describe('ContentTypeFieldsVariablesComponent', () => {
     });
 
     it('should load the component with no rows', () => {
-        spyOn(fieldVariableService, 'load').and.returnValue([]);
+        spyOn(fieldVariableService, 'load').and.returnValue(of([]));
 
         fixture.detectChanges();
 
@@ -97,7 +97,7 @@ describe('ContentTypeFieldsVariablesComponent', () => {
     });
 
     it('should load the component and update', () => {
-        spyOn(fieldVariableService, 'save');
+        spyOn(fieldVariableService, 'save').and.returnValue(of([]));
         fixture.detectChanges();
 
         const buttons = fixture.debugElement.queryAll(By.css('button'));
@@ -111,11 +111,10 @@ describe('ContentTypeFieldsVariablesComponent', () => {
         };
 
         expect(fieldVariableService.save).toHaveBeenCalledWith(params);
-
     });
 
     it('should load the component and delete', () => {
-        spyOn(fieldVariableService, 'delete');
+        spyOn(fieldVariableService, 'delete').and.returnValue(of([]));
         fixture.detectChanges();
 
         const buttons = fixture.debugElement.queryAll(By.css('button'));
@@ -129,6 +128,17 @@ describe('ContentTypeFieldsVariablesComponent', () => {
         };
 
         expect(fieldVariableService.delete).toHaveBeenCalledWith(params);
+    });
+
+    it('should stoppropagation of keydown.enter event in the datatable', () => {
+        fixture.detectChanges();
+        const stopPropagationSpy = jasmine.createSpy('spy');
+        const dataTable = de.query(By.css('p-dataTable'));
+        dataTable.triggerEventHandler('keydown.enter', {
+            stopPropagation: stopPropagationSpy
+        });
+
+        expect(stopPropagationSpy).toHaveBeenCalledTimes(1);
     });
 
 });

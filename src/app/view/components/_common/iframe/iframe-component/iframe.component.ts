@@ -25,14 +25,19 @@ import { DotUiColorsService } from '@services/dot-ui-colors/dot-ui-colors.servic
 export class IframeComponent implements OnInit, OnDestroy {
     @ViewChild('iframeElement')
     iframeElement: ElementRef;
+
     @Input()
     src: string;
+
     @Input()
     isLoading = false;
+
     @Output()
     load: EventEmitter<any> = new EventEmitter();
+
     @Output()
     keydown: EventEmitter<KeyboardEvent> = new EventEmitter();
+
     @Output()
     custom: EventEmitter<CustomEvent> = new EventEmitter();
 

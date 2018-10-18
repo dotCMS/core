@@ -1,4 +1,9 @@
-<p-dialog header="{{ i18nMessages['login-as'] }}" [(visible)]="visible" appendTo="body" modal="modal" resizable class="login-as" [width]="250">
+<dot-dialog
+    [header]="i18nMessages['login-as']"
+    [(visible)]="visible"
+    [actions]="dialogActions"
+    (hide)="close()"
+>
     <!--TODO: manage errors on required fields and errors messages -->
     <span class="error-message">{{ errorMessage }}</span>
     <form [formGroup]="form" (ngSubmit)="doLoginAs()" id="login-as-form" #formEl="ngForm" novalidate>
@@ -22,10 +27,4 @@
             <input pPassword #password [feedback]="false" formControlName="password" id="dot-login-as-password" type="password" placeholder="{{ i18nMessages['loginas.input.loginas.password'] }}" floatingPlaceholder="false"/>
         </div>
     </form>
-    <p-footer>
-        <button pButton class="cancel" id="dot-login-as-button-cancel" (click)="close()" label="{{ i18nMessages['cancel'] }}"></button>
-        <button pButton (click)="formEl.ngSubmit.emit()" id="dot-login-as-button-change" [disabled]="!form.valid || (needPassword && !this.form.value.password)" label="{{ i18nMessages['Change'] }}"></button>
-    </p-footer>
-</p-dialog>
-
-
+</dot-dialog>
