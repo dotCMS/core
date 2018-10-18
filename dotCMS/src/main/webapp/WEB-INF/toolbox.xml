@@ -276,7 +276,7 @@
 	</tool>
 	<tool>
 		<key>workflowtool</key>
-		<scope>application</scope>
+		<scope>request</scope>
 		<class>com.dotcms.rendering.velocity.viewtools.WorkflowTool</class>
 	</tool>
 	<tool>
