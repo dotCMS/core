@@ -14,7 +14,7 @@ export class PatternLibraryComponent implements OnInit {
     radioVal1 = 'Option 4';
     checkboxVal1 = ['Option 4'];
     dialogShow = false;
-    dialogShow2 = false;
+    dialog2Show = false;
     dateFieldMinDate = new Date();
 
     constructor() {}
