@@ -351,8 +351,7 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
         //Apply for both sided relationships
         if (relationship.getParentStructureInode()
                 .equalsIgnoreCase(contentTypeIf.id()) &&
-                !(relationship.getParentRelationName().equals(relationship.getChildRelationName())
-                        && relationship.getChildStructureInode()
+                !(relationship.getChildStructureInode()
                         .equalsIgnoreCase(relationship.getParentStructureInode()))){
             return true;
         }
@@ -362,8 +361,7 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
     public  boolean isChild(final Relationship relationship, final ContentTypeIf contentTypeIf) {
         if (relationship.getChildStructureInode()
                 .equalsIgnoreCase(contentTypeIf.id()) &&
-                !(relationship.getParentRelationName().equals(relationship.getChildRelationName())
-                        && relationship.getChildStructureInode()
+                !(relationship.getChildStructureInode()
                         .equalsIgnoreCase(relationship.getParentStructureInode()))) {
             return true;
         }
