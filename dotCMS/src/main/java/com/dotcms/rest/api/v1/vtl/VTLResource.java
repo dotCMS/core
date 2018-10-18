@@ -129,7 +129,7 @@ public class VTLResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
-    @Consumes({MediaType.APPLICATION_JSON, MediaType.APPLICATION_FORM_URLENCODED})
+    @Consumes({MediaType.APPLICATION_JSON, MediaType.MULTIPART_FORM_DATA, MediaType.APPLICATION_FORM_URLENCODED})
     public final Response post(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
                                      @Context UriInfo uriInfo, @PathParam("folder") final String folderName,
                                      @PathParam("path") final String pathParams, final Map<String, String> properties) {
