@@ -18,6 +18,12 @@ class DotTestHostComponent {
     gravatar: string;
     icon: string;
     title: string;
+
+    constructor() {
+        this.icon = 'icon';
+        this.gravatar = 'test@test.com';
+        this.title = 'test';
+    }
 }
 
 @Component({
@@ -87,9 +93,6 @@ describe('DotDropdownComponent', () => {
 
         de = hostDe.query(By.css('dot-dropdown-component'));
         comp = de.componentInstance;
-        hostComp.icon = 'icon';
-        hostComp.title = 'test';
-        hostComp.gravatar = 'test@test.com';
     });
 
     describe('Enabled', () => {
