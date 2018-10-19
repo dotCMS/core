@@ -5,8 +5,6 @@
     display: flex;
     flex-grow: 1;
     flex-direction: column;
-    margin-bottom: $gutter-border;
-    padding: 0 $gutter-border;
 
     ::ng-deep .ui-tabview {
         margin-left: -$basic-padding * 4;
@@ -14,14 +12,8 @@
     }
 }
 
-dot-dialog ::ng-deep {
-    .ui-dialog {
-        width: 700px;
-    }
-}
 .content-type-fields-drop-zone__container {
     flex-grow: 1;
-    padding-bottom: $basic-padding * 2;
 }
 
 .content-type-fields-drop-zone__hint-icon {

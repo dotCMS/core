@@ -9,6 +9,9 @@ import {
 } from '@angular/core';
 import { FormGroup, FormBuilder, Validators, FormControl } from '@angular/forms';
 
+import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
+
 import * as _ from 'lodash';
 import { SelectItem } from 'primeng/primeng';
 
@@ -47,10 +50,13 @@ export class ContentTypesFormComponent implements OnInit {
     @Output()
     onSubmit: EventEmitter<any> = new EventEmitter();
 
+    @Output()
+    valid: EventEmitter<boolean> = new EventEmitter();
+
     canSave = false;
     dateVarOptions: SelectItem[] = [];
     form: FormGroup;
-    nameFieldLabel: string;
+    nameFieldLabel: Observable<string>;
 
     private originalValue: any;
 
@@ -89,7 +95,8 @@ export class ContentTypesFormComponent implements OnInit {
         this.initFormGroup();
         this.initWorkflowField();
         this.bindActionButtonState();
-        this.setNameFieldLabel();
+
+        this.nameFieldLabel = this.setNameFieldLabel();
         this.name.nativeElement.focus();
 
         if (!this.isEditMode()) {
@@ -125,20 +132,6 @@ export class ContentTypesFormComponent implements OnInit {
     }
 
     /**
-     * Set the form field name label
-     *
-     * @memberof ContentTypesFormComponent
-     */
-    setNameFieldLabel(): void {
-        this.dotMessageService.messageMap$.subscribe(() => {
-            const type = this.data.baseType.toLowerCase();
-
-            this.nameFieldLabel = `${this.dotMessageService.get(`contenttypes.content.${type}`)}
-            ${this.dotMessageService.get('contenttypes.form.name')} *`;
-        });
-    }
-
-    /**
      * If form is valid emit form submit event
      *
      * @memberof ContentTypesFormComponent
@@ -152,6 +145,16 @@ export class ContentTypesFormComponent implements OnInit {
         }
     }
 
+    private setNameFieldLabel(): Observable<string> {
+        return this.dotMessageService.messageMap$.pipe(
+            map(() => {
+                const type = this.data.baseType.toLowerCase();
+                return `${this.dotMessageService.get(`contenttypes.content.${type}`)}
+            ${this.dotMessageService.get('contenttypes.form.name')} *`;
+            })
+        );
+    }
+
     private bindActionButtonState(): void {
         this.form.valueChanges.subscribe(() => {
             this.setSaveState();
@@ -162,6 +165,8 @@ export class ContentTypesFormComponent implements OnInit {
         this.canSave = this.isEditMode()
             ? this.form.valid && this.isFormValueUpdated()
             : this.form.valid;
+
+        this.valid.next(this.canSave);
     }
 
     private getDateVarFieldOption(field: ContentTypeField): SelectItem {

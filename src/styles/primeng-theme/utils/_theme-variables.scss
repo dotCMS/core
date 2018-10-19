@@ -175,6 +175,7 @@ $paginator-page-border-radius: 10px;
 $paginator-page-size: 21px;
 
 // TABVIEW
+$tabview-item-hover-bgcolor: $selectbutton-button-hover-bgcolor;
 $tabview-item-color: $gray;
 $tabview-item-selected-color: $brand-secondary;
 $tabview-item-padding: $basic-padding * 2 $basic-padding * 3 10px; // To match the 48px height

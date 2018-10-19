@@ -35,14 +35,19 @@ export class AddVariableFormComponent implements OnInit {
      * Handle Create Variable event from form
      * @memberof ContentTypeFieldsVariablesComponent
      */
-    addVariableForm(): void {
-        const variable: FieldVariable = {
-            key: this.form.controls.key.value,
-            value: this.form.controls.value.value
-        };
-        this.saveVariable.emit(variable);
-        this.form = this.getNewForm();
-        this.keyField.nativeElement.focus();
+    addVariableForm($event: Event | KeyboardEvent): void {
+        $event.stopPropagation();
+
+        if (this.form.valid) {
+            const variable: FieldVariable = {
+                key: this.form.controls.key.value,
+                value: this.form.controls.value.value
+            };
+            this.saveVariable.emit(variable);
+            this.form = this.getNewForm();
+            this.keyField.nativeElement.focus();
+        }
+
     }
 
     private getNewForm(): FormGroup {

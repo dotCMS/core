@@ -7,7 +7,7 @@
     display: flex;
     height: $content-type-field-height;
     padding: $basic-padding * 2;
-    transition: border-left-color $basic-speed, box-shadow $basic-speed;
+    transition: box-shadow $basic-speed;
 
     &:hover {
         box-shadow: $md-shadow-5;

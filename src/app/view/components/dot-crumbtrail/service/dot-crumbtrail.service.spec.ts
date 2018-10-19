@@ -1,16 +1,16 @@
 import { DOTTestBed } from '../../../../test/dot-test-bed';
-import { DotCrumbtrailService } from './dot-crumbtrail.service';
+import { DotCrumbtrailService, DotCrumb } from './dot-crumbtrail.service';
 import { Injectable } from '@angular/core';
 import { DotNavigationService } from '../../dot-navigation/services/dot-navigation.service';
-import { Router, ActivatedRoute } from '@angular/router';
-import { Observable, Subject, of } from 'rxjs';
+import { Router, ActivatedRoute, NavigationEnd } from '@angular/router';
+import { Observable, Subject, of, BehaviorSubject } from 'rxjs';
 import { DotMenu } from '../../../../shared/models/navigation';
 
 @Injectable()
 class MockDotNavigationService {
-    readonly navigationEnd: Subject<Event> = new Subject();
+    readonly navigationEnd: Subject<NavigationEnd> = new Subject();
 
-    onNavigationEnd(): Observable<Event> {
+    onNavigationEnd(): Observable<NavigationEnd> {
         return this.navigationEnd.asObservable();
     }
 
@@ -25,19 +25,19 @@ class MockDotNavigationService {
                         active: false,
                         ajax: false,
                         angular: false,
-                        id: 'first_porlet',
-                        label: 'First Potlet Label',
-                        url: '/url/fisrt_portet',
-                        menuLink: '/menulink/first_portet'
+                        id: 'first_portlet',
+                        label: 'First Portlet Label',
+                        url: '/url/fisrt_portlet',
+                        menuLink: 'menulink/first_portlet'
                     },
                     {
                         active: false,
                         ajax: false,
                         angular: false,
-                        id: 'porlet',
+                        id: 'portlet',
                         label: 'Potlet Label',
-                        url: '/url/portet',
-                        menuLink: '/menulink/portet'
+                        url: '/url/portlet',
+                        menuLink: 'menulink/portlet'
                     }
                 ],
                 name: 'menu',
@@ -45,6 +45,48 @@ class MockDotNavigationService {
                 tabIcon: '',
                 tabName: 'Menu Label',
                 url: '/url/menu'
+            },
+            {
+                active: false,
+                id: 'menu_2',
+                isOpen: false,
+                menuItems: [
+                    {
+                        active: false,
+                        ajax: false,
+                        angular: false,
+                        id: 'content-types-angular',
+                        label: 'Content Types',
+                        url: '/content-types-angular',
+                        menuLink: 'content-types-angular'
+                    }
+                ],
+                name: 'Types & Tag',
+                tabDescription: '',
+                tabIcon: '',
+                tabName: 'Types & Tag',
+                url: '/url/menu_2'
+            },
+            {
+                active: false,
+                id: 'site',
+                isOpen: false,
+                menuItems: [
+                    {
+                        active: false,
+                        ajax: false,
+                        angular: false,
+                        id: 'site-browser',
+                        label: 'Browser',
+                        url: '/site-browser',
+                        menuLink: 'c/site-browser'
+                    }
+                ],
+                name: 'site',
+                tabDescription: '',
+                tabIcon: '',
+                tabName: 'Site',
+                url: '/url/menu_3'
             }
         ]);
     }
@@ -52,11 +94,13 @@ class MockDotNavigationService {
 
 @Injectable()
 class MockRouter {
-    url = '/c/embedded-dashboard';
+    url = '/portlet';
 }
 
 @Injectable()
-class MockActivatedRoute {}
+class MockActivatedRoute {
+    root: any;
+}
 
 describe('DotCrumbtrailService', () => {
     const dotNavigationServiceMock: MockDotNavigationService = new MockDotNavigationService();
@@ -64,6 +108,8 @@ describe('DotCrumbtrailService', () => {
     const mockActivatedRoute = new MockActivatedRoute();
 
     let service: DotCrumbtrailService;
+    let firstCrumb: DotCrumb[];
+    let secondCrumb: DotCrumb[];
 
     beforeEach(() => {
         const testbed = DOTTestBed.configureTestingModule({
@@ -85,11 +131,182 @@ describe('DotCrumbtrailService', () => {
         });
 
         service = testbed.get(DotCrumbtrailService);
+
+        service.crumbTrail$.subscribe((crumbs) => {
+            if (!firstCrumb) {
+                firstCrumb = crumbs;
+            } else {
+                secondCrumb = crumbs;
+            }
+        });
     });
 
-    it('should take the current url', () => {
-        service.crumbTrail$.subscribe((crumbs) => {
-            console.log('CRUMBS', crumbs);
-        });
+    it('should take the current url from Router', () => {
+        expect(firstCrumb).toEqual([
+            {
+                label: 'menu',
+                url: '#/menulink/first_portlet'
+            },
+            {
+                label: 'Potlet Label',
+                url: '#/menulink/portlet'
+            }
+        ]);
+    });
+
+    it('Should take url from NavegationEnd event', () => {
+        dotNavigationServiceMock.navigationEnd.next(
+            {
+                url: '/first_portlet',
+                urlAfterRedirects: '/first_portlet',
+                id: 1,
+            }
+        );
+
+        expect(secondCrumb).toEqual([
+            {
+                label: 'menu',
+                url: '#/menulink/first_portlet'
+            },
+            {
+                label: 'First Portlet Label',
+                url: '#/menulink/first_portlet'
+            }
+        ]);
+    });
+
+    it('Should ignore c prefix', () => {
+        dotNavigationServiceMock.navigationEnd.next(
+            {
+                url: '/first_portlet',
+                urlAfterRedirects: '/first_portlet',
+                id: 1,
+            }
+        );
+
+        expect(secondCrumb).toEqual([
+            {
+                label: 'menu',
+                url: '#/menulink/first_portlet'
+            },
+            {
+                label: 'First Portlet Label',
+                url: '#/menulink/first_portlet'
+            }
+        ]);
+    });
+
+    it('Should exclude URL', () => {
+        dotNavigationServiceMock.navigationEnd.next(
+            {
+                url: '/content-types-angular/create/content',
+                urlAfterRedirects: '/content-types-angular/create/content',
+                id: 1,
+            }
+        );
+
+        expect(secondCrumb).toEqual([
+            {
+                label: 'Types & Tag',
+                url: '#/content-types-angular'
+            },
+            {
+                label: 'Content Types',
+                url: '#/content-types-angular'
+            }
+        ]);
+    });
+
+    it('Should take content types data', () => {
+        mockActivatedRoute.root = {
+            firstChild: {
+                data: new BehaviorSubject({}),
+                firstChild: {
+                    data: new BehaviorSubject({}),
+                    firstChild: {
+                        firstChild: null,
+                        data: new BehaviorSubject(
+                            {
+                                contentType: {
+                                    name: 'Content Type Testing'
+                                }
+                            }
+                        )
+                    }
+                }
+            }
+        };
+
+        dotNavigationServiceMock.navigationEnd.next(
+            {
+                url: '/content-types-angular/edit/02853fe9-bd7b-48b4-b19d-058b9dad19a8',
+                urlAfterRedirects: '/content-types-angular/edit/02853fe9-bd7b-48b4-b19d-058b9dad19a8',
+                id: 1,
+            }
+        );
+
+        expect(secondCrumb).toEqual([
+            {
+                label: 'Types & Tag',
+                url: '#/content-types-angular'
+            },
+            {
+                label: 'Content Types',
+                url: '#/content-types-angular'
+            },
+            {
+                label: 'Content Type Testing',
+                url: ''
+            }
+        ]);
+    });
+
+    it('Should take edit page data', () => {
+        mockActivatedRoute.root = {
+            firstChild: {
+                data: new BehaviorSubject({}),
+                firstChild: {
+                    data: new BehaviorSubject({}),
+                    firstChild: {
+                        firstChild: {
+                            firstChild: null,
+                            data: new BehaviorSubject({})
+                        },
+                        data: new BehaviorSubject(
+                            {
+                                content: {
+                                    page: {
+                                        title: 'About Us'
+                                    }
+                                }
+                            }
+                        )
+                    }
+                }
+            }
+        };
+
+        dotNavigationServiceMock.navigationEnd.next(
+            {
+                url: '/edit-page/content?url=%2Fabout-us%2Findex&language_id=1',
+                urlAfterRedirects: '/edit-page/content?url=%2Fabout-us%2Findex&language_id=1',
+                id: 1,
+            }
+        );
+
+        expect(secondCrumb).toEqual([
+            {
+                label: 'site',
+                url: '#/c/site-browser'
+            },
+            {
+                label: 'Browser',
+                url: '#/c/site-browser'
+            },
+            {
+                label: 'About Us',
+                url: ''
+            }
+        ]);
     });
 });

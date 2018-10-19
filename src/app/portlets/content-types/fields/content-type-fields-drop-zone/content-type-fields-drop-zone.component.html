@@ -25,10 +25,9 @@
 </div>
 
 <dot-dialog
-    [show]="displayDialog"
-    [ok]="saveDialogAction"
-    [cancel]="closeDialogAction"
-    (close)="removeFieldsWithoutId()"
+    [(visible)]="displayDialog"
+    [actions]="dialogActions"
+    (hide)="removeFieldsWithoutId()"
     [header]="currentFieldType?.label">
 
     <p-tabView [activeIndex]="dialogActiveTab">

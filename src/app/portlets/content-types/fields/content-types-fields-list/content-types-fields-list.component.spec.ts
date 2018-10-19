@@ -26,7 +26,7 @@ describe('ContentTypesFieldsListComponent', () => {
     }));
 
     it('should renderer each items', () => {
-        const fieldService = fixture.debugElement.injector.get(FieldService);
+        const fieldService = de.injector.get(FieldService);
         const itemsData = [
             {
                 label: 'Text'
@@ -48,7 +48,7 @@ describe('ContentTypesFieldsListComponent', () => {
 
         spyOn(fieldService, 'loadFieldTypes').and.returnValue(observableOf(itemsData));
 
-        const fieldDragDropService = fixture.debugElement.injector.get(FieldDragDropService);
+        const fieldDragDropService = de.injector.get(FieldDragDropService);
         spyOn(fieldDragDropService, 'setFieldBagOptions');
 
         fixture.detectChanges();

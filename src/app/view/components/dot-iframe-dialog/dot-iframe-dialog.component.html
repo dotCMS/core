@@ -1,27 +1,16 @@
-
-
-<p-dialog
+<dot-dialog
     #dialog
-    class="dialog"
-    [dismissableMask]="false"
-    [closable]="false"
-    [header]="header"
-    [draggable]="false"
-    [visible]="show"
-    [dismissableMask]="true"
-    [responsive]="true"
-    [modal]="true"
-    [styleClass]="header?.length > 0 ? 'ui-dialog-titlebar-animate' : ''">
-
-    <a href="#" (click)="onClose($event)" role="button" class="ui-dialog-titlebar-icon ui-dialog-titlebar-close dialog__close">
-        <dot-icon name="clear"></dot-icon>
-    </a>
+    (beforeClose)="beforeClose.emit($event)"
+    (hide)="onDialogHide()"
+    [(visible)]="show"
+    [contentStyle]="{'padding': '0'}"
+    [headerStyle]="{'background-color': '#f1f3f4'}"
+    [header]="header">
     <dot-iframe
         class="dialog__iframe"
         [src]="url"
-        *ngIf="show"
         (load)="onLoad($event)"
         (keydown)="onKeyDown($event)"
-        (custom)="onCustomEvents($event)">
+        (custom)="custom.emit($event)">
     </dot-iframe>
-</p-dialog>
+</dot-dialog>

@@ -44,6 +44,7 @@ export class SiteSelectorFieldComponent implements ControlValueAccessor {
      */
     registerOnChange(fn): void {
         this.propagateChange = fn;
+        this.propagateCurrentSiteId();
     }
 
     registerOnTouched(): void {}
@@ -79,6 +80,18 @@ export class SiteSelectorFieldComponent implements ControlValueAccessor {
             this.currentSiteSubscription = this.siteService.switchSite$.subscribe((site: Site) => {
                 this.value = site.identifier;
                 this.propagateChange(site.identifier);
+            });
+        }
+    }
+
+    private propagateCurrentSiteId(): void {
+        if (this.siteService.currentSite) {
+            this.value = this.siteService.currentSite.identifier;
+            this.propagateChange(this.value);
+        } else {
+            this.siteService.getCurrentSite().subscribe((currentSite: Site) => {
+                this.value = currentSite.identifier;
+                this.propagateChange(this.value);
             });
         }
     }

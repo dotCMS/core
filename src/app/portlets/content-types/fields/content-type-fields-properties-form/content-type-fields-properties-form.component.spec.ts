@@ -230,7 +230,7 @@ describe('ContentTypeFieldsPropertiesFormComponent', () => {
             startHostComponent();
         });
 
-        it("should set unique and no break when indexed and required doesn't exist", () => {
+        it('should set unique and no break when indexed and required doesn\'t exist', () => {
             comp.form.get('unique').setValue(true);
 
             expect(comp.form.get('indexed')).toBe(null);

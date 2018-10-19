@@ -1,38 +1,35 @@
-<p-dialog
-    #dialog
-    class="dialog"
-    (onHide)="closeDialog()"
-    [draggable]="false"
-    [visible]="show"
-    [dismissableMask]="true"
-    [closable]="false"
-    [responsive]="true"
-    [modal]="true">
+<div #dialog class="dialog" [@animation]="{value: 'visible'}" (@animation.start)="onAnimationStart($event)" *ngIf="visible">
+    <header class="dialog__header" [class.dialog__header--shadowed]="isContentScrolled$ | async" [ngStyle]="headerStyle">
+        <h4 class="dialog__title" [textContent]="header"></h4>
+        <dot-icon-button
+            big
+            icon="close"
+            (click)="close($event)"
+            *ngIf="closeable">
+        </dot-icon-button>
+    </header>
 
-    <p-header>
-        {{ header }}
-        <dot-icon-button icon="close" (click)="closeDialog()"></dot-icon-button>
-    </p-header>
+    <div class="dialog__content" #content [ngStyle]="contentStyle">
+        <ng-content></ng-content>
+    </div>
 
-    <ng-content></ng-content>
-
-    <p-footer *ngIf="ok || cancel">
+    <footer class="dialog__footer" *ngIf="actions" [class.dialog__footer--shadowed]="isContentScrolled$ | async">
         <button
-            *ngIf="cancel"
+            *ngIf="actions.cancel"
+            class="dialog__button-cancel"
             pButton
-            id="button-sec"
-            class="dot-dialog__cancel"
-            type="button"
-            [disabled]="cancel.disabled"
-            [label]="cancel.label"
-            (click)="cancelAction()"></button>
+            secondary
+            (click)="cancelAction()"
+            [disabled]="actions.cancel.disabled"
+            [label]="actions.cancel.label">
+        </button>
         <button
-            *ngIf="ok"
+            *ngIf="actions.accept"
+            class="dialog__button-accept"
             pButton
-            class="dot-dialog__ok"
-            type="button"
-            [disabled]="ok.disabled"
-            [label]="ok.label"
-            (click)="ok.action(this)"></button>
-    </p-footer>
-</p-dialog>
+            [disabled]="actions.accept.disabled"
+            [label]="actions.accept.label"
+            (click)="acceptAction()">
+        </button>
+    </footer>
+</div>

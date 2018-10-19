@@ -1,8 +1,13 @@
-<p-dialog header="{{ i18nMessages['my-account'] }}" [(visible)]="visible"  appendTo="body" modal="modal" width="300" responsive="true">
+<dot-dialog
+    [header]="i18nMessages['my-account']"
+    [(visible)]="visible"
+    [actions]="dialogActions"
+    (hide)="close.emit()"
+>
+
     <div class="error-message" [innerHTML]="message" *ngIf="message" id="dot-my-account-general-error-message"></div>
 
     <form #myAccountForm="ngForm" class="my-account">
-
         <div class="form__group">
             <span dotMdInputtext label="{{ i18nMessages['First-Name'] }}">
                 <input pInputText id="dot-my-account-first-name-input"
@@ -83,10 +88,4 @@
         </div>
         <p class="error-message" [hidden]="!(passwordInput.dirty && confirmPasswordInput.dirty) || passwordMatch">{{ i18nMessages['error.forgot.password.passwords.dont.match'] }}</p>
     </form>
-    <footer>
-        <div class="ui-dialog-buttonpane ui-widget-content ui-helper-clearfix">
-            <button pButton id="dot-my-account-ok-button" (click)="save()" [disabled]="(changePasswordOption && !passwordMatch) || !myAccountForm.form.valid" label="{{ i18nMessages['save'] }}"></button>
-            <button pButton secondary id="dot-my-account-close-button" (click)="close.emit()" type="button" label="{{ i18nMessages['modes.Close'] }}"></button>
-        </div>
-    </footer>
-</p-dialog>
+</dot-dialog>

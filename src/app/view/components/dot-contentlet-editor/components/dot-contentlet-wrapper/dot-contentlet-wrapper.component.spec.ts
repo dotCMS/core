@@ -71,11 +71,11 @@ describe('DotContentletWrapperComponent', () => {
         spyOn(component.custom, 'emit');
     });
 
-    it('should hide dot-iframe-dialog', () => {
+    it('should show dot-iframe-dialog', () => {
         fixture.detectChanges();
         dotIframeDialog = de.query(By.css('dot-iframe-dialog'));
 
-        expect(dotIframeDialog).toBe(null);
+        expect(dotIframeDialog).not.toBe(null);
     });
 
     describe('with data', () => {
@@ -93,11 +93,6 @@ describe('DotContentletWrapperComponent', () => {
             it('should call load', () => {
                 dotIframeDialog.triggerEventHandler('load', { hello: 'world' });
                 expect(dotAddContentletService.load).toHaveBeenCalledWith({ hello: 'world' });
-            });
-
-            it('should call keyDown', () => {
-                dotIframeDialog.triggerEventHandler('keydown', { hello: 'world' });
-                expect(dotAddContentletService.keyDown).toHaveBeenCalledWith({ hello: 'world' });
             });
 
             it('should close the dialog', () => {

@@ -1,33 +1,35 @@
-import { Observable } from 'rxjs';
+import { Observable, Subject } from 'rxjs';
 import {
     Component,
     Input,
     Output,
     EventEmitter,
-    ViewEncapsulation,
     ViewChild,
     AfterViewInit
 } from '@angular/core';
 import { FormGroup, FormBuilder, Validators } from '@angular/forms';
-import { OnInit } from '@angular/core/src/metadata/lifecycle_hooks';
+import { OnInit, OnDestroy } from '@angular/core/src/metadata/lifecycle_hooks';
 import { DotMessageService } from '@services/dot-messages-service';
 import { LoggerService } from 'dotcms-js';
 import { AddToBundleService } from '@services/add-to-bundle/add-to-bundle.service';
 import { DotBundle } from '@models/dot-bundle/dot-bundle';
 import { Dropdown } from 'primeng/primeng';
-import { mergeMap, map } from 'rxjs/operators';
+import { mergeMap, map, tap, take, takeUntil } from 'rxjs/operators';
+import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
 
 const LAST_BUNDLE_USED = 'lastBundleUsed';
 
 @Component({
-    encapsulation: ViewEncapsulation.None,
     selector: 'dot-add-to-bundle',
-    templateUrl: 'dot-add-to-bundle.component.html'
+    templateUrl: 'dot-add-to-bundle.component.html',
+    styleUrls: ['dot-add-to-bundle.component.scss']
 })
-export class DotAddToBundleComponent implements OnInit, AfterViewInit {
+export class DotAddToBundleComponent implements OnInit, AfterViewInit, OnDestroy {
     form: FormGroup;
     bundle$: Observable<DotBundle[]>;
     placeholder = '';
+    dialogShow = false;
+    dialogActions: DotDialogActions;
 
     @Input()
     assetIdentifier: string;
@@ -40,6 +42,8 @@ export class DotAddToBundleComponent implements OnInit, AfterViewInit {
 
     @ViewChild('addBundleDropdown')
     addBundleDropdown: Dropdown;
+
+    private destroy$: Subject<boolean> = new Subject<boolean>();
 
     constructor(
         private addToBundleService: AddToBundleService,
@@ -61,8 +65,10 @@ export class DotAddToBundleComponent implements OnInit, AfterViewInit {
         this.initForm();
 
         this.bundle$ = this.dotMessageService.getMessages(keys).pipe(
-            mergeMap((messages) => {
+            take(1),
+            mergeMap((messages: {[key: string]: string}) => {
                 return this.addToBundleService.getBundles().pipe(
+                    take(1),
                     map((bundles: DotBundle[]) => {
                         setTimeout(() => {
                             this.placeholder = bundles.length
@@ -78,6 +84,10 @@ export class DotAddToBundleComponent implements OnInit, AfterViewInit {
                                     : ''
                             );
                         return bundles;
+                    }),
+                    tap(() => {
+                        this.setDialogConfig(messages, this.form);
+                        this.dialogShow = true;
                     })
                 );
             })
@@ -88,6 +98,11 @@ export class DotAddToBundleComponent implements OnInit, AfterViewInit {
         setTimeout(() => {
             this.addBundleDropdown.editableInputViewChild.nativeElement.focus();
         });
+    }
+
+    ngOnDestroy(): void {
+        this.destroy$.next(true);
+        this.destroy$.complete();
     }
 
     /**
@@ -108,6 +123,7 @@ export class DotAddToBundleComponent implements OnInit, AfterViewInit {
         if (this.form.valid) {
             this.addToBundleService
                 .addToBundle(this.assetIdentifier, this.setBundleData())
+                .pipe(takeUntil(this.destroy$))
                 .subscribe((result: any) => {
                     if (!result.errors) {
                         sessionStorage.setItem(
@@ -152,5 +168,33 @@ export class DotAddToBundleComponent implements OnInit, AfterViewInit {
         const lastBundle: DotBundle = JSON.parse(sessionStorage.getItem(LAST_BUNDLE_USED));
         // return lastBundle ? this.bundle$.find(bundle => bundle.name === lastBundle.name) : null;
         return lastBundle ? bundles.find((bundle) => bundle.name === lastBundle.name) : null;
+    }
+
+    private setDialogConfig(messages: {[key: string]: string}, form: FormGroup): void {
+        this.dialogActions = {
+            accept: {
+                action: () => {
+                    this.submitForm();
+                },
+                label: messages['contenttypes.content.add_to_bundle.form.add'],
+                disabled: !form.valid
+            },
+            cancel: {
+                action: () => {
+                    this.close();
+                },
+                label: messages['contenttypes.content.add_to_bundle.form.cancel']
+            }
+        };
+
+        form.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(() => {
+            this.dialogActions = {
+                ...this.dialogActions,
+                accept: {
+                    ...this.dialogActions.accept,
+                    disabled: !this.form.valid
+                }
+            };
+        });
     }
 }

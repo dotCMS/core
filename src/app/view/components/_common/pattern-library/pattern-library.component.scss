@@ -10,7 +10,7 @@
 }
 
 .pl__forms {
-    display: inline-grid;
+    display: grid;
     grid-gap: $basic-padding * 2;
 }
 

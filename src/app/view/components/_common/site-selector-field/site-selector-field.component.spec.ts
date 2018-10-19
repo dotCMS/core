@@ -61,7 +61,6 @@ describe('SiteSelectorFieldComponent', () => {
     });
 
     it('should have current site as default value', () => {
-        siteServiceMock.setFakeCurrentSite();
         fixture.detectChanges();
 
         expect(component.form.value).toEqual({

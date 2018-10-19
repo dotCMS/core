@@ -9,6 +9,7 @@ import { PaginationEvent } from '@components/_common/searchable-dropdown/compone
 
 import { NgControl, FormGroup } from '@angular/forms';
 import { By } from '@angular/platform-browser';
+import { of } from 'rxjs';
 
 @Component({
     selector: 'dot-searchable-dropdown',
@@ -48,15 +49,23 @@ class TestFieldValidationMessageComponent {
 }
 
 @Injectable()
-class TestPaginatorService {}
+class TestPaginatorService {
+    getWithOffset() {
+        return of([]);
+    }
+}
 
 describe('CategoriesPropertyComponent', () => {
     let comp: CategoriesPropertyComponent;
     let fixture: ComponentFixture<CategoriesPropertyComponent>;
+    let de: DebugElement;
+    let searchableDropdown: DebugElement;
+
     const messageServiceMock = new MockDotMessageService({
         'contenttypes.field.properties.category.label': 'Select category',
         search: 'search'
     });
+    let paginatorService: PaginatorService;
 
     beforeEach(async(() => {
         DOTTestBed.configureTestingModule({
@@ -73,16 +82,18 @@ describe('CategoriesPropertyComponent', () => {
         });
 
         fixture = DOTTestBed.createComponent(CategoriesPropertyComponent);
+        de = fixture.debugElement;
         comp = fixture.componentInstance;
+        paginatorService = de.injector.get(PaginatorService);
     }));
 
     it('should have a form', () => {
         const group = new FormGroup({});
         comp.group = group;
-        const divForm: DebugElement = fixture.debugElement.query(By.css('div'));
+        const divForm: DebugElement = de.query(By.css('div'));
 
         expect(divForm).not.toBeNull();
-        expect(group).toEqual(divForm.componentInstance.group);
+        expect(divForm.componentInstance.group).toEqual(group);
     });
 
     it('should set PaginatorService url & placeholder empty label', () => {
@@ -92,8 +103,7 @@ describe('CategoriesPropertyComponent', () => {
             value: ''
         };
         comp.ngOnInit();
-        const mockFieldPaginatorService = fixture.debugElement.injector.get(PaginatorService);
-        expect('v1/categories').toBe(mockFieldPaginatorService.url);
+        expect(paginatorService.url).toBe('v1/categories');
         expect(comp.placeholder).toBe('Select category');
     });
 
@@ -114,31 +124,28 @@ describe('CategoriesPropertyComponent', () => {
     });
 
     describe('Pagination events', () => {
-        beforeEach(async(() => {
-            const divForm: DebugElement = fixture.debugElement.query(By.css('div'));
-            this.searchableDropdown = divForm.query(By.css('dot-searchable-dropdown'));
-        }));
+        let spyMethod: jasmine.Spy;
+
+        beforeEach(() => {
+            const divForm: DebugElement = de.query(By.css('div'));
+            searchableDropdown = divForm.query(By.css('dot-searchable-dropdown'));
+            spyMethod = spyOn(paginatorService, 'getWithOffset').and.returnValue(of([]));
+        });
 
         it('should change Page', () => {
-            const mockFieldPaginatorService = fixture.debugElement.injector.get(PaginatorService);
-            const spyMethod = spyOn(mockFieldPaginatorService, 'getWithOffset');
-
-            this.searchableDropdown.componentInstance.pageChange.next({
+            searchableDropdown.triggerEventHandler('pageChange', {
                 filter: 'filter',
                 first: 2
             });
 
-            expect('filter').toBe(mockFieldPaginatorService.filter);
+            expect('filter').toBe(paginatorService.filter);
             expect(spyMethod).toHaveBeenCalledWith(2);
         });
 
         it('should filter', () => {
-            const mockFieldPaginatorService = fixture.debugElement.injector.get(PaginatorService);
-            const spyMethod = spyOn(mockFieldPaginatorService, 'getWithOffset');
+            searchableDropdown.triggerEventHandler('filterChange', 'filter');
 
-            this.searchableDropdown.componentInstance.filterChange.next('filter');
-
-            expect('filter').toBe(mockFieldPaginatorService.filter);
+            expect('filter').toBe(paginatorService.filter);
             expect(spyMethod).toHaveBeenCalledWith(0);
         });
     });

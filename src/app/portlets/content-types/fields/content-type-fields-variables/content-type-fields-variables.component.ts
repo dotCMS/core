@@ -3,6 +3,7 @@ import { DotMessageService } from '../../../../api/services/dot-messages-service
 import { FieldVariablesService, FieldVariableParams } from '../service/';
 import { DotHttpErrorManagerService } from '../../../../api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { ResponseView } from 'dotcms-js';
+import { Column } from 'primeng/primeng';
 
 export interface FieldVariable {
     id?: string;
@@ -18,15 +19,17 @@ export interface FieldVariable {
     templateUrl: './content-type-fields-variables.component.html'
 })
 export class ContentTypeFieldsVariablesComponent implements OnInit, OnChanges {
-    @Input() field: FieldVariableParams;
+    @Input()
+    field: FieldVariableParams;
 
     fieldVariables: FieldVariable[] = [];
-    messages: {[key: string]: string} = {};
+    messages: { [key: string]: string } = {};
+    canSaveFields: boolean[] | null[] = [];
 
     constructor(
         private dotHttpErrorManagerService: DotHttpErrorManagerService,
         public dotMessageService: DotMessageService,
-        private fieldVariablesService: FieldVariablesService,
+        private fieldVariablesService: FieldVariablesService
     ) {}
 
     ngOnInit() {
@@ -37,7 +40,7 @@ export class ContentTypeFieldsVariablesComponent implements OnInit, OnChanges {
                 'contenttypes.field.variables.actions_header.label',
                 'contenttypes.field.variables.value_no_rows.label'
             ])
-            .subscribe((messages: {[key: string]: string}) => {
+            .subscribe((messages: { [key: string]: string }) => {
                 this.messages = messages;
                 this.initTableData();
             });
@@ -60,12 +63,17 @@ export class ContentTypeFieldsVariablesComponent implements OnInit, OnChanges {
             fieldId: this.field.fieldId,
             variable: this.fieldVariables[fieldIndex]
         };
-        this.fieldVariablesService.delete(params)
-            .subscribe(() => {
-                this.fieldVariables = this.fieldVariables.filter((_item: FieldVariable, index: number) => index !== fieldIndex);
-            }, (err: ResponseView) => {
+        this.fieldVariablesService.delete(params).subscribe(
+            () => {
+                this.fieldVariables = this.fieldVariables.filter(
+                    (_item: FieldVariable, index: number) => index !== fieldIndex
+                );
+                this.canSaveFields.splice(fieldIndex, 1);
+            },
+            (err: ResponseView) => {
                 this.dotHttpErrorManagerService.handle(err).subscribe();
-            });
+            }
+        );
     }
 
     /**
@@ -79,26 +87,36 @@ export class ContentTypeFieldsVariablesComponent implements OnInit, OnChanges {
             fieldId: this.field.fieldId,
             variable: variable
         };
-        this.fieldVariablesService.save(params)
-            .subscribe((savedVariable: FieldVariable) => {
+        this.fieldVariablesService.save(params).subscribe(
+            (savedVariable: FieldVariable) => {
                 if (typeof variableIndex !== 'undefined') {
-                    this.fieldVariables = this.updateVariableCollection(savedVariable, variableIndex);
+                    this.fieldVariables = this.updateVariableCollection(
+                        savedVariable,
+                        variableIndex
+                    );
                 } else {
-                    this.fieldVariables = this.fieldVariables.concat(savedVariable);
+                    this.fieldVariables = [].concat(savedVariable, this.fieldVariables);
+                    this.canSaveFields = [].concat(null, this.canSaveFields);
                 }
-            }, (err: ResponseView) => {
+            },
+            (err: ResponseView) => {
                 this.dotHttpErrorManagerService.handle(err).subscribe();
-            });
+            }
+        );
     }
 
     /**
-     * Checks if a existing variable meets conditions to be updated
-     * @param {number} index
-     * @returns {boolean}
+     * Holds status if a existing variable meets conditions to be updated
+     * @param {any} event
      * @memberof ContentTypeFieldsVariablesComponent
      */
-    canSaveField(index: number): boolean {
-        return this.fieldVariables[index].key === '' || this.fieldVariables[index].value === '';
+    updateSaveButtons(event: {
+        column: Column;
+        data: { [key: string]: string };
+        index: number;
+    }): void {
+        this.canSaveFields[event.index] =
+            event.data.key.length > 0 && event.data.value.length > 0 ? null : true;
     }
 
     private initTableData(): void {
@@ -111,7 +129,10 @@ export class ContentTypeFieldsVariablesComponent implements OnInit, OnChanges {
         });
     }
 
-    private updateVariableCollection(savedVariable: FieldVariable, variableIndex?: number): FieldVariable[] {
+    private updateVariableCollection(
+        savedVariable: FieldVariable,
+        variableIndex?: number
+    ): FieldVariable[] {
         return this.fieldVariables.map((item, index) => {
             if (index === variableIndex) {
                 item = savedVariable;
@@ -119,5 +140,4 @@ export class ContentTypeFieldsVariablesComponent implements OnInit, OnChanges {
             return item;
         });
     }
-
 }

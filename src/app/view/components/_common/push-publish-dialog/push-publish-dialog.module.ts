@@ -2,9 +2,10 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
 import { PushPublishContentTypesDialogComponent } from './push-publish-dialog.component';
-import { CalendarModule, DialogModule, DropdownModule, CheckboxModule } from 'primeng/primeng';
+import { CalendarModule, DropdownModule, CheckboxModule } from 'primeng/primeng';
 import { PushPublishEnvSelectorModule } from '../dot-push-publish-env-selector/dot-push-publish-env-selector.module';
 import { FieldValidationMessageModule } from '../field-validation-message/file-validation-message.module';
+import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 
 @NgModule({
     declarations: [PushPublishContentTypesDialogComponent],
@@ -13,7 +14,7 @@ import { FieldValidationMessageModule } from '../field-validation-message/file-v
         CommonModule,
         FormsModule,
         CalendarModule,
-        DialogModule,
+        DotDialogModule,
         PushPublishEnvSelectorModule,
         ReactiveFormsModule,
         DropdownModule,

@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { CoreWebService } from './core-web.service';
-import { Observable, Subject } from 'rxjs';
+import { Observable, Subject, of } from 'rxjs';
 import { RequestMethod } from '@angular/http';
 import { pluck, map } from 'rxjs/operators';
 import { LoginService, Auth } from './login.service';
@@ -160,6 +160,24 @@ export class SiteService {
             .subscribe(() => this.setCurrentSite(site));
     }
 
+    /**
+     * Request the current site
+     * @returns Observable<Site>
+     * @memberof SiteService
+     */
+    getCurrentSite(): Observable<Site> {
+        if (this.selectedSite) {
+            return of(this.selectedSite);
+        } else {
+            return this.coreWebService
+            .requestView({
+                method: RequestMethod.Get,
+                url: this.urls.currentSiteUrl
+            })
+            .pipe(pluck('entity'));
+        }
+    }
+
     private setCurrentSite(site: Site): void {
         if (this.selectedSite) {
             this._switchSite$.next(Object.assign({}, site));
@@ -169,13 +187,7 @@ export class SiteService {
     }
 
     private loadCurrentSite(): void {
-        this.coreWebService
-            .requestView({
-                method: RequestMethod.Get,
-                url: this.urls.currentSiteUrl
-            })
-            .pipe(pluck('entity'))
-            .subscribe((currentSite) => {
+        this.getCurrentSite().subscribe((currentSite) => {
                 this.setCurrentSite(<Site>currentSite);
             });
     }

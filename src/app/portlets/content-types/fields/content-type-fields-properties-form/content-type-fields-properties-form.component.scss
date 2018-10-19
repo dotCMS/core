@@ -1,12 +1,17 @@
 @import "variables";
 
+:host {
+    display: block;
+    width: 500px;
+}
+
+::ng-deep .form__group {
+    .md-inputtext,
+    .ui-inputtext {
+        width: 100%;
+    }
+}
+
 .content-type-fields__properties-form {
     margin: $basic-padding * 3;
-
-    .form__group {
-        .md-inputtext,
-        .ui-inputtext {
-            width: 100%;
-        }
-    }
 }
