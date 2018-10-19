@@ -13,4 +13,3 @@ export class ObservableHack {
     }).subscribeOn(asapScheduler);
   }
 }
-1
