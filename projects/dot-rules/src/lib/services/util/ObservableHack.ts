@@ -1,4 +1,4 @@
-import {Observable, Scheduler} from 'rxjs';
+import {Observable, asapScheduler} from 'rxjs';
 
 // @dynamic
 export class ObservableHack {
@@ -10,6 +10,7 @@ export class ObservableHack {
   static of(value: string): Observable<string> {
     return Observable.create(subscriber => {
       subscriber.next(value);
-    }).subscribeOn(Scheduler.asap);
+    }).subscribeOn(asapScheduler);
   }
 }
+1
