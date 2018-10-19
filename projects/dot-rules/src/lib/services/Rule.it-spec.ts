@@ -10,13 +10,13 @@ import {
 } from './Rule';
 import { ConditionService } from './Condition';
 import { ReflectiveInjector } from '@angular/core';
-import { ApiRoot } from 'dotcms-js/dotcms-js';
-import { UserModel } from 'dotcms-js/dotcms-js';
+import { ApiRoot } from 'dotcms-js';
+import { UserModel } from 'dotcms-js';
 import { ActionService } from './Action';
 import { ConditionGroupService } from './ConditionGroup';
 import { I18nService } from './system/locale/I18n';
 import { Observable } from 'rxjs';
-import { CwError } from 'dotcms-js/dotcms-js';
+import { CwError } from 'dotcms-js';
 import { ServerSideTypeModel } from './ServerSideFieldModel';
 import { BrowserModule } from '@angular/platform-browser';
 

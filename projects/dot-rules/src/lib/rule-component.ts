@@ -31,8 +31,8 @@ import {
 } from './services/Rule';
 
 import { I18nService } from './services/system/locale/I18n';
-import { UserModel } from 'dotcms-js/dotcms-js';
-import { ApiRoot } from 'dotcms-js/dotcms-js';
+import { UserModel } from 'dotcms-js';
+import { ApiRoot } from 'dotcms-js';
 import {
     ConditionActionEvent,
     RuleActionActionEvent,
@@ -41,7 +41,7 @@ import {
 } from './rule-engine.container';
 import { ServerSideTypeModel } from './services/ServerSideFieldModel';
 import { IPublishEnvironment } from './services/bundle-service';
-import { LoggerService } from 'dotcms-js/dotcms-js';
+import { LoggerService } from 'dotcms-js';
 
 const I8N_BASE = 'api.sites.ruleengine';
 // tslint:disable-next-line:no-unused-variable

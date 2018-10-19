@@ -1,6 +1,6 @@
 import { RuleService, RuleModel } from './Rule';
-import { ApiRoot } from 'dotcms-js/dotcms-js';
-import { UserModel } from 'dotcms-js/dotcms-js';
+import { ApiRoot } from 'dotcms-js';
+import { UserModel } from 'dotcms-js';
 
 describe('Unit.api.rule-engine.Rule', () => {
     beforeEach(() => {});

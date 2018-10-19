@@ -1,5 +1,5 @@
 import { Component, ViewEncapsulation } from '@angular/core';
-import { LoginService, ResponseView } from 'dotcms-js/dotcms-js';
+import { LoginService, ResponseView } from 'dotcms-js';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 
 @Component({

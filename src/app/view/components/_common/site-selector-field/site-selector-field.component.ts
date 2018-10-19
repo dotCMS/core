@@ -1,6 +1,6 @@
 import { Component, forwardRef, Input } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
-import { Site, SiteService } from 'dotcms-js/dotcms-js';
+import { Site, SiteService } from 'dotcms-js';
 import { Subscription } from 'rxjs';
 /**
  * Form control to select DotCMS instance host identifier.

@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { LoginService } from  'dotcms-js/dotcms-js' ;
+import { LoginService } from  'dotcms-js' ;
 import { environment } from '../environments/environment';
 
 @Component({

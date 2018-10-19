@@ -18,11 +18,11 @@ import { ConditionService } from './services/Condition';
 import { ActionService } from './services/Action';
 import { ConditionGroupService } from './services/ConditionGroup';
 import { I18nService } from './services/system/locale/I18n';
-import { CwError } from 'dotcms-js/dotcms-js';
+import { CwError } from 'dotcms-js';
 import { BundleService, IPublishEnvironment } from './services/bundle-service';
 import { ActivatedRoute } from '@angular/router';
-import { HttpCode } from 'dotcms-js/dotcms-js';
-import { LoggerService } from 'dotcms-js/dotcms-js';
+import { HttpCode } from 'dotcms-js';
+import { LoggerService } from 'dotcms-js';
 
 // tslint:disable-next-line:no-unused-variable
 const I8N_BASE = 'api.sites.ruleengine';

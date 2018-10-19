@@ -11,7 +11,7 @@ import {
 import { DataTable, LazyLoadEvent } from 'primeng/primeng';
 import { ActionHeaderOptions, ButtonAction } from '@models/action-header';
 import { DataTableColumn } from '@models/data-table/data-table-column';
-import { LoggerService } from 'dotcms-js/dotcms-js';
+import { LoggerService } from 'dotcms-js';
 import { FormatDateService } from '@services/format-date-service';
 import { DotMessageService } from '@services/dot-messages-service';
 import { PaginatorService, OrderDirection } from '@services/paginator';

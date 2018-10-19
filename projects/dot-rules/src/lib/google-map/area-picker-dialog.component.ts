@@ -9,7 +9,7 @@ import {
     OnChanges
 } from '@angular/core';
 import { GoogleMapService } from '../services/GoogleMapService';
-import { LoggerService } from 'dotcms-js/dotcms-js';
+import { LoggerService } from 'dotcms-js';
 import { GCircle } from '../models/gcircle.model';
 
 let mapIdCounter = 1;

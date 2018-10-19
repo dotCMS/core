@@ -1,5 +1,5 @@
 import * as _ from 'lodash';
-import { LoggerService, Protocol, Url } from 'dotcms-js/dotcms-js';
+import { LoggerService, Protocol, Url } from 'dotcms-js';
 
 export class WebSocketProtocol extends Protocol {
     private static readonly AVAILABLE_FOR_USER_WS_CLOSE_STATUS = 4000;

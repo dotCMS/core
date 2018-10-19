@@ -5,7 +5,7 @@ import { Site } from './treeable/shared/site.model';
 import { DOTTestBed } from 'src/app/test/dot-test-bed';
 import { LoginService } from './login.service';
 import { LoginServiceMock } from 'src/app/test/login-service.mock';
-import { DotcmsEventsService } from 'dotcms-js/dotcms-js';
+import { DotcmsEventsService } from 'dotcms-js';
 import { DotcmsEventsServiceMock } from 'src/app/test/dotcms-events-service.mock';
 import { SiteService } from './site.service';
 

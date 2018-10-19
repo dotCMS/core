@@ -1,5 +1,5 @@
 import { Component, Input, OnInit } from '@angular/core';
-import { SiteService, Site, DotcmsEventsService } from 'dotcms-js/dotcms-js';
+import { SiteService, Site, DotcmsEventsService } from 'dotcms-js';
 import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { DotNavigationService } from '../dot-navigation/services/dot-navigation.service';

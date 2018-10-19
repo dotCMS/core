@@ -3,7 +3,7 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { DotLanguage } from '@models/dot-language/dot-language.model';
 import { RequestMethod } from '@angular/http';
-import { CoreWebService } from 'dotcms-js/dotcms-js';
+import { CoreWebService } from 'dotcms-js';
 
 /**
  * Provide util methods to get Languages available in the system.

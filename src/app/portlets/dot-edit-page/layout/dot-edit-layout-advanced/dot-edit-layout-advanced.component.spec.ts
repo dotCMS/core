@@ -2,7 +2,7 @@ import { of as observableOf, Observable } from 'rxjs';
 import { async, ComponentFixture } from '@angular/core/testing';
 import { RouterTestingModule } from '@angular/router/testing';
 
-import { LoginService } from 'dotcms-js/dotcms-js';
+import { LoginService } from 'dotcms-js';
 
 import { DOTTestBed } from '../../../../test/dot-test-bed';
 import { DotEditLayoutAdvancedComponent } from './dot-edit-layout-advanced.component';

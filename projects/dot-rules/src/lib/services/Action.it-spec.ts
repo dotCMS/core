@@ -1,12 +1,12 @@
 import {} from 'jasmine';
 
 import { Observable, Subscription } from 'rxjs';
-import { CwError } from 'dotcms-js/dotcms-js';
+import { CwError } from 'dotcms-js';
 
 import { RuleModel, RuleService, ActionModel } from './Rule';
 import { ReflectiveInjector } from '@angular/core';
-import { ApiRoot } from 'dotcms-js/dotcms-js';
-import { UserModel } from 'dotcms-js/dotcms-js';
+import { ApiRoot } from 'dotcms-js';
+import { UserModel } from 'dotcms-js';
 import { ActionService } from './Action';
 import { ConditionGroupService } from './ConditionGroup';
 import { ConditionService } from './Condition';

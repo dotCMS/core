@@ -1,9 +1,9 @@
 import { AccountService, AccountUser } from '@services/account-service';
 import { Component, EventEmitter, Output, ViewEncapsulation, Input, OnInit } from '@angular/core';
-import { LoginService, User, Auth } from 'dotcms-js/dotcms-js';
+import { LoginService, User, Auth } from 'dotcms-js';
 import { DotMessageService } from '@services/dot-messages-service';
 import { StringFormat } from '../../../api/util/stringFormat';
-import { DotcmsConfig } from 'dotcms-js/dotcms-js';
+import { DotcmsConfig } from 'dotcms-js';
 
 @Component({
     encapsulation: ViewEncapsulation.None,

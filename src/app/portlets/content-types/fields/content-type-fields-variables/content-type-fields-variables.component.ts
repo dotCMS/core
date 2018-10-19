@@ -2,7 +2,7 @@ import { Component, Input, SimpleChanges, OnChanges, OnInit } from '@angular/cor
 import { DotMessageService } from '../../../../api/services/dot-messages-service';
 import { FieldVariablesService, FieldVariableParams } from '../service/';
 import { DotHttpErrorManagerService } from '../../../../api/services/dot-http-error-manager/dot-http-error-manager.service';
-import { ResponseView } from 'dotcms-js/dotcms-js';
+import { ResponseView } from 'dotcms-js';
 
 export interface FieldVariable {
     id?: string;

@@ -1,11 +1,11 @@
 import { Component, OnInit, ViewChild, ViewEncapsulation } from '@angular/core';
-import { Folder } from 'dotcms-js/dotcms-js';
+import { Folder } from 'dotcms-js';
 import {
     FileService,
     FolderService,
     SiteBrowserState,
     SiteDatagridComponent
-} from 'dotcms-js/dotcms-js';
+} from 'dotcms-js';
 import { FileUpload } from 'primeng/primeng';
 
 @Component({

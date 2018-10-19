@@ -14,7 +14,7 @@ import {
     DotHttpErrorManagerService,
     DotHttpErrorHandled
 } from '@services/dot-http-error-manager/dot-http-error-manager.service';
-import { ResponseView } from 'dotcms-js/dotcms-js';
+import { ResponseView } from 'dotcms-js';
 
 import { HotkeysService, Hotkey } from 'angular2-hotkeys';
 import { DotEventsService } from '@services/dot-events/dot-events.service';

@@ -10,7 +10,7 @@ import {
     ConditionGroupModel,
     ConditionModel
 } from './services/Rule';
-import { LoggerService } from 'dotcms-js/dotcms-js';
+import { LoggerService } from 'dotcms-js';
 
 @Component({
     selector: 'condition-group',

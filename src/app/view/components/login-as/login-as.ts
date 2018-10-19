@@ -8,7 +8,7 @@ import {
     ElementRef,
     ViewChild
 } from '@angular/core';
-import { LoginService, User } from 'dotcms-js/dotcms-js';
+import { LoginService, User } from 'dotcms-js';
 import { DotMessageService } from '@services/dot-messages-service';
 import { PaginatorService } from '@services/paginator';
 import { FormGroup, FormBuilder, FormControl, Validators } from '@angular/forms';

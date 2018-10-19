@@ -6,7 +6,7 @@ import {NgControl, ControlValueAccessor, } from '@angular/forms';
 import {Http} from '@angular/http';
 
 import {Verify} from '../../../services/validation/Verify';
-import {ApiRoot} from 'dotcms-js/dotcms-js';
+import {ApiRoot} from 'dotcms-js';
 import {Observable} from 'rxjs';
 import * as _ from 'lodash';
 

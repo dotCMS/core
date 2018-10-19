@@ -9,7 +9,7 @@ import {
     ActionModel
 } from './services/Rule';
 import { RuleActionActionEvent } from './rule-engine.container';
-import { LoggerService } from 'dotcms-js/dotcms-js';
+import { LoggerService } from 'dotcms-js';
 
 @Component({
     selector: 'rule-action',

@@ -1,7 +1,7 @@
 import { Component, Input, Output, EventEmitter, ChangeDetectionStrategy } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { FormControl } from '@angular/forms';
-import { LoggerService } from 'dotcms-js/dotcms-js';
+import { LoggerService } from 'dotcms-js';
 import { GCircle } from '../../models/gcircle.model';
 
 interface Param<T> {

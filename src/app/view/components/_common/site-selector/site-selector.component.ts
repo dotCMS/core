@@ -11,7 +11,7 @@ import {
     OnChanges,
     OnDestroy
 } from '@angular/core';
-import { Site, SiteService } from 'dotcms-js/dotcms-js';
+import { Site, SiteService } from 'dotcms-js';
 import { PaginatorService } from '@services/paginator';
 import { SearchableDropdownComponent } from '../searchable-dropdown/component';
 import { DotEventsService } from '@services/dot-events/dot-events.service';

@@ -5,7 +5,7 @@ import { ActivatedRoute } from '@angular/router';
 import { Component, OnInit, ViewChild, ElementRef, NgZone, OnDestroy } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 
-import { SiteService, ResponseView } from 'dotcms-js/dotcms-js';
+import { SiteService, ResponseView } from 'dotcms-js';
 
 import { DotAlertConfirmService } from '@services/dot-alert-confirm';
 import { DotEditContentHtmlService } from './services/dot-edit-content-html/dot-edit-content-html.service';

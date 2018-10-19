@@ -4,7 +4,7 @@ import { ContentTypeEditResolver } from './content-types-edit-resolver.service';
 import { async } from '@angular/core/testing';
 import { ContentTypesInfoService } from '@services/content-types-info';
 import { CrudService } from '@services/crud';
-import { LoginService } from 'dotcms-js/dotcms-js';
+import { LoginService } from 'dotcms-js';
 import { ActivatedRouteSnapshot } from '@angular/router';
 import { LoginServiceMock } from '../../../test/login-service.mock';
 import { RouterTestingModule } from '@angular/router/testing';

@@ -33,7 +33,6 @@ import { VisitorsLocationContainer } from './custom-types/visitors-location/visi
 
 import {
     ApiRoot,
-    Config,
     CoreWebService,
     DotcmsConfig,
     DotcmsEventsService,
@@ -44,7 +43,7 @@ import {
     StringUtils,
     UserModel,
     BrowserUtil
-} from 'dotcms-js/dotcms-js';
+} from 'dotcms-js';
 import {
   DropdownModule, MultiSelectModule, InputTextModule, InputSwitchModule,
   AutoCompleteModule, ButtonModule, DialogModule, MessagesModule, MessageModule, CalendarModule
@@ -97,7 +96,6 @@ import { DotAutocompleteTagsModule } from './components/dot-autocomplete-tags/do
     providers: [
         ApiRoot,
         BrowserUtil,
-        Config,
         CoreWebService,
         DotcmsConfig,
         DotcmsEventsService,

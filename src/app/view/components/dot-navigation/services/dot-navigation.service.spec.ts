@@ -10,7 +10,7 @@ import { DotMenuService } from '@services/dot-menu.service';
 import { DotNavigationService } from './dot-navigation.service';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 
-import { DotcmsEventsService, LoginService, Auth } from 'dotcms-js/dotcms-js';
+import { DotcmsEventsService, LoginService, Auth } from 'dotcms-js';
 
 import { Observable, Subject, of } from 'rxjs';
 import { skip } from 'rxjs/operators';

@@ -3,7 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import { Injectable } from '@angular/core';
 import { ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
 import { PublicAuthGuardService } from './public-auth-guard.service';
-import { LoginService } from 'dotcms-js/dotcms-js';
+import { LoginService } from 'dotcms-js';
 import { DotRouterService } from '../dot-router/dot-router.service';
 
 @Injectable()

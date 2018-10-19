@@ -48,21 +48,18 @@
       "dot-layout-grid/*": [
         "dist-lib/dot-layout-grid/*"
       ],
-      "dotcms-js/dotcms-js": [
-        "projects/dotcms-js/src/public_api"
-      ],
       "dot-rules": [
-        "dist/dot-rules"
+        "dist-lib/dot-rules"
       ],
       "dot-rules/*": [
-        "dist/dot-rules/*"
+        "dist-lib/dot-rules/*"
+      ],
+      "dotcms-js": [
+        "dist-lib/dotcms-js"
+      ],
+      "dotcms-js/*": [
+        "dist-lib/dotcms-js/*"
       ]
-    //   "dotcms-js": [
-    //     "dist-lib/dotcms-js"
-    //   ],
-    //   "dotcms-js/*": [
-    //     "dist-lib/dotcms-js/*"
-    //   ]
     }
   }
 }

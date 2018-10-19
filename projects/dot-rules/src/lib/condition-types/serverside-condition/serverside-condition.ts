@@ -9,7 +9,7 @@ import { ObservableHack } from '../../services/util/ObservableHack';
 import { CwRestDropdownInputModel } from '../../services/util/CwInputModel';
 import { Verify } from '../../services/validation/Verify';
 import { ParameterModel } from '../../services/Rule';
-import { LoggerService } from 'dotcms-js/dotcms-js';
+import { LoggerService } from 'dotcms-js';
 
 @Component({
     changeDetection: ChangeDetectionStrategy.OnPush,

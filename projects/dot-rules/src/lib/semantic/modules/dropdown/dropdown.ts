@@ -14,7 +14,7 @@ import {
 import { ControlValueAccessor, NgControl } from '@angular/forms';
 import { BehaviorSubject, Observable } from 'rxjs';
 import * as _ from 'lodash';
-import { LoggerService } from 'dotcms-js/dotcms-js';
+import { LoggerService } from 'dotcms-js';
 
 /**
  * Angular wrapper around OLD Semantic UI Dropdown Module.

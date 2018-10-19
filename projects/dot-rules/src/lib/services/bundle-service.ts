@@ -6,8 +6,8 @@ import {Injectable} from '@angular/core';
 import {RequestMethod} from '@angular/http';
 import {Observable, BehaviorSubject} from 'rxjs';
 
-import {ApiRoot} from 'dotcms-js/dotcms-js';
-import {CoreWebService} from 'dotcms-js/dotcms-js';
+import {ApiRoot} from 'dotcms-js';
+import {CoreWebService} from 'dotcms-js';
 
 export interface IUser {
   givenName?: string;

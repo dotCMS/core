@@ -8,7 +8,7 @@ import {
     RULE_CONDITION_UPDATE_OPERATOR,
     ConditionModel
 } from './services/Rule';
-import { LoggerService } from 'dotcms-js/dotcms-js';
+import { LoggerService } from 'dotcms-js';
 
 @Component({
     selector: 'rule-condition',

@@ -5,7 +5,7 @@ import { DotContentletsComponent } from './dot-contentlets.component';
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotContentletEditorModule } from '@components/dot-contentlet-editor/dot-contentlet-editor.module';
 import { ComponentFixture, async } from '@angular/core/testing';
-import { LoginService } from 'dotcms-js/dotcms-js';
+import { LoginService } from 'dotcms-js';
 import { LoginServiceMock } from '../../../test/login-service.mock';
 import { By } from '@angular/platform-browser';
 import { DotRouterService } from '@services/dot-router/dot-router.service';

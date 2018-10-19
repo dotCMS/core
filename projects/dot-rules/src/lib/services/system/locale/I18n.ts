@@ -6,10 +6,10 @@ import { Injectable } from '@angular/core';
 import { Http } from '@angular/http';
 import { Observable } from 'rxjs';
 
-import { ApiRoot } from 'dotcms-js/dotcms-js';
+import { ApiRoot } from 'dotcms-js';
 import { Verify } from '../../validation/Verify';
-import { LoggerService } from 'dotcms-js/dotcms-js';
-import { HttpCode } from 'dotcms-js/dotcms-js';
+import { LoggerService } from 'dotcms-js';
+import { HttpCode } from 'dotcms-js';
 
 export class TreeNode {
     [key: string]: TreeNode | any;

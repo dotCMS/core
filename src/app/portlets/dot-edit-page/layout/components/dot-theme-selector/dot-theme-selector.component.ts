@@ -14,7 +14,7 @@ import { DotMessageService } from '@services/dot-messages-service';
 import { DotTheme } from '../../../shared/models/dot-theme.model';
 import { PaginatorService } from '@services/paginator/paginator.service';
 import { DataGrid, LazyLoadEvent } from 'primeng/primeng';
-import { Site, SiteService } from 'dotcms-js/dotcms-js';
+import { Site, SiteService } from 'dotcms-js';
 import { DotDialogAction, DotDialogComponent } from '@components/dot-dialog/dot-dialog.component';
 
 /**

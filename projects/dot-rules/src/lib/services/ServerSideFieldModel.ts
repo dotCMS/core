@@ -2,7 +2,7 @@ import { CwModel } from './util/CwModel';
 import { ParameterDefinition } from './util/CwInputModel';
 import { ParameterModel } from './Rule';
 import { FormControl, Validators, ValidatorFn } from '@angular/forms';
-import { LoggerService } from 'dotcms-js/dotcms-js';
+import { LoggerService } from 'dotcms-js';
 import { CustomValidators } from './validation/CustomValidators';
 
 export class ServerSideFieldModel extends CwModel {

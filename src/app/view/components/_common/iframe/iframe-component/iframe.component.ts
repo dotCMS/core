@@ -10,7 +10,7 @@ import {
     NgZone,
     OnDestroy
 } from '@angular/core';
-import { LoginService, LoggerService } from 'dotcms-js/dotcms-js';
+import { LoginService, LoggerService } from 'dotcms-js';
 import { DotLoadingIndicatorService } from '../dot-loading-indicator/dot-loading-indicator.service';
 import { IframeOverlayService } from '../service/iframe-overlay.service';
 import { DotIframeService } from '../service/dot-iframe/dot-iframe.service';

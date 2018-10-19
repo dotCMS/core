@@ -7,11 +7,11 @@ import { Injectable } from '@angular/core';
 import { RequestMethod } from '@angular/http';
 import { Observable, BehaviorSubject } from 'rxjs';
 
-import { ApiRoot } from 'dotcms-js/dotcms-js';
+import { ApiRoot } from 'dotcms-js';
 import { ServerSideFieldModel, ServerSideTypeModel } from './ServerSideFieldModel';
-import { CoreWebService } from 'dotcms-js/dotcms-js';
-import { SiteService } from 'dotcms-js/dotcms-js';
-import { CwError } from 'dotcms-js/dotcms-js';
+import { CoreWebService } from 'dotcms-js';
+import { SiteService } from 'dotcms-js';
+import { CwError } from 'dotcms-js';
 import { I18nService } from './system/locale/I18n';
 
 export const RULE_CREATE = 'RULE_CREATE';

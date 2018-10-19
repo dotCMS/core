@@ -11,7 +11,7 @@ import { OnInit } from '@angular/core/src/metadata/lifecycle_hooks';
 import { PushPublishService } from '@services/push-publish/push-publish.service';
 import { SelectItem } from 'primeng/primeng';
 import { DotMessageService } from '@services/dot-messages-service';
-import { LoggerService } from 'dotcms-js/dotcms-js';
+import { LoggerService } from 'dotcms-js';
 @Component({
     encapsulation: ViewEncapsulation.None,
     selector: 'dot-push-publish-dialog',

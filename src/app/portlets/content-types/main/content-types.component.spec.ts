@@ -19,7 +19,7 @@ import { PushPublishContentTypesDialogModule } from '@components/_common/push-pu
 import { PushPublishService } from '@services/push-publish/push-publish.service';
 import { DotLicenseService } from '@services/dot-license/dot-license.service';
 import { SelectItem } from 'primeng/primeng';
-import { ResponseView } from 'dotcms-js/dotcms-js';
+import { ResponseView } from 'dotcms-js';
 import {
     DotHttpErrorHandled,
     DotHttpErrorManagerService

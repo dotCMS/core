@@ -2,7 +2,7 @@ import { of as observableOf, Observable, Subject } from 'rxjs';
 
 import { mergeMap, pluck, take, map } from 'rxjs/operators';
 import { DotPage } from './../../../shared/models/dot-page.model';
-import { LoginService } from 'dotcms-js/dotcms-js';
+import { LoginService } from 'dotcms-js';
 import {
     DotPageState,
     DotRenderedPageState

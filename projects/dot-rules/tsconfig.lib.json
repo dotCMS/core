@@ -17,12 +17,7 @@
     "lib": [
       "dom",
       "es2015"
-    ],
-      "paths": {
-          "dotcms-js/dotcms-js": [
-              "/projects/dotcms-js/src/public_api"
-          ]
-      }
+    ]
   },
   "angularCompilerOptions": {
     "annotateForClosureCompiler": true,

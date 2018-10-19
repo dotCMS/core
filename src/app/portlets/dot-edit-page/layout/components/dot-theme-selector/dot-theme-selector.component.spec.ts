@@ -11,7 +11,7 @@ import { mockDotThemes } from '../../../../../test/dot-themes.mock';
 import { DataGridModule } from 'primeng/primeng';
 import { SiteSelectorModule } from '@components/_common/site-selector/site-selector.module';
 import { mockSites, SiteServiceMock } from '../../../../../test/site-service.mock';
-import { SiteService } from 'dotcms-js/dotcms-js';
+import { SiteService } from 'dotcms-js';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { PaginatorService } from '@services/paginator/paginator.service';
 import { DotThemesServiceMock } from '../../../../../test/dot-themes-service.mock';

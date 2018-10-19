@@ -5,10 +5,10 @@ import {reduce, mergeMap, catchError, map} from 'rxjs/operators';
 import { Observable } from 'rxjs';
 import { Http, Response } from '@angular/http';
 import { Injectable } from '@angular/core';
-import { ApiRoot } from 'dotcms-js/dotcms-js';
+import { ApiRoot } from 'dotcms-js';
 import { ConditionGroupModel, IConditionGroup } from './Rule';
-import { HttpCode } from 'dotcms-js/dotcms-js';
-import { LoggerService } from 'dotcms-js/dotcms-js';
+import { HttpCode } from 'dotcms-js';
+import { LoggerService } from 'dotcms-js';
 
 @Injectable()
 export class ConditionGroupService {

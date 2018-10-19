@@ -4,7 +4,7 @@ import { DotRenderedPageState } from '../../shared/models/dot-rendered-page-stat
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { DotMessageService } from '@services/dot-messages-service';
 import { DotClipboardUtil } from '../../../../api/util/clipboard/ClipboardUtil';
-import { SiteService } from 'dotcms-js/dotcms-js';
+import { SiteService } from 'dotcms-js';
 
 /**
  * Basic page information for edit mode

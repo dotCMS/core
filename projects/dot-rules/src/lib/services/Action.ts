@@ -4,7 +4,7 @@ import {from as observableFrom, empty as observableEmpty} from 'rxjs';
 import {mergeMap, reduce, catchError, map} from 'rxjs/operators';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { ApiRoot } from 'dotcms-js/dotcms-js';
+import { ApiRoot } from 'dotcms-js';
 import { ServerSideTypeModel } from './ServerSideFieldModel';
 import { Http, Response } from '@angular/http';
 import { ActionModel } from './Rule';
@@ -14,9 +14,9 @@ import {
     SERVER_RESPONSE_ERROR,
     NETWORK_CONNECTION_ERROR,
     CLIENTS_ONLY_MESSAGES
-} from 'dotcms-js/dotcms-js';
-import { LoggerService } from 'dotcms-js/dotcms-js';
-import { HttpCode } from 'dotcms-js/dotcms-js';
+} from 'dotcms-js';
+import { LoggerService } from 'dotcms-js';
+import { HttpCode } from 'dotcms-js';
 
 // tslint:disable-next-line:no-unused-variable
 const noop = (...arg: any[]) => {};

@@ -1,6 +1,6 @@
 import { ReflectiveInjector, Provider } from '@angular/core';
-import { UserModel } from 'dotcms-js/dotcms-js';
-import { ApiRoot } from 'dotcms-js/dotcms-js';
+import { UserModel } from 'dotcms-js';
+import { ApiRoot } from 'dotcms-js';
 import { BrowserModule } from '@angular/platform-browser';
 import { I18nService } from './I18n';
 

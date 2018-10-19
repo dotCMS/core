@@ -4,7 +4,7 @@ import { FormControl } from '@angular/forms';
 import { ServerSideFieldModel } from '../../services/ServerSideFieldModel';
 import { Observable, BehaviorSubject } from 'rxjs';
 import { I18nService } from '../.././services/system/locale/I18n';
-import { LoggerService } from 'dotcms-js/dotcms-js';
+import { LoggerService } from 'dotcms-js';
 import { GCircle } from '../../models/gcircle.model';
 
 interface Param<T> {

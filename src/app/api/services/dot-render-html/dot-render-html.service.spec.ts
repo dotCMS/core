@@ -2,7 +2,7 @@ import { ConnectionBackend, Response, ResponseOptions } from '@angular/http';
 import { MockBackend } from '@angular/http/testing';
 import { RouterTestingModule } from '@angular/router/testing';
 
-import { LoginService } from 'dotcms-js/dotcms-js';
+import { LoginService } from 'dotcms-js';
 
 import { DOTTestBed } from '../../../test/dot-test-bed';
 import { DotRenderHTMLService, DotRenderPageOptions } from './dot-render-html.service';
