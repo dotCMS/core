@@ -514,6 +514,8 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
       // for each field in the content type lets create it if doesn't exists and update its
       // properties if it does
       for (Field field : newFields) {
+
+        field = this.checkContentTypeFields(contentTypeToSave, field);
         if (!varNamesCantDelete.containsKey(field.variable())) {
           fieldAPI.save(field, APILocator.systemUser());
         } else {
@@ -545,6 +547,18 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     }
 
     return find(contentTypeToSave.id());
+  }
+
+  private Field checkContentTypeFields(final ContentType contentType, final Field field) {
+
+      if (UtilMethods.isSet(field) && UtilMethods.isSet(contentType.id())) {
+
+          return  !UtilMethods.isSet(field.contentTypeId()) || !field.contentTypeId().equals(contentType.id()) ?
+                FieldBuilder.builder(field).contentTypeId(contentType.id()).build() : field;
+
+      }
+
+      return field;
   }
 
   @WrapInTransaction
