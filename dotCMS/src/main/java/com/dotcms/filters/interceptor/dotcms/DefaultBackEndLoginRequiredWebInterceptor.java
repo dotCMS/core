@@ -31,7 +31,8 @@ public class DefaultBackEndLoginRequiredWebInterceptor implements WebInterceptor
             .format("/%s/#/public/login", PortletURLUtil.URL_ADMIN_PREFIX);
 
     private static final String DEFAULT_ALLOWED_SUB_PATHS = "/html/js/dojo,"
-            + "/html/images/backgrounds,/html/images/persona";
+            + "/html/images/backgrounds,/html/images/persona,"
+            + "/html/portal/login.jsp";
     private static String[] ALLOWED_SUB_PATHS;
 
     // \A -> The beginning of the input
