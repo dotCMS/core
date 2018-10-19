@@ -9,9 +9,11 @@ This project was created using [angular-cli](https://cli.angular.io/) it means y
 ## Before start
 Build the interal libraries (until we publish it to npm)
 
-```ng build dot-layout-grid```
-```ng build dot-rules```
-```ng build dotcms-js```
+```
+ng build dot-layout-grid
+ng build dot-rules
+ng build dotcms-js
+```
 
 You should see now the folders:
 
