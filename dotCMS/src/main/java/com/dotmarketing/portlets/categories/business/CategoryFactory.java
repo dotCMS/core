@@ -39,7 +39,16 @@ public abstract class CategoryFactory {
 	 * @throws DotDataException
 	 */
 	protected abstract Category findByKey(String key) throws DotDataException;
-	
+
+	/**
+	 * This tries to get a Category object with the given variable from
+	 * @param variable
+	 * @return
+	 * @throws DotDataException
+	 */
+
+	protected abstract Category findByVar(String variable) throws DotDataException;
+
 	/**
 	 * This method get a category object from the cache based
 	 * on the passed inode, if the object does not exist

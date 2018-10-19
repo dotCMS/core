@@ -139,6 +139,7 @@ public class EditEventAction extends EditContentletAction {
 			eventForm.setSpecificDate(false);
 			req.setAttribute(WebKeys.EVENT_EDIT, new Event());
 		}
+		req.setAttribute("identifier", req.getParameter("identifier"));
 	}
 
 	/**

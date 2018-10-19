@@ -1,5 +1,7 @@
 package com.dotmarketing.portlets.contentlet.action;
 
+import static com.dotmarketing.portlets.contentlet.util.ContentletUtil.isFieldTypeAllowedOnImportExport;
+
 import com.dotcms.api.system.event.Visibility;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.contenttype.business.ContentTypeAPI;
@@ -17,7 +19,16 @@ import com.dotcms.util.I18NMessage;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
-import com.dotmarketing.business.*;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.Layout;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.PublishStateException;
+import com.dotmarketing.business.Role;
+import com.dotmarketing.business.RoleAPI;
+import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.FieldsCache;
@@ -36,7 +47,12 @@ import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.ajax.ContentletAjax;
-import com.dotmarketing.portlets.contentlet.business.*;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.contentlet.business.ContentletCache;
+import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
+import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
+import com.dotmarketing.portlets.contentlet.business.DotLockException;
+import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.contentlet.struts.ContentletForm;
@@ -52,7 +68,15 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.business.DotWorkflowException;
 import com.dotmarketing.tag.business.TagAPI;
 import com.dotmarketing.tag.model.Tag;
-import com.dotmarketing.util.*;
+import com.dotmarketing.util.ActivityLogger;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.HostUtil;
+import com.dotmarketing.util.InodeUtils;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PortletURLUtil;
+import com.dotmarketing.util.UUIDGenerator;
+import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.language.LanguageException;
@@ -66,17 +90,6 @@ import com.liferay.util.FileUtil;
 import com.liferay.util.LocaleUtil;
 import com.liferay.util.StringPool;
 import com.liferay.util.servlet.SessionMessages;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang.StringUtils;
-import org.apache.struts.Globals;
-import org.apache.struts.action.ActionErrors;
-import org.apache.struts.action.ActionForm;
-import org.apache.struts.action.ActionMapping;
-import org.apache.struts.action.ActionMessage;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Writer;
@@ -85,12 +98,28 @@ import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import static com.dotmarketing.portlets.contentlet.util.ContentletUtil.isFieldTypeAllowedOnImportExport;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.StringUtils;
+import org.apache.struts.Globals;
+import org.apache.struts.action.ActionErrors;
+import org.apache.struts.action.ActionForm;
+import org.apache.struts.action.ActionMapping;
+import org.apache.struts.action.ActionMessage;
 
 /**
  * This class processes all the interactions with contentlets that are
@@ -283,7 +312,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 
 			} catch (Exception ae) {
 				if ((referer != null) && (referer.length() != 0)) {
-					if (ae.getMessage().equals(WebKeys.EDIT_ASSET_EXCEPTION)) {
+					if (null != ae.getMessage() && ae.getMessage().equals(WebKeys.EDIT_ASSET_EXCEPTION)) {
 						// The web asset edit threw an exception because it's
 						// locked so it should redirect back with message
 						java.util.Map<String, String[]> params = new java.util.HashMap<String, String[]>();
@@ -324,7 +353,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 
 			} catch (Exception ae) {
 				if ((referer != null) && (referer.length() != 0)) {
-					if (ae.getMessage().equals(WebKeys.EDIT_ASSET_EXCEPTION)) {
+					if (null != ae.getMessage() && ae.getMessage().equals(WebKeys.EDIT_ASSET_EXCEPTION)) {
 						// The web asset edit threw an exception because it's
 						// locked so it should redirect back with message
 						java.util.Map<String, String[]> params = new java.util.HashMap<String, String[]>();
@@ -342,7 +371,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 								WindowState.MAXIMIZED.toString(), params);
 
 						_sendToReferral(req, res, directorURL);
-					} else if (ae.getMessage().equals(WebKeys.USER_PERMISSIONS_EXCEPTION)) {
+					} else if (null != ae.getMessage() && ae.getMessage().equals(WebKeys.USER_PERMISSIONS_EXCEPTION)) {
 						_sendToReferral(req, res, referer);
 					} else {
 						_handleException(ae, req);
@@ -854,6 +883,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 				String.valueOf(APILocator.getLanguageAPI().getDefaultLanguage().getId()));
 		}
 
+		req.setAttribute("identifier", contentlet.getIdentifier());
 		// Asset Versions to list in the versions tab
 		req.setAttribute(WebKeys.VERSIONS_INODE_EDIT, contentlet);
 	}
@@ -1065,8 +1095,16 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 			httpReq.getSession().setAttribute(WebKeys.CONTENTLET_LAST_SEARCH, lastSearchMap);
 		}
 
-		if (null == contentType) {
-
+        if(null != contentType) {
+			//In case we failed to determine the structured out of the selectedStructure param
+			if (!UtilMethods.isSet(contentType.getInode()) && UtilMethods.isSet(req.getParameter("identifier"))) {
+				final String identifier = req.getParameter("identifier");
+				final Contentlet auxContentlet = conAPI
+						.findContentletByIdentifierAnyLanguage(identifier);
+				contentType = auxContentlet.getStructure();
+				contentlet.setStructureInode(contentType.getInode());
+			}
+		}else{
 			this.handleContentTypeNull((ActionRequestImpl) req, inode);
 		}
 		// Checking permissions to add new content of selected content type

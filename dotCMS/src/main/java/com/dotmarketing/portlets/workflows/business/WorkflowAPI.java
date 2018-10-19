@@ -439,6 +439,18 @@ public interface WorkflowAPI {
 			DotSecurityException;
 
 	/**
+	 * Find the list of Workflow Actions available for the current user on the specified workflow
+	 * step and for the bulk modal
+	 *
+	 * @param step The current step
+	 * @param user The current User
+	 * @return List of workflow actions that the user have access in the bulk modal
+	 */
+	public List<WorkflowAction> findBulkActions(WorkflowStep step, User user)
+			throws DotDataException,
+			DotSecurityException;
+
+	/**
 	 * Find the list of Workflow Actions available for the current user on the specified workflow step and permissionable
 	 * @param step The current step
 	 * @param user The current User

@@ -15,13 +15,9 @@ import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
 import org.apache.commons.lang.StringUtils;
+
+import java.util.*;
 
 public class DependencySet extends HashSet<String> {
 
@@ -142,6 +138,11 @@ public class DependencySet extends HashSet<String> {
 			//For un-publish we always remove the asset from cache
 			for ( Environment env : envs ) {
 				cache.removePushedAssetById( assetId, env.getId() );
+				try {
+					APILocator.getPushedAssetsAPI().deletePushedAssetsByEnvironment(assetId, env.getId());
+				} catch (DotDataException e) {
+					Logger.error(this, e.getMessage(), e);
+				}
 			}
 
 			//Return if we are here just to clean up dependencies from cache
