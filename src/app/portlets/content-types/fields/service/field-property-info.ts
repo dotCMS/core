@@ -11,6 +11,7 @@ import {
 import { Validators } from '@angular/forms';
 import { validateDateDefaultValue } from './validators';
 import { RelationshipsPropertyComponent } from '../content-type-fields-properties-form/field-properties/relationships-property/relationships-property.component';
+import { validateRelationship } from './validators/relationship-validator';
 
 export const PROPERTY_INFO = {
     categories: {
@@ -85,6 +86,6 @@ export const PROPERTY_INFO = {
             cardinality: 0
         },
         order: 6,
-        validations: [Validators.required]
+        validations: [validateRelationship]
     }
 };
