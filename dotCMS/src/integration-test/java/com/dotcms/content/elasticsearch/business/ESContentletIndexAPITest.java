@@ -714,12 +714,6 @@ public class ESContentletIndexAPITest extends IntegrationTestBase {
                             DataTypes.DATE).build();
             field = APILocator.getContentTypeFieldAPI().save(field,user);
 
-//	    	Field field = new Field( "testSearchIndexByDateField", Field.FieldType.DATE_TIME,  Field.DataType.DATE, testStructure, true, true, true, 1, false, false, true );
-//	    	field.setVelocityVarName( "testSearchIndexByDateField" );
-//	    	field.setListed( true );
-//	    	FieldFactory.saveField( field );
-
-
 	    	//Creating a test contentlet
 	    	testContent = new Contentlet();
 	    	testContent.setReviewInterval( "1m" );
@@ -729,8 +723,6 @@ public class ESContentletIndexAPITest extends IntegrationTestBase {
 	    	testContent.setIndexPolicy(IndexPolicy.FORCE);
 	    	testContent.setIndexPolicyDependencies(IndexPolicy.FORCE);
 	    	testContent.setProperty(field.variable(),"03/05/2014");
-
-//	    	contentletAPI.setContentletProperty( testContent, field, "03/05/2014" );
 
 	    	testContent = contentletAPI.checkin( testContent, null, permissionAPI.getPermissions( testStructure ), user, false );
 
@@ -848,12 +840,6 @@ public class ESContentletIndexAPITest extends IntegrationTestBase {
                         .contentTypeId(testStructure.id()).dataType(
                         DataTypes.LONG_TEXT).build();
         field = APILocator.getContentTypeFieldAPI().save(field,user);
-
-//        Field field = new Field( "Wysiwyg", Field.FieldType.WYSIWYG, Field.DataType.LONG_TEXT, testStructure, true, true, true, 1, false, false, false );
-//        field.setVelocityVarName( "wysiwyg" );
-//        field.setListed( true );
-//        FieldFactory.saveField( field );
-
 
         return testStructure;
     }
