@@ -8,6 +8,9 @@ import { map } from 'rxjs/operators';
 import { RelationshipCardinality } from '@portlets/content-types/fields/shared/relationship-cardinality.model';
 import { RelationshipService } from '@portlets/content-types/fields/service/relationship.service';
 
+interface CardinalitySorted {
+    [id: number]: RelationshipCardinality;
+}
 @Component({
     providers: [PaginatorService],
     selector: 'dot-edit-relationships',
@@ -24,7 +27,7 @@ export class EditRelationshipsComponent implements OnInit {
         [key: string]: string;
     } = {};
 
-    private cardinalities: {[id: number]: RelationshipCardinality};
+    private cardinalities: CardinalitySorted;
 
     constructor(
         public dotMessageService: DotMessageService,
@@ -71,7 +74,7 @@ export class EditRelationshipsComponent implements OnInit {
         });
     }
 
-    private getCardinalities(): Observable<{[id: number]: RelationshipCardinality} > {
+    private getCardinalities(): Observable<CardinalitySorted> {
         if (!this.cardinalities) {
             this.cardinalities = {};
 
@@ -93,7 +96,7 @@ export class EditRelationshipsComponent implements OnInit {
         this.relationshipPaginatorService.setExtraParams('contentTypeId', this.editContentTypeCacheService.contentType.id);
         this.relationshipPaginatorService.filter = filter;
 
-        this.getCardinalities().subscribe((cardinalities: {[id: number]: RelationshipCardinality}) => {
+        this.getCardinalities().subscribe((cardinalities: CardinalitySorted) => {
             console.log('cardinalities', cardinalities);
             this.relationshipsCurrentPage = this.relationshipPaginatorService.getWithOffset(offset).pipe(
                 map((relationships: Relationship[]) => {
