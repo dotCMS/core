@@ -115,7 +115,6 @@ public class DefaultBackEndLoginRequiredWebInterceptor implements WebInterceptor
                             .stripReferer(request, completeRequestedURL));
                 }
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                response.sendRedirect(LOGIN_URL);
 
                 result = Result.SKIP_NO_CHAIN; // needs to stop the filter chain.
             }
