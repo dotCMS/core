@@ -237,7 +237,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 				}
 			}
 			catch(Exception e){
-				Logger.warn(this.getClass(), "Cannot get URLMap for contentlet.id : " + ((ident != null) ? ident.getId() : contentlet) + " , reason: "+e.getMessage());
+				Logger.warn(this.getClass(), "Cannot get URLMap for structure : "+ st.getName() + " and contentlet.id : " + ((ident != null) ? ident.getId() : contentlet) + " , reason: "+e.getMessage());
 				
 			}
 
