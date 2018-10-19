@@ -448,22 +448,10 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
     }
 
 	public  List<Contentlet> dbRelatedContentByParent(final String parentInode, final String relationType, final boolean live,
-            final String orderBy) throws DotDataException {
+            final String orderBy) throws DotDataException, DotSecurityException {
 
-	    final StringBuilder query = new StringBuilder("select cont1.inode, show_on_menu, title, mod_date, mod_user, sort_order, friendly_name, structure_inode, last_review, next_review, "
-                + "review_interval, disabled_wysiwyg, cont1.identifier, language_id, date1, date2, date3, date4, date5, date6, date7, date8, date9, date10, "
-                + "date11, date12, date13, date14, date15, date16, date17, date18, date19, date20, date21, date22, date23, date24, date25, text1, text2, "
-                + "text3, text4, text5, text6, text7, text8, text9, text10, text11, text12, text13, text14, text15, text16, text17, text18, text19, "
-                + "text20, text21, text22, text23, text24, text25, text_area1, text_area2, text_area3, text_area4, text_area5, text_area6, text_area7, "
-                + "text_area8, text_area9, text_area10, text_area11, text_area12, text_area13, text_area14, text_area15, text_area16, text_area17, "
-                + "text_area18, text_area19, text_area20, text_area21, text_area22, text_area23, text_area24, text_area25, integer1, integer2, integer3, "
-                + "integer4, integer5, integer6, integer7, integer8, integer9, integer10, integer11, integer12, integer13, integer14, integer15, "
-                + "integer16, integer17, integer18, integer19, integer20, integer21, integer22, integer23, integer24, integer25, \"float1\", "
-                + "\"float2\", \"float3\", \"float4\", \"float5\", \"float6\", \"float7\", \"float8\", \"float9\", \"float10\", \"float11\", \"float12\", "
-                + "\"float13\", \"float14\", \"float15\", \"float16\", \"float17\", \"float18\", \"float19\", \"float20\", \"float21\", \"float22\", "
-                + "\"float23\", \"float24\", \"float25\", bool1, bool2, bool3, bool4, bool5, bool6, bool7, bool8, bool9, bool10, bool11, bool12, bool13, "
-                + "bool14, bool15, bool16, bool17, bool18, bool19, bool20, bool21, bool22, bool23, bool24, bool25, ")
-                .append("owner from contentlet cont1, inode ci1, tree tree1, contentlet_version_info vi1 where tree1.parent = ? and tree1.relation_type = ? ")
+	    final StringBuilder query = new StringBuilder("select cont1.inode from contentlet cont1, inode ci1, tree tree1, "
+                + "contentlet_version_info vi1 where tree1.parent = ? and tree1.relation_type = ? ")
                 .append("and tree1.child = cont1.identifier and cont1.inode = ci1.inode and vi1.identifier = cont1.identifier and " + (live?"vi1.live_inode":"vi1.working_inode"))
                 .append(" = cont1.inode");
 
@@ -479,7 +467,14 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
             dc.addParam(parentInode);
             dc.addParam(relationType);
 
-            return new ContentletTransformer(dc.loadObjectResults()).asList();
+        List<Map<String, Object>> results = dc.loadObjectResults();
+        List<Contentlet> contentlets = new ArrayList<Contentlet>();
+
+        for(Map<String,Object> map : results){
+            contentlets.add(APILocator.getContentletAPI().find((String) map.get("inode"),APILocator.systemUser(),false));
+        }
+
+        return contentlets;
     }
 
     @SuppressWarnings("unchecked")

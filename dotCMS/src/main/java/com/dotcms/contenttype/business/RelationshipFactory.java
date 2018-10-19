@@ -61,7 +61,7 @@ public interface RelationshipFactory {
     void deleteKeepTrees(final Relationship relationship) throws DotDataException;
 
     List<Contentlet> dbRelatedContentByParent(final String parentInode, final String relationType, final boolean live,
-            final String orderBy) throws DotDataException;
+            final String orderBy) throws DotDataException, DotSecurityException;
 
     List<Contentlet> dbRelatedContentByChild(final String childInode, final String relationType, final boolean live,
             final String orderBy) throws DotDataException, DotSecurityException;
