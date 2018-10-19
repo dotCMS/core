@@ -404,6 +404,7 @@ public class HTMLPageAPITest extends IntegrationTestBase {
 
 		final String pageURI = "/about-us/index";
 		final String indexAssetName = "index";
+        final String indexParentPath = "/about-us/";
 
 		Host defaultHost = APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), true);
 
@@ -411,6 +412,8 @@ public class HTMLPageAPITest extends IntegrationTestBase {
 		Identifier id = APILocator.getIdentifierAPI()
 				.find(defaultHost,
 						pageURI);
+		final String identifierId = id.getId();
+
 		ContentletVersionInfo cvi = APILocator.getVersionableAPI()
 				.getContentletVersionInfo(id.getId(), 1);
 		Contentlet contentlet = APILocator.getContentletAPI()
@@ -430,6 +433,17 @@ public class HTMLPageAPITest extends IntegrationTestBase {
 		assertNotNull(newPage);
 		assertNotNull(newPage.getURI());
 		assertEquals(newPage.getURI(), pageURI);
+
+        //Make sure the identifier is intact
+        id = APILocator.getIdentifierAPI().find(defaultHost, pageURI);
+        //Validations
+        assertNotNull(id);
+        assertNotNull(id.getId());
+        assertNotNull(id.getParentPath());
+        assertNotNull(id.getAssetName());
+        assertEquals(id.getParentPath(), indexParentPath);
+        assertEquals(id.getAssetName(), indexAssetName);
+        assertEquals(id.getId(), identifierId);
 	}
 
 }
