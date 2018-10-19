@@ -1,27 +1,18 @@
 package com.dotmarketing.portlets.htmlpages.business;
 
-import java.util.ArrayList;
-import java.util.List;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import com.dotcms.IntegrationTestBase;
-
 import com.dotcms.datagen.ContentletDataGen;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
-import com.tngtech.java.junit.dataprovider.DataProvider;
-import com.tngtech.java.junit.dataprovider.DataProviderRunner;
-import com.tngtech.java.junit.dataprovider.UseDataProvider;
-import org.apache.velocity.exception.ResourceNotFoundException;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.HTMLPageDataGen;
 import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.beans.Permission;
@@ -31,12 +22,16 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.MultiTreeFactory;
 import com.dotmarketing.portlets.AssetUtil;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.structure.model.Structure;
@@ -45,9 +40,15 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
+import com.tngtech.java.junit.dataprovider.DataProvider;
+import com.tngtech.java.junit.dataprovider.DataProviderRunner;
+import com.tngtech.java.junit.dataprovider.UseDataProvider;
+import java.util.ArrayList;
+import java.util.List;
+import org.apache.velocity.exception.ResourceNotFoundException;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.junit.runner.RunWith;
-
-import static org.junit.Assert.*;
 
 @RunWith(DataProviderRunner.class)
 public class HTMLPageAPITest extends IntegrationTestBase {
@@ -391,6 +392,56 @@ public class HTMLPageAPITest extends IntegrationTestBase {
 
 	}
 
+	/**
+	 * Validates the checkout method is setting properly the HTMLPages calculated URL field to the
+	 * returned contentlet.
+	 */
+	@Test
+	public void checkcout_populate_url_field_for_pages()
+			throws DotSecurityException, DotDataException {
 
+		final String pageURI = "/about-us/index";
+		final String indexAssetName = "index";
+		final String indexParentPath = "/about-us/";
+
+		Host defaultHost = APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), true);
+
+		// CHECKOUT the "About Us" page
+		Identifier id = APILocator.getIdentifierAPI()
+				.find(defaultHost,
+						pageURI);
+		final String identifierId = id.getId();
+
+		ContentletVersionInfo cvi = APILocator.getVersionableAPI()
+				.getContentletVersionInfo(id.getId(), 1);
+		Contentlet contentlet = APILocator.getContentletAPI()
+				.checkout(cvi.getWorkingInode(), APILocator.systemUser(), true);
+		//Validations
+		assertNotNull(contentlet);
+		assertNotNull(contentlet.getStringProperty(HTMLPageAssetAPI.URL_FIELD));
+		assertEquals(contentlet.getStringProperty(HTMLPageAssetAPI.URL_FIELD), indexAssetName);
+
+		//Saving the content
+		contentlet.setBoolProperty(Contentlet.DONT_VALIDATE_ME, true);
+		final Contentlet newCon = APILocator.getContentletAPI()
+				.checkin(contentlet, APILocator.systemUser(), false);
+
+		// Validate we have the right data
+		HTMLPageAsset newPage = APILocator.getHTMLPageAssetAPI().fromContentlet(newCon);
+		assertNotNull(newPage);
+		assertNotNull(newPage.getURI());
+		assertEquals(newPage.getURI(), pageURI);
+
+		//Make sure the identifier is intact
+		id = APILocator.getIdentifierAPI().find(defaultHost, pageURI);
+		//Validations
+		assertNotNull(id);
+		assertNotNull(id.getId());
+		assertNotNull(id.getParentPath());
+		assertNotNull(id.getAssetName());
+		assertEquals(id.getParentPath(), indexParentPath);
+		assertEquals(id.getAssetName(), indexAssetName);
+		assertEquals(id.getId(), identifierId);
+	}
 
 }

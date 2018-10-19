@@ -3603,6 +3603,22 @@ public class ESContentletAPIImpl implements ContentletAPI {
         workingContentlet.setInode(contentletInode);
         copyProperties(workingContentlet, cmap);
         workingContentlet.setInode("");
+
+        /*
+        The checkin is assuming that HTMLPages are going to have an URL field as it
+        is always sent from the UI, but if we checkout the content and then save (checkin) we
+        fail as the checkout is not populating that field.
+        We need to remember the URL field in pages is a calculated value and should not be stored.
+         */
+        if (workingContentlet.getContentType().baseType() == BaseContentType.HTMLPAGE
+                && UtilMethods.isSet(workingContentlet.getIdentifier())) {
+
+            final Identifier htmlPageIdentifier = APILocator.getIdentifierAPI()
+                    .find(workingContentlet.getIdentifier());
+            workingContentlet
+                    .setStringProperty(HTMLPageAssetAPI.URL_FIELD, htmlPageIdentifier.getAssetName());
+        }
+
         return workingContentlet;
     }
 
