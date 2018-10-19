@@ -74,7 +74,7 @@ export class SearchableDropdownComponent implements ControlValueAccessor, OnChan
     @ViewChild('searchPanel')
     searchPanelRef: OverlayPanel;
 
-    value: any = {};
+    value: any;
     valueString = '';
 
     i18nMessages: {
@@ -86,7 +86,8 @@ export class SearchableDropdownComponent implements ControlValueAccessor, OnChan
     propagateChange = (_: any) => {};
 
     ngOnChanges(change: SimpleChanges): void {
-        if (change.placeholder && change.placeholder.currentValue) {
+        console.log('change', change);
+        if (this.usePlaceholder(change)) {
             this.valueString = change.placeholder.currentValue;
         }
     }
@@ -134,6 +135,11 @@ export class SearchableDropdownComponent implements ControlValueAccessor, OnChan
         } else {
             this.valueString = value ? value[this.labelPropertyName] : this.placeholder;
         }
+
+        console.log('this.labelPropertyName]', this.labelPropertyName);
+        console.log('this.valueString', this.valueString);
+        console.log('this.value', this.value);
+        console.log('this.data', this.data);
     }
 
     /**
@@ -197,6 +203,10 @@ export class SearchableDropdownComponent implements ControlValueAccessor, OnChan
         }
 
         this.searchPanelRef.hide();
+    }
+
+    private usePlaceholder(change: SimpleChanges): boolean {
+        return change.placeholder && change.placeholder.currentValue && !this.value;
     }
 }
 

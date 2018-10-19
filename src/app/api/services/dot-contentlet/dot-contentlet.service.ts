@@ -4,10 +4,20 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { RequestMethod } from '@angular/http';
 import { StructureTypeView, ContentTypeView } from '@models/contentlet';
+import { ContentType } from '@portlets/content-types/shared/content-type.model';
 
 @Injectable()
 export class DotContentletService {
     constructor(private coreWebService: CoreWebService) {}
+
+    getContentType(id: string): Observable<ContentType> {
+        return this.coreWebService
+            .requestView({
+                method: RequestMethod.Get,
+                url: `v1/contenttype/id/${id}`
+            })
+            .pipe(pluck('entity'));
+    }
 
     /**
      * Get the content types from the endpoint

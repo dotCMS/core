@@ -20,6 +20,7 @@ import { HotkeysService, Hotkey } from 'angular2-hotkeys';
 import { DotEventsService } from '@services/dot-events/dot-events.service';
 import { MenuItem } from 'primeng/primeng';
 import { Subject } from 'rxjs';
+import { EditContentTypeCacheService } from '../services/edit-content-type-cache.service';
 
 
 /**
@@ -60,12 +61,14 @@ export class ContentTypesEditComponent implements OnInit, OnDestroy {
         private hotkeysService: HotkeysService,
         private route: ActivatedRoute,
         public dotMessageService: DotMessageService,
-        public router: Router
+        public router: Router,
+        private editContentTypeCacheService: EditContentTypeCacheService
     ) {}
 
     ngOnInit(): void {
         this.route.data.pipe(pluck('contentType'), takeUntil(this.destroy$)).subscribe((contentType: ContentType) => {
             this.data = contentType;
+            this.editContentTypeCacheService.contentType = contentType;
 
             if (contentType.fields) {
                 this.fields = contentType.fields;

@@ -69,12 +69,25 @@ import { DotPageSelectorModule } from '@components/_common/dot-page-selector/dot
 import { DotTextareaContentModule } from '@components/_common/dot-textarea-content/dot-textarea-content.module';
 import { DotWorkflowService } from '@services/dot-workflow/dot-workflow.service';
 import { DotWorkflowsSelectorFieldModule } from '@components/_common/dot-workflows-selector-field/dot-workflows-selector-field.module';
-import { DynamicFieldPropertyDirective } from './fields/content-type-fields-properties-form/field-properties/dynamic-field-property-directive/dynamic-field-property.directive';
+import {
+    DynamicFieldPropertyDirective
+} from './fields/content-type-fields-properties-form/field-properties/dynamic-field-property-directive/dynamic-field-property.directive';
 import { IFrameModule } from '@components/_common/iframe';
 import { MdInputTextModule } from '@directives/md-inputtext/md-input-text.module';
 import { PushPublishContentTypesDialogModule } from '@components/_common/push-publish-dialog/push-publish-dialog.module';
 import { SearchableDropDownModule } from '@components/_common/searchable-dropdown';
 import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
+import {
+    RelationshipsPropertyComponent
+} from './fields/content-type-fields-properties-form/field-properties/relationships-property/relationships-property.component';
+import { RelationshipService } from './fields/service/relationship.service';
+import {
+    NewRelationshipsComponent
+} from './fields/content-type-fields-properties-form/field-properties/relationships-property/new-relationships.component.ts/new-relationships.component';
+import {
+    EditRelationshipsComponent
+} from './fields/content-type-fields-properties-form/field-properties/relationships-property/edit-relationship.component.ts/edit-relationships.component';
+import { EditContentTypeCacheService } from './services/edit-content-type-cache.service';
 
 @NgModule({
     declarations: [
@@ -98,7 +111,10 @@ import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.modu
         HintPropertyComponent,
         NamePropertyComponent,
         RegexCheckPropertyComponent,
-        ValuesPropertyComponent
+        ValuesPropertyComponent,
+        RelationshipsPropertyComponent,
+        NewRelationshipsComponent,
+        EditRelationshipsComponent
     ],
     entryComponents: [
         NamePropertyComponent,
@@ -108,7 +124,8 @@ import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.modu
         DefaultValuePropertyComponent,
         HintPropertyComponent,
         RegexCheckPropertyComponent,
-        ValuesPropertyComponent
+        ValuesPropertyComponent,
+        RelationshipsPropertyComponent
     ],
     exports: [ContentTypesPortletComponent],
     imports: [
@@ -159,7 +176,9 @@ import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.modu
         FieldPropertyService,
         FieldVariablesService,
         FieldService,
-        FormatDateService
+        FormatDateService,
+        RelationshipService,
+        EditContentTypeCacheService
     ]
 })
 export class ContentTypesModule {}

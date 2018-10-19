@@ -1,0 +1,22 @@
+<dot-searchable-dropdown 
+    [data]="contentTypeCurrentPage | async"
+    [pageLinkSize]="contentTypePaginatorService.maxLinksPage"
+    [rows]="contentTypePaginatorService.paginationPerPage"
+    [totalRecords]="contentTypePaginatorService.totalRecords"
+    (filterChange)="handleContentTypeFilterChange($event)"
+    (pageChange)="handleContentTypePageChange($event)"
+    labelPropertyName="name"
+    [placeholder]="i18nMessages['contenttypes.field.properties.relationship.new.content_type.placeholder']"
+    (change)="tiggerChanged()"
+    [(ngModel)]="contentType">
+</dot-searchable-dropdown>*
+
+<p-dropdown 
+    appendTo="body"
+    [options]="relationshpsCardinalities" 
+    optionLabel="name" 
+    optionValue="id"
+    (onChange)="tiggerChanged()"
+    [(ngModel)]="cardinality" >
+</p-dropdown>
+ 

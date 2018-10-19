@@ -1,0 +1,11 @@
+<dot-searchable-dropdown
+    [data]="relationshipsCurrentPage | async"
+    [pageLinkSize]="relationshipPaginatorService.maxLinksPage"
+    [rows]="relationshipPaginatorService.paginationPerPage"
+    [totalRecords]="relationshipPaginatorService.totalRecords"
+    (filterChange)="handleRelationshipFilterChange($event)"
+    (pageChange)="handleRelationshipPageChange($event)"
+    labelPropertyName="label"
+    [placeholder]="i18nMessages['contenttypes.field.properties.relationship.existing.placeholder']"
+    (change)="tiggerChanged($event.relationship)">
+</dot-searchable-dropdown>*

@@ -10,6 +10,7 @@ import {
 } from '../content-type-fields-properties-form/field-properties';
 import { Validators } from '@angular/forms';
 import { validateDateDefaultValue } from './validators';
+import { RelationshipsPropertyComponent } from '../content-type-fields-properties-form/field-properties/relationships-property/relationships-property.component';
 
 export const PROPERTY_INFO = {
     categories: {
@@ -76,6 +77,14 @@ export const PROPERTY_INFO = {
         component: ValuesPropertyComponent,
         defaultValue: '',
         order: 3,
+        validations: [Validators.required]
+    },
+    relationships: {
+        component: RelationshipsPropertyComponent,
+        defaultValue: {
+            cardinality: 0
+        },
+        order: 6,
         validations: [Validators.required]
     }
 };
