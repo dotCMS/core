@@ -12,6 +12,16 @@ import java.util.List;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.content.elasticsearch.util.ESClient;
+import com.dotcms.contenttype.model.field.DataTypes;
+import com.dotcms.contenttype.model.field.DateTimeField;
+import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.FieldBuilder;
+import com.dotcms.contenttype.model.field.TextField;
+import com.dotcms.contenttype.model.field.WysiwygField;
+import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.model.type.ContentTypeBuilder;
+import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.HTMLPageDataGen;
 import com.dotcms.enterprise.publishing.sitesearch.SiteSearchResult;
 import com.dotcms.enterprise.publishing.sitesearch.SiteSearchResults;
@@ -41,13 +51,12 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
+import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
-import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
-import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.sitesearch.business.SiteSearchAPI;
@@ -100,6 +109,47 @@ public class ESContentletIndexAPITest extends IntegrationTestBase {
                 "and argus reduce to the stem ... (illustrating the case where the stem is " +
                 "not itself a word or root) but arguments reduce to the stem .....";
     }
+
+    @Test
+    public void test_indexContentList_ContentTypeWithPageDetailNotExists() throws Exception{
+        long time = System.currentTimeMillis();
+        ContentType type = null;
+        try {
+            type = ContentTypeBuilder
+                    .builder(BaseContentType.getContentTypeClass(BaseContentType.CONTENT.getType()))
+                    .description("description" + time).folder(FolderAPI.SYSTEM_FOLDER)
+                    .host(Host.SYSTEM_HOST)
+                    .name("ContentTypeTestingWithPageDetail" + time).owner("owner")
+                    .variable("velocityVarNameTesting" + time).detailPage("pageNotExists")
+                    .build();
+
+            type = APILocator.getContentTypeAPI(user).save(type);
+
+            final Field titleField =
+                    FieldBuilder.builder(TextField.class).name("testTitle").variable("testTitle")
+                            .unique(true)
+                            .contentTypeId(type.id()).dataType(
+                            DataTypes.TEXT).build();
+            APILocator.getContentTypeFieldAPI().save(titleField, user);
+
+            final Contentlet contentlet = new ContentletDataGen(type.id())
+                    .setProperty("testTitle", "TestContent").nextPersisted();
+
+            final List<Contentlet> contentlets = new ArrayList<>();
+            contentlets.add(contentlet);
+
+            APILocator.getContentletIndexAPI().indexContentList(contentlets, null, false);
+
+            assertTrue(APILocator.getContentletAPI()
+                    .indexCount("+identifier:" + contentlet.getIdentifier(), user, false) > 0);
+        }finally {
+            if(type!=null){
+                APILocator.getContentTypeAPI(user).delete(type);
+            }
+        }
+
+    }
+
 
     /**
      * Testing the {@link ContentletIndexAPI#createContentIndex(String)}, {@link ContentletIndexAPI#delete(String)} and
@@ -599,11 +649,12 @@ public class ESContentletIndexAPITest extends IntegrationTestBase {
 	    	CacheLocator.getContentTypeCache().add( testStructure );
 	    	//Adding test field
 
-	    	Field field = new Field( "testSearchIndexByDateField", Field.FieldType.DATE_TIME,  Field.DataType.DATE, testStructure, true, true, true, 1, false, false, true );
-	    	field.setVelocityVarName( "testSearchIndexByDateField" );
-	    	field.setListed( true );
-	    	FieldFactory.saveField( field );
-
+            Field field =
+                    FieldBuilder.builder(DateTimeField.class).name("testSearchIndexByDateField").variable("testSearchIndexByDateField")
+                            .required(true).indexed(true).listed(true)
+                            .contentTypeId(testStructure.id()).dataType(
+                            DataTypes.DATE).build();
+            field = APILocator.getContentTypeFieldAPI().save(field,user);
 
 	    	//Creating a test contentlet
 	    	testContent = new Contentlet();
@@ -611,8 +662,7 @@ public class ESContentletIndexAPITest extends IntegrationTestBase {
 	    	testContent.setStructureInode( testStructure.getInode() );
 	    	testContent.setHost( defaultHost.getIdentifier() );
 	    	testContent.setLanguageId(1);
-
-	    	contentletAPI.setContentletProperty( testContent, field, "03/05/2014" );
+            testContent.setProperty(field.variable(),"03/05/2014");
 
 	    	testContent = contentletAPI.checkin( testContent, null, permissionAPI.getPermissions( testStructure ), user, false );
 	    	APILocator.getVersionableAPI().setLive(testContent);
@@ -722,11 +772,11 @@ public class ESContentletIndexAPITest extends IntegrationTestBase {
         StructureFactory.saveStructure( testStructure );
         CacheLocator.getContentTypeCache().add( testStructure );
         //Adding test field
-        Field field = new Field( "Wysiwyg", Field.FieldType.WYSIWYG, Field.DataType.LONG_TEXT, testStructure, true, true, true, 1, false, false, false );
-        field.setVelocityVarName( "wysiwyg" );
-        field.setListed( true );
-        FieldFactory.saveField( field );
-
+        Field field =
+                FieldBuilder.builder(WysiwygField.class).name("Wysiwyg").variable("wysiwyg").required(true).indexed(true).listed(true)
+                        .contentTypeId(testStructure.id()).dataType(
+                        DataTypes.LONG_TEXT).build();
+        field = APILocator.getContentTypeFieldAPI().save(field,user);
 
         return testStructure;
     }
