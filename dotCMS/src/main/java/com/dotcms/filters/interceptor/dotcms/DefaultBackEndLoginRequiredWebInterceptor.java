@@ -8,7 +8,6 @@ import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.PortletURLUtil;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.WebKeys;
 import java.io.IOException;
@@ -27,12 +26,11 @@ public class DefaultBackEndLoginRequiredWebInterceptor implements WebInterceptor
     private static final String ALLOWED_SUB_PATHS_WITHOUT_AUTHENTICATION = "ALLOWED_SUB_PATHS_WITHOUT_AUTHENTICATION";
     private static final String AUTHENTICATION_REQUIRED_PATHS = "AUTHENTICATION_REQUIRED_PATHS";
 
-    private static final String LOGIN_URL = String
-            .format("/%s/#/public/login", PortletURLUtil.URL_ADMIN_PREFIX);
-
     private static final String DEFAULT_ALLOWED_SUB_PATHS = "/html/js/dojo,"
             + "/html/images/backgrounds,/html/images/persona,"
-            + "/html/portal/login.jsp";
+            + "/html/portal/login.jsp,"
+            + "/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/,"
+            + "/DotAjaxDirector/com.dotmarketing.sitesearch.ajax.SiteSearchAjaxAction/cmd/";
     private static String[] ALLOWED_SUB_PATHS;
 
     // \A -> The beginning of the input
@@ -83,7 +81,7 @@ public class DefaultBackEndLoginRequiredWebInterceptor implements WebInterceptor
         if (null != requestedURI) {
             for (final String allowedSubPath : ALLOWED_SUB_PATHS) {
 
-                if (requestedURI.startsWith(allowedSubPath.toLowerCase())) {
+                if (requestedURI.toLowerCase().startsWith(allowedSubPath.toLowerCase())) {
                     requiresAuthentication = false;
                     break;
                 }
