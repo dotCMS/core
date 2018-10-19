@@ -4,10 +4,7 @@ import com.dotcms.api.vtl.model.DotJSON;
 import com.dotcms.cache.DotJSONCache;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.repackage.javax.ws.rs.*;
-import com.dotcms.repackage.javax.ws.rs.core.Context;
-import com.dotcms.repackage.javax.ws.rs.core.MediaType;
-import com.dotcms.repackage.javax.ws.rs.core.Response;
-import com.dotcms.repackage.javax.ws.rs.core.UriInfo;
+import com.dotcms.repackage.javax.ws.rs.core.*;
 import com.dotcms.repackage.org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.WebResource;
@@ -129,10 +126,11 @@ public class VTLResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
-    @Consumes({MediaType.APPLICATION_JSON, MediaType.MULTIPART_FORM_DATA, MediaType.APPLICATION_FORM_URLENCODED})
+    @Consumes({MediaType.APPLICATION_JSON})
     public final Response post(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
-                                     @Context UriInfo uriInfo, @PathParam("folder") final String folderName,
-                                     @PathParam("path") final String pathParams, final Map<String, String> properties) {
+                               @Context UriInfo uriInfo, @PathParam("folder") final String folderName,
+                               @PathParam("path") final String pathParams,
+                                   final Map<String, String> properties) {
 
         final InitDataObject initDataObject = this.webResource.init
                 (pathParams, false, request, false, null);
