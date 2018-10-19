@@ -73,6 +73,8 @@ export class SearchableDropdownComponent implements ControlValueAccessor, OnChan
     searchInput: ElementRef;
     @ViewChild('searchPanel')
     searchPanelRef: OverlayPanel;
+    @ViewChild('button')
+    button: ElementRef;
 
     value: any;
     valueString = '';
@@ -197,6 +199,10 @@ export class SearchableDropdownComponent implements ControlValueAccessor, OnChan
         }
 
         this.searchPanelRef.hide();
+    }
+
+    setDisabledState(isDisabled: boolean): void {
+        this.button.nativeElement.disabled = isDisabled;
     }
 
     private usePlaceholder(change: SimpleChanges): boolean {

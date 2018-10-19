@@ -8,7 +8,8 @@
     labelPropertyName="name"
     [placeholder]="i18nMessages['contenttypes.field.properties.relationship.new.content_type.placeholder']"
     (change)="tiggerChanged()"
-    [(ngModel)]="contentType">
+    [(ngModel)]="contentType"
+    [disabled]="editing">
 </dot-searchable-dropdown>*
 
 <p-dropdown 
@@ -17,6 +18,6 @@
     optionLabel="name" 
     optionValue="id"
     (onChange)="tiggerChanged()"
-    [(ngModel)]="cardinality" >
+    [(ngModel)]="cardinality">
 </p-dropdown> *
  

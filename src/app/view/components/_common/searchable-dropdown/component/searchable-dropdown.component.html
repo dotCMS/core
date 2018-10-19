@@ -22,7 +22,7 @@
     </p-dataList>
 </p-overlayPanel>
 
-<button dotMdRipple pButton
+<button #button dotMdRipple pButton
     (click)="searchPanel.toggle($event)"
     [label]="persistentPlaceholder ? placeholder : valueString"
     icon="fa fa-caret-down"
