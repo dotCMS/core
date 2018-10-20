@@ -3,7 +3,6 @@ import {
     Component,
     EventEmitter,
     Output,
-    ViewEncapsulation,
     Input,
     OnInit,
     ViewChild,
@@ -20,7 +19,6 @@ import { LoginService, User, Auth } from 'dotcms-js/dotcms-js';
 import { StringFormat } from '../../../api/util/stringFormat';
 
 @Component({
-    encapsulation: ViewEncapsulation.None,
     selector: 'dot-my-account',
     styleUrls: ['./dot-my-account-component.scss'],
     templateUrl: 'dot-my-account-component.html'
