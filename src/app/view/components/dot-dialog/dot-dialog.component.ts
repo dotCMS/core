@@ -110,6 +110,7 @@ export class DotDialogComponent {
      * @memberof DotDialogComponent
      */
     close($event?: MouseEvent): void {
+
         if (this.beforeClose.observers.length) {
             this.beforeClose.emit({
                 close: () => {
@@ -180,7 +181,7 @@ export class DotDialogComponent {
     }
 
     private isContentScrolled(): Observable<boolean> {
-        return fromEvent(this.content.nativeElement, 'scroll').pipe(
+        return this.content ? fromEvent(this.content.nativeElement, 'scroll').pipe(
             tap((e: { target: HTMLInputElement }) => {
                 /*
                     Absolute positioned overlays panels (in dropdowns, menus, etc...) inside the
@@ -192,7 +193,7 @@ export class DotDialogComponent {
             map((e: { target: HTMLInputElement }) => {
                 return e.target.scrollTop > 0;
             })
-        );
+        ) : null;
     }
 
     private unBindEvents(): void {
