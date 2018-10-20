@@ -6,6 +6,7 @@ import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
@@ -18,6 +19,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Provides the main configuration parameters of a bundle sent via Push Publish.
@@ -35,7 +37,8 @@ public class PublisherConfig implements Map<String, Object>, Cloneable {
 		START_DATE, END_DATE, HOSTS, HOST_SET, LANGUAGES, FOLDERS, STRUCTURES, INCLUDE_PATTERN,
 		EXCLUDE_PATTERN, LANGUAGE, USER, PUBLISHER, MAKE_BUNDLE, LUCENE_QUERY, 
 		THREADS, ID, TIMESTAMP, BUNDLERS, INCREMENTAL, NOT_NEW_NOT_INCREMENTAL, DESTINATION_BUNDLE,
-		UPDATED_HTML_PAGE_IDS, LUCENE_QUERIES, ENDPOINT, GROUP_ID, ASSETS, FOLDERS_PENDING_DEFAULT
+		UPDATED_HTML_PAGE_IDS, LUCENE_QUERIES, ENDPOINT, GROUP_ID, ASSETS, FOLDERS_PENDING_DEFAULT,
+		REPLACED_LANGUAGES
 	}
 
 	public enum Operation {
@@ -548,4 +551,33 @@ public class PublisherConfig implements Map<String, Object>, Cloneable {
 		this.publishAuditStatus = publishAuditStatus;
 	}
 
+
+	/**
+	 * Convenience method to get access to the null values set that is kept within the map
+	 * @return
+	 */
+	@SuppressWarnings("unchecked")
+	private Map<Long,Language> getWritableReplacedLanguages(){
+		return (Map<Long,Language>)params.computeIfAbsent(Config.REPLACED_LANGUAGES.name(), s -> {
+			return new ConcurrentHashMap<Long,Language>();
+		});
+	}
+
+	/**
+	 *
+	 * @param remoteId
+	 * @param localLang
+	 */
+	public void addReplacedLanguage(final Long remoteId, final Language localLang){
+	    getWritableReplacedLanguages().put(remoteId,localLang);
+	}
+
+	/**
+	 *
+	 * @param remoteId
+	 * @return
+	 */
+	public Language getReplacedLanguage(final Long remoteId){
+		return getWritableReplacedLanguages().get(remoteId);
+	}
 }

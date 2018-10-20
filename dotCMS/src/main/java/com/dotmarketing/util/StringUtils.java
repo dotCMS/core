@@ -1,11 +1,12 @@
 package com.dotmarketing.util;
 
+import static org.apache.commons.lang.StringUtils.split;
+
 import com.dotcms.repackage.com.google.common.base.CaseFormat;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONArray;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
 import com.dotcms.repackage.org.jsoup.Jsoup;
 import com.liferay.util.StringPool;
-
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -13,8 +14,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
-
-import static org.apache.commons.lang.StringUtils.split;
 
 public class StringUtils {
 
@@ -282,4 +281,17 @@ public class StringUtils {
 
         return builder;
     } // builder.
+
+    /**
+     *  Null safe, case insensitive equals
+     * @param a
+     * @param b
+     * @return
+     */
+    public static boolean equalsNullSafeIgnoreCase(final String a, final String b){
+
+        if( null == a && null == b ) return true;
+        return (a != null && a.trim().equalsIgnoreCase(b));
+    }
+
 }
