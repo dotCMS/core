@@ -131,6 +131,11 @@ describe('DotIframeDialogComponent', () => {
                 it('should set header attr', () => {
                     expect(dialogComponent.header).toContain('This is a header');
                 });
+
+                it('should set width and height att', () => {
+                    expect(dialogComponent.width).toEqual('90vw');
+                    expect(dialogComponent.height).toEqual('90vh');
+                });
             });
 
             describe('dot-iframe', () => {

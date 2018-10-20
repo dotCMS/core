@@ -33,6 +33,8 @@ $dialog-padding: $basic-padding * 4;
 }
 
 .dialog__content {
+    flex-basis: 0%;
+    flex-grow: 1;
     overflow-y: scroll;
     padding: 0 $dialog-padding $dialog-padding;
 }

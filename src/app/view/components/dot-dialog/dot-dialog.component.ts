@@ -63,6 +63,12 @@ export class DotDialogComponent {
         [key: string]: string;
     };
 
+    @Input()
+    width: string;
+
+    @Input()
+    height: string;
+
     @Output()
     hide: EventEmitter<any> = new EventEmitter();
 

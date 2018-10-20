@@ -22,6 +22,8 @@ const dispatchKeydownEvent = (key: string) => {
     selector: 'dot-test-host-component',
     template: `
         <dot-dialog
+            width="100px"
+            height="100px"
             [actions]="actions"
             [headerStyle]="{'margin': '0'}"
             [contentStyle]="{'padding': '0'}"
@@ -157,6 +159,11 @@ describe('DotDialogComponent', () => {
             it('should set the content custom styles', () => {
                 const content: DebugElement = de.query(By.css('.dialog__content'));
                 expect(content.styles).toEqual({padding: '0'});
+            });
+
+            it('should set width and height', () => {
+                const dialog: DebugElement = de.query(By.css('.dialog'));
+                expect(dialog.styles).toEqual({height: '100px', width: '100px'});
             });
 
             it('should show footer', () => {
