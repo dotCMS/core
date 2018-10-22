@@ -38,7 +38,7 @@ public class PublisherConfig implements Map<String, Object>, Cloneable {
 		EXCLUDE_PATTERN, LANGUAGE, USER, PUBLISHER, MAKE_BUNDLE, LUCENE_QUERY, 
 		THREADS, ID, TIMESTAMP, BUNDLERS, INCREMENTAL, NOT_NEW_NOT_INCREMENTAL, DESTINATION_BUNDLE,
 		UPDATED_HTML_PAGE_IDS, LUCENE_QUERIES, ENDPOINT, GROUP_ID, ASSETS, FOLDERS_PENDING_DEFAULT,
-		REPLACED_LANGUAGES
+		MAPPED_REMOTE_LANGUAGES
 	}
 
 	public enum Operation {
@@ -553,14 +553,14 @@ public class PublisherConfig implements Map<String, Object>, Cloneable {
 
 
 	/**
-	 * Convenience method to get access to the null values set that is kept within the map
+	 * Convenience method to get access to the mapped remote languages map
 	 * @return
 	 */
 	@SuppressWarnings("unchecked")
-	private Map<Long,Language> getWritableReplacedLanguages(){
-		return (Map<Long,Language>)params.computeIfAbsent(Config.REPLACED_LANGUAGES.name(), s -> {
-			return new ConcurrentHashMap<Long,Language>();
-		});
+	private Map<Long,Language> getWritableMappedRemoteLanguages(){
+		return (Map<Long,Language>)params.computeIfAbsent(Config.MAPPED_REMOTE_LANGUAGES.name(),
+		  s -> new ConcurrentHashMap<Long,Language>()
+		);
 	}
 
 	/**
@@ -568,8 +568,8 @@ public class PublisherConfig implements Map<String, Object>, Cloneable {
 	 * @param remoteId
 	 * @param localLang
 	 */
-	public void addReplacedLanguage(final Long remoteId, final Language localLang){
-	    getWritableReplacedLanguages().put(remoteId,localLang);
+	public void mapRemoteLanguage(final Long remoteId, final Language localLang){
+	    getWritableMappedRemoteLanguages().put(remoteId,localLang);
 	}
 
 	/**
@@ -577,7 +577,7 @@ public class PublisherConfig implements Map<String, Object>, Cloneable {
 	 * @param remoteId
 	 * @return
 	 */
-	public Language getReplacedLanguage(final Long remoteId){
-		return getWritableReplacedLanguages().get(remoteId);
+	public Language getMappedRemoteLanguage(final Long remoteId){
+		return getWritableMappedRemoteLanguages().get(remoteId);
 	}
 }
