@@ -9,8 +9,8 @@ import {
     OnChanges,
     SimpleChanges
 } from '@angular/core';
-import { Observable, fromEvent, Subscription } from 'rxjs';
-import { filter, map, tap } from 'rxjs/operators';
+import { fromEvent, Subscription } from 'rxjs';
+import { filter } from 'rxjs/operators';
 
 @Component({
     selector: 'dot-dialog',
@@ -20,9 +20,6 @@ import { filter, map, tap } from 'rxjs/operators';
 export class DotDialogComponent implements OnChanges {
     @ViewChild('dialog')
     dialog: ElementRef;
-
-    @ViewChild('content')
-    content: ElementRef;
 
     @Input()
     @HostBinding('class.active')
@@ -64,7 +61,7 @@ export class DotDialogComponent implements OnChanges {
     @Output()
     visibleChange: EventEmitter<any> = new EventEmitter();
 
-    isContentScrolled$: Observable<boolean>;
+    isContentScrolled: boolean;
 
     private subscription: Subscription[] = [];
 
@@ -122,9 +119,24 @@ export class DotDialogComponent implements OnChanges {
         }
     }
 
-    private bindEvents(): void {
-        this.isContentScrolled$ = this.isContentScrolled();
+    /**
+     * Handle scroll event in the content
+     *
+     * @param {{ target: HTMLInputElement }} event
+     * @memberof DotDialogComponent
+     */
+    onContentScroll(event: { target: HTMLInputElement }) {
+        /*
+            Absolute positioned overlays panels (in dropdowns, menus, etc...) inside the
+            dialog content needs to be append to the body, this click is to hide them on
+            scroll because they mantain their position relative to the body.
+        */
+        event.target.click();
 
+        this.isContentScrolled = event.target.scrollTop > 0;
+    }
+
+    private bindEvents(): void {
         this.subscription.push(
             fromEvent(document, 'keydown').subscribe(this.handleKeyboardEvents.bind(this))
         );
@@ -164,25 +176,7 @@ export class DotDialogComponent implements OnChanges {
         }
     }
 
-    private isContentScrolled(): Observable<boolean> {
-        return this.content ? fromEvent(this.content.nativeElement, 'scroll').pipe(
-            tap((e: { target: HTMLInputElement }) => {
-                /*
-                    Absolute positioned overlays panels (in dropdowns, menus, etc...) inside the
-                    dialog content needs to be append to the body, this click is to hide them on
-                    scroll because they mantain their position relative to the body.
-                */
-                e.target.click();
-            }),
-            map((e: { target: HTMLInputElement }) => {
-                return e.target.scrollTop > 0;
-            })
-        ) : null;
-    }
-
     private unBindEvents(): void {
-        this.isContentScrolled$ = null;
-
         this.subscription.forEach((sub: Subscription) => {
             sub.unsubscribe();
         });
