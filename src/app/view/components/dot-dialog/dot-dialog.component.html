@@ -1,8 +1,6 @@
 <div
     #dialog
-    (@animation.start)="onAnimationStart($event)"
     *ngIf="visible"
-    [@animation]="{value: 'visible'}"
     [style.height]="height"
     [style.width]="width"
     class="dialog">

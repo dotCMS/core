@@ -203,7 +203,6 @@ describe('ContentTypesEditComponent', () => {
         it('should close the dialog and redirect', () => {
             const dialogCancelButton = dialog.query(By.css('.dialog__button-cancel')).nativeElement;
             dialogCancelButton.click();
-            dialog.triggerEventHandler('hide', {});
             fixture.detectChanges();
 
             expect(comp.onDialogHide).toHaveBeenCalledTimes(1);
@@ -418,10 +417,8 @@ describe('ContentTypesEditComponent', () => {
 
         it('should close the dialog', () => {
             clickEditButton();
-
             const cancelButton = de.query(By.css('.dialog__button-cancel'));
             cancelButton.nativeElement.click();
-            dialog.triggerEventHandler('hide', {});
 
             expect(comp.onDialogHide).toHaveBeenCalledTimes(1);
             expect(comp.show).toBe(false);
