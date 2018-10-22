@@ -5,35 +5,19 @@ import {
     Output,
     HostBinding,
     ViewChild,
-    ElementRef
+    ElementRef,
+    OnChanges,
+    SimpleChanges
 } from '@angular/core';
-import { trigger, transition, style, animate, state, AnimationEvent } from '@angular/animations';
 import { Observable, fromEvent, Subscription } from 'rxjs';
 import { filter, map, tap } from 'rxjs/operators';
 
 @Component({
     selector: 'dot-dialog',
     templateUrl: './dot-dialog.component.html',
-    styleUrls: ['./dot-dialog.component.scss'],
-    animations: [
-        trigger('animation', [
-            state(
-                'show',
-                style({
-                    opacity: 1
-                })
-            ),
-            state(
-                'void',
-                style({
-                    opacity: 0
-                })
-            ),
-            transition('* => *', animate('300ms ease-in'))
-        ])
-    ]
+    styleUrls: ['./dot-dialog.component.scss']
 })
-export class DotDialogComponent {
+export class DotDialogComponent implements OnChanges {
     @ViewChild('dialog')
     dialog: ElementRef;
 
@@ -63,6 +47,12 @@ export class DotDialogComponent {
         [key: string]: string;
     };
 
+    @Input()
+    width: string;
+
+    @Input()
+    height: string;
+
     @Output()
     hide: EventEmitter<any> = new EventEmitter();
 
@@ -79,6 +69,12 @@ export class DotDialogComponent {
     private subscription: Subscription[] = [];
 
     constructor(private el: ElementRef) {}
+
+    ngOnChanges(changes: SimpleChanges) {
+        if (changes.visible && changes.visible.currentValue) {
+            this.bindEvents();
+        }
+    }
 
     /**
      * Accept button handler
@@ -110,36 +106,19 @@ export class DotDialogComponent {
      * @memberof DotDialogComponent
      */
     close($event?: MouseEvent): void {
+
         if (this.beforeClose.observers.length) {
             this.beforeClose.emit({
                 close: () => {
-                    this.visibleChange.emit(false);
+                    this.handleClose();
                 }
             });
         } else {
-            this.visibleChange.emit(false);
+            this.handleClose();
         }
 
         if ($event) {
             $event.preventDefault();
-        }
-    }
-
-    /**
-     * Handle animation start
-     *
-     * @param {AnimationEvent} $event
-     * @memberof DotDialogComponent
-     */
-    onAnimationStart($event: AnimationEvent): void {
-        switch ($event.toState) {
-            case 'visible':
-                this.bindEvents();
-                break;
-            case 'void':
-                this.hide.emit();
-                this.unBindEvents();
-                break;
         }
     }
 
@@ -166,6 +145,12 @@ export class DotDialogComponent {
         return item && !item.disabled && !!item.action;
     }
 
+    private handleClose(): void {
+        this.visibleChange.emit(false);
+        this.hide.emit();
+        this.unBindEvents();
+    }
+
     private handleKeyboardEvents(event: KeyboardEvent): void {
         switch (event.code) {
             case 'Escape':
@@ -180,7 +165,7 @@ export class DotDialogComponent {
     }
 
     private isContentScrolled(): Observable<boolean> {
-        return fromEvent(this.content.nativeElement, 'scroll').pipe(
+        return this.content ? fromEvent(this.content.nativeElement, 'scroll').pipe(
             tap((e: { target: HTMLInputElement }) => {
                 /*
                     Absolute positioned overlays panels (in dropdowns, menus, etc...) inside the
@@ -192,7 +177,7 @@ export class DotDialogComponent {
             map((e: { target: HTMLInputElement }) => {
                 return e.target.scrollTop > 0;
             })
-        );
+        ) : null;
     }
 
     private unBindEvents(): void {

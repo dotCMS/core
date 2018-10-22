@@ -1,4 +1,9 @@
-<div #dialog class="dialog" [@animation]="{value: 'visible'}" (@animation.start)="onAnimationStart($event)" *ngIf="visible">
+<div
+    #dialog
+    *ngIf="visible"
+    [style.height]="height"
+    [style.width]="width"
+    class="dialog">
     <header class="dialog__header" [class.dialog__header--shadowed]="isContentScrolled$ | async" [ngStyle]="headerStyle">
         <h4 class="dialog__title" [textContent]="header"></h4>
         <dot-icon-button

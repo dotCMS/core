@@ -3,7 +3,6 @@ import {
     Output,
     EventEmitter,
     Input,
-    ViewEncapsulation,
     OnInit,
     ElementRef,
     ViewChild,
@@ -22,7 +21,6 @@ import { PaginatorService } from '@services/paginator';
 import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
 
 @Component({
-    encapsulation: ViewEncapsulation.None,
     providers: [],
     selector: 'dot-login-as',
     styleUrls: ['./login-as.scss'],
