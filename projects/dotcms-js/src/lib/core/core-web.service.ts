@@ -137,8 +137,10 @@ export class CoreWebService {
                 } else {
                     return new ResponseView(resp);
                 }
+            }),
+            catchError((err) => {
+                throw this.handleRequestViewErrors(err);
             })
-            // catchError(this.handleRequestViewErrors)
         );
     }
 
