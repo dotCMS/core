@@ -470,8 +470,8 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
         for(final Map<String,Object> map : results){
             try {
                 contentlets.add(APILocator.getContentletAPI().find((String) map.get("inode"),APILocator.systemUser(),false));
-            } catch (DotSecurityException e) {
-                //Do nothing since never gonna throw DotSecurityException is using systemUser
+            } catch (DotSecurityException e) {//Never Should throw DotSecurityException since is using systemUser but just in case
+                Logger.error(this, e.getMessage() + "inode: " + map.get("inode"));
             }
         }
 
@@ -506,8 +506,8 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
         for(final Map<String,Object> map : results){
             try {
                 contentlets.add(APILocator.getContentletAPI().find((String) map.get("inode"),APILocator.systemUser(),false));
-            } catch (DotSecurityException e) {
-                //Do nothing since never gonna throw DotSecurityException is using systemUser
+            } catch (DotSecurityException e) {//Never Should throw DotSecurityException since is using systemUser but just in case
+                Logger.error(this, e.getMessage() + "inode: " + map.get("inode"));
             }
         }
 
