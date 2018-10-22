@@ -12,6 +12,8 @@ import { MockDotMessageService } from '../../../test/dot-message-service.mock';
 import { RouterTestingModule } from '@angular/router/testing';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
+import { LoginService } from 'dotcms-js/dotcms-js';
+import { LoginServiceMock } from 'src/app/test/login-service.mock';
 
 @Injectable()
 class MockDotWorkflowTaskDetailService {
@@ -54,6 +56,10 @@ describe('DotWorkflowTaskComponent', () => {
                 {
                     provide: DotMessageService,
                     useValue: messageServiceMock
+                },
+                {
+                    provide: LoginService,
+                    useClass: LoginServiceMock
                 }
             ]
         });

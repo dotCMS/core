@@ -1,12 +1,17 @@
 @import "variables";
 
+:host {
+    display: block;
+    width: 500px;
+}
+
 ::ng-deep {
     .ui-datatable {
         .ui-datatable-thead tr {
             th {
                 padding: .5em;
                 text-align: left;
-    
+
                 &.content-type-fields__variables-actions {
                     width: 88px;
                 }

@@ -1,253 +1,345 @@
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { DebugElement, Component } from '@angular/core';
-import { async, ComponentFixture, tick, fakeAsync } from '@angular/core/testing';
+import { async, ComponentFixture } from '@angular/core/testing';
 
 import { DOTTestBed } from '../../../test/dot-test-bed';
-import { DialogModule, Dialog } from 'primeng/primeng';
 import { By } from '@angular/platform-browser';
-import { DotDialogComponent, DotDialogAction } from './dot-dialog.component';
+import { DotDialogComponent, DotDialogActions } from './dot-dialog.component';
 import { DotIconButtonModule } from '../_common/dot-icon-button/dot-icon-button.module';
+import { DotIconButtonComponent } from '@components/_common/dot-icon-button/dot-icon-button.component';
+import { ButtonModule } from 'primeng/primeng';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+
+const dispatchKeydownEvent = (key: string) => {
+    const event = new KeyboardEvent('keydown', {
+        'key': key,
+        'code': key
+    });
+
+    document.dispatchEvent(event);
+};
 
 @Component({
     selector: 'dot-test-host-component',
-    template: `<dot-dialog [header]="header" [show]="show" [ok]="ok" [cancel]="cancel">
-                    <b>Dialog content</b>
-                </dot-dialog>`
+    template: `
+        <dot-dialog
+            [actions]="actions"
+            [headerStyle]="{'margin': '0'}"
+            [contentStyle]="{'padding': '0'}"
+            [header]="header"
+            [(visible)]="show"
+            [closeable]="closeable">
+            <b>Dialog content</b>
+        </dot-dialog>
+    `
 })
 class TestHostComponent {
     header: string;
-    show = true;
+    show = false;
+    closeable = false;
+    actions: DotDialogActions;
+}
 
-    ok: DotDialogAction;
-    cancel: DotDialogAction;
+@Component({
+    selector: 'dot-test-host-component',
+    template: `
+        <dot-dialog
+            (beforeClose)="beforeClose()"
+            [(visible)]="show">
+            <b>Dialog content</b>
+        </dot-dialog>
+    `
+})
+class TestHost2Component {
+    show = false;
+    beforeClose(): void {}
 }
 
 describe('DotDialogComponent', () => {
-    let component: DotDialogComponent;
-    let de: DebugElement;
-    let dialog: DebugElement;
-    let dialogComponent: Dialog;
-    let hostComponent: TestHostComponent;
-    let hostFixture: ComponentFixture<TestHostComponent>;
+    describe('regular close', () => {
+        let component: DotDialogComponent;
+        let de: DebugElement;
+        let hostComponent: TestHostComponent;
+        let hostDe: DebugElement;
+        let hostFixture: ComponentFixture<TestHostComponent>;
 
-    beforeEach(async(() => {
-        DOTTestBed.configureTestingModule({
-            imports: [DialogModule, BrowserAnimationsModule, DotIconButtonModule],
-            providers: [],
-            declarations: [DotDialogComponent, TestHostComponent]
-        }).compileComponents();
-    }));
+        beforeEach(async(() => {
+            DOTTestBed.configureTestingModule({
+                imports: [DotIconButtonModule, ButtonModule, BrowserAnimationsModule],
+                providers: [],
+                declarations: [DotDialogComponent, TestHostComponent]
+            }).compileComponents();
+        }));
 
-    beforeEach(() => {
-        hostFixture = DOTTestBed.createComponent(TestHostComponent);
-        const hostDe: DebugElement = hostFixture.debugElement;
-        hostComponent = hostFixture.componentInstance;
-        de = hostDe.query(By.css('dot-dialog'));
-        component = de.componentInstance;
-
-        dialog = de.query(By.css('p-dialog'));
-        dialogComponent = dialog.componentInstance;
-    });
-
-    describe('dialog', () => {
         beforeEach(() => {
-            hostComponent.header = 'This is a header';
-            hostFixture.detectChanges();
+            hostFixture = DOTTestBed.createComponent(TestHostComponent);
+            hostDe = hostFixture.debugElement;
+            hostComponent = hostFixture.componentInstance;
         });
 
-        it('should have', () => {
-            expect(dialog).toBeTruthy();
-        });
-
-        it('should have the right attrs', () => {
-            expect(dialogComponent.draggable).toEqual(false, 'draggable');
-            expect(dialogComponent.dismissableMask).toEqual(true, 'dismissableMask');
-            expect(dialogComponent.modal).toEqual(true, 'modal');
-            expect(component.header).toBe('This is a header');
-        });
-    });
-
-    describe('events', () => {
-        it('header "x" button should trigger the close action', () => {
-            hostFixture.detectChanges();
-
-            spyOn(component.close, 'emit');
-            const closeButton = dialog.query(By.css('p-header dot-icon-button'));
-            console.log(closeButton);
-            closeButton.triggerEventHandler('click', {
-                preventDefault: () => {}
-            });
-            expect(component.close.emit).toHaveBeenCalledTimes(1);
-        });
-
-        it('should emit close', () => {
-            hostComponent.show = true;
-            hostFixture.detectChanges();
-
-            spyOn(component.close, 'emit');
-
-            dialog.triggerEventHandler('onHide', {});
-            expect(component.close.emit).toHaveBeenCalledTimes(1);
-            expect(component.show).toBe(false);
-
-            hostFixture.detectChanges();
-            expect(dialogComponent.visible).toBe(false);
-        });
-    });
-
-    describe('show/hide', () => {
-        beforeEach(() => {
-            hostComponent.show = true;
-            hostFixture.detectChanges();
-        });
-
-        it('should show', () => {
-            expect(dialogComponent.visible).toBe(true);
-        });
-
-        xit('should hide', () => {
-            spyOn(component.close, 'emit').and.callThrough();
-
-            hostComponent.show = false;
-            hostFixture.detectChanges();
-
-            expect(dialogComponent.visible).toBe(false);
-            expect(component.close.emit).toHaveBeenCalledTimes(1);
-        });
-    });
-
-    describe('body content', () => {
-        beforeEach(() => {
-            hostFixture.detectChanges();
-        });
-
-        it('should show tag body into the dialog', () => {
-            const content = dialog.query(By.css('b'));
-
-            expect(content).not.toBeNull('must have content');
-            expect(content.nativeElement.innerHTML).toBe('Dialog content');
-        });
-    });
-
-    describe('actions', () => {
-        it('should not have footer', () => {
-            hostFixture.detectChanges();
-
-            const footer = dialog.query(By.css('p-footer'));
-
-            expect(footer).toBeNull('must have not footer');
-
-            const buttons = dialog.queryAll(By.css('ui-dialog-footer button'));
-            expect(buttons.length).toBe(0, 'must have not buttons');
-        });
-
-        describe('re-center', () => {
-            it(
-                'should have ok button',
-                fakeAsync(() => {
-                    spyOn(dialogComponent, 'center');
-                    component.reRecenter();
-                    tick();
-                    expect(dialogComponent.center).toHaveBeenCalled();
-                })
-            );
-        });
-
-        describe('ok button', () => {
-            it('should have ok button', () => {
-                hostComponent.ok = {
-                    label: 'Ok',
-                    disabled: true,
-                    action: jasmine.createSpy('ok')
-                };
-
-                hostFixture.detectChanges();
-                const footer = dialog.query(By.css('p-footer'));
-                expect(footer).not.toBeNull('must have footer');
-
-                const buttons = footer.queryAll(By.css('button'));
-                expect(buttons.length).toBe(1, 'should have ok button');
-
-                expect(buttons[0].nativeElement.className).toContain(
-                    'dot-dialog__ok',
-                    'should have the right class'
-                );
-                expect(buttons[0].properties.disabled).toBe(true, 'should be disabled');
-            });
-
-            it('should trigger the right action', () => {
-                hostComponent.ok = {
-                    label: 'Ok',
-                    action: jasmine.createSpy('ok')
-                };
-
-                hostFixture.detectChanges();
-
-                const footer = dialog.query(By.css('p-footer'));
-                const buttons = footer.queryAll(By.css('button'));
-
-                buttons[0].triggerEventHandler('click', null);
-                expect(hostComponent.ok.action).toHaveBeenCalled();
-            });
-        });
-
-        describe('cancel button', () => {
+        describe('default', () => {
             beforeEach(() => {
-                hostComponent.cancel = {
-                    label: 'Cancel',
-                    action: jasmine.createSpy('cancel')
-                };
-
                 hostFixture.detectChanges();
+                de = hostDe.query(By.css('dot-dialog'));
+                component = de.componentInstance;
             });
 
-            it('shouls have cancel button', () => {
-                const footer = dialog.query(By.css('p-footer'));
-                expect(footer).not.toBeNull('must have footer');
-
-                const buttons = footer.queryAll(By.css('button'));
-                expect(buttons.length).toBe(1, 'should have cancel button');
-
-                expect(buttons[0].nativeElement.className).toContain(
-                    'dot-dialog__cancel',
-                    'should have the right class'
-                );
-                // expect(buttons[0].componentInstance.label).toBe('Cancel', 'should have the right label');
+            it('should not show dialog', () => {
+                expect(de.nativeElement.classList.contains('active')).toBe(false);
             });
 
-            it('shouls trigger the right action', () => {
-                const footer = dialog.query(By.css('p-footer'));
-                const buttons = footer.queryAll(By.css('button'));
-                spyOn(component, 'closeDialog');
+            it('should not show footer buttons', () => {
+                const footer = de.query(By.css('.dialog__footer'));
+                expect(footer === null).toBe(true);
+            });
 
-                buttons[0].triggerEventHandler('click', null);
-                expect(component.closeDialog).toHaveBeenCalled();
-                expect(hostComponent.cancel.action).toHaveBeenCalled();
+            it('should not show close button', () => {
+                const close: DebugElement = de.query(By.css('dot-icon-button'));
+                expect(close === null).toBe(true);
             });
         });
 
-        describe('both buttons', () => {
-            beforeEach(() => {
-                hostComponent.cancel = {
-                    label: 'Cancel',
-                    action: jasmine.createSpy('cancel')
-                };
+        describe('show', () => {
+            let accceptAction: jasmine.Spy;
+            let cancelAction: jasmine.Spy;
 
-                hostComponent.ok = {
-                    label: 'Ok',
-                    action: jasmine.createSpy('ok')
+            beforeEach(() => {
+                accceptAction = jasmine.createSpy('ok');
+                cancelAction = jasmine.createSpy('cancel');
+
+                hostComponent.closeable = true;
+                hostComponent.header = 'Hello World';
+                hostComponent.actions = {
+                    accept: {
+                        label: 'Accept',
+                        disabled: true,
+                        action: accceptAction
+                    },
+                    cancel: {
+                        label: 'Cancel',
+                        disabled: false,
+                        action: cancelAction
+                    }
                 };
+                hostComponent.show = true;
 
                 hostFixture.detectChanges();
+                de = hostDe.query(By.css('dot-dialog'));
+                component = de.componentInstance;
             });
 
-            it('shouls have both buttons', () => {
-                const footer = dialog.query(By.css('p-footer'));
-                expect(footer).not.toBeNull('must have footer');
+            it('should show dialog', () => {
+                expect(de.nativeElement.classList.contains('active')).toBe(true);
+            });
 
-                const buttons = footer.queryAll(By.css('button'));
-                expect(buttons.length).toBe(2, 'should have both button');
+            it('should set the header', () => {
+                const header: DebugElement = de.query(By.css('.dialog__header h4'));
+                expect(header.nativeElement.textContent).toBe('Hello World');
+            });
+
+            it('should set the header custom styles', () => {
+                const header: DebugElement = de.query(By.css('.dialog__header'));
+                expect(header.styles).toEqual({margin: '0'});
+            });
+
+            it('should have close button', () => {
+                const close: DebugElement = de.query(By.css('dot-icon-button'));
+                const closeComponent: DotIconButtonComponent = close.componentInstance;
+
+                expect(closeComponent.icon).toBe('close');
+                expect(close.attributes.big).toBeDefined();
+            });
+
+            it('should show content', () => {
+                const content: DebugElement = de.query(By.css('.dialog__content'));
+                expect(content.nativeElement.innerHTML).toBe('<b>Dialog content</b>');
+            });
+
+            it('should set the content custom styles', () => {
+                const content: DebugElement = de.query(By.css('.dialog__content'));
+                expect(content.styles).toEqual({padding: '0'});
+            });
+
+            it('should show footer', () => {
+                const footer: DebugElement = de.query(By.css('.dialog__footer'));
+                expect(footer === null).toBe(false);
+            });
+
+            it('should show action buttons', () => {
+                const buttons: DebugElement[] = de.queryAll(By.css('.dialog__footer button'));
+
+                const buttonsElements = buttons.map((button: DebugElement) => button.nativeElement);
+
+                const buttonsComponents = buttonsElements.map(
+                    (button: HTMLButtonElement) => button.textContent
+                );
+
+                const buttonsAttr = buttonsElements.map((button: HTMLButtonElement) => button.disabled);
+
+                expect(buttonsComponents).toEqual(['Cancel', 'Accept']);
+                expect(buttonsAttr).toEqual([false, true]);
+            });
+
+            describe('events', () => {
+                beforeEach(() => {
+                    spyOn(component.hide, 'emit').and.callThrough();
+                    spyOn(component.visibleChange, 'emit').and.callThrough();
+                });
+
+                it('should close dialog and emit close', () => {
+                    hostFixture.whenStable().then(() => {
+                        expect(component.visible).toBe(true);
+
+                        const close: DebugElement = de.query(By.css('dot-icon-button'));
+
+                        close.triggerEventHandler('click', {
+                            preventDefault: () => {}
+                        });
+
+                        hostFixture.detectChanges();
+                        expect(component.visibleChange.emit).toHaveBeenCalledTimes(1);
+                        expect(component.visible).toBe(false);
+                        // expect(component.hide.emit).toHaveBeenCalledTimes(1);
+                    });
+                });
+
+                it('should close the dialog on overlay click', () => {
+                    hostFixture.whenStable().then(() => {
+                        de.nativeElement.click();
+                        hostFixture.detectChanges();
+
+                        expect(component.visible).toBe(false);
+                    });
+                });
+
+                it('should emit beforeClose', () => {
+
+                });
+
+                xit('it should set shadow to header and footer on scroll', () => {
+
+                });
+
+                describe('keyboard events', () => {
+
+                    it('should trigger cancel action and close the dialog on Escape', () => {
+                        hostFixture.whenStable().then(() => {
+                            expect(component.visible).toBe(true);
+
+                            dispatchKeydownEvent('Escape');
+
+                            hostFixture.detectChanges();
+
+                            expect(cancelAction).toHaveBeenCalledTimes(1);
+                            expect(component.visible).toBe(false);
+                            // expect(component.hide.emit).toHaveBeenCalledTimes(1);
+                        });
+                    });
+
+                    it('should trigger accept action on Enter', () => {
+                        hostComponent.actions = {
+                            ...hostComponent.actions,
+                            accept: {
+                                ...hostComponent.actions.accept,
+                                disabled: false
+                            }
+                        };
+
+                        hostFixture.detectChanges();
+
+                        hostFixture.whenStable().then(() => {
+                            expect(component.visible).toBe(true);
+
+                            dispatchKeydownEvent('Enter');
+
+                            hostFixture.detectChanges();
+
+                            expect(accceptAction).toHaveBeenCalledTimes(1);
+                        });
+                    });
+                });
+
+                describe('actions', () => {
+                    it('should call accept action', () => {
+                        hostComponent.actions = {
+                            ...hostComponent.actions,
+                            accept: {
+                                ...hostComponent.actions.accept,
+                                disabled: false
+                            }
+                        };
+                        hostFixture.detectChanges();
+
+                        const accept: DebugElement = de.query(By.css('.dialog__button-accept'));
+                        accept.triggerEventHandler('click', {});
+
+                        expect(accceptAction).toHaveBeenCalledTimes(1);
+                    });
+
+                    it('should call cancel action and close the dialog', () => {
+                        hostFixture.whenStable().then(() => {
+                            expect(component.visible).toBe(true);
+
+                            const cancel: DebugElement = de.query(By.css('.dialog__button-cancel'));
+                            cancel.triggerEventHandler('click', {});
+
+                            hostFixture.detectChanges();
+
+                            expect(cancelAction).toHaveBeenCalledTimes(1);
+                            expect(component.visible).toBe(false);
+                            // expect(component.hide.emit).toHaveBeenCalledTimes(1);
+                        });
+                    });
+                });
             });
         });
     });
+
+    describe('with before close', () => {
+        let component: DotDialogComponent;
+        let de: DebugElement;
+        let hostComponent: TestHost2Component;
+        let hostDe: DebugElement;
+        let hostFixture: ComponentFixture<TestHost2Component>;
+
+        beforeEach(async(() => {
+            DOTTestBed.configureTestingModule({
+                imports: [DotIconButtonModule, ButtonModule, BrowserAnimationsModule],
+                providers: [],
+                declarations: [DotDialogComponent, TestHost2Component]
+            }).compileComponents();
+        }));
+
+        beforeEach(() => {
+            hostFixture = DOTTestBed.createComponent(TestHost2Component);
+            hostDe = hostFixture.debugElement;
+            hostComponent = hostFixture.componentInstance;
+            hostComponent.show = true;
+
+            hostFixture.detectChanges();
+            de = hostDe.query(By.css('dot-dialog'));
+            component = de.componentInstance;
+
+            spyOn(component.visibleChange, 'emit').and.callThrough();
+            spyOn(component.beforeClose, 'emit').and.callThrough();
+        });
+
+        it('should emit beforeClose', () => {
+            hostFixture.whenStable().then(() => {
+                expect(component.visible).toBe(true);
+
+                const close: DebugElement = de.query(By.css('dot-icon-button'));
+
+                close.triggerEventHandler('click', {
+                    preventDefault: () => {}
+                });
+
+                hostFixture.detectChanges();
+                expect(component.beforeClose.emit).toHaveBeenCalledTimes(1);
+                expect(component.visibleChange.emit).not.toHaveBeenCalled();
+                expect(component.visible).toBe(true);
+            });
+        });
+    });
+
 });
+

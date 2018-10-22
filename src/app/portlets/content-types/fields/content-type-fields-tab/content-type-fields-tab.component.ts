@@ -43,8 +43,8 @@ export class ContentTypeFieldsTabComponent implements OnInit {
             ])
             .subscribe((res) => {
                 this.i18nMessages = res;
-                this.label = this.fieldTab.getFieldDivider().name;
             });
+        this.label = this.fieldTab.getFieldDivider().name;
     }
 
     /**

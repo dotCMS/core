@@ -1,5 +1,6 @@
 <span dotMdInputtext [label]="label" *ngIf="floatingLabel; else placeholded">
     <p-autoComplete
+        appendTo="body"
         (completeMethod)="search($event.query)"
         (onClear)="onClear($event)"
         (onSelect)="onSelect($event)"

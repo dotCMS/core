@@ -23,6 +23,7 @@ import { DotNavigationService } from '../dot-navigation/services/dot-navigation.
 import { DotEventsService } from '@services/dot-events/dot-events.service';
 import { DotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { DotIconModule } from '@components/_common/dot-icon/dot-icon.module';
+import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 
 @Injectable()
 class MockDotNavigationService {
@@ -59,7 +60,8 @@ describe('ToolbarUserComponent', () => {
                 OverlayPanelModule,
                 BrowserAnimationsModule,
                 DotIconModule,
-                DotIconButtonModule
+                DotIconButtonModule,
+                DotDialogModule
             ]
         });
 

@@ -30,7 +30,7 @@ class TestHostComponent {
     pushPublishIdentifier: string;
 }
 
-describe('PushPublishContentTypesDialogComponent', () => {
+xdescribe('PushPublishContentTypesDialogComponent', () => {
     let comp: PushPublishContentTypesDialogComponent;
     let fixture: ComponentFixture<TestHostComponent>;
     let de: DebugElement;

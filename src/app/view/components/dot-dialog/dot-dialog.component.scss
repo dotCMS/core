@@ -1,16 +1,73 @@
 @import "mixins";
 @import "variables";
+@import "primeng-theme/utils/theme-variables";
 
-.dialog ::ng-deep {
-    .ui-dialog {
-        .ui-dialog-content {
-            overflow: auto;
-        }
+$dialog-padding: $basic-padding * 4;
 
-        p-header {
-            align-items: center;
-            display: flex;
-            justify-content: space-between;
-        }
+:host {
+    display: none;
+
+    &.active {
+        background-color: rgba($black, 0.8);
+        bottom: 0;
+        display: block;
+        left: 0;
+        position: absolute;
+        right: 0;
+        top: 0;
+        z-index: 1000;
     }
+}
+
+.dialog {
+    background-color: $white;
+    border-radius: 2px;
+    box-shadow: $md-shadow-1;
+    display: flex;
+    flex-direction: column;
+    left: 50%;
+    max-height: 90vh;
+    position: absolute;
+    top: 5vh;
+    transform: translate(-50%, 0);
+}
+
+.dialog__content {
+    overflow-y: scroll;
+    padding: 0 $dialog-padding $dialog-padding;
+}
+
+.dialog__footer,
+.dialog__header {
+    flex-shrink: 0;
+    padding: $dialog-padding;
+    position: relative;
+    transition: box-shadow $basic-speed ease-out;
+}
+
+.dialog__footer {
+    display: flex;
+    justify-content: flex-end;
+
+    button {
+        margin-left: $basic-padding;
+    }
+}
+
+.dialog__footer--shadowed {
+    box-shadow: 0px -3px 20px 0 #00000026;
+}
+
+.dialog__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.dialog__header--shadowed {
+    box-shadow: 0px 3px 20px 0 #00000026;
+}
+
+.dialog__title {
+    margin: 0;
 }

@@ -1,4 +1,4 @@
-<form [formGroup]="form" (ngSubmit)="addVariableForm()" #formEl="ngForm" (keyup.enter)="formEl.ngSubmit" novalidate>
+<form [formGroup]="form" (ngSubmit)="addVariableForm($event)" #formEl="ngForm" (keydown.enter)="addVariableForm($event)" novalidate>
     <div>
         <label class="form__label">{{ messages['contenttypes.field.variables.key_header.label'] }}</label>
         <input pInputText type="text" formControlName="key" #key/>
@@ -7,5 +7,5 @@
         <label class="form__label">{{ messages['contenttypes.field.variables.value_header.label'] }}</label>
         <input pInputText type="text" formControlName="value"/>
     </div>
-    <button pButton secondary tiny [label]="messages['contenttypes.field.variables.add_button.label']" (click)="formEl.ngSubmit" [disabled]="!form.valid"></button>
+    <button type="submit" pButton secondary tiny [label]="messages['contenttypes.field.variables.add_button.label']" [disabled]="!form.valid"></button>
 </form>

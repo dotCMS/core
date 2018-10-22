@@ -59,7 +59,7 @@ describe('DotThemeSelectorComponent', () => {
         fixture = DOTTestBed.createComponent(DotThemeSelectorComponent);
         component = fixture.componentInstance;
         de = fixture.debugElement;
-        dialog = de.query(By.css('p-dialog')).componentInstance;
+        dialog = de.query(By.css('dot-dialog')).componentInstance;
         component.value = Object.assign({}, mockDotThemes[0]);
         paginatorService = de.injector.get(PaginatorService);
     });
@@ -73,32 +73,17 @@ describe('DotThemeSelectorComponent', () => {
             expect(dialog.visible).toBeTruthy();
         });
 
-        it('should not be draggable, modal and have dismissable Mask', () => {
-            expect(dialog.closable).toBe(false, 'closable');
-            expect(dialog.draggable).toBe(false, 'draggable');
-            expect(dialog.modal).toBe(true, 'modal');
-        });
-
-        it('should have defined Dialog actions for Apply/Cancel buttons', () => {
-            const applyDialogActionTpl = {
-                label: messageServiceMock.get('dot.common.apply'),
-                disabled: true,
-                action: () => {
-                    this.apply();
+        it('should have set dialog actions', () => {
+            expect(component.dialogActions).toEqual({
+                accept: {
+                    label: 'Apply',
+                    disabled: true,
+                    action: jasmine.any(Function)
+                },
+                cancel: {
+                    label: 'Cancel'
                 }
-            };
-            const closeDialogActionTpl = {
-                label: messageServiceMock.get('dot.common.cancel'),
-                action: (dialogElem) => {
-                    dialogElem.closeDialog();
-                }
-            };
-            expect(JSON.stringify(component.applyDialogAction)).toBe(
-                JSON.stringify(applyDialogActionTpl)
-            );
-            expect(JSON.stringify(component.closeDialogAction)).toBe(
-                JSON.stringify(closeDialogActionTpl)
-            );
+            });
         });
     });
 
@@ -134,7 +119,7 @@ describe('DotThemeSelectorComponent', () => {
 
         it('should disable the apply button', () => {
             fixture.detectChanges();
-            expect(component.applyDialogAction.disabled).toBe(true);
+            expect(component.dialogActions.accept.disabled).toBe(true);
         });
 
         it('should show theme image when available', () => {
@@ -183,7 +168,7 @@ describe('DotThemeSelectorComponent', () => {
             themes[1].nativeElement.click();
             fixture.detectChanges();
 
-            expect(component.applyDialogAction.disabled).toBe(false);
+            expect(component.dialogActions.accept.disabled).toBe(false);
         });
 
         it(

@@ -14,8 +14,10 @@ import { take } from 'rxjs/operators';
 export class DotFormSelectorComponent implements OnInit {
     @Input()
     show = false;
+
     @Output()
     select = new EventEmitter<ContentType>();
+
     @Output()
     close = new EventEmitter<any>();
 

@@ -1,4 +1,4 @@
-<dot-dialog [show]="show" (close)="close.emit($event)" [header]="messages['modes.Add-Form']">
+<dot-dialog [(visible)]="show" [contentStyle]="{'padding': '0'}" (hide)="close.emit($event)" [header]="messages['modes.Add-Form']">
     <p-dataTable
         (onLazyLoad)="loadData($event)"
         [lazy]="true"

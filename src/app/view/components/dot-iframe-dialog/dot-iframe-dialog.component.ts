@@ -5,11 +5,9 @@ import {
     OnChanges,
     EventEmitter,
     Output,
-    HostListener,
     ViewChild
 } from '@angular/core';
-import { Dialog } from 'primeng/primeng';
-import { fromEvent } from 'rxjs';
+import { DotDialogComponent } from '@components/dot-dialog/dot-dialog.component';
 
 @Component({
     selector: 'dot-iframe-dialog',
@@ -17,8 +15,7 @@ import { fromEvent } from 'rxjs';
     styleUrls: ['./dot-iframe-dialog.component.scss']
 })
 export class DotIframeDialogComponent implements OnChanges {
-    @ViewChild('dialog')
-    dialog: Dialog;
+    @ViewChild('dialog') dotDialog: DotDialogComponent;
 
     @Input()
     url: string;
@@ -28,7 +25,6 @@ export class DotIframeDialogComponent implements OnChanges {
 
     @Output()
     beforeClose: EventEmitter<{
-        originalEvent: MouseEvent | KeyboardEvent;
         close: () => void;
     }> = new EventEmitter();
 
@@ -51,11 +47,6 @@ export class DotIframeDialogComponent implements OnChanges {
     ngOnChanges(changes: SimpleChanges) {
         if (changes.url) {
             this.show = !!changes.url.currentValue;
-
-            // Need to wait til' the dialog is rendered
-            setTimeout(() => {
-                this.handleMaskEvents(this.show);
-            }, 0);
         }
 
         if (changes.header) {
@@ -64,50 +55,16 @@ export class DotIframeDialogComponent implements OnChanges {
     }
 
     /**
-     * Handle attemp to close the dialog
-     *
-     * @param (MouseEvent | KeyboardEvent) $event
-     * @memberof DotIframeDialogComponent
-     */
-    onClose($event: MouseEvent | KeyboardEvent): void {
-        if ($event.preventDefault) {
-            $event.preventDefault();
-        }
-
-        if (this.beforeClose.observers.length) {
-            this.beforeClose.emit({
-                originalEvent: $event,
-                close: () => {
-                    this.closeDialog();
-                }
-            });
-        } else {
-            this.closeDialog();
-        }
-    }
-
-    /**
-     * Handle custom event from the iframe window
-     *
-     * @param CustomEvent $event
-     * @memberof DotIframeDialogComponent
-     */
-    onCustomEvents($event: CustomEvent): void {
-        this.custom.emit($event);
-    }
-
-    /**
      * Handle keydown event from the iframe window
      *
      * @param any $event
      * @memberof DotIframeDialogComponent
      */
-    @HostListener('document:keydown', ['$event'])
     onKeyDown($event: KeyboardEvent): void {
         this.keydown.emit($event);
 
         if ($event.key === 'Escape') {
-            this.onClose($event);
+            this.dotDialog.close();
         }
     }
 
@@ -122,16 +79,15 @@ export class DotIframeDialogComponent implements OnChanges {
         this.load.emit($event);
     }
 
-    private closeDialog(): void {
+    /**
+     * Handle dialog close/hide
+     *
+     * @memberof DotIframeDialogComponent
+     */
+    onDialogHide(): void {
         this.url = null;
         this.show = false;
         this.header = '';
         this.close.emit();
-    }
-
-    private handleMaskEvents(show: boolean): void {
-        if (show) {
-            fromEvent(this.dialog.mask, 'click').subscribe(this.onClose.bind(this));
-        }
     }
 }

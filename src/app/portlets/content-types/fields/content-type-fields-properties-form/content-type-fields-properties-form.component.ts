@@ -6,23 +6,23 @@ import {
     SimpleChanges,
     ViewChild,
     OnChanges,
-    OnInit,
-    ViewEncapsulation
+    OnInit
 } from '@angular/core';
 import { FormGroup, FormBuilder, AbstractControl } from '@angular/forms';
 import { DotMessageService } from '@services/dot-messages-service';
 import { ContentTypeField } from '../shared';
 import { FieldPropertyService } from '../service/';
+import { take } from 'rxjs/operators';
 
 @Component({
     selector: 'dot-content-type-fields-properties-form',
     styleUrls: ['./content-type-fields-properties-form.component.scss'],
     templateUrl: './content-type-fields-properties-form.component.html',
-    encapsulation: ViewEncapsulation.None
 })
 export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnInit {
     @Output()
     saveField: EventEmitter<any> = new EventEmitter();
+
     @Input()
     formFieldData: ContentTypeField;
 
@@ -92,6 +92,7 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
                 'contenttypes.field.properties.validation_regex.values.alphanumeric',
                 'contenttypes.field.properties.validation_regex.values.url_pattern'
             ])
+            .pipe(take(1))
             .subscribe((res) => {
                 this.i18nMessages = res;
             });

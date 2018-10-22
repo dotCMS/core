@@ -16,12 +16,11 @@ import {
 } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 import { ResponseView } from 'dotcms-js/dotcms-js';
 
-import { HotkeysService, Hotkey } from 'angular2-hotkeys';
 import { DotEventsService } from '@services/dot-events/dot-events.service';
 import { MenuItem } from 'primeng/primeng';
 import { Subject } from 'rxjs';
 import { EditContentTypeCacheService } from '../services/edit-content-type-cache.service';
-
+import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
 
 /**
  * Portlet component for edit content types
@@ -37,17 +36,20 @@ import { EditContentTypeCacheService } from '../services/edit-content-type-cache
 })
 export class ContentTypesEditComponent implements OnInit, OnDestroy {
     @ViewChild('form')
-    form: ContentTypesFormComponent;
+    contentTypesForm: ContentTypesFormComponent;
+
     contentTypeActions: MenuItem[];
+    dialogCloseable = false;
     data: ContentType;
+    dialogActions: DotDialogActions;
+    editButtonLbl: string;
     fields: ContentTypeField[];
+    messagesKey: { [key: string]: string } = {};
     show: boolean;
     templateInfo = {
         icon: '',
         header: ''
     };
-    messagesKey: { [key: string]: string } = {};
-    editButtonLbl: string;
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
@@ -58,7 +60,6 @@ export class ContentTypesEditComponent implements OnInit, OnDestroy {
         private dotEventsService: DotEventsService,
         private dotRouterService: DotRouterService,
         private fieldService: FieldService,
-        private hotkeysService: HotkeysService,
         private route: ActivatedRoute,
         public dotMessageService: DotMessageService,
         public router: Router,
@@ -66,14 +67,20 @@ export class ContentTypesEditComponent implements OnInit, OnDestroy {
     ) {}
 
     ngOnInit(): void {
-        this.route.data.pipe(pluck('contentType'), takeUntil(this.destroy$)).subscribe((contentType: ContentType) => {
-            this.data = contentType;
-            this.editContentTypeCacheService.contentType = contentType;
 
-            if (contentType.fields) {
-                this.fields = contentType.fields;
-            }
-        });
+        this.route.data
+            .pipe(
+                pluck('contentType'),
+                takeUntil(this.destroy$)
+            )
+            .subscribe((contentType: ContentType) => {
+                this.data = contentType;
+                this.editContentTypeCacheService.contentType = contentType;
+
+                if (contentType.fields) {
+                    this.fields = contentType.fields;
+                }
+            });
 
         this.dotMessageService
             .getMessages([
@@ -94,27 +101,30 @@ export class ContentTypesEditComponent implements OnInit, OnDestroy {
                 'contenttypes.form.identifier',
                 'contenttypes.dropzone.rows.add',
                 'contenttypes.dropzone.rows.tab_divider'
-
             ])
+            .pipe(take(1))
             .subscribe((messages: { [key: string]: string }) => {
                 this.messagesKey = messages;
-                this.contentTypeActions = [{
-                    label: this.messagesKey['contenttypes.dropzone.rows.add'],
-                    command: () => this.notifyAddEvt('add-row')
-                },
-                {
-                    label: this.messagesKey['contenttypes.dropzone.rows.tab_divider'],
-                    command: () => this.notifyAddEvt('add-tab-divider')
-                }];
+
+                this.contentTypeActions = [
+                    {
+                        label: this.messagesKey['contenttypes.dropzone.rows.add'],
+                        command: () => this.notifyAddEvt('add-row')
+                    },
+                    {
+                        label: this.messagesKey['contenttypes.dropzone.rows.tab_divider'],
+                        command: () => this.notifyAddEvt('add-tab-divider')
+                    }
+                ];
+
+                if (!this.isEditMode()) {
+                    this.startFormDialog();
+                }
+
+                this.dialogCloseable = this.isEditMode();
             });
 
         this.setTemplateInfo();
-
-        this.show = !this.isEditMode();
-
-        if (!this.isEditMode()) {
-            this.bindEscKey();
-        }
     }
 
     ngOnDestroy(): void {
@@ -123,16 +133,24 @@ export class ContentTypesEditComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Handle cancel button in dialog
+     * Handle hide dialog
      *
      * @memberof ContentTypesEditComponent
      */
-    cancelForm(): void {
-        this.show = false;
-
+    onDialogHide(): void {
         if (!this.isEditMode()) {
             this.dotRouterService.gotoPortlet('/content-types-angular');
         }
+    }
+
+    /**
+     * Show and set options for dialog
+     *
+     * @memberof ContentTypesEditComponent
+     */
+    startFormDialog(): void {
+        this.show = true;
+        this.setEditContentletDialogOptions(this.messagesKey);
     }
 
     /**
@@ -160,13 +178,28 @@ export class ContentTypesEditComponent implements OnInit, OnDestroy {
     }
 
     /**
+     * Set the state for the ok action for the dialog
+     *
+     * @param {boolean} $event
+     * @memberof ContentTypesEditComponent
+     */
+    setDialogOkButtonState(formIsValid: boolean): void {
+        this.dialogActions = {
+            ...this.dialogActions,
+            accept: {
+                ...this.dialogActions.accept,
+                disabled: !formIsValid
+            }
+        };
+    }
+
+    /**
      * Check if we need to update or create a content type
      *
      * @param * value;
      * @memberof ContentTypesEditComponent
      */
     handleFormSubmit(value: any): void {
-        this.show = false;
         this.isEditMode() ? this.updateContentType(value) : this.createContentType(value);
     }
 
@@ -205,7 +238,6 @@ export class ContentTypesEditComponent implements OnInit, OnDestroy {
      * @memberof ContentTypesEditComponent
      */
     saveFields(fieldsToSave: ContentTypeField[]): void {
-
         this.fieldService.saveFields(this.data.id, fieldsToSave).subscribe(
             (fields: ContentTypeField[]) => {
                 if (this.updateOrNewField(fieldsToSave)) {
@@ -227,20 +259,25 @@ export class ContentTypesEditComponent implements OnInit, OnDestroy {
         this.dotEventsService.notify(typeEvt);
     }
 
-    private updateOrNewField(fieldsToSave: ContentTypeField[]): boolean {
-        return !fieldsToSave[0].id || fieldsToSave.length === 1;
+    private setEditContentletDialogOptions(messages: { [key: string]: string }): void {
+        this.dialogActions = {
+            accept: {
+                disabled: true,
+                label: this.isEditMode()
+                    ? messages['contenttypes.action.update']
+                    : messages['contenttypes.action.create'],
+                action: () => {
+                    this.contentTypesForm.submitForm();
+                }
+            },
+            cancel: {
+                label: 'Cancel'
+            }
+        };
     }
 
-    private bindEscKey(): void {
-        this.hotkeysService.add(
-            new Hotkey(
-                'esc',
-                (_event: KeyboardEvent): boolean => {
-                    this.cancelForm();
-                    return false;
-                }
-            )
-        );
+    private updateOrNewField(fieldsToSave: ContentTypeField[]): boolean {
+        return !fieldsToSave[0].id || fieldsToSave.length === 1;
     }
 
     private createContentType(value: ContentType): void {

@@ -167,7 +167,5 @@ export class SiteSelectorComponent implements OnInit, OnChanges, OnDestroy {
 
     private setCurrentSiteAsDefault() {
         this.currentSite = of(this.siteService.currentSite);
-
-        this.change.next(this.siteService.currentSite);
     }
 }

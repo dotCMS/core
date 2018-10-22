@@ -1,9 +1,23 @@
 import { AccountService, AccountUser } from '@services/account-service';
-import { Component, EventEmitter, Output, ViewEncapsulation, Input, OnInit } from '@angular/core';
-import { LoginService, User, Auth } from 'dotcms-js/dotcms-js';
+import {
+    Component,
+    EventEmitter,
+    Output,
+    ViewEncapsulation,
+    Input,
+    OnInit,
+    ViewChild,
+    OnDestroy
+} from '@angular/core';
+import { NgForm } from '@angular/forms';
+import { takeUntil } from 'rxjs/operators';
+import { Subject } from 'rxjs';
+
+import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
 import { DotMessageService } from '@services/dot-messages-service';
-import { StringFormat } from '../../../api/util/stringFormat';
 import { DotcmsConfig } from 'dotcms-js/dotcms-js';
+import { LoginService, User, Auth } from 'dotcms-js/dotcms-js';
+import { StringFormat } from '../../../api/util/stringFormat';
 
 @Component({
     encapsulation: ViewEncapsulation.None,
@@ -11,9 +25,13 @@ import { DotcmsConfig } from 'dotcms-js/dotcms-js';
     styleUrls: ['./dot-my-account-component.scss'],
     templateUrl: 'dot-my-account-component.html'
 })
-export class MyAccountComponent implements OnInit {
+export class MyAccountComponent implements OnInit, OnDestroy {
+    @ViewChild('myAccountForm')
+    form: NgForm;
+
     @Output()
     close = new EventEmitter<any>();
+
     @Input()
     visible: boolean;
 
@@ -35,6 +53,10 @@ export class MyAccountComponent implements OnInit {
     i18nMessages: {
         [key: string]: string;
     } = {};
+
+    dialogActions: DotDialogActions;
+
+    private destroy$: Subject<boolean> = new Subject<boolean>();
 
     constructor(
         private dotMessageService: DotMessageService,
@@ -72,7 +94,35 @@ export class MyAccountComponent implements OnInit {
             ])
             .subscribe((res) => {
                 this.i18nMessages = res;
+
+                this.dialogActions = {
+                    accept: {
+                        label: this.i18nMessages['save'],
+                        action: () => {
+                            this.save();
+                        },
+                        disabled: true
+                    },
+                    cancel: {
+                        label: this.i18nMessages['modes.Close']
+                    }
+                };
+
+                this.form.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(() => {
+                    this.dialogActions = {
+                        ...this.dialogActions,
+                        accept: {
+                            ...this.dialogActions.accept,
+                            disabled: (this.changePasswordOption && !this.passwordMatch) || !this.form.valid
+                        }
+                    };
+                });
             });
+    }
+
+    ngOnDestroy(): void {
+        this.destroy$.next(true);
+        this.destroy$.complete();
     }
 
     checkPasswords(): void {

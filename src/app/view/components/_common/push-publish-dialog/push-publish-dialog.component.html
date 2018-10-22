@@ -1,16 +1,8 @@
-<p-dialog
-    modal="modal"
-    width="500"
-    [dismissableMask]="true"
-    [visible]="true"
-    [responsive]="true"
-    [resizable]="false"
-    [draggable]="false"
-    (onHide)="close()">
-
-    <p-header>
-        {{ dotMessageService.get('contenttypes.content.push_publish') }}
-    </p-header>
+<dot-dialog
+    [(visible)]="dialogShow"
+    [actions]="dialogActions"
+    [header]="dotMessageService.get('contenttypes.content.push_publish')"
+    (hide)="close()">
 
     <form *ngIf="pushActions" [formGroup]="form" (ngSubmit)="submitPushAction($event)" (keyup.enter)="submitPushAction($event)" novalidate #formEl="ngForm">
         <div class="form__group">
@@ -44,8 +36,4 @@
             <dot-field-validation-message message="{{ dotMessageService.get('contenttypes.content.push_publish.push_to_errormsg') }}" [field]="form.get('environment')"></dot-field-validation-message>
         </div>
     </form>
-    <p-footer>
-        <button pButton type="button" (click)="close()" label="{{ dotMessageService.get('contenttypes.content.push_publish.form.cancel') }}" class="push-publish-dialog__form-cancel"></button>
-        <button pButton type="submit" (click)="submitForm()" label="{{ dotMessageService.get('contenttypes.content.push_publish.form.push') }}" [disabled]="form && !form.valid"></button>
-    </p-footer>
-</p-dialog>
+</dot-dialog>

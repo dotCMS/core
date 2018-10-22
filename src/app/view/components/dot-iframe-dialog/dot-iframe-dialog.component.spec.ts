@@ -1,10 +1,9 @@
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { By } from '@angular/platform-browser';
-import { DebugElement, Component, OnInit } from '@angular/core';
+import { DebugElement, Component } from '@angular/core';
 import { async, ComponentFixture } from '@angular/core/testing';
 
 import { DOTTestBed } from '../../../test/dot-test-bed';
-import { DialogModule, Dialog } from 'primeng/primeng';
 import { DotIframeDialogComponent } from './dot-iframe-dialog.component';
 import { IFrameModule } from '../_common/iframe';
 import { LoginService } from 'dotcms-js/dotcms-js';
@@ -12,20 +11,21 @@ import { LoginServiceMock } from '../../../test/login-service.mock';
 import { RouterTestingModule } from '@angular/router/testing';
 import { IframeComponent } from '../_common/iframe/iframe-component';
 import { DotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
+import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
+import { DotDialogComponent } from '@components/dot-dialog/dot-dialog.component';
 
 let component: DotIframeDialogComponent;
 let de: DebugElement;
 let dialog: DebugElement;
-let dialogComponent: Dialog;
+let dialogComponent: DotDialogComponent;
 let hostDe: DebugElement;
 let dotIframe: DebugElement;
 let dotIframeComponent: IframeComponent;
-let closeButton: DebugElement;
 
 const getTestConfig = (hostComponent) => {
     return {
         imports: [
-            DialogModule,
+            DotDialogModule,
             BrowserAnimationsModule,
             IFrameModule,
             RouterTestingModule,
@@ -50,6 +50,16 @@ class TestHostComponent {
     header: string;
 }
 
+const fakeEvent = () => {
+    return {
+        target: {
+            contentWindow: {
+                focus: jasmine.createSpy('focus')
+            }
+        }
+    };
+};
+
 describe('DotIframeDialogComponent', () => {
     let hostComponent: TestHostComponent;
     let hostFixture: ComponentFixture<TestHostComponent>;
@@ -66,162 +76,47 @@ describe('DotIframeDialogComponent', () => {
         component = de.componentInstance;
     });
 
-    describe('default', () => {
+    describe('hidden', () => {
         beforeEach(() => {
             hostFixture.detectChanges();
-            dialog = de.query(By.css('p-dialog'));
+            dialog = de.query(By.css('dot-dialog'));
+            dialogComponent = dialog.componentInstance;
             dotIframe = de.query(By.css('dot-iframe'));
         });
 
-        describe('dialog', () => {
-            it('should have', () => {
-                expect(dialog).toBeTruthy();
-            });
+        it('should have', () => {
+            expect(dialog).toBeTruthy();
         });
 
-        describe('iframe', () => {
-            it('should not have', () => {
-                expect(dotIframe === null).toBe(true);
-            });
+        it('should have the right attrs', () => {
+            expect(dialogComponent.visible).toEqual(false, 'hidden');
+            expect(dialogComponent.header).toBeUndefined();
+            expect(dialogComponent.contentStyle).toEqual({'padding': '0'});
+            expect(dialogComponent.headerStyle).toEqual({'background-color': '#f1f3f4'});
         });
     });
 
     describe('show', () => {
-        const fakeEvent = () => {
-            return {
-                target: {
-                    contentWindow: {
-                        focus: jasmine.createSpy('focus')
-                    }
-                }
-            };
-        };
-
         beforeEach(() => {
             hostComponent.url = 'hello/world';
             hostComponent.header = 'This is a header';
             hostFixture.detectChanges();
-            dialog = de.query(By.css('p-dialog'));
+            dialog = de.query(By.css('dot-dialog'));
             dialogComponent = dialog.componentInstance;
             dotIframe = de.query(By.css('dot-iframe'));
-            closeButton = de.query(
-                By.css('.dialog__close')
-            );
         });
 
-        describe('events', () => {
-            it('should emit load', () => {
-                spyOn(component.load, 'emit');
-
-                const mockEvent = fakeEvent();
-                dotIframe.triggerEventHandler('load', mockEvent);
-                expect(component.load.emit).toHaveBeenCalledWith(mockEvent);
-            });
-
-            describe('hide dialog', () => {
-                beforeEach(() => {
-                    spyOn(component.close, 'emit');
-                    spyOn(component.beforeClose, 'emit');
-
-                    component.url = 'hello.world.com';
-                    component.show = true;
-                    component.header = 'Header';
-                });
-
-                it('should hide and emit close when click close button', () => {
-                    closeButton.triggerEventHandler('click', { preventDefault: () => {} });
-
-                    expect(component.url).toBe(null);
-                    expect(component.show).toBe(false);
-                    expect(component.header).toBe('');
-                    expect(component.close.emit).toHaveBeenCalledTimes(1);
-                    expect(component.beforeClose.emit).not.toHaveBeenCalled();
-                });
-
-                it('should close on escape key in the dialog', () => {
-                    document.dispatchEvent(
-                        new KeyboardEvent('keydown', {
-                            key: 'Escape'
-                        })
-                    );
-                    expect(component.url).toBe(null);
-                    expect(component.show).toBe(false);
-                    expect(component.header).toBe('');
-                    expect(component.close.emit).toHaveBeenCalledTimes(1);
-                    expect(component.beforeClose.emit).not.toHaveBeenCalled();
-                });
-
-                it('should close on click in the dialog mask', (done) => {
-                    setTimeout(() => {
-                        component.dialog.mask.click();
-
-                        expect(component.url).toBe(null);
-                        expect(component.show).toBe(false);
-                        expect(component.header).toBe('');
-                        expect(component.close.emit).toHaveBeenCalledTimes(1);
-                        expect(component.beforeClose.emit).not.toHaveBeenCalled();
-                        done();
-                    }, 0);
-                });
-            });
-
-            it('should emit keydown', () => {
-                spyOn(component.keydown, 'emit');
-
-                dotIframe.triggerEventHandler('keydown', { hello: 'world' });
-                expect(component.keydown.emit).toHaveBeenCalledWith({ hello: 'world' });
-            });
-
-            it('should emit custom', () => {
-                spyOn(component.custom, 'emit');
-
-                dotIframe.triggerEventHandler('custom', {
-                    detail: {
-                        name: 'Hello World'
-                    }
-                });
-                expect(component.custom.emit).toHaveBeenCalledWith({
-                    detail: {
-                        name: 'Hello World'
-                    }
-                });
-            });
-        });
-
-        describe('dialog', () => {
+        describe('dot-dialog', () => {
             it('should have', () => {
                 expect(dialog).toBeTruthy();
             });
 
-            it('should have the right attrs', () => {
+            it('should set visible attr', () => {
                 expect(dialogComponent.visible).toEqual(true, 'visible');
-                expect(dialogComponent.draggable).toEqual(false, 'draggable');
-                expect(dialogComponent.dismissableMask).toEqual(false, 'dismissableMask');
-                expect(dialogComponent.closable).toEqual(false, 'closable');
-                expect(dialogComponent.modal).toEqual(true, 'modal');
             });
 
-            it('should have header', () => {
-                const header: DebugElement = de.query(By.css('p-header'));
-                expect(header.nativeElement.textContent).toContain('This is a header');
-            });
-
-            it('it should have custom close button', () => {
-                expect(closeButton === null).toBe(false);
-            });
-
-            it('should focus in the iframe window', () => {
-                const mockEvent = fakeEvent();
-                dotIframe.triggerEventHandler('load', { ...mockEvent });
-                expect(mockEvent.target.contentWindow.focus).toHaveBeenCalledTimes(1);
-            });
-
-            it('should call onClose on esc key', () => {
-                spyOn(component, 'onClose');
-                dotIframe.triggerEventHandler('keydown', {
-                    key: 'Escape'
-                });
-                expect(component.onClose).toHaveBeenCalledTimes(1);
+            it('should set header attr', () => {
+                expect(dialogComponent.header).toContain('This is a header');
             });
         });
 
@@ -235,97 +130,79 @@ describe('DotIframeDialogComponent', () => {
                 expect(dotIframe).toBeTruthy();
             });
 
-            it('should have the right attrs', () => {
+            it('should set src attr', () => {
                 expect(dotIframeComponent.src).toBe('hello/world');
             });
-        });
-    });
 
-    describe('show/hide', () => {
-        beforeEach(() => {
-            hostComponent.url = 'hello/world';
-            hostFixture.detectChanges();
-            dialog = de.query(By.css('p-dialog'));
-            dotIframe = de.query(By.css('dot-iframe'));
+            it('should focus in the iframe window on dot-iframe load', () => {
+                const mockEvent = fakeEvent();
+                dotIframe.triggerEventHandler('load', { ...mockEvent });
+                expect(mockEvent.target.contentWindow.focus).toHaveBeenCalledTimes(1);
+            });
         });
 
-        it('should update', () => {
-            expect(dialog).toBeTruthy();
-            expect(dotIframe).toBeTruthy();
+        describe('events', () => {
+            beforeEach(() => {
+                spyOn(component.beforeClose, 'emit');
+                spyOn(component.close, 'emit');
+                spyOn(component.custom, 'emit');
+                spyOn(component.keydown, 'emit');
+                spyOn(component.load, 'emit');
+                spyOn(dialog.componentInstance, 'close');
+            });
 
-            hostComponent.url = null;
-            hostFixture.detectChanges();
-            dialog = de.query(By.css('p-dialog'));
-            dotIframe = de.query(By.css('dot-iframe'));
+            describe('dot-iframe', () => {
+                it('should emit events from dot-iframe', () => {
+                    const mockEvent = fakeEvent();
+                    dotIframe.triggerEventHandler('load', mockEvent);
 
-            expect(dialog).toBeTruthy();
-            expect(dotIframe === null).toBe(true);
+                    dotIframe.triggerEventHandler('keydown', { hello: 'world' });
+
+                    dotIframe.triggerEventHandler('custom', {
+                        detail: {
+                            name: 'Hello World'
+                        }
+                    });
+
+                    expect(component.load.emit).toHaveBeenCalledWith(mockEvent);
+                    expect(component.keydown.emit).toHaveBeenCalledWith({ hello: 'world' });
+                    expect(component.custom.emit).toHaveBeenCalledWith({
+                        detail: {
+                            name: 'Hello World'
+                        }
+                    });
+                });
+
+                it('should call close method on dot-dialog on dot-iframe escape key', () => {
+                    dotIframe.triggerEventHandler('keydown', {
+                        key: 'Escape'
+                    });
+
+                    expect(component.keydown.emit).toHaveBeenCalledTimes(1);
+                });
+            });
+
+            describe('dot-dialog', () => {
+                beforeEach(() => {
+                    component.show = true;
+                });
+
+                it('should handle hide', () => {
+                    dialog.triggerEventHandler('hide', { });
+
+                    expect(component.url).toBe(null);
+                    expect(component.show).toBe(false);
+                    expect(component.header).toBe('');
+                    expect(component.close.emit).toHaveBeenCalledTimes(1);
+                    expect(component.beforeClose.emit).not.toHaveBeenCalled();
+                });
+
+                it('should emit beforeClose', () => {
+                    dialog.triggerEventHandler('beforeClose', { });
+                    expect(component.beforeClose.emit).toHaveBeenCalled();
+                });
+
+            });
         });
-    });
-});
-
-@Component({
-    selector: 'dot-test-host-2-component',
-    template:
-        '<dot-iframe-dialog [url]="url" [header]="header" (beforeClose)="onBeforeClose($event)"></dot-iframe-dialog>'
-})
-class TestHost2Component implements OnInit {
-    url: string;
-    header: string;
-
-    onBeforeClose(_$event: { originalEvent: MouseEvent | KeyboardEvent; close: () => {} }) {}
-
-    ngOnInit() {
-        this.url = 'http://';
-    }
-}
-
-describe('DotIframeDialogComponent with onBeforeClose event', () => {
-    let hostFixture: ComponentFixture<TestHost2Component>;
-
-    beforeEach(async(() => {
-        DOTTestBed.configureTestingModule(getTestConfig(TestHost2Component)).compileComponents();
-    }));
-
-    beforeEach(() => {
-        hostFixture = DOTTestBed.createComponent(TestHost2Component);
-        hostDe = hostFixture.debugElement;
-        de = hostDe.query(By.css('dot-iframe-dialog'));
-        component = de.componentInstance;
-
-        hostFixture.detectChanges();
-
-        closeButton = de.query(
-            By.css('.ui-dialog-titlebar-icon.ui-dialog-titlebar-close.dialog__close')
-        );
-    });
-
-    it('should emit beforeClose', () => {
-        spyOn(component.beforeClose, 'emit');
-        spyOn(component.close, 'emit');
-        closeButton.triggerEventHandler('click', { preventDefault: () => {} });
-
-        expect(component.beforeClose.emit).toHaveBeenCalledWith({
-            originalEvent: { preventDefault: jasmine.any(Function) },
-            close: jasmine.any(Function)
-        });
-        expect(component.close.emit).not.toHaveBeenCalled();
-    });
-
-    it('should close when callback is called', () => {
-        spyOn(component.close, 'emit');
-
-        component.beforeClose.subscribe(
-            ($event: { originalEvent: MouseEvent | KeyboardEvent; close: () => {} }) => {
-                $event.close();
-
-                expect(component.url).toBe(null);
-                expect(component.show).toBe(false);
-                expect(component.header).toBe('');
-                expect(component.close.emit).toHaveBeenCalledTimes(1);
-            }
-        );
-
-        closeButton.triggerEventHandler('click', { preventDefault: () => {} });
     });
 });

@@ -3,32 +3,39 @@ import {
     Input,
     Output,
     EventEmitter,
-    ViewEncapsulation,
     ViewChild
 } from '@angular/core';
 import { FormGroup, FormBuilder, Validators } from '@angular/forms';
-import { OnInit } from '@angular/core/src/metadata/lifecycle_hooks';
+import { OnInit, OnDestroy } from '@angular/core/src/metadata/lifecycle_hooks';
 import { PushPublishService } from '@services/push-publish/push-publish.service';
 import { SelectItem } from 'primeng/primeng';
 import { DotMessageService } from '@services/dot-messages-service';
 import { LoggerService } from 'dotcms-js/dotcms-js';
+import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
+import { takeUntil } from 'rxjs/operators';
+import { Subject } from 'rxjs';
 @Component({
-    encapsulation: ViewEncapsulation.None,
     selector: 'dot-push-publish-dialog',
     styleUrls: ['./push-publish-dialog.component.scss'],
     templateUrl: 'push-publish-dialog.component.html'
 })
-export class PushPublishContentTypesDialogComponent implements OnInit {
+export class PushPublishContentTypesDialogComponent implements OnInit, OnDestroy {
+    dateFieldMinDate = new Date();
+    dialogActions: DotDialogActions;
+    dialogShow = false;
     form: FormGroup;
     pushActions: SelectItem[];
-    dateFieldMinDate = new Date();
 
     @Input()
     assetIdentifier: string;
+
     @Output()
     cancel = new EventEmitter<boolean>();
+
     @ViewChild('formEl')
     formEl: HTMLFormElement;
+
+    private destroy$: Subject<boolean> = new Subject<boolean>();
 
     constructor(
         private pushPublishService: PushPublishService,
@@ -55,30 +62,18 @@ export class PushPublishContentTypesDialogComponent implements OnInit {
                 'contenttypes.content.push_publish.publish_date_errormsg',
                 'contenttypes.content.push_publish.expire_date_errormsg'
             ])
-            .subscribe(() => {
-                this.pushActions = [
-                    {
-                        label: this.dotMessageService.get(
-                            'contenttypes.content.push_publish.action.push'
-                        ),
-                        value: 'publish'
-                    },
-                    {
-                        label: this.dotMessageService.get(
-                            'contenttypes.content.push_publish.action.remove'
-                        ),
-                        value: 'expire'
-                    },
-                    {
-                        label: this.dotMessageService.get(
-                            'contenttypes.content.push_publish.action.pushremove'
-                        ),
-                        value: 'publishexpire'
-                    }
-                ];
-
+            .pipe(takeUntil(this.destroy$))
+            .subscribe((messages: { [key: string]: string }) => {
+                this.pushActions = this.getPushPublishActions(messages);
                 this.initForm();
+                this.setDialogConfig(messages, this.form);
+                this.dialogShow = true;
             });
+    }
+
+    ngOnDestroy(): void {
+        this.destroy$.next(true);
+        this.destroy$.complete();
     }
 
     /**
@@ -126,6 +121,52 @@ export class PushPublishContentTypesDialogComponent implements OnInit {
             expiredate: [new Date(), [Validators.required]],
             environment: ['', [Validators.required]],
             forcePush: false
+        });
+    }
+
+    private getPushPublishActions(messages: { [key: string]: string }): SelectItem[] {
+        return [
+            {
+                label: messages['contenttypes.content.push_publish.action.push'],
+                value: 'publish'
+            },
+            {
+                label: messages['contenttypes.content.push_publish.action.remove'],
+                value: 'expire'
+            },
+            {
+                label: messages['contenttypes.content.push_publish.action.pushremove'],
+                value: 'publishexpire'
+            }
+        ];
+    }
+
+    private setDialogConfig(messages: { [key: string]: string }, form: FormGroup): void {
+        this.dialogActions = {
+            accept: {
+                action: () => {
+                    this.submitForm();
+                },
+                label: messages['contenttypes.content.push_publish.form.push'],
+                disabled: true
+            },
+            cancel: {
+                action: () => {
+                    this.close();
+                },
+                label: messages['contenttypes.content.push_publish.form.cancel']
+            }
+        };
+
+
+        form.valueChanges.subscribe(() => {
+            this.dialogActions = {
+                ...this.dialogActions,
+                accept: {
+                    ...this.dialogActions.accept,
+                    disabled: !this.form.valid
+                }
+            };
         });
     }
 }

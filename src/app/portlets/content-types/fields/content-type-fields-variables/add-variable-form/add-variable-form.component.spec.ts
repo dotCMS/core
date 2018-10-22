@@ -10,6 +10,7 @@ describe('AddVariableFormComponent', () => {
     let comp: AddVariableFormComponent;
     let fixture: ComponentFixture<AddVariableFormComponent>;
     let de: DebugElement;
+    let submitButton: DebugElement;
 
     beforeEach(() => {
         const messageServiceMock = new MockDotMessageService({
@@ -30,10 +31,15 @@ describe('AddVariableFormComponent', () => {
         comp = fixture.componentInstance;
         de = fixture.debugElement;
         fixture.detectChanges();
+
+        spyOn(comp.keyField.nativeElement, 'focus');
+        spyOn(comp.saveVariable, 'emit');
+
+        submitButton = de.query(By.css('button'));
+
     });
 
     it('should load the component', () => {
-        const submitButton = de.query(By.css('button'));
         const labels = fixture.debugElement.queryAll(By.css('label'));
 
         expect(submitButton.nativeElement.innerText).toBe('Add');
@@ -42,17 +48,31 @@ describe('AddVariableFormComponent', () => {
         expect(labels[1].nativeElement.innerText).toBe('Value');
     });
 
-    it('should submit form, reset and focus on key field', () => {
-        spyOn(comp.keyField.nativeElement, 'focus');
-        spyOn(comp.saveVariable, 'emit');
+    it('should not submit form when form is invalid', () => {
+        comp.form.controls.key.setValue('key');
+        fixture.detectChanges();
 
+        expect(submitButton.nativeElement.disabled).toBe(true);
+
+        submitButton.triggerEventHandler('click', {});
+
+        expect(comp.saveVariable.emit).not.toHaveBeenCalled();
+        expect(comp.form.value).toEqual({
+            key: 'key',
+            value: ''
+        });
+        expect(comp.keyField.nativeElement.focus).not.toHaveBeenCalled();
+    });
+
+    it('should submit form, reset and focus on key field', () => {
         const param = {
             key: 'key1',
             value: 'value1'
         };
-        const submitButton = de.query(By.css('button'));
         comp.form.controls.key.setValue(param.key);
         comp.form.controls.value.setValue(param.value);
+
+        expect(submitButton.nativeElement.disabled).toBe(true);
 
         fixture.detectChanges();
 

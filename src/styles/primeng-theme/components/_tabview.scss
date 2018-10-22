@@ -13,9 +13,10 @@
 
             a {
                 border-bottom: $tabview-item-border;
+                transition: background-color $basic-speed ease-in;
 
                 &:hover {
-                    background-color: $selectbutton-button-hover-bgcolor;
+                    background-color: $tabview-item-hover-bgcolor;
                     border-bottom: 0;
                 }
             }

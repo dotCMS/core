@@ -1,6 +1,7 @@
 {
     "extends": ["tslint-angular"],
     "rules": {
+        "no-output-on-prefix": [false],
         "cyclomatic-complexity": [true, 3],
         "directive-selector": [true, "attribute", "dot", "camelCase"],
         "component-selector": [true, "element", "dot", "kebab-case"],

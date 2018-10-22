@@ -1,4 +1,21 @@
+<h3>Custom Components</h3>
+<p>
+    <button pButton (click)="dialogShow = true" label="Open Dialog"></button>
+</p>
 
+<p>
+    <button pButton (click)="dialog2Show = true" label="Open Dialog with beforeUnload"></button>
+</p>
+
+<dot-dialog [(visible)]="dialogShow" header="Hello Dialog">
+    <h1>Hello World</h1>
+</dot-dialog>
+
+<dot-dialog [(visible)]="dialog2Show" header="Hello Dialog" (beforeClose)="onBeforeClose($event)">
+    <h1>Hello World</h1>
+</dot-dialog>
+
+<h3>Form Fields</h3>
 <div class="pl__forms">
     <p-dropdown [options]="dropdownOptions"></p-dropdown>
     <p-dropdown tiny [options]="dropdownOptions"></p-dropdown>
@@ -84,4 +101,6 @@
         <p-checkbox name="group1" value="Option 3" label="Option 3" [(ngModel)]="checkboxVal1" inputId="la"></p-checkbox>
         <p-checkbox name="group1" value="Option 4" label="Option 4" [(ngModel)]="checkboxVal1" inputId="la" [disabled]="true"></p-checkbox>
     </div>
+
+    <p-calendar class="push-publish-dialog__calendar-date" dataType="string" dateFormat="yy-mm-dd" placeholder="yy-mm-dd" showTime="true" [minDate]="dateFieldMinDate" readonlyInput="true" ></p-calendar>
 </div>
