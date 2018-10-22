@@ -61,7 +61,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.primitives.Ints;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-import java.util.Arrays;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.io.Serializable;
@@ -1465,14 +1464,12 @@ public class ESContentFactoryImpl extends ContentletFactory {
             	    // relationships tipically have a format velocityVarName-stname1-stname2
             	    if(sortBy.indexOf('-')>0) {
 
-            	        final String[] sortByArray = sortBy.split(StringPool.DASH);
-                        final String identifier = UtilMethods.isSet(sortByArray[1])?Arrays
-                                .stream(sortByArray, 3, sortByArray.length - 1)
-                                .collect(Collectors.joining(StringPool.DASH)): null;
+            	        final String identifier = sortBy
+                                .substring(sortBy.indexOf(StringPool.DASH) + 1,
+                                        sortBy.lastIndexOf(StringPool.DASH));
 
                         if (UtilMethods.isSet(identifier)) {
-                            final String relName = Arrays.stream(sortByArray, 0, 3)
-                                    .collect(Collectors.joining(StringPool.DASH));
+                            final String relName = sortBy.substring(0, sortBy.indexOf(StringPool.DASH));
                             final Script script = new Script(
                                 Script.DEFAULT_SCRIPT_TYPE,
                                 "expert_scripts",

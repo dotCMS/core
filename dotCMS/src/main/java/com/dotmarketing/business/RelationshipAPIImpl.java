@@ -13,8 +13,6 @@ import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Relationship;
 
 import com.dotmarketing.portlets.structure.transform.ContentletRelationshipsTransformer;
-import com.dotmarketing.util.UUIDGenerator;
-import com.dotmarketing.util.UtilMethods;
 import java.util.List;
 import java.util.Optional;
 import java.util.Map;
