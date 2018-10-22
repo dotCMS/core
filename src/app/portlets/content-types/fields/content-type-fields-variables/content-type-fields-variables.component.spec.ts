@@ -78,7 +78,7 @@ describe('ContentTypeFieldsVariablesComponent', () => {
         fixture.detectChanges();
         const dataTable = de.query(By.css('p-dataTable'));
         expect(dataTable.componentInstance.value).toEqual(mockFieldVariables);
-        expect(dataTable.listeners[0].name).toBe('onEditComplete');
+        expect(dataTable.listeners[1].name).toBe('onEditComplete');
     });
 
     it('should load the component and create', () => {
