@@ -1165,10 +1165,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
     public ContentletRelationships getAllRelationships(Contentlet contentlet)throws DotDataException {
 
         ContentletRelationships cRelationships = new ContentletRelationships(contentlet);
-        ContentType structure = contentlet.getContentType();
+        ContentType contentType = contentlet.getContentType();
         List<ContentletRelationshipRecords> matches = cRelationships.getRelationshipsRecords();
-        List<Relationship> relationships = FactoryLocator.getRelationshipFactory()
-                .dbAllByTypeValue(structure.variable() + StringPool.PERIOD);
+        List<Relationship> relationships = FactoryLocator.getRelationshipFactory().byContentType(contentType);
 
         for (Relationship relationship : relationships) {
 
@@ -1184,7 +1183,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 records = cRelationships.new ContentletRelationshipRecords(relationship, false);
                 contentletList = new ArrayList<Contentlet> ();
                 try {
-                    contentletList.addAll(getRelatedContent(contentlet, relationship, false, APILocator.getUserAPI().getSystemUser(), true));
+                    contentletList.addAll(getRelatedContent(contentlet, relationship, false,
+                            APILocator.getUserAPI().getSystemUser(), true));
                 } catch (DotSecurityException e) {
                     Logger.error(this,"Unable to get system user",e);
                 }
@@ -1193,9 +1193,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                 //Pulling as parent
                 records = cRelationships.new ContentletRelationshipRecords(relationship, true);
-                contentletList = new ArrayList<Contentlet> ();
+                contentletList = new ArrayList<> ();
                 try {
-                    contentletList.addAll(getRelatedContent(contentlet, relationship, true, APILocator.getUserAPI().getSystemUser(), true));
+                    contentletList.addAll(getRelatedContent(contentlet, relationship, true,
+                            APILocator.getUserAPI().getSystemUser(), true));
                 } catch (DotSecurityException e) {
                     Logger.error(this,"Unable to get system user",e);
                 }
@@ -1203,11 +1204,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 matches.add(records);
 
             } else {
-                records = cRelationships.new ContentletRelationshipRecords(relationship, FactoryLocator.getRelationshipFactory().isParent(relationship, structure));
-                try{
-                    contentletList = getRelatedContent(contentlet, relationship, APILocator.getUserAPI().getSystemUser(), true);
+                records = cRelationships.new ContentletRelationshipRecords(relationship,
+                        FactoryLocator.getRelationshipFactory()
+                                .isParent(relationship, contentType));
+                try {
+                    contentletList = getRelatedContent(contentlet, relationship,
+                            APILocator.getUserAPI().getSystemUser(), true);
                 } catch (DotSecurityException e) {
-                    Logger.error(this,"Unable to get system user",e);
+                    Logger.error(this, "Unable to get system user", e);
                 }
 
                 records.setRecords(contentletList);

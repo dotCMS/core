@@ -141,8 +141,6 @@
 	request.setAttribute("structure", structure);
 	request.setAttribute("selectedCategories", selectedCategories);
 
-
-	//TODO: Remove this attribute when the relationships tab is no longer used
 	List<ContentletRelationships.ContentletRelationshipRecords> relationshipRecords = (contentletRelationships==null) ? new ArrayList<ContentletRelationships.ContentletRelationshipRecords>() : contentletRelationships.getRelationshipsRecords();
 	request.setAttribute("relationshipRecords", relationshipRecords);
 
@@ -337,9 +335,12 @@
                             </div>
                             <div class="fieldValue">
                                 <%
-                                    StringBuilder fullFieldVar = new StringBuilder(structure.getVelocityVarName())
-                                                        .append(StringPool.PERIOD).append(f.getVelocityVarName());
-                                    request.setAttribute("fieldRelationType", fullFieldVar.toString());%>
+                                    if(f.getFieldType().equals(Field.FieldType.RELATIONSHIP.toString())){
+                                        StringBuilder fullFieldVar = new StringBuilder(structure.getVelocityVarName())
+                                                            .append(StringPool.PERIOD).append(f.getVelocityVarName());
+                                        request.setAttribute("fieldRelationType", fullFieldVar.toString());
+                                    }
+                                %>
                                 <jsp:include page="/html/portlet/ext/contentlet/edit_contentlet_relationships.jsp"/>
                             </div>
                         <% }

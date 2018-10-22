@@ -236,30 +236,27 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
     public List<Relationship> byContentType(final String contentTypeInode, String orderBy){
 
         List<Relationship> relationships = new ArrayList<>();
-        ContentType contentType;
+        ContentTypeIf contentTypeIf = null;
         try {
-            contentType = APILocator.getContentTypeAPI(APILocator.systemUser()).find(contentTypeInode);
-            relationships = cache.getRelationshipsByType(contentType);
+            contentTypeIf = APILocator.getContentTypeAPI(APILocator.systemUser()).find(contentTypeInode);
+            relationships = cache.getRelationshipsByType(contentTypeIf);
             if(relationships != null && !relationships.isEmpty()) {
                 return relationships;
             }
 
-            final StringBuilder filter = new StringBuilder(StringPool.PERCENT)
-                    .append(contentType.variable()).append(StringPool.PERIOD)
-                    .append(StringPool.PERCENT);
-
             orderBy = SQLUtil.sanitizeSortBy(orderBy);
 
             final DotConnect dc = new DotConnect();
-            dc.setSQL(sql.FIND_BY_TYPE_VALUE_LIKE + " order by " + orderBy);
-            dc.addParam(filter.toString().toLowerCase());
+            dc.setSQL(sql.FIND_BY_PARENT_OR_CHILD_INODE + " order by " + orderBy);
+            dc.addParam(contentTypeInode);
+            dc.addParam(contentTypeInode);
             List<Map<String, Object>> results;
             results = dc.loadObjectResults();
 
             relationships = new DbRelationshipTransformer(results).asList();
 
             if(!relationships.isEmpty()){
-                cache.putRelationshipsByType(contentType,relationships);
+                cache.putRelationshipsByType(contentTypeIf,relationships);
             }
 
         } catch (DotCacheException e) {

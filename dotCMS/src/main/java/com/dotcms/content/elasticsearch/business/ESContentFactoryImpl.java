@@ -5,6 +5,7 @@ import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.datetim
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
+import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
 import com.dotcms.content.elasticsearch.util.ESClient;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.notifications.bean.NotificationType;
@@ -62,7 +63,6 @@ import com.google.common.primitives.Ints;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 import java.io.Serializable;
 import java.io.StringWriter;
 import java.sql.Connection;
@@ -1459,17 +1459,27 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
             if(UtilMethods.isSet(sortBy) ) {
             	sortBy = sortBy.toLowerCase();
-            	if(sortBy.endsWith("-order")) {
+            	if(sortBy.endsWith(ESMappingConstants.SUFFIX_ORDER)) {
             	    // related content ordering
-            	    // relationships tipically have a format velocityVarName-stname1-stname2
+            	    // relationships typically have a format stname1-stname2(legacy relationships) or relationType (one-sided relationships)
             	    if(sortBy.indexOf('-')>0) {
 
-            	        final String identifier = sortBy
+                        String identifier = sortBy
                                 .substring(sortBy.indexOf(StringPool.DASH) + 1,
                                         sortBy.lastIndexOf(StringPool.DASH));
 
                         if (UtilMethods.isSet(identifier)) {
-                            final String relName = sortBy.substring(0, sortBy.indexOf(StringPool.DASH));
+
+                            //Support for one-sided relationships
+                            String relName = sortBy.substring(0, sortBy.indexOf(StringPool.DASH));
+                            if (UtilMethods.isSet(identifier) && !relName.contains(StringPool.PERIOD)) {
+                                //Support for legacy relationships
+                                relName += StringPool.DASH + identifier
+                                        .substring(0, identifier.indexOf(StringPool.DASH));
+                                identifier = identifier
+                                        .substring(identifier.indexOf(StringPool.DASH) + 1);
+                            }
+
                             final Script script = new Script(
                                 Script.DEFAULT_SCRIPT_TYPE,
                                 "expert_scripts",
