@@ -106,7 +106,6 @@ export class DotDialogComponent implements OnChanges {
      * @memberof DotDialogComponent
      */
     close($event?: MouseEvent): void {
-        console.log('close');
 
         if (this.beforeClose.observers.length) {
             this.beforeClose.emit({
@@ -124,7 +123,6 @@ export class DotDialogComponent implements OnChanges {
     }
 
     private bindEvents(): void {
-        console.log('bindEvents');
         this.isContentScrolled$ = this.isContentScrolled();
 
         this.subscription.push(
@@ -183,7 +181,6 @@ export class DotDialogComponent implements OnChanges {
     }
 
     private unBindEvents(): void {
-        console.log('unBindEvents');
         this.isContentScrolled$ = null;
 
         this.subscription.forEach((sub: Subscription) => {
