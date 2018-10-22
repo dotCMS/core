@@ -1,6 +1,5 @@
 package com.dotcms.contenttype.business;
 
-import com.dotcms.content.elasticsearch.business.ESContentFactoryImpl;
 import com.dotcms.contenttype.business.sql.RelationshipSQL;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.ContentTypeIf;
@@ -11,7 +10,6 @@ import com.dotmarketing.beans.Tree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheException;
-import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -19,7 +17,6 @@ import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.TreeFactory;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.contentlet.transform.ContentletTransformer;
 import com.dotmarketing.portlets.structure.factories.RelationshipCache;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.InodeUtils;
@@ -211,7 +208,7 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
 
     @Override
     public  List<Contentlet> dbRelatedContent(final Relationship relationship, final Contentlet contentlet)
-            throws DotDataException, DotSecurityException {
+            throws DotDataException {
         final String stInode = contentlet.getContentTypeId();
 
         final boolean selfJoinRelationship = relationship.getParentStructureInode().equalsIgnoreCase(stInode)
@@ -224,14 +221,14 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
 
     @Override
     public  List<Contentlet> dbRelatedContent(final Relationship relationship, final Contentlet contentlet,
-            final boolean hasParent) throws DotDataException, DotSecurityException {
+            final boolean hasParent) throws DotDataException {
         return dbRelatedContent (relationship, contentlet, hasParent, false, "tree_order");
     }
 
     @SuppressWarnings("deprecation")
     public  List<Contentlet> dbRelatedContent(final Relationship relationship, final Contentlet contentlet,
             final boolean hasParent, final boolean live, final String orderBy)
-            throws DotDataException, DotSecurityException {
+            throws DotDataException {
         List<Contentlet> matches = new ArrayList<Contentlet>();
 
         if(contentlet == null || !InodeUtils.isSet(contentlet.getIdentifier())) {
@@ -448,7 +445,7 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
     }
 
 	public  List<Contentlet> dbRelatedContentByParent(final String parentInode, final String relationType, final boolean live,
-            final String orderBy) throws DotDataException, DotSecurityException {
+            final String orderBy) throws DotDataException{
 
 	    final StringBuilder query = new StringBuilder("select cont1.inode from contentlet cont1, inode ci1, tree tree1, "
                 + "contentlet_version_info vi1 where tree1.parent = ? and tree1.relation_type = ? ")
@@ -462,16 +459,20 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
             	query.append(" order by tree1.tree_order");
             }
 
-            DotConnect dc = new DotConnect();
+            final DotConnect dc = new DotConnect();
             dc.setSQL(query.toString());
             dc.addParam(parentInode);
             dc.addParam(relationType);
 
-        List<Map<String, Object>> results = dc.loadObjectResults();
-        List<Contentlet> contentlets = new ArrayList<Contentlet>();
+        final List<Map<String, Object>> results = dc.loadObjectResults();
+        final List<Contentlet> contentlets = new ArrayList<Contentlet>();
 
-        for(Map<String,Object> map : results){
-            contentlets.add(APILocator.getContentletAPI().find((String) map.get("inode"),APILocator.systemUser(),false));
+        for(final Map<String,Object> map : results){
+            try {
+                contentlets.add(APILocator.getContentletAPI().find((String) map.get("inode"),APILocator.systemUser(),false));
+            } catch (DotSecurityException e) {
+                //Do nothing since never gonna throw DotSecurityException is using systemUser
+            }
         }
 
         return contentlets;
@@ -479,7 +480,7 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
 
     @SuppressWarnings("unchecked")
     public  List<Contentlet> dbRelatedContentByChild(final String childInode, final String relationType, final boolean live,
-            final String orderBy) throws DotDataException, DotSecurityException {
+            final String orderBy) throws DotDataException {
 
         final StringBuilder query = new StringBuilder("select cont1.inode from contentlet cont1 join inode ci1 on (cont1.inode = ci1.inode) join contentlet_version_info vi1 on "
                         + "(" + (live?"vi1.live_inode":"vi1.working_inode") + " = cont1.inode) join tree tree1 on (tree1.parent = cont1.identifier) ")
@@ -493,17 +494,21 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
             query.append(" order by tree1.tree_order");
         }
 
-        DotConnect dc = new DotConnect();
+        final DotConnect dc = new DotConnect();
         dc.setSQL(query.toString());
         dc.addParam(childInode);
         dc.addParam(relationType);
 
 
-        List<Map<String, Object>> results = dc.loadObjectResults();
-        List<Contentlet> contentlets = new ArrayList<Contentlet>();
+        final List<Map<String, Object>> results = dc.loadObjectResults();
+        final List<Contentlet> contentlets = new ArrayList<Contentlet>();
 
-        for(Map<String,Object> map : results){
-            contentlets.add(APILocator.getContentletAPI().find((String) map.get("inode"),APILocator.systemUser(),false));
+        for(final Map<String,Object> map : results){
+            try {
+                contentlets.add(APILocator.getContentletAPI().find((String) map.get("inode"),APILocator.systemUser(),false));
+            } catch (DotSecurityException e) {
+                //Do nothing since never gonna throw DotSecurityException is using systemUser
+            }
         }
 
         return contentlets;
