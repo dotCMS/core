@@ -72,16 +72,7 @@ public class DotParse extends DotDirective {
 
         String errorMessage = String.format("No resource found for [%s]",  arguments[0]);
 
-        /*
-        In Edit mode we are allow to fail and be noisy, but on Preview and Live mode we just want to
-        continue with the render of the page, on the DotDirective.render we are catching ResourceNotFoundException's
-        and on the catch we continue with the render.
-         */
-        if ( params.mode.showLive ) {
             throw new ResourceNotFoundException(errorMessage);
-        } else {
-            throw new DotStateException(errorMessage);
-        }
       }
 
       ContentletVersionInfo cv = APILocator.getVersionableAPI().getContentletVersionInfo(id.getId(), lang);

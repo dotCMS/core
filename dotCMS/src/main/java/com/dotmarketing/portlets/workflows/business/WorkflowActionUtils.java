@@ -113,6 +113,61 @@ class WorkflowActionUtils {
         return permissionables;
     }
 
+    /**
+     * Filter the list of actions to display according to the user logged permissions
+     *
+     * @param actions List of action to filter
+     * @param user User to validate
+     * @param respectFrontEndRoles indicates if should respect frontend roles
+     * @return List<WorkflowAction>
+     */
+    @CloseDBIfOpened
+    List<WorkflowAction> filterBulkActions(final List<WorkflowAction> actions,
+            final User user, final boolean respectFrontEndRoles) throws DotDataException {
+
+        if ((user != null) && roleAPI.doesUserHaveRole(user, cmsAdminRole)) {
+            Logger.debug(this, () -> "user:" + user.getUserId()
+                    + " has an admin role. returning all actions.");
+            return actions;
+        }
+
+        final List<WorkflowAction> permissionables = new ArrayList<>(actions);
+        if (permissionables.isEmpty()) {
+            Logger.debug(this, () -> " No actions were passed. ");
+            return permissionables;
+        }
+
+        final Iterator<WorkflowAction> actionsIterator = permissionables.iterator();
+        while (actionsIterator.hasNext()) {
+
+            final WorkflowAction action = actionsIterator.next();
+            boolean hasPermission = false;
+
+            // Validate if the action has user/role permissions
+            if (doesUserHavePermission(action, PermissionAPI.PERMISSION_USE, user,
+                    respectFrontEndRoles)) {
+                Logger.debug(this, () -> " Trying other roles for action " + action.getName()
+                        + " had permissions: yes");
+                hasPermission = true;
+            }
+
+            /*
+            If we don't have direct permissions over the action but the action has special roles
+            our best guess is to allow the user to try to execute the action in the bulk actions modal,
+            at this point and the way we calculate the bulk operations for efficiency we don't have
+            a permissionable to use in order to validate individual permissions.
+             */
+            if (!hasPermission && hasSpecialWorkflowRoles(action)) {
+                hasPermission = true;
+            }
+
+            if (!hasPermission) {
+                actionsIterator.remove();
+            }
+        }
+
+        return permissionables;
+    }
 
     /**
      * Filters the list of actions to display according to the role passed
@@ -287,6 +342,18 @@ class WorkflowActionUtils {
                     PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user, respectFrontEndRoles);
         }
         return false;
+    }
+
+    /**
+     * Verifies if the given Workflow Action has special roles on it
+     */
+    @CloseDBIfOpened
+    private boolean hasSpecialWorkflowRoles(final WorkflowAction action) throws DotDataException {
+
+        return isRolePresent(action, anyWhoCanViewContentRole)
+                || isRolePresent(action, anyWhoCanEditContentRole)
+                || isRolePresent(action, anyWhoCanPublishContentRole)
+                || isRolePresent(action, anyWhoCanEditPermisionsContentRole);
     }
 
     /**

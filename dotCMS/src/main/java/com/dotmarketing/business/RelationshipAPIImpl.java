@@ -93,12 +93,14 @@ public class RelationshipAPIImpl implements RelationshipAPI {
 
     @CloseDBIfOpened
     @Override
-    public List<Contentlet> dbRelatedContent(Relationship relationship, Contentlet contentlet) throws DotDataException {
+    public List<Contentlet> dbRelatedContent(Relationship relationship, Contentlet contentlet)
+            throws DotDataException {
         return this.relationshipFactory.dbRelatedContent(relationship, contentlet);
     }
 
     @Override
-    public List<Contentlet> dbRelatedContent(Relationship relationship, Contentlet contentlet, boolean hasParent) throws DotDataException {
+    public List<Contentlet> dbRelatedContent(Relationship relationship, Contentlet contentlet, boolean hasParent)
+            throws DotDataException {
         return this.relationshipFactory.dbRelatedContent(relationship, contentlet, hasParent);
     }
 

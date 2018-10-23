@@ -3,7 +3,12 @@ package com.dotcms.rest.api.v1.vtl;
 import com.dotcms.api.vtl.model.DotJSON;
 import com.dotcms.cache.DotJSONCache;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
-import com.dotcms.repackage.javax.ws.rs.*;
+import com.dotcms.repackage.javax.ws.rs.Consumes;
+import com.dotcms.repackage.javax.ws.rs.GET;
+import com.dotcms.repackage.javax.ws.rs.POST;
+import com.dotcms.repackage.javax.ws.rs.Path;
+import com.dotcms.repackage.javax.ws.rs.PathParam;
+import com.dotcms.repackage.javax.ws.rs.Produces;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
@@ -15,6 +20,7 @@ import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.v1.HTTPMethod;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.util.CollectionsUtils;
+import com.dotcms.util.DotPreconditions;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -29,12 +35,14 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.WebKeys;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
@@ -46,7 +54,7 @@ import static com.dotcms.cache.DotJSONCacheFactory.getCacheStrategy;
 @Path("/vtl")
 public class VTLResource {
 
-    private final WebResource webResource = new WebResource();
+    private final WebResource webResource;
     @VisibleForTesting
     static final String VTL_PATH = "/application/apivtl";
     private final HostAPI hostAPI;
@@ -55,14 +63,17 @@ public class VTLResource {
     private final String FILE_EXTENSION = ".vtl";
 
     public VTLResource() {
-        this(APILocator.getHostAPI(), APILocator.getIdentifierAPI(), APILocator.getContentletAPI());
+        this(APILocator.getHostAPI(), APILocator.getIdentifierAPI(), APILocator.getContentletAPI(),
+                new WebResource());
     }
 
     @VisibleForTesting
-    VTLResource(final HostAPI hostAPI, final IdentifierAPI identifierAPI, final ContentletAPI contentletAPI) {
+    VTLResource(final HostAPI hostAPI, final IdentifierAPI identifierAPI, final ContentletAPI contentletAPI,
+                final WebResource webResource) {
         this.hostAPI = hostAPI;
         this.identifierAPI = identifierAPI;
         this.contentletAPI = contentletAPI;
+        this.webResource = webResource;
     }
 
     /**
@@ -82,6 +93,8 @@ public class VTLResource {
 
         final InitDataObject initDataObject = this.webResource.init
                 (pathParams, false, request, false, null);
+
+        setUserInSession(request.getSession(false), initDataObject.getUser());
 
         final DotJSONCache cache = getCacheStrategy(HTTPMethod.GET);
         final Optional<DotJSON> dotJSONOptional = cache.get(request, initDataObject.getUser());
@@ -121,13 +134,16 @@ public class VTLResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
-    @Consumes({MediaType.APPLICATION_JSON, MediaType.APPLICATION_FORM_URLENCODED})
+    @Consumes({MediaType.APPLICATION_JSON})
     public final Response post(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
-                                     @Context UriInfo uriInfo, @PathParam("folder") final String folderName,
-                                     @PathParam("path") final String pathParams, final Map<String, String> properties) {
+                               @Context UriInfo uriInfo, @PathParam("folder") final String folderName,
+                               @PathParam("path") final String pathParams,
+                                   final Map<String, String> properties) {
 
         final InitDataObject initDataObject = this.webResource.init
                 (pathParams, false, request, false, null);
+
+        setUserInSession(request.getSession(false), initDataObject.getUser());
 
         try {
             final FileAsset vtlFile = getVTLFile(HTTPMethod.POST, request, folderName, initDataObject.getUser());
@@ -151,6 +167,12 @@ public class VTLResource {
         }
     }
 
+    private void setUserInSession(final HttpSession session, final User user) {
+        DotPreconditions.checkNotNull(session);
+        DotPreconditions.checkNotNull(user);
+        session.setAttribute(WebKeys.CMS_USER, user);
+    }
+
     private Response evalVTLFile(final HttpServletRequest request, final HttpServletResponse response,
                                  final FileAsset getFileAsset, final Map<String, Object> contextParams,
                                  final User user, final DotJSONCache cache)
@@ -163,14 +185,14 @@ public class VTLResource {
 
         try (final InputStream fileAssetIputStream = getFileAsset.getInputStream()) {
             VelocityUtil.getEngine().evaluate(context, evalResult, "", fileAssetIputStream);
-            final DotJSON<String, String> dotJSON = (DotJSON<String, String>) context.get("dotJSON");
+            final DotJSON dotJSON = (DotJSON) context.get("dotJSON");
 
             if(dotJSON.size()==0) { // If dotJSON is not used let's return the raw evaluation of the velocity file
                 return Response.ok(evalResult.toString()).build();
             } else {
                 // let's add it to cache
                 cache.add(request, user, dotJSON);
-                return Response.ok(dotJSON).build();
+                return Response.ok(dotJSON.getMap()).build();
             }
         }
     }

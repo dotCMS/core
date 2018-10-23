@@ -22,6 +22,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.VelocityUtil;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 import org.apache.velocity.context.Context;
 
 import java.util.*;
@@ -100,8 +101,9 @@ public class ContainerRenderedBuilder {
                     try {
                         return VelocityUtil.getInstance().mergeTemplate(key.path, velocityContext);
                     } catch (Exception e) {
-                        throw new DotRuntimeException(String.format("Container '%s' could not be " +
+                        Logger.warn(this,String.format("Container '%s' could not be " +
                                 "rendered via " + "Velocity.", container.getIdentifier()), e);
+                        return StringPool.BLANK;
                     }
                 }));
     }
