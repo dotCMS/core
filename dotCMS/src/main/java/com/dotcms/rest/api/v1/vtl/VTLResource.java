@@ -2,13 +2,9 @@ package com.dotcms.rest.api.v1.vtl;
 
 import com.dotcms.api.vtl.model.DotJSON;
 import com.dotcms.cache.DotJSONCache;
+import com.dotcms.cache.DotJSONCacheFactory;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
-import com.dotcms.repackage.javax.ws.rs.Consumes;
-import com.dotcms.repackage.javax.ws.rs.GET;
-import com.dotcms.repackage.javax.ws.rs.POST;
-import com.dotcms.repackage.javax.ws.rs.Path;
-import com.dotcms.repackage.javax.ws.rs.PathParam;
-import com.dotcms.repackage.javax.ws.rs.Produces;
+import com.dotcms.repackage.javax.ws.rs.*;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
@@ -49,8 +45,6 @@ import java.io.StringWriter;
 import java.util.Map;
 import java.util.Optional;
 
-import static com.dotcms.cache.DotJSONCacheFactory.getCacheStrategy;
-
 @Path("/vtl")
 public class VTLResource {
 
@@ -76,6 +70,19 @@ public class VTLResource {
         this.webResource = webResource;
     }
 
+    @GET
+    @Path("/{folder}")
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
+    @Consumes({MediaType.APPLICATION_JSON})
+    public Response get(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
+                        @Context UriInfo uriInfo, @PathParam("folder") final String folderName,
+                        final Map<String, String> requestJSONMap) {
+
+        return get(request, response, uriInfo, folderName, null, requestJSONMap);
+
+    }
+
     /**
      * Returns the output of a convention based "get.vtl" file, located under the given {folder} after being evaluated
      * using the velocity engine.
@@ -84,50 +91,23 @@ public class VTLResource {
      */
 
     @GET
-    @Path("/{folder}/{path: .*}")
+    @Path("/{folder}/{pathParam:.*}")
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
+    @Consumes({MediaType.APPLICATION_JSON})
     public Response get(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
                         @Context UriInfo uriInfo, @PathParam("folder") final String folderName,
-                        @PathParam("path") final String pathParams) {
+                        @PathParam("pathParam") final String pathParams, final Map<String, String> requestJSONMap) {
 
-        final InitDataObject initDataObject = this.webResource.init
-                (pathParams, false, request, false, null);
-
-        setUserInSession(request.getSession(false), initDataObject.getUser());
-
-        final DotJSONCache cache = getCacheStrategy(HTTPMethod.GET);
-        final Optional<DotJSON> dotJSONOptional = cache.get(request, initDataObject.getUser());
-
-        if(dotJSONOptional.isPresent()) {
-            return Response.ok(dotJSONOptional.get()).build();
-        }
-
-        try {
-            final FileAsset getFileAsset = getVTLFile(HTTPMethod.GET, request, folderName, initDataObject.getUser());
-
-            final Map<String, Object> contextParams = CollectionsUtils.map(
-                    "urlParams", initDataObject.getParamsMap(),
-                    "queryParams", uriInfo.getQueryParameters());
-
-            return evalVTLFile(request, response, getFileAsset, contextParams,
-                    initDataObject.getUser(), cache);
-        } catch(DotContentletStateException e) {
-            final String errorMessage = "Unable to find velocity file '" +
-                    HTTPMethod.GET.fileName() + FILE_EXTENSION + "' under path '" + VTL_PATH +
-                    StringPool.SLASH + folderName + StringPool.SLASH + "'";
-            Logger.error(this, errorMessage, e);
-            return ResponseUtil.mapExceptionResponse(new DotDataException(errorMessage));
-        } catch(Exception e) {
-            Logger.error(this,"Exception on VTL endpoint. GET method: " + e.getMessage(), e);
-            return ResponseUtil.mapExceptionResponse(e);
-        }
+        return processRequest(request, response, uriInfo, folderName, pathParams, HTTPMethod.GET, requestJSONMap);
 
     }
 
     /**
-     * @param request HttpServletRequest
-     * @return Response
+     * Returns the output of a convention based "post.vtl" file, located under the given {folder} after being evaluated
+     * using the velocity engine.
+     *
+     * "post.vtl" code determines whether the response is a JSON object or anything else (XML, text-plain).
      */
     @POST
     @Path("/{folder}/{path: .*}")
@@ -138,31 +118,66 @@ public class VTLResource {
     public final Response post(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
                                @Context UriInfo uriInfo, @PathParam("folder") final String folderName,
                                @PathParam("path") final String pathParams,
-                                   final Map<String, String> properties) {
+                                   final Map<String, String> requestJSONMap) {
 
+        return processRequest(request, response, uriInfo, folderName, pathParams, HTTPMethod.POST, requestJSONMap);
+    }
+
+    /**
+     * Returns the output of a convention based "delete.vtl" file, located under the given {folder} after being evaluated
+     * using the velocity engine.
+     *
+     * "delete.vtl" code determines whether the response is a JSON object or anything else (XML, text-plain).
+     */
+    @DELETE
+    @Path("/{folder}/{path: .*}")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
+    @Consumes({MediaType.APPLICATION_JSON})
+    public final Response delete(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
+                               @Context UriInfo uriInfo, @PathParam("folder") final String folderName,
+                               @PathParam("path") final String pathParams,
+                               final Map<String, String> requestJSONMap) {
+
+        return processRequest(request, response, uriInfo, folderName, pathParams, HTTPMethod.DELETE, requestJSONMap);
+    }
+
+    private Response processRequest(@Context HttpServletRequest request, @Context HttpServletResponse response,
+                                    @Context UriInfo uriInfo, @PathParam("folder") String folderName,
+                                    @PathParam("path") String pathParam,
+                                    final HTTPMethod httpMethod,
+                                    final Map<String, String> requestJSONMap) {
         final InitDataObject initDataObject = this.webResource.init
-                (pathParams, false, request, false, null);
+                (null, false, request, false, null);
 
         setUserInSession(request.getSession(false), initDataObject.getUser());
 
+        final DotJSONCache cache = DotJSONCacheFactory.getCache(httpMethod);
+        final Optional<DotJSON> dotJSONOptional = cache.get(request, initDataObject.getUser());
+
+        if(dotJSONOptional.isPresent()) {
+            return Response.ok(dotJSONOptional.get()).build();
+        }
+
         try {
-            final FileAsset vtlFile = getVTLFile(HTTPMethod.POST, request, folderName, initDataObject.getUser());
+            final FileAsset getFileAsset = getVTLFile(httpMethod, request, folderName, initDataObject.getUser());
+
             final Map<String, Object> contextParams = CollectionsUtils.map(
-                    "urlParams", initDataObject.getParamsMap(),
+                    "pathParam", pathParam,
                     "queryParams", uriInfo.getQueryParameters(),
-                    "postParams", properties,
-                    "user", initDataObject.getUser());
+                    "requestJSONMap", requestJSONMap);
 
-            return evalVTLFile(request, response, vtlFile, contextParams,
-                    initDataObject.getUser(), getCacheStrategy(HTTPMethod.POST));
-
+            return evalVTLFile(request, response, getFileAsset, contextParams,
+                    initDataObject.getUser(), cache);
         } catch(DotContentletStateException e) {
-            final String errorMessage = "Unable to find velocity file '" + HTTPMethod.POST.fileName() + FILE_EXTENSION
-                    + "' under path '" + VTL_PATH + StringPool.SLASH + folderName + StringPool.SLASH + "'";
-            Logger.warn(this, errorMessage, e);
+            final String errorMessage = "Unable to find velocity file '" +
+                    httpMethod.fileName() + FILE_EXTENSION + "' under path '" + VTL_PATH +
+                    StringPool.SLASH + folderName + StringPool.SLASH + "'";
+            Logger.error(this, errorMessage, e);
             return ResponseUtil.mapExceptionResponse(new DotDataException(errorMessage));
         } catch(Exception e) {
-            Logger.error(this,"Exception on VTL endpoint. POST method: " + e.getMessage(), e);
+            Logger.error(this,"Exception on VTL endpoint. GET method: " + e.getMessage(), e);
             return ResponseUtil.mapExceptionResponse(e);
         }
     }

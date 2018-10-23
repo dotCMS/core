@@ -136,7 +136,7 @@ public class VTLResourceIntegrationTest {
             final VTLResource resource = new VTLResource(APILocator.getHostAPI(), APILocator.getIdentifierAPI(),
                     APILocator.getContentletAPI(), webResource);
             final Response response = resource.get(request, servletResponse, uriInfo, testCase.getFolderName(),
-                    testCase.getPathParameters());
+                    testCase.getPathParameters(), null);
 
             String expectedOutput;
             String getOutput;

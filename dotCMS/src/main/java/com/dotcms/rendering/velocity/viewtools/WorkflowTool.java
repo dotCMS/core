@@ -12,6 +12,7 @@ import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicyProvider;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
 
@@ -51,9 +52,10 @@ public class WorkflowTool implements ViewTool {
 	private final CategoryAPI categoryAPI = APILocator.getCategoryAPI();
 	private final RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
 	private User user;
+	private HttpServletRequest request;
 
 	public void init(final Object initData) {
-		final HttpServletRequest request = ((ViewContext) initData).getRequest();
+		request = ((ViewContext) initData).getRequest();
 		user = getUser(request);
 	}
 
@@ -167,29 +169,36 @@ public class WorkflowTool implements ViewTool {
 	 * @throws DotDataException
 	 */
 
-	public Contentlet fire(final String wfActionId, final Map<String, Object> properties)
-			throws DotSecurityException, DotDataException {
-		final MapToContentletPopulator mapToContentletPopulator = MapToContentletPopulator.INSTANCE;
-		Contentlet contentlet = new Contentlet();
-		contentlet = mapToContentletPopulator.populate(contentlet, properties);
+	public Contentlet fire(final String wfActionId, final Map<String, Object> properties) {
 
-		final boolean ALLOW_FRONT_END_SAVING = Config
-				.getBooleanProperty("WORKFLOW_TOOL_ALLOW_FRONT_END_SAVING", false);
+		try {
+			final MapToContentletPopulator mapToContentletPopulator = MapToContentletPopulator.INSTANCE;
+			Contentlet contentlet = new Contentlet();
+			contentlet = mapToContentletPopulator.populate(contentlet, properties);
 
-		final List<Category> cats = categoryAPI.getCategoriesFromContent(contentlet, user, ALLOW_FRONT_END_SAVING);
+			final boolean ALLOW_FRONT_END_SAVING = Config
+					.getBooleanProperty("WORKFLOW_TOOL_ALLOW_FRONT_END_SAVING", false);
 
-		final Map<Relationship, List<Contentlet>> relationships = (Map<Relationship, List<Contentlet>>)
-				contentlet.get(RELATIONSHIP_KEY);
+			final List<Category> cats = categoryAPI.getCategoriesFromContent(contentlet, user, ALLOW_FRONT_END_SAVING);
 
-		final ContentletDependencies contentletDependencies = new ContentletDependencies.Builder()
-				.workflowActionId(wfActionId)
-				.respectAnonymousPermissions(ALLOW_FRONT_END_SAVING)
-				.modUser(user).categories(cats)
-				.relationships(relationshipAPI.getContentletRelationshipsFromMap(contentlet, relationships))
-				.indexPolicy(IndexPolicyProvider.getInstance().forSingleContent())
-				.build();
+			final Map<Relationship, List<Contentlet>> relationships = (Map<Relationship, List<Contentlet>>)
+					contentlet.get(RELATIONSHIP_KEY);
 
-		return workflowAPI.fireContentWorkflow(contentlet, contentletDependencies);
+			final ContentletDependencies contentletDependencies = new ContentletDependencies.Builder()
+					.workflowActionId(wfActionId)
+					.respectAnonymousPermissions(ALLOW_FRONT_END_SAVING)
+					.modUser(user).categories(cats)
+					.relationships(relationshipAPI.getContentletRelationshipsFromMap(contentlet, relationships))
+					.indexPolicy(IndexPolicyProvider.getInstance().forSingleContent())
+					.build();
+
+			return workflowAPI.fireContentWorkflow(contentlet, contentletDependencies);
+		} catch (Throwable ex) {
+			if (Config.getBooleanProperty("ENABLE_FRONTEND_STACKTRACE", false)) {
+				Logger.error(this, "error in ContentTool.pull. URL: " + request.getRequestURL().toString(), ex);
+			}
+			throw new RuntimeException(ex);
+		}
 	}
 
 }
