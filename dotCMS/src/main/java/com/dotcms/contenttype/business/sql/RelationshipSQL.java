@@ -28,8 +28,6 @@ public abstract class RelationshipSQL {
 	public static final String FIND_BY_PARENT_INODE = SELECT_ALL_FIELDS + " where parent_structure_inode = ?";
 
 	public static final String FIND_BY_CHILD_INODE = SELECT_ALL_FIELDS + " where child_structure_inode = ?";
-
-	public static final String ORDER_BY = " order by ?";
 	
 	public static final String FIND_BY_PARENT_OR_CHILD_INODE = SELECT_ALL_FIELDS
 			+ " where parent_structure_inode = ? or child_structure_inode = ?";

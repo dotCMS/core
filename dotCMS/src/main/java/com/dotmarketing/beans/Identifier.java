@@ -33,7 +33,11 @@ public class Identifier implements UUIDable,Serializable,Permissionable,Categori
 	public Identifier() {
 	}
 
-    private String id;
+	public Identifier(final String id) {
+		setId(id);
+	}
+
+	private String id;
     
     private String assetName;
     

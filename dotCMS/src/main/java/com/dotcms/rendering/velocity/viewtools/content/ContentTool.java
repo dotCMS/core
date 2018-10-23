@@ -55,23 +55,14 @@ public class ContentTool implements ViewTool {
 	private String tmDate;
 	private Context context;
 	private Host currentHost;
-	
+
 	public void init(Object initData) {
-		userAPI = WebAPILocator.getUserWebAPI();
-		this.context = ((ViewContext) initData).getVelocityContext();
 		this.req = ((ViewContext) initData).getRequest();
-		try {
-			user = userAPI.getLoggedInUser(req);
-			if (user == null) {
-				user = userAPI.getLoggedInFrontendUser(req);
-			}
-	        if (user == null) {
-               user = userAPI.getAnonymousUser();
-           }
-		} catch (Exception e) {
-			Logger.error(this, "Error finding the logged in user", e);
-		}
-		
+
+		user = getUser(req);
+
+		this.context = ((ViewContext) initData).getVelocityContext();
+
 		tmDate=null;
 
 		HttpSession session = req.getSession(false);

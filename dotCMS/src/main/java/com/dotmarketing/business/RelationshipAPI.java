@@ -2,11 +2,13 @@ package com.dotmarketing.business;
 
 import com.dotcms.contenttype.model.type.ContentType;
 import java.util.List;
+import java.util.Map;
 
 import com.dotcms.contenttype.model.type.ContentTypeIf;
 import com.dotmarketing.beans.Tree;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Relationship;
 
 public interface RelationshipAPI {
@@ -25,10 +27,11 @@ public interface RelationshipAPI {
 
   List<Relationship> byContentType(ContentTypeIf type, String orderBy);
 
-  List<Contentlet> dbRelatedContent(Relationship relationship, Contentlet contentlet) throws DotDataException;
+  List<Contentlet> dbRelatedContent(Relationship relationship, Contentlet contentlet)
+          throws DotDataException;
 
   List<Contentlet> dbRelatedContent(Relationship relationship, Contentlet contentlet,
-                                    boolean hasParent) throws  DotDataException;
+                                    boolean hasParent) throws DotDataException;
 
   void deleteByContent(Contentlet contentlet, Relationship relationship, List<Contentlet> relatedContentlets)
       throws DotDataException;
@@ -85,4 +88,7 @@ public interface RelationshipAPI {
 
   List<Relationship> getOneSidedRelationships(final ContentType contentType, final int limit,
           final int offset) throws DotDataException;
+
+  ContentletRelationships getContentletRelationshipsFromMap(final Contentlet contentlet, final Map<Relationship,
+          List<Contentlet>> contentRelationships);
 }

@@ -220,7 +220,7 @@ public class WorkflowHelper {
 
                 final CountWorkflowStep step = new CountWorkflowStep(stepCount.getValue(),
                         workflowStep);
-                stepActionsMap.put(step, this.workflowAPI.findActions(step.getWorkflowStep(), user)
+                stepActionsMap.put(step, this.workflowAPI.findBulkActions(step.getWorkflowStep(), user)
                         .stream().filter(WorkflowAction::shouldShowOnListing)
                         .collect(CollectionsUtils.toImmutableList()));
             }catch (Exception e){

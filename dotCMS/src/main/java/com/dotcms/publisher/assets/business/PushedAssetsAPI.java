@@ -1,9 +1,9 @@
 package com.dotcms.publisher.assets.business;
 
-import java.util.List;
-
 import com.dotcms.publisher.assets.bean.PushedAsset;
 import com.dotmarketing.exception.DotDataException;
+
+import java.util.List;
 
 public interface PushedAssetsAPI {
 
@@ -51,8 +51,18 @@ public interface PushedAssetsAPI {
 	 *
 	 * @throws	DotDataException	thrown when an error in the underlying data layer occurs
 	 */
-
 	public void deletePushedAssetsByEnvironment(String environmentId)  throws DotDataException;
+
+	/**
+	 * deletes the push assets entries for the given assetId and environment Id.
+	 *
+	 * @param	assetId	the id of the asset whose pushed assets records will be deleted
+	 * @param	environmentId	the id of the environment whose pushed assets records will be deleted
+	 *
+	 * @throws	DotDataException	thrown when an error in the underlying data layer occurs
+	 */
+
+	public void deletePushedAssetsByEnvironment(String assetId, String environmentId)  throws DotDataException;
 
 	/**
 	 * returns all the push assets for a given assetId

@@ -97,7 +97,11 @@
 	boolean canEditAsset = conPerAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user);
 	Integer catCounter = 0;
 
-	boolean contentEditable = (UtilMethods.isSet(contentlet.getInode())?(Boolean)request.getAttribute(com.dotmarketing.util.WebKeys.CONTENT_EDITABLE):false);
+	boolean contentEditable = (
+	                            UtilMethods.isSet(contentlet.getInode()) && UtilMethods.isSet(request.getAttribute(com.dotmarketing.util.WebKeys.CONTENT_EDITABLE)) ?
+	                            (Boolean)request.getAttribute(com.dotmarketing.util.WebKeys.CONTENT_EDITABLE)
+	                            :false
+	                           );
 	boolean canUserPublishContentlet = conPerAPI.doesUserHavePermission(contentlet,PermissionAPI.PERMISSION_PUBLISH,user);
 
 	if(!InodeUtils.isSet(contentlet.getInode())) {
@@ -374,7 +378,8 @@ document.addEventListener('DOMContentLoaded', function(){
 
 <%
 	/*########################## BEGINNING  DOTCMS-2692 ###############################*/
-    if(InodeUtils.isSet(request.getParameter("inode"))){
+	final String identifier = request.getParameter("identifier");
+    if(InodeUtils.isSet(identifier)){
     	request.getSession().setAttribute("ContentletForm_lastLanguage",contentletForm);
     	request.getSession().setAttribute("ContentletForm_lastLanguage_permissions", contentlet);
     }

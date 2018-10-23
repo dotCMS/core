@@ -151,7 +151,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -295,28 +294,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
             Logger.debug(this,"No working contentlet found for language");
         }
         return con;
-    }
-
-    @CloseDBIfOpened
-    @Override
-    public List<Contentlet> findAllLangContentlets(final String identifier) {
-
-        final List<Language> languages = languageAPI.getLanguages();
-        final Identifier identifierObject = new Identifier();
-        identifierObject.setId(identifier);
-        return languages.stream().map(l -> {
-                    try {
-                        final ContentletVersionInfo contentletVersionInfo = APILocator.getVersionableAPI()
-                                .getContentletVersionInfo(identifier, l.getId());
-                        if (contentletVersionInfo != null && !contentletVersionInfo.isDeleted()) {
-                            return contentFactory.find(contentletVersionInfo.getWorkingInode());
-                        }
-                    } catch (Exception e) {
-                        Logger.error(this, "No working contentlet found for language");
-                    }
-                    return null;
-                }
-        ).filter(Objects::nonNull).collect(CollectionsUtils.toImmutableList());
     }
 
     @CloseDBIfOpened
@@ -1029,13 +1006,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
      */
     private IHTMLPage loadPageByIdentifier ( String ident, boolean live, Long languageId, User user, boolean frontRoles ) throws DotDataException, DotContentletStateException, DotSecurityException {
 
-        Identifier ii = APILocator.getIdentifierAPI().find(ident);
-        if ( ii.getAssetType().equals("contentlet") ) {
-            return APILocator.getHTMLPageAssetAPI().fromContentlet(APILocator.getContentletAPI().findContentletByIdentifier(ident, live, languageId, user, frontRoles));
-        } else {
-            return live ? (IHTMLPage) APILocator.getVersionableAPI().findLiveVersion(ii, user, frontRoles)
-                    : (IHTMLPage) APILocator.getVersionableAPI().findWorkingVersion(ii, user, frontRoles);
-        }
+
+        return APILocator.getHTMLPageAssetAPI().fromContentlet(this.findContentletByIdentifier(ident, live, languageId, user, frontRoles));
+        
     }
 
     /**
@@ -3694,6 +3667,22 @@ public class ESContentletAPIImpl implements ContentletAPI {
         workingContentlet.setInode(contentletInode);
         copyProperties(workingContentlet, cmap);
         workingContentlet.setInode("");
+
+        /*
+        The checkin is assuming that HTMLPages are going to have an URL field as it
+        is always sent from the UI, but if we checkout the content and then save (checkin) we
+        fail as the checkout is not populating that field.
+        We need to remember the URL field in pages is a calculated value and should not be stored.
+         */
+        if (workingContentlet.getContentType().baseType() == BaseContentType.HTMLPAGE
+                && UtilMethods.isSet(workingContentlet.getIdentifier())) {
+
+            final Identifier htmlPageIdentifier = APILocator.getIdentifierAPI()
+                    .find(workingContentlet.getIdentifier());
+            workingContentlet
+                    .setStringProperty(HTMLPageAssetAPI.URL_FIELD, htmlPageIdentifier.getAssetName());
+        }
+
         return workingContentlet;
     }
 
@@ -4888,7 +4877,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    private Map<Relationship, List<Contentlet>> findContentRelationships(Contentlet contentlet) throws DotDataException{
+    private Map<Relationship, List<Contentlet>> findContentRelationships(Contentlet contentlet)
+            throws DotDataException {
         Map<Relationship, List<Contentlet>> contentRelationships = new HashMap<>();
         if(contentlet == null)
             return contentRelationships;
