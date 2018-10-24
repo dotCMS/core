@@ -169,7 +169,8 @@ public class WorkflowTool implements ViewTool {
 	 * @throws DotDataException
 	 */
 
-	public Contentlet fire(final String wfActionId, final Map<String, Object> properties) {
+	public ToolResponse<Contentlet> fire(final String wfActionId, final Map<String, Object> properties) {
+		ToolResponse<Contentlet> response;
 
 		try {
 			final MapToContentletPopulator mapToContentletPopulator = MapToContentletPopulator.INSTANCE;
@@ -192,13 +193,17 @@ public class WorkflowTool implements ViewTool {
 					.indexPolicy(IndexPolicyProvider.getInstance().forSingleContent())
 					.build();
 
-			return workflowAPI.fireContentWorkflow(contentlet, contentletDependencies);
+			final Contentlet resultContentlet = workflowAPI.fireContentWorkflow(contentlet, contentletDependencies);
+			response = new ToolResponse.Builder<Contentlet>().entity(resultContentlet).build();
+
 		} catch (Throwable ex) {
-			if (Config.getBooleanProperty("ENABLE_FRONTEND_STACKTRACE", false)) {
+			if (Config.getBooleanProperty("ENABLE_FRONTEND_STACKTRACE", true)) {
 				Logger.error(this, "error in ContentTool.pull. URL: " + request.getRequestURL().toString(), ex);
 			}
-			throw new RuntimeException(ex);
+			response = new ToolResponse.Builder<Contentlet>().errorMessage(ex.getMessage()).build();
 		}
+
+		return  response;
 	}
 
 }

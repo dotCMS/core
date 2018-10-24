@@ -11,6 +11,7 @@ import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.javax.ws.rs.core.UriInfo;
 import com.dotcms.repackage.org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.PATCH;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.v1.HTTPMethod;
@@ -31,6 +32,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
@@ -70,19 +72,6 @@ public class VTLResource {
         this.webResource = webResource;
     }
 
-    @GET
-    @Path("/{folder}")
-    @NoCache
-    @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
-    @Consumes({MediaType.APPLICATION_JSON})
-    public Response get(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
-                        @Context UriInfo uriInfo, @PathParam("folder") final String folderName,
-                        final Map<String, String> requestJSONMap) {
-
-        return get(request, response, uriInfo, folderName, null, requestJSONMap);
-
-    }
-
     /**
      * Returns the output of a convention based "get.vtl" file, located under the given {folder} after being evaluated
      * using the velocity engine.
@@ -97,10 +86,21 @@ public class VTLResource {
     @Consumes({MediaType.APPLICATION_JSON})
     public Response get(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
                         @Context UriInfo uriInfo, @PathParam("folder") final String folderName,
-                        @PathParam("pathParam") final String pathParams, final Map<String, String> requestJSONMap) {
+                        @PathParam("pathParam") final String pathParams, final Map<String, String> bodyMap) {
 
-        return processRequest(request, response, uriInfo, folderName, pathParams, HTTPMethod.GET, requestJSONMap);
+        return processRequest(request, response, uriInfo, folderName, pathParams, HTTPMethod.GET, bodyMap);
+    }
 
+    @GET
+    @Path("/{folder}")
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
+    @Consumes({MediaType.APPLICATION_JSON})
+    public Response get(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
+                        @Context UriInfo uriInfo, @PathParam("folder") final String folderName,
+                        final Map<String, String> bodyMap) {
+
+        return get(request, response, uriInfo, folderName, null, bodyMap);
     }
 
     /**
@@ -118,9 +118,62 @@ public class VTLResource {
     public final Response post(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
                                @Context UriInfo uriInfo, @PathParam("folder") final String folderName,
                                @PathParam("path") final String pathParams,
-                                   final Map<String, String> requestJSONMap) {
+                                   final Map<String, String> bodyMap) {
 
-        return processRequest(request, response, uriInfo, folderName, pathParams, HTTPMethod.POST, requestJSONMap);
+        return processRequest(request, response, uriInfo, folderName, pathParams, HTTPMethod.POST, bodyMap);
+    }
+
+    @POST
+    @Path("/{folder}")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
+    @Consumes({MediaType.APPLICATION_JSON})
+    public final Response post(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
+                               @Context UriInfo uriInfo, @PathParam("folder") final String folderName,
+                               final Map<String, String> bodyMap) {
+
+        return processRequest(request, response, uriInfo, folderName, null, HTTPMethod.POST, bodyMap);
+    }
+
+    /**
+     * Returns the output of a convention based "put.vtl" file, located under the given {folder} after being evaluated
+     * using the velocity engine.
+     *
+     * "put.vtl" code determines whether the response is a JSON object or anything else (XML, text-plain).
+     */
+    @PUT
+    @Path("/{folder}/{path: .*}")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
+    @Consumes({MediaType.APPLICATION_JSON})
+    public final Response put(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
+                               @Context UriInfo uriInfo, @PathParam("folder") final String folderName,
+                               @PathParam("path") final String pathParams,
+                               final Map<String, String> bodyMap) {
+
+        return processRequest(request, response, uriInfo, folderName, pathParams, HTTPMethod.PUT, bodyMap);
+    }
+
+    /**
+     * Returns the output of a convention based "patch.vtl" file, located under the given {folder} after being evaluated
+     * using the velocity engine.
+     *
+     * "patch.vtl" code determines whether the response is a JSON object or anything else (XML, text-plain).
+     */
+    @PATCH
+    @Path("/{folder}/{path: .*}")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
+    @Consumes({MediaType.APPLICATION_JSON})
+    public final Response patch(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
+                              @Context UriInfo uriInfo, @PathParam("folder") final String folderName,
+                              @PathParam("path") final String pathParams,
+                              final Map<String, String> bodyMap) {
+
+        return processRequest(request, response, uriInfo, folderName, pathParams, HTTPMethod.PATCH, bodyMap);
     }
 
     /**
@@ -147,7 +200,7 @@ public class VTLResource {
                                     @Context UriInfo uriInfo, @PathParam("folder") String folderName,
                                     @PathParam("path") String pathParam,
                                     final HTTPMethod httpMethod,
-                                    final Map<String, String> requestJSONMap) {
+                                    final Map<String, String> bodyMap) {
         final InitDataObject initDataObject = this.webResource.init
                 (null, false, request, false, null);
 
@@ -166,7 +219,7 @@ public class VTLResource {
             final Map<String, Object> contextParams = CollectionsUtils.map(
                     "pathParam", pathParam,
                     "queryParams", uriInfo.getQueryParameters(),
-                    "requestJSONMap", requestJSONMap);
+                    "bodyMap", bodyMap);
 
             return evalVTLFile(request, response, getFileAsset, contextParams,
                     initDataObject.getUser(), cache);
@@ -206,6 +259,10 @@ public class VTLResource {
                 return Response.ok(evalResult.toString()).build();
             } else {
                 // let's add it to cache
+                if(UtilMethods.isSet(dotJSON.get("errors"))) {
+                    return Response.status(Response.Status.BAD_REQUEST).entity(dotJSON.get("errors")).build();
+                }
+
                 cache.add(request, user, dotJSON);
                 return Response.ok(dotJSON.getMap()).build();
             }
