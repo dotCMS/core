@@ -56,6 +56,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 import java.util.List;
 import java.util.Optional;
 import org.apache.commons.lang.StringUtils;
@@ -199,6 +200,9 @@ public class FieldAPIImpl implements FieldAPI {
             //checking if the relationship is against a content type or an existing relationship
             if (relationType.length > 1){
                 relationship = relationshipAPI.byTypeValue(field.relationType());
+            } else{
+                relationship = relationshipAPI
+                        .byTypeValue(type.variable() + StringPool.PERIOD + field.variable());
             }
 
             //verify if the relationship already exists
