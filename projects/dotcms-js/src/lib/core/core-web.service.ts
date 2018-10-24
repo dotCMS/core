@@ -7,7 +7,7 @@ import {
     URLSearchParams
 } from '@angular/http';
 import { Injectable } from '@angular/core';
-import { Subject, Observable } from 'rxjs';
+import { Subject, Observable, throwError } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 
 import {
@@ -129,7 +129,7 @@ export class CoreWebService {
      */
     public requestView(options: RequestOptionsArgs): Observable<ResponseView> {
         const request = this.getRequestOpts(options);
-
+        console.log('BBBBBB');
         return this._http.request(request).pipe(
             map((resp) => {
                 if (resp.json().errors && resp.json().errors.length > 0) {
@@ -138,9 +138,7 @@ export class CoreWebService {
                     return new ResponseView(resp);
                 }
             }),
-            catchError((err) => {
-                throw this.handleRequestViewErrors(err);
-            })
+            catchError((err) => throwError(this.handleRequestViewErrors(err)))
         );
     }
 
