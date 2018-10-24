@@ -42,7 +42,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
-import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.io.StringWriter;
 import java.util.Map;
 import java.util.Optional;
@@ -110,14 +111,14 @@ public class VTLResource {
      * "post.vtl" code determines whether the response is a JSON object or anything else (XML, text-plain).
      */
     @POST
-    @Path("/{folder}/{path: .*}")
+    @Path("/{folder}/{pathParam: .*}")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
     @Consumes({MediaType.APPLICATION_JSON})
     public final Response post(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
                                @Context UriInfo uriInfo, @PathParam("folder") final String folderName,
-                               @PathParam("path") final String pathParams,
+                               @PathParam("pathParam") final String pathParams,
                                    final Map<String, String> bodyMap) {
 
         return processRequest(request, response, uriInfo, folderName, pathParams, HTTPMethod.POST, bodyMap);
@@ -143,14 +144,14 @@ public class VTLResource {
      * "put.vtl" code determines whether the response is a JSON object or anything else (XML, text-plain).
      */
     @PUT
-    @Path("/{folder}/{path: .*}")
+    @Path("/{folder}/{pathParam: .*}")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
     @Consumes({MediaType.APPLICATION_JSON})
     public final Response put(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
                                @Context UriInfo uriInfo, @PathParam("folder") final String folderName,
-                               @PathParam("path") final String pathParams,
+                               @PathParam("pathParam") final String pathParams,
                                final Map<String, String> bodyMap) {
 
         return processRequest(request, response, uriInfo, folderName, pathParams, HTTPMethod.PUT, bodyMap);
@@ -196,9 +197,9 @@ public class VTLResource {
         return processRequest(request, response, uriInfo, folderName, pathParams, HTTPMethod.DELETE, requestJSONMap);
     }
 
-    private Response processRequest(@Context HttpServletRequest request, @Context HttpServletResponse response,
-                                    @Context UriInfo uriInfo, @PathParam("folder") String folderName,
-                                    @PathParam("path") String pathParam,
+    private Response processRequest(final HttpServletRequest request, final HttpServletResponse response,
+                                    final UriInfo uriInfo, final String folderName,
+                                    final String pathParam,
                                     final HTTPMethod httpMethod,
                                     final Map<String, String> bodyMap) {
         final InitDataObject initDataObject = this.webResource.init
@@ -210,7 +211,7 @@ public class VTLResource {
         final Optional<DotJSON> dotJSONOptional = cache.get(request, initDataObject.getUser());
 
         if(dotJSONOptional.isPresent()) {
-            return Response.ok(dotJSONOptional.get()).build();
+            return Response.ok(dotJSONOptional.get().getMap()).build();
         }
 
         try {
@@ -251,8 +252,8 @@ public class VTLResource {
 
         final StringWriter evalResult = new StringWriter();
 
-        try (final InputStream fileAssetIputStream = getFileAsset.getInputStream()) {
-            VelocityUtil.getEngine().evaluate(context, evalResult, "", fileAssetIputStream);
+        try (final Reader targetReader = new InputStreamReader(getFileAsset.getInputStream())) {
+            VelocityUtil.getEngine().evaluate(context, evalResult, "", targetReader);
             final DotJSON dotJSON = (DotJSON) context.get("dotJSON");
 
             if(dotJSON.size()==0) { // If dotJSON is not used let's return the raw evaluation of the velocity file
