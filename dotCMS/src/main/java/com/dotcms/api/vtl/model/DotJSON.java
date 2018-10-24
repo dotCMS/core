@@ -14,7 +14,7 @@ public class DotJSON implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @JsonIgnore
-    public static final String CACHE_TTL_KEY = "cache";
+    public static final String CACHE_TTL_KEY = "dotcache";
     @JsonIgnore
     private LocalDateTime cachedSince;
 
