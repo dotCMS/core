@@ -164,13 +164,13 @@ public class WorkflowTool implements ViewTool {
 
 	/**
 	 * Fires a Workflow Action identified by wfActionId using the given map of properties of a contentlet.
-	 * @param wfActionId Id of the action to perform
 	 * @param properties Map of properties of the contentlet to process
+	 * @param wfActionId Id of the action to perform
 	 * @return the resulting content after performing the action
 	 * @throws DotToolException runtime exception to wrap the original exception
 	 */
 
-	public Contentlet fire(final String wfActionId, final Map<String, Object> properties) throws DotToolException {
+	public Contentlet fire(final Map<String, Object> properties, final String wfActionId) throws DotToolException {
 		Contentlet contentlet = new Contentlet();
 
 		try {
