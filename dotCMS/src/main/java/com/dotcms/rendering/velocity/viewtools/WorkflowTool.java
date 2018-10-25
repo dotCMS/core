@@ -15,6 +15,7 @@ import com.dotmarketing.portlets.contentlet.model.IndexPolicyProvider;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
 
@@ -176,6 +177,10 @@ public class WorkflowTool implements ViewTool {
 		try {
 			final MapToContentletPopulator mapToContentletPopulator = MapToContentletPopulator.INSTANCE;
 			contentlet = mapToContentletPopulator.populate(contentlet, properties);
+
+			if(UtilMethods.isSet(properties.get("inode"))) {
+				contentlet.setInode((String) properties.get("inode"));
+			}
 
 			final boolean ALLOW_FRONT_END_SAVING = Config
 					.getBooleanProperty("WORKFLOW_TOOL_ALLOW_FRONT_END_SAVING", false);

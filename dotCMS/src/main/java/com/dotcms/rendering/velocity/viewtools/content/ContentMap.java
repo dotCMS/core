@@ -437,11 +437,7 @@ public class ContentMap {
 	}
 	public boolean isWorking() throws Exception {
 	    return content.isWorking();
-	}
-
-	public Map<String, Object> getFieldValueMap() {
-		return fieldValueMap;
-	}
+	}	
 
 	public String toString() {
 		getContentletsTitle();
