@@ -137,12 +137,18 @@ public class FieldAPIImpl implements FieldAPI {
 		Field result = fieldFactory.save(field);
 
         //if RelationshipField, Relationship record must be added/updated
-        if (field instanceof RelationshipField) {
-              Relationship relationship = getRelationshipForField(field, contentTypeAPI, type);
+      if (field instanceof RelationshipField) {
+          Optional<Relationship> relationship = getRelationshipForField(field, contentTypeAPI,
+                  type);
 
-              relationshipAPI.save(relationship);
-        }
-		//update Content Type mod_date to detect the changes done on the field
+          if (relationship.isPresent()) {
+              relationshipAPI.save(relationship.get());
+              Logger.info(this,
+                      "The relationship has been saved successfully for field " + field.name());
+          }
+
+      }
+      //update Content Type mod_date to detect the changes done on the field
 		contentTypeAPI.updateModDate(type);
 		
 		Structure structure = new StructureTransformer(type).asStructure();
@@ -182,9 +188,10 @@ public class FieldAPIImpl implements FieldAPI {
      * @throws DotDataException
      */
     @VisibleForTesting
-    Relationship getRelationshipForField(Field field, ContentTypeAPI contentTypeAPI,
+    Optional<Relationship> getRelationshipForField(Field field, ContentTypeAPI contentTypeAPI,
             ContentType type) throws DotDataException {
-        Relationship relationship = null;
+        Relationship relationship;
+        ContentType relatedContentType;
         try {
             final String[] relationType = field.relationType().split("\\.");
             final int cardinality = Integer.parseInt(field.values());
@@ -195,7 +202,14 @@ public class FieldAPIImpl implements FieldAPI {
             }
 
             //we need to find the id of the related structure using the velocityVarName set in the relationType
-            ContentType relatedContentType = contentTypeAPI.find(relationType[0]);
+            try {
+                relatedContentType = contentTypeAPI.find(relationType[0]);
+            } catch (NotFoundInDbException e) {
+                Logger.debug(this, "No relationship has been saved for field " + field.name()
+                        + ". The related content type " + relationType[0]
+                        + "could not be found in DB");
+                return Optional.empty();
+            }
 
             //checking if the relationship is against a content type or an existing relationship
             if (relationType.length > 1){
@@ -250,7 +264,7 @@ public class FieldAPIImpl implements FieldAPI {
             throw new DotDataException(e);
         }
 
-        return relationship;
+        return Optional.of(relationship);
     }
 
   @WrapInTransaction
