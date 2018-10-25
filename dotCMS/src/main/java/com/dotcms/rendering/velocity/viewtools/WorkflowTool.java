@@ -1,11 +1,13 @@
 package com.dotcms.rendering.velocity.viewtools;
 
+import com.dotcms.rendering.velocity.viewtools.exception.DotToolException;
 import com.dotcms.rest.MapToContentletPopulator;
 import com.dotmarketing.business.Permissionable;
 import java.util.List;
 import java.util.Map;
 
 import com.dotmarketing.business.RelationshipAPI;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
@@ -165,16 +167,14 @@ public class WorkflowTool implements ViewTool {
 	 * @param wfActionId Id of the action to perform
 	 * @param properties Map of properties of the contentlet to process
 	 * @return the resulting content after performing the action
-	 * @throws DotSecurityException
-	 * @throws DotDataException
+	 * @throws DotToolException runtime exception to wrap the original exception
 	 */
 
-	public ToolResponse<Contentlet> fire(final String wfActionId, final Map<String, Object> properties) {
-		ToolResponse<Contentlet> response;
+	public Contentlet fire(final String wfActionId, final Map<String, Object> properties) throws DotToolException {
+		Contentlet contentlet = new Contentlet();
 
 		try {
 			final MapToContentletPopulator mapToContentletPopulator = MapToContentletPopulator.INSTANCE;
-			Contentlet contentlet = new Contentlet();
 			contentlet = mapToContentletPopulator.populate(contentlet, properties);
 
 			final boolean ALLOW_FRONT_END_SAVING = Config
@@ -193,17 +193,13 @@ public class WorkflowTool implements ViewTool {
 					.indexPolicy(IndexPolicyProvider.getInstance().forSingleContent())
 					.build();
 
-			final Contentlet resultContentlet = workflowAPI.fireContentWorkflow(contentlet, contentletDependencies);
-			response = new ToolResponse.Builder<Contentlet>().entity(resultContentlet).build();
+			contentlet = workflowAPI.fireContentWorkflow(contentlet, contentletDependencies);
 
-		} catch (Throwable ex) {
-			if (Config.getBooleanProperty("ENABLE_FRONTEND_STACKTRACE", true)) {
-				Logger.error(this, "error in ContentTool.pull. URL: " + request.getRequestURL().toString(), ex);
-			}
-			response = new ToolResponse.Builder<Contentlet>().errorMessage(ex.getMessage()).build();
+		} catch (Exception e) {
+			throw new DotToolException(e);
 		}
 
-		return  response;
+		return  contentlet;
 	}
 
 }

@@ -4,6 +4,7 @@ import com.dotcms.api.vtl.model.DotJSON;
 import com.dotcms.cache.DotJSONCache;
 import com.dotcms.cache.DotJSONCacheFactory;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
+import com.dotcms.rendering.velocity.viewtools.exception.DotToolException;
 import com.dotcms.repackage.javax.ws.rs.*;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
@@ -37,6 +38,7 @@ import com.dotmarketing.util.WebKeys;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import org.apache.velocity.exception.MethodInvocationException;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -101,7 +103,7 @@ public class VTLResource {
                         @Context UriInfo uriInfo, @PathParam("folder") final String folderName,
                         final Map<String, String> bodyMap) {
 
-        return get(request, response, uriInfo, folderName, null, bodyMap);
+        return processRequest(request, response, uriInfo, folderName, null, HTTPMethod.GET, bodyMap);
     }
 
     /**
@@ -245,7 +247,7 @@ public class VTLResource {
     private Response evalVTLFile(final HttpServletRequest request, final HttpServletResponse response,
                                  final FileAsset getFileAsset, final Map<String, Object> contextParams,
                                  final User user, final DotJSONCache cache)
-            throws IOException {
+            throws Exception {
         final org.apache.velocity.context.Context context = VelocityUtil.getInstance().getContext(request, response);
         contextParams.forEach(context::put);
         context.put("dotJSON", new DotJSON());
@@ -253,7 +255,13 @@ public class VTLResource {
         final StringWriter evalResult = new StringWriter();
 
         try (final Reader targetReader = new InputStreamReader(getFileAsset.getInputStream())) {
-            VelocityUtil.getEngine().evaluate(context, evalResult, "", targetReader);
+            try {
+                VelocityUtil.getEngine().evaluate(context, evalResult, "", targetReader);
+            } catch(MethodInvocationException e) {
+                if(e.getCause() instanceof DotToolException) {
+                    throw (Exception) (e.getCause()).getCause();
+                }
+            }
             final DotJSON dotJSON = (DotJSON) context.get("dotJSON");
 
             if(dotJSON.size()==0) { // If dotJSON is not used let's return the raw evaluation of the velocity file
