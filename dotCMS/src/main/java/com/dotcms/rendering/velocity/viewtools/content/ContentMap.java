@@ -439,6 +439,10 @@ public class ContentMap {
 	    return content.isWorking();
 	}
 
+	public Map<String, Object> getFieldValueMap() {
+		return fieldValueMap;
+	}
+
 	public String toString() {
 		getContentletsTitle();
 		getStructure();
