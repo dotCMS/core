@@ -121,6 +121,7 @@ import com.dotmarketing.util.TrashUtils;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
+import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.liferay.portal.NoSuchUserException;
@@ -4650,17 +4651,15 @@ public class ESContentletAPIImpl implements ContentletAPI {
         } catch (DotContentletValidationException ve) {
             throw ve;
         } catch (DotSecurityException | DotDataException e) {
-            Logger.error(this,"Error validating contentlet: "+e.getMessage(),e);
+            Logger.error(this, "Error validating contentlet: " + e.getMessage(), e);
         }
 
-        //Validating relationships fields
-        FieldsCache.getFieldsByStructureInode(stInode).stream()
-                .filter(field -> field.getFieldType().equals(FieldType.RELATIONSHIP.toString()))
-                .forEach(field -> validateRelationships(contentlet, contentRelationships, field));
+        validateRelationships(contentlet, contentRelationships);
+
     }
 
     private void validateRelationships(final Contentlet contentlet,
-            final ContentletRelationships contentRelationships, Field field) throws DotContentletValidationException {
+            final ContentletRelationships contentRelationships) throws DotContentletValidationException {
 
         boolean hasError = false;
 
@@ -4669,8 +4668,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 "Contentlet's fields are not valid");
 
         if (contentRelationships != null) {
-            List<ContentletRelationshipRecords> records = contentRelationships
-                    .getRelationshipsRecordsByField(field.getFieldRelationType());
+            List<ContentletRelationshipRecords> records = contentRelationships.getRelationshipsRecords();
+
             for (ContentletRelationshipRecords cr : records) {
                 Relationship rel = cr.getRelationship();
                 List<Contentlet> cons = cr.getRecords();
@@ -4678,6 +4677,16 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     cons = new ArrayList<>();
                 }
 
+                if (rel.getCardinality() == RELATIONSHIP_CARDINALITY.ONE_TO_ONE
+                        .ordinal() && cons.size() > 1){
+                    StringBuilder error = new StringBuilder();
+                    error.append("ERROR! Relationship with ").append(rel.getRelationTypeValue())
+                            .append(" has been defined as One to One");
+                    Logger.error(this, error.toString());
+                    cve.addBadCardinalityRelationship(rel, cons);
+                    hasError = true;
+                    continue;
+                }
                 //There is a case when the Relationship is between same structures
                 //We need to validate that case
                 boolean isRelationshipParent = true;
@@ -4705,7 +4714,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                             // If there's a 1-N relationship and the parent
                             // content is relating to a child that already has
                             // a parent...
-                            if (rel.getCardinality() == 0
+                            if (rel.getCardinality() == RELATIONSHIP_CARDINALITY.ONE_TO_MANY.ordinal()
                                     && relatedCon.size() > 0
                                     && !relatedCon.get(0).getIdentifier()
                                     .equals(contentlet.getIdentifier())) {
@@ -4717,7 +4726,16 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                 Logger.error(this, error.toString());
                                 hasError = true;
                                 cve.addBadCardinalityRelationship(rel, cons);
+                            } else if (rel.getCardinality() == RELATIONSHIP_CARDINALITY.ONE_TO_ONE
+                                    .ordinal() && relatedCon.size() > 0){
+                                StringBuilder error = new StringBuilder();
+                                error.append("ERROR! Relationship with ").append(rel.getRelationTypeValue())
+                                        .append(" has been defined as One to One");
+                                Logger.error(this, error.toString());
+                                cve.addBadCardinalityRelationship(rel, cons);
+                                hasError = true;
                             }
+
                             if (!con.getStructureInode().equalsIgnoreCase(rel.getChildStructureInode())) {
                                 hasError = true;
                                 cve.addInvalidContentRelationship(rel, cons);
@@ -4735,7 +4753,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     }
                     // If there's a 1-N relationship and the child content is
                     // trying to relate to one more parent...
-                    if (rel.getCardinality() == 0 && cons.size() > 1) {
+                    if (rel.getCardinality() == RELATIONSHIP_CARDINALITY.ONE_TO_MANY.ordinal() && cons.size() > 1) {
                         StringBuilder error = new StringBuilder();
                         error.append("ERROR! Child content [").append(contentlet.getIdentifier())
                                 .append("] is already related to another parent content [");
@@ -4747,6 +4765,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                         hasError = true;
                         cve.addBadCardinalityRelationship(rel, cons);
                     }
+
                     for (Contentlet con : cons) {
                         if (null != rel.getParentStructureInode() && !con.getStructureInode().equalsIgnoreCase(
                                 rel.getParentStructureInode())) {

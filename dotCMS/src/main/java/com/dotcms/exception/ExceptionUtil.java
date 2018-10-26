@@ -264,7 +264,7 @@ public class ExceptionUtil {
                             errorMessage = "message.contentlet.relationship.bad";
                             break;
                         case VALIDATION_FAILED_BAD_CARDINALITY:
-                            errorMessage = "message.contentlet.relationship.caridanility.bad";
+                            errorMessage = "message.contentlet.relationship.cardinality.bad";
                             break;
                     }
 

@@ -129,7 +129,7 @@
 						</a>
 					</td>
 					<td align="center">
-						<%=relationship.getCardinality() == com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY.ONE_TO_MANY.ordinal()?"1-N":"M-N"%>
+						<%=LanguageUtil.get(pageContext, "relationship.cardinality." + relationship.getCardinality())%>
 					</td>
 					<td align="center"><%=(relationship.isParentRequired()) ? LanguageUtil.get(pageContext, "Yes") : LanguageUtil.get(pageContext, "No") %></td>
 					<td align="center"><%=(relationship.isChildRequired()) ? LanguageUtil.get(pageContext, "Yes") : LanguageUtil.get(pageContext, "No")%></td>

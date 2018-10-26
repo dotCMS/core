@@ -157,21 +157,25 @@ public class EditRelationshipAction extends DotPortletAction {
 			Structure childStructure  = null;
 			if(InodeUtils.isSet(relationshipForm.getParentStructureInode()) || 
 					InodeUtils.isSet(relationshipForm.getChildStructureInode())){
-				parentStructure = CacheLocator.getContentTypeCache().getStructureByInode(relationshipForm.getParentStructureInode());
-				childStructure  = CacheLocator.getContentTypeCache().getStructureByInode(relationshipForm.getChildStructureInode());
+				parentStructure = CacheLocator.getContentTypeCache()
+						.getStructureByInode(relationshipForm.getParentStructureInode());
+				childStructure = CacheLocator.getContentTypeCache()
+						.getStructureByInode(relationshipForm.getChildStructureInode());
 			}
 			if(parentStructure!=null && childStructure!=null){
 
 				if(!relationship.isFixed()){
-
-					//TODO: Add field.velocityVarName. Remove hardcoded
-					String relationshipTypeValue = "newRel-" + relationshipForm.getParentRelationName().replaceAll("\\s", "_").replaceAll("[^a-zA-Z0-9\\_]", "") +
-					"-" + relationshipForm.getChildRelationName().replaceAll("\\s", "_").replaceAll("[^a-zA-Z0-9\\_]", "");
+					String relationshipTypeValue =
+							relationshipForm.getParentRelationName().replaceAll("\\s", "_")
+									.replaceAll("[^a-zA-Z0-9\\_]", "") +
+									"-" + relationshipForm.getChildRelationName()
+									.replaceAll("\\s", "_").replaceAll("[^a-zA-Z0-9\\_]", "");
 
 					String lastRelationshipTypeValue = relationship.getRelationTypeValue();
 
 					//Preserve old tree relationship if the relation name be changed
-					if (InodeUtils.isSet(relationship.getInode()) && !relationshipTypeValue.equals(lastRelationshipTypeValue)) {
+					if (InodeUtils.isSet(relationship.getInode()) && !relationshipTypeValue
+							.equals(lastRelationshipTypeValue)) {
 						DotConnect dc = new DotConnect ();
 						dc.setSQL("update tree set relation_type = '" + relationshipTypeValue + 
 								"' where relation_type = '" + lastRelationshipTypeValue + "'");
@@ -182,14 +186,8 @@ public class EditRelationshipAction extends DotPortletAction {
 					BeanUtils.copyProperties(relationship,relationshipForm);
 
 					if (!relationshipTypeValue.equals(relationship.getRelationTypeValue())) {
-						Relationship oRel = APILocator.getRelationshipAPI().byTypeValue(relationshipTypeValue);
-						/*if (InodeUtils.isSet(oRel.getInode()) && !oRel.getInode().equalsIgnoreCase(relationship.getInode())) {
-							String message = "error.relationship.same.relation.exist";
-							SessionMessages.add(req, "error",message);
-							return false;
-						}*/
-
-						List<Tree> treesToUpdate = TreeFactory.getTreesByRelationType(relationshipForm.getRelationTypeValue());
+						List<Tree> treesToUpdate = TreeFactory
+								.getTreesByRelationType(relationshipForm.getRelationTypeValue());
 						for (Tree theTree : treesToUpdate) {
 							theTree.setRelationType(relationshipTypeValue);
 						}
