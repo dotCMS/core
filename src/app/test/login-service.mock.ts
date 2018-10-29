@@ -47,6 +47,10 @@ export class LoginServiceMock {
         return observableOf(mockUserWithRedirect);
     }
 
+    logOutUser(): Observable<any> {
+        return observableOf({});
+    }
+
     watchUser(func: Function): void {
         this.watchUserFunc = func;
     }

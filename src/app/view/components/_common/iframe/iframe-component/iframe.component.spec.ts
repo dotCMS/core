@@ -21,6 +21,7 @@ describe('IframeComponent', () => {
     let iframeEl: DebugElement;
     let dotIframeService: DotIframeService;
     let dotUiColorsService: DotUiColorsService;
+    let loginService: LoginService;
 
     beforeEach(async(() => {
         DOTTestBed.configureTestingModule({
@@ -44,6 +45,7 @@ describe('IframeComponent', () => {
 
         dotIframeService = de.injector.get(DotIframeService);
         dotUiColorsService = de.injector.get(DotUiColorsService);
+        loginService = de.injector.get(LoginService);
 
         spyOn(dotUiColorsService, 'setColors');
 
@@ -169,5 +171,20 @@ describe('IframeComponent', () => {
         });
     });
 
-    xit('should trigger keydown', () => {});
+    describe('iframe errors', () => {
+        it('should logout on 401', () => {
+            spyOn(loginService, 'logOutUser').and.callThrough();
+
+            iframeEl.triggerEventHandler('load', {
+                target: {
+                    contentDocument: {
+                        title: '401'
+                    }
+                }
+            });
+
+            expect(loginService.logOutUser).toHaveBeenCalledTimes(1);
+        });
+    });
+
 });
