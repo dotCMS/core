@@ -4738,7 +4738,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                 hasError = true;
                                 cve.addBadCardinalityRelationship(rel, cons);
                             } else if (rel.getCardinality() == RELATIONSHIP_CARDINALITY.ONE_TO_ONE
-                                    .ordinal() && relatedCon.size() > 0){
+                                    .ordinal() && relatedCon.size() > 0 && !relatedCon.get(0).getIdentifier()
+                                    .equals(contentlet.getIdentifier())){
                                 StringBuilder error = new StringBuilder();
                                 error.append("ERROR! Relationship ").append(rel.getRelationTypeValue())
                                         .append(" has been defined as One to One");
