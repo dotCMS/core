@@ -7,14 +7,12 @@ import java.util.List;
 import java.util.Map;
 
 import com.dotmarketing.business.RelationshipAPI;
-import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicyProvider;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.Config;
-import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
@@ -55,10 +53,9 @@ public class WorkflowTool implements ViewTool {
 	private final CategoryAPI categoryAPI = APILocator.getCategoryAPI();
 	private final RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
 	private User user;
-	private HttpServletRequest request;
 
 	public void init(final Object initData) {
-		request = ((ViewContext) initData).getRequest();
+		HttpServletRequest request = ((ViewContext) initData).getRequest();
 		user = getUser(request);
 	}
 

@@ -5,16 +5,16 @@ import com.dotmarketing.exception.DotRuntimeException;
 public class DotToolException extends DotRuntimeException {
     private static final long serialVersionUID = 1L;
 
-    public DotToolException(Throwable x){
-        super(x.getMessage(),x);
+    public DotToolException(final Throwable cause){
+        super(cause.getMessage(),cause);
     }
 
-    public DotToolException(String x) {
-        super(x);
+    public DotToolException(final String message) {
+        super(message);
     }
 
-    public DotToolException(String x, Exception cause) {
-        super(x, cause);
+    public DotToolException(final String message, final Exception cause) {
+        super(message, cause);
     }
 }
 
