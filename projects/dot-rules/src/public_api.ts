@@ -1,7 +1,7 @@
 /*
  * Public API Surface of dot-rules
  */
-export * from './lib/app.module';
+export * from './lib/rule-engine.module';
 export * from './lib/app.component';
 export * from './lib/condition-types/serverside-condition/serverside-condition';
 export * from './lib/custom-types/visitors-location/visitors-location.component';

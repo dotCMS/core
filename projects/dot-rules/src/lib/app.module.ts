@@ -6,7 +6,7 @@ import { AppRulesComponent } from './app.component';
 import { RuleEngineModule } from './rule-engine.module';
 
 @NgModule({
-    declarations: [AppRulesComponent],
+    declarations: [],
     imports: [
         BrowserModule,
         RuleEngineModule,
@@ -15,6 +15,7 @@ import { RuleEngineModule } from './rule-engine.module';
         })
     ],
     providers: [],
-    bootstrap: [AppRulesComponent]
+    exports: [],
+    bootstrap: []
 })
-export class AppModule {}
+export class AppRulesModule {}
