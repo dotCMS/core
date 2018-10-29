@@ -48,8 +48,9 @@ import {
   DropdownModule, MultiSelectModule, InputTextModule, InputSwitchModule,
   AutoCompleteModule, ButtonModule, DialogModule, MessagesModule, MessageModule, CalendarModule
 } from 'primeng/primeng';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+
 import { DotAutocompleteTagsModule } from './components/dot-autocomplete-tags/dot-autocomplete-tags.module';
+import { AppRulesComponent } from './app.component';
 
 
 @NgModule({
@@ -58,7 +59,6 @@ import { DotAutocompleteTagsModule } from './components/dot-autocomplete-tags/do
         FormsModule,
         ReactiveFormsModule,
         DropdownModule,
-        BrowserAnimationsModule,
         MultiSelectModule,
         InputTextModule,
         InputSwitchModule,
@@ -91,7 +91,8 @@ import { DotAutocompleteTagsModule } from './components/dot-autocomplete-tags/do
         RuleEngineContainer,
         ServersideCondition,
         VisitorsLocationComponent,
-        VisitorsLocationContainer
+        VisitorsLocationContainer,
+        AppRulesComponent
     ],
     providers: [
         ApiRoot,
@@ -115,6 +116,6 @@ import { DotAutocompleteTagsModule } from './components/dot-autocomplete-tags/do
         I18nService,
         RuleService
     ],
-    exports: [RuleEngineContainer]
+    exports: [RuleEngineContainer, AppRulesComponent]
 })
 export class RuleEngineModule {}
