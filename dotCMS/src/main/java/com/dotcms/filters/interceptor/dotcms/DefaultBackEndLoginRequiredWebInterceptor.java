@@ -114,12 +114,31 @@ public class DefaultBackEndLoginRequiredWebInterceptor implements WebInterceptor
                             .stripReferer(request, completeRequestedURL));
                 }
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.setContentType("text/html");
+                response.getWriter().print(unauthorizedHtmlResponse());
 
                 result = Result.SKIP_NO_CHAIN; // needs to stop the filter chain.
             }
         }
 
         return result; // if it is log in, continue!
+    }
+
+    /**
+     * HTML response that will be mainly use for angular in order to identify we have a 401.
+     * Basically from angular there is not a simpler way to identify the status of the requested URL
+     * by an iframe but angular can check things like the title of the iframe and handle according
+     * to that.
+     */
+    private String unauthorizedHtmlResponse() {
+
+        return ""
+                + "<html>\n"
+                + " <head>\n"
+                + "     <title>401</title>\n"
+                + " </head>\n"
+                + " <body></body>\n"
+                + "</html>";
     }
 
 }
