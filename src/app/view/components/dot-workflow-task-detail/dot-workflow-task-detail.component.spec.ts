@@ -5,7 +5,7 @@ import { DebugElement } from '@angular/core';
 import { RouterTestingModule } from '@angular/router/testing';
 import { async, ComponentFixture } from '@angular/core/testing';
 
-import { LoginService } from 'dotcms-js/dotcms-js';
+import { LoginService } from 'dotcms-js';
 
 import { DOTTestBed } from '../../../test/dot-test-bed';
 import { DotWorkflowTaskDetailService } from './services/dot-workflow-task-detail.service';

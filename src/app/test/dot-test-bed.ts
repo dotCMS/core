@@ -14,7 +14,7 @@ import {
     LoggerService,
     StringUtils,
     UserModel
-} from 'dotcms-js/dotcms-js';
+} from 'dotcms-js';
 import { ConfirmationService } from 'primeng/primeng';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { NGFACES_MODULES } from '../modules';

@@ -14,7 +14,7 @@ import {
 import { ReactiveFormsModule } from '@angular/forms';
 import { FieldValidationMessageModule } from '@components/_common/field-validation-message/file-validation-message.module';
 import { DotMessageService } from '@services/dot-messages-service';
-import { LoginService, SocketFactory } from 'dotcms-js/dotcms-js';
+import { LoginService, SocketFactory } from 'dotcms-js';
 import { Router } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 import { Observable, Subject } from 'rxjs';

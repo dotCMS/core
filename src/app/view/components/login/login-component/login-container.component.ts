@@ -5,7 +5,7 @@ import {
     LoggerService,
     HttpCode,
     User
-} from 'dotcms-js/dotcms-js';
+} from 'dotcms-js';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { DotLoadingIndicatorService } from '../../_common/iframe/dot-loading-indicator/dot-loading-indicator.service';
 

@@ -22,7 +22,7 @@ import { mockDotRenderedPage } from '../../../../../test/dot-rendered-page.mock'
 import { DotDeviceSelectorComponent } from '@components/dot-device-selector/dot-device-selector.component';
 import { DotPersonaSelectorComponent } from '@components/dot-persona-selector/dot-persona-selector.component';
 import { DotLanguageSelectorComponent } from '@components/dot-language-selector/dot-language-selector.component';
-import { LoginService } from 'dotcms-js/dotcms-js';
+import { LoginService } from 'dotcms-js';
 import { DotLicenseService } from '@services/dot-license/dot-license.service';
 import { of } from 'rxjs';
 import { MockDotMessageService } from '../../../../../test/dot-message-service.mock';

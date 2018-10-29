@@ -1,5 +1,5 @@
 import { Component, ViewEncapsulation, Input, Output, EventEmitter, OnInit } from '@angular/core';
-import { LoginService, LoggerService } from 'dotcms-js/dotcms-js';
+import { LoginService, LoggerService } from 'dotcms-js';
 import { ChangePasswordData } from './reset-password-container.component';
 
 @Component({

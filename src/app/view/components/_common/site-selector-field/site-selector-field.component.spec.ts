@@ -3,7 +3,7 @@ import { DOTTestBed } from '../../../../test/dot-test-bed';
 import { DebugElement, Component } from '@angular/core';
 import { SiteSelectorFieldComponent } from './site-selector-field.component';
 import { SiteSelectorModule } from '../site-selector/site-selector.module';
-import { SiteService } from 'dotcms-js/dotcms-js';
+import { SiteService } from 'dotcms-js';
 import { SiteServiceMock } from '../../../../test/site-service.mock';
 import { async, ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormGroup, FormBuilder } from '@angular/forms';

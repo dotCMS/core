@@ -4,7 +4,7 @@ import { DebugElement } from '@angular/core';
 import { DOTTestBed } from '../../../../../test/dot-test-bed';
 import { DotReorderMenuComponent } from './dot-reorder-menu.component';
 import { DotIframeDialogModule } from '../../../dot-iframe-dialog/dot-iframe-dialog.module';
-import { LoginService } from 'dotcms-js/dotcms-js';
+import { LoginService } from 'dotcms-js';
 import { LoginServiceMock } from '../../../../../test/login-service.mock';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { DotMessageService } from '@services/dot-messages-service';

@@ -4,7 +4,7 @@ import { ActivatedRoute, UrlSegment } from '@angular/router';
 
 import { BehaviorSubject } from 'rxjs';
 
-import { SiteService, DotcmsEventsService, LoggerService } from 'dotcms-js/dotcms-js';
+import { SiteService, DotcmsEventsService, LoggerService } from 'dotcms-js';
 
 import { DotContentletService } from '@services/dot-contentlet/dot-contentlet.service';
 import { DotLoadingIndicatorService } from '../dot-loading-indicator/dot-loading-indicator.service';

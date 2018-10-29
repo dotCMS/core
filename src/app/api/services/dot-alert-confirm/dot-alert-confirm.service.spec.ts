@@ -1,7 +1,7 @@
 import { MockDotMessageService } from '../../../test/dot-message-service.mock';
 import { DotAlertConfirm } from '@models/dot-alert-confirm/dot-alert-confirm.model';
 import { ConfirmationService } from 'primeng/primeng';
-import { LoginService } from 'dotcms-js/dotcms-js';
+import { LoginService } from 'dotcms-js';
 import { DotAlertConfirmService } from './dot-alert-confirm.service';
 import { DOTTestBed } from '../../../test/dot-test-bed';
 import { LoginServiceMock } from '../../../test/login-service.mock';

@@ -1,5 +1,5 @@
 import { of as observableOf, Observable, Subject } from 'rxjs';
-import { User, Auth } from 'dotcms-js/dotcms-js';
+import { User, Auth } from 'dotcms-js';
 
 export const mockUser: User = {
     emailAddress: 'admin@dotcms.com',

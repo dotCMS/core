@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { NotLicensedService } from '@services/not-licensed-service';
-import { DotcmsConfig } from 'dotcms-js/dotcms-js';
+import { DotcmsConfig } from 'dotcms-js';
 import { DotUiColors, DotUiColorsService } from '@services/dot-ui-colors/dot-ui-colors.service';
 import { take, pluck } from 'rxjs/operators';
 

@@ -12,7 +12,7 @@ import {
     SocketFactory,
     StringUtils,
     UserModel
-} from 'dotcms-js/dotcms-js';
+} from 'dotcms-js';
 
 // Common Modules
 import { DotDropdownModule } from '@components/_common/dropdown-component/dot-dropdown.module';

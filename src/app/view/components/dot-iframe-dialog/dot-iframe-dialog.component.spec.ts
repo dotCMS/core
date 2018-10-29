@@ -6,7 +6,7 @@ import { async, ComponentFixture } from '@angular/core/testing';
 import { DOTTestBed } from '../../../test/dot-test-bed';
 import { DotIframeDialogComponent } from './dot-iframe-dialog.component';
 import { IFrameModule } from '../_common/iframe';
-import { LoginService } from 'dotcms-js/dotcms-js';
+import { LoginService } from 'dotcms-js';
 import { LoginServiceMock } from '../../../test/login-service.mock';
 import { RouterTestingModule } from '@angular/router/testing';
 import { IframeComponent } from '../_common/iframe/iframe-component';

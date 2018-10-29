@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { CoreWebService } from 'dotcms-js/dotcms-js';
+import { CoreWebService } from 'dotcms-js';
 import { RequestMethod } from '@angular/http';
 import { FieldVariable } from '../content-type-fields-variables/content-type-fields-variables.component';
 import { pluck } from 'rxjs/operators';

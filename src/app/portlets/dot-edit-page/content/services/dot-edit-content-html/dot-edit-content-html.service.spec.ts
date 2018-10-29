@@ -7,7 +7,7 @@ import { DotDragDropAPIHtmlService } from '../html/dot-drag-drop-api-html.servic
 import { DotDOMHtmlUtilService } from '../html/dot-dom-html-util.service';
 import { DotMessageService } from '@services/dot-messages-service';
 import { MockDotMessageService } from '../../../../../test/dot-message-service.mock';
-import { LoggerService, StringUtils } from 'dotcms-js/dotcms-js';
+import { LoggerService, StringUtils } from 'dotcms-js';
 import { DOTTestBed } from '../../../../../test/dot-test-bed';
 import { DotAlertConfirmService } from '@services/dot-alert-confirm/dot-alert-confirm.service';
 import { DotPageContent } from '../../../../dot-edit-page/shared/models/dot-page-content.model';

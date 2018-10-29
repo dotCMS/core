@@ -8,7 +8,7 @@ import { DotContentletWrapperComponent } from '../dot-contentlet-wrapper/dot-con
 import { DotCreateContentletComponent } from './dot-create-contentlet.component';
 import { DotIframeDialogModule } from '../../../dot-iframe-dialog/dot-iframe-dialog.module';
 import { DotMenuService } from '@services/dot-menu.service';
-import { LoginService } from 'dotcms-js/dotcms-js';
+import { LoginService } from 'dotcms-js';
 import { LoginServiceMock } from '../../../../../test/login-service.mock';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { RouterTestingModule } from '@angular/router/testing';

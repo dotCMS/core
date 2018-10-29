@@ -8,7 +8,7 @@ import {
     AfterViewInit
 } from '@angular/core';
 import { LoginData } from './login-container.component';
-import { LoginService, LoggerService } from 'dotcms-js/dotcms-js';
+import { LoginService, LoggerService } from 'dotcms-js';
 
 @Component({
     encapsulation: ViewEncapsulation.Emulated,

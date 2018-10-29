@@ -1,4 +1,5 @@
 import { AccountService, AccountUser } from '@services/account-service';
+
 import {
     Component,
     EventEmitter,
@@ -14,8 +15,7 @@ import { Subject } from 'rxjs';
 
 import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
 import { DotMessageService } from '@services/dot-messages-service';
-import { DotcmsConfig } from 'dotcms-js/dotcms-js';
-import { LoginService, User, Auth } from 'dotcms-js/dotcms-js';
+import { DotcmsConfig, LoginService, User, Auth } from 'dotcms-js';
 import { StringFormat } from '../../../api/util/stringFormat';
 
 @Component({
