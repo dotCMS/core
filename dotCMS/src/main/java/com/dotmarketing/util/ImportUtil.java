@@ -1345,7 +1345,11 @@ public class ImportUtil {
 
         boolean error = false;
 
-        Relationship relationship =  APILocator.getRelationshipAPI().byTypeValue(field.getFieldRelationType());
+        String fieldRelationType = field.getFieldRelationType();
+        Relationship relationship = APILocator.getRelationshipAPI().byTypeValue(
+                fieldRelationType.contains(StringPool.PERIOD) ? fieldRelationType
+                        : cont.getContentType().variable() + StringPool.PERIOD + field
+                                .getVelocityVarName());
 
         if(relationship!=null && InodeUtils.isSet(relationship.getInode())) {
 

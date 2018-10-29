@@ -47,6 +47,7 @@ import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships.ContentletRelationshipRecords;
 import com.dotmarketing.portlets.structure.model.Field;
+import com.dotmarketing.portlets.structure.model.Field.FieldType;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.business.DotWorkflowException;
@@ -66,6 +67,7 @@ import com.liferay.util.FileUtil;
 import com.liferay.util.LocaleUtil;
 import com.liferay.util.StringPool;
 import com.liferay.util.servlet.SessionMessages;
+import java.util.stream.Collectors;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.struts.Globals;
@@ -1983,6 +1985,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 
 				writer.print("\r\n");
 				for(Contentlet content :  contentletsList2 ){
+					ContentletRelationships relationships = this.conAPI.getAllRelationships(content);
 					List<Category> catList = (List<Category>) catAPI.getParents(content, user, false);
 					writer.print(content.getIdentifier());
 					Language lang =APILocator.getLanguageAPI().getLanguage(content.getLanguageId());
@@ -2032,6 +2035,15 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 							            }
 							        }
 							    }
+							} else if (field.getFieldType().equals(FieldType.RELATIONSHIP.toString())) {
+								String fieldRelationType = field.getFieldRelationType();
+								text = loadRelationships(relationships
+										.getRelationshipsRecordsByField(
+												fieldRelationType.contains(StringPool.PERIOD)
+														? fieldRelationType
+														: content.getContentType().variable()
+																+ StringPool.PERIOD + field
+																.getVelocityVarName()));
 							} else{
 								if (value instanceof Date || value instanceof Timestamp) {
 									if(field.getFieldType().equals(Field.FieldType.DATE.toString())) {
@@ -2077,6 +2089,22 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		else {
 			try {writer.print("\r\n");} catch (Exception e) {	Logger.debug(this,"Error: download to excel "+e);	}
 		}
+	}
+
+	/**
+	 * Builds the list of related records separated by comma
+	 */
+	private String loadRelationships(List<ContentletRelationshipRecords> relationshipRecords)
+			throws DotDataException {
+
+		final StringBuilder result = new StringBuilder();
+
+		relationshipRecords.forEach(record -> result.append(String
+				.join(StringPool.COMMA,
+						record.getRecords().stream().map(Contentlet::getIdentifier).collect(
+								Collectors.toList()))));
+
+		return result.toString();
 	}
 
 	/**
