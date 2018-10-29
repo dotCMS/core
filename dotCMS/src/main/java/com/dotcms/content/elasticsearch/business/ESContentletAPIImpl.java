@@ -1122,6 +1122,17 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     }
                 }
                 return categoryList;
+            }else if(theField.getFieldType().equals(FieldType.RELATIONSHIP.toString())) {
+                Relationship relationship;
+                final String[] relationType = theField.getFieldRelationType().split("\\.");
+                if (relationType.length > 1){
+                    relationship = relationshipAPI.byTypeValue(theField.getFieldRelationType());
+                } else {
+                    relationship = relationshipAPI
+                            .byTypeValue(contentlet.getContentType().variable() + StringPool.PERIOD
+                                    + theField.getVelocityVarName());
+                }
+                return relationshipAPI.dbRelatedContent(relationship, contentlet);
             }else{
                 return contentlet.get(theField.getVelocityVarName());
             }
@@ -4680,7 +4691,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 if (rel.getCardinality() == RELATIONSHIP_CARDINALITY.ONE_TO_ONE
                         .ordinal() && cons.size() > 1){
                     StringBuilder error = new StringBuilder();
-                    error.append("ERROR! Relationship with ").append(rel.getRelationTypeValue())
+                    error.append("ERROR! Relationship ").append(rel.getRelationTypeValue())
                             .append(" has been defined as One to One");
                     Logger.error(this, error.toString());
                     cve.addBadCardinalityRelationship(rel, cons);
@@ -4729,7 +4740,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                             } else if (rel.getCardinality() == RELATIONSHIP_CARDINALITY.ONE_TO_ONE
                                     .ordinal() && relatedCon.size() > 0){
                                 StringBuilder error = new StringBuilder();
-                                error.append("ERROR! Relationship with ").append(rel.getRelationTypeValue())
+                                error.append("ERROR! Relationship ").append(rel.getRelationTypeValue())
                                         .append(" has been defined as One to One");
                                 Logger.error(this, error.toString());
                                 cve.addBadCardinalityRelationship(rel, cons);

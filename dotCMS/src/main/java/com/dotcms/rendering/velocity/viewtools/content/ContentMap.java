@@ -18,6 +18,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.structure.model.Field;
+import com.dotmarketing.portlets.structure.model.Field.FieldType;
 import com.dotmarketing.portlets.structure.model.KeyValueFieldUtil;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.tag.model.Tag;
@@ -281,6 +282,9 @@ public class ContentMap {
 				retMap.put("keys", retMap.keySet());
 				retMap.put("map", keyValueMap);
 				return retMap;
+			} else if(f != null && f.getFieldType().equals(FieldType.RELATIONSHIP.toString())){
+				return perAPI.filterCollection((ArrayList) conAPI.getFieldValue(content, f),
+						PermissionAPI.PERMISSION_USE, true, user);
 			}
 
 			//ret could have been set by title
