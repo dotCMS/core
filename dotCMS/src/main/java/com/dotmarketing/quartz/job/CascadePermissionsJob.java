@@ -115,7 +115,7 @@ public class CascadePermissionsJob implements Job {
 			permissionable = (Permissionable) retrievePermissionable(permissionableId);
 			Role role = (Role) roleAPI.loadRoleById(roleId);
 			permissionAPI.cascadePermissionUnder(permissionable, role);
-			permissionAPI.removePermissionableFromCache(permissionable.getPermissionId());
+			permissionAPI.clearCache();
 		} catch (DotDataException e) {
 			Logger.error(this, e.getMessage(), e);
 			throw new DotRuntimeException(e.getMessage(), e);
