@@ -35,6 +35,10 @@ export class LoginServiceMock {
         return this._auth;
     }
 
+    setAuth(): void {
+
+    }
+
     loginAs(): Observable<any> {
         return observableOf({});
     }

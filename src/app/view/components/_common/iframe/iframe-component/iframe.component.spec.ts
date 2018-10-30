@@ -147,7 +147,13 @@ describe('IframeComponent', () => {
         });
 
         it('should remove and add listener on load', () => {
-            iframeEl.triggerEventHandler('load', {});
+            iframeEl.triggerEventHandler('load', {
+                target: {
+                    contentDocument: {
+                        title: ''
+                    }
+                }
+            });
 
             expect(
                 comp.iframeElement.nativeElement.contentWindow.removeEventListener
@@ -165,7 +171,13 @@ describe('IframeComponent', () => {
         });
 
         it('should set the colors to the jsp on load', () => {
-            iframeEl.triggerEventHandler('load', {});
+            iframeEl.triggerEventHandler('load', {
+                target: {
+                    contentDocument: {
+                        title: ''
+                    }
+                }
+            });
 
             expect(dotUiColorsService.setColors).toHaveBeenCalledWith(fakeHtmlEl);
         });
