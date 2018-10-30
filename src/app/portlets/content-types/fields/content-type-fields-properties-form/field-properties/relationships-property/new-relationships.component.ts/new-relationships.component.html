@@ -7,15 +7,13 @@
     (pageChange)="handleContentTypePageChange($event)"
     labelPropertyName="name"
     [placeholder]="i18nMessages['contenttypes.field.properties.relationship.new.content_type.placeholder']"
-    (change)="tiggerChanged()"
-    [(ngModel)]="contentType"
-    [disabled]="editing">
+    (change)="tiggerChanged()">
 </dot-searchable-dropdown>*
 
 <p-dropdown 
     appendTo="body"
     [options]="relationshpsCardinalities" 
-    optionLabel="name" 
+    optionLabel="label" 
     optionValue="id"
     (onChange)="tiggerChanged()"
     [(ngModel)]="cardinality">
