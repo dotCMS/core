@@ -179,18 +179,18 @@ public class WorkflowTool implements ViewTool {
 				contentlet.setInode((String) properties.get("inode"));
 			}
 
-			final boolean ALLOW_FRONT_END_SAVING = Config
+			final boolean allowFrontEndSaving = Config
 					.getBooleanProperty("WORKFLOW_TOOL_ALLOW_FRONT_END_SAVING", false);
 
-			final List<Category> cats = categoryAPI.getCategoriesFromContent(contentlet, user, ALLOW_FRONT_END_SAVING);
+			final List<Category> categories = categoryAPI.getCategoriesFromContent(contentlet, user, allowFrontEndSaving);
 
 			final Map<Relationship, List<Contentlet>> relationships = (Map<Relationship, List<Contentlet>>)
 					contentlet.get(RELATIONSHIP_KEY);
 
 			final ContentletDependencies contentletDependencies = new ContentletDependencies.Builder()
 					.workflowActionId(wfActionId)
-					.respectAnonymousPermissions(ALLOW_FRONT_END_SAVING)
-					.modUser(user).categories(cats)
+					.respectAnonymousPermissions(allowFrontEndSaving)
+					.modUser(user).categories(categories)
 					.relationships(relationshipAPI.getContentletRelationshipsFromMap(contentlet, relationships))
 					.indexPolicy(IndexPolicyProvider.getInstance().forSingleContent())
 					.build();
