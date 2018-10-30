@@ -7,7 +7,7 @@ import {
     URLSearchParams
 } from '@angular/http';
 import { Injectable } from '@angular/core';
-import { Subject, Observable } from 'rxjs';
+import { Subject, Observable, throwError } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 
 import {
@@ -137,8 +137,8 @@ export class CoreWebService {
                 } else {
                     return new ResponseView(resp);
                 }
-            })
-            // catchError(this.handleRequestViewErrors)
+            }),
+            catchError((err) => throwError(this.handleRequestViewErrors(err)))
         );
     }
 
