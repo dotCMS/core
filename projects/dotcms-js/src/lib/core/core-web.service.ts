@@ -129,7 +129,7 @@ export class CoreWebService {
      */
     public requestView(options: RequestOptionsArgs): Observable<ResponseView> {
         const request = this.getRequestOpts(options);
-        console.log('BBBBBB');
+
         return this._http.request(request).pipe(
             map((resp) => {
                 if (resp.json().errors && resp.json().errors.length > 0) {
