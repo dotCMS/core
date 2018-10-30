@@ -1457,6 +1457,10 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
             contAPI.refreshContentUnderFolder((Folder)permissionable);
         }
 
+		if(isHost) {
+			ContentletAPI contentAPI = APILocator.getContentletAPI();
+			contentAPI.refreshContentUnderHost((Host)permissionable);
+		}
 	}
 
 	/*
