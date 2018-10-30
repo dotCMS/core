@@ -4310,7 +4310,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                         new DotContentletValidationException("Contentlet ["
                                         + (contentlet != null && UtilMethods.isSet(contentlet.getIdentifier())
                                                         ? contentlet.getIdentifier() : "Unknown/New")
-                                        + "] has an invalid field.");
+                                        + "] has invalid / missing field(s).");
         List<Field> fields = FieldsCache.getFieldsByStructureInode(stInode);
         Structure structure = CacheLocator.getContentTypeCache().getStructureByInode(stInode);
         final Map<String, Object> conMap = contentlet.getMap();

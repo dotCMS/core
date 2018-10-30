@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.dotcms.rendering.velocity.viewtools.exception.DotToolException;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.exception.ParseErrorException;
@@ -25,6 +26,10 @@ public class MethodExceptionEventHandlerImpl implements org.apache.velocity.app.
 	String errorTemplate = "/static/preview_mode/error_template.vtl";
 
 	public Object methodException(Class clazz, String message, Exception e) throws Exception {
+		if(e instanceof DotToolException) {
+			throw e;
+		}
+
 		if (!isEditMode(e)) {
 			Logger.velocityWarn(clazz, message + " " + e.getMessage());
 			Logger.velocityDebug(clazz, e.getMessage(),e);

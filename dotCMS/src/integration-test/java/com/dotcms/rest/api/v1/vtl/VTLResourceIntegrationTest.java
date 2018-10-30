@@ -25,7 +25,6 @@ import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mockito;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -64,21 +63,21 @@ public class VTLResourceIntegrationTest {
                 new VTLResourceTestCase.Builder().setVtlFile(VALID_GET_VTL_DOTJSON_OUTPUT)
                         .setFolderName(folderName)
                         .setQueryParameters(queryParameters)
-                        .setPathParameters("id/aaee9776-8fb7-4501-8048-844912a20405")
+                        .setPathParameter("aaee9776-8fb7-4501-8048-844912a20405")
                         .setExpectedJSON(VALID_EXPECTED_JSON)
                         .setExpectedOutput(null)
                         .build(),
                 new VTLResourceTestCase.Builder().setVtlFile(VALID_GET_VTL_RAW_OUTPUT)
                         .setFolderName(folderName)
                         .setQueryParameters(queryParameters)
-                        .setPathParameters("id/aaee9776-8fb7-4501-8048-844912a20405")
+                        .setPathParameter("aaee9776-8fb7-4501-8048-844912a20405")
                         .setExpectedJSON(null)
                         .setExpectedOutput(VALID_GET_VTL_RAW_OUTPUT)
                         .build(),
                 new VTLResourceTestCase.Builder().setVtlFile(INVALID_GET_VTL)
                         .setFolderName(folderName)
                         .setQueryParameters(queryParameters)
-                        .setPathParameters("id/aaee9776-8fb7-4501-8048-844912a20405")
+                        .setPathParameter("aaee9776-8fb7-4501-8048-844912a20405")
                         .setExpectedJSON(null)
                         .setExpectedOutput(null)
                         .setExpectedException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode())
@@ -86,7 +85,7 @@ public class VTLResourceIntegrationTest {
                 new VTLResourceTestCase.Builder().setVtlFile(VALID_GET_VTL_DOTJSON_OUTPUT)
                         .setFolderName(folderName)
                         .setQueryParameters(queryParameters)
-                        .setPathParameters("id/aaee9776-8fb7-4501-8048-844912a20405")
+                        .setPathParameter("aaee9776-8fb7-4501-8048-844912a20405")
                         .setExpectedJSON(VALID_EXPECTED_JSON)
                         .setExpectedOutput(null)
                         .setUser(ANONYMOUS_USER_ID)
@@ -131,12 +130,12 @@ public class VTLResourceIntegrationTest {
 
             final WebResource webResource = spy(WebResource.class);
             doReturn(requestingUser).when(webResource).getCurrentUser(request,
-                    WebResource.buildParamsMap(testCase.getPathParameters()), false);
+                    WebResource.buildParamsMap(testCase.getPathParameter()), false);
 
             final VTLResource resource = new VTLResource(APILocator.getHostAPI(), APILocator.getIdentifierAPI(),
                     APILocator.getContentletAPI(), webResource);
             final Response response = resource.get(request, servletResponse, uriInfo, testCase.getFolderName(),
-                    testCase.getPathParameters());
+                    testCase.getPathParameter(), null);
 
             String expectedOutput;
             String getOutput;
@@ -164,7 +163,7 @@ public class VTLResourceIntegrationTest {
     }
 
     private static final String VALID_GET_VTL_DOTJSON_OUTPUT = "## GETS NEWS BY ID, LOADS A FEW FIELD\n" +
-            "#set($news = $dotcontent.find($urlParams.id))\n" +
+            "#set($news = $dotcontent.find($pathParam))\n" +
             "\n" +
             "##  QUERY PARAMS\n" +
             "\n" +
