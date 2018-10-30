@@ -458,21 +458,22 @@ describe('DotEditContentComponent', () => {
             const mockRenderedPageState = new DotRenderedPageState(mockUser, mockDotRenderedPage);
 
             spyOn(component, 'changeViewAsHandler').and.callThrough();
-            spyOn(dotPageStateService, 'set').and.returnValue(observableOf(mockRenderedPageState));
             spyOn(dotPageStateService, 'reload');
 
             viewAsToolbar.componentInstance.changeViewAs.emit(mockDotEditPageViewAs);
 
             expect(component.changeViewAsHandler).toHaveBeenCalledWith(mockDotEditPageViewAs);
-            expect(dotPageStateService.set).toHaveBeenCalledWith(
-                component.pageState.page,
-                component.pageState.state,
-                mockDotEditPageViewAs
-            );
 
             expect(dotPageStateService.reload).toHaveBeenCalledWith(
-                route.snapshot.queryParams.url,
-                mockRenderedPageState.page.languageId
+                {
+                    url: route.snapshot.queryParams.url,
+                    mode: 2,
+                    viewAs: {
+                        persona_id: mockDotEditPageViewAs.persona.identifier,
+                        language_id: mockRenderedPageState.page.languageId,
+                        device_inode: mockDotEditPageViewAs.device.inode
+                    }
+                }
             );
         });
 

@@ -189,20 +189,15 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
      * @memberof DotEditContentComponent
      */
     changeViewAsHandler(viewAsConfig: DotEditPageViewAs): void {
-        // TODO: Refactor to send just the pageState.
-        this.dotPageStateService
-            .set(this.pageState.page, this.pageState.state, viewAsConfig)
-            .pipe(takeUntil(this.destroy$))
-            .subscribe(
-                (pageState: DotRenderedPageState) => {
-                    this.setPageState(pageState);
-                    this.dotPageStateService.reload(
-                        this.route.snapshot.queryParams.url,
-                        viewAsConfig.language.id
-                    );
-                },
-                (err: ResponseView) => {
-                    this.handleSetPageStateFailed(err);
+            this.dotPageStateService.reload(
+                {
+                    url: this.route.snapshot.queryParams.url,
+                    mode: this.pageState.state.mode,
+                    viewAs: {
+                        persona_id: viewAsConfig.persona ? viewAsConfig.persona.identifier : null,
+                        language_id: viewAsConfig.language.id,
+                        device_inode: viewAsConfig.device ? viewAsConfig.device.inode : null
+                    }
                 }
             );
     }
@@ -449,9 +444,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
         this.dotPageStateService.reload$
             .pipe(takeUntil(this.destroy$))
             .subscribe((pageState: DotRenderedPageState) => {
-                if (this.pageState.page.inode !== pageState.page.inode) {
-                    this.setPageState(pageState);
-                }
+                this.setPageState(pageState);
             });
     }
 
