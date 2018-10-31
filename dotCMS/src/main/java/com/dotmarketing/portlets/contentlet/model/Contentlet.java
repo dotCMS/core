@@ -760,12 +760,14 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 		return (String) map.get(HOST_KEY);
 	}
 
-	private transient Optional<com.dotcms.contenttype.model.field.Field> firstImageFieldVar = null;
-    public Optional<com.dotcms.contenttype.model.field.Field> getFirstImageField() {
-        
-        if(firstImageFieldVar!=null) return firstImageFieldVar;
+    private transient Optional<com.dotcms.contenttype.model.field.Field> titleImageFieldVar = null;
+
+    public Optional<com.dotcms.contenttype.model.field.Field> getTitleImage() {
+
+        if (this.titleImageFieldVar != null)
+            return this.titleImageFieldVar;
         try {
-            this.firstImageFieldVar = this.getContentType().fields().stream().filter(f -> {
+            this.titleImageFieldVar = this.getContentType().fields().stream().filter(f -> {
                 try {
                     return (f instanceof BinaryField && UtilMethods.isImage(this.getBinary(f.variable()).toString()));
                 } catch (Exception e) {
@@ -776,7 +778,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
         } catch (Exception e) {
             Logger.debug(this.getClass(), e.getMessage(), e);
         }
-        return firstImageFieldVar;
+        return this.titleImageFieldVar;
     }
 	
 	

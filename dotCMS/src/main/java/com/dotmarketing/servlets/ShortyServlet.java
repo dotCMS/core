@@ -166,7 +166,7 @@ public class ShortyServlet extends HttpServlet {
 
     }
 
-    return (con.getFirstImageField().isPresent() ) ? con.getFirstImageField().get().variable():NOT_FOUND ;
+    return (con.getTitleImage().isPresent() ) ? con.getTitleImage().get().variable():NOT_FOUND ;
   }
 
 }
