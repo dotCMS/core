@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component } from '@angular/core';
 import { LoginService } from 'dotcms-js';
 
 @Component({
@@ -6,17 +6,6 @@ import { LoginService } from 'dotcms-js';
     template:
         '<cw-rule-engine-container class="rules__engine-container" *ngIf="this.loginService.auth"></cw-rule-engine-container>'
 })
-export class AppRulesComponent implements OnInit {
+export class AppRulesComponent {
     constructor(public loginService: LoginService) {}
-
-    ngOnInit() {
-        // TODO: need to find a better wat to login
-        if (!this.loginService.auth) {
-            this.loginService
-                .loginUser('admin@dotcms.com', 'admin', false, 'en-US')
-                .subscribe(res => {
-                    console.log('fake login', res);
-                });
-        }
-    }
 }

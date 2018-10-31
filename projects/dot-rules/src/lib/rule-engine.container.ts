@@ -232,35 +232,18 @@ export class RuleEngineContainer {
         obs2 = observableFrom(rule._conditionGroups);
       }
 
-      const data = obs2.pipe(switchMap((group: ConditionGroupModel) =>
-        this._conditionService.listForGroup(group, this._ruleService._conditionTypes)
+      const obs3: Observable<ConditionGroupModel> = obs2.pipe(mergeMap(
+            (group: ConditionGroupModel) => this._conditionService.listForGroup(group, this._ruleService._conditionTypes),
+            (group: ConditionGroupModel, conditions: ConditionModel[]) => {
+                if (conditions) {
+                    conditions.forEach((condition: ConditionModel) => {
+                        condition.type = this._ruleService._conditionTypes[condition.conditionlet];
+                    });
+                }
+                group._conditions = conditions;
+                return group;
+            }
       ));
-
-      const obs3: Observable<ConditionGroupModel> = forkJoin(obs2, data).pipe(map((res) => {
-        const group: ConditionGroupModel = res[0];
-        const conditions: ConditionModel[] = res[1];
-
-        if (conditions) {
-          conditions.forEach((condition: ConditionModel) => {
-            condition.type = this._ruleService._conditionTypes[condition.conditionlet];
-          });
-        }
-        group._conditions = conditions;
-        return group;
-      }));
-
-      // const obs3: Observable<ConditionGroupModel> = obs2.flatMap(
-      //   (group: ConditionGroupModel) => this._conditionService.listForGroup(group, this._ruleService._conditionTypes),
-      //   (group: ConditionGroupModel, conditions: ConditionModel[]) => {
-      //     if (conditions) {
-      //       conditions.forEach((condition: ConditionModel) => {
-      //         condition.type = this._ruleService._conditionTypes[condition.conditionlet];
-      //       });
-      //     }
-      //     group._conditions = conditions;
-      //     return group;
-      //   }
-      // );
 
       const obs4: Observable<ConditionGroupModel[]> = obs3.pipe(reduce(
         (acc: ConditionGroupModel[], group: ConditionGroupModel) => {

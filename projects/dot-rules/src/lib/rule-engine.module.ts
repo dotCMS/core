@@ -101,7 +101,6 @@ import { AppRulesComponent } from './app.component';
         DotcmsConfig,
         DotcmsEventsService,
         LoggerService,
-        LoginService,
         SiteService,
         SocketFactory,
         StringUtils,
