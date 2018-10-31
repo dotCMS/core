@@ -30,6 +30,8 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
+import com.liferay.portal.language.LanguageException;
+import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 
 import java.util.Arrays;
@@ -68,9 +70,22 @@ public class RelationshipsResource {
 
         return Response.ok(new ResponseEntityView(
                 Arrays.stream(WebKeys.Relationship.RELATIONSHIP_CARDINALITY.values())
-                      .map(cardinality -> map(
-                        "name", cardinality.name(),
-                        "id", cardinality.ordinal()))
+                      .map(cardinality -> {
+                          String label;
+
+                          try {
+                              label = LanguageUtil.get(String.format(
+                                      "contenttypes.field.properties.relationships.cardinality.%s.label", cardinality.name()));
+                          } catch (LanguageException e) {
+                              label = cardinality.name();
+                          }
+
+                          return map(
+                                  "name", cardinality.name(),
+                                  "id", cardinality.ordinal(),
+                                  "label", label
+                                 );
+                      })
                       .collect(toImmutableList())
         )).build();
     }
