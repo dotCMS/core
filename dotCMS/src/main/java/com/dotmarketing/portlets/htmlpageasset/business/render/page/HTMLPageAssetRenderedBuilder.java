@@ -211,7 +211,7 @@ public class HTMLPageAssetRenderedBuilder {
                     : deviceInode;
 
             if (currentDeviceId != null) {
-                currentDevice = contentletAPI.find(currentDeviceId, user, true);
+                currentDevice = contentletAPI.find(currentDeviceId, user, false);
 
                 if (currentDevice == null) {
                     request.getSession().removeAttribute(WebKeys.CURRENT_DEVICE);
