@@ -12,6 +12,7 @@ import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
 import com.dotcms.tika.TikaUtils;
 import com.dotcms.util.CollectionsUtils;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.*;
@@ -171,7 +172,8 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 			Structure st=CacheLocator.getContentTypeCache().getStructureByInode(contentlet.getStructureInode());
 
 			Folder conFolder=APILocator.getFolderAPI().findFolderByPath(ident.getParentPath(), ident.getHostId(), APILocator.getUserAPI().getSystemUser(), false);
-
+			Host conHost = APILocator.getHostAPI().find(ident.getHostId(), APILocator.getUserAPI().getSystemUser(), false);
+			
 			contentletMap.put(ESMappingConstants.TITLE, contentlet.getTitle());
 			contentletMap.put(ESMappingConstants.STRUCTURE_NAME, st.getVelocityVarName()); // marked for DEPRECATION
 			contentletMap.put(ESMappingConstants.CONTENT_TYPE, st.getVelocityVarName());
@@ -197,6 +199,10 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 			contentletMap.put(ESMappingConstants.LANGUAGE_ID + TEXT, Long.toString(contentlet.getLanguageId()));
 			contentletMap.put(ESMappingConstants.IDENTIFIER, ident.getId());
 			contentletMap.put(ESMappingConstants.CONTENTLET_HOST, ident.getHostId());
+	        contentletMap.put(ESMappingConstants.CONTENTLET_HOSTNAME, conHost.getHostname());
+			
+			
+			
 			contentletMap.put(ESMappingConstants.CONTENTLET_FOLER, conFolder!=null && InodeUtils.isSet(conFolder.getInode()) ? conFolder.getInode() : contentlet.getFolder());
 			contentletMap.put(ESMappingConstants.PARENT_PATH, ident.getParentPath());
 			contentletMap.put(ESMappingConstants.PATH, ident.getPath());
