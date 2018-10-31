@@ -42,7 +42,7 @@ export class DotPageSelectorService {
      */
     getPagesInFolder(searchParam: string, hostId?: string): Observable<DotPageAsset[]> {
         searchParam = searchParam.replace(/\//g, '\\/');
-        let query = `+basetype:5 +parentpath:*${searchParam}*`;
+        let query = `+basetype:5 +path:*${searchParam}*`;
         query += hostId ? ` +conhost:${hostId}` : '';
 
         return this.coreWebService
