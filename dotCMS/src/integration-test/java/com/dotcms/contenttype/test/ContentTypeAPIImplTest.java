@@ -1000,6 +1000,18 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 		int base = BaseContentType.PERSONA.ordinal();
         createContentTypeWithPublishExpireFields(base);
 	}
+
+	@Test
+	public void testSave_GivenFixedTrueAndHostDifferentThanSYSTEMHOST_HostShouldBeSYSTEMHOST()
+			throws DotDataException, DotSecurityException {
+
+		final ContentType languageVariableType = contentTypeApi.find("Languagevariable");
+		final ContentType languageVariableTypeWithAnotherHost =
+				ContentTypeBuilder.builder(languageVariableType).host("ANY-OTHER-HOST").build();
+
+		final ContentType savedLanguagaVariableType = contentTypeApi.save(languageVariableTypeWithAnotherHost);
+		assertEquals(savedLanguagaVariableType.host(), Host.SYSTEM_HOST);
+	}
 	
 	private void createContentTypeWithPublishExpireFields(int base) throws Exception{
 		long time = System.currentTimeMillis();
