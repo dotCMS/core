@@ -1,5 +1,8 @@
 package com.dotcms.publisher.business;
 
+import static java.lang.String.valueOf;
+import static org.junit.Assert.assertEquals;
+
 import com.dotcms.datagen.HTMLPageDataGen;
 import com.dotcms.enterprise.publishing.PublishDateUpdater;
 import com.dotcms.publisher.bundle.bean.Bundle;
@@ -12,7 +15,12 @@ import com.dotcms.publisher.environment.business.EnvironmentAPI;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publisher.util.PublisherUtil;
 import com.dotcms.publisher.util.PusheableAsset;
-import com.dotcms.publishing.*;
+import com.dotcms.publishing.BundlerStatus;
+import com.dotcms.publishing.DotPublishingException;
+import com.dotcms.publishing.IBundler;
+import com.dotcms.publishing.PublishStatus;
+import com.dotcms.publishing.Publisher;
+import com.dotcms.publishing.PublisherConfig;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
@@ -21,19 +29,18 @@ import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
-
 import java.io.File;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
-
-import static java.lang.String.valueOf;
-import static org.junit.Assert.assertEquals;
 
 
 public class PublisherTestUtil {
@@ -182,16 +189,7 @@ public class PublisherTestUtil {
 
         final HTMLPageAsset pageAsset = (HTMLPageAsset)APILocator.getHTMLPageAssetAPI().findPage(page.getInode(), sysuser, false);
 
-        pageAsset.setIndexPolicy(IndexPolicy.FORCE);
-        pageAsset.setIndexPolicyDependencies(IndexPolicy.FORCE);
-        pageAsset.setBoolProperty(Contentlet.IS_TEST_MODE, true);
-
         APILocator.getContentletAPI().publish(pageAsset, user, false);
-
-        pageAsset.setIndexPolicy(IndexPolicy.FORCE);
-        pageAsset.setIndexPolicyDependencies(IndexPolicy.FORCE);
-        pageAsset.setBoolProperty(Contentlet.IS_TEST_MODE, true);
-
         APILocator.getContentletIndexAPI().addContentToIndex(pageAsset);
         assertEquals(1, APILocator.getContentletAPI().indexCount("+inode:" + pageAsset.getInode(), user, false));
 
