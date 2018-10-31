@@ -26,7 +26,7 @@ public abstract class LanguageCache implements Cachable{
     
     protected abstract boolean hasLanguage (String languageCode, String countryCode);
     
-    protected abstract void removeLanguage(Language l);
+    public abstract void removeLanguage(Language l);
 
     public abstract void clearCache();
     
