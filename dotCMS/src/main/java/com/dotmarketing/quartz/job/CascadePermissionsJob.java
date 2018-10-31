@@ -3,12 +3,20 @@
  */
 package com.dotmarketing.quartz.job;
 
+import com.dotcms.api.system.event.Visibility;
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.notifications.bean.NotificationLevel;
+import com.dotcms.notifications.bean.NotificationType;
+import com.dotcms.notifications.business.NotificationAPI;
+import com.dotcms.util.I18NMessage;
+import com.dotmarketing.business.web.WebAPILocator;
+import com.liferay.portal.PortalException;
+import com.liferay.portal.SystemException;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
-import org.quartz.Job;
 import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
 import org.quartz.JobExecutionContext;
@@ -41,34 +49,63 @@ import com.dotmarketing.quartz.ScheduledTask;
 import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import org.quartz.StatefulJob;
 
 /**
  * @author David H Torres
  */
-public class CascadePermissionsJob implements Job {
+public class CascadePermissionsJob implements StatefulJob {
 	
 	/* (non-Javadoc)
 	 * @see org.quartz.Job#execute(org.quartz.JobExecutionContext)
 	 */
     
-    private static ContentletAPI contAPI = APILocator.getContentletAPI();
-    private static FolderAPI folderAPI = APILocator.getFolderAPI();
-    private static HostAPI hostAPI = APILocator.getHostAPI();
-    private static IdentifierAPI identAPI = APILocator.getIdentifierAPI();
-    private static LanguageAPI langAPI = APILocator.getLanguageAPI();
-    private static PermissionAPI permissionAPI = APILocator.getPermissionAPI();
-    private static RoleAPI roleAPI = APILocator.getRoleAPI();
-    private static UserAPI userAPI = APILocator.getUserAPI();
-    private static VersionableAPI verAPI = APILocator.getVersionableAPI();
-    
+    private final ContentletAPI contAPI;
+    private final FolderAPI folderAPI;
+    private final HostAPI hostAPI;
+    private final IdentifierAPI identAPI;
+    private final LanguageAPI langAPI;
+    private final NotificationAPI notificationAPI;
+    private final PermissionAPI permissionAPI;
+    private final RoleAPI roleAPI;
+    private final UserAPI userAPI;
+    private final VersionableAPI verAPI;
+
+	public CascadePermissionsJob() {
+		contAPI   = APILocator.getContentletAPI();
+		folderAPI = APILocator.getFolderAPI();
+		hostAPI   = APILocator.getHostAPI();
+		identAPI  = APILocator.getIdentifierAPI();
+		langAPI   = APILocator.getLanguageAPI();
+		roleAPI   = APILocator.getRoleAPI();
+		userAPI   = APILocator.getUserAPI();
+		verAPI    = APILocator.getVersionableAPI();
+
+		notificationAPI = APILocator.getNotificationAPI();
+		permissionAPI   = APILocator.getPermissionAPI();
+	}
     
 	public static void triggerJobImmediately (Permissionable perm, Role role) {
 		String randomID = UUID.randomUUID().toString();
+		String userId = null;
 		JobDataMap dataMap = new JobDataMap();
 		
 		dataMap.put("permissionableId", perm.getPermissionId());
 		dataMap.put("roleId", role.getId());
-		
+
+		//TODO: For a major release, remove this logic and get userId as parameter
+		try {
+			if (UtilMethods.isSet(HttpServletRequestThreadLocal.INSTANCE.getRequest())){
+				userId = WebAPILocator.getUserWebAPI()
+						.getLoggedInUser(HttpServletRequestThreadLocal.INSTANCE.getRequest())
+						.getUserId();
+			}
+			dataMap.put("userId", userId);
+		} catch (PortalException | SystemException e) {
+			Logger.warn(CascadePermissionsJob.class, "Error getting user info for notification", e);
+		}
+
+
 		JobDetail jd = new JobDetail("CascadePermissionsJob-" + randomID, "cascade_permissions_jobs", CascadePermissionsJob.class);
 		jd.setJobDataMap(dataMap);
 		jd.setDurability(false);
@@ -97,25 +134,34 @@ public class CascadePermissionsJob implements Job {
 			throw new DotRuntimeException(e.getMessage(), e);
 		}
 	}
-	
-	public CascadePermissionsJob() {
-		
-	}
 
 	@CloseDBIfOpened
 	public void execute(JobExecutionContext jobContext) throws JobExecutionException {
 		
 	    Permissionable permissionable;
 	    
-		JobDataMap map = jobContext.getJobDetail().getJobDataMap();
+		final JobDataMap map = jobContext.getJobDetail().getJobDataMap();
 
-		String permissionableId = (String) map.get("permissionableId");
-		String roleId = (String) map.get("roleId");
+		final String permissionableId = (String) map.get("permissionableId");
+		final String roleId = (String) map.get("roleId");
+		final String userId = (String) map.get("userId");
 		try {
-			permissionable = (Permissionable) retrievePermissionable(permissionableId);
-			Role role = (Role) roleAPI.loadRoleById(roleId);
+			permissionable = retrievePermissionable(permissionableId);
+			final Role role      = roleAPI.loadRoleById(roleId);
 			permissionAPI.cascadePermissionUnder(permissionable, role);
 			permissionAPI.removePermissionableFromCache(permissionable.getPermissionId());
+
+			if (UtilMethods.isSet(userId)){
+				notificationAPI.generateNotification(
+						new I18NMessage("notification.identifier.cascadepermissionsjob.info.title"),
+						new I18NMessage("notification.cascade.permissions.success"),
+						null, // no actions
+						NotificationLevel.INFO,
+						NotificationType.GENERIC, Visibility.USER, userId, userId,
+						userAPI.getSystemUser().getLocale()
+				);
+			}
+
 		} catch (DotDataException e) {
 			Logger.error(this, e.getMessage(), e);
 			throw new DotRuntimeException(e.getMessage(), e);
@@ -128,7 +174,7 @@ public class CascadePermissionsJob implements Job {
 	@SuppressWarnings("unchecked")
 	private Permissionable retrievePermissionable (String assetId) throws DotDataException, DotSecurityException {
 		
-		Permissionable perm = null;
+		Permissionable perm;
 		
 		//Determining the type
 		

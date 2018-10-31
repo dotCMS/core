@@ -1456,11 +1456,6 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
             ContentletAPI contAPI = APILocator.getContentletAPI();
             contAPI.refreshContentUnderFolder((Folder)permissionable);
         }
-
-		if(isHost) {
-			ContentletAPI contentAPI = APILocator.getContentletAPI();
-			contentAPI.refreshContentUnderHost((Host)permissionable);
-		}
 	}
 
 	/*
@@ -2785,7 +2780,12 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		} else if(isHost || isFolder) {
 			cascadePermissionUnder(permissionable, role, permissionable, allPermissions);
 		}
-		Logger.info(this, "Ending cascade role permissions for permissionable " + permissionable.getPermissionId() + " for role " + role.getId());
+
+		 if(isHost) {
+			 ContentletAPI contentAPI = APILocator.getContentletAPI();
+			 contentAPI.refreshContentUnderHost((Host)permissionable);
+		 }
+		 Logger.info(this, "Ending cascade role permissions for permissionable " + permissionable.getPermissionId() + " for role " + role.getId());
 
 	}
 
