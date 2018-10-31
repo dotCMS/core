@@ -37,7 +37,6 @@ import {
     DotcmsConfig,
     DotcmsEventsService,
     LoggerService,
-    LoginService,
     SiteService,
     SocketFactory,
     StringUtils,
