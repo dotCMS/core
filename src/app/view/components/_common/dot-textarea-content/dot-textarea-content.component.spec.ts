@@ -59,7 +59,7 @@ describe('DotTextareaContentComponent', () => {
         expect(selectField == null).toBe(true, 'hide buttons');
     });
 
-    it("should have option 'Plain' selected by default", async(() => {
+    it('should have option \'Plain\' selected by default', async(() => {
         fixture.detectChanges();
         /*
                 We need to to async and whenStable here because the ngModel in the PrimeNg component
@@ -74,7 +74,7 @@ describe('DotTextareaContentComponent', () => {
         });
     }));
 
-    it("should show 'Plain' field by default", () => {
+    it('should show \'Plain\' field by default', () => {
         fixture.detectChanges();
         const plainFieldTexarea = de.query(By.css('.textarea-content__plain-field'));
         expect(plainFieldTexarea).toBeTruthy('show plain field');
@@ -209,5 +209,36 @@ describe('DotTextareaContentComponent', () => {
         component.onModelChange(value);
 
         expect(component.value).toEqual(value);
+    });
+
+    it('should not propagate enter keyboard event', () => {
+        const spy = jasmine.createSpy('stopPropagation');
+
+        component.show = ['wysiwyg', 'plain', 'code'];
+        fixture.detectChanges();
+
+        const tinymce = de.query(By.css('app-tinymce'));
+        tinymce.triggerEventHandler('keydown.enter', {
+            stopPropagation: spy
+        });
+
+        component.selected = 'plain';
+        fixture.detectChanges();
+
+        const textarea = de.query(By.css('textarea'));
+        textarea.triggerEventHandler('keydown.enter', {
+            stopPropagation: spy
+        });
+
+        component.selected = 'code';
+        fixture.detectChanges();
+
+        const ace = de.query(By.css('ace-editor'));
+        ace.triggerEventHandler('keydown.enter', {
+            stopPropagation: spy
+        });
+
+        expect(spy).toHaveBeenCalledTimes(3);
+
     });
 });
