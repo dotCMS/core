@@ -1,6 +1,5 @@
 package com.dotmarketing.portlets.languagesmanager.model;
 
-import com.dotmarketing.util.StringUtils;
 import java.io.Serializable;
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
@@ -160,27 +159,8 @@ public class Language implements Serializable {
 		return this.getLanguageCode().toLowerCase();
 	}
 
-    /**
-     *
-     * @param remoteLang
-     * @param localLang
-     * @return
-     */
-    public static boolean equals(final Language remoteLang, final Language localLang){
-       // if they both are null or they are the same object then yes they are equal
-       if( remoteLang == localLang ){
-          return true;
-       }
-       //if only one of them is null then we must get out of here. They're not equal
-       if(remoteLang == null || localLang == null ){
-           return false;
-       }
-       // none of them is null. Let's check in depth.
-           return StringUtils.equalsNullSafeIgnoreCase(remoteLang.getLanguageCode(),
-                   localLang.getLanguageCode())
-                   && StringUtils.equalsNullSafeIgnoreCase(remoteLang.getCountryCode(),
-                   localLang.getCountryCode());
 
-    }
+
+
 
 }
