@@ -21,6 +21,7 @@ describe('IframeComponent', () => {
     let iframeEl: DebugElement;
     let dotIframeService: DotIframeService;
     let dotUiColorsService: DotUiColorsService;
+    let loginService: LoginService;
 
     beforeEach(async(() => {
         DOTTestBed.configureTestingModule({
@@ -44,6 +45,7 @@ describe('IframeComponent', () => {
 
         dotIframeService = de.injector.get(DotIframeService);
         dotUiColorsService = de.injector.get(DotUiColorsService);
+        loginService = de.injector.get(LoginService);
 
         spyOn(dotUiColorsService, 'setColors');
 
@@ -145,7 +147,13 @@ describe('IframeComponent', () => {
         });
 
         it('should remove and add listener on load', () => {
-            iframeEl.triggerEventHandler('load', {});
+            iframeEl.triggerEventHandler('load', {
+                target: {
+                    contentDocument: {
+                        title: ''
+                    }
+                }
+            });
 
             expect(
                 comp.iframeElement.nativeElement.contentWindow.removeEventListener
@@ -163,11 +171,32 @@ describe('IframeComponent', () => {
         });
 
         it('should set the colors to the jsp on load', () => {
-            iframeEl.triggerEventHandler('load', {});
+            iframeEl.triggerEventHandler('load', {
+                target: {
+                    contentDocument: {
+                        title: ''
+                    }
+                }
+            });
 
             expect(dotUiColorsService.setColors).toHaveBeenCalledWith(fakeHtmlEl);
         });
     });
 
-    xit('should trigger keydown', () => {});
+    describe('iframe errors', () => {
+        it('should logout on 401', () => {
+            spyOn(loginService, 'logOutUser').and.callThrough();
+
+            iframeEl.triggerEventHandler('load', {
+                target: {
+                    contentDocument: {
+                        title: '401'
+                    }
+                }
+            });
+
+            expect(loginService.logOutUser).toHaveBeenCalledTimes(1);
+        });
+    });
+
 });

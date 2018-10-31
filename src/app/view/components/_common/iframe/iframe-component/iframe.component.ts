@@ -1,4 +1,3 @@
-import { takeUntil } from 'rxjs/operators';
 import {
     Component,
     ElementRef,
@@ -10,11 +9,15 @@ import {
     NgZone,
     OnDestroy
 } from '@angular/core';
-import { LoginService, LoggerService } from 'dotcms-js';
+
+import { takeUntil } from 'rxjs/operators';
+import { Subject } from 'rxjs';
+
+import { LoginService } from 'dotcms-js';
+
 import { DotLoadingIndicatorService } from '../dot-loading-indicator/dot-loading-indicator.service';
 import { IframeOverlayService } from '../service/iframe-overlay.service';
 import { DotIframeService } from '../service/dot-iframe/dot-iframe.service';
-import { Subject } from 'rxjs';
 import { DotUiColorsService } from '@services/dot-ui-colors/dot-ui-colors.service';
 
 @Component({
@@ -47,7 +50,6 @@ export class IframeComponent implements OnInit, OnDestroy {
 
     constructor(
         private dotIframeService: DotIframeService,
-        private loggerService: LoggerService,
         private loginService: LoginService,
         private ngZone: NgZone,
         private dotUiColorsService: DotUiColorsService,
@@ -94,53 +96,22 @@ export class IframeComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Validate if the iframe window is send to the login page after jsessionid expired
-     * then logout the user from angular session
-     *
-     * @memberof IframeComponent
-     */
-    checkSessionExpired(): void {
-        if (
-            !!this.getIframeWindow() &&
-            this.getIframeLocation().pathname.indexOf('/c/portal_public/login') !== -1
-        ) {
-            this.loginService.logOutUser().subscribe(
-                (_data) => {},
-                (error) => {
-                    this.loggerService.error(error);
-                }
-            );
-        }
-    }
-
-    /**
      * Called when iframe load event happen.
      *
      * @param any $event
      * @memberof IframeComponent
      */
     onLoad($event): void {
+        // JSP is setting the error number in the title
+        const errorCode = parseInt($event.target.contentDocument.title, 10);
+        if (errorCode > 400) {
+            this.handleErrors(errorCode);
+        }
+
         this.dotLoadingIndicatorService.hide();
 
         if (this.isIframeHaveContent()) {
-            this.getIframeWindow().removeEventListener('keydown', this.emitKeyDown.bind(this));
-            this.getIframeWindow().document.removeEventListener(
-                'ng-event',
-                this.emitCustonEvent.bind(this)
-            );
-
-            this.getIframeWindow().addEventListener('keydown', this.emitKeyDown.bind(this));
-            this.getIframeWindow().document.addEventListener(
-                'ng-event',
-                this.emitCustonEvent.bind(this)
-            );
-            this.load.emit($event);
-
-            const doc = this.getIframeDocument();
-
-            if (doc) {
-                this.dotUiColorsService.setColors(doc.querySelector('html'));
-            }
+            this.handleIframeEvents($event);
         }
     }
 
@@ -166,6 +137,42 @@ export class IframeComponent implements OnInit, OnDestroy {
 
     private getIframeLocation(): any {
         return this.iframeElement.nativeElement.contentWindow.location;
+    }
+
+    private handleErrors(error: number): void {
+        const errorMapHandler = {
+            401: () => {
+                this.loginService.logOutUser().subscribe(
+                    (_data) => {}
+                );
+            }
+        };
+
+        if (errorMapHandler[error]) {
+            errorMapHandler[error]();
+        }
+
+    }
+
+    private handleIframeEvents($event): void {
+        this.getIframeWindow().removeEventListener('keydown', this.emitKeyDown.bind(this));
+        this.getIframeWindow().document.removeEventListener(
+            'ng-event',
+            this.emitCustonEvent.bind(this)
+        );
+
+        this.getIframeWindow().addEventListener('keydown', this.emitKeyDown.bind(this));
+        this.getIframeWindow().document.addEventListener(
+            'ng-event',
+            this.emitCustonEvent.bind(this)
+        );
+        this.load.emit($event);
+
+        const doc = this.getIframeDocument();
+
+        if (doc) {
+            this.dotUiColorsService.setColors(doc.querySelector('html'));
+        }
     }
 
     private isIframeHaveContent(): boolean {
