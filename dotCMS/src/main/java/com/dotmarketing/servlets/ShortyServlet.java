@@ -166,14 +166,7 @@ public class ShortyServlet extends HttpServlet {
 
     }
 
-
-    for (Field f : FieldsCache.getFieldsByStructureInode(con.getStructureInode())) {
-      if ("binary".equals(f.getFieldType())) {
-        return f.getVelocityVarName();
-      }
-    }
-
-    return NOT_FOUND;
+    return (con.getFirstImageField().isPresent() ) ? con.getFirstImageField().get().variable():NOT_FOUND ;
   }
 
 }
