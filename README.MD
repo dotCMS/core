@@ -7,12 +7,12 @@ This project was created using [angular-cli](https://cli.angular.io/) it means y
 3. Angular CLI 6.1.2
 
 ## Before start
-Build the interal libraries (until we publish it to npm)
+Build the interal libraries (until we publish it to npm). `dotcms-js` needs to be build first, because is used by other libraries.
 
 ```
+ng build dotcms-js
 ng build dot-layout-grid
 ng build dot-rules
-ng build dotcms-js
 ```
 
 You should see now the folders:

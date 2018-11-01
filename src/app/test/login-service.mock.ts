@@ -35,6 +35,10 @@ export class LoginServiceMock {
         return this._auth;
     }
 
+    setAuth(): void {
+
+    }
+
     loginAs(): Observable<any> {
         return observableOf({});
     }
@@ -45,6 +49,10 @@ export class LoginServiceMock {
 
     loginUser(): Observable<User> {
         return observableOf(mockUserWithRedirect);
+    }
+
+    logOutUser(): Observable<any> {
+        return observableOf({});
     }
 
     watchUser(func: Function): void {
