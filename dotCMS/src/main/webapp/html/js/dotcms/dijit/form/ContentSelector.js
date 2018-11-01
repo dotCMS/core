@@ -132,6 +132,15 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 	},
 
 	_structureDetailsCallback: function (structure) {
+
+        if (structure.inode === 'catchall') {
+            this.search_general.style.display = "block";
+        } else {
+            this.search_general.style.display = "none";
+            var searchInput = document.getElementById("allFieldTB");
+            searchInput.value = "";
+        }
+
 		!isNg && this.dialog.set('title', structure["name"] ? structure["name"] : "");
 		this.structureVelVar = structure["velocityVarName"] ? structure["velocityVarName"] : "";
         this._structureChanged();
@@ -534,7 +543,15 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 		if(dijit.byId("langcombo+"+this.dialogCounter).get('displayedValue') != "")
 			fieldsValues[fieldsValues.length] = dijit.byId("langcombo+"+this.dialogCounter).get('value');
 		else
-			fieldsValues[fieldsValues.length] = "";
+            fieldsValues[fieldsValues.length] = "";
+            
+        var allField = dijit.byId("allFieldTB").getValue();
+
+        if (allField != undefined && allField.length>0 ) {
+
+                fieldsValues[fieldsValues.length] = "catchall";
+                fieldsValues[fieldsValues.length] = allField + "*";
+        }
 
 		for (var h = 0; h < this.currentStructureFields.length; h++) {
 
@@ -757,7 +774,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 		cell.setAttribute("class","beta");
 		cell.setAttribute("className","beta");
 		cell.setAttribute("style","text-align: center;");
-		cell.innerHTML = "<td><a href='#'><b>Type</b></a></td>";
+		cell.innerHTML = "<td><b>Type</b></td>";
 
 		for (var i = 0; i < headers.length; i++) {
 			var header = headers[i];
@@ -785,7 +802,6 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 				// row.setAttribute("bgcolor","#EEEEEE");
 			}
             var cellData = data[i];
-            console.log('---cellData', cellData)
             
             var cell = row.insertCell (row.cells.length);
             var iconName = this._getIconName(cellData['__type__']);
@@ -980,7 +996,9 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 		dwr.util.removeAllRows(this.results_table);
 		this.nextDiv.style.display = "none";
 		this.previousDiv.style.display = "none";
-		this.relateDiv.style.display = "none";
+        this.relateDiv.style.display = "none";
+        var searchInput = document.getElementById("allFieldTB");
+        searchInput.value = "";
 
 		this._hideMatchingResults ();
 	},

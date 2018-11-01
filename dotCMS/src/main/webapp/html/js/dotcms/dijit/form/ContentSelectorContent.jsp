@@ -18,6 +18,12 @@
                     <div dojoAttachPoint="search_categories_table">
                         <dl class="vertical" dojoAttachPoint="search_categories_list"></dl>
                     </div>
+                    <div dojoAttachPoint="search_general">
+                        <dl class="vertical">
+                            <dt><label><%= LanguageUtil.get(pageContext, "Search") %>:</label></dt>
+                            <dd><input type="text" dojoType="dijit.form.TextBox" onKeyDown='contentSelector._doSearch()' name="allFieldTB" id="allFieldTB"></dd>
+                        </dl>
+                    </div>
                     <div class="clear"></div>
                     <div class="buttonRow">
                         <button dojoType="dijit.form.Button" dojoAttachEvent='onClick:_doSearchPage1' iconClass="searchIcon"><%= LanguageUtil.get(pageContext, "Search") %></button>
