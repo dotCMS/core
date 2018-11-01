@@ -554,7 +554,7 @@ public class PublisherConfig implements Map<String, Object>, Cloneable {
 
 	/**
 	 * Convenience method to get access to the mapped remote languages map
-	 * @return
+	 * @return a Writable Map of the form Id/Language
 	 */
 	@SuppressWarnings("unchecked")
 	private Map<Long,Language> getWritableMappedRemoteLanguages(){
@@ -564,7 +564,13 @@ public class PublisherConfig implements Map<String, Object>, Cloneable {
 	}
 
 	/**
-	 *
+	 * This method is used to solve Language conflicts
+	 * It allows the assignment of remote Lang id with an existing language
+	 * Meaning that if for example Language: Finish has an id 3 on the sender.
+	 * it also exists on the receiver under a different id let says 5
+	 * We can says that 3 maps to 5.
+	 * In the given scenario of a new Language the map has to be used to map the new id with the new Languange Instance.
+	 * The same way if no conflict is found we can use the map to say an id should map to the non-conflicting the Local Lang.
 	 * @param remoteId
 	 * @param localLang
 	 */
@@ -573,9 +579,9 @@ public class PublisherConfig implements Map<String, Object>, Cloneable {
 	}
 
 	/**
-	 *
+	 * This method serves as a Read-Only accessor to the map used to handle language conflicts.
 	 * @param remoteId
-	 * @return
+	 * @return the Language mapped to the given id.
 	 */
 	public Language getMappedRemoteLanguage(final Long remoteId){
 		return getWritableMappedRemoteLanguages().get(remoteId);
