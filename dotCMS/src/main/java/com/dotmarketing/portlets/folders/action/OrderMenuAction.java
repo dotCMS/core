@@ -22,11 +22,9 @@ import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.Treeable;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portal.struts.DotPortletAction;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -48,7 +46,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 
-import com.liferay.portal.util.Constants;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionMapping;
 
@@ -290,26 +287,26 @@ public class OrderMenuAction extends DotPortletAction {
                         if (shorty == null) {
                             continue;
                         } else if (ShortType.FOLDER.equals(shorty.subType)) {
-                            Folder f = APILocator.getFolderAPI().find(inode, user, false);
-                            f.setSortOrder(i);
-                            APILocator.getFolderAPI().save(f, user, false);
-                            ret.add(f);
+                            final Folder folder = APILocator.getFolderAPI().find(inode, user, false);
+                            folder.setSortOrder(i);
+                            APILocator.getFolderAPI().save(folder, user, false);
+                            ret.add(folder);
                         } else if (ShortType.LINKS.equals(shorty.subType)) {
-                            Link l = APILocator.getMenuLinkAPI().find(inode, user, false);
-                            l.setSortOrder(i);
-                            APILocator.getMenuLinkAPI().save(l, user, false);
-                            ret.add(l);
+                            final Link link = APILocator.getMenuLinkAPI().find(inode, user, false);
+                            link.setSortOrder(i);
+                            APILocator.getMenuLinkAPI().save(link, user, false);
+                            ret.add(link);
                         } else if (ShortType.CONTENTLET.equals(shorty.subType)) {
-                            final Contentlet c = APILocator.getContentletAPI().find(inode, user, false);
+                            final Contentlet contentlet = APILocator.getContentletAPI().find(inode, user, false);
 
                             // User must have publish on the pages in order to reorder them
-                            APILocator.getPermissionAPI().checkPermission(c, PermissionLevel.PUBLISH, user);
+                            APILocator.getPermissionAPI().checkPermission(contentlet, PermissionLevel.PUBLISH, user);
 
 
-                            c.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
-                            c.setSortOrder(i);
-                            c.setModDate(new Date());
-                            final Contentlet in = APILocator.getContentletAPI().checkinWithoutVersioning(c, null, null, null,
+                            contentlet.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
+                            contentlet.setSortOrder(i);
+                            contentlet.setModDate(new Date());
+                            final Contentlet in = APILocator.getContentletAPI().checkinWithoutVersioning(contentlet, null, null, null,
                                     APILocator.systemUser(), false);
 
                             ret.add(in);
