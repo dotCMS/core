@@ -55,22 +55,32 @@ const I8N_BASE = 'api.sites.ruleengine';
                      icon="{{opt.icon}}"></cw-input-option>
   </cw-input-dropdown>
   <div flex="15" layout-fill layout="row" layout-align="start center" class="cw-input">
-    <cw-input-text
-        flex
-        class="cw-latLong"
-        [value]="getRadiusInPreferredUnit() | number:'1.0-0'"
-        [readonly]="true">
-    </cw-input-text>
+      <input  pInputText
+              class="cw-latLong"
+              [value]="getRadiusInPreferredUnit() | number:'1.0-0'"
+              [readonly]="true"
+      />
+      <!--<cw-input-text-->
+        <!--flex-->
+        <!--class="cw-latLong"-->
+        <!--[value]="getRadiusInPreferredUnit() | number:'1.0-0'"-->
+        <!--[readonly]="true">-->
+    <!--</cw-input-text>-->
     <label class="cw-input-label-right">{{preferredUnit}}</label>
   </div>
   <div flex layout-fill layout="row" layout-align="start center" class="cw-input">
     <label class="cw-input-label-left">{{fromLabel}}</label>
-    <cw-input-text
+      <input  pInputText
+              class="cw-radius"
+              [value]="getLatLong()"
+              [readonly]="true"
+      />
+    <!--<cw-input-text
         flex
         class="cw-radius"
         [value]="getLatLong()"
         [readonly]="true">
-    </cw-input-text>
+    </cw-input-text>-->
   </div>
   <div flex layout="column" class="cw-input cw-last">
     <button class="ui button cw-button-add" aria-label="Show Map" (click)="toggleMap()">

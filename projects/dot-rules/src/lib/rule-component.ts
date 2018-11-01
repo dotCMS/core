@@ -73,7 +73,28 @@ const rsrc = {
     <div flex="70" layout="row" layout-align="start center" class="cw-header-info" >
       <i flex="none" class="caret icon cw-rule-caret large" [class.right]="!rule._expanded" [class.down]="rule._expanded" aria-hidden="true"></i>
       <div flex="70" layout="column">
-      <cw-input-text class="cw-rule-name-input"
+          <input  pInputText
+                  class="cw-rule-name-input"
+                  [value]="getLatLong()"
+                  [readonly]="true"
+          />
+
+
+          <input  pInputText
+                  type="{{type}}"
+                  [value]="value"
+                  [disabled]="disabled"
+                  [readonly]="readonly"
+                  tabindex="{{tabIndex || ''}}"
+                  placeholder="{{placeholder}}"
+                  (blur)="onBlur($event)"
+                  (change)="$event.stopPropagation()"
+                  (input)="onChange($event.target.value)"
+          />
+          
+          
+          
+          <cw-input-text class="cw-rule-name-input"
                      focused="{{rule.key == null}}"
                      placeholder="{{rsrc('inputs.name.placeholder') | async}}"
                      formControlName="name"
