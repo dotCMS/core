@@ -22,7 +22,7 @@ const route: any = jasmine.createSpyObj<ActivatedRouteSnapshot>('ActivatedRouteS
 
 route.queryParams = {};
 
-fdescribe('DotEditPageResolver', () => {
+describe('DotEditPageResolver', () => {
     let resolver: DotEditPageResolver;
     let dotPageStateService: DotPageStateService;
     let dotHttpErrorManagerService: DotHttpErrorManagerService;
@@ -99,7 +99,7 @@ fdescribe('DotEditPageResolver', () => {
             });
         });
 
-        fit('should return handle 403', () => {
+        it('should return handle 403', () => {
             const fake403Response = mockResponseView(403);
 
             spyOn(dotHttpErrorManagerService, 'handle').and.returnValue(
@@ -121,7 +121,7 @@ fdescribe('DotEditPageResolver', () => {
             });
         });
 
-        fit('should redirect to site-browser', () => {
+        it('should redirect to site-browser', () => {
             const fake403Response = mockResponseView(403);
 
             spyOn(dotHttpErrorManagerService, 'handle').and.returnValue(

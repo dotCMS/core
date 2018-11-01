@@ -455,8 +455,6 @@ describe('DotEditContentComponent', () => {
         );
 
         it('should change the Language/Persona of the page when viewAs configuration changes and set the dev', () => {
-            const mockRenderedPageState = new DotRenderedPageState(mockUser, mockDotRenderedPage);
-
             spyOn(component, 'changeViewAsHandler').and.callThrough();
             spyOn(dotPageStateService, 'reload');
 
@@ -466,12 +464,12 @@ describe('DotEditContentComponent', () => {
 
             expect(dotPageStateService.reload).toHaveBeenCalledWith(
                 {
-                    url: route.snapshot.queryParams.url,
+                    url: 'an/url/fake',
                     mode: 2,
                     viewAs: {
-                        persona_id: mockDotEditPageViewAs.persona.identifier,
-                        language_id: mockRenderedPageState.page.languageId,
-                        device_inode: mockDotEditPageViewAs.device.inode
+                        persona_id: '1c56ba62-1f41-4b81-bd62-b6eacff3ad23',
+                        language_id: 1,
+                        device_inode: '1'
                     }
                 }
             );
