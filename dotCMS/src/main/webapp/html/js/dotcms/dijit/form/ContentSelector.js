@@ -58,7 +58,7 @@ var isNg = new URLSearchParams(document.location.search).get('ng');
 dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templated], {
 
 	templatePath: dojo.moduleUrl("dotcms", isNg ? "dijit/form/ContentSelectorNoDialog.jsp" : "dijit/form/ContentSelector.jsp"),
-	selectButtonTemplate: '<button id="{buttonInode}" class="dijitButtonFlat" dojoType="dijit.form.Button">Select</button>',
+	selectButtonTemplate: '<button id="{buttonInode}" pbutton secondary dojoType="dijit.form.Button">Select</button>',
 	checkBoxTemplate: '<input value="{buttonInode}" class="contentCheckbox" dojoType="dijit.form.CheckBox"></input>',
 	widgetsInTemplate: true,
 	title: '',
@@ -752,16 +752,12 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 
 		//Filling Headers
 		var row = table.insertRow(table.rows.length);
-		var cell = row.insertCell (row.cells.length);
-		cell.setAttribute("class","beta");
-		cell.setAttribute("className","beta");
-		cell.setAttribute("width","5%");
 
-		var cell = row.insertCell (row.cells.length);
+        var cell = row.insertCell (row.cells.length);
 		cell.setAttribute("class","beta");
 		cell.setAttribute("className","beta");
-		cell.setAttribute("style","min-width:120px;");
-		cell.innerHTML = "<b>"+this.availableLanguages[0]['title']+"</b>";
+		cell.setAttribute("style","text-align: center;");
+		cell.innerHTML = "<td><a href='#'><b>Type</b></a></td>";
 
 		for (var i = 0; i < headers.length; i++) {
 			var header = headers[i];
@@ -769,20 +765,40 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 			cell.innerHTML = this._getHeader (header);
 			cell.setAttribute("class","beta");
 			cell.setAttribute("className","beta");
-		}
+        }
+        
+		var cell = row.insertCell (row.cells.length);
+		cell.setAttribute("class","beta");
+		cell.setAttribute("className","beta");
+		cell.setAttribute("style","min-width:120px;");
+		cell.innerHTML = "<b>"+this.availableLanguages[0]['title']+"</b>";
+
+        var cell = row.insertCell (row.cells.length);
+		cell.setAttribute("class","beta");
+		cell.setAttribute("className","beta");
+		cell.setAttribute("width","5%");
+
 		//Filling data
 		for (var i = 0; i < data.length; i++) {
 			var row = table.insertRow(table.rows.length);
 			if (i % 2 == 1){
 				// row.setAttribute("bgcolor","#EEEEEE");
 			}
-			var cellData = data[i];
-			var cell = row.insertCell (row.cells.length);
-			cell.setAttribute("id",i);
-			if(this.multiple=='true') {
-				cell.innerHTML = this._checkButton(cellData);
-			} else {
-				cell.innerHTML = this._selectButton(cellData);
+            var cellData = data[i];
+            console.log('---cellData', cellData)
+            
+            var cell = row.insertCell (row.cells.length);
+            var iconName = this._getIconName(cellData['__type__']);
+            cell.innerHTML = '<img style="border:1px solid #eeeeee" onError="contentSelector._replaceWithIcon(this.parentElement, \'' + iconName + '\')" src="/dA/' + cellData.inode + '/32w">';
+            cell.setAttribute("style","text-align: center;");
+
+			for (var j = 0; j < this.headers.length; j++) {
+				var header = this.headers[j];
+				var cell = row.insertCell (row.cells.length);
+				cell.setAttribute("onClick","javascript: toggleCheckbox("+i+")");
+				var value = cellData[header["fieldVelocityVarName"]];
+				if (value != null)
+					cell.innerHTML = value;
 			}
 
 			for(var l = 0; l < this.availableLanguages.length; l++){
@@ -793,15 +809,15 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 				}
 			}
 
-			for (var j = 0; j < this.headers.length; j++) {
-				var header = this.headers[j];
-				var cell = row.insertCell (row.cells.length);
-				cell.setAttribute("onClick","javascript: toggleCheckbox("+i+")");
-				var value = cellData[header["fieldVelocityVarName"]];
-				if (value != null)
-					cell.innerHTML = value;
+            var cell = row.insertCell (row.cells.length);
+			cell.setAttribute("id",i);
+			if(this.multiple=='true') {
+				cell.innerHTML = this._checkButton(cellData);
+			} else {
+				cell.innerHTML = this._selectButton(cellData);
 			}
-		}
+
+        }
 
 		//dojo.parser.parse("results_table_popup_menus");
 		dojo.parser.parse(this.results_table);
@@ -975,5 +991,15 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 
 	_nextPage: function (){
 		this._doSearch(this.currentPage+1);
+    },
+
+    _getIconName: function (iconCode) {
+        var startIndex = iconCode.indexOf('<span class') + 13;
+        var endIndex = iconCode.indexOf('</span>') - 2;
+		return iconCode.substring(startIndex, endIndex);
+    },
+
+	_replaceWithIcon: function (parentElement, iconName) {
+        parentElement.innerHTML = '<span class="' + iconName +'"></span>'
     }
 });
