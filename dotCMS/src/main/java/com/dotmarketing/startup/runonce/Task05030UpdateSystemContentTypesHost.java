@@ -4,12 +4,9 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.startup.AbstractJDBCStartupTask;
 import com.dotmarketing.startup.StartupTask;
 
 import java.sql.SQLException;
-import java.util.Collections;
-import java.util.List;
 
 /**
  * This task updates the 'host' db column of the 'structure' table to System Host's identifier for 'fixed' records
@@ -32,13 +29,13 @@ public class Task05030UpdateSystemContentTypesHost implements StartupTask {
     public void executeUpgrade() throws DotDataException, DotRuntimeException {
         try {
             DbConnectionFactory.getConnection().setAutoCommit(true);
-            DotConnect dc = new DotConnect();
+            final DotConnect dotConnect = new DotConnect();
 
-            dc.setSQL(UPDATE_HOST_ON_FIXED_TYPES);
-            dc.loadResult();
+            dotConnect.setSQL(UPDATE_HOST_ON_FIXED_TYPES);
+            dotConnect.loadResult();
 
-            dc.setSQL(REMOVE_FIXED_ON_COMMENTS_TYPE);
-            dc.loadResult();
+            dotConnect.setSQL(REMOVE_FIXED_ON_COMMENTS_TYPE);
+            dotConnect.loadResult();
         } catch (SQLException e) {
             throw new DotDataException(e.getMessage(), e);
         }
