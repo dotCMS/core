@@ -281,17 +281,4 @@ public class StringUtils {
 
         return builder;
     } // builder.
-
-    /**
-     *  Null safe, case insensitive equals
-     * @param a
-     * @param b
-     * @return
-     */
-    public static boolean equalsNullSafeIgnoreCase(final String a, final String b){
-
-        if( null == a && null == b ) return true;
-        return (a != null && a.trim().equalsIgnoreCase(b));
-    }
-
 }
