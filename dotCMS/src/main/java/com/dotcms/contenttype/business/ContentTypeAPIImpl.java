@@ -376,7 +376,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
       throws DotDataException, DotSecurityException {
     // Sets the host:
     try {
-      if (contentType.host() == null || contentType.fixed()) {
+      if (contentType.host() == null) {
         contentType = ContentTypeBuilder.builder(contentType).host(Host.SYSTEM_HOST).build();
       }
       if (!UUIDUtil.isUUID(contentType.host()) && !Host.SYSTEM_HOST.equalsIgnoreCase(contentType.host())) {
