@@ -146,8 +146,8 @@ public class CascadePermissionsJob implements StatefulJob {
 		final String roleId = (String) map.get("roleId");
 		final String userId = (String) map.get("userId");
 		try {
-			permissionable = retrievePermissionable(permissionableId);
-			final Role role      = roleAPI.loadRoleById(roleId);
+			permissionable  = retrievePermissionable(permissionableId);
+			final Role role = roleAPI.loadRoleById(roleId);
 			permissionAPI.cascadePermissionUnder(permissionable, role);
 			permissionAPI.removePermissionableFromCache(permissionable.getPermissionId());
 
@@ -161,12 +161,23 @@ public class CascadePermissionsJob implements StatefulJob {
 						userAPI.getSystemUser().getLocale()
 				);
 			}
-
-		} catch (DotDataException e) {
-			Logger.error(this, e.getMessage(), e);
-			throw new DotRuntimeException(e.getMessage(), e);
-		} catch (DotSecurityException e) {
+		} catch (DotDataException | DotSecurityException e) {
 			Logger.error(CascadePermissionsJob.class, e.getMessage(), e);
+
+			if (UtilMethods.isSet(userId)){
+				try {
+					notificationAPI.generateNotification(
+                            new I18NMessage("notification.identifier.cascadepermissionsjob.info.title"),
+                            new I18NMessage("notification.cascade.permissions.error"),
+                            null, // no actions
+                            NotificationLevel.ERROR,
+                            NotificationType.GENERIC, Visibility.USER, userId, userId,
+                            userAPI.getSystemUser().getLocale()
+                    );
+				} catch (DotDataException e1) {
+					Logger.error(CascadePermissionsJob.class, e.getMessage(), e);
+				}
+			}
 			throw new DotRuntimeException(e.getMessage(), e);
 		}
 	}
