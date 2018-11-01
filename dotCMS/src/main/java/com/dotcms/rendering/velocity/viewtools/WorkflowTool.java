@@ -1,5 +1,6 @@
 package com.dotcms.rendering.velocity.viewtools;
 
+import com.dotcms.rendering.velocity.viewtools.exception.DotToolException;
 import com.dotcms.rest.MapToContentletPopulator;
 import com.dotmarketing.business.Permissionable;
 import java.util.List;
@@ -12,6 +13,8 @@ import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicyProvider;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.UtilMethods;
+import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
 
 import com.dotmarketing.business.APILocator;
@@ -34,6 +37,8 @@ import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.liferay.portal.model.User;
 
+import javax.servlet.http.HttpServletRequest;
+
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.RELATIONSHIP_KEY;
 
 
@@ -47,8 +52,11 @@ public class WorkflowTool implements ViewTool {
 	private final WorkflowAPI workflowAPI = APILocator.getWorkflowAPI();
 	private final CategoryAPI categoryAPI = APILocator.getCategoryAPI();
 	private final RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
+	private User user;
 
-	public void init(Object obj) {
+	public void init(final Object initData) {
+		HttpServletRequest request = ((ViewContext) initData).getRequest();
+		user = getUser(request);
 	}
 
 	public WorkflowTask findTaskByContentlet(Contentlet contentlet) throws DotDataException {
@@ -154,37 +162,46 @@ public class WorkflowTool implements ViewTool {
 
 	/**
 	 * Fires a Workflow Action identified by wfActionId using the given map of properties of a contentlet.
-	 * @param wfActionId Id of the action to perform
 	 * @param properties Map of properties of the contentlet to process
-	 * @param user User performing the action
+	 * @param wfActionId Id of the action to perform
 	 * @return the resulting content after performing the action
-	 * @throws DotSecurityException
-	 * @throws DotDataException
+	 * @throws DotToolException runtime exception to wrap the original exception
 	 */
 
-	public Contentlet fire(final String wfActionId, final Map<String, Object> properties, final User user)
-			throws DotSecurityException, DotDataException {
-		final MapToContentletPopulator mapToContentletPopulator = MapToContentletPopulator.INSTANCE;
+	public Contentlet fire(final Map<String, Object> properties, final String wfActionId) throws DotToolException {
 		Contentlet contentlet = new Contentlet();
-		contentlet = mapToContentletPopulator.populate(contentlet, properties);
 
-		final boolean ALLOW_FRONT_END_SAVING = Config
-				.getBooleanProperty("WORKFLOW_TOOL_ALLOW_FRONT_END_SAVING", false);
+		try {
+			final MapToContentletPopulator mapToContentletPopulator = MapToContentletPopulator.INSTANCE;
+			contentlet = mapToContentletPopulator.populate(contentlet, properties);
 
-		final List<Category> cats = categoryAPI.getCategoriesFromContent(contentlet, user, ALLOW_FRONT_END_SAVING);
+			if(UtilMethods.isSet(properties.get("inode"))) {
+				contentlet.setInode((String) properties.get("inode"));
+			}
 
-		final Map<Relationship, List<Contentlet>> relationships = (Map<Relationship, List<Contentlet>>)
-				contentlet.get(RELATIONSHIP_KEY);
+			final boolean allowFrontEndSaving = Config
+					.getBooleanProperty("WORKFLOW_TOOL_ALLOW_FRONT_END_SAVING", false);
 
-		final ContentletDependencies contentletDependencies = new ContentletDependencies.Builder()
-				.workflowActionId(wfActionId)
-				.respectAnonymousPermissions(ALLOW_FRONT_END_SAVING)
-				.modUser(user).categories(cats)
-				.relationships(relationshipAPI.getContentletRelationshipsFromMap(contentlet, relationships))
-				.indexPolicy(IndexPolicyProvider.getInstance().forSingleContent())
-				.build();
+			final List<Category> categories = categoryAPI.getCategoriesFromContent(contentlet, user, allowFrontEndSaving);
 
-		return workflowAPI.fireContentWorkflow(contentlet, contentletDependencies);
+			final Map<Relationship, List<Contentlet>> relationships = (Map<Relationship, List<Contentlet>>)
+					contentlet.get(RELATIONSHIP_KEY);
+
+			final ContentletDependencies contentletDependencies = new ContentletDependencies.Builder()
+					.workflowActionId(wfActionId)
+					.respectAnonymousPermissions(allowFrontEndSaving)
+					.modUser(user).categories(categories)
+					.relationships(relationshipAPI.getContentletRelationshipsFromMap(contentlet, relationships))
+					.indexPolicy(IndexPolicyProvider.getInstance().forSingleContent())
+					.build();
+
+			contentlet = workflowAPI.fireContentWorkflow(contentlet, contentletDependencies);
+
+		} catch (Exception e) {
+			throw new DotToolException(e);
+		}
+
+		return  contentlet;
 	}
 
 }

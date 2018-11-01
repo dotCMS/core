@@ -988,13 +988,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
      */
     private IHTMLPage loadPageByIdentifier ( String ident, boolean live, Long languageId, User user, boolean frontRoles ) throws DotDataException, DotContentletStateException, DotSecurityException {
 
-        Identifier ii = APILocator.getIdentifierAPI().find(ident);
-        if ( ii.getAssetType().equals("contentlet") ) {
-            return APILocator.getHTMLPageAssetAPI().fromContentlet(APILocator.getContentletAPI().findContentletByIdentifier(ident, live, languageId, user, frontRoles));
-        } else {
-            return live ? (IHTMLPage) APILocator.getVersionableAPI().findLiveVersion(ii, user, frontRoles)
-                    : (IHTMLPage) APILocator.getVersionableAPI().findWorkingVersion(ii, user, frontRoles);
-        }
+
+        return APILocator.getHTMLPageAssetAPI().fromContentlet(this.findContentletByIdentifier(ident, live, languageId, user, frontRoles));
+        
     }
 
     /**
@@ -3653,6 +3649,22 @@ public class ESContentletAPIImpl implements ContentletAPI {
         workingContentlet.setInode(contentletInode);
         copyProperties(workingContentlet, cmap);
         workingContentlet.setInode("");
+
+        /*
+        The checkin is assuming that HTMLPages are going to have an URL field as it
+        is always sent from the UI, but if we checkout the content and then save (checkin) we
+        fail as the checkout is not populating that field.
+        We need to remember the URL field in pages is a calculated value and should not be stored.
+         */
+        if (workingContentlet.getContentType().baseType() == BaseContentType.HTMLPAGE
+                && UtilMethods.isSet(workingContentlet.getIdentifier())) {
+
+            final Identifier htmlPageIdentifier = APILocator.getIdentifierAPI()
+                    .find(workingContentlet.getIdentifier());
+            workingContentlet
+                    .setStringProperty(HTMLPageAssetAPI.URL_FIELD, htmlPageIdentifier.getAssetName());
+        }
+
         return workingContentlet;
     }
 
@@ -4280,7 +4292,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                         new DotContentletValidationException("Contentlet ["
                                         + (contentlet != null && UtilMethods.isSet(contentlet.getIdentifier())
                                                         ? contentlet.getIdentifier() : "Unknown/New")
-                                        + "] has an invalid field.");
+                                        + "] has invalid / missing field(s).");
         List<Field> fields = FieldsCache.getFieldsByStructureInode(stInode);
         Structure structure = CacheLocator.getContentTypeCache().getStructureByInode(stInode);
         final Map<String, Object> conMap = contentlet.getMap();
@@ -4847,7 +4859,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    private Map<Relationship, List<Contentlet>> findContentRelationships(Contentlet contentlet) throws DotDataException{
+    private Map<Relationship, List<Contentlet>> findContentRelationships(Contentlet contentlet)
+            throws DotDataException {
         Map<Relationship, List<Contentlet>> contentRelationships = new HashMap<>();
         if(contentlet == null)
             return contentRelationships;
