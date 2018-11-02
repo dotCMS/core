@@ -239,7 +239,7 @@ public class TikaUtils {
                     logError(binFile, e);
                 }
             }
-        } catch (Exception e) {
+        } catch (Throwable e) {
 
             if (isZeroByteFileException(e)) {
                 logWarning(binFile, e);
