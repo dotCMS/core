@@ -982,11 +982,14 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 			throws DotDataException, DotSecurityException {
 
 		final ContentType languageVariableType = contentTypeApi.find("Languagevariable");
+		final List<Field> fields = languageVariableType.fields();
 		final ContentType languageVariableTypeWithAnotherHost =
 				ContentTypeBuilder.builder(languageVariableType).host("ANY-OTHER-HOST").build();
+		languageVariableTypeWithAnotherHost.constructWithFields(fields);
 
 		final ContentType savedLanguagaVariableType = contentTypeApi.save(languageVariableTypeWithAnotherHost);
 		assertEquals(savedLanguagaVariableType.host(), Host.SYSTEM_HOST);
+		assertEquals(fields, savedLanguagaVariableType.fields());
 	}
 	
 	private void createContentTypeWithPublishExpireFields(int base) throws Exception{
