@@ -366,16 +366,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     // note: is not annotated with WrapInTransaction b/c it handles his own transaction locally in the methodok
+    @WrapInTransaction
     @Override
     public void publish(Contentlet contentlet, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException, DotStateException {
 
-        boolean localTransaction = false;
-        boolean isNewConnection  = false;
 
-        try {
-
-            localTransaction = HibernateUtil.startLocalTransactionIfNeeded();
-            isNewConnection  = !DbConnectionFactory.connectionExists();
 
             String contentPushPublishDate = contentlet.getStringProperty("wfPublishDate");
             String contentPushExpireDate = contentlet.getStringProperty("wfExpireDate");
@@ -476,20 +471,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             HibernateUtil.addAsyncCommitListener(
                     () -> this.contentletSystemEventUtil.pushPublishEvent(contentlet), 1000);
 
-            if ( localTransaction ) {
-                HibernateUtil.commitTransaction();
-            }
-        } catch(Exception e) {
-            Logger.error(this, e.getMessage(), e);
 
-            if(localTransaction){
-                HibernateUtil.rollbackTransaction();
-            }
-        } finally {
-            if ((localTransaction && isNewConnection)) {
-                HibernateUtil.closeSessionSilently();
-            }
-        }
     }
 
     @Override
