@@ -20,7 +20,7 @@ import { LoggerService } from 'dotcms-js';
       <div *ngIf="input.type == 'spacer'" flex class="cw-input cw-input-placeholder">&nbsp;</div>
       <cw-input-dropdown *ngIf="input.type == 'dropdown'"
                          flex
-                         class="cw-input"
+                         class="cw-input testhoy1"
                          [hidden]="input.argIndex !== null && input.argIndex >= _rhArgCount"
                          [formControl]="input.control"
                          [required]="input.required"
@@ -37,8 +37,8 @@ import { LoggerService } from 'dotcms-js';
       </cw-input-dropdown>
 
       <div flex layout-fill layout="column" class="cw-input" [class.cw-last]="islast" *ngIf="input.type == 'restDropdown'">
-        <cw-input-rest-dropdown flex
-                                class="cw-input"
+        <cw-input-rest-dropdown flex 
+                                class="cw-input testhoy2"
                                 [value]="input.value"
                                 [formControl]="input.control"
                                 [hidden]="input.argIndex !== null && input.argIndex >= _rhArgCount"
@@ -61,15 +61,14 @@ import { LoggerService } from 'dotcms-js';
       </div>
 
       <div flex layout-fill layout="column" class="cw-input" [class.cw-last]="islast" *ngIf="input.type == 'text' || input.type == 'number'">
-        <cw-input-text
-            flex
-            [placeholder]="input.placeholder | async"
-            [formControl]="input.control"
-            [type]="input.type"
-            [hidden]="input.argIndex !== null && input.argIndex >= _rhArgCount"
-            (blur)="onBlur(input)"
-            #fInput="ngForm"
-        ></cw-input-text>
+          <input pInputText
+              [placeholder]="input.placeholder | async"
+              [formControl]="input.control"
+              [type]="input.type"
+              [hidden]="input.argIndex !== null && input.argIndex >= _rhArgCount"
+              (blur)="onBlur(input)"
+              #fInput="ngForm"
+          />
         <div flex="50" *ngIf="fInput.touched && !fInput.valid && (input.argIndex == null || input.argIndex < _rhArgCount)"
             class="name cw-warn basic label">{{getErrorMessage(input)}}</div>
       </div>

@@ -1,18 +1,13 @@
 
-import {interval as observableInterval} from 'rxjs';
-
-import {takeWhile} from 'rxjs/operators';
 import { ElementRef, Component, Directive, EventEmitter, Optional } from '@angular/core';
 import {
   Host,
-  AfterViewInit,
-  OnDestroy,
   Output,
   Input,
   ChangeDetectionStrategy
 } from '@angular/core';
 import { ControlValueAccessor, NgControl } from '@angular/forms';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { BehaviorSubject } from 'rxjs';
 import * as _ from 'lodash';
 import { LoggerService } from 'dotcms-js';
 
@@ -32,7 +27,7 @@ import { LoggerService } from 'dotcms-js';
                 class="ui fluid ng-valid"
                 [placeholder]="placeholder"
                 [(ngModel)]="modelValue"
-                (onChange)="onChangeSemantic($event.value)"
+                (onChange)="fireChange($event.value)"
                 [required]="minSelections > 0"
                 [editable]="allowAdditions">
     </p-dropdown>
@@ -59,7 +54,6 @@ export class Dropdown implements ControlValueAccessor {
   private _optionsAry: InputOption[] = [];
   private _options: BehaviorSubject<InputOption[]>;
   private elementRef: ElementRef;
-  private _$dropdown: any;
 
   onChange: Function = () => {};
   onTouched: Function = () => {};
@@ -89,17 +83,8 @@ export class Dropdown implements ControlValueAccessor {
     return this._options;
   }
 
-  focus(): void {
-    try {
-      this._$dropdown.children('input.search')[0].focus();
-    } catch (e) {
-      this.loggerService.info('Dropdown', 'could not focus search element');
-    }
-  }
-
   writeValue(value: any): void {
     this.modelValue = _.isEmpty(value) ? '' : value;
-    this.applyValue(this.modelValue);
   }
 
   registerOnChange(fn): void {
@@ -110,25 +95,24 @@ export class Dropdown implements ControlValueAccessor {
     this.onTouched = fn;
   }
 
-  fireChange($event): void {
+  fireChange(value: any): void {
+    this.modelValue = value;
     if (this.onDropDownChange) {
-      this.onDropDownChange.emit($event);
-      this.onChange($event);
+      this.onDropDownChange.emit(value);
+      this.onChange(value);
+      this.fireTouch(value);
     }
   }
 
   fireMultiSelectChanges(event: any): void {
-    this.onChangeSemantic(event);
+    this.fireChange(event);
     this.fireTouch(event);
   }
 
-  completeMethod($event): void {
-    console.log('completeMethod');
-  }
-
   fireTouch($event): void {
-    this.touch.emit($event);
-    this.onTouched();
+      this.onTouched();
+      this.touch.emit($event);
+
   }
 
   hasOption(option: InputOption): boolean {
@@ -141,9 +125,6 @@ export class Dropdown implements ControlValueAccessor {
   addOption(option: InputOption): void {
     this._optionsAry = this._optionsAry.concat(option);
     this._options.next(this._optionsAry);
-    if (option.value === this.modelValue) {
-      this.refreshDisplayText(option.label);
-    }
   }
 
   updateOption(option: InputOption): void {
@@ -153,45 +134,6 @@ export class Dropdown implements ControlValueAccessor {
     this.addOption(option);
   }
 
-  refreshDisplayText(label: string): void {
-    if (this._$dropdown) {
-      this._$dropdown.dropdown('set text', label);
-    }
-  }
-
-  /**
-   * Is called after a dropdown value changes. Receives the name and value of selection and the active menu element
-   * @param value
-   */
-  onChangeSemantic(value): void {
-    this.modelValue = value;
-    this.fireChange(value);
-  }
-
-  private applyValue(value): void {
-    let count = 0;
-
-    observableInterval(10).pipe(
-      takeWhile(() => {
-        count++;
-        if (count > 100) {
-          throw new Error('Dropdown element not found.');
-        }
-        return this._$dropdown == null;
-      }))
-      .subscribe(
-        () => {
-          // still null!
-        },
-        e => {
-          this.loggerService.info('Dropdown', 'Error', e);
-        },
-        () => {
-          this.loggerService.info('Dropdown', 'onComplete');
-          this._$dropdown.dropdown('set selected', value);
-        }
-      );
-  }
 }
 
 @Directive({

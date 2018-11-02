@@ -75,31 +75,10 @@ const rsrc = {
       <div flex="70" layout="column">
           <input  pInputText
                   class="cw-rule-name-input"
-                  [value]="getLatLong()"
-                  [readonly]="true"
-          />
-
-
-          <input  pInputText
-                  type="{{type}}"
-                  [value]="value"
-                  [disabled]="disabled"
-                  [readonly]="readonly"
-                  tabindex="{{tabIndex || ''}}"
-                  placeholder="{{placeholder}}"
-                  (blur)="onBlur($event)"
-                  (change)="$event.stopPropagation()"
-                  (input)="onChange($event.target.value)"
-          />
-          
-          
-          
-          <cw-input-text class="cw-rule-name-input"
-                     focused="{{rule.key == null}}"
-                     placeholder="{{rsrc('inputs.name.placeholder') | async}}"
-                     formControlName="name"
-                     (click)="$event.stopPropagation()">
-      </cw-input-text>
+                  placeholder="{{rsrc('inputs.name.placeholder') | async}}"
+                  formControlName="name"
+                  (click)="$event.stopPropagation()"
+                  dotAutofocus/>
       <div flex="50" [hidden]="!formModel.controls['name'].touched || formModel.controls['name'].valid"
         class="name cw-warn basic label">Name is required
       </div>

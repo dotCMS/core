@@ -12,7 +12,7 @@ $foreground-disabled: #a4a4a4;
 $foreground-active: #848484;
 
 $text-emphasis: #fc7e1c;
-$warn: #c85a6a;
+$warn: #cb3927;
 $brand-primary-one: #209021;
 
 
@@ -34,19 +34,17 @@ $brand-primary-one: #209021;
 }
 
 @mixin valid-and-dirty-or-touched-focused {
-    border-left: 5px solid $brand-primary-one;
     transition-property: border-left;
     transition-delay: 0s;
     transition-duration: 0s;
 }
 
 @mixin invalid-and-dirty-or-touched {
-    border-left: 5px solid $warn;
-    border-color: $warn
+    box-shadow: 0 2px 0 $warn;
 }
 
 @mixin invalid-and-pristine-or-untouched {
-    border-left: 5px solid $foreground-active;
+
 }
 
 $finder-s-input: '.ui.input input';

@@ -17,7 +17,6 @@ import { Dropdown, InputOption } from './semantic/modules/dropdown/dropdown';
 import { GoogleMapService } from './services/GoogleMapService';
 import { I18nService } from './services/system/locale/I18n';
 import { InputDate } from './semantic/elements/input-date/input-date';
-import { InputText } from './semantic/elements/input-text/input-text';
 import { ModalDialogComponent } from './modal-dialog/dialog-component';
 import { PushPublishDialogComponent } from './push-publish/push-publish-dialog-component';
 import { PushPublishDialogContainer } from './push-publish/push-publish-dialog-container';
@@ -50,6 +49,7 @@ import {
 
 import { DotAutocompleteTagsModule } from './components/dot-autocomplete-tags/dot-autocomplete-tags.module';
 import { AppRulesComponent } from './app.component';
+import { DotAutofocusModule } from './directives/dot-autofocus/dot-autofocus.module';
 
 
 @NgModule({
@@ -68,7 +68,8 @@ import { AppRulesComponent } from './app.component';
         MessageModule,
         CalendarModule,
         DotAutocompleteTagsModule,
-        HttpModule
+        HttpModule,
+        DotAutofocusModule
     ],
     declarations: [
         AddToBundleDialogComponent,
@@ -79,7 +80,6 @@ import { AppRulesComponent } from './app.component';
         Dropdown,
         InputDate,
         InputOption,
-        InputText,
         ModalDialogComponent,
         PushPublishDialogComponent,
         PushPublishDialogContainer,

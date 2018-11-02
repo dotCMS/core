@@ -60,12 +60,6 @@ const I8N_BASE = 'api.sites.ruleengine';
               [value]="getRadiusInPreferredUnit() | number:'1.0-0'"
               [readonly]="true"
       />
-      <!--<cw-input-text-->
-        <!--flex-->
-        <!--class="cw-latLong"-->
-        <!--[value]="getRadiusInPreferredUnit() | number:'1.0-0'"-->
-        <!--[readonly]="true">-->
-    <!--</cw-input-text>-->
     <label class="cw-input-label-right">{{preferredUnit}}</label>
   </div>
   <div flex layout-fill layout="row" layout-align="start center" class="cw-input">
@@ -75,12 +69,6 @@ const I8N_BASE = 'api.sites.ruleengine';
               [value]="getLatLong()"
               [readonly]="true"
       />
-    <!--<cw-input-text
-        flex
-        class="cw-radius"
-        [value]="getLatLong()"
-        [readonly]="true">
-    </cw-input-text>-->
   </div>
   <div flex layout="column" class="cw-input cw-last">
     <button class="ui button cw-button-add" aria-label="Show Map" (click)="toggleMap()">
