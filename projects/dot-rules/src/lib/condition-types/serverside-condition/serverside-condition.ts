@@ -20,7 +20,7 @@ import { LoggerService } from 'dotcms-js';
       <div *ngIf="input.type == 'spacer'" flex class="cw-input cw-input-placeholder">&nbsp;</div>
       <cw-input-dropdown *ngIf="input.type == 'dropdown'"
                          flex
-                         class="cw-input testhoy1"
+                         class="cw-input"
                          [hidden]="input.argIndex !== null && input.argIndex >= _rhArgCount"
                          [formControl]="input.control"
                          [required]="input.required"
@@ -37,8 +37,8 @@ import { LoggerService } from 'dotcms-js';
       </cw-input-dropdown>
 
       <div flex layout-fill layout="column" class="cw-input" [class.cw-last]="islast" *ngIf="input.type == 'restDropdown'">
-        <cw-input-rest-dropdown flex 
-                                class="cw-input testhoy2"
+        <cw-input-rest-dropdown flex
+                                class="cw-input"
                                 [value]="input.value"
                                 [formControl]="input.control"
                                 [hidden]="input.argIndex !== null && input.argIndex >= _rhArgCount"
