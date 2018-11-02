@@ -101,7 +101,12 @@ public class JsonFieldTransformer implements FieldTransformer, JsonTransformer {
       JSONObject jo = new JSONObject(input);
 
       if (jo.has(CATEGORIES_PROPERTY_NAME)){
-        final Object categories = jo.get(CATEGORIES_PROPERTY_NAME);
+        Object categories = jo.get(CATEGORIES_PROPERTY_NAME);
+
+        if (!(categories instanceof String)) {
+          categories = jo.get("values");
+        }
+
         jo.put("values", categories);
       }
 
