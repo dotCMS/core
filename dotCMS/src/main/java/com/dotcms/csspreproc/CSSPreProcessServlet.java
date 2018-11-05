@@ -48,17 +48,18 @@ public class CSSPreProcessServlet extends HttpServlet {
             final boolean live = !WebAPILocator.getUserWebAPI().isLoggedToBackend(req);
             final User user = WebAPILocator.getUserWebAPI().getLoggedInUser(req);
             final String origURI=req.getRequestURI();
-            final String uri = (origURI.endsWith(".dotsass"))  ? origURI : origURI.replace("/DOTSASS", "").replace("/DOTLESS","");
+            //final String uri = (origURI.endsWith(".dotsass"))  ? origURI : origURI.replace("/DOTSASS", "").replace("/DOTLESS","");
+            final String fileUri = origURI.replace("/DOTSASS","").replace("/DOTLESS","");
 
 
             // choose compiler based on the request URI
             final Class<? extends CSSCompiler> compilerClass =  (origURI.startsWith("/DOTLESS/")) ? LessCompiler.class : DEFAULT_SASS_COMPILER;
             
             
-            CSSCompiler compiler = compilerClass.getConstructor(Host.class,String.class,boolean.class).newInstance(host,uri,live);
+            CSSCompiler compiler = compilerClass.getConstructor(Host.class,String.class,boolean.class).newInstance(host,fileUri,live);
             
             // check if the asset exists
-            String actualUri =  uri.substring(0, uri.lastIndexOf('.')) + "." + compiler.getDefaultExtension();
+            String actualUri =  fileUri.substring(0, fileUri.lastIndexOf('.')) + "." + compiler.getDefaultExtension();
             Identifier ident = APILocator.getIdentifierAPI().find(host, actualUri);
             if(ident==null || !InodeUtils.isSet(ident.getId())) {
                 resp.sendError(404);
@@ -97,13 +98,13 @@ public class CSSPreProcessServlet extends HttpServlet {
                 synchronized(ident.getId().intern()) {
                     cache = CacheLocator.getCSSCache().get(host.getIdentifier(), actualUri, live, user);
                     if(cache==null || cache.data==null) {
-                        Logger.debug(this, "compiling css data for "+host.getHostname()+":"+uri);
+                        Logger.debug(this, "compiling css data for "+host.getHostname()+":"+fileUri);
                         
                         try {
                             compiler.compile();
                         }
                         catch (Throwable ex) {
-                            Logger.error(this, "Error compiling " + host.getHostname() + ":" + uri, ex);
+                            Logger.error(this, "Error compiling " + host.getHostname() + ":" + fileUri, ex);
                             if (Config.getBooleanProperty("SHOW_SASS_ERRORS_ON_FRONTEND", true)) {
                                 String err = ex.getMessage();
                                 if (err != null) {
@@ -170,7 +171,7 @@ public class CSSPreProcessServlet extends HttpServlet {
                     responseData = cache.data;
                     cacheMaxDate = cache.getMaxDate();
                     cacheObject = cache;
-                    Logger.debug(this, "using cached css data for "+host.getHostname()+":"+uri);
+                    Logger.debug(this, "using cached css data for "+host.getHostname()+":"+fileUri);
                 }
                 else {
                     resp.sendError(500, "no data!");
@@ -192,7 +193,7 @@ public class CSSPreProcessServlet extends HttpServlet {
                 // write the actual response to the user
                 resp.setContentType("text/css");
                 resp.setHeader("Content-Disposition", 
-                        "inline; filename=\"" + uri.substring(uri.lastIndexOf('/'), uri.length()) + "\"");
+                        "inline; filename=\"" + fileUri.substring(fileUri.lastIndexOf('/'), fileUri.length()) + "\"");
                 
                 if(!live && userHasEditPerms && req.getParameter("debug")!=null) {
                     // debug information requested
