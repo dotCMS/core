@@ -99,8 +99,8 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
             final ContentletVersionInfo info = APILocator.getVersionableAPI().
                     getContentletVersionInfo(htmlPageAsset.getIdentifier(), htmlPageAsset.getLanguageId());
 
-            return user.getUserId().equals(info.getLockedBy())
-                    ? PageMode.EDIT_MODE : mode;
+            return user.getUserId().equals(info.getLockedBy()) ? PageMode.EDIT_MODE
+                    : getNotLockDefaultPageMode(htmlPageAsset, user);
         } catch (DotDataException | DotSecurityException e) {
             throw new DotRuntimeException(e);
         }
@@ -136,6 +136,11 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
                 .getPageHTML();
     }
 
+    private PageMode getNotLockDefaultPageMode(final HTMLPageAsset htmlPageAsset, final User user) throws DotDataException {
+        return this.permissionAPI.doesUserHavePermission(htmlPageAsset, PermissionLevel.READ.getType(), user, false)
+                ? PageMode.PREVIEW_MODE : PageMode.LIVE;
+    }
+
     private HTMLPageAsset getHtmlPageAsset(final User user, final String uri, final PageMode mode, final Host host)
             throws DotDataException, DotSecurityException {
         final String pageUri = (UUIDUtil.isUUID(uri) ||( uri.length()>0 && '/' == uri.charAt(0))) ? uri : ("/" + uri);
@@ -148,7 +153,7 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
             throw new HTMLPageAssetNotFoundException(uri);
         } else  {
             final boolean doesUserHavePermission = this.permissionAPI.doesUserHavePermission(htmlPageAsset, PermissionLevel.READ.getType(),
-                    user, false);
+                    user, mode.respectAnonPerms);
 
             if (!doesUserHavePermission) {
                 final String message = String.format("User: %s does not have permissions %s for object %s", user,
