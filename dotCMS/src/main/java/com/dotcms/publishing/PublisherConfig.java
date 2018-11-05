@@ -6,7 +6,6 @@ import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
@@ -19,7 +18,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Provides the main configuration parameters of a bundle sent via Push Publish.
@@ -37,8 +35,7 @@ public class PublisherConfig implements Map<String, Object>, Cloneable {
 		START_DATE, END_DATE, HOSTS, HOST_SET, LANGUAGES, FOLDERS, STRUCTURES, INCLUDE_PATTERN,
 		EXCLUDE_PATTERN, LANGUAGE, USER, PUBLISHER, MAKE_BUNDLE, LUCENE_QUERY, 
 		THREADS, ID, TIMESTAMP, BUNDLERS, INCREMENTAL, NOT_NEW_NOT_INCREMENTAL, DESTINATION_BUNDLE,
-		UPDATED_HTML_PAGE_IDS, LUCENE_QUERIES, ENDPOINT, GROUP_ID, ASSETS, FOLDERS_PENDING_DEFAULT,
-		MAPPED_REMOTE_LANGUAGES
+		UPDATED_HTML_PAGE_IDS, LUCENE_QUERIES, ENDPOINT, GROUP_ID, ASSETS, FOLDERS_PENDING_DEFAULT
 	}
 
 	public enum Operation {
@@ -551,39 +548,4 @@ public class PublisherConfig implements Map<String, Object>, Cloneable {
 		this.publishAuditStatus = publishAuditStatus;
 	}
 
-
-	/**
-	 * Convenience method to get access to the mapped remote languages map
-	 * @return a Writable Map of the form Id/Language
-	 */
-	@SuppressWarnings("unchecked")
-	private Map<Long,Language> getWritableMappedRemoteLanguages(){
-		return (Map<Long,Language>)params.computeIfAbsent(Config.MAPPED_REMOTE_LANGUAGES.name(),
-		  s -> new ConcurrentHashMap<Long,Language>()
-		);
-	}
-
-	/**
-	 * This method is used to solve Language conflicts
-	 * It allows the assignment of remote Lang id with an existing language
-	 * Meaning that if for example Language: Finish has an id 3 on the sender.
-	 * it also exists on the receiver under a different id let says 5
-	 * We can says that 3 maps to 5.
-	 * In the given scenario of a new Language the map has to be used to map the new id with the new Languange Instance.
-	 * The same way if no conflict is found we can use the map to say an id should map to the non-conflicting the Local Lang.
-	 * @param remoteId
-	 * @param localLang
-	 */
-	public void mapRemoteLanguage(final Long remoteId, final Language localLang){
-	    getWritableMappedRemoteLanguages().put(remoteId,localLang);
-	}
-
-	/**
-	 * This method serves as a Read-Only accessor to the map used to handle language conflicts.
-	 * @param remoteId
-	 * @return the Language mapped to the given id.
-	 */
-	public Language getMappedRemoteLanguage(final Long remoteId){
-		return getWritableMappedRemoteLanguages().get(remoteId);
-	}
 }
