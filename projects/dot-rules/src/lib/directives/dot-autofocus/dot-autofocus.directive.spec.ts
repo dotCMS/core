@@ -1,5 +1,3 @@
-/* tslint:disable:no-unused-variable */
-
 import { TestBed, ComponentFixture, async } from '@angular/core/testing';
 import { DebugElement, Component } from '@angular/core';
 import { By } from '@angular/platform-browser';
