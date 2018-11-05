@@ -148,7 +148,7 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
             throw new HTMLPageAssetNotFoundException(uri);
         } else  {
             final boolean doesUserHavePermission = this.permissionAPI.doesUserHavePermission(htmlPageAsset, PermissionLevel.READ.getType(),
-                    user, false);
+                    user, mode.respectAnonPerms);
 
             if (!doesUserHavePermission) {
                 final String message = String.format("User: %s does not have permissions %s for object %s", user,
