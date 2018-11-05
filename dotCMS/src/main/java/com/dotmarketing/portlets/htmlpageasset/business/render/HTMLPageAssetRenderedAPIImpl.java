@@ -99,11 +99,16 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
             final ContentletVersionInfo info = APILocator.getVersionableAPI().
                     getContentletVersionInfo(htmlPageAsset.getIdentifier(), htmlPageAsset.getLanguageId());
 
-            return user.getUserId().equals(info.getLockedBy())
-                    ? PageMode.EDIT_MODE : mode;
+            return user.getUserId().equals(info.getLockedBy()) ? PageMode.EDIT_MODE
+                    : getNotLockDefaultPageMode(htmlPageAsset, user);
         } catch (DotDataException | DotSecurityException e) {
             throw new DotRuntimeException(e);
         }
+    }
+
+    private PageMode getNotLockDefaultPageMode(final HTMLPageAsset htmlPageAsset, final User user) throws DotDataException {
+        return this.permissionAPI.doesUserHavePermission(htmlPageAsset, PermissionLevel.READ.getType(), user, false)
+                ? PageMode.PREVIEW_MODE : PageMode.LIVE;
     }
 
     @Override
