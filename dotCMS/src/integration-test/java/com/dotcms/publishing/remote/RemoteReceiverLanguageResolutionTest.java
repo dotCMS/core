@@ -9,6 +9,7 @@ import static com.dotmarketing.business.Role.ADMINISTRATOR;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyString;
@@ -53,6 +54,7 @@ import com.dotmarketing.portlets.workflows.business.BaseWorkflowIntegrationTest;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
 import com.liferay.portal.struts.MultiMessageResources;
@@ -61,9 +63,13 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.felix.framework.OSGIUtil;
@@ -73,12 +79,12 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-public class RemoteReceiverTest extends IntegrationTestBase {
+public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
 
     static final String ADMIN_DEFAULT_ID = "dotcms.org.1";
     static final String ADMIN_DEFAULT_MAIL = "admin@dotcms.com";
     static final String ADMIN_NAME = "User Admin";
-    static final String REQUIRED_TEXT_FIELD_NAME = "required-field";
+    static final String REQUIRED_TEXT_FIELD_NAME = "lang-name-field";
 
     private static Host host;
     private static Role adminRole;
@@ -93,14 +99,12 @@ public class RemoteReceiverTest extends IntegrationTestBase {
     private static PublishingEndPointAPI endpointAPI;
 
 
-
-
     @BeforeClass
     public static void prepare() throws Exception {
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
 
-        //If I don't set this we'll end-up getting a ClassCasException.
+        //If I don't set this we'll end-up getting a ClassCasException at LanguageVariablesHandler.java:75
         Mockito.when(Config.CONTEXT.getAttribute(Globals.MESSAGES_KEY))
                 .thenReturn(new MultiMessageResources( MultiMessageResourcesFactory.createFactory(),""));
 
@@ -184,15 +188,14 @@ public class RemoteReceiverTest extends IntegrationTestBase {
      */
     Contentlet createSampleContent(final ContentType contentType, final Language language)
             throws Exception {
-        Contentlet contentlet = null;
         // Create a content sample
-        contentlet = new Contentlet();
+        Contentlet contentlet = new Contentlet();
         // instruct the content with its own type
         contentlet.setStructureInode(contentType.inode());
         contentlet.setHost(host.getIdentifier());
         contentlet.setLanguageId(language.getId());
-
-        contentlet.setStringProperty(REQUIRED_TEXT_FIELD_NAME, "anyValue");
+        //Now lets add some lang info to the instance itself.
+        contentlet.setStringProperty(REQUIRED_TEXT_FIELD_NAME, language.toString());
         contentlet.setIndexPolicy(IndexPolicy.FORCE);
 
         // Save the content
@@ -209,7 +212,7 @@ public class RemoteReceiverTest extends IntegrationTestBase {
     }
 
     /**
-     * This method test the deletePushedAssetsByEnvironment method
+     * This method test method simply tests that languages are pushed-published
      */
     @Test
     public void test_create_languages_create_bundle_then_publish_then_read_languages()
@@ -224,7 +227,8 @@ public class RemoteReceiverTest extends IntegrationTestBase {
 
         final ContentType contentType = createSampleContentType();
 
-        final List<Language> languages = new ArrayList<>();
+        final List<Language> languages = new ArrayList<>(3);
+
         for (final Language language : newLanguages) {
             languageAPI.saveLanguage(language);
             languages.add(language);
@@ -314,10 +318,10 @@ public class RemoteReceiverTest extends IntegrationTestBase {
 
 
     @Test
-    public void test_create_dupe_languages_create_bundle_then_publish_then_read_languages_verify_dupes_are_ignored()
+    public void test_create_dupe_languages_create_bundle_then_publish_bundle_then_read_languages_verify_dupes_are_ignored()
             throws Exception {
 
-            //We assume these languages already exist on the db
+        //We assume these languages already exist in the db
         final List<Language> dupeLanguages = new ImmutableList.Builder<Language>().
                 add(newLanguageInstance("en", "US", "English", "United States")).
                 add(newLanguageInstance("es", "ES", "Espanol", "Espana")).
@@ -384,6 +388,7 @@ public class RemoteReceiverTest extends IntegrationTestBase {
             // it will get the first lang and not the one stored on cache during the bundle generation process.
             APILocator.getLanguageAPI().clearCache();
 
+            // Now lets push-publish
             final PublisherConfig publisherConfig = new PublisherConfig();
             final BundlePublisher bundlePublisher = new BundlePublisher();
             publisherConfig.setId(fileName);
@@ -393,9 +398,9 @@ public class RemoteReceiverTest extends IntegrationTestBase {
 
             bundlePublisher.init(publisherConfig);
             bundlePublisher.process(null);
+            //Push publish ends here.
 
-           // indexNeedsToCatchup();
-
+            //Now we check the results
             //Should have used only the language there came by default. Meaning the dupes should have been ignored.
             publishedContentlets = contentletAPI.findByStructure(contentType.inode(), adminUser, false,10, 0);
             assertEquals("We expected 2 instances of our custom type ", 2, publishedContentlets.size());
@@ -431,6 +436,170 @@ public class RemoteReceiverTest extends IntegrationTestBase {
 
     }
 
+
+    @Test
+    public void test_create_new_languages_create_bundle_then_publish_bundle_then_read_verify_dupes_are_ignored_and_new_languges_were_created()
+            throws Exception {
+
+        final List<Language> newLanguages = new ImmutableList.Builder<Language>().
+                add(newLanguageInstance("ep", "", "Esperanto", "")).
+                add(newLanguageInstance("de", "DE", "German", "Germany")).
+                add(newLanguageInstance("ru", "RUS", "Russian", "Russia")).
+                add(newLanguageInstance("da", "DK ", "Danish", "Denmark")).
+                add(newLanguageInstance("en", "NZ ", "New Zealand", "Denmark")).
+                build();
+
+        final List<Language> savedNewLanguages = new ArrayList<>();
+        for (final Language language : newLanguages) {
+            languageAPI.saveLanguage(language);
+            savedNewLanguages.add(language);
+        }
+
+        final List<String> assetIds = new ArrayList<>();
+        final ContentType contentType = createSampleContentType();
+        final List<Contentlet> contentlets = new ArrayList<>();
+        for (final Language dupeLanguage : savedNewLanguages) {
+            final Contentlet contentlet = createSampleContent(contentType, dupeLanguage);
+            assetIds.add(contentlet.getIdentifier());
+            contentlets.add(contentlet);
+        }
+
+        List<Contentlet> publishedContentlets = Collections.emptyList();
+
+        final PublisherAPI publisherAPI = PublisherAPI.getInstance();
+        final BundleAPI bundleAPI = APILocator.getBundleAPI();
+        Environment environment = null;
+        PublishingEndPoint endpoint = null;
+        Bundle bundle = null;
+        final User adminUser = APILocator.getUserAPI()
+                .loadByUserByEmail(ADMIN_DEFAULT_MAIL, APILocator.getUserAPI().getSystemUser(),
+                        false);
+        File file = null;
+
+        try{
+
+            environment = createEnvironment(adminUser);
+            endpoint = createEndpoint(environment);
+
+            //Save the endpoint.
+            bundle = new Bundle("testBundle", null, null, adminUser.getUserId());
+            bundleAPI.saveBundle(bundle);
+
+            publisherAPI.saveBundleAssets(assetIds, bundle.getId(), adminUser);
+
+            final Map<String, Object> bundleData = generateBundle(bundle.getId(), Operation.PUBLISH);
+            assertNotNull(bundleData);
+            assertNotNull(bundleData.get("file"));
+            file = File.class.cast(bundleData.get("file"));
+            final String fileName = file.getName();
+
+            final String bundleFolder = fileName.substring(0, fileName.indexOf(".tar.gz"));
+
+            PublishAuditStatus status = PublishAuditAPI
+                    .getInstance()
+                    .updateAuditTable(endpoint.getId(), endpoint.getGroupId(), bundleFolder, true);
+
+            // Remove contentlets so they can be regenerated from the bundle
+            for (final Contentlet contentlet : contentlets) {
+                contentletAPI.archive(contentlet, adminUser, false);
+                contentletAPI.delete(contentlet, adminUser, false);
+            }
+
+            // Remove all the languages we just created from the db.. see if they get re-generated out of the push-publish process.
+            for (final Language language : savedNewLanguages) {
+                languageAPI.deleteLanguage(language);
+            }
+
+            // Now we need to flush cache so the next time the pp process asks for a Language
+            // it will get the first lang and not the one stored in cache during the bundle generation process.
+            APILocator.getLanguageAPI().clearCache();
+
+            //Now recreate a few languages to simulate a conflict on the receiver. They will be re-inserted under a different id. so that creates a clash.
+            //Now the contentlets generated out of pp should come with these codes.
+            final List<Language> reinsertLanguages = new ImmutableList.Builder<Language>().
+                    add(newLanguageInstance("ep", "", "Esperanto", "")).
+                    add(newLanguageInstance("de", "DE", "German", "Germany")).
+                    build();
+
+            final List<Language> savedReinsertedLanguages = new ArrayList<>();
+            for (final Language language : reinsertLanguages) {
+                languageAPI.saveLanguage(language);
+                savedReinsertedLanguages.add(language);
+            }
+            // We have now added dupe Languages.
+            // Organize new dupe languages as a map.
+            final Map<Long,Language> reInsertedLanguagesMap = savedReinsertedLanguages.stream().collect(
+                    Collectors.toMap(Language::getId, Function.identity())
+            );
+
+            final Comparator<Language> comparator = Comparator.comparing( Language::getId );
+
+            // Get Max Language id at this point of time.
+            final Language mostRecentlyAddedLangBeforePP = savedReinsertedLanguages.stream().max(comparator).get();
+            //Any other language inserted before this point has to have a greater id value.
+
+            // Now lets do push-publish
+            final PublisherConfig publisherConfig = new PublisherConfig();
+            final BundlePublisher bundlePublisher = new BundlePublisher();
+            publisherConfig.setId(fileName);
+            publisherConfig.setEndpoint(endpoint.getId());
+            publisherConfig.setGroupId(endpoint.getGroupId());
+            publisherConfig.setPublishAuditStatus(status);
+
+            bundlePublisher.init(publisherConfig);
+            bundlePublisher.process(null);
+            //Push publish ends here.
+
+            //Now we check the results.
+            //Should have used only the language there came by default. Meaning the dupes should have been ignored.
+            publishedContentlets = contentletAPI.findByStructure(contentType.inode(), adminUser, false,10, 0);
+            assertEquals("We expected 5 instances of our custom type ", 5, publishedContentlets.size());
+
+            //Count number of instances already using an existing language.
+
+            long contentletsWithReusedLanguages = publishedContentlets.stream().filter(contentlet -> reInsertedLanguagesMap.containsKey(contentlet.getLanguageId())).count();
+
+            assertEquals("We expected 2 languages already existing languages to be re-used.",2, contentletsWithReusedLanguages);
+
+            long contentletsWithNewLanguages = publishedContentlets.stream().filter(contentlet -> contentlet.getLanguageId() > mostRecentlyAddedLangBeforePP.getId()).count();
+
+            assertEquals("We expected 3 new languages created after pp.",3, contentletsWithNewLanguages);
+
+            //Expected language codes. These are created by PP
+            final Set<String> expectedNewLangs = new HashSet<>(Arrays.asList("ru","da","en"));
+            final boolean newLanguagesMatch = publishedContentlets.stream().filter(contentlet -> contentlet.getLanguageId() > mostRecentlyAddedLangBeforePP.getId()).allMatch(contentlet ->  {
+                final Language lang = languageAPI.getLanguage(contentlet.getLanguageId());
+                return expectedNewLangs.contains(lang.getLanguageCode());
+            } );
+
+            assertTrue("new Languages created are not a match.", newLanguagesMatch);
+
+        } finally {
+
+            // Remove contentlets pushed
+            for (final Contentlet contentlet : publishedContentlets) {
+                contentletAPI.archive(contentlet, adminUser, false);
+                contentletAPI.delete(contentlet, adminUser, false);
+            }
+
+            for (final Language language : savedNewLanguages) {
+                final Language persistedLang = languageAPI.getLanguage(language.getLanguageCode(), language.getCountryCode());
+                if(UtilMethods.isSet(persistedLang) && persistedLang.getId() > 0 ){
+                    languageAPI.deleteLanguage(persistedLang);
+                }
+            }
+
+            if (null != bundle && null != endpoint && null != environment) {
+                cleanBundleEndpointEnv(bundle, endpoint, environment);
+            }
+
+            if (null != file) {
+                file.delete();
+            }
+
+        }
+
+    }
 
 
 }
