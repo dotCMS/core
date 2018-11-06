@@ -3,21 +3,54 @@
     <ng-content></ng-content>
 </dot-action-header>
 
-<p-dataTable #dataTable
-             [value]="items"
-             [rows]="paginatorService.paginationPerPage"
-             [paginator]="true"
-             [pageLinks]="paginatorService.maxLinksPage"
-             [lazy]="true"
-             [totalRecords]="paginatorService.totalRecords"
-             (onLazyLoad)="loadDataPaginationEvent($event)"
-             (onRowClick)="handleRowClick($event)"
-             [globalFilter]="gf"
-             [sortOrder]="sortOrder && sortOrder.toLowerCase() === 'desc' ? -1 : 1"
-             [loading]="loading" loadingIcon="fa fa-spinner pi-spin">
+<p-table #dataTable
+        [columns]="columns" 
+        [value]="items"
+        [paginator]="true"
+        [pageLinks]="paginatorService.maxLinksPage"
+        [lazy]="true"
+        [totalRecords]="paginatorService.totalRecords"
+        (onLazyLoad)="loadDataPaginationEvent($event)"
+        (onRowSelect)="handleRowClick($event)"
+        [sortOrder]="sortOrder && sortOrder.toLowerCase() === 'desc' ? -1 : 1"
+        selectionMode="single"
+        dataKey="id"
+        [loading]="loading" loadingIcon="fa fa-spinner pi-spin">
 
-    <p-column selectionMode="multiple" *ngIf="multipleSelection"></p-column>
+    <ng-template pTemplate="header" let-columns>
+        <tr>
+            <th *ngFor="let col of columns"
+                [ngStyle]="{'width': col.width, 'text-align': getAlign(col)}"
+                [pSortableColumn]="col.fieldName"
+                [pSortableColumnDisabled]="!col.sortable">
+                {{col.header}}
+                <p-sortIcon [field]="col.fieldName"></p-sortIcon>
+            </th>
+            <th style="width: 5%"></th>
+        </tr>
+    </ng-template>
 
+    <ng-template pTemplate="body" let-rowData let-columns="columns">
+        <tr [pSelectableRow]="rowData">
+            <td *ngFor="let col of columns"
+                [ngStyle]="{'width': col.width, 'text-align': getAlign(col)}">
+                <div class="listing-datatable__column-icon"  *ngIf="col.icon">
+                    <dot-icon name="{{ col.icon(rowData) }}"></dot-icon>
+                    <span>{{ rowData[col.fieldName] }}</span>
+                </div>
+                <span *ngIf="!col.icon">{{ rowData[col.fieldName] }}</span>
+            </td>
+            <td class="listing-datatable__action-column" style="width: 5%">
+                <dot-action-menu-button
+                    class="listing-datatable__action-button"
+                    [actions]="actions"
+                    [item]="rowData">
+                </dot-action-menu-button>
+            </td>
+        </tr>
+    </ng-template>
+    
+    <!-- 
     <ng-template ngFor let-col [ngForOf]="columns">
         <p-column
             [field]="col.fieldName"
@@ -33,7 +66,6 @@
             </ng-template>
         </p-column>
     </ng-template>
-
     <p-column *ngIf="actions && actions.length > 0" styleClass="listing-datatable__action-column" [style]="{'width': '5%'}">
         <ng-template pTemplate="header"></ng-template>
         <ng-template let-item="rowData" pTemplate="body">
@@ -44,4 +76,50 @@
             </dot-action-menu-button>
         </ng-template>
     </p-column>
-</p-dataTable>
+-->
+
+</p-table>
+<!--
+    <p-dataTable #dataTable2
+                [value]="items"
+                [rows]="paginatorService.paginationPerPage"
+                [paginator]="true"
+                [pageLinks]="paginatorService.maxLinksPage"
+                [lazy]="true"
+                [totalRecords]="paginatorService.totalRecords"
+                (onLazyLoad)="loadDataPaginationEvent($event)"
+                (onRowClick)="handleRowClick($event)"
+                [globalFilter]="gf"
+                [sortOrder]="sortOrder && sortOrder.toLowerCase() === 'desc' ? -1 : 1"
+                [loading]="loading" loadingIcon="fa fa-spinner pi-spin">
+
+        <p-column selectionMode="multiple" *ngIf="multipleSelection"></p-column>
+
+        <ng-template ngFor let-col [ngForOf]="columns">
+            <p-column
+                [field]="col.fieldName"
+                [header]="col.header"
+                [sortable]="col.sortable"
+                [style]="{'width': col.width, 'text-align': getAlign(col)}">
+                <ng-template let-item="rowData" pTemplate="body">
+                    <div class="listing-datatable__column-icon"  *ngIf="col.icon">
+                        <dot-icon name="{{ col.icon(item) }}"></dot-icon>
+                        <span>{{ item[col.fieldName] }}</span>
+                    </div>
+                    <span *ngIf="!col.icon">{{ item[col.fieldName] }}</span>
+                </ng-template>
+            </p-column>
+        </ng-template>
+
+        <p-column *ngIf="actions && actions.length > 0" styleClass="listing-datatable__action-column" [style]="{'width': '5%'}">
+            <ng-template pTemplate="header"></ng-template>
+            <ng-template let-item="rowData" pTemplate="body">
+                <dot-action-menu-button
+                    class="listing-datatable__action-button"
+                    [actions]="actions"
+                    [item]="item">
+                </dot-action-menu-button>
+            </ng-template>
+        </p-column>
+    </p-dataTable>
+-->

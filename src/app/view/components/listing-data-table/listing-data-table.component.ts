@@ -8,7 +8,8 @@ import {
     ElementRef,
     OnInit
 } from '@angular/core';
-import { DataTable, LazyLoadEvent } from 'primeng/primeng';
+import { LazyLoadEvent } from 'primeng/primeng';
+import { Table } from 'primeng/table';
 import { ActionHeaderOptions, ButtonAction } from '@models/action-header';
 import { DataTableColumn } from '@models/data-table/data-table-column';
 import { LoggerService } from 'dotcms-js';
@@ -49,7 +50,7 @@ export class ListingDataTableComponent implements OnChanges, OnInit {
     @ViewChild('gf')
     globalSearch: ElementRef;
     @ViewChild('dataTable')
-    dataTable: DataTable;
+    dataTable: Table;
 
     readonly DATE_FORMAT = 'date';
 
@@ -77,6 +78,7 @@ export class ListingDataTableComponent implements OnChanges, OnInit {
         }
 
         if (changes.columns && changes.columns.currentValue) {
+            console.log('---columns', changes.columns);
             this.dateColumns = changes.columns.currentValue.filter(
                 (column) => column.format === this.DATE_FORMAT
             );
@@ -96,6 +98,7 @@ export class ListingDataTableComponent implements OnChanges, OnInit {
     }
 
     handleRowClick($event): void {
+        console.log('--click');
         this.rowWasClicked.emit($event);
     }
 
@@ -142,6 +145,7 @@ export class ListingDataTableComponent implements OnChanges, OnInit {
     loadCurrentPage(): void {
         this.loading = true;
         if (this.columns) {
+            console.log('--- loadCurrentPage columns', this.columns);
             this.paginatorService.getCurrentPage().subscribe((items) => this.setItems(items));
         }
     }
@@ -173,6 +177,7 @@ export class ListingDataTableComponent implements OnChanges, OnInit {
 
     private setItems(items: any[]): void {
         this.items = this.dateColumns ? this.formatData(items) : items;
+        console.log('---items', this.items)
         this.loading = false;
     }
 }
