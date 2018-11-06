@@ -1,6 +1,7 @@
 package com.dotmarketing.util;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotmarketing.business.APILocator;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
@@ -117,8 +118,8 @@ public enum PageMode {
         PageMode sessionPageMode = (PageMode) ses.getAttribute(WebKeys.PAGE_MODE_SESSION);
         HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
 
-        return  sessionPageMode != PageMode.LIVE &&
-                request != null &&
+        return  request != null &&
+                (sessionPageMode != PageMode.LIVE || APILocator.getLoginServiceAPI().isLoggedIn(request)) &&
                 request.getAttribute(WebKeys.PAGE_MODE_PARAMETER) == null ;
     }
 
