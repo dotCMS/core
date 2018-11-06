@@ -3,11 +3,9 @@ package com.dotmarketing.portlets.htmlpageasset.business.render;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.cms.login.LoginServiceAPI;
 
+import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.PermissionLevel;
-import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.business.*;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -34,13 +32,34 @@ import javax.servlet.http.HttpServletResponse;
  */
 public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
 
-    private final HostWebAPI hostWebAPI = WebAPILocator.getHostWebAPI();
-    private final HTMLPageAssetAPI htmlPageAssetAPI = APILocator.getHTMLPageAssetAPI();
-    private final LanguageAPI languageAPI = APILocator.getLanguageAPI();
-    private final HostAPI hostAPI = APILocator.getHostAPI();
-    private final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
-    private final UserAPI userAPI = APILocator.getUserAPI();
-    private final  LoginServiceAPI loginServiceAPI = APILocator.getLoginServiceAPI();
+    private final HostWebAPI hostWebAPI;
+    private final HTMLPageAssetAPI htmlPageAssetAPI;
+    private final LanguageAPI languageAPI;
+    private final HostAPI hostAPI;
+    private final PermissionAPI permissionAPI;
+    private final UserAPI userAPI;
+    private final VersionableAPI versionableAPI;
+
+    public HTMLPageAssetRenderedAPIImpl(){
+        this(APILocator.getPermissionAPI(), APILocator.getUserAPI(), WebAPILocator.getHostWebAPI(),
+                APILocator.getLanguageAPI(), APILocator.getHTMLPageAssetAPI(), APILocator.getVersionableAPI(),
+                APILocator.getHostAPI());
+    }
+
+    @VisibleForTesting
+    public HTMLPageAssetRenderedAPIImpl(final PermissionAPI permissionAPI, final UserAPI userAPI,
+                                        final HostWebAPI hostWebAPI, final LanguageAPI languageAPI,
+                                        final HTMLPageAssetAPI htmlPageAssetAPI, final VersionableAPI versionableAPI,
+                                        final HostAPI hostAPI){
+
+        this.permissionAPI = permissionAPI;
+        this.userAPI = userAPI;
+        this.hostWebAPI = hostWebAPI;
+        this.languageAPI = languageAPI;
+        this.htmlPageAssetAPI = htmlPageAssetAPI;
+        this.versionableAPI = versionableAPI;
+        this.hostAPI = hostAPI;
+    }
 
     /**
      * @param request    The {@link HttpServletRequest} object.
@@ -92,11 +111,10 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
         try {
             final User systemUser = userAPI.getSystemUser();
 
-            final PageMode mode = PageMode.PREVIEW_MODE;
-            final Host host = this.resolveSite(request, systemUser, mode);
-            final HTMLPageAsset htmlPageAsset = getHtmlPageAsset(systemUser, pageUri, mode, host);
+            final Host host = this.resolveSite(request, systemUser, PageMode.PREVIEW_MODE);
+            final HTMLPageAsset htmlPageAsset = getHtmlPageAsset(systemUser, pageUri, PageMode.PREVIEW_MODE, host);
 
-            final ContentletVersionInfo info = APILocator.getVersionableAPI().
+            final ContentletVersionInfo info = this.versionableAPI.
                     getContentletVersionInfo(htmlPageAsset.getIdentifier(), htmlPageAsset.getLanguageId());
 
             return user.getUserId().equals(info.getLockedBy()) ? PageMode.EDIT_MODE
@@ -180,7 +198,7 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
     }
 
     private Host resolveSite(final HttpServletRequest request, final User user, final PageMode mode) throws DotDataException, DotSecurityException {
-        final String siteName = null == request.getParameter(Host.HOST_VELOCITY_VAR_NAME) ?
+        final String siteName = (null == request.getParameter(Host.HOST_VELOCITY_VAR_NAME)) ?
                 request.getServerName() : request.getParameter(Host.HOST_VELOCITY_VAR_NAME);
         Host site = this.hostWebAPI.resolveHostName(siteName, user, mode.respectAnonPerms);
 

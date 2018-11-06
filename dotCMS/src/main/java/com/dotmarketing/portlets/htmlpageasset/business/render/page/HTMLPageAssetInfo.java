@@ -69,7 +69,7 @@ public class HTMLPageAssetInfo {
         return this;
     }
 
-    public HTMLPageAssetInfo setCanRead(boolean canRead) {
+    public HTMLPageAssetInfo setCanRead(final boolean canRead) {
         this.canRead = canRead;
         return this;
     }
