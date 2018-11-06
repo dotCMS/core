@@ -118,8 +118,8 @@ public enum PageMode {
         PageMode sessionPageMode = (PageMode) ses.getAttribute(WebKeys.PAGE_MODE_SESSION);
         HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
 
-        return  (sessionPageMode != PageMode.LIVE || APILocator.getLoginServiceAPI().isLoggedIn(request)) &&
-                request != null &&
+        return  request != null &&
+                (sessionPageMode != PageMode.LIVE || APILocator.getLoginServiceAPI().isLoggedIn(request)) &&
                 request.getAttribute(WebKeys.PAGE_MODE_PARAMETER) == null ;
     }
 
