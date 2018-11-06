@@ -26,7 +26,6 @@ $brand-primary-one: #209021;
 }
 
 @mixin valid-and-dirty-or-touched {
-    border-left: 1px solid rgba(34, 36, 38, 0.15);
     transition-property: border-left, border-left-width;
     transition-delay: 1s;
     transition-duration: 600ms;

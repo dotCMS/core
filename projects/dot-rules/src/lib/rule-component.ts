@@ -99,7 +99,7 @@ const rsrc = {
     </div>
     <div flex="30" layout="row" layout-align="end center" class="cw-header-actions" >
       <span class="cw-rule-status-text" title="{{statusText()}}">{{statusText(30)}}</span>
-      <p-inputSwitch [(ngModel)]="rule.enabled" (onChange)="setRuleEnabledState($event)" [disabled]="!saved" [ngModelOptions]="{standalone: true}" ></p-inputSwitch>
+      <p-inputSwitch [(ngModel)]="rule.enabled" (onChange)="setRuleEnabledState($event)" [ngModelOptions]="{standalone: true}" ></p-inputSwitch>
       <div class="cw-btn-group">
         <div class="ui basic icon buttons">
           <button class="ui button cw-delete-rule" aria-label="More Actions" (click)="showMoreMenu = !showMoreMenu; $event.stopPropagation()">
