@@ -152,7 +152,8 @@ public class HTMLPageAssetRenderedBuilder {
             .setPage(this.htmlPageAsset)
             .setWorkingInode(info.getWorkingInode())
             .setShortyWorking(APILocator.getShortyAPI().shortify(info.getWorkingInode()))
-            .setCanEdit(this.permissionAPI.doesUserHavePermission(htmlPageAsset, PermissionLevel.EDIT.getType(), user))
+            .setCanEdit(this.permissionAPI.doesUserHavePermission(htmlPageAsset, PermissionLevel.EDIT.getType(), user, false))
+            .setCanRead(this.permissionAPI.doesUserHavePermission(htmlPageAsset, PermissionLevel.READ.getType(), user, false))
             .setLiveInode(info.getLiveInode())
             .setShortyLive(APILocator.getShortyAPI().shortify(info.getLiveInode()))
             .setCanLock(this.canLock());
