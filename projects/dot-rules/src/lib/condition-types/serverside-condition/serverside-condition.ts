@@ -61,15 +61,14 @@ import { LoggerService } from 'dotcms-js';
       </div>
 
       <div flex layout-fill layout="column" class="cw-input" [class.cw-last]="islast" *ngIf="input.type == 'text' || input.type == 'number'">
-        <cw-input-text
-            flex
-            [placeholder]="input.placeholder | async"
-            [formControl]="input.control"
-            [type]="input.type"
-            [hidden]="input.argIndex !== null && input.argIndex >= _rhArgCount"
-            (blur)="onBlur(input)"
-            #fInput="ngForm"
-        ></cw-input-text>
+          <input pInputText
+              [placeholder]="input.placeholder | async"
+              [formControl]="input.control"
+              [type]="input.type"
+              [hidden]="input.argIndex !== null && input.argIndex >= _rhArgCount"
+              (blur)="onBlur(input)"
+              #fInput="ngForm"
+          />
         <div flex="50" *ngIf="fInput.touched && !fInput.valid && (input.argIndex == null || input.argIndex < _rhArgCount)"
             class="name cw-warn basic label">{{getErrorMessage(input)}}</div>
       </div>

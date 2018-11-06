@@ -73,12 +73,12 @@ const rsrc = {
     <div flex="70" layout="row" layout-align="start center" class="cw-header-info" >
       <i flex="none" class="caret icon cw-rule-caret large" [class.right]="!rule._expanded" [class.down]="rule._expanded" aria-hidden="true"></i>
       <div flex="70" layout="column">
-      <cw-input-text class="cw-rule-name-input"
-                     focused="{{rule.key == null}}"
-                     placeholder="{{rsrc('inputs.name.placeholder') | async}}"
-                     formControlName="name"
-                     (click)="$event.stopPropagation()">
-      </cw-input-text>
+          <input  pInputText
+                  class="cw-rule-name-input"
+                  placeholder="{{rsrc('inputs.name.placeholder') | async}}"
+                  formControlName="name"
+                  (click)="$event.stopPropagation()"
+                  dotAutofocus/>
       <div flex="50" [hidden]="!formModel.controls['name'].touched || formModel.controls['name'].valid"
         class="name cw-warn basic label">Name is required
       </div>
@@ -99,7 +99,7 @@ const rsrc = {
     </div>
     <div flex="30" layout="row" layout-align="end center" class="cw-header-actions" >
       <span class="cw-rule-status-text" title="{{statusText()}}">{{statusText(30)}}</span>
-      <p-inputSwitch [(ngModel)]="rule.enabled" (onChange)="setRuleEnabledState($event)" [disabled]="!saved" [ngModelOptions]="{standalone: true}" ></p-inputSwitch>
+      <p-inputSwitch [(ngModel)]="rule.enabled" (onChange)="setRuleEnabledState($event)" [ngModelOptions]="{standalone: true}" ></p-inputSwitch>
       <div class="cw-btn-group">
         <div class="ui basic icon buttons">
           <button class="ui button cw-delete-rule" aria-label="More Actions" (click)="showMoreMenu = !showMoreMenu; $event.stopPropagation()">

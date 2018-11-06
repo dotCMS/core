@@ -29,10 +29,8 @@ const I8N_BASE = 'api.sites.ruleengine';
 <div class="cw-rule-engine" *ngIf="!loading && showRules">
   <div class="cw-header">
     <div flex layout="row" >
-      <div flex layout="row" class="ui icon input">
-        <input class="cw-ru" pInputText type="text" placeholder="{{rsrc('inputs.filter.placeholder') | async}}"
-          [value]="filterText" (keyup)="filterText = $event.target.value">
-      </div>
+      <input pInputText placeholder="{{rsrc('inputs.filter.placeholder') | async}}"
+        [value]="filterText" (keyup)="filterText = $event.target.value"/>
       <div flex="2"></div>
       <button pButton label="{{rsrc('inputs.addRule.label') | async}}" (click)="addRule()" icon="fa fa-plus"></button>
     </div>
