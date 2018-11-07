@@ -56,7 +56,7 @@ import java.util.stream.Collectors;
 public class PublisherTestUtil {
 
     private final static String PROTOCOL = "http";
-
+    public static final String FILE = "file";
     /**
      * Creates a generic TestEnvironment
      * @param user
@@ -410,7 +410,7 @@ public class PublisherTestUtil {
     }
 
 
-    public static Map<String, Object> generateBundle ( String bundleId, PushPublisherConfig.Operation operation )
+    public static Map<String, Object> generateBundle ( final String bundleId, final PushPublisherConfig.Operation operation )
     throws DotPublisherException, DotDataException, DotPublishingException, IllegalAccessException, InstantiationException, DotBundleException, IOException {
 
         final PushPublisherConfig pconf = new PushPublisherConfig();
@@ -475,7 +475,7 @@ public class PublisherTestUtil {
 
         final Map<String, Object> bundleData = new HashMap<String, Object>();
         bundleData.put( "id", newBundleId );
-        bundleData.put( "file", PushUtils.compressFiles( list, bundle, bundleRoot.getAbsolutePath() ) );
+        bundleData.put( FILE, PushUtils.compressFiles( list, bundle, bundleRoot.getAbsolutePath() ) );
         return bundleData;
     }
 

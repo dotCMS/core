@@ -30,6 +30,7 @@ import com.dotcms.publisher.bundle.business.BundleAPI;
 import com.dotcms.publisher.business.PublishAuditAPI;
 import com.dotcms.publisher.business.PublishAuditStatus;
 import com.dotcms.publisher.business.PublisherAPI;
+import com.dotcms.publisher.business.PublisherTestUtil;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.publisher.receiver.BundlePublisher;
@@ -83,6 +84,8 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
     static final String ADMIN_DEFAULT_MAIL = "admin@dotcms.com";
     static final String ADMIN_NAME = "User Admin";
     static final String REQUIRED_TEXT_FIELD_NAME = "lang-name-field";
+
+    static final String FILE = PublisherTestUtil.FILE;
 
     private static Host host;
     private static Role adminRole;
@@ -258,13 +261,13 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
             final Map<String, Object> bundleData = generateBundle(bundle.getId(),
                     Operation.PUBLISH);
             assertNotNull(bundleData);
-            assertNotNull(bundleData.get("file"));
-            file = File.class.cast(bundleData.get("file"));
+            assertNotNull(bundleData.get(FILE));
+            file = File.class.cast(bundleData.get(FILE));
             final String fileName = file.getName();
 
             final String bundleFolder = fileName.substring(0, fileName.indexOf(".tar.gz"));
 
-            PublishAuditStatus status = PublishAuditAPI
+            final PublishAuditStatus status = PublishAuditAPI
                     .getInstance()
                     .updateAuditTable(endpoint.getId(), endpoint.getGroupId(), bundleFolder, true);
 
@@ -361,13 +364,13 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
 
             final Map<String, Object> bundleData = generateBundle(bundle.getId(), Operation.PUBLISH);
             assertNotNull(bundleData);
-            assertNotNull(bundleData.get("file"));
-            file = File.class.cast(bundleData.get("file"));
+            assertNotNull(bundleData.get(FILE));
+            file = File.class.cast(bundleData.get(FILE));
             final String fileName = file.getName();
 
             final String bundleFolder = fileName.substring(0, fileName.indexOf(".tar.gz"));
 
-            PublishAuditStatus status = PublishAuditAPI
+            final PublishAuditStatus status = PublishAuditAPI
                     .getInstance()
                     .updateAuditTable(endpoint.getId(), endpoint.getGroupId(), bundleFolder, true);
 
@@ -484,13 +487,13 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
 
             final Map<String, Object> bundleData = generateBundle(bundle.getId(), Operation.PUBLISH);
             assertNotNull(bundleData);
-            assertNotNull(bundleData.get("file"));
-            file = File.class.cast(bundleData.get("file"));
+            assertNotNull(bundleData.get(FILE));
+            file = File.class.cast(bundleData.get(FILE));
             final String fileName = file.getName();
 
             final String bundleFolder = fileName.substring(0, fileName.indexOf(".tar.gz"));
 
-            PublishAuditStatus status = PublishAuditAPI
+            final PublishAuditStatus status = PublishAuditAPI
                     .getInstance()
                     .updateAuditTable(endpoint.getId(), endpoint.getGroupId(), bundleFolder, true);
 
@@ -552,11 +555,11 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
 
             //Count number of instances already using an existing language.
 
-            long contentletsWithReusedLanguages = publishedContentlets.stream().filter(contentlet -> reInsertedLanguagesMap.containsKey(contentlet.getLanguageId())).count();
+            final long contentletsWithReusedLanguages = publishedContentlets.stream().filter(contentlet -> reInsertedLanguagesMap.containsKey(contentlet.getLanguageId())).count();
 
             assertEquals("We expected 2 languages already existing languages to be re-used.",2, contentletsWithReusedLanguages);
 
-            long contentletsWithNewLanguages = publishedContentlets.stream().filter(contentlet -> contentlet.getLanguageId() > mostRecentlyAddedLangBeforePP.getId()).count();
+            final long contentletsWithNewLanguages = publishedContentlets.stream().filter(contentlet -> contentlet.getLanguageId() > mostRecentlyAddedLangBeforePP.getId()).count();
 
             assertEquals("We expected 3 new languages created after pp.",3, contentletsWithNewLanguages);
 
