@@ -31,7 +31,6 @@ import com.dotcms.publisher.business.PublishAuditAPI;
 import com.dotcms.publisher.business.PublishAuditStatus;
 import com.dotcms.publisher.business.PublisherAPI;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
-import com.dotcms.publisher.endpoint.business.PublishingEndPointAPI;
 import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.publisher.receiver.BundlePublisher;
 import com.dotcms.publishing.PublisherConfig;
@@ -77,7 +76,6 @@ import org.apache.struts.Globals;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.mockito.Mockito;
 
 public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
 
@@ -96,7 +94,6 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
     private static ContentletAPI contentletAPI;
     private static User systemUser;
     private static User adminUser;
-    private static PublishingEndPointAPI endpointAPI;
 
 
     @BeforeClass
@@ -105,7 +102,7 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
         IntegrationTestInitService.getInstance().init();
 
         //If I don't set this we'll end-up getting a ClassCasException at LanguageVariablesHandler.java:75
-        Mockito.when(Config.CONTEXT.getAttribute(Globals.MESSAGES_KEY))
+        when(Config.CONTEXT.getAttribute(Globals.MESSAGES_KEY))
                 .thenReturn(new MultiMessageResources( MultiMessageResourcesFactory.createFactory(),""));
 
         OSGIUtil.getInstance().initializeFramework(Config.CONTEXT);
@@ -115,7 +112,6 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
         workflowAPI = APILocator.getWorkflowAPI();
         contentletAPI = APILocator.getContentletAPI();
         roleAPI = APILocator.getRoleAPI();
-        endpointAPI = APILocator.getPublisherEndPointAPI();
 
         final User user = mock(User.class);
         when(user.getUserId()).thenReturn(ADMIN_DEFAULT_ID);
@@ -186,7 +182,7 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
     /**
      * Creates a contentlet based on the content type + Language passed
      */
-    Contentlet createSampleContent(final ContentType contentType, final Language language)
+    private Contentlet createSampleContent(final ContentType contentType, final Language language)
             throws Exception {
         // Create a content sample
         Contentlet contentlet = new Contentlet();
@@ -246,9 +242,6 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
         Environment environment = null;
         PublishingEndPoint endpoint = null;
         Bundle bundle = null;
-        final User adminUser = APILocator.getUserAPI()
-                .loadByUserByEmail(ADMIN_DEFAULT_MAIL, APILocator.getUserAPI().getSystemUser(),
-                        false);
 
         File file = null;
         try {
@@ -306,6 +299,9 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
                 languageAPI.deleteLanguage(language);
             }
 
+            if(null != contentType){
+            }  contentTypeAPI.delete(contentType);
+
             if (null != bundle && null != endpoint && null != environment) {
                 cleanBundleEndpointEnv(bundle, endpoint, environment);
             }
@@ -350,9 +346,7 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
         Environment environment = null;
         PublishingEndPoint endpoint = null;
         Bundle bundle = null;
-        final User adminUser = APILocator.getUserAPI()
-                .loadByUserByEmail(ADMIN_DEFAULT_MAIL, APILocator.getUserAPI().getSystemUser(),
-                        false);
+
         File file = null;
         try{
 
@@ -424,6 +418,10 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
                 languageAPI.deleteLanguage(language);
             }
 
+            if(null != contentType){
+            }  contentTypeAPI.delete(contentType);
+
+
             if (null != bundle && null != endpoint && null != environment) {
                 cleanBundleEndpointEnv(bundle, endpoint, environment);
             }
@@ -471,9 +469,6 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
         Environment environment = null;
         PublishingEndPoint endpoint = null;
         Bundle bundle = null;
-        final User adminUser = APILocator.getUserAPI()
-                .loadByUserByEmail(ADMIN_DEFAULT_MAIL, APILocator.getUserAPI().getSystemUser(),
-                        false);
         File file = null;
 
         try{
@@ -588,6 +583,10 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
                     languageAPI.deleteLanguage(persistedLang);
                 }
             }
+
+            if(null != contentType){
+            }  contentTypeAPI.delete(contentType);
+
 
             if (null != bundle && null != endpoint && null != environment) {
                 cleanBundleEndpointEnv(bundle, endpoint, environment);
