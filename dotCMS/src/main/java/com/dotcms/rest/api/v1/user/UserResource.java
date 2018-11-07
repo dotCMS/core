@@ -310,6 +310,9 @@ public class UserResource implements Serializable {
 			PrincipalThreadLocal.setName(loginAsUserId);
 			session.setAttribute(com.dotmarketing.util.WebKeys.CURRENT_HOST,
 					sessionData.get(com.dotmarketing.util.WebKeys.CURRENT_HOST));
+
+			this.setDefaultCurrentSite(request, sessionData.get(WebKeys.USER_ID).toString());
+
 			response = Response.ok(new ResponseEntityView(map("loginAs", true))).build();
 		} catch (NoSuchUserException | DotSecurityException e) {
 			SecurityLogger.logInfo(UserResource.class,
@@ -337,6 +340,12 @@ public class UserResource implements Serializable {
 		SecurityLogger.logInfo(UserResource.class, "User ID (" + currentUser.getUserId()
 				+ "), has sucessfully login as (" + loginAsUserId + "). Remote IP: " + request.getRemoteAddr());
 		return response;
+	}
+
+	private void setDefaultCurrentSite(final HttpServletRequest req, final String userID) throws DotDataException, DotSecurityException {
+		final User user = APILocator.getUserAPI().loadUserById(userID);
+		req.getSession().setAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID,
+				APILocator.getHostAPI().findDefaultHost(user, true).getIdentifier());
 	}
 
 	/**
