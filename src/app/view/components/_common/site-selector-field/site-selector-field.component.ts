@@ -85,7 +85,7 @@ export class SiteSelectorFieldComponent implements ControlValueAccessor {
     }
 
     private propagateCurrentSiteId(): void {
-        console.log('this.siteService.currentSite', );
+
         if (this.siteService.currentSite) {
             this.value = this.value || this.siteService.currentSite.identifier;
             this.propagateChange(this.value);
