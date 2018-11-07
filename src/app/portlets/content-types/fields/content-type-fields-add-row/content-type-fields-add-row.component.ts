@@ -11,6 +11,8 @@ import {
 import { HotkeysService, Hotkey } from 'angular2-hotkeys';
 import { DotMessageService } from '@services/dot-messages-service';
 import { DotEventsService } from '@services/dot-events/dot-events.service';
+import { takeUntil } from 'rxjs/operators';
+import { Subject } from 'rxjs/internal/Subject';
 
 /**
  * Display select columns row
@@ -37,12 +39,14 @@ export class ContentTypeFieldsAddRowComponent implements OnDestroy, OnInit {
     toolTips: string[] = [
         'contenttypes.content.single_column',
         'contenttypes.content.many_columns',
-        'contenttypes.content.add_column_title'
+        'contenttypes.content.add_column_title',
+        'contenttypes.dropzone.rows.tab_divider'
     ];
     @Output()
     selectColums: EventEmitter<number> = new EventEmitter<number>();
     @ViewChild('colContainer')
     colContainerElem: ElementRef;
+    private destroy$: Subject<boolean> = new Subject<boolean>();
 
     constructor(
         private dotEventsService: DotEventsService,
@@ -53,13 +57,15 @@ export class ContentTypeFieldsAddRowComponent implements OnDestroy, OnInit {
     ngOnInit(): void {
         this.setKeyboardEvent('ctrl+a', this.setColumnSelect.bind(this));
         this.loadMessages();
-        this.dotEventsService.listen('add-row').subscribe(() => {
+        this.dotEventsService.listen('add-row').pipe(takeUntil(this.destroy$)).subscribe(() => {
             this.setColumnSelect();
         });
     }
 
     ngOnDestroy(): void {
         this.removeHotKeys();
+        this.destroy$.next(true);
+        this.destroy$.complete();
     }
 
     /**
@@ -107,6 +113,14 @@ export class ContentTypeFieldsAddRowComponent implements OnDestroy, OnInit {
         setTimeout(() => {
             this.setFocus(this.getElementSelected());
         }, 201);
+    }
+
+    /**
+     * Emits event to add a Tab Divider
+     * @memberof ContentTypeFieldsAddRowComponent
+     */
+    addTabDivider(): void {
+        this.dotEventsService.notify('add-tab-divider');
     }
 
     /**
