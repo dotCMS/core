@@ -6,6 +6,7 @@ import static com.dotcms.util.CollectionsUtils.map;
 
 import java.io.Serializable;
 import java.util.Collections;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
@@ -23,11 +24,8 @@ import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.v1.authentication.IncorrectPasswordException;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.ApiProvider;
-import com.dotmarketing.business.NoSuchUserException;
-import com.dotmarketing.business.Role;
-import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.*;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.UserFirstNameException;
@@ -311,7 +309,7 @@ public class UserResource implements Serializable {
 			session.setAttribute(com.dotmarketing.util.WebKeys.CURRENT_HOST,
 					sessionData.get(com.dotmarketing.util.WebKeys.CURRENT_HOST));
 
-			this.setDefaultCurrentSite(request, sessionData.get(WebKeys.USER_ID).toString());
+			this.setCurrentSite(request, sessionData.get(WebKeys.USER_ID).toString());
 
 			response = Response.ok(new ResponseEntityView(map("loginAs", true))).build();
 		} catch (NoSuchUserException | DotSecurityException e) {
@@ -342,10 +340,20 @@ public class UserResource implements Serializable {
 		return response;
 	}
 
-	private void setDefaultCurrentSite(final HttpServletRequest req, final String userID) throws DotDataException, DotSecurityException {
+	private void setCurrentSite(final HttpServletRequest req, final String userID) throws DotDataException, DotSecurityException {
+		final HttpSession session = req.getSession();
 		final User user = APILocator.getUserAPI().loadUserById(userID);
-		req.getSession().setAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID,
-				APILocator.getHostAPI().findDefaultHost(user, true).getIdentifier());
+		final String currentSiteID = (String) session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);
+		Host currentSite = null;
+
+		try {
+			currentSite = APILocator.getHostAPI().find(currentSiteID, user, false);
+		} catch (DotSecurityException e) {
+			final List<Host> sites = APILocator.getHostAPI().findAll(user, false);
+			currentSite = sites.size() > 0 ? sites.get(0) : APILocator.getHostAPI().findDefaultHost(user, false);
+		}
+
+		session.setAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID, currentSite.getIdentifier());
 	}
 
 	/**
