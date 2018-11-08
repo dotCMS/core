@@ -179,7 +179,7 @@ export class LoginAsComponent implements OnInit, OnDestroy {
             .getWithOffset(offset)
             .pipe(take(1))
             .subscribe((items) => {
-                // items.splice(0) is used to return a new object and trigger the change detection in angular
+                // items.splice(0) to return a new object and trigger the change detection
                 this.userCurrentPage = items.splice(0);
             });
     }
