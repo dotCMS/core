@@ -6,7 +6,9 @@ import {
     OnInit,
     ElementRef,
     ViewChild,
-    OnDestroy
+    OnDestroy,
+    InjectionToken,
+    Inject
 } from '@angular/core';
 
 import { LoginService, User } from 'dotcms-js';
@@ -15,15 +17,13 @@ import { FormGroup, FormBuilder, FormControl, Validators } from '@angular/forms'
 import { Subject } from 'rxjs';
 import { take, takeUntil } from 'rxjs/operators';
 
-import { DotEventsService } from '@services/dot-events/dot-events.service';
 import { DotMessageService } from '@services/dot-messages-service';
-import { DotNavigationService } from '../dot-navigation/services/dot-navigation.service';
-import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
 import { PaginatorService } from '@services/paginator';
 import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
+import { LOCATION_TOKEN } from 'src/app/providers';
+
 
 @Component({
-    providers: [],
     selector: 'dot-login-as',
     styleUrls: ['./login-as.scss'],
     templateUrl: 'login-as.html'
@@ -54,13 +54,11 @@ export class LoginAsComponent implements OnInit, OnDestroy {
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
     constructor(
+        @Inject(LOCATION_TOKEN) private location: Location,
         private dotMessageService: DotMessageService,
-        private dotEventsService: DotEventsService,
         private fb: FormBuilder,
         private loginService: LoginService,
         public paginationService: PaginatorService,
-        private iframeOverlayService: IframeOverlayService,
-        private dotNavigationService: DotNavigationService
     ) {}
 
     ngOnInit(): void {
@@ -139,10 +137,7 @@ export class LoginAsComponent implements OnInit, OnDestroy {
             .subscribe(
                 (data) => {
                     if (data) {
-                        this.close();
-                        this.iframeOverlayService.hide();
-                        this.dotNavigationService.goToFirstPortlet();
-                        this.dotEventsService.notify('login-as');
+                        this.location.reload();
                     }
                 },
                 (response) => {

@@ -6,7 +6,7 @@ import {
 import { mockUser, LoginServiceMock } from './../../../test/login-service.mock';
 import { By } from '@angular/platform-browser';
 import { ComponentFixture, async } from '@angular/core/testing';
-import { DebugElement, Injectable, Component, Input, forwardRef, Output, EventEmitter } from '@angular/core';
+import { DebugElement, Component, Input, forwardRef, Output, EventEmitter } from '@angular/core';
 import { LoginAsComponent } from './login-as';
 import { MockDotMessageService } from '../../../test/dot-message-service.mock';
 import { DOTTestBed } from '../../../test/dot-test-bed';
@@ -18,11 +18,10 @@ import { ActivatedRoute } from '@angular/router';
 import { InputTextModule } from 'primeng/primeng';
 import { ReactiveFormsModule, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
-import { DotNavigationService } from '../dot-navigation/services/dot-navigation.service';
 import { DotEventsService } from '@services/dot-events/dot-events.service';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { RouterTestingModule } from '@angular/router/testing';
+import { LOCATION_TOKEN } from 'src/app/providers';
 
 @Component({
     selector: 'dot-searchable-dropdown',
@@ -88,11 +87,6 @@ class DotSearchableDropdownMockComponent {
     registerOnTouched(): void {}
 }
 
-@Injectable()
-class MockDotNavigationService {
-    goToFirstPortlet() {}
-}
-
 describe('LoginAsComponent', () => {
     let comp: LoginAsComponent;
     let fixture: ComponentFixture<LoginAsComponent>;
@@ -100,6 +94,7 @@ describe('LoginAsComponent', () => {
     let paginatorService: PaginatorService;
     let loginService: LoginService;
     let dotEventsService: DotEventsService;
+    let locationService: Location;
 
     const users: User[] = [
         {
@@ -132,25 +127,28 @@ describe('LoginAsComponent', () => {
                 RouterTestingModule
             ],
             providers: [
+                {
+                    provide: LOCATION_TOKEN,
+                    useValue: {
+                        reload() {}
+                    }
+                },
                 { provide: DotMessageService, useValue: messageServiceMock },
                 { provide: LoginService, useClass: LoginServiceMock },
-                {
-                    provide: DotNavigationService,
-                    useClass: MockDotNavigationService
-                },
                 {
                     provide: ActivatedRoute,
                     useValue: { params: observableFrom([{ id: '1234' }]) }
                 },
                 PaginatorService,
-                IframeOverlayService
             ]
         });
+
 
         fixture = DOTTestBed.createComponent(LoginAsComponent);
         comp = fixture.componentInstance;
         de = fixture.debugElement;
 
+        locationService = de.injector.get(LOCATION_TOKEN);
         paginatorService = de.injector.get(PaginatorService);
         loginService = de.injector.get(LoginService);
         dotEventsService = de.injector.get(DotEventsService);
@@ -158,6 +156,11 @@ describe('LoginAsComponent', () => {
         spyOn(paginatorService, 'getWithOffset').and.returnValue(observableOf([...users]));
 
     }));
+
+    afterAll(() => {
+        comp.visible = false;
+        fixture.detectChanges();
+    });
 
     it('should load the first page', () => {
         fixture.detectChanges();
@@ -193,7 +196,7 @@ describe('LoginAsComponent', () => {
         expect(paginatorService.filter).toEqual('new filter');
     });
 
-    it('should call "loginAs" in "LoginService" when login as happens', () => {
+    it('should call "loginAs" in "LoginService"', () => {
         spyOn(loginService, 'loginAs').and.callThrough();
         spyOn(dotEventsService, 'notify');
 
@@ -201,15 +204,12 @@ describe('LoginAsComponent', () => {
         fixture.detectChanges();
 
         comp.form.get('loginAsUser').setValue(mockUser);
-        fixture.detectChanges();
-
         comp.dialogActions.accept.action();
 
         expect(loginService.loginAs).toHaveBeenCalledTimes(1);
-        expect(dotEventsService.notify).toHaveBeenCalledWith('login-as');
     });
 
-    it('should focus on Password input after an Error haapens in "loginAs" in "LoginService"', () => {
+    it('should focus on password input after an error haapens in "loginAs" in "LoginService"', () => {
         spyOn(loginService, 'loginAs').and.returnValue(observableThrowError({ message: 'Error' }));
         comp.visible = true;
         comp.needPassword = true;
@@ -225,5 +225,20 @@ describe('LoginAsComponent', () => {
         comp.dialogActions.accept.action();
 
         expect(passwordInputElem.nativeElement.focus).toHaveBeenCalled();
+    });
+
+    it('should reload the page on login as', () => {
+        spyOn(loginService, 'loginAs').and.callThrough();
+        spyOn(locationService, 'reload');
+
+        comp.visible = true;
+        fixture.detectChanges();
+
+        comp.form.get('loginAsUser').setValue(mockUser);
+        fixture.detectChanges();
+
+        comp.dialogActions.accept.action();
+
+        expect(locationService.reload).toHaveBeenCalledTimes(1);
     });
 });
