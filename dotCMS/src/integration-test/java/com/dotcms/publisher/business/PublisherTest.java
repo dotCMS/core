@@ -80,7 +80,9 @@ public class PublisherTest extends IntegrationTestBase {
             this.assertPushFolderPage(folderPage, pushResult);
         } finally {
 
-            PublisherTestUtil.cleanBundleEndpointEnv(null, ppBean.endPoint, ppBean.environment);
+            if (null != ppBean) {
+                PublisherTestUtil.cleanBundleEndpointEnv(null, ppBean.endPoint, ppBean.environment);
+            }
         }
     }
 

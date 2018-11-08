@@ -32,6 +32,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
 import java.io.File;
@@ -191,6 +192,8 @@ public class PublisherTestUtil {
 
         APILocator.getContentletAPI().publish(pageAsset, user, false);
         APILocator.getContentletIndexAPI().addContentToIndex(pageAsset);
+
+        APILocator.getContentletAPI().isInodeIndexed(pageAsset.getInode());
         assertEquals(1, APILocator.getContentletAPI().indexCount("+inode:" + pageAsset.getInode(), user, false));
 
         return pageAsset;
@@ -387,7 +390,11 @@ public class PublisherTestUtil {
                 "/live/" + host.getHostname() + "/" + page.getLanguageId() + "/" +
                         folder.getName() + "/" + countOrder + "-" + page.getPageUrl() + ".content.xml");
 
-        return pageTestPath.exists();
+        boolean exists = pageTestPath.exists();
+        Logger.info(PublisherTestUtil.class,
+                pageTestPath.getAbsolutePath() + " - Exists [" + exists + "]");
+
+        return exists;
     }
 
 
