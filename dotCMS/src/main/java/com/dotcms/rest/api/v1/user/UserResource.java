@@ -26,10 +26,7 @@ import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.*;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.exception.UserFirstNameException;
-import com.dotmarketing.exception.UserLastNameException;
+import com.dotmarketing.exception.*;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
@@ -350,8 +347,14 @@ public class UserResource implements Serializable {
 			currentSite = APILocator.getHostAPI().find(currentSiteID, user, false);
 		} catch (DotSecurityException e) {
 			final List<Host> sites = APILocator.getHostAPI().findAll(user, false);
-			currentSite = sites.size() > 0 ? sites.get(0) : APILocator.getHostAPI().findDefaultHost(user, false);
+
+			if (sites.isEmpty()) {
+				throw new DotRuntimeException(String.format("The user %s don't have any site", userID));
+			}
+
+			currentSite =  sites.get(0);
 		}
+
 
 		session.setAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID, currentSite.getIdentifier());
 	}
