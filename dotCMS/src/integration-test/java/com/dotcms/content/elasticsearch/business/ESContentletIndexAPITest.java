@@ -140,6 +140,7 @@ public class ESContentletIndexAPITest extends IntegrationTestBase {
 
             APILocator.getContentletIndexAPI().indexContentList(contentlets, null, false);
 
+            APILocator.getContentletAPI().isInodeIndexed(contentlet.getInode());
             assertTrue(APILocator.getContentletAPI()
                     .indexCount("+identifier:" + contentlet.getIdentifier(), user, false) > 0);
         }finally {
