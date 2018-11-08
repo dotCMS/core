@@ -39,8 +39,7 @@ export class ContentTypeFieldsAddRowComponent implements OnDestroy, OnInit {
     toolTips: string[] = [
         'contenttypes.content.single_column',
         'contenttypes.content.many_columns',
-        'contenttypes.content.add_column_title',
-        'contenttypes.dropzone.rows.tab_divider'
+        'contenttypes.content.add_column_title'
     ];
     @Output()
     selectColums: EventEmitter<number> = new EventEmitter<number>();
@@ -194,7 +193,7 @@ export class ContentTypeFieldsAddRowComponent implements OnDestroy, OnInit {
     }
 
     private loadMessages(): void {
-        const i18nKeys = [...this.toolTips, 'contenttypes.dropzone.rows.add'];
+        const i18nKeys = [...this.toolTips, 'contenttypes.dropzone.rows.add', 'contenttypes.dropzone.rows.tab_divider'];
 
         this.dotMessageService.getMessages(i18nKeys).subscribe((res) => {
             this.i18nMessages = res;
