@@ -217,8 +217,12 @@ public class BinaryExporterServlet extends HttpServlet {
 						try {
 							content = contentAPI.find(assetInode, user, mode.respectAnonPerms);
 						} catch(DotSecurityException e) {
-							final Contentlet contentTemp = contentAPI.find(assetInode, APILocator.getUserAPI().getSystemUser(), false);
-							content = (Contentlet) APILocator.getVersionableAPI().findLiveVersion(contentTemp, user, true);
+							if (!mode.respectAnonPerms) {
+								final Contentlet contentTemp = contentAPI.find(assetInode,
+										APILocator.getUserAPI().getSystemUser(), false);
+								content = (Contentlet) APILocator.getVersionableAPI().findLiveVersion(contentTemp, user,
+										true);
+							}
 						}
 					}
 
