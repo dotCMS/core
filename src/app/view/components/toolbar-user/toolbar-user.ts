@@ -1,10 +1,9 @@
-import { Component, ViewChild, OnInit } from '@angular/core';
+import { Component, ViewChild, OnInit, Inject } from '@angular/core';
 import { DotDropdownComponent } from '../_common/dropdown-component/dot-dropdown.component';
 import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
 import { LoginService, Auth, LoggerService } from 'dotcms-js';
 import { DotMessageService } from '@services/dot-messages-service';
-import { DotNavigationService } from '../dot-navigation/services/dot-navigation.service';
-import { DotEventsService } from '@services/dot-events/dot-events.service';
+import { LOCATION_TOKEN } from 'src/app/providers';
 
 @Component({
     selector: 'dot-toolbar-user',
@@ -24,12 +23,11 @@ export class ToolbarUserComponent implements OnInit {
     } = {};
 
     constructor(
+        @Inject(LOCATION_TOKEN) private location: Location,
         private dotMessageService: DotMessageService,
-        private dotEventsService: DotEventsService,
         private loggerService: LoggerService,
         private loginService: LoginService,
         public iframeOverlayService: IframeOverlayService,
-        private dotNavigationService: DotNavigationService
     ) {}
 
     ngOnInit(): void {
@@ -70,9 +68,7 @@ export class ToolbarUserComponent implements OnInit {
         this.loginService.logoutAs().subscribe(
             () => {
                 this.dropdown.closeIt();
-                this.iframeOverlayService.hide();
-                this.dotNavigationService.goToFirstPortlet();
-                this.dotEventsService.notify('logout-as');
+                this.location.reload();
             },
             (error) => {
                 this.loggerService.error(error);

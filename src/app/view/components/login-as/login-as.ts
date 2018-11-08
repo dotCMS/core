@@ -7,7 +7,6 @@ import {
     ElementRef,
     ViewChild,
     OnDestroy,
-    InjectionToken,
     Inject
 } from '@angular/core';
 
