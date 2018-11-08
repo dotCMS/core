@@ -210,10 +210,18 @@ public class BinaryExporterServlet extends HttpServlet {
 			if (isContent){
 				Contentlet content = null;
 				if(byInode) {
-					if(isTempBinaryImage)
+
+					if (isTempBinaryImage)
 						content = contentAPI.find(assetInode, APILocator.getUserAPI().getSystemUser(), mode.respectAnonPerms);
-					else
-						content = contentAPI.find(assetInode, user, mode.respectAnonPerms);
+					else {
+						try {
+							content = contentAPI.find(assetInode, user, mode.respectAnonPerms);
+						} catch(DotSecurityException e) {
+							final Contentlet contentTemp = contentAPI.find(assetInode, APILocator.getUserAPI().getSystemUser(), false);
+							content = (Contentlet) APILocator.getVersionableAPI().findLiveVersion(contentTemp, user, true);
+						}
+					}
+
 					assetIdentifier = content.getIdentifier();
 				} else {
 				    boolean live=userWebAPI.isLoggedToFrontend(req);
