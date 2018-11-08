@@ -156,7 +156,7 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
 
     private PageMode getNotLockDefaultPageMode(final HTMLPageAsset htmlPageAsset, final User user) throws DotDataException {
         return this.permissionAPI.doesUserHavePermission(htmlPageAsset, PermissionLevel.READ.getType(), user, false)
-                ? PageMode.PREVIEW_MODE : PageMode.LIVE;
+                ? PageMode.PREVIEW_MODE : PageMode.ADMIN_MODE;
     }
 
     private HTMLPageAsset getHtmlPageAsset(final User user, final String uri, final PageMode mode, final Host host)
