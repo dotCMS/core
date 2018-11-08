@@ -220,13 +220,11 @@ public class BinaryExporterServlet extends HttpServlet {
 							if (!mode.respectAnonPerms) {
 								final Contentlet contentTemp = contentAPI.find(assetInode,
 										APILocator.getUserAPI().getSystemUser(), false);
-								content = (Contentlet) APILocator.getVersionableAPI().findLiveVersion(contentTemp, user,
-										true);
+								content = contentAPI.findContentletByIdentifier(contentTemp.getIdentifier(),
+										true, lang, user, true);
 							}
 						}
 					}
-
-					assetIdentifier = content.getIdentifier();
 				} else {
 				    boolean live=userWebAPI.isLoggedToFrontend(req);
 
