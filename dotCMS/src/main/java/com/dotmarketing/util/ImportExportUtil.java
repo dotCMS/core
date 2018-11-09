@@ -144,7 +144,6 @@ public class ImportExportUtil {
         } catch (Exception e) { }
         classesWithIdentity.add("Rating");
         classesWithIdentity.add("dist_journal");
-        classesWithIdentity.add("Language");
         classesWithIdentity.add("Permission");
         classesWithIdentity.add("PermissionReference");
         classesWithIdentity.add("UserPreference");
