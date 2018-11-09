@@ -399,16 +399,34 @@ public class PublisherTestUtil {
         return folderTestPath.exists() && folderIdTestPath.exists();
     }
 
-    public static boolean existsPage(final String bundlePath, final Host host, final int countOrder,
-                                     final Folder folder, final HTMLPageAsset page) {
+    public static boolean existsPage(final String bundlePath, final Host host,
+            final Folder folder, final HTMLPageAsset page) {
 
-        final File pageTestPath   = new File(bundlePath,
+        boolean exists = false;
+
+        final String testPageName = page.getPageUrl() + ".content.xml";
+        final File pageParentPath = new File(bundlePath,
                 "/live/" + host.getHostname() + "/" + page.getLanguageId() + "/" +
-                        folder.getName() + "/" + countOrder + "-" + page.getPageUrl() + ".content.xml");
+                        folder.getName());
 
-        return pageTestPath.exists();
+        if (pageParentPath.exists()) {
+
+            //Getting the content of the parent folder
+            final String[] testPages = pageParentPath.list();
+            if (null != testPages) {
+
+                for (final String testPage : testPages) {
+
+                    //Verify if we found the page
+                    if (testPage.endsWith(testPageName)) {
+                        exists = true;
+                    }
+                }
+            }
+        }
+
+        return exists;
     }
-
 
     public static Map<String, Object> generateBundle ( final String bundleId, final PushPublisherConfig.Operation operation )
     throws DotPublisherException, DotDataException, DotPublishingException, IllegalAccessException, InstantiationException, DotBundleException, IOException {

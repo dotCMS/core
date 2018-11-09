@@ -104,7 +104,7 @@ public class PublisherTest extends IntegrationTestBase {
         assertTrue("We should have 1 page on: " + folderPage.folder, bundlerStatus.get().getCount() != 0);
 
         assertTrue(PublisherTestUtil.existsFolder(pushResult.bundlePath, folderPage.folder));
-        assertTrue(PublisherTestUtil.existsPage(pushResult.bundlePath, host, 0, folderPage.folder, folderPage.page));
+        assertTrue(PublisherTestUtil.existsPage(pushResult.bundlePath, host, folderPage.folder, folderPage.page));
     }
 
     private void assertRemoveFolder(final FolderPage folderPage, final PushResult pushResult) throws Exception {
