@@ -6,6 +6,7 @@ import static com.dotcms.util.CollectionsUtils.map;
 
 import java.io.Serializable;
 import java.util.Collections;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
@@ -23,15 +24,9 @@ import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.v1.authentication.IncorrectPasswordException;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.ApiProvider;
-import com.dotmarketing.business.NoSuchUserException;
-import com.dotmarketing.business.Role;
-import com.dotmarketing.business.UserAPI;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.exception.UserFirstNameException;
-import com.dotmarketing.exception.UserLastNameException;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.*;
+import com.dotmarketing.exception.*;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
@@ -310,6 +305,9 @@ public class UserResource implements Serializable {
 			PrincipalThreadLocal.setName(loginAsUserId);
 			session.setAttribute(com.dotmarketing.util.WebKeys.CURRENT_HOST,
 					sessionData.get(com.dotmarketing.util.WebKeys.CURRENT_HOST));
+
+			this.setCurrentSite(request, sessionData.get(WebKeys.USER_ID).toString());
+
 			response = Response.ok(new ResponseEntityView(map("loginAs", true))).build();
 		} catch (NoSuchUserException | DotSecurityException e) {
 			SecurityLogger.logInfo(UserResource.class,
@@ -337,6 +335,28 @@ public class UserResource implements Serializable {
 		SecurityLogger.logInfo(UserResource.class, "User ID (" + currentUser.getUserId()
 				+ "), has sucessfully login as (" + loginAsUserId + "). Remote IP: " + request.getRemoteAddr());
 		return response;
+	}
+
+	private void setCurrentSite(final HttpServletRequest req, final String userID) throws DotDataException, DotSecurityException {
+		final HttpSession session = req.getSession();
+		final User user = APILocator.getUserAPI().loadUserById(userID);
+		final String currentSiteID = (String) session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);
+		Host currentSite = null;
+
+		try {
+			currentSite = APILocator.getHostAPI().find(currentSiteID, user, false);
+		} catch (DotSecurityException e) {
+			final List<Host> sites = APILocator.getHostAPI().findAll(user, 1,0,null, false);
+
+			if (sites.isEmpty()) {
+				throw new DotRuntimeException(String.format("The user %s don't have any site", userID));
+			}
+
+			currentSite =  sites.get(0);
+		}
+
+
+		session.setAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID, currentSite.getIdentifier());
 	}
 
 	/**
