@@ -13,6 +13,7 @@ import { DotMessageService } from '@services/dot-messages-service';
 import { DotEventsService } from '@services/dot-events/dot-events.service';
 import { takeUntil } from 'rxjs/operators';
 import { Subject } from 'rxjs/internal/Subject';
+import { MenuItem } from 'primeng/primeng';
 
 /**
  * Display select columns row
@@ -30,6 +31,7 @@ export class ContentTypeFieldsAddRowComponent implements OnDestroy, OnInit {
     rowState = 'add';
     selectedColumnIndex = 0;
     i18nMessages = {};
+    actions: MenuItem[];
 
     @Input()
     columns: number[] = [1, 2, 3, 4];
@@ -56,9 +58,12 @@ export class ContentTypeFieldsAddRowComponent implements OnDestroy, OnInit {
     ngOnInit(): void {
         this.setKeyboardEvent('ctrl+a', this.setColumnSelect.bind(this));
         this.loadMessages();
-        this.dotEventsService.listen('add-row').pipe(takeUntil(this.destroy$)).subscribe(() => {
-            this.setColumnSelect();
-        });
+        this.dotEventsService
+            .listen('add-row')
+            .pipe(takeUntil(this.destroy$))
+            .subscribe(() => {
+                this.setColumnSelect();
+            });
     }
 
     ngOnDestroy(): void {
@@ -193,11 +198,35 @@ export class ContentTypeFieldsAddRowComponent implements OnDestroy, OnInit {
     }
 
     private loadMessages(): void {
-        const i18nKeys = [...this.toolTips, 'contenttypes.dropzone.rows.add', 'contenttypes.dropzone.rows.tab_divider'];
+        const i18nKeys = [
+            ...this.toolTips,
+            'contenttypes.dropzone.rows.add',
+            'contenttypes.dropzone.rows.tab_divider'
+        ];
 
         this.dotMessageService.getMessages(i18nKeys).subscribe((res) => {
             this.i18nMessages = res;
+            this.loadActions();
         });
+    }
+
+    private loadActions(): void {
+        this.actions = [
+            {
+                label: this.i18nMessages['contenttypes.dropzone.rows.add'],
+                icon: 'fa fa-plus',
+                command: () => {
+                    this.setColumnSelect();
+                }
+            },
+            {
+                label: this.i18nMessages['contenttypes.dropzone.rows.tab_divider'],
+                icon: 'fa fa-plus',
+                command: () => {
+                    this.addTabDivider();
+                }
+            }
+        ];
     }
 
     private getNumberColumnsSelected() {

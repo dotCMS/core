@@ -2,6 +2,7 @@ import { ContentTypeFieldsAddRowComponent } from './content-type-fields-add-row.
 import { DotMessageService } from '@services/dot-messages-service';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { TooltipModule } from 'primeng/primeng';
+import { SplitButtonModule } from 'primeng/splitbutton';
 import { ComponentFixture, fakeAsync, tick } from '@angular/core/testing';
 import { DOTTestBed } from '../../../../test/dot-test-bed';
 import { DebugElement } from '@angular/core';
@@ -34,7 +35,7 @@ describe('ContentTypeFieldsAddRowComponent', () => {
 
         DOTTestBed.configureTestingModule({
             declarations: [ContentTypeFieldsAddRowComponent],
-            imports: [TooltipModule, BrowserAnimationsModule, DotIconButtonModule],
+            imports: [TooltipModule, BrowserAnimationsModule, DotIconButtonModule, SplitButtonModule],
             providers: [
                 { provide: HotkeysService, useValue: testHotKeysMock },
                 { provide: DotMessageService, useValue: messageServiceMock }
