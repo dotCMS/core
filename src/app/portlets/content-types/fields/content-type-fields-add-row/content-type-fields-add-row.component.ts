@@ -11,7 +11,7 @@ import {
 import { HotkeysService, Hotkey } from 'angular2-hotkeys';
 import { DotMessageService } from '@services/dot-messages-service';
 import { DotEventsService } from '@services/dot-events/dot-events.service';
-import { takeUntil } from 'rxjs/operators';
+import { takeUntil, take } from 'rxjs/operators';
 import { Subject } from 'rxjs/internal/Subject';
 import { MenuItem } from 'primeng/primeng';
 
@@ -204,7 +204,7 @@ export class ContentTypeFieldsAddRowComponent implements OnDestroy, OnInit {
             'contenttypes.dropzone.rows.tab_divider'
         ];
 
-        this.dotMessageService.getMessages(i18nKeys).subscribe((res) => {
+        this.dotMessageService.getMessages(i18nKeys).pipe(take(1)).subscribe((res) => {
             this.i18nMessages = res;
             this.loadActions();
         });

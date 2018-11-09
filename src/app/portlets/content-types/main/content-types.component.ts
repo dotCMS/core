@@ -1,11 +1,11 @@
-import { forkJoin as observableForkJoin } from 'rxjs';
+import { forkJoin as observableForkJoin, Subject } from 'rxjs';
 
-import { map } from 'rxjs/operators';
+import { map, takeUntil, take } from 'rxjs/operators';
 import { ListingDataTableComponent } from '@components/listing-data-table/listing-data-table.component';
 import { DotAlertConfirmService } from '@services/dot-alert-confirm/dot-alert-confirm.service';
 import { CrudService } from '@services/crud';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { Component, OnInit, ViewChild, OnDestroy } from '@angular/core';
 
 import { ActionHeaderOptions } from '@models/action-header';
 import { ContentTypesInfoService } from '@services/content-types-info';
@@ -32,7 +32,7 @@ import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot
     styleUrls: ['./content-types.component.scss'],
     templateUrl: 'content-types.component.html'
 })
-export class ContentTypesPortletComponent implements OnInit {
+export class ContentTypesPortletComponent implements OnInit, OnDestroy {
 
     @ViewChild('listing')
     listing: ListingDataTableComponent;
@@ -65,6 +65,7 @@ export class ContentTypesPortletComponent implements OnInit {
         'contenttypes.content.add_to_bundle',
         'Content-Type'
     ];
+    private destroy$: Subject<boolean> = new Subject<boolean>();
 
     constructor(
         private contentTypesInfoService: ContentTypesInfoService,
@@ -87,7 +88,10 @@ export class ContentTypesPortletComponent implements OnInit {
             this.dotLicenseService.isEnterprise(),
             this.pushPublishService
                 .getEnvironments()
-                .pipe(map((environments: DotEnvironment[]) => !!environments.length))
+                .pipe(
+                    map((environments: DotEnvironment[]) => !!environments.length),
+                    takeUntil(this.destroy$)
+                )
         ).subscribe((res) => {
             const baseTypes: StructureTypeView[] = res[1];
             const rowActionsMap = {
@@ -104,6 +108,11 @@ export class ContentTypesPortletComponent implements OnInit {
             this.contentTypeColumns = this.setContentTypeColumns();
             this.rowActions = this.createRowActions(rowActionsMap);
         });
+    }
+
+    ngOnDestroy(): void {
+        this.destroy$.next(true);
+        this.destroy$.complete();
     }
 
     editContentType($event): void {
@@ -246,11 +255,11 @@ export class ContentTypesPortletComponent implements OnInit {
     }
 
     private removeContentType(item): void {
-        this.crudService.delete(`v1/contenttype/id`, item.id).subscribe(
+        this.crudService.delete(`v1/contenttype/id`, item.id).pipe(take(1)).subscribe(
             () => {
                 this.listing.loadCurrentPage();
             },
-            (error) => this.httpErrorManagerService.handle(error).subscribe()
+            (error) => this.httpErrorManagerService.handle(error).pipe(take(1)).subscribe()
         );
     }
 

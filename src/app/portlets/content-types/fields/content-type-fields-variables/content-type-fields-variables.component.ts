@@ -1,9 +1,11 @@
-import { Component, Input, SimpleChanges, OnChanges, OnInit } from '@angular/core';
+import { Component, Input, SimpleChanges, OnChanges, OnInit, OnDestroy } from '@angular/core';
 import { DotMessageService } from '../../../../api/services/dot-messages-service';
 import { FieldVariablesService, FieldVariableParams } from '../service/';
 import { DotHttpErrorManagerService } from '../../../../api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { ResponseView } from 'dotcms-js';
 import { Column } from 'primeng/primeng';
+import { take, takeUntil } from 'rxjs/operators';
+import { Subject } from 'rxjs/internal/Subject';
 
 export interface FieldVariable {
     id?: string;
@@ -18,13 +20,14 @@ export interface FieldVariable {
     styleUrls: ['./content-type-fields-variables.component.scss'],
     templateUrl: './content-type-fields-variables.component.html'
 })
-export class ContentTypeFieldsVariablesComponent implements OnInit, OnChanges {
+export class ContentTypeFieldsVariablesComponent implements OnInit, OnChanges, OnDestroy {
     @Input()
     field: FieldVariableParams;
 
     fieldVariables: FieldVariable[] = [];
     messages: { [key: string]: string } = {};
     canSaveFields: boolean[] | null[] = [];
+    private destroy$: Subject<boolean> = new Subject<boolean>();
 
     constructor(
         private dotHttpErrorManagerService: DotHttpErrorManagerService,
@@ -40,6 +43,7 @@ export class ContentTypeFieldsVariablesComponent implements OnInit, OnChanges {
                 'contenttypes.field.variables.actions_header.label',
                 'contenttypes.field.variables.value_no_rows.label'
             ])
+            .pipe(take(1))
             .subscribe((messages: { [key: string]: string }) => {
                 this.messages = messages;
                 this.initTableData();
@@ -50,6 +54,11 @@ export class ContentTypeFieldsVariablesComponent implements OnInit, OnChanges {
         if (changes.field.currentValue && !changes.field.firstChange) {
             this.initTableData();
         }
+    }
+
+    ngOnDestroy(): void {
+        this.destroy$.next(true);
+        this.destroy$.complete();
     }
 
     /**
@@ -63,7 +72,7 @@ export class ContentTypeFieldsVariablesComponent implements OnInit, OnChanges {
             fieldId: this.field.fieldId,
             variable: this.fieldVariables[fieldIndex]
         };
-        this.fieldVariablesService.delete(params).subscribe(
+        this.fieldVariablesService.delete(params).pipe(takeUntil(this.destroy$)).subscribe(
             () => {
                 this.fieldVariables = this.fieldVariables.filter(
                     (_item: FieldVariable, index: number) => index !== fieldIndex
@@ -71,7 +80,7 @@ export class ContentTypeFieldsVariablesComponent implements OnInit, OnChanges {
                 this.canSaveFields.splice(fieldIndex, 1);
             },
             (err: ResponseView) => {
-                this.dotHttpErrorManagerService.handle(err).subscribe();
+                this.dotHttpErrorManagerService.handle(err).pipe(take(1)).subscribe();
             }
         );
     }
@@ -87,7 +96,7 @@ export class ContentTypeFieldsVariablesComponent implements OnInit, OnChanges {
             fieldId: this.field.fieldId,
             variable: variable
         };
-        this.fieldVariablesService.save(params).subscribe(
+        this.fieldVariablesService.save(params).pipe(takeUntil(this.destroy$)).subscribe(
             (savedVariable: FieldVariable) => {
                 if (typeof variableIndex !== 'undefined') {
                     this.fieldVariables = this.updateVariableCollection(
@@ -100,7 +109,7 @@ export class ContentTypeFieldsVariablesComponent implements OnInit, OnChanges {
                 }
             },
             (err: ResponseView) => {
-                this.dotHttpErrorManagerService.handle(err).subscribe();
+                this.dotHttpErrorManagerService.handle(err).pipe(take(1)).subscribe();
             }
         );
     }
@@ -124,7 +133,7 @@ export class ContentTypeFieldsVariablesComponent implements OnInit, OnChanges {
             contentTypeId: this.field.contentTypeId,
             fieldId: this.field.fieldId
         };
-        this.fieldVariablesService.load(params).subscribe((fieldVariables: FieldVariable[]) => {
+        this.fieldVariablesService.load(params).pipe(takeUntil(this.destroy$)).subscribe((fieldVariables: FieldVariable[]) => {
             this.fieldVariables = fieldVariables;
         });
     }

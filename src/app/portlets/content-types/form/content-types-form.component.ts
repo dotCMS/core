@@ -5,12 +5,13 @@ import {
     Input,
     OnInit,
     Output,
-    ViewChild
+    ViewChild,
+    OnDestroy
 } from '@angular/core';
 import { FormGroup, FormBuilder, Validators, FormControl } from '@angular/forms';
 
-import { Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { Observable, Subject } from 'rxjs';
+import { map, take, takeUntil } from 'rxjs/operators';
 
 import * as _ from 'lodash';
 import { SelectItem } from 'primeng/primeng';
@@ -37,7 +38,7 @@ import { ContentTypeField } from '../fields';
     styleUrls: ['./content-types-form.component.scss'],
     templateUrl: 'content-types-form.component.html'
 })
-export class ContentTypesFormComponent implements OnInit {
+export class ContentTypesFormComponent implements OnInit, OnDestroy {
     @ViewChild('name')
     name: ElementRef;
 
@@ -59,6 +60,7 @@ export class ContentTypesFormComponent implements OnInit {
     nameFieldLabel: Observable<string>;
 
     private originalValue: any;
+    private destroy$: Subject<boolean> = new Subject<boolean>();
 
     constructor(
         private fb: FormBuilder,
@@ -88,6 +90,7 @@ export class ContentTypesFormComponent implements OnInit {
                 'contenttypes.hint.URL.map.pattern.hint1',
                 'dot.common.message.field.required'
             ])
+            .pipe(take(1))
             .subscribe();
     }
 
@@ -100,10 +103,15 @@ export class ContentTypesFormComponent implements OnInit {
         this.name.nativeElement.focus();
 
         if (!this.isEditMode()) {
-            this.dotWorkflowService.getSystem().subscribe((workflow: DotWorkflow) => {
+            this.dotWorkflowService.getSystem().pipe(takeUntil(this.destroy$)).subscribe((workflow: DotWorkflow) => {
                 this.form.get('workflow').setValue([workflow.id]);
             });
         }
+    }
+
+    ngOnDestroy(): void {
+        this.destroy$.next(true);
+        this.destroy$.complete();
     }
 
     /**
@@ -156,7 +164,7 @@ export class ContentTypesFormComponent implements OnInit {
     }
 
     private bindActionButtonState(): void {
-        this.form.valueChanges.subscribe(() => {
+        this.form.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(() => {
             this.setSaveState();
         });
     }
@@ -227,7 +235,7 @@ export class ContentTypesFormComponent implements OnInit {
     }
 
     private initWorkflowField(): void {
-        this.dotLicenseService.isEnterprise().subscribe((isEnterpriseLicense: boolean) => {
+        this.dotLicenseService.isEnterprise().pipe(takeUntil(this.destroy$)).subscribe((isEnterpriseLicense: boolean) => {
             this.updateWorkflowFormControl(isEnterpriseLicense);
         });
     }

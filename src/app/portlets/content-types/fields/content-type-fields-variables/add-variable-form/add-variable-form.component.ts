@@ -2,6 +2,7 @@ import { Component, OnInit, Output, EventEmitter, ViewChild, ElementRef } from '
 import { FormGroup, FormControl, Validators, FormBuilder } from '@angular/forms';
 import { DotMessageService } from '../../../../../api/services/dot-messages-service';
 import { FieldVariable } from '..';
+import { take } from 'rxjs/operators';
 
 @Component({
     selector: 'dot-add-variable-form',
@@ -25,6 +26,7 @@ export class AddVariableFormComponent implements OnInit {
                 'contenttypes.field.variables.value_header.label',
                 'contenttypes.field.variables.add_button.label'
             ])
+            .pipe(take(1))
             .subscribe((messages: {[key: string]: string}) => {
                 this.messages = messages;
             });
