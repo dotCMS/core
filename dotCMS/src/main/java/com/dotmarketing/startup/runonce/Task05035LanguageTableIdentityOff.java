@@ -19,7 +19,7 @@ public class Task05035LanguageTableIdentityOff implements StartupTask  {
 
     private static final String MS_SQL_SET_IDENTITY_INSERT_LANGUAGE_OFF = " SET IDENTITY_INSERT language OFF; ";
 
-    private static final String POSTGRES_DROP_SEQUENCE = " DROP SEQUENCE IF EXISTS language_seq CASCADE; ALTER TABLE language ALTER COLUMN id DROP default; ";
+    private static final String POSTGRES_DROP_SEQUENCE_IF_EXISTS = " DROP SEQUENCE IF EXISTS language_seq CASCADE; ALTER TABLE language ALTER COLUMN id DROP default; ";
 
     private static final String ORACLE_CHECK_SEQUENCE_EXIST = " SELECT sequence_name FROM all_sequences WHERE lower(sequence_name) = 'language_seq'; ";
     private static final String ORACLE_DROP_SEQUENCE = " DROP SEQUENCE language_seq; ";
@@ -49,7 +49,7 @@ public class Task05035LanguageTableIdentityOff implements StartupTask  {
             } else if (DbConnectionFactory.isMySql()) {
                 dotConnect.setSQL(MY_SQL_ALTER_TABLE_LANGUAGE_DROP_AUTO_INCREMENT);
             } else if (DbConnectionFactory.isPostgres()) {
-                dotConnect.setSQL(POSTGRES_DROP_SEQUENCE);
+                dotConnect.setSQL(POSTGRES_DROP_SEQUENCE_IF_EXISTS);
             } else if (DbConnectionFactory.isOracle()) {
                  if(!checkSequenceExistsOracle(dotConnect)){
                    return;
