@@ -19,14 +19,19 @@ public class Task05035LanguageTableIdentityOff implements StartupTask  {
 
     private static final String MS_SQL_SET_IDENTITY_INSERT_LANGUAGE_OFF = " SET IDENTITY_INSERT language OFF; ";
 
-    private static final String POSTGRES_DROP_SEQUENCE = " DROP SEQUENCE language_seq CASCADE; ALTER TABLE language ALTER COLUMN id DROP default; ";
+    private static final String POSTGRES_DROP_SEQUENCE = " DROP SEQUENCE IF EXISTS language_seq CASCADE; ALTER TABLE language ALTER COLUMN id DROP default; ";
 
+    private static final String ORACLE_CHECK_SEQUENCE_EXIST = "SELECT sequence_name as sequence_exists FROM all_sequences WHERE sequence_name = 'language_seq' ";
     private static final String ORACLE_DROP_SEQUENCE = " DROP SEQUENCE language_seq CASCADE; ALTER TABLE language ALTER COLUMN id DROP default; ";
-
 
     @Override
     public boolean forceRun() {
         return Boolean.TRUE;
+    }
+
+    private boolean checkSequenceExistsOracle(final DotConnect dotConnect) throws DotDataException, DotRuntimeException {
+        dotConnect.setSQL(ORACLE_CHECK_SEQUENCE_EXIST);
+        return !dotConnect.loadObjectResults().isEmpty();
     }
 
     @Override
@@ -39,19 +44,16 @@ public class Task05035LanguageTableIdentityOff implements StartupTask  {
 
             final DotConnect dotConnect = new DotConnect();
 
-            if(DbConnectionFactory.isMsSql()){
+            if (DbConnectionFactory.isMsSql()) {
                 dotConnect.setSQL(MS_SQL_SET_IDENTITY_INSERT_LANGUAGE_OFF);
-            }
-
-            if(DbConnectionFactory.isMySql()){
+            } else if (DbConnectionFactory.isMySql()) {
                 dotConnect.setSQL(MY_SQL_ALTER_TABLE_LANGUAGE_DROP_AUTO_INCREMENT);
-            }
-
-            if(DbConnectionFactory.isPostgres()){
+            } else if (DbConnectionFactory.isPostgres()) {
                 dotConnect.setSQL(POSTGRES_DROP_SEQUENCE);
-            }
-
-            if(DbConnectionFactory.isOracle()){
+            } else if (DbConnectionFactory.isOracle()) {
+                 if(!checkSequenceExistsOracle(dotConnect)){
+                   return;
+                 }
                 dotConnect.setSQL(ORACLE_DROP_SEQUENCE);
             }
 
