@@ -10,6 +10,9 @@
         [style]="style"
         [suggestions]="results"
         field="path">
+        <ng-template let-page pTemplate="item">
+                <span> <b>{{page.host}}</b> {{page.path}} </span>
+            </ng-template>
     </p-autoComplete>
 </span>
 
@@ -25,5 +28,8 @@
         [style]="style"
         [suggestions]="results"
         field="path">
+        <ng-template let-page pTemplate="item">
+            <span> <b>{{page.host}}</b> {{page.path}} </span>
+        </ng-template>
     </p-autoComplete>
 </ng-template>

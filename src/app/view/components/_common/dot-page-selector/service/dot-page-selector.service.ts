@@ -41,9 +41,12 @@ export class DotPageSelectorService {
      * @memberof DotPageSelectorService
      */
     getPagesInFolder(searchParam: string, hostId?: string): Observable<DotPageAsset[]> {
-        searchParam = searchParam.replace(/\//g, '\\/');
-        let query = `+basetype:5 +path:*${searchParam}*`;
-        query += hostId ? ` +conhost:${hostId}` : '';
+        const parsedQuery = this.parseHost(searchParam);
+        let query = `+basetype:5 +path:*${parsedQuery[0]}*`;
+        query +=
+            parsedQuery.length > 1
+                ? ` +conhostName:*${parsedQuery[1]}*`
+                : hostId ? ` +conhost:${hostId}` : '';
 
         return this.coreWebService
             .requestView({
@@ -79,9 +82,17 @@ export class DotPageSelectorService {
                 method: RequestMethod.Post,
                 url: 'es/search'
             })
-            .pipe(
-                pluck('contentlets'),
-                map((pages: DotPageAsset[]) => pages[0])
-            );
+            .pipe(pluck('contentlets'), map((pages: DotPageAsset[]) => pages[0]));
+    }
+
+    private parseHost(query: string): string[] {
+        const host = query.match(/^\/\/[^/]*\//g);
+        const search: string[] = [];
+        if (host) {
+            search.push(query.replace(host[0], '').replace(/\//g, '\\/'));
+            search.push(host[0].substr(2).slice(0, -1));
+            return search;
+        }
+        return [query.replace(/\//g, '\\/')];
     }
 }

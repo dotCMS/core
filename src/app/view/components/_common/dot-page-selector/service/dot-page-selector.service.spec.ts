@@ -75,6 +75,36 @@ describe('Service: DotPageSelector', () => {
         expect(this.lastConnection.request._body).toEqual(query);
     });
 
+    it('should get pages in a folder filtered by hostName', () => {
+        let result;
+        const searchParam = '//demo.dotcms.com/about';
+        const query = {
+            query: {
+                query_string: {
+                    query: `+basetype:5 +parentpath:*about* +conhostName:*demo.dotcms.com*`
+                }
+            }
+        };
+
+        this.dotPageSelectorService.getPagesInFolder(searchParam, hostId).subscribe((res) => {
+            result = res;
+        });
+
+        this.lastConnection.mockRespond(
+            new Response(
+                new ResponseOptions({
+                    body: {
+                        contentlets: [mockPageSelector]
+                    }
+                })
+            )
+        );
+        expect(result[0]).toEqual(mockPageSelector);
+        expect(this.lastConnection.request.url).toContain('es/search');
+        expect(this.lastConnection.request.method).toEqual(1);
+        expect(this.lastConnection.request._body).toEqual(JSON.stringify(query));
+    });
+
     it('should get a page by identifier', () => {
         let result;
         const searchParam = 'fdeb07ff-6fc3-4237-91d9-728109bc621d';
@@ -106,4 +136,6 @@ describe('Service: DotPageSelector', () => {
         expect(this.lastConnection.request.method).toEqual(1);
         expect(this.lastConnection.request._body).toEqual(query);
     });
+
+
 });
