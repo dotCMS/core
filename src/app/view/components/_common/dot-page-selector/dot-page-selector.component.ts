@@ -69,11 +69,9 @@ export class DotPageSelectorComponent implements ControlValueAccessor {
      * @memberof DotPageSelectorComponent
      */
     search(param: string): void {
-        debugger;
         this.dotPageSelectorService
             .getPagesInFolder(param, this.hostIdentifier)
             .subscribe((pages: DotPageAsset[]) => {
-                debugger;
                 this.results = pages;
             });
     }
@@ -93,6 +91,16 @@ export class DotPageSelectorComponent implements ControlValueAccessor {
                     this.val = page;
                 });
         }
+    }
+
+    /**
+     * Prevent enter to propagate on selection
+     *
+     * @param {KeyboardEvent} $event
+     * @memberof DotTextareaContentComponent
+     */
+    onKeyEnter($event: KeyboardEvent): void {
+        $event.stopPropagation();
     }
 
     /**

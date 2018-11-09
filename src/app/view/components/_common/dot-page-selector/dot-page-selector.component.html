@@ -9,7 +9,8 @@
         [ngModel]="val"
         [style]="style"
         [suggestions]="results"
-        field="path">
+        field="path"
+        (keydown.enter)="onKeyEnter($event)">
         <ng-template let-page pTemplate="item">
                 <span> <b>{{page.host}}</b> {{page.path}} </span>
             </ng-template>
@@ -27,7 +28,8 @@
         [placeholder]="label"
         [style]="style"
         [suggestions]="results"
-        field="path">
+        field="path"
+        (keydown.enter)="onKeyEnter($event)">
         <ng-template let-page pTemplate="item">
             <span> <b>{{page.host}}</b> {{page.path}} </span>
         </ng-template>
