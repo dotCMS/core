@@ -205,7 +205,7 @@ public class NavToolTest extends IntegrationTestBase{
             final FileAssetDataGen fileAssetDataGen = new FileAssetDataGen(systemFolder, file);
             final Contentlet fileAsset = fileAssetDataGen.nextPersisted();
             fileAssetShown = APILocator.getContentletAPI().find(fileAsset.getInode(), user, false);
-            fileAssetShown.setBoolProperty(FileAssetAPI.SHOW_ON_MENU, true);
+            fileAssetShown.setStringProperty(FileAssetAPI.SHOW_ON_MENU, "true");
             fileAssetShown.setInode("");
             fileAssetShown = APILocator.getContentletAPI().checkin(fileAssetShown, user, false);
             APILocator.getContentletAPI().publish(fileAssetShown, user, false);
