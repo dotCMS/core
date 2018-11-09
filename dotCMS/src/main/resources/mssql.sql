@@ -1243,7 +1243,7 @@ create table user_preferences (
    primary key (id)
 );
 create table language (
-   id numeric(19,0) identity not null,
+   id numeric(19,0) not null,
    language_code NVARCHAR(5) null,
    country_code NVARCHAR(255) null,
    language NVARCHAR(255) null,

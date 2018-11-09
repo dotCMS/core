@@ -235,6 +235,7 @@ public class TaskLocatorUtil {
 		ret.add(Task04385UpdateCategoryKey.class);
 		ret.add(Task04390ShowEditingListingWorkflowActionTable.class);
 		ret.add(Task05030UpdateSystemContentTypesHost.class);
+		ret.add(Task05035LanguageTableIdentityOff.class);
 		return ret;
 	}
 

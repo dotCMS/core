@@ -25,6 +25,7 @@ import com.dotmarketing.factories.MultiTreeFactory;
 import com.dotmarketing.logConsole.model.LogMapperRow;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.rules.util.RulesImportExportUtil;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil;
@@ -183,7 +184,6 @@ public class ImportExportUtil {
             sequences = new HashMap<String, String>();
             sequences.put("content_rating", "content_rating_sequence");
             sequences.put("dist_journal", "dist_journal_id_seq");
-            sequences.put("language", "language_seq");
             sequences.put("permission", "permission_seq");
             sequences.put("permission_reference", "permission_reference_seq");
             sequences.put("user_preferences", "user_preferences_seq");
@@ -1297,6 +1297,22 @@ public class ImportExportUtil {
                         throw new DotDataException("Unable to load company",e);
                     }
                 }
+            } else if (_importClass.equals(Language.class)) {
+                for (Object aL : l) {
+                    final Language lang = (Language) aL;
+
+                    LocalTransaction.wrap(() -> {
+                        DotConnect dc = new DotConnect();
+                        dc.setSQL("insert into language (id,language_code,country_code,language,country) values (?,?,?,?,?)");
+                        dc.addParam(lang.getId());
+                        dc.addParam(lang.getLanguageCode());
+                        dc.addParam(lang.getCountryCode());
+                        dc.addParam(lang.getLanguage());
+                        dc.addParam(lang.getCountry());
+                        dc.getResults();
+                    });
+
+                }
             }else {
                 String id;
                 if (_importClass.equals(Identifier.class)){
@@ -1340,7 +1356,7 @@ public class ImportExportUtil {
                                     HibernateUtil.startTransaction();
                                     Logger.debug(this, "Saving the object: " +
                                                 obj.getClass() + ", with the id: " + prop);
-                                    Long myId = new Long(Long.parseLong(prop));
+                                    Long myId = Long.parseLong(prop);
                                     HibernateUtil.saveWithPrimaryKey(obj, myId);
                                     HibernateUtil.closeAndCommitTransaction();
                                 }
