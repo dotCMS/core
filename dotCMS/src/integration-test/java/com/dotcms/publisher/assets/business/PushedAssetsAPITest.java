@@ -111,7 +111,7 @@ public class PushedAssetsAPITest extends IntegrationTestBase {
 
             for (final PushedAsset asset : pushedAssets2) {
 
-                assertNotNull(pushedAssetsAPI.getLastPushForAsset(asset.getAssetId(), environment1.getId(), endpoint1.getId()));
+                assertNotNull(pushedAssetsAPI.getLastPushForAsset(asset.getAssetId(), environment2.getId(), endpoint2.getId()));
             }
         } finally {
 

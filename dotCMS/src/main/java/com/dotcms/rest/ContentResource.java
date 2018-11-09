@@ -411,7 +411,10 @@ public class ContentResource {
         final String limitStr = paramsMap.get(RESTParams.LIMIT.getValue());
         final String offsetStr = paramsMap.get(RESTParams.OFFSET.getValue());
         final String inode = paramsMap.get(RESTParams.INODE.getValue());
-        final boolean respectFrontendRoles = Boolean.valueOf(paramsMap.get(RESTParams.RESPECT_FRONT_END_ROLES.getValue()));
+        final String respectFrontEndRolesKey = RESTParams.RESPECT_FRONT_END_ROLES.getValue();
+        final boolean respectFrontendRoles = UtilMethods.isSet(paramsMap.get(respectFrontEndRolesKey))
+                ? Boolean.valueOf(paramsMap.get(respectFrontEndRolesKey))
+                : true;
         final long language = toLong(paramsMap.get(RESTParams.LANGUAGE.getValue()),
                 () -> APILocator.getLanguageAPI().getDefaultLanguage().getId());
         /* Limit and Offset Parameters Handling, if not passed, using default */
