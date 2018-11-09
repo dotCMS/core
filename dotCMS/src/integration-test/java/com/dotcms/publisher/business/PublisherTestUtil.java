@@ -383,16 +383,31 @@ public class PublisherTestUtil {
         return folderTestPath.exists() && folderIdTestPath.exists();
     }
 
-    public static boolean existsPage(final String bundlePath, final Host host, final int countOrder,
+    public static boolean existsPage(final String bundlePath, final Host host,
                                      final Folder folder, final HTMLPageAsset page) {
 
-        final File pageTestPath   = new File(bundlePath,
-                "/live/" + host.getHostname() + "/" + page.getLanguageId() + "/" +
-                        folder.getName() + "/" + countOrder + "-" + page.getPageUrl() + ".content.xml");
+        boolean exists = false;
 
-        boolean exists = pageTestPath.exists();
-        Logger.info(PublisherTestUtil.class,
-                pageTestPath.getAbsolutePath() + " - Exists [" + exists + "]");
+        final String testPageName = page.getPageUrl() + ".content.xml";
+        final File pageParentPath = new File(bundlePath,
+                "/live/" + host.getHostname() + "/" + page.getLanguageId() + "/" +
+                        folder.getName());
+
+        if (pageParentPath.exists()) {
+
+            //Getting the content of the parent folder
+            final String[] testPages = pageParentPath.list();
+            if (null != testPages) {
+
+                for (final String testPage : testPages) {
+
+                    //Verify if we found the page
+                    if (testPage.endsWith(testPageName)) {
+                        exists = true;
+                    }
+                }
+            }
+        }
 
         return exists;
     }
