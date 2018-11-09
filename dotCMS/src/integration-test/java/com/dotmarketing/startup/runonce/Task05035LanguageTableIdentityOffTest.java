@@ -25,7 +25,7 @@ public class Task05035LanguageTableIdentityOffTest {
          final Task05035LanguageTableIdentityOff languageTableIdentityOff = new Task05035LanguageTableIdentityOff();
          languageTableIdentityOff.executeUpgrade();
        } catch (Exception e) {
-           final String  errMessage = "Could not modify Language table on db of type: " + dbType;
+           final String  errMessage = "Could not modify Language table on db of type: " + dbType + " Err: " +  e.toString() ;
            Logger.error(getClass(),errMessage, e);
            Assert.fail(errMessage);
        }
