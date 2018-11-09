@@ -115,6 +115,13 @@ public interface HostAPI {
 	 * @throws DotSecurityException
 	 *
 	 */
+	public List<Host> findAll(User user, int limit, int offset, String sortBy, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+
+	/**
+	 * Retrieves the list of all hosts in the system, that the given user has permissions to see
+	 * @throws DotSecurityException
+	 *
+	 */
 	public List<Host> findAllFromDB(User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
 	/**

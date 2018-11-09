@@ -346,7 +346,7 @@ public class UserResource implements Serializable {
 		try {
 			currentSite = APILocator.getHostAPI().find(currentSiteID, user, false);
 		} catch (DotSecurityException e) {
-			final List<Host> sites = APILocator.getHostAPI().findAll(user, false);
+			final List<Host> sites = APILocator.getHostAPI().findAll(user, 1,0,null, false);
 
 			if (sites.isEmpty()) {
 				throw new DotRuntimeException(String.format("The user %s don't have any site", userID));
