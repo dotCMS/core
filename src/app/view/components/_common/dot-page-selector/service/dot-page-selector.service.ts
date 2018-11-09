@@ -3,6 +3,7 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { CoreWebService } from 'dotcms-js';
 import { RequestMethod } from '@angular/http';
+import { Site } from 'dotcms-js';
 
 export interface DotPageAsset {
     template: string;
@@ -83,6 +84,23 @@ export class DotPageSelectorService {
                 url: 'es/search'
             })
             .pipe(pluck('contentlets'), map((pages: DotPageAsset[]) => pages[0]));
+    }
+
+    /**
+     * Get all sited of filtered by name.
+     *
+     * @param string identifier
+     * @memberof DotPageSelectorService
+     */
+    getSites(filter?: string): Observable<Site[]> {
+        let url = 'v1/site/';
+        url += filter ? `?filter=${filter}` : '';
+        return this.coreWebService
+            .requestView({
+                method: RequestMethod.Get,
+                url: url
+            })
+            .pipe(pluck('entity'));
     }
 
     private parseHost(query: string): string[] {

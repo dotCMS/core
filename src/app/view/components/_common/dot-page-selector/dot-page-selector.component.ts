@@ -2,6 +2,7 @@ import { Component, Output, EventEmitter, forwardRef, Input } from '@angular/cor
 import { DotPageSelectorService, DotPageAsset } from './service/dot-page-selector.service';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { take } from 'rxjs/operators';
+import { Site } from 'dotcms-js';
 
 /**
  * Search and select a page asset
@@ -23,16 +24,11 @@ import { take } from 'rxjs/operators';
     ]
 })
 export class DotPageSelectorComponent implements ControlValueAccessor {
-    @Output()
-    selected = new EventEmitter<DotPageAsset>();
-    @Input()
-    style: any;
-    @Input()
-    label: string;
-    @Input()
-    hostIdentifier: string;
-    @Input()
-    floatingLabel = false;
+    @Output() selected = new EventEmitter<DotPageAsset>();
+    @Input() style: any;
+    @Input() label: string;
+    @Input() hostIdentifier: string;
+    @Input() floatingLabel = false;
 
     results: any[];
     val: DotPageAsset;
@@ -58,6 +54,8 @@ export class DotPageSelectorComponent implements ControlValueAccessor {
      * @memberof DotPageSelectorComponent
      */
     onSelect(item: DotPageAsset): void {
+        // TODO: complete selection of host if apply && don't emmit selected yet.
+        debugger;
         this.selected.emit(item);
         this.propagateChange(item.identifier);
     }
@@ -69,11 +67,23 @@ export class DotPageSelectorComponent implements ControlValueAccessor {
      * @memberof DotPageSelectorComponent
      */
     search(param: string): void {
-        this.dotPageSelectorService
-            .getPagesInFolder(param, this.hostIdentifier)
-            .subscribe((pages: DotPageAsset[]) => {
-                this.results = pages;
-            });
+        const filtedByHost = this.checkHostFilter(param);
+        // TODO: create common object for both calls.
+        if (filtedByHost) {
+            this.dotPageSelectorService
+                .getSites(filtedByHost.input.substr(2))
+                .subscribe((sites: Site[]) => {
+                    // TODO: make objec conversion && display error message if empty
+                    debugger;
+                    this.results = sites;
+                });
+        } else {
+            this.dotPageSelectorService
+                .getPagesInFolder(param, this.hostIdentifier)
+                .subscribe((pages: DotPageAsset[]) => {
+                    this.results = pages;
+                });
+        }
     }
 
     /**
@@ -114,4 +124,8 @@ export class DotPageSelectorComponent implements ControlValueAccessor {
     }
 
     registerOnTouched(_fn: any): void {}
+
+    private checkHostFilter(query: string): any {
+        return query.match(/^\/\//);
+    }
 }
