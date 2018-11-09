@@ -21,8 +21,8 @@ public class Task05035LanguageTableIdentityOff implements StartupTask  {
 
     private static final String POSTGRES_DROP_SEQUENCE = " DROP SEQUENCE IF EXISTS language_seq CASCADE; ALTER TABLE language ALTER COLUMN id DROP default; ";
 
-    private static final String ORACLE_CHECK_SEQUENCE_EXIST = "SELECT sequence_name as sequence_exists FROM all_sequences WHERE sequence_name = 'language_seq' ";
-    private static final String ORACLE_DROP_SEQUENCE = " DROP SEQUENCE language_seq CASCADE; ALTER TABLE language ALTER COLUMN id DROP default; ";
+    private static final String ORACLE_CHECK_SEQUENCE_EXIST = " SELECT sequence_name FROM all_sequences WHERE lower(sequence_name) = 'language_seq'; ";
+    private static final String ORACLE_DROP_SEQUENCE = " DROP SEQUENCE language_seq; ";
 
     @Override
     public boolean forceRun() {
