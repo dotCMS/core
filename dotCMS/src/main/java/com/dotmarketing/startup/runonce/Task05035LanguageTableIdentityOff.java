@@ -17,6 +17,7 @@ public class Task05035LanguageTableIdentityOff implements StartupTask  {
              "ALTER TABLE language MODIFY id BIGINT, DROP PRIMARY KEY, ADD PRIMARY KEY (id);\n" +
              "SET foreign_key_checks = 1;";
 
+    private static final String MS_SQL_GET_IDENTITY_COLUMN = " SELECT $IDENTITY FROM language; ";
     private static final String MS_SQL_SET_IDENTITY_INSERT_LANGUAGE_OFF = " SET IDENTITY_INSERT language OFF; ";
 
     private static final String POSTGRES_DROP_SEQUENCE_IF_EXISTS = " DROP SEQUENCE IF EXISTS language_seq CASCADE; ALTER TABLE language ALTER COLUMN id DROP default; ";
@@ -27,6 +28,16 @@ public class Task05035LanguageTableIdentityOff implements StartupTask  {
     @Override
     public boolean forceRun() {
         return Boolean.TRUE;
+    }
+
+    private boolean checkIdentityExistsMSSQL(final DotConnect dotConnect) throws DotDataException, DotRuntimeException {
+       try {
+          dotConnect.setSQL(MS_SQL_GET_IDENTITY_COLUMN);
+          return !dotConnect.loadObjectResults().isEmpty();
+       }catch(Exception e){
+          Logger.error(getClass(),"failed getting identity column from table ",e);
+          return false;
+       }
     }
 
     private boolean checkSequenceExistsOracle(final DotConnect dotConnect) throws DotDataException, DotRuntimeException {
@@ -45,7 +56,11 @@ public class Task05035LanguageTableIdentityOff implements StartupTask  {
             final DotConnect dotConnect = new DotConnect();
 
             if (DbConnectionFactory.isMsSql()) {
+                if(!checkIdentityExistsMSSQL(dotConnect)){
+                    return;
+                }
                 dotConnect.setSQL(MS_SQL_SET_IDENTITY_INSERT_LANGUAGE_OFF);
+
             } else if (DbConnectionFactory.isMySql()) {
                 dotConnect.setSQL(MY_SQL_ALTER_TABLE_LANGUAGE_DROP_AUTO_INCREMENT);
             } else if (DbConnectionFactory.isPostgres()) {
