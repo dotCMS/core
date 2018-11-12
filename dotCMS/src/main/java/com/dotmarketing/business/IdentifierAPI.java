@@ -56,8 +56,8 @@ public interface IdentifierAPI {
 	/**
 	 * Will take a host and uri and return its identifier from cache or db. If cache miss
 	 * this will always hit the db
-	 * @param versionable
-	 * @return Identifier
+	 * @param host
+	 * @return Identifier (note: it could return a not null identifier, however it does not means the identifier exists, must check UtiMethods.isSet(identifier.getId()) to make sure it is a valid Identifier)
 	 * @throws DotDataException
 	 * @throws DotStateException
 	 */

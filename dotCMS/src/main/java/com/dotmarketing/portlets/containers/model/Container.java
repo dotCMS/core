@@ -1,14 +1,7 @@
 package com.dotmarketing.portlets.containers.model;
 
-import com.dotmarketing.beans.ContainerStructure;
-import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.Inode;
-import com.dotmarketing.beans.MultiTree;
-import com.dotmarketing.beans.WebAsset;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.PermissionSummary;
-import com.dotmarketing.business.Permissionable;
+import com.dotmarketing.beans.*;
+import com.dotmarketing.business.*;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -18,22 +11,22 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import org.apache.commons.lang.builder.ToStringBuilder;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
-import org.apache.commons.lang.builder.ToStringBuilder;
 
-/** @author Hibernate CodeGenerator */
+/**
+ * Containers encapsulate the formatting for specific content types so it can be reused in multiple templates and feed for content (contentlets)
+ */
 public class Container extends WebAsset implements Serializable {
 
-    
     /*
      * Convenience access 
      */
     public static final String LEGACY_RELATION_TYPE = MultiTree.LEGACY_RELATION_TYPE;
-    
-    
-    
+
 	private static final long serialVersionUID = 1L;
 
 	/** nullable persistent field */
@@ -181,12 +174,15 @@ public class Container extends WebAsset implements Serializable {
 		this.useDiv = useDiv;
 	}
 
+
+
 	public int compareTo(Container contObject) {
 
 		Container container = (Container) contObject;
 		return (container.getTitle().compareTo(this.getTitle()));
 
 	}
+
 
 	/**
 	 * Returns the postLoop.

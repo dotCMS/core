@@ -21,7 +21,7 @@
 <%
     String containerIdentifier = request.getParameter("container_id");
     User user = PortalUtil.getUser(request);
-    Container container = (Container) APILocator.getVersionableAPI().findWorkingVersion(containerIdentifier,
+    Container container = APILocator.getContainerAPI().getWorkingContainerById(containerIdentifier,
             APILocator.getUserAPI().getSystemUser(), false);
 
     List<ContentType> contentTypes = null;

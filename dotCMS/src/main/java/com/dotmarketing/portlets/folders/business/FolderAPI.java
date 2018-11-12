@@ -1,10 +1,5 @@
 package com.dotmarketing.portlets.folders.business;
 
-import java.io.IOException;
-import java.io.Serializable;
-import java.util.List;
-import java.util.Map;
-
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.business.DotIdentifierStateException;
@@ -20,6 +15,12 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.liferay.portal.model.User;
+
+import java.io.IOException;
+import java.io.Serializable;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Predicate;
 
 /**
  * @author margaret
@@ -342,16 +343,17 @@ import com.liferay.portal.model.User;
 	public abstract List<Map<String, Serializable>> DBSearch(Query query, User user, boolean respectFrontendRoles)
 			throws ValidationException, DotDataException;
 
-	/**Checks if folder1 is child of folder2
+	/**
+     * Checks if childFolder is child of parentFolder
 	 *
-	 * @param folder1
-	 * @param folder2
+	 * @param child {@link Folder}
+	 * @param parent  {@link Folder}
 	 * @return
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 * @throws DotSecurityException
 	 */
-	public abstract boolean isChildFolder(Folder folder1,Folder folder2) throws DotDataException, DotSecurityException;
+	public abstract boolean isChildFolder(final Folder childFolder, final Folder parentFolder) throws DotDataException, DotSecurityException;
 
 	/**
 	 *
@@ -512,5 +514,20 @@ import com.liferay.portal.model.User;
 	 * @throws DotSecurityException
 	 */
 	public abstract List<Contentlet> getLiveContent(Folder parent,User user, boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException;
+
+	/**
+	 * Subscribe a listener to handle changes over the folder
+	 * @param folder {@link Folder}
+	 * @param folderListener folderListener
+	 */
+	public void subscribeFolderListener (final Folder folder, final FolderListener folderListener);
+
+	/**
+	 * Subscribe a listener to handle changes over the folder, this one filters the child events by name.
+	 * @param @param folder {@link Folder}
+	 * @param folderListener folderListener
+	 * @param childNameFilter {@link Predicate} filter
+	 */
+	public void subscribeFolderListener (final Folder folder, final FolderListener folderListener, final Predicate<String> childNameFilter);
 
 }

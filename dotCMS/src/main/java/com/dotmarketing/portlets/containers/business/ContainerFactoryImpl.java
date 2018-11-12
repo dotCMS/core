@@ -1,20 +1,13 @@
 package com.dotmarketing.portlets.containers.business;
 
 import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotcms.util.transform.TransformerLocator;
-
-import com.dotmarketing.beans.ContainerStructure;
-import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.Inode;
+import com.dotmarketing.beans.*;
 import com.dotmarketing.beans.Inode.Type;
-import com.dotmarketing.beans.VersionInfo;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.IdentifierCache;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.Permissionable;
+import com.dotmarketing.business.*;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
@@ -23,83 +16,104 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.containers.model.ContainerVersionInfo;
-import com.dotmarketing.util.InodeUtils;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.PaginatedArrayList;
-import com.dotmarketing.util.UtilMethods;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
+import com.dotmarketing.portlets.contentlet.business.HostAPI;
+import com.dotmarketing.portlets.fileassets.business.FileAsset;
+import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
+import com.dotmarketing.portlets.folders.business.FolderAPI;
+import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.util.*;
 import com.liferay.portal.model.User;
 
-public class ContainerFactoryImpl implements ContainerFactory {
-	static IdentifierCache identifierCache = CacheLocator.getIdentifierCache();
-	static ContainerCache containerCache = CacheLocator.getContainerCache();
+import java.util.*;
 
-	public void save(Container container) throws DotDataException {
+import static com.dotmarketing.util.StringUtils.builder;
+
+public class ContainerFactoryImpl implements ContainerFactory {
+
+	static IdentifierCache identifierCache    = CacheLocator.getIdentifierCache();
+	static ContainerCache  containerCache     = CacheLocator.getContainerCache();
+	private final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+	private final FolderAPI     folderAPI     = APILocator.getFolderAPI();
+    private final FileAssetAPI  fileAssetAPI  = APILocator.getFileAssetAPI();
+    private final HostAPI       hostAPI       = APILocator.getHostAPI();
+	private final IdentifierAPI identifierAPI = APILocator.getIdentifierAPI();
+
+
+	public void save(final Container container) throws DotDataException {
 		HibernateUtil.save(container);
 		containerCache.remove(container);
 	}
 
-	public void save(Container container, String existingId) throws DotDataException {
+	public void save(final Container container, final String existingId) throws DotDataException {
 		HibernateUtil.saveWithPrimaryKey(container, existingId);
 		containerCache.remove(container);
 	}
 
 	@SuppressWarnings("unchecked")
-	public List<Container> findContainersUnder(Host parentPermissionable) throws DotDataException {
-		DotConnect dc = new DotConnect();
-		StringBuilder sql = new StringBuilder();
-		String tableName = Type.CONTAINERS.getTableName();
+	public List<Container> findContainersUnder(final Host parentPermissionable) throws DotDataException {
 
-		sql.append("SELECT ");
-		sql.append(tableName);
-		sql.append(".*, dot_containers_1_.* from ");
-		sql.append(tableName);
-		sql.append(
-				", inode dot_containers_1_, identifier ident, container_version_info vv where vv.working_inode=");
-		sql.append(tableName);
-		sql.append(".inode and ");
-		sql.append(tableName);
-		sql.append(".inode = dot_containers_1_.inode and vv.identifier = ident.id and host_inode = '");
-		sql.append(parentPermissionable.getIdentifier() );
-		sql.append('\'');
-		dc.setSQL(sql.toString());
+		final List<Container> containers = new ArrayList<>();
+		final String tableName 			 = Type.CONTAINERS.getTableName();
+		final StringBuilder sql = new StringBuilder();
 
-		return TransformerLocator.createContainerTransformer(dc.loadObjectResults()).asList();
+		sql.append("SELECT ")
+			.append(tableName)
+			.append(".*, dot_containers_1_.* from ")
+			.append(tableName)
+			.append(", inode dot_containers_1_, identifier ident, container_version_info vv where vv.working_inode=")
+			.append(tableName)
+			.append(".inode and ")
+			.append(tableName)
+			.append(".inode = dot_containers_1_.inode and vv.identifier = ident.id and host_inode = '")
+			.append(parentPermissionable.getIdentifier() )
+			.append('\'');
 
+		try {
 
+			containers.addAll(this.findHostContainers(parentPermissionable, APILocator.systemUser()));
+		} catch (DotSecurityException e) {
+			throw new DotDataException(e);
+		}
+
+		containers.addAll(TransformerLocator.createContainerTransformer
+				(new DotConnect().setSQL(sql.toString()).loadObjectResults()).asList());
+
+		return containers;
 	}
 
 	@SuppressWarnings("unchecked")
 	public List<Container> findAllContainers() throws DotDataException {
-		DotConnect dc = new DotConnect();
-		StringBuilder sql = new StringBuilder();
-		String tableName = Type.CONTAINERS.getTableName();
 
-		sql.append("SELECT ");
-		sql.append(tableName);
-		sql.append(".*, dot_containers_1_.* from ");
-		sql.append(tableName);
-		sql.append(", inode dot_containers_1_, container_version_info vv where vv.working_inode= ");
-		sql.append(tableName);
-		sql.append(".inode and ");
-		sql.append(tableName);
-		sql.append(".inode = dot_containers_1_.inode and dot_containers_1_.type='containers' order by ");
-		sql.append(tableName);
-		sql.append(".title");
-		dc.setSQL(sql.toString());
+		final List<Container> containers = new ArrayList<>();
+		final String tableName 			 = Type.CONTAINERS.getTableName();
+		final StringBuilder sql = new StringBuilder()
+				.append("SELECT ")
+				.append(tableName)
+				.append(".*, dot_containers_1_.* from ")
+				.append(tableName)
+				.append(", inode dot_containers_1_, container_version_info vv where vv.working_inode= ")
+				.append(tableName)
+				.append(".inode and ")
+				.append(tableName)
+				.append(".inode = dot_containers_1_.inode and dot_containers_1_.type='containers' order by ")
+				.append(tableName)
+				.append(".title");
 
-		return TransformerLocator.createContainerTransformer(dc.loadObjectResults()).asList();
+		try {
+			containers.addAll(this.findAllHostFolderAssetContainers());
+		} catch (DotSecurityException e) {
+			throw new DotDataException(e);
+		}
 
+		containers.addAll(TransformerLocator.createContainerTransformer
+				(new DotConnect().setSQL(sql.toString()).loadObjectResults()).asList());
 
+		return containers;
 	}
+
     @Override
     @SuppressWarnings("unchecked")
-    public Container find(String inode) throws DotDataException, DotSecurityException {
+    public Container find(final String inode) throws DotDataException, DotSecurityException {
       Container container = CacheLocator.getContainerCache().get(inode);
       //If it is not in cache.
       if(container == null){
@@ -119,170 +133,119 @@ public class ContainerFactoryImpl implements ContainerFactory {
       }
       
       return container;
-      
-      
     }
-	public List<Container> findContainers(User user, boolean includeArchived,
-			Map<String, Object> params, String hostId,String inode, String identifier, String parent,
-			int offset, int limit, String orderBy) throws DotSecurityException,
+
+	@Override
+	public Container getLiveContainerByFolderPath(final String path, final Host host, final User user,
+												  final boolean respectFrontEndPermissions) throws DotSecurityException, DotDataException {
+
+		return this.getContainerByFolder(host, this.folderAPI.findFolderByPath(path, host, user, respectFrontEndPermissions), user,true);
+	}
+
+    @Override
+    public Container getWorkingContainerByFolderPath(final String path, final Host host, final User user,
+                                                     final boolean respectFrontEndPermissions) throws DotSecurityException, DotDataException {
+
+        return this.getContainerByFolder(host, this.folderAPI.findFolderByPath(path, host, user, respectFrontEndPermissions), user,false);
+    }
+
+
+    @Override
+    public Container getContainerByFolder(final Host host, final Folder folder, final User user, final boolean showLive) throws DotSecurityException, DotDataException {
+
+        if (!this.isValidContainerPath (folder) ||
+				!hasContainerAsset(host, folder)) {
+
+        	throw new NotFoundInDbException("On getting the container by folder, the folder: " + folder.getPath() +
+					" is not valid, it must be under: " + Constants.CONTAINER_FOLDER_PATH + " and must have a child file asset called: " +
+					Constants.CONTAINER_META_INFO_FILE_NAME);
+		}
+
+        return ContainerByFolderAssetsUtil.getInstance().fromAssets (folder, this.findContainerAssets(folder, user), showLive);
+    }
+
+	private List<FileAsset> findContainerAssets(final Folder folder, final User user) throws DotDataException, DotSecurityException {
+		// Save: taking info from ES Index.
+		return this.fileAssetAPI.findFileAssetsByFolder(folder, user, false);
+	}
+
+	private boolean hasContainerAsset(Host host, Folder folder) {
+		try {
+
+			final Identifier identifier = this.identifierAPI.find(host, builder(folder.getPath(),
+					 Constants.CONTAINER_META_INFO_FILE_NAME).toString());
+			return null != identifier && UtilMethods.isSet(identifier.getId());
+		} catch (Exception  e) {
+			return false;
+		}
+	}
+
+	private boolean isValidContainerPath(final Folder folder) {
+		return null != folder && UtilMethods.isSet(folder.getPath()) && folder.getPath().contains(Constants.CONTAINER_FOLDER_PATH);
+	}
+
+	@Override
+	public List<Container> findContainers(final User user, final boolean includeArchived,
+			final Map<String, Object> params, final String hostId,
+			final String inode, final String identifier, final String parent,
+			final int offset, final int limit, final String orderByParam) throws DotSecurityException,
 			DotDataException {
 
-		ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
+		final ContentTypeAPI contentTypeAPI        = APILocator.getContentTypeAPI(user);
+		final StringBuffer conditionBuffer         = new StringBuffer();
+		final List<Object> paramValues 			   = this.getConditionParametersAndBuildConditionQuery(params, conditionBuffer);
+		final PaginatedArrayList<Container> assets = new PaginatedArrayList<Container>();
+		final List<Permissionable> toReturn        = new ArrayList<>();
+		int     internalLimit                      = 500;
+		int     internalOffset                     = 0;
+		boolean done                               = false;
+		String  orderBy                            = orderByParam;
+		final StringBuilder query 				   = new StringBuilder().append("select asset.*, inode.* from ")
+				.append(Type.CONTAINERS.getTableName()).append(" asset, inode, identifier, ")
+				.append(Type.CONTAINERS.getVersionTableName()).append(" vinfo");
 
-		PaginatedArrayList<Container> assets = new PaginatedArrayList<Container>();
-		List<Permissionable> toReturn = new ArrayList<Permissionable>();
-		int internalLimit = 500;
-		int internalOffset = 0;
-		boolean done = false;
+		this.buildFindContainersQuery(includeArchived, hostId, inode,
+				identifier, parent, contentTypeAPI, query);
 
-		StringBuffer conditionBuffer = new StringBuffer();
-
-		List<Object> paramValues =null;
-		if(params!=null && params.size()>0){
-			conditionBuffer.append(" and (");
-			paramValues = new ArrayList<>();
-			int counter = 0;
-			for (Map.Entry<String, Object> entry : params.entrySet()) {
-				if(counter==0){
-					if(entry.getValue() instanceof String){
-						if (entry.getKey().equalsIgnoreCase("inode") || entry.getKey()
-								.equalsIgnoreCase("identifier")) {
-							conditionBuffer.append(" asset.");
-							conditionBuffer.append(entry.getKey());
-							conditionBuffer.append(" = '");
-							conditionBuffer.append(entry.getValue());
-							conditionBuffer.append('\'');
-						}else{
-							conditionBuffer.append(" lower(asset.");
-							conditionBuffer.append(entry.getKey());
-							conditionBuffer.append(") like ? ");
-							paramValues.add("%"+ ((String)entry.getValue()).toLowerCase()+"%");
-						}
-					}else{
-						conditionBuffer.append(" asset.");
-						conditionBuffer.append(entry.getKey());
-						conditionBuffer.append(" = ");
-						conditionBuffer.append(entry.getValue());
-					}
-				}else{
-					if(entry.getValue() instanceof String){
-						if (entry.getKey().equalsIgnoreCase("inode") || entry.getKey()
-								.equalsIgnoreCase("identifier")) {
-							conditionBuffer.append(" OR asset.");
-							conditionBuffer.append(entry.getKey());
-							conditionBuffer.append(" = '");
-							conditionBuffer.append(entry.getValue());
-							conditionBuffer.append('\'');
-						}else{
-							conditionBuffer.append(" OR lower(asset.");
-							conditionBuffer.append(entry.getKey());
-							conditionBuffer.append(") like ? ");
-							paramValues.add("%"+ ((String)entry.getValue()).toLowerCase()+"%");
-						}
-					}else{
-						conditionBuffer.append(" OR asset.");
-						conditionBuffer.append(entry.getKey());
-						conditionBuffer.append(" = ");
-						conditionBuffer.append(entry.getValue());
-					}
-				}
-
-				counter+=1;
-			}
-			conditionBuffer.append(" ) ");
-		}
-
-		final StringBuilder query = new StringBuilder();
-		query.append("select asset.*, inode.* from ");
-		query.append(Type.CONTAINERS.getTableName());
-		query.append(" asset, inode, identifier, ");
-		query.append(Type.CONTAINERS.getVersionTableName());
-		query.append(" vinfo");
-
-		if(UtilMethods.isSet(parent)){
-
-			//Search for the given ContentType inode
-			ContentType foundContentType = contentTypeAPI.find(parent);
-
-			if (null != foundContentType && InodeUtils.isSet(foundContentType.inode())) {
-				query.append(
-						" where asset.inode = inode.inode and asset.identifier = identifier.id")
-						.append(
-								" and exists (select * from container_structures cs where cs.container_id = asset.identifier")
-						.append(" and cs.structure_id = '");
-				query.append(parent);
-				query.append("' ) ");
-			}else {
-				query.append(
-						" ,tree where asset.inode = inode.inode and asset.identifier = identifier.id")
-						.append(" and tree.parent = '");
-				query.append(parent);
-				query.append("' and tree.child=asset.inode");
-			}
-		}else{
-			query.append(" where asset.inode = inode.inode and asset.identifier = identifier.id");
-		}
-		query.append(" and vinfo.identifier=identifier.id and vinfo.working_inode=asset.inode ");
-		if(!includeArchived) {
-			query.append(" and vinfo.deleted=");
-			query.append(DbConnectionFactory.getDBFalse());
-		}
-		if(UtilMethods.isSet(hostId)){
-			query.append(" and identifier.host_inode = '");
-			query.append(hostId).append('\'');
-		}
-		if(UtilMethods.isSet(inode)){
-			query.append(" and asset.inode = '");
-			query.append(inode).append('\'');
-		}
-		if(UtilMethods.isSet(identifier)){
-			query.append(" and asset.identifier = '");
-			query.append(identifier);
-			query.append('\'');
-		}
-		if(!UtilMethods.isSet(orderBy)){
+		if(!UtilMethods.isSet(orderBy)) {
 			orderBy = "mod_date desc";
 		}
 
 		List<Container> resultList;
-		DotConnect dc = new DotConnect();
-		int countLimit = 100;
-		int size = 0;
+		final DotConnect dc  = new DotConnect();
+		int countLimit 		 = 100;
+
 		try {
+
 			query.append(conditionBuffer.toString());
 			query.append(" order by asset.");
 			query.append(orderBy);
 			dc.setSQL(query.toString());
 
-			if(paramValues!=null && paramValues.size()>0){
-				for (Object value : paramValues) {
+			if(paramValues!=null && paramValues.size()>0) {
+				for (final Object value : paramValues) {
 					dc.addParam((String)value);
 				}
 			}
 
-			while(!done) {
-				dc.setStartRow(internalOffset);
-				dc.setMaxRows(internalLimit);
-				resultList = TransformerLocator.createContainerTransformer(dc.loadObjectResults()).asList();
+			// adding the container from the site browser
+			toReturn.addAll(this.findFolderAssetContainers(user, includeArchived,
+					params, hostId, inode, identifier, parent, orderByParam));
 
-				PermissionAPI permAPI = APILocator.getPermissionAPI();
-				toReturn.addAll(permAPI.filterCollection(resultList, PermissionAPI.PERMISSION_READ, false, user));
-				if(countLimit > 0 && toReturn.size() >= countLimit + offset)
+			while(!done) {
+
+				dc.setStartRow(internalOffset).setMaxRows(internalLimit);
+				resultList = TransformerLocator.createContainerTransformer(dc.loadObjectResults()).asList();
+				toReturn.addAll(this.permissionAPI.filterCollection(resultList, PermissionAPI.PERMISSION_READ, false, user));
+				if(countLimit > 0 && toReturn.size() >= countLimit + offset) {
 					done = true;
-				else if(resultList.size() < internalLimit)
+				} else if(resultList.size() < internalLimit) {
 					done = true;
+				}
 
 				internalOffset += internalLimit;
 			}
 
-			if(offset > toReturn.size()) {
-				size = 0;
-			} else if(countLimit > 0) {
-				int toIndex = offset + countLimit > toReturn.size()?toReturn.size():offset + countLimit;
-				size = toReturn.subList(offset, toIndex).size();
-			} else if (offset > 0) {
-				size = toReturn.subList(offset, toReturn.size()).size();
-			}
 			assets.setTotalResults(toReturn.size());
 
 			if(limit!=-1) {
@@ -309,13 +272,211 @@ public class ContainerFactoryImpl implements ContainerFactory {
 		return assets;
 	}
 
-    public List<Container> findContainersForStructure(String structureIdentifier) throws DotDataException {
+	private Collection<? extends Permissionable> findFolderAssetContainers(final User user, final boolean includeArchived,
+																		   final Map<String, Object> params, final String hostId,
+																		   final String inode,  final String identifier,
+																		   final String parent, final String orderByParam) throws DotSecurityException, DotDataException {
+
+		// todo: when something happen cache and return an empty collection
+	    // todo: we are passing all the parameters but not sure if we need everything
+		try {
+			final Host host     			 = this.hostAPI.find(hostId, user, false);
+			final Folder folder 			 = this.folderAPI.findFolderByPath(Constants.CONTAINER_FOLDER_PATH, host, user, false);
+			final List<Folder> subFolders    = this.folderAPI.findSubFolders(folder, user, false); // todo: change this in order to get the information from the index
+			final List<Container> containers = this.getFolderContainers(host, user, subFolders);
+
+			// todo: order by???
+
+			return containers;
+		} catch (Exception e) {
+
+			Logger.error(this, e.getMessage(), e);
+			return Collections.emptyList();
+		}
+	}
+
+	private Collection<Container> findAllHostFolderAssetContainers() throws DotSecurityException, DotDataException {
+
+		final User       user  = APILocator.systemUser();
+		// todo: find another strategy in order to be less items
+		final List<Host> hosts = this.hostAPI.findAll(user, false);
+		final ImmutableList.Builder<Container> containers = new ImmutableList.Builder<>();
+
+		for (final Host host : hosts) {
+
+			containers.addAll(this.findHostContainers(host, user));
+		}
+
+		return containers.build();
+	}
+
+	private List<Container> findHostContainers(final Host host, final User user) throws DotDataException, DotSecurityException {
+
+		// todo: replace this for ES call, not matter the host by sort by host
+		final List<Container> containers = new ArrayList<>();
+		final Optional<Folder> folder = this.findContainerFolderByHost(host, user);
+
+		if (folder.isPresent() && UtilMethods.isSet(folder.get().getIdentifier())) {
+
+			final List<Folder> subFolders = this.folderAPI.findSubFolders(folder.get(), user, false);
+			containers.addAll(this.getFolderContainers(host, user, subFolders));
+		}
+
+		return containers;
+	}
+
+	private List<Container> getFolderContainers(final Host host, final User user, final List<Folder> subFolders) throws DotDataException {
+
+		final List<Container> containers = new ArrayList<>();
+		for (final Folder subFolder : subFolders) {
+
+			try {
+				final Container container = this.getContainerByFolder(host, subFolder, null != user? user: APILocator.systemUser(), false); // todo: check eventually the false.
+				containers.add(container);
+			} catch (DotSecurityException e) {
+
+				Logger.debug(this, () -> "Does not have permission to read the folder container: " + subFolder.getPath());
+			}
+		}
+
+		return containers;
+	}
+
+	private Optional<Folder> findContainerFolderByHost (final Host host, final User user) {
+
+		try {
+
+			return Optional.of(this.folderAPI.findFolderByPath(Constants.CONTAINER_FOLDER_PATH,
+					host, user, false));
+		} catch (Exception e) {
+
+			return Optional.empty();
+		}
+	}
+
+	private void buildFindContainersQuery(final boolean includeArchived, final String hostId, final String inode,
+										  final String identifier, final String parent, final ContentTypeAPI contentTypeAPI,
+										  final StringBuilder query) throws DotSecurityException, DotDataException {
+
+		if(UtilMethods.isSet(parent)) {
+
+			//Search for the given ContentType inode
+			final ContentType foundContentType = contentTypeAPI.find(parent);
+
+			if (null != foundContentType && InodeUtils.isSet(foundContentType.inode())) {
+				query.append(
+						" where asset.inode = inode.inode and asset.identifier = identifier.id")
+						.append(
+								" and exists (select * from container_structures cs where cs.container_id = asset.identifier")
+						.append(" and cs.structure_id = '")
+						.append(parent)
+						.append("' ) ");
+			}else {
+				query.append(
+						" ,tree where asset.inode = inode.inode and asset.identifier = identifier.id")
+						.append(" and tree.parent = '")
+						.append(parent)
+						.append("' and tree.child=asset.inode");
+			}
+		} else {
+			query.append(" where asset.inode = inode.inode and asset.identifier = identifier.id");
+		}
+
+		query.append(" and vinfo.identifier=identifier.id and vinfo.working_inode=asset.inode ");
+
+		if(!includeArchived) {
+			query.append(" and vinfo.deleted=");
+			query.append(DbConnectionFactory.getDBFalse());
+		}
+
+		if(UtilMethods.isSet(hostId)) {
+			query.append(" and identifier.host_inode = '");
+			query.append(hostId).append('\'');
+		}
+
+		if(UtilMethods.isSet(inode)) {
+			query.append(" and asset.inode = '");
+			query.append(inode).append('\'');
+		}
+
+		if(UtilMethods.isSet(identifier)) {
+			query.append(" and asset.identifier = '");
+			query.append(identifier);
+			query.append('\'');
+		}
+	}
+
+	private List<Object> getConditionParametersAndBuildConditionQuery(final Map<String, Object> params, final StringBuffer conditionQueryBuffer) {
+
+		List<Object> paramValues = null;
+
+		if(params!=null && params.size()>0) {
+
+			conditionQueryBuffer.append(" and (");
+			paramValues = new ArrayList<>();
+			int counter = 0;
+
+			for (final Map.Entry<String, Object> entry : params.entrySet()) {
+
+				this.buildConditionParameterAndBuildConditionQuery(entry, paramValues, conditionQueryBuffer,
+						(counter==0)?
+								Optional.empty():
+								Optional.of(" OR"));
+				counter+=1;
+			}
+
+			conditionQueryBuffer.append(" ) ");
+		}
+		return paramValues;
+	}
+
+	private void buildConditionParameterAndBuildConditionQuery (final Map.Entry<String, Object> entry,
+																final List<Object> paramValues,
+																final StringBuffer conditionQueryBuffer,
+																final Optional<String> prefix) {
+
+		if(entry.getValue() instanceof String){
+			if (entry.getKey().equalsIgnoreCase("inode") || entry.getKey()
+					.equalsIgnoreCase("identifier")) {
+
+				if (prefix.isPresent()) {
+					conditionQueryBuffer.append(prefix.get());
+				}
+				conditionQueryBuffer.append(" asset.");
+				conditionQueryBuffer.append(entry.getKey());
+				conditionQueryBuffer.append(" = '");
+				conditionQueryBuffer.append(entry.getValue());
+				conditionQueryBuffer.append('\'');
+			} else {
+
+				if (prefix.isPresent()) {
+					conditionQueryBuffer.append(prefix.get());
+				}
+				conditionQueryBuffer.append(" lower(asset.");
+				conditionQueryBuffer.append(entry.getKey());
+				conditionQueryBuffer.append(") like ? ");
+				paramValues.add("%"+ ((String)entry.getValue()).toLowerCase()+"%");
+			}
+		} else {
+
+			if (prefix.isPresent()) {
+				conditionQueryBuffer.append(prefix.get());
+			}
+			conditionQueryBuffer.append(" asset.");
+			conditionQueryBuffer.append(entry.getKey());
+			conditionQueryBuffer.append(" = ");
+			conditionQueryBuffer.append(entry.getValue());
+		}
+	}
+
+	@Override
+	public List<Container> findContainersForStructure(final String structureIdentifier) throws DotDataException {
         return findContainersForStructure(structureIdentifier, false);
     }
 
 	@Override
-	public List<Container> findContainersForStructure(String structureIdentifier,
-			boolean workingOrLiveOnly) throws DotDataException {
+	public List<Container> findContainersForStructure(final String structureIdentifier,
+			final boolean workingOrLiveOnly) throws DotDataException {
 		HibernateUtil dh = new HibernateUtil(Container.class);
 
 		StringBuilder query = new StringBuilder();

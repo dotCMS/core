@@ -1,15 +1,19 @@
 package com.dotmarketing.portlets.containers.business;
 
-import java.util.List;
-import java.util.Map;
-
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.liferay.portal.model.User;
 
+import java.util.List;
+import java.util.Map;
+
+/**
+ * Persistence component for Containers
+ */
 public interface ContainerFactory {
 	
 	/**
@@ -37,7 +41,8 @@ public interface ContainerFactory {
 	public List<Container> findAllContainers() throws DotDataException;
 	
 	/**
-	 * Retrieves a paginated list of containers the user can use 
+	 * Retrieves a paginated list of containers the user can use
+	 * It will retrieve first the db container and them the folder containers.
 	 * @param user
 	 * @param includeArchived
 	 * @param params
@@ -48,11 +53,53 @@ public interface ContainerFactory {
 	 * @param offset
 	 * @param limit
 	 * @param orderBy
-	 * @return
+	 * @return List of Containers
 	 * @throws DotSecurityException
 	 * @throws DotDataException
 	 */
 	public List<Container> findContainers(User user, boolean includeArchived, Map<String,Object> params, String hostId, String inode, String identifier, String parent, int offset, int limit, String orderBy) throws DotSecurityException, DotDataException;
+
+	/**
+	 * Get a container based on a folder (non-db)
+	 * A Folder could be consider as a container if:
+	 * 1) is inside the /application/containers
+	 * 2) has a file asset called container.vtl
+	 * @param host {@link Host}
+	 * @param folder {@link Folder}
+	 * @param user   {@link User}
+	 * @param showLive {@link Boolean}
+	 * @return Container
+	 * @throws DotSecurityException
+	 * @throws DotDataException
+	 */
+	public Container getContainerByFolder(final Host host, final Folder folder, final User user, final boolean showLive) throws DotSecurityException, DotDataException;
+
+	/**
+	 * Get working container by folder path
+	 * @param path {@link String} p
+	 * @param host {@link Host}
+	 * @param user {@link User}
+	 * @param respectFrontEndPermissions {@link Boolean}
+	 * @return Container
+	 * @throws DotSecurityException
+	 * @throws DotDataException
+	 */
+	public Container getWorkingContainerByFolderPath(final String path, final Host host, final User user,
+													 final boolean respectFrontEndPermissions) throws DotSecurityException, DotDataException;
+
+
+	/**
+	 * Get live container by folder path
+	 * @param path {@link String} p
+	 * @param host {@link Host}
+	 * @param user {@link User}
+	 * @param respectFrontEndPermissions {@link Boolean}
+	 * @return Container
+	 * @throws DotSecurityException
+	 * @throws DotDataException
+	 */
+	Container getLiveContainerByFolderPath(String path, Host host, User user,
+										   boolean respectFrontEndPermissions) throws DotSecurityException, DotDataException;
 
     public List<Container> findContainersForStructure(String structureIdentifier) throws DotDataException;
 
@@ -77,13 +124,12 @@ public interface ContainerFactory {
 	public void updateUserReferences(String userId, String replacementUserId)throws DotDataException, DotSecurityException;
     /**
      * Finds a container by Inode
-     * @param inode
-     * @param user
-     * @param respectFrontendRoles
-     * @return
+     * @param inode {@link String}
+     * @return Container
      * @throws DotDataException
      * @throws DotSecurityException
      */
 	Container find(String inode) throws DotDataException, DotSecurityException;
-	
+
+
 }

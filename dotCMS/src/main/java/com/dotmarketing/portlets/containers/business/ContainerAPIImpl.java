@@ -8,20 +8,8 @@ import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.rendering.velocity.services.ContainerLoader;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.transform.TransformerLocator;
-import com.dotmarketing.beans.ContainerStructure;
-import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.beans.Inode;
-import com.dotmarketing.beans.Tree;
-import com.dotmarketing.beans.VersionInfo;
-import com.dotmarketing.beans.WebAsset;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.BaseWebAssetAPI;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.FactoryLocator;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.RoleAPI;
+import com.dotmarketing.beans.*;
+import com.dotmarketing.business.*;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -31,20 +19,17 @@ import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.factories.TreeFactory;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
+import com.dotmarketing.portlets.folders.business.FolderAPI;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.util.Constants;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+
+import java.util.*;
 
 /**
  * Implementation class of the {@link ContainerAPI}.
@@ -56,22 +41,27 @@ import java.util.Map;
  */
 public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 
-	protected PermissionAPI permissionAPI;
+	protected PermissionAPI    permissionAPI;
 	protected ContainerFactory containerFactory;
-	protected HostAPI hostAPI;
+	protected HostAPI          hostAPI;
+	protected FolderAPI        folderAPI;
+
+
 
 	/**
 	 * 
 	 */
 	public ContainerAPIImpl () {
-		permissionAPI = APILocator.getPermissionAPI();
-		containerFactory = FactoryLocator.getContainerFactory();
-		hostAPI = APILocator.getHostAPI();
+
+        this.permissionAPI    = APILocator.getPermissionAPI();
+        this.containerFactory = FactoryLocator.getContainerFactory();
+        this.hostAPI          = APILocator.getHostAPI();
+        this.folderAPI        = APILocator.getFolderAPI();
 	}
 
 	@WrapInTransaction
 	@Override
-	public Container copy(Container source, Host destination, User user, boolean respectFrontendRoles)
+	public Container copy(final Container source, Host destination, final User user, final boolean respectFrontendRoles)
 			throws DotDataException, DotSecurityException {
 
 		if (!permissionAPI.doesUserHavePermission(source, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)) {
@@ -84,16 +74,16 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 		}
 
 		//gets the new information for the template from the request object
-		Container newContainer = new Container();
+		final Container newContainer = new Container();
 
 		newContainer.copy(source);
 
-		String appendToName = getAppendToContainerTitle(source.getTitle(), destination);
+		final String appendToName = getAppendToContainerTitle(source.getTitle(), destination);
        	newContainer.setFriendlyName(source.getFriendlyName() + appendToName);
        	newContainer.setTitle(source.getTitle() + appendToName);
 
         //creates new identifier for this webasset and persists it
-		Identifier newIdentifier = APILocator.getIdentifierAPI().createNew(newContainer, destination);
+		final Identifier newIdentifier = APILocator.getIdentifierAPI().createNew(newContainer, destination);
 
         newContainer.setIdentifier(newIdentifier.getId());
 		//persists the webasset
@@ -109,11 +99,12 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 		// issue-2093 Copying multiple structures per container
 		if(source.getMaxContentlets()>0) {
 
-			List<ContainerStructure> sourceCS = getContainerStructures(source);
-			List<ContainerStructure> newContainerCS = new LinkedList<ContainerStructure>();
+			final List<ContainerStructure> sourceCS = getContainerStructures(source);
+			final List<ContainerStructure> newContainerCS = new LinkedList<ContainerStructure>();
 
-			for (ContainerStructure oldCS : sourceCS) {
-				ContainerStructure newCS = new ContainerStructure();
+			for (final ContainerStructure oldCS : sourceCS) {
+
+				final ContainerStructure newCS = new ContainerStructure();
 				newCS.setContainerId(newContainer.getIdentifier());
                 newCS.setContainerInode(newContainer.getInode());
 				newCS.setStructureId(oldCS.getStructureId());
@@ -139,7 +130,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 	 * @param container
 	 * @throws DotDataException
 	 */
-	private void save(Container container) throws DotDataException {
+	private void save(final Container container) throws DotDataException {
 		containerFactory.save(container);
 	}
 
@@ -149,13 +140,13 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 	 * @param existingId
 	 * @throws DotDataException
 	 */
-	private void save(Container container, String existingId) throws DotDataException {
+	private void save(final Container container, final String existingId) throws DotDataException {
 		containerFactory.save(container, existingId);
 	}
 
 	@WrapInTransaction
 	@Override
-	protected void save(WebAsset webAsset) throws DotDataException {
+	protected void save(final WebAsset webAsset) throws DotDataException {
 		save((Container) webAsset);
 	}
 
@@ -166,7 +157,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 	 * @throws DotDataException
 	 */
 	@WrapInTransaction
-	protected void save(WebAsset webAsset, String existingId) throws DotDataException {
+	protected void save(final WebAsset webAsset, final String existingId) throws DotDataException {
 		save((Container) webAsset, existingId);
 	}
 
@@ -179,7 +170,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 	 */
 	@CloseDBIfOpened
 	@SuppressWarnings("unchecked")
-	private String getAppendToContainerTitle(final String containerTitle, Host destination)
+	private String getAppendToContainerTitle(final String containerTitle, final Host destination)
 			throws DotDataException {
 		List<Container> containers;
 		String temp = new String(containerTitle);
@@ -225,40 +216,92 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 	@CloseDBIfOpened
     @Override
     @SuppressWarnings("unchecked")
-    public Container find(String inode, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+    public Container find(final String inode, final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 
+	    final  Identifier  identifier = APILocator.getIdentifierAPI().findFromInode(inode);
+        final Container container = this.isContainerFile(identifier)? // todo: ask if the working is ok?
+				this.getWorkingContainerByFolderPath(identifier.getParentPath(), identifier.getHostId(), user, respectFrontendRoles):
+                containerFactory.find(inode);
 
-      Container container = containerFactory.find(inode);
-      if(container ==null){
-        return null;
-      }
-      if (!permissionAPI.doesUserHavePermission(container, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)) {
-        throw new DotSecurityException("You don't have permission to read the source file.");
-      }
-      
-      return container;
+        if (container == null) {
+            return null;
+        }
+        if (!permissionAPI.doesUserHavePermission(container, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)) {
+            throw new DotSecurityException("You don't have permission to read the source file.");
+        }
+
+        return container;
+    }
+
+	@CloseDBIfOpened
+	@Override
+	@SuppressWarnings("unchecked")
+	public Container getWorkingContainerById(final String id, final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+
+        final  Identifier  identifier = APILocator.getIdentifierAPI().find(id);
+        return this.isContainerFile(identifier)?
+                this.getWorkingContainerByFolderPath(identifier.getParentPath(), identifier.getHostId(), user, respectFrontendRoles):
+                this.getWorkingVersionInfoContainerById(id, user, respectFrontendRoles);
+	}
+
+    private boolean isContainerFile(final Identifier identifier) {
+
+        return null != identifier && Constants.CONTAINER_META_INFO_FILE_NAME.equals(identifier.getAssetName());
+    }
+
+	private Container getWorkingContainerByFolderPath(final String path, final String hostId, final User user,
+													 final boolean respectFrontEndPermissions) throws DotSecurityException, DotDataException {
+
+		final Host host = this.hostAPI.find(hostId, user, respectFrontEndPermissions);
+		return this.getWorkingContainerByFolderPath(path, host, user, respectFrontEndPermissions);
+	}
+
+    @CloseDBIfOpened
+    @Override
+    public Container getWorkingContainerByFolderPath(final String path, final Host host, final User user,
+                                                     final boolean respectFrontEndPermissions) throws DotSecurityException, DotDataException {
+
+	    return this.containerFactory.getWorkingContainerByFolderPath(path, host, user, respectFrontEndPermissions);
+    }
+
+	@CloseDBIfOpened
+    @Override
+    public Container getContainerByFolder(final Folder folder, final User user, final boolean showLive) throws DotSecurityException, DotDataException {
+
+		final Host host = this.hostAPI.find(folder.getHostId(), user, false);
+	    return this.containerFactory.getContainerByFolder(host, folder, user, showLive);
+    }
+
+    private Container getWorkingVersionInfoContainerById(final String id, final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+
+        final VersionInfo info       = APILocator.getVersionableAPI().getVersionInfo(id);
+        return (info !=null)  ? find(info.getWorkingInode(), user, respectFrontendRoles) : null;
     }
 
 	@Override
 	@SuppressWarnings("unchecked")
-	public Container getWorkingContainerById(String id, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
-
-	    VersionInfo info = APILocator.getVersionableAPI().getVersionInfo(id);
-		return (info !=null)  ? find(info.getWorkingInode(), user, respectFrontendRoles) : null;
-
-	}
-
-	@Override
-	@SuppressWarnings("unchecked")
 	public Container getLiveContainerById(String id, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
-		
-      VersionInfo info = APILocator.getVersionableAPI().getVersionInfo(id);
-      return find(info.getLiveInode(), user, respectFrontendRoles);
+
+		final  Identifier  identifier = APILocator.getIdentifierAPI().find(id);
+		return this.isContainerFile(identifier)?
+				this.getLiveContainerByFolderPath(identifier.getParentPath(),
+						this.hostAPI.find(identifier.getHostId(), user, respectFrontendRoles), user, respectFrontendRoles):
+				this.getLiveVersionInfoContainerById(id, user, respectFrontendRoles);
 	}
 
+	@CloseDBIfOpened
+	@Override
+	public Container getLiveContainerByFolderPath(final String path, final Host host, final User user,
+													 final boolean respectFrontEndPermissions) throws DotSecurityException, DotDataException {
 
+		return this.containerFactory.getLiveContainerByFolderPath(path, host, user, respectFrontEndPermissions);
+	}
 
+	private Container getLiveVersionInfoContainerById(final String id, final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 
+		final VersionInfo info = APILocator.getVersionableAPI().getVersionInfo(id);
+		return (info !=null)  ? find(info.getLiveInode(), user, respectFrontendRoles) : null;
+	}
 
 
     @CloseDBIfOpened
@@ -267,24 +310,21 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
     public List<Container> getContainersOnPage(final IHTMLPage page)
             throws DotStateException, DotDataException, DotSecurityException {
 
-        final List<Container> containers = new ArrayList<>();
-        List<Identifier> identifiers = new ArrayList<>();
-        DotConnect dc = new DotConnect();
-        dc.setSQL("select * from identifier where id in (select distinct(parent2) as containers from multi_tree where parent1=?)");
-        dc.addParam(page.getIdentifier());
+        final List<Container> containers  = new ArrayList<>();
+        final DotConnect dc = new DotConnect()
+				.setSQL("select * from identifier where id in (select distinct(parent2) as containers from multi_tree where parent1=?)")
+        		.addParam(page.getIdentifier());
 
-
-        identifiers = TransformerLocator.createIdentifierTransformer(dc.loadObjectResults()).asList();
-
-
-
-        
+        final List<Identifier> identifiers   = TransformerLocator.createIdentifierTransformer(dc.loadObjectResults()).asList();
         final List<Container> pageContainers = new ArrayList<>();
-        for (Identifier id : identifiers) {
-            final Container cont = (Container) APILocator.getVersionableAPI()
-                    .findWorkingVersion(id, APILocator.getUserAPI().getSystemUser(), false);
-            pageContainers.add(cont);
+
+        for (final Identifier id : identifiers) {
+
+            final Container container =
+					this.getWorkingVersionInfoContainerById (id.getId(), APILocator.getUserAPI().getSystemUser(), false);
+            pageContainers.add(container);
         }
+
         return containers;
     }
     
@@ -323,23 +363,24 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 	@CloseDBIfOpened
 	@Override
 	@SuppressWarnings({ "unchecked" })
-	public List<ContainerStructure> getContainerStructures(Container container) throws DotStateException, DotDataException, DotSecurityException  {
-		
+	public List<ContainerStructure> getContainerStructures(final Container container) throws DotStateException, DotDataException, DotSecurityException  {
+
 		//Gets the list from cache.
 		List<ContainerStructure> containerStructures = CacheLocator.getContentTypeCache().getContainerStructures(container.getIdentifier(), container.getInode());
 		
 		//If there is not cache data for that container, go to the DB.
 		if(containerStructures == null){
 			
-			//Run query directly to DB.
-			HibernateUtil dh = new HibernateUtil(ContainerStructure.class);
-			dh.setSQLQuery("select {container_structures.*} from container_structures " +
-                    "where container_structures.container_id = ? " +
-                    "and container_structures.container_inode = ?");
-			dh.setParam(container.getIdentifier());
-            dh.setParam(container.getInode());
-			containerStructures = dh.list();
-			
+
+			final ContainerStructureFinderStrategyResolver resolver   =
+					new ContainerStructureFinderStrategyResolver();
+
+			final Optional<ContainerStructureFinderStrategy> strategy =
+					resolver.get(container);
+
+			containerStructures = strategy.isPresent()? strategy.get().apply(container):
+					resolver.getDefaultStrategy().apply(container);
+
 			//Add the list to cache. 
 			CacheLocator.getContentTypeCache().addContainerStructures(containerStructures, container.getIdentifier(), container.getInode());
 		}
@@ -365,7 +406,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 					continue;
 				}
 
-				contentTypeList.add(type);
+				contentTypeList .add(type);
 			} catch (DotSecurityException e) {
 				continue;
 			}
@@ -535,7 +576,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 
 	@WrapInTransaction
 	@Override
-	public boolean delete(Container container, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
+	public boolean delete(final Container container, final User user, final boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
 		if(permissionAPI.doesUserHavePermission(container, PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles)) {
 			deleteContainerStructuresByContainer(container);
 			return deleteAsset(container);
@@ -547,7 +588,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 
 	@CloseDBIfOpened
 	@Override
-	public List<Container> findAllContainers(User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+	public List<Container> findAllContainers(final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 		RoleAPI roleAPI = APILocator.getRoleAPI();
 		if ((user != null)
 				&& roleAPI.doesUserHaveRole(user, roleAPI.loadCMSAdminRole())) {
@@ -560,15 +601,15 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 
 	@CloseDBIfOpened
 	@Override
-	public Host getParentHost(Container cont, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+	public Host getParentHost(final Container cont, final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 		return hostAPI.findParentHost(cont, user, respectFrontendRoles);
 	}
 
 	@CloseDBIfOpened
 	@Override
-	public List<Container> findContainers(User user, boolean includeArchived,
-			Map<String, Object> params, String hostId,String inode, String identifier, String parent,
-			int offset, int limit, String orderBy) throws DotSecurityException,
+	public List<Container> findContainers(final User user, final boolean includeArchived,
+			final Map<String, Object> params, final String hostId, final String inode, final String identifier, final String parent,
+			final int offset, final int limit, final String orderBy) throws DotSecurityException,
 			DotDataException {
 		return containerFactory.findContainers(user, includeArchived, params, hostId, inode, identifier, parent, offset, limit, orderBy);
 	}
@@ -577,13 +618,13 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 
 	@CloseDBIfOpened
 	@Override
-	public List<Container> findContainersForStructure(String structureInode,
-			boolean workingOrLiveOnly) throws DotDataException {
-		return containerFactory.findContainersForStructure(structureInode, workingOrLiveOnly);
+	public List<Container> findContainersForStructure(final String structureInode,
+			final boolean workingOrLiveOnly) throws DotDataException {
+		return containerFactory.findContainersForStructure(structureInode, workingOrLiveOnly); // todo: add here the containers file based
 	}
 
 	@Override
-    public int deleteOldVersions(Date assetsOlderThan) throws DotStateException, DotDataException {
+    public int deleteOldVersions(final Date assetsOlderThan) throws DotStateException, DotDataException {
         return deleteOldVersions(assetsOlderThan, Inode.Type.CONTAINERS.getValue());
     }
 
@@ -597,19 +638,17 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
         .setSQL("DELETE FROM container_structures WHERE structure_id = ?")
         .addParam(type.id())
         .loadResult();
-      
-
     }
 
     @CloseDBIfOpened
     @Override
-    public List<Container> findContainersForStructure(String structureInode) throws DotDataException {
+    public List<Container> findContainersForStructure(final String structureInode) throws DotDataException {
         return containerFactory.findContainersForStructure(structureInode);
     }
     
     @WrapInTransaction
 	@Override
-	public void deleteContainerStructuresByContainer(Container container)
+	public void deleteContainerStructuresByContainer(final Container container)
 			throws DotStateException, DotDataException, DotSecurityException {
 
 		if(container != null && UtilMethods.isSet(container.getIdentifier()) && UtilMethods.isSet(container.getInode())){
@@ -644,7 +683,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 	 * @throws DotSecurityException 
 	 */
 	@WrapInTransaction
-	public void updateUserReferences(String userId, String replacementUserId)throws DotDataException, DotSecurityException{
+	public void updateUserReferences(final String userId, final String replacementUserId)throws DotDataException, DotSecurityException{
 		containerFactory.updateUserReferences(userId, replacementUserId);
 	}
 }

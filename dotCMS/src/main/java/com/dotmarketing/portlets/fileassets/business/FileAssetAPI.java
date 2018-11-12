@@ -86,6 +86,18 @@ public interface FileAssetAPI {
 	Map<String, String> getMetaDataMap(Contentlet contentlet, File binFile) throws DotDataException;
 
 	/**
+	 * Checks if the File Name already exists. Important: This method doesn't check for language of the File Asset and do not double check identifier.
+	 *
+	 * @param host
+	 * @param folder
+	 * @param fileName
+	 * @return boolean true if exists
+	 * @throws DotDataException
+	 */
+	boolean fileNameExists(Host host, Folder folder, String fileName) throws  DotDataException;
+
+
+	/**
 	 * Checks if the File Name already exists. Important: This method doesn't check for language of the File Asset.
 	 *
 	 * @param host
@@ -96,6 +108,7 @@ public interface FileAssetAPI {
 	 * @throws DotDataException
 	 */
 	boolean fileNameExists(Host host, Folder folder, String fileName, String identifier) throws  DotDataException;
+
 
 	/**
 	 * Checks if the File Name already exists. I verifies that the FileAsset found has the same language.

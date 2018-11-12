@@ -4,16 +4,12 @@ import com.dotcms.rendering.velocity.services.VelocityResourceKey;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.LayoutAPI;
-import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.containers.model.Container;
-import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
-import com.dotmarketing.portlets.htmlpageasset.business.render.page.HTMLPageAssetRenderedBuilder;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
@@ -25,9 +21,10 @@ import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import org.apache.velocity.context.Context;
 
-import java.util.*;
-import java.util.function.Function;
-import java.util.stream.Collector;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -51,7 +48,7 @@ public class ContainerRenderedBuilder {
     }
 
     public Collection<ContainerRendered> getContainersRendered(final Template template, final Context velocityContext,
-                                                         PageMode mode)
+                                                         final PageMode mode)
 
             throws DotSecurityException, DotDataException {
 
@@ -87,8 +84,8 @@ public class ContainerRenderedBuilder {
         final User systemUser = this.userAPI.getSystemUser();
 
         return (mode.showLive) ?
-                    (Container) APILocator.getVersionableAPI().findLiveVersion(containerId, systemUser, false) :
-                    (Container) APILocator.getVersionableAPI().findWorkingVersion(containerId, systemUser, false);
+                    APILocator.getContainerAPI().getLiveContainerById(containerId, systemUser, false) :
+                    APILocator.getContainerAPI().getWorkingContainerById(containerId, systemUser, false);
     }
 
     private Map<String, String> render(Context velocityContext, PageMode mode, Collection <ContainerUUID> uuids,

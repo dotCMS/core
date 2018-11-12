@@ -134,4 +134,19 @@ public final class Constants {
 
 	public static final String CONFIG_DISPLAY_NOT_EXISTING_USER_AT_RECOVER_PASSWORD = "DISPLAY_NOT_EXISTING_USER_AT_RECOVER_PASSWORD";
 
+	/**
+	 * Base path that contains the folder container definitions
+	 */
+	public static final String CONTAINER_FOLDER_PATH   = "/application/containers";
+
+	/**
+	 * This is the name of the meta info for a file based container.
+	 */
+	public static final String CONTAINER_META_INFO_FILE_NAME   = "container.vtl";
+
+
+	/**
+	 * Extension for the velocity file: .vtl
+	 */
+	public static final String VELOCITY_FILE_EXTENSION = ".vtl";
 }

@@ -13,23 +13,18 @@ import com.dotcms.mock.request.MockHttpRequest;
 import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.mock.response.BaseResponse;
 import com.dotcms.rendering.velocity.servlet.VelocityModeHandler;
-
+import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.IdentifierAPI;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.PermissionLevel;
-import com.dotmarketing.business.UserAPI;
-import com.dotmarketing.business.VersionableAPI;
+import com.dotmarketing.beans.MultiTree;
+import com.dotmarketing.business.*;
 import com.dotmarketing.business.web.LanguageWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.factories.MultiTreeFactory;
 import com.dotmarketing.filters.CMSUrlUtil;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
@@ -45,23 +40,13 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.*;
-
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import com.liferay.portal.model.User;
+import org.apache.velocity.exception.ResourceNotFoundException;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
-import com.liferay.util.StringUtil;
-import org.apache.velocity.exception.ResourceNotFoundException;
-
-import com.liferay.portal.model.User;
+import java.util.*;
 
 
 
@@ -171,6 +156,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
         return APILocator.getHostAPI().find(identifierAPI.find(page).getHostId(), userAPI.getSystemUser(), false);
     }
 
+    @CloseDBIfOpened
     @Override
     public HTMLPageAsset fromContentlet(Contentlet con) {
     	if (con != null){
@@ -231,6 +217,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
         return pa;
     }
 
+    @CloseDBIfOpened
     @Override
     public IHTMLPage getPageByPath(String uri, Host host, Long languageId, Boolean live) throws DotDataException, DotSecurityException {
         Identifier id;
@@ -294,6 +281,26 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
 				respectFrontEndRoles);
     }
 
+
+    @CloseDBIfOpened
+    @Override
+    public List<IHTMLPage> getHTMLPagesByContainer(final String containerId) throws DotDataException, DotSecurityException {
+
+        final List<MultiTree> pageContents = MultiTreeFactory.getMultiTrees(containerId);
+        final ImmutableList.Builder<IHTMLPage> builder = new ImmutableList.Builder<>();
+
+        if (UtilMethods.isSet(pageContents)) {
+
+            for (final MultiTree pageContent : pageContents) {
+
+                builder.add(this.findPage(pageContent.getHtmlPage(), APILocator.systemUser(), false));
+            }
+        }
+
+        return builder.build();
+    }
+
+    @CloseDBIfOpened
 	@Override
 	public List<IHTMLPage> getHTMLPages(Object parent, boolean live,
 			boolean deleted, int limit, int offset, String sortBy, User user,
@@ -376,6 +383,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
         return getHTMLPages( parent, false, true, user, respectFrontEndRoles );
     }
 
+    @CloseDBIfOpened
     @Override
     public Folder getParentFolder(IHTMLPage htmlPage) throws DotDataException, DotSecurityException {
         Identifier ident = identifierAPI.find(htmlPage.getIdentifier());
@@ -391,8 +399,9 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
     }
 
     /**
-     * @see HTMLPageAssetAPI#findPagesByTemplate(Template, User, boolean)
+     * @see HTMLPageAssetAPI#findPage(inode, User, boolean)
      */
+    @CloseDBIfOpened
     @Override
     public IHTMLPage findPage(final String inode, final User user, final boolean respectFrontendRoles)
             throws DotDataException, DotSecurityException {
@@ -410,7 +419,8 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
     public String getHostDefaultPageType(String hostId) throws DotDataException, DotSecurityException {
         return getHostDefaultPageType(APILocator.getHostAPI().find(hostId, APILocator.getUserAPI().getSystemUser(), false));
     }
-    
+
+    @CloseDBIfOpened
     @Override
     public String getHostDefaultPageType(Host host) {
         Field ff=host.getStructure().getField(DEFAULT_HTML_PAGE_ASSET_STRUCTURE_HOST_FIELD);
@@ -701,7 +711,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
 	}
 
 
-
+    @CloseDBIfOpened
 	@Override
     public String getHTML(final String uri, final Host host, final boolean liveMode, final String contentId, final User user, final long viewingLang,
             String userAgent) throws DotStateException, DotDataException, DotSecurityException {
@@ -839,7 +849,8 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
 	    return findByIdLanguageFallback(identifier.getId(), tryLang, live, user, respectFrontEndPermissions);
 
     }
-	
+
+    @CloseDBIfOpened
 	@Override
     public IHTMLPage findByIdLanguageFallback(final String identifier, final long tryLang, final boolean live, final User user, final boolean respectFrontEndPermissions)
             throws DotDataException, DotSecurityException {

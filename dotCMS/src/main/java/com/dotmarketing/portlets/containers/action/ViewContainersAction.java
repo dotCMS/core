@@ -4,22 +4,28 @@ import com.dotcms.repackage.javax.portlet.PortletConfig;
 import com.dotcms.repackage.javax.portlet.RenderRequest;
 import com.dotcms.repackage.javax.portlet.RenderResponse;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.PermissionAsset;
+import com.dotmarketing.beans.Source;
+import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.portal.struts.DotPortletAction;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.Constants;
-import java.util.List;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
-import javax.servlet.jsp.PageContext;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+import javax.servlet.jsp.PageContext;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * <a href="ViewQuestionsAction.java.html"><b><i>View Source</i></b></a>
@@ -69,7 +75,27 @@ public class ViewContainersAction extends DotPortletAction {
 				req.setAttribute(WebKeys.CONTAINER_CAN_ADD, true);
 			}
 			
-			_viewWebAssets(req, user, Container.class, "container", WebKeys.CONTAINERS_VIEW_COUNT, WebKeys.CONTAINERS_VIEW, WebKeys.CONTAINER_QUERY, WebKeys.CONTAINER_SHOW_DELETED, WebKeys.CONTAINER_HOST_CHANGED, structureId);	
+			_viewWebAssets(req, user, Container.class, "container", WebKeys.CONTAINERS_VIEW_COUNT, WebKeys.CONTAINERS_VIEW, WebKeys.CONTAINER_QUERY, WebKeys.CONTAINER_SHOW_DELETED, WebKeys.CONTAINER_HOST_CHANGED, structureId);
+
+			final PaginatedArrayList<PermissionAsset> currentResults = (PaginatedArrayList<PermissionAsset>) req.getAttribute(WebKeys.CONTAINERS_VIEW);
+
+			if (null != currentResults && !currentResults.isEmpty()) {
+
+				final PaginatedArrayList<PermissionAsset> newResults = new PaginatedArrayList<>();
+
+				newResults.addAll(currentResults.stream()
+						.filter(asset -> WebAsset.class.cast(asset.getAsset()).getSource() == Source.DB)
+						.collect(Collectors.toList()));
+
+				final int diff = currentResults.size() - newResults.size();
+
+				newResults.setQuery(currentResults.getQuery());
+				newResults.setTotalResults(currentResults.getTotalResults() - diff);
+
+				req.setAttribute(WebKeys.CONTAINERS_VIEW, newResults);
+				req.setAttribute(WebKeys.CONTAINERS_VIEW_COUNT, newResults.getTotalResults());
+			}
+
 			return mapping.findForward("portlet.ext.containers.view_containers");
 		} catch (Exception e) {
 			req.setAttribute(PageContext.EXCEPTION, e);

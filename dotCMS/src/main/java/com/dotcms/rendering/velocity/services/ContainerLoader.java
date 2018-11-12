@@ -1,18 +1,14 @@
 package com.dotcms.rendering.velocity.services;
 
-import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.rendering.velocity.util.VelocityUtil;
-
 import com.dotmarketing.beans.ContainerStructure;
-import com.dotmarketing.beans.PermissionType;
-import com.dotmarketing.business.*;
-import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
-import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
@@ -21,31 +17,29 @@ import java.io.InputStream;
 import java.io.StringWriter;
 import java.util.Iterator;
 import java.util.List;
-
-import com.liferay.portal.model.User;
-import org.apache.felix.framework.resolver.ResourceNotFoundException;
-import org.apache.velocity.runtime.resource.ResourceManager;
-
-import javax.servlet.http.HttpServletRequest;
+import java.util.Optional;
 
 /**
  * @author will
  */
 public class ContainerLoader implements DotLoader {
 
-public static final String SHOW_PRE_POST_LOOP="SHOW_PRE_POST_LOOP";
+    public static final String SHOW_PRE_POST_LOOP="SHOW_PRE_POST_LOOP";
+
     @Override
     public InputStream writeObject(final VelocityResourceKey key)
             throws DotDataException, DotSecurityException {
 
-        VersionableAPI versionableAPI = APILocator.getVersionableAPI();
-        Container container = null;
-        if (key.mode.showLive) {
-            container = (Container) versionableAPI.findLiveVersion(key.id1, sysUser(), true);
-        } else {
-            container = (Container) versionableAPI.findWorkingVersion(key.id1, sysUser(), true);
-        }
-        if(null==container) {
+        final ContainerFinderStrategyResolver resolver   =
+                ContainerFinderStrategyResolver.getInstance();
+        final Optional<ContainerFinderStrategy> strategy =
+                resolver.get(key);
+
+        final Container container = strategy.isPresent()?
+                strategy.get().apply(key):resolver.getDefaultStrategy().apply(key);
+
+        if(null == container) {
+
             throw new DotStateException("cannot find container for : " +  key);
         }
 

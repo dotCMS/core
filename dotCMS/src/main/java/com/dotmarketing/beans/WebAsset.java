@@ -21,8 +21,14 @@ import com.liferay.portal.model.User;
  * @author  maria
  */
 public abstract class WebAsset extends Inode implements Permissionable, Versionable,Treeable, Ruleable{
-	
+
+
 	private static final long serialVersionUID = 1L;
+
+	/**
+	 * By default the asset are fetch from the database
+	 */
+	protected Source source = Source.DB;
 
 	/** nullable persistent field */
     private String title = "";
@@ -41,10 +47,12 @@ public abstract class WebAsset extends Inode implements Permissionable, Versiona
 
     /** nullable persistent field */
     private boolean showOnMenu;
-    
-    
 
-    public String getVersionId() {
+	public Source getSource() {
+		return source;
+	}
+
+	public String getVersionId() {
     	return getIdentifier();
     }
     
