@@ -1,5 +1,6 @@
 package com.dotcms.contenttype.transform.field;
 
+import com.dotcms.repackage.org.directwebremoting.json.types.JsonObject;
 import com.dotmarketing.util.UtilMethods;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -101,8 +102,8 @@ public class JsonFieldTransformer implements FieldTransformer, JsonTransformer {
       JSONObject jo = new JSONObject(input);
 
       if (jo.has(CATEGORIES_PROPERTY_NAME)){
-        final Object categories = jo.get(CATEGORIES_PROPERTY_NAME);
-        jo.put("values", categories);
+        final JSONObject categories = (JSONObject) jo.get(CATEGORIES_PROPERTY_NAME);
+        jo.put("values", categories.get("inode"));
       }
 
       return (Field) mapper.readValue(jo.toString(), Field.class);

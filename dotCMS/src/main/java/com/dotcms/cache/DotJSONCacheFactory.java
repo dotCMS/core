@@ -11,7 +11,7 @@ public final class DotJSONCacheFactory {
 
     private DotJSONCacheFactory() {}
 
-    public static DotJSONCache getCacheStrategy(final HTTPMethod httpMethod) {
+    public static DotJSONCache getCache(final HTTPMethod httpMethod) {
         if(httpMethod.equals(HTTPMethod.GET)) {
             return new DotJSONCacheImpl();
         } else {

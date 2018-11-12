@@ -14,6 +14,7 @@ import com.dotcms.filters.interceptor.Result;
 import com.dotcms.filters.interceptor.SimpleWebInterceptorDelegateImpl;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.util.SecurityLogger;
+import java.io.PrintWriter;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -75,6 +76,7 @@ public class DefaultBackEndLoginRequiredWebInterceptorTest extends UnitTestBase 
 
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final HttpServletResponse response = mock(HttpServletResponse.class);
+        final PrintWriter printWriter = mock(PrintWriter.class);
         final HttpSession session = mock(HttpSession.class);
         final UserWebAPI userWebAPI = mock(UserWebAPI.class);
 
@@ -85,6 +87,7 @@ public class DefaultBackEndLoginRequiredWebInterceptorTest extends UnitTestBase 
                 new DefaultBackEndLoginRequiredWebInterceptor(userWebAPI);
 
         when(request.getSession(false)).thenReturn(session);
+        when(response.getWriter()).thenReturn(printWriter);
         when(userWebAPI.isLoggedToBackend(request)).thenReturn(false);
 
         loginRequiredWebInterceptor.init();
@@ -105,11 +108,14 @@ public class DefaultBackEndLoginRequiredWebInterceptorTest extends UnitTestBase 
 
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final HttpServletResponse response = mock(HttpServletResponse.class);
+        final PrintWriter printWriter = mock(PrintWriter.class);
         final HttpSession session = mock(HttpSession.class);
         final UserWebAPI userWebAPI = mock(UserWebAPI.class);
 
         PowerMockito.mockStatic(SecurityLogger.class);
         PowerMockito.doNothing().when(SecurityLogger.class, "logInfo", any(), anyString());
+
+        when(response.getWriter()).thenReturn(printWriter);
 
         final DefaultBackEndLoginRequiredWebInterceptor loginRequiredWebInterceptor =
                 new DefaultBackEndLoginRequiredWebInterceptor(userWebAPI);
@@ -272,6 +278,7 @@ public class DefaultBackEndLoginRequiredWebInterceptorTest extends UnitTestBase 
 
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final HttpServletResponse response = mock(HttpServletResponse.class);
+        final PrintWriter printWriter = mock(PrintWriter.class);
         final HttpSession session = mock(HttpSession.class);
         final UserWebAPI userWebAPI = mock(UserWebAPI.class);
 
@@ -283,6 +290,7 @@ public class DefaultBackEndLoginRequiredWebInterceptorTest extends UnitTestBase 
 
         when(request.getSession(false)).thenReturn(session);
         when(userWebAPI.isLoggedToBackend(request)).thenReturn(false);
+        when(response.getWriter()).thenReturn(printWriter);
 
         loginRequiredWebInterceptor.init();
 

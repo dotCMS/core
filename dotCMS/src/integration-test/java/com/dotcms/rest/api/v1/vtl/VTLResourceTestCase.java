@@ -7,7 +7,7 @@ public class VTLResourceTestCase {
     private final String vtlFile;
     private final String folderName;
     private final MultivaluedMap<String, String> queryParameters;
-    private final String pathParameters;
+    private final String pathParameter;
     private final String expectedJSON;
     private final String expectedOutput;
     private final int expectedException;
@@ -25,8 +25,8 @@ public class VTLResourceTestCase {
         return queryParameters;
     }
 
-    String getPathParameters() {
-        return pathParameters;
+    String getPathParameter() {
+        return pathParameter;
     }
 
     String getExpectedJSON() {
@@ -46,12 +46,12 @@ public class VTLResourceTestCase {
     }
 
     private VTLResourceTestCase(final String vtlFile, final String folderName, final MultivaluedMap<String, String> queryParameters,
-                               final String pathParameters, final String expectedJSON, final String expectedOutput,
-                               final int expectedException, final String user) {
+                                final String pathParameter, final String expectedJSON, final String expectedOutput,
+                                final int expectedException, final String user) {
         this.vtlFile = vtlFile;
         this.folderName = folderName;
         this.queryParameters = queryParameters;
-        this.pathParameters = pathParameters;
+        this.pathParameter = pathParameter;
         this.expectedJSON = expectedJSON;
         this.expectedOutput = expectedOutput;
         this.expectedException = expectedException;
@@ -62,7 +62,7 @@ public class VTLResourceTestCase {
         private String vtlFile;
         private String folderName;
         private MultivaluedMap<String, String> queryParameters;
-        private String pathParameters;
+        private String pathParameter;
         private String expectedJSON;
         private String expectedOutput;
         private int expectedException;
@@ -83,8 +83,8 @@ public class VTLResourceTestCase {
             return this;
         }
 
-        Builder setPathParameters(final String pathParameters) {
-            this.pathParameters = pathParameters;
+        Builder setPathParameter(final String pathParameter) {
+            this.pathParameter = pathParameter;
             return this;
         }
 
@@ -109,7 +109,7 @@ public class VTLResourceTestCase {
         }
 
         VTLResourceTestCase build() {
-            return new VTLResourceTestCase(vtlFile, folderName, queryParameters, pathParameters ,expectedJSON,
+            return new VTLResourceTestCase(vtlFile, folderName, queryParameters, pathParameter,expectedJSON,
                     expectedOutput, expectedException, user);
         }
     }

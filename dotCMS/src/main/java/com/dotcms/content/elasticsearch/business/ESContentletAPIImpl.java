@@ -374,16 +374,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     // note: is not annotated with WrapInTransaction b/c it handles his own transaction locally in the methodok
+    @WrapInTransaction
     @Override
     public void publish(Contentlet contentlet, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException, DotStateException {
 
-        boolean localTransaction = false;
-        boolean isNewConnection  = false;
 
-        try {
-
-            localTransaction = HibernateUtil.startLocalTransactionIfNeeded();
-            isNewConnection  = !DbConnectionFactory.connectionExists();
 
             String contentPushPublishDate = contentlet.getStringProperty("wfPublishDate");
             String contentPushExpireDate = contentlet.getStringProperty("wfExpireDate");
@@ -484,20 +479,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             HibernateUtil.addCommitListener(
                     () -> this.contentletSystemEventUtil.pushPublishEvent(contentlet), 1000);
 
-            if ( localTransaction ) {
-                HibernateUtil.commitTransaction();
-            }
-        } catch(Exception e) {
-            Logger.error(this, e.getMessage(), e);
 
-            if(localTransaction){
-                HibernateUtil.rollbackTransaction();
-            }
-        } finally {
-            if ((localTransaction && isNewConnection)) {
-                HibernateUtil.closeSessionSilently();
-            }
-        }
     }
 
     @Override
@@ -4278,7 +4260,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                         new DotContentletValidationException("Contentlet ["
                                         + (contentlet != null && UtilMethods.isSet(contentlet.getIdentifier())
                                                         ? contentlet.getIdentifier() : "Unknown/New")
-                                        + "] has an invalid field.");
+                                        + "] has invalid / missing field(s).");
         List<Field> fields = FieldsCache.getFieldsByStructureInode(stInode);
         Structure structure = CacheLocator.getContentTypeCache().getStructureByInode(stInode);
         final Map<String, Object> conMap = contentlet.getMap();
@@ -4845,7 +4827,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    private Map<Relationship, List<Contentlet>> findContentRelationships(Contentlet contentlet) throws DotDataException{
+    private Map<Relationship, List<Contentlet>> findContentRelationships(Contentlet contentlet)
+            throws DotDataException {
         Map<Relationship, List<Contentlet>> contentRelationships = new HashMap<>();
         if(contentlet == null)
             return contentRelationships;
