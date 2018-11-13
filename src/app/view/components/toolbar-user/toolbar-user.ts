@@ -4,6 +4,7 @@ import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.s
 import { LoginService, Auth, LoggerService } from 'dotcms-js';
 import { DotMessageService } from '@services/dot-messages-service';
 import { LOCATION_TOKEN } from 'src/app/providers';
+import { DotNavigationService } from '@components/dot-navigation/services/dot-navigation.service';
 
 @Component({
     selector: 'dot-toolbar-user',
@@ -28,6 +29,7 @@ export class ToolbarUserComponent implements OnInit {
         private loggerService: LoggerService,
         private loginService: LoginService,
         public iframeOverlayService: IframeOverlayService,
+        private dotNavigationService: DotNavigationService
     ) {}
 
     ngOnInit(): void {
@@ -68,7 +70,9 @@ export class ToolbarUserComponent implements OnInit {
         this.loginService.logoutAs().subscribe(
             () => {
                 this.dropdown.closeIt();
-                this.location.reload();
+                this.dotNavigationService.goToFirstPortlet().then(() => {
+                    this.location.reload();
+                });
             },
             (error) => {
                 this.loggerService.error(error);

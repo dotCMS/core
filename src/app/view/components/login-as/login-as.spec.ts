@@ -1,7 +1,7 @@
 import {
     throwError as observableThrowError,
     of as observableOf,
-    from as observableFrom
+    from as observableFrom,
 } from 'rxjs';
 import { mockUser, LoginServiceMock } from './../../../test/login-service.mock';
 import { By } from '@angular/platform-browser';
@@ -22,6 +22,8 @@ import { DotEventsService } from '@services/dot-events/dot-events.service';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { RouterTestingModule } from '@angular/router/testing';
 import { LOCATION_TOKEN } from 'src/app/providers';
+import { DotNavigationService } from '@components/dot-navigation/services/dot-navigation.service';
+import { DotMenuService } from '@services/dot-menu.service';
 
 @Component({
     selector: 'dot-searchable-dropdown',
@@ -94,6 +96,7 @@ describe('LoginAsComponent', () => {
     let paginatorService: PaginatorService;
     let loginService: LoginService;
     let dotEventsService: DotEventsService;
+    let dotNavigationService: DotNavigationService;
     let locationService: Location;
 
     const users: User[] = [
@@ -139,6 +142,8 @@ describe('LoginAsComponent', () => {
                     provide: ActivatedRoute,
                     useValue: { params: observableFrom([{ id: '1234' }]) }
                 },
+                DotNavigationService,
+                DotMenuService,
                 PaginatorService,
             ]
         });
@@ -152,6 +157,7 @@ describe('LoginAsComponent', () => {
         paginatorService = de.injector.get(PaginatorService);
         loginService = de.injector.get(LoginService);
         dotEventsService = de.injector.get(DotEventsService);
+        dotNavigationService = de.injector.get(DotNavigationService);
 
         spyOn(paginatorService, 'getWithOffset').and.returnValue(observableOf([...users]));
 
@@ -228,7 +234,10 @@ describe('LoginAsComponent', () => {
     });
 
     it('should reload the page on login as', () => {
-        spyOn(loginService, 'loginAs').and.callThrough();
+        spyOn(dotNavigationService, 'goToFirstPortlet').and.returnValue(new Promise((resolve) => {
+            resolve(true);
+        }));
+        spyOn(loginService, 'logoutAs').and.callThrough();
         spyOn(locationService, 'reload');
 
         comp.visible = true;
@@ -239,6 +248,9 @@ describe('LoginAsComponent', () => {
 
         comp.dialogActions.accept.action();
 
-        expect(locationService.reload).toHaveBeenCalledTimes(1);
+        fixture.whenStable().then(() => {
+            expect(dotNavigationService.goToFirstPortlet).toHaveBeenCalledTimes(1);
+            expect(locationService.reload).toHaveBeenCalledTimes(1);
+        });
     });
 });

@@ -24,6 +24,8 @@ import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { RouterTestingModule } from '@angular/router/testing';
 import { Jsonp } from '@angular/http';
 import { LOCATION_TOKEN } from 'src/app/providers';
+import { DotMenuService } from '@services/dot-menu.service';
+import { DotNavigationService } from '@components/dot-navigation/services/dot-navigation.service';
 
 describe('ToolbarUserComponent', () => {
     let comp: ToolbarUserComponent;
@@ -32,6 +34,7 @@ describe('ToolbarUserComponent', () => {
     let dotDropdownComponent: DotDropdownComponent;
     let loginService: LoginService;
     let locationService: Location;
+    let dotNavigationService: DotNavigationService;
 
     beforeEach(async(() => {
         DOTTestBed.configureTestingModule({
@@ -54,7 +57,9 @@ describe('ToolbarUserComponent', () => {
                 { provide: LoginService, useClass: LoginServiceMock },
                 IframeOverlayService,
                 GravatarService,
-                Jsonp
+                Jsonp,
+                DotNavigationService,
+                DotMenuService,
             ],
             imports: [
                 DataListModule,
@@ -73,11 +78,17 @@ describe('ToolbarUserComponent', () => {
 
         loginService = de.injector.get(LoginService);
         locationService = de.injector.get(LOCATION_TOKEN);
+        dotNavigationService = de.injector.get(DotNavigationService);
     }));
 
-    it('should call "logoutAs" in "LoginService" on logout click', () => {
+    it('should call "logoutAs" in "LoginService" on logout click', (done) => {
+        spyOn(dotNavigationService, 'goToFirstPortlet').and.returnValue(new Promise((resolve) => {
+            console.log('yhis spy');
+            resolve(true);
+        }));
         spyOn(locationService, 'reload');
         spyOn(loginService, 'logoutAs').and.callThrough();
+
         comp.auth = mockAuth;
         fixture.detectChanges();
 
@@ -86,9 +97,15 @@ describe('ToolbarUserComponent', () => {
         fixture.detectChanges();
 
         const logoutAsLink = de.query(By.css('#dot-toolbar-user-link-logout-as'));
-        logoutAsLink.nativeElement.click();
+        logoutAsLink.triggerEventHandler('click', {
+            preventDefault: () => {}
+        });
 
-        expect(loginService.logoutAs).toHaveBeenCalledTimes(1);
-        expect(locationService.reload).toHaveBeenCalledTimes(1);
+        setTimeout(() => {
+            expect(loginService.logoutAs).toHaveBeenCalledTimes(1);
+            expect(dotNavigationService.goToFirstPortlet).toHaveBeenCalledTimes(1);
+            expect(locationService.reload).toHaveBeenCalledTimes(1);
+            done();
+        }, 0);
     });
 });

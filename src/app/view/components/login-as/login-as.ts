@@ -20,6 +20,7 @@ import { DotMessageService } from '@services/dot-messages-service';
 import { PaginatorService } from '@services/paginator';
 import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
 import { LOCATION_TOKEN } from 'src/app/providers';
+import { DotNavigationService } from '@components/dot-navigation/services/dot-navigation.service';
 
 
 @Component({
@@ -55,9 +56,10 @@ export class LoginAsComponent implements OnInit, OnDestroy {
     constructor(
         @Inject(LOCATION_TOKEN) private location: Location,
         private dotMessageService: DotMessageService,
+        private dotNavigationService: DotNavigationService,
         private fb: FormBuilder,
         private loginService: LoginService,
-        public paginationService: PaginatorService,
+        public paginationService: PaginatorService
     ) {}
 
     ngOnInit(): void {
@@ -136,7 +138,9 @@ export class LoginAsComponent implements OnInit, OnDestroy {
             .subscribe(
                 (data) => {
                     if (data) {
-                        this.location.reload();
+                        this.dotNavigationService.goToFirstPortlet().then(() => {
+                            this.location.reload();
+                        });
                     }
                 },
                 (response) => {
