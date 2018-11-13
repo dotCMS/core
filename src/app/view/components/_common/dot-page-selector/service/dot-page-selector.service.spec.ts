@@ -38,10 +38,11 @@ describe('Service: DotPageSelector', () => {
                 })
             )
         );
+
         expect(result[0]).toEqual(mockPageSelector);
         expect(this.lastConnection.request.url).toContain('es/search');
         expect(this.lastConnection.request.method).toEqual(1);
-        expect(this.lastConnection.request._body).toEqual(JSON.stringify(query));
+        expect(this.lastConnection.request._body).toEqual(query);
     });
 
     it('should get pages in a folder without hostId', () => {
@@ -71,7 +72,7 @@ describe('Service: DotPageSelector', () => {
         expect(result[0]).toEqual(mockPageSelector);
         expect(this.lastConnection.request.url).toContain('es/search');
         expect(this.lastConnection.request.method).toEqual(1);
-        expect(this.lastConnection.request._body).toEqual(JSON.stringify(query));
+        expect(this.lastConnection.request._body).toEqual(query);
     });
 
     it('should get a page by identifier', () => {
@@ -103,6 +104,6 @@ describe('Service: DotPageSelector', () => {
         expect(result).toEqual(mockPageSelector[0]);
         expect(this.lastConnection.request.url).toContain('es/search');
         expect(this.lastConnection.request.method).toEqual(1);
-        expect(this.lastConnection.request._body).toEqual(JSON.stringify(query));
+        expect(this.lastConnection.request._body).toEqual(query);
     });
 });
