@@ -51,8 +51,8 @@ public class Task05035LanguageTableIdentityOff implements StartupTask  {
     private static final String POSTGRES_ALTER_TABLE_LANG = " ALTER TABLE language ALTER COLUMN id DROP default; ";
 
     //Oracle Upgrade
-    private static final String ORACLE_CHECK_SEQUENCE_EXIST = " SELECT sequence_name FROM all_sequences WHERE lower(sequence_name) = 'language_seq'; ";
-    private static final String ORACLE_DROP_SEQUENCE = " DROP SEQUENCE language_seq; ";
+    private static final String ORACLE_CHECK_SEQUENCE_EXIST = "SELECT sequence_name FROM all_sequences WHERE lower(sequence_name) = 'language_seq'";
+    private static final String ORACLE_DROP_SEQUENCE = " DROP SEQUENCE language_seq ";
 
     @Override
     public boolean forceRun() {
