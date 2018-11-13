@@ -22,6 +22,7 @@ public class Task05035LanguageTableIdentityOffTest {
     public void testExecuteUpgrade() throws DotDataException, DotSecurityException {
        final DbType dbType = DbType.getDbType(DbConnectionFactory.getDBType());
        try{
+
          final Task05035LanguageTableIdentityOff languageTableIdentityOff = new Task05035LanguageTableIdentityOff();
          languageTableIdentityOff.executeUpgrade();
        } catch (Exception e) {
