@@ -81,9 +81,8 @@ describe('ToolbarUserComponent', () => {
         dotNavigationService = de.injector.get(DotNavigationService);
     }));
 
-    it('should call "logoutAs" in "LoginService" on logout click', (done) => {
+    it('should call "logoutAs" in "LoginService" on logout click', async(() => {
         spyOn(dotNavigationService, 'goToFirstPortlet').and.returnValue(new Promise((resolve) => {
-            console.log('yhis spy');
             resolve(true);
         }));
         spyOn(locationService, 'reload');
@@ -101,11 +100,10 @@ describe('ToolbarUserComponent', () => {
             preventDefault: () => {}
         });
 
-        setTimeout(() => {
+        fixture.whenStable().then(() => {
             expect(loginService.logoutAs).toHaveBeenCalledTimes(1);
             expect(dotNavigationService.goToFirstPortlet).toHaveBeenCalledTimes(1);
             expect(locationService.reload).toHaveBeenCalledTimes(1);
-            done();
-        }, 0);
-    });
+        });
+    }));
 });
