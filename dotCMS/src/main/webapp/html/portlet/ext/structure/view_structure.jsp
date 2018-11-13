@@ -119,17 +119,6 @@
         submitForm(form);
     }
 
-
-
-    function addNewRelationship()
-    {
-        var href = "<portlet:actionURL windowState='<%=WindowState.MAXIMIZED.toString()%>'>";
-        href = href + "<portlet:param name='referer' value='<%=referer%>' />";
-        href = href + "<portlet:param name='struts_action' value='/ext/structure/edit_relationship' />";
-        href = href + "</portlet:actionURL>";
-        document.location.href = href;
-    }
-
     function viewAllRelationship()
     {
         var href = "<portlet:actionURL windowState='<%=WindowState.MAXIMIZED.toString()%>'>";
@@ -166,15 +155,6 @@
 	 }
 	 });
 	 menu.addChild(menuItem1);
-
-	 var menuItem2 = new dijit.MenuItem({
-	 label: "<%= LanguageUtil.get(pageContext, "Add-New-Relationship") %>",
-	 iconClass: "formNewIcon",
-	 onClick: function() {
-	 addNewRelationship();
-	 }
-	 });
-	 menu.addChild(menuItem2);
 
 	 var menuItem3 = new dijit.MenuItem({
 	 label: "<%= LanguageUtil.get(pageContext, "View-all-Relationships") %>",
@@ -324,10 +304,6 @@
 					<div data-dojo-type="dijit/Menu" class="contentlet-menu-actions">
 						<div data-dojo-type="dijit/MenuItem" onClick="addNewStructure();">
 							<%= LanguageUtil.get(pageContext, "Add-New-Structure") %>
-						</div>
-
-						<div data-dojo-type="dijit/MenuItem" onClick="addNewRelationship();">
-							<%= LanguageUtil.get(pageContext, "Add-New-Relationship") %>
 						</div>
 
 						<div data-dojo-type="dijit/MenuItem" onClick="viewAllRelationship();">
