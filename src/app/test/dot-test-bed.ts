@@ -14,7 +14,7 @@ import {
     LoggerService,
     StringUtils,
     UserModel
-} from 'dotcms-js/dotcms-js';
+} from 'dotcms-js';
 import { ConfirmationService } from 'primeng/primeng';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { NGFACES_MODULES } from '../modules';
@@ -29,12 +29,17 @@ import { DotLicenseService } from '../api/services/dot-license/dot-license.servi
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotUiColorsService } from '../api/services/dot-ui-colors/dot-ui-colors.service';
 
+class MockDotUiColorsService {
+    setColors() {}
+}
+
 export class DOTTestBed {
     private static DEFAULT_CONFIG = {
         imports: [...NGFACES_MODULES, CommonModule, FormsModule, ReactiveFormsModule],
         providers: [
             { provide: ConnectionBackend, useClass: MockBackend },
             { provide: RequestOptions, useClass: BaseRequestOptions },
+            { provide: DotUiColorsService, useClass: MockDotUiColorsService},
             { provide: LOCALE_ID, useValue: {} },
             ApiRoot,
             BrowserUtil,
@@ -48,7 +53,7 @@ export class DOTTestBed {
             DotIframeService,
             DotMessageService,
             DotRouterService,
-            DotUiColorsService,
+
             DotcmsConfig,
             DotcmsEventsService,
             FormatDateService,

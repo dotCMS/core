@@ -7,7 +7,7 @@ import { ComponentFixture, fakeAsync, tick } from '@angular/core/testing';
 import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
 import { RouterTestingModule } from '@angular/router/testing';
 import { DialogModule } from 'primeng/primeng';
-import { LoginService, SiteService } from 'dotcms-js/dotcms-js';
+import { LoginService, SiteService } from 'dotcms-js';
 import { DOTTestBed } from '../../../test/dot-test-bed';
 import { DotContainerContentletService } from './services/dot-container-contentlet.service';
 import { DotContentletLockerService } from '@services/dot-contentlet-locker/dot-contentlet-locker.service';

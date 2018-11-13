@@ -1,5 +1,5 @@
 import { toArray, filter, pluck, mergeMap } from 'rxjs/operators';
-import { CoreWebService, ApiRoot } from 'dotcms-js/dotcms-js';
+import { CoreWebService, ApiRoot } from 'dotcms-js';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { RequestMethod } from '@angular/http';

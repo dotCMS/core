@@ -1,13 +1,11 @@
 import { By } from '@angular/platform-browser';
 import { DOTTestBed } from '../../../../test/dot-test-bed';
-import { DebugElement, Component } from '@angular/core';
+import { DebugElement, Component, Input } from '@angular/core';
 import { SiteSelectorFieldComponent } from './site-selector-field.component';
-import { SiteSelectorModule } from '../site-selector/site-selector.module';
-import { SiteService } from 'dotcms-js/dotcms-js';
+import { SiteService } from 'dotcms-js';
 import { SiteServiceMock } from '../../../../test/site-service.mock';
 import { async, ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormGroup, FormBuilder } from '@angular/forms';
-import { SiteSelectorFieldModule } from './site-selector-field.module';
 
 @Component({
     selector: 'dot-fake-form',
@@ -32,6 +30,22 @@ class FakeFormComponent {
     }
 }
 
+
+@Component({
+    selector: 'dot-site-selector',
+    template: ''
+})
+export class SiteSelectorComponent {
+    @Input()
+    archive: boolean;
+    @Input()
+    id: string;
+    @Input()
+    live: boolean;
+    @Input()
+    system: boolean;
+}
+
 describe('SiteSelectorFieldComponent', () => {
     let component: FakeFormComponent;
     let fixture: ComponentFixture<FakeFormComponent>;
@@ -42,8 +56,8 @@ describe('SiteSelectorFieldComponent', () => {
         siteServiceMock.setFakeCurrentSite();
 
         DOTTestBed.configureTestingModule({
-            declarations: [FakeFormComponent],
-            imports: [SiteSelectorFieldModule, SiteSelectorModule],
+            declarations: [FakeFormComponent, SiteSelectorComponent, SiteSelectorFieldComponent],
+            imports: [],
             providers: [{ provide: SiteService, useValue: siteServiceMock }]
         });
     }));
@@ -121,5 +135,16 @@ describe('SiteSelectorFieldComponent', () => {
         expect(siteSelector.componentInstance.archive).toBe(true);
         expect(siteSelector.componentInstance.system).toBe(false);
         expect(siteSelector.componentInstance.live).toBe(false);
+    });
+
+    it('should not set current site when already hava a value', () => {
+        component.form.get('site').setValue('1234');
+        fixture.detectChanges();
+
+        const siteSelectorField: SiteSelectorFieldComponent = de.query(
+            By.css('dot-site-selector-field')
+        ).componentInstance;
+
+        expect(siteSelectorField.value).toEqual('1234');
     });
 });

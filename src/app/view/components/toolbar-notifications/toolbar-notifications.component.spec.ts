@@ -6,7 +6,7 @@ import { ToolbarNotificationsComponent } from './toolbar-notifications';
 import { INotification } from '@shared/models/notifications';
 import { DotMessageService } from '@services/dot-messages-service';
 import { IframeOverlayService } from '@components/_common/iframe/service/iframe-overlay.service';
-import { DotcmsEventsService, LoginService } from 'dotcms-js/dotcms-js';
+import { DotcmsEventsService, LoginService } from 'dotcms-js';
 import { NotificationsService } from '@services/notifications-service';
 import { Observable, Subject } from 'rxjs';
 import { of as observableOf } from 'rxjs';

@@ -7,11 +7,21 @@ This project was created using [angular-cli](https://cli.angular.io/) it means y
 3. Angular CLI 6.1.2
 
 ## Before start
-Build the interal libraries (until we publish it to npm)
+Build the interal libraries (until we publish it to npm). `dotcms-js` needs to be build first, because is used by other libraries.
 
-```ng build dot-layout-grid```
+```
+ng build dotcms-js
+ng build dot-layout-grid
+ng build dot-rules
+```
 
-You should see now a `dist-lib/dot-layout-grid` folder.
+You should see now the folders:
+
+```
+dist-lib/dot-layout-grid
+dist-lib/dot-rules
+dist-lib/dotcms-js
+```
 
 ## Run for DotCMS
 Watch and compile your files in development mode and copy it into ```dotAdmin``` folder in core.

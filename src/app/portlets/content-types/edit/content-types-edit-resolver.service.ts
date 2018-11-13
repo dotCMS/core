@@ -8,7 +8,7 @@ import { Resolve, ActivatedRouteSnapshot } from '@angular/router';
 import { CrudService } from '@services/crud';
 import { ContentTypesInfoService } from '@services/content-types-info';
 import { ContentType } from '../shared/content-type.model';
-import { LoginService, ResponseView } from 'dotcms-js/dotcms-js';
+import { LoginService, ResponseView } from 'dotcms-js';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { take, map, catchError } from 'rxjs/operators';
 

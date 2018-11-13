@@ -1,34 +1,37 @@
-<p-selectButton 
+<p-selectButton
     *ngIf="selectOptions.length > 1"
-    class="textarea-content__select-field" 
+    class="textarea-content__select-field"
     [options]="selectOptions"
     [(ngModel)]="selected">
 </p-selectButton>
 <textarea
     *ngIf="selected === 'plain'"
-    class="textarea-content__plain-field"
+    (keydown.enter)="onKeyEnter($event)"
     (ngModelChange)="onModelChange($event)"
     [ngModel]="value"
-    [ngStyle]="styles">
+    [ngStyle]="styles"
+    class="textarea-content__plain-field">
 </textarea>
 <ace-editor
     #ace
     *ngIf="selected === 'code'"
-    class="textarea-content__code-field"
-    theme="textmate"
-    [mode]="code.mode"
-    [readOnly]="false"
-    [options]="code.options"
-    [durationBeforeCallback]="500"
-    [autoUpdateContent]="true"
+    (keydown.enter)="onKeyEnter($event)"
     (textChanged)="onModelChange($event)"
+    [autoUpdateContent]="true"
+    [durationBeforeCallback]="500"
+    [mode]="code.mode"
+    [ngStyle]="styles"
+    [options]="code.options"
+    [readOnly]="false"
     [text]="value"
-    [ngStyle]="styles">
+    class="textarea-content__code-field"
+    theme="textmate">
 </ace-editor>
 <app-tinymce
     #wysiwyg
     *ngIf="selected === 'wysiwyg'"
-    class="textarea-content__wysiwyg-field"
+    (keydown.enter)="onKeyEnter($event)"
     (ngModelChange)="onModelChange($event)"
-    [ngModel]="value">
+    [ngModel]="value"
+    class="textarea-content__wysiwyg-field">
 </app-tinymce>

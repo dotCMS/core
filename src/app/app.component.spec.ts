@@ -7,7 +7,7 @@ import { AppComponent } from './app.component';
 import { DOTTestBed } from './test/dot-test-bed';
 import { NotLicensedService } from '@services/not-licensed-service';
 import { DotUiColorsService } from '@services/dot-ui-colors/dot-ui-colors.service';
-import { DotcmsConfig } from 'dotcms-js/dotcms-js';
+import { DotcmsConfig } from 'dotcms-js';
 import { of } from 'rxjs';
 
 describe('AppComponent', () => {

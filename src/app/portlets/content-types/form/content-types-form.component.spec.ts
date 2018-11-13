@@ -14,8 +14,8 @@ import {
     TabViewModule
 } from 'primeng/primeng';
 
-import { DotcmsConfig, LoginService } from 'dotcms-js/dotcms-js';
-import { SiteService } from 'dotcms-js/dotcms-js';
+import { DotcmsConfig, LoginService } from 'dotcms-js';
+import { SiteService } from 'dotcms-js';
 
 import { ContentTypesFormComponent } from './content-types-form.component';
 import { DOTTestBed } from '../../../test/dot-test-bed';

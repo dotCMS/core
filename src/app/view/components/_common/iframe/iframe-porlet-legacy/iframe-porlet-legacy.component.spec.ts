@@ -9,7 +9,7 @@ import { DotMenuService } from '@services/dot-menu.service';
 import { IFrameModule } from '../index';
 import { IframePortletLegacyComponent } from './iframe-porlet-legacy.component';
 import { RouterTestingModule } from '@angular/router/testing';
-import { SocketFactory, SiteService, LoginService } from 'dotcms-js/dotcms-js';
+import { SocketFactory, SiteService, LoginService } from 'dotcms-js';
 import { DotIframeEventsHandler } from './services/iframe-events-handler.service';
 
 describe('IframePortletLegacyComponent', () => {

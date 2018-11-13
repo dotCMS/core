@@ -1,4 +1,4 @@
-import { ResponseView } from 'dotcms-js/dotcms-js';
+import { ResponseView } from 'dotcms-js';
 import { ResponseOptions, Response } from '@angular/http';
 
 export const mockResponseView = (status, url?) =>

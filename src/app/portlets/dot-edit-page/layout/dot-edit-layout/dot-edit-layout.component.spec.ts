@@ -6,7 +6,7 @@ import { DOTTestBed } from '../../../../test/dot-test-bed';
 import { DotEditLayoutAdvancedModule } from '../dot-edit-layout-advanced/dot-edit-layout-advanced.module';
 import { DotEditLayoutComponent } from './dot-edit-layout.component';
 import { DotEditLayoutDesignerModule } from '../dot-edit-layout-designer/dot-edit-layout-designer.module';
-import { LoginService, SiteService } from 'dotcms-js/dotcms-js';
+import { LoginService, SiteService } from 'dotcms-js';
 import { LoginServiceMock } from '../../../../test/login-service.mock';
 import { RouterTestingModule } from '@angular/router/testing';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';

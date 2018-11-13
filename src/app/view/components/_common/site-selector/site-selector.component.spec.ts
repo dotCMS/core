@@ -8,7 +8,7 @@ import { SearchableDropDownModule } from '../searchable-dropdown/searchable-drop
 import { DotMessageService } from '@services/dot-messages-service';
 import { MockDotMessageService } from '../../../../test/dot-message-service.mock';
 import { SiteServiceMock, mockSites } from '../../../../test/site-service.mock';
-import { SiteService } from 'dotcms-js/dotcms-js';
+import { SiteService } from 'dotcms-js';
 import { SearchableDropdownComponent } from '../searchable-dropdown/component/searchable-dropdown.component';
 import { PaginatorService } from '@services/paginator';
 import { IframeOverlayService } from '../iframe/service/iframe-overlay.service';

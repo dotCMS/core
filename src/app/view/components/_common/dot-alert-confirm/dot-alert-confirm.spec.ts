@@ -2,7 +2,7 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { DotAlertConfirmService } from '@services/dot-alert-confirm/dot-alert-confirm.service';
 import { DebugElement } from '@angular/core/src/debug/debug_node';
 import { LoginServiceMock } from '../../../../test/login-service.mock';
-import { LoginService } from 'dotcms-js/dotcms-js';
+import { LoginService } from 'dotcms-js';
 import { DOTTestBed } from '../../../../test/dot-test-bed';
 import { DotAlertConfirmComponent } from './dot-alert-confirm';
 import { async, ComponentFixture, fakeAsync } from '@angular/core/testing';

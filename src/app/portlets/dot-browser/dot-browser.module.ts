@@ -19,7 +19,7 @@ import {
     DotSiteSelectorModule,
     DotSiteTreeTableModule,
     DotTreeableDetailModule
-} from 'dotcms-js/dotcms-js';
+} from 'dotcms-js';
 import { Routes, RouterModule } from '@angular/router';
 import { DotDirectivesModule } from '@shared/dot-directives.module';
 

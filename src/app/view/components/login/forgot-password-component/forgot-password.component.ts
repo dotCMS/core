@@ -1,5 +1,5 @@
 import { Component, EventEmitter, Input, Output, ViewEncapsulation, OnInit } from '@angular/core';
-import { LoginService, LoggerService } from 'dotcms-js/dotcms-js';
+import { LoginService, LoggerService } from 'dotcms-js';
 
 @Component({
     encapsulation: ViewEncapsulation.Emulated,

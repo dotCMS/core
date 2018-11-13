@@ -1,5 +1,5 @@
 import { DotAlertConfirmService } from '../dot-alert-confirm/dot-alert-confirm.service';
-import { LoginService, ResponseView } from 'dotcms-js/dotcms-js';
+import { LoginService, ResponseView } from 'dotcms-js';
 import { DOTTestBed } from '../../../test/dot-test-bed';
 import { DotRouterService } from '../dot-router/dot-router.service';
 import { RouterTestingModule } from '@angular/router/testing';

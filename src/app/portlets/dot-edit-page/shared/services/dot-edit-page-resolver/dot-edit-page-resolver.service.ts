@@ -3,7 +3,7 @@ import { Injectable } from '@angular/core';
 import { Resolve, ActivatedRouteSnapshot } from '@angular/router';
 import { Response, Headers } from '@angular/http';
 
-import { ResponseView, HttpCode } from 'dotcms-js/dotcms-js';
+import { ResponseView, HttpCode } from 'dotcms-js';
 
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { DotRenderedPageState } from '../../models/dot-rendered-page-state.model';

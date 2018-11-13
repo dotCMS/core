@@ -18,17 +18,22 @@ import { AceEditorComponent } from 'ng2-ace-editor';
 export class DotTextareaContentComponent implements OnInit, ControlValueAccessor {
     @ViewChild('ace')
     ace: AceEditorComponent;
+
     @Input()
     code: any = {
         mode: 'text',
         options: {}
     };
+
     @Input()
     height: string;
+
     @Input()
     show;
+
     @Input()
     value = '';
+
     @Input()
     width: string;
 
@@ -63,6 +68,22 @@ export class DotTextareaContentComponent implements OnInit, ControlValueAccessor
             width: this.width || '100%',
             height: this.height || '300px'
         };
+    }
+
+
+    /**
+     * Prevent enter to propagate
+     *
+     * @param {KeyboardEvent} $event
+     * @memberof DotTextareaContentComponent
+     */
+    onKeyEnter($event: KeyboardEvent): void {
+        /*
+            This field is use in dot-dialog.component when we hit enter it triggers the "Accept"
+            action in the dialog, but for this case we don't want to do that because this fields
+            are multilines, which mean that "enter" should do a "next line".
+        */
+        $event.stopPropagation();
     }
 
     /**
