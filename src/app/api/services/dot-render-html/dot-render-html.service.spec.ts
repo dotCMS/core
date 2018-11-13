@@ -79,7 +79,7 @@ describe('DotRenderHTMLService', () => {
         };
 
         expect(lastConnection[0].request.url).toContain(
-            '/api/v1/page/render/about-us?mode=EDIT_MODE'
+            'v1/page/render/about-us?mode=EDIT_MODE'
         );
         expect(result).toEqual(mockDotRenderedPage);
         expect(editPageService.get).toHaveBeenCalledWith(expectedResponse);
@@ -101,7 +101,7 @@ describe('DotRenderHTMLService', () => {
             )
         );
         expect(lastConnection[0].request.url).toContain(
-            '/api/v1/page/render/about-us?mode=PREVIEW_MODE'
+            'v1/page/render/about-us?mode=PREVIEW_MODE'
         );
         expect(result).toEqual(mockDotRenderedPage);
     });
@@ -122,7 +122,7 @@ describe('DotRenderHTMLService', () => {
             )
         );
         expect(lastConnection[0].request.url).toContain(
-            '/api/v1/page/render/about-us?mode=ADMIN_MODE'
+            'v1/page/render/about-us?mode=ADMIN_MODE'
         );
         expect(result).toEqual(mockDotRenderedPage);
     });
@@ -147,7 +147,7 @@ describe('DotRenderHTMLService', () => {
             )
         );
         expect(lastConnection[0].request.url).toContain(
-            '/api/v1/page/render/about-us?mode=EDIT_MODE'
+            'v1/page/render/about-us?mode=EDIT_MODE'
         );
         expect(result).toEqual(mockDotRenderedPage);
     });
@@ -174,7 +174,7 @@ describe('DotRenderHTMLService', () => {
             )
         );
         expect(lastConnection[0].request.url).toContain(
-            '/api/v1/page/render/about-us?language_id=2'
+            'v1/page/render/about-us?language_id=2'
         );
         expect(result).toEqual(mockDotRenderedPage);
     });
@@ -202,7 +202,7 @@ describe('DotRenderHTMLService', () => {
             )
         );
         expect(lastConnection[0].request.url).toContain(
-            '/api/v1/page/render/about-us?mode=EDIT_MODE&language_id=2'
+            'v1/page/render/about-us?mode=EDIT_MODE&language_id=2'
         );
         expect(result).toEqual(mockDotRenderedPage);
     });
