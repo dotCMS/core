@@ -92,6 +92,7 @@ public class BinaryExporterServlet extends HttpServlet {
 	private static final FileAssetAPI fileAssetAPI = APILocator.getFileAssetAPI();
 	private static final UserAPI userAPI = APILocator.getUserAPI();
 	Map<String, BinaryContentExporter> exportersByPathMapping;
+	private final ContentletAPI contentAPI = APILocator.getContentletAPI();
 
 	private long defaultLang = APILocator.getLanguageAPI().getDefaultLanguage().getId();
 
@@ -181,7 +182,6 @@ public class BinaryExporterServlet extends HttpServlet {
 		}
 
 		UserWebAPI userWebAPI = WebAPILocator.getUserWebAPI();
-		ContentletAPI contentAPI = APILocator.getContentletAPI();
 		BinaryContentExporter.BinaryContentExporterData data = null;
 		File inputFile = null;
 		HttpSession session = req.getSession(false);
@@ -210,11 +210,18 @@ public class BinaryExporterServlet extends HttpServlet {
 			if (isContent){
 				Contentlet content = null;
 				if(byInode) {
-					if(isTempBinaryImage)
+
+					if (isTempBinaryImage)
 						content = contentAPI.find(assetInode, APILocator.getUserAPI().getSystemUser(), mode.respectAnonPerms);
-					else
-						content = contentAPI.find(assetInode, user, mode.respectAnonPerms);
-					assetIdentifier = content.getIdentifier();
+					else {
+						try {
+							content = contentAPI.find(assetInode, user, mode.respectAnonPerms);
+						} catch(DotSecurityException e) {
+							if (!mode.respectAnonPerms) {
+								content = getContentletLiveVersion(assetInode, user, lang);
+							}
+						}
+					}
 				} else {
 				    boolean live=userWebAPI.isLoggedToFrontend(req);
 
@@ -622,6 +629,15 @@ public class BinaryExporterServlet extends HttpServlet {
 			
 		}
 		
+	}
+
+	private Contentlet getContentletLiveVersion(String assetInode, User user, long lang) throws DotDataException, DotSecurityException {
+		Contentlet content;
+		final Contentlet contentTemp = contentAPI.find(assetInode,
+				APILocator.getUserAPI().getSystemUser(), false);
+		content = contentAPI.findContentletByIdentifier(contentTemp.getIdentifier(),
+				true, lang, user, true);
+		return content;
 	}
 
 	@SuppressWarnings("unchecked")

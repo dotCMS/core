@@ -89,7 +89,6 @@ public class LanguageFactoryImpl extends LanguageFactory {
 
 	@Override
 	protected Language getLanguage(String languageCode, String countryCode) {
-
 		try {
 			languageCode = (languageCode != null) ? languageCode.toLowerCase() : null;
 			countryCode = (countryCode != null) ? countryCode.toLowerCase() : null;
