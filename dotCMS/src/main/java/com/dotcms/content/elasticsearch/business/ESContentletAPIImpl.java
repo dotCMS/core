@@ -4,6 +4,7 @@ import com.dotcms.api.system.event.ContentletSystemEventUtil;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.business.DotMappingException;
+import com.dotcms.content.elasticsearch.business.event.ContentletCheckinEvent;
 import com.dotcms.content.elasticsearch.business.event.ContentletDeletedEvent;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.field.CategoryField;
@@ -3488,10 +3489,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
           FileAsset asset = APILocator.getFileAssetAPI().fromContentlet(contentlet);
         }
 
-
-
         ActivityLogger.logInfo(getClass(), "Content Saved", "StartDate: " +contentPushPublishDate+ "; "
                 + "EndDate: " +contentPushExpireDate + "; User:" + user.getUserId() + "; ContentIdentifier: " + contentlet.getIdentifier(), contentlet.getHost());
+
+        // Creates the Local System event
+        this.createLocalCheckinEvent (contentlet, user, createNewVersion);
 
         //Create a System event for this contentlet
         if ( generateSystemEvent ) {
@@ -3503,6 +3505,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }finally{
           contentlet.cleanup();
         }
+    }
+
+    private void createLocalCheckinEvent(Contentlet contentlet, User user, boolean createNewVersion) throws DotHibernateException {
+
+        HibernateUtil.addCommitListener
+                (()-> this.localSystemEventsAPI.notify(new ContentletCheckinEvent(contentlet, createNewVersion, user)));
     }
 
     private void updateTemplateInAllLanguageVersions(final Contentlet contentlet, final User user)

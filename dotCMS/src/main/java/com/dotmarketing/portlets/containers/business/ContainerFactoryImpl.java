@@ -85,6 +85,20 @@ public class ContainerFactoryImpl implements ContainerFactory {
 	public List<Container> findAllContainers() throws DotDataException {
 
 		final List<Container> containers = new ArrayList<>();
+
+		try {
+			containers.addAll(this.findAllHostFolderAssetContainers());
+		} catch (DotSecurityException e) {
+			throw new DotDataException(e);
+		}
+
+		containers.addAll(this.findAllHostDataBaseContainers());
+
+		return containers;
+	}
+
+	private List<Container> findAllHostDataBaseContainers() throws DotDataException {
+
 		final String tableName 			 = Type.CONTAINERS.getTableName();
 		final StringBuilder sql = new StringBuilder()
 				.append("SELECT ")
@@ -99,19 +113,11 @@ public class ContainerFactoryImpl implements ContainerFactory {
 				.append(tableName)
 				.append(".title");
 
-		try {
-			containers.addAll(this.findAllHostFolderAssetContainers());
-		} catch (DotSecurityException e) {
-			throw new DotDataException(e);
-		}
-
-		containers.addAll(TransformerLocator.createContainerTransformer
-				(new DotConnect().setSQL(sql.toString()).loadObjectResults()).asList());
-
-		return containers;
+		return TransformerLocator.createContainerTransformer
+				(new DotConnect().setSQL(sql.toString()).loadObjectResults()).asList();
 	}
 
-    @Override
+	@Override
     @SuppressWarnings("unchecked")
     public Container find(final String inode) throws DotDataException, DotSecurityException {
       Container container = CacheLocator.getContainerCache().get(inode);
@@ -169,7 +175,7 @@ public class ContainerFactoryImpl implements ContainerFactory {
 		return this.fileAssetAPI.findFileAssetsByFolder(folder, user, false);
 	}
 
-	private boolean hasContainerAsset(Host host, Folder folder) {
+	private boolean hasContainerAsset(final Host host, final Folder folder) {
 		try {
 
 			final Identifier identifier = this.identifierAPI.find(host, builder(folder.getPath(),

@@ -4,7 +4,6 @@ import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
@@ -111,7 +110,6 @@ public class ContainerFinderStrategyResolver {
     /////////////
     private class IdentifierContainerFinderStrategyImpl  implements ContainerFinderStrategy {
 
-        private final VersionableAPI versionableAPI = APILocator.getVersionableAPI();
         private final ContainerAPI   containerAPI   = APILocator.getContainerAPI();
 
         @Override

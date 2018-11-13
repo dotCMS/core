@@ -32,6 +32,16 @@ public class ApplicationContainerFolderListener implements FolderListener {
     private final MultiTreeAPI  multiTreeAPI        = APILocator.getMultiTreeAPI();
 
     @Override
+    public void folderChildModified(FolderEvent folderEvent) {
+
+        // todo: create here the invalidation
+        // 1) if the file is content type, check if it exists
+        // 2) if it is container, preloop or postloop
+        // 3) checks if the container.vtl exists
+        // 4) invalidate the container
+    }
+
+    @Override
     public void folderChildDeleted(final FolderEvent folderEvent) {
 
         if (null != folderEvent && null != folderEvent.getChild()) {

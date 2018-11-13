@@ -408,9 +408,9 @@ public class ContainerResource implements Serializable {
                     .findFirst()
                     .orElse(null);
 
-            final StringWriter in  = new StringWriter();
-            final StringWriter out = new StringWriter();
-            in.append("#set ($contentletList")
+            final StringWriter inputWriter  = new StringWriter();
+            final StringWriter outputWriter = new StringWriter();
+            inputWriter.append("#set ($contentletList")
                     .append(container.getIdentifier())
                     .append(" = [")
                     .append(contentlet.getIdentifier())
@@ -425,11 +425,11 @@ public class ContainerResource implements Serializable {
                     .append("\")");
 
             VelocityUtil.getEngine()
-                    .evaluate(context, out, this.getClass()
-                            .getName(), IOUtils.toInputStream(in.toString()));
+                    .evaluate(context, outputWriter, this.getClass()
+                            .getName(), IOUtils.toInputStream(inputWriter.toString()));
 
             final Map<String, String> response = new HashMap<>();
-            response.put("render", out.toString());
+            response.put("render", outputWriter.toString());
 
             final Response.ResponseBuilder responseBuilder = Response.ok(response);
 

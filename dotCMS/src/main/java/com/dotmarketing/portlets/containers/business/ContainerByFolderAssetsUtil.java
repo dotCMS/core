@@ -165,7 +165,7 @@ public class ContainerByFolderAssetsUtil {
 
             this.removeDefaultMetaDataNames(map);
 
-            for (Map.Entry<String, Object> entry : map.entrySet()) {
+            for (final Map.Entry<String, Object> entry : map.entrySet()) {
 
                 container.addMetaData (entry.getKey(), entry.getValue());
             }

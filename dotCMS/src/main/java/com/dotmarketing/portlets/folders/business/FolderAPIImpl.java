@@ -4,6 +4,7 @@ import com.dotcms.api.system.event.*;
 import com.dotcms.api.system.event.verifier.ExcludeOwnerVerifierBean;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.content.elasticsearch.business.event.ContentletCheckinEvent;
 import com.dotcms.content.elasticsearch.business.event.ContentletDeletedEvent;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.FileAssetContentType;
@@ -39,6 +40,7 @@ import org.apache.commons.lang.StringUtils;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -923,7 +925,32 @@ public class FolderAPIImpl implements FolderAPI  {
 					FolderAPIImpl.this.triggerChildDeleteEvent(event, folder, folderListener, childNameFilter);
 				}
 			});
+
+			this.localSystemEventsAPI.subscribe(ContentletCheckinEvent.class, new EventSubscriber<ContentletCheckinEvent>() {
+
+				@Override
+				public String getId() {
+
+					return folderListener.getId() + StringPool.FORWARD_SLASH + ContentletCheckinEvent.class.getName();
+				}
+
+				@Override
+				public void notify(final ContentletCheckinEvent event) {
+
+					FolderAPIImpl.this.triggerChildModifiedEvent(event, folder, folderListener, childNameFilter);
+				}
+			});
 		}
+	}
+
+	private void triggerChildModifiedEvent(final ContentletCheckinEvent event,
+										   final Folder parentFolder,
+										   final FolderListener folderListener,
+										   final Predicate<String> childNameFilter) {
+
+		final Contentlet contentlet = event.getContentlet();
+		this.triggerChildEvent(contentlet, event.getUser(), event.getDate(), parentFolder, childNameFilter,
+				folderEvent-> folderListener.folderChildModified(folderEvent));
 	}
 
 	private void triggerChildDeleteEvent(final ContentletDeletedEvent event,
@@ -932,6 +959,13 @@ public class FolderAPIImpl implements FolderAPI  {
 										 final Predicate<String> childNameFilter) {
 
 		final Contentlet contentlet = event.getContentlet();
+		this.triggerChildEvent(contentlet, event.getUser(), event.getDate(), parentFolder, childNameFilter,
+				folderEvent-> folderListener.folderChildDeleted(folderEvent));
+	} // triggerChildDeleteEvent
+
+	private void triggerChildEvent (final Contentlet contentlet, final User user, final Date date,
+									final Folder parentFolder, final Predicate<String> childNameFilter,
+									final Consumer<FolderEvent> folderEventConsumer) {
 
 		if (null != contentlet && (contentlet instanceof IFileAsset || contentlet.getContentType() instanceof FileAssetContentType)) {
 
@@ -939,22 +973,23 @@ public class FolderAPIImpl implements FolderAPI  {
 
 				final String name = contentlet instanceof  IFileAsset?
 						IFileAsset.class.cast(contentlet).getFileName(): (String)contentlet.getMap().get("fileName");
+
 				if (null != childNameFilter && !childNameFilter.test(name)) {
 					return;
 				}
 
 				final String fileAssetFolderParentId = contentlet instanceof  IFileAsset?
-					IFileAsset.class.cast(contentlet).getParent(): (String)contentlet.getMap().get(Contentlet.FOLDER_KEY);
+						IFileAsset.class.cast(contentlet).getParent(): (String)contentlet.getMap().get(Contentlet.FOLDER_KEY);
 
 				final Folder childFolder = this.find(fileAssetFolderParentId, APILocator.systemUser(), false);
 				if (null != childFolder && this.isChildFolder(childFolder, parentFolder)) {
 
-					folderListener.folderChildDeleted(
-							new FolderEvent(UUIDUtil.uuid(), event.getUser(), contentlet, name, childFolder, event.getDate()));
+					folderEventConsumer.accept(
+							new FolderEvent(UUIDUtil.uuid(), user, contentlet, name, childFolder, date));
 				}
 			} catch (DotSecurityException | DotDataException e) {
 				Logger.error(this, e.getMessage(), e);
 			}
 		}
-	} // triggerChildDeleteEvent
+	}
 }

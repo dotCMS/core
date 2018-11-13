@@ -15,7 +15,7 @@ public interface TemplatePathStrategy {
      * @param arguments
      * @return boolean
      */
-    boolean test(final Context context, final RenderParams params, final String[] arguments);
+    boolean test(final Context context, final RenderParams params, final String... arguments);
 
     /**
      * Applies the strategy
@@ -24,5 +24,5 @@ public interface TemplatePathStrategy {
      * @param arguments
      * @return String
      */
-    String apply(final Context context, final RenderParams params, final String[] arguments);
+    String apply(final Context context, final RenderParams params, final String... arguments);
 }

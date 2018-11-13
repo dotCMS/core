@@ -22,8 +22,8 @@ public interface ContainerFactory {
 	 * @param container
 	 * @throws DotDataException
 	 */
-	public void save(Container container) throws DotDataException;
-	public void save(Container container, String existingId) throws DotDataException;
+	void save(Container container) throws DotDataException;
+	void save(Container container, String existingId) throws DotDataException;
 	
     /**
      * Finds all containers attached to a host
@@ -31,14 +31,14 @@ public interface ContainerFactory {
      * @return
      * @throws DotDataException
      */
-    public List<Container> findContainersUnder(Host parentPermissionable) throws DotDataException;
+    List<Container> findContainersUnder(Host parentPermissionable) throws DotDataException;
 
     /**
      * Retrieves all registered containers in the system
      * @return
      * @throws DotDataException 
      */
-	public List<Container> findAllContainers() throws DotDataException;
+    List<Container> findAllContainers() throws DotDataException;
 	
 	/**
 	 * Retrieves a paginated list of containers the user can use
@@ -57,7 +57,7 @@ public interface ContainerFactory {
 	 * @throws DotSecurityException
 	 * @throws DotDataException
 	 */
-	public List<Container> findContainers(User user, boolean includeArchived, Map<String,Object> params, String hostId, String inode, String identifier, String parent, int offset, int limit, String orderBy) throws DotSecurityException, DotDataException;
+	List<Container> findContainers(User user, boolean includeArchived, Map<String,Object> params, String hostId, String inode, String identifier, String parent, int offset, int limit, String orderBy) throws DotSecurityException, DotDataException;
 
 	/**
 	 * Get a container based on a folder (non-db)
@@ -72,7 +72,7 @@ public interface ContainerFactory {
 	 * @throws DotSecurityException
 	 * @throws DotDataException
 	 */
-	public Container getContainerByFolder(final Host host, final Folder folder, final User user, final boolean showLive) throws DotSecurityException, DotDataException;
+	Container getContainerByFolder(final Host host, final Folder folder, final User user, final boolean showLive) throws DotSecurityException, DotDataException;
 
 	/**
 	 * Get working container by folder path
@@ -84,7 +84,7 @@ public interface ContainerFactory {
 	 * @throws DotSecurityException
 	 * @throws DotDataException
 	 */
-	public Container getWorkingContainerByFolderPath(final String path, final Host host, final User user,
+	Container getWorkingContainerByFolderPath(final String path, final Host host, final User user,
 													 final boolean respectFrontEndPermissions) throws DotSecurityException, DotDataException;
 
 
@@ -101,7 +101,7 @@ public interface ContainerFactory {
 	Container getLiveContainerByFolderPath(String path, Host host, User user,
 										   boolean respectFrontEndPermissions) throws DotSecurityException, DotDataException;
 
-    public List<Container> findContainersForStructure(String structureIdentifier) throws DotDataException;
+	List<Container> findContainersForStructure(String structureIdentifier) throws DotDataException;
 
 	/**
 	 * Search Containers associated with a specific Structure
@@ -110,7 +110,7 @@ public interface ContainerFactory {
 	 * @return list of container
 	 * @throws DotDataException
 	 */
-	public List<Container> findContainersForStructure(String structureIdentifier, boolean workingOrLiveOnly) throws DotDataException;
+	List<Container> findContainersForStructure(String structureIdentifier, boolean workingOrLiveOnly) throws DotDataException;
 	
     /**
 	 * Method will replace user references of the given userId in containers 
@@ -121,7 +121,8 @@ public interface ContainerFactory {
 	 * @throws DotStateException There is a data inconsistency
 	 * @throws DotSecurityException 
 	 */
-	public void updateUserReferences(String userId, String replacementUserId)throws DotDataException, DotSecurityException;
+    void updateUserReferences(String userId, String replacementUserId)throws DotDataException, DotSecurityException;
+
     /**
      * Finds a container by Inode
      * @param inode {@link String}

@@ -236,12 +236,12 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 	@CloseDBIfOpened
 	@Override
 	@SuppressWarnings("unchecked")
-	public Container getWorkingContainerById(final String id, final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+	public Container getWorkingContainerById(final String identifierParameter, final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 
-        final  Identifier  identifier = APILocator.getIdentifierAPI().find(id);
+        final  Identifier  identifier = APILocator.getIdentifierAPI().find(identifierParameter);
         return this.isContainerFile(identifier)?
                 this.getWorkingContainerByFolderPath(identifier.getParentPath(), identifier.getHostId(), user, respectFrontendRoles):
-                this.getWorkingVersionInfoContainerById(id, user, respectFrontendRoles);
+                this.getWorkingVersionInfoContainerById(identifierParameter, user, respectFrontendRoles);
 	}
 
     private boolean isContainerFile(final Identifier identifier) {
@@ -311,11 +311,11 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
             throws DotStateException, DotDataException, DotSecurityException {
 
         final List<Container> containers  = new ArrayList<>();
-        final DotConnect dc = new DotConnect()
+        final DotConnect dotConnect = new DotConnect()
 				.setSQL("select * from identifier where id in (select distinct(parent2) as containers from multi_tree where parent1=?)")
         		.addParam(page.getIdentifier());
 
-        final List<Identifier> identifiers   = TransformerLocator.createIdentifierTransformer(dc.loadObjectResults()).asList();
+        final List<Identifier> identifiers   = TransformerLocator.createIdentifierTransformer(dotConnect.loadObjectResults()).asList();
         final List<Container> pageContainers = new ArrayList<>();
 
         for (final Identifier id : identifiers) {

@@ -211,14 +211,14 @@ public class TemplatePathStrategyResolver {
                     shortyIdOptional.get().longId:identifier;
         }
 
-        private boolean isIdentifier (final String id) {
+        private boolean isIdentifier (final String identifier) {
 
             boolean isIdentifier = false;
-            isIdentifier |= UUIDUtil.isUUID(id);
+            isIdentifier |= UUIDUtil.isUUID(identifier);
 
             if (!isIdentifier) {
                 try {
-                    APILocator.getShortyAPI().validShorty(id);
+                    APILocator.getShortyAPI().validShorty(identifier);
                     isIdentifier = true;
                 } catch (Exception e) {
                     isIdentifier = false;

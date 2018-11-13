@@ -7,7 +7,7 @@ import java.util.Date;
 
 public class FolderEvent {
 
-    private final String id;
+    private final String identifier;
     private final User   user;
     private final Object child;
     private final String childName;
@@ -17,7 +17,7 @@ public class FolderEvent {
     public FolderEvent(final String id, final User user, final Object child,
                        final String childName, final Folder parent, final Date date) {
 
-        this.id    = id;
+        this.identifier = id;
         this.user  = user;
         this.child = child;
         this.childName = childName;
@@ -25,8 +25,8 @@ public class FolderEvent {
         this.date   = date;
     }
 
-    public String getId() {
-        return id;
+    public String getIdentifier() {
+        return identifier;
     }
 
     public Object getChild() {

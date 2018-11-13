@@ -16,8 +16,13 @@ public interface FolderListener {
 
     /**
      * When a child is deleted this event is triggered
-     * @param folderChildDeletedEvent {@link FolderEvent}
+     * @param folderEvent {@link FolderEvent}
      */
-    default void folderChildDeleted(FolderEvent folderChildDeletedEvent) { }
+    default void folderChildDeleted(FolderEvent folderEvent) { }
 
+    /**
+     * When a child is being modified this event is triggered
+     * @param folderEvent {@link FolderEvent}
+     */
+    default void folderChildModified(FolderEvent folderEvent) {}
 }
