@@ -575,7 +575,7 @@ public class FieldAPITest extends IntegrationTestBase {
         }
     }
 
-    @Test(expected = DotDataException.class)
+    /*@Test(expected = DotDataException.class)
     public void testSavedRelationshipFieldWithInvalidRelationType()
             throws DotSecurityException, DotDataException {
         final long time = System.currentTimeMillis();
@@ -602,7 +602,7 @@ public class FieldAPITest extends IntegrationTestBase {
                 contentTypeAPI.delete(parentContentType);
             }
         }
-    }
+    }*/
 
     @Test
     public void testSaveRelationshipFieldBothSidesRequired()
