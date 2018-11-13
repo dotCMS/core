@@ -166,6 +166,10 @@ public class ContentUtils {
 		}
 		
 		public static PaginatedArrayList<Contentlet> pull(String query, int offset,int limit, String sort, User user, String tmDate){
+			return pull(query, offset, limit, sort, user, tmDate, false);
+		}
+
+		public static PaginatedArrayList<Contentlet> pull(String query, int offset,int limit, String sort, User user, String tmDate, boolean respectFrontendRoles){
 		    PaginatedArrayList<Contentlet> ret = new PaginatedArrayList<Contentlet>();
 		    
 			try {
@@ -184,8 +188,8 @@ public class ContentUtils {
 		            				" TO "+ffdate+"] "+notexpired;
 		            String lquery=query + " +live:true " + notexpired;
 		            
-		            PaginatedArrayList<Contentlet> wc=(PaginatedArrayList<Contentlet>)conAPI.search(wquery, limit, offset, sort, user, true);
-		            PaginatedArrayList<Contentlet> lc=(PaginatedArrayList<Contentlet>)conAPI.search(lquery, limit, offset, sort, user, true);
+		            PaginatedArrayList<Contentlet> wc=(PaginatedArrayList<Contentlet>)conAPI.search(wquery, limit, offset, sort, user, respectFrontendRoles);
+		            PaginatedArrayList<Contentlet> lc=(PaginatedArrayList<Contentlet>)conAPI.search(lquery, limit, offset, sort, user, respectFrontendRoles);
 		            ret.setQuery(lquery);
 		            // merging both results avoiding repeated inodes
 		            Set<String> inodes=new HashSet<String>();
@@ -233,7 +237,7 @@ public class ContentUtils {
 			    }
 			    else {
 			        // normal query
-			        PaginatedArrayList<Contentlet> conts=(PaginatedArrayList<Contentlet>)conAPI.search(query, limit, offset, sort, user, true);
+			        PaginatedArrayList<Contentlet> conts=(PaginatedArrayList<Contentlet>)conAPI.search(query, limit, offset, sort, user, respectFrontendRoles);
 			        ret.setTotalResults(conts.getTotalResults());
 			        ret.setQuery(query);
 			        contentlets=conts;

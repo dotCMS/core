@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.contentlet.model;
 
+import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
@@ -48,6 +49,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
+
 import org.apache.commons.lang.builder.ToStringBuilder;
 
 /**
@@ -757,6 +760,29 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 		return (String) map.get(HOST_KEY);
 	}
 
+    private transient Optional<com.dotcms.contenttype.model.field.Field> titleImageFieldVar = null;
+
+    public Optional<com.dotcms.contenttype.model.field.Field> getTitleImage() {
+
+        if (this.titleImageFieldVar != null)
+            return this.titleImageFieldVar;
+        try {
+            this.titleImageFieldVar = this.getContentType().fields().stream().filter(f -> {
+                try {
+                    return (f instanceof BinaryField && UtilMethods.isImage(this.getBinary(f.variable()).toString()));
+                } catch (Exception e) {
+                    return false;
+                }
+            }).findFirst();
+
+        } catch (Exception e) {
+            Logger.debug(this.getClass(), e.getMessage(), e);
+        }
+        return this.titleImageFieldVar;
+    }
+	
+	
+	
 	/**
 	 * 
 	 * @param host

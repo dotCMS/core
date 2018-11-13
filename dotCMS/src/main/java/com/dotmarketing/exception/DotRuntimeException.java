@@ -6,20 +6,15 @@ package com.dotmarketing.exception;
 
 
 public class DotRuntimeException extends RuntimeException {
-	
 	private static final long serialVersionUID = 1L;
 
-	
-	public DotRuntimeException(String x){
-		super(x);
-
-		
+	public DotRuntimeException(String message){
+		super(message);
 	}
-	public DotRuntimeException(Throwable x){
-		this(x.getMessage(),x);
+	public DotRuntimeException(Throwable cause){
+		this(cause.getMessage(),cause);
 	}
-	public DotRuntimeException(String x, Throwable e){
-		super(x, e);
+	public DotRuntimeException(String message, Throwable cause){
+		super(message, cause);
 	}
-
 }

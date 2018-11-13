@@ -1,12 +1,20 @@
 package com.dotmarketing.quartz.job;
 
+import com.dotcms.api.system.event.Visibility;
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.notifications.bean.NotificationLevel;
+import com.dotcms.notifications.bean.NotificationType;
+import com.dotcms.notifications.business.NotificationAPI;
+import com.dotcms.util.I18NMessage;
+import com.dotmarketing.business.web.WebAPILocator;
+import com.liferay.portal.PortalException;
+import com.liferay.portal.SystemException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Map;
 import java.util.UUID;
 
-import org.quartz.Job;
 import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
 import org.quartz.JobExecutionContext;
@@ -33,6 +41,7 @@ import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import org.quartz.StatefulJob;
 
 /**
  * This job is called when the permissions on a given {@link Permissionable} have changed. A
@@ -41,7 +50,18 @@ import com.dotmarketing.util.UtilMethods;
  * 
  * @author David H Torres
  */
-public class ResetPermissionsJob implements Job {
+public class ResetPermissionsJob implements StatefulJob {
+
+	private final UserAPI userAPI;
+	private final NotificationAPI notificationAPI;
+	private final HostAPI hostAPI;
+
+	public ResetPermissionsJob() {
+		hostAPI = APILocator.getHostAPI();
+		userAPI = APILocator.getUserAPI();
+
+		notificationAPI = APILocator.getNotificationAPI();
+	}
 	
     /**
      * Triggers the execution of this permission rest job on the specified {@link Permissionable}.
@@ -52,9 +72,24 @@ public class ResetPermissionsJob implements Job {
 	public static void triggerJobImmediately (final Permissionable perm) {
 		final String randomID = UUID.randomUUID().toString();
 		final JobDataMap dataMap = new JobDataMap();
+
+		String userId = null;
 		
 		dataMap.put("permissionableId", perm.getPermissionId());
-		
+
+		//TODO: For a major release, remove this logic and get userId as parameter
+		try {
+			if (UtilMethods.isSet(HttpServletRequestThreadLocal.INSTANCE.getRequest())){
+				userId = WebAPILocator.getUserWebAPI()
+						.getLoggedInUser(HttpServletRequestThreadLocal.INSTANCE.getRequest())
+						.getUserId();
+			}
+			dataMap.put("userId", userId);
+		} catch (PortalException | SystemException e) {
+			Logger.warn(CascadePermissionsJob.class, "Error getting user info for notification", e);
+		}
+
+
 		final JobDetail jd = new JobDetail("ResetPermissionsJob-" + randomID, "dotcms_jobs", ResetPermissionsJob.class);
 		jd.setJobDataMap(dataMap);
 		jd.setDurability(false);
@@ -77,10 +112,6 @@ public class ResetPermissionsJob implements Job {
 		}
 
 	}
-	
-	public ResetPermissionsJob() {
-		
-	}
 
 	/**
      * Triggers the permission reset operation on a given Permissionable object.
@@ -91,26 +122,51 @@ public class ResetPermissionsJob implements Job {
 	@WrapInTransaction
 	public void execute(JobExecutionContext jobContext) throws JobExecutionException {
 		
-		JobDataMap map = jobContext.getJobDetail().getJobDataMap();
+		final JobDataMap map = jobContext.getJobDetail().getJobDataMap();
 
-		PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+		final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
 		
-		String permissionableId = (String) map.get("permissionableId");
+		final String permissionableId = (String) map.get("permissionableId");
+		final String userId = (String) map.get("userId");
+
 		try {
-			Permissionable permissionable = retrievePermissionable(permissionableId);
+			final Permissionable permissionable = retrievePermissionable(permissionableId);
 			permissionAPI.resetPermissionsUnder(permissionable);
+
+			if (UtilMethods.isSet(userId)){
+				notificationAPI.generateNotification(
+						new I18NMessage("notification.identifier.resetpermissionsjob.info.title"),
+						new I18NMessage("notification.reset.permissions.success"),
+						null, // no actions
+						NotificationLevel.INFO,
+						NotificationType.GENERIC, Visibility.USER, userId, userId,
+						userAPI.getSystemUser().getLocale()
+
+				);
+			}
 		} catch (DotDataException | DotSecurityException e) {
 			Logger.error(this, e.getMessage(), e);
+			if (UtilMethods.isSet(userId)){
+				try {
+					notificationAPI.generateNotification(
+                            new I18NMessage("notification.identifier.resetpermissionsjob.info.title"),
+                            new I18NMessage("notification.reset.permissions.error"),
+                            null, // no actions
+                            NotificationLevel.ERROR,
+							NotificationType.GENERIC, Visibility.USER, userId, userId,
+							userAPI.getSystemUser().getLocale()
+					);
+				} catch (DotDataException e1) {
+					Logger.error(this, e.getMessage(), e);
+				}
+			}
 			throw new DotRuntimeException(e.getMessage(), e);
 		}
 	}
 	
 	private Permissionable retrievePermissionable (String assetId) throws DotDataException, DotSecurityException {
-		
-		UserAPI userAPI = APILocator.getUserAPI();
-		HostAPI hostAPI = APILocator.getHostAPI();
-		
-		Permissionable perm = null;
+
+		Permissionable perm;
 		
 		//Determining the type
 		

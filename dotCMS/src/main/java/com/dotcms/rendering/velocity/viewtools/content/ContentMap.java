@@ -441,7 +441,7 @@ public class ContentMap {
 	}
 	public boolean isWorking() throws Exception {
 	    return content.isWorking();
-	}
+	}	
 
 	public String toString() {
 		getContentletsTitle();

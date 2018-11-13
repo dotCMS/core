@@ -70,7 +70,7 @@ public class DotJSONCacheImpl extends DotJSONCache {
                     final LocalDateTime cachedSince = dotJSON.getCachedSince();
 
                     final LocalDateTime cachedSincePlusTTL = cachedSince.plus(dotJSON.getCacheTTL(),
-                            ChronoField.MILLI_OF_DAY.getBaseUnit());
+                            ChronoField.SECOND_OF_DAY.getBaseUnit());
 
                     if (cachedSincePlusTTL.isAfter(LocalDateTime.now())) {
                         dotJSONOptional = Optional.of(dotJSON);

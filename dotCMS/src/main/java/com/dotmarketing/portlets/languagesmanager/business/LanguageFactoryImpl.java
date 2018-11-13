@@ -41,6 +41,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import org.apache.struts.Globals;
 /**
@@ -107,7 +108,10 @@ public class LanguageFactoryImpl extends LanguageFactory {
 							"from language in class com.dotmarketing.portlets.languagesmanager.model.Language where lower(language_code) = ? and (country_code = '' OR country_code IS NULL)");
 					dh.setParam(languageCode);
 				}
-	            lang = (Language) dh.load();
+				@SuppressWarnings(value="unchecked")
+				final List<Language> list = dh.list();
+				Optional<Language> o = list.stream().findFirst();
+	            lang = (o.orElse(null));
 
 	            //Validate we are returning a valid Language object
 				if(lang != null && lang.getId() == 0){

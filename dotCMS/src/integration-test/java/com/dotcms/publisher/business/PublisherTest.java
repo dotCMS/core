@@ -71,12 +71,12 @@ public class PublisherTest extends IntegrationTestBase {
             adminUser     = APILocator.getUserAPI().loadByUserByEmail("admin@dotcms.com", APILocator.getUserAPI().getSystemUser(), false);
             folderPage    = this.createFolderPage("testFolderPublisher"+System.currentTimeMillis(), adminUser);
             ppBean        = this.createPushPublishEnv(adminUser);
-            pushResult    = this.pushFolderPage(folderPage, adminUser, ppBean);
+            pushResult    = this.pushFolderPage("folderPage1Test", folderPage, adminUser, ppBean);
             this.assertPushFolderPage(folderPage, pushResult);
-            pushResult    = this.removePushFolder(folderPage, adminUser, ppBean);
+            pushResult    = this.removePushFolder("removeFolderPage1Test", folderPage, adminUser, ppBean);
             this.assertRemoveFolder(folderPage, pushResult);
             folderPage    = this.createNewPage(folderPage, adminUser);
-            pushResult    = this.pushFolderPage(folderPage, adminUser, ppBean);
+            pushResult    = this.pushFolderPage("folderPage2Test", folderPage, adminUser, ppBean);
             this.assertPushFolderPage(folderPage, pushResult);
         } finally {
 
@@ -104,7 +104,7 @@ public class PublisherTest extends IntegrationTestBase {
         assertTrue("We should have 1 page on: " + folderPage.folder, bundlerStatus.get().getCount() != 0);
 
         assertTrue(PublisherTestUtil.existsFolder(pushResult.bundlePath, folderPage.folder));
-        assertTrue(PublisherTestUtil.existsPage(pushResult.bundlePath, host, 0, folderPage.folder, folderPage.page));
+        assertTrue(PublisherTestUtil.existsPage(pushResult.bundlePath, host, folderPage.folder, folderPage.page));
     }
 
     private void assertRemoveFolder(final FolderPage folderPage, final PushResult pushResult) throws Exception {
@@ -122,11 +122,11 @@ public class PublisherTest extends IntegrationTestBase {
         return new PPBean(environment, endPoint);
     }
 
-    private PushResult pushFolderPage(final FolderPage folderPage, final User user, final PPBean ppBean)
+    private PushResult pushFolderPage(final String bundleName, final FolderPage folderPage, final User user, final PPBean ppBean)
             throws DotDataException, DotPublisherException, InstantiationException, IllegalAccessException, DotSecurityException {
 
         final PublisherAPI publisherAPI = PublisherAPI.getInstance();
-        final Bundle bundle             = PublisherTestUtil.createBundle("folderPage1Test", user, ppBean.environment);
+        final Bundle bundle             = PublisherTestUtil.createBundle(bundleName, user, ppBean.environment);
         final String assetRealPath      = Config.getStringProperty("ASSET_REAL_PATH", "test-resources");
         final File tempDir              = new File(assetRealPath + "/bundles/" + System.currentTimeMillis());
 
@@ -155,11 +155,11 @@ public class PublisherTest extends IntegrationTestBase {
         return new FolderPage(folder, page);
     }
 
-    private PushResult removePushFolder(final FolderPage folderPage, final User user, final PPBean ppBean)
+    private PushResult removePushFolder(final String bundleName, final FolderPage folderPage, final User user, final PPBean ppBean)
             throws DotDataException, DotPublisherException, InstantiationException, IllegalAccessException, DotSecurityException {
 
         final PublisherAPI publisherAPI = PublisherAPI.getInstance();
-        final Bundle bundle             = PublisherTestUtil.createBundle("removeFolderPage1Test", user, ppBean.environment);
+        final Bundle bundle             = PublisherTestUtil.createBundle(bundleName, user, ppBean.environment);
         final String assetRealPath      = Config.getStringProperty("ASSET_REAL_PATH", "test-resources");
 
         final List<PublishQueueElement> assets = PublisherTestUtil.getAssets(bundle, folderPage.folder);

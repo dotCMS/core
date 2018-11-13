@@ -1,6 +1,9 @@
 package com.dotcms.contenttype.transform.field;
 
-import com.dotcms.contenttype.model.field.*;
+import static com.dotcms.util.CollectionsUtils.map;
+
+import com.dotcms.contenttype.model.field.ContentTypeFieldProperties;
+import com.dotcms.contenttype.model.field.ImmutableRelationshipField;
 import com.dotmarketing.util.UtilMethods;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -8,6 +11,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.FieldVariable;
+import com.dotcms.contenttype.model.field.ImmutableCategoryField;
+import com.dotcms.contenttype.model.field.ImmutableFieldVariable;
 import com.dotcms.contenttype.transform.JsonTransformer;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotmarketing.business.APILocator;
@@ -20,8 +27,6 @@ import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
-
-import static com.dotcms.util.CollectionsUtils.map;
 
 public class JsonFieldTransformer implements FieldTransformer, JsonTransformer {
 
@@ -100,12 +105,12 @@ public class JsonFieldTransformer implements FieldTransformer, JsonTransformer {
       JSONObject jo = new JSONObject(input);
 
       if (jo.has(CATEGORIES_PROPERTY_NAME)){
-        final Object categories = jo.get(CATEGORIES_PROPERTY_NAME);
-        jo.put("values", categories);
+          final JSONObject categories = (JSONObject) jo.get(CATEGORIES_PROPERTY_NAME);
+          jo.put("values", categories.get("inode"));
       } else if (jo.has(ContentTypeFieldProperties.RELATIONSHIPS.getName())) {
-        final JSONObject relationship = (JSONObject) jo.get(ContentTypeFieldProperties.RELATIONSHIPS.getName());
-        jo.put("values", relationship.get("cardinality"));
-        jo.put("relationType", relationship.get("velocityVar"));
+          final JSONObject relationship = (JSONObject) jo.get(ContentTypeFieldProperties.RELATIONSHIPS.getName());
+          jo.put("values", relationship.get("cardinality"));
+          jo.put("relationType", relationship.get("velocityVar"));
       }
 
       return (Field) mapper.readValue(jo.toString(), Field.class);
