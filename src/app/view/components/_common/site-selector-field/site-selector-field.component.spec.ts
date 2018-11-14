@@ -66,7 +66,6 @@ describe('SiteSelectorFieldComponent', () => {
         fixture = TestBed.createComponent(FakeFormComponent);
         component = fixture.componentInstance;
         de = fixture.debugElement;
-        fixture.detectChanges();
     });
 
     it('should have a site selector component', () => {
@@ -98,6 +97,7 @@ describe('SiteSelectorFieldComponent', () => {
     });
 
     it('should not update the value when current site change if already have a value', () => {
+        fixture.detectChanges();
         component.form.setValue({
             site: 'abc'
         });
@@ -138,6 +138,18 @@ describe('SiteSelectorFieldComponent', () => {
     });
 
     it('should not set current site when already hava a value', () => {
+        component.form.get('site').setValue('1234');
+        fixture.detectChanges();
+
+        const siteSelectorField: SiteSelectorFieldComponent = de.query(
+            By.css('dot-site-selector-field')
+        ).componentInstance;
+        console.log('siteSelectorField.value', siteSelectorField.value);
+        expect(siteSelectorField.value).toEqual('1234');
+    });
+
+    it('should not set current site when already hava a value and current site request is getting after onInit', () => {
+        spyOnProperty(siteServiceMock, 'currentSite', 'get').and.returnValue(null);
         component.form.get('site').setValue('1234');
         fixture.detectChanges();
 
