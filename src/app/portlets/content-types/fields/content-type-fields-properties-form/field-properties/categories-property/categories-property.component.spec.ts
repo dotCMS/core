@@ -148,5 +148,9 @@ describe('CategoriesPropertyComponent', () => {
             expect('filter').toBe(paginatorService.filter);
             expect(spyMethod).toHaveBeenCalledWith(0);
         });
+
+        it('should valuePropertyName be nuu', () => {
+            expect(searchableDropdown.componentInstance.valuePropertyName).toBeUndefined();
+        });
     });
 });
