@@ -72,7 +72,7 @@ public class WorkflowResourceResponseCodeIntegrationTest {
                 contentletAPI, responseUtil, permissionAPI, workflowImportExportUtil, webResource);
     }
 
-    @AfterClass
+    //@AfterClass
     public static void cleanup() throws Exception {
         doCleanUp(workflowResource, workflowAPI);
     }
