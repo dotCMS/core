@@ -128,9 +128,10 @@ public class WorkflowResourceLicenseIntegrationTest {
     }
 
 
-    //@AfterClass
+    @AfterClass
     public static void cleanup() throws Exception {
-        doCleanUp(licenseWorkflowResource, licensedWorkflowAPI);
+        doCleanUp(licensedWorkflowAPI);
+
     }
 
     @Test
