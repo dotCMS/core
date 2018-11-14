@@ -342,7 +342,10 @@ public class ContainerFactoryImpl implements ContainerFactory {
 			} catch (DotSecurityException e) {
 
 				Logger.debug(this, () -> "Does not have permission to read the folder container: " + subFolder.getPath());
-			}
+			} catch (NotFoundInDbException e) {
+
+                Logger.debug(this, () -> "The folder: " + subFolder.getPath() + ", is not a container");
+            }
 		}
 
 		return containers;

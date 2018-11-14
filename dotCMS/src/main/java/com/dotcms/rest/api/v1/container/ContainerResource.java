@@ -199,7 +199,7 @@ public class ContainerResource implements Serializable {
         final InitDataObject initData = this.webResource.init(true, req, true);
         final User user               = initData.getUser();
         final PageMode mode           = PageMode.EDIT_MODE;
-        final Language landId         = WebAPILocator.getLanguageWebAPI().getLanguage(req);
+        final Language landId         = WebAPILocator.getLanguageWebAPI().getLanguage(req); // todo: used
         
         PageMode.setPageMode(req, PageMode.EDIT_MODE);
 

@@ -177,6 +177,7 @@ public class ContainerFinderStrategyResolver {
             return path.substring(hostIndexOf + hostName.length(), lastSlash);
         }
 
+        // /EDIT_MODE///demo.dotcms.com/application/containers/test?languageid=1/LEGACY_RELATION_TYPE.container
         // /EDIT_MODE///demo.dotcms.com/application/containers/test/LEGACY_RELATION_TYPE.container
 
         private Host getHost (final String path) {

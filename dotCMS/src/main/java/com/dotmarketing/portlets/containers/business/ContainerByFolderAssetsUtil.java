@@ -35,9 +35,9 @@ public class ContainerByFolderAssetsUtil {
     private static String [] DEFAULT_META_DATA_NAMES_ARRAY
             = new String[] { TITLE, FRIENDLY_NAME, MAX_CONTENTLETS, NOTES};
 
-    private static final String PRE_LOOP             = "preloop.vtl";
-    private static final String POST_LOOP            = "postloop.vtl";
-    private static final String CONTAINER_META_INFO  = "container.vtl";
+    static final String PRE_LOOP             = "preloop.vtl";
+    static final String POST_LOOP            = "postloop.vtl";
+    static final String CONTAINER_META_INFO  = "container.vtl";
 
 
     private static class SingletonHolder {
