@@ -92,10 +92,25 @@ public class ThemeResourceIntegrationTest {
     public void test_FindThemes_WhenHostIdIsSentAndPerPageEquals1_Returns1Theme()
             throws Throwable {
         final ThemeResource resource = new ThemeResource();
+
         final Response response = resource.findThemes(getHttpRequest(), host.getIdentifier(), 0, 1,
                 OrderDirection.ASC.name(), null);
 
         validateFindThemesResponse(response, 1);
+    }
+
+    @Test
+    public void testFindThemes_PaginationTotalEntries_ShouldMatch_totalCountPerHost()
+            throws Throwable {
+        final ThemeResource resource = new ThemeResource();
+
+        final int expectedTotal = getTotalCount(resource, getHttpRequest(), host.getIdentifier(), -1);
+
+        final Response response = resource.findThemes(getHttpRequest(), host.getIdentifier(), 0, 1,
+                OrderDirection.ASC.name(), null);
+
+        final String totalEntries = response.getHeaderString("X-Pagination-Total-Entries");
+        assertEquals(expectedTotal, Integer.parseInt(totalEntries));
     }
 
 
@@ -263,7 +278,6 @@ public class ThemeResourceIntegrationTest {
     private void validateFindThemesResponse(final Response response, final int perPage) throws IOException {
         assertEquals(Status.OK.getStatusCode(), response.getStatus());
 
-        final String totalEntries = response.getHeaderString("X-Pagination-Total-Entries");
         final Collection entities = (Collection) ((ResponseEntityView) response.getEntity()).getEntity();
 
         final List<JsonNode> responseList = CollectionsUtils
@@ -274,8 +288,6 @@ public class ThemeResourceIntegrationTest {
         //verify pagination
         if (perPage > 0) {
             assertEquals(1, responseList.size());
-            assertNotNull(totalEntries);
-            assertTrue(Integer.parseInt(totalEntries) > 1);
         }
     }
 
@@ -293,5 +305,17 @@ public class ThemeResourceIntegrationTest {
                 "Basic " + new String(Base64.encode("admin@dotcms.com:admin".getBytes())));
 
         return request;
+    }
+
+    private int getTotalCount(final ThemeResource resource, final HttpServletRequest request, final String hostIdentifier,
+                              final int perPage) throws Throwable {
+        // get initial total count with same params
+        final Response responseWithTotalCount = resource.findThemes(request, hostIdentifier, 0,
+                perPage, OrderDirection.ASC.name(), null);
+        final Collection entities = (Collection) ((ResponseEntityView) responseWithTotalCount.getEntity()).getEntity();
+        final List<JsonNode> responseList = CollectionsUtils
+                .asList(entities.iterator());
+        final int expectedTotal = responseList.size();
+        return expectedTotal;
     }
 }
