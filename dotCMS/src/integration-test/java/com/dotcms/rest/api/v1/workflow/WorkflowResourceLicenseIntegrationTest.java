@@ -130,7 +130,8 @@ public class WorkflowResourceLicenseIntegrationTest {
 
     @AfterClass
     public static void cleanup() throws Exception {
-        doCleanUp(licenseWorkflowResource, licensedWorkflowAPI);
+        doCleanUp(licensedWorkflowAPI);
+
     }
 
     @Test
