@@ -149,7 +149,7 @@ describe('CategoriesPropertyComponent', () => {
             expect(spyMethod).toHaveBeenCalledWith(0);
         });
 
-        it('should valuePropertyName be nuu', () => {
+        it('should valuePropertyName be undefined', () => {
             expect(searchableDropdown.componentInstance.valuePropertyName).toBeUndefined();
         });
     });
