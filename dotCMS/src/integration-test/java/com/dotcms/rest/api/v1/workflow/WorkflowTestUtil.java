@@ -68,7 +68,7 @@ public abstract class WorkflowTestUtil {
 
     static void doCleanUp(final WorkflowAPI workflowAPI)
             throws Exception {
-        workflowAPI.findSchemes(false).stream()
+        workflowAPI.findSchemes(true).stream()
                 .filter(scheme -> scheme.getName().startsWith(SCHEME_NAME_PREFIX))
                 .forEach(workflowScheme -> {
                     try {
