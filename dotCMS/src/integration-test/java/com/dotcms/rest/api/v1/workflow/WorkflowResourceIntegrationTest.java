@@ -197,7 +197,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
     @AfterClass
     public static void cleanup() throws Exception {
 
-        doCleanUp(workflowResource, workflowAPI);
+        doCleanUp(workflowAPI);
 
     }
 
