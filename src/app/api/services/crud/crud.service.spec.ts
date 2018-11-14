@@ -57,7 +57,7 @@ describe('CrudService', () => {
 
             tick();
             expect(this.lastConnection.request.url).toContain('v1/urldemo');
-            expect(JSON.parse(this.lastConnection.request._body)).toEqual(body);
+            expect(this.lastConnection.request._body).toEqual(body);
             expect(result[0]).toEqual(mockResponse.entity[0]);
         })
     );

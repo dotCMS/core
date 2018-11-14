@@ -37,7 +37,7 @@ describe('DotContentletLockerService', () => {
                 })
             )
         );
-        expect(lastConnection[0].request.url).toContain('/api/content/lock/inode/123');
+        expect(lastConnection[0].request.url).toContain('content/lock/inode/123');
         expect(result).toEqual({ message: 'locked' });
     });
 
@@ -54,7 +54,7 @@ describe('DotContentletLockerService', () => {
                 })
             )
         );
-        expect(lastConnection[0].request.url).toContain('/api/content/unlock/inode/123');
+        expect(lastConnection[0].request.url).toContain('content/unlock/inode/123');
         expect(result).toEqual({ message: 'locked' });
     });
 });
