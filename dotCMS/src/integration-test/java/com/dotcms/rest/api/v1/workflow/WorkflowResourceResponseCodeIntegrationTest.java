@@ -74,7 +74,7 @@ public class WorkflowResourceResponseCodeIntegrationTest {
 
     @AfterClass
     public static void cleanup() throws Exception {
-        doCleanUp(workflowResource, workflowAPI);
+        doCleanUp(workflowAPI);
     }
 
     @Test
