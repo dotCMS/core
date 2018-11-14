@@ -4,7 +4,8 @@
         <p-splitButton 
             label="{{ i18nMessages['contenttypes.dropzone.rows.add'] }}" 
             icon="fa fa-plus" 
-            (onClick)="setColumnSelect()" 
+            (onClick)="setColumnSelect()"
+            [disabled]="disabled"
             [model]="actions"></p-splitButton>
     </div>
 

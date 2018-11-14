@@ -12,6 +12,7 @@ import { TestHotkeysMock } from '../../../../test/hotkeys-service.mock';
 import { MockDotMessageService } from '../../../../test/dot-message-service.mock';
 import { DotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { DotEventsService } from '@services/dot-events/dot-events.service';
+import { RouterTestingModule } from '@angular/router/testing';
 
 describe('ContentTypeFieldsAddRowComponent', () => {
     let comp: ContentTypeFieldsAddRowComponent;
@@ -35,7 +36,7 @@ describe('ContentTypeFieldsAddRowComponent', () => {
 
         DOTTestBed.configureTestingModule({
             declarations: [ContentTypeFieldsAddRowComponent],
-            imports: [TooltipModule, BrowserAnimationsModule, DotIconButtonModule, SplitButtonModule],
+            imports: [TooltipModule, BrowserAnimationsModule, DotIconButtonModule, SplitButtonModule, RouterTestingModule],
             providers: [
                 { provide: HotkeysService, useValue: testHotKeysMock },
                 { provide: DotMessageService, useValue: messageServiceMock }
@@ -73,9 +74,13 @@ describe('ContentTypeFieldsAddRowComponent', () => {
         const addRowContainer = de.query(By.css('.dot-add-rows-button__container'));
         const buttonsElement = de.queryAll(By.css('button'));
         expect(addRowContainer.nativeElement.classList.contains('dot-add-rows__add')).toEqual(true);
-        expect(buttonsElement.length).toBe(2);
         expect(buttonsElement[0].nativeElement.textContent).toBe('Add Row');
-        expect(buttonsElement[1].nativeElement.textContent).toBe('Add Tab');
+        buttonsElement[1].nativeElement.click();
+        fixture.detectChanges();
+        const splitOptionsBtn = de.queryAll(By.css('p-splitbutton .ui-menuitem-text'));
+        expect(splitOptionsBtn.length).toBe(2);
+        expect(splitOptionsBtn[0].nativeElement.innerText).toBe('Add Row');
+        expect(splitOptionsBtn[1].nativeElement.innerText).toBe('Add Tab');
     });
 
     it('should display row selection after click on Add Rows button and focus the first column selection', () => {
@@ -93,8 +98,9 @@ describe('ContentTypeFieldsAddRowComponent', () => {
     it('should bind send notification after click on Add Tab button', () => {
         spyOn(dotEventsService, 'notify');
         fixture.detectChanges();
-        const addTabButton = de.queryAll(By.css('button'))[1].nativeElement;
-        addTabButton.click();
+        de.queryAll(By.css('button'))[1].nativeElement.click();
+        fixture.detectChanges();
+        de.queryAll(By.css('p-splitbutton .ui-menuitem-link'))[1].nativeElement.click();
         fixture.detectChanges();
         expect(dotEventsService.notify).toHaveBeenCalledWith('add-tab-divider');
     });
