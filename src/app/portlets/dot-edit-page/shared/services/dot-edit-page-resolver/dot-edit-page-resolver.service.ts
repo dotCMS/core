@@ -39,9 +39,7 @@ export class DotEditPageResolver implements Resolve<DotRenderedPageState> {
             return this.dotPageStateService
                 .get({
                     url: route.queryParams.url,
-                    viewAs: {
-                        language_id: route.queryParams.language_id,
-                    }
+                    ...(route.queryParams.language_id ? { viewAs: {language_id: route.queryParams.language_id}} : {})
                 })
                 .pipe(
                     take(1),

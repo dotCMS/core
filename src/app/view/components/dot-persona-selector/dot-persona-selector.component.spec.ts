@@ -10,9 +10,11 @@ import { DotPersonasServiceMock } from '../../../test/dot-personas-service.mock'
 import { By } from '@angular/platform-browser';
 import { DotPersona } from '@models/dot-persona/dot-persona.model';
 import { Dropdown } from 'primeng/primeng';
-import { of } from 'rxjs/internal/observable/of';
+import { of } from 'rxjs';
 
 describe('DotPersonaSelectorComponent', () => {
+    let dotPersonasService: DotPersonasService;
+
     let component: DotPersonaSelectorComponent;
     let fixture: ComponentFixture<DotPersonaSelectorComponent>;
     let de: DebugElement;
@@ -22,7 +24,7 @@ describe('DotPersonaSelectorComponent', () => {
     });
 
     beforeEach(() => {
-        DOTTestBed.configureTestingModule({
+        const testbed = DOTTestBed.configureTestingModule({
             declarations: [DotPersonaSelectorComponent],
             imports: [BrowserAnimationsModule],
             providers: [
@@ -40,6 +42,8 @@ describe('DotPersonaSelectorComponent', () => {
         fixture = DOTTestBed.createComponent(DotPersonaSelectorComponent);
         component = fixture.componentInstance;
         de = fixture.debugElement;
+
+        dotPersonasService = testbed.get(DotPersonasService);
     });
 
     it('should emmit the selected persona', () => {
@@ -63,37 +67,6 @@ describe('DotPersonaSelectorComponent', () => {
         fixture.detectChanges();
         const pDropDown: Dropdown = de.query(By.css('p-dropdown')).componentInstance;
         expect(pDropDown.style).toEqual({ width: '100px' });
-    });
-});
-
-describe('DotPersonaSelectorComponent', () => {
-    let dotPersonasService: DotPersonasService;
-
-    let fixture: ComponentFixture<DotPersonaSelectorComponent>;
-    let de: DebugElement;
-    const messageServiceMock = new MockDotMessageService({
-        'modes.persona.no.persona': 'Default Persona'
-    });
-
-    beforeEach(() => {
-        const testbed = DOTTestBed.configureTestingModule({
-            declarations: [DotPersonaSelectorComponent],
-            imports: [BrowserAnimationsModule],
-            providers: [
-                {
-                    provide: DotPersonasService,
-                    useClass: DotPersonasServiceMock
-                },
-                {
-                    provide: DotMessageService,
-                    useValue: messageServiceMock
-                }
-            ]
-        });
-
-        fixture = DOTTestBed.createComponent(DotPersonaSelectorComponent);
-        dotPersonasService = testbed.get(DotPersonasService);
-        de = fixture.debugElement;
     });
 
     it('should disabled when just hava the default persona', () => {

@@ -14,7 +14,8 @@ import { DotDevice } from '@models/dot-device/dot-device.model';
 import { Dropdown } from 'primeng/primeng';
 import { of } from 'rxjs/internal/observable/of';
 
-describe('DotDeviceSelectorComponent', () => {
+fdescribe('DotDeviceSelectorComponent', () => {
+    let dotDeviceService;
     let component: DotDeviceSelectorComponent;
     let fixture: ComponentFixture<DotDeviceSelectorComponent>;
     let de: DebugElement;
@@ -29,7 +30,7 @@ describe('DotDeviceSelectorComponent', () => {
     });
 
     beforeEach(() => {
-        DOTTestBed.configureTestingModule({
+        const testbed = DOTTestBed.configureTestingModule({
             declarations: [DotDeviceSelectorComponent],
             imports: [BrowserAnimationsModule],
             providers: [
@@ -46,8 +47,9 @@ describe('DotDeviceSelectorComponent', () => {
 
         fixture = DOTTestBed.createComponent(DotDeviceSelectorComponent);
         component = fixture.componentInstance;
-        fixture.detectChanges();
         de = fixture.debugElement;
+
+        dotDeviceService = testbed.get(DotDevicesService);
     });
 
     it('should emmit the selected Device', () => {
@@ -83,41 +85,6 @@ describe('DotDeviceSelectorComponent', () => {
         expect(pDropDown.style).toEqual({ width: '100px' });
     });
 
-});
-
-
-describe('DotDeviceSelectorComponent', () => {
-    let dotDeviceService: DotDevicesService;
-
-    let fixture: ComponentFixture<DotDeviceSelectorComponent>;
-    let de: DebugElement;
-
-    const messageServiceMock = new MockDotMessageService({
-        'editpage.viewas.default.device': 'Desktop'
-    });
-
-    beforeEach(() => {
-        const testbed = DOTTestBed.configureTestingModule({
-            declarations: [DotDeviceSelectorComponent],
-            imports: [BrowserAnimationsModule],
-            providers: [
-                {
-                    provide: DotDevicesService,
-                    useClass: DotDevicesServiceMock
-                },
-                {
-                    provide: DotMessageService,
-                    useValue: messageServiceMock
-                }
-            ]
-        });
-
-        fixture = DOTTestBed.createComponent(DotDeviceSelectorComponent);
-        de = fixture.debugElement;
-
-        dotDeviceService = testbed.get(DotDevicesService);
-    });
-
     it('should disabled when just hava the default device', () => {
         spyOn(dotDeviceService, 'get').and.returnValue(of([]));
 
@@ -126,4 +93,5 @@ describe('DotDeviceSelectorComponent', () => {
         const pDropDown: DebugElement = de.query(By.css('p-dropdown'));
         expect(pDropDown.componentInstance.disabled).toBeTruthy();
     });
+
 });

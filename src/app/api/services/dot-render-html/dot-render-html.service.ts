@@ -68,10 +68,8 @@ export class DotRenderHTMLService {
     }
 
     public get(options: DotRenderPageOptions): Observable<DotRenderedPage> {
-        let params: any = options.mode ? { mode: this.getPageModeString(options.mode) } : {};
-
-        params = {
-            ...params,
+        const params: RenderPageServerParam = {
+            ...options.mode ? { mode: this.getPageModeString(options.mode) } : {},
             ...(options.viewAs ? this.getOptionalViewAsParams(options.viewAs) : {})
         };
 
@@ -135,4 +133,11 @@ interface DotEditPageViewAsParams {
     persona_id?: string;
     language_id?: number;
     device_inode?: string;
+}
+
+interface RenderPageServerParam {
+    persona_id?: string;
+    language_id?: string;
+    device_inode?: string;
+    mode: string;
 }

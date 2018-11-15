@@ -23,8 +23,12 @@ export class DotDevicesService {
         return this.coreWebService
             .requestView({
                 method: RequestMethod.Get,
-                // tslint:disable-next-line:max-line-length
-                url: 'content/respectFrontendRoles/false/render/false/query/+contentType:previewDevice +live:true +deleted:false +working:true'
+                url: [
+                    'content',
+                    'respectFrontendRoles/false',
+                    'render/false',
+                    'query/+contentType:previewDevice +live:true +deleted:false +working:true'
+                ].join('/')
             })
             .pipe(pluck('contentlets'));
     }
