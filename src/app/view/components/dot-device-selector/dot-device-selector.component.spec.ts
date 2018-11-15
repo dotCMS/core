@@ -14,7 +14,7 @@ import { DotDevice } from '@models/dot-device/dot-device.model';
 import { Dropdown } from 'primeng/primeng';
 import { of } from 'rxjs/internal/observable/of';
 
-fdescribe('DotDeviceSelectorComponent', () => {
+describe('DotDeviceSelectorComponent', () => {
     let dotDeviceService;
     let component: DotDeviceSelectorComponent;
     let fixture: ComponentFixture<DotDeviceSelectorComponent>;
