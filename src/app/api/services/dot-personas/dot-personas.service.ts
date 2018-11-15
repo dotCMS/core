@@ -3,7 +3,7 @@ import { Injectable } from '@angular/core';
 import { DotPersona } from '@models/dot-persona/dot-persona.model';
 import { Observable } from 'rxjs';
 import { RequestMethod } from '@angular/http';
-import { CoreWebService } from 'dotcms-js/dotcms-js';
+import { CoreWebService } from 'dotcms-js';
 
 /**
  * Provide util methods to get Personas.

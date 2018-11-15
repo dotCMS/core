@@ -22,6 +22,8 @@ const dispatchKeydownEvent = (key: string) => {
     selector: 'dot-test-host-component',
     template: `
         <dot-dialog
+            width="100px"
+            height="100px"
             [actions]="actions"
             [headerStyle]="{'margin': '0'}"
             [contentStyle]="{'padding': '0'}"
@@ -159,6 +161,11 @@ describe('DotDialogComponent', () => {
                 expect(content.styles).toEqual({padding: '0'});
             });
 
+            it('should set width and height', () => {
+                const dialog: DebugElement = de.query(By.css('.dialog'));
+                expect(dialog.styles).toEqual({height: '100px', width: '100px'});
+            });
+
             it('should show footer', () => {
                 const footer: DebugElement = de.query(By.css('.dialog__footer'));
                 expect(footer === null).toBe(false);
@@ -198,7 +205,7 @@ describe('DotDialogComponent', () => {
                         hostFixture.detectChanges();
                         expect(component.visibleChange.emit).toHaveBeenCalledTimes(1);
                         expect(component.visible).toBe(false);
-                        // expect(component.hide.emit).toHaveBeenCalledTimes(1);
+                        expect(component.hide.emit).toHaveBeenCalledTimes(1);
                     });
                 });
 
@@ -211,13 +218,35 @@ describe('DotDialogComponent', () => {
                     });
                 });
 
-                it('should emit beforeClose', () => {
+                it('it should set shadow to header and footer on content scroll', () => {
+                    const content: DebugElement = de.query(By.css('.dialog__content'));
+                    content.triggerEventHandler('scroll', {
+                        target: {
+                            click: () => {},
+                            scrollTop: 100
+                        }
+                    });
+                    hostFixture.detectChanges();
 
+                    const header: DebugElement = de.query(By.css('.dialog__header'));
+                    const footer: DebugElement = de.query(By.css('.dialog__footer'));
+                    expect(header.classes['dialog__header--shadowed']).toBe(true);
+                    expect(footer.classes['dialog__footer--shadowed']).toBe(true);
                 });
 
-                xit('it should set shadow to header and footer on scroll', () => {
-
+                it('it should click target on content scroll', () => {
+                    const clickSpy = jasmine.createSpy('clickSpy');
+                    const content: DebugElement = de.query(By.css('.dialog__content'));
+                    content.triggerEventHandler('scroll', {
+                        target: {
+                            click: clickSpy,
+                            scrollTop: 100
+                        }
+                    });
+                    hostFixture.detectChanges();
+                    expect(clickSpy).toHaveBeenCalledTimes(1);
                 });
+
 
                 describe('keyboard events', () => {
 
@@ -231,7 +260,7 @@ describe('DotDialogComponent', () => {
 
                             expect(cancelAction).toHaveBeenCalledTimes(1);
                             expect(component.visible).toBe(false);
-                            // expect(component.hide.emit).toHaveBeenCalledTimes(1);
+                            expect(component.hide.emit).toHaveBeenCalledTimes(1);
                         });
                     });
 
@@ -286,7 +315,7 @@ describe('DotDialogComponent', () => {
 
                             expect(cancelAction).toHaveBeenCalledTimes(1);
                             expect(component.visible).toBe(false);
-                            // expect(component.hide.emit).toHaveBeenCalledTimes(1);
+                            expect(component.hide.emit).toHaveBeenCalledTimes(1);
                         });
                     });
                 });

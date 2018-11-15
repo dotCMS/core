@@ -1,5 +1,5 @@
 import { of as observableOf, Observable, Subject } from 'rxjs';
-import { Site } from 'dotcms-js/dotcms-js';
+import { Site } from 'dotcms-js';
 
 export const mockSites: Site[] = [
     {
@@ -55,5 +55,9 @@ export class SiteServiceMock {
 
     get switchSite$(): Observable<Site> {
         return this._switchSite$.asObservable();
+    }
+
+    getCurrentSite(): Observable<Site> {
+        return observableOf(mockSites[0]);
     }
 }

@@ -2,7 +2,7 @@ import { of as observableOf } from 'rxjs';
 import { ConnectionBackend, ResponseOptions, Response } from '@angular/http';
 import { MockBackend } from '@angular/http/testing';
 
-import { LoginService } from 'dotcms-js/dotcms-js';
+import { LoginService } from 'dotcms-js';
 
 import { DOTTestBed } from '../../../../../test/dot-test-bed';
 import { DotContentletLockerService } from '@services/dot-contentlet-locker/dot-contentlet-locker.service';
@@ -85,9 +85,9 @@ describe('DotPageStateService', () => {
                 )
             );
 
-            expect(lastConnection[0].request.url).toContain('/api/content/lock/inode/999');
+            expect(lastConnection[0].request.url).toContain('content/lock/inode/999');
             expect(lastConnection[1].request.url).toContain(
-                '/api/v1/page/render/an/url/test?mode=ADMIN_MODE'
+                'v1/page/render/an/url/test?mode=ADMIN_MODE'
             );
         });
 
@@ -129,9 +129,9 @@ describe('DotPageStateService', () => {
                 )
             );
 
-            expect(lastConnection[0].request.url).toContain('/api/content/unlock/inode/999');
+            expect(lastConnection[0].request.url).toContain('content/unlock/inode/999');
             expect(lastConnection[1].request.url).toContain(
-                '/api/v1/page/render/an/url/test?mode=PREVIEW'
+                'v1/page/render/an/url/test?mode=PREVIEW'
             );
         });
 
@@ -160,7 +160,7 @@ describe('DotPageStateService', () => {
             );
 
             expect(lastConnection[0].request.url).toContain(
-                '/api/v1/page/render/an/url/test?mode=PREVIEW'
+                'v1/page/render/an/url/test?mode=PREVIEW'
             );
             expect(lastConnection[1]).toBeUndefined();
         });
@@ -212,7 +212,7 @@ describe('DotPageStateService', () => {
                 )
             );
 
-            expect(lastConnection[0].request.url).toContain('/api/v1/page/render/hello/world');
+            expect(lastConnection[0].request.url).toContain('v1/page/render/hello/world');
         });
 
         it('should get a page in a specific language', () => {
@@ -248,7 +248,7 @@ describe('DotPageStateService', () => {
             );
 
             expect(lastConnection[0].request.url).toContain(
-                '/api/v1/page/render/hello/world?language_id=2'
+                'v1/page/render/hello/world?language_id=2'
             );
         });
 
@@ -283,7 +283,7 @@ describe('DotPageStateService', () => {
                         })
                     )
                 );
-                expect(lastConnection[0].request.url).toContain('/api/v1/page/render/test/123');
+                expect(lastConnection[0].request.url).toContain('v1/page/render/test/123');
             });
 
             it('should get a locked page and set default state locked by another user', () => {
@@ -308,7 +308,7 @@ describe('DotPageStateService', () => {
                         })
                     )
                 );
-                expect(lastConnection[0].request.url).toContain('/api/v1/page/render/hola/mundo');
+                expect(lastConnection[0].request.url).toContain('v1/page/render/hola/mundo');
             });
         });
     });

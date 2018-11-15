@@ -9,7 +9,7 @@ import { DebugElement, Component, Input, Output, EventEmitter } from '@angular/c
 import { ContentTypeField } from '../fields';
 import { FieldService } from '../fields/service';
 import { Location } from '@angular/common';
-import { LoginService } from 'dotcms-js/dotcms-js';
+import { LoginService } from 'dotcms-js';
 import { LoginServiceMock } from '../../../test/login-service.mock';
 import { RouterTestingModule } from '@angular/router/testing';
 import { async } from '@angular/core/testing';
@@ -203,7 +203,6 @@ describe('ContentTypesEditComponent', () => {
         it('should close the dialog and redirect', () => {
             const dialogCancelButton = dialog.query(By.css('.dialog__button-cancel')).nativeElement;
             dialogCancelButton.click();
-            dialog.triggerEventHandler('hide', {});
             fixture.detectChanges();
 
             expect(comp.onDialogHide).toHaveBeenCalledTimes(1);
@@ -418,10 +417,8 @@ describe('ContentTypesEditComponent', () => {
 
         it('should close the dialog', () => {
             clickEditButton();
-
             const cancelButton = de.query(By.css('.dialog__button-cancel'));
             cancelButton.nativeElement.click();
-            dialog.triggerEventHandler('hide', {});
 
             expect(comp.onDialogHide).toHaveBeenCalledTimes(1);
             expect(comp.show).toBe(false);

@@ -16,8 +16,10 @@ import { DotWorkflowTaskDetailService } from './services/dot-workflow-task-detai
 export class DotWorkflowTaskDetailComponent implements OnInit {
     @Output()
     close: EventEmitter<any> = new EventEmitter();
+
     @Output()
     custom: EventEmitter<any> = new EventEmitter();
+
     url$: Observable<string>;
     header$: Observable<string>;
 

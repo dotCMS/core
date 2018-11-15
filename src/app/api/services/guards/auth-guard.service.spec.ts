@@ -2,7 +2,7 @@ import { of as observableOf, Observable } from 'rxjs';
 import { TestBed } from '@angular/core/testing';
 import { Injectable } from '@angular/core';
 import { AuthGuardService } from './auth-guard.service';
-import { LoginService } from 'dotcms-js/dotcms-js';
+import { LoginService } from 'dotcms-js';
 import { DotRouterService } from '../dot-router/dot-router.service';
 import { ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
 

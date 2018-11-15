@@ -5,10 +5,11 @@ import {
     NgZone,
     Output,
     ViewEncapsulation,
-    AfterViewInit
+    AfterViewInit,
+    OnInit
 } from '@angular/core';
 import { LoginData } from './login-container.component';
-import { LoginService, LoggerService } from 'dotcms-js/dotcms-js';
+import { LoginService, LoggerService } from 'dotcms-js';
 
 @Component({
     encapsulation: ViewEncapsulation.Emulated,
@@ -19,20 +20,25 @@ import { LoginService, LoggerService } from 'dotcms-js/dotcms-js';
  * The login component allows the user to fill all
  * the info required to log in the dotCMS angular backend
  */
-export class LoginComponent implements AfterViewInit {
+export class LoginComponent implements AfterViewInit, OnInit {
     @Input()
     isLoginInProgress = false;
+
     @Input()
     message = '';
+
     @Input()
     passwordChanged = false;
+
     @Input()
     resetEmailSent = false;
+
     @Input()
     resetEmail = '';
 
     @Output()
     recoverPassword = new EventEmitter<any>();
+
     @Output()
     login = new EventEmitter<LoginData>();
 
@@ -86,6 +92,14 @@ export class LoginComponent implements AfterViewInit {
     ) {
         this.language = '';
         this.renderPageData();
+    }
+
+    ngOnInit() {
+        this.loginService.setAuth({
+            loginAsUser: null,
+            user: null,
+            isLoginAs: false
+        });
     }
 
     ngAfterViewInit(): void {

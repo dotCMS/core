@@ -1,7 +1,7 @@
 import { ActionHeaderModule } from './action-header/action-header.module';
 import { CommonModule } from '@angular/common';
 import { CrudService } from '@services/crud/crud.service';
-import { DotcmsConfig, LoggerService } from 'dotcms-js/dotcms-js';
+import { DotcmsConfig, LoggerService } from 'dotcms-js';
 import { FormsModule } from '@angular/forms';
 import { FormatDateService } from '@services/format-date-service';
 import { ListingDataTableComponent } from './listing-data-table.component';

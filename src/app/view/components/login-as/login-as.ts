@@ -3,27 +3,27 @@ import {
     Output,
     EventEmitter,
     Input,
-    ViewEncapsulation,
     OnInit,
     ElementRef,
     ViewChild,
-    OnDestroy
+    OnDestroy,
+    Inject
 } from '@angular/core';
+
+import { LoginService, User } from 'dotcms-js';
+
 import { FormGroup, FormBuilder, FormControl, Validators } from '@angular/forms';
 import { Subject } from 'rxjs';
 import { take, takeUntil } from 'rxjs/operators';
 
-import { DotEventsService } from '@services/dot-events/dot-events.service';
 import { DotMessageService } from '@services/dot-messages-service';
-import { DotNavigationService } from '../dot-navigation/services/dot-navigation.service';
-import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
-import { LoginService, User } from 'dotcms-js/dotcms-js';
 import { PaginatorService } from '@services/paginator';
 import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
+import { LOCATION_TOKEN } from 'src/app/providers';
+import { DotNavigationService } from '@components/dot-navigation/services/dot-navigation.service';
+
 
 @Component({
-    encapsulation: ViewEncapsulation.None,
-    providers: [],
     selector: 'dot-login-as',
     styleUrls: ['./login-as.scss'],
     templateUrl: 'login-as.html'
@@ -54,13 +54,12 @@ export class LoginAsComponent implements OnInit, OnDestroy {
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
     constructor(
+        @Inject(LOCATION_TOKEN) private location: Location,
         private dotMessageService: DotMessageService,
-        private dotEventsService: DotEventsService,
+        private dotNavigationService: DotNavigationService,
         private fb: FormBuilder,
         private loginService: LoginService,
-        public paginationService: PaginatorService,
-        private iframeOverlayService: IframeOverlayService,
-        private dotNavigationService: DotNavigationService
+        public paginationService: PaginatorService
     ) {}
 
     ngOnInit(): void {
@@ -139,10 +138,9 @@ export class LoginAsComponent implements OnInit, OnDestroy {
             .subscribe(
                 (data) => {
                     if (data) {
-                        this.close();
-                        this.iframeOverlayService.hide();
-                        this.dotNavigationService.goToFirstPortlet();
-                        this.dotEventsService.notify('login-as');
+                        this.dotNavigationService.goToFirstPortlet().then(() => {
+                            this.location.reload();
+                        });
                     }
                 },
                 (response) => {
@@ -179,7 +177,7 @@ export class LoginAsComponent implements OnInit, OnDestroy {
             .getWithOffset(offset)
             .pipe(take(1))
             .subscribe((items) => {
-                // items.splice(0) is used to return a new object and trigger the change detection in angular
+                // items.splice(0) to return a new object and trigger the change detection
                 this.userCurrentPage = items.splice(0);
             });
     }

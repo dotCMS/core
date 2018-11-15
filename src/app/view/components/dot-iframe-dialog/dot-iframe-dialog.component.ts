@@ -5,17 +5,20 @@ import {
     OnChanges,
     EventEmitter,
     Output,
-    ViewChild
+    ViewChild,
+    OnInit
 } from '@angular/core';
 import { DotDialogComponent } from '@components/dot-dialog/dot-dialog.component';
+import { filter } from 'rxjs/operators';
 
 @Component({
     selector: 'dot-iframe-dialog',
     templateUrl: './dot-iframe-dialog.component.html',
     styleUrls: ['./dot-iframe-dialog.component.scss']
 })
-export class DotIframeDialogComponent implements OnChanges {
-    @ViewChild('dialog') dotDialog: DotDialogComponent;
+export class DotIframeDialogComponent implements OnChanges, OnInit {
+    @ViewChild('dialog')
+    dotDialog: DotDialogComponent;
 
     @Input()
     url: string;
@@ -43,6 +46,18 @@ export class DotIframeDialogComponent implements OnChanges {
     show: boolean;
 
     constructor() {}
+
+    ngOnInit() {
+        if (this.beforeClose.observers.length) {
+            this.dotDialog.beforeClose
+                .pipe(filter(() => this.show))
+                .subscribe((event: {
+                    close: () => void;
+                }) => {
+                    this.beforeClose.emit(event);
+                });
+        }
+    }
 
     ngOnChanges(changes: SimpleChanges) {
         if (changes.url) {

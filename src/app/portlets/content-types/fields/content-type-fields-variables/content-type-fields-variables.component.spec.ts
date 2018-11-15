@@ -6,7 +6,7 @@ import { MockDotMessageService } from '../../../../test/dot-message-service.mock
 import { DOTTestBed } from '../../../../test/dot-test-bed';
 import { DotMessageService } from '../../../../api/services/dot-messages-service';
 import { DotIconButtonModule } from '../../../../view/components/_common/dot-icon-button/dot-icon-button.module';
-import { LoginService } from 'dotcms-js/dotcms-js';
+import { LoginService } from 'dotcms-js';
 import { LoginServiceMock } from '../../../../test/login-service.mock';
 import { RouterTestingModule } from '@angular/router/testing';
 import { FieldVariablesServiceMock, mockFieldVariables } from '../../../../test/field-variable-service.mock';
@@ -78,7 +78,7 @@ describe('ContentTypeFieldsVariablesComponent', () => {
         fixture.detectChanges();
         const dataTable = de.query(By.css('p-dataTable'));
         expect(dataTable.componentInstance.value).toEqual(mockFieldVariables);
-        expect(dataTable.listeners[0].name).toBe('onEditComplete');
+        expect(dataTable.listeners[1].name).toBe('onEditComplete');
     });
 
     it('should load the component and create', () => {

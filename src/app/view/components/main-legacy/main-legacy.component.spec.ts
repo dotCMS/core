@@ -3,7 +3,7 @@ import { DOTTestBed } from '../../../test/dot-test-bed';
 import { DebugElement, Component, Input } from '@angular/core';
 import { MainComponentLegacyComponent } from './main-legacy.component';
 import { RouterTestingModule } from '@angular/router/testing';
-import { LoginService } from 'dotcms-js/dotcms-js';
+import { LoginService } from 'dotcms-js';
 import { LoginServiceMock } from '../../../test/login-service.mock';
 import { By } from '@angular/platform-browser';
 import { DotIframeService } from '../_common/iframe/service/dot-iframe/dot-iframe.service';

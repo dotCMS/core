@@ -7,7 +7,7 @@ import { DotEditPageResolver } from './dot-edit-page-resolver.service';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotPageStateService } from '../../../content/services/dot-page-state/dot-page-state.service';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
-import { LoginService } from 'dotcms-js/dotcms-js';
+import { LoginService } from 'dotcms-js';
 import { LoginServiceMock, mockUser } from './../../../../../test/login-service.mock';
 import { RouterTestingModule } from '@angular/router/testing';
 import { async } from '@angular/core/testing';

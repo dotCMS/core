@@ -1,7 +1,7 @@
 import { pluck, map } from 'rxjs/operators';
 import { Injectable } from '@angular/core';
 import { RequestMethod } from '@angular/http';
-import { CoreWebService } from 'dotcms-js/dotcms-js';
+import { CoreWebService } from 'dotcms-js';
 import { Observable } from 'rxjs';
 
 /**

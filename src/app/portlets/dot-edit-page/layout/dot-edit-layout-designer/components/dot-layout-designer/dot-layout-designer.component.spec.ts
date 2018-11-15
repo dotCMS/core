@@ -13,7 +13,7 @@ import { FormBuilder } from '@angular/forms';
 import { DOTTestBed } from '../../../../../../test/dot-test-bed';
 import { DotSidebarPropertiesModule } from '../../../components/dot-sidebar-properties/dot-sidebar-properties.module';
 import { LoginServiceMock } from '../../../../../../test/login-service.mock';
-import { LoginService } from 'dotcms-js/dotcms-js';
+import { LoginService } from 'dotcms-js';
 import { DotEditLayoutSidebarModule } from '../../../components/dot-edit-layout-sidebar/dot-edit-layout-sidebar.module';
 import { MockDotMessageService } from '../../../../../../test/dot-message-service.mock';
 import { DotMessageService } from '@services/dot-messages-service';

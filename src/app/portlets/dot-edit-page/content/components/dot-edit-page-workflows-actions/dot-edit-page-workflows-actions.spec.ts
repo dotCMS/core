@@ -11,7 +11,7 @@ import {
     mockWorkflowsActions
 } from '../../../../../test/dot-workflow-service.mock';
 import { mockDotPage } from '../../../../../test/dot-rendered-page.mock';
-import { LoginService } from 'dotcms-js/dotcms-js';
+import { LoginService } from 'dotcms-js';
 import { MockDotMessageService } from '../../../../../test/dot-message-service.mock';
 import { LoginServiceMock } from '../../../../../test/login-service.mock';
 import { DotWorkflowService } from '@services/dot-workflow/dot-workflow.service';

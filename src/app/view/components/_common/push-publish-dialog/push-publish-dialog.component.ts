@@ -10,10 +10,11 @@ import { OnInit, OnDestroy } from '@angular/core/src/metadata/lifecycle_hooks';
 import { PushPublishService } from '@services/push-publish/push-publish.service';
 import { SelectItem } from 'primeng/primeng';
 import { DotMessageService } from '@services/dot-messages-service';
-import { LoggerService } from 'dotcms-js/dotcms-js';
+import { LoggerService } from 'dotcms-js';
 import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
 import { takeUntil } from 'rxjs/operators';
 import { Subject } from 'rxjs';
+
 @Component({
     selector: 'dot-push-publish-dialog',
     styleUrls: ['./push-publish-dialog.component.scss'],

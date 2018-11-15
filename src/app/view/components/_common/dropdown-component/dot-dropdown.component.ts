@@ -5,7 +5,9 @@ import {
     Output,
     ViewEncapsulation,
     ElementRef,
-    HostListener
+    HostListener,
+    OnChanges,
+    SimpleChanges
 } from '@angular/core';
 import { trigger, transition, style, animate } from '@angular/animations';
 
@@ -27,7 +29,7 @@ import { trigger, transition, style, animate } from '@angular/animations';
     styleUrls: ['./dot-dropdown.component.scss'],
     templateUrl: 'dot-dropdown.component.html'
 })
-export class DotDropdownComponent {
+export class DotDropdownComponent implements OnChanges {
     @Input()
     disabled = false;
     @Input()
@@ -49,6 +51,12 @@ export class DotDropdownComponent {
     show = false;
 
     constructor(private elementRef: ElementRef) {}
+
+    ngOnChanges(changes: SimpleChanges): void {
+        if (changes.disabled && this.icon) {
+            this.disabled = changes.disabled.currentValue ? true : null;
+        }
+    }
 
     @HostListener('document:click', ['$event'])
     handleClick($event) {
