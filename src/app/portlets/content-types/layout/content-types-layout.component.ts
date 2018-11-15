@@ -1,17 +1,15 @@
-import { Component, Input, OnChanges, OnInit, OnDestroy } from '@angular/core';
+import { Component, Input, OnChanges, OnInit } from '@angular/core';
 import { DotMessageService } from '@services/dot-messages-service';
 import { DotMenuService } from '@services/dot-menu.service';
 import { FieldDragDropService } from '../fields/service';
 import { take } from 'rxjs/internal/operators/take';
-import { Subject } from 'rxjs/internal/Subject';
-import { takeUntil } from 'rxjs/internal/operators/takeUntil';
 
 @Component({
     selector: 'dot-content-type-layout',
     styleUrls: ['./content-types-layout.component.scss'],
     templateUrl: 'content-types-layout.component.html'
 })
-export class ContentTypesLayoutComponent implements OnChanges, OnInit, OnDestroy {
+export class ContentTypesLayoutComponent implements OnChanges, OnInit {
     @Input()
     contentTypeId: string;
 
@@ -22,8 +20,6 @@ export class ContentTypesLayoutComponent implements OnChanges, OnInit, OnDestroy
     i18nMessages: {
         [key: string]: string;
     } = {};
-
-    private destroy$: Subject<boolean> = new Subject<boolean>();
 
     constructor(
         private dotMessageService: DotMessageService,
@@ -50,7 +46,7 @@ export class ContentTypesLayoutComponent implements OnChanges, OnInit, OnDestroy
 
     ngOnChanges(changes): void {
         if (changes.contentTypeId.currentValue) {
-            this.dotMenuService.getDotMenuId('content-types-angular').pipe(takeUntil(this.destroy$)).subscribe((id) => {
+            this.dotMenuService.getDotMenuId('content-types-angular').pipe(take(1)).subscribe((id) => {
                 // tslint:disable-next-line:max-line-length
                 this.relationshipURL = `c/portal/layout?p_l_id=${id}&p_p_id=content-types&_content_types_struts_action=%2Fext%2Fstructure%2Fview_relationships&_content_types_structure_id=${
                     changes.contentTypeId.currentValue
@@ -66,8 +62,4 @@ export class ContentTypesLayoutComponent implements OnChanges, OnInit, OnDestroy
         }
     }
 
-    ngOnDestroy(): void {
-        this.destroy$.next(true);
-        this.destroy$.complete();
-    }
 }

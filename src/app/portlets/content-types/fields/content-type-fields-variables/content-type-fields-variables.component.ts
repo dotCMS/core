@@ -72,7 +72,7 @@ export class ContentTypeFieldsVariablesComponent implements OnInit, OnChanges, O
             fieldId: this.field.fieldId,
             variable: this.fieldVariables[fieldIndex]
         };
-        this.fieldVariablesService.delete(params).pipe(takeUntil(this.destroy$)).subscribe(
+        this.fieldVariablesService.delete(params).pipe(take(1)).subscribe(
             () => {
                 this.fieldVariables = this.fieldVariables.filter(
                     (_item: FieldVariable, index: number) => index !== fieldIndex
@@ -96,7 +96,7 @@ export class ContentTypeFieldsVariablesComponent implements OnInit, OnChanges, O
             fieldId: this.field.fieldId,
             variable: variable
         };
-        this.fieldVariablesService.save(params).pipe(takeUntil(this.destroy$)).subscribe(
+        this.fieldVariablesService.save(params).pipe(take(1)).subscribe(
             (savedVariable: FieldVariable) => {
                 if (typeof variableIndex !== 'undefined') {
                     this.fieldVariables = this.updateVariableCollection(

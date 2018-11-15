@@ -103,7 +103,7 @@ export class ContentTypesFormComponent implements OnInit, OnDestroy {
         this.name.nativeElement.focus();
 
         if (!this.isEditMode()) {
-            this.dotWorkflowService.getSystem().pipe(takeUntil(this.destroy$)).subscribe((workflow: DotWorkflow) => {
+            this.dotWorkflowService.getSystem().pipe(take(1)).subscribe((workflow: DotWorkflow) => {
                 this.form.get('workflow').setValue([workflow.id]);
             });
         }
@@ -235,7 +235,7 @@ export class ContentTypesFormComponent implements OnInit, OnDestroy {
     }
 
     private initWorkflowField(): void {
-        this.dotLicenseService.isEnterprise().pipe(takeUntil(this.destroy$)).subscribe((isEnterpriseLicense: boolean) => {
+        this.dotLicenseService.isEnterprise().pipe(take(1)).subscribe((isEnterpriseLicense: boolean) => {
             this.updateWorkflowFormControl(isEnterpriseLicense);
         });
     }

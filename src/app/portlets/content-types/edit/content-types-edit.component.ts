@@ -154,7 +154,7 @@ export class ContentTypesEditComponent implements OnInit, OnDestroy {
      * @memberof ContentTypesEditComponent
      */
     setTemplateInfo(): void {
-        this.dotMessageService.messageMap$.pipe(takeUntil(this.destroy$)).subscribe(() => {
+        this.dotMessageService.messageMap$.pipe(take(1)).subscribe(() => {
             const type = this.contentTypesInfoService.getLabel(this.data.baseType);
             const contentTypeName = this.messagesKey[`contenttypes.content.${type}`];
 
@@ -217,7 +217,7 @@ export class ContentTypesEditComponent implements OnInit, OnDestroy {
     removeFields(fieldsToDelete: ContentTypeField[]): void {
         this.fieldService
             .deleteFields(this.data.id, fieldsToDelete)
-            .pipe(pluck('fields'), takeUntil(this.destroy$))
+            .pipe(pluck('fields'), take(1))
             .subscribe(
                 (fields: ContentTypeField[]) => {
                     this.fields = fields;

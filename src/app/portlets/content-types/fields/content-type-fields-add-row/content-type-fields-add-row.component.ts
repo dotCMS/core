@@ -120,14 +120,6 @@ export class ContentTypeFieldsAddRowComponent implements OnDestroy, OnInit {
     }
 
     /**
-     * Emits event to add a Tab Divider
-     * @memberof ContentTypeFieldsAddRowComponent
-     */
-    addTabDivider(): void {
-        this.dotEventsService.notify('add-tab-divider');
-    }
-
-    /**
      * Set focus on element sent as param
      * @param elem
      */
@@ -223,7 +215,7 @@ export class ContentTypeFieldsAddRowComponent implements OnDestroy, OnInit {
                 label: this.i18nMessages['contenttypes.dropzone.rows.tab_divider'],
                 icon: 'fa fa-plus',
                 command: () => {
-                    this.addTabDivider();
+                    this.dotEventsService.notify('add-tab-divider');
                 }
             }
         ];
