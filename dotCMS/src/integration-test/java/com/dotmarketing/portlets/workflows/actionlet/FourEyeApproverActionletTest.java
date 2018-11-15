@@ -289,7 +289,7 @@ public class FourEyeApproverActionletTest extends BaseWorkflowIntegrationTest {
 
         // Expect the correct 'user cannot read' exception
         boolean isErrorExpected = false;
-        final String expectedErrorMsg = "User Joe Contributor : dotcms.org.2789 cannot read action action1";
+        final String expectedErrorMsg = "User Joe Contributor [ID: dotcms.org.2789][email:joe@dotcms.com] cannot read action action1";
         try {
             // Triggering the save content action with a non-authorized user
             User incorrectUser = userAPI.getUsersByNameOrEmailOrUserID("joe@dotcms.com", 0, 1).get(0);

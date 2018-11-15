@@ -87,11 +87,30 @@
 #
 #action.destructive_requires_name: true
 
-cluster.name: dotCMSContentIndex_5x
-path.data: esdata
-path.repo: essnapshot/snapshots
-path.logs: tomcat8/logs
+
+#cluster.name: dotCMSContentIndex_3x
+#path.data: dotsecure/esdata
+#path.repo: dotsecure/essnapshot/snapshots
+#path.logs: tomcat/logs
+
 http.port: 9200
 http.host: localhost
-http.enabled: false
+http.enabled: true
 http.cors.enabled: false
+
+cluster.name: dotCMSContentIndex_Fabrizzio_server1
+path.data: /Users/fabrizzio/code/servers/server1/esdata
+path.repo: /Users/fabrizzio/code/servers/server1/esdata/essnapshot/snapshots
+path.logs: /Users/fabrizzio/code/servers/server1/logs
+
+#http.port: 9206
+#http.host: localhost
+#http.enabled: true
+#http.cors.enabled: false
+
+#cluster.name: dotCMSContentIndex_Fabrizzio_server2
+#path.data: /Users/fabrizzio/code/servers/server2/esdata
+#path.repo: /Users/fabrizzio/code/servers/server2/esdata/essnapshot/snapshots
+#path.logs: /Users/fabrizzio/code/servers/server2/logs
+
+cluster.routing.allocation.disk.threshold_enabled: false
