@@ -180,6 +180,7 @@ public class HTMLPageAssetRenderedTest {
         final String pageName = "test1Page-"+System.currentTimeMillis();
         final HTMLPageAsset pageEnglishVersion = new HTMLPageDataGen(folder,template).languageId(1).pageURL(pageName).title(pageName).nextPersisted();
         contentletAPI.publish(pageEnglishVersion, systemUser, false);
+        APILocator.getContentletAPI().isInodeIndexed(pageEnglishVersion.getInode(),true);
 
         createMultiTree(pageEnglishVersion.getIdentifier());
 
@@ -189,7 +190,6 @@ public class HTMLPageAssetRenderedTest {
         mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
         HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
         final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
-        APILocator.getContentletAPI().isInodeIndexed(pageEnglishVersion.getInode(),true);
         String html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(mockRequest, mockResponse, systemUser, pageEnglishVersion.getURI(), PageMode.PREVIEW_MODE);
         Assert.assertTrue("ENG = "+html , html.contains("content2content1"));
 
@@ -198,7 +198,6 @@ public class HTMLPageAssetRenderedTest {
                 .request();
         mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "2");
         HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
-        APILocator.getContentletAPI().isInodeIndexed(pageEnglishVersion.getInode(),true);
         html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(mockRequest, mockResponse, systemUser, pageEnglishVersion.getURI(), PageMode.PREVIEW_MODE);
         Assert.assertTrue("ESP = "+html , html.contains("content3content2Spa"));
     }
@@ -222,11 +221,14 @@ public class HTMLPageAssetRenderedTest {
         final String pageName = "test2Page-"+System.currentTimeMillis();
         final HTMLPageAsset pageEnglishVersion = new HTMLPageDataGen(folder,template).languageId(1).pageURL(pageName).title(pageName).nextPersisted();
         contentletAPI.publish(pageEnglishVersion, systemUser, false);
+        APILocator.getContentletAPI().isInodeIndexed(pageEnglishVersion.getInode(),true);
+
         Contentlet pageSpanishVersion = contentletAPI.find(pageEnglishVersion.getInode(),systemUser,false);
         pageSpanishVersion.setInode("");
         pageSpanishVersion.setLanguageId(2);
         pageSpanishVersion = contentletAPI.checkin(pageSpanishVersion,systemUser,false);
         contentletAPI.publish(pageSpanishVersion,systemUser,false);
+        APILocator.getContentletAPI().isInodeIndexed(pageSpanishVersion.getInode(),true);
 
         createMultiTree(pageEnglishVersion.getIdentifier());
 
@@ -236,7 +238,6 @@ public class HTMLPageAssetRenderedTest {
         mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
         HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
         final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
-        APILocator.getContentletAPI().isInodeIndexed(pageEnglishVersion.getInode(),true);
         String html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(mockRequest, mockResponse, systemUser, pageEnglishVersion.getURI(), PageMode.PREVIEW_MODE);
         Assert.assertTrue("ENG = "+html , html.contains("content2content1"));
 
@@ -245,7 +246,6 @@ public class HTMLPageAssetRenderedTest {
                 .request();
         mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "2");
         HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
-        APILocator.getContentletAPI().isInodeIndexed(pageEnglishVersion.getInode(),true);
         html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(mockRequest, mockResponse, systemUser, pageEnglishVersion.getURI(), PageMode.PREVIEW_MODE);
         Assert.assertTrue("ESP = "+html , html.contains("content3content2Spa"));
 
@@ -271,6 +271,7 @@ public class HTMLPageAssetRenderedTest {
         final String pageName = "test3Page-"+System.currentTimeMillis();
         final HTMLPageAsset pageSpanishVersion = new HTMLPageDataGen(folder,template).languageId(2).pageURL(pageName).title(pageName).nextPersisted();
         contentletAPI.publish(pageSpanishVersion, systemUser, false);
+        APILocator.getContentletAPI().isInodeIndexed(pageSpanishVersion.getInode(),true);
 
         createMultiTree(pageSpanishVersion.getIdentifier());
 
@@ -280,7 +281,7 @@ public class HTMLPageAssetRenderedTest {
         mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "2");
         HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
         final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
-        APILocator.getContentletAPI().isInodeIndexed(pageSpanishVersion.getInode(),true);
+
         String html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(mockRequest, mockResponse, systemUser, pageSpanishVersion.getURI(), PageMode.PREVIEW_MODE);
         Assert.assertTrue("ESP = "+html , html.contains("content3content2Spa"));
 
@@ -289,8 +290,8 @@ public class HTMLPageAssetRenderedTest {
                 .request();
         mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
         HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
-        APILocator.getContentletAPI().isInodeIndexed(pageSpanishVersion.getInode(),true);
         html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(mockRequest, mockResponse, systemUser, pageSpanishVersion.getURI(), PageMode.PREVIEW_MODE);
+        //TODO: Missing assert???
     }
 
     /**
@@ -312,6 +313,7 @@ public class HTMLPageAssetRenderedTest {
         final String pageName = "test4Page-"+System.currentTimeMillis();
         final HTMLPageAsset pageEnglishVersion = new HTMLPageDataGen(folder,template).languageId(1).pageURL(pageName).title(pageName).nextPersisted();
         contentletAPI.publish(pageEnglishVersion, systemUser, false);
+        APILocator.getContentletAPI().isInodeIndexed(pageEnglishVersion.getInode(),true);
 
         createMultiTree(pageEnglishVersion.getIdentifier());
 
@@ -321,7 +323,6 @@ public class HTMLPageAssetRenderedTest {
         mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
         HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
         final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
-        APILocator.getContentletAPI().isInodeIndexed(pageEnglishVersion.getInode(),true);
         String html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(mockRequest, mockResponse, systemUser, pageEnglishVersion.getURI(), PageMode.PREVIEW_MODE);
         Assert.assertTrue("ENG = "+html , html.contains("content2content1"));
 
@@ -330,8 +331,8 @@ public class HTMLPageAssetRenderedTest {
                 .request();
         mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "2");
         HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
-        APILocator.getContentletAPI().isInodeIndexed(pageEnglishVersion.getInode(),true);
         html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(mockRequest, mockResponse, systemUser, pageEnglishVersion.getURI(), PageMode.PREVIEW_MODE);
+        //TODO: Missing assert???
     }
 
     /**
@@ -353,11 +354,14 @@ public class HTMLPageAssetRenderedTest {
         final String pageName = "test5Page-"+System.currentTimeMillis();
         final HTMLPageAsset pageEnglishVersion = new HTMLPageDataGen(folder,template).languageId(1).pageURL(pageName).title(pageName).nextPersisted();
         contentletAPI.publish(pageEnglishVersion, systemUser, false);
+        APILocator.getContentletAPI().isInodeIndexed(pageEnglishVersion.getInode(),true);
+
         Contentlet pageSpanishVersion = contentletAPI.find(pageEnglishVersion.getInode(),systemUser,false);
         pageSpanishVersion.setInode("");
         pageSpanishVersion.setLanguageId(2);
         pageSpanishVersion = contentletAPI.checkin(pageSpanishVersion,systemUser,false);
         contentletAPI.publish(pageSpanishVersion,systemUser,false);
+        APILocator.getContentletAPI().isInodeIndexed(pageSpanishVersion.getInode(),true);
 
         createMultiTree(pageEnglishVersion.getIdentifier());
 
@@ -367,7 +371,6 @@ public class HTMLPageAssetRenderedTest {
         mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
         HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
         final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
-        APILocator.getContentletAPI().isInodeIndexed(pageEnglishVersion.getInode(),true);
         String html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(mockRequest, mockResponse, systemUser, pageEnglishVersion.getURI(), PageMode.PREVIEW_MODE);
         Assert.assertTrue("ENG = "+html , html.contains("content2content1"));
 
@@ -376,7 +379,6 @@ public class HTMLPageAssetRenderedTest {
                 .request();
         mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "2");
         HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
-        APILocator.getContentletAPI().isInodeIndexed(pageEnglishVersion.getInode(),true);
         html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(mockRequest, mockResponse, systemUser, pageEnglishVersion.getURI(), PageMode.PREVIEW_MODE);
         Assert.assertTrue("ESP = "+html , html.contains("content3content2Spa"));
     }
@@ -400,11 +402,14 @@ public class HTMLPageAssetRenderedTest {
         final String pageName = "test6Page-"+System.currentTimeMillis();
         final HTMLPageAsset pageEnglishVersion = new HTMLPageDataGen(folder,template).languageId(1).pageURL(pageName).title(pageName).nextPersisted();
         contentletAPI.publish(pageEnglishVersion, systemUser, false);
+        APILocator.getContentletAPI().isInodeIndexed(pageEnglishVersion.getInode(),true);
+
         Contentlet pageSpanishVersion = contentletAPI.find(pageEnglishVersion.getInode(),systemUser,false);
         pageSpanishVersion.setInode("");
         pageSpanishVersion.setLanguageId(2);
         pageSpanishVersion = contentletAPI.checkin(pageSpanishVersion,systemUser,false);
         contentletAPI.publish(pageSpanishVersion,systemUser,false);
+        APILocator.getContentletAPI().isInodeIndexed(pageSpanishVersion.getInode(),true);
 
         createMultiTree(pageEnglishVersion.getIdentifier());
 
@@ -414,7 +419,6 @@ public class HTMLPageAssetRenderedTest {
         mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
         HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
         final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
-        APILocator.getContentletAPI().isInodeIndexed(pageEnglishVersion.getInode(),true);
         String html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(mockRequest, mockResponse, systemUser, pageEnglishVersion.getURI(), PageMode.PREVIEW_MODE);
         Assert.assertTrue("ENG = "+html , html.contains("content2content1"));
 
@@ -423,7 +427,6 @@ public class HTMLPageAssetRenderedTest {
                 .request();
         mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "2");
         HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
-        APILocator.getContentletAPI().isInodeIndexed(pageEnglishVersion.getInode(),true);
         html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(mockRequest, mockResponse, systemUser, pageEnglishVersion.getURI(), PageMode.PREVIEW_MODE);
         Assert.assertTrue("ESP = "+html , html.contains("content3content2Spacontent1"));
     }
@@ -447,6 +450,7 @@ public class HTMLPageAssetRenderedTest {
         final String pageName = "test7Page-"+System.currentTimeMillis();
         final HTMLPageAsset pageEnglishVersion = new HTMLPageDataGen(folder,template).languageId(1).pageURL(pageName).title(pageName).nextPersisted();
         contentletAPI.publish(pageEnglishVersion, systemUser, false);
+        APILocator.getContentletAPI().isInodeIndexed(pageEnglishVersion.getInode(),true);
 
         createMultiTree(pageEnglishVersion.getIdentifier());
 
@@ -456,7 +460,6 @@ public class HTMLPageAssetRenderedTest {
         mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
         HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
         final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
-        APILocator.getContentletAPI().isInodeIndexed(pageEnglishVersion.getInode(),true);
         String html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(mockRequest, mockResponse, systemUser, pageEnglishVersion.getURI(), PageMode.PREVIEW_MODE);
         Assert.assertTrue("ENG = "+html , html.contains("content2content1"));
 
@@ -465,8 +468,8 @@ public class HTMLPageAssetRenderedTest {
                 .request();
         mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "2");
         HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
-        APILocator.getContentletAPI().isInodeIndexed(pageEnglishVersion.getInode(),true);
         html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(mockRequest, mockResponse, systemUser, pageEnglishVersion.getURI(), PageMode.PREVIEW_MODE);
+        //TODO: Missing assert???
     }
 
     /**
@@ -499,11 +502,13 @@ public class HTMLPageAssetRenderedTest {
             final Contentlet contentlet = new ContentletDataGen(contentType.id()).languageId(1)
                     .setProperty("widgetTitle", "testing").nextPersisted();
             contentletAPI.publish(contentlet, systemUser, false);
+            APILocator.getContentletAPI().isInodeIndexed(contentlet.getInode(),true);
 
             final HTMLPageAsset pageEnglishVersion = new HTMLPageDataGen(folder, template)
                     .languageId(1).pageURL("testPageWidget").title("testPageWidget")
                     .nextPersisted();
             contentletAPI.publish(pageEnglishVersion, systemUser, false);
+            APILocator.getContentletAPI().isInodeIndexed(pageEnglishVersion.getInode(),true);
 
             MultiTree multiTree = new MultiTree(pageEnglishVersion.getIdentifier(), containerId,
                     contentlet.getIdentifier(), UUID, 0);
@@ -516,7 +521,6 @@ public class HTMLPageAssetRenderedTest {
             mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
             HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
             final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
-            APILocator.getContentletAPI().isInodeIndexed(pageEnglishVersion.getInode(),true);
             String html = APILocator.getHTMLPageAssetRenderedAPI()
                     .getPageHtml(mockRequest, mockResponse, systemUser, pageEnglishVersion.getURI(),
                             PageMode.PREVIEW_MODE);
@@ -536,7 +540,6 @@ public class HTMLPageAssetRenderedTest {
                     .request();
             mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
             HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
-            APILocator.getContentletAPI().isInodeIndexed(pageEnglishVersion.getInode(),true);
             html = APILocator.getHTMLPageAssetRenderedAPI()
                     .getPageHtml(mockRequest, mockResponse, systemUser, pageEnglishVersion.getURI(),
                             PageMode.PREVIEW_MODE);
