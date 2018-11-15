@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.htmlpageasset.business.render;
 
+import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.rendering.velocity.services.VelocityResourceKey;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
 import com.dotmarketing.beans.ContainerStructure;
@@ -21,10 +22,7 @@ import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import org.apache.velocity.context.Context;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -73,11 +71,14 @@ public class ContainerRenderedBuilder {
                         render(velocityContext, mode, entry.getValue(), container): null;
 
                 return new ContainerRendered(container, containerStructures, containersRendered);
-            } catch (DotDataException | DotSecurityException e) {
+            } catch (NotFoundInDbException e) {
+                // if the container does not exists or is not valid for the mode, returns null to be filtrated
+                return null;
+            } catch(DotDataException | DotSecurityException e) {
                 Logger.error(ContainerRenderedBuilder.class, e.getMessage());
                 throw new DotRuntimeException(e);
             }
-        }).collect(Collectors.toList());
+        }).filter(Objects::nonNull).collect(Collectors.toList());
     }
 
     private Container getContainer(PageMode mode, String containerId) throws DotDataException, DotSecurityException {

@@ -4,6 +4,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -20,6 +21,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -126,23 +128,38 @@ public class ContainerStructureFinderStrategyResolver {
         @Override
         public List<ContainerStructure> apply(final Container container) {
 
-            final ImmutableList.Builder<ContainerStructure> builder =
-                    new ImmutableList.Builder<>();
+            if (null == container) {
 
-            try {
+                return Collections.emptyList();
+            }
+            //Gets the list from cache.
+            List<ContainerStructure> containerStructures = CacheLocator.getContentTypeCache().getContainerStructures(container.getIdentifier(), container.getInode());
 
-                final HibernateUtil dh = new HibernateUtil(ContainerStructure.class);
-                dh.setSQLQuery("select {container_structures.*} from container_structures " +
-                        "where container_structures.container_id = ? " +
-                        "and container_structures.container_inode = ?");
-                dh.setParam(container.getIdentifier());
-                dh.setParam(container.getInode());
-                builder.addAll(dh.list());
-            } catch (DotHibernateException e) {
-                throw new DotStateException("cannot find container structures for : " +  container);
+            //If there is not cache data for that container, go to the DB.
+            if(containerStructures == null) {
+
+                final ImmutableList.Builder<ContainerStructure> builder =
+                        new ImmutableList.Builder<>();
+
+                try {
+
+                    final HibernateUtil dh = new HibernateUtil(ContainerStructure.class);
+                    dh.setSQLQuery("select {container_structures.*} from container_structures " +
+                            "where container_structures.container_id = ? " +
+                            "and container_structures.container_inode = ?");
+                    dh.setParam(container.getIdentifier());
+                    dh.setParam(container.getInode());
+                    builder.addAll(dh.list());
+
+                    //Add the list to cache.
+                    containerStructures = builder.build();
+                    CacheLocator.getContentTypeCache().addContainerStructures(containerStructures, container.getIdentifier(), container.getInode());
+                } catch (DotHibernateException e) {
+                    throw new DotStateException("cannot find container structures for : " + container);
+                }
             }
 
-            return builder.build();
+            return containerStructures;
         }
     } // IdentifierContainerStructureFinderStrategyImpl
 

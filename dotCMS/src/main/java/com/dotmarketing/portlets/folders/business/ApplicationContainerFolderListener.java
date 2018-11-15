@@ -3,24 +3,27 @@ package com.dotmarketing.portlets.folders.business;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.rendering.velocity.services.ContainerLoader;
+import com.dotcms.rendering.velocity.services.PageLoader;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.IdentifierAPI;
-import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.beans.Inode;
+import com.dotmarketing.business.*;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.MultiTreeAPI;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.util.Constants;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+
+import java.util.List;
 
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
 import static com.dotmarketing.util.StringUtils.builder;
@@ -44,13 +47,14 @@ public class ApplicationContainerFolderListener implements FolderListener {
 
             final String childName       = folderEvent.getChildName();
             final Folder containerFolder = folderEvent.getParent();
+            final Object child           = folderEvent.getChild();
 
             if (this.isValidChild(folderEvent, childName, containerFolder)) {
 
                 try {
 
                     final Container container = this.containerAPI
-                            .getContainerByFolder(containerFolder, folderEvent.getUser(), false);
+                            .getContainerByFolder(containerFolder, folderEvent.getUser(), this.getChildVersion(child));
 
                     if (null != container && UtilMethods.isSet(container.getIdentifier())) {
 
@@ -73,6 +77,14 @@ public class ApplicationContainerFolderListener implements FolderListener {
         }
     }
 
+    private boolean getChildVersion(final Object child) {
+        try {
+            return null != child && child instanceof Versionable && Versionable.class.cast(child).isLive();
+        } catch (DotDataException | DotSecurityException e) {
+            return false;
+        }
+    }
+
     @Override
     public void folderChildDeleted(final FolderEvent folderEvent) {
 
@@ -80,12 +92,14 @@ public class ApplicationContainerFolderListener implements FolderListener {
 
             final String childName       = folderEvent.getChildName();
             final Folder containerFolder = folderEvent.getParent();
+            final Object child           = folderEvent.getChild();
 
             if (this.isSpecialAsset (childName) || isContentType(folderEvent, childName)) {
                 try {
 
-                    final Container container = this.containerAPI
-                            .getContainerByFolder(containerFolder, folderEvent.getUser(), false);
+                    final Container container = (ContainerAPI.CONTAINER_META_INFO.contains(childName))?
+                            this.createFakeContainer(child):
+                            this.containerAPI.getContainerByFolder(containerFolder, folderEvent.getUser(), this.getChildVersion(child));
 
                     if (null != container && UtilMethods.isSet(container.getIdentifier())) {
 
@@ -109,13 +123,34 @@ public class ApplicationContainerFolderListener implements FolderListener {
         }
     } // folderChildDeleted.
 
+    /**
+     * When the file to remove is the ContainerAPI.CONTAINER_META_INFO, since it does not exists we have to create a fake container with just the
+     * id and inode
+     * @param child Object expects a {@link Inode}
+     * @return Container
+     */
+    private Container createFakeContainer(final Object child) {
+        final Container container = new Container();
+        if (child instanceof Contentlet) {
+            final Contentlet webAsset = (Contentlet) child;
+            container.setIdentifier(webAsset.getIdentifier());
+            container.setInode(webAsset.getInode());
+        } else {
+            final Inode webAsset = (Inode) child;
+            container.setIdentifier(webAsset.getIdentifier());
+            container.setInode(webAsset.getInode());
+        }
+        return container;
+    }
+
     @WrapInTransaction
     private void removeContainerFromTemplate(final Container container, final User user) throws DotDataException {
 
         if(this.permissionAPI.doesUserHavePermission(container, PERMISSION_WRITE, user)) {
 
             CacheLocator.getIdentifierCache().removeFromCacheByVersionable(container);
-            final Identifier identifier = this.identifierAPI.find(container);
+            final Identifier identifier = new Identifier();
+            identifier.setId(container.getIdentifier());
             this.multiTreeAPI.deleteMultiTreeByIdentifier(identifier);
         }
     } // removeContainerFromTemplate.
@@ -191,9 +226,9 @@ public class ApplicationContainerFolderListener implements FolderListener {
     }
 
     // todo: we should not need this
-    /**private void invalidatedRelatedPages(final Container container) throws DotDataException, DotSecurityException {
+    private void invalidatedRelatedPages(final Container container) throws DotDataException, DotSecurityException {
 
-        final List<IHTMLPage> pageList = this.htmlPageAssetAPI.
+        final List<IHTMLPage> pageList = APILocator.getHTMLPageAssetAPI().
                 getHTMLPagesByContainer(container.getIdentifier());
 
         if (UtilMethods.isSet(pageList)) {
@@ -203,7 +238,7 @@ public class ApplicationContainerFolderListener implements FolderListener {
                 new PageLoader().invalidate(page);
             }
         }
-    }*/
+    }
 
     private void invalidateContainerCache(final Container container) {
 

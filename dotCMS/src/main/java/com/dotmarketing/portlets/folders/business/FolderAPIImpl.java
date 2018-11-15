@@ -6,6 +6,7 @@ import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.elasticsearch.business.event.ContentletCheckinEvent;
 import com.dotcms.content.elasticsearch.business.event.ContentletDeletedEvent;
+import com.dotcms.content.elasticsearch.business.event.ContentletPublishEvent;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.FileAssetContentType;
 import com.dotcms.publisher.business.PublisherAPI;
@@ -911,6 +912,23 @@ public class FolderAPIImpl implements FolderAPI  {
 			Logger.info(this, () -> "Subscribing the folder listener: " + folderListener.getId() +
 					", to the folder: " + folder);
 
+			// handle publish and unpublish
+			this.localSystemEventsAPI.subscribe(ContentletPublishEvent.class, new EventSubscriber<ContentletPublishEvent>() {
+
+				@Override
+				public String getId() {
+
+					return folderListener.getId() + StringPool.FORWARD_SLASH + ContentletPublishEvent.class.getName();
+				}
+
+				@Override
+				public void notify(final ContentletPublishEvent event) {
+
+					FolderAPIImpl.this.triggerChildModifiedEvent(event, folder, folderListener, childNameFilter);
+				}
+			});
+
+			// handle delete
 			this.localSystemEventsAPI.subscribe(ContentletDeletedEvent.class, new EventSubscriber<ContentletDeletedEvent>() {
 
 				@Override
@@ -926,6 +944,7 @@ public class FolderAPIImpl implements FolderAPI  {
 				}
 			});
 
+			// handle checkin
 			this.localSystemEventsAPI.subscribe(ContentletCheckinEvent.class, new EventSubscriber<ContentletCheckinEvent>() {
 
 				@Override
@@ -941,6 +960,16 @@ public class FolderAPIImpl implements FolderAPI  {
 				}
 			});
 		}
+	}
+
+	private void triggerChildModifiedEvent(final ContentletPublishEvent event,
+										   final Folder parentFolder,
+										   final FolderListener folderListener,
+										   final Predicate<String> childNameFilter) {
+
+		final Contentlet contentlet = event.getContentlet();
+		this.triggerChildEvent(contentlet, event.getUser(), event.getDate(), parentFolder, childNameFilter,
+				folderEvent-> folderListener.folderChildModified(folderEvent));
 	}
 
 	private void triggerChildModifiedEvent(final ContentletCheckinEvent event,

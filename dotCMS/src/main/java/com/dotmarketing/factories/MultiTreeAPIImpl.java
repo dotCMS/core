@@ -2,6 +2,7 @@ package com.dotmarketing.factories;
 
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
@@ -80,10 +81,19 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
         final List<MultiTree> multiTres = MultiTreeFactory.getMultiTrees(page.getIdentifier());
 
         for (final MultiTree multiTree : multiTres) {
-            final Container container = (liveMode) ?
-                    this.containerAPI.getLiveContainerById    (multiTree.getContainer(), systemUser, false):
-                    this.containerAPI.getWorkingContainerById (multiTree.getContainer(), systemUser, false);
-            if(container==null && ! liveMode) {
+
+            Container container = null;
+
+            try {
+
+                container = (liveMode) ?
+                        this.containerAPI.getLiveContainerById(multiTree.getContainer(), systemUser, false) :
+                        this.containerAPI.getWorkingContainerById(multiTree.getContainer(), systemUser, false);
+                if (container == null && !liveMode) {
+                    continue;
+                }
+            } catch (NotFoundInDbException e) {
+                Logger.debug(this, e.getMessage(), e);
                 continue;
             }
 
@@ -120,13 +130,20 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
             for (final ContainerUUID containerUUID : containersUUID) {
 
-                final Container container = (liveMode) ?
-                        this.containerAPI.getLiveContainerById   (containerUUID.getIdentifier(),      systemUser, false):
-                        this.containerAPI.getWorkingContainerById(containerUUID.getIdentifier(), systemUser, false);
+                Container container = null;
+                try {
+                    container = (liveMode) ?
+                            this.containerAPI.getLiveContainerById   (containerUUID.getIdentifier(),      systemUser, false):
+                            this.containerAPI.getWorkingContainerById(containerUUID.getIdentifier(), systemUser, false);
 
-                if(container==null && ! liveMode) {
+                    if(container==null && ! liveMode) {
+                        continue;
+                    }
+                } catch (NotFoundInDbException e) {
+                    Logger.debug(this, e.getMessage(), e);
                     continue;
                 }
+
 
                 if (!pageContents.contains(containerUUID.getIdentifier(), containerUUID.getUUID())) {
                     final boolean isLegacyValue = ContainerUUID.UUID_LEGACY_VALUE.equals(containerUUID.getUUID());

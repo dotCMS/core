@@ -7,32 +7,25 @@ import java.io.Serializable;
 import java.util.Date;
 
 /**
- * Event to notified when a contentlet is being checkin
+ * Event to notified when a contentlet is being publish or unpublish
  * @author jsanca
  */
-public class ContentletCheckinEvent implements Serializable {
+public class ContentletPublishEvent implements Serializable {
 
     private final Contentlet contentlet;
-    private final boolean newVersionCreated;
     private final User user;
     private final Date date;
 
-    public ContentletCheckinEvent(final Contentlet contentlet,
-                                  final boolean newVersionCreated,
+    public ContentletPublishEvent(final Contentlet contentlet,
                                   final User user) {
 
         this.contentlet = contentlet;
-        this.newVersionCreated = newVersionCreated;
         this.user = user;
         this.date = new Date();
     }
 
     public Contentlet getContentlet() {
         return contentlet;
-    }
-
-    public boolean isNewVersionCreated() {
-        return newVersionCreated;
     }
 
     public User getUser() {

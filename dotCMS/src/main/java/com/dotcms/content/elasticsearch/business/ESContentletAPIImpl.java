@@ -6,6 +6,7 @@ import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.event.ContentletCheckinEvent;
 import com.dotcms.content.elasticsearch.business.event.ContentletDeletedEvent;
+import com.dotcms.content.elasticsearch.business.event.ContentletPublishEvent;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.field.CategoryField;
 import com.dotcms.contenttype.model.field.ConstantField;
@@ -460,7 +461,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 anyone who need it can subscribed to this commit listener event, on this case will be
                 mostly use it in order to invalidate this contentlet cache.
                  */
-                triggerCommitListenerEvent(contentlet);
+                triggerCommitListenerEvent(contentlet, user);
 
                 // by now, the publish event is making a duplicate reload events on the site browser
                 // so we decided to comment it out by now, and
@@ -2333,7 +2334,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             anyone who need it can subscribed to this commit listener event, on this case will be
             mostly use it in order to invalidate this contentlet cache.
              */
-            triggerCommitListenerEvent(contentlet);
+            triggerCommitListenerEvent(contentlet, user);
 
         } catch(DotDataException | DotStateException| DotSecurityException e) {
             ActivityLogger.logInfo(getClass(), "Error Unpublishing Content", "StartDate: " +contentPushPublishDate+ "; "
@@ -6147,8 +6148,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * mostly use it in order to invalidate this contentlet cache.
      *
      * @param contentlet Contentlet to be processed by the Commit listener event
+     * @param user       User that triggered the event
      */
-    private void triggerCommitListenerEvent(final Contentlet contentlet) {
+    private void triggerCommitListenerEvent(final Contentlet contentlet, final User user) {
 
         try {
             if (!contentlet.getBoolProperty(Contentlet.IS_TEST_MODE)) {
@@ -6169,6 +6171,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 }, 1001);
             }
 
+            HibernateUtil.addCommitListener(()-> {
+                //Triggering event listener when this commit listener is executed
+                localSystemEventsAPI
+                        .notify(new ContentletPublishEvent(contentlet, user));
+            });
         } catch (DotHibernateException e) {
             throw new DotRuntimeException(e);
         }

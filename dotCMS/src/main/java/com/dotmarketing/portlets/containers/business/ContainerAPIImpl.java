@@ -365,26 +365,15 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 	@SuppressWarnings({ "unchecked" })
 	public List<ContainerStructure> getContainerStructures(final Container container) throws DotStateException, DotDataException, DotSecurityException  {
 
-		//Gets the list from cache.
-		List<ContainerStructure> containerStructures = CacheLocator.getContentTypeCache().getContainerStructures(container.getIdentifier(), container.getInode());
-		
-		//If there is not cache data for that container, go to the DB.
-		if(containerStructures == null){
-			
+		final ContainerStructureFinderStrategyResolver resolver   =
+				new ContainerStructureFinderStrategyResolver();
 
-			final ContainerStructureFinderStrategyResolver resolver   =
-					new ContainerStructureFinderStrategyResolver();
+		final Optional<ContainerStructureFinderStrategy> strategy =
+				resolver.get(container);
 
-			final Optional<ContainerStructureFinderStrategy> strategy =
-					resolver.get(container);
+		final List<ContainerStructure> containerStructures = strategy.isPresent()? strategy.get().apply(container):
+				resolver.getDefaultStrategy().apply(container);
 
-			containerStructures = strategy.isPresent()? strategy.get().apply(container):
-					resolver.getDefaultStrategy().apply(container);
-
-			//Add the list to cache. 
-			CacheLocator.getContentTypeCache().addContainerStructures(containerStructures, container.getIdentifier(), container.getInode());
-		}
-		
 		return containerStructures;
 	}
 	

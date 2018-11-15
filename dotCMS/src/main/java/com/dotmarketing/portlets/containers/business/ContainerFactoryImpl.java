@@ -167,12 +167,11 @@ public class ContainerFactoryImpl implements ContainerFactory {
 					Constants.CONTAINER_META_INFO_FILE_NAME);
 		}
 
-        return ContainerByFolderAssetsUtil.getInstance().fromAssets (folder, this.findContainerAssets(folder, user), showLive);
+        return ContainerByFolderAssetsUtil.getInstance().fromAssets (folder, this.findContainerAssets(folder, user, showLive), showLive);
     }
 
-	private List<FileAsset> findContainerAssets(final Folder folder, final User user) throws DotDataException, DotSecurityException {
-		// Save: taking info from ES Index.
-		return this.fileAssetAPI.findFileAssetsByFolder(folder, user, false);
+	private List<FileAsset> findContainerAssets(final Folder folder, final User user, final boolean showLive) throws DotDataException, DotSecurityException {
+		return this.fileAssetAPI.findFileAssetsByFolder(folder, null, showLive, user, false);
 	}
 
 	private boolean hasContainerAsset(final Host host, final Folder folder) {
