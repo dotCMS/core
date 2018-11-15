@@ -95,8 +95,13 @@ public class NavToolTest extends IntegrationTestBase{
         assertNotNull(navResult);
 
         int spanishResultChildren = navResult.getChildren().size();
-        //We are expecting 3 children result for Spanish Language.
-        assertEquals(spanishResultChildren, 3);
+
+        /*
+         As we are using the DEFAULT_PAGE_TO_DEFAULT_LANGUAGE=true and at this point
+         we are not creating any spanish page we can assume we have the same amount
+         of english pages.
+         */
+        assertEquals(spanishResultChildren, currentShowOnMenuItems);
 
         List<IHTMLPage> liveHTMLPages = APILocator.getHTMLPageAssetAPI().getLiveHTMLPages(aboutUsFolder, user, false);
 
