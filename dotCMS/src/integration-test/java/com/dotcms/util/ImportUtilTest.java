@@ -39,6 +39,7 @@ import com.dotmarketing.util.ImportUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
+import java.util.concurrent.ExecutionException;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
@@ -1237,17 +1238,16 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
      * Remove the workflows created for the test
      */
     @AfterClass
-    public static void cleanup()
-            throws DotDataException, DotSecurityException, AlreadyExistException {
+    public static void cleanup() throws Exception {
         if (null != schemeStepActionResult1 && null != schemeStepActionResult1.getScheme()) {
             final WorkflowScheme wfScheme = schemeStepActionResult1.getScheme();
             workflowAPI.archive(wfScheme, user);
-            workflowAPI.deleteScheme(wfScheme, user);
+            workflowAPI.deleteScheme(wfScheme, user).get();
         }
         if (null != schemeStepActionResult2 && null != schemeStepActionResult2.getScheme()) {
             final WorkflowScheme wfScheme2 = schemeStepActionResult2.getScheme();
             workflowAPI.archive(wfScheme2, user);
-            workflowAPI.deleteScheme(wfScheme2, user);
+            workflowAPI.deleteScheme(wfScheme2, user).get();
         }
     }
 
