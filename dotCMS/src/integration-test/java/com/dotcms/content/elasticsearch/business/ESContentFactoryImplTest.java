@@ -1,9 +1,18 @@
 package com.dotcms.content.elasticsearch.business;
 
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.FieldBuilder;
+import com.dotcms.contenttype.model.field.TextField;
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.model.type.ContentTypeBuilder;
+import com.dotcms.contenttype.model.type.SimpleContentType;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -87,42 +96,88 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
     }
 
     @Test
-    public void testScore () {
+    public void testScore () throws DotDataException, DotSecurityException {
 
-        //+++++++++++++++++++++++++++
-        //Executing a simple query filtering by score
-        SearchHits searchHits = instance.indexSearch("+contenttype:blog", 20, 0, "score");
+        // create content type and field
+        ContentType type = null;
+
+        try {
+
+            long time = System.currentTimeMillis();
+            final String typeName = "type"+time;
+            type = APILocator.getContentTypeAPI(APILocator.systemUser())
+                    .save(ContentTypeBuilder.builder(SimpleContentType.class).name(typeName).variable(typeName)
+                            .build());
+
+            final String fieldName = "text"+time;
+            Field field = FieldBuilder.builder(TextField.class).indexed(true)
+                    .name(fieldName).variable(fieldName).contentTypeId(type.id()).build();
+            APILocator.getContentTypeFieldAPI().save(field, APILocator.systemUser());
+
+            final List<String> clubNames = Arrays.asList("Internazionale", "Barcelona", "PSG", "Chelsea");
+
+            for (String clubName : clubNames) {
+                createContentlet(type, field, clubName);
+            }
+
+            //+++++++++++++++++++++++++++
+            //Executing a simple query filtering by score
+            SearchHits searchHits = instance.indexSearch("+contenttype:" + type.variable(), 20, 0, "score");
 
 
-        //Starting some validations
-        assertNotNull(searchHits.getTotalHits());
-        assertTrue(searchHits.getTotalHits() > 0);
+            //Starting some validations
+            assertNotNull(searchHits.getTotalHits());
+            assertTrue(searchHits.getTotalHits() > 0);
 
-        SearchHit[] hits = searchHits.getHits();
-        float maxScore = hits[0].getScore();
-        //With this query all the results must have the same score
-        for ( SearchHit searchHit : hits ) {
-            Logger.info(this, "Blog - SearchHit Score: " + searchHit.getScore() + " inode: "+ searchHit.getSourceAsMap().get("inode"));
-            assertTrue(searchHit.getScore() == maxScore);
+            SearchHit[] hits = searchHits.getHits();
+            float maxScore = hits[0].getScore();
+            //With this query all the results must have the same score
+            for (SearchHit searchHit : hits) {
+                Logger.info(this, "Blog - SearchHit Score: " + searchHit.getScore() + " inode: " + searchHit.getSourceAsMap().get("inode"));
+                assertTrue(searchHit.getScore() == maxScore);
+            }
+
+            //+++++++++++++++++++++++++++
+            //Executing a simple query filtering by score
+            final String query = "+contenttype:" + type.variable() + " " + type.variable()
+                    + "." + field.variable() + ":Internazionale*";
+            searchHits = instance.indexSearch(query, 20, 0, "score");
+
+            //Starting some validations
+            assertNotNull(searchHits.getTotalHits());
+            assertTrue(searchHits.getTotalHits() > 0);
+
+            hits = searchHits.getHits();
+            maxScore = getMaxScore(hits);
+
+
+            //With this query the first result must have a higher score than the others
+            assertTrue(maxScore == searchHits.getHits()[0].getScore());
+            //The second record should have a lower score
+            assertTrue(maxScore != searchHits.getHits()[1].getScore());
+            assertTrue(searchHits.getHits()[0].getScore() > searchHits.getHits()[1].getScore());
+
+        } finally {
+            if(type!=null) {
+                APILocator.getContentTypeAPI(APILocator.systemUser()).delete(type);
+            }
         }
+    }
 
-        //+++++++++++++++++++++++++++
-        //Executing a simple query filtering by score
-        searchHits = instance.indexSearch("+contenttype:blog blog.title:bullish*", 20, 0, "score");
+    private void createContentlet(final ContentType type, final Field field, final String value) {
+        try {
+            Contentlet contentlet = new Contentlet();
+            contentlet.setContentTypeId(type.id());
+            contentlet.setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId());
+            contentlet.setStringProperty(field.variable(), value);
 
-        //Starting some validations
-        assertNotNull(searchHits.getTotalHits());
-        assertTrue(searchHits.getTotalHits() > 0);
+            contentlet = APILocator.getContentletAPI().checkin(contentlet, APILocator.systemUser(), false);
+            APILocator.getContentletAPI().publish(contentlet, APILocator.systemUser(), false);
 
-        hits = searchHits.getHits();
-        maxScore = getMaxScore(hits);
-
-
-        //With this query the first result must have a higher score than the others
-        assertTrue(maxScore == searchHits.getHits()[0].getScore());
-        //The second record should have a lower score
-        assertTrue(maxScore != searchHits.getHits()[1].getScore());
-        assertTrue(searchHits.getHits()[0].getScore() > searchHits.getHits()[1].getScore());
+            APILocator.getContentletAPI().isInodeIndexed(contentlet.getInode(), true);
+        } catch(DotDataException | DotSecurityException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Test
