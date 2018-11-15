@@ -100,7 +100,6 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
 
         // create content type and field
         ContentType type = null;
-        final List<Contentlet> clubs = new ArrayList<>();
 
         try {
 
@@ -118,7 +117,7 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
             final List<String> clubNames = Arrays.asList("Internazionale", "Barcelona", "PSG", "Chelsea");
 
             for (String clubName : clubNames) {
-                clubs.add(createContentlet(type, field, clubName));
+                createContentlet(type, field, clubName);
             }
 
             //+++++++++++++++++++++++++++
@@ -162,20 +161,10 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
             if(type!=null) {
                 APILocator.getContentTypeAPI(APILocator.systemUser()).delete(type);
             }
-
-            if(UtilMethods.isSet(clubs)) {
-                clubs.forEach((contentlet -> {
-                    try {
-                        APILocator.getContentletAPI().destroy(contentlet, APILocator.systemUser(), false);
-                    } catch (DotDataException | DotSecurityException e) {
-                        Logger.warn(this, "Error cleaning up test content");
-                    }
-                }));
-            }
         }
     }
 
-    private Contentlet createContentlet(final ContentType type, final Field field, final String value) {
+    private void createContentlet(final ContentType type, final Field field, final String value) {
         try {
             Contentlet contentlet = new Contentlet();
             contentlet.setContentTypeId(type.id());
@@ -186,8 +175,6 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
             APILocator.getContentletAPI().publish(contentlet, APILocator.systemUser(), false);
 
             APILocator.getContentletAPI().isInodeIndexed(contentlet.getInode(), true);
-
-            return contentlet;
         } catch(DotDataException | DotSecurityException e) {
             throw new RuntimeException(e);
         }
