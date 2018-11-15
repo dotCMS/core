@@ -168,10 +168,13 @@ export class DotEditPageToolbarComponent implements OnInit, OnChanges {
         };
     }
 
-    private getPreviewOption(_pageState: DotRenderedPageState): SelectItem {
+    private getPreviewOption(pageState: DotRenderedPageState): SelectItem {
         return {
             label: this.dotMessageService.get('editpage.toolbar.preview.page'),
-            value: PageMode.PREVIEW
+            value: PageMode.PREVIEW,
+            styleClass: !pageState.page.canRead
+                ? 'edit-page-toolbar__state-selector-item--disabled'
+                : ''
         };
     }
 

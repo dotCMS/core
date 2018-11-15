@@ -57,6 +57,7 @@ export interface DotPage {
 // Extra properties from renderHTML
 export interface DotPage {
     canEdit: boolean;
+    canRead: boolean;
     canLock: boolean;
     identifier: string;
     liveInode?: string;
