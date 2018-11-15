@@ -144,7 +144,7 @@ describe('SiteSelectorFieldComponent', () => {
         const siteSelectorField: SiteSelectorFieldComponent = de.query(
             By.css('dot-site-selector-field')
         ).componentInstance;
-        console.log('siteSelectorField.value', siteSelectorField.value);
+
         expect(siteSelectorField.value).toEqual('1234');
     });
 
