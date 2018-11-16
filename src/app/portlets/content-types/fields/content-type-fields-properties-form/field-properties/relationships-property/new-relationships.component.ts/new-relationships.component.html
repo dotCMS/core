@@ -7,7 +7,7 @@
     (pageChange)="handleContentTypePageChange($event)"
     labelPropertyName="name"
     [placeholder]="i18nMessages['contenttypes.field.properties.relationship.new.content_type.placeholder']"
-    (change)="tiggerChanged()">
+    [(ngModel)]="contentType">
 </dot-searchable-dropdown>*
 
 <p-dropdown 
