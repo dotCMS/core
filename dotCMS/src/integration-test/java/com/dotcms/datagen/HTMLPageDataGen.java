@@ -184,6 +184,7 @@ public class HTMLPageDataGen extends ContentletDataGen {
         htmlPageAsset.setInode(inode);
         htmlPageAsset.setIdentifier(identifier);
         htmlPageAsset.setIndexPolicy(IndexPolicy.FORCE);
+        htmlPageAsset.setBoolProperty(Contentlet.IS_TEST_MODE, true);
 
         for (Map.Entry<String, Object> element : properties.entrySet()) {
             htmlPageAsset.setProperty(element.getKey(), element.getValue());
