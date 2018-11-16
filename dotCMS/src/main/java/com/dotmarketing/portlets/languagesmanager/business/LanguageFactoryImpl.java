@@ -43,6 +43,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+
+import com.liferay.util.StringPool;
 import org.apache.struts.Globals;
 /**
  * Implementation class for the {@link LanguageFactory}.
@@ -93,6 +95,9 @@ public class LanguageFactoryImpl extends LanguageFactory {
 
         try {
         	languageCode = languageCode.toLowerCase();
+        	if(!UtilMethods.isSet(countryCode)){
+        		countryCode = StringPool.BLANK;
+			}
         	countryCode = countryCode.toLowerCase();
         	Language lang = CacheLocator.getLanguageCache().getLanguageByCode(languageCode, countryCode);
 
