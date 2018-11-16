@@ -70,8 +70,8 @@ export class DotPageStateService {
      * @param number [languageId]
      * @memberof DotPageStateService
      */
-    reload(url: string, languageId?: number): void {
-        this.get(url, languageId)
+    reload(options: DotRenderPageOptions): void {
+        this.get(options)
             .pipe(take(1))
             .subscribe((page: DotRenderedPageState) => {
                 this.reload$.next(page);
@@ -86,14 +86,10 @@ export class DotPageStateService {
      * @returns Observable<DotRenderedPageState>
      * @memberof DotPageStateService
      */
-    get(url: string, languageId?: number): Observable<DotRenderedPageState> {
-        const options: DotRenderPageOptions = {
-            url: url
-        };
-
-        if (languageId) {
-            options.viewAs = {
-                language_id: languageId
+    get(options: DotRenderPageOptions | string): Observable<DotRenderedPageState> {
+        if (typeof options === 'string') {
+            options = {
+                url: options
             };
         }
 

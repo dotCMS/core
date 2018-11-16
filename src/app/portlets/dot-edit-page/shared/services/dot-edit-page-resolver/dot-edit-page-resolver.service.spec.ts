@@ -113,7 +113,12 @@ describe('DotEditPageResolver', () => {
 
             resolver.resolve(route).subscribe();
             expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(fake403Response);
-            expect(dotPageStateService.get).toHaveBeenCalledWith('edit-page/content', '2');
+            expect(dotPageStateService.get).toHaveBeenCalledWith({
+                url: 'edit-page/content',
+                viewAs: {
+                    language_id: '2'
+                }
+            });
         });
 
         it('should redirect to site-browser', () => {
@@ -132,7 +137,12 @@ describe('DotEditPageResolver', () => {
 
             resolver.resolve(route).subscribe();
             expect(dotRouterService.goToSiteBrowser).toHaveBeenCalledTimes(1);
-            expect(dotPageStateService.get).toHaveBeenCalledWith('edit-page/content', '2');
+            expect(dotPageStateService.get).toHaveBeenCalledWith({
+                url: 'edit-page/content',
+                viewAs: {
+                    language_id: '2'
+                }
+            });
         });
     });
 
