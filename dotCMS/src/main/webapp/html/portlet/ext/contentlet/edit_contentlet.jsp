@@ -141,7 +141,7 @@
 	request.setAttribute("selectedCategories", selectedCategories);
 
 	List<ContentletRelationships.ContentletRelationshipRecords> relationshipRecords = (contentletRelationships==null) ? new ArrayList<ContentletRelationships.ContentletRelationshipRecords>() : contentletRelationships.getRelationshipsRecords();
-	request.setAttribute("relationshipRecords", relationshipRecords);
+	List<ContentletRelationships.ContentletRelationshipRecords> legacyRelationshipRecords = contentletRelationships.getLegacyRelationshipsRecords();
 
 	request.setAttribute("references", references);
 	request.setAttribute("referer", referer);
@@ -152,9 +152,6 @@
 
 
 	List<Structure> structures = StructureFactory.getStructuresByUser(user, "", "name", 100, 0,"asc");
-
-
-
 
 	/*### DRAW THE DYNAMIC FIELDS ###*/
 
@@ -322,8 +319,12 @@
                         <%@ include file="/html/portlet/ext/common/edit_permissions_tab_inc.jsp" %>
                     <%}else if(f.getFieldType().equals(Field.FieldType.RELATIONSHIP.toString()) || f.getFieldType().equals(Field.FieldType.RELATIONSHIPS_TAB.toString())){%>
                         <% if(fieldCounter==0){
-                            relationshipsTabFieldExists =  true;
-                            request.setAttribute("isRelationsihpAField",true); //DOTCMS-6893%>
+
+                            if (f.getFieldType().equals(Field.FieldType.RELATIONSHIPS_TAB.toString())){
+                                relationshipsTabFieldExists =  true;
+                                request.setAttribute("isRelationsihpAField",true); //DOTCMS-6893
+                            }%>
+
                             <div class="fieldName">
                                 <% if(f.isRequired()) {%>
                                     <span class="required2">
@@ -337,10 +338,12 @@
                                     if(f.getFieldType().equals(Field.FieldType.RELATIONSHIP.toString())){
                                         if (f.getFieldRelationType() != null && f.getFieldRelationType().contains(".")){
                                             //field on the other side of the relationship
-                                            request.setAttribute("fieldRelationType", f.getFieldRelationType());
+                                            request.setAttribute("relationshipRecords", contentletRelationships.getRelationshipsRecordsByField(f.getFieldRelationType()));
                                         }else{
-                                            request.setAttribute("fieldRelationType", structure.getVelocityVarName() + "." + f.getVelocityVarName());
+                                            request.setAttribute("relationshipRecords", contentletRelationships.getRelationshipsRecordsByField(structure.getVelocityVarName() + "." + f.getVelocityVarName()));
                                         }
+                                    } else {
+                                        request.setAttribute("relationshipRecords", legacyRelationshipRecords);
                                     }
                                 %>
                                 <jsp:include page="/html/portlet/ext/contentlet/edit_contentlet_relationships.jsp"/>
@@ -460,9 +463,11 @@
 	<!-- END TABS -->
 
 	<!-- Relationships -->
-	<% if(relationshipRecords != null && relationshipRecords.size() > 0 && !relationshipsTabFieldExists){
+	<% if(legacyRelationshipRecords != null && legacyRelationshipRecords.size() > 0 && !relationshipsTabFieldExists){
 		   relationshipsTabFieldExists = true;
 		   request.setAttribute("isRelationsihpAField",false); //DOTCMS-6893
+		   request.setAttribute("relationshipRecords", legacyRelationshipRecords);
+		   request.removeAttribute("fieldRelationType");
 	%>
 		<div id="relationships" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Relationships") %>">
 			<jsp:include page="/html/portlet/ext/contentlet/edit_contentlet_relationships.jsp" />

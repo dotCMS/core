@@ -1,5 +1,7 @@
 package com.dotmarketing.portlets.structure.model;
 
+import com.dotcms.contenttype.model.field.RelationshipField;
+import com.dotcms.contenttype.model.type.ContentType;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -51,13 +53,36 @@ public class ContentletRelationships
 	}
 
 	/**
-	 * @return Returns the relationshipsRecords.
+	 * @return Returns the relationshipsRecords that belong to a field.
 	 */
 	public List<ContentletRelationshipRecords> getRelationshipsRecordsByField(String relationTypeValue) {
 		return relationshipsRecords.stream()
 				.filter(record -> record.relationship.getRelationTypeValue()
 						.equals(relationTypeValue)).collect(Collectors.toList());
 	}
+
+	/**
+	 * @return Returns the relationshipRecords that do not belong to any field
+	 */
+	public List<ContentletRelationshipRecords> getLegacyRelationshipsRecords() {
+
+		ContentType contentType = contentlet.getContentType();
+
+		//Obtain field relation types
+		List<String> relationTypes = contentType.fields().stream()
+				.filter(field -> field instanceof RelationshipField)
+				.map(field -> (field.relationType() != null && field.relationType().contains("."))
+						? field.relationType() : contentType.variable() + "." + field.variable())
+				.collect(
+						Collectors.toList());
+
+		//Filter legacy relationship records, which do not have a relationship field
+		return relationshipsRecords.stream()
+				.filter(record -> !relationTypes
+						.contains(record.relationship.getRelationTypeValue()))
+				.collect(Collectors.toList());
+	}
+
 	/**
 	 * @param relationshipsRecords The relationshipsRecords to set.
 	 */

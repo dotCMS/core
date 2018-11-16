@@ -71,19 +71,7 @@
 
 <%
 	}
-    ContentletRelationships contentletRelationships = (ContentletRelationships)
-		request.getAttribute(com.dotmarketing.util.WebKeys.CONTENTLET_RELATIONSHIPS_EDIT);
-
-
-	List<ContentletRelationships.ContentletRelationshipRecords> relationshipRecords = new ArrayList<>();
-
-	if (UtilMethods.isSet(contentletRelationships)){
-	    if (UtilMethods.isSet(request.getAttribute("fieldRelationType"))){
-	        relationshipRecords = contentletRelationships.getRelationshipsRecordsByField((String) request.getAttribute("fieldRelationType"));
-	    }else{
-	        relationshipRecords = contentletRelationships.getRelationshipsRecords();
-	    }
-	}
+ 	List relationshipRecords = (List<ContentletRelationships.ContentletRelationshipRecords>)request.getAttribute("relationshipRecords");
 
 	if (relationshipRecords.size() > 0) {
 
@@ -630,6 +618,7 @@
 						if (<%= relationJsName %>_Contents[i]['inode'] != null)
 							hiddenField.value = hiddenField.value + <%= relationJsName %>_Contents[i]['inode'] + ",";
 					}
+
 				}
 
 				//Add new content
