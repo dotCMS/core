@@ -5,6 +5,7 @@ package com.dotmarketing.common.business.journal;
 
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.FactoryLocator;
@@ -12,6 +13,8 @@ import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
 
 import java.sql.Connection;
 import java.util.List;
@@ -144,12 +147,20 @@ public class DistributedJournalAPIImpl<T> implements DistributedJournalAPI<T> {
 	@Override
 	public void addIdentifierReindex(final String id) throws DotDataException {
 
+		Logger.debug(this, ()->"\n*********----------- addIdentifierReindex String id : " + Thread.currentThread().getName() + ", id: " + id);
+		Logger.debug(this, ()->"*********-----------  " + DbConnectionFactory.getConnection());
+		Logger.debug(this, ()->"*********-----------  " + ExceptionUtil.getCurrentStackTraceAsString(Config.getIntProperty("stacktracelimit", 10)) + "\n");
+
 		this.distributedJournalFactory.addIdentifierReindex(id);
 	}
 
 	@WrapInTransaction
 	@Override
 	public void addReindexHighPriority(final String identifier) throws DotDataException {
+
+		Logger.debug(this, ()->"\n*********----------- addReindexHighPriority String identifier: " + Thread.currentThread().getName() + ", id: " + identifier);
+		Logger.debug(this, ()->"*********-----------  " + DbConnectionFactory.getConnection());
+		Logger.debug(this, ()->"*********-----------  " + ExceptionUtil.getCurrentStackTraceAsString(Config.getIntProperty("stacktracelimit", 10)) + "\n");
 
 		this.distributedJournalFactory.addReindexHighPriority(identifier);
 	}
@@ -158,6 +169,10 @@ public class DistributedJournalAPIImpl<T> implements DistributedJournalAPI<T> {
 	@Override
 	public int addIdentifierReindex(final Set<String> ids) throws DotDataException {
 
+		Logger.debug(this, ()->"\n*********----------- addIdentifierReindex Set<String> ids: " + Thread.currentThread().getName() + ", id: " + ids);
+		Logger.debug(this, ()->"*********-----------  " + DbConnectionFactory.getConnection());
+		Logger.debug(this, ()->"*********-----------  " + ExceptionUtil.getCurrentStackTraceAsString(Config.getIntProperty("stacktracelimit", 10)) + "\n");
+
 		return this.distributedJournalFactory.addIdentifierReindex(ids);
 	}
 
@@ -165,6 +180,9 @@ public class DistributedJournalAPIImpl<T> implements DistributedJournalAPI<T> {
 	@Override
 	public int addReindexHighPriority(final Set<String> ids) throws DotDataException {
 
+		Logger.debug(this, ()->"\n*********----------- addReindexHighPriority Set<String> ids : " + Thread.currentThread().getName() + ", ids: " + ids);
+		Logger.debug(this, ()->"*********-----------  " + DbConnectionFactory.getConnection());
+		Logger.debug(this, ()->"*********-----------  " + ExceptionUtil.getCurrentStackTraceAsString(Config.getIntProperty("stacktracelimit", 10)) + "\n");
 		return this.distributedJournalFactory.addReindexHighPriority(ids);
 	}
 
@@ -172,6 +190,9 @@ public class DistributedJournalAPIImpl<T> implements DistributedJournalAPI<T> {
 	@Override
 	public void addContentletReindex(final Contentlet contentlet) throws DotDataException {
 
+		Logger.debug(this, ()->"\n*********----------- addIdentifierReindex Contentlet contentlet : " + Thread.currentThread().getName() + ", id: " + contentlet.getIdentifier());
+		Logger.debug(this, ()->"*********-----------  " + DbConnectionFactory.getConnection());
+		Logger.debug(this, ()->"*********-----------  " + ExceptionUtil.getCurrentStackTraceAsString(Config.getIntProperty("stacktracelimit", 10)) + "\n");
 		this.distributedJournalFactory.addIdentifierReindex(contentlet.getIdentifier());
 	}
 
@@ -179,6 +200,9 @@ public class DistributedJournalAPIImpl<T> implements DistributedJournalAPI<T> {
 	@Override
 	public void addIdentifierReindex(final Identifier identifier) throws DotDataException {
 
+		Logger.debug(this, ()->"\n*********----------- addIdentifierReindex Identifier identifier : " + Thread.currentThread().getName() + ", id: " + identifier);
+		Logger.debug(this, ()->"*********-----------  " + DbConnectionFactory.getConnection());
+		Logger.debug(this, ()->"*********-----------  " + ExceptionUtil.getCurrentStackTraceAsString(Config.getIntProperty("stacktracelimit", 10)) + "\n");
 		this.distributedJournalFactory.addIdentifierReindex(identifier.getId());
 	}
 

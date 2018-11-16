@@ -14,6 +14,7 @@ import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
+import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.exception.ExceptionUtil;
@@ -167,6 +168,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	private final DistributedJournalAPI<String> distributedJournalAPI =
 			APILocator.getDistributedJournalAPI();
 
+	private final ContentletIndexAPI contentletIndexAPI =
+			APILocator.getContentletIndexAPI();
 	// not very fancy, but the WorkflowImport is a friend of WorkflowAPI
 	private volatile FriendClass  friendClass = null;
 
@@ -1202,11 +1205,42 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				"The Workflow task with id:" + task.getId() + " has been saved.");
 	}
 
+	private void saveWorkflowTaskWithoutIndexing(final WorkflowTask task) throws DotDataException {
+
+		if (task.getLanguageId() <= 0) {
+
+			Logger.error(this, "The task: " + task.getId() +
+					", does not have language id, setting to the default one");
+			task.setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId());
+		}
+
+		this.workFlowFactory.saveWorkflowTask(task);
+
+		SecurityLogger.logInfo(this.getClass(),
+				"The Workflow task with id:" + task.getId() + " has been saved.");
+	}
+
+
+	@WrapInTransaction
+	private void saveWorkflowTaskWithoutIndexing(final WorkflowTask task, final WorkflowProcessor processor) throws DotDataException {
+
+		this.saveWorkflowTaskInternal(task, processor, false);
+	}
+
 	@Override
 	@WrapInTransaction
 	public void saveWorkflowTask(final WorkflowTask task, final WorkflowProcessor processor) throws DotDataException {
 
-		this.saveWorkflowTask(task);
+		this.saveWorkflowTaskInternal(task, processor, true);
+	}
+
+	public void saveWorkflowTaskInternal(final WorkflowTask task, final WorkflowProcessor processor, final boolean doIndex) throws DotDataException {
+
+		if (doIndex) {
+			this.saveWorkflowTask(task);
+		} else {
+			this.saveWorkflowTaskWithoutIndexing(task);
+		}
 		final WorkflowHistory history = new WorkflowHistory();
 		history.setWorkflowtaskId(task.getId());
 		history.setActionId(processor.getAction().getId());
@@ -1221,12 +1255,12 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		try {
 			history.setChangeDescription(
 					LanguageUtil.format(processor.getUser().getLocale(), "workflow.history.description", new String[]{
-						processor.getUser().getFullName(),
-						processor.getAction().getName(),
-						processor.getNextStep().getName(),
-						nextAssignName,
-						comment}, false)
-					);
+							processor.getUser().getFullName(),
+							processor.getAction().getName(),
+							processor.getNextStep().getName(),
+							nextAssignName,
+							comment}, false)
+			);
 		} catch (LanguageException e) {
 			Logger.error(WorkflowAPIImpl.class,e.getMessage());
 			Logger.debug(WorkflowAPIImpl.class,e.getMessage(),e);
@@ -2072,7 +2106,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 				this.saveWorkflowTask(processor);
 
-				if (UtilMethods.isSet(processor.getContentlet())) {
+				if (UtilMethods.isSet(processor.getContentlet())
+						&& !this.contentletIndexAPI.isContentAlreadyIndexed(processor.getContentlet())) { // we make sure if it was already indexed in some of the
 				    HibernateUtil.addCommitListener(() -> {
                         try {
 							this.distributedJournalAPI.addIdentifierReindex(processor.getContentlet().getIdentifier());
@@ -2131,7 +2166,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		}
 		task.setStatus(processor.getNextStep().getId());
 
-		saveWorkflowTask(task, processor);
+		saveWorkflowTaskWithoutIndexing(task, processor);
 
 		if (null == processor.getTask()) {
 			processor.setTask(task); // when the content is new there might be the case than an action is waiting for the task in some commit listener

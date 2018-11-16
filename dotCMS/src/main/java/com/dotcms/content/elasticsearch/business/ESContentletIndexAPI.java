@@ -5,6 +5,7 @@ import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
 import com.dotcms.content.elasticsearch.util.ESClient;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.tika.TikaUtils;
 import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.business.APILocator;
@@ -56,6 +57,7 @@ import static com.dotmarketing.util.StringUtils.builder;
 
 public class ESContentletIndexAPI implements ContentletIndexAPI{
 
+	private static final ThreadLocal<Set<String>> contentIndexedTrackingLocal = new ThreadLocal< >();
 
 	private static final int    TIMEOUT_INDEX_WAIT_FOR_DEFAULT = 30000;
 	private static final String TIMEOUT_INDEX_WAIT_FOR         = "TIMEOUT_INDEX_WAIT_FOR";
@@ -93,6 +95,18 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 	        delete(idxs.reindex_working);
 	    if(idxs.reindex_live!=null)
 	        delete(idxs.reindex_live);
+	}
+
+	private Set<String> getContentIndexedTracking () {
+
+    	Set<String> set = contentIndexedTrackingLocal.get();
+    	if (null == set) {
+
+    		set = new HashSet<>();
+    		contentIndexedTrackingLocal.set(set);
+		}
+
+		return set;
 	}
 
 	/**
@@ -328,6 +342,8 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 	    	return;
 		}
 
+		this.addContentIndexTracking (content);
+
         // http://jira.dotmarketing.net/browse/DOTCMS-6886
         // check for related content to reindex
 		List<Contentlet> contentDependencies  = null;
@@ -373,6 +389,29 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 		} catch (DotDataException | DotSecurityException e1) {
 			throw new DotHibernateException(e1.getMessage(), e1);
 		}
+	}
+
+	private void addContentIndexTracking(final Contentlet content) {
+
+		this.getContentIndexedTracking().add(content.getIdentifier());
+	}
+
+	@Override
+	public boolean isContentAlreadyIndexed(final Contentlet contentlet) {
+
+		return this.isContentAlreadyIndexed(contentlet.getIdentifier());
+	}
+
+	@Override
+	public boolean isContentAlreadyIndexed(final String contentletIdentifier) {
+
+		boolean isIndexed = false;
+
+		if (null != contentIndexedTrackingLocal.get()) {
+			isIndexed = contentIndexedTrackingLocal.get().contains(contentletIdentifier);
+		}
+
+		return isIndexed;
 	}
 
 	private void handleIndexNotDefer(final Contentlet content,
@@ -573,6 +612,11 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 
 		for(Contentlet con : contentToIndexSet) {
             String id=con.getIdentifier()+"_"+con.getLanguageId();
+
+            Logger.debug(this, ()->"\n*********----------- Indexing : " + Thread.currentThread().getName() + ", id: " + con.getIdentifier());
+			Logger.debug(this, ()->"*********-----------  " + DbConnectionFactory.getConnection());
+			Logger.debug(this, ()->"*********-----------  " + ExceptionUtil.getCurrentStackTraceAsString(Config.getIntProperty("stacktracelimit", 10)) + "\n");
+
             IndiciesInfo info=APILocator.getIndiciesAPI().loadIndicies();
             Gson gson=new Gson(); // todo why do we create a new Gson everytime
             String mapping=null;

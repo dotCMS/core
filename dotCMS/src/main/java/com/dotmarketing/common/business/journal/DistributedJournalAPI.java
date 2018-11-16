@@ -16,7 +16,8 @@ import java.util.Set;
  *
  */
 public interface DistributedJournalAPI<T> {
-	
+
+
 	/**
 	 * Will return only the entries for the specific server the code is executed on
 	 * This method will also delete all entries from the table that are returned in the select 

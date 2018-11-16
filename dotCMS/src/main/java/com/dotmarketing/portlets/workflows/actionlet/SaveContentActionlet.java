@@ -59,22 +59,35 @@ public class SaveContentActionlet extends WorkFlowActionlet {
 					"Saving the content of the contentlet: " + contentlet.getIdentifier());
 
 			final boolean    isNew              = this.isNew (contentlet);
+
+			Logger.debug(this, ()->"\n*********----------- Checkout BEGIN : " + Thread.currentThread().getName() + ", id: " + contentlet.getIdentifier());
+
 			final Contentlet checkoutContentlet = isNew? contentlet:
 					this.contentletAPI.checkout(contentlet.getInode(), processor.getUser(), false);
+
+			Logger.debug(this, ()->"\n*********----------- Checkout END : " + Thread.currentThread().getName() + ", id: " + contentlet.getIdentifier());
 
 			if (!isNew) {
 
 				final String inode = checkoutContentlet.getInode();
+
+				Logger.debug(this, ()->"\n*********----------- Copy BEGIN : " + Thread.currentThread().getName() + ", id: " + contentlet.getIdentifier());
+
 				this.contentletAPI.copyProperties(checkoutContentlet, contentlet.getMap());
+
+				Logger.debug(this, ()->"\n*********----------- Copy BEGIN : " + Thread.currentThread().getName() + ", id: " + contentlet.getIdentifier());
 				checkoutContentlet.setInode(inode);
 			}
 
 			checkoutContentlet.setProperty(Contentlet.WORKFLOW_IN_PROGRESS, Boolean.TRUE);
 
+			Logger.debug(this, ()->"\n*********----------- CHECKIN BEGIN : " + Thread.currentThread().getName() + ", id: " + contentlet.getIdentifier());
+
 			final Contentlet contentletNew = (null != processor.getContentletDependencies())?
 					this.contentletAPI.checkin(checkoutContentlet, processor.getContentletDependencies()):
 					this.contentletAPI.checkin(checkoutContentlet, processor.getUser(), false);
 
+			Logger.debug(this, ()->"\n*********----------- CHECKIN END : " + Thread.currentThread().getName() + ", id: " + contentlet.getIdentifier());
 			processor.setContentlet(contentletNew);
 
 			Logger.debug(this,

@@ -52,6 +52,21 @@ public interface ContentletIndexAPI {
 
 	public boolean optimize(List<String> indexNames);
 
+	/**
+	 * Returns true if the {@link Contentlet} has been already indexed on the current thread
+	 * @param contentlet {@link Contentlet}
+	 * @return true if the content has been already indexed
+	 */
+	boolean isContentAlreadyIndexed(final Contentlet contentlet);
+
+
+	/**
+	 * Returns true if the {@link Contentlet} id has been already indexed on the current thread
+	 * @param contentletIdentifier {@link String}
+	 * @return true if the content has been already indexed
+	 */
+	boolean isContentAlreadyIndexed(final String contentletIdentifier);
+
 	public void addContentToIndex(final Contentlet content) throws DotHibernateException;
 
 	public void addContentToIndex(final Contentlet content, final boolean deps) throws DotHibernateException;

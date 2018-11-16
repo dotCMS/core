@@ -124,12 +124,15 @@ public class ReindexThread extends Thread {
                 APILocator.getRoleAPI());
 	}
 
+
+
 	@VisibleForTesting
 	public ReindexThread(final DistributedJournalAPI<String> jAPI,
 						 final NotificationAPI notificationAPI,
                          final UserAPI userAPI,
 						 final RoleAPI roleAPI) {
 
+		super ("ReindexThread");
 		this.jAPI = jAPI;
 		this.notificationAPI = notificationAPI;
         this.userAPI = userAPI;

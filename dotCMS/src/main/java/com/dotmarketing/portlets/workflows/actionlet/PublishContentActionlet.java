@@ -61,7 +61,10 @@ public class PublishContentActionlet extends WorkFlowActionlet {
                 PublishFactory.publishHTMLPage(htmlPageAsset, relatedNotPublished, processor.getUser(), false);
 
             } else {
+
+                System.err.println("\n*********----------- PUBLISH BEGIN : " + Thread.currentThread().getName() + ", id: " + contentlet.getIdentifier());
                 APILocator.getContentletAPI().publish(processor.getContentlet(), processor.getUser(), false);
+                System.err.println("\n*********----------- PUBLISH END : " + Thread.currentThread().getName() + ", id: " + contentlet.getIdentifier());
             }
 
         } catch (Exception e) {
