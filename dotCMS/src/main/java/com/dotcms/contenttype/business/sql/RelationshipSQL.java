@@ -66,7 +66,7 @@ public abstract class RelationshipSQL {
 			+ " and parent_relation_name is null)) order by parent_relation_name";
 
 
-	public static final String SELECT_ONE_SIDE_RELATIONSHIP_COUNT = "select count(*) from relationship where ((child_structure_inode = ?"
+	public static final String SELECT_ONE_SIDE_RELATIONSHIP_COUNT = "select count(*) as count from relationship where ((child_structure_inode = ?"
 			+ " and child_relation_name is null) or (parent_structure_inode = ?"
 			+ " and parent_relation_name is null))";
 }
