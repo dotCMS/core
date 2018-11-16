@@ -11,7 +11,6 @@ import { ActionHeaderOptions } from '@models/action-header';
 import { ContentTypesInfoService } from '@services/content-types-info';
 import { DataTableColumn } from '@models/data-table';
 import { DotMessageService } from '@services/dot-messages-service';
-import { DotContentletService } from '@services/dot-contentlet/dot-contentlet.service';
 import { StructureTypeView } from '@models/contentlet/structure-type-view.model';
 import { ButtonModel } from '@models/action-header/button.model';
 import { DotDataTableAction } from '@models/data-table/dot-data-table-action';
@@ -19,6 +18,7 @@ import { PushPublishService } from '@services/push-publish/push-publish.service'
 import { DotEnvironment } from '@models/dot-environment/dot-environment';
 import { DotLicenseService } from '@services/dot-license/dot-license.service';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
+import { DotContentTypeService } from '@services/dot-content-type/dot-content-type.service';
 
 /**
  * List of Content Types
@@ -69,7 +69,7 @@ export class ContentTypesPortletComponent implements OnInit {
     constructor(
         private contentTypesInfoService: ContentTypesInfoService,
         private crudService: CrudService,
-        private dotContentletService: DotContentletService,
+        private dotContentletService: DotContentTypeService,
         private dotDialogService: DotAlertConfirmService,
         private dotLicenseService: DotLicenseService,
         private httpErrorManagerService: DotHttpErrorManagerService,

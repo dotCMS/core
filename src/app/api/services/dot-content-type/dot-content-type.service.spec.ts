@@ -1,9 +1,9 @@
 import { DOTTestBed } from '../../../test/dot-test-bed';
-import { DotContentletService } from './dot-contentlet.service';
 import { ConnectionBackend, ResponseOptions, Response } from '@angular/http';
 import { MockBackend } from '@angular/http/testing';
 import { mockDotContentlet } from '../../../test/dot-contentlet.mock';
 import { StructureTypeView } from '@models/contentlet/structure-type-view.model';
+import { DotContentTypeService } from './dot-content-type.service';
 
 let lastConnection: any;
 
@@ -25,8 +25,8 @@ function isRecentContentType(type: StructureTypeView): boolean {
 
 describe('DotContentletService', () => {
     beforeEach(() => {
-        this.injector = DOTTestBed.resolveAndCreate([DotContentletService]);
-        this.dotContentletService = this.injector.get(DotContentletService);
+        this.injector = DOTTestBed.resolveAndCreate([DotContentTypeService]);
+        this.dotContentletService = this.injector.get(DotContentTypeService);
         this.backend = this.injector.get(ConnectionBackend) as MockBackend;
         this.backend.connections.subscribe((connection: any) => (lastConnection = connection));
     });

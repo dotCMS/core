@@ -7,14 +7,18 @@ import { StructureTypeView, ContentTypeView } from '@models/contentlet';
 import { ContentType } from '@portlets/content-types/shared/content-type.model';
 
 @Injectable()
-export class DotContentletService {
+export class DotContentTypeService {
     constructor(private coreWebService: CoreWebService) {}
 
-    getContentType(id: string): Observable<ContentType> {
+    /**
+     * Get a content type by id or variable name
+     * @param idOrVar content type's id or variable name
+     */
+    getContentType(idOrVar: string): Observable<ContentType> {
         return this.coreWebService
             .requestView({
                 method: RequestMethod.Get,
-                url: `v1/contenttype/id/${id}`
+                url: `v1/contenttype/id/${idOrVar}`
             })
             .pipe(pluck('entity'));
     }

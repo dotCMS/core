@@ -4,8 +4,8 @@ import { PaginatorService } from '@services/paginator';
 import { ContentType } from '@portlets/content-types/shared/content-type.model';
 import { RelationshipCardinality } from '@portlets/content-types/fields/shared/relationship-cardinality.model';
 import { RelationshipService } from '@portlets/content-types/fields/service/relationship.service';
-import { DotContentletService } from '@services/dot-contentlet/dot-contentlet.service';
 import { Observable } from 'rxjs';
+import { DotContentTypeService } from '@services/dot-content-type/dot-content-type.service';
 
 @Component({
     providers: [PaginatorService],
@@ -39,7 +39,7 @@ export class NewRelationshipsComponent implements OnInit {
         public dotMessageService: DotMessageService,
         public contentTypePaginatorService: PaginatorService,
         private relationshipService: RelationshipService,
-        private contentTypeService: DotContentletService) {
+        private contentTypeService: DotContentTypeService) {
 
     }
     ngOnInit() {

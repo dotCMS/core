@@ -1,10 +1,10 @@
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
-import { DotContentletService } from '@services/dot-contentlet/dot-contentlet.service';
 import { StructureTypeView } from '@models/contentlet/structure-type-view.model';
 import { Observable } from 'rxjs';
 import { DotMessageService } from '@services/dot-messages-service';
 import { SelectItem } from 'primeng/primeng';
 import { map, take } from 'rxjs/operators';
+import { DotContentTypeService } from '@services/dot-content-type/dot-content-type.service';
 
 @Component({
     selector: 'dot-base-type-selector',
@@ -20,7 +20,7 @@ export class DotBaseTypeSelectorComponent implements OnInit {
     options: Observable<SelectItem[]>;
 
     constructor(
-        private dotContentletService: DotContentletService,
+        private dotContentletService: DotContentTypeService,
         private dotMessageService: DotMessageService
     ) {}
 
