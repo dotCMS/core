@@ -62,7 +62,7 @@ public class FieldAPITest extends IntegrationTestBase {
             final String uuid = UUIDGenerator.generateUuid();
             contentType = ContentTypeBuilder.builder(SimpleContentType.class).folder(
                     FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST).name("FieldAPITest_" + uuid)
-                    .variable("FieldAPITest_" + uuid).owner(user.getUserId()).build();
+                    .owner(user.getUserId()).build();
 
             contentType = contentTypeAPI.save(contentType);
 
@@ -112,18 +112,18 @@ public class FieldAPITest extends IntegrationTestBase {
         try {
             parentContentType = ContentTypeBuilder.builder(SimpleContentType.class).folder(
                     FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST).name("parentContentType" + time)
-                    .variable("parentContentType" + time).owner(user.getUserId()).build();
+                    .owner(user.getUserId()).build();
 
             parentContentType = contentTypeAPI.save(parentContentType);
 
             childContentType = ContentTypeBuilder.builder(SimpleContentType.class).folder(
                     FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST).name("childContentType" + time)
-                    .variable("childContentType" + time).owner(user.getUserId()).build();
+                    .owner(user.getUserId()).build();
 
             childContentType = contentTypeAPI.save(childContentType);
 
             Field field = FieldBuilder.builder(RelationshipField.class).name("newRel")
-                    .contentTypeId(parentContentType.id()).values("1").variable("newRel")
+                    .contentTypeId(parentContentType.id()).values("1")
                     .relationType(childContentType.variable()).build();
 
             //One side of the relationship is set parentContentType --> childContentType
@@ -164,19 +164,19 @@ public class FieldAPITest extends IntegrationTestBase {
         try {
             parentContentType = ContentTypeBuilder.builder(SimpleContentType.class).folder(
                     FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST).name("parentContentType" + time)
-                    .variable("parentContentType" + time).owner(user.getUserId()).build();
+                    .owner(user.getUserId()).build();
 
             parentContentType = contentTypeAPI.save(parentContentType);
 
             childContentType = ContentTypeBuilder.builder(SimpleContentType.class).folder(
                     FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST).name("childContentType" + time)
-                    .variable("childContentType" + time).owner(user.getUserId()).build();
+                    .owner(user.getUserId()).build();
 
             childContentType = contentTypeAPI.save(childContentType);
 
             //Adding a RelationshipField to the parent
             Field field = FieldBuilder.builder(RelationshipField.class).name("newRel")
-                    .contentTypeId(parentContentType.id()).values("1").variable("newRel")
+                    .contentTypeId(parentContentType.id()).values("1")
                     .relationType(childContentType.variable()).build();
 
             //One side of the relationship is set parentContentType --> childContentType
@@ -187,12 +187,12 @@ public class FieldAPITest extends IntegrationTestBase {
 
 
             //Adding a RelationshipField to the child
-            final Field secondField = FieldBuilder.builder(RelationshipField.class).name("otherSideRel")
-                    .contentTypeId(childContentType.id()).values("1").variable("otherSideRel")
+            Field secondField = FieldBuilder.builder(RelationshipField.class).name("otherSideRel")
+                    .contentTypeId(childContentType.id()).values("1")
                     .relationType(fullFieldVar).build();
 
             //Setting the other side of the relationship childContentType --> parentContentType
-            fieldAPI.save(secondField, user);
+            secondField = fieldAPI.save(secondField, user);
 
             final Relationship relationship = relationshipAPI.byTypeValue(fullFieldVar);
 
@@ -229,26 +229,26 @@ public class FieldAPITest extends IntegrationTestBase {
         try {
             parentContentType = ContentTypeBuilder.builder(SimpleContentType.class).folder(
                     FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST).name("parentContentType" + time)
-                    .variable("parentContentType" + time).owner(user.getUserId()).build();
+                    .owner(user.getUserId()).build();
 
             parentContentType = contentTypeAPI.save(parentContentType);
 
             childContentType = ContentTypeBuilder.builder(SimpleContentType.class).folder(
                     FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST).name("childContentType" + time)
-                    .variable("childContentType" + time).owner(user.getUserId()).build();
+                    .owner(user.getUserId()).build();
 
             childContentType = contentTypeAPI.save(childContentType);
 
             newParentContentType = ContentTypeBuilder.builder(SimpleContentType.class).folder(
                     FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST)
                     .name("newParentContentType" + time)
-                    .variable("newParentContentType" + time).owner(user.getUserId()).build();
+                    .owner(user.getUserId()).build();
 
             newParentContentType = contentTypeAPI.save(newParentContentType);
 
             //Adding a RelationshipField to the parent
             Field field = FieldBuilder.builder(RelationshipField.class).name("newRel")
-                    .contentTypeId(parentContentType.id()).values("1").variable("newRel")
+                    .contentTypeId(parentContentType.id()).values("1")
                     .relationType(childContentType.variable()).build();
 
             //One side of the relationship is set parentContentType --> childContentType
@@ -260,7 +260,7 @@ public class FieldAPITest extends IntegrationTestBase {
             //Adding a RelationshipField to the child
             //Setting the other side of the relationship childContentType --> parentContentType
             Field secondField = FieldBuilder.builder(RelationshipField.class).name("otherSideRel")
-                    .contentTypeId(childContentType.id()).values("1").variable("otherSideRel")
+                    .contentTypeId(childContentType.id()).values("1")
                     .relationType(fullFieldVar).build();
 
             secondField = fieldAPI.save(secondField, user);
@@ -296,26 +296,26 @@ public class FieldAPITest extends IntegrationTestBase {
         try {
             parentContentType = ContentTypeBuilder.builder(SimpleContentType.class).folder(
                     FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST).name("parentContentType" + time)
-                    .variable("parentContentType" + time).owner(user.getUserId()).build();
+                    .owner(user.getUserId()).build();
 
             parentContentType = contentTypeAPI.save(parentContentType);
 
             childContentType = ContentTypeBuilder.builder(SimpleContentType.class).folder(
                     FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST).name("childContentType" + time)
-                    .variable("childContentType" + time).owner(user.getUserId()).build();
+                    .owner(user.getUserId()).build();
 
             childContentType = contentTypeAPI.save(childContentType);
 
             newChildContentType = ContentTypeBuilder.builder(SimpleContentType.class).folder(
                     FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST)
                     .name("newChildContentType" + time)
-                    .variable("newChildContentType" + time).owner(user.getUserId()).build();
+                    .owner(user.getUserId()).build();
 
             newChildContentType = contentTypeAPI.save(newChildContentType);
 
             //Adding a RelationshipField to the parent
             Field field = FieldBuilder.builder(RelationshipField.class).name("newRel")
-                    .contentTypeId(parentContentType.id()).values("1").variable("newRel")
+                    .contentTypeId(parentContentType.id()).values("1")
                     .relationType(childContentType.variable()).build();
 
             //One side of the relationship is set parentContentType --> childContentType
@@ -327,7 +327,7 @@ public class FieldAPITest extends IntegrationTestBase {
             //Adding a RelationshipField to the child
             //Setting the other side of the relationship childContentType --> parentContentType
             Field secondField = FieldBuilder.builder(RelationshipField.class).name("otherSideRel")
-                    .contentTypeId(childContentType.id()).values("1").variable("otherSideRel")
+                    .contentTypeId(childContentType.id()).values("1")
                     .relationType(fullFieldVar).build();
 
             fieldAPI.save(secondField, user);
@@ -364,19 +364,19 @@ public class FieldAPITest extends IntegrationTestBase {
         try {
             parentContentType = ContentTypeBuilder.builder(SimpleContentType.class).folder(
                     FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST).name("parentContentType" + time)
-                    .variable("parentContentType" + time).owner(user.getUserId()).build();
+                    .owner(user.getUserId()).build();
 
             parentContentType = contentTypeAPI.save(parentContentType);
 
             childContentType = ContentTypeBuilder.builder(SimpleContentType.class).folder(
                     FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST).name("childContentType" + time)
-                    .variable("childContentType" + time).owner(user.getUserId()).build();
+                    .owner(user.getUserId()).build();
 
             childContentType = contentTypeAPI.save(childContentType);
 
             //Adding a RelationshipField to the parent
             Field field = FieldBuilder.builder(RelationshipField.class).name("newRel")
-                    .contentTypeId(parentContentType.id()).values("1").variable("newRel")
+                    .contentTypeId(parentContentType.id()).values("1")
                     .relationType(childContentType.variable()).build();
 
             //One side of the relationship is set parentContentType --> childContentType
@@ -388,7 +388,7 @@ public class FieldAPITest extends IntegrationTestBase {
 
             //Adding a RelationshipField to the child
             Field secondField = FieldBuilder.builder(RelationshipField.class).name("otherSideRel")
-                    .contentTypeId(childContentType.id()).values("1").variable("otherSideRel")
+                    .contentTypeId(childContentType.id()).values("1")
                     .relationType(fullFieldVar).build();
 
             secondField = fieldAPI.save(secondField, user);
@@ -430,19 +430,19 @@ public class FieldAPITest extends IntegrationTestBase {
         try {
             parentContentType = ContentTypeBuilder.builder(SimpleContentType.class).folder(
                     FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST).name("parentContentType" + time)
-                    .variable("parentContentType" + time).owner(user.getUserId()).build();
+                    .owner(user.getUserId()).build();
 
             parentContentType = contentTypeAPI.save(parentContentType);
 
             childContentType = ContentTypeBuilder.builder(SimpleContentType.class).folder(
                     FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST).name("childContentType" + time)
-                    .variable("childContentType" + time).owner(user.getUserId()).build();
+                    .owner(user.getUserId()).build();
 
             childContentType = contentTypeAPI.save(childContentType);
 
             //Adding a RelationshipField to the parent
             Field field = FieldBuilder.builder(RelationshipField.class).name("newRel")
-                    .contentTypeId(parentContentType.id()).values("1").variable("newRel")
+                    .contentTypeId(parentContentType.id()).values("1")
                     .relationType(childContentType.variable()).build();
 
             //One side of the relationship is set parentContentType --> childContentType
@@ -453,7 +453,7 @@ public class FieldAPITest extends IntegrationTestBase {
 
             //Adding a RelationshipField to the child
             Field secondField = FieldBuilder.builder(RelationshipField.class).name("otherSideRel")
-                    .contentTypeId(childContentType.id()).values("1").variable("otherSideRel")
+                    .contentTypeId(childContentType.id()).values("1")
                     .relationType(fullFieldVar).build();
 
             secondField = fieldAPI.save(secondField, user);
@@ -495,19 +495,19 @@ public class FieldAPITest extends IntegrationTestBase {
         try {
             parentContentType = ContentTypeBuilder.builder(SimpleContentType.class).folder(
                     FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST).name("parentContentType" + time)
-                    .variable("parentContentType" + time).owner(user.getUserId()).build();
+                    .owner(user.getUserId()).build();
 
             parentContentType = contentTypeAPI.save(parentContentType);
 
             childContentType = ContentTypeBuilder.builder(SimpleContentType.class).folder(
                     FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST).name("childContentType" + time)
-                    .variable("childContentType" + time).owner(user.getUserId()).build();
+                    .owner(user.getUserId()).build();
 
             childContentType = contentTypeAPI.save(childContentType);
 
             //Adding a RelationshipField to the parent
             Field field = FieldBuilder.builder(RelationshipField.class).name("newRel")
-                    .contentTypeId(parentContentType.id()).values("1").variable("newRel")
+                    .contentTypeId(parentContentType.id()).values("1")
                     .relationType(childContentType.variable()).build();
 
             //One side of the relationship is set parentContentType --> childContentType
@@ -546,19 +546,19 @@ public class FieldAPITest extends IntegrationTestBase {
         try {
             parentContentType = ContentTypeBuilder.builder(SimpleContentType.class).folder(
                     FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST).name("parentContentType" + time)
-                    .variable("parentContentType" + time).owner(user.getUserId()).build();
+                    .owner(user.getUserId()).build();
 
             parentContentType = contentTypeAPI.save(parentContentType);
 
             childContentType = ContentTypeBuilder.builder(SimpleContentType.class).folder(
                     FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST).name("childContentType" + time)
-                    .variable("childContentType" + time).owner(user.getUserId()).build();
+                    .owner(user.getUserId()).build();
 
             childContentType = contentTypeAPI.save(childContentType);
 
             //Adding a RelationshipField to the parent
             Field field = FieldBuilder.builder(RelationshipField.class).name("newRel")
-                    .contentTypeId(parentContentType.id()).values("5").variable("newRel")
+                    .contentTypeId(parentContentType.id()).values("5")
                     .relationType(childContentType.variable()).build();
 
             //Trying to save relationship field with invalid input (cardinality=5)
@@ -616,19 +616,19 @@ public class FieldAPITest extends IntegrationTestBase {
         try {
             parentContentType = ContentTypeBuilder.builder(SimpleContentType.class).folder(
                     FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST).name("parentContentType" + time)
-                    .variable("parentContentType" + time).owner(user.getUserId()).build();
+                    .owner(user.getUserId()).build();
 
             parentContentType = contentTypeAPI.save(parentContentType);
 
             childContentType = ContentTypeBuilder.builder(SimpleContentType.class).folder(
                     FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST).name("childContentType" + time)
-                    .variable("childContentType" + time).owner(user.getUserId()).build();
+                    .owner(user.getUserId()).build();
 
             childContentType = contentTypeAPI.save(childContentType);
 
             //Adding a RelationshipField to the parent
             Field field = FieldBuilder.builder(RelationshipField.class).name("newRel")
-                    .contentTypeId(parentContentType.id()).values("1").variable("newRel")
+                    .contentTypeId(parentContentType.id()).values("1")
                     .relationType(childContentType.variable()).required(true).build();
 
 
@@ -646,7 +646,7 @@ public class FieldAPITest extends IntegrationTestBase {
 
             //Adding a RelationshipField to the child
             Field secondField = FieldBuilder.builder(RelationshipField.class).name("otherSideRel")
-                    .contentTypeId(childContentType.id()).values("1").variable("otherSideRel")
+                    .contentTypeId(childContentType.id()).values("1")
                     .relationType(fullFieldVar).required(true).build();
 
             secondField = fieldAPI.save(secondField, user);
@@ -681,12 +681,12 @@ public class FieldAPITest extends IntegrationTestBase {
         try {
             parentContentType = ContentTypeBuilder.builder(SimpleContentType.class).folder(
                     FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST).name("parentContentType" + time)
-                    .variable("parentContentType" + time).owner(user.getUserId()).build();
+                    .owner(user.getUserId()).build();
 
             parentContentType = contentTypeAPI.save(parentContentType);
 
             Field field = FieldBuilder.builder(RelationshipField.class).name("newRel")
-                    .contentTypeId(parentContentType.id()).values("1").variable("newRel")
+                    .contentTypeId(parentContentType.id()).values("1")
                     .relationType(existingContentType.variable()).build();
 
             //One side of the relationship is set parentContentType --> Youtube
