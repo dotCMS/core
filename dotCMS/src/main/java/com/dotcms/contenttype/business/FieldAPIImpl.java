@@ -138,7 +138,7 @@ public class FieldAPIImpl implements FieldAPI {
 
         //if RelationshipField, Relationship record must be added/updated
       if (field instanceof RelationshipField) {
-          Optional<Relationship> relationship = getRelationshipForField(field, contentTypeAPI,
+          Optional<Relationship> relationship = getRelationshipForField(result, contentTypeAPI,
                   type);
 
           if (relationship.isPresent()) {
