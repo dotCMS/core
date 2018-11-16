@@ -58,16 +58,27 @@ public class JavascriptEngine {
         return Optional.empty();
     }
 
-    public Optional<Object> invokeFunction (final CharSequence script, final String functionName, Object... functionArguments) {
+    public Optional<Object> invokeFunction (final CharSequence script, final String functionName,
+                                            Object... functionArguments) {
 
-        return this.invokeFunction(new StringReader(script.toString()), functionName, functionArguments);
+        return this.invokeFunction(script, functionName, Collections.emptyMap(), functionArguments);
     }
 
-    public Optional<Object> invokeFunction (final Reader reader, final String functionName, Object... functionArguments) {
+    public Optional<Object> invokeFunction (final CharSequence script, final String functionName,
+                                            final Map<String, Object> context, Object... functionArguments) {
+
+        return this.invokeFunction(new StringReader(script.toString()), functionName, context, functionArguments);
+    }
+
+    public Optional<Object> invokeFunction (final Reader reader, final String functionName,
+                                            final Map<String, Object> context, Object... functionArguments) {
 
         try {
 
             final ScriptEngine engine = this.getEngine();
+            for (final Map.Entry<String, Object> entry : context.entrySet()) {
+                engine.getContext().setAttribute(entry.getKey(), entry.getValue(), ScriptContext.ENGINE_SCOPE);
+            }
             engine.eval(reader);
             final Invocable invocable = (Invocable)engine;
             return Optional.ofNullable(invocable.invokeFunction(functionName, functionArguments));
