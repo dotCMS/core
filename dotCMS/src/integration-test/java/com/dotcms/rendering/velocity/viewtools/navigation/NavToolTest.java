@@ -1,5 +1,11 @@
 package com.dotcms.rendering.velocity.viewtools.navigation;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.datagen.FileAssetDataGen;
 import com.dotcms.util.IntegrationTestInitService;
@@ -7,6 +13,8 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
@@ -14,14 +22,15 @@ import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.util.Config;
-
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
-
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.junit.AfterClass;
@@ -30,13 +39,7 @@ import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.MethodSorters;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 import org.mockito.Mockito;
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.mock;
 
 /**
  * NavToolTest
@@ -81,16 +84,24 @@ public class NavToolTest extends IntegrationTestBase{
         NavResult navResult = new NavTool().getNav(demoHost, aboutUsIdentifier.getPath(), 1, user);
         assertNotNull(navResult);
 
-        //We are expecting 3 children result for English Language.
+        //Find out how many show on menu items we currently have
+        final int currentShowOnMenuItems = findShowOnMenuUnderFolderRecursive(aboutUsFolder, user);
+
+        //Comparing what we found vs the result on the NavTool
         int englishResultChildren = navResult.getChildren().size();
-        assertEquals(englishResultChildren, 3);
+        assertEquals(englishResultChildren, currentShowOnMenuItems);
 
         navResult = new NavTool().getNav(demoHost, aboutUsIdentifier.getPath(), 2, user);
         assertNotNull(navResult);
 
         int spanishResultChildren = navResult.getChildren().size();
-        //We are expecting 3 children result for Spanish Language.
-        assertEquals(spanishResultChildren, 3);
+
+        /*
+         As we are using the DEFAULT_PAGE_TO_DEFAULT_LANGUAGE=true and at this point
+         we are not creating any spanish page we can assume we have the same amount
+         of english pages.
+         */
+        assertEquals(spanishResultChildren, currentShowOnMenuItems);
 
         List<IHTMLPage> liveHTMLPages = APILocator.getHTMLPageAssetAPI().getLiveHTMLPages(aboutUsFolder, user, false);
 
@@ -141,9 +152,12 @@ public class NavToolTest extends IntegrationTestBase{
         NavResult navResult = new NavTool().getNav(demoHost, aboutUsIdentifier.getPath(), 1, user);
         assertNotNull(navResult);
 
-        //We are expecting 3 children result for English Language.
+        //Find out how many show on menu items we currently have
+        final int currentShowOnMenuItems = findShowOnMenuUnderFolderRecursive(aboutUsFolder, user);
+
+        //Comparing what we found vs the result on the NavTool
         int englishResultChildren = navResult.getChildren().size();
-        assertEquals(englishResultChildren, 3);
+        assertEquals(englishResultChildren, currentShowOnMenuItems);
 
         navResult = new NavTool().getNav(demoHost, aboutUsIdentifier.getPath(), 2, user);
         assertNotNull(navResult);
@@ -245,6 +259,16 @@ public class NavToolTest extends IntegrationTestBase{
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final ViewContext viewContext = mock(ViewContext.class);
 
+        //Using System User.
+        User user = APILocator.getUserAPI().getSystemUser();
+
+        //Using demo.dotcms.com host.
+        final Host demoHost = APILocator.getHostAPI().findByName("demo.dotcms.com", user, false);
+
+        //Using about us Folder.
+        final Folder aboutUsFolder = APILocator.getFolderAPI()
+                .findFolderByPath("/about-us/", demoHost, user, false);
+
         Mockito.when(request.getRequestURI()).thenReturn("/about-us");
         Mockito.when(request.getServerName()).thenReturn("demo.dotcms.com");
         Mockito.when(viewContext.getRequest()).thenReturn(request);
@@ -255,15 +279,28 @@ public class NavToolTest extends IntegrationTestBase{
         final NavResult navResult = navTool.getNav(1);
         assertNotNull(navResult);
 
-        //We are expecting 3 children result
+        //Find out how many show on menu items we currently have
+        final int currentShowOnMenuItems = findShowOnMenuUnderFolderRecursive(aboutUsFolder, user);
+
+        //Comparing what we found vs the result on the NavTool
         final int resultChildren = navResult.getChildren().size();
-        assertEquals(resultChildren, 3);
+        assertEquals(resultChildren, currentShowOnMenuItems);
     }
 
     @Test
     public void test_getNavWithoutParameters() throws Exception {
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final ViewContext viewContext = mock(ViewContext.class);
+
+        //Using System User.
+        User user = APILocator.getUserAPI().getSystemUser();
+
+        //Using demo.dotcms.com host.
+        final Host demoHost = APILocator.getHostAPI().findByName("demo.dotcms.com", user, false);
+
+        //Using about us Folder.
+        final Folder aboutUsFolder = APILocator.getFolderAPI()
+                .findFolderByPath("/about-us/", demoHost, user, false);
 
         Mockito.when(request.getRequestURI()).thenReturn("/about-us");
         Mockito.when(request.getServerName()).thenReturn("demo.dotcms.com");
@@ -275,9 +312,12 @@ public class NavToolTest extends IntegrationTestBase{
         final NavResult navResult = navTool.getNav();
         assertNotNull(navResult);
 
-        //We are expecting 3 children result
+        //Find out how many show on menu items we currently have
+        final int currentShowOnMenuItems = findShowOnMenuUnderFolderRecursive(aboutUsFolder, user);
+
+        //Comparing what we found vs the result on the NavTool
         final int resultChildren = navResult.getChildren().size();
-        assertEquals(resultChildren, 3);
+        assertEquals(resultChildren, currentShowOnMenuItems);
     }
 
     @DataProvider
@@ -376,4 +416,52 @@ public class NavToolTest extends IntegrationTestBase{
             contentletsCreated.add(working);
         }
     }
+
+    /**
+     * Given a folder we return the number of items inside that folder marked with the Show On Menu
+     * flag, we exclude from that count the parent folder as we are counting just items under it.
+     * This method calculates also over the sub folders of the given parent folder.
+     */
+    private int findShowOnMenuUnderFolderRecursive(Folder folder, User user)
+            throws DotSecurityException, DotDataException {
+
+        //First count over the given folder
+        int showOnMenu = findShowOnMenuUnderFolder(folder, user, false);
+
+        //Now search for sub folders under the given folder
+        List<Folder> subFolders = APILocator.getFolderAPI().findSubFolders(folder, user, false);
+        for (Folder subfolder : subFolders) {
+            showOnMenu += findShowOnMenuUnderFolder(subfolder, user, true);
+        }
+
+        return showOnMenu;
+    }
+
+    /**
+     * Given a folder we return the number of items inside that folder marked with the Show On Menu
+     * flag.
+     */
+    private int findShowOnMenuUnderFolder(Folder folder, User user, boolean includeFolder)
+            throws DotSecurityException, DotDataException {
+
+        int showOnMenu = 0;
+
+        List<IHTMLPage> liveHTMLPages = APILocator.getHTMLPageAssetAPI()
+                .getLiveHTMLPages(folder, user, false);
+        if (!liveHTMLPages.isEmpty()) {
+            for (IHTMLPage page : liveHTMLPages) {
+                if (page.isShowOnMenu()) {
+                    showOnMenu++;
+                }
+            }
+
+        }
+
+        if (includeFolder && folder.isShowOnMenu()) {
+            showOnMenu++;
+        }
+
+        return showOnMenu;
+    }
+
 }
