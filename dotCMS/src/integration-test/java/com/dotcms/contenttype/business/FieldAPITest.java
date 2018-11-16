@@ -575,34 +575,6 @@ public class FieldAPITest extends IntegrationTestBase {
         }
     }
 
-    /*@Test(expected = DotDataException.class)
-    public void testSavedRelationshipFieldWithInvalidRelationType()
-            throws DotSecurityException, DotDataException {
-        final long time = System.currentTimeMillis();
-
-        ContentType parentContentType = null;
-
-        try {
-            parentContentType = ContentTypeBuilder.builder(SimpleContentType.class).folder(
-                    FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST).name("parentContentType" + time)
-                    .variable("parentContentType" + time).owner(user.getUserId()).build();
-
-            parentContentType = contentTypeAPI.save(parentContentType);
-
-            //Adding a RelationshipField to the parent
-            Field field = FieldBuilder.builder(RelationshipField.class).name("newRel")
-                    .contentTypeId(parentContentType.id()).values("1").variable("newRel")
-                    .relationType("sssss").build();
-
-            //Trying to save relationship field with invalid input (relationType=sssss)
-            fieldAPI.save(field, user);
-
-        } finally {
-            if (UtilMethods.isSet(parentContentType) && UtilMethods.isSet(parentContentType.id())) {
-                contentTypeAPI.delete(parentContentType);
-            }
-        }
-    }*/
 
     @Test
     public void testSaveRelationshipFieldBothSidesRequired()
