@@ -1,5 +1,4 @@
 import { debounceTime } from 'rxjs/operators';
-import { DotContainer } from '@models/container/dot-container.model';
 import {
     Component,
     ElementRef,
@@ -79,6 +78,8 @@ export class SearchableDropdownComponent implements ControlValueAccessor, OnChan
     value: any;
     valueString = '';
 
+    label: string;
+
     i18nMessages: {
         [key: string]: string;
     } = {};
@@ -156,7 +157,7 @@ export class SearchableDropdownComponent implements ControlValueAccessor, OnChan
      * @returns string
      * @memberof SearchableDropdownComponent
      */
-    getLabel(container: DotContainer): string {
+    getItemLabel(dropDownItem: any): string {
         let resultProps;
 
         if (Array.isArray(this.labelPropertyName)) {
@@ -164,18 +165,18 @@ export class SearchableDropdownComponent implements ControlValueAccessor, OnChan
                 if (item.indexOf('.') > -1) {
                     let propertyName;
                     item.split('.').forEach((nested) => {
-                        propertyName = propertyName ? propertyName[nested] : container[nested];
+                        propertyName = propertyName ? propertyName[nested] : dropDownItem[nested];
                     });
 
                     return propertyName;
                 }
 
-                return container[item];
+                return dropDownItem[item];
             });
 
             return resultProps.join(' - ');
         } else {
-            return container[this.labelPropertyName];
+            return dropDownItem[this.labelPropertyName];
         }
     }
 
@@ -203,6 +204,10 @@ export class SearchableDropdownComponent implements ControlValueAccessor, OnChan
 
     setDisabledState(isDisabled: boolean): void {
         this.button.nativeElement.disabled = isDisabled;
+    }
+
+    getLabel(): string {
+        return this.persistentPlaceholder ? this.placeholder : this.valueString;
     }
 
     private usePlaceholder(change: SimpleChanges): boolean {
