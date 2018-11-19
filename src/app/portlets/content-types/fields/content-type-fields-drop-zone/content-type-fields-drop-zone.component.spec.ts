@@ -13,6 +13,7 @@ import {
 } from '../';
 import { ReactiveFormsModule } from '@angular/forms';
 import { FieldValidationMessageModule } from '@components/_common/field-validation-message/file-validation-message.module';
+import { DotActionButtonModule } from '@components/_common/dot-action-button/dot-action-button.module';
 import { DotMessageService } from '@services/dot-messages-service';
 import { LoginService, SocketFactory } from 'dotcms-js';
 import { Router } from '@angular/router';
@@ -28,10 +29,11 @@ import { DotIconButtonModule } from '@components/_common/dot-icon-button/dot-ico
 import { DotIconModule } from '@components/_common/dot-icon/dot-icon.module';
 import { HotkeysService } from 'angular2-hotkeys';
 import { TestHotkeysMock } from '../../../../test/hotkeys-service.mock';
-import { AddVariableFormComponent } from '../content-type-fields-variables/add-variable-form';
 import { DragulaModule, DragulaService } from 'ng2-dragula';
 import * as _ from 'lodash';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
+import { TableModule } from 'primeng/table';
+
 @Component({
     selector: 'dot-content-type-fields-row',
     template: ''
@@ -114,7 +116,6 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
 
         DOTTestBed.configureTestingModule({
             declarations: [
-                AddVariableFormComponent,
                 ContentTypeFieldsDropZoneComponent,
                 ContentTypeFieldsVariablesComponent,
                 TestContentTypeFieldsPropertiesFormComponent,
@@ -131,9 +132,11 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
                 BrowserAnimationsModule,
                 ContentTypeFieldsAddRowModule,
                 DotDialogModule,
+                DotActionButtonModule,
                 DotIconButtonModule,
                 DotIconModule,
                 DragulaModule,
+                TableModule,
                 FieldValidationMessageModule,
                 ReactiveFormsModule
             ],
@@ -302,7 +305,6 @@ describe('Load fields and drag and drop', () => {
             declarations: [
                 ContentTypeFieldsDropZoneComponent,
                 ContentTypeFieldsVariablesComponent,
-                AddVariableFormComponent,
                 TestContentTypeFieldsRowComponent,
                 TestContentTypeFieldsPropertiesFormComponent,
                 TestDotContentTypeFieldsTabComponent,
@@ -319,8 +321,10 @@ describe('Load fields and drag and drop', () => {
                 FieldValidationMessageModule,
                 ReactiveFormsModule,
                 BrowserAnimationsModule,
+                DotActionButtonModule,
                 DotIconModule,
                 DotIconButtonModule,
+                TableModule,
                 ContentTypeFieldsAddRowModule,
                 DotDialogModule
             ],

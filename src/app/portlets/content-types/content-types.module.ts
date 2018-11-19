@@ -56,7 +56,6 @@ import {
     RegexCheckPropertyComponent,
     ValuesPropertyComponent
 } from './fields/content-type-fields-properties-form/field-properties';
-import { AddVariableFormComponent } from './fields/content-type-fields-variables/add-variable-form';
 
 import { DotAddToBundleModule } from '@components/_common/dot-add-to-bundle/dot-add-to-bundle.module';
 import { DotBaseTypeSelectorModule } from '@components/dot-base-type-selector/dot-base-type-selector.module';
@@ -84,7 +83,6 @@ import { DotActionButtonModule } from '@components/_common/dot-action-button/dot
         ContentTypeFieldsDropZoneComponent,
         ContentTypeFieldsPropertiesFormComponent,
         ContentTypeFieldsVariablesComponent,
-        AddVariableFormComponent,
         ContentTypeFieldsRowComponent,
         ContentTypeFieldsTabComponent,
         ContentTypesEditComponent,

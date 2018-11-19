@@ -1,7 +1,8 @@
 import { By } from '@angular/platform-browser';
 import { ComponentFixture } from '@angular/core/testing';
-import { DebugElement, Component, Output, EventEmitter } from '@angular/core';
-import { ContentTypeFieldsVariablesComponent, FieldVariable } from './content-type-fields-variables.component';
+import { DebugElement} from '@angular/core';
+import { ContentTypeFieldsVariablesComponent } from './content-type-fields-variables.component';
+import { DotActionButtonModule } from '@components/_common/dot-action-button/dot-action-button.module';
 import { MockDotMessageService } from '../../../../test/dot-message-service.mock';
 import { DOTTestBed } from '../../../../test/dot-test-bed';
 import { DotMessageService } from '../../../../api/services/dot-messages-service';
@@ -11,16 +12,8 @@ import { LoginServiceMock } from '../../../../test/login-service.mock';
 import { RouterTestingModule } from '@angular/router/testing';
 import { FieldVariablesServiceMock, mockFieldVariables } from '../../../../test/field-variable-service.mock';
 import { FieldVariablesService } from '../service/field-variables.service';
+import { TableModule } from 'primeng/table';
 import { of } from 'rxjs';
-
-@Component({
-    selector: 'dot-add-variable-form',
-    template: ''
-})
-class AddVariableFormComponent {
-    @Output() saveVariable = new EventEmitter<FieldVariable>();
-    constructor() {}
-}
 
 describe('ContentTypeFieldsVariablesComponent', () => {
     let comp: ContentTypeFieldsVariablesComponent;
@@ -33,12 +26,14 @@ describe('ContentTypeFieldsVariablesComponent', () => {
             'contenttypes.field.variables.actions_header.label': 'Actions',
             'contenttypes.field.variables.value_header.label': 'Value',
             'contenttypes.field.variables.key_header.label': 'Key',
-            'contenttypes.field.variables.value_no_rows.label': 'No Rows'
+            'contenttypes.field.variables.value_no_rows.label': 'No Rows',
+            'contenttypes.action.save': 'Save',
+            'contenttypes.action.cancel': 'Cancel'
         });
 
         DOTTestBed.configureTestingModule({
-            declarations: [ContentTypeFieldsVariablesComponent, AddVariableFormComponent],
-            imports: [DotIconButtonModule, RouterTestingModule],
+            declarations: [ContentTypeFieldsVariablesComponent],
+            imports: [DotIconButtonModule, DotActionButtonModule, RouterTestingModule, TableModule],
             providers: [
                 { provide: DotMessageService, useValue: messageServiceMock },
                 { provide: LoginService, useClass: LoginServiceMock },
@@ -66,22 +61,27 @@ describe('ContentTypeFieldsVariablesComponent', () => {
 
         fixture.detectChanges();
 
-        const dataTable = de.query(By.css('p-dataTable'));
-        expect(dataTable.componentInstance.columns[0].header).toBe('Key');
-        expect(dataTable.componentInstance.columns[1].header).toBe('Value');
-        expect(dataTable.componentInstance.columns[2].header).toBe('Actions');
+        const dataTable = de.query(By.css('p-table'));
+        expect(dataTable.nativeElement.innerText).toContain('Key');
+        expect(dataTable.nativeElement.innerText).toContain('Value');
+        expect(dataTable.nativeElement.innerText).toContain('Actions');
         expect(dataTable.nativeElement.innerText).toContain('No Rows');
-        expect(dataTable.componentInstance.editable).toBe(true);
     });
 
     it('should load the component with data', () => {
         fixture.detectChanges();
-        const dataTable = de.query(By.css('p-dataTable'));
+        const dataTable = de.query(By.css('p-table'));
         expect(dataTable.componentInstance.value).toEqual(mockFieldVariables);
-        expect(dataTable.listeners[1].name).toBe('onEditComplete');
+        expect(dataTable.listeners[0].name).toBe('keydown.enter');
     });
 
-    it('should load the component and create', () => {
+    it('should create an empty variable', () => {
+        fixture.detectChanges();
+        de.query(By.css('dot-action-button')).nativeElement.click();
+        expect(comp.fieldVariables.length).toBe(4);
+    });
+
+    it('should save a variable', () => {
         spyOn(fieldVariableService, 'save').and.returnValue(of(mockFieldVariables[0]));
         const params = {
             contentTypeId: comp.field.contentTypeId,
@@ -90,42 +90,20 @@ describe('ContentTypeFieldsVariablesComponent', () => {
         };
 
         fixture.detectChanges();
-        const addVariableForm = de.query(By.css('dot-add-variable-form')).componentInstance;
-        addVariableForm.saveVariable.emit(mockFieldVariables[0]);
-        expect(fieldVariableService.save).toHaveBeenCalledWith(params);
-        expect(comp.canSaveFields[0]).toBe(null);
-    });
-
-    it('should load the component and update', () => {
-        spyOn(fieldVariableService, 'save').and.returnValue(of([]));
-        fixture.detectChanges();
-
-        const buttons = fixture.debugElement.queryAll(By.css('button'));
-        buttons[1].nativeElement.click();
-        fixture.detectChanges();
-
-        const params = {
-            contentTypeId: comp.field.contentTypeId,
-            fieldId: comp.field.fieldId,
-            variable: mockFieldVariables[0]
-        };
-
+        comp.saveVariable(mockFieldVariables[0], 0);
         expect(fieldVariableService.save).toHaveBeenCalledWith(params);
     });
 
-    it('should load the component and delete', () => {
+    it('should delete a variable', () => {
         spyOn(fieldVariableService, 'delete').and.returnValue(of([]));
         fixture.detectChanges();
 
-        const buttons = fixture.debugElement.queryAll(By.css('button'));
-        buttons[0].nativeElement.click();
-        fixture.detectChanges();
-
         const params = {
             contentTypeId: comp.field.contentTypeId,
             fieldId: comp.field.fieldId,
             variable: mockFieldVariables[0]
         };
+        comp.deleteVariable(mockFieldVariables[0], 0);
 
         expect(fieldVariableService.delete).toHaveBeenCalledWith(params);
     });
@@ -133,7 +111,7 @@ describe('ContentTypeFieldsVariablesComponent', () => {
     it('should stoppropagation of keydown.enter event in the datatable', () => {
         fixture.detectChanges();
         const stopPropagationSpy = jasmine.createSpy('spy');
-        const dataTable = de.query(By.css('p-dataTable'));
+        const dataTable = de.query(By.css('p-table'));
         dataTable.triggerEventHandler('keydown.enter', {
             stopPropagation: stopPropagationSpy
         });
