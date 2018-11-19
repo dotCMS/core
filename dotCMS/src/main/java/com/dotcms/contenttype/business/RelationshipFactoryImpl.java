@@ -344,21 +344,19 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
 
     @Override
     public  boolean isParent(final Relationship relationship, final ContentTypeIf contentTypeIf) {
-
-        //Apply for both sided relationships
-        if (relationship.getParentStructureInode()
-                .equalsIgnoreCase(contentTypeIf.id()) &&
-                !(relationship.getChildStructureInode()
-                        .equalsIgnoreCase(relationship.getParentStructureInode()))){
+        if (relationship.getParentStructureInode().equalsIgnoreCase(contentTypeIf.id()) &&
+                !(relationship.getParentRelationName().equals(relationship.getChildRelationName())
+                        && relationship.getChildStructureInode()
+                        .equalsIgnoreCase(relationship.getParentStructureInode()))) {
             return true;
         }
         return false;
     }
     @Override
     public  boolean isChild(final Relationship relationship, final ContentTypeIf contentTypeIf) {
-        if (relationship.getChildStructureInode()
-                .equalsIgnoreCase(contentTypeIf.id()) &&
-                !(relationship.getChildStructureInode()
+        if (relationship.getChildStructureInode().equalsIgnoreCase(contentTypeIf.id()) &&
+                !(relationship.getParentRelationName().equals(relationship.getChildRelationName())
+                        && relationship.getChildStructureInode()
                         .equalsIgnoreCase(relationship.getParentStructureInode()))) {
             return true;
         }
