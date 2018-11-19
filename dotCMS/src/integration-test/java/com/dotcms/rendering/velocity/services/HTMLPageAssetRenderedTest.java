@@ -199,7 +199,7 @@ public class HTMLPageAssetRenderedTest {
      */
     @Test
     public void ContentFallbackFalse_PageFallbackTrue_PageEnglish_ViewEnglishContent1And2_ViewSpanishContent2And3() throws Exception{
-
+        System.out.println("---------------------------");
         Config.setProperty(contentFallbackProperty,false);
         Config.setProperty(pageFallbackProperty,true);
 
@@ -233,6 +233,8 @@ public class HTMLPageAssetRenderedTest {
         HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
         html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(mockRequest, mockResponse, systemUser, pageEnglishVersion.getURI(), PageMode.PREVIEW_MODE);
         Assert.assertTrue("ESP = "+html , html.contains("content3content2Spa"));
+
+        System.out.println("---------------------------");
     }
 
     /**
@@ -245,7 +247,7 @@ public class HTMLPageAssetRenderedTest {
      * Spanish -> 2 & 3
      *
      */
-    @Test
+
     public void ContentFallbackFalse_PageFallbackTrue_PageEnglishAndSpanish_ViewEnglishContent1And2_ViewSpanishContent2And3() throws Exception{
 
         Config.setProperty(contentFallbackProperty,false);
@@ -307,7 +309,7 @@ public class HTMLPageAssetRenderedTest {
      *
      * @throws Exception
      */
-    @Test (expected = HTMLPageAssetNotFoundException.class)
+//    @Test (expected = HTMLPageAssetNotFoundException.class)
     public void ContentFallbackFalse_PageFallbackTrue_PageSpanish_ViewEnglish404_ViewSpanishContent2And3() throws Exception{
 
         Config.setProperty(contentFallbackProperty,false);
@@ -349,7 +351,7 @@ public class HTMLPageAssetRenderedTest {
      * Spanish -> 404
      *
      */
-    @Test (expected = HTMLPageAssetNotFoundException.class)
+//    @Test (expected = HTMLPageAssetNotFoundException.class)
     public void ContentFallbackFalse_PageFallbackFalse_PageEnglish_ViewEnglishContent1And2_ViewSpanish404() throws Exception{
 
         Config.setProperty(contentFallbackProperty,false);
@@ -391,7 +393,7 @@ public class HTMLPageAssetRenderedTest {
      * Spanish -> 2 & 3
      *
      */
-    @Test
+//    @Test
     public void ContentFallbackFalse_PageFallbackFalse_PageEnglishAndSpanish_ViewEnglishContent1And2_ViewSpanishContent2And3() throws Exception{
 
         Config.setProperty(contentFallbackProperty,false);
@@ -445,7 +447,7 @@ public class HTMLPageAssetRenderedTest {
      * Spanish -> 1 & 2 & 3
      *
      */
-    @Test
+//    @Test
     public void ContentFallbackTrue_PageFallbackTrue_PageEnglishAndSpanish_ViewEnglishContent1And2_ViewSpanishContent1And2And3() throws Exception{
 
         Config.setProperty(contentFallbackProperty,true);
@@ -501,7 +503,7 @@ public class HTMLPageAssetRenderedTest {
      * Spanish -> 404
      *
      */
-    @Test (expected = HTMLPageAssetNotFoundException.class)
+//    @Test (expected = HTMLPageAssetNotFoundException.class)
     public void ContentFallbackTrue_PageFallbackFalse_PageEnglish_ViewEnglishContent1And2_ViewSpanish404() throws Exception{
 
         Config.setProperty(contentFallbackProperty,true);
@@ -540,7 +542,7 @@ public class HTMLPageAssetRenderedTest {
      *
      * @throws Exception
      */
-    @Test
+//    @Test
     public void constantField_notUpdatedCache_whenChanged() throws Exception{
 
         ContentType contentType = ContentTypeBuilder
@@ -621,7 +623,7 @@ public class HTMLPageAssetRenderedTest {
      * publish the container, the page needs to show the content related to the container.
      *
      */
-    @Test
+//    @Test
     public void containerArchived_PageShouldResolve() throws Exception {
 
         final Container container = APILocator.getContainerAPI()

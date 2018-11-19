@@ -1,11 +1,14 @@
 package com.dotcms.contenttype.test;
 
 import java.io.File;
+
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.dotcms.contenttype.util.ContentTypeImportExportUtil;
 import com.dotcms.repackage.com.google.common.io.Files;
 
+@Ignore
 public class ContentTypeImportExportTest extends ContentTypeBaseTest {
 
 	@Test

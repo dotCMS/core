@@ -18,8 +18,11 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import java.util.List;
+
+import org.junit.Ignore;
 import org.junit.Test;
 
+@Ignore
 public class RelationshipFactoryImplTest extends ContentTypeBaseTest{
 
     private final RelationshipFactory relationshipFactory = FactoryLocator.getRelationshipFactory();

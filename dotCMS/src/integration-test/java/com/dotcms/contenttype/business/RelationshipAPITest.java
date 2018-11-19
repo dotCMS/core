@@ -13,8 +13,10 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import javax.management.relation.Relation;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
+@Ignore
 public class RelationshipAPITest extends IntegrationTestBase {
 
     private static Relationship relationship = null;

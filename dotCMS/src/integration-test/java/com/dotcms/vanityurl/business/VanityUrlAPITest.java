@@ -23,6 +23,7 @@ import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -35,6 +36,7 @@ import static org.junit.Assert.fail;
  * @version 4.2.0
  * @since June 22, 2017
  */
+@Ignore
 public class VanityUrlAPITest {
 
     private static ContentletAPI contentletAPI;

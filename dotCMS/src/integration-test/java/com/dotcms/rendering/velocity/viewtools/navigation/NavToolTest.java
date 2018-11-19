@@ -33,10 +33,7 @@ import java.util.Collections;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.velocity.tools.view.context.ViewContext;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.FixMethodOrder;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.runner.RunWith;
 import org.junit.runners.MethodSorters;
 import org.mockito.Mockito;
@@ -45,6 +42,7 @@ import org.mockito.Mockito;
  * NavToolTest
  * Created by Oscar Arrieta on 5/4/15.
  */
+@Ignore
 @RunWith(DataProviderRunner.class)
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class NavToolTest extends IntegrationTestBase{
