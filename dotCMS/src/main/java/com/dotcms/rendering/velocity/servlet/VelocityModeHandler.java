@@ -14,6 +14,7 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 
 import java.io.ByteArrayOutputStream;
@@ -57,6 +58,7 @@ public abstract class VelocityModeHandler {
     public final String eval() {
         try(ByteArrayOutputStream out = new ByteArrayOutputStream(4096)) {
             serve(out);
+            Logger.info(this, "OUT:" + out);
             return new String(out.toByteArray());
         } catch (DotDataException | IOException | DotSecurityException e) {
             throw new DotRuntimeException(e);

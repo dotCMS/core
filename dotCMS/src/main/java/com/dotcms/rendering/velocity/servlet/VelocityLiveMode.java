@@ -36,6 +36,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import org.apache.velocity.Template;
 import org.apache.velocity.context.Context;
 
 import com.liferay.portal.model.User;
@@ -81,6 +82,10 @@ public class VelocityLiveMode extends VelocityModeHandler {
 
             // now we check identifier cache first (which DOES NOT have a 404 cache )
             Identifier id = APILocator.getIdentifierAPI().find(host, uri);
+            Logger.info(this, "Identifier:" + id + ", Host: " + host.getIdentifier() + ", URI:" + uri);
+            Logger.info(this, "Host: " + host.getIdentifier());
+            Logger.info(this, "URI:" + uri);
+
             if (id == null || id.getId() == null) {
                 response.sendError(HttpServletResponse.SC_NOT_FOUND);
                 return;
@@ -112,9 +117,12 @@ public class VelocityLiveMode extends VelocityModeHandler {
             IHTMLPage htmlPage = APILocator.getHTMLPageAssetAPI().findByIdLanguageFallback(id, langId, mode.showLive,
                     APILocator.systemUser(), mode.respectAnonPerms);
 
+            Logger.info(this, "HTMLPAGE: " + htmlPage);
+
 
             // Verify and handle the case for unauthorized access of this contentlet
             Boolean unauthorized = CMSUrlUtil.getInstance().isUnauthorizedAndHandleError(htmlPage, uri, user, request, response);
+            Logger.info(this, "UNAUTHORIZED:" + unauthorized);
             if (unauthorized) {
                 return;
             }
@@ -156,6 +164,7 @@ public class VelocityLiveMode extends VelocityModeHandler {
                 String cachedPage = CacheLocator.getBlockPageCache().get(htmlPage, cacheParameters);
                 if (cachedPage != null) {
                     // have cached response and are not refreshing, send it
+                    Logger.info(this, "returning page from cache: " + cachedPage.getBytes());
                     out.write(cachedPage.getBytes());
                     return;
                 }
@@ -164,7 +173,9 @@ public class VelocityLiveMode extends VelocityModeHandler {
 
             try (Writer tmpOut = (key != null) ? new StringWriter(4096) : new BufferedWriter(new OutputStreamWriter(out))) {
 
-                this.getTemplate(htmlPage, mode).merge(context, tmpOut);
+                final Template template = this.getTemplate(htmlPage, mode);
+                Logger.info(this, "TEMPLATE:" + template.getName());
+                template.merge(context, tmpOut);
 
                 if (key != null) {
                     String trimmedPage = tmpOut.toString().trim();
