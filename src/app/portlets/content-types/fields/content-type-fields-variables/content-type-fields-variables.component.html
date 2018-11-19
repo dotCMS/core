@@ -1,21 +1,57 @@
-<dot-add-variable-form (saveVariable)="saveVariable($event)"></dot-add-variable-form>
-<p-dataTable
-    [value]="fieldVariables"
-    [editable]="true"
-    sortField="clazz"
-    sortOrder=0
-    (keydown.enter)="$event.stopPropagation()"
-    (onEditComplete)="updateSaveButtons($event)"
-    >
-    <p-column field="key" [header]="messages['contenttypes.field.variables.key_header.label']" [editable]="true"></p-column>
-    <p-column field="value" [header]="messages['contenttypes.field.variables.value_header.label']" [editable]="true"></p-column>
-    <p-column styleClass="content-type-fields__variables-actions" [header]="messages['contenttypes.field.variables.actions_header.label']" >
-        <ng-template let-fieldVar="rowData" let-index="rowIndex" pTemplate="body">
-            <dot-icon-button icon="delete_outline" (click)="deleteVariable(index)"></dot-icon-button>
-            <dot-icon-button icon="save" (click)="saveVariable(fieldVar, index)" [attr.disabled]="canSaveFields[index]"></dot-icon-button>
-        </ng-template>
-    </p-column>
-    <ng-template pTemplate="emptymessage">
-        {{ messages['contenttypes.field.variables.value_no_rows.label'] }}
+<dot-action-button class="action-header__primary-button" (click)="addVariable()"></dot-action-button>
+<p-table [value]="fieldVariables" sortField="clazz" sortOrder=0 (keydown.enter)="$event.stopPropagation()" dataKey="id">
+    <ng-template pTemplate="header" let-columns>
+        <tr>
+            <th [ngStyle]="{'text-align': 'left'}">
+                {{messages['contenttypes.field.variables.key_header.label']}}
+            </th>
+            <th [ngStyle]="{'text-align': 'left'}">
+                {{messages['contenttypes.field.variables.value_header.label']}}
+            </th>
+            <th [ngStyle]="{'text-align': 'right', 'width': '185px', 'padding-right': '32px'}">
+                {{messages['contenttypes.field.variables.actions_header.label']}}
+            </th>
+        </tr>
     </ng-template>
-</p-dataTable>
+    <ng-template pTemplate="body" let-fieldVariable let-rowIndex="rowIndex">
+        <tr>
+            <td [pEditableColumn]="fieldVariable.key" id="content-type-fields__variables-key-{{ rowIndex }}" [pEditableColumnField]="'key'">
+                <p-cellEditor>
+                    <ng-template pTemplate="input">
+                        <input pInputText type="text" (focus)="editFieldInit(fieldVariable, rowIndex)" [(ngModel)]="fieldVariable.key">
+                    </ng-template>
+                    <ng-template pTemplate="output">
+                        {{fieldVariable.key}}
+                    </ng-template>
+                </p-cellEditor>
+            </td>
+            <td [pEditableColumn]="fieldVariable.value" id="content-type-fields__variables-value-{{ rowIndex }}" [pEditableColumnField]="'value'">
+                <p-cellEditor>
+                    <ng-template pTemplate="input">
+                        <input pInputText type="text" (keyup)="editFieldInit(fieldVariable, rowIndex)" (focus)="editFieldInit(fieldVariable, rowIndex)" [(ngModel)]="fieldVariable.value">
+                    </ng-template>
+                    <ng-template pTemplate="output">
+                        {{fieldVariable.value}}
+                    </ng-template>
+                </p-cellEditor>
+            </td>
+            <td class="content-type-fields__variables-actions" [ngStyle]="{'text-align': 'right'}">
+                <div id="content-type-fields__variables-actions-edit-{{ rowIndex }}" [ngStyle]="{'display': 'none'}">
+                    <button pButton secondary tiny label="{{ messages['contenttypes.action.cancel'] }}" (click)="cancelVariableAction(rowIndex)"></button>
+                    <button class="content-type-fields__variables-actions-edit-save" pButton tiny label="{{ messages['contenttypes.action.save'] }}" (click)="saveVariable(fieldVariable, rowIndex)"></button>
+                </div>
+                <div id="content-type-fields__variables-actions-main-{{ rowIndex }}">
+                    <dot-icon-button icon="delete_outline" (click)="deleteVariable(fieldVariable, rowIndex)"></dot-icon-button>
+                    <dot-icon-button icon="edit" (click)="editVariableAction(rowIndex)"></dot-icon-button>
+                </div>
+            </td>
+        </tr>
+    </ng-template>
+    <ng-template pTemplate="emptymessage" let-fieldVariables>
+        <tr>
+            <td [attr.colspan]="3">
+                {{ messages['contenttypes.field.variables.value_no_rows.label'] }}
+            </td>
+        </tr>
+    </ng-template>
+</p-table>

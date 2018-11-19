@@ -1,7 +1,13 @@
-.ui-datatable {
+@import "variables";
+
+.ui-datatable,
+.ui-table {
     .ui-datatable-thead > tr > th,
+    .ui-table-thead > tr > th,
     .ui-datatable-tfoot > tr > td,
-    .ui-datatable-data > tr > td {
+    .ui-datatable-data > tr > td,
+    .ui-table-tbody > tr > td {
+
         border-width: 0px;
         padding: $datatable-cell-padding;
 
@@ -24,19 +30,26 @@
         }
     }
 
-    .ui-datatable-thead > tr > th {
+    .ui-datatable-thead > tr > th,
+    .ui-table-thead > tr > th {
         color: $datatable-head-color;
         font-size: $font-size-small;
+        font-weight: normal;
         border-bottom: $datatable-cell-border;
         padding: $datatable-header-cell-padding;
 
-        &:focus {
+        a:focus {
             outline: 0;
         }
     }
 
-    .ui-datatable-data > tr > td {
+    .ui-datatable-data > tr > td,
+    .ui-table-tbody > tr > td {
         border-bottom: $datatable-cell-border;
+    }
+
+    .ui-table-tbody tr:hover {
+        background-color: rgba($brand-primary_rgb, 0.1);
     }
 
     .ui-datatable-loading {
@@ -58,20 +71,6 @@
         }
     }
 
-    .ui-sortable-column {
-        .pi-sort:before {
-            content: "";
-        }
-
-        .pi-sort-asc:before {
-            content: "\f063";
-        }
-
-        .pi-sort-desc:before {
-            content: "\f062";
-        }
-    }
-
     .ui-widget-content .ui-state-highlight {
         background: $datatable-highlight-row-bgcolor;
         color: $datatable-row-color;
@@ -84,5 +83,31 @@
     .ui-paginator {
         padding-top: $basic-padding * 2;
         padding-bottom: $basic-padding * 2;
+    }
+
+
+    .ui-table-sort-icon {
+        display: none;
+    }
+
+    .ui-sortable-column .ui-table-sort-icon {
+        display: inline-block;
+    }
+
+}
+
+.ui-datatable {
+    .ui-sortable-column {
+        .pi-sort:before {
+            content: "";
+        }
+    
+        .pi-sort-asc:before {
+            content: "\f063";
+        }
+    
+        .pi-sort-desc:before {
+            content: "\f062";
+        }
     }
 }

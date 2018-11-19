@@ -40,3 +40,25 @@
         }
     }
 }
+
+.content-type-fields__variables-actions {
+    button {
+        margin-right: $basic-padding;
+
+        &:last-child {
+            margin-right: 0;
+        }
+    }
+
+    dot-icon-button button {
+        margin-right: 0;
+    }
+}
+
+dot-action-button {
+    float: right;
+    position: relative;
+    right: $basic-padding * 2;
+    top: -$basic-padding * 3;
+    z-index: 1;
+}

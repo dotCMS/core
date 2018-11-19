@@ -35,7 +35,6 @@ import {
 import {
     ButtonModule,
     ConfirmDialogModule,
-    DataTableModule,
     DialogModule,
     DropdownModule,
     InputTextModule,
@@ -46,6 +45,7 @@ import {
     TabViewModule,
     MultiSelectModule
 } from 'primeng/primeng';
+import { TableModule } from 'primeng/table';
 import {
     NamePropertyComponent,
     CheckboxPropertyComponent,
@@ -75,6 +75,7 @@ import { MdInputTextModule } from '@directives/md-inputtext/md-input-text.module
 import { PushPublishContentTypesDialogModule } from '@components/_common/push-publish-dialog/push-publish-dialog.module';
 import { SearchableDropDownModule } from '@components/_common/searchable-dropdown';
 import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
+import { DotActionButtonModule } from '@components/_common/dot-action-button/dot-action-button.module';
 
 @NgModule({
     declarations: [
@@ -117,7 +118,8 @@ import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.modu
         CommonModule,
         ConfirmDialogModule,
         ContentTypesRoutingModule,
-        DataTableModule,
+        DotActionButtonModule,
+        TableModule,
         DialogModule,
         DotDialogModule,
         DotIconModule,
