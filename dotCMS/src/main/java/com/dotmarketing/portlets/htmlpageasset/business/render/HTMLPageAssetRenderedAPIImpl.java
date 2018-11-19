@@ -20,6 +20,7 @@ import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UUIDUtil;
 import com.liferay.portal.model.User;
@@ -144,6 +145,8 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
                               final String uri, final PageMode mode) throws DotSecurityException, DotDataException {
         final Host host = resolveSite(request, user, mode);
         final HTMLPageAsset page = getHtmlPageAsset(user, uri, mode, host);
+
+        Logger.error(this, "TEST PageAsset Info: " + page.toString());
 
         return new HTMLPageAssetRenderedBuilder()
                 .setHtmlPageAsset(page)

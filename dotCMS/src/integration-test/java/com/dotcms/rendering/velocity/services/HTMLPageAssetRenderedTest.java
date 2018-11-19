@@ -31,10 +31,8 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetNotFoundException;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.templates.model.Template;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.PageMode;
-import com.dotmarketing.util.UUIDGenerator;
-import com.dotmarketing.util.WebKeys;
+import com.dotmarketing.util.*;
+import com.liferay.portal.ejb.AddressPool;
 import com.liferay.portal.model.User;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -221,7 +219,9 @@ public class HTMLPageAssetRenderedTest {
         HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
         final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
 
-        Thread.sleep(10000);
+        Logger.error(this,"TEST Page Identifier: " + pageEnglishVersion.getIdentifier());
+        Logger.error(this,"TEST GetMultitree True: " + APILocator.getMultiTreeAPI().getPageMultiTrees(pageEnglishVersion,true));
+        Logger.error(this,"TEST GetMultitree False: " + APILocator.getMultiTreeAPI().getPageMultiTrees(pageEnglishVersion,false));
 
         String html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(mockRequest, mockResponse, systemUser, pageEnglishVersion.getURI(), PageMode.PREVIEW_MODE);
         Assert.assertTrue("ENG = "+html , html.contains("content2content1"));
@@ -279,7 +279,9 @@ public class HTMLPageAssetRenderedTest {
         HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
         final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
 
-        Thread.sleep(10000);
+        Logger.error(this,"TEST Page Identifier: " + pageEnglishVersion.getIdentifier());
+        Logger.error(this,"TEST GetMultitree True: " + APILocator.getMultiTreeAPI().getPageMultiTrees(pageEnglishVersion,true));
+        Logger.error(this,"TEST GetMultitree False: " + APILocator.getMultiTreeAPI().getPageMultiTrees(pageEnglishVersion,false));
 
         String html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(mockRequest, mockResponse, systemUser, pageEnglishVersion.getURI(), PageMode.PREVIEW_MODE);
         Assert.assertTrue("ENG = "+html , html.contains("content2content1"));

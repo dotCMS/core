@@ -168,7 +168,9 @@ public class MultiTreeFactory {
         DotConnect db = new DotConnect().setSQL(SELECT_BY_ONE_PARENT)
             .addParam(parentInode)
             .addParam(parentInode);
-            
+
+
+        Logger.error(MultiTreeFactory.class,"TEST GetMultiTreeFactory DB before Transformer: " + db.loadObjectResults().toString());
         return TransformerLocator.createMultiTreeTransformer(db.loadObjectResults()).asList();
 
     }
