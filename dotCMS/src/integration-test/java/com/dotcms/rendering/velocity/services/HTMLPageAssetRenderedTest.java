@@ -249,9 +249,9 @@ public class HTMLPageAssetRenderedTest {
      * Spanish -> 2 & 3
      *
      */
-
+    @Test
     public void ContentFallbackFalse_PageFallbackTrue_PageEnglishAndSpanish_ViewEnglishContent1And2_ViewSpanishContent2And3() throws Exception{
-
+        System.out.println("-------------S--------------");
         Config.setProperty(contentFallbackProperty,false);
         Config.setProperty(pageFallbackProperty,true);
 
