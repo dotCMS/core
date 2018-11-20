@@ -1,7 +1,6 @@
 package com.dotmarketing.portlets.languagesmanager.business;
 
-import static com.dotcms.util.ConversionUtils.toLong;
-
+import com.dotcms.util.CloseUtils;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.common.db.DotConnect;
@@ -9,10 +8,10 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.languagesmanager.model.LanguageKey;
+import com.dotmarketing.portlets.languagesmanager.transform.LanguageTransformer;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.struts.MultiMessageResources;
 import com.liferay.util.FileUtil;
 import java.io.File;
@@ -28,6 +27,7 @@ import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -35,7 +35,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 import org.apache.struts.Globals;
 /**
  * Implementation class for the {@link LanguageFactory}.
@@ -57,8 +56,7 @@ public class LanguageFactoryImpl extends LanguageFactory {
 	private static final String SELECT_LANGUAGE_BY_ID="select * from language where id = ?";
 	private static final String SELECT_ALL_LANGUAGES="select * from language where id <> ? order by language_code ";
 
-	private static Language defaultLanguage;
-	private final DotConnect dotConnect;
+	private static volatile Language defaultLanguage;
 
 	private final Map<String, Date> readTimeStamps = new HashMap<String, Date>();
 
@@ -66,16 +64,7 @@ public class LanguageFactoryImpl extends LanguageFactory {
 	 * Creates a new instance of the {@link LanguageFactory}.
 	 */
 	public LanguageFactoryImpl () {
-		this(new DotConnect());
-	}
 
-	/**
-	 * Creates a new instance of the {@link LanguageFactory}.
-	 */
-	@VisibleForTesting
-	protected LanguageFactoryImpl (final DotConnect dotConnect) {
-
-		this.dotConnect = dotConnect;
 	}
 
 	@Override
@@ -123,25 +112,28 @@ public class LanguageFactoryImpl extends LanguageFactory {
 	}
 
 	@Override
-	protected Language getLanguage(String id) {
+	protected Language getLanguage(final String languageId) {
 
+        if(!UtilMethods.isSet(languageId)){
+           throw new IllegalArgumentException("languageId is expected to have a value.");
+        }
 
 		// if we have a number
-		if(id!=null && !id.contains("_") || !id.contains("-")  ){
+		if(!languageId.contains("_")){
 			try {
-				long  x = Long.parseLong(id);
-				return getLanguage(x);
+				final long parsedLangId = Long.parseLong(languageId);
+				return getLanguage(parsedLangId);
 			} catch (NumberFormatException e) {
-				Logger.debug(LanguageFactoryImpl.class, "getLanguage failed passed id is not numeric. Value from parameter: " + id, e);
+				Logger.debug(LanguageFactoryImpl.class, "getLanguage failed passed id is not numeric. Value from parameter: " + languageId, e);
 			}
 		}
 
 		try{
-			String[] codes= id.split("[_|-]");
+			final String[] codes = languageId.split("[_|-]");
 			return getLanguage(codes[0], codes[1]);
 		} catch (Exception e) {
-			Logger.error(LanguageFactoryImpl.class, "getLanguage failed for id:" + id,e);
-			throw new DotRuntimeException("getLanguage failed for id:" + id, e);
+			Logger.error(LanguageFactoryImpl.class, "getLanguage failed for id:" + languageId,e);
+			throw new DotRuntimeException("getLanguage failed for id:" + languageId, e);
 
 		}
 
@@ -151,7 +143,7 @@ public class LanguageFactoryImpl extends LanguageFactory {
 	@Override
 	protected Language createDefaultLanguage() {
 
-		Language language = getLanguage (Config.getStringProperty("DEFAULT_LANGUAGE_CODE", "en"), Config.getStringProperty("DEFAULT_LANGUAGE_COUNTRY_CODE","US"));
+		final Language language = getLanguage (Config.getStringProperty("DEFAULT_LANGUAGE_CODE", "en"), Config.getStringProperty("DEFAULT_LANGUAGE_COUNTRY_CODE","US"));
 		language.setCountry(Config.getStringProperty("DEFAULT_LANGUAGE_COUNTRY", "United States"));
 		language.setCountryCode(Config.getStringProperty("DEFAULT_LANGUAGE_COUNTRY_CODE", "US"));
 		language.setLanguage(Config.getStringProperty("DEFAULT_LANGUAGE_STR", "English"));
@@ -198,21 +190,20 @@ public class LanguageFactoryImpl extends LanguageFactory {
 
 	@Override
 	protected List<Language> getLanguages() {
-		List<Language> list = CacheLocator.getLanguageCache().getLanguages();
-		if(list!=null){
-			return list;
+		List<Language> languages = CacheLocator.getLanguageCache().getLanguages();
+		if(languages != null){
+			return languages;
 		}
 		try {
-			Language defaultLang = getDefaultLanguage();
-
-			list =  fromDbList(new DotConnect().setSQL( SELECT_ALL_LANGUAGES)
+			final Language defaultLang = getDefaultLanguage();
+			languages =  fromDbList(new DotConnect().setSQL( SELECT_ALL_LANGUAGES )
 					.addParam(defaultLang.getId())
 					.loadObjectResults());
 
-			list.add(0,defaultLang);
+			languages.add(0,defaultLang);
 
-			CacheLocator.getLanguageCache().putLanguages(list);
-			return list;
+			CacheLocator.getLanguageCache().putLanguages(languages);
+			return languages;
 		} catch (DotDataException e) {
 			CacheLocator.getLanguageCache().putLanguages(null);
 			throw new DotRuntimeException(e);
@@ -462,10 +453,10 @@ public class LanguageFactoryImpl extends LanguageFactory {
 	 * @param toDeleteKeys
 	 * @throws IOException
 	 */
-	private void saveLanguageKeys(String fileLangName, Map<String, String> keys, Set<String> toDeleteKeys) throws IOException {
+	private void saveLanguageKeys(final String fileLangName, Map<String, String> keys, final Set<String> toDeleteKeys) throws IOException {
 
 		if(keys == null)
-			keys = new HashMap<String, String>();
+			keys = new HashMap<>();
 
 		InputStream fileReader = null;
 		PrintWriter tempFileWriter = null;
@@ -483,7 +474,7 @@ public class LanguageFactoryImpl extends LanguageFactory {
 
 				tempFileWriter = new PrintWriter(tempFilePath, "UTF8");
 
-				for (String k : toDeleteKeys) {
+				for (final String k : toDeleteKeys) {
 					keys.remove(k);
 				}
 
@@ -505,23 +496,31 @@ public class LanguageFactoryImpl extends LanguageFactory {
 
 		}
 
-		try(InputStream tempFileInputStream = Files.newInputStream(tempFile.toPath());
-				OutputStream fileOutputStream = Files.newOutputStream(file.toPath())) {
+
+		ReadableByteChannel inputChannel = null;
+		WritableByteChannel outputChannel = null;
+		try (final InputStream tempFileInputStream = Files.newInputStream(tempFile.toPath());
+			 final OutputStream fileOutputStream = Files.newOutputStream(file.toPath())) {
 
 			if (file.exists() && tempFile.exists()) {
-				final ReadableByteChannel inputChannel = Channels.newChannel(tempFileInputStream);
-				final WritableByteChannel outputChannel = Channels.newChannel(fileOutputStream);
+
+				inputChannel = Channels.newChannel(tempFileInputStream);
+				outputChannel = Channels.newChannel(fileOutputStream);
 				FileUtil.fastCopyUsingNio(inputChannel, outputChannel);
-				inputChannel.close();
-				outputChannel.close();
+
 			} else {
-				if (!file.exists())
+				if (!file.exists()) {
 					Logger.warn(this, "Error: properties file: '" + filePath + "' doesn't exists.");
-				if (!tempFile.exists())
-					Logger.warn(this, "Error: properties file: '" + tempFilePath + "' doesn't exists.");
+				}
+				if (!tempFile.exists()) {
+					Logger.warn(this,
+							"Error: properties file: '" + tempFilePath + "' doesn't exists.");
+				}
 			}
 		} catch (IOException e) {
 			throw e;
+		} finally {
+			CloseUtils.closeQuietly(inputChannel, outputChannel);
 		}
 
 		tempFile.delete();
@@ -602,19 +601,18 @@ public class LanguageFactoryImpl extends LanguageFactory {
 	@Override
 	protected int deleteLanguageById(final Language language) {
 
-		int rowsAffected = 0;
-		long id          = 0;
-
+		if(!UtilMethods.isSet(language)){
+			throw new IllegalArgumentException("language is expected to be different from null.");
+		}
+		int rowsAffected;
+		final long id = language.getId();
 		try {
-
-			id = language.getId();
-			Logger.debug(this, "Deleting the language by id: " + id);
-			rowsAffected = this.dotConnect.executeUpdate(DELETE_FROM_LANGUAGE_WHERE_ID, id);
+			Logger.debug(this, ()-> "Deleting the language by id: " + id);
+			rowsAffected = new DotConnect().executeUpdate(DELETE_FROM_LANGUAGE_WHERE_ID, id);
 		} catch (DotDataException e) {
-			Logger.warn(LanguageFactoryImpl.class, "deleteLanguageById failed to delete the language with id: " + id);
+			Logger.error(LanguageFactoryImpl.class, "deleteLanguageById failed to delete the language with id: " + id);
 			throw new DotRuntimeException(e.toString(), e);
 		} finally {
-
 			CacheLocator.getLanguageCache().removeLanguage(language);
 		}
 
@@ -655,23 +653,15 @@ public class LanguageFactoryImpl extends LanguageFactory {
     }
 
 	private List<Language> fromDbList(final List<Map<String, Object>> resultSet) {
-		if (resultSet == null) {
-			return new ArrayList<>();
-		}
-		return resultSet.stream().map(this::fromDbMap).collect(Collectors.toList());
+		return new LanguageTransformer(resultSet).asList();
 	}
 
 
-	private Language fromDbMap(final Map<String, Object> resultSet){
-		if(resultSet==null) {
+	private Language fromDbMap(final Map<String, Object> resultSet) {
+		if (resultSet == null) {
 			return null;
 		}
-		final long id               = toLong(resultSet.get("id"), 0L);
-		final String langCode       = (resultSet.get("language_code")!=null)    ? String.valueOf(resultSet.get("language_code")): null;
-		final String countryCode    = (resultSet.get("country_code")!=null)     ? String.valueOf(resultSet.get("country_code")) : null;
-		final String language       = (resultSet.get("language")!=null)         ? String.valueOf(resultSet.get("language"))     : null;
-		final String country        = (resultSet.get("country")!=null)          ? String.valueOf(resultSet.get("country"))      : null;
-		return new Language(id, langCode, countryCode, language, country);
+		return new LanguageTransformer(Collections.singletonList(resultSet)).findFirst();
 	}
 
 }
