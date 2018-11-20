@@ -26,6 +26,7 @@ import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
@@ -112,27 +113,14 @@ public class FieldAPITest extends IntegrationTestBase {
         ContentType parentContentType = null;
         ContentType childContentType  = null;
         try {
-            parentContentType = ContentTypeBuilder.builder(SimpleContentType.class).folder(
-                    FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST).name("parentContentType" + time)
-                    .owner(user.getUserId()).build();
+            parentContentType = createAndSaveSimpleContentType("parentContentType" + time);
+            childContentType = createAndSaveSimpleContentType("childContentType" + time);
 
-            parentContentType = contentTypeAPI.save(parentContentType);
-
-            childContentType = ContentTypeBuilder.builder(SimpleContentType.class).folder(
-                    FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST).name("childContentType" + time)
-                    .owner(user.getUserId()).build();
-
-            childContentType = contentTypeAPI.save(childContentType);
-
-            Field field = FieldBuilder.builder(RelationshipField.class).name("newRel")
-                    .contentTypeId(parentContentType.id())
-                    .values(CARDINALITY).relationType(childContentType.variable()).build();
-
-            //One side of the relationship is set parentContentType --> childContentType
-            field = fieldAPI.save(field, user);
+            final Field parentTypeRelationshipField = createAndSaveManyToManyRelationshipField("newRel",
+                    parentContentType.id(), childContentType.variable(), CARDINALITY);
 
             final String fullFieldVar =
-                    parentContentType.variable() + StringPool.PERIOD + field.variable();
+                    parentContentType.variable() + StringPool.PERIOD + parentTypeRelationshipField.variable();
 
             final Relationship relationship = relationshipAPI.byTypeValue(fullFieldVar);
 
@@ -141,8 +129,8 @@ public class FieldAPITest extends IntegrationTestBase {
             assertNull(relationship.getParentRelationName());
             assertEquals(parentContentType.id(), relationship.getParentStructureInode());
             assertEquals(childContentType.id(), relationship.getChildStructureInode());
-            assertEquals(field.variable(), relationship.getChildRelationName());
-            assertEquals(1, relationship.getCardinality());
+            assertEquals(parentTypeRelationshipField.variable(), relationship.getChildRelationName());
+            assertEquals(CARDINALITY, Integer.toString(relationship.getCardinality()));
             assertEquals(fullFieldVar, relationship.getRelationTypeValue());
         } finally {
             if (UtilMethods.isSet(parentContentType) && UtilMethods.isSet(parentContentType.id())) {
@@ -164,47 +152,29 @@ public class FieldAPITest extends IntegrationTestBase {
         ContentType childContentType  = null;
 
         try {
-            parentContentType = ContentTypeBuilder.builder(SimpleContentType.class).folder(
-                    FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST).name("parentContentType" + time)
-                    .owner(user.getUserId()).build();
-
-            parentContentType = contentTypeAPI.save(parentContentType);
-
-            childContentType = ContentTypeBuilder.builder(SimpleContentType.class).folder(
-                    FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST).name("childContentType" + time)
-                    .owner(user.getUserId()).build();
-
-            childContentType = contentTypeAPI.save(childContentType);
+            parentContentType = createAndSaveSimpleContentType("parentContentType" + time);
+            childContentType = createAndSaveSimpleContentType("childContentType" + time);
 
             //Adding a RelationshipField to the parent
-            Field field = FieldBuilder.builder(RelationshipField.class).name("newRel")
-                    .contentTypeId(parentContentType.id())
-                    .values(CARDINALITY).relationType(childContentType.variable()).build();
-
-            //One side of the relationship is set parentContentType --> childContentType
-            field = fieldAPI.save(field, user);
+            final Field parentTypeRelationshipField = createAndSaveManyToManyRelationshipField("newRel",
+                    parentContentType.id(), childContentType.variable(), CARDINALITY);
 
             final String fullFieldVar =
-                    parentContentType.variable() + StringPool.PERIOD + field.variable();
-
+                    parentContentType.variable() + StringPool.PERIOD + parentTypeRelationshipField.variable();
 
             //Adding a RelationshipField to the child
-            Field secondField = FieldBuilder.builder(RelationshipField.class).name("otherSideRel")
-                    .contentTypeId(childContentType.id())
-                    .values(CARDINALITY).relationType(fullFieldVar).build();
-
-            //Setting the other side of the relationship childContentType --> parentContentType
-            secondField = fieldAPI.save(secondField, user);
+            final Field childTypeRelationshipField = createAndSaveManyToManyRelationshipField("otherSideRel",
+                    childContentType.id(), fullFieldVar, CARDINALITY);
 
             final Relationship relationship = relationshipAPI.byTypeValue(fullFieldVar);
 
             assertNotNull(relationship);
 
             assertEquals(childContentType.id(), relationship.getChildStructureInode());
-            assertEquals(field.variable(), relationship.getChildRelationName());
+            assertEquals(parentTypeRelationshipField.variable(), relationship.getChildRelationName());
             assertEquals(parentContentType.id(), relationship.getParentStructureInode());
-            assertEquals(secondField.variable(), relationship.getParentRelationName());
-            assertEquals(1, relationship.getCardinality());
+            assertEquals(childTypeRelationshipField.variable(), relationship.getParentRelationName());
+            assertEquals(CARDINALITY, Integer.toString(relationship.getCardinality()));
             assertEquals(fullFieldVar, relationship.getRelationTypeValue());
 
         } finally {
@@ -219,7 +189,7 @@ public class FieldAPITest extends IntegrationTestBase {
     }
 
     @Test(expected = DotDataException.class)
-    public void testSaveRelationshipField_when_replacingParentInABothSidedRelationship()
+    public void testSaveRelationshipField_when_replacingParentInABothSidedRelationship_ShouldThrowException()
             throws DotSecurityException, DotDataException {
         final long time = System.currentTimeMillis();
 
@@ -229,48 +199,29 @@ public class FieldAPITest extends IntegrationTestBase {
 
 
         try {
-            parentContentType = ContentTypeBuilder.builder(SimpleContentType.class).folder(
-                    FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST).name("parentContentType" + time)
-                    .owner(user.getUserId()).build();
-
-            parentContentType = contentTypeAPI.save(parentContentType);
-
-            childContentType = ContentTypeBuilder.builder(SimpleContentType.class).folder(
-                    FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST).name("childContentType" + time)
-                    .owner(user.getUserId()).build();
-
-            childContentType = contentTypeAPI.save(childContentType);
-
-            newParentContentType = ContentTypeBuilder.builder(SimpleContentType.class).folder(
-                    FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST)
-                    .name("newParentContentType" + time)
-                    .owner(user.getUserId()).build();
-
-            newParentContentType = contentTypeAPI.save(newParentContentType);
+            parentContentType = createAndSaveSimpleContentType("parentContentType" + time);
+            childContentType = createAndSaveSimpleContentType("childContentType" + time);
+            newParentContentType = createAndSaveSimpleContentType("newParentContentType" + time);
 
             //Adding a RelationshipField to the parent
-            Field field = FieldBuilder.builder(RelationshipField.class).name("newRel")
-                    .contentTypeId(parentContentType.id())
-                    .values(CARDINALITY).relationType(childContentType.variable()).build();
-
             //One side of the relationship is set parentContentType --> childContentType
-            field = fieldAPI.save(field, user);
+            final Field parentTypeRelationshipField = createAndSaveManyToManyRelationshipField("newRel",
+                    parentContentType.id(), childContentType.variable(), CARDINALITY);
 
             final String fullFieldVar =
-                    parentContentType.variable() + StringPool.PERIOD + field.variable();
+                    parentContentType.variable() + StringPool.PERIOD + parentTypeRelationshipField.variable();
 
             //Adding a RelationshipField to the child
             //Setting the other side of the relationship childContentType --> parentContentType
-            Field secondField = FieldBuilder.builder(RelationshipField.class).name("otherSideRel")
-                    .contentTypeId(childContentType.id())
-                    .values(CARDINALITY).relationType(fullFieldVar).build();
-
-            secondField = fieldAPI.save(secondField, user);
+            //Adding a RelationshipField to the child
+            final Field childTypeRelationshipField = createAndSaveManyToManyRelationshipField("otherSideRel",
+                    childContentType.id(), fullFieldVar, CARDINALITY);
 
             //Setting a new relationship childContentType --> newParentContentType
-            secondField = FieldBuilder.builder(secondField).relationType(newParentContentType.variable()).build();
+            final Field mutatedChildTypeRelationshipField = FieldBuilder.builder(childTypeRelationshipField)
+                    .relationType(newParentContentType.variable()).build();
 
-            fieldAPI.save(secondField, user);
+            fieldAPI.save(mutatedChildTypeRelationshipField, user);
         } finally {
             if (UtilMethods.isSet(parentContentType) && UtilMethods.isSet(parentContentType.id())) {
                 contentTypeAPI.delete(parentContentType);
@@ -287,7 +238,7 @@ public class FieldAPITest extends IntegrationTestBase {
     }
 
     @Test(expected = DotDataException.class)
-    public void testSaveRelationshipField_when_replacingChildInABothSidedRelationship()
+    public void testSaveRelationshipField_when_replacingChildInABothSidedRelationship_ShouldThrowException()
             throws DotSecurityException, DotDataException {
         final long time = System.currentTimeMillis();
 
@@ -296,48 +247,27 @@ public class FieldAPITest extends IntegrationTestBase {
         ContentType newChildContentType = null;
 
         try {
-            parentContentType = ContentTypeBuilder.builder(SimpleContentType.class).folder(
-                    FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST).name("parentContentType" + time)
-                    .owner(user.getUserId()).build();
-
-            parentContentType = contentTypeAPI.save(parentContentType);
-
-            childContentType = ContentTypeBuilder.builder(SimpleContentType.class).folder(
-                    FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST).name("childContentType" + time)
-                    .owner(user.getUserId()).build();
-
-            childContentType = contentTypeAPI.save(childContentType);
-
-            newChildContentType = ContentTypeBuilder.builder(SimpleContentType.class).folder(
-                    FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST)
-                    .name("newChildContentType" + time)
-                    .owner(user.getUserId()).build();
-
-            newChildContentType = contentTypeAPI.save(newChildContentType);
+            parentContentType = createAndSaveSimpleContentType("parentContentType" + time);
+            childContentType = createAndSaveSimpleContentType("childContentType" + time);
+            newChildContentType = createAndSaveSimpleContentType("newChildContentType" + time);
 
             //Adding a RelationshipField to the parent
-            Field field = FieldBuilder.builder(RelationshipField.class).name("newRel")
-                    .contentTypeId(parentContentType.id()).values(CARDINALITY)
-                    .relationType(childContentType.variable()).build();
-
-            //One side of the relationship is set parentContentType --> childContentType
-            field = fieldAPI.save(field, user);
+            final Field parentTypeRelationshipField = createAndSaveManyToManyRelationshipField("newRel",
+                    parentContentType.id(), childContentType.variable(), CARDINALITY);
 
             final String fullFieldVar =
-                    parentContentType.variable() + StringPool.PERIOD + field.variable();
+                    parentContentType.variable() + StringPool.PERIOD + parentTypeRelationshipField.variable();
 
             //Adding a RelationshipField to the child
             //Setting the other side of the relationship childContentType --> parentContentType
-            Field secondField = FieldBuilder.builder(RelationshipField.class).name("otherSideRel")
-                    .contentTypeId(childContentType.id()).values(CARDINALITY)
-                    .relationType(fullFieldVar).build();
-
-            fieldAPI.save(secondField, user);
+            createAndSaveManyToManyRelationshipField("otherSideRel",
+                    childContentType.id(), fullFieldVar, CARDINALITY);
 
             //Setting a new relationship parentContentType --> newChildContentType
-            field = FieldBuilder.builder(field).relationType(newChildContentType.variable()).build();
+            final Field mutatedParentTypeRelationshipField = FieldBuilder.builder(parentTypeRelationshipField)
+                    .relationType(newChildContentType.variable()).build();
 
-            fieldAPI.save(field, user);
+            fieldAPI.save(mutatedParentTypeRelationshipField, user);
 
         } finally {
             if (UtilMethods.isSet(parentContentType) && UtilMethods.isSet(parentContentType.id())) {
@@ -356,7 +286,7 @@ public class FieldAPITest extends IntegrationTestBase {
 
 
     @Test
-    public void testSaveBothSidedRelationshipFieldAndRemoveChildField()
+    public void test_GivenBothSidedRelationshipField_WhenRemovingChildField_RelationshipShouldBeGettable()
             throws DotSecurityException, DotDataException {
         final long time = System.currentTimeMillis();
 
@@ -364,39 +294,22 @@ public class FieldAPITest extends IntegrationTestBase {
         ContentType childContentType  = null;
 
         try {
-            parentContentType = ContentTypeBuilder.builder(SimpleContentType.class).folder(
-                    FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST).name("parentContentType" + time)
-                    .owner(user.getUserId()).build();
-
-            parentContentType = contentTypeAPI.save(parentContentType);
-
-            childContentType = ContentTypeBuilder.builder(SimpleContentType.class).folder(
-                    FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST).name("childContentType" + time)
-                    .owner(user.getUserId()).build();
-
-            childContentType = contentTypeAPI.save(childContentType);
+            parentContentType = createAndSaveSimpleContentType("parentContentType" + time);
+            childContentType = createAndSaveSimpleContentType("childContentType" + time);
 
             //Adding a RelationshipField to the parent
-            Field field = FieldBuilder.builder(RelationshipField.class).name("newRel")
-                    .contentTypeId(parentContentType.id()).values(CARDINALITY)
-                    .relationType(childContentType.variable()).build();
-
-            //One side of the relationship is set parentContentType --> childContentType
-            field = fieldAPI.save(field, user);
+            final Field parentTypeRelationshipField = createAndSaveManyToManyRelationshipField("newRel",
+                    parentContentType.id(), childContentType.variable(), CARDINALITY);
 
             final String fullFieldVar =
-                    parentContentType.variable() + StringPool.PERIOD + field.variable();
-
+                    parentContentType.variable() + StringPool.PERIOD + parentTypeRelationshipField.variable();
 
             //Adding a RelationshipField to the child
-            Field secondField = FieldBuilder.builder(RelationshipField.class).name("otherSideRel")
-                    .contentTypeId(childContentType.id()).values(CARDINALITY)
-                    .relationType(fullFieldVar).build();
-
-            secondField = fieldAPI.save(secondField, user);
+            final Field childTypeRelationshipField = createAndSaveManyToManyRelationshipField("otherSideRel",
+                    childContentType.id(), fullFieldVar, CARDINALITY);
 
             //Removing child field
-            fieldAPI.delete(secondField);
+            fieldAPI.delete(childTypeRelationshipField);
 
             //Getting the one-sided of the relationship parentContentType --> childContentType
             final Relationship relationship = relationshipAPI.byTypeValue(fullFieldVar);
@@ -404,10 +317,10 @@ public class FieldAPITest extends IntegrationTestBase {
             assertNotNull(relationship);
 
             assertEquals(childContentType.id(), relationship.getChildStructureInode());
-            assertEquals(field.variable(), relationship.getChildRelationName());
+            assertEquals(parentTypeRelationshipField.variable(), relationship.getChildRelationName());
             assertEquals(parentContentType.id(), relationship.getParentStructureInode());
             assertNull(relationship.getParentRelationName());
-            assertEquals(1, relationship.getCardinality());
+            assertEquals(CARDINALITY, Integer.toString(relationship.getCardinality()));
             assertEquals(fullFieldVar, relationship.getRelationTypeValue());
 
         } finally {
@@ -422,7 +335,7 @@ public class FieldAPITest extends IntegrationTestBase {
     }
 
     @Test
-    public void testSaveBothSidedRelationshipFieldAndRemoveParentField()
+    public void test_GivenBothSidedRelationshipField_WhenRemovingParentField_RelationshipShouldBeGettable()
             throws DotSecurityException, DotDataException {
         final long time = System.currentTimeMillis();
 
@@ -430,38 +343,22 @@ public class FieldAPITest extends IntegrationTestBase {
         ContentType childContentType  = null;
 
         try {
-            parentContentType = ContentTypeBuilder.builder(SimpleContentType.class).folder(
-                    FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST).name("parentContentType" + time)
-                    .owner(user.getUserId()).build();
-
-            parentContentType = contentTypeAPI.save(parentContentType);
-
-            childContentType = ContentTypeBuilder.builder(SimpleContentType.class).folder(
-                    FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST).name("childContentType" + time)
-                    .owner(user.getUserId()).build();
-
-            childContentType = contentTypeAPI.save(childContentType);
+            parentContentType = createAndSaveSimpleContentType("parentContentType" + time);
+            childContentType = createAndSaveSimpleContentType("childContentType" + time);
 
             //Adding a RelationshipField to the parent
-            Field field = FieldBuilder.builder(RelationshipField.class).name("newRel")
-                    .contentTypeId(parentContentType.id()).values(CARDINALITY)
-                    .relationType(childContentType.variable()).build();
-
-            //One side of the relationship is set parentContentType --> childContentType
-            field = fieldAPI.save(field, user);
+            final Field parentTypeRelationshipField = createAndSaveManyToManyRelationshipField("newRel",
+                    parentContentType.id(), childContentType.variable(), CARDINALITY);
 
             final String fullFieldVar =
-                    parentContentType.variable() + StringPool.PERIOD + field.variable();
+                    parentContentType.variable() + StringPool.PERIOD + parentTypeRelationshipField.variable();
 
             //Adding a RelationshipField to the child
-            Field secondField = FieldBuilder.builder(RelationshipField.class).name("otherSideRel")
-                    .contentTypeId(childContentType.id()).values(CARDINALITY)
-                    .relationType(fullFieldVar).build();
-
-            secondField = fieldAPI.save(secondField, user);
+            final Field childTypeRelationshipField = createAndSaveManyToManyRelationshipField("otherSideRel",
+                    childContentType.id(), fullFieldVar, CARDINALITY);
 
             //Removing parent field
-            fieldAPI.delete(field);
+            fieldAPI.delete(parentTypeRelationshipField);
 
             //Getting the one-sided relationship childContentType --> parentContentType
             final Relationship relationship = relationshipAPI.byTypeValue(fullFieldVar);
@@ -469,7 +366,7 @@ public class FieldAPITest extends IntegrationTestBase {
             assertNotNull(relationship);
 
             assertEquals(parentContentType.id(), relationship.getParentStructureInode());
-            assertEquals(secondField.variable(), relationship.getParentRelationName());
+            assertEquals(childTypeRelationshipField.variable(), relationship.getParentRelationName());
             assertEquals(childContentType.id(), relationship.getChildStructureInode());
             assertNull(relationship.getChildRelationName());
             assertEquals(1, relationship.getCardinality());
@@ -487,7 +384,7 @@ public class FieldAPITest extends IntegrationTestBase {
     }
 
     @Test
-    public void testOneSidedRelationshipFieldAndRemoveField()
+    public void test_GivenOneSidedRelationshipField_WhenRemovingField_RelationshipShouldBeWiped()
             throws DotSecurityException, DotDataException {
         final long time = System.currentTimeMillis();
 
@@ -495,31 +392,18 @@ public class FieldAPITest extends IntegrationTestBase {
         ContentType childContentType  = null;
 
         try {
-            parentContentType = ContentTypeBuilder.builder(SimpleContentType.class).folder(
-                    FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST).name("parentContentType" + time)
-                    .owner(user.getUserId()).build();
-
-            parentContentType = contentTypeAPI.save(parentContentType);
-
-            childContentType = ContentTypeBuilder.builder(SimpleContentType.class).folder(
-                    FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST).name("childContentType" + time)
-                    .owner(user.getUserId()).build();
-
-            childContentType = contentTypeAPI.save(childContentType);
+            parentContentType = createAndSaveSimpleContentType("parentContentType" + time);
+            childContentType = createAndSaveSimpleContentType("childContentType" + time);
 
             //Adding a RelationshipField to the parent
-            Field field = FieldBuilder.builder(RelationshipField.class).name("newRel")
-                    .contentTypeId(parentContentType.id()).values(CARDINALITY)
-                    .relationType(childContentType.variable()).build();
-
-            //One side of the relationship is set parentContentType --> childContentType
-            field = fieldAPI.save(field, user);
+            final Field parentTypeRelationshipField = createAndSaveManyToManyRelationshipField("newRel",
+                    parentContentType.id(), childContentType.variable(), CARDINALITY);
 
             final String fullFieldVar =
-                    parentContentType.variable() + StringPool.PERIOD + field.variable();
+                    parentContentType.variable() + StringPool.PERIOD + parentTypeRelationshipField.variable();
 
             //Removing parent field
-            fieldAPI.delete(field);
+            fieldAPI.delete(parentTypeRelationshipField);
 
             final Relationship result = relationshipAPI.byTypeValue(fullFieldVar);
 
@@ -546,25 +430,12 @@ public class FieldAPITest extends IntegrationTestBase {
         ContentType childContentType  = null;
 
         try {
-            parentContentType = ContentTypeBuilder.builder(SimpleContentType.class).folder(
-                    FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST).name("parentContentType" + time)
-                    .owner(user.getUserId()).build();
-
-            parentContentType = contentTypeAPI.save(parentContentType);
-
-            childContentType = ContentTypeBuilder.builder(SimpleContentType.class).folder(
-                    FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST).name("childContentType" + time)
-                    .owner(user.getUserId()).build();
-
-            childContentType = contentTypeAPI.save(childContentType);
+            parentContentType = createAndSaveSimpleContentType("parentContentType" + time);
+            childContentType = createAndSaveSimpleContentType("childContentType" + time);
 
             //Adding a RelationshipField to the parent
-            Field field = FieldBuilder.builder(RelationshipField.class).name("newRel")
-                    .contentTypeId(parentContentType.id()).values("5")
-                    .relationType(childContentType.variable()).build();
-
-            //Trying to save relationship field with invalid input (cardinality=5)
-            fieldAPI.save(field, user);
+            createAndSaveManyToManyRelationshipField("newRel",
+                    parentContentType.id(), childContentType.variable(), "5");
 
         } finally {
             if (UtilMethods.isSet(parentContentType) && UtilMethods.isSet(parentContentType.id())) {
@@ -579,7 +450,7 @@ public class FieldAPITest extends IntegrationTestBase {
 
 
     @Test
-    public void testSaveRelationshipFieldBothSidesRequired()
+    public void testSaveRelationshipFieldBothSidesRequired_ShouldSucceed()
             throws DotSecurityException, DotDataException {
         final long time = System.currentTimeMillis();
 
@@ -588,17 +459,8 @@ public class FieldAPITest extends IntegrationTestBase {
         Relationship relationship;
 
         try {
-            parentContentType = ContentTypeBuilder.builder(SimpleContentType.class).folder(
-                    FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST).name("parentContentType" + time)
-                    .owner(user.getUserId()).build();
-
-            parentContentType = contentTypeAPI.save(parentContentType);
-
-            childContentType = ContentTypeBuilder.builder(SimpleContentType.class).folder(
-                    FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST).name("childContentType" + time)
-                    .owner(user.getUserId()).build();
-
-            childContentType = contentTypeAPI.save(childContentType);
+            parentContentType = createAndSaveSimpleContentType("parentContentType" + time);
+            childContentType = createAndSaveSimpleContentType("childContentType" + time);
 
             //Adding a RelationshipField to the parent
             Field field = FieldBuilder.builder(RelationshipField.class).name("newRel")
@@ -647,27 +509,20 @@ public class FieldAPITest extends IntegrationTestBase {
     }
 
     @Test
-    public void testSaveOneSidedRelationship_when_theChildContentTypeIsRelatedWithAnotherContentType()
+    public void testSaveOneSidedRelationship_when_theChildContentTypeIsRelatedWithAnotherContentType_ShouldSucceed()
             throws DotSecurityException, DotDataException {
         final long time = System.currentTimeMillis();
         ContentType parentContentType = null;
         final ContentType existingContentType = contentTypeAPI.find("Youtube");
         try {
-            parentContentType = ContentTypeBuilder.builder(SimpleContentType.class).folder(
-                    FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST).name("parentContentType" + time)
-                    .owner(user.getUserId()).build();
-
-            parentContentType = contentTypeAPI.save(parentContentType);
-
-            Field field = FieldBuilder.builder(RelationshipField.class).name("newRel")
-                    .contentTypeId(parentContentType.id()).values(CARDINALITY)
-                    .relationType(existingContentType.variable()).build();
+            parentContentType = createAndSaveSimpleContentType("parentContentType" + time);
 
             //One side of the relationship is set parentContentType --> Youtube
-            field = fieldAPI.save(field, user);
+            final Field parentTypeRelationshipField = createAndSaveManyToManyRelationshipField("newRel",
+                    parentContentType.id(), existingContentType.variable(), CARDINALITY);
 
             final String fullFieldVar =
-                    parentContentType.variable() + StringPool.PERIOD + field.variable();
+                    parentContentType.variable() + StringPool.PERIOD + parentTypeRelationshipField.variable();
 
             final Relationship relationship = relationshipAPI.byTypeValue(fullFieldVar);
 
@@ -675,13 +530,32 @@ public class FieldAPITest extends IntegrationTestBase {
             assertNull(relationship.getParentRelationName());
             assertEquals(parentContentType.id(), relationship.getParentStructureInode());
             assertEquals(existingContentType.id(), relationship.getChildStructureInode());
-            assertEquals(field.variable(), relationship.getChildRelationName());
-            assertEquals(1, relationship.getCardinality());
+            assertEquals(parentTypeRelationshipField.variable(), relationship.getChildRelationName());
+            assertEquals(CARDINALITY, Integer.toString(relationship.getCardinality()));
             assertEquals(fullFieldVar, relationship.getRelationTypeValue());
         } finally {
             if (UtilMethods.isSet(parentContentType) && UtilMethods.isSet(parentContentType.id())) {
                 contentTypeAPI.delete(parentContentType);
             }
         }
+    }
+
+    private ContentType createAndSaveSimpleContentType(final String name) throws DotSecurityException, DotDataException {
+        return contentTypeAPI.save(ContentTypeBuilder.builder(SimpleContentType.class).folder(
+                FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST).name(name)
+                .owner(user.getUserId()).build());
+    }
+
+
+    private Field createAndSaveManyToManyRelationshipField(final String relationshipName, final String parentTypeId,
+                                                 final String childTypeVar, final String cardinality)
+            throws DotSecurityException, DotDataException {
+
+        final Field field = FieldBuilder.builder(RelationshipField.class).name(relationshipName)
+                .contentTypeId(parentTypeId).values(cardinality)
+                .relationType(childTypeVar).build();
+
+        //One side of the relationship is set parentContentType --> childContentType
+        return fieldAPI.save(field, user);
     }
 }
