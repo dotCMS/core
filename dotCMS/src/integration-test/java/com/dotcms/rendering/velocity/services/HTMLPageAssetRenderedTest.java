@@ -15,6 +15,7 @@ import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHttpRequest;
 import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
@@ -52,6 +53,7 @@ public class HTMLPageAssetRenderedTest {
     private static String contentGenericId;
     private static String containerId;
     private static Template template;
+    private static Container container;
     private static User systemUser;
     private static final String contentFallbackProperty = "DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE";
     private static final String pageFallbackProperty = "DEFAULT_PAGE_TO_DEFAULT_LANGUAGE";
@@ -83,9 +85,29 @@ public class HTMLPageAssetRenderedTest {
         contentGenericId = contentGenericType.id();
 
         //Get a Container that includes ContentGeneric
-        final List<Container> container = APILocator.getContainerAPI().findContainersForStructure(contentGenericId,true);
-        Logger.error(HTMLPageAssetRenderedTest.class,"TEST INFO CONTAINER LIVE: " + container.get(0).isLive());
-        containerId = container.get(0).getIdentifier();
+//        final List<Container> container = APILocator.getContainerAPI().findContainersForStructure(contentGenericId,true);
+//        Logger.error(HTMLPageAssetRenderedTest.class,"TEST INFO CONTAINER LIVE: " + container.get(0).isLive());
+//        containerId = container.get(0).getIdentifier();
+
+        /**
+         * Create new container
+         */
+        container = new Container();
+        final String containerName = "containerHTMLPageRenderedTest" + System.currentTimeMillis();
+
+        container.setFriendlyName(containerName);
+        container.setTitle(containerName);
+        container.setOwner(systemUser.getUserId());
+        container.setMaxContentlets(5);
+
+        final List<ContainerStructure> csList = new ArrayList<ContainerStructure>();
+        final ContainerStructure cs = new ContainerStructure();
+        cs.setStructureId(contentGenericType.id());
+        cs.setCode("$!{body}");
+        csList.add(cs);
+        container = APILocator.getContainerAPI().save(container, csList, APILocator.systemHost(), systemUser, false);
+        PublishFactory.publishAsset(container, systemUser, false, false);
+        containerId = container.getIdentifier();
 
         //Create a Template
         template = new TemplateDataGen().title("PageContextBuilderTemplate"+System.currentTimeMillis())
@@ -173,6 +195,10 @@ public class HTMLPageAssetRenderedTest {
 
         if(template != null){
             APILocator.getTemplateAPI().delete(template,systemUser,false);
+        }
+
+        if(container != null){
+            APILocator.getContainerAPI().delete(container,systemUser,false);
         }
 
         for(final String contentletId : contentletsIds){
@@ -311,7 +337,7 @@ public class HTMLPageAssetRenderedTest {
      *
      * @throws Exception
      */
-//    @Test (expected = HTMLPageAssetNotFoundException.class)
+    @Test (expected = HTMLPageAssetNotFoundException.class)
     public void ContentFallbackFalse_PageFallbackTrue_PageSpanish_ViewEnglish404_ViewSpanishContent2And3() throws Exception{
 
         Config.setProperty(contentFallbackProperty,false);
@@ -353,7 +379,7 @@ public class HTMLPageAssetRenderedTest {
      * Spanish -> 404
      *
      */
-//    @Test (expected = HTMLPageAssetNotFoundException.class)
+    @Test (expected = HTMLPageAssetNotFoundException.class)
     public void ContentFallbackFalse_PageFallbackFalse_PageEnglish_ViewEnglishContent1And2_ViewSpanish404() throws Exception{
 
         Config.setProperty(contentFallbackProperty,false);
@@ -395,7 +421,7 @@ public class HTMLPageAssetRenderedTest {
      * Spanish -> 2 & 3
      *
      */
-//    @Test
+    @Test
     public void ContentFallbackFalse_PageFallbackFalse_PageEnglishAndSpanish_ViewEnglishContent1And2_ViewSpanishContent2And3() throws Exception{
 
         Config.setProperty(contentFallbackProperty,false);
@@ -449,7 +475,7 @@ public class HTMLPageAssetRenderedTest {
      * Spanish -> 1 & 2 & 3
      *
      */
-//    @Test
+    @Test
     public void ContentFallbackTrue_PageFallbackTrue_PageEnglishAndSpanish_ViewEnglishContent1And2_ViewSpanishContent1And2And3() throws Exception{
 
         Config.setProperty(contentFallbackProperty,true);
@@ -505,7 +531,7 @@ public class HTMLPageAssetRenderedTest {
      * Spanish -> 404
      *
      */
-//    @Test (expected = HTMLPageAssetNotFoundException.class)
+    @Test (expected = HTMLPageAssetNotFoundException.class)
     public void ContentFallbackTrue_PageFallbackFalse_PageEnglish_ViewEnglishContent1And2_ViewSpanish404() throws Exception{
 
         Config.setProperty(contentFallbackProperty,true);
@@ -544,7 +570,7 @@ public class HTMLPageAssetRenderedTest {
      *
      * @throws Exception
      */
-//    @Test
+    @Test
     public void constantField_notUpdatedCache_whenChanged() throws Exception{
 
         ContentType contentType = ContentTypeBuilder
@@ -625,7 +651,7 @@ public class HTMLPageAssetRenderedTest {
      * publish the container, the page needs to show the content related to the container.
      *
      */
-//    @Test
+    @Test
     public void containerArchived_PageShouldResolve() throws Exception {
 
         final Container container = APILocator.getContainerAPI()

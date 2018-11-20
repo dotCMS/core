@@ -63,7 +63,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
                     systemUser, false)
                     : (Container) versionableAPI.findWorkingVersion(multiTree.getContainer(), systemUser, false);
 
-            Logger.error(this,"TEST INFO Container: " + container.toString());
+//            Logger.error(this,"TEST INFO Container: " + container.toString());
             Logger.error(this, "TEST INFO CONTAINERAPI " + APILocator.getContainerAPI().getLiveContainerById(multiTree.getContainer(),systemUser,false));
 
             if(container==null && ! liveMode) {
