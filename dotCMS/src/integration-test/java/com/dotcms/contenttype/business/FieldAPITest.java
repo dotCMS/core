@@ -156,7 +156,7 @@ public class FieldAPITest extends IntegrationTestBase {
     }
 
     @Test
-    public void testSaveRelationshipField_when_newFieldIsSetToAnExistingRelationship()
+    public void testSaveRelationshipField_when_newFieldIsSetToAnExistingRelationship_SaveShouldSucceed()
             throws DotSecurityException, DotDataException {
         final long time = System.currentTimeMillis();
 
