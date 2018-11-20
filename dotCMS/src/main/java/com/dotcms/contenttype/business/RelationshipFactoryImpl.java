@@ -654,6 +654,6 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
         dc.addParam(contentType.id());
         dc.addParam(contentType.id());
         List<Map<String,String>> results = dc.loadResults();
-        return Long.parseLong(results.get(0).get("count"));
+        return Long.parseLong(results.get(0).get("relationship_count"));
     }
 }
