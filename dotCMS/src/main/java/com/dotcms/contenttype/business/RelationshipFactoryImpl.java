@@ -5,6 +5,7 @@ import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeIf;
 import com.dotcms.contenttype.transform.relationship.DbRelationshipTransformer;
+import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.DotPreconditions;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Tree;
@@ -125,7 +126,7 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
         if(typeValue==null) {
             return null;
         }
-        Relationship rel = null;
+        Relationship relationship = null;
 
         List<Map<String, Object>> results = new ArrayList<Map<String, Object>>();
         try {
@@ -134,20 +135,20 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
             dc.addParam(typeValue.toLowerCase());
             results = dc.loadObjectResults();
             if (results.size() == 0) {
-                return rel;
+                return relationship;
             }
 
-            rel = new DbRelationshipTransformer(results).from();
+            relationship = new DbRelationshipTransformer(results).from();
 
-            if(rel!= null && InodeUtils.isSet(rel.getInode())){
-                cache.putRelationshipByInode(rel);
+            if(relationship!= null && InodeUtils.isSet(relationship.getInode())){
+                cache.putRelationshipByInode(relationship);
             }
 
         } catch (DotDataException e) {
             Logger.error(this,"Error getting relationships with typeValue: " + typeValue.toLowerCase(),e);
         }
 
-        return rel;
+        return relationship;
     }
 
     @Override
@@ -344,23 +345,23 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
 
     @Override
     public  boolean isParent(final Relationship relationship, final ContentTypeIf contentTypeIf) {
-        if (relationship.getParentStructureInode().equalsIgnoreCase(contentTypeIf.id()) &&
-                !(relationship.getParentRelationName().equals(relationship.getChildRelationName())
+        return (relationship.getParentStructureInode().equalsIgnoreCase(contentTypeIf.id()) &&
+                !(sameParentAndChildRelationName(relationship)
                         && relationship.getChildStructureInode()
-                        .equalsIgnoreCase(relationship.getParentStructureInode()))) {
-            return true;
-        }
-        return false;
+                        .equalsIgnoreCase(relationship.getParentStructureInode())));
     }
     @Override
     public  boolean isChild(final Relationship relationship, final ContentTypeIf contentTypeIf) {
-        if (relationship.getChildStructureInode().equalsIgnoreCase(contentTypeIf.id()) &&
-                !(relationship.getParentRelationName().equals(relationship.getChildRelationName())
+        return (relationship.getChildStructureInode().equalsIgnoreCase(contentTypeIf.id()) &&
+                !(sameParentAndChildRelationName(relationship)
                         && relationship.getChildStructureInode()
-                        .equalsIgnoreCase(relationship.getParentStructureInode()))) {
-            return true;
-        }
-        return false;
+                        .equalsIgnoreCase(relationship.getParentStructureInode())));
+    }
+
+    private boolean sameParentAndChildRelationName(final Relationship relationship){
+        return relationship.getParentRelationName() != null
+                && relationship.getChildRelationName() != null && relationship
+                .getParentRelationName().equals(relationship.getChildRelationName());
     }
     @Override
     public  boolean sameParentAndChild(final Relationship rel) {
@@ -649,11 +650,11 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
 
     @Override
     public long getOneSidedRelationshipsCount(final ContentType contentType) throws DotDataException {
-        DotConnect dc = new DotConnect();
+        final DotConnect dc = new DotConnect();
         dc.setSQL(sql.SELECT_ONE_SIDE_RELATIONSHIP_COUNT);
         dc.addParam(contentType.id());
         dc.addParam(contentType.id());
-        List<Map<String,String>> results = dc.loadResults();
-        return Long.parseLong(results.get(0).get("relationship_count"));
+        final List<Map<String,String>> results = dc.loadResults();
+        return ConversionUtils.toLong(results.get(0).get("relationship_count"));
     }
 }

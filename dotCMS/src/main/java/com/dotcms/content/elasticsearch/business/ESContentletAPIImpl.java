@@ -1105,15 +1105,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 }
                 return categoryList;
             }else if(theField.getFieldType().equals(FieldType.RELATIONSHIP.toString())) {
-                Relationship relationship;
+
                 final String[] relationType = theField.getFieldRelationType().split("\\.");
-                if (relationType.length > 1){
-                    relationship = relationshipAPI.byTypeValue(theField.getFieldRelationType());
-                } else {
-                    relationship = relationshipAPI
-                            .byTypeValue(contentlet.getContentType().variable() + StringPool.PERIOD
-                                    + theField.getVelocityVarName());
-                }
+                final Relationship relationship = (relationType.length > 1) ? relationshipAPI
+                        .byTypeValue(theField.getFieldRelationType()) : relationshipAPI.byTypeValue(
+                        contentlet.getContentType().variable() + StringPool.PERIOD + theField
+                                .getVelocityVarName());
+
                 return relationshipAPI.dbRelatedContent(relationship, contentlet);
             }else{
                 return contentlet.get(theField.getVelocityVarName());
@@ -1154,14 +1152,15 @@ public class ESContentletAPIImpl implements ContentletAPI {
     @Override
     public ContentletRelationships getAllRelationships(Contentlet contentlet)throws DotDataException {
 
-        ContentletRelationships cRelationships = new ContentletRelationships(contentlet);
-        ContentType contentType = contentlet.getContentType();
-        List<ContentletRelationshipRecords> matches = cRelationships.getRelationshipsRecords();
-        List<Relationship> relationships = FactoryLocator.getRelationshipFactory().byContentType(contentType);
+        final ContentletRelationships cRelationships = new ContentletRelationships(contentlet);
+        final ContentType contentType = contentlet.getContentType();
+        final List<ContentletRelationshipRecords> matches = cRelationships.getRelationshipsRecords();
+        final List<Relationship> relationships = FactoryLocator.getRelationshipFactory()
+                .byContentType(contentType);
 
         for (Relationship relationship : relationships) {
 
-            ContentletRelationshipRecords records = null;
+            ContentletRelationshipRecords records;
             List<Contentlet> contentletList = null;
 
             if (FactoryLocator.getRelationshipFactory().sameParentAndChild(relationship)) {
@@ -1333,8 +1332,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     private String getRelatedContentESQuery(Contentlet contentlet, Relationship rel) {
-        boolean isSameStructRelationship = FactoryLocator.getRelationshipFactory().sameParentAndChild(rel);
-        String q = "";
+        final boolean isSameStructRelationship = FactoryLocator.getRelationshipFactory()
+                .sameParentAndChild(rel);
+        String q;
 
         if(isSameStructRelationship) {
             q = "+type:content +(" + rel.getRelationTypeValue() + "-parent:" + contentlet.getIdentifier() + " " +
@@ -1353,8 +1353,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     private String getRelatedContentESQuery(Contentlet contentlet,Relationship rel, boolean pullByParent) {
-        boolean isSameStructureRelationship = FactoryLocator.getRelationshipFactory().sameParentAndChild(rel);
-        String q = "";
+        final boolean isSameStructureRelationship = FactoryLocator.getRelationshipFactory()
+                .sameParentAndChild(rel);
+        String q;
 
         if(isSameStructureRelationship) {
             String disc = pullByParent?"-parent":"-child";
@@ -2548,8 +2549,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
             throw new DotSecurityException("User: " + (user != null ? user.getUserId() : "Unknown")
                     + " cannot edit Contentlet: " + (contentlet != null ? contentlet.getInode() : "Unknown"));
         }
-        List<Relationship> rels = this.getRelationships(contentlet.getContentType());
-        if(!rels.contains(related.getRelationship())){
+        final List<Relationship> relationships = this.getRelationships(contentlet.getContentType());
+        if(!relationships.contains(related.getRelationship())){
             throw new DotContentletStateException(
                     "Error adding relationships in contentlet:  " + (contentlet != null ? contentlet
                             .getInode() : "Unknown"));

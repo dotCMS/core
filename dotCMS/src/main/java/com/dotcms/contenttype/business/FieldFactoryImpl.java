@@ -337,15 +337,9 @@ public class FieldFactoryImpl implements FieldFactory {
     DotConnect dc = new DotConnect();
     dc.setSQL(sql.findByContentTypeAndRelationType).addParam(id).addParam(fieldRelationType);
 
-
-    List<Map<String, Object>> results;
-
-    results = dc.loadObjectResults();
-    if (results.size() == 0) {
-      return Optional.empty();
-    }
-    return Optional.of(new DbFieldTransformer(results.get(0)).from());
-
+    final List<Map<String, Object>> results = dc.loadObjectResults();
+    return results.isEmpty()?
+            Optional.empty():Optional.of(new DbFieldTransformer(results.get(0)).from());
   }
 
   private Field selectInDb(String id) throws DotDataException {

@@ -19,7 +19,6 @@ import com.dotmarketing.business.*;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -785,17 +784,8 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 			Logger.warn(this, "Error getting field for relation type " + records.getKey(), e);
 		}
 
-		if (field.isPresent()) {
-
-			Map<String, List> results = new HashMap<>();
-
-			results.put(new StringBuilder(con.getContentType().variable()).append(".")
-					.append(field.get().variable()).toString(), records.getValue());
-
-			return results;
-		}
-
-		return Collections.emptyMap();
+		return field.isPresent()? CollectionsUtils.map(new StringBuilder(con.getContentType().variable()).append(".")
+					.append(field.get().variable()).toString(), records.getValue()):Collections.emptyMap();
 
 	}
 }

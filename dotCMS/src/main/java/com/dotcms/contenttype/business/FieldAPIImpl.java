@@ -222,34 +222,8 @@ public class FieldAPIImpl implements FieldAPI {
             //verify if the relationship already exists
             if (UtilMethods.isSet(relationship) && UtilMethods.isSet(relationship.getInode())) {
 
-                final String relationName = field.variable();
-                //check which side of the relationship is being updated (parent or child)
-                if (relationship.getChildStructureInode().equals(type.id())) {
-                    //parent is updated
-                    relationship.setParentRelationName(relationName);
-                    relationship.setParentRequired(field.required());
-
-                    //only one side of the relationship can be required
-                    if (field.required()) {
-                        //setting as not required the other side of the relationship
-                        relationship.setChildRequired(false);
-                        fieldFactory.save(FieldBuilder.builder(byContentTypeAndVar(relatedContentType,
-                                relationType[1])).required(false).build());
-                    }
-                } else {
-                    //child is updated
-                    relationship.setChildRelationName(relationName);
-                    relationship.setChildRequired(field.required());
-
-                    //only one side of the relationship can be required
-                    if (field.required()) {
-                        //setting as not required the other side of the relationship
-                        relationship.setParentRequired(false);
-                        fieldFactory.save(FieldBuilder.builder(byContentTypeAndVar(relatedContentType,
-                                relationType[1])).required(false).build());
-                    }
-                }
-                relationship.setCardinality(cardinality);
+                updateRelationshipObject(field, type, relationship, relatedContentType,
+                        relationType, cardinality);
 
             } else {
                 //otherwise, a new relationship will be created
@@ -267,7 +241,50 @@ public class FieldAPIImpl implements FieldAPI {
         return Optional.of(relationship);
     }
 
-  @WrapInTransaction
+    /**
+     * Update properties in a existing relationship
+     * @param field
+     * @param type
+     * @param relationship
+     * @param relatedContentType
+     * @param relationType
+     * @param cardinality
+     * @throws DotDataException
+     */
+    private void updateRelationshipObject(Field field, ContentType type, Relationship relationship,
+            ContentType relatedContentType, String[] relationType, int cardinality)
+            throws DotDataException {
+        final String relationName = field.variable();
+        //check which side of the relationship is being updated (parent or child)
+        if (relationship.getChildStructureInode().equals(type.id())) {
+            //parent is updated
+            relationship.setParentRelationName(relationName);
+            relationship.setParentRequired(field.required());
+
+            //only one side of the relationship can be required
+            if (field.required()) {
+                //setting as not required the other side of the relationship
+                relationship.setChildRequired(false);
+                fieldFactory.save(FieldBuilder.builder(byContentTypeAndVar(relatedContentType,
+                        relationType[1])).required(false).build());
+            }
+        } else {
+            //child is updated
+            relationship.setChildRelationName(relationName);
+            relationship.setChildRequired(field.required());
+
+            //only one side of the relationship can be required
+            if (field.required()) {
+                //setting as not required the other side of the relationship
+                relationship.setParentRequired(false);
+                fieldFactory.save(FieldBuilder.builder(byContentTypeAndVar(relatedContentType,
+                        relationType[1])).required(false).build());
+            }
+        }
+        relationship.setCardinality(cardinality);
+    }
+
+    @WrapInTransaction
   @Override
   public FieldVariable save(final FieldVariable var, final User user) throws DotDataException, DotSecurityException {
       ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
@@ -456,7 +473,7 @@ public class FieldAPIImpl implements FieldAPI {
   @WrapInTransaction
   @Override
   public void deleteFieldsByContentType(final ContentType type) throws DotDataException {
-      List<Field> fields = byContentTypeId(type.id());
+      final List<Field> fields = byContentTypeId(type.id());
       for (Field field : fields) {
           delete(field);
       }

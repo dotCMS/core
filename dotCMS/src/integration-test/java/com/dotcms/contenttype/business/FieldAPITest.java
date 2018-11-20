@@ -26,6 +26,7 @@ import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import java.util.Date;
@@ -39,6 +40,7 @@ public class FieldAPITest extends IntegrationTestBase {
     private static ContentTypeAPI contentTypeAPI;
     private static RelationshipAPI relationshipAPI;
     private static User user;
+    private final static String CARDINALITY = String.valueOf(RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal());
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -72,7 +74,7 @@ public class FieldAPITest extends IntegrationTestBase {
                     .build();
 
             field = fieldAPI.save(field, user);
-            FieldVariable fv = ImmutableFieldVariable.builder().fieldId(field.inode())
+            final FieldVariable fv = ImmutableFieldVariable.builder().fieldId(field.inode())
                     .name("variable1").key("variable1").value("value").userId(user.getUserId())
                     .modDate(new Date()).build();
             fieldAPI.save(fv, user);
@@ -123,8 +125,8 @@ public class FieldAPITest extends IntegrationTestBase {
             childContentType = contentTypeAPI.save(childContentType);
 
             Field field = FieldBuilder.builder(RelationshipField.class).name("newRel")
-                    .contentTypeId(parentContentType.id()).values("1")
-                    .relationType(childContentType.variable()).build();
+                    .contentTypeId(parentContentType.id())
+                    .values(CARDINALITY).relationType(childContentType.variable()).build();
 
             //One side of the relationship is set parentContentType --> childContentType
             field = fieldAPI.save(field, user);
@@ -176,8 +178,8 @@ public class FieldAPITest extends IntegrationTestBase {
 
             //Adding a RelationshipField to the parent
             Field field = FieldBuilder.builder(RelationshipField.class).name("newRel")
-                    .contentTypeId(parentContentType.id()).values("1")
-                    .relationType(childContentType.variable()).build();
+                    .contentTypeId(parentContentType.id())
+                    .values(CARDINALITY).relationType(childContentType.variable()).build();
 
             //One side of the relationship is set parentContentType --> childContentType
             field = fieldAPI.save(field, user);
@@ -188,8 +190,8 @@ public class FieldAPITest extends IntegrationTestBase {
 
             //Adding a RelationshipField to the child
             Field secondField = FieldBuilder.builder(RelationshipField.class).name("otherSideRel")
-                    .contentTypeId(childContentType.id()).values("1")
-                    .relationType(fullFieldVar).build();
+                    .contentTypeId(childContentType.id())
+                    .values(CARDINALITY).relationType(fullFieldVar).build();
 
             //Setting the other side of the relationship childContentType --> parentContentType
             secondField = fieldAPI.save(secondField, user);
@@ -248,8 +250,8 @@ public class FieldAPITest extends IntegrationTestBase {
 
             //Adding a RelationshipField to the parent
             Field field = FieldBuilder.builder(RelationshipField.class).name("newRel")
-                    .contentTypeId(parentContentType.id()).values("1")
-                    .relationType(childContentType.variable()).build();
+                    .contentTypeId(parentContentType.id())
+                    .values(CARDINALITY).relationType(childContentType.variable()).build();
 
             //One side of the relationship is set parentContentType --> childContentType
             field = fieldAPI.save(field, user);
@@ -260,8 +262,8 @@ public class FieldAPITest extends IntegrationTestBase {
             //Adding a RelationshipField to the child
             //Setting the other side of the relationship childContentType --> parentContentType
             Field secondField = FieldBuilder.builder(RelationshipField.class).name("otherSideRel")
-                    .contentTypeId(childContentType.id()).values("1")
-                    .relationType(fullFieldVar).build();
+                    .contentTypeId(childContentType.id())
+                    .values(CARDINALITY).relationType(fullFieldVar).build();
 
             secondField = fieldAPI.save(secondField, user);
 
@@ -315,7 +317,7 @@ public class FieldAPITest extends IntegrationTestBase {
 
             //Adding a RelationshipField to the parent
             Field field = FieldBuilder.builder(RelationshipField.class).name("newRel")
-                    .contentTypeId(parentContentType.id()).values("1")
+                    .contentTypeId(parentContentType.id()).values(CARDINALITY)
                     .relationType(childContentType.variable()).build();
 
             //One side of the relationship is set parentContentType --> childContentType
@@ -327,7 +329,7 @@ public class FieldAPITest extends IntegrationTestBase {
             //Adding a RelationshipField to the child
             //Setting the other side of the relationship childContentType --> parentContentType
             Field secondField = FieldBuilder.builder(RelationshipField.class).name("otherSideRel")
-                    .contentTypeId(childContentType.id()).values("1")
+                    .contentTypeId(childContentType.id()).values(CARDINALITY)
                     .relationType(fullFieldVar).build();
 
             fieldAPI.save(secondField, user);
@@ -376,7 +378,7 @@ public class FieldAPITest extends IntegrationTestBase {
 
             //Adding a RelationshipField to the parent
             Field field = FieldBuilder.builder(RelationshipField.class).name("newRel")
-                    .contentTypeId(parentContentType.id()).values("1")
+                    .contentTypeId(parentContentType.id()).values(CARDINALITY)
                     .relationType(childContentType.variable()).build();
 
             //One side of the relationship is set parentContentType --> childContentType
@@ -388,7 +390,7 @@ public class FieldAPITest extends IntegrationTestBase {
 
             //Adding a RelationshipField to the child
             Field secondField = FieldBuilder.builder(RelationshipField.class).name("otherSideRel")
-                    .contentTypeId(childContentType.id()).values("1")
+                    .contentTypeId(childContentType.id()).values(CARDINALITY)
                     .relationType(fullFieldVar).build();
 
             secondField = fieldAPI.save(secondField, user);
@@ -442,7 +444,7 @@ public class FieldAPITest extends IntegrationTestBase {
 
             //Adding a RelationshipField to the parent
             Field field = FieldBuilder.builder(RelationshipField.class).name("newRel")
-                    .contentTypeId(parentContentType.id()).values("1")
+                    .contentTypeId(parentContentType.id()).values(CARDINALITY)
                     .relationType(childContentType.variable()).build();
 
             //One side of the relationship is set parentContentType --> childContentType
@@ -453,7 +455,7 @@ public class FieldAPITest extends IntegrationTestBase {
 
             //Adding a RelationshipField to the child
             Field secondField = FieldBuilder.builder(RelationshipField.class).name("otherSideRel")
-                    .contentTypeId(childContentType.id()).values("1")
+                    .contentTypeId(childContentType.id()).values(CARDINALITY)
                     .relationType(fullFieldVar).build();
 
             secondField = fieldAPI.save(secondField, user);
@@ -507,7 +509,7 @@ public class FieldAPITest extends IntegrationTestBase {
 
             //Adding a RelationshipField to the parent
             Field field = FieldBuilder.builder(RelationshipField.class).name("newRel")
-                    .contentTypeId(parentContentType.id()).values("1")
+                    .contentTypeId(parentContentType.id()).values(CARDINALITY)
                     .relationType(childContentType.variable()).build();
 
             //One side of the relationship is set parentContentType --> childContentType
@@ -600,7 +602,7 @@ public class FieldAPITest extends IntegrationTestBase {
 
             //Adding a RelationshipField to the parent
             Field field = FieldBuilder.builder(RelationshipField.class).name("newRel")
-                    .contentTypeId(parentContentType.id()).values("1")
+                    .contentTypeId(parentContentType.id()).values(CARDINALITY)
                     .relationType(childContentType.variable()).required(true).build();
 
 
@@ -618,7 +620,7 @@ public class FieldAPITest extends IntegrationTestBase {
 
             //Adding a RelationshipField to the child
             Field secondField = FieldBuilder.builder(RelationshipField.class).name("otherSideRel")
-                    .contentTypeId(childContentType.id()).values("1")
+                    .contentTypeId(childContentType.id()).values(CARDINALITY)
                     .relationType(fullFieldVar).required(true).build();
 
             secondField = fieldAPI.save(secondField, user);
@@ -658,7 +660,7 @@ public class FieldAPITest extends IntegrationTestBase {
             parentContentType = contentTypeAPI.save(parentContentType);
 
             Field field = FieldBuilder.builder(RelationshipField.class).name("newRel")
-                    .contentTypeId(parentContentType.id()).values("1")
+                    .contentTypeId(parentContentType.id()).values(CARDINALITY)
                     .relationType(existingContentType.variable()).build();
 
             //One side of the relationship is set parentContentType --> Youtube

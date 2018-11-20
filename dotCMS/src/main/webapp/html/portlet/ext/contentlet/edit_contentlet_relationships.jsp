@@ -71,7 +71,7 @@
 
 <%
 	}
- 	List relationshipRecords = (List<ContentletRelationships.ContentletRelationshipRecords>)request.getAttribute("relationshipRecords");
+ 	List<ContentletRelationships.ContentletRelationshipRecords> relationshipRecords = (List<ContentletRelationships.ContentletRelationshipRecords>)request.getAttribute("relationshipRecords");
 
 	if (relationshipRecords.size() > 0) {
 
