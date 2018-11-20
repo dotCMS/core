@@ -38,6 +38,7 @@ import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import sun.rmi.runtime.Log;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -83,6 +84,7 @@ public class HTMLPageAssetRenderedTest {
 
         //Get a Container that includes ContentGeneric
         final List<Container> container = APILocator.getContainerAPI().findContainersForStructure(contentGenericId,true);
+        Logger.error(HTMLPageAssetRenderedTest.class,"TEST INFO CONTAINER LIVE: " + container.get(0).isLive());
         containerId = container.get(0).getIdentifier();
 
         //Create a Template
