@@ -199,7 +199,7 @@ public class HTMLPageAssetRenderedTest {
      */
     @Test
     public void ContentFallbackFalse_PageFallbackTrue_PageEnglish_ViewEnglishContent1And2_ViewSpanishContent2And3() throws Exception{
-        System.out.println("---------------------------");
+        System.out.println("-------------S--------------");
         Config.setProperty(contentFallbackProperty,false);
         Config.setProperty(pageFallbackProperty,true);
 
@@ -234,7 +234,7 @@ public class HTMLPageAssetRenderedTest {
         html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(mockRequest, mockResponse, systemUser, pageEnglishVersion.getURI(), PageMode.PREVIEW_MODE);
         Assert.assertTrue("ESP = "+html , html.contains("content3content2Spa"));
 
-        System.out.println("---------------------------");
+        System.out.println("-------------E--------------");
     }
 
     /**

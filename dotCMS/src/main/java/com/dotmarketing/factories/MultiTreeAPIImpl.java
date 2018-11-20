@@ -24,6 +24,7 @@ import java.util.Set;
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Table;
 import com.liferay.portal.model.User;
+import sun.rmi.runtime.Log;
 
 public class MultiTreeAPIImpl implements MultiTreeAPI {
 
@@ -55,10 +56,15 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
         final Table<String, String, Set<String>> pageContents = HashBasedTable.create();
         final List<MultiTree> multiTres = MultiTreeFactory.getMultiTrees(page.getIdentifier());
 
+        Logger.error(this,"TEST INFO multitrees got: " + multiTres.toString());
+
         for (final MultiTree multiTree : multiTres) {
             final Container container = (liveMode) ? (Container) versionableAPI.findLiveVersion(multiTree.getContainer(),
                     systemUser, false)
                     : (Container) versionableAPI.findWorkingVersion(multiTree.getContainer(), systemUser, false);
+
+            Logger.error(this,"TEST INFO Container: " + container.toString());
+
             if(container==null && ! liveMode) {
                 continue;
             }
@@ -70,6 +76,9 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
                 Logger.warn(this.getClass(), "invalid contentlet on multitree:" + multiTree);
             }
             if(contentlet!=null ) {
+
+                Logger.error(this,"TEST INFO Contentlet: " + contentlet.toString());
+
                 final Set<String> myContents = pageContents.contains(multiTree.getContainer(), multiTree.getRelationType())
                         ? pageContents.get(multiTree.getContainer(), multiTree.getRelationType())
                         : new LinkedHashSet<>();
@@ -81,6 +90,8 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
              };
 
         }
+
+        Logger.error(this,"TEST INFO pageContents: " + pageContents.toString());
 
         this.addEmptyContainers(page, pageContents, liveMode);
 

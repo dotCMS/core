@@ -10,6 +10,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import org.junit.FixMethodOrder;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
@@ -50,6 +51,7 @@ import com.dotmarketing.util.Config;
 import java.util.Arrays;
 
 
+@Ignore
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class FieldFactoryImplTest extends ContentTypeBaseTest {
 

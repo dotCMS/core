@@ -7,10 +7,7 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.rules.exception.ComparisonNotSupportedException;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
 import com.dotmarketing.util.WebKeys;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.*;
 import org.mockito.Mockito;
 
 import javax.servlet.http.HttpServletRequest;
@@ -25,6 +22,7 @@ import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.*;
  * @author Jonathan Gamba
  *         Date: 1/14/16
  */
+@Ignore
 public class CurrentSessionLanguageConditionletTest {
 
     private HttpServletRequest request;

@@ -3,6 +3,7 @@ package com.dotmarketing.beans.transform;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.transform.DBTransformer;
 import com.dotmarketing.beans.MultiTree;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import java.util.ArrayList;
 import java.util.List;
@@ -22,7 +23,8 @@ public class MultiTreeTransformer implements DBTransformer<MultiTree> {
 
     @Override
     public List<MultiTree> asList() {
-        return (List)this.list.clone();
+        Logger.error(MultiTreeTransformer.class,"TEST INFO multitree list: " + this.list);
+        return this.list;
     }
 
     public MultiTreeTransformer(final List<Map<String, Object>> initList) {
@@ -45,6 +47,9 @@ public class MultiTreeTransformer implements DBTransformer<MultiTree> {
         if (UtilMethods.isSet(map.get(TREE_ORDER))) {
             mt.setTreeOrder(ConversionUtils.toInt(map.get(TREE_ORDER), 0));
         }
+
+        Logger.error(MultiTreeTransformer.class,"TEST INFO multitree transformed: " + mt);
+
         return mt;
     }
 }
