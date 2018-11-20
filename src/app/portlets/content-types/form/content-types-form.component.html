@@ -31,7 +31,7 @@
     </div>
     <span class="form__group-hint" *ngIf="!dateVarOptions.length" id="field-dates-hint">{{ dotMessageService.get('contenttypes.form.message.no.date.fields.defined') }}</span>
     <div class="form__group" *ngIf="form.get('detailPage')">
-        <dot-page-selector id="content-type-form-detail-page" formControlName="detailPage" [floatingLabel]="true" [hostIdentifier]="form.get('host').value" tabindex="7" [style]="{'width': '100%'}" label="{{ dotMessageService.get('contenttypes.form.field.detail.page') }}"></dot-page-selector>
+        <dot-page-selector id="content-type-form-detail-page" formControlName="detailPage" [floatingLabel]="true" tabindex="7" [style]="{'width': '100%'}" label="{{ dotMessageService.get('contenttypes.form.field.detail.page') }}"></dot-page-selector>
     </div>
     <div class="form__group" *ngIf="form.get('urlMapPattern')">
         <dot-icon-button class="content-type-form-url-pattern" icon="help_outline" (click)="hint.toggle($event)"></dot-icon-button>

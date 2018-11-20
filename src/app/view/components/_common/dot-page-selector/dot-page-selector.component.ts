@@ -1,7 +1,6 @@
 import { Component, Output, EventEmitter, forwardRef, Input } from '@angular/core';
-import { DotPageSelectorService, DotPageAsset } from './service/dot-page-selector.service';
+import { DotPageSelectorService, DotPageAsset, DotPageSeletorItem } from './service/dot-page-selector.service';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
-import { take } from 'rxjs/operators';
 import { Site } from 'dotcms-js';
 
 /**
@@ -27,10 +26,9 @@ export class DotPageSelectorComponent implements ControlValueAccessor {
     @Output() selected = new EventEmitter<DotPageAsset>();
     @Input() style: any;
     @Input() label: string;
-    @Input() hostIdentifier: string;
     @Input() floatingLabel = false;
 
-    results: any[];
+    results: DotPageSeletorItem[];
     val: DotPageAsset;
 
     constructor(private dotPageSelectorService: DotPageSelectorService) {}
@@ -53,11 +51,14 @@ export class DotPageSelectorComponent implements ControlValueAccessor {
      * @param DotPageAsset item
      * @memberof DotPageSelectorComponent
      */
-    onSelect(item: DotPageAsset): void {
+    onSelect(item: DotPageSeletorItem): void {
+        console.log('select', item);
+        if (item.isHost) {
+            this.dotPageSelectorService.setCurrentHost(<Site>item.payload);
+        }
         // TODO: complete selection of host if apply && don't emmit selected yet.
-        debugger;
-        this.selected.emit(item);
-        this.propagateChange(item.identifier);
+        // this.selected.emit(item);
+        // this.propagateChange(item.identifier);
     }
 
     /**
@@ -67,23 +68,10 @@ export class DotPageSelectorComponent implements ControlValueAccessor {
      * @memberof DotPageSelectorComponent
      */
     search(param: string): void {
-        const filtedByHost = this.checkHostFilter(param);
-        // TODO: create common object for both calls.
-        if (filtedByHost) {
-            this.dotPageSelectorService
-                .getSites(filtedByHost.input.substr(2))
-                .subscribe((sites: Site[]) => {
-                    // TODO: make objec conversion && display error message if empty
-                    debugger;
-                    this.results = sites;
-                });
-        } else {
-            this.dotPageSelectorService
-                .getPagesInFolder(param, this.hostIdentifier)
-                .subscribe((pages: DotPageAsset[]) => {
-                    this.results = pages;
-                });
-        }
+        console.log('search.component', param);
+        this.dotPageSelectorService.search(param).subscribe((data: DotPageSeletorItem[]) => {
+            this.results = data;
+        });
     }
 
     /**
@@ -94,12 +82,12 @@ export class DotPageSelectorComponent implements ControlValueAccessor {
      */
     writeValue(idenfier: string): void {
         if (idenfier) {
-            this.dotPageSelectorService
-                .getPage(idenfier)
-                .pipe(take(1))
-                .subscribe((page: DotPageAsset) => {
-                    this.val = page;
-                });
+            // this.dotPageSelectorService
+            //     .getPage(idenfier)
+            //     .pipe(take(1))
+            //     .subscribe((page: DotPageAsset) => {
+            //         this.val = page;
+            //     });
         }
     }
 
@@ -110,6 +98,8 @@ export class DotPageSelectorComponent implements ControlValueAccessor {
      * @memberof DotTextareaContentComponent
      */
     onKeyEnter($event: KeyboardEvent): void {
+        const input: HTMLInputElement = <HTMLInputElement>$event.target;
+        console.log('onKeyEnter', input.value);
         $event.stopPropagation();
     }
 
@@ -124,8 +114,4 @@ export class DotPageSelectorComponent implements ControlValueAccessor {
     }
 
     registerOnTouched(_fn: any): void {}
-
-    private checkHostFilter(query: string): any {
-        return query.match(/^\/\//);
-    }
 }

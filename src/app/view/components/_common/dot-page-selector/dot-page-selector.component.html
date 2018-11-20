@@ -1,19 +1,18 @@
+
 <span dotMdInputtext [label]="label" *ngIf="floatingLabel; else placeholded">
     <p-autoComplete
         appendTo="body"
         (completeMethod)="search($event.query)"
+        (keydown.enter)="onKeyEnter($event)"
+        (keydown.tab)="$event.preventDefault()"
         (onClear)="onClear($event)"
         (onSelect)="onSelect($event)"
         [inputStyle]="{'width': '100%', 'padding': '0'}"
         [minLength]="3"
         [ngModel]="val"
         [style]="style"
-        [suggestions]="results"
-        field="path"
-        (keydown.enter)="onKeyEnter($event)">
-        <ng-template let-page pTemplate="item">
-                <span> <b>{{page.host}}</b> {{page.path}} </span>
-            </ng-template>
+        field="label"
+        [suggestions]="results">
     </p-autoComplete>
 </span>
 
