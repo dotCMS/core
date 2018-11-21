@@ -90,6 +90,15 @@ public class RelationshipsResource {
         )).build();
     }
 
+    /**
+     * Returns orphan relationships (those defined in the parent or children but not in both) given a content type.
+     * @param contentTypeId
+     * @param page
+     * @param perPage
+     * @param request
+     * @return
+     * @throws Throwable
+     */
     @GET
     @JSONP
     @NoCache
