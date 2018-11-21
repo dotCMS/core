@@ -1,5 +1,5 @@
 import { By } from '@angular/platform-browser';
-import { ComponentFixture, async } from '@angular/core/testing';
+import { ComponentFixture } from '@angular/core/testing';
 import { DOTTestBed } from '../../../../../test/dot-test-bed';
 import { SimpleChange, DebugElement } from '@angular/core';
 import { DotMessageService } from '@services/dot-messages-service';
@@ -21,7 +21,7 @@ describe('SearchableDropdownComponent', () => {
     let pageLinkSize: number;
     let mainButton: DebugElement;
 
-    beforeEach(async(() => {
+    beforeEach(() => {
         const messageServiceMock = new MockDotMessageService({
             search: 'Search'
         });
@@ -52,12 +52,20 @@ describe('SearchableDropdownComponent', () => {
         comp.totalRecords = NROWS;
         comp.rows = rows;
         comp.pageLinkSize = pageLinkSize;
+    });
+
+    beforeEach(() => {
+        fixture.componentInstance.ngOnChanges({
+            placeholder: new SimpleChange(null, 'placeholder', true)
+        });
+        fixture.detectChanges();
 
         mainButton = de.query(By.css('button'));
         mainButton.triggerEventHandler('click', {});
-    }));
+    });
 
     it('should renderer the pagination links', () => {
+
         fixture.detectChanges();
 
         const paginator = fixture.debugElement.query(By.css('p-paginator'));
