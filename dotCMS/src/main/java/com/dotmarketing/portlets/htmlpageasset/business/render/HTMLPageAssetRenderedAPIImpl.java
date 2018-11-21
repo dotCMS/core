@@ -146,8 +146,6 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
         final Host host = resolveSite(request, user, mode);
         final HTMLPageAsset page = getHtmlPageAsset(user, uri, mode, host);
 
-        Logger.error(this, "TEST PageAsset Info: " + page.toString());
-
         return new HTMLPageAssetRenderedBuilder()
                 .setHtmlPageAsset(page)
                 .setUser(user)

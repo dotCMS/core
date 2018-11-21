@@ -23,7 +23,6 @@ public class MultiTreeTransformer implements DBTransformer<MultiTree> {
 
     @Override
     public List<MultiTree> asList() {
-        Logger.error(MultiTreeTransformer.class,"TEST INFO multitree list: " + this.list);
         return this.list;
     }
 
@@ -47,8 +46,6 @@ public class MultiTreeTransformer implements DBTransformer<MultiTree> {
         if (UtilMethods.isSet(map.get(TREE_ORDER))) {
             mt.setTreeOrder(ConversionUtils.toInt(map.get(TREE_ORDER), 0));
         }
-
-        Logger.error(MultiTreeTransformer.class,"TEST INFO multitree transformed: " + mt);
 
         return mt;
     }

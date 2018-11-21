@@ -54,21 +54,15 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
                                                                  final boolean liveMode) throws DotDataException, DotSecurityException {
 
         final Table<String, String, Set<String>> pageContents = HashBasedTable.create();
-        final List<MultiTree> multiTres = MultiTreeFactory.getMultiTrees(page.getIdentifier());
+        final List<MultiTree> multiTrees = MultiTreeFactory.getMultiTrees(page.getIdentifier());
 
-        Logger.error(this,"TEST INFO multitrees got: " + multiTres.toString());
 
-        for (final MultiTree multiTree : multiTres) {
+        for (final MultiTree multiTree : multiTrees) {
             final Container container = (liveMode) ? (Container) versionableAPI.findLiveVersion(multiTree.getContainer(),
                     systemUser, false)
                     : (Container) versionableAPI.findWorkingVersion(multiTree.getContainer(), systemUser, false);
 
-//            Logger.error(this,"TEST INFO Container: " + container.toString());
-            Logger.error(this, "TEST INFO CONTAINERAPI " + APILocator.getContainerAPI().getLiveContainerById(multiTree.getContainer(),systemUser,false));
-
             if(container==null && ! liveMode) {
-                Logger.error(this, "TEST INFO CONTAINER NULL " + multiTree.getContainer());
-                Logger.error(this, "TEST INFO CONTAINERAPI " + APILocator.getContainerAPI().getLiveContainerById(multiTree.getContainer(),systemUser,false));
                 continue;
             }
 
@@ -79,9 +73,6 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
                 Logger.warn(this.getClass(), "invalid contentlet on multitree:" + multiTree);
             }
             if(contentlet!=null ) {
-
-                Logger.error(this,"TEST INFO Contentlet: " + contentlet.toString());
-
                 final Set<String> myContents = pageContents.contains(multiTree.getContainer(), multiTree.getRelationType())
                         ? pageContents.get(multiTree.getContainer(), multiTree.getRelationType())
                         : new LinkedHashSet<>();
@@ -93,8 +84,6 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
              };
 
         }
-
-        Logger.error(this,"TEST INFO pageContents: " + pageContents.toString());
 
         this.addEmptyContainers(page, pageContents, liveMode);
 

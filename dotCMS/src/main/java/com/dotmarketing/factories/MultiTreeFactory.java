@@ -169,8 +169,6 @@ public class MultiTreeFactory {
             .addParam(parentInode)
             .addParam(parentInode);
 
-
-        Logger.error(MultiTreeFactory.class,"TEST GetMultiTreeFactory DB before Transformer: " + db.loadObjectResults().toString());
         return TransformerLocator.createMultiTreeTransformer(db.loadObjectResults()).asList();
 
     }
