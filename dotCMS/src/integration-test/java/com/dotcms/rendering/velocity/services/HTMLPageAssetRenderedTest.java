@@ -15,6 +15,7 @@ import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHttpRequest;
 import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
@@ -31,15 +32,13 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetNotFoundException;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.templates.model.Template;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.PageMode;
-import com.dotmarketing.util.UUIDGenerator;
-import com.dotmarketing.util.WebKeys;
+import com.dotmarketing.util.*;
 import com.liferay.portal.model.User;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import sun.rmi.runtime.Log;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -53,6 +52,7 @@ public class HTMLPageAssetRenderedTest {
     private static String contentGenericId;
     private static String containerId;
     private static Template template;
+    private static Container container;
     private static User systemUser;
     private static final String contentFallbackProperty = "DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE";
     private static final String pageFallbackProperty = "DEFAULT_PAGE_TO_DEFAULT_LANGUAGE";
@@ -83,9 +83,25 @@ public class HTMLPageAssetRenderedTest {
         final ContentType contentGenericType = contentTypeAPI.find("webPageContent");
         contentGenericId = contentGenericType.id();
 
-        //Get a Container that includes ContentGeneric
-        final List<Container> container = APILocator.getContainerAPI().findContainersForStructure(contentGenericId,true);
-        containerId = container.get(0).getIdentifier();
+        /**
+         * Create new container
+         */
+        container = new Container();
+        final String containerName = "containerHTMLPageRenderedTest" + System.currentTimeMillis();
+
+        container.setFriendlyName(containerName);
+        container.setTitle(containerName);
+        container.setOwner(systemUser.getUserId());
+        container.setMaxContentlets(5);
+
+        final List<ContainerStructure> csList = new ArrayList<ContainerStructure>();
+        final ContainerStructure cs = new ContainerStructure();
+        cs.setStructureId(contentGenericType.id());
+        cs.setCode("$!{body}");
+        csList.add(cs);
+        container = APILocator.getContainerAPI().save(container, csList, APILocator.systemHost(), systemUser, false);
+        PublishFactory.publishAsset(container, systemUser, false, false);
+        containerId = container.getIdentifier();
 
         //Create a Template
         template = new TemplateDataGen().title("PageContextBuilderTemplate"+System.currentTimeMillis())
@@ -173,6 +189,10 @@ public class HTMLPageAssetRenderedTest {
 
         if(template != null){
             APILocator.getTemplateAPI().delete(template,systemUser,false);
+        }
+
+        if(container != null){
+            APILocator.getContainerAPI().delete(container,systemUser,false);
         }
 
         for(final String contentletId : contentletsIds){
