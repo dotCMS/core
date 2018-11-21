@@ -1,18 +1,18 @@
 <div *ngIf="!editing">    
     <p-radioButton [label]="i18nMessages['contenttypes.field.properties.relationship.new.label']"
-                value="NEW"
+                value="STATUS.NEW"
                 [(ngModel)]="status"
                 (click)="clean()">
     </p-radioButton>
 
     <p-radioButton [label]="i18nMessages['contenttypes.field.properties.relationship.existing.label']"
-                value="EXISTING" 
+                value="STATUS.EXISTING" 
                 [(ngModel)]="status"
                 (click)="clean()">
     </p-radioButton>
 </div>
 
-<dot-new-relationships *ngIf="status === 'NEW';else existing"
+<dot-new-relationships *ngIf="isNew();else existing"
                         [velocityVar]="group.get(property.name).value.velocityVar"
                         [cardinalityIndex]="group.get(property.name).value.cardinalityIndex"
                         [editing]="editing"
@@ -25,7 +25,7 @@
 </ng-template>
 
 <dot-field-validation-message
-    [message]="status === 'NEW' ? i18nMessages['contenttypes.field.properties.relationships.new.error.required'] : i18nMessages['contenttypes.field.properties.relationships.edit.error.required']"
+    [message]="getValidationMessage()"
     [field]="group.controls[property.name]">
 </dot-field-validation-message>
  

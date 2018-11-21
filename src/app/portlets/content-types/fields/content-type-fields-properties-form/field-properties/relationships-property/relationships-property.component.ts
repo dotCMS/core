@@ -4,6 +4,10 @@ import { FieldProperty } from '../field-properties.model';
 import { FormGroup } from '@angular/forms';
 import * as _ from 'lodash';
 
+enum STATUS {
+    NEW, EXISTING
+}
+
 @Component({
     providers: [],
     selector: 'dot-relationships-property',
@@ -13,7 +17,7 @@ export class RelationshipsPropertyComponent implements OnInit {
     property: FieldProperty;
     group: FormGroup;
 
-    status = 'NEW';
+    status: STATUS = STATUS.NEW;
 
     editing: boolean;
 
@@ -30,10 +34,8 @@ export class RelationshipsPropertyComponent implements OnInit {
     ngOnInit() {
         this.dotMessageService
             .getMessages([
-                'contenttypes.field.properties.relationship.new.label',
                 'contenttypes.field.properties.relationship.existing.label',
-                'contenttypes.field.properties.relationship.existing.placeholder',
-                'contenttypes.field.properties.relationship.new.content_type.placeholder',
+                'contenttypes.field.properties.relationship.new.label',
                 'contenttypes.field.properties.relationships.new.error.required',
                 'contenttypes.field.properties.relationships.edit.error.required'
             ])
@@ -58,6 +60,16 @@ export class RelationshipsPropertyComponent implements OnInit {
 
     clean(): void {
         this.group.get(this.property.name).setValue(_.cloneDeep(this.beforeValue));
+    }
+
+    getValidationMessage(): string {
+        return this.status === STATUS.NEW ?
+            this.i18nMessages['contenttypes.field.properties.relationships.new.error.required'] :
+            this.i18nMessages['contenttypes.field.properties.relationships.edit.error.required'];
+    }
+
+    isNew(): boolean {
+        return this.status === STATUS.NEW;
     }
 
     private getVelocityVar(): string {
