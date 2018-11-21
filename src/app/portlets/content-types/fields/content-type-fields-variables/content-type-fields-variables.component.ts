@@ -87,35 +87,14 @@ export class ContentTypeFieldsVariablesComponent implements OnInit, OnChanges, O
     /**
      * Handle Delete event
      * @param {FieldVariable} variable
+     * @param {Number} fieldIndex
      * @memberof ContentTypeFieldsVariablesComponent
      */
     deleteVariable(fieldVariable: FieldVariable, fieldIndex: number): void {
         if (fieldVariable.key !== '') {
-            const params: FieldVariableParams = {
-                contentTypeId: this.field.contentTypeId,
-                fieldId: this.field.fieldId,
-                variable: this.fieldVariables[fieldIndex]
-            };
-            this.fieldVariablesService.delete(params).pipe(take(1)).subscribe(
-                () => {
-                    [this.fieldVariables, this.fieldVariablesBackup] = [this.fieldVariables, this.fieldVariablesBackup]
-                        .map((variables: FieldVariable[]) => {
-                            return variables.filter(
-                                (_item: FieldVariable, index: number) => index !== fieldIndex
-                            );
-                        });
-                },
-                (err: ResponseView) => {
-                    this.dotHttpErrorManagerService.handle(err).pipe(take(1)).subscribe();
-                }
-            );
+            this.deleteExistingVariable(fieldIndex);
         } else {
-            [this.fieldVariables, this.fieldVariablesBackup] = [this.fieldVariables, this.fieldVariablesBackup]
-                .map((variables: FieldVariable[]) => {
-                    return variables.filter(
-                        (_item: FieldVariable, index: number) => index !== fieldIndex
-                    );
-                });
+            this.deleteEmptyVariable(fieldIndex);
         }
     }
 
@@ -152,34 +131,14 @@ export class ContentTypeFieldsVariablesComponent implements OnInit, OnChanges, O
     /**
      * Handle Save event
      * @param {FieldVariable} variable
+     * @param {Number} variableIndex
      * @memberof ContentTypeFieldsVariablesComponent
      */
     saveVariable(variable: FieldVariable, variableIndex?: number): void {
-        const params: FieldVariableParams = {
-            contentTypeId: this.field.contentTypeId,
-            fieldId: this.field.fieldId,
-            variable: variable
-        };
-        if (typeof variableIndex !== 'undefined') {
-            this.fieldVariablesService.save(params).pipe(take(1)).subscribe(
-                (savedVariable: FieldVariable) => {
-                        this.fieldVariables = this.updateVariableCollection(
-                            savedVariable,
-                            variableIndex
-                        );
-                    this.fieldVariablesBackup = _.cloneDeep(this.fieldVariables);
-                },
-                (err: ResponseView) => {
-                    this.dotHttpErrorManagerService.handle(err).pipe(take(1)).subscribe();
-                }
-            );
+        if (typeof variableIndex === 'number') {
+            this.updateExistingVariable(variable, variableIndex);
         } else {
-            const emptyVariable: FieldVariable = {
-                key: '',
-                value: ''
-            };
-            this.fieldVariables = [].concat(emptyVariable, this.fieldVariables);
-            this.fieldVariablesBackup = [].concat(emptyVariable, this.fieldVariablesBackup);
+            this.addEmptyVariable();
         }
     }
 
@@ -231,10 +190,66 @@ export class ContentTypeFieldsVariablesComponent implements OnInit, OnChanges, O
         });
     }
 
-    private updateVariableCollection(
-        savedVariable: FieldVariable,
-        variableIndex?: number
-    ): FieldVariable[] {
+    private deleteExistingVariable(fieldIndex: number): void {
+        const params: FieldVariableParams = {
+            contentTypeId: this.field.contentTypeId,
+            fieldId: this.field.fieldId,
+            variable: this.fieldVariables[fieldIndex]
+        };
+        this.fieldVariablesService.delete(params).pipe(take(1)).subscribe(
+            () => {
+                [this.fieldVariables, this.fieldVariablesBackup] = [this.fieldVariables, this.fieldVariablesBackup]
+                    .map((variables: FieldVariable[]) => {
+                        return variables.filter(
+                            (_item: FieldVariable, index: number) => index !== fieldIndex
+                        );
+                    });
+            },
+            (err: ResponseView) => {
+                this.dotHttpErrorManagerService.handle(err).pipe(take(1)).subscribe();
+            }
+        );
+    }
+
+    private deleteEmptyVariable(fieldIndex: number): void {
+        [this.fieldVariables, this.fieldVariablesBackup] = [this.fieldVariables, this.fieldVariablesBackup]
+                .map((variables: FieldVariable[]) => {
+                    return variables.filter(
+                        (_item: FieldVariable, index: number) => index !== fieldIndex
+                    );
+                });
+    }
+
+    private updateExistingVariable(variable: FieldVariable, variableIndex: number): void {
+        const params: FieldVariableParams = {
+            contentTypeId: this.field.contentTypeId,
+            fieldId: this.field.fieldId,
+            variable: variable
+        };
+        this.fieldVariablesService.save(params).pipe(take(1)).subscribe(
+            (savedVariable: FieldVariable) => {
+                    this.fieldVariables = this.updateVariableCollection(
+                        savedVariable,
+                        variableIndex
+                    );
+                this.fieldVariablesBackup = _.cloneDeep(this.fieldVariables);
+            },
+            (err: ResponseView) => {
+                this.dotHttpErrorManagerService.handle(err).pipe(take(1)).subscribe();
+            }
+        );
+    }
+
+    private addEmptyVariable(): void {
+        const emptyVariable: FieldVariable = {
+            key: '',
+            value: ''
+        };
+        this.fieldVariables = [].concat(emptyVariable, this.fieldVariables);
+        this.fieldVariablesBackup = [].concat(emptyVariable, this.fieldVariablesBackup);
+    }
+
+    private updateVariableCollection(savedVariable: FieldVariable, variableIndex?: number): FieldVariable[] {
         return this.fieldVariables.map((item, index) => {
             if (index === variableIndex) {
                 item = savedVariable;

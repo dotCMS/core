@@ -1,10 +1,8 @@
 @import "variables";
 
-.ui-datatable {
-    .ui-datatable-thead > tr > th,
-    .ui-datatable-tfoot > tr > td,
-    .ui-datatable-data > tr > td {
-
+.ui-table {
+    .ui-table-thead > tr > th,
+    .ui-table-tbody > tr > td {
         border-width: 0px;
         padding: $datatable-cell-padding;
 
@@ -27,7 +25,7 @@
         }
     }
 
-    .ui-datatable-thead > tr > th {
+    .ui-table-thead > tr > th {
         color: $datatable-head-color;
         font-size: $font-size-small;
         font-weight: normal;
@@ -39,41 +37,12 @@
         }
     }
 
-    .ui-datatable-data > tr > td {
+    .ui-table-tbody > tr > td {
         border-bottom: $datatable-cell-border;
     }
 
-    .ui-datatable-loading {
-        background-color: $black;
-        opacity: 0.075;
-    }
-
-    .ui-datatable-loading-content {
-        align-items: center;
-        bottom: 0;
-        display: flex;
-        justify-content: center;
-        left: 0;
-        right: 0;
-        top: 0;
-
-        .fa {
-            opacity: 0.5;
-        }
-    }
-
-    .ui-sortable-column {
-        .pi-sort:before {
-            content: "";
-        }
-    
-        .pi-sort-asc:before {
-            content: "\f063";
-        }
-    
-        .pi-sort-desc:before {
-            content: "\f062";
-        }
+    .ui-table-tbody tr:hover {
+        background-color: rgba($brand-primary_rgb, 0.1);
     }
 
     .ui-widget-content .ui-state-highlight {
@@ -81,12 +50,16 @@
         color: $datatable-row-color;
     }
 
-    .ui-datatable-odd {
-        background: $datatable-row-bgcolor;
-    }
-
     .ui-paginator {
         padding-top: $basic-padding * 2;
         padding-bottom: $basic-padding * 2;
+    }
+
+    .ui-table-sort-icon {
+        display: none;
+    }
+
+    .ui-sortable-column .ui-table-sort-icon {
+        display: inline-block;
     }
 }
