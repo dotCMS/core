@@ -4,20 +4,19 @@ import { FieldProperty } from '../field-properties.model';
 import { FormGroup } from '@angular/forms';
 import * as _ from 'lodash';
 
-enum STATUS {
-    NEW, EXISTING
-}
-
 @Component({
     providers: [],
     selector: 'dot-relationships-property',
     templateUrl: './relationships-property.component.html'
 })
 export class RelationshipsPropertyComponent implements OnInit {
+    readonly STATUS_NEW = 'NEW';
+    readonly STATUS_EXISTING = 'EXISTING';
+
     property: FieldProperty;
     group: FormGroup;
 
-    status: STATUS = STATUS.NEW;
+    status = this.STATUS_NEW;
 
     editing: boolean;
 
@@ -63,13 +62,13 @@ export class RelationshipsPropertyComponent implements OnInit {
     }
 
     getValidationMessage(): string {
-        return this.status === STATUS.NEW ?
+        return this.status === this.STATUS_NEW ?
             this.i18nMessages['contenttypes.field.properties.relationships.new.error.required'] :
             this.i18nMessages['contenttypes.field.properties.relationships.edit.error.required'];
     }
 
     isNew(): boolean {
-        return this.status === STATUS.NEW;
+        return this.status === this.STATUS_NEW;
     }
 
     private getVelocityVar(): string {

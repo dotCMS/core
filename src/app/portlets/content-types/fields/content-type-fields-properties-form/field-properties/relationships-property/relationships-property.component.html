@@ -1,18 +1,18 @@
 <div *ngIf="!editing">    
     <p-radioButton [label]="i18nMessages['contenttypes.field.properties.relationship.new.label']"
-                value="STATUS.NEW"
+                [value]="STATUS_NEW"
                 [(ngModel)]="status"
                 (click)="clean()">
     </p-radioButton>
 
     <p-radioButton [label]="i18nMessages['contenttypes.field.properties.relationship.existing.label']"
-                value="STATUS.EXISTING" 
+                [value]="STATUS_EXISTING" 
                 [(ngModel)]="status"
                 (click)="clean()">
     </p-radioButton>
 </div>
 
-<dot-new-relationships *ngIf="isNew();else existing"
+<dot-new-relationships *ngIf="status === STATUS_NEW;else existing"
                         [velocityVar]="group.get(property.name).value.velocityVar"
                         [cardinalityIndex]="group.get(property.name).value.cardinalityIndex"
                         [editing]="editing"

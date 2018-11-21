@@ -1,8 +1,8 @@
 <dot-searchable-dropdown
     [data]="currentPage | async"
-    [pageLinkSize]="relationshipPaginatorService.maxLinksPage"
-    [rows]="relationshipPaginatorService.paginationPerPage"
-    [totalRecords]="relationshipPaginatorService.totalRecords"
+    [pageLinkSize]="dotPaginatorService.maxLinksPage"
+    [rows]="dotPaginatorService.paginationPerPage"
+    [totalRecords]="dotPaginatorService.totalRecords"
     [placeholder]="i18nMessages['contenttypes.field.properties.relationship.existing.placeholder']"
     labelPropertyName="label"
     (change)="triggerChanged($event.relationship)"
