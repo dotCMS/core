@@ -11,7 +11,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Map;
 
-public class Task05035LanguageTableIdentityOff implements StartupTask  {
+public class Task05040LanguageTableIdentityOff implements StartupTask  {
 
 
     //MySQL Upgrade
