@@ -1,4 +1,3 @@
-
 <span dotMdInputtext [label]="label" *ngIf="floatingLabel; else placeholded">
     <p-autoComplete
         appendTo="body"
@@ -9,12 +8,13 @@
         (onSelect)="onSelect($event)"
         [inputStyle]="{'width': '100%', 'padding': '0'}"
         [minLength]="3"
-        [ngModel]="val"
         [style]="style"
         field="label"
-        [suggestions]="results">
+        [ngModel]="val"
+        [suggestions]="results.data">
     </p-autoComplete>
 </span>
+<div *ngIf="message" class="ui-messages-error" [textContent]="message"></div>
 
 <ng-template #placeholded>
     <p-autoComplete

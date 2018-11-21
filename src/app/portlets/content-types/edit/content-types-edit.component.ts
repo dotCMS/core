@@ -288,6 +288,7 @@ export class ContentTypesEditComponent implements OnInit, OnDestroy {
                     this.data = contentType;
                     this.fields = this.data.fields;
                     this.dotRouterService.goToEditContentType(this.data.id);
+                    console.log('postData');
                     this.show = false;
                 },
                 (err: ResponseView) => {
@@ -308,6 +309,7 @@ export class ContentTypesEditComponent implements OnInit, OnDestroy {
         this.crudService.putData(`v1/contenttype/id/${this.data.id}`, data).subscribe(
             (contentType: ContentType) => {
                 this.data = contentType;
+                console.log('putData');
                 this.show = false;
             },
             (err: ResponseView) => {

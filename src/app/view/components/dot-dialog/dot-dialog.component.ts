@@ -90,6 +90,7 @@ export class DotDialogComponent implements OnChanges {
      * @memberof DotDialogComponent
      */
     cancelAction(): void {
+
         this.close();
 
         if (this.actions && this.canTriggerAction(this.actions.cancel)) {

@@ -1,4 +1,4 @@
-import { map, pluck, flatMap, toArray } from 'rxjs/operators';
+import { map, pluck, flatMap, toArray, tap, switchMap } from 'rxjs/operators';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { RequestMethod } from '@angular/http';
@@ -32,8 +32,16 @@ export interface DotPageAsset {
 export interface DotPageSeletorItem {
     label: string;
     payload: DotPageAsset | Site;
-    isHost?: boolean;
 }
+
+export interface DotPageSelectorResults {
+    data: DotPageSeletorItem[];
+    type: string;
+    query: string;
+}
+
+const HOST_FULL_REGEX = /^\/\/[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b\//;
+const URL_ABS_REGEX = /^\/\/?[a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,5}(:[0-9]{1,5})?(\/.*)?$/;
 
 @Injectable()
 export class DotPageSelectorService {
@@ -41,17 +49,72 @@ export class DotPageSelectorService {
 
     constructor(private coreWebService: CoreWebService) {}
 
+    /**
+     * Get page asset by identifier
+     *
+     * @param {string} identifier
+     * @returns {Observable<DotPageSeletorItem>}
+     * @memberof DotPageSelectorService
+     */
+    getPageById(identifier: string): Observable<DotPageSeletorItem> {
+        return this.coreWebService
+            .requestView({
+                body: this.getRequestBodyQuery(`+basetype:5 +identifier:*${identifier}*`),
+                method: RequestMethod.Post,
+                url: 'es/search'
+            })
+            .pipe(
+                pluck('contentlets'),
+                flatMap((pages: DotPageAsset[]) => pages),
+                map((page: DotPageAsset) => {
+                    return {
+                        label: `//coming.from.server${page.path}`,
+                        payload: page
+                    };
+                })
+            );
+    }
+
+    /**
+     * Set the host to perform page searches
+     *
+     * @param {Site} host
+     * @memberof DotPageSelectorService
+     */
     setCurrentHost(host: Site): void {
-        console.log('setCurrentHost');
         this.currentHost = host;
     }
 
-    search(param: string): Observable<DotPageSeletorItem[]> {
-        console.log('search.service', param);
+    /**
+     * Search for host, page or both
+     *
+     * @param {string} param
+     * @returns {Observable<DotPageSelectorResults>}
+     * @memberof DotPageSelectorService
+     */
+    search(param: string): Observable<DotPageSelectorResults> {
+        if (this.isTwoStepSearch(param)) {
+            return this.fullSearch(param);
+        } else {
+            return this.conditionalSearch(param);
+        }
+    }
 
+    private conditionalSearch(param: string): Observable<DotPageSelectorResults> {
         return this.shouldSearchPages(param)
             ? this.getPages(param)
             : this.getSites(this.getSiteName(param));
+    }
+
+    private fullSearch(param: string): Observable<DotPageSelectorResults> {
+        const host = this.parseHost(param).pop();
+
+        return this.getSites(host).pipe(
+            tap((results: DotPageSelectorResults) => {
+                this.setCurrentHost(<Site>results.data[0].payload);
+            }),
+            switchMap(() => this.getPages(param))
+        );
     }
 
     private getEsResults(query: string): Observable<ResponseView> {
@@ -62,7 +125,7 @@ export class DotPageSelectorService {
         });
     }
 
-    private getPages(searchParam: string): Observable<DotPageSeletorItem[]> {
+    private getPages(searchParam: string): Observable<DotPageSelectorResults> {
         return this.coreWebService
             .requestView({
                 body: this.getPagesSearchQuery(
@@ -78,15 +141,21 @@ export class DotPageSelectorService {
                 map((page: DotPageAsset) => {
                     return {
                         label: `//coming.from.server${page.path}`,
-                        payload: page,
-                        isHost: false
+                        payload: page
                     };
                 }),
-                toArray()
+                toArray(),
+                map((items: DotPageSeletorItem[]) => {
+                    return {
+                        data: items,
+                        type: 'page',
+                        query: searchParam.replace(HOST_FULL_REGEX, '')
+                    };
+                })
             );
     }
 
-    private getPagesSearchQuery(searchParam: string, hostId?: string): {[key: string]: {}} {
+    private getPagesSearchQuery(searchParam: string, hostId?: string): { [key: string]: {} } {
         const parsedQuery = this.parseHost(searchParam);
 
         let query = `+basetype:5 +path:*${parsedQuery[0]}*`;
@@ -101,7 +170,7 @@ export class DotPageSelectorService {
         return this.getRequestBodyQuery(query);
     }
 
-    private getRequestBodyQuery(query: string): {[key: string]: {}} {
+    private getRequestBodyQuery(query: string): { [key: string]: {} } {
         return {
             query: {
                 query_string: {
@@ -111,7 +180,7 @@ export class DotPageSelectorService {
         };
     }
 
-    private getSites(param?: string): Observable<DotPageSeletorItem[]> {
+    private getSites(param: string): Observable<DotPageSelectorResults> {
         const query = `+contenttype:Host +host.hostName:*${this.getSiteName(param)}*`;
 
         return this.getEsResults(query).pipe(
@@ -124,7 +193,14 @@ export class DotPageSelectorService {
                     isHost: true
                 };
             }),
-            toArray()
+            toArray(),
+            map((items: DotPageSeletorItem[]) => {
+                return {
+                    data: items,
+                    type: 'site',
+                    query: param
+                };
+            })
         );
     }
 
@@ -132,12 +208,20 @@ export class DotPageSelectorService {
         return site.replace(/\//g, '');
     }
 
+    private isAbsoluteUrl(param: string): boolean {
+        return URL_ABS_REGEX.test(param);
+    }
+
     private isReSearchingForHost(param: string): boolean {
         return this.currentHost && !this.itStartWithFullHost(param);
     }
 
     private itStartWithFullHost(param: string): boolean {
-        return /^\/\/[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b\//.test(param);
+        return HOST_FULL_REGEX.test(param);
+    }
+
+    private isTwoStepSearch(param): boolean {
+        return !this.currentHost && this.isAbsoluteUrl(param);
     }
 
     private parseHost(query: string): string[] {
