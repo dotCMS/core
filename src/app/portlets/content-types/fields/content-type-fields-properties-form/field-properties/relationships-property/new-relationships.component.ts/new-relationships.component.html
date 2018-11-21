@@ -1,21 +1,20 @@
 <dot-searchable-dropdown 
     [data]="contentTypeCurrentPage | async"
-    [pageLinkSize]="contentTypePaginatorService.maxLinksPage"
-    [rows]="contentTypePaginatorService.paginationPerPage"
-    [totalRecords]="contentTypePaginatorService.totalRecords"
-    (filterChange)="handleContentTypeFilterChange($event)"
-    (pageChange)="handleContentTypePageChange($event)"
+    [pageLinkSize]="paginatorService.maxLinksPage"
+    [rows]="paginatorService.paginationPerPage"
+    [totalRecords]="paginatorService.totalRecords"
+    (filterChange)="handleFilterChange($event)"
+    (pageChange)="handlePageChange($event)"
     labelPropertyName="name"
     [placeholder]="i18nMessages['contenttypes.field.properties.relationship.new.content_type.placeholder']"
-    [(ngModel)]="contentType">
+    [ngModel]="contentType"
+    [disabled]="editing"
+    (change)="triggerChanged()">
 </dot-searchable-dropdown>*
 
-<p-dropdown 
-    appendTo="body"
-    [options]="relationshpsCardinalities" 
-    optionLabel="label" 
-    optionValue="id"
-    (onChange)="tiggerChanged()"
-    [(ngModel)]="cardinality">
-</p-dropdown> *
+<dot-cardinality-selector [cardinalityIndex]="cardinalityIndex"
+                          [disabled]="editing"
+                          (change)="cardinalityChanged($event)">
+
+</dot-cardinality-selector>
  

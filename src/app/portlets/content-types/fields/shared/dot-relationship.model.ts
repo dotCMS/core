@@ -1,6 +1,6 @@
 import { ContentType } from '@portlets/content-types/shared/content-type.model';
 
-export interface Relationship {
+export interface DotRelationship {
     archived: boolean;
     cardinality: number;
     categoryId: string;

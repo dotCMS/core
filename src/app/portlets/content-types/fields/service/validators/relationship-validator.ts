@@ -1,7 +1,7 @@
 import { FormControl } from '@angular/forms';
 
 /**
- * Validate defaultValue for date field, date_time Field and time field
+ * Validate the values for a relationship property field are right.
  *
  * @export
  * @param FormControl formControl

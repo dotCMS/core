@@ -4,6 +4,7 @@ import { MockBackend } from '@angular/http/testing';
 import { mockDotContentlet } from '../../../test/dot-contentlet.mock';
 import { StructureTypeView } from '@models/contentlet/structure-type-view.model';
 import { DotContentTypeService } from './dot-content-type.service';
+import { ContentType } from '@portlets/content-types/shared/content-type.model';
 
 let lastConnection: any;
 
@@ -58,5 +59,34 @@ describe('DotContentletService', () => {
             expect(action).toBe(mockDotContentlet[0].types[0].action);
         });
         mockConnectionContentletResponse();
+    });
+
+    it('should get one content type by id or varName', () => {
+        const id = '1';
+        const contentTypeExpected = {
+            clazz: 'clazz',
+            defaultType: false,
+            fixed: false,
+            folder: 'folder',
+            host: 'host',
+            id: id,
+            name: 'content type name',
+            owner: 'user',
+            system: false,
+        };
+
+        this.dotContentletService.getContentType(id).subscribe((contentType: ContentType) => {
+            expect(contentType).toBe(contentTypeExpected);
+        });
+
+        lastConnection.mockRespond(
+            new Response(
+                new ResponseOptions({
+                    body: {
+                        entity: contentTypeExpected
+                    }
+                })
+            )
+        );
     });
 });

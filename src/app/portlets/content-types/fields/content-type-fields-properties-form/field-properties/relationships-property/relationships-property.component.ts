@@ -15,9 +15,6 @@ export class RelationshipsPropertyComponent implements OnInit {
 
     status = 'NEW';
 
-    cardinalityIndex: number;
-    velocityVar: string;
-
     editing: boolean;
 
     beforeValue: any;
@@ -46,8 +43,11 @@ export class RelationshipsPropertyComponent implements OnInit {
 
 
         this.beforeValue = _.cloneDeep(this.group.get(this.property.name).value);
-        this.velocityVar = this.getVelocityVar();
-        this.cardinalityIndex = this.group.get(this.property.name).value.cardinality;
+
+        this.group.get(this.property.name).setValue({
+            velocityVar: this.getVelocityVar(),
+            cardinality: this.group.get(this.property.name).value.cardinality
+        });
 
         this.editing = !!this.group.get(this.property.name).value.velocityVar;
     }

@@ -29,6 +29,7 @@ import { DotEventsService } from '@services/dot-events/dot-events.service';
 import { ContentType } from '@portlets/content-types/shared/content-type.model';
 import { MenuItem } from 'primeng/primeng';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
+import { DotEditContentTypeCacheService } from '../services/edit-content-type-cache.service';
 
 @Component({
     selector: 'dot-content-type-fields-drop-zone',
@@ -139,7 +140,8 @@ const getConfig = (route) => {
             FieldService,
             ContentTypesInfoService,
             DotMenuService,
-            Location
+            Location,
+            DotEditContentTypeCacheService
         ]
     };
 };
@@ -369,6 +371,14 @@ describe('ContentTypesEditComponent', () => {
             fixture.detectChanges();
             dialog = de.query(By.css('dot-dialog'));
         };
+
+        it('should set data, fields and cache', () => {
+            expect(comp.data).toBe(fakeContentType);
+            expect(comp.fields).toBe(fakeContentType.fields);
+
+            const dotEditContentTypeCacheService = de.injector.get(DotEditContentTypeCacheService);
+            expect(dotEditContentTypeCacheService.getContentType()).toBe(fakeContentType);
+        });
 
         it('should have dot-content-type-layout', () => {
             const contentTypeLayout = de.query(By.css('dot-content-type-layout'));

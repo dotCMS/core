@@ -87,7 +87,8 @@ import {
 import {
     EditRelationshipsComponent
 } from './fields/content-type-fields-properties-form/field-properties/relationships-property/edit-relationship.component.ts/edit-relationships.component';
-import { EditContentTypeCacheService } from './services/edit-content-type-cache.service';
+import { DotEditContentTypeCacheService } from './services/edit-content-type-cache.service';
+import { CardinalitySelectorComponent } from './fields/content-type-fields-properties-form/field-properties/relationships-property/cardinality-selector/cardinality-selector.component';
 
 @NgModule({
     declarations: [
@@ -114,6 +115,7 @@ import { EditContentTypeCacheService } from './services/edit-content-type-cache.
         ValuesPropertyComponent,
         RelationshipsPropertyComponent,
         NewRelationshipsComponent,
+        CardinalitySelectorComponent,
         EditRelationshipsComponent
     ],
     entryComponents: [
@@ -178,7 +180,7 @@ import { EditContentTypeCacheService } from './services/edit-content-type-cache.
         FieldService,
         FormatDateService,
         RelationshipService,
-        EditContentTypeCacheService
+        DotEditContentTypeCacheService
     ]
 })
 export class ContentTypesModule {}

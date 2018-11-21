@@ -1,9 +1,7 @@
-import { Component, OnInit, Input, Output, EventEmitter } from '@angular/core';
+import { Component, OnInit, Input, Output, EventEmitter, SimpleChanges, OnChanges } from '@angular/core';
 import { DotMessageService } from '@services/dot-messages-service';
 import { PaginatorService } from '@services/paginator';
 import { ContentType } from '@portlets/content-types/shared/content-type.model';
-import { RelationshipCardinality } from '@portlets/content-types/fields/shared/relationship-cardinality.model';
-import { RelationshipService } from '@portlets/content-types/fields/service/relationship.service';
 import { Observable } from 'rxjs';
 import { DotContentTypeService } from '@services/dot-content-type/dot-content-type.service';
 
@@ -12,7 +10,7 @@ import { DotContentTypeService } from '@services/dot-content-type/dot-content-ty
     selector: 'dot-new-relationships',
     templateUrl: './new-relationships.component.html'
 })
-export class NewRelationshipsComponent implements OnInit {
+export class NewRelationshipsComponent implements OnInit, OnChanges {
     @Input()
     cardinalityIndex: number;
 
@@ -26,10 +24,9 @@ export class NewRelationshipsComponent implements OnInit {
     change: EventEmitter<any> = new EventEmitter();
 
     contentTypeCurrentPage: Observable<ContentType[]>;
-    relationshpsCardinalities: RelationshipCardinality[];
 
-    cardinality: RelationshipCardinality;
     contentType: ContentType;
+    currentCardinalityIndex: number;
 
     i18nMessages: {
         [key: string]: string;
@@ -37,11 +34,11 @@ export class NewRelationshipsComponent implements OnInit {
 
     constructor(
         public dotMessageService: DotMessageService,
-        public contentTypePaginatorService: PaginatorService,
-        private relationshipService: RelationshipService,
+        public paginatorService: PaginatorService,
         private contentTypeService: DotContentTypeService) {
 
     }
+
     ngOnInit() {
         this.dotMessageService
             .getMessages([
@@ -52,17 +49,16 @@ export class NewRelationshipsComponent implements OnInit {
                 this.i18nMessages = res;
             });
 
-        this.contentTypePaginatorService.url = 'v1/contenttype';
+        this.paginatorService.url = 'v1/contenttype';
+    }
 
-        this.relationshipService.loadCardinalities().subscribe((cardinalities: RelationshipCardinality[]) => {
-            this.relationshpsCardinalities = cardinalities;
-            this.cardinality = this.relationshpsCardinalities[this.cardinalityIndex];
-        });
+    ngOnChanges(changes: SimpleChanges): void {
+        if (changes.velocityVar) {
+            this.loadContentType(changes.velocityVar.currentValue);
+        }
 
-        if (this.velocityVar) {
-            this.contentTypeService.getContentType(this.velocityVar).subscribe((contentType) => {
-                this.contentType = contentType;
-            });
+        if (changes.cardinalityIndexInput) {
+            this.currentCardinalityIndex = changes.cardinalityIndexInput.currentValue;
         }
     }
 
@@ -71,7 +67,7 @@ export class NewRelationshipsComponent implements OnInit {
      * @param any filter
      * @memberof CategoriesPropertyComponent
      */
-    handleContentTypeFilterChange(filter): void {
+    handleFilterChange(filter): void {
         this.getContentTypeList(filter);
     }
 
@@ -80,19 +76,37 @@ export class NewRelationshipsComponent implements OnInit {
      * @param any event
      * @memberof CategoriesPropertyComponent
      */
-    handleContentTypePageChange(event): void {
+    handlePageChange(event): void {
         this.getContentTypeList(event.filter, event.first);
     }
 
-    tiggerChanged(): void {
+    /**
+     * Trigger a change event
+     */
+    triggerChanged(): void {
         this.change.next({
-            velocityVar: this.contentType.variable,
-            cardinality: this.cardinality.id
+            velocityVar: this.contentType ? this.contentType.variable : undefined,
+            cardinality: this.currentCardinalityIndex
         });
     }
 
+    cardinalityChanged(cardinalityIndex: number): void {
+        this.currentCardinalityIndex = cardinalityIndex;
+        this.triggerChanged();
+    }
+
+    private loadContentType(velocityVar: string) {
+        if (velocityVar) {
+            this.contentTypeService.getContentType(velocityVar).subscribe((contentType) => {
+                this.contentType = contentType;
+            });
+        } else {
+            this.contentType = undefined;
+        }
+    }
+
     private getContentTypeList(filter = '', offset = 0): void {
-        this.contentTypePaginatorService.filter = filter;
-        this.contentTypeCurrentPage = this.contentTypePaginatorService.getWithOffset(offset);
+        this.paginatorService.filter = filter;
+        this.contentTypeCurrentPage = this.paginatorService.getWithOffset(offset);
     }
 }

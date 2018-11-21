@@ -1,4 +1,4 @@
-import { toArray, defaultIfEmpty, map, pluck, flatMap, filter } from 'rxjs/operators';
+import { toArray, defaultIfEmpty, map, pluck, flatMap, filter, take } from 'rxjs/operators';
 import { CoreWebService } from 'dotcms-js';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
@@ -20,7 +20,10 @@ export class DotContentTypeService {
                 method: RequestMethod.Get,
                 url: `v1/contenttype/id/${idOrVar}`
             })
-            .pipe(pluck('entity'));
+            .pipe(
+                take(1),
+                pluck('entity')
+            );
     }
 
     /**

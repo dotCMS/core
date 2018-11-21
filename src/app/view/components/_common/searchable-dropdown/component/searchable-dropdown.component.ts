@@ -79,7 +79,7 @@ export class SearchableDropdownComponent implements ControlValueAccessor, OnChan
     valueString = '';
 
     label: string;
-
+    disabled = false;
     i18nMessages: {
         [key: string]: string;
     } = {};
@@ -202,8 +202,13 @@ export class SearchableDropdownComponent implements ControlValueAccessor, OnChan
         this.searchPanelRef.hide();
     }
 
+    /**
+     * disabled the component, for more information see:
+     * https://angular.io/api/forms/ControlValueAccessor#setdisabledstate
+     * @param isDisabled if it is true the component is disabled
+     */
     setDisabledState(isDisabled: boolean): void {
-        this.button.nativeElement.disabled = isDisabled;
+        this.disabled = isDisabled;
     }
 
     getLabel(): string {

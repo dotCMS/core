@@ -13,8 +13,8 @@
 </div>
 
 <dot-new-relationships *ngIf="status === 'NEW';else existing"
-                        [velocityVar]="velocityVar"
-                        [cardinalityIndex]="cardinalityIndex"
+                        [velocityVar]="group.get(property.name).value.velocityVar"
+                        [cardinalityIndex]="group.get(property.name).value.cardinalityIndex"
                         [editing]="editing"
                         (change)="handleChange($event)">
 </dot-new-relationships>
