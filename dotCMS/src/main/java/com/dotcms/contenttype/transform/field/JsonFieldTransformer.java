@@ -31,6 +31,7 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 public class JsonFieldTransformer implements FieldTransformer, JsonTransformer {
 
   private static final String CATEGORIES_PROPERTY_NAME = "categories";
+  private static final String VALUES = "values";
 
   final List<Field> list;
 
@@ -106,10 +107,10 @@ public class JsonFieldTransformer implements FieldTransformer, JsonTransformer {
 
       if (jo.has(CATEGORIES_PROPERTY_NAME)){
           final JSONObject categories = (JSONObject) jo.get(CATEGORIES_PROPERTY_NAME);
-          jo.put("values", categories.get("inode"));
+          jo.put(VALUES, categories.get("inode"));
       } else if (jo.has(ContentTypeFieldProperties.RELATIONSHIPS.getName())) {
           final JSONObject relationship = (JSONObject) jo.get(ContentTypeFieldProperties.RELATIONSHIPS.getName());
-          jo.put("values", relationship.get("cardinality"));
+          jo.put(VALUES, relationship.get("cardinality"));
           jo.put("relationType", relationship.get("velocityVar"));
       }
 
@@ -165,7 +166,7 @@ public class JsonFieldTransformer implements FieldTransformer, JsonTransformer {
 
       if (ImmutableCategoryField.class.getName().equals(field.get("clazz"))) {
         try {
-          final Object values = field.get("values");
+          final Object values = field.get(VALUES);
           if (UtilMethods.isSet(values)) {
             final Category category = APILocator.getCategoryAPI()
                     .find(values.toString(), APILocator.getLoginServiceAPI().getLoggedInUser(),
@@ -181,7 +182,7 @@ public class JsonFieldTransformer implements FieldTransformer, JsonTransformer {
           Logger.error(JsonFieldTransformer.class, e.getMessage());
         }
       } else if (ImmutableRelationshipField.class.getName().equals(field.get("clazz"))) {
-        final String cardinality = field.get("values").toString();
+        final String cardinality = field.get(VALUES).toString();
         final String relationType = field.get("relationType").toString();
 
         field.put(ContentTypeFieldProperties.RELATIONSHIPS.getName(), map(

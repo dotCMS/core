@@ -165,13 +165,13 @@ public class EditRelationshipAction extends DotPortletAction {
 			if(parentStructure!=null && childStructure!=null){
 
 				if(!relationship.isFixed()){
-					String relationshipTypeValue =
+					final String relationshipTypeValue =
 							relationshipForm.getParentRelationName().replaceAll("\\s", "_")
 									.replaceAll("[^a-zA-Z0-9\\_]", "") +
 									"-" + relationshipForm.getChildRelationName()
 									.replaceAll("\\s", "_").replaceAll("[^a-zA-Z0-9\\_]", "");
 
-					String lastRelationshipTypeValue = relationship.getRelationTypeValue();
+					final String lastRelationshipTypeValue = relationship.getRelationTypeValue();
 
 					//Preserve old tree relationship if the relation name be changed
 					if (InodeUtils.isSet(relationship.getInode()) && !relationshipTypeValue

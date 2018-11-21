@@ -55,7 +55,7 @@ public class ContentletRelationships
 	/**
 	 * @return Returns the relationshipsRecords that belong to a field.
 	 */
-	public List<ContentletRelationshipRecords> getRelationshipsRecordsByField(String relationTypeValue) {
+	public List<ContentletRelationshipRecords> getRelationshipsRecordsByField(final String relationTypeValue) {
 		return relationshipsRecords.stream()
 				.filter(record -> record.relationship.getRelationTypeValue()
 						.equals(relationTypeValue)).collect(Collectors.toList());
@@ -66,12 +66,12 @@ public class ContentletRelationships
 	 */
 	public List<ContentletRelationshipRecords> getLegacyRelationshipsRecords() {
 
-		ContentType contentType = contentlet.getContentType();
+		final ContentType contentType = contentlet.getContentType();
 
 		//Obtain field relation types
-		List<String> relationTypes = contentType.fields().stream()
+		final List<String> relationTypes = contentType.fields().stream()
 				.filter(field -> field instanceof RelationshipField)
-				.map(field -> (field.relationType() != null && field.relationType().contains("."))
+				.map(field -> field.relationType() != null && field.relationType().contains(".")
 						? field.relationType() : contentType.variable() + "." + field.variable())
 				.collect(
 						Collectors.toList());

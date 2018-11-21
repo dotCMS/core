@@ -46,10 +46,11 @@ public class Relationship extends Inode
 	 * @param childRequired
 	 */
     @Deprecated
-	public Relationship(Structure parentStructure, Structure childStructure,
-			String parentRelationName, String childRelationName, int cardinality,
-			boolean parentRequired, boolean childRequired) {
-		super.setType("relationship");
+	public Relationship(final Structure parentStructure, final Structure childStructure,
+			final String parentRelationName, final String childRelationName, final int cardinality,
+			final boolean parentRequired, final boolean childRequired) {
+		super();
+		this.setType("relationship");
 		this.parentStructureInode = parentStructure.getInode();
 		this.childStructureInode = childStructure.getInode();
 		this.parentRelationName = parentRelationName;
@@ -59,10 +60,13 @@ public class Relationship extends Inode
 		this.childRequired = childRequired;
 		this.relationTypeValue = parentRelationName.replaceAll(" ", "_") + "-" + childRelationName
 				.replaceAll(" ", "_");
+
 	}
 
-	public Relationship(ContentType parentContentType, ContentType childContentType, Field field){
-		super.setType("relationship");
+	public Relationship(final ContentType parentContentType, final ContentType childContentType,
+			final Field field) {
+		super();
+		this.setType("relationship");
 		this.parentStructureInode = parentContentType.id();
 		this.childStructureInode = childContentType.id();
 		this.parentRelationName = null;

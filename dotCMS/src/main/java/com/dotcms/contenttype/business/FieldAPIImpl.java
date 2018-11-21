@@ -118,15 +118,15 @@ public class FieldAPIImpl implements FieldAPI {
                     }
                 }
 
-                if (oldField instanceof RelationshipField){
-                    if (null != oldField.relationType() && null != field.relationType() && !oldField
-                            .relationType().equals(field.relationType())) {
-                        Logger.error(this,
-                                "Related content type cannot be modified. A new relationship field should be created instead");
-                        throw new DotDataException(
-                                "Related content type cannot be modified. A new relationship field should be created instead");
-                    }
+                if (oldField instanceof RelationshipField && null != oldField.relationType()
+                        && null != field.relationType() && !oldField.relationType()
+                        .equals(field.relationType())) {
+                    Logger.error(this,
+                            "Related content type cannot be modified. A new relationship field should be created instead");
+                    throw new DotDataException(
+                            "Related content type cannot be modified. A new relationship field should be created instead");
                 }
+
             } catch(NotFoundInDbException e) {
 	    		//Do nothing as Starter comes with id but field is unexisting yet
 	    	}
@@ -188,33 +188,37 @@ public class FieldAPIImpl implements FieldAPI {
      * @throws DotDataException
      */
     @VisibleForTesting
-    Optional<Relationship> getRelationshipForField(Field field, ContentTypeAPI contentTypeAPI,
-            ContentType type) throws DotDataException {
+    Optional<Relationship> getRelationshipForField(final Field field, final ContentTypeAPI contentTypeAPI,
+            final ContentType type) throws DotDataException, DotSecurityException {
         Relationship relationship;
         ContentType relatedContentType;
         try {
-            final String[] relationType = field.relationType().split("\\.");
             final int cardinality = Integer.parseInt(field.values());
 
             //check if cardinality is valid
-            if (cardinality < 0 || cardinality >= RELATIONSHIP_CARDINALITY.values().length){
+            if (cardinality < 0 || cardinality >= RELATIONSHIP_CARDINALITY.values().length) {
                 throw new DotDataException("Cardinality value is incorrect");
             }
+
+            final String[] relationType = field.relationType().split("\\.");
 
             //we need to find the id of the related structure using the velocityVarName set in the relationType
             try {
                 relatedContentType = contentTypeAPI.find(relationType[0]);
             } catch (NotFoundInDbException e) {
-                Logger.debug(this, "No relationship has been saved for field " + field.name()
-                        + ". The related content type " + relationType[0]
-                        + "could not be found in DB");
+                final String errorMessage = "Unable to save relationships for field " + field.name()
+                        + " because the related content type " + relationType[0] + " was not found in DB."
+                        + " A new attempt will be made when the related content type is saved.";
+                Logger.info(this, errorMessage);
+                Logger.debug(this, errorMessage, e);
+
                 return Optional.empty();
             }
 
             //checking if the relationship is against a content type or an existing relationship
-            if (relationType.length > 1){
+            if (relationType.length > 1) {
                 relationship = relationshipAPI.byTypeValue(field.relationType());
-            } else{
+            } else {
                 relationship = relationshipAPI
                         .byTypeValue(type.variable() + StringPool.PERIOD + field.variable());
             }
@@ -230,7 +234,9 @@ public class FieldAPIImpl implements FieldAPI {
                 relationship = new Relationship(type, relatedContentType, field);
             }
 
-
+        } catch (DotSecurityException e){
+            Logger.error(this, "Error saving relationship for field: " + field.variable(), e);
+            throw e;
         } catch (Exception e) {
             //we need to capture any error found during relationship creation
             //(ie.: NumberFormatException, NullPointerException, ArrayOutOfBoundException)
@@ -251,8 +257,8 @@ public class FieldAPIImpl implements FieldAPI {
      * @param cardinality
      * @throws DotDataException
      */
-    private void updateRelationshipObject(Field field, ContentType type, Relationship relationship,
-            ContentType relatedContentType, String[] relationType, int cardinality)
+    private void updateRelationshipObject(final Field field, final ContentType type, final Relationship relationship,
+            final ContentType relatedContentType, final String[] relationType, final int cardinality)
             throws DotDataException {
         final String relationName = field.variable();
         //check which side of the relationship is being updated (parent or child)
@@ -414,7 +420,7 @@ public class FieldAPIImpl implements FieldAPI {
      *
      * @param relationship
      */
-    private void unlinkParent(Relationship relationship) {
+    private void unlinkParent(final Relationship relationship) {
         relationship.setParentRequired(false);
         relationship.setParentRelationName(null);
     }
@@ -423,7 +429,7 @@ public class FieldAPIImpl implements FieldAPI {
      *
      * @param relationship
      */
-    private void unlinkChild(Relationship relationship) {
+    private void unlinkChild(final Relationship relationship) {
         relationship.setChildRequired(false);
         relationship.setChildRelationName(null);
     }

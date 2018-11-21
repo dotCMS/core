@@ -167,9 +167,16 @@ public interface FieldAPI {
 			Contentlet.HOST_KEY,
 			Contentlet.FOLDER_KEY);
 
+	/**
+	 * Returns a field based on the Content Type Id and the Field Relation Type
+	 * @param contentTypeId
+	 * @param fieldRelationType
+	 * @return
+	 * @throws DotDataException
+	 */
 	@CloseDBIfOpened
-	Optional<Field> byContentTypeAndFieldRelationType(String id,
-			String fieldRelationType) throws DotDataException;
+	Optional<Field> byContentTypeAndFieldRelationType(final String contentTypeId,
+			final String fieldRelationType) throws DotDataException;
 
 	/**
 	 * Returns a field based on the Content Type Id and the Field Variable
