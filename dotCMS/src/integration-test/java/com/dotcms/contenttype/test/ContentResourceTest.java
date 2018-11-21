@@ -50,10 +50,8 @@ import javax.servlet.ServletInputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 
-@Ignore
 public class ContentResourceTest extends IntegrationTestBase {
 
     final static String REQUIRED_NUMERIC_FIELD_NAME = "numeric";
