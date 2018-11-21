@@ -168,7 +168,6 @@ public class MultiTreeFactory {
         DotConnect db = new DotConnect().setSQL(SELECT_BY_ONE_PARENT)
             .addParam(parentInode)
             .addParam(parentInode);
-
         return TransformerLocator.createMultiTreeTransformer(db.loadObjectResults()).asList();
 
     }

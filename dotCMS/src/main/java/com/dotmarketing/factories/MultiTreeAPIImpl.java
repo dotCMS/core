@@ -24,7 +24,6 @@ import java.util.Set;
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Table;
 import com.liferay.portal.model.User;
-import sun.rmi.runtime.Log;
 
 public class MultiTreeAPIImpl implements MultiTreeAPI {
 
@@ -61,7 +60,6 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
             final Container container = (liveMode) ? (Container) versionableAPI.findLiveVersion(multiTree.getContainer(),
                     systemUser, false)
                     : (Container) versionableAPI.findWorkingVersion(multiTree.getContainer(), systemUser, false);
-
             if(container==null && ! liveMode) {
                 continue;
             }
