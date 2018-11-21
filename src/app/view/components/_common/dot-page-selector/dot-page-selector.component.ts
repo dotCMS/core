@@ -149,8 +149,9 @@ export class DotPageSelectorComponent implements ControlValueAccessor {
         } else if (this.results.type === 'page') {
             const page = <DotPageAsset>this.results.data[0].payload;
             input.value = `//demo.dotcms.com${page.path}`;
-            this.resetResults();
         }
+
+        this.resetResults();
     }
 
     private shouldAutoFill(): boolean {
