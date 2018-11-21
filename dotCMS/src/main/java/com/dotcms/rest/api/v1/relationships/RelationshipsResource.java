@@ -65,7 +65,7 @@ public class RelationshipsResource {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Path("cardinalities")
-    public final Response gerCardinality() throws Throwable {
+    public final Response getCardinality() throws Throwable {
         Logger.debug(this, "Getting relationships cardinality");
 
         return Response.ok(new ResponseEntityView(
