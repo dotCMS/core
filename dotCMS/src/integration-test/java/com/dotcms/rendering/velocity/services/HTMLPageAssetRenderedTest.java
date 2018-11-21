@@ -84,11 +84,6 @@ public class HTMLPageAssetRenderedTest {
         final ContentType contentGenericType = contentTypeAPI.find("webPageContent");
         contentGenericId = contentGenericType.id();
 
-        //Get a Container that includes ContentGeneric
-//        final List<Container> container = APILocator.getContainerAPI().findContainersForStructure(contentGenericId,true);
-//        Logger.error(HTMLPageAssetRenderedTest.class,"TEST INFO CONTAINER LIVE: " + container.get(0).isLive());
-//        containerId = container.get(0).getIdentifier();
-
         /**
          * Create new container
          */
@@ -227,7 +222,6 @@ public class HTMLPageAssetRenderedTest {
      */
     @Test
     public void ContentFallbackFalse_PageFallbackTrue_PageEnglish_ViewEnglishContent1And2_ViewSpanishContent2And3() throws Exception{
-        System.out.println("-------------S--------------");
         Config.setProperty(contentFallbackProperty,false);
         Config.setProperty(pageFallbackProperty,true);
 
@@ -246,11 +240,6 @@ public class HTMLPageAssetRenderedTest {
         mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
         HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
         final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
-
-        Logger.error(this,"TEST Page Identifier: " + pageEnglishVersion.getIdentifier());
-        Logger.error(this,"TEST GetMultitree True: " + APILocator.getMultiTreeAPI().getPageMultiTrees(pageEnglishVersion,true));
-        Logger.error(this,"TEST GetMultitree False: " + APILocator.getMultiTreeAPI().getPageMultiTrees(pageEnglishVersion,false));
-
         String html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(mockRequest, mockResponse, systemUser, pageEnglishVersion.getURI(), PageMode.PREVIEW_MODE);
         Assert.assertTrue("ENG = "+html , html.contains("content2content1"));
 
@@ -261,8 +250,6 @@ public class HTMLPageAssetRenderedTest {
         HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
         html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(mockRequest, mockResponse, systemUser, pageEnglishVersion.getURI(), PageMode.PREVIEW_MODE);
         Assert.assertTrue("ESP = "+html , html.contains("content3content2Spa"));
-
-        System.out.println("-------------E--------------");
     }
 
     /**
@@ -277,7 +264,6 @@ public class HTMLPageAssetRenderedTest {
      */
     @Test
     public void ContentFallbackFalse_PageFallbackTrue_PageEnglishAndSpanish_ViewEnglishContent1And2_ViewSpanishContent2And3() throws Exception{
-        System.out.println("-------------S--------------");
         Config.setProperty(contentFallbackProperty,false);
         Config.setProperty(pageFallbackProperty,true);
 
@@ -308,11 +294,6 @@ public class HTMLPageAssetRenderedTest {
         mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
         HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
         final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
-
-        Logger.error(this,"TEST Page Identifier: " + pageEnglishVersion.getIdentifier());
-        Logger.error(this,"TEST GetMultitree True: " + APILocator.getMultiTreeAPI().getPageMultiTrees(pageEnglishVersion,true));
-        Logger.error(this,"TEST GetMultitree False: " + APILocator.getMultiTreeAPI().getPageMultiTrees(pageEnglishVersion,false));
-
         String html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(mockRequest, mockResponse, systemUser, pageEnglishVersion.getURI(), PageMode.PREVIEW_MODE);
         Assert.assertTrue("ENG = "+html , html.contains("content2content1"));
 
@@ -323,7 +304,6 @@ public class HTMLPageAssetRenderedTest {
         HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
         html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(mockRequest, mockResponse, systemUser, pageEnglishVersion.getURI(), PageMode.PREVIEW_MODE);
         Assert.assertTrue("ESP = "+html , html.contains("content3content2Spa"));
-
     }
 
     /**
