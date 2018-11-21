@@ -82,7 +82,7 @@ public class RelationshipsResourceTest {
 
             assertTrue(UtilMethods.isSet(entities));
 
-            assertEquals(1, responseList.get(0).size());
+            assertEquals(1, responseList.size());
         } finally {
             contentTypeAPI.delete(contentType);
         }

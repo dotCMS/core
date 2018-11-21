@@ -1879,19 +1879,27 @@ public class ContentletAjax {
 						.getNotValidRelationship();
 				final Set<String> auxKeys = notValidRelationships.keySet();
 				for (final String key : auxKeys) {
-					String errorMessage = "";
+					StringBuilder errorMessage = new StringBuilder();
 					if (key.equals(
 							DotContentletValidationException.VALIDATION_FAILED_REQUIRED_REL)) {
-						errorMessage = "<b>Required Relationship</b>";
+						errorMessage.append("<b>").append(LanguageUtil
+								.get(user, "message.contentlet.relationship.required"))
+								.append("</b>");
 					} else if (key
 							.equals(DotContentletValidationException.VALIDATION_FAILED_INVALID_REL_CONTENT)) {
-						errorMessage = "<b>Invalid Relationship-Contentlet</b>";
+						errorMessage.append("<b>").append(LanguageUtil
+								.get(user, "message.contentlet.relationship.invalid"))
+								.append("</b>");
 					} else if (key
 							.equals(DotContentletValidationException.VALIDATION_FAILED_BAD_REL)) {
-						errorMessage = "<b>Bad Relationship</b>";
+						errorMessage.append("<b>").append(LanguageUtil
+								.get(user, "message.contentlet.relationship.bad"))
+								.append("</b>");
 					} else if (key
 							.equals(DotContentletValidationException.VALIDATION_FAILED_BAD_CARDINALITY)) {
-						errorMessage = "<b>One to Many Relation Violated</b>";
+						errorMessage.append("<b>").append(LanguageUtil
+								.get(user, "message.contentlet.relationship.cardinality.bad"))
+								.append("</b>");
 					}
 
 					sb.append(errorMessage).append(":<br>");

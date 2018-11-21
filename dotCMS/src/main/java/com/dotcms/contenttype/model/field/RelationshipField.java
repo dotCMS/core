@@ -45,7 +45,6 @@ public abstract class RelationshipField extends Field{
     @JsonIgnore
     public Collection<ContentTypeFieldProperties> getFieldContentTypeProperties(){
         return list(ContentTypeFieldProperties.REQUIRED, ContentTypeFieldProperties.NAME,
-                ContentTypeFieldProperties.RELATIONSHIPS, ContentTypeFieldProperties.VALUES,
-                ContentTypeFieldProperties.SEARCHABLE);
+                ContentTypeFieldProperties.RELATIONSHIPS, ContentTypeFieldProperties.SEARCHABLE);
     }
 }

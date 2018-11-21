@@ -131,7 +131,7 @@ public class LegacyFieldTransformer implements FieldTransformer {
 			@Override
 			@Nullable
 			public String relationType() {
-				return null;
+				return StringUtils.nullEmptyStr(oldField.getFieldRelationType());
 			}
 
 			@Override

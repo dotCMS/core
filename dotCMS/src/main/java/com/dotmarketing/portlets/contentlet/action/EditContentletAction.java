@@ -1,7 +1,5 @@
 package com.dotmarketing.portlets.contentlet.action;
 
-import static com.dotmarketing.portlets.contentlet.util.ContentletUtil.isFieldTypeAllowedOnImportExport;
-
 import com.dotcms.api.system.event.Visibility;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.contenttype.business.ContentTypeAPI;
@@ -19,16 +17,7 @@ import com.dotcms.util.I18NMessage;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.FactoryLocator;
-import com.dotmarketing.business.Layout;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.PublishStateException;
-import com.dotmarketing.business.Role;
-import com.dotmarketing.business.RoleAPI;
-import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.business.*;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.FieldsCache;
@@ -47,12 +36,7 @@ import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.ajax.ContentletAjax;
-import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
-import com.dotmarketing.portlets.contentlet.business.ContentletCache;
-import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
-import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
-import com.dotmarketing.portlets.contentlet.business.DotLockException;
-import com.dotmarketing.portlets.contentlet.business.HostAPI;
+import com.dotmarketing.portlets.contentlet.business.*;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.contentlet.struts.ContentletForm;
@@ -63,20 +47,13 @@ import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships.ContentletRelationshipRecords;
 import com.dotmarketing.portlets.structure.model.Field;
+import com.dotmarketing.portlets.structure.model.Field.FieldType;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.business.DotWorkflowException;
 import com.dotmarketing.tag.business.TagAPI;
 import com.dotmarketing.tag.model.Tag;
-import com.dotmarketing.util.ActivityLogger;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.HostUtil;
-import com.dotmarketing.util.InodeUtils;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.PortletURLUtil;
-import com.dotmarketing.util.UUIDGenerator;
-import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.WebKeys;
+import com.dotmarketing.util.*;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.language.LanguageException;
@@ -90,6 +67,18 @@ import com.liferay.util.FileUtil;
 import com.liferay.util.LocaleUtil;
 import com.liferay.util.StringPool;
 import com.liferay.util.servlet.SessionMessages;
+import java.util.stream.Collectors;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.StringUtils;
+import org.apache.struts.Globals;
+import org.apache.struts.action.ActionErrors;
+import org.apache.struts.action.ActionForm;
+import org.apache.struts.action.ActionMapping;
+import org.apache.struts.action.ActionMessage;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Writer;
@@ -98,28 +87,12 @@ import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang.StringUtils;
-import org.apache.struts.Globals;
-import org.apache.struts.action.ActionErrors;
-import org.apache.struts.action.ActionForm;
-import org.apache.struts.action.ActionMapping;
-import org.apache.struts.action.ActionMessage;
+
+import static com.dotmarketing.portlets.contentlet.util.ContentletUtil.isFieldTypeAllowedOnImportExport;
 
 /**
  * This class processes all the interactions with contentlets that are
@@ -2013,6 +1986,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 
 				writer.print("\r\n");
 				for(Contentlet content :  contentletsList2 ){
+					ContentletRelationships relationships = this.conAPI.getAllRelationships(content);
 					List<Category> catList = (List<Category>) catAPI.getParents(content, user, false);
 					writer.print(content.getIdentifier());
 					Language lang =APILocator.getLanguageAPI().getLanguage(content.getLanguageId());
@@ -2062,6 +2036,15 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 							            }
 							        }
 							    }
+							} else if (field.getFieldType().equals(FieldType.RELATIONSHIP.toString())) {
+								String fieldRelationType = field.getFieldRelationType();
+								text = loadRelationships(relationships
+										.getRelationshipsRecordsByField(
+												fieldRelationType.contains(StringPool.PERIOD)
+														? fieldRelationType
+														: content.getContentType().variable()
+																+ StringPool.PERIOD + field
+																.getVelocityVarName()));
 							} else{
 								if (value instanceof Date || value instanceof Timestamp) {
 									if(field.getFieldType().equals(Field.FieldType.DATE.toString())) {
@@ -2107,6 +2090,22 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		else {
 			try {writer.print("\r\n");} catch (Exception e) {	Logger.debug(this,"Error: download to excel "+e);	}
 		}
+	}
+
+	/**
+	 * Builds the list of related records separated by comma
+	 */
+	private String loadRelationships(List<ContentletRelationshipRecords> relationshipRecords)
+			throws DotDataException {
+
+		final StringBuilder result = new StringBuilder();
+
+		relationshipRecords.forEach(record -> result.append(String
+				.join(StringPool.COMMA,
+						record.getRecords().stream().map(Contentlet::getIdentifier).collect(
+								Collectors.toList()))));
+
+		return result.toString();
 	}
 
 	/**
