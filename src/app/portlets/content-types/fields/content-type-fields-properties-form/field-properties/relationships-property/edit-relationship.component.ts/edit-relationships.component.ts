@@ -94,7 +94,7 @@ export class EditRelationshipsComponent implements OnInit {
     }
 
     private getRelationshipList(filter = '', offset = 0): void {
-        this.dotPaginatorService.setExtraParams('contentTypeId', this.editContentTypeCacheService.getContentType().id);
+        this.dotPaginatorService.setExtraParams('contentTypeId', this.editContentTypeCacheService.get().id);
         this.dotPaginatorService.filter = filter;
 
         this.getCardinalities().subscribe((cardinalities: CardinalitySorted) => {

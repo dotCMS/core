@@ -159,7 +159,7 @@ describe('EditRelationshipsComponent', () => {
     it('should handle filter change into relationship pagination', () => {
         const newFilter = 'new filter';
 
-        dotEditContentTypeCacheService.setContentType(contentTypeMock);
+        dotEditContentTypeCacheService.set(contentTypeMock);
 
         fixture.detectChanges();
 
@@ -190,7 +190,7 @@ describe('EditRelationshipsComponent', () => {
             first: 2
         };
 
-        dotEditContentTypeCacheService.setContentType(contentTypeMock);
+        dotEditContentTypeCacheService.set(contentTypeMock);
 
         fixture.detectChanges();
 

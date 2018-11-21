@@ -75,7 +75,7 @@ export class ContentTypesEditComponent implements OnInit, OnDestroy {
             )
             .subscribe((contentType: ContentType) => {
                 this.data = contentType;
-                this.editContentTypeCacheService.setContentType(contentType);
+                this.editContentTypeCacheService.set(contentType);
 
                 if (contentType.fields) {
                     this.fields = contentType.fields;
