@@ -33,7 +33,6 @@ import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetNotF
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.*;
-import com.liferay.portal.ejb.AddressPool;
 import com.liferay.portal.model.User;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -222,6 +221,7 @@ public class HTMLPageAssetRenderedTest {
      */
     @Test
     public void ContentFallbackFalse_PageFallbackTrue_PageEnglish_ViewEnglishContent1And2_ViewSpanishContent2And3() throws Exception{
+
         Config.setProperty(contentFallbackProperty,false);
         Config.setProperty(pageFallbackProperty,true);
 
@@ -264,6 +264,7 @@ public class HTMLPageAssetRenderedTest {
      */
     @Test
     public void ContentFallbackFalse_PageFallbackTrue_PageEnglishAndSpanish_ViewEnglishContent1And2_ViewSpanishContent2And3() throws Exception{
+
         Config.setProperty(contentFallbackProperty,false);
         Config.setProperty(pageFallbackProperty,true);
 
@@ -304,6 +305,7 @@ public class HTMLPageAssetRenderedTest {
         HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
         html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(mockRequest, mockResponse, systemUser, pageEnglishVersion.getURI(), PageMode.PREVIEW_MODE);
         Assert.assertTrue("ESP = "+html , html.contains("content3content2Spa"));
+
     }
 
     /**
