@@ -25,6 +25,7 @@ import com.dotmarketing.portlets.workflows.model.WorkflowState;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil;
 import com.dotmarketing.portlets.workflows.util.WorkflowSchemeImportExportObject;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -65,16 +66,20 @@ public abstract class WorkflowTestUtil {
     static final String ARCHIVE = "Archive";
     static final String SAVE_PUBLISH = "Save / Publish";
 
-    static void doCleanUp(final WorkflowResource workflowResource, final WorkflowAPI workflowAPI)
+    static void doCleanUp(final WorkflowAPI workflowAPI)
             throws Exception {
-        final List<WorkflowScheme> schemes = findSchemes(workflowResource);
-        for (WorkflowScheme scheme : schemes) {
-            if (scheme.getName().startsWith(SCHEME_NAME_PREFIX)) {
-                //In order to delete the scheme. It needs to be marked as archived first.
-                scheme.setArchived(true);
-                workflowAPI.deleteScheme(scheme, APILocator.getUserAPI().getSystemUser());
-            }
-        }
+        workflowAPI.findSchemes(true).stream()
+                .filter(scheme -> scheme.getName().startsWith(SCHEME_NAME_PREFIX))
+                .forEach(workflowScheme -> {
+                    try {
+                        workflowScheme.setArchived(true);
+                        workflowAPI.deleteScheme(workflowScheme,
+                                APILocator.getUserAPI().getSystemUser()).get();
+                    } catch (Exception e) {
+                        Logger.warn("Error deleting scheme", e.getMessage(), e);
+                    }
+                });
+
     }
 
     public static String stepName() {

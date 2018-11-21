@@ -194,10 +194,10 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
 
     }
 
-    @AfterClass
+    //@AfterClass
     public static void cleanup() throws Exception {
 
-        doCleanUp(workflowResource, workflowAPI);
+        doCleanUp(workflowAPI);
 
     }
 
@@ -360,9 +360,9 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
                     final WorkflowScheme schemeToRemove = workflowAPI.findScheme(scheme.getId());
                     schemeToRemove.setArchived(true);
                     workflowAPI.saveScheme(schemeToRemove, APILocator.systemUser());
-                    workflowAPI.deleteScheme(schemeToRemove, APILocator.systemUser());
-                } catch (DotDataException | DotSecurityException | AlreadyExistException e) {
-                    e.printStackTrace();
+                    workflowAPI.deleteScheme(schemeToRemove, APILocator.systemUser()).get();
+                } catch (Exception e) {
+                    Logger.warn(getClass(), e.getMessage(), e);
                 }
             }
         }

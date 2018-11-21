@@ -35,6 +35,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import com.liferay.util.StringPool;
 import org.apache.struts.Globals;
 /**
  * Implementation class for the {@link LanguageFactory}.
@@ -77,30 +79,28 @@ public class LanguageFactoryImpl extends LanguageFactory {
 
 
 	@Override
-	protected Language getLanguage(String languageCode, String countryCode) {
+	protected Language getLanguage(final String languageCode, final String countryCode) {
 		try {
-			languageCode = (languageCode != null) ? languageCode.toLowerCase() : null;
-			countryCode = (countryCode != null) ? countryCode.toLowerCase() : null;
+			final String languageCodeLowerCase = (languageCode != null) ? languageCode.toLowerCase() : null;
+			final String countryCodeLowerCase = (countryCode != null) ? countryCode.toLowerCase() : null;
 			Language lang = CacheLocator.getLanguageCache().getLanguageByCode(languageCode, countryCode);
 
 			if (lang == null) {
-				lang = UtilMethods.isSet(countryCode)
+				lang = UtilMethods.isSet(countryCodeLowerCase)
 						? fromDbList(new DotConnect()
 						.setSQL(SELECT_LANGUAGE_BY_LANG_AND_COUNTRY_CODES)
-						.addParam(languageCode)
-						.addParam(countryCode)
+						.addParam(languageCodeLowerCase)
+						.addParam(countryCodeLowerCase)
 						.loadObjectResults())
 						.stream()
 						.findFirst()
 						.orElse(null)
-						: getFallbackLanguage(languageCode);
+						: getFallbackLanguage(languageCodeLowerCase);
 
 				if (lang != null && lang.getId() > 0) {
 					CacheLocator.getLanguageCache().addLanguage(lang);
 				}
 			}
-
-
 
 			return lang;
 

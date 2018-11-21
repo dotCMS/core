@@ -23,7 +23,7 @@ public class Task05035LanguageTableIdentityOffTest {
        final DbType dbType = DbType.getDbType(DbConnectionFactory.getDBType());
        try{
 
-         final Task05035LanguageTableIdentityOff languageTableIdentityOff = new Task05035LanguageTableIdentityOff();
+         final Task05040LanguageTableIdentityOff languageTableIdentityOff = new Task05040LanguageTableIdentityOff();
          languageTableIdentityOff.executeUpgrade();
        } catch (Exception e) {
            final String  errMessage = "Could not modify Language table on db of type: " + dbType + " Err: " +  e.toString() ;
