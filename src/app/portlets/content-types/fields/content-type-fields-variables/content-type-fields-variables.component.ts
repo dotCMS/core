@@ -1,10 +1,12 @@
-import { Component, Input, SimpleChanges, OnChanges, OnInit, OnDestroy } from '@angular/core';
+import { Component, Input, SimpleChanges, OnChanges, OnInit, OnDestroy, ViewChild } from '@angular/core';
 import { DotMessageService } from '../../../../api/services/dot-messages-service';
 import { FieldVariablesService, FieldVariableParams } from '../service/';
 import { DotHttpErrorManagerService } from '../../../../api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { ResponseView } from 'dotcms-js';
 import { take, takeUntil } from 'rxjs/operators';
 import { Subject } from 'rxjs/internal/Subject';
+import { Table } from 'primeng/table';
+import * as _ from 'lodash';
 
 export interface FieldVariable {
     id?: string;
@@ -20,10 +22,13 @@ export interface FieldVariable {
     templateUrl: './content-type-fields-variables.component.html'
 })
 export class ContentTypeFieldsVariablesComponent implements OnInit, OnChanges, OnDestroy {
+    @ViewChild('table')
+    table: Table;
     @Input()
     field: FieldVariableParams;
 
     fieldVariables: FieldVariable[] = [];
+    fieldVariablesBackup: FieldVariable[] = [];
     messages: { [key: string]: string } = {};
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
@@ -62,6 +67,24 @@ export class ContentTypeFieldsVariablesComponent implements OnInit, OnChanges, O
     }
 
     /**
+     * Handle keydown event from the table component
+     *
+     * @param {KeyboardEvent} $event
+     * @param {FieldVariable} variable
+     * @param {Number} index
+     * @memberof ContentTypeFieldsVariablesComponent
+     */
+    // tslint:disable-next-line:cyclomatic-complexity
+    onKeyDown($event: KeyboardEvent, fieldVariable: FieldVariable, index: number): void {
+        $event.stopPropagation();
+        if ($event.key === 'Escape') {
+            this.cancelVariableAction(index);
+        } else if ($event.key === 'Enter' && !this.isFieldDisabled(fieldVariable)) {
+            this.saveVariable(fieldVariable, index);
+        }
+    }
+
+    /**
      * Handle Delete event
      * @param {FieldVariable} variable
      * @memberof ContentTypeFieldsVariablesComponent
@@ -75,18 +98,24 @@ export class ContentTypeFieldsVariablesComponent implements OnInit, OnChanges, O
             };
             this.fieldVariablesService.delete(params).pipe(take(1)).subscribe(
                 () => {
-                    this.fieldVariables = this.fieldVariables.filter(
-                        (_item: FieldVariable, index: number) => index !== fieldIndex
-                    );
+                    [this.fieldVariables, this.fieldVariablesBackup] = [this.fieldVariables, this.fieldVariablesBackup]
+                        .map((variables: FieldVariable[]) => {
+                            return variables.filter(
+                                (_item: FieldVariable, index: number) => index !== fieldIndex
+                            );
+                        });
                 },
                 (err: ResponseView) => {
                     this.dotHttpErrorManagerService.handle(err).pipe(take(1)).subscribe();
                 }
             );
         } else {
-            this.fieldVariables = this.fieldVariables.filter(
-                (_item: FieldVariable, index: number) => index !== fieldIndex
-            );
+            [this.fieldVariables, this.fieldVariablesBackup] = [this.fieldVariables, this.fieldVariablesBackup]
+                .map((variables: FieldVariable[]) => {
+                    return variables.filter(
+                        (_item: FieldVariable, index: number) => index !== fieldIndex
+                    );
+                });
         }
     }
 
@@ -111,6 +140,13 @@ export class ContentTypeFieldsVariablesComponent implements OnInit, OnChanges, O
         const mainMenu = document.getElementById(`content-type-fields__variables-actions-main-${fieldIndex}`);
         mainMenu.style.display = 'block';
         editMenu.style.display = 'none';
+
+        if (this.fieldVariablesBackup[fieldIndex].key === '' && this.fieldVariablesBackup[fieldIndex].value === '') {
+            this.deleteVariable(this.fieldVariablesBackup[fieldIndex], fieldIndex);
+        } else {
+            this.fieldVariablesBackup[fieldIndex] = _.cloneDeep(this.fieldVariables[fieldIndex]);
+        }
+        this.table.closeCellEdit();
     }
 
     /**
@@ -127,14 +163,11 @@ export class ContentTypeFieldsVariablesComponent implements OnInit, OnChanges, O
         if (typeof variableIndex !== 'undefined') {
             this.fieldVariablesService.save(params).pipe(take(1)).subscribe(
                 (savedVariable: FieldVariable) => {
-                    if (typeof variableIndex !== 'undefined') {
                         this.fieldVariables = this.updateVariableCollection(
                             savedVariable,
                             variableIndex
                         );
-                    } else {
-                        this.fieldVariables = [].concat(savedVariable, this.fieldVariables);
-                    }
+                    this.fieldVariablesBackup = _.cloneDeep(this.fieldVariables);
                 },
                 (err: ResponseView) => {
                     this.dotHttpErrorManagerService.handle(err).pipe(take(1)).subscribe();
@@ -146,6 +179,7 @@ export class ContentTypeFieldsVariablesComponent implements OnInit, OnChanges, O
                 value: ''
             };
             this.fieldVariables = [].concat(emptyVariable, this.fieldVariables);
+            this.fieldVariablesBackup = [].concat(emptyVariable, this.fieldVariablesBackup);
         }
     }
 
@@ -167,8 +201,7 @@ export class ContentTypeFieldsVariablesComponent implements OnInit, OnChanges, O
      * @memberof ContentTypeFieldsVariablesComponent
      */
     editFieldInit(fieldVariable: FieldVariable, index: number): void {
-        const disabled = fieldVariable.key === '' || fieldVariable.value === '' ? true : false;
-        this.showEditVariableAction(index, disabled);
+        this.showEditVariableAction(index, this.isFieldDisabled(fieldVariable));
     }
 
     private showEditVariableAction(fieldIndex: number, disabled?: boolean): void {
@@ -183,6 +216,10 @@ export class ContentTypeFieldsVariablesComponent implements OnInit, OnChanges, O
         }
     }
 
+    private isFieldDisabled(fieldVariable: FieldVariable): boolean {
+        return fieldVariable.key === '' || fieldVariable.value === '' ? true : false;
+    }
+
     private initTableData(): void {
         const params: FieldVariableParams = {
             contentTypeId: this.field.contentTypeId,
@@ -190,6 +227,7 @@ export class ContentTypeFieldsVariablesComponent implements OnInit, OnChanges, O
         };
         this.fieldVariablesService.load(params).pipe(takeUntil(this.destroy$)).subscribe((fieldVariables: FieldVariable[]) => {
             this.fieldVariables = fieldVariables;
+            this.fieldVariablesBackup = _.cloneDeep(fieldVariables);
         });
     }
 

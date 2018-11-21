@@ -1,5 +1,5 @@
 <dot-action-button class="action-header__primary-button" (click)="addVariable()"></dot-action-button>
-<p-table [value]="fieldVariables" sortField="clazz" sortOrder=0 (keydown.enter)="$event.stopPropagation()" dataKey="id">
+<p-table #table [value]="fieldVariablesBackup" sortField="clazz" (keydown.enter)="$event.stopPropagation()" sortOrder=0 dataKey="id">
     <ng-template pTemplate="header" let-columns>
         <tr>
             <th [ngStyle]="{'text-align': 'left'}">
@@ -18,7 +18,7 @@
             <td [pEditableColumn]="fieldVariable.key" id="content-type-fields__variables-key-{{ rowIndex }}" [pEditableColumnField]="'key'">
                 <p-cellEditor>
                     <ng-template pTemplate="input">
-                        <input pInputText type="text" (focus)="editFieldInit(fieldVariable, rowIndex)" [(ngModel)]="fieldVariable.key">
+                        <input pInputText type="text" (focus)="editFieldInit(fieldVariable, rowIndex)" (keyup)="editFieldInit(fieldVariable, rowIndex)" (keydown)="onKeyDown($event, fieldVariable, rowIndex)" [(ngModel)]="fieldVariable.key">
                     </ng-template>
                     <ng-template pTemplate="output">
                         {{fieldVariable.key}}
@@ -28,7 +28,7 @@
             <td [pEditableColumn]="fieldVariable.value" id="content-type-fields__variables-value-{{ rowIndex }}" [pEditableColumnField]="'value'">
                 <p-cellEditor>
                     <ng-template pTemplate="input">
-                        <input pInputText type="text" (keyup)="editFieldInit(fieldVariable, rowIndex)" (focus)="editFieldInit(fieldVariable, rowIndex)" [(ngModel)]="fieldVariable.value">
+                        <input pInputText type="text" (focus)="editFieldInit(fieldVariable, rowIndex)" (keyup)="editFieldInit(fieldVariable, rowIndex)" (keydown)="onKeyDown($event, fieldVariable, rowIndex)" [(ngModel)]="fieldVariable.value">
                     </ng-template>
                     <ng-template pTemplate="output">
                         {{fieldVariable.value}}
