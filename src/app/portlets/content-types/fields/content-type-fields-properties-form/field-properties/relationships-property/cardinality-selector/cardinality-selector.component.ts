@@ -1,7 +1,7 @@
 import { Component, Input, EventEmitter, Output, OnInit, SimpleChanges, OnChanges } from '@angular/core';
 import { DotRelationshipCardinality } from '@portlets/content-types/fields/shared/dot-relationship-cardinality.model';
 import { DotMessageService } from '@services/dot-messages-service';
-import { RelationshipService } from '@portlets/content-types/fields/service/relationship.service';
+import { RelationshipService } from '@portlets/content-types/fields/content-type-fields-properties-form/field-properties/relationships-property/services/relationship.service';
 
 @Component({
     providers: [],

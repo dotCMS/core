@@ -6,7 +6,7 @@ import { PaginationEvent } from '@components/_common/searchable-dropdown/compone
 import { MockDotMessageService } from 'src/app/test/dot-message-service.mock';
 import { DotEditContentTypeCacheService } from '@portlets/content-types/services/edit-content-type-cache.service';
 import { PaginatorService } from '@services/paginator';
-import { RelationshipService } from '@portlets/content-types/fields/service/relationship.service';
+import { RelationshipService } from '@portlets/content-types/fields/content-type-fields-properties-form/field-properties/relationships-property/services/relationship.service';
 import { ComponentFixture } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { Observable, of } from 'rxjs';

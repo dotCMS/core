@@ -4,7 +4,7 @@ import { PaginatorService } from '@services/paginator';
 import { DotEditContentTypeCacheService } from '@portlets/content-types/services/edit-content-type-cache.service';
 import { of as observableOf, Observable } from 'rxjs';
 import { map, flatMap, toArray } from 'rxjs/operators';
-import { RelationshipService } from '@portlets/content-types/fields/service/relationship.service';
+import { RelationshipService } from '@portlets/content-types/fields/content-type-fields-properties-form/field-properties/relationships-property/services/relationship.service';
 import { DotRelationship } from '@portlets/content-types/fields/shared/dot-relationship.model';
 import { DotRelationshipCardinality } from '@portlets/content-types/fields/shared/dot-relationship-cardinality.model';
 

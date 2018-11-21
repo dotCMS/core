@@ -8,11 +8,12 @@ import { FormControl } from '@angular/forms';
  * @returns
  */
 export function validateRelationship(formControl: FormControl) {
-    if (formControl.value.cardinality && formControl.value.velocityVar) {
+
+    if (formControl.value.cardinality !== undefined && formControl.value.velocityVar) {
         return null;
     } else {
         return {
-            valid: true
+            valid: false
         };
     }
 }

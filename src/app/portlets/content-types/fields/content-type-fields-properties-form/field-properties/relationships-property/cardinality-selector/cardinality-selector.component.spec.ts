@@ -5,7 +5,7 @@ import { DotMessageService } from '@services/dot-messages-service';
 import { MockDotMessageService } from 'src/app/test/dot-message-service.mock';
 import { DotRelationshipCardinality } from '@portlets/content-types/fields/shared/dot-relationship-cardinality.model';
 import { Observable, of } from 'rxjs';
-import { RelationshipService } from '@portlets/content-types/fields/service/relationship.service';
+import { RelationshipService } from '@portlets/content-types/fields/content-type-fields-properties-form/field-properties/relationships-property/services/relationship.service';
 import { ComponentFixture } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 

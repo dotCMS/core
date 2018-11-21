@@ -7,7 +7,7 @@ import { MockDotMessageService } from 'src/app/test/dot-message-service.mock';
 import { DOTTestBed } from 'src/app/test/dot-test-bed';
 import { PaginationEvent } from '@components/_common/searchable-dropdown/component';
 import { DotMessageService } from '@services/dot-messages-service';
-import { RelationshipService } from '@portlets/content-types/fields/service/relationship.service';
+import { RelationshipService } from '@portlets/content-types/fields/content-type-fields-properties-form/field-properties/relationships-property/services/relationship.service';
 import { DotContentTypeService } from '@services/dot-content-type/dot-content-type.service';
 import { By } from '@angular/platform-browser';
 import { Observable, of } from 'rxjs';

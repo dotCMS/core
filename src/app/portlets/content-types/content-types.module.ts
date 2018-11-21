@@ -80,7 +80,7 @@ import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.modu
 import {
     RelationshipsPropertyComponent
 } from './fields/content-type-fields-properties-form/field-properties/relationships-property/relationships-property.component';
-import { RelationshipService } from './fields/service/relationship.service';
+import { RelationshipService } from './fields/content-type-fields-properties-form/field-properties/relationships-property/services/relationship.service';
 import {
     NewRelationshipsComponent
 } from './fields/content-type-fields-properties-form/field-properties/relationships-property/new-relationships.component.ts/new-relationships.component';
