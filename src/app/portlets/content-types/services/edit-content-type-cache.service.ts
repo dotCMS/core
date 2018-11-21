@@ -1,15 +1,15 @@
 import { Injectable } from '@angular/core';
 import { ContentType } from '../shared/content-type.model';
-
+import * as _ from 'lodash';
 @Injectable()
 export class DotEditContentTypeCacheService {
     private currentContentType: ContentType;
 
-    setContentType(contentType: ContentType) {
+    set(contentType: ContentType) {
         this.currentContentType = contentType;
     }
 
-    getContentType(): ContentType {
-        return this.currentContentType;
+    get(): ContentType {
+        return _.cloneDeep(this.currentContentType);
     }
 }
