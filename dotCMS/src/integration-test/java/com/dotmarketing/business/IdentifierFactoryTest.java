@@ -25,13 +25,11 @@ import java.io.IOException;
 import java.util.List;
 import org.junit.Assert;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 
 /**
  * Created by Nollymar Longa on 10/25/17.
  */
-@Ignore
 public class IdentifierFactoryTest {
 
     private static IdentifierFactory factory;

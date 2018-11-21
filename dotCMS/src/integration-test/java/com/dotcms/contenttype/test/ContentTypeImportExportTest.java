@@ -1,7 +1,6 @@
 package com.dotcms.contenttype.test;
 
 import java.io.File;
-
 import org.junit.Test;
 
 import com.dotcms.contenttype.util.ContentTypeImportExportUtil;

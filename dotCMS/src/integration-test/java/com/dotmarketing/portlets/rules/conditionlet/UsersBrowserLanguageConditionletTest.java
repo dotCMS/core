@@ -4,7 +4,10 @@ import com.dotcms.LicenseTestUtil;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.portlets.rules.exception.ComparisonNotSupportedException;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
-import org.junit.*;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.mockito.Mockito;
 
 import javax.servlet.http.HttpServletRequest;
@@ -17,7 +20,6 @@ import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.*;
  * @author Jonathan Gamba
  *         Date: 1/12/16
  */
-@Ignore
 public class UsersBrowserLanguageConditionletTest {
 
     private HttpServletRequest request;

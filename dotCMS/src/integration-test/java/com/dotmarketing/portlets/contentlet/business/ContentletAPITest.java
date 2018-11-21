@@ -137,7 +137,6 @@ import org.junit.Test;
  * Date: 3/20/12
  * Time: 12:12 PM
  */
-@Ignore
 public class ContentletAPITest extends ContentletBaseTest {
 
     /**
