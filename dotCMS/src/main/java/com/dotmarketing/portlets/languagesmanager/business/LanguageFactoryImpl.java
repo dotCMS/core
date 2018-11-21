@@ -35,8 +35,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import com.liferay.util.StringPool;
 import org.apache.struts.Globals;
 /**
  * Implementation class for the {@link LanguageFactory}.
@@ -653,7 +651,7 @@ public class LanguageFactoryImpl extends LanguageFactory {
     }
 
 	private List<Language> fromDbList(final List<Map<String, Object>> resultSet) {
-		return new LanguageTransformer(resultSet).asList();
+		return  new ArrayList<>(new LanguageTransformer(resultSet).asList());
 	}
 
 
