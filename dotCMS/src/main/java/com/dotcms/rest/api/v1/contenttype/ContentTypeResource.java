@@ -135,7 +135,7 @@ public class ContentTypeResource implements Serializable {
 			throw new ForbiddenException(e);
 
 		} catch (Exception e) {
-
+			Logger.error(this, e.getMessage(), e);
 			response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
 		}
 

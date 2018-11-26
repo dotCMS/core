@@ -53,9 +53,10 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
                                                                  final boolean liveMode) throws DotDataException, DotSecurityException {
 
         final Table<String, String, Set<String>> pageContents = HashBasedTable.create();
-        final List<MultiTree> multiTres = MultiTreeFactory.getMultiTrees(page.getIdentifier());
+        final List<MultiTree> multiTrees = MultiTreeFactory.getMultiTrees(page.getIdentifier());
 
-        for (final MultiTree multiTree : multiTres) {
+
+        for (final MultiTree multiTree : multiTrees) {
             final Container container = (liveMode) ? (Container) versionableAPI.findLiveVersion(multiTree.getContainer(),
                     systemUser, false)
                     : (Container) versionableAPI.findWorkingVersion(multiTree.getContainer(), systemUser, false);

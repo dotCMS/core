@@ -414,7 +414,7 @@ public class HostAPIImpl implements HostAPI {
         }
         Host savedHost =  new Host(contentletHost);
 
-        updateDefaultHost(host, user, respectFrontendRoles);
+        updateDefaultHost(savedHost, user, respectFrontendRoles);
         hostCache.clearAliasCache();
         return savedHost;
 

@@ -32,6 +32,8 @@ public abstract class FieldSql {
 	public String findByContentType = SELECT_ALL_FIELDS + " where inode.inode = field.inode and structure_inode =? order by sort_order";
 	public String findByContentTypeVar = SELECT_ALL_FIELDS
 			+ ", structure where inode.inode = field.inode and field.structure_inode = structure.inode and structure.velocity_var_name= ? order by sort_order";
+	public String findByContentTypeAndRelationType = SELECT_ALL_FIELDS
+			+ ", structure where inode.inode = field.inode and structure_inode =? and field.field_relation_type= ? order by sort_order";
 	
 	
 	public String findByContentTypeAndFieldVar = SELECT_ALL_FIELDS + " where inode.inode = field.inode and structure_inode =? and field.velocity_var_name=?";

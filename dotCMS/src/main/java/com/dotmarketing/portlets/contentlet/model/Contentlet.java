@@ -332,7 +332,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	/**
 	 * @deprecated As of dotCMS 4.1.0. Please use the following approach:
 	 *             <pre>
-	 *             APILocator.getContentTypeAPI(user).find(content.getStructureInode());
+	 *             {@link #getContentType()}
 	 *             </pre>
 	 * 
 	 * @return
