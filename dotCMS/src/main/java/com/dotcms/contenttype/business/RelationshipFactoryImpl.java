@@ -272,8 +272,14 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
     @Override
     public  List<Contentlet> dbRelatedContent(final Relationship relationship, final Contentlet contentlet) throws DotDataException {
 
-        return dbRelatedContent(relationship, contentlet,
-                isParent(relationship, contentlet.getContentType()));
+        final String stInode = contentlet.getContentTypeId();
+
+        final boolean selfJoinRelationship = relationship.getParentStructureInode().equalsIgnoreCase(stInode)
+                && relationship.getChildStructureInode().equalsIgnoreCase(stInode);
+
+        final boolean hasParent = !selfJoinRelationship && relationship.getParentStructureInode().equalsIgnoreCase(stInode);
+
+        return dbRelatedContent(relationship, contentlet, hasParent);
     }
 
     @Override
@@ -346,15 +352,15 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
     @Override
     public  boolean isParent(final Relationship relationship, final ContentTypeIf contentTypeIf) {
         return relationship.getParentStructureInode().equalsIgnoreCase(contentTypeIf.id()) &&
-                !(sameParentAndChildRelationName(relationship)
-                        && relationship.getChildStructureInode()
+                !(sameParentAndChildRelationName(relationship) && relationship
+                        .getChildStructureInode()
                         .equalsIgnoreCase(relationship.getParentStructureInode()));
     }
     @Override
     public  boolean isChild(final Relationship relationship, final ContentTypeIf contentTypeIf) {
         return relationship.getChildStructureInode().equalsIgnoreCase(contentTypeIf.id()) &&
-                !(sameParentAndChildRelationName(relationship)
-                        && relationship.getChildStructureInode()
+                !(sameParentAndChildRelationName(relationship) && relationship
+                        .getChildStructureInode()
                         .equalsIgnoreCase(relationship.getParentStructureInode()));
     }
 
