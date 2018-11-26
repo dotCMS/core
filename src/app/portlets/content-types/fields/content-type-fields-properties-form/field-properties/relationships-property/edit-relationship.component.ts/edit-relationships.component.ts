@@ -3,10 +3,11 @@ import { DotMessageService } from '@services/dot-messages-service';
 import { PaginatorService } from '@services/paginator';
 import { DotEditContentTypeCacheService } from '@portlets/content-types/services/edit-content-type-cache.service';
 import { of as observableOf, Observable } from 'rxjs';
-import { map, flatMap, toArray } from 'rxjs/operators';
+import { map, flatMap, toArray, take } from 'rxjs/operators';
 import { RelationshipService } from '@portlets/content-types/fields/content-type-fields-properties-form/field-properties/relationships-property/services/relationship.service';
 import { DotRelationship } from '@portlets/content-types/fields/shared/dot-relationship.model';
 import { DotRelationshipCardinality } from '@portlets/content-types/fields/shared/dot-relationship-cardinality.model';
+import { DotRelationshipsPropertyValue } from '../relationships-property.component';
 
 interface CardinalitySorted {
     [id: number]: DotRelationshipCardinality;
@@ -19,7 +20,7 @@ interface CardinalitySorted {
 export class EditRelationshipsComponent implements OnInit {
 
     @Output()
-    change: EventEmitter<any> = new EventEmitter();
+    change: EventEmitter<DotRelationshipsPropertyValue> = new EventEmitter();
 
     currentPage: Observable<{label: string, relationship: DotRelationship}[]>;
 
@@ -42,6 +43,7 @@ export class EditRelationshipsComponent implements OnInit {
                 'contenttypes.field.properties.relationship.existing.label',
                 'contenttypes.field.properties.relationship.existing.placeholder',
             ])
+            .pipe(take(1))
             .subscribe((res) => {
                 this.i18nMessages = res;
             });
@@ -54,7 +56,7 @@ export class EditRelationshipsComponent implements OnInit {
      * @param any filter
      * @memberof EditRelationshipsComponent
      */
-    handleFilterChange(filter): void {
+    handleFilterChange(filter: string): void {
         this.getRelationshipList(filter);
     }
 
@@ -67,6 +69,12 @@ export class EditRelationshipsComponent implements OnInit {
         this.getRelationshipList(event.filter, event.first);
     }
 
+    /**
+     * Trigger a change event, it send a object with the current content type's variable and
+     * the current candinality's index.
+     * @param relationship relationship selected
+     * @memberof EditRelationshipsComponent
+     */
     triggerChanged(relationship: DotRelationship): void {
         this.change.next({
             velocityVar: relationship.relationTypeValue,

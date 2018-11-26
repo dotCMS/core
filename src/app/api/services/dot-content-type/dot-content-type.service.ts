@@ -13,6 +13,7 @@ export class DotContentTypeService {
     /**
      * Get a content type by id or variable name
      * @param idOrVar content type's id or variable name
+     * @returns Content Type
      */
     getContentType(idOrVar: string): Observable<ContentType> {
         return this.coreWebService

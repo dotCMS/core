@@ -13,6 +13,9 @@ export class RelationshipService {
 
     constructor(private coreWebService: CoreWebService) {}
 
+    /**
+     * Return all the cardinalities options allow
+     */
     loadCardinalities(): Observable<DotRelationshipCardinality[]> {
         return this.coreWebService
             .requestView({

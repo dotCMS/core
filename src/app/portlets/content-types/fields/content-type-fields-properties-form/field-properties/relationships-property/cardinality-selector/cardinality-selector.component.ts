@@ -2,6 +2,7 @@ import { Component, Input, EventEmitter, Output, OnInit, SimpleChanges, OnChange
 import { DotRelationshipCardinality } from '@portlets/content-types/fields/shared/dot-relationship-cardinality.model';
 import { DotMessageService } from '@services/dot-messages-service';
 import { RelationshipService } from '@portlets/content-types/fields/content-type-fields-properties-form/field-properties/relationships-property/services/relationship.service';
+import { take } from 'rxjs/operators';
 
 @Component({
     providers: [],
@@ -37,6 +38,7 @@ export class CardinalitySelectorComponent implements OnInit, OnChanges {
             .getMessages([
                 'contenttypes.field.properties.relationship.cardinality.placeholder',
             ])
+            .pipe(take(1))
             .subscribe((res) => {
                 this.i18nMessages = res;
             });
@@ -60,7 +62,7 @@ export class CardinalitySelectorComponent implements OnInit, OnChanges {
         this.change.next(cardinality);
     }
 
-    private changeCardinality(cardinality: number) {
+    private changeCardinality(cardinality: number): void {
         if (this.cardinalities) {
             this.cardinality = this.cardinalities[cardinality];
         }

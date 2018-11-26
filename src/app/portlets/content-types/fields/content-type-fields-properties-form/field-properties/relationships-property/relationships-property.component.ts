@@ -3,6 +3,7 @@ import { DotMessageService } from '@services/dot-messages-service';
 import { FieldProperty } from '../field-properties.model';
 import { FormGroup } from '@angular/forms';
 import * as _ from 'lodash';
+import { take } from 'rxjs/operators';
 
 @Component({
     providers: [],
@@ -20,7 +21,7 @@ export class RelationshipsPropertyComponent implements OnInit {
 
     editing: boolean;
 
-    beforeValue: any;
+    beforeValue: DotRelationshipsPropertyValue;
 
     i18nMessages: {
         [key: string]: string;
@@ -38,6 +39,7 @@ export class RelationshipsPropertyComponent implements OnInit {
                 'contenttypes.field.properties.relationships.new.error.required',
                 'contenttypes.field.properties.relationships.edit.error.required'
             ])
+            .pipe(take(1))
             .subscribe((res) => {
                 this.i18nMessages = res;
             });
@@ -45,34 +47,48 @@ export class RelationshipsPropertyComponent implements OnInit {
 
         this.beforeValue = _.cloneDeep(this.group.get(this.property.name).value);
 
-        this.group.get(this.property.name).setValue({
+        const currentValue: DotRelationshipsPropertyValue = {
             velocityVar: this.getVelocityVar(),
             cardinality: this.group.get(this.property.name).value.cardinality
-        });
+        };
 
+        this.group.get(this.property.name).setValue(currentValue);
         this.editing = !!this.group.get(this.property.name).value.velocityVar;
     }
 
-    handleChange(event): void {
-        this.group.get(this.property.name).setValue(event);
+    /**
+     * Handle a change in the relationships property
+     * @param event
+     */
+    handleChange(value: DotRelationshipsPropertyValue): void {
+        this.group.get(this.property.name).setValue(value);
     }
 
+    /**
+     * Clean the relationships property's value
+     */
     clean(): void {
         this.group.get(this.property.name).setValue(_.cloneDeep(this.beforeValue));
     }
 
-    getValidationMessage(): string {
+    /**
+     * Return the validation error message according with the component's state.
+     * @returns validation error message
+     */
+    getValidationErrorMessage(): string {
         return this.status === this.STATUS_NEW ?
             this.i18nMessages['contenttypes.field.properties.relationships.new.error.required'] :
             this.i18nMessages['contenttypes.field.properties.relationships.edit.error.required'];
-    }
-
-    isNew(): boolean {
-        return this.status === this.STATUS_NEW;
     }
 
     private getVelocityVar(): string {
         const value = this.group.get(this.property.name).value.velocityVar;
         return !!value ? value.split('.')[0] : '';
     }
+}
+
+
+export interface DotRelationshipsPropertyValue {
+    velocityVar: string;
+    cardinality: number;
 }

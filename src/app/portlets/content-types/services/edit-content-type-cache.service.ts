@@ -5,7 +5,7 @@ import * as _ from 'lodash';
 export class DotEditContentTypeCacheService {
     private currentContentType: ContentType;
 
-    set(contentType: ContentType) {
+    set(contentType: ContentType): void {
         this.currentContentType = contentType;
     }
 

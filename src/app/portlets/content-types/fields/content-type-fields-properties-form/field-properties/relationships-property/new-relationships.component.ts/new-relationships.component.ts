@@ -4,6 +4,8 @@ import { PaginatorService } from '@services/paginator';
 import { ContentType } from '@portlets/content-types/shared/content-type.model';
 import { Observable } from 'rxjs';
 import { DotContentTypeService } from '@services/dot-content-type/dot-content-type.service';
+import { DotRelationshipsPropertyValue } from '../relationships-property.component';
+import { take } from 'rxjs/operators';
 
 @Component({
     providers: [PaginatorService],
@@ -21,7 +23,7 @@ export class NewRelationshipsComponent implements OnInit, OnChanges {
     editing: boolean;
 
     @Output()
-    change: EventEmitter<any> = new EventEmitter();
+    change: EventEmitter<DotRelationshipsPropertyValue> = new EventEmitter();
 
     contentTypeCurrentPage: Observable<ContentType[]>;
 
@@ -45,6 +47,7 @@ export class NewRelationshipsComponent implements OnInit, OnChanges {
                 'contenttypes.field.properties.relationship.new.label',
                 'contenttypes.field.properties.relationship.new.content_type.placeholder'
             ])
+            .pipe(take(1))
             .subscribe((res) => {
                 this.i18nMessages = res;
             });
@@ -63,25 +66,8 @@ export class NewRelationshipsComponent implements OnInit, OnChanges {
     }
 
     /**
-     * Call when the content type global serach changed
-     * @param any filter
-     * @memberof CategoriesPropertyComponent
-     */
-    handleFilterChange(filter): void {
-        this.getContentTypeList(filter);
-    }
-
-    /**
-     * Call when the current page changed
-     * @param any event
-     * @memberof CategoriesPropertyComponent
-     */
-    handlePageChange(event): void {
-        this.getContentTypeList(event.filter, event.first);
-    }
-
-    /**
-     * Trigger a change event
+     * Trigger a change event, it send a object with the current content type's variable and
+     * the current candinality's index.
      */
     triggerChanged(): void {
         this.change.next({
@@ -90,9 +76,23 @@ export class NewRelationshipsComponent implements OnInit, OnChanges {
         });
     }
 
+    /**
+     * Call when the selected cardinality changed
+     * @param cardinalityIndex selected cardinality index
+     */
     cardinalityChanged(cardinalityIndex: number): void {
         this.currentCardinalityIndex = cardinalityIndex;
         this.triggerChanged();
+    }
+
+    /**
+     * Load content types by pagination
+     * @param filter content types's filter
+     * @param offset pagination index
+     */
+    getContentTypeList(filter = '', offset = 0): void {
+        this.paginatorService.filter = filter;
+        this.contentTypeCurrentPage = this.paginatorService.getWithOffset(offset);
     }
 
     private loadContentType(velocityVar: string) {
@@ -103,10 +103,5 @@ export class NewRelationshipsComponent implements OnInit, OnChanges {
         } else {
             this.contentType = undefined;
         }
-    }
-
-    private getContentTypeList(filter = '', offset = 0): void {
-        this.paginatorService.filter = filter;
-        this.contentTypeCurrentPage = this.paginatorService.getWithOffset(offset);
     }
 }
