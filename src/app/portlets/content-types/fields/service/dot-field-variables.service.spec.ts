@@ -1,13 +1,13 @@
 import { Response, ResponseOptions, ConnectionBackend } from '@angular/http';
 import { MockBackend } from '@angular/http/testing';
-import { FieldVariablesService, FieldVariableParams } from './';
+import { DotFieldVariablesService, DotFieldVariableParams } from './dot-field-variables.service';
 import { DOTTestBed } from '../../../../test/dot-test-bed';
-import { FieldVariable } from '../content-type-fields-variables/content-type-fields-variables.component';
+import { FieldVariable } from '../dot-content-type-fields-variables/dot-content-type-fields-variables.component';
 
 describe('FieldVariablesService', () => {
     beforeEach(() => {
-        this.injector = DOTTestBed.resolveAndCreate([FieldVariablesService]);
-        this.fieldVariableService = this.injector.get(FieldVariablesService);
+        this.injector = DOTTestBed.resolveAndCreate([DotFieldVariablesService]);
+        this.fieldVariableService = this.injector.get(DotFieldVariablesService);
         this.backend = this.injector.get(ConnectionBackend) as MockBackend;
         this.backend.connections.subscribe((connection: any) => (this.lastConnection = connection));
     });
@@ -32,7 +32,7 @@ describe('FieldVariablesService', () => {
             ]
         };
 
-        const params: FieldVariableParams = {
+        const params: DotFieldVariableParams = {
             contentTypeId: '1b',
             fieldId: '1'
         };
@@ -64,7 +64,7 @@ describe('FieldVariablesService', () => {
                 }
         };
 
-        const params: FieldVariableParams = {
+        const params: DotFieldVariableParams = {
             contentTypeId: '1b',
             fieldId: '1',
             variable: {
@@ -95,7 +95,7 @@ describe('FieldVariablesService', () => {
             entity: []
         };
 
-        const params: FieldVariableParams = {
+        const params: DotFieldVariableParams = {
             contentTypeId: '1b',
             fieldId: '1',
             variable: {

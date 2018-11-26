@@ -1,7 +1,7 @@
 import { By } from '@angular/platform-browser';
 import { ComponentFixture } from '@angular/core/testing';
 import { DebugElement} from '@angular/core';
-import { ContentTypeFieldsVariablesComponent } from './content-type-fields-variables.component';
+import { DotContentTypeFieldsVariablesComponent } from './dot-content-type-fields-variables.component';
 import { DotActionButtonModule } from '@components/_common/dot-action-button/dot-action-button.module';
 import { MockDotMessageService } from '../../../../test/dot-message-service.mock';
 import { DOTTestBed } from '../../../../test/dot-test-bed';
@@ -11,15 +11,15 @@ import { LoginService } from 'dotcms-js';
 import { LoginServiceMock } from '../../../../test/login-service.mock';
 import { RouterTestingModule } from '@angular/router/testing';
 import { FieldVariablesServiceMock, mockFieldVariables } from '../../../../test/field-variable-service.mock';
-import { FieldVariablesService } from '../service/field-variables.service';
+import { DotFieldVariablesService } from '../service/dot-field-variables.service';
 import { TableModule } from 'primeng/table';
 import { of } from 'rxjs';
 
 describe('ContentTypeFieldsVariablesComponent', () => {
-    let comp: ContentTypeFieldsVariablesComponent;
-    let fixture: ComponentFixture<ContentTypeFieldsVariablesComponent>;
+    let comp: DotContentTypeFieldsVariablesComponent;
+    let fixture: ComponentFixture<DotContentTypeFieldsVariablesComponent>;
     let de: DebugElement;
-    let fieldVariableService: FieldVariablesService;
+    let fieldVariableService: DotFieldVariablesService;
 
     beforeEach(() => {
         const messageServiceMock = new MockDotMessageService({
@@ -32,22 +32,22 @@ describe('ContentTypeFieldsVariablesComponent', () => {
         });
 
         DOTTestBed.configureTestingModule({
-            declarations: [ContentTypeFieldsVariablesComponent],
+            declarations: [DotContentTypeFieldsVariablesComponent],
             imports: [DotIconButtonModule, DotActionButtonModule, RouterTestingModule, TableModule],
             providers: [
                 { provide: DotMessageService, useValue: messageServiceMock },
                 { provide: LoginService, useClass: LoginServiceMock },
                 {
-                    provide: FieldVariablesService,
+                    provide: DotFieldVariablesService,
                     useClass: FieldVariablesServiceMock
                 },
             ]
         });
 
-        fixture = DOTTestBed.createComponent(ContentTypeFieldsVariablesComponent);
+        fixture = DOTTestBed.createComponent(DotContentTypeFieldsVariablesComponent);
         comp = fixture.componentInstance;
         de = fixture.debugElement;
-        fieldVariableService = de.injector.get(FieldVariablesService);
+        fieldVariableService = de.injector.get(DotFieldVariablesService);
 
         comp.field = {
             contentTypeId: 'ddf29c1e-babd-40a8-bfed-920fc9b8c77',

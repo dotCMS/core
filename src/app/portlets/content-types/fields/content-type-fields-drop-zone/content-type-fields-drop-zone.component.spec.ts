@@ -32,7 +32,7 @@ import { DragulaModule, DragulaService } from 'ng2-dragula';
 import * as _ from 'lodash';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { TableModule } from 'primeng/table';
-import { DotContentTypeFieldsVariablesModule } from '../content-type-fields-variables/content-type-fields-variables.module';
+import { DotContentTypeFieldsVariablesModule } from '../dot-content-type-fields-variables/dot-content-type-fields-variables.module';
 
 @Component({
     selector: 'dot-content-type-fields-row',

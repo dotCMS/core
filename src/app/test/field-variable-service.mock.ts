@@ -1,6 +1,6 @@
 import { Observable, of } from 'rxjs';
 import * as _ from 'lodash';
-import { FieldVariable } from '@portlets/content-types/fields/content-type-fields-variables/content-type-fields-variables.component';
+import { FieldVariable } from '@portlets/content-types/fields/dot-content-type-fields-variables/dot-content-type-fields-variables.component';
 
 export const mockFieldVariables: FieldVariable[] = [
     {

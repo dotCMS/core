@@ -1,6 +1,6 @@
 import { Component, Input, SimpleChanges, OnChanges, OnInit, OnDestroy, ViewChild } from '@angular/core';
 import { DotMessageService } from '../../../../api/services/dot-messages-service';
-import { FieldVariablesService, FieldVariableParams } from '../service/';
+import { DotFieldVariablesService, DotFieldVariableParams } from '../service/dot-field-variables.service';
 import { DotHttpErrorManagerService } from '../../../../api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { ResponseView } from 'dotcms-js';
 import { take, takeUntil } from 'rxjs/operators';
@@ -18,14 +18,14 @@ export interface FieldVariable {
 
 @Component({
     selector: 'dot-content-type-fields-variables',
-    styleUrls: ['./content-type-fields-variables.component.scss'],
-    templateUrl: './content-type-fields-variables.component.html'
+    styleUrls: ['./dot-content-type-fields-variables.component.scss'],
+    templateUrl: './dot-content-type-fields-variables.component.html'
 })
-export class ContentTypeFieldsVariablesComponent implements OnInit, OnChanges, OnDestroy {
+export class DotContentTypeFieldsVariablesComponent implements OnInit, OnChanges, OnDestroy {
     @ViewChild('table')
     table: Table;
     @Input()
-    field: FieldVariableParams;
+    field: DotFieldVariableParams;
 
     fieldVariables: FieldVariable[] = [];
     fieldVariablesBackup: FieldVariable[] = [];
@@ -35,7 +35,7 @@ export class ContentTypeFieldsVariablesComponent implements OnInit, OnChanges, O
     constructor(
         private dotHttpErrorManagerService: DotHttpErrorManagerService,
         public dotMessageService: DotMessageService,
-        private fieldVariablesService: FieldVariablesService
+        private fieldVariablesService: DotFieldVariablesService
     ) {}
 
     ngOnInit() {
@@ -45,6 +45,8 @@ export class ContentTypeFieldsVariablesComponent implements OnInit, OnChanges, O
                 'contenttypes.field.variables.value_header.label',
                 'contenttypes.field.variables.actions_header.label',
                 'contenttypes.field.variables.value_no_rows.label',
+                'contenttypes.field.variables.key_input.placeholder',
+                'contenttypes.field.variables.value_input.placeholder',
                 'contenttypes.action.save',
                 'contenttypes.action.cancel'
             ])
@@ -180,7 +182,7 @@ export class ContentTypeFieldsVariablesComponent implements OnInit, OnChanges, O
     }
 
     private initTableData(): void {
-        const params: FieldVariableParams = {
+        const params: DotFieldVariableParams = {
             contentTypeId: this.field.contentTypeId,
             fieldId: this.field.fieldId
         };
@@ -191,7 +193,7 @@ export class ContentTypeFieldsVariablesComponent implements OnInit, OnChanges, O
     }
 
     private deleteExistingVariable(fieldIndex: number): void {
-        const params: FieldVariableParams = {
+        const params: DotFieldVariableParams = {
             contentTypeId: this.field.contentTypeId,
             fieldId: this.field.fieldId,
             variable: this.fieldVariables[fieldIndex]
@@ -221,7 +223,7 @@ export class ContentTypeFieldsVariablesComponent implements OnInit, OnChanges, O
     }
 
     private updateExistingVariable(variable: FieldVariable, variableIndex: number): void {
-        const params: FieldVariableParams = {
+        const params: DotFieldVariableParams = {
             contentTypeId: this.field.contentTypeId,
             fieldId: this.field.fieldId,
             variable: variable

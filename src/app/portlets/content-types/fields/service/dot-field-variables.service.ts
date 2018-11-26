@@ -2,10 +2,10 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { CoreWebService } from 'dotcms-js';
 import { RequestMethod } from '@angular/http';
-import { FieldVariable } from '../content-type-fields-variables/content-type-fields-variables.component';
+import { FieldVariable } from '../dot-content-type-fields-variables/dot-content-type-fields-variables.component';
 import { pluck } from 'rxjs/operators';
 
-export interface FieldVariableParams {
+export interface DotFieldVariableParams {
     contentTypeId: string;
     fieldId: string;
     variable?: FieldVariable;
@@ -15,7 +15,7 @@ export interface FieldVariableParams {
  * Provide method to handle with the Field Variables
  */
 @Injectable()
-export class FieldVariablesService {
+export class DotFieldVariablesService {
     constructor(private coreWebService: CoreWebService) {}
 
     /**
@@ -24,7 +24,7 @@ export class FieldVariablesService {
      * @returns {Observable<FieldVariable[]>}
      * @memberof FieldVariablesService
      */
-    load(params: FieldVariableParams): Observable<FieldVariable[]> {
+    load(params: DotFieldVariableParams): Observable<FieldVariable[]> {
         return this.coreWebService
             .requestView({
                 method: RequestMethod.Get,
@@ -39,7 +39,7 @@ export class FieldVariablesService {
      * @returns {Observable<FieldVariable>}
      * @memberof FieldVariablesService
      */
-    save(params: FieldVariableParams): Observable<FieldVariable> {
+    save(params: DotFieldVariableParams): Observable<FieldVariable> {
         return this.coreWebService
             .requestView({
                 body: {
@@ -60,7 +60,7 @@ export class FieldVariablesService {
      * @returns {Observable<FieldVariable>}
      * @memberof FieldVariablesService
      */
-    delete(params: FieldVariableParams): Observable<FieldVariable> {
+    delete(params: DotFieldVariableParams): Observable<FieldVariable> {
         return this.coreWebService
             .requestView({
                 method: RequestMethod.Delete,

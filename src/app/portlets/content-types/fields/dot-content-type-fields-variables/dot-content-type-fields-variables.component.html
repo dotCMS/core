@@ -18,7 +18,13 @@
             <td [pEditableColumn]="fieldVariable.key" id="content-type-fields__variables-key-{{ rowIndex }}" [pEditableColumnField]="'key'">
                 <p-cellEditor>
                     <ng-template pTemplate="input">
-                        <input pInputText type="text" (focus)="editFieldInit(fieldVariable, rowIndex)" (keyup)="editFieldInit(fieldVariable, rowIndex)" (keydown)="onKeyDown($event, fieldVariable, rowIndex)" [(ngModel)]="fieldVariable.key">
+                        <input pInputText
+                            type="text"
+                            placeholder="{{ messages['contenttypes.field.variables.key_input.placeholder'] }}"
+                            (focus)="editFieldInit(fieldVariable, rowIndex)"
+                            (keyup)="editFieldInit(fieldVariable, rowIndex)"
+                            (keydown)="onKeyDown($event, fieldVariable, rowIndex)"
+                            [(ngModel)]="fieldVariable.key">
                     </ng-template>
                     <ng-template pTemplate="output">
                         {{fieldVariable.key}}
@@ -28,7 +34,13 @@
             <td [pEditableColumn]="fieldVariable.value" id="content-type-fields__variables-value-{{ rowIndex }}" [pEditableColumnField]="'value'">
                 <p-cellEditor>
                     <ng-template pTemplate="input">
-                        <input pInputText type="text" (focus)="editFieldInit(fieldVariable, rowIndex)" (keyup)="editFieldInit(fieldVariable, rowIndex)" (keydown)="onKeyDown($event, fieldVariable, rowIndex)" [(ngModel)]="fieldVariable.value">
+                        <input pInputText
+                            type="text"
+                            placeholder="{{ messages['contenttypes.field.variables.value_input.placeholder'] }}"
+                            (focus)="editFieldInit(fieldVariable, rowIndex)"
+                            (keyup)="editFieldInit(fieldVariable, rowIndex)"
+                            (keydown)="onKeyDown($event, fieldVariable, rowIndex)"
+                            [(ngModel)]="fieldVariable.value">
                     </ng-template>
                     <ng-template pTemplate="output">
                         {{fieldVariable.value}}

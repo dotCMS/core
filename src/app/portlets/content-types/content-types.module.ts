@@ -71,7 +71,7 @@ import { MdInputTextModule } from '@directives/md-inputtext/md-input-text.module
 import { PushPublishContentTypesDialogModule } from '@components/_common/push-publish-dialog/push-publish-dialog.module';
 import { SearchableDropDownModule } from '@components/_common/searchable-dropdown';
 import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
-import { DotContentTypeFieldsVariablesModule } from './fields/content-type-fields-variables/content-type-fields-variables.module';
+import { DotContentTypeFieldsVariablesModule } from './fields/dot-content-type-fields-variables/dot-content-type-fields-variables.module';
 
 @NgModule({
     declarations: [

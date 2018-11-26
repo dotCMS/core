@@ -9,7 +9,7 @@ import {
     ViewChild,
     OnDestroy
 } from '@angular/core';
-import { FieldDragDropService, DropFieldData, FieldVariableParams } from '../service';
+import { FieldDragDropService, DropFieldData } from '../service';
 import { FieldRow, FieldTab, ContentTypeField, FieldType, FieldColumn } from '../shared';
 import { ContentTypeFieldsPropertiesFormComponent } from '../content-type-fields-properties-form';
 import { DotMessageService } from '@services/dot-messages-service';
@@ -20,6 +20,7 @@ import { DotEventsService } from '@services/dot-events/dot-events.service';
 import { FieldDivider } from '@portlets/content-types/fields/shared/field-divider.interface';
 import { takeUntil, take } from 'rxjs/operators';
 import { Subject } from 'rxjs';
+import { DotFieldVariableParams } from '../service/dot-field-variables.service';
 
 /**
  * Display all the Field Types
@@ -38,7 +39,7 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
     fieldRows: FieldDivider[] = [];
     formData: ContentTypeField;
     currentFieldType: FieldType;
-    currentField: FieldVariableParams;
+    currentField: DotFieldVariableParams;
     dialogActions: DotDialogActions;
 
 
