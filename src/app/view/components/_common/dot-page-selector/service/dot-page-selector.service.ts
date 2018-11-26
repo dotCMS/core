@@ -3,6 +3,7 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { RequestMethod } from '@angular/http';
 import { Site, ResponseView, CoreWebService } from 'dotcms-js';
+import { DotPageSeletorItem, DotPageSelectorResults } from '../models/dot-page-selector.models';
 
 export interface DotPageAsset {
     template: string;
@@ -29,19 +30,8 @@ export interface DotPageAsset {
     url?: string;
 }
 
-export interface DotPageSeletorItem {
-    label: string;
-    payload: DotPageAsset | Site;
-}
-
-export interface DotPageSelectorResults {
-    data: DotPageSeletorItem[];
-    type: string;
-    query: string;
-}
-
 const HOST_FULL_REGEX = /^\/\/[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b\//;
-const URL_ABS_REGEX = /^\/\/?[a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,5}(:[0-9]{1,5})?(\/.*)?$/;
+const PAGE_BASE_TYPE_QUERY = '+basetype:5';
 
 @Injectable()
 export class DotPageSelectorService {
@@ -59,7 +49,7 @@ export class DotPageSelectorService {
     getPageById(identifier: string): Observable<DotPageSeletorItem> {
         return this.coreWebService
             .requestView({
-                body: this.getRequestBodyQuery(`+basetype:5 +identifier:*${identifier}*`),
+                body: this.getRequestBodyQuery(`${PAGE_BASE_TYPE_QUERY} +identifier:*${identifier}*`),
                 method: RequestMethod.Post,
                 url: 'es/search'
             })
@@ -107,7 +97,7 @@ export class DotPageSelectorService {
     }
 
     private fullSearch(param: string): Observable<DotPageSelectorResults> {
-        const host = this.parseHost(param).pop();
+        const host = this.parseUrl(param).hostname;
 
         return this.getSites(host).pipe(
             tap((results: DotPageSelectorResults) => {
@@ -125,13 +115,10 @@ export class DotPageSelectorService {
         });
     }
 
-    private getPages(searchParam: string): Observable<DotPageSelectorResults> {
+    private getPages(query: string): Observable<DotPageSelectorResults> {
         return this.coreWebService
             .requestView({
-                body: this.getPagesSearchQuery(
-                    searchParam,
-                    this.currentHost ? this.currentHost.identifier : null
-                ),
+                body: this.getPagesSearchQuery(query),
                 method: RequestMethod.Post,
                 url: 'es/search'
             })
@@ -149,23 +136,20 @@ export class DotPageSelectorService {
                     return {
                         data: items,
                         type: 'page',
-                        query: searchParam.replace(HOST_FULL_REGEX, '')
+                        query: query.replace(HOST_FULL_REGEX, '')
                     };
                 })
             );
     }
 
-    private getPagesSearchQuery(searchParam: string, hostId?: string): { [key: string]: {} } {
-        const parsedQuery = this.parseHost(searchParam);
+    private getPagesSearchQuery(param: string): { [key: string]: {} } {
+        const parsedUrl: URL = this.parseUrl(param);
 
-        let query = `+basetype:5 +path:*${parsedQuery[0]}*`;
+        let query = `${PAGE_BASE_TYPE_QUERY} +path:*${parsedUrl ? parsedUrl.pathname : param}*`;
 
-        query +=
-            parsedQuery.length > 1
-                ? ` +conhostName:*${parsedQuery[1]}*`
-                : hostId
-                ? ` +conhost:${hostId}`
-                : '';
+        if (this.currentHost) {
+            query += ` +conhostName:*${this.currentHost.hostname}*`;
+        }
 
         return this.getRequestBodyQuery(query);
     }
@@ -208,12 +192,17 @@ export class DotPageSelectorService {
         return site.replace(/\//g, '');
     }
 
-    private isAbsoluteUrl(param: string): boolean {
-        return URL_ABS_REGEX.test(param);
+    private isHostAndPath(param: string): boolean {
+        const url: URL | { [key: string]: string } = this.parseUrl(param);
+        return url && !!(url.host && url.pathname.length > 1);
     }
 
     private isReSearchingForHost(param: string): boolean {
         return this.currentHost && !this.itStartWithFullHost(param);
+    }
+
+    private isSearchingForHost(query: string): boolean {
+        return query.startsWith('//');
     }
 
     private itStartWithFullHost(param: string): boolean {
@@ -221,25 +210,26 @@ export class DotPageSelectorService {
     }
 
     private isTwoStepSearch(param): boolean {
-        return !this.currentHost && this.isAbsoluteUrl(param);
+        return !this.currentHost && this.isHostAndPath(param);
     }
 
-    private parseHost(query: string): string[] {
-        const host = query.match(/^\/\/[^/]*\//g);
-        const search: string[] = [];
-        if (host) {
-            search.push(query.replace(host[0], '').replace(/\//g, '\\/'));
-            search.push(host[0].substr(2).slice(0, -1));
-            return search;
+    private parseUrl(query: string): URL {
+        if (this.isSearchingForHost(query)) {
+            try {
+                return new URL(`http:${query}`);
+            } catch {
+                return null;
+            }
+        } else {
+            return null;
         }
-        return [query.replace(/\//g, '\\/')];
     }
 
-    private shouldSearchPages(param: string): boolean {
-        if (this.isReSearchingForHost(param)) {
+    private shouldSearchPages(query: string): boolean {
+        if (this.isReSearchingForHost(query)) {
             this.currentHost = null;
         }
 
-        return !!(this.currentHost || !param.startsWith('//'));
+        return !!(this.currentHost || !this.isSearchingForHost(query));
     }
 }

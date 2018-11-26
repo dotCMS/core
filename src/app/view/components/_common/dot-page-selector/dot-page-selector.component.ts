@@ -1,13 +1,12 @@
 import { Component, Output, EventEmitter, forwardRef, Input } from '@angular/core';
-import {
-    DotPageSelectorService,
-    DotPageAsset,
-    DotPageSeletorItem,
-    DotPageSelectorResults
-} from './service/dot-page-selector.service';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
-import { Site } from 'dotcms-js';
+
 import { take } from 'rxjs/operators';
+
+import { Site } from 'dotcms-js';
+
+import { DotPageSelectorService, DotPageAsset } from './service/dot-page-selector.service';
+import { DotPageSelectorResults, DotPageSeletorItem } from './models/dot-page-selector.models';
 
 /**
  * Search and select a page asset
@@ -66,12 +65,13 @@ export class DotPageSelectorComponent implements ControlValueAccessor {
         if (this.results.type === 'site') {
             const site: Site = <Site>item.payload;
             this.dotPageSelectorService.setCurrentHost(site);
-            this.resetResults();
         } else if (this.results.type === 'page') {
             const page: DotPageAsset = <DotPageAsset>item.payload;
             this.selected.emit(page);
             this.propagateChange(page.identifier);
         }
+
+        this.resetResults();
     }
 
     /**
