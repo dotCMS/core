@@ -57,6 +57,7 @@ import static com.dotmarketing.util.StringUtils.builder;
 
 public class ESContentletIndexAPI implements ContentletIndexAPI{
 
+	// todo: switch this by a property in the contentlet set to is dirty
 	private static final ThreadLocal<Set<String>> contentIndexedTrackingLocal = new ThreadLocal< >();
 
 	private static final int    TIMEOUT_INDEX_WAIT_FOR_DEFAULT = 30000;
@@ -610,10 +611,12 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 		boolean alwaysRegenerateMetadata = Config
 				.getBooleanProperty("always.regenerate.metadata.on.reindex", false);
 
-		for(Contentlet con : contentToIndexSet) {
+		for(final Contentlet con : contentToIndexSet) {
+
             String id=con.getIdentifier()+"_"+con.getLanguageId();
 
-            Logger.debug(this, ()->"\n*********----------- Indexing : " + Thread.currentThread().getName() + ", id: " + con.getIdentifier());
+            Logger.debug(this, ()->"\n*********----------- Indexing : " + Thread.currentThread().getName() + ", id: " + con.getIdentifier() +
+					"identityHashCode = " + System.identityHashCode(con));
 			Logger.debug(this, ()->"*********-----------  " + DbConnectionFactory.getConnection());
 			Logger.debug(this, ()->"*********-----------  " + ExceptionUtil.getCurrentStackTraceAsString(Config.getIntProperty("stacktracelimit", 10)) + "\n");
 

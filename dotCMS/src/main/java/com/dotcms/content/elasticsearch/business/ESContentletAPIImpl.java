@@ -127,7 +127,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     private static final String CANT_GET_LOCK_ON_CONTENT ="Only the CMS Admin or the user who locked the contentlet can lock/unlock it";
     private static final String FAILED_TO_DELETE_UNARCHIVED_CONTENT = "Failed to delete unarchived content. Content must be archived first before it can be deleted.";
     private static final String NEVER_EXPIRE = "NeverExpire";
-    private static final String CHECKING_ON_PROGRESS = "__checking_on_progress__";
+    private static final String CHECKIN_IN_PROGRESS = "__checkin_in_progress__";
 
     private final ESContentletIndexAPI indexAPI;
     private final ESContentFactoryImpl contentFactory;
@@ -375,7 +375,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     // note: is not annotated with WrapInTransaction b/c it handles his own transaction locally in the methodok
     @WrapInTransaction
     @Override
-    public void publish(Contentlet contentlet, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException, DotStateException {
+    public void publish(final Contentlet contentlet, final User user, final boolean respectFrontendRoles) throws DotSecurityException, DotDataException, DotStateException {
 
 
 
@@ -2468,7 +2468,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
 
         // Refresh the parent only if the contentlet is not already in the checkin
-        if (contentlet.get(CHECKING_ON_PROGRESS) == null || !contentlet.getBoolProperty(CHECKING_ON_PROGRESS)) {
+        if (contentlet.get(CHECKIN_IN_PROGRESS) == null || !contentlet.getBoolProperty(CHECKIN_IN_PROGRESS)) {
             refreshNoDeps(contentlet);
         }
     }
@@ -3077,7 +3077,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 }
 
                 if (createNewVersion || (!createNewVersion && (contentRelationships != null || cats != null))) {
-                    contentlet.setBoolProperty(CHECKING_ON_PROGRESS, Boolean.TRUE);
+                    contentlet.setBoolProperty(CHECKIN_IN_PROGRESS, Boolean.TRUE);
                     moveContentDependencies(workingContentlet, contentlet, contentRelationships, cats, user, respectFrontendRoles);
                 }
 
@@ -3497,8 +3497,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return contentlet;
         } finally{
 
-            if (contentlet.getMap().containsKey(CHECKING_ON_PROGRESS)) {
-                contentlet.getMap().remove(CHECKING_ON_PROGRESS);
+            if (contentlet.getMap().containsKey(CHECKIN_IN_PROGRESS)) {
+                contentlet.getMap().remove(CHECKIN_IN_PROGRESS);
             }
             contentlet.cleanup();
         }

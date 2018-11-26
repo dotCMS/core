@@ -2105,17 +2105,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			if (!processor.abort()) {
 
 				this.saveWorkflowTask(processor);
-
-				if (UtilMethods.isSet(processor.getContentlet())
-						&& !this.contentletIndexAPI.isContentAlreadyIndexed(processor.getContentlet())) { // we make sure if it was already indexed in some of the
-				    HibernateUtil.addCommitListener(() -> {
-                        try {
-							this.distributedJournalAPI.addIdentifierReindex(processor.getContentlet().getIdentifier());
-						} catch (DotDataException e) {
-                            Logger.error(WorkflowAPIImpl.class, e.getMessage(), e);
-                        }
-                    });
-				}
+				// if it still WORKFLOW_CONTENTLET_WAS_NOT_REINDEX
+				/// todo: WAIT_FOR if the content wasnt index on any of the actionlets
 			}
 		} catch(Exception e) {
 
@@ -2123,6 +2114,19 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			Logger.error(WorkflowAPIImpl.class, "There was an unexpected error: " + e.getMessage());
 			Logger.debug(WorkflowAPIImpl.class, e.getMessage(), e);
 			throw new DotWorkflowException(e.getMessage(), e);
+		} finally {
+
+			if (null != processor.getContentlet() &&
+					UtilMethods.isSet(processor.getContentlet().getIdentifier())) {
+
+				HibernateUtil.addCommitListener(() -> {
+					try {
+						this.distributedJournalAPI.addIdentifierReindex(processor.getContentlet().getIdentifier());
+					} catch (DotDataException e) {
+						Logger.error(WorkflowAPIImpl.class, e.getMessage(), e);
+					}
+				});
+			}
 		}
 	}
 

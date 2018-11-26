@@ -6,17 +6,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.util.ConversionUtils;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.PermissionSummary;
-import com.dotmarketing.business.Permissionable;
-import com.dotmarketing.business.RelatedPermissionableGroup;
-import com.dotmarketing.business.Ruleable;
-import com.dotmarketing.business.Treeable;
-import com.dotmarketing.business.UserAPI;
-import com.dotmarketing.business.Versionable;
+import com.dotmarketing.business.*;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -34,24 +24,18 @@ import com.dotmarketing.tag.model.TagInode;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.model.User;
+import org.apache.commons.lang.builder.ToStringBuilder;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
 import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
-
-import org.apache.commons.lang.builder.ToStringBuilder;
 
 /**
  * Represents a content unit in the system. Ideally, every single domain object
@@ -121,6 +105,16 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	private transient IndexPolicy indexPolicy = IndexPolicy.DEFER;
 	private transient IndexPolicy indexPolicyDependencies = IndexPolicy.DEFER;
 
+	// todo: work with this
+	private transient boolean needsReindex = false;
+
+	@JsonIgnore
+	@com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore
+	public boolean isNeedsReindex() {
+		return needsReindex;
+	}
+
+
 	public IndexPolicy getIndexPolicy() {
 
 		return (null == this.indexPolicy)?
@@ -188,6 +182,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 		this.map = new ContentletHashMap();
     	this.map.putAll(map);
 		this.indexPolicy = IndexPolicy.DEFER;
+		this.needsReindex = false;
     }
 
 	/**
@@ -213,6 +208,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 		setDisabledWysiwyg(new ArrayList<>());
 		this.indexPolicy = IndexPolicy.DEFER;
 		getWritableNullProperties();
+		this.needsReindex = false;
 	}
 
     @Override
@@ -1243,6 +1239,9 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 		}
 
 		public Object put(String key, Object value) {
+
+			Contentlet.this.needsReindex = true;
+
 			 if(value==null) {
 				 Object oldValue = this.get(key);
 				 this.remove(key);

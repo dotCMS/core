@@ -57,6 +57,7 @@ public interface ContentletIndexAPI {
 	 * @param contentlet {@link Contentlet}
 	 * @return true if the content has been already indexed
 	 */
+	// todo: remove this
 	boolean isContentAlreadyIndexed(final Contentlet contentlet);
 
 
