@@ -70,7 +70,10 @@ public class ContentHelper {
                 // making a copy to avoid issues on modifying cache objects.
                 newContentlet = new Contentlet();
                 newContentlet.getMap().putAll(contentlet.getMap());
+                // Add any additional property
                 newContentlet.getMap().put(HTMLPageAssetAPI.URL_FIELD, url);
+                //Remove any unwanted existing property
+                newContentlet.getMap().remove(Contentlet.NULL_PROPERTIES);
             }
         }
 
