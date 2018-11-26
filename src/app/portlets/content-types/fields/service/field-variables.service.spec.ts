@@ -2,7 +2,7 @@ import { Response, ResponseOptions, ConnectionBackend } from '@angular/http';
 import { MockBackend } from '@angular/http/testing';
 import { FieldVariablesService, FieldVariableParams } from './';
 import { DOTTestBed } from '../../../../test/dot-test-bed';
-import { FieldVariable } from '../content-type-fields-variables';
+import { FieldVariable } from '../content-type-fields-variables/content-type-fields-variables.component';
 
 describe('FieldVariablesService', () => {
     beforeEach(() => {

@@ -17,8 +17,7 @@ import { DragulaService } from 'ng2-dragula';
 import {
     FieldService,
     FieldDragDropService,
-    FieldPropertyService,
-    FieldVariablesService
+    FieldPropertyService
 } from './fields/service';
 import { ContentTypeFieldsAddRowModule } from './fields/content-type-fields-add-row';
 import { ContentTypeEditResolver } from './edit/content-types-edit-resolver.service';
@@ -26,7 +25,6 @@ import { ContentTypeEditResolver } from './edit/content-types-edit-resolver.serv
 import {
     ContentTypeFieldsDropZoneComponent,
     ContentTypeFieldsPropertiesFormComponent,
-    ContentTypeFieldsVariablesComponent,
     ContentTypeFieldsRowComponent,
     ContentTypeFieldsTabComponent,
     ContentTypesFieldDragabbleItemComponent,
@@ -45,7 +43,6 @@ import {
     TabViewModule,
     MultiSelectModule
 } from 'primeng/primeng';
-import { TableModule } from 'primeng/table';
 import {
     NamePropertyComponent,
     CheckboxPropertyComponent,
@@ -74,7 +71,7 @@ import { MdInputTextModule } from '@directives/md-inputtext/md-input-text.module
 import { PushPublishContentTypesDialogModule } from '@components/_common/push-publish-dialog/push-publish-dialog.module';
 import { SearchableDropDownModule } from '@components/_common/searchable-dropdown';
 import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
-import { DotActionButtonModule } from '@components/_common/dot-action-button/dot-action-button.module';
+import { DotContentTypeFieldsVariablesModule } from './fields/content-type-fields-variables/content-type-fields-variables.module';
 
 @NgModule({
     declarations: [
@@ -82,7 +79,6 @@ import { DotActionButtonModule } from '@components/_common/dot-action-button/dot
         CheckboxPropertyComponent,
         ContentTypeFieldsDropZoneComponent,
         ContentTypeFieldsPropertiesFormComponent,
-        ContentTypeFieldsVariablesComponent,
         ContentTypeFieldsRowComponent,
         ContentTypeFieldsTabComponent,
         ContentTypesEditComponent,
@@ -116,8 +112,6 @@ import { DotActionButtonModule } from '@components/_common/dot-action-button/dot
         CommonModule,
         ConfirmDialogModule,
         ContentTypesRoutingModule,
-        DotActionButtonModule,
-        TableModule,
         DialogModule,
         DotDialogModule,
         DotIconModule,
@@ -148,7 +142,8 @@ import { DotActionButtonModule } from '@components/_common/dot-action-button/dot
         DotPageSelectorModule,
         DotBaseTypeSelectorModule,
         MdInputTextModule,
-        DotAutofocusModule
+        DotAutofocusModule,
+        DotContentTypeFieldsVariablesModule
     ],
     providers: [
         ContentTypeEditResolver,
@@ -157,7 +152,6 @@ import { DotActionButtonModule } from '@components/_common/dot-action-button/dot
         DragulaService,
         FieldDragDropService,
         FieldPropertyService,
-        FieldVariablesService,
         FieldService,
         FormatDateService
     ]

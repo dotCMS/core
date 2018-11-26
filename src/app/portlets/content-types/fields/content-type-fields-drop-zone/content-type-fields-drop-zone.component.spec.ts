@@ -8,8 +8,7 @@ import {
     FieldRow,
     ContentTypeFieldsAddRowModule,
     FieldTab,
-    FieldDivider,
-    ContentTypeFieldsVariablesComponent
+    FieldDivider
 } from '../';
 import { ReactiveFormsModule } from '@angular/forms';
 import { FieldValidationMessageModule } from '@components/_common/field-validation-message/file-validation-message.module';
@@ -33,6 +32,7 @@ import { DragulaModule, DragulaService } from 'ng2-dragula';
 import * as _ from 'lodash';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { TableModule } from 'primeng/table';
+import { DotContentTypeFieldsVariablesModule } from '../content-type-fields-variables/content-type-fields-variables.module';
 
 @Component({
     selector: 'dot-content-type-fields-row',
@@ -117,7 +117,6 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
         DOTTestBed.configureTestingModule({
             declarations: [
                 ContentTypeFieldsDropZoneComponent,
-                ContentTypeFieldsVariablesComponent,
                 TestContentTypeFieldsPropertiesFormComponent,
                 TestContentTypeFieldsRowComponent,
                 TestDotContentTypeFieldsTabComponent
@@ -131,6 +130,7 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
                 ]),
                 BrowserAnimationsModule,
                 ContentTypeFieldsAddRowModule,
+                DotContentTypeFieldsVariablesModule,
                 DotDialogModule,
                 DotActionButtonModule,
                 DotIconButtonModule,
@@ -304,7 +304,6 @@ describe('Load fields and drag and drop', () => {
         DOTTestBed.configureTestingModule({
             declarations: [
                 ContentTypeFieldsDropZoneComponent,
-                ContentTypeFieldsVariablesComponent,
                 TestContentTypeFieldsRowComponent,
                 TestContentTypeFieldsPropertiesFormComponent,
                 TestDotContentTypeFieldsTabComponent,
@@ -319,6 +318,7 @@ describe('Load fields and drag and drop', () => {
                 ]),
                 DragulaModule,
                 FieldValidationMessageModule,
+                DotContentTypeFieldsVariablesModule,
                 ReactiveFormsModule,
                 BrowserAnimationsModule,
                 DotActionButtonModule,
