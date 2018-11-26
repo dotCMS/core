@@ -1,4 +1,4 @@
-import { validateRelationship } from './relationship-validator';
+import { validateRelationship } from './dot-relationship-validator';
 import { FormControl } from '@angular/forms';
 
 describe('validateRelationship', () => {

@@ -29,7 +29,7 @@ import { DotEventsService } from '@services/dot-events/dot-events.service';
 import { ContentType } from '@portlets/content-types/shared/content-type.model';
 import { MenuItem } from 'primeng/primeng';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
-import { DotEditContentTypeCacheService } from '../services/edit-content-type-cache.service';
+import { DotEditContentTypeCacheService } from '../fields/content-type-fields-properties-form/field-properties/relationships-property/services/dot-edit-content-type-cache.service';
 
 @Component({
     selector: 'dot-content-type-fields-drop-zone',

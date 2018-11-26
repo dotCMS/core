@@ -1,23 +1,23 @@
 import { Component, Input, EventEmitter, Output, OnInit, SimpleChanges, OnChanges } from '@angular/core';
 import { DotRelationshipCardinality } from '@portlets/content-types/fields/shared/dot-relationship-cardinality.model';
 import { DotMessageService } from '@services/dot-messages-service';
-import { RelationshipService } from '@portlets/content-types/fields/content-type-fields-properties-form/field-properties/relationships-property/services/relationship.service';
+import { DotRelationshipService } from '@portlets/content-types/fields/content-type-fields-properties-form/field-properties/relationships-property/services/dot-relationship.service';
 import { take } from 'rxjs/operators';
 
 @Component({
     providers: [],
     selector: 'dot-cardinality-selector',
-    templateUrl: './cardinality-selector.component.html'
+    templateUrl: './dot-cardinality-selector.component.html'
 })
-export class CardinalitySelectorComponent implements OnInit, OnChanges {
+export class DotCardinalitySelectorComponent implements OnInit, OnChanges {
     @Input()
-    cardinalityIndex: number;
+    value: number;
 
     @Input()
     disabled: boolean;
 
     @Output()
-    change: EventEmitter<DotRelationshipCardinality> = new EventEmitter();
+    change: EventEmitter<number> = new EventEmitter();
 
     cardinalities: DotRelationshipCardinality[];
 
@@ -29,9 +29,7 @@ export class CardinalitySelectorComponent implements OnInit, OnChanges {
 
     constructor(
         public dotMessageService: DotMessageService,
-        private relationshipService: RelationshipService) {
-
-    }
+        private relationshipService: DotRelationshipService) {}
 
     ngOnInit() {
         this.dotMessageService
@@ -46,25 +44,21 @@ export class CardinalitySelectorComponent implements OnInit, OnChanges {
         this.relationshipService.loadCardinalities().subscribe((cardinalities: DotRelationshipCardinality[]) => {
             this.cardinalities = cardinalities;
 
-            if (this.cardinalityIndex) {
-                this.cardinality = this.cardinalities[this.cardinalityIndex];
+            if (this.value) {
+                this.cardinality = this.cardinalities[this.value];
             }
         });
     }
 
     ngOnChanges(changes: SimpleChanges): void {
         if (changes.cardinalityIndex.currentValue) {
-            this.changeCardinality(changes.cardinalityIndex.currentValue);
+            if (this.cardinalities) {
+                this.cardinality = this.cardinalities[changes.cardinalityIndex.currentValue];
+            }
         }
     }
 
     tiggerChanged(cardinality: DotRelationshipCardinality): void {
-        this.change.next(cardinality);
-    }
-
-    private changeCardinality(cardinality: number): void {
-        if (this.cardinalities) {
-            this.cardinality = this.cardinalities[cardinality];
-        }
+        this.change.next(cardinality.id);
     }
 }

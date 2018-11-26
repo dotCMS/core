@@ -1,6 +1,6 @@
 import { DOTTestBed } from 'src/app/test/dot-test-bed';
-import { DotEditContentTypeCacheService } from './edit-content-type-cache.service';
-import { ContentType } from '../shared/content-type.model';
+import { DotEditContentTypeCacheService } from './dot-edit-content-type-cache.service';
+import { ContentType } from '../../../../../shared/content-type.model';
 
 const contentTypeMock: ContentType = {
     clazz: 'clazz',

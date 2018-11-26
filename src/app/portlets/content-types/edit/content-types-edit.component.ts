@@ -19,7 +19,7 @@ import { ResponseView } from 'dotcms-js';
 import { DotEventsService } from '@services/dot-events/dot-events.service';
 import { MenuItem } from 'primeng/primeng';
 import { Subject } from 'rxjs';
-import { DotEditContentTypeCacheService } from '../services/edit-content-type-cache.service';
+import { DotEditContentTypeCacheService } from '../fields/content-type-fields-properties-form/field-properties/relationships-property/services/dot-edit-content-type-cache.service';
 import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
 
 /**

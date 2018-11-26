@@ -9,7 +9,7 @@ import { DotRelationshipCardinality } from '../../../../shared/dot-relationship-
  * Provide method to handle with the Relationship field
  */
 @Injectable()
-export class RelationshipService {
+export class DotRelationshipService {
 
     constructor(private coreWebService: CoreWebService) {}
 

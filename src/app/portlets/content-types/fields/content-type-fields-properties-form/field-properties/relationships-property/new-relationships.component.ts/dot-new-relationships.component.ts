@@ -4,7 +4,7 @@ import { PaginatorService } from '@services/paginator';
 import { ContentType } from '@portlets/content-types/shared/content-type.model';
 import { Observable } from 'rxjs';
 import { DotContentTypeService } from '@services/dot-content-type/dot-content-type.service';
-import { DotRelationshipsPropertyValue } from '../relationships-property.component';
+import { DotRelationshipsPropertyValue } from '../dot-relationships-property.component';
 import { take } from 'rxjs/operators';
 
 @Component({
@@ -12,9 +12,9 @@ import { take } from 'rxjs/operators';
     selector: 'dot-new-relationships',
     templateUrl: './new-relationships.component.html'
 })
-export class NewRelationshipsComponent implements OnInit, OnChanges {
+export class DotNewRelationshipsComponent implements OnInit, OnChanges {
     @Input()
-    cardinalityIndex: number;
+    cardinality: number;
 
     @Input()
     velocityVar: string;

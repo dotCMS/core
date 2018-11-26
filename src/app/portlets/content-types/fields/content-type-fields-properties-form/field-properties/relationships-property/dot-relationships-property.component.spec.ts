@@ -1,4 +1,4 @@
-import { RelationshipsPropertyComponent } from './relationships-property.component';
+import { RelationshipsPropertyComponent } from './dot-relationships-property.component';
 import { ComponentFixture } from '@angular/core/testing';
 import { DebugElement, Component, Input, Output, EventEmitter } from '@angular/core';
 import { MockDotMessageService } from 'src/app/test/dot-message-service.mock';
@@ -145,7 +145,7 @@ fdescribe('RelationshipsPropertyComponent', () => {
 
             expect(radios.length).toBe(0);
             expect(de.query(By.css('dot-new-relationships'))).not.toBeUndefined();
-            expect(de.query(By.css('dot-edit-relationships '))).toBeNull();
+            expect(de.query(By.css('dot-edit-relationships'))).toBeNull();
         });
     });
 });

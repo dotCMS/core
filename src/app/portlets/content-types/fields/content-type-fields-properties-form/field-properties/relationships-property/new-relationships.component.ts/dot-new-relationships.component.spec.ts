@@ -1,5 +1,5 @@
 import { ContentType } from '@portlets/content-types/shared/content-type.model';
-import { NewRelationshipsComponent } from './new-relationships.component';
+import { DotNewRelationshipsComponent } from './dot-new-relationships.component';
 import { ComponentFixture } from '@angular/core/testing';
 import { DebugElement, Component, Input, Output, EventEmitter, Injectable, forwardRef } from '@angular/core';
 import { PaginatorService } from '@services/paginator';
@@ -7,7 +7,7 @@ import { MockDotMessageService } from 'src/app/test/dot-message-service.mock';
 import { DOTTestBed } from 'src/app/test/dot-test-bed';
 import { PaginationEvent } from '@components/_common/searchable-dropdown/component';
 import { DotMessageService } from '@services/dot-messages-service';
-import { RelationshipService } from '@portlets/content-types/fields/content-type-fields-properties-form/field-properties/relationships-property/services/relationship.service';
+import { DotRelationshipService } from '@portlets/content-types/fields/content-type-fields-properties-form/field-properties/relationships-property/services/dot-relationship.service';
 import { DotContentTypeService } from '@services/dot-content-type/dot-content-type.service';
 import { By } from '@angular/platform-browser';
 import { Observable, of } from 'rxjs';
@@ -143,7 +143,7 @@ class MockDotContentTypeService {
 
 describe('NewRelationshipsComponent', () => {
     let fixtureHostComponent: ComponentFixture<HostTestComponent>;
-    let comp: NewRelationshipsComponent;
+    let comp: DotNewRelationshipsComponent;
     let de: DebugElement;
 
     let paginatorService: PaginatorService;
@@ -157,7 +157,7 @@ describe('NewRelationshipsComponent', () => {
         DOTTestBed.configureTestingModule({
             declarations: [
                 HostTestComponent,
-                NewRelationshipsComponent,
+                DotNewRelationshipsComponent,
                 MockSearchableDropdownComponent,
                 MockCardinalitySelectorComponent
             ],
@@ -165,7 +165,7 @@ describe('NewRelationshipsComponent', () => {
             providers: [
                 { provide: DotMessageService, useValue: messageServiceMock },
                 { provide: PaginatorService, useClass: MockPaginatorService },
-                { provide: RelationshipService, useClass: MockRelationshipService },
+                { provide: DotRelationshipService, useClass: MockRelationshipService },
                 { provide: DotContentTypeService, useClass: MockDotContentTypeService },
             ]
         });
@@ -207,7 +207,7 @@ describe('NewRelationshipsComponent', () => {
             fixtureHostComponent.detectChanges();
 
             const dotSearchableDropdown = de.query(By.css('dot-searchable-dropdown'));
-            dotSearchableDropdown.componentInstance.filterChange.emit(newFilter);
+            dotSearchableDropdown.triggerEventHandler('filterChange', newFilter);
 
             expect(paginatorService.filter).toBe(newFilter);
             expect(paginatorService.getWithOffset).toHaveBeenCalledWith(0);

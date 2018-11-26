@@ -1,6 +1,10 @@
 import { Injectable } from '@angular/core';
-import { ContentType } from '../shared/content-type.model';
+import { ContentType } from '../../../../../shared/content-type.model';
 import * as _ from 'lodash';
+
+/**
+ * Store the current Content Type to Add or Edit the Relationships
+ */
 @Injectable()
 export class DotEditContentTypeCacheService {
     private currentContentType: ContentType;

@@ -8,7 +8,7 @@ import { take } from 'rxjs/operators';
 @Component({
     providers: [],
     selector: 'dot-relationships-property',
-    templateUrl: './relationships-property.component.html'
+    templateUrl: './dot-relationships-property.component.html'
 })
 export class RelationshipsPropertyComponent implements OnInit {
     readonly STATUS_NEW = 'NEW';

@@ -79,16 +79,20 @@ import { SearchableDropDownModule } from '@components/_common/searchable-dropdow
 import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
 import {
     RelationshipsPropertyComponent
-} from './fields/content-type-fields-properties-form/field-properties/relationships-property/relationships-property.component';
-import { RelationshipService } from './fields/content-type-fields-properties-form/field-properties/relationships-property/services/relationship.service';
+} from './fields/content-type-fields-properties-form/field-properties/relationships-property/dot-relationships-property.component';
+// tslint:disable-next-line:max-line-length
+import { DotRelationshipService } from './fields/content-type-fields-properties-form/field-properties/relationships-property/services/dot-relationship.service';
 import {
-    NewRelationshipsComponent
-} from './fields/content-type-fields-properties-form/field-properties/relationships-property/new-relationships.component.ts/new-relationships.component';
+    DotNewRelationshipsComponent
+// tslint:disable-next-line:max-line-length
+} from './fields/content-type-fields-properties-form/field-properties/relationships-property/new-relationships.component.ts/dot-new-relationships.component';
 import {
-    EditRelationshipsComponent
-} from './fields/content-type-fields-properties-form/field-properties/relationships-property/edit-relationship.component.ts/edit-relationships.component';
-import { DotEditContentTypeCacheService } from './services/edit-content-type-cache.service';
-import { CardinalitySelectorComponent } from './fields/content-type-fields-properties-form/field-properties/relationships-property/cardinality-selector/cardinality-selector.component';
+    DotEditRelationshipsComponent
+// tslint:disable-next-line:max-line-length
+} from './fields/content-type-fields-properties-form/field-properties/relationships-property/edit-relationship.component.ts/dot-edit-relationships.component';
+import { DotEditContentTypeCacheService } from './fields/content-type-fields-properties-form/field-properties/relationships-property/services/dot-edit-content-type-cache.service';
+// tslint:disable-next-line:max-line-length
+import { DotCardinalitySelectorComponent } from './fields/content-type-fields-properties-form/field-properties/relationships-property/cardinality-selector/dot-cardinality-selector.component';
 
 @NgModule({
     declarations: [
@@ -114,9 +118,9 @@ import { CardinalitySelectorComponent } from './fields/content-type-fields-prope
         RegexCheckPropertyComponent,
         ValuesPropertyComponent,
         RelationshipsPropertyComponent,
-        NewRelationshipsComponent,
-        CardinalitySelectorComponent,
-        EditRelationshipsComponent
+        DotNewRelationshipsComponent,
+        DotCardinalitySelectorComponent,
+        DotEditRelationshipsComponent
     ],
     entryComponents: [
         NamePropertyComponent,
@@ -179,7 +183,7 @@ import { CardinalitySelectorComponent } from './fields/content-type-fields-prope
         FieldVariablesService,
         FieldService,
         FormatDateService,
-        RelationshipService,
+        DotRelationshipService,
         DotEditContentTypeCacheService
     ]
 })

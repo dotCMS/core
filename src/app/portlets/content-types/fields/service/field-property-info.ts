@@ -10,8 +10,8 @@ import {
 } from '../content-type-fields-properties-form/field-properties';
 import { Validators } from '@angular/forms';
 import { validateDateDefaultValue } from './validators';
-import { RelationshipsPropertyComponent } from '../content-type-fields-properties-form/field-properties/relationships-property/relationships-property.component';
-import { validateRelationship } from '../content-type-fields-properties-form/field-properties/relationships-property/services/validators/relationship-validator';
+import { RelationshipsPropertyComponent } from '../content-type-fields-properties-form/field-properties/relationships-property/dot-relationships-property.component';
+import { validateRelationship } from '../content-type-fields-properties-form/field-properties/relationships-property/services/validators/dot-relationship-validator';
 
 export const PROPERTY_INFO = {
     categories: {

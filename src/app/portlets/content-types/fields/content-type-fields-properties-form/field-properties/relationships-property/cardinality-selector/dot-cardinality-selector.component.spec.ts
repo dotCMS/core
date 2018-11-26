@@ -1,11 +1,11 @@
 import { Component, Input, Output, EventEmitter, Injectable, DebugElement } from '@angular/core';
 import { DOTTestBed } from 'src/app/test/dot-test-bed';
-import { CardinalitySelectorComponent } from './cardinality-selector.component';
+import { DotCardinalitySelectorComponent } from './cardinality-selector.component';
 import { DotMessageService } from '@services/dot-messages-service';
 import { MockDotMessageService } from 'src/app/test/dot-message-service.mock';
 import { DotRelationshipCardinality } from '@portlets/content-types/fields/shared/dot-relationship-cardinality.model';
 import { Observable, of } from 'rxjs';
-import { RelationshipService } from '@portlets/content-types/fields/content-type-fields-properties-form/field-properties/relationships-property/services/relationship.service';
+import { DotRelationshipService } from '@portlets/content-types/fields/content-type-fields-properties-form/field-properties/relationships-property/services/dot-relationship.service';
 import { ComponentFixture } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
@@ -50,7 +50,7 @@ class MockRelationshipService {
 describe('CardinalitySelectorComponent', () => {
 
     let fixtureHostComponent: ComponentFixture<HostTestComponent>;
-    let comp: CardinalitySelectorComponent;
+    let comp: DotCardinalitySelectorComponent;
     let de: DebugElement;
 
     const messageServiceMock = new MockDotMessageService({
@@ -60,13 +60,13 @@ describe('CardinalitySelectorComponent', () => {
     beforeEach(() => {
         DOTTestBed.configureTestingModule({
             declarations: [
-                CardinalitySelectorComponent,
+                DotCardinalitySelectorComponent,
                 HostTestComponent
             ],
             imports: [],
             providers: [
                 { provide: DotMessageService, useValue: messageServiceMock },
-                { provide: RelationshipService, useClass: MockRelationshipService }
+                { provide: DotRelationshipService, useClass: MockRelationshipService }
             ]
         });
 

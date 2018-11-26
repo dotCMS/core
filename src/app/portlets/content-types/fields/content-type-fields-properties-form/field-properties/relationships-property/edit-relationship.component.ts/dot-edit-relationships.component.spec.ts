@@ -1,12 +1,12 @@
 import { DOTTestBed } from 'src/app/test/dot-test-bed';
-import { EditRelationshipsComponent } from './edit-relationships.component';
+import { DotEditRelationshipsComponent } from './edit-relationships.component';
 import { Component, Input, Output, EventEmitter, Injectable, DebugElement } from '@angular/core';
 import { DotMessageService } from '@services/dot-messages-service';
 import { PaginationEvent } from '@components/_common/searchable-dropdown/component';
 import { MockDotMessageService } from 'src/app/test/dot-message-service.mock';
-import { DotEditContentTypeCacheService } from '@portlets/content-types/services/edit-content-type-cache.service';
+import { DotEditContentTypeCacheService } from '@portlets/content-types/fields/content-type-fields-properties-form/field-properties/relationships-property/services/dot-edit-content-type-cache.service';
 import { PaginatorService } from '@services/paginator';
-import { RelationshipService } from '@portlets/content-types/fields/content-type-fields-properties-form/field-properties/relationships-property/services/relationship.service';
+import { DotRelationshipService } from '@portlets/content-types/fields/content-type-fields-properties-form/field-properties/relationships-property/services/dot-relationship.service';
 import { ComponentFixture } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { Observable, of } from 'rxjs';
@@ -87,7 +87,7 @@ class MockRelationshipService {
     }
 }
 
-describe('EditRelationshipsComponent', () => {
+describe('DotEditRelationshipsComponent', () => {
     const contentTypeMock: ContentType = {
         clazz: 'clazz',
         defaultType: false,
@@ -100,8 +100,8 @@ describe('EditRelationshipsComponent', () => {
         id: '1',
     };
 
-    let comp: EditRelationshipsComponent;
-    let fixture: ComponentFixture<EditRelationshipsComponent>;
+    let comp: DotEditRelationshipsComponent;
+    let fixture: ComponentFixture<DotEditRelationshipsComponent>;
     let de: DebugElement;
 
     let paginatorService: PaginatorService;
@@ -115,7 +115,7 @@ describe('EditRelationshipsComponent', () => {
     beforeEach(() => {
         DOTTestBed.configureTestingModule({
             declarations: [
-                EditRelationshipsComponent,
+                DotEditRelationshipsComponent,
                 MockSearchableDropdownComponent
             ],
             imports: [],
@@ -123,11 +123,11 @@ describe('EditRelationshipsComponent', () => {
                 DotEditContentTypeCacheService,
                 { provide: DotMessageService, useValue: messageServiceMock },
                 { provide: PaginatorService, useClass: MockPaginatorService },
-                { provide: RelationshipService, useClass: MockRelationshipService }
+                { provide: DotRelationshipService, useClass: MockRelationshipService }
             ]
         });
 
-        fixture = DOTTestBed.createComponent(EditRelationshipsComponent);
+        fixture = DOTTestBed.createComponent(DotEditRelationshipsComponent);
         comp = fixture.componentInstance;
         de = fixture.debugElement;
 
@@ -174,11 +174,11 @@ describe('EditRelationshipsComponent', () => {
 
         expect(dotSearchableDropdown.componentInstance.data).toEqual([
             {
-                label: 'a   .   One to one',
+                label: 'a.One to one',
                 relationship: mockRelationships[0]
             },
             {
-                label: 'b   .   Many to many',
+                label: 'b.Many to many',
                 relationship: mockRelationships[1]
             }
         ]);
@@ -219,7 +219,7 @@ describe('EditRelationshipsComponent', () => {
         fixture.detectChanges();
 
         const dotSearchableDropdown = de.query(By.css('dot-searchable-dropdown'));
-        dotSearchableDropdown.componentInstance.change.emit({
+        dotSearchableDropdown.triggerEventHandler('change', {
             relationship: mockRelationships[0]
         });
 

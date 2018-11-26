@@ -10,7 +10,8 @@ import {
     forwardRef,
     SimpleChanges,
     OnChanges,
-    OnInit
+    OnInit,
+    SimpleChange
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { DotMessageService } from '@services/dot-messages-service';
@@ -89,7 +90,7 @@ export class SearchableDropdownComponent implements ControlValueAccessor, OnChan
     propagateChange = (_: any) => {};
 
     ngOnChanges(change: SimpleChanges): void {
-        if (this.usePlaceholder(change)) {
+        if (this.usePlaceholder(change.placeholder)) {
             this.valueString = change.placeholder.currentValue;
         }
     }
@@ -203,7 +204,7 @@ export class SearchableDropdownComponent implements ControlValueAccessor, OnChan
     }
 
     /**
-     * disabled the component, for more information see:
+     * Disabled the component, for more information see:
      * https://angular.io/api/forms/ControlValueAccessor#setdisabledstate
      * @param isDisabled if it is true the component is disabled
      */
@@ -211,12 +212,16 @@ export class SearchableDropdownComponent implements ControlValueAccessor, OnChan
         this.disabled = isDisabled;
     }
 
+    /**
+     * Return the component's label
+     * @returns compoenent's label
+     */
     getLabel(): string {
         return this.persistentPlaceholder ? this.placeholder : this.valueString;
     }
 
-    private usePlaceholder(change: SimpleChanges): boolean {
-        return change.placeholder && change.placeholder.currentValue && !this.value;
+    private usePlaceholder(placeholderChange: SimpleChange): boolean {
+        return placeholderChange && placeholderChange.currentValue && !this.value;
     }
 }
 
