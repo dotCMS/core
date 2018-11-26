@@ -60,20 +60,22 @@ public class ContentHelper {
      * @param contentlet {@link Contentlet} original contentlet to hydrate, won't be modified.
      * @return Contentlet returns a contentlet, if there is something to add will create a new instance based on the current one in the parameter and the new attributes, otherwise will the same instance
      */
-    public Contentlet hydrateContentLet (final Contentlet contentlet) {
+    public Contentlet hydrateContentLet(final Contentlet contentlet) {
 
         Contentlet newContentlet = contentlet;
-        if (null != contentlet && !contentlet.getMap().containsKey(HTMLPageAssetAPI.URL_FIELD)) {
 
-            final String url = this.getUrl(contentlet);
-            if (null != url) {
-                // making a copy to avoid issues on modifying cache objects.
-                newContentlet = new Contentlet();
-                newContentlet.getMap().putAll(contentlet.getMap());
-                // Add any additional property
-                newContentlet.getMap().put(HTMLPageAssetAPI.URL_FIELD, url);
-                //Remove any unwanted existing property
-                newContentlet.getMap().remove(Contentlet.NULL_PROPERTIES);
+        if (null != contentlet) {
+            // making a copy to avoid issues on modifying cache objects.
+            newContentlet = new Contentlet();
+            newContentlet.getMap().putAll(contentlet.getMap());
+            //Remove any unwanted existing property.
+            newContentlet.getMap().remove(Contentlet.NULL_PROPERTIES);
+            //Add any additional desired property.
+            if (!contentlet.getMap().containsKey(HTMLPageAssetAPI.URL_FIELD)) {
+                final String url = this.getUrl(contentlet);
+                if (null != url) {
+                    newContentlet.getMap().put(HTMLPageAssetAPI.URL_FIELD, url);
+                }
             }
         }
 
