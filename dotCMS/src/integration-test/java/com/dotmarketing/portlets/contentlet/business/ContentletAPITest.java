@@ -3970,7 +3970,8 @@ public class ContentletAPITest extends ContentletBaseTest {
     @Test
     public void testCheckin1_ExistingContentWithChildAndParentRels_NullRels_ShouldKeepExistingRels()
         throws DotDataException, DotSecurityException {
-        Contentlet blogContent = null;
+        Contentlet blogContent    = null;
+        Relationship relationship = null;
         List<Contentlet> relatedContent = null;
 
         try {
@@ -3978,7 +3979,7 @@ public class ContentletAPITest extends ContentletBaseTest {
             blogContent = getBlogContent();
 
             final ContentletRelationships relationships = getACoupleOfParentAndChildrenSelfJoinRelationships(blogContent);
-            final Relationship relationship = relationships.getRelationshipsRecords().get(0).getRelationship();
+            relationship = relationships.getRelationshipsRecords().get(0).getRelationship();
             relatedContent = relationships.getRelationshipsRecords().get(0).getRecords();
 
             final List<Category> categories = getACoupleOfCategories();
@@ -4017,6 +4018,10 @@ public class ContentletAPITest extends ContentletBaseTest {
                         throw new RuntimeException(e);
                     }
                 });
+            }
+
+            if (relationship != null && relationship.getInode() != null) {
+                relationshipAPI.delete(relationship);
             }
         }
     }
