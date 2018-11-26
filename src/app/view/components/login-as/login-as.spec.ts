@@ -1,7 +1,7 @@
 import {
     throwError as observableThrowError,
     of as observableOf,
-    from as observableFrom,
+    from as observableFrom
 } from 'rxjs';
 import { mockUser, LoginServiceMock } from './../../../test/login-service.mock';
 import { By } from '@angular/platform-browser';
@@ -34,7 +34,7 @@ import { DotMenuService } from '@services/dot-menu.service';
             provide: NG_VALUE_ACCESSOR,
             useExisting: forwardRef(() => DotSearchableDropdownMockComponent)
         }
-    ],
+    ]
 })
 class DotSearchableDropdownMockComponent {
     @Input()
@@ -116,7 +116,8 @@ describe('LoginAsComponent', () => {
             cancel: 'cancel',
             'login-as': 'login-as',
             'loginas.select.loginas.user': 'loginas.select.loginas.user',
-            password: 'password'
+            password: 'password',
+            'loginas.error.wrong-credentials': 'wrong password'
         });
 
         DOTTestBed.configureTestingModule({
@@ -144,10 +145,9 @@ describe('LoginAsComponent', () => {
                 },
                 DotNavigationService,
                 DotMenuService,
-                PaginatorService,
+                PaginatorService
             ]
         });
-
 
         fixture = DOTTestBed.createComponent(LoginAsComponent);
         comp = fixture.componentInstance;
@@ -160,7 +160,6 @@ describe('LoginAsComponent', () => {
         dotNavigationService = de.injector.get(DotNavigationService);
 
         spyOn(paginatorService, 'getWithOffset').and.returnValue(observableOf([...users]));
-
     }));
 
     afterAll(() => {
@@ -234,9 +233,11 @@ describe('LoginAsComponent', () => {
     });
 
     it('should reload the page on login as', () => {
-        spyOn(dotNavigationService, 'goToFirstPortlet').and.returnValue(new Promise((resolve) => {
-            resolve(true);
-        }));
+        spyOn(dotNavigationService, 'goToFirstPortlet').and.returnValue(
+            new Promise((resolve) => {
+                resolve(true);
+            })
+        );
         spyOn(loginService, 'logoutAs').and.callThrough();
         spyOn(locationService, 'reload');
 
@@ -252,5 +253,27 @@ describe('LoginAsComponent', () => {
             expect(dotNavigationService.goToFirstPortlet).toHaveBeenCalledTimes(1);
             expect(locationService.reload).toHaveBeenCalledTimes(1);
         });
+    });
+
+    it('should show error message', () => {
+        spyOn(loginService, 'loginAs').and.returnValue(
+            observableThrowError({ })
+        );
+
+        comp.visible = true;
+        comp.needPassword = true;
+        fixture.detectChanges();
+
+        let error: DebugElement;
+        error = de.query(By.css('.login-as__error-message'));
+        expect(error).toBeFalsy();
+
+        const form: DebugElement = de.query(By.css('form'));
+        form.triggerEventHandler('ngSubmit', {});
+
+        fixture.detectChanges();
+
+        error = de.query(By.css('.login-as__error-message'));
+        expect(error.nativeElement.textContent).toBe('wrong password');
     });
 });
