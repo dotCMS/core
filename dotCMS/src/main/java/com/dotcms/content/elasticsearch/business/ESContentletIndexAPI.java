@@ -5,6 +5,7 @@ import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
 import com.dotcms.content.elasticsearch.util.ESClient;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.tika.TikaUtils;
 import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.business.APILocator;
@@ -61,9 +62,11 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 	private static final String TIMEOUT_INDEX_WAIT_FOR         = "TIMEOUT_INDEX_WAIT_FOR";
 	private static final int    TIME_INDEX_FORCE_DEFAULT 	   = 30000;
 	private static final String TIMEOUT_INDEX_FORCE      	   = "TIMEOUT_INDEX_FORCE";
+
+	private static final String SELECT_CONTENTLET_VERSION_INFO = "select working_inode,live_inode from contentlet_version_info where identifier=?";
 	private static DistributedJournalAPI<String> journalAPI = null;
-	private static final ESIndexAPI esIndexApi       = new ESIndexAPI();
-    private static final ESMappingAPIImpl mappingAPI = new ESMappingAPIImpl();
+	private static final ESIndexAPI              esIndexApi = new ESIndexAPI();
+    private static final ESMappingAPIImpl        mappingAPI = new ESMappingAPIImpl();
 
     public static final SimpleDateFormat timestampFormatter=new SimpleDateFormat("yyyyMMddHHmmss");
 
@@ -318,30 +321,30 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 	}
 
 	@WrapInTransaction
-	public void addContentToIndex(final Contentlet content,
+	public void addContentToIndex(final Contentlet parentContenlet,
 								  final boolean includeDependencies,
 								  final boolean indexBeforeCommit,
 								  final boolean reindexOnly,
 								  final BulkRequestBuilder bulk) throws DotHibernateException {
 
-	    if (null == content || !UtilMethods.isSet(content.getIdentifier())) {
+	    if (null == parentContenlet || !UtilMethods.isSet(parentContenlet.getIdentifier())) {
 	    	return;
 		}
 
         // http://jira.dotmarketing.net/browse/DOTCMS-6886
         // check for related content to reindex
 		List<Contentlet> contentDependencies  = null;
-		final boolean    indexIsNotDefer   	  = IndexPolicy.DEFER != content.getIndexPolicy();
+		final boolean    indexIsNotDefer   	  = IndexPolicy.DEFER != parentContenlet.getIndexPolicy();
         final List<Contentlet> contentToIndex = new ArrayList<>();
 
-        contentToIndex.add(content);
+        contentToIndex.add(parentContenlet);
 
 		try {
 
 			if(includeDependencies){
 
-				final List<Contentlet> dependencies  = loadDeps(content);
-				dependencies.forEach(contentlet -> contentlet.setIndexPolicy(content.getIndexPolicyDependencies()));
+				final List<Contentlet> dependencies  = loadDeps(parentContenlet);
+				dependencies.forEach(contentlet -> contentlet.setIndexPolicy(parentContenlet.getIndexPolicyDependencies()));
 				if (indexIsNotDefer) {
 					contentDependencies = new ArrayList<>(dependencies);
 				} else {
@@ -353,7 +356,7 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 
 				if (indexIsNotDefer) {
 
-					this.handleIndexNotDefer(content, reindexOnly, bulk, contentDependencies, contentToIndex, false);
+					this.handleIndexNotDefer(parentContenlet, reindexOnly, bulk, contentDependencies, contentToIndex, false);
 				} else {
 
 					this.indexContentList(contentToIndex, bulk, reindexOnly);
@@ -362,11 +365,11 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 
 				if (indexIsNotDefer) {
 
-					this.handleIndexNotDefer(content, reindexOnly, bulk, contentDependencies, contentToIndex, true);
+					this.handleIndexNotDefer(parentContenlet, reindexOnly, bulk, contentDependencies, contentToIndex, true);
 				} else {
 					// add a commit listener to index the contentlet if the entire
 					// transaction finish clean
-					HibernateUtil.addCommitListener(content.getInode() + ReindexRunnable.Action.ADDING,
+					HibernateUtil.addCommitListener(parentContenlet.getInode() + ReindexRunnable.Action.ADDING,
 							new AddReindexRunnable(contentToIndex, ReindexRunnable.Action.ADDING, bulk, reindexOnly));
 				}
 			}
@@ -571,46 +574,62 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 		boolean alwaysRegenerateMetadata = Config
 				.getBooleanProperty("always.regenerate.metadata.on.reindex", false);
 
-		for(Contentlet con : contentToIndexSet) {
-            String id=con.getIdentifier()+"_"+con.getLanguageId();
-            IndiciesInfo info=APILocator.getIndiciesAPI().loadIndicies();
-            Gson gson=new Gson(); // todo why do we create a new Gson everytime
-            String mapping=null;
+		for(final Contentlet contentlet : contentToIndexSet) {
+
+            final String id=contentlet.getIdentifier()+"_"+contentlet.getLanguageId();
+			Logger.debug(this, ()->"\n*********----------- Indexing : " + Thread.currentThread().getName()
+					+ ", id: " + contentlet.getIdentifier() + ", identityHashCode: " + System.identityHashCode(contentlet));
+			Logger.debug(this, ()->"*********-----------  " + DbConnectionFactory.getConnection());
+			Logger.debug(this, ()->"*********-----------  " + ExceptionUtil.getCurrentStackTraceAsString(Config.getIntProperty("stacktracelimit", 10)) + "\n");
+
+			final IndiciesInfo info = APILocator.getIndiciesAPI().loadIndicies();
+			final Gson gson         = new Gson(); // todo why do we create a new Gson everytime
+            String mapping          = null;
+
             try {
 
-				if (con.isLive() || con.isWorking()) {
+				if (contentlet.isLive() || contentlet.isWorking()) {
 					if (alwaysRegenerateMetadata) {
-						new TikaUtils().generateMetaData(con, true);
+						new TikaUtils().generateMetaData(contentlet, true);
 					} else if (regenerateMissingMetadata) {
-						new TikaUtils().generateMetaData(con);
+						new TikaUtils().generateMetaData(contentlet);
 					}
 				}
 
-				if (con.isWorking()) {
-                    mapping=gson.toJson(mappingAPI.toMap(con));
+				if (contentlet.isWorking()) {
+
+                    mapping = gson.toJson(mappingAPI.toMap(contentlet));
                     
-                    if(!reindexOnly)
-                        req.add(new IndexRequest(info.working, "content", id)
-                                    .source(mapping, XContentType.JSON));
-                    if(info.reindex_working!=null)
-                        req.add(new IndexRequest(info.reindex_working, "content", id)
-                                    .source(mapping, XContentType.JSON));
+                    if (!reindexOnly) {
+						req.add(new IndexRequest(info.working, "content", id)
+								.source(mapping, XContentType.JSON));
+					}
+
+                    if (info.reindex_working!=null) {
+						req.add(new IndexRequest(info.reindex_working, "content", id)
+								.source(mapping, XContentType.JSON));
+					}
                 }
     
-                if(con.isLive()) {
-                    if(mapping==null)
-                        mapping=gson.toJson(mappingAPI.toMap(con));
+                if (contentlet.isLive()) {
+                    if(mapping==null) {
+						mapping = gson.toJson(mappingAPI.toMap(contentlet));
+					}
                     
-                    if(!reindexOnly)
-                        req.add(new IndexRequest(info.live, "content", id)
-                                .source(mapping, XContentType.JSON));
-                    if(info.reindex_live!=null)
-                        req.add(new IndexRequest(info.reindex_live, "content", id)
-                                .source(mapping, XContentType.JSON));
+                    if(!reindexOnly) {
+						req.add(new IndexRequest(info.live, "content", id)
+								.source(mapping, XContentType.JSON));
+					}
+
+                    if(info.reindex_live!=null) {
+						req.add(new IndexRequest(info.reindex_live, "content", id)
+								.source(mapping, XContentType.JSON));
+					}
                 }
-            }
-            catch(DotMappingException ex) {
-				Logger.error(this, "Can't get a mapping for contentlet with id_lang:" + id + " Content data: " + con.getMap(), ex);
+
+                contentlet.markAsReindexed();
+            } catch(DotMappingException ex) {
+				Logger.error(this, "Can't get a mapping for contentlet with id_lang:" + id + " Content data: " + contentlet.getMap(), ex);
 				throw ex;
             }
         }
@@ -619,32 +638,31 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 
 	@CloseDBIfOpened
 	@SuppressWarnings("unchecked")
-	public List<Contentlet> loadDeps(Contentlet content) throws DotDataException, DotSecurityException {
-	    List<Contentlet> contentToIndex=new ArrayList<Contentlet>();
-	    List<String> depsIdentifiers=mappingAPI.dependenciesLeftToReindex(content);
-        for(String ident : depsIdentifiers) {
+	public List<Contentlet> loadDeps(final Contentlet parentContentlet) throws DotDataException, DotSecurityException {
+
+	    final List<Contentlet> contentToIndex = new ArrayList<Contentlet>();
+		final List<String> depsIdentifiers    = this.mappingAPI.dependenciesLeftToReindex(parentContentlet);
+        for(final String identifier : depsIdentifiers) {
+
             // get working and live version for all languages based on the identifier
-//            String sql = "select distinct inode from contentlet join contentlet_version_info " +
-//                    " on (inode=live_inode or inode=working_inode) and contentlet.identifier=?";
-            String sql = "select working_inode,live_inode from contentlet_version_info where identifier=?";
-    	    
-            DotConnect dc = new DotConnect();
-            dc.setSQL(sql);
-            dc.addParam(ident);
-            List<Map<String,String>> ret = dc.loadResults();
-            List<String> inodes = new ArrayList<String>(); 
-            for(Map<String,String> m : ret) {
-            	String workingInode = m.get("working_inode");
-            	String liveInode = m.get("live_inode");
+            final List<Map<String,String>> versionInfoMapResults =
+					new DotConnect().setSQL(SELECT_CONTENTLET_VERSION_INFO).addParam(identifier).loadResults();
+            final List<String> inodes = new ArrayList<>();
+            for(final Map<String,String> versionInfoMap : versionInfoMapResults) {
+
+            	final String workingInode = versionInfoMap.get("working_inode");
+				final String liveInode    = versionInfoMap.get("live_inode");
             	inodes.add(workingInode);
             	if(UtilMethods.isSet(liveInode) && !workingInode.equals(liveInode)){
             		inodes.add(liveInode);
             	}
             }
             
-            for(String inode : inodes) {
-                Contentlet con=APILocator.getContentletAPI().find(inode, APILocator.getUserAPI().getSystemUser(), false);
-                contentToIndex.add(con);
+            for(final String inode : inodes) {
+
+                final Contentlet contentlet = APILocator.getContentletAPI()
+						.find(inode, APILocator.getUserAPI().getSystemUser(), false);
+                contentToIndex.add(contentlet);
             }
         }
         return contentToIndex;
