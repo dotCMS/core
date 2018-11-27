@@ -49,6 +49,10 @@
 		z-index:4;
 	}
 
+    #ulNav #selectHostDiv + li {
+        display: none;
+    }
+
 </style>
 <script type="text/javascript" src="/dwr/interface/CategoryAjax.js"></script>
 <script type="text/javascript">
