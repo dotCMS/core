@@ -267,7 +267,7 @@ describe('NewRelationshipsComponent', () => {
             const dotCardinalitySelector = de.query(By.css('dot-cardinality-selector'));
             expect(dotCardinalitySelector).not.toBeUndefined();
 
-            expect(dotCardinalitySelector.componentInstance.cardinalityIndex).toEqual(comp.cardinality);
+            expect(dotCardinalitySelector.componentInstance.value).toEqual(comp.cardinality);
         });
 
         it('should tigger change event when cardinality changed', (done) => {
