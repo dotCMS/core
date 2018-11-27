@@ -7,11 +7,11 @@ import { MockDotMessageService } from 'src/app/test/dot-message-service.mock';
 import { DOTTestBed } from 'src/app/test/dot-test-bed';
 import { PaginationEvent } from '@components/_common/searchable-dropdown/component';
 import { DotMessageService } from '@services/dot-messages-service';
-import { DotRelationshipService } from '@portlets/content-types/fields/content-type-fields-properties-form/field-properties/relationships-property/services/dot-relationship.service';
+import { DotRelationshipService } from '@portlets/content-types/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/services/dot-relationship.service';
 import { DotContentTypeService } from '@services/dot-content-type/dot-content-type.service';
 import { By } from '@angular/platform-browser';
 import { Observable, of } from 'rxjs';
-import { DotRelationshipCardinality } from '@portlets/content-types/fields/shared/dot-relationship-cardinality.model';
+import { DotRelationshipCardinality } from '@portlets/content-types/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/model/dot-relationship-cardinality.model';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
 const cardinalities = [

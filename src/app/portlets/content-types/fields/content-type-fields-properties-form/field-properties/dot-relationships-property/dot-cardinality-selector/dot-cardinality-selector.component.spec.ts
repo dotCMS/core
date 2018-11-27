@@ -3,9 +3,9 @@ import { DOTTestBed } from 'src/app/test/dot-test-bed';
 import { DotCardinalitySelectorComponent } from './dot-cardinality-selector.component';
 import { DotMessageService } from '@services/dot-messages-service';
 import { MockDotMessageService } from 'src/app/test/dot-message-service.mock';
-import { DotRelationshipCardinality } from '@portlets/content-types/fields/shared/dot-relationship-cardinality.model';
+import { DotRelationshipCardinality } from '@portlets/content-types/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/model/dot-relationship-cardinality.model';
 import { Observable, of } from 'rxjs';
-import { DotRelationshipService } from '@portlets/content-types/fields/content-type-fields-properties-form/field-properties/relationships-property/services/dot-relationship.service';
+import { DotRelationshipService } from '@portlets/content-types/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/services/dot-relationship.service';
 import { ComponentFixture } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 

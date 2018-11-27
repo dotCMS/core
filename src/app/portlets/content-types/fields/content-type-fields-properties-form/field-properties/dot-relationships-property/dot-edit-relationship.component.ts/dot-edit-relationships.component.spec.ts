@@ -4,13 +4,13 @@ import { Component, Input, Output, EventEmitter, Injectable, DebugElement } from
 import { DotMessageService } from '@services/dot-messages-service';
 import { PaginationEvent } from '@components/_common/searchable-dropdown/component';
 import { MockDotMessageService } from 'src/app/test/dot-message-service.mock';
-import { DotEditContentTypeCacheService } from '@portlets/content-types/fields/content-type-fields-properties-form/field-properties/relationships-property/services/dot-edit-content-type-cache.service';
+import { DotEditContentTypeCacheService } from '@portlets/content-types/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/services/dot-edit-content-type-cache.service';
 import { PaginatorService } from '@services/paginator';
-import { DotRelationshipService } from '@portlets/content-types/fields/content-type-fields-properties-form/field-properties/relationships-property/services/dot-relationship.service';
+import { DotRelationshipService } from '@portlets/content-types/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/services/dot-relationship.service';
 import { ComponentFixture } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { Observable, of } from 'rxjs';
-import { DotRelationshipCardinality } from '@portlets/content-types/fields/shared/dot-relationship-cardinality.model';
+import { DotRelationshipCardinality } from '@portlets/content-types/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/model/dot-relationship-cardinality.model';
 import { ContentType } from '@portlets/content-types/shared/content-type.model';
 
 const mockRelationships = [

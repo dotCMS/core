@@ -1,6 +1,6 @@
 import { DotRelationshipsPropertyComponent } from './dot-relationships-property.component';
 import { DotNewRelationshipsComponent } from './new-relationships.component.ts/dot-new-relationships.component';
-import { DotCardinalitySelectorComponent } from './cardinality-selector/dot-cardinality-selector.component';
+import { DotCardinalitySelectorComponent } from './dot-cardinality-selector/dot-cardinality-selector.component';
 import { DotEditRelationshipsComponent } from './edit-relationship.component.ts/dot-edit-relationships.component';
 import { DotRelationshipService } from './services/dot-relationship.service';
 import { DotEditContentTypeCacheService } from './services/dot-edit-content-type-cache.service';
@@ -35,4 +35,4 @@ import { SearchableDropDownModule } from '@components/_common/searchable-dropdow
         DotEditContentTypeCacheService
     ]
 })
-export class RelationshipsModule {}
+export class DotRelationshipsModule {}

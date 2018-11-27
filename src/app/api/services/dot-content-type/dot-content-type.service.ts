@@ -28,10 +28,10 @@ export class DotContentTypeService {
     }
 
     /**
-     * Get the content types from the endpoint
+     *Get the content types from the endpoint
      *
-     * @returns Observable<StructureTypeView[]>
-     * @memberof ContentletService
+     * @returns {Observable<StructureTypeView[]>}
+     * @memberof DotContentTypeService
      */
     getContentTypes(): Observable<StructureTypeView[]> {
         return this.coreWebService

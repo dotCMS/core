@@ -1,4 +1,4 @@
-<div *ngIf="!editing">    
+<ng-container *ngIf="!editing">    
     <p-radioButton [label]="i18nMessages['contenttypes.field.properties.relationship.new.label']"
                 [value]="STATUS_NEW"
                 [(ngModel)]="status"
@@ -10,7 +10,7 @@
                 [(ngModel)]="status"
                 (click)="clean()">
     </p-radioButton>
-</div>
+</ng-container>
 
 <dot-new-relationships *ngIf="status === STATUS_NEW;else existing"
                         [velocityVar]="group.get(property.name).value.velocityVar"

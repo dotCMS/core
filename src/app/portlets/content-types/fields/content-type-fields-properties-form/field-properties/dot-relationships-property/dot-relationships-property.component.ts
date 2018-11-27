@@ -5,6 +5,14 @@ import { FormGroup } from '@angular/forms';
 import * as _ from 'lodash';
 import { take } from 'rxjs/operators';
 
+
+/**
+ *Component for relationships property field
+ *
+ * @export
+ * @class DotRelationshipsPropertyComponent
+ * @implements {OnInit}
+ */
 @Component({
     providers: [],
     selector: 'dot-relationships-property',
@@ -57,23 +65,29 @@ export class DotRelationshipsPropertyComponent implements OnInit {
     }
 
     /**
-     * Handle a change in the relationships property
-     * @param event
+     *Handle a change in the relationships property
+     *
+     * @param {DotRelationshipsPropertyValue} value
+     * @memberof DotRelationshipsPropertyComponent
      */
     handleChange(value: DotRelationshipsPropertyValue): void {
         this.group.get(this.property.name).setValue(value);
     }
 
     /**
-     * Clean the relationships property's value
+     *Clean the relationships property's value
+     *
+     * @memberof DotRelationshipsPropertyComponent
      */
     clean(): void {
         this.group.get(this.property.name).setValue(_.cloneDeep(this.beforeValue));
     }
 
     /**
-     * Return the validation error message according with the component's state.
-     * @returns validation error message
+     *Return the validation error message according with the component's state.
+     *
+     * @returns {string}
+     * @memberof DotRelationshipsPropertyComponent
      */
     getValidationErrorMessage(): string {
         return this.status === this.STATUS_NEW ?

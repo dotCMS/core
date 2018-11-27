@@ -77,7 +77,9 @@ import { MdInputTextModule } from '@directives/md-inputtext/md-input-text.module
 import { PushPublishContentTypesDialogModule } from '@components/_common/push-publish-dialog/push-publish-dialog.module';
 import { SearchableDropDownModule } from '@components/_common/searchable-dropdown';
 import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
-import { RelationshipsModule } from './fields/content-type-fields-properties-form/field-properties/relationships-property/relationships.module';
+import {
+    DotRelationshipsModule
+} from './fields/content-type-fields-properties-form/field-properties/dot-relationships-property/dot-relationships.module';
 
 @NgModule({
     declarations: [
@@ -152,7 +154,7 @@ import { RelationshipsModule } from './fields/content-type-fields-properties-for
         DotBaseTypeSelectorModule,
         MdInputTextModule,
         DotAutofocusModule,
-        RelationshipsModule
+        DotRelationshipsModule
     ],
     providers: [
         ContentTypeEditResolver,

@@ -68,6 +68,8 @@ export class DotNewRelationshipsComponent implements OnInit, OnChanges {
     /**
      * Trigger a change event, it send a object with the current content type's variable and
      * the current candinality's index.
+     *
+     * @memberof DotNewRelationshipsComponent
      */
     triggerChanged(): void {
         this.change.next({
@@ -77,8 +79,10 @@ export class DotNewRelationshipsComponent implements OnInit, OnChanges {
     }
 
     /**
-     * Call when the selected cardinality changed
-     * @param cardinalityIndex selected cardinality index
+     *Call when the selected cardinality changed
+     *
+     * @param {number} cardinalityIndex selected cardinality index
+     * @memberof DotNewRelationshipsComponent
      */
     cardinalityChanged(cardinalityIndex: number): void {
         this.currentCardinalityIndex = cardinalityIndex;
@@ -86,9 +90,11 @@ export class DotNewRelationshipsComponent implements OnInit, OnChanges {
     }
 
     /**
-     * Load content types by pagination
-     * @param filter content types's filter
-     * @param offset pagination index
+     *Load content types by pagination
+     *
+     * @param {string} [filter=''] content types's filter
+     * @param {number} [offset=0] pagination index
+     * @memberof DotNewRelationshipsComponent
      */
     getContentTypeList(filter = '', offset = 0): void {
         this.paginatorService.filter = filter;

@@ -205,16 +205,20 @@ export class SearchableDropdownComponent implements ControlValueAccessor, OnChan
 
     /**
      * Disabled the component, for more information see:
-     * https://angular.io/api/forms/ControlValueAccessor#setdisabledstate
-     * @param isDisabled if it is true the component is disabled
+     * {@link https://angular.io/api/forms/ControlValueAccessor#setdisabledstate}
+     *
+     * @param {boolean} isDisabled if it is true the component is disabled
+     * @memberof SearchableDropdownComponent
      */
     setDisabledState(isDisabled: boolean): void {
         this.disabled = isDisabled;
     }
 
     /**
-     * Return the component's label
-     * @returns compoenent's label
+     *Return the component's label
+     *
+     * @returns {string} compoenent's label
+     * @memberof SearchableDropdownComponent
      */
     getLabel(): string {
         return this.persistentPlaceholder ? this.placeholder : this.valueString;

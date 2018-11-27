@@ -1,9 +1,18 @@
 import { Component, Input, EventEmitter, Output, OnInit, SimpleChanges, OnChanges } from '@angular/core';
-import { DotRelationshipCardinality } from '@portlets/content-types/fields/shared/dot-relationship-cardinality.model';
+import { DotRelationshipCardinality } from '@portlets/content-types/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/model/dot-relationship-cardinality.model';
 import { DotMessageService } from '@services/dot-messages-service';
-import { DotRelationshipService } from '@portlets/content-types/fields/content-type-fields-properties-form/field-properties/relationships-property/services/dot-relationship.service';
+import { DotRelationshipService } from '@portlets/content-types/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/services/dot-relationship.service';
 import { take } from 'rxjs/operators';
 
+
+/**
+ *Selector for relationships cardinalities
+ *
+ * @export
+ * @class DotCardinalitySelectorComponent
+ * @implements {OnInit}
+ * @implements {OnChanges}
+ */
 @Component({
     providers: [],
     selector: 'dot-cardinality-selector',
@@ -58,6 +67,10 @@ export class DotCardinalitySelectorComponent implements OnInit, OnChanges {
         }
     }
 
+    /**
+     * Trigger a change
+     * @param cardinality
+     */
     tiggerChanged(cardinality: DotRelationshipCardinality): void {
         this.change.next(cardinality.id);
     }

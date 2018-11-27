@@ -1,17 +1,33 @@
 import { Component, OnInit, EventEmitter, Output } from '@angular/core';
 import { DotMessageService } from '@services/dot-messages-service';
 import { PaginatorService } from '@services/paginator';
-import { DotEditContentTypeCacheService } from '@portlets/content-types/fields/content-type-fields-properties-form/field-properties/relationships-property/services/dot-edit-content-type-cache.service';
+import { DotEditContentTypeCacheService } from '@portlets/content-types/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/services/dot-edit-content-type-cache.service';
 import { of as observableOf, Observable } from 'rxjs';
 import { map, flatMap, toArray, take, switchMap } from 'rxjs/operators';
-import { DotRelationshipService } from '@portlets/content-types/fields/content-type-fields-properties-form/field-properties/relationships-property/services/dot-relationship.service';
+import { DotRelationshipService } from '@portlets/content-types/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/services/dot-relationship.service';
 import { DotRelationship } from '@portlets/content-types/fields/shared/dot-relationship.model';
-import { DotRelationshipCardinality } from '@portlets/content-types/fields/shared/dot-relationship-cardinality.model';
+import { DotRelationshipCardinality } from '@portlets/content-types/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/model/dot-relationship-cardinality.model';
 import { DotRelationshipsPropertyValue } from '../dot-relationships-property.component';
 
+
+/**
+ *Cardinalities sorted by id
+ *
+ * @interface CardinalitySorted
+ */
 interface CardinalitySorted {
     [id: number]: DotRelationshipCardinality;
 }
+
+
+/**
+ *List the orphans relationships for a content type. The content type to filter the relationships
+ *is take from {@see DotEditContentTypeCacheService}
+ *
+ * @export
+ * @class DotEditRelationshipsComponent
+ * @implements {OnInit}
+ */
 @Component({
     providers: [PaginatorService],
     selector: 'dot-edit-relationships',
@@ -75,7 +91,6 @@ export class DotEditRelationshipsComponent implements OnInit {
      * @memberof DotEditRelationshipsComponent
      */
     triggerChanged(relationship: DotRelationship): void {
-        console.log('triggerChanged', relationship);
         this.change.next({
             velocityVar: relationship.relationTypeValue,
             cardinality: relationship.cardinality
