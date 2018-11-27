@@ -135,7 +135,7 @@ public class OSGIUtilTest {
     /**
      * Test the base directory exists using the servlet context
      */
-//    @Test
+    @Test
     public void test05GetBaseDirectoryFromServletContext() throws Exception {
         String baseDirectory = OSGIUtil.getInstance().getBaseDirectory(Config.CONTEXT);
         assertThat("WEB-INF Base Directory exists", new File(baseDirectory).exists());
@@ -144,7 +144,7 @@ public class OSGIUtilTest {
     /**
      * Test the base directory exists using the Config.CONTEXT
      */
-//    @Test
+    @Test
     public void test06GetBaseDirectoryFromConfigContext() throws Exception {
         String baseDirectory = OSGIUtil.getInstance().getBaseDirectory(null);
         assertThat("WEB-INF Base Directory exists", new File(baseDirectory).exists());
