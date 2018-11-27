@@ -8,11 +8,7 @@ import com.dotmarketing.util.Logger;
 import org.apache.felix.framework.OSGIUtil;
 import java.io.File;
 import org.apache.commons.io.FileUtils;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.FixMethodOrder;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.runners.MethodSorters;
 import org.mockito.Mockito;
 
@@ -63,24 +59,6 @@ public class OSGIUtilTest {
     }
 
     /**
-     * Restart the OSGI Framework. Copies/Restores all files
-     *
-     * @param  felixBasePath The default felix base path
-     * @param newDirectory The new directory to copy the files from
-     */
-    private static void restartOSGi(String felixBasePath, String newDirectory) {
-        try {
-            Config.setProperty(FELIX_BASE_DIR_KEY, felixBasePath);
-
-            FileUtils.copyDirectory(new File(newDirectory), new File(felixBasePath));
-
-            restartOSGi();
-        } catch (Exception ex) {
-            Logger.error(OSGIUtilTest.class, "Error restarting OSGI", ex);
-        }
-    }
-
-    /**
      * Test the felix deploy path is the default path
      */
     @Test
@@ -88,7 +66,7 @@ public class OSGIUtilTest {
         String deployPath = OSGIUtil.getInstance().getFelixDeployPath();
 
         Assert.assertNotNull(deployPath);
-        assertThat("Path ends with /WEB-INF/felix/load", deployPath.endsWith("/WEB-INF/felix/load"));
+        assertThat("Path ends with /WEB-INF/felix/load " + deployPath, deployPath.endsWith("/WEB-INF/felix/load"));
     }
 
     /**
@@ -99,7 +77,7 @@ public class OSGIUtilTest {
         String undeployPath = OSGIUtil.getInstance().getFelixUndeployPath();
 
         Assert.assertNotNull(undeployPath);
-        assertThat("Path ends with /WEB-INF/felix/undeployed", undeployPath.endsWith("/WEB-INF/felix/undeployed"));
+        assertThat("Path ends with /WEB-INF/felix/undeployed " + undeployPath, undeployPath.endsWith("/WEB-INF/felix/undeployed"));
     }
 
     /**
@@ -116,11 +94,15 @@ public class OSGIUtilTest {
         String deployFelixPath = OSGIUtil.getInstance().getFelixDeployPath();
 
         Assert.assertNotNull(deployFelixPath);
-        assertThat("Path ends with /WEB-INF/customfelix/load", deployFelixPath.endsWith("/WEB-INF/customfelix/load"));
+        assertThat("Path ends with /WEB-INF/customfelix/load " + deployFelixPath, deployFelixPath.endsWith("/WEB-INF/customfelix/load"));
 
-        restartOSGi(contextFelixPath, customFelixPath);
+        Config.setProperty(FELIX_BASE_DIR_KEY, contextFelixPath);
 
-        removeFolder(deployFelixPath);
+        restartOSGi();
+
+        deployFelixPath = OSGIUtil.getInstance().getFelixDeployPath();
+        assertThat("Path ends with /WEB-INF/felix/load " + deployFelixPath, deployFelixPath.endsWith("/WEB-INF/felix/load"));
+
         removeFolder(customFelixPath);
     }
 
@@ -138,11 +120,15 @@ public class OSGIUtilTest {
         String undeployFelixPath = OSGIUtil.getInstance().getFelixUndeployPath();
 
         Assert.assertNotNull(undeployFelixPath);
-        assertThat("Path ends with /WEB-INF/customfelix/undeployed", undeployFelixPath.endsWith("/WEB-INF/customfelix/undeployed"));
+        assertThat("Path ends with /WEB-INF/customfelix/undeployed " + undeployFelixPath, undeployFelixPath.endsWith("/WEB-INF/customfelix/undeployed"));
 
-        restartOSGi(contextFelixPath, customFelixPath);
+        Config.setProperty(FELIX_BASE_DIR_KEY, contextFelixPath);
 
-        removeFolder(undeployFelixPath);
+        restartOSGi();
+
+        undeployFelixPath = OSGIUtil.getInstance().getFelixUndeployPath();
+        assertThat("Path ends with /WEB-INF/felix/undeployed " + undeployFelixPath, undeployFelixPath.endsWith("/WEB-INF/felix/undeployed"));
+
         removeFolder(customFelixPath);
     }
 
