@@ -10,7 +10,7 @@ import { take } from 'rxjs/operators';
 @Component({
     providers: [PaginatorService],
     selector: 'dot-new-relationships',
-    templateUrl: './new-relationships.component.html'
+    templateUrl: './dot-new-relationships.component.html'
 })
 export class DotNewRelationshipsComponent implements OnInit, OnChanges {
     @Input()
@@ -60,8 +60,8 @@ export class DotNewRelationshipsComponent implements OnInit, OnChanges {
             this.loadContentType(changes.velocityVar.currentValue);
         }
 
-        if (changes.cardinalityIndexInput) {
-            this.currentCardinalityIndex = changes.cardinalityIndexInput.currentValue;
+        if (changes.cardinality) {
+            this.currentCardinalityIndex = changes.cardinality.currentValue;
         }
     }
 

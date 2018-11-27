@@ -42,7 +42,7 @@ const contentTypeMock: ContentType = {
 
 @Component({
     selector: 'dot-host-component',
-    template: `<dot-new-relationships [cardinalityIndex] = "cardinalityIndex"
+    template: `<dot-new-relationships [cardinality] = "cardinalityIndex"
                                       [velocityVar] = "velocityVar"
                                       [editing] = "editing">
                </dot-new-relationships>`
@@ -105,7 +105,7 @@ class MockSearchableDropdownComponent implements ControlValueAccessor {
 })
 class MockCardinalitySelectorComponent {
     @Input()
-    cardinalityIndex: number;
+    value: number;
 
     @Input()
     disabled: boolean;
@@ -267,7 +267,7 @@ describe('NewRelationshipsComponent', () => {
             const dotCardinalitySelector = de.query(By.css('dot-cardinality-selector'));
             expect(dotCardinalitySelector).not.toBeUndefined();
 
-            expect(dotCardinalitySelector.componentInstance.cardinalityIndex).toEqual(comp.cardinalityIndex);
+            expect(dotCardinalitySelector.componentInstance.cardinalityIndex).toEqual(comp.cardinality);
         });
 
         it('should tigger change event when cardinality changed', (done) => {

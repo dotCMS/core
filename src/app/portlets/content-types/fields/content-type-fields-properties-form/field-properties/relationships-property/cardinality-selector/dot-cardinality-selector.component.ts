@@ -51,9 +51,9 @@ export class DotCardinalitySelectorComponent implements OnInit, OnChanges {
     }
 
     ngOnChanges(changes: SimpleChanges): void {
-        if (changes.cardinalityIndex.currentValue) {
+        if (changes.value.currentValue) {
             if (this.cardinalities) {
-                this.cardinality = this.cardinalities[changes.cardinalityIndex.currentValue];
+                this.cardinality = this.cardinalities[changes.value.currentValue];
             }
         }
     }

@@ -10,7 +10,7 @@ import { take } from 'rxjs/operators';
     selector: 'dot-relationships-property',
     templateUrl: './dot-relationships-property.component.html'
 })
-export class RelationshipsPropertyComponent implements OnInit {
+export class DotRelationshipsPropertyComponent implements OnInit {
     readonly STATUS_NEW = 'NEW';
     readonly STATUS_EXISTING = 'EXISTING';
 

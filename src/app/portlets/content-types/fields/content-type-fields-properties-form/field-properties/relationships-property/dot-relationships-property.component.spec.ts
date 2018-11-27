@@ -1,4 +1,4 @@
-import { RelationshipsPropertyComponent } from './dot-relationships-property.component';
+import { DotRelationshipsPropertyComponent } from './dot-relationships-property.component';
 import { ComponentFixture } from '@angular/core/testing';
 import { DebugElement, Component, Input, Output, EventEmitter } from '@angular/core';
 import { MockDotMessageService } from 'src/app/test/dot-message-service.mock';
@@ -24,7 +24,7 @@ class TestFieldValidationMessageComponent {
 })
 class TestNewRelationshipsComponent {
     @Input()
-    cardinalityIndex: number;
+    cardinality: number;
 
     @Input()
     velocityVar: string;
@@ -46,10 +46,10 @@ class TestEditRelationshipsComponent {
     change: EventEmitter<any> = new EventEmitter();
 }
 
-fdescribe('RelationshipsPropertyComponent', () => {
+describe('RelationshipsPropertyComponent', () => {
 
-    let comp: RelationshipsPropertyComponent;
-    let fixture: ComponentFixture<RelationshipsPropertyComponent>;
+    let comp: DotRelationshipsPropertyComponent;
+    let fixture: ComponentFixture<DotRelationshipsPropertyComponent>;
     let de: DebugElement;
 
     const messageServiceMock = new MockDotMessageService({
@@ -62,7 +62,7 @@ fdescribe('RelationshipsPropertyComponent', () => {
     beforeEach(() => {
         DOTTestBed.configureTestingModule({
             declarations: [
-                RelationshipsPropertyComponent,
+                DotRelationshipsPropertyComponent,
                 TestFieldValidationMessageComponent,
                 TestNewRelationshipsComponent,
                 TestEditRelationshipsComponent
@@ -73,7 +73,7 @@ fdescribe('RelationshipsPropertyComponent', () => {
             ]
         });
 
-        fixture = DOTTestBed.createComponent(RelationshipsPropertyComponent);
+        fixture = DOTTestBed.createComponent(DotRelationshipsPropertyComponent);
         de = fixture.debugElement;
         comp = fixture.componentInstance;
 
@@ -88,7 +88,7 @@ fdescribe('RelationshipsPropertyComponent', () => {
         });
     });
 
-    fdescribe('not editing mode', () => {
+    describe('not editing mode', () => {
         it('should have existing and new radio button', () => {
             fixture.detectChanges();
 
@@ -107,19 +107,38 @@ fdescribe('RelationshipsPropertyComponent', () => {
             fixture.detectChanges();
 
             expect(de.query(By.css('dot-new-relationships'))).not.toBeUndefined();
-            expect(de.query(By.css('dot-edit-relationships '))).toBeNull();
+            expect(de.query(By.css('dot-edit-relationships'))).toBeNull();
         });
 
-        it('should show dot-edit-relationships in new state', () => {
+        it('should show dot-edit-relationships in existing state', () => {
             fixture.detectChanges();
 
-            const newRadio = de.query(By.css('p-radioButton[ng-reflect-label="Existing"]'));
-            newRadio.triggerEventHandler('click', {});
+            comp.status = 'EXISTING';
 
             fixture.detectChanges();
 
-            expect(de.query(By.css('dot-edit-relationships '))).not.toBeUndefined();
+            expect(de.query(By.css('dot-edit-relationships'))).not.toBeUndefined();
             expect(de.query(By.css('dot-new-relationships'))).toBeNull();
+        });
+
+        it('should clean the relationships property value', () => {
+
+            fixture.detectChanges();
+
+            comp.group.setValue(
+                {
+                    'relationship': new FormControl(
+                        {
+                            velocityVar: 'velocityVar'
+                        }
+                    )
+                }
+            );
+
+            const radio = de.query(By.css('p-radioButton'));
+            radio.triggerEventHandler('click', {});
+
+            expect(comp.group.get('relationship').value).toEqual('');
         });
     });
 

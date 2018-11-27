@@ -2,7 +2,7 @@
     appendTo="body"
     [options]="cardinalities" 
     optionLabel="label" 
-    (onChange)="tiggerChanged($event)"
+    (onChange)="tiggerChanged($event.value)"
     [(ngModel)]="cardinality"
     [disabled]="disabled">
 </p-dropdown> *

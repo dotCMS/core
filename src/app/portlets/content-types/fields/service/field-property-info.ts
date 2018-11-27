@@ -10,8 +10,8 @@ import {
 } from '../content-type-fields-properties-form/field-properties';
 import { Validators } from '@angular/forms';
 import { validateDateDefaultValue } from './validators';
-import { RelationshipsPropertyComponent } from '../content-type-fields-properties-form/field-properties/relationships-property/dot-relationships-property.component';
 import { validateRelationship } from '../content-type-fields-properties-form/field-properties/relationships-property/services/validators/dot-relationship-validator';
+import { DotRelationshipsPropertyComponent } from '../content-type-fields-properties-form/field-properties/relationships-property/dot-relationships-property.component';
 
 export const PROPERTY_INFO = {
     categories: {
@@ -81,7 +81,7 @@ export const PROPERTY_INFO = {
         validations: [Validators.required]
     },
     relationships: {
-        component: RelationshipsPropertyComponent,
+        component: DotRelationshipsPropertyComponent,
         defaultValue: {
             cardinality: 0
         },

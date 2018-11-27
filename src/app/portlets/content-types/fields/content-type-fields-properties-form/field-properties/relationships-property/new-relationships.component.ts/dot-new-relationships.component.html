@@ -7,13 +7,13 @@
     (pageChange)="getContentTypeList($event.filter, $event.first)"
     labelPropertyName="name"
     [placeholder]="i18nMessages['contenttypes.field.properties.relationship.new.content_type.placeholder']"
-    [ngModel]="contentType"
+    [(ngModel)]="contentType"
     [disabled]="editing"
     (change)="triggerChanged()">
 </dot-searchable-dropdown>*
 
 <dot-cardinality-selector [value]="cardinality"
-                          [disabled]="editing"
+                         [disabled]="editing"
                           (change)="cardinalityChanged($event)">
 
 </dot-cardinality-selector>

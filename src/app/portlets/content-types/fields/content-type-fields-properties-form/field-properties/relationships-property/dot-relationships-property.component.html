@@ -14,7 +14,7 @@
 
 <dot-new-relationships *ngIf="status === STATUS_NEW;else existing"
                         [velocityVar]="group.get(property.name).value.velocityVar"
-                        [cardinality]="group.get(property.name).value.cardinalityIndex"
+                        [cardinality]="group.get(property.name).value.cardinality"
                         [editing]="editing"
                         (change)="handleChange($event)">
 </dot-new-relationships>
@@ -25,7 +25,7 @@
 </ng-template>
 
 <dot-field-validation-message
-    [message]="getValidationMessage()"
+    [message]="getValidationErrorMessage()"
     [field]="group.controls[property.name]">
 </dot-field-validation-message>
  

@@ -8,7 +8,7 @@ import { FormControl } from '@angular/forms';
  * @returns
  */
 export function validateRelationship(formControl: FormControl) {
-
+    console.log('formControl', formControl);
     if (formControl.value.cardinality !== undefined && formControl.value.velocityVar) {
         return null;
     } else {

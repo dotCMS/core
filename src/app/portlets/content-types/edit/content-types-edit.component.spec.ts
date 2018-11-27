@@ -377,7 +377,7 @@ describe('ContentTypesEditComponent', () => {
             expect(comp.fields).toBe(fakeContentType.fields);
 
             const dotEditContentTypeCacheService = de.injector.get(DotEditContentTypeCacheService);
-            expect(dotEditContentTypeCacheService.get()).toBe(fakeContentType);
+            expect(dotEditContentTypeCacheService.get()).toEqual(fakeContentType);
         });
 
         it('should have dot-content-type-layout', () => {

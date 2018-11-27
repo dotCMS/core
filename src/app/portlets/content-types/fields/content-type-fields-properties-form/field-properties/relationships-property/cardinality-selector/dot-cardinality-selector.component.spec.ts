@@ -1,6 +1,6 @@
 import { Component, Input, Output, EventEmitter, Injectable, DebugElement } from '@angular/core';
 import { DOTTestBed } from 'src/app/test/dot-test-bed';
-import { DotCardinalitySelectorComponent } from './cardinality-selector.component';
+import { DotCardinalitySelectorComponent } from './dot-cardinality-selector.component';
 import { DotMessageService } from '@services/dot-messages-service';
 import { MockDotMessageService } from 'src/app/test/dot-message-service.mock';
 import { DotRelationshipCardinality } from '@portlets/content-types/fields/shared/dot-relationship-cardinality.model';
@@ -9,7 +9,7 @@ import { DotRelationshipService } from '@portlets/content-types/fields/content-t
 import { ComponentFixture } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
-const cardinalities = [
+const cardinalities: DotRelationshipCardinality[] = [
     {
         label: 'Many to many',
         id: 0,
@@ -24,7 +24,7 @@ const cardinalities = [
 
 @Component({
     selector: 'dot-host-component',
-    template: `<dot-cardinality-selector [cardinalityIndex] = "cardinalityIndex"
+    template: `<dot-cardinality-selector [value] = "cardinalityIndex"
                                          [disabled] = "disabled">
                </dot-cardinality-selector>`
 })
@@ -109,11 +109,13 @@ describe('CardinalitySelectorComponent', () => {
         fixtureHostComponent.detectChanges();
 
         comp.change.subscribe((change) => {
-            expect(change).toEqual(cardinalities[1]);
+            expect(change).toEqual(cardinalities[1].id);
             done();
         });
 
         const dropdown = de.query(By.css('p-dropdown'));
-        dropdown.triggerEventHandler('onChange', cardinalities[1]);
+        dropdown.triggerEventHandler('onChange', {
+            value: cardinalities[1]
+        });
     });
 });

@@ -1,5 +1,5 @@
 import { DOTTestBed } from 'src/app/test/dot-test-bed';
-import { DotEditRelationshipsComponent } from './edit-relationships.component';
+import { DotEditRelationshipsComponent } from './dot-edit-relationships.component';
 import { Component, Input, Output, EventEmitter, Injectable, DebugElement } from '@angular/core';
 import { DotMessageService } from '@services/dot-messages-service';
 import { PaginationEvent } from '@components/_common/searchable-dropdown/component';
@@ -164,13 +164,14 @@ describe('DotEditRelationshipsComponent', () => {
         fixture.detectChanges();
 
         const dotSearchableDropdown = de.query(By.css('dot-searchable-dropdown'));
-        dotSearchableDropdown.componentInstance.filterChange.emit(newFilter);
+        dotSearchableDropdown.triggerEventHandler('filterChange', newFilter);
 
         expect(paginatorService.filter).toBe(newFilter);
         expect(paginatorService.setExtraParams).toHaveBeenCalledWith('contentTypeId', contentTypeMock.id);
-        expect(paginatorService.getWithOffset).toHaveBeenCalledWith(0);
 
         fixture.detectChanges();
+
+        expect(paginatorService.getWithOffset).toHaveBeenCalledWith(0);
 
         expect(dotSearchableDropdown.componentInstance.data).toEqual([
             {
@@ -195,21 +196,21 @@ describe('DotEditRelationshipsComponent', () => {
         fixture.detectChanges();
 
         const dotSearchableDropdown = de.query(By.css('dot-searchable-dropdown'));
-        dotSearchableDropdown.componentInstance.pageChange.emit(event);
+        dotSearchableDropdown.triggerEventHandler('pageChange', event);
 
         expect(paginatorService.filter).toBe(event.filter);
         expect(paginatorService.setExtraParams).toHaveBeenCalledWith('contentTypeId', contentTypeMock.id);
-        expect(paginatorService.getWithOffset).toHaveBeenCalledWith(event.first);
 
         fixture.detectChanges();
 
+        expect(paginatorService.getWithOffset).toHaveBeenCalledWith(event.first);
         expect(dotSearchableDropdown.componentInstance.data).toEqual([
             {
-                label: 'a   .   One to one',
+                label: 'a.One to one',
                 relationship: mockRelationships[0]
             },
             {
-                label: 'b   .   Many to many',
+                label: 'b.Many to many',
                 relationship: mockRelationships[1]
             }
         ]);
@@ -218,14 +219,20 @@ describe('DotEditRelationshipsComponent', () => {
     it('should tigger change event', (done) => {
         fixture.detectChanges();
 
+        comp.change.subscribe((relationshipSelect: any) => {
+            console.log('relationshipSelect', relationshipSelect);
+            expect(relationshipSelect).toEqual(
+                {
+                    cardinality: 1,
+                    velocityVar: 'a'
+                }
+            );
+            done();
+        });
+
         const dotSearchableDropdown = de.query(By.css('dot-searchable-dropdown'));
         dotSearchableDropdown.triggerEventHandler('change', {
             relationship: mockRelationships[0]
-        });
-
-        comp.change.subscribe((relationshipSelect: any) => {
-            expect(relationshipSelect).toBe(mockRelationships[0]);
-            done();
         });
     });
 });
