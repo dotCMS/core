@@ -77,12 +77,7 @@ import { MdInputTextModule } from '@directives/md-inputtext/md-input-text.module
 import { PushPublishContentTypesDialogModule } from '@components/_common/push-publish-dialog/push-publish-dialog.module';
 import { SearchableDropDownModule } from '@components/_common/searchable-dropdown';
 import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
-import { DotNewRelationshipsComponent } from './fields/content-type-fields-properties-form/field-properties/relationships-property/new-relationships.component.ts/dot-new-relationships.component';
-import { DotCardinalitySelectorComponent } from './fields/content-type-fields-properties-form/field-properties/relationships-property/cardinality-selector/dot-cardinality-selector.component';
-import { DotEditRelationshipsComponent } from './fields/content-type-fields-properties-form/field-properties/relationships-property/edit-relationship.component.ts/dot-edit-relationships.component';
-import { DotRelationshipsPropertyComponent } from './fields/content-type-fields-properties-form/field-properties/relationships-property/dot-relationships-property.component';
-import { DotRelationshipService } from './fields/content-type-fields-properties-form/field-properties/relationships-property/services/dot-relationship.service';
-import { DotEditContentTypeCacheService } from './fields/content-type-fields-properties-form/field-properties/relationships-property/services/dot-edit-content-type-cache.service';
+import { RelationshipsModule } from './fields/content-type-fields-properties-form/field-properties/relationships-property/relationships.module';
 
 @NgModule({
     declarations: [
@@ -106,11 +101,7 @@ import { DotEditContentTypeCacheService } from './fields/content-type-fields-pro
         HintPropertyComponent,
         NamePropertyComponent,
         RegexCheckPropertyComponent,
-        ValuesPropertyComponent,
-        DotRelationshipsPropertyComponent,
-        DotNewRelationshipsComponent,
-        DotCardinalitySelectorComponent,
-        DotEditRelationshipsComponent
+        ValuesPropertyComponent
     ],
     entryComponents: [
         NamePropertyComponent,
@@ -120,8 +111,7 @@ import { DotEditContentTypeCacheService } from './fields/content-type-fields-pro
         DefaultValuePropertyComponent,
         HintPropertyComponent,
         RegexCheckPropertyComponent,
-        ValuesPropertyComponent,
-        DotRelationshipsPropertyComponent
+        ValuesPropertyComponent
     ],
     exports: [ContentTypesPortletComponent],
     imports: [
@@ -161,7 +151,8 @@ import { DotEditContentTypeCacheService } from './fields/content-type-fields-pro
         DotPageSelectorModule,
         DotBaseTypeSelectorModule,
         MdInputTextModule,
-        DotAutofocusModule
+        DotAutofocusModule,
+        RelationshipsModule
     ],
     providers: [
         ContentTypeEditResolver,
@@ -172,9 +163,7 @@ import { DotEditContentTypeCacheService } from './fields/content-type-fields-pro
         FieldPropertyService,
         FieldVariablesService,
         FieldService,
-        FormatDateService,
-        DotRelationshipService,
-        DotEditContentTypeCacheService
+        FormatDateService
     ]
 })
 export class ContentTypesModule {}
