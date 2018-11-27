@@ -448,7 +448,7 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
                 add(newLanguageInstance("de", "DE", "German", "Germany")).
                 add(newLanguageInstance("ru", "RUS", "Russian", "Russia")).
                 add(newLanguageInstance("da", "DK ", "Danish", "Denmark")).
-                add(newLanguageInstance("en", "NZ ", "New Zealand", "Denmark")).
+                add(newLanguageInstance("en", "NZ ", "English", "New Zealand")).
                 build();
 
         final List<Language> savedNewLanguages = new ArrayList<>();
@@ -535,7 +535,6 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
 
             final Comparator<Language> comparator = Comparator.comparing( Language::getId );
 
-
             // Now lets do push-publish.
             final PublisherConfig publisherConfig = new PublisherConfig();
             final BundlePublisher bundlePublisher = new BundlePublisher();
@@ -567,7 +566,7 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
             assertEquals("We expected 3 new languages created after pp.",3, contentletsWithNewLanguages);
 
             //Expected language codes. These are created by PP
-            final Set<String> expectedNewLangs = new HashSet<>(Arrays.asList("ru","da","en"));
+            final Set<String> expectedNewLangs = new HashSet<>(Arrays.asList("ru","da","en")); //Should have been created with the original ids that they originally had.
             final boolean newLanguagesMatch = publishedContentlets.stream().
               filter(contentlet -> savedLanguagesNowDeletedIds.contains(contentlet.getLanguageId())).allMatch(contentlet ->  {
                 final Language lang = languageAPI.getLanguage(contentlet.getLanguageId());

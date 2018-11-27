@@ -3995,7 +3995,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     }else if(isFieldTypeDate(field)){
                         contentlet.setDateProperty(conVariable,value != null ? (Date)value : null);
                     }else if(isFieldTypeLong(field)){
-                        contentlet.setLongProperty(conVariable,value != null ? (Long)value : null);
+                        contentlet.setLongProperty(conVariable,value != null ? ((Number)value).longValue(): null);
                     }else if(isFieldTypeBinary(field)){
                         contentlet.setBinary(conVariable,(java.io.File)value);
                     } else {
