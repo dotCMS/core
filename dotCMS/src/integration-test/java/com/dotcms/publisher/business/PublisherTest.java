@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -71,6 +72,7 @@ public class PublisherTest extends IntegrationTestBase {
             adminUser     = APILocator.getUserAPI().loadByUserByEmail("admin@dotcms.com", APILocator.getUserAPI().getSystemUser(), false);
             folderPage    = this.createFolderPage("testFolderPublisher"+System.currentTimeMillis(), adminUser);
             ppBean        = this.createPushPublishEnv(adminUser);
+            this.assertPPBean(ppBean);
             pushResult    = this.pushFolderPage("folderPage1Test", folderPage, adminUser, ppBean);
             this.assertPushFolderPage(folderPage, pushResult);
             pushResult    = this.removePushFolder("removeFolderPage1Test", folderPage, adminUser, ppBean);
@@ -80,7 +82,9 @@ public class PublisherTest extends IntegrationTestBase {
             this.assertPushFolderPage(folderPage, pushResult);
         } finally {
 
-            PublisherTestUtil.cleanBundleEndpointEnv(null, ppBean.endPoint, ppBean.environment);
+            if (null != ppBean) {
+                PublisherTestUtil.cleanBundleEndpointEnv(null, ppBean.endPoint, ppBean.environment);
+            }
         }
     }
 
@@ -92,6 +96,11 @@ public class PublisherTest extends IntegrationTestBase {
         return new FolderPage(folderPage.folder, page);
     }
 
+    private void assertPPBean(final PPBean ppBean) {
+        assertNotNull(ppBean);
+        assertNotNull(ppBean.environment);
+        assertNotNull(ppBean.endPoint);
+    }
 
     private void assertPushFolderPage(final FolderPage folderPage, final PushResult pushResult) throws Exception {
 

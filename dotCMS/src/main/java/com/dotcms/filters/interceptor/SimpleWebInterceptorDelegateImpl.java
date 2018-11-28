@@ -161,12 +161,15 @@ public class SimpleWebInterceptorDelegateImpl implements WebInterceptorDelegate 
     } // init.
 
     @Override
-    public boolean intercept(final HttpServletRequest request,
+    public DelegateResult intercept(final HttpServletRequest request,
                              final HttpServletResponse response)
             throws IOException {
 
-        boolean shouldContinue = true;
-        Result result         = null;
+        Result  result                     = null;
+        boolean shouldContinue             = true;
+        HttpServletRequest  requestResult  = null;
+        HttpServletResponse responseResult = null;
+
 
         if (!this.interceptors.isEmpty()) {
 
@@ -177,17 +180,19 @@ public class SimpleWebInterceptorDelegateImpl implements WebInterceptorDelegate 
                         this.anyMatchFilter(webInterceptor, request.getRequestURI())) {
 
                     result          = webInterceptor.intercept(request, response);
-                    shouldContinue &= (Result.SKIP_NO_CHAIN != result);
+                    shouldContinue &= (Result.Type.SKIP_NO_CHAIN != result.getType());
 
-                    if (Result.NEXT != result) {
+                    if (Result.Type.NEXT != result.getType()) {
                         // if just one interceptor failed; we stopped the loop and do not continue the chain call
+                        requestResult  = result.getRequest();
+                        responseResult = result.getResponse();
                         break;
                     }
                 }
             }
         }
 
-        return shouldContinue;
+        return new DelegateResult(shouldContinue, requestResult, responseResult);
     } // intercept.
 
     @VisibleForTesting

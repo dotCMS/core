@@ -33,7 +33,7 @@ public abstract class AbstractWebInterceptorSupportFilter implements Filter {
      * @return boolean true if all interceptors ran successfully.
      * @throws IOException
      */
-    protected boolean runInterceptors (final HttpServletRequest req, HttpServletResponse res) throws IOException {
+    protected WebInterceptorDelegate.DelegateResult runInterceptors (final HttpServletRequest req, HttpServletResponse res) throws IOException {
 
         return this.getDelegate(req).intercept(req, res);
     } // runInterceptor.
@@ -62,15 +62,19 @@ public abstract class AbstractWebInterceptorSupportFilter implements Filter {
     } // getDelegate.
 
     @Override
-    public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain) throws IOException,
+    public void doFilter(final ServletRequest req, final ServletResponse res, final FilterChain chain) throws IOException,
             ServletException {
 
         final HttpServletResponse response = (HttpServletResponse) res;
-        final HttpServletRequest request   = (HttpServletRequest) req;
+        final HttpServletRequest request   = (HttpServletRequest)  req;
 
-        if (this.runInterceptors(request, response)) {
+        final WebInterceptorDelegate.DelegateResult result =
+                this.runInterceptors(request, response);
 
-            chain.doFilter(req, response);
+        if (result.isShouldContinue()) {
+
+            chain.doFilter(null != result.getRequest()? result.getRequest():request,
+                    null != result.getResponse()? result.getResponse(): response);
         }
     } // doFilter.
 
