@@ -1,6 +1,5 @@
 package com.dotcms.rest;
 
-import com.dotcms.business.CloseDB;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -9,7 +8,6 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -23,11 +21,12 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-import org.jetbrains.annotations.Nullable;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.WORKFLOW_ASSIGN_KEY;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.WORKFLOW_COMMENTS_KEY;
 
 /**
  * Complete populator to populate a contentlet from a map (from a resources form) using all logic needed
@@ -77,7 +76,7 @@ public class MapToContentletPopulator  {
         return stInode;
     }
 
-    protected void processMap(final Contentlet contentlet,
+    private void processMap(final Contentlet contentlet,
                               final Map<String, Object> map) throws DotDataException, DotSecurityException {
 
         final String stInode = this.getStInode(map);
@@ -97,6 +96,8 @@ public class MapToContentletPopulator  {
 
                 this.processIdentifier(contentlet, map);
 
+                this.processWorkflow(contentlet, map);
+
                 // build a field map for easy lookup
                 final Map<String, Field> fieldMap = new HashMap<>();
                 for (final Field field : new LegacyFieldTransformer(type.fields()).asOldFieldList()) {
@@ -111,6 +112,15 @@ public class MapToContentletPopulator  {
             }
         }
     } // processMap.
+
+    private void processWorkflow(final Contentlet contentlet, final Map<String,Object> map) {
+        if(map.containsKey(WORKFLOW_ASSIGN_KEY)) {
+            contentlet.setStringProperty(WORKFLOW_ASSIGN_KEY, String.valueOf(map.get(WORKFLOW_ASSIGN_KEY)));
+        }
+        if(map.containsKey(WORKFLOW_COMMENTS_KEY)) {
+            contentlet.setStringProperty(WORKFLOW_COMMENTS_KEY, String.valueOf(map.get(WORKFLOW_COMMENTS_KEY)));
+        }
+    }
 
     private void fillFields(final Contentlet contentlet,
                             final Map<String, Object> map,
@@ -129,10 +139,11 @@ public class MapToContentletPopulator  {
                     this.processHostOrFolderField(contentlet, type, value);
                 } else if (field.getFieldType().equals(FieldType.CATEGORY.toString())) {
 
-                    contentlet.setStringProperty(field.getVelocityVarName(), value.toString());
-                } else if ((field.getFieldType().equals(FieldType.FILE.toString()) || field
-                        .getFieldType().equals(FieldType.IMAGE.toString())) &&
-                        value.toString().startsWith("//")) {
+                    contentlet.setStringProperty(field.getVelocityVarName(),  value != null ? value.toString() : null);
+                } else if (
+                         (field.getFieldType().equals(FieldType.FILE.toString()) || field.getFieldType().equals(FieldType.IMAGE.toString()))
+                                 && (value != null && value.toString().startsWith("//"))
+                       ) {
 
                     this.processFileOrImageField(contentlet, value, field);
                 } else {

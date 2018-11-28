@@ -1,260 +1,327 @@
 package com.dotcms.contenttype.business;
 
-import com.dotcms.content.elasticsearch.business.ESContentFactoryImpl;
 import com.dotcms.contenttype.business.sql.RelationshipSQL;
+import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeIf;
 import com.dotcms.contenttype.transform.relationship.DbRelationshipTransformer;
+import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.DotPreconditions;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Tree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheException;
-import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.util.SQLUtil;
-import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.factories.TreeFactory;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.structure.factories.RelationshipCache;
 import com.dotmarketing.portlets.structure.model.Relationship;
-import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
-
+import com.liferay.util.StringPool;
 import java.util.ArrayList;
-import java.util.Date;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 public class RelationshipFactoryImpl implements RelationshipFactory{
 
-	static RelationshipSQL sql= RelationshipSQL.getInstance();
-	
-	@Override
-	public void deleteByContentType(ContentTypeIf type) throws DotDataException{
-		DotConnect dc = new DotConnect();
-		dc.setSQL(sql.DELETE_RELATIONSHIP);
-		dc.addParam(type.id());
-		dc.addParam(type.id());
-		dc.loadResults();
+	private static final RelationshipSQL sql= RelationshipSQL.getInstance();
 
+    private static final RelationshipCache cache = CacheLocator.getRelationshipCache();
+
+	@Override
+	public void deleteByContentType(final ContentTypeIf type) throws DotDataException{
+	    new DotConnect()
+                .setSQL(sql.DELETE_RELATIONSHIP_BY_PARENT_OR_CHILD_INODE)
+                .addParam(type.id())
+                .addParam(type.id())
+                .loadResults();
 	}
-	private static RelationshipCache cache = CacheLocator.getRelationshipCache();
 
     @Override
-    public  Relationship byInode(String inode) {
+    public Relationship byInode(final String inode){
 		Relationship rel = null;
 		try {
 			rel = cache.getRelationshipByInode(inode);
 			if(rel != null)
 				return rel;
 		} catch (DotCacheException e) {
-			Logger.debug(this.getClass(), "Unable to access the cache to obtaion the relationship", e);
+			Logger.debug(this.getClass(), "Unable to access the cache to obtain the relationship", e);
 		}
 
-		rel = (Relationship) InodeFactory.getInode(inode, Relationship.class);
-		if(rel!= null && InodeUtils.isSet(rel.getInode()))
-			cache.putRelationshipByInode(rel);
-		return rel;
-    }
-
-    @Override
-    @SuppressWarnings("unchecked")
-	public  List<Relationship> byParent (ContentTypeIf parent) throws DotHibernateException {
-        List<Relationship> list =new ArrayList<Relationship>();
-        String query = "select {relationship.*} from relationship, inode relationship_1_ "
-                + "where relationship_1_.type='relationship' and relationship.inode = relationship_1_.inode and "
-                + "relationship.parent_structure_inode = ?";
-
-    	HibernateUtil dh = new HibernateUtil(Relationship.class);
-		dh.setSQLQuery(query);
-		dh.setParam(parent.id());
-		list = dh.list();
-
-        return list;
-    }
-
-    @Override
-    @SuppressWarnings("unchecked")
-	public  List<Relationship> byChild (ContentTypeIf child) throws DotHibernateException {
-        List<Relationship> list = new ArrayList<Relationship>();
-        String query = "select {relationship.*} from relationship, inode relationship_1_ "
-                + "where relationship_1_.type='relationship' and relationship.inode = relationship_1_.inode and "
-                + "relationship.child_structure_inode = ?";
-
-    	HibernateUtil dh = new HibernateUtil(Relationship.class);
-		dh.setSQLQuery(query);
-		dh.setParam(child.id());
-		list = dh.list();
-
-        return list;
-    }
-    @Override
-    public  List<Relationship> dbAll() throws DotHibernateException {
-        String orderBy = "relationship.inode";
-        return dbAll(orderBy,"all");
-    }
-    @Override
-    @SuppressWarnings("unchecked")
-    public  List<Relationship> dbAll(String orderBy, String contentTypeInode) throws DotHibernateException {
-        List<Relationship> list = new ArrayList<Relationship>();
-        String query;
-        if("all".equals(contentTypeInode)){
-           query = "select {relationship.*} from relationship, inode relationship_1_, structure parentstruct, "
-                    + "structure childstruct where relationship_1_.type='relationship' and relationship.inode = relationship_1_.inode and "
-                    + "relationship.parent_structure_inode = parentstruct.inode and "
-                    + "relationship.child_structure_inode = childstruct.inode order by " + orderBy;
-        }else{
-           query = "select {relationship.*} from relationship, inode relationship_1_, structure parentstruct, "
-                    + "structure childstruct where relationship_1_.type='relationship' and relationship.inode = relationship_1_.inode and "
-                    + "relationship.parent_structure_inode = parentstruct.inode and "
-                    + "relationship.child_structure_inode = childstruct.inode and (relationship.parent_structure_inode = '" +contentTypeInode
-                    + "' or relationship.child_structure_inode = '"+contentTypeInode +"')  order by " + orderBy;
+		try {
+		    final List<Map<String, Object>> results = new DotConnect()
+                    .setSQL(sql.FIND_BY_INODE)
+                    .addParam(inode)
+		            .loadObjectResults();
+            if (results.isEmpty()) {
+                throw new NotFoundInDbException("Relationship with inode: " + inode + " not found");
+            }
+            rel = new DbRelationshipTransformer(results).from();
+        } catch (NotFoundInDbException e){
+            Logger.debug(this, e.getMessage());
+        } catch (DotDataException e){
+                Logger.error(this, "Error getting Relationship with inode: " + inode, e);
+                throw new RuntimeException(e);
         }
 
-		HibernateUtil dh = new HibernateUtil(Relationship.class);
-		dh.setSQLQuery(query);
-		list = dh.list();
+        if(rel!= null && InodeUtils.isSet(rel.getInode())) {
+            cache.putRelationshipByInode(rel);
+        }
 
-        return list;
+        return rel;
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+	public  List<Relationship> byParent (final ContentTypeIf parent) throws DotDataException {
+        final List<Map<String, Object>> results = new DotConnect()
+                .setSQL(sql.FIND_BY_PARENT_INODE)
+                .addParam(parent.id())
+                .loadObjectResults();
+        return new DbRelationshipTransformer(results).asList();
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+	public  List<Relationship> byChild (final ContentTypeIf child) throws DotDataException {
+        final List<Map<String, Object>> results = new DotConnect()
+                .setSQL(sql.FIND_BY_CHILD_INODE)
+                .addParam(child.id())
+                .loadObjectResults();
+        return new DbRelationshipTransformer(results).asList();
     }
     @Override
-    public  Relationship byTypeValue(final String typeValue) {
+    public List<Relationship> dbAll() {
+        return dbAll("inode");
+    }
+    @Override
+    @SuppressWarnings("unchecked")
+    public  List<Relationship> dbAll(String orderBy) {
+        orderBy = SQLUtil.sanitizeSortBy(orderBy);
+
+	    final DotConnect dc = new DotConnect();
+	    dc.setSQL(sql.SELECT_ALL_FIELDS + " order by " + orderBy);
+
+        List<Map<String, Object>> results = new ArrayList<Map<String, Object>>();
+        try {
+            results = dc.loadObjectResults();
+        } catch (DotDataException e) {
+            Logger.error(this, "Error getting All Relationships", e);
+        }
+        return new DbRelationshipTransformer(results).asList();
+    }
+
+    @Override
+    public  Relationship byTypeValue(final String typeValue){
         if(typeValue==null) {
             return null;
         }
-		Relationship rel = null;
-		try {
-			rel = cache.getRelationshipByName(typeValue);
-			if(rel != null && rel.getRelationTypeValue().equals(typeValue))
-				return rel;
-		} catch (DotCacheException e) {
-			Logger.debug(this.getClass(), "Unable to access the cache to obtaion the relationship", e);
-		}
+        Relationship relationship = null;
 
-		rel = (Relationship) InodeFactory.getInodeOfClassByCondition(Relationship.class, "lower(relation_type_value) = '"
-                + typeValue.toLowerCase() + "'");
-		if(rel!= null && InodeUtils.isSet(rel.getInode()))
-			cache.putRelationshipByInode(rel);
+        List<Map<String, Object>> results = new ArrayList<Map<String, Object>>();
+        try {
+            final DotConnect dc = new DotConnect();
+            dc.setSQL(sql.FIND_BY_TYPE_VALUE);
+            dc.addParam(typeValue.toLowerCase());
+            results = dc.loadObjectResults();
+            if (results.size() == 0) {
+                return relationship;
+            }
+
+            relationship = new DbRelationshipTransformer(results).from();
+
+            if(relationship!= null && InodeUtils.isSet(relationship.getInode())){
+                cache.putRelationshipByInode(relationship);
+            }
+
+        } catch (DotDataException e) {
+            Logger.error(this,"Error getting relationships with typeValue: " + typeValue.toLowerCase(),e);
+        }
+
+        return relationship;
+    }
+
+    @Override
+    public Optional<Relationship> byParentChildRelationName(final ContentType contentType,
+            final String relationName) {
+        if (contentType == null){
+            Optional.empty();
+        }
+
+        List<Map<String, Object>> results;
+        try {
+            final DotConnect dc = new DotConnect();
+            dc.setSQL(sql.FIND_BY_PARENT_CHILD_AND_RELATION_NAME);
+            dc.addParam(contentType.id());
+            dc.addParam(contentType.id());
+            dc.addParam(relationName);
+            dc.addParam(relationName);
+            results = dc.loadObjectResults();
+            if (results.size() == 0) {
+                return Optional.empty();
+            }
+
+            final Relationship relationship = new DbRelationshipTransformer(results).from();
+
+            if(relationship!= null && InodeUtils.isSet(relationship.getInode())){
+                cache.putRelationshipByInode(relationship);
+            }
+
+            return Optional.of(relationship);
+        } catch (DotDataException e) {
+            Logger.error(this,"Error getting relationships for content type: " + contentType.name(),e);
+        }
+
+        return Optional.empty();
+    }
+
+    @Override
+    public List<Relationship> dbAllByTypeValue(final String typeValue){
+        if(typeValue==null) {
+            return Collections.emptyList();
+        }
+
+        List<Map<String, Object>> results;
+
+        List<Relationship> rel = null;
+        try {
+            final DotConnect dc = new DotConnect();
+            dc.setSQL(sql.FIND_BY_TYPE_VALUE_LIKE);
+            dc.addParam(StringPool.PERCENT + typeValue.toLowerCase() +  StringPool.PERCENT);
+
+            results = dc.loadObjectResults();
+            if (results.size() == 0) {
+             return Collections.emptyList();
+            }
+
+            rel = new DbRelationshipTransformer(results).asList();
+
+            rel.forEach(item -> cache.putRelationshipByInode(item));
+
+        } catch (DotDataException e) {
+            Logger.error(this,"Error getting relationships with typeValue: " + typeValue.toLowerCase(),e);
+        }
+
 		return rel;
 
     }
+
+    @Override
+    public List<Relationship> byContentType(final String contentType){
+        return byContentType(contentType,"inode");
+    }
+
+    @Override
+    public List<Relationship> byContentType(final ContentTypeIf contentType){
+        return byContentType(contentType.id(),"inode");
+    }
+
+    @Override
+    public List<Relationship> byContentType(final ContentTypeIf contentType, final String orderBy){
+	    return byContentType(contentType.id(),orderBy);
+    }
+
     @Override
     @SuppressWarnings("unchecked")
-    public  List<Relationship> byContentType(ContentTypeIf type) throws DotDataException {
-    	
-        List<Relationship> list = null;
-        
+    public List<Relationship> byContentType(final String contentTypeInode, String orderBy){
+
+        List<Relationship> relationships = new ArrayList<>();
+        ContentTypeIf contentTypeIf = null;
         try {
-			list = cache.getRelationshipsByType(type);
-		} catch (DotCacheException e1) {
-			//Logger.debug(this.getClass(),e1.getMessage(),e1);
-		}
-        if(list ==null){
-	        String query = "select {relationship.*} from relationship, inode relationship_1_ "
-	                + "where relationship_1_.type='relationship' and relationship.inode = relationship_1_.inode and "
-				+ "(relationship.parent_structure_inode = ? or relationship.child_structure_inode = ?)";
+            contentTypeIf = APILocator.getContentTypeAPI(APILocator.systemUser()).find(contentTypeInode);
+            relationships = cache.getRelationshipsByType(contentTypeIf);
+            if(relationships != null && !relationships.isEmpty()) {
+                return relationships;
+            }
 
-				HibernateUtil dh = new HibernateUtil(Relationship.class);
-				dh.setSQLQuery(query);
-				dh.setParam(type.id());
-				dh.setParam(type.id());
-				list = dh.list();
-	
-					
-				cache.putRelationshipsByType(type, list);
+            orderBy = SQLUtil.sanitizeSortBy(orderBy);
 
-	
+            final DotConnect dc = new DotConnect();
+            dc.setSQL(sql.FIND_BY_PARENT_OR_CHILD_INODE + " order by " + orderBy);
+            dc.addParam(contentTypeInode);
+            dc.addParam(contentTypeInode);
+            List<Map<String, Object>> results;
+            results = dc.loadObjectResults();
 
+            relationships = new DbRelationshipTransformer(results).asList();
+
+            if(!relationships.isEmpty()){
+                cache.putRelationshipsByType(contentTypeIf,relationships);
+            }
+
+        } catch (DotCacheException e) {
+            Logger.debug(this.getClass(), "Unable to access the cache to obtain the relationship", e);
+        }  catch (DotSecurityException e) {
+            Logger.error(this, "User does not have the permissions required", e);
+        } catch (DotDataException e){
+            Logger.error(this, "Error Getting Relationships for ContentType: " + contentTypeInode, e);
         }
-        return list;
-        
+
+        return relationships;
     }
     @Override
-    @SuppressWarnings("unchecked")
-	public  List<Relationship> byContentType(ContentTypeIf st, boolean hasParent)  {
-        List<Relationship> list = new ArrayList<Relationship>();
-        String query = "select {relationship.*} from relationship, inode relationship_1_ "
-                + "where relationship_1_.type='relationship' and relationship.inode = relationship_1_.inode and ";
-		if (hasParent){
-                query += "(relationship.parent_structure_inode = ?)";
-		}
-        else{
-            query += "(relationship.child_structure_inode = ?)";
-        }
-		try{
-			HibernateUtil dh = new HibernateUtil(Relationship.class);
-			dh.setSQLQuery(query);
-			dh.setParam(st.id());
-			list = dh.list();
-		}
-		catch(Exception e){
-		  throw new DotStateException(e);
-		}
+    public  List<Contentlet> dbRelatedContent(final Relationship relationship, final Contentlet contentlet) throws DotDataException {
 
-        return list;
-    }
-    @Override
-    @SuppressWarnings("unchecked")
-    public List<Relationship> byContentType(ContentTypeIf type, String orderBy) {
-      orderBy = SQLUtil.sanitizeSortBy(orderBy);
-      List<Relationship> list = new ArrayList<Relationship>();
-      String query;
-      if (type.id().equals("all")) {
-        query = "select {relationship.*} from relationship, inode relationship_1_, structure parentstruct, "
-            + "structure childstruct where relationship_1_.type='relationship' and relationship.inode = relationship_1_.inode and "
-            + "relationship.parent_structure_inode = parentstruct.inode and "
-            + "relationship.child_structure_inode = childstruct.inode order by " + orderBy;
-      } else {
-        query = "select {relationship.*} from relationship, inode relationship_1_, structure parentstruct, "
-            + "structure childstruct where relationship_1_.type='relationship' and relationship.inode = relationship_1_.inode and "
-            + "relationship.parent_structure_inode = parentstruct.inode and "
-            + "relationship.child_structure_inode = childstruct.inode and (relationship.parent_structure_inode = '"
-            + type.id() + "' or relationship.child_structure_inode = '" + type.id() + "')  order by " + orderBy;
-      }
-      try {
-        HibernateUtil dh = new HibernateUtil(Relationship.class);
-        dh.setSQLQuery(query);
-        list = dh.list();
-      } catch (DotHibernateException e) {
-        Logger.error(OldRelationshipFactory.class, e.getMessage(), e);
-      }
-      return list;
-    }
-    
-    
-    
-    
-    
-    
-    
-    @Override
-    public  List<Contentlet> dbRelatedContent(Relationship relationship, Contentlet contentlet) throws DotDataException {
-        String stInode = contentlet.getStructure().getInode();
+        final String stInode = contentlet.getContentTypeId();
 
-        boolean selfJoinRelationship = relationship.getParentStructureInode().equalsIgnoreCase(stInode)
-            && relationship.getChildStructureInode().equalsIgnoreCase(stInode);
+        final boolean selfJoinRelationship = relationship.getParentStructureInode().equalsIgnoreCase(stInode)
+                && relationship.getChildStructureInode().equalsIgnoreCase(stInode);
 
-        boolean hasParent = !selfJoinRelationship && relationship.getParentStructureInode().equalsIgnoreCase(stInode);
+        final boolean hasParent = !selfJoinRelationship && relationship.getParentStructureInode().equalsIgnoreCase(stInode);
 
         return dbRelatedContent(relationship, contentlet, hasParent);
     }
 
     @Override
-    public  List<Contentlet> dbRelatedContent(Relationship relationship, Contentlet contentlet,
-            boolean hasParent) throws  DotDataException {
+    public  List<Contentlet> dbRelatedContent(final Relationship relationship, final Contentlet contentlet,
+            final boolean hasParent) throws DotDataException {
         return dbRelatedContent (relationship, contentlet, hasParent, false, "tree_order");
     }
+
+    @SuppressWarnings("deprecation")
+    public  List<Contentlet> dbRelatedContent(final Relationship relationship, final Contentlet contentlet,
+            final boolean hasParent, final boolean live, final String orderBy)
+            throws DotDataException {
+        List<Contentlet> matches = new ArrayList<Contentlet>();
+
+        if(contentlet == null || !InodeUtils.isSet(contentlet.getIdentifier())) {
+            return matches;
+        }
+        String iden = "";
+        try{
+            iden = APILocator.getIdentifierAPI().find(contentlet).getInode();
+        }catch(DotHibernateException dhe){
+            Logger.error(this.getClass(), "Unable to retrieve Identifier", dhe);
+        }
+
+        if(!InodeUtils.isSet(iden)) {
+            return matches;
+        }
+
+        if (hasParent) {
+            matches = live ? dbRelatedContentByParent(iden, relationship.getRelationTypeValue(),true, orderBy):
+                    dbRelatedContentByParent(iden, relationship.getRelationTypeValue(),false, orderBy);
+        } else {
+            matches = live ? dbRelatedContentByChild(iden, relationship.getRelationTypeValue(),true, orderBy):
+                    dbRelatedContentByChild(iden, relationship.getRelationTypeValue(),false, orderBy);
+        }
+        return matches;
+    }
+
     @Override
-    public  List<Tree> relatedContentTrees(Relationship relationship, Contentlet contentlet) throws  DotDataException {
-        String stInode = contentlet.getStructure().getInode();
-        List<Tree> matches = new ArrayList<Tree>();
+    public  List<Tree> relatedContentTrees(final Relationship relationship, final Contentlet contentlet) throws  DotDataException {
+        final String stInode = contentlet.getContentTypeId();
+        List<Tree> matches = new ArrayList<>();
         if (relationship.getParentStructureInode().equalsIgnoreCase(stInode)) {
             matches = relatedContentTrees(relationship, contentlet, true);
         } else if (relationship.getChildStructureInode().equalsIgnoreCase(stInode)) {
@@ -264,10 +331,10 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
     }
     @Override
     @SuppressWarnings("deprecation")
-	public  List<Tree> relatedContentTrees(Relationship relationship, Contentlet contentlet, boolean hasParent) throws  DotDataException {
-        List<Tree> matches = new ArrayList<Tree>();
-        List<Tree> trees = new ArrayList<Tree>();
-        Identifier iden = APILocator.getIdentifierAPI().find(contentlet);
+	public  List<Tree> relatedContentTrees(final Relationship relationship, final Contentlet contentlet, final boolean hasParent) throws  DotDataException {
+        final List<Tree> matches = new ArrayList<>();
+        List<Tree> trees;
+        final Identifier iden = APILocator.getIdentifierAPI().find(contentlet);
         if (hasParent) {
             trees = TreeFactory.getTreesByParentAndRelationType(iden, relationship.getRelationTypeValue());
             for (Tree tree : trees) {
@@ -282,162 +349,233 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
         return matches;
     }
 
-    @SuppressWarnings("deprecation")
-	public  List<Contentlet> dbRelatedContent(Relationship relationship, Contentlet contentlet,
-            boolean hasParent, boolean live, String orderBy) throws  DotDataException {
-        List<Contentlet> matches = new ArrayList<Contentlet>();
+    @Override
+    public  boolean isParent(final Relationship relationship, final ContentTypeIf contentTypeIf) {
+        return relationship.getParentStructureInode().equalsIgnoreCase(contentTypeIf.id()) &&
+                !(sameParentAndChildRelationName(relationship) && relationship
+                        .getChildStructureInode()
+                        .equalsIgnoreCase(relationship.getParentStructureInode()));
+    }
+    @Override
+    public  boolean isChild(final Relationship relationship, final ContentTypeIf contentTypeIf) {
+        return relationship.getChildStructureInode().equalsIgnoreCase(contentTypeIf.id()) &&
+                !(sameParentAndChildRelationName(relationship) && relationship
+                        .getChildStructureInode()
+                        .equalsIgnoreCase(relationship.getParentStructureInode()));
+    }
 
-        if(contentlet == null || !InodeUtils.isSet(contentlet.getIdentifier()))
-        	return matches;
-        String iden = "";
+    private boolean sameParentAndChildRelationName(final Relationship relationship){
+        return relationship.getParentRelationName() != null
+                && relationship.getChildRelationName() != null && relationship
+                .getParentRelationName().equals(relationship.getChildRelationName());
+    }
+    @Override
+    public  boolean sameParentAndChild(final Relationship rel) {
+        return rel.getChildStructureInode().equalsIgnoreCase(rel.getParentStructureInode());
+    }
+
+    @Override
+    public void save(final Relationship relationship) throws DotDataException {
+
+        if(UtilMethods.isSet(relationship.getInode())){
+            if(relationshipExists(relationship.getInode())){
+                insertInodeInDB(relationship);
+                insertRelationshipInDB(relationship);
+            } else {
+                updateInodeInDB(relationship);
+                updateRelationshipInDB(relationship);
+            }
+        } else{
+            relationship.setInode(UUIDGenerator.generateUuid());
+            insertInodeInDB(relationship);
+            insertRelationshipInDB(relationship);
+        }
+
+        cache.removeRelationshipByInode(relationship);
         try{
-        	iden = APILocator.getIdentifierAPI().find(contentlet).getInode();
-        }catch(DotHibernateException dhe){
-        	Logger.error(this.getClass(), "Unable to retrive Identifier", dhe);
+            cache.removeRelationshipsByStruct(relationship.getParentStructure());
+            cache.removeRelationshipsByStruct(relationship.getChildStructure());
         }
-
-        if(!InodeUtils.isSet(iden))
-        	return matches;
-
-        if (hasParent) {
-        	if (live)
-        		matches = dbRelatedContentByParent(iden, relationship.getRelationTypeValue(),true, orderBy);
-        	else
-        		matches = dbRelatedContentByParent(iden, relationship.getRelationTypeValue(),false, orderBy);
-
-
-        } else {
-        	if (live)
-        		matches = dbRelatedContentByChild(iden, relationship.getRelationTypeValue(),true, orderBy);
-        	else
-        		matches = dbRelatedContentByChild(iden, relationship.getRelationTypeValue(),false, orderBy);
+        catch(Exception e){
+            Logger.error(this.getClass(), e.getMessage(),e);
         }
-        return matches;
     }
 
-    @Override
-    public  boolean isParent(Relationship rel, ContentTypeIf st) {
-        if (rel.getParentStructureInode().equalsIgnoreCase(st.id()) &&
-                !(rel.getParentRelationName().equals(rel.getChildRelationName()) && rel.getChildStructureInode().equalsIgnoreCase(rel.getParentStructureInode())))
-            return true;
-        return false;
+    private boolean relationshipExists(final String inode) throws DotDataException {
+        final List<Map<String, Object>> results = new DotConnect()
+                .setSQL(sql.FIND_BY_INODE)
+                .addParam(inode)
+                .loadObjectResults();
+        return results.isEmpty();
     }
-    @Override
-    public  boolean isChild(Relationship rel, ContentTypeIf st) {
-        if (rel.getChildStructureInode().equalsIgnoreCase(st.id()) &&
-                !(rel.getParentRelationName().equals(rel.getChildRelationName()) && rel.getChildStructureInode().equalsIgnoreCase(rel.getParentStructureInode())))
-            return true;
-        return false;
-    }
-    @Override
-    public  boolean sameParentAndChild(Relationship rel) {
-        if (rel.getChildStructureInode().equalsIgnoreCase(rel.getParentStructureInode()) )
-            return true;
-        return false;
-    }
-    
-    public static boolean isSameStructureRelationship(Relationship rel, Structure st) {
-      if (rel.getChildStructureInode().equalsIgnoreCase(rel.getParentStructureInode())  )
-          return true;
-      return false;
-  }
-    
 
-    @Override
-    public  void save(Relationship relationship) throws DotHibernateException {
-    	HibernateUtil.saveOrUpdate(relationship);
-    	CacheLocator.getRelationshipCache().removeRelationshipByInode(relationship);
-    	try{
-    		CacheLocator.getRelationshipCache().removeRelationshipsByStruct(relationship.getParentStructure());
-    		CacheLocator.getRelationshipCache().removeRelationshipsByStruct(relationship.getChildStructure());
-    	}
-    	catch(Exception e){
-    		Logger.error(this.getClass(), e.getMessage(),e);
-    	}
-
-    	
-    	
-    	
+    private void insertInodeInDB(final Relationship relationship) throws DotDataException{
+	    DotConnect dc = new DotConnect();
+	    dc.setSQL(sql.INSERT_INODE);
+	    dc.addParam(relationship.getInode());
+	    dc.addParam(relationship.getiDate());
+	    dc.addParam(relationship.getOwner());
+	    dc.loadResult();
     }
-    
-    @Override
-	public  void save(Relationship relationship, String inode) throws DotHibernateException {
-		Date now = new Date();
-		relationship.setiDate(now);
-		HibernateUtil.saveWithPrimaryKey(relationship, inode);
-	}    
+
+    private void insertRelationshipInDB(final Relationship relationship) throws DotDataException{
+	    DotConnect dc = new DotConnect();
+	    dc.setSQL(sql.INSERT_RELATIONSHIP);
+	    dc.addParam(relationship.getInode());
+	    dc.addParam(relationship.getParentStructureInode());
+	    dc.addParam(relationship.getChildStructureInode());
+        dc.addParam(relationship.getParentRelationName());
+        dc.addParam(relationship.getChildRelationName());
+        dc.addParam(relationship.getRelationTypeValue());
+        dc.addParam(relationship.getCardinality());
+        dc.addParam(relationship.isParentRequired());
+        dc.addParam(relationship.isChildRequired());
+        dc.addParam(relationship.isFixed());
+        dc.loadResult();
+    }
+
+    private void updateInodeInDB(final Relationship relationship) throws DotDataException{
+	    DotConnect dc = new DotConnect();
+	    dc.setSQL(sql.UPDATE_INODE);
+	    dc.addParam(relationship.getInode());
+	    dc.addParam(relationship.getiDate());
+        dc.addParam(relationship.getOwner());
+        dc.addParam(relationship.getInode());
+        dc.loadResult();
+    }
+
+    private void updateRelationshipInDB(final Relationship relationship) throws DotDataException{
+        DotConnect dc = new DotConnect();
+        dc.setSQL(sql.UPDATE_RELATIONSHIP);
+        dc.addParam(relationship.getParentStructureInode());
+        dc.addParam(relationship.getChildStructureInode());
+        dc.addParam(relationship.getParentRelationName());
+        dc.addParam(relationship.getChildRelationName());
+        dc.addParam(relationship.getRelationTypeValue());
+        dc.addParam(relationship.getCardinality());
+        dc.addParam(relationship.isParentRequired());
+        dc.addParam(relationship.isChildRequired());
+        dc.addParam(relationship.isFixed());
+        dc.addParam(relationship.getInode());
+        dc.loadResult();
+    }
 
    @Override
-    public void delete(String inode) throws DotHibernateException {
-        Relationship relationship = byInode(inode);
-        delete(relationship);
+    public void delete(final String inode) throws DotDataException {
+        delete(byInode(inode));
     }
 
     @Override
-    public void delete(Relationship relationship) throws DotHibernateException {
+    public void delete(final Relationship relationship) throws DotDataException {
         delete(relationship, false);
     }
 
     @Override
-    public void deleteKeepTrees(Relationship relationship) throws DotHibernateException {
+    public void deleteKeepTrees(final Relationship relationship) throws DotDataException {
         delete(relationship, true);
     }
 
-    private void delete(Relationship relationship, Boolean keepTreeRecords) throws DotHibernateException {
+    private void delete(final Relationship relationship, final Boolean keepTreeRecords) throws DotDataException {
 
-        InodeFactory.deleteInode(relationship);
+	    deleteRelationshipInDB(relationship.getInode());
+	    deleteInodeInDB(relationship.getInode());
 
         if ( !keepTreeRecords ) {
             TreeFactory.deleteTreesByRelationType(relationship.getRelationTypeValue());
         }
 
-        CacheLocator.getRelationshipCache().removeRelationshipByInode(relationship);
+        cache.removeRelationshipByInode(relationship);
         try {
-            CacheLocator.getRelationshipCache().removeRelationshipsByStruct(relationship.getParentStructure());
-            CacheLocator.getRelationshipCache().removeRelationshipsByStruct(relationship.getChildStructure());
+            cache.removeRelationshipsByStruct(relationship.getParentStructure());
+            cache.removeRelationshipsByStruct(relationship.getChildStructure());
         } catch (DotCacheException e) {
             Logger.error(this.getClass(), e.getMessage(), e);
 
         }
     }
 
+    private void deleteRelationshipInDB(final String inode) throws DotDataException{
+        DotConnect dc = new DotConnect();
+        dc.setSQL(sql.DELETE_RELATIONSHIP_BY_INODE);
+        dc.addParam(inode);
+        dc.loadResult();
+    }
 
-	public  List<Contentlet> dbRelatedContentByParent(String parentInode, String relationType, boolean live, String orderBy) throws DotDataException {
+    private void deleteInodeInDB(final String inode) throws DotDataException{
+        DotConnect dc = new DotConnect();
+        dc.setSQL(sql.DELETE_INODE);
+        dc.addParam(inode);
+        dc.loadResult();
+    }
 
-            HibernateUtil dh = new HibernateUtil(com.dotmarketing.portlets.contentlet.business.Contentlet.class);
+	public  List<Contentlet> dbRelatedContentByParent(final String parentInode, final String relationType, final boolean live,
+            final String orderBy) throws DotDataException{
 
-            String sql = "SELECT {contentlet.*} from contentlet contentlet, inode contentlet_1_, contentlet_version_info vi, tree tree1 "
-            		+ "where tree1.parent = ? and tree1.relation_type = ?  "
-                    + "and tree1.child = contentlet.identifier "
-                    + "and contentlet.inode = contentlet_1_.inode and vi.identifier=contentlet.identifier "
-                    + "and " + ((live)?"vi.live_inode":"vi.working_inode") + " = contentlet.inode ";
+	    final StringBuilder query = new StringBuilder("select cont1.inode from contentlet cont1, inode ci1, tree tree1, "
+                + "contentlet_version_info vi1 where tree1.parent = ? and tree1.relation_type = ? ")
+                .append("and tree1.child = cont1.identifier and cont1.inode = ci1.inode and vi1.identifier = cont1.identifier and " + (live?"vi1.live_inode":"vi1.working_inode"))
+                .append(" = cont1.inode");
 
             if (UtilMethods.isSet(orderBy) && !(orderBy.trim().equals("sort_order") || orderBy.trim().equals("tree_order"))) {
-            	sql = sql + " order by contentlet." + orderBy;
+            	query.append(" order by cont1.")
+                        .append(orderBy);
             } else {
-            	sql = sql + " order by tree1.tree_order";
+            	query.append(" order by tree1.tree_order");
             }
 
+            final DotConnect dc = new DotConnect();
+            dc.setSQL(query.toString());
+            dc.addParam(parentInode);
+            dc.addParam(relationType);
 
-            Logger.debug(this.getClass(), "sql:  " + sql + "\n");
-            Logger.debug(this.getClass(), "parentInode:  " + parentInode + "\n");
-            Logger.debug(this.getClass(), "relationType:  " + relationType + "\n");
-            dh.setSQLQuery(sql);
-            dh.setParam(parentInode);
-            dh.setParam(relationType);
+        final List<Map<String, Object>> results = dc.loadObjectResults();
+        final List<Contentlet> contentlets = new ArrayList<Contentlet>();
 
-            List<com.dotmarketing.portlets.contentlet.business.Contentlet> l = dh.list();
-            List<Contentlet> conResult = new ArrayList<Contentlet>();
-            ESContentFactoryImpl conFac = new ESContentFactoryImpl();
-            for (com.dotmarketing.portlets.contentlet.business.Contentlet fatty : l) {
-            	try {
-					conResult.add(conFac.convertFatContentletToContentlet(fatty));
-				} catch (DotStateException | DotDataException | DotSecurityException e) {
-					throw new DotDataException(e.getMessage(),e);
-				}
-			}
-            return conResult;
+        for(final Map<String,Object> map : results){
+            try {
+                contentlets.add(APILocator.getContentletAPI().find((String) map.get("inode"),APILocator.systemUser(),false));
+            } catch (DotSecurityException e) {//Never Should throw DotSecurityException since is using systemUser but just in case
+                Logger.error(this, e.getMessage() + "inode: " + map.get("inode"));
+            }
+        }
 
+        return contentlets;
+    }
+
+    @SuppressWarnings("unchecked")
+    public  List<Contentlet> dbRelatedContentByChild(final String childInode, final String relationType, final boolean live,
+            final String orderBy) throws DotDataException {
+
+        final StringBuilder query = new StringBuilder("select cont1.inode from contentlet cont1 join inode ci1 on (cont1.inode = ci1.inode) join contentlet_version_info vi1 on "
+                        + "(" + (live?"vi1.live_inode":"vi1.working_inode") + " = cont1.inode) join tree tree1 on (tree1.parent = cont1.identifier) ")
+                .append("where tree1.child = ? and tree1.relation_type = ?");
+
+
+        if (UtilMethods.isSet(orderBy) && !(orderBy.trim().equals("sort_order") || orderBy.trim().equals("tree_order"))) {
+            query.append(" order by cont1.")
+                    .append(orderBy);
+        } else {
+            query.append(" order by tree1.tree_order");
+        }
+
+        final DotConnect dc = new DotConnect();
+        dc.setSQL(query.toString());
+        dc.addParam(childInode);
+        dc.addParam(relationType);
+
+
+        final List<Map<String, Object>> results = dc.loadObjectResults();
+        final List<Contentlet> contentlets = new ArrayList<Contentlet>();
+
+        for(final Map<String,Object> map : results){
+            try {
+                contentlets.add(APILocator.getContentletAPI().find((String) map.get("inode"),APILocator.systemUser(),false));
+            } catch (DotSecurityException e) {//Never Should throw DotSecurityException since is using systemUser but just in case
+                Logger.error(this, e.getMessage() + "inode: " + map.get("inode"));
+            }
+        }
+
+        return contentlets;
 
     }
 
@@ -448,76 +586,14 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
      * @return the max in the sort order
      */
     @Override
-  public int maxSortOrder(String parentInode, String relationType) {
+    public int maxSortOrder(final String parentInode, final String relationType) {
 
+        DotConnect dc = new DotConnect();
+        dc.setSQL(sql.SELECT_MAX_TREE_ORDER);
+        dc.addParam(parentInode);
+        dc.addParam(relationType);
 
-        DotConnect db = new DotConnect();
-
-        String sql = "SELECT max(tree_order) as tree_order from tree tree1 "
-        		+ "where tree1.parent = ? and tree1.relation_type = ? ";
-
-        db.setSQL(sql);
-        db.addParam(parentInode);
-        db.addParam(relationType);
-
-       int x=  db.getInt("tree_order");
-
-        return x;
-
-
-    }
-
-
-
-    @SuppressWarnings("unchecked")
-	public  List<Contentlet> dbRelatedContentByChild(String childInode, String relationType, boolean live, String orderBy) throws DotDataException {
-
-            HibernateUtil dh = new HibernateUtil(com.dotmarketing.portlets.contentlet.business.Contentlet.class);
-
-            String sql =    "SELECT {contentlet.*} "+
-                            "from contentlet "+
-                            "join inode contentlet_1_ "+
-                            "on (contentlet.inode = contentlet_1_.inode) "+
-                            "join contentlet_version_info vi "+
-                            "on (vi."+(live?"live":"working")+"_inode = contentlet.inode) "+
-                            "join tree "+
-                            "on (tree.parent=contentlet.identifier) "+
-                            "where "+
-                            "  tree.child = ? "+
-                            "  and tree.relation_type = ?";
-
-
-           	if (UtilMethods.isSet(orderBy) && !(orderBy.trim().equals("sort_order") || orderBy.trim().equals("tree_order"))) {
-           		sql = sql + " order by contentlet." + orderBy;
-           	} else {
-           		sql = sql + " order by tree.tree_order";
-           	}
-
-            Logger.debug(this.getClass(), "sql:  " + sql + "\n");
-            Logger.debug(this.getClass(), "childInode:  " + childInode + "\n");
-            Logger.debug(this.getClass(), "relationType:  " + relationType + "\n");
-            dh.setSQLQuery(sql);
-            dh.setParam(childInode);
-            dh.setParam(relationType);
-
-            List<com.dotmarketing.portlets.contentlet.business.Contentlet> l = dh.list();
-            List<Contentlet> conResult = new ArrayList<Contentlet>();
-            ESContentFactoryImpl conFac = new ESContentFactoryImpl();
-            for (com.dotmarketing.portlets.contentlet.business.Contentlet fatty : l) {
-            	try {
-					conResult.add(conFac.convertFatContentletToContentlet(fatty));
-				} catch (DotStateException | DotSecurityException e) {
-					throw new DotDataException(e.getMessage(),e);
-				}
-			}
-            return conResult;
-
-
-    }
-
-    public  List<Contentlet> dbRelatedContent(Relationship relationship, Contentlet contentlet,
-            boolean hasParent, boolean live) throws  DotDataException {
-    	return dbRelatedContent(relationship, contentlet, hasParent, live,"");
+        return dc.getInt("tree_order");
     }
 
     /**
@@ -528,7 +604,8 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
      * @throws DotDataException
      */
     @Override
-    public  void deleteByContent(Contentlet contentlet, Relationship relationship, List<Contentlet> relatedContentlets) throws DotDataException{
+    public  void deleteByContent(final Contentlet contentlet, final Relationship relationship,
+            final List<Contentlet> relatedContentlets) throws DotDataException{
         if(contentlet.getIdentifier()!=null){
             for (Contentlet con : relatedContentlets) {
                 if(con.getIdentifier()!=null){
@@ -541,9 +618,16 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
         }
     }
 
-    
+    /**
+     * Creates a relationship between 2 contentlets
+     *
+     * @param parent contentlet parent
+     * @param child contentlet child
+     * @param relationType
+     * @throws DotDataException
+     */
     @Override
-    public void addRelationship(String parent,String child, String relationType)throws DotDataException {       
+    public void addRelationship(final String parent, final String child, final String relationType)throws DotDataException {
         Tree tree = TreeFactory.getTree(parent, child,relationType);
         if (!InodeUtils.isSet(tree.getParent()) || !InodeUtils.isSet(tree.getChild())) {
             tree.setParent(parent);
@@ -557,21 +641,26 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
     }
 
     @Override
-    public List<Relationship> getOneSidedRelationships(final ContentType contentType, final int limit, final int offset) throws DotDataException {
+    public List<Relationship> getOneSidedRelationships(final ContentTypeIf contentType, final int limit, final int offset) throws DotDataException {
+
         DotConnect dc = new DotConnect();
-        StringBuilder sql = new StringBuilder();
-
         DotPreconditions.checkArgument(limit != 0, "limit param must be more than 0");
-
-        sql.append("select * from relationship where ((child_structure_inode = ?").
-                append(" and child_relation_name is null) or (parent_structure_inode = ?").
-                append(" and parent_relation_name is null)) order by parent_relation_name");
-        dc.setSQL(sql.toString());
+        dc.setSQL(sql.SELECT_ONE_SIDE_RELATIONSHIP);
         dc.addParam(contentType.id());
         dc.addParam(contentType.id());
         dc.setMaxRows((limit < 0) ? 10000 : limit);
         dc.setStartRow(offset);
 
         return new DbRelationshipTransformer(dc.loadObjectResults()).asList();
+    }
+
+    @Override
+    public long getOneSidedRelationshipsCount(final ContentType contentType) throws DotDataException {
+        final DotConnect dc = new DotConnect();
+        dc.setSQL(sql.SELECT_ONE_SIDE_RELATIONSHIP_COUNT);
+        dc.addParam(contentType.id());
+        dc.addParam(contentType.id());
+        final List<Map<String,String>> results = dc.loadResults();
+        return ConversionUtils.toLong(results.get(0).get("relationship_count"));
     }
 }

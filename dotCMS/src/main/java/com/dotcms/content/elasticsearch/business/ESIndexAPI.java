@@ -12,7 +12,6 @@ import com.dotcms.repackage.org.dts.spell.utils.FileUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotDataValidationException;
 import com.dotmarketing.sitesearch.business.SiteSearchAPI;
 import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.Config;
@@ -114,6 +113,9 @@ public class ESIndexAPI {
 
     public static final String BACKUP_REPOSITORY = "backup";
     private final String REPOSITORY_PATH = "path.repo";
+
+	private static final int INDEX_OPERATIONS_TIMEOUT_IN_MS =
+			Config.getIntProperty("ES_INDEX_OPERATIONS_TIMEOUT", 15000);
 
 	final private ESClient esclient;
 	final private ESContentletIndexAPI iapi;
@@ -622,7 +624,7 @@ public class ESIndexAPI {
 
 		// create actual index
 		CreateIndexRequestBuilder cirb = iac.prepareCreate(indexName).setSettings(map);
-		CreateIndexResponse createIndexResponse = cirb.execute().actionGet();
+		CreateIndexResponse createIndexResponse = cirb.execute().actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS);
 
 		AdminLogger.log(this.getClass(), "createIndex",
 			"Index created: " + indexName + " with shards: " + shards);
@@ -664,7 +666,8 @@ public class ESIndexAPI {
 
 
         // create actual index
-		iac.prepareCreate(indexName).setSettings(settings, XContentType.JSON).addMapping(type, mapping).execute();
+		iac.prepareCreate(indexName).setSettings(settings, XContentType.JSON)
+				.addMapping(type, mapping).setTimeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS)).execute();
 
         AdminLogger.log(this.getClass(), "createIndex",
                 "Index created: " + indexName + " with shards: " + shards);

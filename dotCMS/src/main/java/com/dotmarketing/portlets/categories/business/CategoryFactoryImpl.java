@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.categories.business;
 
+import com.dotcms.util.DotPreconditions;
 import com.dotmarketing.beans.Tree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -112,6 +113,16 @@ public class CategoryFactoryImpl extends CategoryFactory {
 				}
 		}
 		return cat;
+	}
+
+	@Override
+	protected Category findByVar(final String variable) throws DotDataException {
+		DotPreconditions.checkArgument(UtilMethods.isSet(variable));
+		HibernateUtil hu = new HibernateUtil(Category.class);
+		hu.setQuery("from " + Category.class.getCanonicalName()
+				+ " WHERE category_velocity_var_name=?");
+		hu.setParam(variable);
+		return (Category) hu.load();
 	}
 
 	@Override

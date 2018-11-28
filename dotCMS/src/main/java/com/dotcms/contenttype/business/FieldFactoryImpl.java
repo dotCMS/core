@@ -16,7 +16,6 @@ import com.dotcms.contenttype.model.field.ImmutableFieldVariable;
 import com.dotcms.contenttype.model.field.ImmutableFieldVariable.Builder;
 import com.dotcms.contenttype.model.field.LegacyFieldTypes;
 import com.dotcms.contenttype.model.field.OnePerContentType;
-import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.field.DbFieldTransformer;
@@ -33,6 +32,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.UUID;
@@ -67,6 +67,11 @@ public class FieldFactoryImpl implements FieldFactory {
   @Override
   public Field byContentTypeIdFieldVar(String id, String var) throws DotDataException {
     return selectByContentTypeFieldVarInDb(id, var);
+  }
+
+  @Override
+  public Optional<Field> byContentTypeIdFieldRelationTypeInDb(String id, String var) throws DotDataException {
+    return selectByContentTypeFieldRelationTypeInDb(id, var);
   }
 
   @Override
@@ -221,13 +226,6 @@ public class FieldFactoryImpl implements FieldFactory {
       String tryVar = (throwAwayField.variable() == null)
           ? suggestVelocityVar(throwAwayField.name(), fieldsAlreadyAdded) : throwAwayField.variable();
       builder.variable(tryVar);
-
-      //TODO: Modify when UI changes on Relationships get ready
-      if (throwAwayField.type().getCanonicalName().equals(RelationshipField.class.getCanonicalName())){
-        builder.relationType(tryVar + "-News-Youtube");
-      }
-
-
     }
     builder = FieldBuilder.builder(normalizeData(builder.build()));
 
@@ -237,7 +235,7 @@ public class FieldFactoryImpl implements FieldFactory {
     validateDbColumn(retField);
 
 
-    
+
     
     if (oldField == null) {
       insertInodeInDb(retField);
@@ -333,6 +331,15 @@ public class FieldFactoryImpl implements FieldFactory {
     results = dc.loadObjectResults();
     return new DbFieldTransformer(results).asList();
 
+  }
+
+  private Optional<Field> selectByContentTypeFieldRelationTypeInDb(String id, String fieldRelationType) throws DotDataException {
+    DotConnect dc = new DotConnect();
+    dc.setSQL(sql.findByContentTypeAndRelationType).addParam(id).addParam(fieldRelationType);
+
+    final List<Map<String, Object>> results = dc.loadObjectResults();
+    return results.isEmpty()?
+            Optional.empty():Optional.of(new DbFieldTransformer(results.get(0)).from());
   }
 
   private Field selectInDb(String id) throws DotDataException {

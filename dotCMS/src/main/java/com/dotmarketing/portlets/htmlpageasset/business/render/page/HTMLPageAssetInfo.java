@@ -23,6 +23,7 @@ public class HTMLPageAssetInfo {
     private String workingInode;
     private String shortyWorking;
     private boolean canEdit;
+    private boolean canRead;
     private String liveInode;
     private String shortyLive;
     private boolean canLock;
@@ -66,6 +67,15 @@ public class HTMLPageAssetInfo {
     HTMLPageAssetInfo setCanEdit(boolean canEdit) {
         this.canEdit = canEdit;
         return this;
+    }
+
+    public HTMLPageAssetInfo setCanRead(final boolean canRead) {
+        this.canRead = canRead;
+        return this;
+    }
+
+    public boolean isCanRead() {
+        return canRead;
     }
 
     public String getLiveInode() {

@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.contentlet.ajax;
 
 import static com.dotcms.exception.ExceptionUtil.getRootCause;
+import static com.dotcms.util.CollectionsUtils.map;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
@@ -28,7 +29,12 @@ import com.dotmarketing.business.PublishStateException;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.db.HibernateUtil;
-import com.dotmarketing.exception.*;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotHibernateException;
+import com.dotmarketing.exception.DotLanguageException;
+import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.exception.InvalidLicenseException;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -75,6 +81,7 @@ import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
 import com.google.common.base.CharMatcher;
+import com.google.common.collect.ImmutableList;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.language.LanguageException;
@@ -1579,7 +1586,7 @@ public class ContentletAjax {
 						final Template previousTemplate = APILocator.getTemplateAPI().findWorkingTemplate(previousTemplateId,
 								systemUser, false);
 
-						if (previousTemplate.isAnonymous()) {
+						if (UtilMethods.isSet(previousTemplate) && previousTemplate.isAnonymous()) {
 							APILocator.getTemplateAPI().delete(previousTemplate, systemUser, false);
 						}
 					}
@@ -1648,6 +1655,13 @@ public class ContentletAjax {
 					}
 				}
 			}
+
+
+		  if(UtilMethods.isSet(contentlet) && UtilMethods.isSet(contentlet.getIdentifier())){
+		    callbackData.put("allLangContentlets",
+					findAllLangContentlets(contentlet.getIdentifier())
+		    );
+		  }
 
 			// everything Ok? then commit
 			HibernateUtil.closeAndCommitTransaction();
@@ -1865,19 +1879,27 @@ public class ContentletAjax {
 						.getNotValidRelationship();
 				final Set<String> auxKeys = notValidRelationships.keySet();
 				for (final String key : auxKeys) {
-					String errorMessage = "";
+					StringBuilder errorMessage = new StringBuilder();
 					if (key.equals(
 							DotContentletValidationException.VALIDATION_FAILED_REQUIRED_REL)) {
-						errorMessage = "<b>Required Relationship</b>";
+						errorMessage.append("<b>").append(LanguageUtil
+								.get(user, "message.contentlet.relationship.required"))
+								.append("</b>");
 					} else if (key
 							.equals(DotContentletValidationException.VALIDATION_FAILED_INVALID_REL_CONTENT)) {
-						errorMessage = "<b>Invalid Relationship-Contentlet</b>";
+						errorMessage.append("<b>").append(LanguageUtil
+								.get(user, "message.contentlet.relationship.invalid"))
+								.append("</b>");
 					} else if (key
 							.equals(DotContentletValidationException.VALIDATION_FAILED_BAD_REL)) {
-						errorMessage = "<b>Bad Relationship</b>";
+						errorMessage.append("<b>").append(LanguageUtil
+								.get(user, "message.contentlet.relationship.bad"))
+								.append("</b>");
 					} else if (key
 							.equals(DotContentletValidationException.VALIDATION_FAILED_BAD_CARDINALITY)) {
-						errorMessage = "<b>One to Many Relation Violated</b>";
+						errorMessage.append("<b>").append(LanguageUtil
+								.get(user, "message.contentlet.relationship.cardinality.bad"))
+								.append("</b>");
 					}
 
 					sb.append(errorMessage).append(":<br>");
@@ -2347,5 +2369,40 @@ public class ContentletAjax {
 
 		return callbackData;
 	}
+
+
+	private List<Map<String, String>> findAllLangContentlets(final String contentletIdentifier) {
+
+	    final Identifier identifier = new Identifier(contentletIdentifier);
+
+		final ImmutableList.Builder<Map<String, String>> builder = new ImmutableList.Builder<>();
+
+		final List<Language> allLanguages = langAPI.getLanguages();
+		allLanguages.forEach(language -> {
+
+			try {
+				final Contentlet contentlet = conAPI.findContentletForLanguage(language.getId(), identifier);
+				if (null != contentlet) {
+					builder.add(
+							map("inode", contentlet.getInode(),
+									"identifier", contentletIdentifier,
+									"languageId", language.getId() + "")
+					);
+				} else {
+					builder.add(
+							map("inode", "",
+									"identifier", contentletIdentifier,
+									"languageId", language.getId() + "")
+					);
+				}
+			} catch (DotDataException | DotSecurityException e) {
+			    Logger.error(ContentletAjax.class, String.format("Unable to get contentlet for identifier %s and language %s", contentletIdentifier, language), e);
+			}
+
+		});
+
+		return builder.build();
+	}
+
 }
 

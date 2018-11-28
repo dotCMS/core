@@ -415,23 +415,6 @@
 			<property column="chapter_officer" length="255" name="chapterOfficer" type="string" />
 		</joined-subclass>
 
-		<joined-subclass name="com.dotmarketing.portlets.structure.model.Relationship" table="relationship">
-			<key column="inode" />
-			<property name="parentStructureInode" type="string" length="36" >
-				<column name="parent_structure_inode" index="idx_relationship_1" />
-			</property>
-			<property name="childStructureInode" type="string" length="36" >
-				<column name="child_structure_inode" index="idx_relationship_2" />
-			</property>
-			<property column="parent_relation_name" name="parentRelationName" type="string" length="255" />
-			<property column="child_relation_name" name="childRelationName" type="string" length="255" />
-			<property column="relation_type_value" name="relationTypeValue" type="string" length="255" />
-			<property column="cardinality" name="cardinality" type="int" />
-			<property column="parent_required" name="parentRequired" type="boolean" />
-			<property column="child_required" name="childRequired" type="boolean" />
-			<property column="fixed" name="fixed" type="boolean" />
-		</joined-subclass>
-
 		<joined-subclass name="com.dotmarketing.portlets.structure.model.Field" table="field">
 			<key column="inode" />
 			<property name="structureInode" type="string" length="36" >
@@ -597,19 +580,6 @@
 			<column name="preference" length="255" index="idx_preference_1" />
 		</property>
 		<property column="pref_value" name="value" length="123456789" type="string" />
-	</class>
-
-	<class name="com.dotmarketing.portlets.languagesmanager.model.Language" table="language">
-		<id name="id" column="id" type="long" unsaved-value="0">
-			<!-- generator class="sequence">
-				<param name="sequence">language_seq</param>
-			</generator -->
-			<generator class="native"/>
-		</id>
-		<property name="languageCode" column="language_code" length="5" type="string" />
-		<property name="countryCode" column="country_code" length="255" type="string" />
-		<property name="language" column="language" length="255" type="string" />
-		<property name="country" column="country" length="255" type="string" />
 	</class>
 
 	<class name="com.dotmarketing.beans.Clickstream" table="clickstream">

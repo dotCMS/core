@@ -1,6 +1,5 @@
 package com.dotcms.util.pagination;
 
-import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.business.APILocator;
@@ -19,37 +18,34 @@ import java.util.stream.Collectors;
  * Paginator for relationships results
  * @author nollymar
  */
-public class RelationshipPaginator implements Paginator<Map<String, Object>> {
+public class RelationshipPaginator implements Paginator<Relationship> {
 
     private final RelationshipAPI relationshipAPI;
-    private final ContentTypeAPI contentTypeAPI;
     public static final String CONTENT_TYPE_PARAM = "content_type";
 
     @VisibleForTesting
-    public RelationshipPaginator(final RelationshipAPI relationshipAPI,
-            final ContentTypeAPI contentTypeAPI) {
+    public RelationshipPaginator(final RelationshipAPI relationshipAPI) {
         this.relationshipAPI = relationshipAPI;
-        this.contentTypeAPI = contentTypeAPI;
     }
 
-    public RelationshipPaginator(User user) {
-        this(APILocator.getRelationshipAPI(), APILocator.getContentTypeAPI(user));
+    public RelationshipPaginator() {
+        this(APILocator.getRelationshipAPI());
     }
 
     @Override
-    public PaginatedArrayList<Map<String, Object>> getItems(final User user, final int limit,
+    public PaginatedArrayList<Relationship> getItems(final User user, final int limit,
             final int offset, final Map<String, Object> params) throws PaginationException {
         try {
 
-            final PaginatedArrayList<Map<String, Object>> result = new PaginatedArrayList();
+            final PaginatedArrayList<Relationship> result = new PaginatedArrayList();
+            final ContentType contentType = (ContentType) params.get(CONTENT_TYPE_PARAM);
 
             final List<Relationship> relationships = relationshipAPI
-                    .getOneSidedRelationships((ContentType) params.get(CONTENT_TYPE_PARAM), limit, offset);
+                    .getOneSidedRelationships(contentType, limit, offset);
 
             //Adding one sided relationships
-            result.add(relationships.stream()
-                    .collect(Collectors.toMap(Relationship::getInode, r -> r)));
-
+            result.addAll(relationships);
+            result.setTotalResults(relationshipAPI.getOneSidedRelationshipsCount(contentType));
             return result;
         } catch (DotDataException e) {
             Logger.error(this, "Error getting relationships", e);

@@ -6,6 +6,7 @@ import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.exception.DotDataException;
+import java.util.Optional;
 
 public interface FieldFactory {
     default FieldFactory instance() {
@@ -14,6 +15,8 @@ public interface FieldFactory {
 
     public final static String GENERIC_FIELD_VAR="field";
     Field byId(String id) throws DotDataException;
+
+    Optional<Field> byContentTypeIdFieldRelationTypeInDb(String id, String var) throws DotDataException;
 
     List<Field> byContentType(ContentType type) throws DotDataException;
 

@@ -9,7 +9,9 @@ import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.model.User;
 
+import javax.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoField;
 import java.util.Optional;
@@ -41,25 +43,26 @@ public class DotJSONCacheImpl extends DotJSONCache {
     }
 
     @Override
-    public void add(final DotJSONCacheKey dotJSONCacheKey, final DotJSON dotJSON) {
-        DotPreconditions.checkNotNull(dotJSONCacheKey);
-        DotPreconditions.checkArgument(UtilMethods.isSet(dotJSONCacheKey.getKey()));
+    public void add(final HttpServletRequest request, final User user, final DotJSON dotJSON) {
+        final DotJSONCache.DotJSONCacheKey cacheKey = getDotJSONCacheKey(request, user);
 
         if(dotJSON.getCacheTTL()>0) {
             dotJSON.setCachedSince(LocalDateTime.now());
-            this.cache.put(dotJSONCacheKey.getKey(), dotJSON, primaryCacheGroup);
+            this.cache.put(cacheKey.getKey(), dotJSON, primaryCacheGroup);
         }
     }
 
     @Override
-    public Optional<DotJSON> get(final DotJSONCacheKey dotJSONCacheKey) {
+    public Optional<DotJSON> get(final HttpServletRequest request, final User user) {
         Optional<DotJSON> dotJSONOptional = Optional.empty();
 
-        if (!canCache || dotJSONCacheKey == null) {
+        if (!canCache) {
             return dotJSONOptional;
         }
 
         synchronized(this.cache) {
+            final DotJSONCache.DotJSONCacheKey dotJSONCacheKey = getDotJSONCacheKey(request, user);
+
             try {
                 final DotJSON dotJSON = (DotJSON) this.cache.get(dotJSONCacheKey.getKey(), primaryCacheGroup);
 
@@ -67,7 +70,7 @@ public class DotJSONCacheImpl extends DotJSONCache {
                     final LocalDateTime cachedSince = dotJSON.getCachedSince();
 
                     final LocalDateTime cachedSincePlusTTL = cachedSince.plus(dotJSON.getCacheTTL(),
-                            ChronoField.MILLI_OF_DAY.getBaseUnit());
+                            ChronoField.SECOND_OF_DAY.getBaseUnit());
 
                     if (cachedSincePlusTTL.isAfter(LocalDateTime.now())) {
                         dotJSONOptional = Optional.of(dotJSON);

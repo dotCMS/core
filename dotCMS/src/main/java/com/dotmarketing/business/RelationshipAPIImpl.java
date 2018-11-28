@@ -9,11 +9,14 @@ import com.dotcms.contenttype.model.type.ContentTypeIf;
 import com.dotmarketing.beans.Tree;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Relationship;
 
-import com.dotmarketing.util.UUIDGenerator;
+import com.dotmarketing.portlets.structure.transform.ContentletRelationshipsTransformer;
 import com.dotmarketing.util.UtilMethods;
 import java.util.List;
+import java.util.Optional;
+import java.util.Map;
 
 // THIS IS A FAKE API SO PEOPLE CAN FIND AND USE THE RELATIONSHIPFACTORY
 public class RelationshipAPIImpl implements RelationshipAPI {
@@ -38,6 +41,25 @@ public class RelationshipAPIImpl implements RelationshipAPI {
 
     @CloseDBIfOpened
     @Override
+    public Relationship byTypeValue(final String typeValue) {
+        return this.relationshipFactory.byTypeValue(typeValue);
+    }
+
+    @CloseDBIfOpened
+    @Override
+    public Optional<Relationship> byParentChildRelationName(final ContentType contentType,
+            final String relationName) {
+        return this.relationshipFactory.byParentChildRelationName(contentType, relationName);
+    }
+
+    @CloseDBIfOpened
+    @Override
+    public List<Relationship> dbAllByTypeValue(final String typeValue) {
+        return this.relationshipFactory.dbAllByTypeValue(typeValue);
+    }
+
+    @CloseDBIfOpened
+    @Override
     public List<Relationship> byParent(ContentTypeIf parent) throws DotDataException {
         return this.relationshipFactory.byParent(parent);
     }
@@ -50,36 +72,36 @@ public class RelationshipAPIImpl implements RelationshipAPI {
 
     @CloseDBIfOpened
     @Override
-    public Relationship byTypeValue(String typeValue) {
-        return this.relationshipFactory.byTypeValue(typeValue);
-    }
-
-    @CloseDBIfOpened
-    @Override
     public List<Relationship> byContentType(ContentTypeIf type) throws DotDataException {
         return this.relationshipFactory.byContentType(type);
     }
 
     @CloseDBIfOpened
     @Override
-    public List<Relationship> byContentType(ContentTypeIf st, boolean hasParent) {
-        return this.relationshipFactory.byContentType(st, hasParent);
+    public List<Relationship> byContentType(ContentTypeIf st, boolean hasParent) throws DotDataException{
+        if(hasParent) {
+            return this.relationshipFactory.byParent(st);
+        }else{
+            return this.relationshipFactory.byChild(st);
+        }
     }
 
     @CloseDBIfOpened
     @Override
-    public List<Relationship> byContentType(ContentTypeIf type, String orderBy) {
+    public List<Relationship> byContentType(ContentTypeIf type, String orderBy){
         return this.relationshipFactory.byContentType(type, orderBy);
     }
 
     @CloseDBIfOpened
     @Override
-    public List<Contentlet> dbRelatedContent(Relationship relationship, Contentlet contentlet) throws DotDataException {
+    public List<Contentlet> dbRelatedContent(Relationship relationship, Contentlet contentlet)
+            throws DotDataException {
         return this.relationshipFactory.dbRelatedContent(relationship, contentlet);
     }
 
     @Override
-    public List<Contentlet> dbRelatedContent(Relationship relationship, Contentlet contentlet, boolean hasParent) throws DotDataException {
+    public List<Contentlet> dbRelatedContent(Relationship relationship, Contentlet contentlet, boolean hasParent)
+            throws DotDataException {
         return this.relationshipFactory.dbRelatedContent(relationship, contentlet, hasParent);
     }
 
@@ -113,7 +135,6 @@ public class RelationshipAPIImpl implements RelationshipAPI {
     @WrapInTransaction
     @Override
     public void save(Relationship relationship) throws DotDataException {
-        checkReadOnlyFields(relationship, relationship.getInode());
         this.relationshipFactory.save(relationship);
     }
 
@@ -121,10 +142,11 @@ public class RelationshipAPIImpl implements RelationshipAPI {
     @Override
     public void save(Relationship relationship, String inode) throws DotDataException {
         checkReadOnlyFields(relationship, inode);
-        this.relationshipFactory.save(relationship, inode);
+        this.relationshipFactory.save(relationship);
     }
 
-    private void checkReadOnlyFields(final Relationship relationship, final String inode) {
+    private void checkReadOnlyFields(final Relationship relationship, final String inode)
+            throws DotDataException {
         if (UtilMethods.isSet(inode) && UtilMethods.isSet(relationship)) {
 
             //Check if the relationship already exists
@@ -153,8 +175,7 @@ public class RelationshipAPIImpl implements RelationshipAPI {
     @WrapInTransaction
     @Override
     public void create(Relationship relationship) throws DotDataException {
-        final String inode = UUIDGenerator.generateUuid();
-        this.relationshipFactory.save(relationship, inode);
+        this.relationshipFactory.save(relationship);
     }
 
     @WrapInTransaction
@@ -198,5 +219,16 @@ public class RelationshipAPIImpl implements RelationshipAPI {
     public List<Relationship> getOneSidedRelationships(final ContentType contentType,
             final int limit, final int offset) throws DotDataException {
         return this.relationshipFactory.getOneSidedRelationships(contentType, limit, offset);
+    }
+
+    @CloseDBIfOpened
+    @Override
+    public long getOneSidedRelationshipsCount(final ContentType contentType) throws DotDataException {
+        return this.relationshipFactory.getOneSidedRelationshipsCount(contentType);
+    }
+
+    @Override
+    public ContentletRelationships getContentletRelationshipsFromMap(Contentlet contentlet, final Map<Relationship, List<Contentlet>> contentRelationships) {
+        return new ContentletRelationshipsTransformer(contentlet, contentRelationships).findFirst();
     }
 }

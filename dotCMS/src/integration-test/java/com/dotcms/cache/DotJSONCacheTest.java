@@ -4,9 +4,9 @@ import com.dotcms.api.vtl.model.DotJSON;
 import com.dotcms.cache.DotJSONCache.DotJSONCacheKey;
 import com.dotcms.cache.DotJSONCacheAddTestCase.Builder;
 import com.dotcms.util.IntegrationTestInitService;
-import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.model.User;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
@@ -15,6 +15,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.NoSuchElementException;
 
 import static org.jgroups.util.Util.assertEquals;
@@ -33,9 +34,9 @@ public class DotJSONCacheTest {
 
     @DataProvider
     public static Object[] addTestCases() {
-        final DotJSON<String, String> dotJSONZeroTTL = new DotJSON<>();
-        final DotJSON<String, Integer> dotJSONPositiveTTL = new DotJSON<>();
-        dotJSONPositiveTTL.put(DotJSON.CACHE_TTL_KEY, 1000);
+        final DotJSON dotJSONZeroTTL = new DotJSON();
+        final DotJSON dotJSONPositiveTTL = new DotJSON();
+        dotJSONPositiveTTL.put(DotJSON.CACHE_TTL_KEY, "5");
 
         return new DotJSONCacheAddTestCase[] {
                 new Builder().cacheKey(null).shouldCache(false).build(),
@@ -46,16 +47,16 @@ public class DotJSONCacheTest {
 
     @DataProvider
     public static Object[] getTestCases() {
-        final DotJSON<String, Integer> dotJSON1000TTL = new DotJSON<>();
-        dotJSON1000TTL.put(DotJSON.CACHE_TTL_KEY, 500);
+        final DotJSON dotJSON5TTL = new DotJSON();
+        dotJSON5TTL.put(DotJSON.CACHE_TTL_KEY, "5");
 
         return new DotJSONCacheGetTestCase[] {
-                new DotJSONCacheGetTestCase.Builder().dotJSONToAdd(dotJSON1000TTL).cacheKeyToAdd(VALID_KEY)
-                        .cacheKeyToGet(VALID_KEY).waitTime(0).dotJSONToExpect(dotJSON1000TTL).build(),
-                new DotJSONCacheGetTestCase.Builder().dotJSONToAdd(dotJSON1000TTL).cacheKeyToAdd(VALID_KEY)
+                new DotJSONCacheGetTestCase.Builder().dotJSONToAdd(dotJSON5TTL).cacheKeyToAdd(VALID_KEY)
+                        .cacheKeyToGet(VALID_KEY).waitTime(0).dotJSONToExpect(dotJSON5TTL).build(),
+                new DotJSONCacheGetTestCase.Builder().dotJSONToAdd(dotJSON5TTL).cacheKeyToAdd(VALID_KEY)
                 .cacheKeyToGet(VALID_KEY)
-                        .waitTime(700).dotJSONToExpect(null).build(),
-                new DotJSONCacheGetTestCase.Builder().dotJSONToAdd(dotJSON1000TTL).cacheKeyToAdd(VALID_KEY)
+                        .waitTime(7000).dotJSONToExpect(null).build(),
+                new DotJSONCacheGetTestCase.Builder().dotJSONToAdd(dotJSON5TTL).cacheKeyToAdd(VALID_KEY)
                         .cacheKeyToGet("INVALID-KEY").waitTime(0).dotJSONToExpect(null).build()
 
         };
@@ -64,30 +65,37 @@ public class DotJSONCacheTest {
     @Test
     @UseDataProvider("addTestCases")
     public void testAdd(final DotJSONCacheAddTestCase testCase) {
-        final DotJSONCache cache = CacheLocator.getDotJSONCache();
+        final DotJSONCache cache = Mockito.spy(DotJSONCacheImpl.class);
+        final HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
+        final User user = new User();
+
         final DotJSONCacheKey cacheKey = Mockito.mock(DotJSONCacheKey.class);
         Mockito.when(cacheKey.getKey()).thenReturn(testCase.getCacheKey());
 
+        Mockito.doReturn(cacheKey).when(cache).getDotJSONCacheKey(request, user);
+
         try {
-            cache.add(cacheKey, testCase.getDotJSON());
+            cache.add(request, user, testCase.getDotJSON());
         } catch(Exception e) {
             // not doing anything if exception
         }
 
-        assertEquals(testCase.shouldCache(), cache.get(cacheKey).isPresent());
+        assertEquals(testCase.shouldCache(), cache.get(request, user).isPresent());
     }
 
     @Test
     @UseDataProvider("getTestCases")
     public void testGet(final DotJSONCacheGetTestCase testCase) {
-        final DotJSONCache cache = CacheLocator.getDotJSONCache();
+        final DotJSONCache cache = Mockito.spy(DotJSONCacheImpl.class);
+        final HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
+        final User user = new User();
+
         final DotJSONCacheKey cacheKeyToAdd = Mockito.mock(DotJSONCacheKey.class);
         Mockito.when(cacheKeyToAdd.getKey()).thenReturn(testCase.cacheKeyToAdd());
 
-        final DotJSONCacheKey cacheKeyToGet = Mockito.mock(DotJSONCacheKey.class);
-        Mockito.when(cacheKeyToGet.getKey()).thenReturn(testCase.cacheKeyToGet());
+        Mockito.doReturn(cacheKeyToAdd).when(cache).getDotJSONCacheKey(request, user);
 
-        cache.add(cacheKeyToAdd, testCase.dotJSONToAdd());
+        cache.add(request, user, testCase.dotJSONToAdd());
 
         if(testCase.waitTime()>0) {
             try {
@@ -97,10 +105,15 @@ public class DotJSONCacheTest {
             }
         }
 
-        DotJSON<String, Integer> dotJSONFromCache;
+        final DotJSONCacheKey cacheKeyToGet = Mockito.mock(DotJSONCacheKey.class);
+        Mockito.when(cacheKeyToGet.getKey()).thenReturn(testCase.cacheKeyToGet());
+
+        Mockito.doReturn(cacheKeyToGet).when(cache).getDotJSONCacheKey(request, user);
+
+        DotJSON dotJSONFromCache;
 
         try {
-            dotJSONFromCache = cache.get(cacheKeyToGet).get();
+            dotJSONFromCache = cache.get(request, user).get();
         } catch (NoSuchElementException e) {
             dotJSONFromCache = null;
         }

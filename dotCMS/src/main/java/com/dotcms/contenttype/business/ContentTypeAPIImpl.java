@@ -6,7 +6,6 @@ import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.api.system.event.Visibility;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
-import com.dotcms.contenttype.business.sql.ContentTypeSql;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
@@ -19,13 +18,10 @@ import com.dotcms.exception.BaseRuntimeInternationalizationException;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotcms.util.ContentTypeUtil;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.PermissionableProxy;
 import com.dotmarketing.business.*;
-import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.SimpleStructureURLMap;
 import com.dotmarketing.quartz.job.IdentifierDateJob;
@@ -380,8 +376,10 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
       throws DotDataException, DotSecurityException {
     // Sets the host:
     try {
-      if (contentType.host() == null) {
+      if (contentType.host() == null || contentType.fixed()) {
+        final List<Field> existinFields = contentType.fields();
         contentType = ContentTypeBuilder.builder(contentType).host(Host.SYSTEM_HOST).build();
+        contentType.constructWithFields(existinFields);
       }
       if (!UUIDUtil.isUUID(contentType.host()) && !Host.SYSTEM_HOST.equalsIgnoreCase(contentType.host())) {
         HostAPI hapi = APILocator.getHostAPI();
@@ -491,6 +489,8 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
       // for each field in the content type lets create it if doesn't exists and update its
       // properties if it does
       for (Field field : newFields) {
+
+        field = this.checkContentTypeFields(contentTypeToSave, field);
         if (!varNamesCantDelete.containsKey(field.variable())) {
           fieldAPI.save(field, APILocator.systemUser());
         } else {
@@ -522,6 +522,18 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     }
 
     return find(contentTypeToSave.id());
+  }
+
+  private Field checkContentTypeFields(final ContentType contentType, final Field field) {
+
+      if (UtilMethods.isSet(field) && UtilMethods.isSet(contentType.id())) {
+
+          return  !UtilMethods.isSet(field.contentTypeId()) || !field.contentTypeId().equals(contentType.id()) ?
+                FieldBuilder.builder(field).contentTypeId(contentType.id()).build() : field;
+
+      }
+
+      return field;
   }
 
   @WrapInTransaction

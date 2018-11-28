@@ -9,22 +9,22 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
-public class DotJSON<K, V> implements Serializable {
+public class DotJSON implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
     @JsonIgnore
-    public static final String CACHE_TTL_KEY = "cache";
+    public static final String CACHE_TTL_KEY = "dotcache";
     @JsonIgnore
     private LocalDateTime cachedSince;
 
-    private final Map<K, V> map = new HashMap<>();
+    private final Map<String, Object> map = new HashMap<>();
 
-    public void put(final K key, final V value) {
+    public void put(final String key, final Object value) {
         this.map.put(key, value);
     }
 
-    public V get(final K key) {
+    public Object get(final String key) {
         return this.map.get(key);
     }
 
@@ -47,16 +47,23 @@ public class DotJSON<K, V> implements Serializable {
 
         if(UtilMethods.isSet(this.map.get(CACHE_TTL_KEY))) {
             try {
-                cacheTTL = (Integer) this.map.get(CACHE_TTL_KEY);
+                cacheTTL = (int) this.map.get(CACHE_TTL_KEY);
             } catch (ClassCastException e) {
-                Logger.error(this, "Unable to parse Cache TTL Value in DotJSON Object");
+                Logger.warn(this, "Unable to parse Cache TTL Value in DotJSON Object. " +
+                        "Trying parsing as string now.");
+                try {
+                    cacheTTL = Integer.parseInt((String) this.map.get(CACHE_TTL_KEY));
+                } catch(NumberFormatException nfe) {
+                    Logger.error(this, "Unable to parse Cache TTL Value in DotJSON Object. Returning" +
+                            "default cacheTTL value '0'");
+                }
             }
         }
 
         return cacheTTL;
     }
 
-    public Map<K, V> getMap() {
+    public Map<String, Object> getMap() {
         return map;
     }
 }

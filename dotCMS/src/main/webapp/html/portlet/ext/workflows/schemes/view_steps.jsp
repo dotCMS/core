@@ -197,14 +197,6 @@
 	    <div style="float:left">
 			<input type="hidden" name="cmd" value="save">
 			<input type="hidden" name="schemeId" value="<%=UtilMethods.webifyString(scheme.getId())%>">
-	
-			<div class="showPointer" onClick="schemeAdmin.show()"  style="float: left;">
-			     <h2 style="border-bottom:dotted 1px white;"><%=LanguageUtil.get(pageContext, "Workflow-Schemes")%></h2>
-	
-			</div> 
-			<div style="float: left;">
-			     &nbsp; &rarr; &nbsp;
-			</div>
 			<div onClick="schemeAdmin.showAddEdit('<%=scheme.getId()%>');" style="float: left;" class="showPointer" >
 			     <h2 style="border-bottom:dotted 1px gray;"><%=UtilMethods.webifyString(scheme.getName())%></h2>
 			     <!--  <%=UtilMethods.webifyString(scheme.getDescription())%> -->

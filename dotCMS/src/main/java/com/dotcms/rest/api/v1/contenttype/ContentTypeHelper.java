@@ -15,10 +15,7 @@ import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.util.LocaleUtil;
 import java.io.Serializable;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 import javax.servlet.http.HttpServletRequest;
 
 /**
@@ -84,7 +81,7 @@ public class ContentTypeHelper implements Serializable {
      */
     public synchronized Map<String, String> getBaseContentTypeNames(final Locale locale) throws LanguageException {
 
-        Map<String, String> contentTypesLabelsMap = new HashMap<>();
+        Map<String, String> contentTypesLabelsMap = new LinkedHashMap<>();
         contentTypesLabelsMap.put(BaseContentType.CONTENT.name(), LanguageUtil.get(locale, "Content"));
         contentTypesLabelsMap.put(BaseContentType.WIDGET.name(), LanguageUtil.get(locale, "Widget"));
         contentTypesLabelsMap.put(BaseContentType.FILEASSET.name(), LanguageUtil.get(locale, "File"));

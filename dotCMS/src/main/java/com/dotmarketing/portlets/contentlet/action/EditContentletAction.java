@@ -47,6 +47,7 @@ import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships.ContentletRelationshipRecords;
 import com.dotmarketing.portlets.structure.model.Field;
+import com.dotmarketing.portlets.structure.model.Field.FieldType;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.business.DotWorkflowException;
@@ -66,6 +67,7 @@ import com.liferay.util.FileUtil;
 import com.liferay.util.LocaleUtil;
 import com.liferay.util.StringPool;
 import com.liferay.util.servlet.SessionMessages;
+import java.util.stream.Collectors;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.struts.Globals;
@@ -283,7 +285,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 
 			} catch (Exception ae) {
 				if ((referer != null) && (referer.length() != 0)) {
-					if (ae.getMessage().equals(WebKeys.EDIT_ASSET_EXCEPTION)) {
+					if (null != ae.getMessage() && ae.getMessage().equals(WebKeys.EDIT_ASSET_EXCEPTION)) {
 						// The web asset edit threw an exception because it's
 						// locked so it should redirect back with message
 						java.util.Map<String, String[]> params = new java.util.HashMap<String, String[]>();
@@ -324,7 +326,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 
 			} catch (Exception ae) {
 				if ((referer != null) && (referer.length() != 0)) {
-					if (ae.getMessage().equals(WebKeys.EDIT_ASSET_EXCEPTION)) {
+					if (null != ae.getMessage() && ae.getMessage().equals(WebKeys.EDIT_ASSET_EXCEPTION)) {
 						// The web asset edit threw an exception because it's
 						// locked so it should redirect back with message
 						java.util.Map<String, String[]> params = new java.util.HashMap<String, String[]>();
@@ -342,7 +344,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 								WindowState.MAXIMIZED.toString(), params);
 
 						_sendToReferral(req, res, directorURL);
-					} else if (ae.getMessage().equals(WebKeys.USER_PERMISSIONS_EXCEPTION)) {
+					} else if (null != ae.getMessage() && ae.getMessage().equals(WebKeys.USER_PERMISSIONS_EXCEPTION)) {
 						_sendToReferral(req, res, referer);
 					} else {
 						_handleException(ae, req);
@@ -854,6 +856,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 				String.valueOf(APILocator.getLanguageAPI().getDefaultLanguage().getId()));
 		}
 
+		req.setAttribute("identifier", contentlet.getIdentifier());
 		// Asset Versions to list in the versions tab
 		req.setAttribute(WebKeys.VERSIONS_INODE_EDIT, contentlet);
 	}
@@ -1044,8 +1047,9 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		String langId = req.getParameter("lang");
 		if(UtilMethods.isSet(langId)) {
 			try {
-				contentlet.setLanguageId(Integer.parseInt(langId));
+				contentlet.setLanguageId(Long.parseLong(langId));
 			} catch (NumberFormatException e) {
+			    Logger.error(getClass(),"Error parsing language Id from request", e);
 				contentlet.setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId());
 			}
 		}else{
@@ -1065,8 +1069,16 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 			httpReq.getSession().setAttribute(WebKeys.CONTENTLET_LAST_SEARCH, lastSearchMap);
 		}
 
-		if (null == contentType) {
-
+        if(null != contentType) {
+			//In case we failed to determine the structured out of the selectedStructure param
+			if (!UtilMethods.isSet(contentType.getInode()) && UtilMethods.isSet(req.getParameter("identifier"))) {
+				final String identifier = req.getParameter("identifier");
+				final Contentlet auxContentlet = conAPI
+						.findContentletByIdentifierAnyLanguage(identifier);
+				contentType = auxContentlet.getStructure();
+				contentlet.setStructureInode(contentType.getInode());
+			}
+		}else{
 			this.handleContentTypeNull((ActionRequestImpl) req, inode);
 		}
 		// Checking permissions to add new content of selected content type
@@ -1974,6 +1986,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 
 				writer.print("\r\n");
 				for(Contentlet content :  contentletsList2 ){
+					ContentletRelationships relationships = this.conAPI.getAllRelationships(content);
 					List<Category> catList = (List<Category>) catAPI.getParents(content, user, false);
 					writer.print(content.getIdentifier());
 					Language lang =APILocator.getLanguageAPI().getLanguage(content.getLanguageId());
@@ -2023,6 +2036,15 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 							            }
 							        }
 							    }
+							} else if (field.getFieldType().equals(FieldType.RELATIONSHIP.toString())) {
+								String fieldRelationType = field.getFieldRelationType();
+								text = loadRelationships(relationships
+										.getRelationshipsRecordsByField(
+												fieldRelationType.contains(StringPool.PERIOD)
+														? fieldRelationType
+														: content.getContentType().variable()
+																+ StringPool.PERIOD + field
+																.getVelocityVarName()));
 							} else{
 								if (value instanceof Date || value instanceof Timestamp) {
 									if(field.getFieldType().equals(Field.FieldType.DATE.toString())) {
@@ -2071,6 +2093,22 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 	}
 
 	/**
+	 * Builds the list of related records separated by comma
+	 */
+	private String loadRelationships(List<ContentletRelationshipRecords> relationshipRecords)
+			throws DotDataException {
+
+		final StringBuilder result = new StringBuilder();
+
+		relationshipRecords.forEach(record -> result.append(String
+				.join(StringPool.COMMA,
+						record.getRecords().stream().map(Contentlet::getIdentifier).collect(
+								Collectors.toList()))));
+
+		return result.toString();
+	}
+
+	/**
 	 * Returns the relationships associated to the current contentlet
 	 *
 	 * @param		req ActionRequest.
@@ -2095,7 +2133,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 				hasParent = key.indexOf("_P_") != -1;
 				inodesSt = (String) req.getParameter(key);
 				inodes = inodesSt.split(",");
-				relationship = (Relationship) InodeFactory.getInode(inodes[0], Relationship.class);
+				relationship = APILocator.getRelationshipAPI().byInode(inodes[0]);
 				contentletRelationshipRecords = new ContentletRelationships(null).new ContentletRelationshipRecords(relationship, hasParent);
 				records = new ArrayList<Contentlet>();
 
@@ -2141,7 +2179,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 
 				String[] inodes = inodesSt.split(",");
 
-				Relationship relationship = (Relationship) InodeFactory.getInode(inodes[0], Relationship.class);
+				Relationship relationship = APILocator.getRelationshipAPI().byInode(inodes[0]);
 				ContentletRelationshipRecords records = relationshipsData.new ContentletRelationshipRecords(relationship, hasParent);
 				ArrayList<Contentlet> cons = new ArrayList<Contentlet>();
 				for (String inode : inodes) {

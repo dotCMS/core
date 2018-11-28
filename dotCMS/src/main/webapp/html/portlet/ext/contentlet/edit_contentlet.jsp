@@ -104,7 +104,6 @@
 	//Contentlet relationships
 	ContentletRelationships contentletRelationships = (ContentletRelationships)
 		request.getAttribute(com.dotmarketing.util.WebKeys.CONTENTLET_RELATIONSHIPS_EDIT);
-	List<ContentletRelationships.ContentletRelationshipRecords> relationshipRecords = (contentletRelationships==null) ? new ArrayList<ContentletRelationships.ContentletRelationshipRecords>() : contentletRelationships.getRelationshipsRecords();
 
 	//Contentlet references
 	List<Map<String, Object>> references = null;
@@ -140,7 +139,10 @@
 	//request.setAttribute("contentletForm", contentletForm);
 	request.setAttribute("structure", structure);
 	request.setAttribute("selectedCategories", selectedCategories);
-	request.setAttribute("relationshipRecords", relationshipRecords);
+
+	List<ContentletRelationships.ContentletRelationshipRecords> relationshipRecords = (contentletRelationships==null) ? new ArrayList<ContentletRelationships.ContentletRelationshipRecords>() : contentletRelationships.getRelationshipsRecords();
+	List<ContentletRelationships.ContentletRelationshipRecords> legacyRelationshipRecords = contentletRelationships.getLegacyRelationshipsRecords();
+
 	request.setAttribute("references", references);
 	request.setAttribute("referer", referer);
 	request.setAttribute("fields", fields);
@@ -150,9 +152,6 @@
 
 
 	List<Structure> structures = StructureFactory.getStructuresByUser(user, "", "name", 100, 0,"asc");
-
-
-
 
 	/*### DRAW THE DYNAMIC FIELDS ###*/
 
@@ -265,6 +264,9 @@
             	boolean fieldSetOpen = false;
                 int fieldCounter =0;
                 int i = legacyContenTType ? 0 : 2;
+                boolean rowOpen = true;
+                boolean columnOpen = true;
+
                 for (; i < fields.size(); i++) {
                     Field f = fields.get(i);
                     com.dotcms.contenttype.model.field.Field newField = new LegacyFieldTransformer(f).from();
@@ -276,19 +278,36 @@
                     <%}%>
 
 					<%if(newField instanceof RowField){%>
-						</div>
+						<%if(rowOpen){%>
+							</div>
+						<%}
+							rowOpen = true;
+						%>
 
 						<div class="editcontentlet__row">
                     <%} else if(newField instanceof ColumnField){%>
-						</span>
+						<%if(columnOpen){%>
+							</span>
+						<%}
+							columnOpen = true;
+						%>
 
 						<span class="editcontentlet__col">
                     <%} else if(f.getFieldType().equals(Field.FieldType.LINE_DIVIDER.toString())) {%>
                         <div class="lineDividerTitle"><%=f.getFieldName() %></div>
                     <%}else if(f.getFieldType().equals(Field.FieldType.TAB_DIVIDER.toString())) {
-                        tabDividerOpen = true;%>
-                            </div>
-                        </div>
+						tabDividerOpen = true;
+					%>
+							<%if (rowOpen) {%>
+                        			</span> <!--Closing column-->
+								</div> <!--Closing row-->
+							<%
+								rowOpen= false;
+								columnOpen= false;
+							}%>
+							</div>
+						</div>
+
                         <div id="<%=f.getVelocityVarName()%>" class="custom-tab" dojoType="dijit.layout.ContentPane" title="<%=f.getFieldName()%>">
                             <div class="content-edit__advaced-form">
 
@@ -300,8 +319,12 @@
                         <%@ include file="/html/portlet/ext/common/edit_permissions_tab_inc.jsp" %>
                     <%}else if(f.getFieldType().equals(Field.FieldType.RELATIONSHIP.toString()) || f.getFieldType().equals(Field.FieldType.RELATIONSHIPS_TAB.toString())){%>
                         <% if(fieldCounter==0){
-                            relationshipsTabFieldExists =  true;
-                            request.setAttribute("isRelationsihpAField",true); //DOTCMS-6893%>
+
+                            if (f.getFieldType().equals(Field.FieldType.RELATIONSHIPS_TAB.toString())){
+                                relationshipsTabFieldExists =  true;
+                                request.setAttribute("isRelationsihpAField",true); //DOTCMS-6893
+                            }%>
+
                             <div class="fieldName">
                                 <% if(f.isRequired()) {%>
                                     <span class="required2">
@@ -311,7 +334,19 @@
                                 <%=f.getFieldName()%>:</span>
                             </div>
                             <div class="fieldValue">
-                                <jsp:include page="/html/portlet/ext/contentlet/edit_contentlet_relationships.jsp" />
+                                <%
+                                    if(f.getFieldType().equals(Field.FieldType.RELATIONSHIP.toString())){
+                                        if (f.getFieldRelationType() != null && f.getFieldRelationType().contains(".")){
+                                            //field on the other side of the relationship
+                                            request.setAttribute("relationshipRecords", contentletRelationships.getRelationshipsRecordsByField(f.getFieldRelationType()));
+                                        }else{
+                                            request.setAttribute("relationshipRecords", contentletRelationships.getRelationshipsRecordsByField(structure.getVelocityVarName() + "." + f.getVelocityVarName()));
+                                        }
+                                    } else {
+                                        request.setAttribute("relationshipRecords", legacyRelationshipRecords);
+                                    }
+                                %>
+                                <jsp:include page="/html/portlet/ext/contentlet/edit_contentlet_relationships.jsp"/>
                             </div>
                         <% }
                         counter++;
@@ -417,7 +452,7 @@
                     <jsp:include page="/html/portlet/ext/contentlet/field/edit_field.jsp" />
                 <%}%>
             <%}
-			if (legacyContenTType) {
+			if (rowOpen) {
 			%>
 				</span>
 			</div>
@@ -428,9 +463,11 @@
 	<!-- END TABS -->
 
 	<!-- Relationships -->
-	<% if(relationshipRecords != null && relationshipRecords.size() > 0 && !relationshipsTabFieldExists){
+	<% if(legacyRelationshipRecords != null && legacyRelationshipRecords.size() > 0 && !relationshipsTabFieldExists){
 		   relationshipsTabFieldExists = true;
 		   request.setAttribute("isRelationsihpAField",false); //DOTCMS-6893
+		   request.setAttribute("relationshipRecords", legacyRelationshipRecords);
+		   request.removeAttribute("fieldRelationType");
 	%>
 		<div id="relationships" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Relationships") %>">
 			<jsp:include page="/html/portlet/ext/contentlet/edit_contentlet_relationships.jsp" />

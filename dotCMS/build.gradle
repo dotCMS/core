@@ -155,7 +155,7 @@ dependencies {
     /**** And now the libs we pull in from internal company sources - libs stored in ./plugins, ./bin, ./libs, the starter site, etc. ****/
     compile fileTree("src/main/plugins/com.dotcms.config/build/jar").include('plugin-com.dotcms.config.jar')
 
-    starter group: 'com.dotcms', name: 'starter', version: '20180918', ext: 'zip'
+    starter group: 'com.dotcms', name: 'starter', version: '20181102', ext: 'zip'
 
     profiler group: 'glowroot-custom', name: 'glowroot-agent', version: '0.10.7'
     profilerDependencies group: 'glowroot-custom', name: 'collector-https-linux', version: '0.10.7'
@@ -258,7 +258,7 @@ processResources {
 
 // By default the war task compiles everything under src/main/java into WEB-INF/classes/
 // but, instead, we want to compile everything on a .jar file and put it under WEB-INF/lib.
-war.dependsOn 'deployPlugins','installDotcmsUI'
+war.dependsOn 'deployPlugins','initNpm'
 
 war {
 
@@ -884,6 +884,12 @@ class DeployWarTomcatTask extends DefaultTask{
     }
 }
 
+task initNpm(type: NpmTask) {
+    args = ['init', '--yes']
+
+    finalizedBy 'installDotcmsUI'
+}
+
 task installDotcmsUI(type: NpmTask) {
     if ("latest".equals(coreWebReleaseVersion)) {
         args = ['install', 'dotcms-ui']
@@ -900,6 +906,8 @@ task makeDotAdminFolder(type: DefaultTask) {
 }
 
 task cleanNodeModules(type: Delete) {
+    delete './package.json'
+    delete './package-lock.json'
     delete "./node_modules"
     followSymlinks = true
 }

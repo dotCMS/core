@@ -62,7 +62,8 @@ public interface ContentletAPIPreHook {
 	public default boolean findContentletForLanguage(long languageId, Identifier contentletId){
       return true;
     }
-	
+
+
 	/**
 	 * Returns all Contentlets for a specific structure
 	 * @param structure

@@ -1,92 +1,84 @@
 package com.dotcms.contenttype.business;
-
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeIf;
 import com.dotmarketing.beans.Tree;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.structure.model.Relationship;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface RelationshipFactory {
 
-    void deleteByContentType(ContentTypeIf type) throws DotDataException;
+    void deleteByContentType(final ContentTypeIf type) throws DotDataException;
 
-    Relationship byInode(String inode);
+    Relationship byInode(final String inode);
 
-    List<Relationship> byParent(ContentTypeIf parent) throws DotDataException;
+    List<Relationship> byParent(final ContentTypeIf parent) throws DotDataException;
 
-    List<Relationship> byChild(ContentTypeIf child) throws DotDataException;
+    List<Relationship> byChild(final ContentTypeIf child) throws DotDataException;
 
-    Relationship byTypeValue(String typeValue);
+    List<Relationship> dbAll();
 
-    List<Relationship> byContentType(ContentTypeIf type) throws DotDataException;
+    List<Relationship> dbAll(String orderBy);
 
-    List<Contentlet> dbRelatedContent(Relationship relationship, Contentlet contentlet) throws DotDataException;
+    Relationship byTypeValue(final String typeValue);
 
-    List<Contentlet> dbRelatedContent(Relationship relationship, Contentlet contentlet,
-                                      boolean hasParent) throws  DotDataException;
+    Optional<Relationship> byParentChildRelationName(ContentType contentType, String relationName);
 
-    void deleteByContent(Contentlet contentlet, Relationship relationship, List<Contentlet> relatedContentlets)
+    List<Relationship> dbAllByTypeValue(String typeValue);
+
+    List<Relationship> byContentType(final String contentType);
+
+    List<Relationship> byContentType(final ContentTypeIf contentType);
+
+    List<Relationship> byContentType(final ContentTypeIf contentType, String orderBy);
+
+    List<Relationship> byContentType(final String contentTypeInode, String orderBy);
+
+    List<Contentlet> dbRelatedContent(final Relationship relationship, final Contentlet contentlet)
             throws DotDataException;
 
-    List<Relationship> byContentType(ContentTypeIf st, boolean hasParent);
+    List<Contentlet> dbRelatedContent(final Relationship relationship, final Contentlet contentlet,
+            final boolean hasParent) throws DotDataException;
 
-    List<Tree> relatedContentTrees(Relationship relationship, Contentlet contentlet) throws DotDataException;
+    List<Contentlet> dbRelatedContent(final Relationship relationship, final Contentlet contentlet,
+            final boolean hasParent, final boolean live, final String orderBy)
+            throws DotDataException;
 
-    void delete(String inode) throws DotDataException;
+    List<Tree> relatedContentTrees(final Relationship relationship, final Contentlet contentlet) throws  DotDataException;
 
-    List<Tree> relatedContentTrees(Relationship relationship, Contentlet contentlet, boolean hasParent) throws DotDataException;
+    List<Tree> relatedContentTrees(final Relationship relationship, final Contentlet contentlet, final boolean hasParent) throws  DotDataException;
 
-    void save(Relationship relationship) throws DotDataException;
+    boolean isParent(final Relationship relationship, final ContentTypeIf contentTypeIf);
 
-    void save(Relationship relationship, String inode) throws DotDataException;
+    boolean isChild(final Relationship relationship, final ContentTypeIf contentTypeIf);
 
-    boolean sameParentAndChild(Relationship rel);
+    boolean sameParentAndChild(final Relationship rel);
 
-    boolean isChild(Relationship rel, ContentTypeIf st);
+    void save(final Relationship relationship) throws DotDataException;
 
-    int maxSortOrder(String parentInode, String relationType);
+    void delete(final String inode) throws DotDataException;
 
-    boolean isParent(Relationship rel, ContentTypeIf st);
+    void delete(final Relationship relationship) throws DotDataException;
 
-    /**
-     * Deletes the given {@link Relationship} and the {@link Tree} records related to the
-     * relationship
-     *
-     * @param relationship Relationship to delete
-     * @throws DotDataException
-     */
-    void delete(Relationship relationship) throws DotDataException;
+    void deleteKeepTrees(final Relationship relationship) throws DotDataException;
 
-    /**
-     * Deletes the given {@link Relationship} <br>
-     * <strong>Note: This process does NOT delete the related {@link Tree} records</strong>
-     *
-     * @param relationship Relationship to delete
-     * @throws DotDataException
-     */
-    void deleteKeepTrees(Relationship relationship) throws DotDataException;
+    List<Contentlet> dbRelatedContentByParent(final String parentInode, final String relationType, final boolean live,
+            final String orderBy) throws DotDataException;
 
-    void addRelationship(String parent, String child, String relationType) throws DotDataException;
+    List<Contentlet> dbRelatedContentByChild(final String childInode, final String relationType, final boolean live,
+            final String orderBy) throws DotDataException;
 
-    List<Relationship> byContentType(ContentTypeIf type, String orderBy);
+    int maxSortOrder(final String parentInode, final String relationType);
 
-    List<Relationship> dbAll() throws DotHibernateException;
+    void deleteByContent(final Contentlet contentlet, final Relationship relationship,
+            final List<Contentlet> relatedContentlets) throws DotDataException;
 
-    List<Relationship> dbAll(String orderBy, String contentTypeInode) throws DotHibernateException;
+    void addRelationship(final String parent, final String child, final String relationType)throws DotDataException;
 
-    /**
-     * Given a content type, this method returns the relationships where it is involved as parent or child
-     * @param contentType
-     * @param limit
-     * @param offset
-     * @return
-     * @throws DotDataException
-     */
-    List<Relationship> getOneSidedRelationships(final ContentType contentType, final int limit,
-            final int offset) throws DotDataException;
+    List<Relationship> getOneSidedRelationships(final ContentTypeIf contentType, final int limit, final int offset) throws DotDataException;
 
+    long getOneSidedRelationshipsCount(final ContentType contentType) throws DotDataException;
 }

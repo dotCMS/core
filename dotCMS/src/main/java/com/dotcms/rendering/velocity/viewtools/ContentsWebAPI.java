@@ -620,36 +620,10 @@ public class ContentsWebAPI implements ViewTool {
 
 	public List<Relationship> getRelationshipsOfContentlet(String contentletInode, boolean hasParent) throws DotDataException, DotSecurityException {
 		Contentlet cont = conAPI.find(contentletInode, user, true);
-		return FactoryLocator.getRelationshipFactory().byContentType(cont.getStructure(), hasParent);
-	}
+		return (hasParent)? FactoryLocator.getRelationshipFactory().byParent(cont.getContentType()):
+				FactoryLocator.getRelationshipFactory().byChild(cont.getContentType());
 
-	/**
-	 * This gets the list of all the relationship objects associated to the
-	 * structure of the contentlet
-	 *
-	 * @param cont
-	 *            The contentlet
-	 * @param hasParent
-	 *            true If you find the relations where the contentlet is parent,
-	 *            false If you find the relations where the contentlet is child
-	 * @return A list of relationship objects
-	 * @deprecated this methods could be found on StructuresWebAPI
-	 */
-	@Deprecated
-	public List<Relationship> getRelationshipsOfStructure(Structure st, boolean hasParent) {
-		return getRelationshipsOfStructure(st.getInode(), hasParent);
 	}
-	@Deprecated
-	public List<Relationship> getRelationshipsOfStructure(long structureInode, boolean hasParent) {
-		return getRelationshipsOfStructure(((Long) structureInode).toString(), hasParent);
-	}
-	@Deprecated
-	public List<Relationship> getRelationshipsOfStructure(String structureInode, boolean hasParent) {
-		Structure st = (Structure) InodeFactory.getInode(structureInode, Structure.class);
-		return FactoryLocator.getRelationshipFactory().byContentType(st, hasParent);
-	}
-
-
 
 	/**
 	 * This methods checks if the given contentlet has the role of parent of the
@@ -672,7 +646,7 @@ public class ContentsWebAPI implements ViewTool {
 	}
 
 	public boolean isParent(String contentletInode, String relationshipInode) throws DotDataException, DotSecurityException {
-		Relationship relationship = (Relationship) InodeFactory.getInode(relationshipInode, Relationship.class);
+		Relationship relationship = APILocator.getRelationshipAPI().byInode(relationshipInode);
 		Contentlet contentlet = conAPI.find(contentletInode, user, true);
 		return isParent(contentlet, relationship);
 	}
@@ -698,7 +672,7 @@ public class ContentsWebAPI implements ViewTool {
 	}
 
 	public boolean isChild(String contentletInode, String relationshipInode) throws DotDataException, DotSecurityException {
-		Relationship relationship = (Relationship) InodeFactory.getInode(relationshipInode, Relationship.class);
+		Relationship relationship = APILocator.getRelationshipAPI().byInode(relationshipInode);
 		Contentlet contentlet = conAPI.find(contentletInode, user, true);
 		return isChild(contentlet, relationship);
 	}

@@ -10,14 +10,18 @@ import com.dotmarketing.portlets.contentlet.struts.ContentletForm;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-
+import com.google.common.collect.ImmutableSet;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Encapsulate helper method for the {@link com.dotcms.rest.ContentResource}
  * @author jsanca
  */
 public class ContentHelper {
+
+    //This set contains all the properties that we want to prevent from making it to the final hydrated contentlet
+    private static final Set<String> privateInternalProperties = ImmutableSet.of(Contentlet.NULL_PROPERTIES);
 
     private final MapToContentletPopulator mapToContentletPopulator;
     private final IdentifierAPI identifierAPI;
@@ -60,22 +64,39 @@ public class ContentHelper {
      * @param contentlet {@link Contentlet} original contentlet to hydrate, won't be modified.
      * @return Contentlet returns a contentlet, if there is something to add will create a new instance based on the current one in the parameter and the new attributes, otherwise will the same instance
      */
-    public Contentlet hydrateContentLet (final Contentlet contentlet) {
+    public Contentlet hydrateContentLet(final Contentlet contentlet) {
 
         Contentlet newContentlet = contentlet;
-        if (null != contentlet && !contentlet.getMap().containsKey(HTMLPageAssetAPI.URL_FIELD)) {
 
-            final String url = this.getUrl(contentlet);
-            if (null != url) {
-                // making a copy to avoid issues on modifying cache objects.
-                newContentlet = new Contentlet();
-                newContentlet.getMap().putAll(contentlet.getMap());
-                newContentlet.getMap().put(HTMLPageAssetAPI.URL_FIELD, url);
+        if (null != contentlet) {
+            // making a copy to avoid issues on modifying cache objects.
+            newContentlet = new Contentlet();
+            newContentlet.getMap().putAll(contentlet.getMap());
+            //Remove any unwanted existing property.
+            newContentlet = removePrivateInternalProperties(newContentlet);
+            //Add any additional desired property.
+            if (!contentlet.getMap().containsKey(HTMLPageAssetAPI.URL_FIELD)) {
+                final String url = this.getUrl(contentlet);
+                if (null != url) {
+                    newContentlet.getMap().put(HTMLPageAssetAPI.URL_FIELD, url);
+                }
             }
         }
 
         return newContentlet;
     } // hydrateContentLet.
+
+    /**
+     * Remove any unwanted property from the hydrated contentlet
+     * @param contentlet
+     * @return
+     */
+    private Contentlet removePrivateInternalProperties(final Contentlet contentlet){
+        for(final String propertyName: privateInternalProperties) {
+            contentlet.getMap().remove(propertyName);
+        }
+        return contentlet;
+    }
 
     /**
      * Gets if possible the url associated to this asset contentlet

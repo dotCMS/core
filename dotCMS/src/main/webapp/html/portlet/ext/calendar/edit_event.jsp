@@ -97,7 +97,11 @@
 	boolean canEditAsset = conPerAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user);
 	Integer catCounter = 0;
 
-	boolean contentEditable = (UtilMethods.isSet(contentlet.getInode())?(Boolean)request.getAttribute(com.dotmarketing.util.WebKeys.CONTENT_EDITABLE):false);
+	boolean contentEditable = (
+	                            UtilMethods.isSet(contentlet.getInode()) && UtilMethods.isSet(request.getAttribute(com.dotmarketing.util.WebKeys.CONTENT_EDITABLE)) ?
+	                            (Boolean)request.getAttribute(com.dotmarketing.util.WebKeys.CONTENT_EDITABLE)
+	                            :false
+	                           );
 	boolean canUserPublishContentlet = conPerAPI.doesUserHavePermission(contentlet,PermissionAPI.PERMISSION_PUBLISH,user);
 
 	if(!InodeUtils.isSet(contentlet.getInode())) {
@@ -308,19 +312,25 @@ document.addEventListener('DOMContentLoaded', function(){
 
 	<!-- Permissions Tab -->
 	<% if(!permissionsTabFieldExists && canEditAsset){ %>
-		<div id="permissions" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Permissions") %>">
-			<%
-				request.setAttribute(com.dotmarketing.util.WebKeys.PERMISSIONABLE_EDIT, contentlet);
-				request.setAttribute(com.dotmarketing.util.WebKeys.PERMISSIONABLE_EDIT_BASE, structure);
-			%>
-			<%@include file="/html/portlet/ext/common/edit_permissions_tab_inc.jsp" %>
+		<div id="permissionsTab" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Permissions") %>" onShow="refreshPermissionsTab()" >
+
+			<div id="permissionsTabDiv">
+					<%-- This loads the edit_permission_tab_inc_wrapper.jsp passing in the contentletId as a request parameter --%>
+			</div>
+
 		</div>
     <% } %>
 	<!-- END Permissions Tab -->
 
-	<!-- Versions Tab -->
-	<div id="versions" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Versions") %>">
-		<%@include file="/html/portlet/ext/common/edit_versions_inc.jsp" %>
+	<!-- Versions Tab  -->
+	<div id="versionsTab" dojoType="dijit.layout.ContentPane" disabled="<%=!UtilMethods.isSet(contentlet.getInode()) %>" title="<%= LanguageUtil.get(pageContext, "Versions") %>" onShow="refreshVersionCp();" >
+		<div id="contentletVersionsDiv" style="height:100%;" class="content-edit__history-version">
+		</div>
+
+		<hr class="history__divider">
+		<div class="history__status">
+			<%@ include file="/html/portlet/ext/common/edit_publishing_status_inc.jsp"%>
+		</div>
 	</div>
 	<!-- END Versions Tab -->
 
@@ -374,7 +384,8 @@ document.addEventListener('DOMContentLoaded', function(){
 
 <%
 	/*########################## BEGINNING  DOTCMS-2692 ###############################*/
-    if(InodeUtils.isSet(request.getParameter("inode"))){
+	final String identifier = request.getParameter("identifier");
+    if(InodeUtils.isSet(identifier)){
     	request.getSession().setAttribute("ContentletForm_lastLanguage",contentletForm);
     	request.getSession().setAttribute("ContentletForm_lastLanguage_permissions", contentlet);
     }

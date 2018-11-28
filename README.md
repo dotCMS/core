@@ -1,5 +1,5 @@
 
-<img src="https://dotcms.com/dA/eb062b49-acde/225w/dotcms-logo.png" title="dotcms java content management system">
+<img src="https://dotcms.com/dA/99fe3769-d649/256w/dotcms.png" title="dotcms java content management system">
 
 dotCMS is a scalable, java based, open source content management system (CMS) that has been designed to manage and deliver personalized, permission-based content experiences across multiple channels.  dotCMS can serve as the platform for sites, mobile apps, mini-sites, portals, intranets or as a headless CMS (content is consumed via RESTful APIs).  dotCMS is used everywhere, from running small sites to powering multi-node installations for governments, Fortune 100 companies, Universities and Global Brands. A dotCMS environment can scale to support hundreds of editors managing thousands of sites with millions of content objects.  
 
@@ -26,16 +26,16 @@ GitHub pull requests are the preferred method to contribute code to dotCMS.  Bef
 
 ## Requirements
 
-dotCMS requires a Java 8 Runtime Environment (JRE) or a Java 7 Development Kit (JDK). For a complete list of requirements, see [this page](http://dotcms.com/docs/latest/dotcms-technology-requirements).
+For a complete list of requirements, see [this page](http://dotcms.com/docs/latest/dotcms-technology-requirements).
 
 ## Getting Help
 
 | Source        | Location                                               |
 | ------------- |--------------------------------------------------------|
-| Installation | [Installation](https://dotcms.com/docs/latest/quick-start-guide)                  |
-| Documentation | [Documentation](http://dotcms.com/docs/)                  |
+| Installation | [Installation](https://docs.dotcms.com/docs/latest/quick-start-guide)                  |
+| Documentation | [Documentation](http://docs.dotcms.com/docs/)                  |
 | Videos | [Helpful Videos](http://dotcms.com/videos/)                  |
-| Code Examples | [Codeshare](http://dotcms.com/codeshare)                  |
+| Code Examples | [Codeshare](http://docs.dotcms.com/codeshare)                  |
 | Forums/Listserv        | [via Google Groups](https://groups.google.com/forum/#!forum/dotCMS) |
 | Twitter       | @dotCMS                         |
 | Main Site | [dotCMS.com](http://dotcms.com/)                  |
