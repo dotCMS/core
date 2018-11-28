@@ -14,7 +14,6 @@ import { DotMessageService } from '@services/dot-messages-service';
 import { MockDotMessageService } from '../../../test/dot-message-service.mock';
 import { RouterTestingModule } from '@angular/router/testing';
 import { Injectable } from '@angular/core';
-import { DotContentletService } from '@services/dot-contentlet/dot-contentlet.service';
 import { PushPublishContentTypesDialogModule } from '@components/_common/push-publish-dialog/push-publish-dialog.module';
 import { PushPublishService } from '@services/push-publish/push-publish.service';
 import { DotLicenseService } from '@services/dot-license/dot-license.service';
@@ -25,9 +24,10 @@ import {
     DotHttpErrorManagerService
 } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 import { ContentType } from '@portlets/content-types/shared/content-type.model';
+import { DotContentTypeService } from '@services/dot-content-type/dot-content-type.service';
 
 @Injectable()
-class MockDotContentletService {
+class MockDotContentTypeService {
     getAllContentTypes() {}
 }
 
@@ -90,7 +90,7 @@ describe('ContentTypesPortletComponent', () => {
     let fixture: ComponentFixture<ContentTypesPortletComponent>;
     let de: DebugElement;
     let crudService: CrudService;
-    let dotContentletService: DotContentletService;
+    let dotContentletService: DotContentTypeService;
     let pushPublishService: PushPublishService;
     let dotLicenseService: DotLicenseService;
     let baseTypesSelector: MockDotBaseTypeSelectorComponent;
@@ -127,7 +127,7 @@ describe('ContentTypesPortletComponent', () => {
                 CrudService,
                 DotAlertConfirmService,
                 FormatDateService,
-                { provide: DotContentletService, useClass: MockDotContentletService },
+                { provide: DotContentTypeService, useClass: MockDotContentTypeService },
                 { provide: DotMessageService, useValue: messageServiceMock },
                 { provide: PushPublishService, useClass: MockPushPublishService },
                 { provide: DotLicenseService, useClass: MockDotLicenseService },
@@ -139,7 +139,7 @@ describe('ContentTypesPortletComponent', () => {
         comp = fixture.componentInstance;
         de = fixture.debugElement;
         crudService = fixture.debugElement.injector.get(CrudService);
-        dotContentletService = fixture.debugElement.injector.get(DotContentletService);
+        dotContentletService = fixture.debugElement.injector.get(DotContentTypeService);
         pushPublishService = fixture.debugElement.injector.get(PushPublishService);
         dotLicenseService = fixture.debugElement.injector.get(DotLicenseService);
         dotHttpErrorManagerService = fixture.debugElement.injector.get(DotHttpErrorManagerService);

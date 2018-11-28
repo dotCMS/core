@@ -1,3 +1,5 @@
+@import "variables";
+
 .form__buttons {
     display: flex;
     justify-content: center;
@@ -9,7 +11,7 @@
 }
 
 .form__group {
-    padding: $basic-padding 0;
+    margin: $form-field-spacing 0;
     position: relative;
 
     &:after {
@@ -21,14 +23,6 @@
     & .md-inputtext,
     & > .ui-inputtext {
         width: 100%;
-    }
-
-    &:first-child {
-        padding-top: 0;
-    }
-
-    &:last-child {
-        padding-bottom: 0;
     }
 
     .ui-dialog-content &:first-child {

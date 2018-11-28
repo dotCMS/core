@@ -69,12 +69,17 @@ import { DotPageSelectorModule } from '@components/_common/dot-page-selector/dot
 import { DotTextareaContentModule } from '@components/_common/dot-textarea-content/dot-textarea-content.module';
 import { DotWorkflowService } from '@services/dot-workflow/dot-workflow.service';
 import { DotWorkflowsSelectorFieldModule } from '@components/_common/dot-workflows-selector-field/dot-workflows-selector-field.module';
-import { DynamicFieldPropertyDirective } from './fields/content-type-fields-properties-form/field-properties/dynamic-field-property-directive/dynamic-field-property.directive';
+import {
+    DynamicFieldPropertyDirective
+} from './fields/content-type-fields-properties-form/field-properties/dynamic-field-property-directive/dynamic-field-property.directive';
 import { IFrameModule } from '@components/_common/iframe';
 import { MdInputTextModule } from '@directives/md-inputtext/md-input-text.module';
 import { PushPublishContentTypesDialogModule } from '@components/_common/push-publish-dialog/push-publish-dialog.module';
 import { SearchableDropDownModule } from '@components/_common/searchable-dropdown';
 import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
+import {
+    DotRelationshipsModule
+} from './fields/content-type-fields-properties-form/field-properties/dot-relationships-property/dot-relationships.module';
 
 @NgModule({
     declarations: [
@@ -148,7 +153,8 @@ import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.modu
         DotPageSelectorModule,
         DotBaseTypeSelectorModule,
         MdInputTextModule,
-        DotAutofocusModule
+        DotAutofocusModule,
+        DotRelationshipsModule
     ],
     providers: [
         ContentTypeEditResolver,

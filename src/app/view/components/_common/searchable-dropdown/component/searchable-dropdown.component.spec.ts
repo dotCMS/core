@@ -52,12 +52,20 @@ describe('SearchableDropdownComponent', () => {
         comp.totalRecords = NROWS;
         comp.rows = rows;
         comp.pageLinkSize = pageLinkSize;
+    }));
+
+    beforeEach(() => {
+        fixture.componentInstance.ngOnChanges({
+            placeholder: new SimpleChange(null, 'placeholder', true)
+        });
+        fixture.detectChanges();
 
         mainButton = de.query(By.css('button'));
         mainButton.triggerEventHandler('click', {});
-    }));
+    });
 
     it('should renderer the pagination links', () => {
+
         fixture.detectChanges();
 
         const paginator = fixture.debugElement.query(By.css('p-paginator'));

@@ -24,9 +24,9 @@ import { PaginatorService } from '@services/paginator';
 import { PublicAuthGuardService } from '@services/guards/public-auth-guard.service';
 import { StringFormat } from './api/util/stringFormat';
 import { StringPixels } from './api/util/string-pixels-util';
-import { DotContentletService } from '@services/dot-contentlet/dot-contentlet.service';
 import { DotUiColorsService } from '@services/dot-ui-colors/dot-ui-colors.service';
 import { InjectionToken } from '@angular/core';
+import { DotContentTypeService } from '@services/dot-content-type/dot-content-type.service';
 
 export const LOCATION_TOKEN = new InjectionToken<Location>('Window location object');
 
@@ -42,7 +42,7 @@ const PROVIDERS: any[] = [
     CrudService,
     DefaultGuardService,
     DotAlertConfirmService,
-    DotContentletService,
+    DotContentTypeService,
     DotHttpErrorManagerService,
     DotIframeService,
     DotLicenseService,

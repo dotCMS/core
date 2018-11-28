@@ -1,0 +1,12 @@
+<dot-searchable-dropdown
+    width="100%"
+    [data]="currentPage | async"
+    [pageLinkSize]="dotPaginatorService.maxLinksPage"
+    [rows]="dotPaginatorService.paginationPerPage"
+    [totalRecords]="dotPaginatorService.totalRecords"
+    [placeholder]="i18nMessages['contenttypes.field.properties.relationship.existing.placeholder']"
+    labelPropertyName="label"
+    (change)="triggerChanged($event.relationship)"
+    (filterChange)="handleFilterChange($event)"
+    (pageChange)="handlePageChange($event)">
+</dot-searchable-dropdown>

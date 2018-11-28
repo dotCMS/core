@@ -1,5 +1,4 @@
 import { debounceTime } from 'rxjs/operators';
-import { DotContainer } from '@models/container/dot-container.model';
 import {
     Component,
     ElementRef,
@@ -11,7 +10,8 @@ import {
     forwardRef,
     SimpleChanges,
     OnChanges,
-    OnInit
+    OnInit,
+    SimpleChange
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { DotMessageService } from '@services/dot-messages-service';
@@ -40,43 +40,63 @@ import { OverlayPanel } from 'primeng/primeng';
 export class SearchableDropdownComponent implements ControlValueAccessor, OnChanges, OnInit {
     @Input()
     data: string[];
+
     @Input()
     labelPropertyName: string | string[];
+
     @Input()
     valuePropertyName: string;
+
     @Input()
     pageLinkSize = 3;
+
     @Input()
     rows: number;
+
     @Input()
     totalRecords: number;
+
     @Input()
     placeholder = '';
+
     @Input()
     persistentPlaceholder: boolean;
+
     @Input()
     width: string;
+
     @Input()
     multiple: boolean;
+
     @Output()
     change: EventEmitter<any> = new EventEmitter();
+
     @Output()
     filterChange: EventEmitter<string> = new EventEmitter();
+
     @Output()
     hide: EventEmitter<any> = new EventEmitter();
+
     @Output()
     pageChange: EventEmitter<PaginationEvent> = new EventEmitter();
+
     @Output()
     show: EventEmitter<any> = new EventEmitter();
 
     @ViewChild('searchInput')
     searchInput: ElementRef;
+
     @ViewChild('searchPanel')
     searchPanelRef: OverlayPanel;
 
-    value: any = {};
+    @ViewChild('button')
+    button: ElementRef;
+
+    value: any;
     valueString = '';
 
+    label: string;
+    disabled = false;
     i18nMessages: {
         [key: string]: string;
     } = {};
@@ -86,7 +106,7 @@ export class SearchableDropdownComponent implements ControlValueAccessor, OnChan
     propagateChange = (_: any) => {};
 
     ngOnChanges(change: SimpleChanges): void {
-        if (change.placeholder && change.placeholder.currentValue) {
+        if (this.usePlaceholder(change.placeholder)) {
             this.valueString = change.placeholder.currentValue;
         }
     }
@@ -154,7 +174,7 @@ export class SearchableDropdownComponent implements ControlValueAccessor, OnChan
      * @returns string
      * @memberof SearchableDropdownComponent
      */
-    getLabel(container: DotContainer): string {
+    getItemLabel(dropDownItem: any): string {
         let resultProps;
 
         if (Array.isArray(this.labelPropertyName)) {
@@ -162,18 +182,18 @@ export class SearchableDropdownComponent implements ControlValueAccessor, OnChan
                 if (item.indexOf('.') > -1) {
                     let propertyName;
                     item.split('.').forEach((nested) => {
-                        propertyName = propertyName ? propertyName[nested] : container[nested];
+                        propertyName = propertyName ? propertyName[nested] : dropDownItem[nested];
                     });
 
                     return propertyName;
                 }
 
-                return container[item];
+                return dropDownItem[item];
             });
 
             return resultProps.join(' - ');
         } else {
-            return container[this.labelPropertyName];
+            return dropDownItem[this.labelPropertyName];
         }
     }
 
@@ -197,6 +217,31 @@ export class SearchableDropdownComponent implements ControlValueAccessor, OnChan
         }
 
         this.searchPanelRef.hide();
+    }
+
+    /**
+     * Disabled the component, for more information see:
+     * {@link https://angular.io/api/forms/ControlValueAccessor#setdisabledstate}
+     *
+     * @param {boolean} isDisabled if it is true the component is disabled
+     * @memberof SearchableDropdownComponent
+     */
+    setDisabledState(isDisabled: boolean): void {
+        this.disabled = isDisabled;
+    }
+
+    /**
+     *Return the component's label
+     *
+     * @returns {string} compoenent's label
+     * @memberof SearchableDropdownComponent
+     */
+    getLabel(): string {
+        return this.persistentPlaceholder ? this.placeholder : this.valueString;
+    }
+
+    private usePlaceholder(placeholderChange: SimpleChange): boolean {
+        return placeholderChange && placeholderChange.currentValue && !this.value;
     }
 }
 
