@@ -564,7 +564,7 @@ public class UserAPITest extends IntegrationTestBase {
 		page =htmlPageAssetAPI.getPageByPath(testFolder.getPath()+page0Str, host, langId, true);
 		Logger.info(this, "Page inode:" + page.getInode());
 		Logger.info(this, "Page identifier:" + page.getIdentifier());
-		assertTrue(page.getOwner().equals(replacementUser.getUserId()));
+		assertTrue("Page Owner " + page.getOwner(), page.getOwner().equals(replacementUser.getUserId()));
 		assertTrue(page.getModUser().equals(replacementUser.getUserId()));
 
 		List<Contentlet> contentAssets = conAPI.findByStructure(st, systemUser, false, 100,0);
@@ -606,7 +606,7 @@ public class UserAPITest extends IntegrationTestBase {
 
 	private void waitForDeleteCompletedNotification(User userToDelete) throws DotDataException, InterruptedException {
 
-		final int MAX_TIME = 20000;
+		final int MAX_TIME = 60000;
 		final int WAIT_TIME = 1000;
 
 		TimeUtil.waitFor(WAIT_TIME, MAX_TIME, () -> {
