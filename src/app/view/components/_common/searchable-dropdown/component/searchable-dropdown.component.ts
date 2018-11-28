@@ -106,8 +106,8 @@ export class SearchableDropdownComponent implements ControlValueAccessor, OnChan
     propagateChange = (_: any) => {};
 
     ngOnChanges(change: SimpleChanges): void {
-        if (this.usePlaceholder(change.placeholder)) {
-            this.valueString = change.placeholder.currentValue;
+        if (this.usePlaceholder(change.placeholder) || change.persistentPlaceholder) {
+            this.setLabel();
         }
     }
 
@@ -148,12 +148,8 @@ export class SearchableDropdownComponent implements ControlValueAccessor, OnChan
      * @memberof SearchableDropdownComponent
      */
     writeValue(value: any): void {
-        this.value = value;
-        if (Array.isArray(this.labelPropertyName)) {
-            this.valueString = value ? value[this.labelPropertyName[0]] : this.placeholder;
-        } else {
-            this.valueString = value ? value[this.labelPropertyName] : this.placeholder;
-        }
+        console.log('writeValue', value, this.placeholder);
+        this.setValue(value);
     }
 
     /**
@@ -175,6 +171,7 @@ export class SearchableDropdownComponent implements ControlValueAccessor, OnChan
      * @memberof SearchableDropdownComponent
      */
     getItemLabel(dropDownItem: any): string {
+        console.log('getItemLabel');
         let resultProps;
 
         if (Array.isArray(this.labelPropertyName)) {
@@ -206,13 +203,9 @@ export class SearchableDropdownComponent implements ControlValueAccessor, OnChan
      */
     handleClick(item: any): void {
         if (this.value !== item || this.multiple) {
-            this.value = item;
-            if (Array.isArray(this.labelPropertyName)) {
-                this.valueString = item[this.labelPropertyName[0]];
-            } else {
-                this.valueString = item[this.labelPropertyName];
-            }
-            this.propagateChange(!this.valuePropertyName ? item : item[this.valuePropertyName]);
+            console.log('handleClick');
+            this.setValue(item);
+            this.propagateChange(this.getValueToPropagate());
             this.change.emit(Object.assign({}, this.value));
         }
 
@@ -236,12 +229,29 @@ export class SearchableDropdownComponent implements ControlValueAccessor, OnChan
      * @returns {string} compoenent's label
      * @memberof SearchableDropdownComponent
      */
-    getLabel(): string {
-        return this.persistentPlaceholder ? this.placeholder : this.valueString;
+    setLabel(): void {
+        console.log('setLabel');
+        this.label = this.persistentPlaceholder ? this.placeholder : this.valueString;
+        this.valueString = this.value ? this.value[this.getValueLabelPropertyName()] : this.placeholder;
     }
 
     private usePlaceholder(placeholderChange: SimpleChange): boolean {
         return placeholderChange && placeholderChange.currentValue && !this.value;
+    }
+
+    private setValue(newValue: any): void {
+        console.log('setValue');
+        this.value = newValue;
+
+        this.setLabel();
+    }
+
+    private getValueLabelPropertyName(): string {
+        return Array.isArray(this.labelPropertyName) ? this.labelPropertyName[0] : this.labelPropertyName;
+    }
+
+    private getValueToPropagate(): string {
+        return !this.valuePropertyName ? this.value : this.value[this.valuePropertyName];
     }
 }
 

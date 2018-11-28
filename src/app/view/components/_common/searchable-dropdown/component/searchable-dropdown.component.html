@@ -23,9 +23,9 @@
 </p-overlayPanel>
 
 <button #button dotMdRipple pButton
-    *ngIf="getLabel()"
+    *ngIf="label"
     (click)="searchPanel.toggle($event)"
-    [label]="getLabel()"
+    [label]="label"
     icon="fa fa-caret-down"
     iconPos="right"
     type="button"
