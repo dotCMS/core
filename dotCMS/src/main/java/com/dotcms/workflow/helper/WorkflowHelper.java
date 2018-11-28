@@ -1058,7 +1058,7 @@ public class WorkflowHelper {
     } // findSchemesByContentType.
 
     @WrapInTransaction
-    public void saveSchemesByContentType(final String contentTypeId, final User user, final List<String> workflowIds) {
+    public void saveSchemesByContentType(final String contentTypeId, final User user, final Set<String> workflowIds) {
 
         final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
 
