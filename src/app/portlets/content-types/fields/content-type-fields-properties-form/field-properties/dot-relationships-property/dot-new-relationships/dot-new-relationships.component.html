@@ -1,5 +1,5 @@
 <div class="form__group">
-    <label for="" class="form__label">Content Type</label>
+    <label for="" class="form__label">{{i18nMessages['contenttypes.field.properties.relationships.contentType.label']}}</label>
     <dot-searchable-dropdown
         (change)="triggerChanged()"
         (filterChange)="getContentTypeList($event)"
@@ -17,7 +17,7 @@
     </dot-searchable-dropdown>
 </div>
 <div class="form__group">
-    <label for="" class="form__label">Relationship</label>
+    <label for="" class="form__label">{{i18nMessages['contenttypes.field.properties.relationships.label']}}</label>
     <dot-cardinality-selector
         [value]="cardinality"
         [disabled]="editing"

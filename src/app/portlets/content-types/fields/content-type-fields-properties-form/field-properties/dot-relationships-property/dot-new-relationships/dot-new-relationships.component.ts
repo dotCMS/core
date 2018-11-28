@@ -46,7 +46,9 @@ export class DotNewRelationshipsComponent implements OnInit, OnChanges {
         this.dotMessageService
             .getMessages([
                 'contenttypes.field.properties.relationship.new.label',
-                'contenttypes.field.properties.relationship.new.content_type.placeholder'
+                'contenttypes.field.properties.relationship.new.content_type.placeholder',
+                'contenttypes.field.properties.relationships.label',
+                'contenttypes.field.properties.relationships.contentType.label'
             ])
             .pipe(take(1))
             .subscribe((res) => {
