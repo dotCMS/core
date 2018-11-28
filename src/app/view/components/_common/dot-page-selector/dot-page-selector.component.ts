@@ -64,6 +64,7 @@ export class DotPageSelectorComponent implements ControlValueAccessor {
     onSelect(item: DotPageSeletorItem): void {
         if (this.results.type === 'site') {
             const site: Site = <Site>item.payload;
+            debugger;
             this.dotPageSelectorService.setCurrentHost(site);
         } else if (this.results.type === 'page') {
             const page: DotPageAsset = <DotPageAsset>item.payload;
@@ -96,6 +97,7 @@ export class DotPageSelectorComponent implements ControlValueAccessor {
      * @memberof DotPageSelectorComponent
      */
     search(param: string): void {
+        debugger;
         if (param.length) {
             this.dotPageSelectorService
                 .search(param)
@@ -167,7 +169,7 @@ export class DotPageSelectorComponent implements ControlValueAccessor {
     }
 
     private getErrorMessage(): string {
-        return this.results.data.length === 0 ? 'No results' : null;
+        return this.results.data.length === 0 ? this.results.type === 'site' ? 'No Site results' : 'No pages results' : null;
     }
 
     private isOnlyFullHost(host: string): boolean {

@@ -11,3 +11,8 @@ export interface DotPageSelectorResults {
     type: string;
     query: string;
 }
+
+export interface DotSimpleURL {
+    host: string;
+    pathname: string;
+}
