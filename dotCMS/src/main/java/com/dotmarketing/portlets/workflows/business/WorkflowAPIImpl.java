@@ -515,7 +515,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	@Override
 	@WrapInTransaction
 	public void saveSchemeIdsForContentType(final ContentType contentType,
-											final List<String> schemesIds) throws DotDataException {
+											final Set<String> schemesIds) throws DotDataException {
 
 		try {
 
@@ -525,7 +525,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 					String.join(",", schemesIds), contentType.inode()));
 
 			workFlowFactory.saveSchemeIdsForContentType(contentType.inode(),
-					schemesIds.stream().map(this::getLongIdForScheme).collect(CollectionsUtils.toImmutableList()),
+					schemesIds.stream().map(this::getLongIdForScheme).collect(Collectors.toSet()),
 					this::consumeWorkflowTask);
 			if(schemesIds.isEmpty()){
 				contentTypeAPI.updateModDate(contentType);

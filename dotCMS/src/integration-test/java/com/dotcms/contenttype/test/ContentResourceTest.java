@@ -45,6 +45,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.servlet.ReadListener;
 import javax.servlet.ServletInputStream;
 import javax.servlet.http.HttpServletRequest;
@@ -106,9 +108,10 @@ public class ContentResourceTest extends IntegrationTestBase {
 
         // Assign contentType to Workflows
         workflowAPI.saveSchemeIdsForContentType(contentType,
-                Arrays.asList(
-                        systemWorkflow.getId(), documentWorkflow.getId()
-                )
+                Stream.of(
+                        systemWorkflow.getId(),
+                        documentWorkflow.getId()
+                ).collect(Collectors.toSet())
         );
 
         return contentType;

@@ -525,7 +525,7 @@ public interface WorkflowAPI {
 	 * @throws DotDataException
 	 */
 	public void saveSchemeIdsForContentType(final ContentType contentType,
-											final List<String> schemesIds) throws DotDataException;
+											final Set<String> schemesIds) throws DotDataException;
 
 	/**
 	 * Saves an single action the action is associated to the schema by default

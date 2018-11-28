@@ -87,9 +87,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
-import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -127,7 +125,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.lang.RandomStringUtils;
-import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -646,7 +643,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
                 actionCommentable(false).
                 requiresCheckout(false).
                 actionNextAssign(adminRoleId).
-                whoCanUse(Arrays.asList("")).
+                whoCanUse(Collections.singletonList("")).
                 actionCondition("").
                 build();
 
@@ -981,9 +978,10 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
 
         // Assign contentType to Workflows
         workflowAPI.saveSchemeIdsForContentType(contentType,
-                Arrays.asList(
-                        systemWorkflow.getId(), documentWorkflow.getId()
-                )
+                Stream.of(
+                        systemWorkflow.getId(),
+                        documentWorkflow.getId()
+                ).collect(Collectors.toSet())
         );
 
         return contentType;
@@ -1825,9 +1823,10 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
 
         // Assign contentType to Workflows
         workflowAPI.saveSchemeIdsForContentType(contentType,
-                Arrays.asList(
-                        systemWorkflow.getId(), documentWorkflow.getId()
-                )
+                Stream.of(
+                        systemWorkflow.getId(),
+                        documentWorkflow.getId()
+                ).collect(Collectors.toSet())
         );
 
         return contentType;
@@ -1861,9 +1860,10 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
 
         // Assign contentType to Workflows
         workflowAPI.saveSchemeIdsForContentType(contentType,
-                Arrays.asList(
-                        systemWorkflow.getId(), documentWorkflow.getId()
-                )
+                Stream.of(
+                        systemWorkflow.getId(),
+                        documentWorkflow.getId()
+                ).collect(Collectors.toSet())
         );
 
         return contentType;
@@ -1896,9 +1896,10 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
 
         // Assign contentType to Workflows
         workflowAPI.saveSchemeIdsForContentType(contentType,
-                Arrays.asList(
-                        systemWorkflow.getId(), documentWorkflow.getId()
-                )
+                Stream.of(
+                        systemWorkflow.getId(),
+                        documentWorkflow.getId()
+                ).collect(Collectors.toSet())
         );
 
         return contentType;

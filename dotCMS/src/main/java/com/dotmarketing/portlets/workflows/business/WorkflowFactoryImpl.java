@@ -1390,7 +1390,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
 	@Override
 	public void saveSchemeIdsForContentType(final String contentTypeInode,
-											final List<String> schemesIds,
+											final Set<String> schemesIds,
 											final Consumer<WorkflowTask> workflowTaskConsumer) throws DotDataException {
 
 		if (LicenseUtil.getLevel() < LicenseLevel.STANDARD.level) {
@@ -1406,7 +1406,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 			db.loadResult();
 
 			final ImmutableList.Builder<WorkflowStep> stepBuilder = new ImmutableList.Builder<>();
-			for(String id : schemesIds) {
+			for(final String id : schemesIds) {
 				db.setSQL(sql.INSERT_SCHEME_FOR_STRUCT);
 				db.addParam(UUIDGenerator.generateUuid());
 				db.addParam(id);
@@ -1522,9 +1522,9 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 									 final List<WorkflowScheme> schemes,
 									 final Consumer<WorkflowTask> workflowTaskConsumer) throws DotDataException {
 
-		final List<String> ids = schemes.stream()
-				.map(scheme -> scheme.getId())
-				.collect(Collectors.toList());
+		final Set<String> ids = schemes.stream()
+				.map(WorkflowScheme::getId)
+				.collect(Collectors.toSet());
 
 		this.saveSchemeIdsForContentType(contentTypeInode, ids, workflowTaskConsumer);
 	}
