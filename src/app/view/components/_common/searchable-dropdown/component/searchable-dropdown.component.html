@@ -14,10 +14,10 @@
         [paginator]="totalRecords > rows"
         [rows]="rows"
         [totalRecords]="totalRecords"
-        [value]="data"
+        [value]="options"
         class="searchable-dropdown__data-list">
         <ng-template let-item pTemplate="item">
-            <span [class.selected]="item[labelPropertyName] === valueString" (click)="handleClick(item)">{{ getItemLabel(item) }}</span>
+            <span [class.selected]="item[labelPropertyName] === valueString" (click)="handleClick(item)">{{ item.label }}</span>
         </ng-template>
     </p-dataList>
 </p-overlayPanel>

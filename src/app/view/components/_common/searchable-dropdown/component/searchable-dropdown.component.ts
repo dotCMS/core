@@ -17,6 +17,7 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { DotMessageService } from '@services/dot-messages-service';
 import { fromEvent } from 'rxjs';
 import { OverlayPanel } from 'primeng/primeng';
+import * as _ from 'lodash';
 
 /**
  * Dropdown with pagination and global search
@@ -39,7 +40,7 @@ import { OverlayPanel } from 'primeng/primeng';
 })
 export class SearchableDropdownComponent implements ControlValueAccessor, OnChanges, OnInit {
     @Input()
-    data: string[];
+    data: any[];
 
     @Input()
     labelPropertyName: string | string[];
@@ -92,6 +93,8 @@ export class SearchableDropdownComponent implements ControlValueAccessor, OnChan
     @ViewChild('button')
     button: ElementRef;
 
+    options: any[];
+
     value: any;
     valueString = '';
 
@@ -105,9 +108,17 @@ export class SearchableDropdownComponent implements ControlValueAccessor, OnChan
 
     propagateChange = (_: any) => {};
 
+    // tslint:disable-next-line:cyclomatic-complexity
     ngOnChanges(change: SimpleChanges): void {
         if (this.usePlaceholder(change.placeholder) || change.persistentPlaceholder) {
             this.setLabel();
+        }
+
+        if (change.data && change.data.currentValue) {
+            this.options = _.cloneDeep(change.data.currentValue).map(item => {
+                item.label = this.getItemLabel(item);
+                return item;
+            });
         }
     }
 
@@ -148,7 +159,6 @@ export class SearchableDropdownComponent implements ControlValueAccessor, OnChan
      * @memberof SearchableDropdownComponent
      */
     writeValue(value: any): void {
-        console.log('writeValue', value, this.placeholder);
         this.setValue(value);
     }
 
@@ -203,7 +213,6 @@ export class SearchableDropdownComponent implements ControlValueAccessor, OnChan
      */
     handleClick(item: any): void {
         if (this.value !== item || this.multiple) {
-            console.log('handleClick');
             this.setValue(item);
             this.propagateChange(this.getValueToPropagate());
             this.change.emit(Object.assign({}, this.value));
@@ -231,8 +240,8 @@ export class SearchableDropdownComponent implements ControlValueAccessor, OnChan
      */
     setLabel(): void {
         console.log('setLabel');
-        this.label = this.persistentPlaceholder ? this.placeholder : this.valueString;
         this.valueString = this.value ? this.value[this.getValueLabelPropertyName()] : this.placeholder;
+        this.label = this.persistentPlaceholder ? this.placeholder : this.valueString;
     }
 
     private usePlaceholder(placeholderChange: SimpleChange): boolean {
@@ -240,7 +249,6 @@ export class SearchableDropdownComponent implements ControlValueAccessor, OnChan
     }
 
     private setValue(newValue: any): void {
-        console.log('setValue');
         this.value = newValue;
 
         this.setLabel();
