@@ -8,6 +8,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 
 public class FolderDataGen extends AbstractDataGen<Folder> {
@@ -62,7 +63,13 @@ public class FolderDataGen extends AbstractDataGen<Folder> {
     @SuppressWarnings("unused")
     public FolderDataGen folder(Folder folder) {
         this.folder = folder;
-        this.host = null;
+        try {
+            this.host = APILocator.getHostAPI().find(folder.getHostId(),APILocator.systemUser(),true);
+        } catch (DotDataException e) {
+            Logger.error(this,"ERROR GETTING HOST WITH ID: " + folder.getHostId());
+        } catch (DotSecurityException e) {
+            Logger.error(this,"USER DO NOT HAVE PERMISSION TO HOST WITH ID " + folder.getHostId());
+        }
         return this;
     }
 
