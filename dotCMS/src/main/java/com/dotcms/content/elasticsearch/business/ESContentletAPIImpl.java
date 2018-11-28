@@ -2519,7 +2519,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
 
         // Refresh the parent only if the contentlet is not already in the checkin
-        if (contentlet.get(CHECKIN_IN_PROGRESS) == null || !contentlet.getBoolProperty(CHECKIN_IN_PROGRESS)) {
+        if (!contentlet.getBoolProperty(CHECKIN_IN_PROGRESS)) {
             refreshNoDeps(contentlet);
         }
     }
