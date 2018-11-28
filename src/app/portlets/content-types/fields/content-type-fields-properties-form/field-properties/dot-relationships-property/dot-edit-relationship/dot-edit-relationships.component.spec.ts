@@ -7,7 +7,7 @@ import { MockDotMessageService } from 'src/app/test/dot-message-service.mock';
 import { DotEditContentTypeCacheService } from '@portlets/content-types/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/services/dot-edit-content-type-cache.service';
 import { PaginatorService } from '@services/paginator';
 import { DotRelationshipService } from '@portlets/content-types/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/services/dot-relationship.service';
-import { ComponentFixture } from '@angular/core/testing';
+import { ComponentFixture, async } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { Observable, of } from 'rxjs';
 import { DotRelationshipCardinality } from '@portlets/content-types/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/model/dot-relationship-cardinality.model';
@@ -112,7 +112,7 @@ describe('DotEditRelationshipsComponent', () => {
         'contenttypes.field.properties.relationship.existing.placeholder': 'Select Relationship',
     });
 
-    beforeEach(() => {
+    beforeEach(async(() => {
         DOTTestBed.configureTestingModule({
             declarations: [
                 DotEditRelationshipsComponent,
@@ -136,7 +136,7 @@ describe('DotEditRelationshipsComponent', () => {
         spyOn(paginatorService, 'getWithOffset').and.returnValue(of(mockRelationships));
 
         dotEditContentTypeCacheService = de.injector.get(DotEditContentTypeCacheService);
-    });
+    }));
 
     it('should set url to get relationships', () => {
         fixture.detectChanges();
@@ -220,7 +220,7 @@ describe('DotEditRelationshipsComponent', () => {
         fixture.detectChanges();
 
         comp.change.subscribe((relationshipSelect: any) => {
-            console.log('relationshipSelect', relationshipSelect);
+
             expect(relationshipSelect).toEqual(
                 {
                     cardinality: 1,

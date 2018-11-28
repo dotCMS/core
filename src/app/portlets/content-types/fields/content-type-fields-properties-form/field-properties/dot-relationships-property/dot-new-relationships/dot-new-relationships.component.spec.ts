@@ -1,6 +1,6 @@
 import { ContentType } from '@portlets/content-types/shared/content-type.model';
 import { DotNewRelationshipsComponent } from './dot-new-relationships.component';
-import { ComponentFixture } from '@angular/core/testing';
+import { ComponentFixture, async } from '@angular/core/testing';
 import { DebugElement, Component, Input, Output, EventEmitter, Injectable, forwardRef } from '@angular/core';
 import { PaginatorService } from '@services/paginator';
 import { MockDotMessageService } from 'src/app/test/dot-message-service.mock';
@@ -141,7 +141,7 @@ class MockDotContentTypeService {
     }
 }
 
-describe('NewRelationshipsComponent', () => {
+describe('DotNewRelationshipsComponent', () => {
     let fixtureHostComponent: ComponentFixture<HostTestComponent>;
     let comp: DotNewRelationshipsComponent;
     let de: DebugElement;
@@ -153,7 +153,7 @@ describe('NewRelationshipsComponent', () => {
         'contenttypes.field.properties.relationship.new.content_type.placeholder': 'Select Content Type',
     });
 
-    beforeEach(() => {
+    beforeEach(async(() => {
         DOTTestBed.configureTestingModule({
             declarations: [
                 HostTestComponent,
@@ -176,7 +176,7 @@ describe('NewRelationshipsComponent', () => {
 
         paginatorService = de.injector.get(PaginatorService);
         spyOn(paginatorService, 'getWithOffset').and.returnValue(of([contentTypeMock]));
-    });
+    }));
 
     describe('Content Types', () => {
         beforeEach(() => {
@@ -259,11 +259,11 @@ describe('NewRelationshipsComponent', () => {
 
         beforeEach(() => {
             fixtureHostComponent.componentInstance.cardinalityIndex = 2;
+
+            fixtureHostComponent.detectChanges();
         });
 
         it('should hava a dot-cardinality-selector with the right attributes', () => {
-            fixtureHostComponent.detectChanges();
-
             const dotCardinalitySelector = de.query(By.css('dot-cardinality-selector'));
             expect(dotCardinalitySelector).not.toBeUndefined();
 
@@ -271,8 +271,6 @@ describe('NewRelationshipsComponent', () => {
         });
 
         it('should tigger change event when cardinality changed', (done) => {
-            fixtureHostComponent.detectChanges();
-
             comp.change.subscribe((relationshipSelect: any) => {
                 expect(relationshipSelect).toEqual(
                     {

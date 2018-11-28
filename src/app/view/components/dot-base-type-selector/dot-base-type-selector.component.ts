@@ -20,7 +20,7 @@ export class DotBaseTypeSelectorComponent implements OnInit {
     options: Observable<SelectItem[]>;
 
     constructor(
-        private dotContentletService: DotContentTypeService,
+        private dotContentTypeService: DotContentTypeService,
         private dotMessageService: DotMessageService
     ) {}
 
@@ -29,7 +29,7 @@ export class DotBaseTypeSelectorComponent implements OnInit {
             .getMessages(['contenttypes.selector.any.content.type'])
             .pipe(take(1))
             .subscribe(() => {
-                this.options = this.dotContentletService.getAllContentTypes().pipe(
+                this.options = this.dotContentTypeService.getAllContentTypes().pipe(
                     take(1),
                     map((structures: StructureTypeView[]) =>
                         this.setOptions(

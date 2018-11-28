@@ -1,13 +1,13 @@
 import { Component, OnInit, EventEmitter, Output } from '@angular/core';
 import { DotMessageService } from '@services/dot-messages-service';
 import { PaginatorService } from '@services/paginator';
-import { DotEditContentTypeCacheService } from '@portlets/content-types/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/services/dot-edit-content-type-cache.service';
 import { of as observableOf, Observable } from 'rxjs';
 import { map, flatMap, toArray, take, switchMap } from 'rxjs/operators';
-import { DotRelationshipService } from '@portlets/content-types/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/services/dot-relationship.service';
-import { DotRelationship } from '@portlets/content-types/fields/shared/dot-relationship.model';
-import { DotRelationshipCardinality } from '@portlets/content-types/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/model/dot-relationship-cardinality.model';
-import { DotRelationshipsPropertyValue } from '../dot-relationships-property.component';
+import { DotRelationshipsPropertyValue } from '../model/dot-relationships-property-value.model';
+import { DotRelationship } from '../model/dot-relationship.model';
+import { DotEditContentTypeCacheService } from '../services/dot-edit-content-type-cache.service';
+import { DotRelationshipService } from '../services/dot-relationship.service';
+import { DotRelationshipCardinality } from '../model/dot-relationship-cardinality.model';
 
 
 /**
@@ -49,8 +49,8 @@ export class DotEditRelationshipsComponent implements OnInit {
     constructor(
         public dotMessageService: DotMessageService,
         public dotPaginatorService: PaginatorService,
-        private editContentTypeCacheService: DotEditContentTypeCacheService,
-        private relationshipService: DotRelationshipService) {}
+        private dotEditContentTypeCacheService: DotEditContentTypeCacheService,
+        private dotRelationshipService: DotRelationshipService) {}
 
     ngOnInit() {
         this.dotMessageService
@@ -66,9 +66,11 @@ export class DotEditRelationshipsComponent implements OnInit {
         this.dotPaginatorService.url = 'v1/relationships';
     }
 
+
     /**
-     * Filter relationchips by name
-     * @param any filter
+     *Filter relationchips by name
+     *
+     * @param {string} filter
      * @memberof DotEditRelationshipsComponent
      */
     handleFilterChange(filter: string): void {
@@ -76,8 +78,9 @@ export class DotEditRelationshipsComponent implements OnInit {
     }
 
     /**
-     * Change relationships current page
-     * @param any event
+     *Change relationships current page
+     *
+     * @param {{filter: string, first: number}} event
      * @memberof DotEditRelationshipsComponent
      */
     handlePageChange(event: {filter: string, first: number}): void {
@@ -85,9 +88,9 @@ export class DotEditRelationshipsComponent implements OnInit {
     }
 
     /**
-     * Trigger a change event, it send a object with the current content type's variable and
-     * the current candinality's index.
-     * @param relationship relationship selected
+     *Trigger a change event, it send a object with the current content type's variable and
+     *
+     * @param {DotRelationship} relationship relationship selected
      * @memberof DotEditRelationshipsComponent
      */
     triggerChanged(relationship: DotRelationship): void {
@@ -101,7 +104,7 @@ export class DotEditRelationshipsComponent implements OnInit {
 
         if (!this.cardinalities) {
 
-            return this.relationshipService.loadCardinalities().pipe(
+            return this.dotRelationshipService.loadCardinalities().pipe(
                 map((relationshipCardinalities: DotRelationshipCardinality[]) => {
                     this.cardinalities = {};
 
@@ -118,7 +121,7 @@ export class DotEditRelationshipsComponent implements OnInit {
     }
 
     private getRelationshipList(filter = '', offset = 0): void {
-        this.dotPaginatorService.setExtraParams('contentTypeId', this.editContentTypeCacheService.get().id);
+        this.dotPaginatorService.setExtraParams('contentTypeId', this.dotEditContentTypeCacheService.get().id);
         this.dotPaginatorService.filter = filter;
 
         this.currentPage = this.getCardinalities().pipe(
@@ -128,7 +131,7 @@ export class DotEditRelationshipsComponent implements OnInit {
                     map((relationship: DotRelationship) => {
                         return {
                             label: `${relationship.relationTypeValue}.${cardinalities[relationship.cardinality].label}`,
-                            relationship: <DotRelationship> relationship
+                            relationship: <DotRelationship>relationship
                         };
                     }),
                     toArray()

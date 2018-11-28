@@ -4,8 +4,8 @@ import { PaginatorService } from '@services/paginator';
 import { ContentType } from '@portlets/content-types/shared/content-type.model';
 import { Observable } from 'rxjs';
 import { DotContentTypeService } from '@services/dot-content-type/dot-content-type.service';
-import { DotRelationshipsPropertyValue } from '../dot-relationships-property.component';
 import { take } from 'rxjs/operators';
+import { DotRelationshipsPropertyValue } from '../model/dot-relationships-property-value.model';
 
 @Component({
     providers: [PaginatorService],

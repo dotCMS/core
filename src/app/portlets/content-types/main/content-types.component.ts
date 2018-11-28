@@ -69,7 +69,7 @@ export class ContentTypesPortletComponent implements OnInit {
     constructor(
         private contentTypesInfoService: ContentTypesInfoService,
         private crudService: CrudService,
-        private dotContentletService: DotContentTypeService,
+        private dotContentTypeService: DotContentTypeService,
         private dotDialogService: DotAlertConfirmService,
         private dotLicenseService: DotLicenseService,
         private httpErrorManagerService: DotHttpErrorManagerService,
@@ -83,7 +83,7 @@ export class ContentTypesPortletComponent implements OnInit {
 
         observableForkJoin(
             this.dotMessageService.getMessages(this.i18nKeys),
-            this.dotContentletService.getAllContentTypes(),
+            this.dotContentTypeService.getAllContentTypes(),
             this.dotLicenseService.isEnterprise(),
             this.pushPublishService
                 .getEnvironments()

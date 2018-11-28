@@ -17,19 +17,19 @@ const cardinalities = [
     }
 ];
 
-describe('RelationshipService', () => {
-    let relationshipService: DotRelationshipService;
+describe('DotRelationshipService', () => {
+    let dotRelationshipService: DotRelationshipService;
 
     beforeEach(() => {
         this.injector = DOTTestBed.resolveAndCreate([DotRelationshipService]);
 
-        relationshipService = this.injector.get(DotRelationshipService);
+        dotRelationshipService = this.injector.get(DotRelationshipService);
         this.backend = this.injector.get(ConnectionBackend) as MockBackend;
         this.backend.connections.subscribe((connection: any) => (this.lastConnection = connection));
     });
 
     it('should load cardinalities', fakeAsync(() => {
-        relationshipService.loadCardinalities().subscribe((res) => this.response = res);
+        dotRelationshipService.loadCardinalities().subscribe((res) => this.response = res);
 
         this.lastConnection.mockRespond(
             new Response(

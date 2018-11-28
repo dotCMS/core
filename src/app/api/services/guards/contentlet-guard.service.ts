@@ -11,7 +11,7 @@ import { DotContentTypeService } from '@services/dot-content-type/dot-content-ty
 @Injectable()
 export class ContentletGuardService implements CanActivateChild {
     constructor(
-        private dotContentletService: DotContentTypeService,
+        private dotContentTypeService: DotContentTypeService,
         private dotNavigationService: DotNavigationService
     ) {}
 
@@ -29,7 +29,7 @@ export class ContentletGuardService implements CanActivateChild {
      * @returns boolean
      */
     canAccessContentType(url: string): Observable<boolean> {
-        return this.dotContentletService.isContentTypeInMenu(url).pipe(
+        return this.dotContentTypeService.isContentTypeInMenu(url).pipe(
             map((res) => {
                 if (!res) {
                     this.dotNavigationService.goToFirstPortlet();

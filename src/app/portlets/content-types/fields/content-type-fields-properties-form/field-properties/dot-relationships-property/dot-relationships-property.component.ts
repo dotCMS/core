@@ -1,9 +1,10 @@
 import { Component, OnInit } from '@angular/core';
 import { DotMessageService } from '@services/dot-messages-service';
-import { FieldProperty } from '../field-properties.model';
 import { FormGroup } from '@angular/forms';
 import * as _ from 'lodash';
 import { take } from 'rxjs/operators';
+import { FieldProperty } from '../field-properties.model';
+import { DotRelationshipsPropertyValue } from './model/dot-relationships-property-value.model';
 
 
 /**
@@ -99,10 +100,4 @@ export class DotRelationshipsPropertyComponent implements OnInit {
         const value = this.group.get(this.property.name).value.velocityVar;
         return !!value ? value.split('.')[0] : '';
     }
-}
-
-
-export interface DotRelationshipsPropertyValue {
-    velocityVar: string;
-    cardinality: number;
 }

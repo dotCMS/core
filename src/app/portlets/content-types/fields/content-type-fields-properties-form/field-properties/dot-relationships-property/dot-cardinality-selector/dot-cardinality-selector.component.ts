@@ -28,7 +28,7 @@ export class DotCardinalitySelectorComponent implements OnInit, OnChanges {
     @Output()
     change: EventEmitter<number> = new EventEmitter();
 
-    cardinalities: DotRelationshipCardinality[];
+    options: DotRelationshipCardinality[];
 
     cardinality: DotRelationshipCardinality;
 
@@ -38,7 +38,7 @@ export class DotCardinalitySelectorComponent implements OnInit, OnChanges {
 
     constructor(
         public dotMessageService: DotMessageService,
-        private relationshipService: DotRelationshipService) {}
+        private dotRelationshipService: DotRelationshipService) {}
 
     ngOnInit() {
         this.dotMessageService
@@ -50,26 +50,28 @@ export class DotCardinalitySelectorComponent implements OnInit, OnChanges {
                 this.i18nMessages = res;
             });
 
-        this.relationshipService.loadCardinalities().subscribe((cardinalities: DotRelationshipCardinality[]) => {
-            this.cardinalities = cardinalities;
+        this.dotRelationshipService.loadCardinalities().subscribe((cardinalities: DotRelationshipCardinality[]) => {
+            this.options = cardinalities;
 
             if (this.value) {
-                this.cardinality = this.cardinalities[this.value];
+                this.cardinality = this.options[this.value];
             }
         });
     }
 
     ngOnChanges(changes: SimpleChanges): void {
         if (changes.value.currentValue) {
-            if (this.cardinalities) {
-                this.cardinality = this.cardinalities[changes.value.currentValue];
+            if (this.options) {
+                this.cardinality = this.options[changes.value.currentValue];
             }
         }
     }
 
     /**
-     * Trigger a change
-     * @param cardinality
+     *Trigger a change event
+     *
+     * @param {DotRelationshipCardinality} cardinality
+     * @memberof DotCardinalitySelectorComponent
      */
     tiggerChanged(cardinality: DotRelationshipCardinality): void {
         this.change.next(cardinality.id);

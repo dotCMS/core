@@ -63,7 +63,7 @@ export class ContentTypesEditComponent implements OnInit, OnDestroy {
         private route: ActivatedRoute,
         public dotMessageService: DotMessageService,
         public router: Router,
-        private editContentTypeCacheService: DotEditContentTypeCacheService
+        private dotEditContentTypeCacheService: DotEditContentTypeCacheService
     ) {}
 
     ngOnInit(): void {
@@ -75,7 +75,7 @@ export class ContentTypesEditComponent implements OnInit, OnDestroy {
             )
             .subscribe((contentType: ContentType) => {
                 this.data = contentType;
-                this.editContentTypeCacheService.set(contentType);
+                this.dotEditContentTypeCacheService.set(contentType);
 
                 if (contentType.fields) {
                     this.fields = contentType.fields;

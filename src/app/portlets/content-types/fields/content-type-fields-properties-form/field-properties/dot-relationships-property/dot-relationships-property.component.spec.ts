@@ -1,5 +1,5 @@
 import { DotRelationshipsPropertyComponent } from './dot-relationships-property.component';
-import { ComponentFixture } from '@angular/core/testing';
+import { ComponentFixture, async } from '@angular/core/testing';
 import { DebugElement, Component, Input, Output, EventEmitter } from '@angular/core';
 import { MockDotMessageService } from 'src/app/test/dot-message-service.mock';
 import { DOTTestBed } from 'src/app/test/dot-test-bed';
@@ -46,7 +46,7 @@ class TestEditRelationshipsComponent {
     change: EventEmitter<any> = new EventEmitter();
 }
 
-describe('RelationshipsPropertyComponent', () => {
+describe('DotRelationshipsPropertyComponent', () => {
 
     let comp: DotRelationshipsPropertyComponent;
     let fixture: ComponentFixture<DotRelationshipsPropertyComponent>;
@@ -59,7 +59,7 @@ describe('RelationshipsPropertyComponent', () => {
         'contenttypes.field.properties.relationships.edit.error.required': 'Edit validation error'
     });
 
-    beforeEach(() => {
+    beforeEach(async(() => {
         DOTTestBed.configureTestingModule({
             declarations: [
                 DotRelationshipsPropertyComponent,
@@ -86,12 +86,15 @@ describe('RelationshipsPropertyComponent', () => {
         comp.group = new FormGroup({
             'relationship': new FormControl('')
         });
-    });
+    }));
 
     describe('not editing mode', () => {
-        it('should have existing and new radio button', () => {
-            fixture.detectChanges();
 
+        beforeEach(() => {
+            fixture.detectChanges();
+        });
+
+        it('should have existing and new radio button', () => {
             const radios = de.queryAll(By.css('p-radioButton'));
 
             expect(radios.length).toBe(2);
@@ -99,32 +102,25 @@ describe('RelationshipsPropertyComponent', () => {
         });
 
         it('should show dot-new-relationships in new state', () => {
-            fixture.detectChanges();
-
-            const newRadio = de.query(By.css('p-radioButton[ng-reflect-label="New"]'));
+            const newRadio = de.query(By.css('.relationships__new'));
             newRadio.triggerEventHandler('click', {});
 
             fixture.detectChanges();
 
-            expect(de.query(By.css('dot-new-relationships'))).not.toBeUndefined();
+            expect(de.query(By.css('dot-new-relationships'))).toBeDefined();
             expect(de.query(By.css('dot-edit-relationships'))).toBeNull();
         });
 
         it('should show dot-edit-relationships in existing state', () => {
-            fixture.detectChanges();
-
             comp.status = 'EXISTING';
 
             fixture.detectChanges();
 
-            expect(de.query(By.css('dot-edit-relationships'))).not.toBeUndefined();
+            expect(de.query(By.css('dot-edit-relationships'))).toBeDefined();
             expect(de.query(By.css('dot-new-relationships'))).toBeNull();
         });
 
         it('should clean the relationships property value', () => {
-
-            fixture.detectChanges();
-
             comp.group.setValue(
                 {
                     'relationship': new FormControl(

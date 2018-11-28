@@ -6,7 +6,7 @@ import { MockDotMessageService } from 'src/app/test/dot-message-service.mock';
 import { DotRelationshipCardinality } from '@portlets/content-types/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/model/dot-relationship-cardinality.model';
 import { Observable, of } from 'rxjs';
 import { DotRelationshipService } from '@portlets/content-types/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/services/dot-relationship.service';
-import { ComponentFixture } from '@angular/core/testing';
+import { ComponentFixture, async } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
 const cardinalities: DotRelationshipCardinality[] = [
@@ -47,7 +47,7 @@ class MockRelationshipService {
     }
 }
 
-describe('CardinalitySelectorComponent', () => {
+describe('DotCardinalitySelectorComponent', () => {
 
     let fixtureHostComponent: ComponentFixture<HostTestComponent>;
     let comp: DotCardinalitySelectorComponent;
@@ -57,7 +57,7 @@ describe('CardinalitySelectorComponent', () => {
         'contenttypes.field.properties.relationship.cardinality.placeholder': 'Select Cardinality',
     });
 
-    beforeEach(() => {
+    beforeEach(async(() => {
         DOTTestBed.configureTestingModule({
             declarations: [
                 DotCardinalitySelectorComponent,
@@ -73,14 +73,14 @@ describe('CardinalitySelectorComponent', () => {
         fixtureHostComponent = DOTTestBed.createComponent(HostTestComponent);
         de = fixtureHostComponent.debugElement.query(By.css('dot-cardinality-selector'));
         comp = de.componentInstance;
-    });
+    }));
 
     it('should have a p-dropdown with right attributes', () => {
         fixtureHostComponent.detectChanges();
 
         const dropdown = de.query(By.css('p-dropdown'));
 
-        expect(dropdown).not.toBeUndefined();
+        expect(dropdown).toBeDefined();
 
         expect(dropdown.componentInstance.appendTo).toBe('body');
         expect(dropdown.componentInstance.optionLabel).toBe('label');
@@ -92,7 +92,7 @@ describe('CardinalitySelectorComponent', () => {
 
         const dropdown = de.query(By.css('p-dropdown'));
 
-        expect(dropdown.componentInstance.disabled).toBeTruthy();
+        expect(dropdown.componentInstance.disabled).toBe(true);
     });
 
     it('should load cardinalities', () => {
@@ -101,8 +101,10 @@ describe('CardinalitySelectorComponent', () => {
 
         const  dropdown = de.query(By.css('p-dropdown'));
 
-        expect(comp.cardinalities).toEqual(cardinalities);
-        expect(dropdown.componentInstance.options).toEqual(dropdown.componentInstance.options);
+        expect(comp.options).toEqual(cardinalities);
+        console.log('dropdown.componentInstance.options', dropdown.componentInstance.options);
+        expect(dropdown.componentInstance.options.map(option => option.value))
+            .toEqual(cardinalities);
     });
 
     it('should trigger a change event p-dropdown', (done) => {
