@@ -95,15 +95,16 @@ public class NavToolTest extends IntegrationTestBase{
         final int currentShowOnMenuItems = findShowOnMenuUnderFolder(folder, user);
 
         //Comparing what we found vs the result on the NavTool
+        //Expected: 1 SubFolder and 1 Page (there is another page with Show on Menu but is in Spanish)
         int englishResultChildren = navResult.getChildren().size();
-
-        assertEquals(currentShowOnMenuItems-1,englishResultChildren);//1 SubFolder and 1 Page (there is another page with Show on Menu but is in Spanish)
+        assertEquals(currentShowOnMenuItems-1,englishResultChildren);
 
         navResult = new NavTool().getNav(demoHost, folderIdentifier.getPath(), 2, user);
         assertNotNull(navResult);
 
+        //Expected: 1 SubFolder and 2 Pages (DEFAULT_PAGE_TO_DEFAULT_LANGUAGE=true) should make the english page to return also
         int spanishResultChildren = navResult.getChildren().size();
-        assertEquals(currentShowOnMenuItems,spanishResultChildren);//1 SubFolder and 2 Pages
+        assertEquals(currentShowOnMenuItems,spanishResultChildren);
     }
 
     @Test
@@ -122,15 +123,16 @@ public class NavToolTest extends IntegrationTestBase{
         final int currentShowOnMenuItems = findShowOnMenuUnderFolder(folder, user);
 
         //Comparing what we found vs the result on the NavTool
+        //Expected: 1 SubFolder and 1 Page (there is another page with Show on Menu but is in Spanish)
         int englishResultChildren = navResult.getChildren().size();
-
-        assertEquals(currentShowOnMenuItems-1,englishResultChildren);//1 SubFolder and 1 Page (there is another page with Show on Menu but is in Spanish)
+        assertEquals(currentShowOnMenuItems-1,englishResultChildren);
 
         navResult = new NavTool().getNav(demoHost, folderIdentifier.getPath(), 2, user);
         assertNotNull(navResult);
 
+        //Expected: 1 SubFolder and 1 Page (DEFAULT_PAGE_TO_DEFAULT_LANGUAGE=false) should NOT include english page
         int spanishResultChildren = navResult.getChildren().size();
-        assertEquals(currentShowOnMenuItems-1,spanishResultChildren);//1 SubFolder and 1 Page
+        assertEquals(currentShowOnMenuItems-1,spanishResultChildren);
 
     }
 
