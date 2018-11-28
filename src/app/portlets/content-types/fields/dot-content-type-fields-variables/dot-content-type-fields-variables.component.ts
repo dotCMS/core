@@ -7,6 +7,8 @@ import { take, takeUntil } from 'rxjs/operators';
 import { Subject } from 'rxjs/internal/Subject';
 import { Table } from 'primeng/table';
 import * as _ from 'lodash';
+import { DotContentTypeFieldsVariablesTableRowComponent } from
+ './dot-content-type-fields-variables-table-row/dot-content-type-fields-variables-table-row.component';
 
 export interface FieldVariable {
     id?: string;
@@ -24,6 +26,8 @@ export interface FieldVariable {
 export class DotContentTypeFieldsVariablesComponent implements OnInit, OnChanges, OnDestroy {
     @ViewChild('table')
     table: Table;
+    @ViewChild('tableRow') tableRow: DotContentTypeFieldsVariablesTableRowComponent;
+
     @Input()
     field: DotFieldVariableParams;
 
@@ -44,11 +48,7 @@ export class DotContentTypeFieldsVariablesComponent implements OnInit, OnChanges
                 'contenttypes.field.variables.key_header.label',
                 'contenttypes.field.variables.value_header.label',
                 'contenttypes.field.variables.actions_header.label',
-                'contenttypes.field.variables.value_no_rows.label',
-                'contenttypes.field.variables.key_input.placeholder',
-                'contenttypes.field.variables.value_input.placeholder',
-                'contenttypes.action.save',
-                'contenttypes.action.cancel'
+                'contenttypes.field.variables.value_no_rows.label'
             ])
             .pipe(take(1))
             .subscribe((messages: { [key: string]: string }) => {
@@ -82,7 +82,7 @@ export class DotContentTypeFieldsVariablesComponent implements OnInit, OnChanges
         if ($event.key === 'Escape') {
             this.cancelVariableAction(index);
         } else if ($event.key === 'Enter' && !this.isFieldDisabled(fieldVariable)) {
-            this.saveVariable(fieldVariable, index);
+            // this.saveVariable(fieldVariable, index);
         }
     }
 
@@ -93,7 +93,7 @@ export class DotContentTypeFieldsVariablesComponent implements OnInit, OnChanges
      * @memberof ContentTypeFieldsVariablesComponent
      */
     deleteVariable(fieldVariable: FieldVariable, fieldIndex: number): void {
-        if (fieldVariable.key !== '') {
+        if (fieldVariable.id) {
             this.deleteExistingVariable(fieldIndex);
         } else {
             this.deleteEmptyVariable(fieldIndex);
@@ -136,23 +136,28 @@ export class DotContentTypeFieldsVariablesComponent implements OnInit, OnChanges
      * @param {Number} variableIndex
      * @memberof ContentTypeFieldsVariablesComponent
      */
-    saveVariable(variable: FieldVariable, variableIndex?: number): void {
-        if (typeof variableIndex === 'number') {
-            this.updateExistingVariable(variable, variableIndex);
+    saveVariable(fieldIndex: number): void {
+        if (typeof fieldIndex === 'number') {
+            this.updateExistingVariable(this.fieldVariablesBackup[fieldIndex], fieldIndex);
         } else {
             this.addEmptyVariable();
         }
     }
 
-    /**
-     * Handle Add new variable button event
-     * @memberof ContentTypeFieldsVariablesComponent
-     */
-    addVariable(): void {
-        this.saveVariable(null);
-        setTimeout(() => {
-            this.editVariableAction(0);
-        });
+    onDelete(fieldIndex: number): void {
+        if (this.fieldVariables[fieldIndex].id) {
+            this.fieldVariablesBackup[fieldIndex] = _.cloneDeep(this.fieldVariables[fieldIndex]);
+        } else {
+            this.deleteVariable(this.fieldVariables[fieldIndex], fieldIndex);
+        }
+    }
+
+    onCancel(fieldIndex: number): void {
+        if (this.fieldVariables[fieldIndex].id) {
+            this.fieldVariablesBackup[fieldIndex] = _.cloneDeep(this.fieldVariables[fieldIndex]);
+        } else {
+            this.deleteVariable(this.fieldVariables[fieldIndex], fieldIndex);
+        }
     }
 
     /**
@@ -242,13 +247,16 @@ export class DotContentTypeFieldsVariablesComponent implements OnInit, OnChanges
         );
     }
 
+    // tslint:disable-next-line:cyclomatic-complexity
     private addEmptyVariable(): void {
-        const emptyVariable: FieldVariable = {
-            key: '',
-            value: ''
-        };
-        this.fieldVariables = [].concat(emptyVariable, this.fieldVariables);
-        this.fieldVariablesBackup = [].concat(emptyVariable, this.fieldVariablesBackup);
+        if (this.fieldVariables.length === 0 || (this.fieldVariables.length > 0 && this.fieldVariables[0].key !== '')) {
+            const emptyVariable: FieldVariable = {
+                key: '',
+                value: ''
+            };
+            this.fieldVariables = [].concat(emptyVariable, this.fieldVariables);
+            this.fieldVariablesBackup = [].concat(emptyVariable, this.fieldVariablesBackup);
+        }
     }
 
     private updateVariableCollection(savedVariable: FieldVariable, variableIndex?: number): FieldVariable[] {

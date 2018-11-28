@@ -7,6 +7,8 @@ import { FormsModule } from '@angular/forms';
 import { ButtonModule, InputTextModule } from 'primeng/primeng';
 import { DotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { DotContentTypeFieldsVariablesComponent } from './dot-content-type-fields-variables.component';
+// tslint:disable-next-line:max-line-length
+import { DotContentTypeFieldsVariablesTableRowModule } from './dot-content-type-fields-variables-table-row/dot-content-type-fields-variables-table-row.module';
 
 @NgModule({
     imports: [
@@ -16,7 +18,8 @@ import { DotContentTypeFieldsVariablesComponent } from './dot-content-type-field
         FormsModule,
         TableModule,
         DotActionButtonModule,
-        DotIconButtonModule
+        DotIconButtonModule,
+        DotContentTypeFieldsVariablesTableRowModule
     ],
     exports: [DotContentTypeFieldsVariablesComponent],
     providers: [DotFieldVariablesService],

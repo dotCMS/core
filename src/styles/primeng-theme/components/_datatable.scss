@@ -1,10 +1,7 @@
-@import "variables";
-
 .ui-datatable {
     .ui-datatable-thead > tr > th,
     .ui-datatable-tfoot > tr > td,
     .ui-datatable-data > tr > td {
-
         border-width: 0px;
         padding: $datatable-cell-padding;
 
@@ -30,7 +27,6 @@
     .ui-datatable-thead > tr > th {
         color: $datatable-head-color;
         font-size: $font-size-small;
-        font-weight: normal;
         border-bottom: $datatable-cell-border;
         padding: $datatable-header-cell-padding;
 
@@ -66,11 +62,9 @@
         .pi-sort:before {
             content: "";
         }
-    
         .pi-sort-asc:before {
             content: "\f063";
         }
-    
         .pi-sort-desc:before {
             content: "\f062";
         }

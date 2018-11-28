@@ -15,7 +15,7 @@ import { DotFieldVariablesService } from '../service/dot-field-variables.service
 import { TableModule } from 'primeng/table';
 import { of } from 'rxjs';
 
-describe('ContentTypeFieldsVariablesComponent', () => {
+fdescribe('ContentTypeFieldsVariablesComponent', () => {
     let comp: DotContentTypeFieldsVariablesComponent;
     let fixture: ComponentFixture<DotContentTypeFieldsVariablesComponent>;
     let de: DebugElement;
@@ -77,7 +77,7 @@ describe('ContentTypeFieldsVariablesComponent', () => {
 
     it('should create an empty variable', () => {
         fixture.detectChanges();
-        de.query(By.css('dot-action-button')).nativeElement.click();
+        de.query(By.css('.action-header__primary-button')).triggerEventHandler('click', { stopPropagation: () => {} });
         expect(comp.fieldVariables.length).toBe(4);
     });
 

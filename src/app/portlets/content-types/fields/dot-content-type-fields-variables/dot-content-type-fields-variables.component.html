@@ -1,11 +1,11 @@
-<dot-action-button class="action-header__primary-button" (click)="addVariable()"></dot-action-button>
+<dot-action-button class="action-header__primary-button" (click)="saveVariable(null)"></dot-action-button>
 <p-table #table [value]="fieldVariablesBackup" sortField="clazz" (keydown.enter)="$event.stopPropagation()" sortOrder=0 dataKey="id">
     <ng-template pTemplate="header" let-columns>
         <tr>
-            <th [ngStyle]="{'text-align': 'left'}">
+            <th [ngStyle]="{'text-align': 'left', 'width': '33%'}">
                 {{messages['contenttypes.field.variables.key_header.label']}}
             </th>
-            <th [ngStyle]="{'text-align': 'left'}">
+            <th [ngStyle]="{'text-align': 'left', 'width': '33%'}">
                 {{messages['contenttypes.field.variables.value_header.label']}}
             </th>
             <th [ngStyle]="{'text-align': 'right', 'width': '185px', 'padding-right': '32px'}">
@@ -14,50 +14,13 @@
         </tr>
     </ng-template>
     <ng-template pTemplate="body" let-fieldVariable let-rowIndex="rowIndex">
-        <tr>
-            <td [pEditableColumn]="fieldVariable.key" id="content-type-fields__variables-key-{{ rowIndex }}" [pEditableColumnField]="'key'">
-                <p-cellEditor>
-                    <ng-template pTemplate="input">
-                        <input pInputText
-                            type="text"
-                            placeholder="{{ messages['contenttypes.field.variables.key_input.placeholder'] }}"
-                            (focus)="editFieldInit(fieldVariable, rowIndex)"
-                            (keyup)="editFieldInit(fieldVariable, rowIndex)"
-                            (keydown)="onKeyDown($event, fieldVariable, rowIndex)"
-                            [(ngModel)]="fieldVariable.key">
-                    </ng-template>
-                    <ng-template pTemplate="output">
-                        {{fieldVariable.key}}
-                    </ng-template>
-                </p-cellEditor>
-            </td>
-            <td [pEditableColumn]="fieldVariable.value" id="content-type-fields__variables-value-{{ rowIndex }}" [pEditableColumnField]="'value'">
-                <p-cellEditor>
-                    <ng-template pTemplate="input">
-                        <input pInputText
-                            type="text"
-                            placeholder="{{ messages['contenttypes.field.variables.value_input.placeholder'] }}"
-                            (focus)="editFieldInit(fieldVariable, rowIndex)"
-                            (keyup)="editFieldInit(fieldVariable, rowIndex)"
-                            (keydown)="onKeyDown($event, fieldVariable, rowIndex)"
-                            [(ngModel)]="fieldVariable.value">
-                    </ng-template>
-                    <ng-template pTemplate="output">
-                        {{fieldVariable.value}}
-                    </ng-template>
-                </p-cellEditor>
-            </td>
-            <td class="content-type-fields__variables-actions" [ngStyle]="{'text-align': 'right'}">
-                <div id="content-type-fields__variables-actions-edit-{{ rowIndex }}" [ngStyle]="{'display': 'none'}">
-                    <button pButton secondary tiny label="{{ messages['contenttypes.action.cancel'] }}" (click)="cancelVariableAction(rowIndex)"></button>
-                    <button class="content-type-fields__variables-actions-edit-save" pButton tiny label="{{ messages['contenttypes.action.save'] }}" (click)="saveVariable(fieldVariable, rowIndex)"></button>
-                </div>
-                <div id="content-type-fields__variables-actions-main-{{ rowIndex }}">
-                    <dot-icon-button icon="delete_outline" (click)="deleteVariable(fieldVariable, rowIndex)"></dot-icon-button>
-                    <dot-icon-button icon="edit" (click)="editVariableAction(rowIndex)"></dot-icon-button>
-                </div>
-            </td>
-        </tr>
+        <dot-content-type-fields-variables-table-row #tableRow
+            [fieldVariable]="fieldVariable"
+            [variableIndex]="rowIndex"
+            (cancel)="onCancel($event)"
+            (delete)="deleteVariable(fieldVariables[$event], $event)"
+            (save)="saveVariable($event)">
+        </dot-content-type-fields-variables-table-row>
     </ng-template>
     <ng-template pTemplate="emptymessage" let-fieldVariables>
         <tr>

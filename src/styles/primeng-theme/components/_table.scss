@@ -1,8 +1,8 @@
 @import "variables";
 
 .ui-table {
-    .ui-table-thead > tr > th,
-    .ui-table-tbody > tr > td {
+    .ui-table-thead tr th,
+    .ui-table-tbody tr td {
         border-width: 0px;
         padding: $datatable-cell-padding;
 
@@ -25,7 +25,7 @@
         }
     }
 
-    .ui-table-thead > tr > th {
+    .ui-table-thead tr th {
         color: $datatable-head-color;
         font-size: $font-size-small;
         font-weight: normal;
@@ -37,12 +37,16 @@
         }
     }
 
-    .ui-table-tbody > tr > td {
+    .ui-table-tbody tr td {
         border-bottom: $datatable-cell-border;
     }
 
-    .ui-table-tbody tr:hover {
-        background-color: rgba($brand-primary_rgb, 0.1);
+    .ui-table-tbody tr {
+        transition: background-color $field-animation-speed ease-in;
+
+        &:hover {
+            background-color: $gray-bg;
+        }
     }
 
     .ui-widget-content .ui-state-highlight {
