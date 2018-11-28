@@ -107,10 +107,12 @@ export class DotNewRelationshipsComponent implements OnInit, OnChanges {
     private loadContentType(velocityVar: string) {
         if (velocityVar) {
             this.contentTypeService.getContentType(velocityVar).subscribe((contentType) => {
+                console.log('contentType', contentType);
                 this.contentType = contentType;
             });
         } else {
-            this.contentType = undefined;
+            console.log('contentType', null);
+            this.contentType = null;
         }
     }
 }

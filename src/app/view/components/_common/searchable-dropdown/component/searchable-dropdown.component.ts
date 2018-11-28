@@ -108,18 +108,12 @@ export class SearchableDropdownComponent implements ControlValueAccessor, OnChan
 
     propagateChange = (_: any) => {};
 
-    // tslint:disable-next-line:cyclomatic-complexity
     ngOnChanges(change: SimpleChanges): void {
         if (this.usePlaceholder(change.placeholder) || change.persistentPlaceholder) {
             this.setLabel();
         }
 
-        if (change.data && change.data.currentValue) {
-            this.options = _.cloneDeep(change.data.currentValue).map(item => {
-                item.label = this.getItemLabel(item);
-                return item;
-            });
-        }
+        this.setOptions(change);
     }
 
     ngOnInit(): void {
@@ -181,7 +175,6 @@ export class SearchableDropdownComponent implements ControlValueAccessor, OnChan
      * @memberof SearchableDropdownComponent
      */
     getItemLabel(dropDownItem: any): string {
-        console.log('getItemLabel');
         let resultProps;
 
         if (Array.isArray(this.labelPropertyName)) {
@@ -239,9 +232,17 @@ export class SearchableDropdownComponent implements ControlValueAccessor, OnChan
      * @memberof SearchableDropdownComponent
      */
     setLabel(): void {
-        console.log('setLabel');
         this.valueString = this.value ? this.value[this.getValueLabelPropertyName()] : this.placeholder;
         this.label = this.persistentPlaceholder ? this.placeholder : this.valueString;
+    }
+
+    private setOptions(change: SimpleChanges): void {
+        if (change.data && change.data.currentValue) {
+            this.options = _.cloneDeep(change.data.currentValue).map(item => {
+                item.label = this.getItemLabel(item);
+                return item;
+            });
+        }
     }
 
     private usePlaceholder(placeholderChange: SimpleChange): boolean {

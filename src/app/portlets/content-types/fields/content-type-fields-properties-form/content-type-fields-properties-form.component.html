@@ -9,7 +9,7 @@
             'form__group': checkboxFields.indexOf(property) == -1 && property !== 'relationships'
         }"
         *ngFor="let property of fieldProperties"
-    >
+        #properties>
         <ng-container
             dotDynamicFieldProperty
             [propertyName]="property"
