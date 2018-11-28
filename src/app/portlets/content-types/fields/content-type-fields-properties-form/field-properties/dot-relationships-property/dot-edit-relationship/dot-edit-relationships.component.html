@@ -1,4 +1,5 @@
 <dot-searchable-dropdown
+    width="100%"
     [data]="currentPage | async"
     [pageLinkSize]="dotPaginatorService.maxLinksPage"
     [rows]="dotPaginatorService.paginationPerPage"
@@ -8,4 +9,4 @@
     (change)="triggerChanged($event.relationship)"
     (filterChange)="handleFilterChange($event)"
     (pageChange)="handlePageChange($event)">
-</dot-searchable-dropdown>*
+</dot-searchable-dropdown>

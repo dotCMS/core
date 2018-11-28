@@ -40,39 +40,55 @@ import { OverlayPanel } from 'primeng/primeng';
 export class SearchableDropdownComponent implements ControlValueAccessor, OnChanges, OnInit {
     @Input()
     data: string[];
+
     @Input()
     labelPropertyName: string | string[];
+
     @Input()
     valuePropertyName: string;
+
     @Input()
     pageLinkSize = 3;
+
     @Input()
     rows: number;
+
     @Input()
     totalRecords: number;
+
     @Input()
     placeholder = '';
+
     @Input()
     persistentPlaceholder: boolean;
+
     @Input()
     width: string;
+
     @Input()
     multiple: boolean;
+
     @Output()
     change: EventEmitter<any> = new EventEmitter();
+
     @Output()
     filterChange: EventEmitter<string> = new EventEmitter();
+
     @Output()
     hide: EventEmitter<any> = new EventEmitter();
+
     @Output()
     pageChange: EventEmitter<PaginationEvent> = new EventEmitter();
+
     @Output()
     show: EventEmitter<any> = new EventEmitter();
 
     @ViewChild('searchInput')
     searchInput: ElementRef;
+
     @ViewChild('searchPanel')
     searchPanelRef: OverlayPanel;
+
     @ViewChild('button')
     button: ElementRef;
 

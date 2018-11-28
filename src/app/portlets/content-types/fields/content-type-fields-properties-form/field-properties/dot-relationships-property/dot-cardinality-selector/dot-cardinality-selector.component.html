@@ -1,8 +1,9 @@
-<p-dropdown 
-    appendTo="body"
-    [options]="options" 
-    optionLabel="label" 
+<p-dropdown
     (onChange)="tiggerChanged($event.value)"
     [(ngModel)]="cardinality"
-    [disabled]="disabled">
-</p-dropdown> *
+    [disabled]="disabled"
+    [options]="options"
+    [style]="{'width': '100%'}"
+    appendTo="body"
+    optionLabel="label">
+</p-dropdown>

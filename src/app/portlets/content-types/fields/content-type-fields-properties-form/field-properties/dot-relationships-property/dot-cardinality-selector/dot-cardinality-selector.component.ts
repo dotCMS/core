@@ -16,7 +16,8 @@ import { take } from 'rxjs/operators';
 @Component({
     providers: [],
     selector: 'dot-cardinality-selector',
-    templateUrl: './dot-cardinality-selector.component.html'
+    templateUrl: './dot-cardinality-selector.component.html',
+    styleUrls: ['./dot-cardinality-selector.component.scss']
 })
 export class DotCardinalitySelectorComponent implements OnInit, OnChanges {
     @Input()

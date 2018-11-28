@@ -1,20 +1,27 @@
-<dot-searchable-dropdown 
-    [data]="contentTypeCurrentPage | async"
-    [pageLinkSize]="paginatorService.maxLinksPage"
-    [rows]="paginatorService.paginationPerPage"
-    [totalRecords]="paginatorService.totalRecords"
-    (filterChange)="getContentTypeList($event)"
-    (pageChange)="getContentTypeList($event.filter, $event.first)"
-    labelPropertyName="name"
-    [placeholder]="i18nMessages['contenttypes.field.properties.relationship.new.content_type.placeholder']"
-    [(ngModel)]="contentType"
-    [disabled]="editing"
-    (change)="triggerChanged()">
-</dot-searchable-dropdown>*
-
-<dot-cardinality-selector [value]="cardinality"
-                         [disabled]="editing"
-                          (change)="cardinalityChanged($event)">
-
-</dot-cardinality-selector>
- 
+<div class="form__group">
+    <label for="" class="form__label">Content Type</label>
+    <dot-searchable-dropdown
+        (change)="triggerChanged()"
+        (filterChange)="getContentTypeList($event)"
+        (pageChange)="getContentTypeList($event.filter, $event.first)"
+        [(ngModel)]="contentType"
+        [data]="contentTypeCurrentPage | async"
+        [disabled]="editing"
+        [pageLinkSize]="paginatorService.maxLinksPage"
+        [placeholder]="i18nMessages['contenttypes.field.properties.relationship.new.content_type.placeholder']"
+        [rows]="paginatorService.paginationPerPage"
+        [totalRecords]="paginatorService.totalRecords"
+        labelPropertyName="name"
+        width="100%"
+    >
+    </dot-searchable-dropdown>
+</div>
+<div class="form__group">
+    <label for="" class="form__label">Relationship</label>
+    <dot-cardinality-selector
+        [value]="cardinality"
+        [disabled]="editing"
+        (change)="cardinalityChanged($event)"
+    >
+    </dot-cardinality-selector>
+</div>

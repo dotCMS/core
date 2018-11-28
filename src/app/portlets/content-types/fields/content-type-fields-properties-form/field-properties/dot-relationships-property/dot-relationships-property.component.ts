@@ -17,7 +17,8 @@ import { DotRelationshipsPropertyValue } from './model/dot-relationships-propert
 @Component({
     providers: [],
     selector: 'dot-relationships-property',
-    templateUrl: './dot-relationships-property.component.html'
+    templateUrl: './dot-relationships-property.component.html',
+    styleUrls: ['./dot-relationships-property.component.scss']
 })
 export class DotRelationshipsPropertyComponent implements OnInit {
     readonly STATUS_NEW = 'NEW';

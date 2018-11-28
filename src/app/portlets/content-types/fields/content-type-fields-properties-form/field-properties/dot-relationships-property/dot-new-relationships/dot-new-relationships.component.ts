@@ -10,7 +10,8 @@ import { DotRelationshipsPropertyValue } from '../model/dot-relationships-proper
 @Component({
     providers: [PaginatorService],
     selector: 'dot-new-relationships',
-    templateUrl: './dot-new-relationships.component.html'
+    templateUrl: './dot-new-relationships.component.html',
+    styleUrls: ['./dot-new-relationships.component.scss']
 })
 export class DotNewRelationshipsComponent implements OnInit, OnChanges {
     @Input()
