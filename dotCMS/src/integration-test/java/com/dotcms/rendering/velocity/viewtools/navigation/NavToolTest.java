@@ -19,6 +19,7 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
@@ -56,110 +57,114 @@ import org.mockito.Mockito;
 public class NavToolTest extends IntegrationTestBase{
 
     private static boolean ORIGINAL_DEFAULT_PAGE_TO_DEFAULT_LANGUAGE;
+    private static Folder folder;
+    private static User user;
+    private static Host demoHost;
 
     @BeforeClass
     public static void prepare() throws Exception {
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
         ORIGINAL_DEFAULT_PAGE_TO_DEFAULT_LANGUAGE = APILocator.getLanguageAPI().canDefaultPageToDefaultLanguage();
+        user = APILocator.getUserAPI().getSystemUser();
+        demoHost = APILocator.getHostAPI().findByName("demo.dotcms.com", user, false);
     }
 
     @AfterClass
-    public static void restoreProperty() {
+    public static void restoreProperty() throws DotSecurityException, DotDataException {
         Config.setProperty("DEFAULT_PAGE_TO_DEFAULT_LANGUAGE", ORIGINAL_DEFAULT_PAGE_TO_DEFAULT_LANGUAGE);
         assertEquals(APILocator.getLanguageAPI().canDefaultPageToDefaultLanguage(), ORIGINAL_DEFAULT_PAGE_TO_DEFAULT_LANGUAGE);
+        if(folder != null){
+            APILocator.getFolderAPI().delete(folder,user,true);
+        }
     }
 
     @Test
     public void testFolderDefaultPageToLanguageTrue() throws Exception { // https://github.com/dotCMS/core/issues/7678
         Config.setProperty("DEFAULT_PAGE_TO_DEFAULT_LANGUAGE", true);
         assertTrue(APILocator.getLanguageAPI().canDefaultPageToDefaultLanguage());
-        testFolderGetNav();
+
+        createData();
+
+        //Using Identifier to get the path.
+        Identifier folderIdentifier = APILocator.getIdentifierAPI().find(folder);
+        NavResult navResult = new NavTool().getNav(demoHost, folderIdentifier.getPath(), 1, user);
+        assertNotNull(navResult);
+
+        //Find out how many show on menu items we currently have
+        final int currentShowOnMenuItems = findShowOnMenuUnderFolder(folder, user);
+
+        //Comparing what we found vs the result on the NavTool
+        int englishResultChildren = navResult.getChildren().size();
+
+        assertEquals(currentShowOnMenuItems-1,englishResultChildren);//1 SubFolder and 1 Page (there is another page with Show on Menu but is in Spanish)
+
+        navResult = new NavTool().getNav(demoHost, folderIdentifier.getPath(), 2, user);
+        assertNotNull(navResult);
+
+        int spanishResultChildren = navResult.getChildren().size();
+        assertEquals(currentShowOnMenuItems,spanishResultChildren);//1 SubFolder and 2 Pages
     }
 
     @Test
     public void testFolderDefaultPageToLanguageFalse() throws Exception { // https://github.com/dotCMS/core/issues/7678
         Config.setProperty("DEFAULT_PAGE_TO_DEFAULT_LANGUAGE", false);
         assertFalse(APILocator.getLanguageAPI().canDefaultPageToDefaultLanguage());
-        testFolderGetNav();
+
+        createData();
+
+        //Using Identifier to get the path.
+        Identifier folderIdentifier = APILocator.getIdentifierAPI().find(folder);
+        NavResult navResult = new NavTool().getNav(demoHost, folderIdentifier.getPath(), 1, user);
+        assertNotNull(navResult);
+
+        //Find out how many show on menu items we currently have
+        final int currentShowOnMenuItems = findShowOnMenuUnderFolder(folder, user);
+
+        //Comparing what we found vs the result on the NavTool
+        int englishResultChildren = navResult.getChildren().size();
+
+        assertEquals(currentShowOnMenuItems-1,englishResultChildren);//1 SubFolder and 1 Page (there is another page with Show on Menu but is in Spanish)
+
+        navResult = new NavTool().getNav(demoHost, folderIdentifier.getPath(), 2, user);
+        assertNotNull(navResult);
+
+        int spanishResultChildren = navResult.getChildren().size();
+        assertEquals(currentShowOnMenuItems-1,spanishResultChildren);//1 SubFolder and 1 Page
 
     }
 
-    private void testFolderGetNav() throws Exception {
-        //Using System User.
-        final User user = APILocator.getUserAPI().getSystemUser();
-
-        //Using demo.dotcms.com host.
-        final Host demoHost = APILocator.getHostAPI().findByName("demo.dotcms.com", user, false);
+    private void createData() throws Exception {
 
         //Create Folder
-        final Folder folder = new FolderDataGen().nextPersisted();
-        try {
-            //New template
-            final Template template = new TemplateDataGen().nextPersisted();
+        folder = new FolderDataGen().nextPersisted();
 
-            //Create 2 Pages (One with show on Menu and one without)
-            final HTMLPageAsset pageAsset1 = new HTMLPageDataGen(folder, template).showOnMenu(true).languageId(1).nextPersisted();
-            final HTMLPageAsset pageAsset2 = new HTMLPageDataGen(folder, template).showOnMenu(false).languageId(1).nextPersisted();
+        //New template
+        final Template template = new TemplateDataGen().nextPersisted();
 
-            //Create 2 Folders (One with show on Menu and one without)
-            final Folder subFolder1 = new FolderDataGen().folder(folder).showOnMenu(true).nextPersisted();
-            final Folder subFolder2 = new FolderDataGen().folder(folder).showOnMenu(false).nextPersisted();
+        //Create 2 Pages (One with show on Menu and one without) in English
+        final HTMLPageAsset pageAsset1 = new HTMLPageDataGen(folder, template).showOnMenu(true).languageId(1).nextPersisted();
+        final HTMLPageAsset pageAsset2 = new HTMLPageDataGen(folder, template).showOnMenu(false).languageId(1).nextPersisted();
+        pageAsset1.setIndexPolicy(IndexPolicy.FORCE);
+        pageAsset2.setIndexPolicy(IndexPolicy.FORCE);
+        APILocator.getContentletAPI().publish(pageAsset1, user, true);
+        APILocator.getContentletAPI().publish(pageAsset2, user, true);
 
-            //Using Identifier to get the path.
-            Identifier aboutUsIdentifier = APILocator.getIdentifierAPI().find(folder);
+        //Create 2 Pages (One with show on Menu and one without) in Spanish
+        final HTMLPageAsset pageAsset3 = new HTMLPageDataGen(folder, template).showOnMenu(true).languageId(2).nextPersisted();
+        final HTMLPageAsset pageAsset4 = new HTMLPageDataGen(folder, template).showOnMenu(false).languageId(2).nextPersisted();
+        pageAsset3.setIndexPolicy(IndexPolicy.FORCE);
+        pageAsset4.setIndexPolicy(IndexPolicy.FORCE);
+        APILocator.getContentletAPI().publish(pageAsset3, user, true);
+        APILocator.getContentletAPI().publish(pageAsset4, user, true);
 
-            NavResult navResult = new NavTool().getNav(demoHost, aboutUsIdentifier.getPath(), 1, user);
-            assertNotNull(navResult);
-
-            //Find out how many show on menu items we currently have
-            final int currentShowOnMenuItems = findShowOnMenuUnderFolder(folder, user);
-
-            //Comparing what we found vs the result on the NavTool
-            int englishResultChildren = navResult.getChildren().size();
-
-            assertEquals(englishResultChildren, currentShowOnMenuItems);
-
-            navResult = new NavTool().getNav(demoHost, aboutUsIdentifier.getPath(), 2, user);
-            assertNotNull(navResult);
-
-            int spanishResultChildren = navResult.getChildren().size();
-
-            List<IHTMLPage> liveHTMLPages = APILocator.getHTMLPageAssetAPI().getLiveHTMLPages(folder, user, false);
-
-            //List of contentlets created for this test.
-            List<Contentlet> contentletsCreated = new ArrayList<>();
-
-            createSpanishPagesCopy(user, liveHTMLPages, contentletsCreated);
-
-            navResult = new NavTool().getNav(demoHost, aboutUsIdentifier.getPath(), 2, user);
-            assertNotNull(navResult);
-
-            //Now remove all the pages that we created for this tests.
-            APILocator.getContentletAPI().unpublish(contentletsCreated, user, false);
-            APILocator.getContentletAPI().archive(contentletsCreated, user, false);
-            APILocator.getContentletAPI().delete(contentletsCreated, user, false);
-
-            //We should back to 2 in Spanish Nav.
-            navResult = new NavTool().getNav(demoHost, aboutUsIdentifier.getPath(), 2, user);
-            assertNotNull(navResult);
-
-            //Now We are expecting original amount children result for Spanish Language.
-            assertEquals(spanishResultChildren, navResult.getChildren().size());
-
-            // Flush the cache
-            CacheLocator.getNavToolCache().removeNav(demoHost.getIdentifier(), folder.getInode(), 2);
-        }finally {
-            //Delete folder created
-            APILocator.getFolderAPI().delete(folder, user, false);
-        }
+        //Create 2 Folders (One with show on Menu and one without)
+        final Folder subFolder1 = new FolderDataGen().folder(folder).showOnMenu(true).nextPersisted();
+        final Folder subFolder2 = new FolderDataGen().folder(folder).showOnMenu(false).nextPersisted();
     }
 
     @Test
     public void testRootLevelNavigation_WhenOneFileAssetIsShownOnMenu() throws Exception {
-
-        //Using System User.
-        final User user = APILocator.getUserAPI().getSystemUser();
 
         Contentlet fileAssetShown = null;
         Contentlet fileAssetNotShown = null;
@@ -168,10 +173,6 @@ public class NavToolTest extends IntegrationTestBase{
 
             //Get SystemFolder
             final Folder systemFolder = APILocator.getFolderAPI().findSystemFolder();
-
-            //Using demo.dotcms.com host.
-            final Host demoHost = APILocator.getHostAPI()
-                    .findByName("demo.dotcms.com", user, false);
 
             //Create a FileAsset In English With ShowOnMenu = true
             final File file = File.createTempFile("fileTestEngTrue", ".txt");
@@ -232,51 +233,29 @@ public class NavToolTest extends IntegrationTestBase{
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final ViewContext viewContext = mock(ViewContext.class);
 
-        //Using System User.
-        User user = APILocator.getUserAPI().getSystemUser();
+        createData();
 
-        //Using demo.dotcms.com host.
-        final Host demoHost = APILocator.getHostAPI().findByName("demo.dotcms.com", user, false);
-
-        //Create Folder
-        final Folder folder = new FolderDataGen().nextPersisted();
-        try {
-            //New template
-            final Template template = new TemplateDataGen().nextPersisted();
-
-            //Create 2 Pages (One with show on Menu and one without)
-            final HTMLPageAsset pageAsset1 = new HTMLPageDataGen(folder, template).showOnMenu(true).languageId(1).nextPersisted();
-            final HTMLPageAsset pageAsset2 = new HTMLPageDataGen(folder, template).showOnMenu(false).languageId(1).nextPersisted();
-
-            //Create 2 Folders (One with show on Menu and one without)
-            final Folder subFolder1 = new FolderDataGen().folder(folder).showOnMenu(true).nextPersisted();
-            final Folder subFolder2 = new FolderDataGen().folder(folder).showOnMenu(false).nextPersisted();
-
-            Mockito.when(request.getRequestURI()).thenReturn("/" + folder.getName());
-            Mockito.when(request.getServerName()).thenReturn("demo.dotcms.com");
-            Mockito.when(viewContext.getRequest()).thenReturn(request);
+        Mockito.when(request.getRequestURI()).thenReturn("/" + folder.getName());
+        Mockito.when(request.getServerName()).thenReturn("demo.dotcms.com");
+        Mockito.when(viewContext.getRequest()).thenReturn(request);
 
 
-            final NavTool navTool = new NavTool();
-            navTool.init(viewContext);
-            NavResult navResult = null;
-            if (UtilMethods.isSet(level)) {
-                navResult = navTool.getNav(level);
-            } else {
-                navResult = navTool.getNav();
-            }
-            assertNotNull(navResult);
-
-            //Find out how many show on menu items we currently have
-            final int currentShowOnMenuItems = findShowOnMenuUnderFolder(folder, user);
-
-            //Comparing what we found vs the result on the NavTool
-            final int resultChildren = navResult.getChildren().size();
-            assertEquals(resultChildren, currentShowOnMenuItems);
-        }finally {
-            //Delete folder created
-            APILocator.getFolderAPI().delete(folder, user, false);
+        final NavTool navTool = new NavTool();
+        navTool.init(viewContext);
+        NavResult navResult = null;
+        if (UtilMethods.isSet(level)) {
+            navResult = navTool.getNav(level);
+        } else {
+            navResult = navTool.getNav();
         }
+        assertNotNull(navResult);
+
+        //Find out how many show on menu items we currently have
+        final int currentShowOnMenuItems = findShowOnMenuUnderFolder(folder, user);
+
+        //Comparing what we found vs the result on the NavTool
+        final int resultChildren = navResult.getChildren().size();
+        assertEquals(currentShowOnMenuItems-1, resultChildren);//1 SubFolder and 1 Page (there is another page with Show on Menu but is in Spanish)
     }
 
     @DataProvider
@@ -366,11 +345,12 @@ public class NavToolTest extends IntegrationTestBase{
 
             htmlPageContentlet.getMap().put("inode", "");
             htmlPageContentlet.getMap().put("languageId", 2L);
+            htmlPageContentlet.setIndexPolicy(IndexPolicy.FORCE);
 
             //Checkin and Publish.
             Contentlet working = APILocator.getContentletAPI().checkin(htmlPageContentlet, user, false);
+            working.setIndexPolicy(IndexPolicy.FORCE);
             APILocator.getContentletAPI().publish(working, user, false);
-            APILocator.getContentletAPI().isInodeIndexed(working.getInode(), true);
 
             contentletsCreated.add(working);
         }
