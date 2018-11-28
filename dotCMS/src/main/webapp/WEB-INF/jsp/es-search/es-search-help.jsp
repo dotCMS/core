@@ -19,6 +19,28 @@
 
 <br>
 
+
+<h3>Content query: images under the image folder, with limit and offset</h3>
+Note the \\ to escape the /
+<pre><code>
+{
+    "query" : 
+    { 
+        "query_string" : 
+        {
+            "query" : "+path:\\/images* +metadata.contenttype:image\\/png"
+        } 
+    },
+    "size":10,
+    "from":5
+    
+}
+</code></pre>
+
+<br>
+
+
+
 <h3>Match every piece of content, paginate showing the results 11-20</h3>
 <pre><code>{
     "query" : {
