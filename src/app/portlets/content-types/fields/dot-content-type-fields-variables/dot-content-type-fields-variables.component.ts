@@ -13,19 +13,12 @@ import {
     DotFieldVariableParams
 } from '../service/dot-field-variables.service';
 import { DotHttpErrorManagerService } from '../../../../api/services/dot-http-error-manager/dot-http-error-manager.service';
+import { DotFieldVariable } from '../shared/dot-field-variable.interface';
 import { ResponseView } from 'dotcms-js';
 import { take, takeUntil } from 'rxjs/operators';
 import { Subject } from 'rxjs/internal/Subject';
 import { Table } from 'primeng/table';
 import * as _ from 'lodash';
-
-export interface FieldVariable {
-    id?: string;
-    clazz?: string;
-    fieldId?: string;
-    key: string;
-    value: string;
-}
 
 @Component({
     selector: 'dot-content-type-fields-variables',
@@ -39,8 +32,8 @@ export class DotContentTypeFieldsVariablesComponent implements OnInit, OnChanges
     @Input()
     field: DotFieldVariableParams;
 
-    fieldVariables: FieldVariable[] = [];
-    fieldVariablesBackup: FieldVariable[] = [];
+    fieldVariables: DotFieldVariable[] = [];
+    fieldVariablesBackup: DotFieldVariable[] = [];
     messages: { [key: string]: string } = {};
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
@@ -77,12 +70,14 @@ export class DotContentTypeFieldsVariablesComponent implements OnInit, OnChanges
     }
 
     /**
-     * Handle Delete event
-     * @param {FieldVariable} fieldVariable
+     * Handle Delete event, if a variable has an Id (it already exist) we make a
+     * request to the backend, if not then the variable is only removed from the
+     * UI collection
+     * @param {DotFieldVariable} fieldVariable
      * @param {number} fieldIndex
      * @memberof DotContentTypeFieldsVariablesComponent
      */
-    deleteVariable(fieldVariable: FieldVariable, fieldIndex: number): void {
+    deleteVariable(fieldVariable: DotFieldVariable, fieldIndex: number): void {
         if (fieldVariable.id) {
             this.deleteExistingVariable(fieldIndex);
         } else {
@@ -91,7 +86,9 @@ export class DotContentTypeFieldsVariablesComponent implements OnInit, OnChanges
     }
 
     /**
-     * Handle Save event
+     * Handle Save event, if a fieldIndex is provided(variable already exist) we make a
+     * request to the backend, if not then an empty variable and a row is added to the
+     * UI collection
      * @param {number} fieldIndex
      * @memberof DotContentTypeFieldsVariablesComponent
      */
@@ -104,7 +101,9 @@ export class DotContentTypeFieldsVariablesComponent implements OnInit, OnChanges
     }
 
     /**
-     * Handle Cancel event
+     * Handle Cancel event, if a fieldIndex is provided(variable already exist) we restore
+     * the original value of the variable, if not then the variable last added is removed from
+     * UI collection
      * @param {number} fieldIndex
      * @memberof DotContentTypeFieldsVariablesComponent
      */
@@ -124,7 +123,7 @@ export class DotContentTypeFieldsVariablesComponent implements OnInit, OnChanges
         this.fieldVariablesService
             .load(params)
             .pipe(takeUntil(this.destroy$))
-            .subscribe((fieldVariables: FieldVariable[]) => {
+            .subscribe((fieldVariables: DotFieldVariable[]) => {
                 this.fieldVariables = fieldVariables;
                 this.fieldVariablesBackup = _.cloneDeep(fieldVariables);
             });
@@ -144,9 +143,9 @@ export class DotContentTypeFieldsVariablesComponent implements OnInit, OnChanges
                     [this.fieldVariables, this.fieldVariablesBackup] = [
                         this.fieldVariables,
                         this.fieldVariablesBackup
-                    ].map((variables: FieldVariable[]) => {
+                    ].map((variables: DotFieldVariable[]) => {
                         return variables.filter(
-                            (_item: FieldVariable, index: number) => index !== fieldIndex
+                            (_item: DotFieldVariable, index: number) => index !== fieldIndex
                         );
                     });
                 },
@@ -163,12 +162,12 @@ export class DotContentTypeFieldsVariablesComponent implements OnInit, OnChanges
         [this.fieldVariables, this.fieldVariablesBackup] = [
             this.fieldVariables,
             this.fieldVariablesBackup
-        ].map((variables: FieldVariable[]) => {
-            return variables.filter((_item: FieldVariable, index: number) => index !== fieldIndex);
+        ].map((variables: DotFieldVariable[]) => {
+            return variables.filter((_item: DotFieldVariable, index: number) => index !== fieldIndex);
         });
     }
 
-    private updateExistingVariable(variable: FieldVariable, variableIndex: number): void {
+    private updateExistingVariable(variable: DotFieldVariable, variableIndex: number): void {
         const params: DotFieldVariableParams = {
             contentTypeId: this.field.contentTypeId,
             fieldId: this.field.fieldId,
@@ -178,7 +177,7 @@ export class DotContentTypeFieldsVariablesComponent implements OnInit, OnChanges
             .save(params)
             .pipe(take(1))
             .subscribe(
-                (savedVariable: FieldVariable) => {
+                (savedVariable: DotFieldVariable) => {
                     this.fieldVariables = this.updateVariableCollection(
                         savedVariable,
                         variableIndex
@@ -194,11 +193,9 @@ export class DotContentTypeFieldsVariablesComponent implements OnInit, OnChanges
             );
     }
 
-    // tslint:disable-next-line:cyclomatic-complexity
     private addEmptyVariable(): void {
-        if (this.fieldVariables.length === 0 ||
-            (this.fieldVariables.length > 0 && this.fieldVariables[0].key !== '')) {
-            const emptyVariable: FieldVariable = {
+        if (this.fieldVariables.length === 0 || this.isEmptyVariableNotAdded()) {
+            const emptyVariable: DotFieldVariable = {
                 key: '',
                 value: ''
             };
@@ -207,10 +204,14 @@ export class DotContentTypeFieldsVariablesComponent implements OnInit, OnChanges
         }
     }
 
+    private isEmptyVariableNotAdded(): boolean {
+        return this.fieldVariables.length > 0 && this.fieldVariables[0].key !== '';
+    }
+
     private updateVariableCollection(
-        savedVariable: FieldVariable,
+        savedVariable: DotFieldVariable,
         variableIndex?: number
-    ): FieldVariable[] {
+    ): DotFieldVariable[] {
         return this.fieldVariables.map((item, index) => {
             if (index === variableIndex) {
                 item = savedVariable;

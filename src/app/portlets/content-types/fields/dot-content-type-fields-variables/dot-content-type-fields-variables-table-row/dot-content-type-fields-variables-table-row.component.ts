@@ -9,7 +9,7 @@ import {
 } from '@angular/core';
 import { DotMessageService } from '../../../../../api/services/dot-messages-service';
 import { take } from 'rxjs/operators';
-import { FieldVariable } from '../dot-content-type-fields-variables.component';
+import { DotFieldVariable } from '../../shared/dot-field-variable.interface';
 
 @Component({
     selector: 'dot-content-type-fields-variables-table-row',
@@ -25,7 +25,7 @@ export class DotContentTypeFieldsVariablesTableRowComponent implements OnInit {
     valueCell: ElementRef;
 
     @Input()
-    fieldVariable: FieldVariable;
+    fieldVariable: DotFieldVariable;
     @Input()
     variableIndex: number;
 
@@ -62,11 +62,8 @@ export class DotContentTypeFieldsVariablesTableRowComponent implements OnInit {
      * @param {boolean} [forced]
      * @memberof DotContentTypeFieldsVariablesTableRowComponent
      */
-    // tslint:disable-next-line:cyclomatic-complexity
     focusKeyInput(forced?: boolean): void {
-        if (forced ||
-            (this.fieldVariable &&
-                (this.fieldVariable.key === '' || this.fieldVariable.value === ''))) {
+        if (forced || this.isFieldDisabled()) {
             this.keyCell.nativeElement.click();
         }
     }
@@ -98,9 +95,9 @@ export class DotContentTypeFieldsVariablesTableRowComponent implements OnInit {
     // tslint:disable-next-line:cyclomatic-complexity
     onPressEnter($event: KeyboardEvent): void {
         let elemRef: ElementRef;
-        if (this.fieldVariable.key === '' && $event) {
+        if (this.fieldVariable.key === '' && $event.srcElement.classList.contains('field-variable-key-input')) {
             elemRef = this.keyCell;
-        } else if ((this.fieldVariable.key !== '' && $event) ||
+        } else if ((this.fieldVariable.key !== '' && $event.srcElement.classList.contains('field-variable-key-input')) ||
             (this.fieldVariable.key !== '' && this.fieldVariable.value === '')) {
             elemRef = this.valueCell;
         } else if (this.fieldVariable.key !== '' && this.fieldVariable.value !== '') {

@@ -2,7 +2,7 @@ import { Response, ResponseOptions, ConnectionBackend } from '@angular/http';
 import { MockBackend } from '@angular/http/testing';
 import { DotFieldVariablesService, DotFieldVariableParams } from './dot-field-variables.service';
 import { DOTTestBed } from '../../../../test/dot-test-bed';
-import { FieldVariable } from '../dot-content-type-fields-variables/dot-content-type-fields-variables.component';
+import { DotFieldVariable } from '../shared/dot-field-variable.interface';
 
 describe('FieldVariablesService', () => {
     beforeEach(() => {
@@ -37,7 +37,7 @@ describe('FieldVariablesService', () => {
             fieldId: '1'
         };
 
-        this.fieldVariableService.load(params).subscribe((variables: FieldVariable[]) => {
+        this.fieldVariableService.load(params).subscribe((variables: DotFieldVariable[]) => {
             expect(variables).toEqual(mockResponse.entity);
             expect(0).toBe(this.lastConnection.request.method); // 2 is GET method
             expect(this.lastConnection.request.url)
@@ -73,7 +73,7 @@ describe('FieldVariablesService', () => {
             }
         };
 
-        this.fieldVariableService.save(params).subscribe((variables: FieldVariable) => {
+        this.fieldVariableService.save(params).subscribe((variables: DotFieldVariable) => {
             expect(variables).toEqual(mockResponse.entity);
             expect(1).toBe(this.lastConnection.request.method); // 1 is POST method
             expect(this.lastConnection.request.url)
@@ -105,7 +105,7 @@ describe('FieldVariablesService', () => {
             }
         };
 
-        this.fieldVariableService.delete(params).subscribe((_variables: FieldVariable) => {
+        this.fieldVariableService.delete(params).subscribe((_variables: DotFieldVariable) => {
             expect(3).toBe(this.lastConnection.request.method); // 3 is DELETE method
             expect(this.lastConnection.request.url)
                 .toContain(`v1/contenttype/${params.contentTypeId}/fields/id/${params.fieldId}/variables/id/${params.variable.id}`);

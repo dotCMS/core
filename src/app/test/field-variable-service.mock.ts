@@ -1,8 +1,8 @@
 import { Observable, of } from 'rxjs';
 import * as _ from 'lodash';
-import { FieldVariable } from '@portlets/content-types/fields/dot-content-type-fields-variables/dot-content-type-fields-variables.component';
+import { DotFieldVariable } from '@portlets/content-types/fields/shared/dot-field-variable.interface';
 
-export const mockFieldVariables: FieldVariable[] = [
+export const mockFieldVariables: DotFieldVariable[] = [
     {
         clazz: 'com.dotcms.contenttype.model.field.ImmutableFieldVariable',
         fieldId: 'f965a51b-130a-435f-b646-41e07d685363',
@@ -27,11 +27,11 @@ export const mockFieldVariables: FieldVariable[] = [
 ];
 
 export class FieldVariablesServiceMock {
-    load(): Observable<FieldVariable[]> {
+    load(): Observable<DotFieldVariable[]> {
         return of(_.cloneDeep(mockFieldVariables));
     }
 
-    save(): Observable<FieldVariable> {
+    save(): Observable<DotFieldVariable> {
         return of(_.cloneDeep(mockFieldVariables[0]));
     }
 

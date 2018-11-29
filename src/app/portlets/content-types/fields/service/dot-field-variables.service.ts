@@ -2,13 +2,13 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { CoreWebService } from 'dotcms-js';
 import { RequestMethod } from '@angular/http';
-import { FieldVariable } from '../dot-content-type-fields-variables/dot-content-type-fields-variables.component';
 import { pluck } from 'rxjs/operators';
+import { DotFieldVariable } from '../shared/dot-field-variable.interface';
 
 export interface DotFieldVariableParams {
     contentTypeId: string;
     fieldId: string;
-    variable?: FieldVariable;
+    variable?: DotFieldVariable;
 }
 
 /**
@@ -21,10 +21,10 @@ export class DotFieldVariablesService {
     /**
      * Load Field Variables.
      * @param {FieldVariableParams} params Variable params to get id of variables to be listed
-     * @returns {Observable<FieldVariable[]>}
+     * @returns {Observable<DotFieldVariable[]>}
      * @memberof FieldVariablesService
      */
-    load(params: DotFieldVariableParams): Observable<FieldVariable[]> {
+    load(params: DotFieldVariableParams): Observable<DotFieldVariable[]> {
         return this.coreWebService
             .requestView({
                 method: RequestMethod.Get,
@@ -36,10 +36,10 @@ export class DotFieldVariablesService {
     /**
      * Save Field Variables.
      * @param {FieldVariableParams} params Variable params to be saved
-     * @returns {Observable<FieldVariable>}
+     * @returns {Observable<DotFieldVariable>}
      * @memberof FieldVariablesService
      */
-    save(params: DotFieldVariableParams): Observable<FieldVariable> {
+    save(params: DotFieldVariableParams): Observable<DotFieldVariable> {
         return this.coreWebService
             .requestView({
                 body: {
@@ -57,10 +57,10 @@ export class DotFieldVariablesService {
     /**
      * Delete Field Variables.
      * @param {FieldVariableParams} params Variable params to be deleted
-     * @returns {Observable<FieldVariable>}
+     * @returns {Observable<DotFieldVariable>}
      * @memberof FieldVariablesService
      */
-    delete(params: DotFieldVariableParams): Observable<FieldVariable> {
+    delete(params: DotFieldVariableParams): Observable<DotFieldVariable> {
         return this.coreWebService
             .requestView({
                 method: RequestMethod.Delete,

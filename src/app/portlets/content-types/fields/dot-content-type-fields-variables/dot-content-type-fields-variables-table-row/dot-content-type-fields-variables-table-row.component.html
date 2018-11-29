@@ -3,6 +3,7 @@
         <p-cellEditor>
             <ng-template pTemplate="input">
                 <input pInputText
+                    class="field-variable-key-input"
                     type="text"
                     [placeholder]="messages['contenttypes.field.variables.key_input.placeholder']"
                     (focus)="editFieldInit()"
@@ -25,12 +26,13 @@
         <p-cellEditor>
             <ng-template pTemplate="input">
                 <input pInputText
+                    class="field-variable-value-input"
                     type="text"
                     [placeholder]="messages['contenttypes.field.variables.value_input.placeholder']"
                     (focus)="editFieldInit()"
                     (keyup)="editFieldInit()"
                     (keydown.escape)="onCancel($event)"
-                    (keydown.enter)="onPressEnter()"
+                    (keydown.enter)="onPressEnter($event)"
                     [(ngModel)]="fieldVariable.value">
             </ng-template>
             <ng-template pTemplate="output">
