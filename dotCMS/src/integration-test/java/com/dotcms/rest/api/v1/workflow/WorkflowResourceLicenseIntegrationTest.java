@@ -29,6 +29,7 @@ import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.model.WorkflowState;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil;
+import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -565,6 +566,7 @@ public class WorkflowResourceLicenseIntegrationTest {
     public void Find_Available_Actions_Invalid_License() throws Exception {
         final HttpServletRequest request = mock(HttpServletRequest.class);
         List<Contentlet> contetlets = APILocator.getContentletAPI().findAllContent(0,1);
+        Logger.error(this, "Contentlet: " + contetlets.get(0));
         final Response response = nonLicenseWorkflowResource.findAvailableActions(request, contetlets.get(0).getInode(), null);
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
         ResponseEntityView ev = ResponseEntityView.class.cast(response.getEntity());
