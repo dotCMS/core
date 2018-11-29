@@ -167,6 +167,16 @@ $datatable-row-bgcolor: $white;
 $datatable-head-bgcolor: $gray-bg;
 $datatable-head-color: $gray;
 
+// TABLE
+$table-cell-padding: 18px $basic-padding * 2; // We need to have 40px min height in the cell
+$table-header-cell-padding: 10px $basic-padding * 2;
+$table-cell-border: 1px solid $gray-bg;
+$table-highlight-row-bgcolor: $gray-bg;
+$table-row-color: $black;
+$table-row-bgcolor: $white;
+$table-head-bgcolor: $gray-bg;
+$table-head-color: $gray;
+
 // PAGINATOR
 $paginator-page-selected-bgcolor: $brand-primary;
 $paginator-page-selected-border-color: $brand-primary;

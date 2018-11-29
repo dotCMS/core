@@ -4,7 +4,7 @@
     .ui-table-thead tr th,
     .ui-table-tbody tr td {
         border-width: 0px;
-        padding: $datatable-cell-padding;
+        padding: $table-cell-padding;
 
         &.ui-selection-column {
             padding-right: 0;
@@ -26,11 +26,11 @@
     }
 
     .ui-table-thead tr th {
-        color: $datatable-head-color;
+        color: $table-head-color;
         font-size: $font-size-small;
         font-weight: normal;
-        border-bottom: $datatable-cell-border;
-        padding: $datatable-header-cell-padding;
+        border-bottom: $table-cell-border;
+        padding: $table-header-cell-padding;
 
         a:focus {
             outline: 0;
@@ -38,7 +38,7 @@
     }
 
     .ui-table-tbody tr td {
-        border-bottom: $datatable-cell-border;
+        border-bottom: $table-cell-border;
     }
 
     .ui-table-tbody tr {
@@ -50,8 +50,8 @@
     }
 
     .ui-widget-content .ui-state-highlight {
-        background: $datatable-highlight-row-bgcolor;
-        color: $datatable-row-color;
+        background: $table-highlight-row-bgcolor;
+        color: $table-row-color;
     }
 
     .ui-paginator {
