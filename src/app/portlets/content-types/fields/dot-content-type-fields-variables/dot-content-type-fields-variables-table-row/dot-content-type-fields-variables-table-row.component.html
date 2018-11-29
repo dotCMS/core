@@ -2,7 +2,7 @@
     <td #keyCell [pEditableColumn]="fieldVariable.key" [pEditableColumnField]="'key'">
         <p-cellEditor>
             <ng-template pTemplate="input">
-                <input pInputText #keyInput
+                <input pInputText
                     type="text"
                     [placeholder]="messages['contenttypes.field.variables.key_input.placeholder']"
                     (focus)="editFieldInit()"
@@ -24,7 +24,7 @@
     <td #valueCell [pEditableColumn]="fieldVariable.value" [pEditableColumnField]="'value'">
         <p-cellEditor>
             <ng-template pTemplate="input">
-                <input pInputText #valueInput
+                <input pInputText
                     type="text"
                     [placeholder]="messages['contenttypes.field.variables.value_input.placeholder']"
                     (focus)="editFieldInit()"

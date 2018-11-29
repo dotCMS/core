@@ -6,63 +6,10 @@
 
     dot-action-button {
         display: flex;
+        float: right;
+        position: relative;
+        right: $basic-padding * 2;
+        top: -$basic-padding * 3;
+        z-index: 1;
     }
-}
-
-::ng-deep {
-    .ui-datatable {
-        .ui-datatable-thead tr {
-            th {
-                padding: .5em;
-                text-align: left;
-
-                &.content-type-fields__variables-actions {
-                    width: 88px;
-                }
-            }
-        }
-        .ui-datatable-data tr {
-            td {
-                padding-left: 0;
-                padding-right: 0;
-
-                &:first-child {
-                    .ui-cell-editor {
-                        padding: 0 $basic-padding * 3;
-                    }
-                }
-
-                &.content-type-fields__variables-actions {
-                    padding-right: 0;
-                    width: 88px;
-                }
-
-                .ui-cell-editor {
-                    padding: 0 0.5em;
-                }
-            }
-        }
-    }
-}
-
-.content-type-fields__variables-actions {
-    button {
-        margin-right: $basic-padding;
-
-        &:last-child {
-            margin-right: 0;
-        }
-    }
-
-    dot-icon-button button {
-        margin-right: 0;
-    }
-}
-
-dot-action-button {
-    float: right;
-    position: relative;
-    right: $basic-padding * 2;
-    top: -$basic-padding * 3;
-    z-index: 1;
 }

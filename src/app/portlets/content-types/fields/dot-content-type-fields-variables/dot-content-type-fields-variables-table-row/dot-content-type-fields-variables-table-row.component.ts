@@ -1,4 +1,12 @@
-import { Component, OnInit, Input, Output, EventEmitter, ViewChild, ElementRef } from '@angular/core';
+import {
+    Component,
+    OnInit,
+    Input,
+    Output,
+    EventEmitter,
+    ViewChild,
+    ElementRef
+} from '@angular/core';
 import { DotMessageService } from '../../../../../api/services/dot-messages-service';
 import { take } from 'rxjs/operators';
 import { FieldVariable } from '../dot-content-type-fields-variables.component';
@@ -11,10 +19,6 @@ import { FieldVariable } from '../dot-content-type-fields-variables.component';
 export class DotContentTypeFieldsVariablesTableRowComponent implements OnInit {
     @ViewChild('saveButton')
     saveButton: ElementRef;
-    @ViewChild('keyInput')
-    keyInput: ElementRef;
-    @ViewChild('valueInput')
-    valueInput: ElementRef;
     @ViewChild('keyCell')
     keyCell: ElementRef;
     @ViewChild('valueCell')
@@ -34,15 +38,11 @@ export class DotContentTypeFieldsVariablesTableRowComponent implements OnInit {
 
     showEditMenu: Boolean = false;
     saveDisabled: Boolean = false;
-    fieldVariables: FieldVariable[] = [];
-    fieldVariablesBackup: FieldVariable[] = [];
     messages: { [key: string]: string } = {};
 
-    constructor(
-        public dotMessageService: DotMessageService
-    ) {}
+    constructor(public dotMessageService: DotMessageService) {}
 
-    ngOnInit() {
+    ngOnInit(): void {
         this.dotMessageService
             .getMessages([
                 'contenttypes.field.variables.key_input.placeholder',
@@ -57,40 +57,64 @@ export class DotContentTypeFieldsVariablesTableRowComponent implements OnInit {
             });
     }
 
+    /**
+     * Focus on Key input
+     * @param {boolean} [forced]
+     * @memberof DotContentTypeFieldsVariablesTableRowComponent
+     */
     // tslint:disable-next-line:cyclomatic-complexity
     focusKeyInput(forced?: boolean): void {
-        if (forced || (this.fieldVariable && (this.fieldVariable.key === '' || this.fieldVariable.value === ''))) {
+        if (forced ||
+            (this.fieldVariable &&
+                (this.fieldVariable.key === '' || this.fieldVariable.value === ''))) {
             this.keyCell.nativeElement.click();
         }
     }
 
-    editFieldInit() {
+    /**
+     * Sets initial fields properties
+     * @memberof DotContentTypeFieldsVariablesTableRowComponent
+     */
+    editFieldInit(): void {
         this.showEditMenu = true;
         this.saveDisabled = this.isFieldDisabled();
     }
 
+    /**
+     * Handle Cancel event
+     * @param {KeyboardEvent} $event
+     * @memberof DotContentTypeFieldsVariablesTableRowComponent
+     */
     onCancel($event: KeyboardEvent): void {
         $event.stopPropagation();
         this.cancel.emit(this.variableIndex);
     }
 
+    /**
+     * Handle Enter key event
+     * @param {KeyboardEvent} $event
+     * @memberof DotContentTypeFieldsVariablesTableRowComponent
+     */
     // tslint:disable-next-line:cyclomatic-complexity
     onPressEnter($event: KeyboardEvent): void {
         let elemRef: ElementRef;
         if (this.fieldVariable.key === '' && $event) {
             elemRef = this.keyCell;
-        } else if ((this.fieldVariable.key !== '' && $event) || (this.fieldVariable.key !== '' && this.fieldVariable.value === '')) {
+        } else if ((this.fieldVariable.key !== '' && $event) ||
+            (this.fieldVariable.key !== '' && this.fieldVariable.value === '')) {
             elemRef = this.valueCell;
         } else if (this.fieldVariable.key !== '' && this.fieldVariable.value !== '') {
             elemRef = this.saveButton;
         }
-
         setTimeout(() => {
             elemRef.nativeElement.click();
         });
-
     }
 
+    /**
+     * Handle Save event
+     * @memberof DotContentTypeFieldsVariablesTableRowComponent
+     */
     saveVariable(): void {
         this.save.emit(this.variableIndex);
     }
@@ -98,5 +122,4 @@ export class DotContentTypeFieldsVariablesTableRowComponent implements OnInit {
     private isFieldDisabled(): boolean {
         return this.fieldVariable.key === '' || this.fieldVariable.value === '' ? true : false;
     }
-
 }

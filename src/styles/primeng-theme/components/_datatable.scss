@@ -30,7 +30,7 @@
         border-bottom: $datatable-cell-border;
         padding: $datatable-header-cell-padding;
 
-        a:focus {
+        &:focus {
             outline: 0;
         }
     }
@@ -62,9 +62,11 @@
         .pi-sort:before {
             content: "";
         }
+
         .pi-sort-asc:before {
             content: "\f063";
         }
+
         .pi-sort-desc:before {
             content: "\f062";
         }
