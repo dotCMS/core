@@ -90,8 +90,6 @@ export class DotPageSelectorService {
      * @memberof DotPageSelectorService
      */
     search(param: string): Observable<DotPageSelectorResults> {
-        debugger;
-        // const parsedURL = this.parseUrl(param)
         if (this.isTwoStepSearch(param)) {
             return this.fullSearch(param);
         } else {
@@ -100,19 +98,16 @@ export class DotPageSelectorService {
     }
 
     private conditionalSearch(param: string): Observable<DotPageSelectorResults> {
-        debugger;
         return this.shouldSearchPages(param)
             ? this.getPages(param)
             : this.getSites(this.getSiteName(param));
     }
 
     private fullSearch(param: string): Observable<DotPageSelectorResults> {
-        debugger;
         const host = this.parseUrl(param).host;
 
         return this.getSites(host).pipe(
             tap((results: DotPageSelectorResults) => {
-                debugger;
                 this.setCurrentHost(<Site>results.data[0].payload);
             }),
             switchMap(() => this.getPages(param))
@@ -138,7 +133,6 @@ export class DotPageSelectorService {
                 pluck('contentlets'),
                 flatMap((pages: DotPageAsset[]) => pages),
                 map((page: DotPageAsset) => {
-                    debugger;
                     return {
                         label: `//${page.hostName}${page.path}`,
                         payload: page
@@ -156,16 +150,19 @@ export class DotPageSelectorService {
     }
 
     private getPagesSearchQuery(param: string): { [key: string]: {} } {
-        debugger;
         const parsedUrl: DotSimpleURL = this.parseUrl(param);
 
-        let query = `${PAGE_BASE_TYPE_QUERY} +path:*${parsedUrl ? parsedUrl.pathname : param}*`;
+        let query = `${PAGE_BASE_TYPE_QUERY} +path:*${this.cleanPath(parsedUrl ? parsedUrl.pathname : param)}*`;
 
         if (this.currentHost) {
-            query += ` +conhostName:*${this.currentHost.hostname}*`;
+            query += ` +conhostName:${this.currentHost.hostname}`;
         }
 
         return this.getRequestBodyQuery(query);
+    }
+
+    private cleanPath(path: string): string {
+        return path.replace(/\//g, '\\/');
     }
 
     private getRequestBodyQuery(query: string): { [key: string]: {} } {
@@ -185,7 +182,6 @@ export class DotPageSelectorService {
             pluck('contentlets'),
             flatMap((sites: Site[]) => sites),
             map((site: Site) => {
-                debugger;
                 return {
                     label: `//${site.hostname}/`,
                     payload: site,
@@ -208,22 +204,13 @@ export class DotPageSelectorService {
     }
 
     private isHostAndPath(param: string): boolean {
-        debugger;
         const url: DotSimpleURL | { [key: string]: string } = this.parseUrl(param);
         return url && !!(url.host && url.pathname.length > 0);
     }
 
-    // check if current host is the same  // check if path is empty
     private isReSearchingForHost(query: string): boolean {
-        debugger;
-        //const parsedURL = this.parseUrl(query)
-
-        // TODO: check if path is valid.;
         return this.isSearchingForHost(query) && this.hostChanged(query);
-        // return this.currentHost && parsedURL && this.hostChanged(parsedURL); // !!this.parseUrl(param).host; // !this.itStartWithFullHost(param);
     }
-
-    // crear metodo para ver si los
 
     private hostChanged(query: string): boolean {
         const parsedURL = this.parseUrl(query);
@@ -231,23 +218,12 @@ export class DotPageSelectorService {
     }
 
     private isSearchingForHost(query: string): boolean {
-        debugger;
         return query.startsWith('//') && !query.endsWith('/');
     }
 
-    // private itStartWithFullHost(param: string): boolean {
-    //     debugger; // fredy/
-    //     return HOST_FULL_REGEX.test(param);
-    // }
 
     private isTwoStepSearch(param): boolean {
-        debugger;
-        //const parsedURL: DotSimpleURL = this.parseUrl(param);
-        //return !this.isSearchingForHost(param) && ( !this.currentHost ||  this.hostChanged(param));
-
          return this.isHostAndPath(param) && ( !this.currentHost ||  this.hostChanged(param));
-        // return this.currentHost &&
-       // return !this.currentHost && this.isHostAndPath(param); // check host es diferente al actual
     }
 
     private parseUrl(query: string): DotSimpleURL {
@@ -264,11 +240,8 @@ export class DotPageSelectorService {
     }
 
     private shouldSearchPages(query: string): boolean {
-        debugger;
         const parsedURL = this.parseUrl(query);
-        // TODO: check if path is valid.
         if ( !parsedURL || this.isReSearchingForHost(query)) {
-            debugger;
             this.currentHost = null;
         }
 

@@ -1,9 +1,7 @@
-{{results.data.length}}
-
 <span dotMdInputtext [label]="label" *ngIf="floatingLabel; else placeholded">
     <p-autoComplete
         appendTo="body"
-        (completeMethod)="search($event.query)"
+        (completeMethod)="search($event)"
         (keydown.enter)="onKeyEnter($event)"
         (keydown.tab)="$event.preventDefault()"
         (onClear)="onClear($event)"
@@ -21,7 +19,7 @@
 <ng-template #placeholded>
     <p-autoComplete
         appendTo="body"
-        (completeMethod)="search($event.query)"
+        (completeMethod)="search($event)"
         (keydown.enter)="onKeyEnter($event)"
         (keydown.tab)="$event.preventDefault()"
         (onClear)="onClear($event)"

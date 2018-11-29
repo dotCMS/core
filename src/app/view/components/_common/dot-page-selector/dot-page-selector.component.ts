@@ -7,6 +7,10 @@ import { Site } from 'dotcms-js';
 
 import { DotPageSelectorService, DotPageAsset } from './service/dot-page-selector.service';
 import { DotPageSelectorResults, DotPageSeletorItem } from './models/dot-page-selector.models';
+import { DotMessageService } from '@services/dot-messages-service';
+
+const VALID_INPUT_REGEX = /^[a-zA-Z0-9_/-]*$/g;
+const REPLACE_INPUT_REGEX = /[^a-zA-Z0-9_/-]/g;
 
 /**
  * Search and select a page asset
@@ -41,7 +45,14 @@ export class DotPageSelectorComponent implements ControlValueAccessor {
     val: DotPageSeletorItem;
     message: string;
 
-    constructor(private dotPageSelectorService: DotPageSelectorService) {}
+    constructor(
+        private dotPageSelectorService: DotPageSelectorService,
+        public dotMessageService: DotMessageService
+    ) {
+        this.dotMessageService
+            .getMessages(['page.selector.no.sites.results', 'page.selector.no.page.results'])
+            .subscribe();
+    }
 
     propagateChange = (_: any) => {};
 
@@ -64,7 +75,6 @@ export class DotPageSelectorComponent implements ControlValueAccessor {
     onSelect(item: DotPageSeletorItem): void {
         if (this.results.type === 'site') {
             const site: Site = <Site>item.payload;
-            debugger;
             this.dotPageSelectorService.setCurrentHost(site);
         } else if (this.results.type === 'page') {
             const page: DotPageAsset = <DotPageAsset>item.payload;
@@ -96,17 +106,19 @@ export class DotPageSelectorComponent implements ControlValueAccessor {
      * @param string param
      * @memberof DotPageSelectorComponent
      */
-    search(param: string): void {
-        debugger;
-        if (param.length) {
+    search(param: any): void {
+        if (this.cleanInput(param).length) {
             this.dotPageSelectorService
-                .search(param)
+                .search(this.cleanQuery(param.query))
                 .pipe(take(1))
                 .subscribe((results: DotPageSelectorResults) => {
                     this.results = results;
                     this.message = this.getErrorMessage();
 
-                    if (this.shouldAutoFill() && this.isOnlyFullHost(param)) {
+                    if (
+                        this.shouldAutoFill() &&
+                        this.isOnlyFullHost(this.cleanQuery(param.query))
+                    ) {
                         this.autoSelectUniqueResult();
                     }
                 });
@@ -169,7 +181,11 @@ export class DotPageSelectorComponent implements ControlValueAccessor {
     }
 
     private getErrorMessage(): string {
-        return this.results.data.length === 0 ? this.results.type === 'site' ? 'No Site results' : 'No pages results' : null;
+        return this.results.data.length === 0
+            ? this.results.type === 'site'
+              ? this.dotMessageService.get('page.selector.no.sites.results')
+              : this.dotMessageService.get('page.selector.no.page.results')
+            : null;
     }
 
     private isOnlyFullHost(host: string): boolean {
@@ -178,5 +194,14 @@ export class DotPageSelectorComponent implements ControlValueAccessor {
 
     private autoSelectUniqueResult(): void {
         this.onSelect(this.results.data[0]);
+    }
+
+    private cleanInput(event: any): string {
+        event.originalEvent.target.value = this.cleanQuery(event.query);
+        return event.originalEvent.target.value;
+    }
+
+    private cleanQuery(query: string): string {
+        return !VALID_INPUT_REGEX.test(query) ? query.replace(REPLACE_INPUT_REGEX, '') : query;
     }
 }
