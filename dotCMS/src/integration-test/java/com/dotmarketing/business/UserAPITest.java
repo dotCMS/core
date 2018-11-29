@@ -417,6 +417,7 @@ public class UserAPITest extends IntegrationTestBase {
 		contentAsset.setFolder(testFolder.getInode());
 		contentAsset.setIndexPolicy(IndexPolicy.FORCE);
 		contentAsset=conAPI.checkin(contentAsset, userToDelete, false);
+		contentAsset.setIndexPolicy(IndexPolicy.FORCE);
 		conAPI.publish(contentAsset, userToDelete, false);
 
 		/**
@@ -432,6 +433,7 @@ public class UserAPITest extends IntegrationTestBase {
 		contentAsset2.setFolder(testFolder.getInode());
 		contentAsset2.setIndexPolicy(IndexPolicy.FORCE);
 		contentAsset2=conAPI.checkin(contentAsset2, userToDelete, false);
+		contentAsset.setIndexPolicy(IndexPolicy.FORCE);
 		conAPI.publish(contentAsset2, userToDelete, false);
 
 		/**
@@ -607,7 +609,7 @@ public class UserAPITest extends IntegrationTestBase {
 
 	private void waitForDeleteCompletedNotification(User userToDelete) throws DotDataException, InterruptedException {
 
-		final int MAX_TIME = 60000;
+		final int MAX_TIME = 20000;
 		final int WAIT_TIME = 1000;
 
 		TimeUtil.waitFor(WAIT_TIME, MAX_TIME, () -> {
