@@ -1,17 +1,18 @@
 package com.dotmarketing.portlets.structure.model;
 
+import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.factories.InodeFactory;
-import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
+import com.liferay.util.StringPool;
 
 
-
-public class Relationship extends Inode 
+public class Relationship extends Inode
 {
 	
 	private static final long serialVersionUID = 1L;
@@ -32,19 +33,51 @@ public class Relationship extends Inode
     	super.setType("relationship");	
     }
 
-    public Relationship(Structure parentStructure, Structure childStructure, String parentRelationName, String childRelationName, int cardinality, boolean parentRequired, boolean childRequired){
-    	super.setType("relationship");	
-    	this.parentStructureInode = parentStructure.getInode();
-    	this.childStructureInode = childStructure.getInode();
-    	this.parentRelationName = parentRelationName;
-    	this.childRelationName = childRelationName;
-    	this.cardinality = cardinality;
-    	this.parentRequired = parentRequired;
-    	this.childRequired = childRequired;
-    	this.relationTypeValue = parentRelationName.replaceAll(" ", "_") + "-" + childRelationName.replaceAll(" ", "_");
-    }
-    
-    
+	/**
+	 * Use {@link Relationship#Relationship(ContentType, ContentType, Field)} instead.
+	 * Otherwise, use at your own risk
+	 *
+	 * @param parentStructure
+	 * @param childStructure
+	 * @param parentRelationName
+	 * @param childRelationName
+	 * @param cardinality
+	 * @param parentRequired
+	 * @param childRequired
+	 */
+    @Deprecated
+	public Relationship(final Structure parentStructure, final Structure childStructure,
+			final String parentRelationName, final String childRelationName, final int cardinality,
+			final boolean parentRequired, final boolean childRequired) {
+		super();
+		this.setType("relationship");
+		this.parentStructureInode = parentStructure.getInode();
+		this.childStructureInode = childStructure.getInode();
+		this.parentRelationName = parentRelationName;
+		this.childRelationName = childRelationName;
+		this.cardinality = cardinality;
+		this.parentRequired = parentRequired;
+		this.childRequired = childRequired;
+		this.relationTypeValue = parentRelationName.replaceAll(" ", "_") + "-" + childRelationName
+				.replaceAll(" ", "_");
+
+	}
+
+	public Relationship(final ContentType parentContentType, final ContentType childContentType,
+			final Field field) {
+		super();
+		this.setType("relationship");
+		this.parentStructureInode = parentContentType.id();
+		this.childStructureInode = childContentType.id();
+		this.parentRelationName = null;
+		this.childRelationName = field.variable();
+		this.cardinality = Integer.parseInt(field.values());
+		this.parentRequired = false;
+		this.childRequired = field.required();
+		this.relationTypeValue = parentContentType.variable() + StringPool.PERIOD + field.variable();
+	}
+
+
 	/**
 	 * @return Returns the cardinality.
 	 */
@@ -75,20 +108,27 @@ public class Relationship extends Inode
 	public String getChildStructureInode() {
 		return childStructureInode;
 	}
-	
-	public Structure getChildStructure () {
-	  try {
-        return new StructureTransformer(APILocator.getContentTypeAPI(APILocator.systemUser()).find(childStructureInode)).asStructure();
-      } catch (DotStateException | DotDataException | DotSecurityException e) {
-        throw new DotStateException("getChildStructure Struc not found, childStructureInode:" + childStructureInode, e);
 
-      }
-	  
+	public Structure getChildStructure() {
+		try {
+			return UtilMethods.isSet(childStructureInode) ? new StructureTransformer(
+					APILocator.getContentTypeAPI(APILocator.systemUser()).find(childStructureInode))
+					.asStructure() : null;
+		} catch (DotStateException | DotDataException | DotSecurityException e) {
+			throw new DotStateException(
+					"getChildStructure Struc not found, childStructureInode:" + childStructureInode,
+					e);
+
+		}
+
 	}
 	
 	/**
+	 * Use at your own risk. This property should not be modified once the object is created through
+	 * the constructor {@link Relationship#Relationship(ContentType, ContentType, Field)}
 	 * @param childStructureInode The childStructureInode to set.
 	 */
+	@Deprecated
 	public void setChildStructureInode(String childStructureInode) {
 		this.childStructureInode = childStructureInode;
 	}
@@ -105,24 +145,31 @@ public class Relationship extends Inode
 		this.parentRelationName = parentRelationName;
 	}
 
-	public Structure getParentStructure () {
-      try {
-        return new StructureTransformer(APILocator.getContentTypeAPI(APILocator.systemUser()).find(parentStructureInode)).asStructure();
-      } catch (DotStateException | DotDataException | DotSecurityException e) {
-        throw new DotStateException("getParentStructure Struc not found, parentStructureInode:" + parentStructureInode, e);
+	public Structure getParentStructure() {
+		try {
+			return UtilMethods.isSet(parentStructureInode) ? new StructureTransformer(
+					APILocator.getContentTypeAPI(APILocator.systemUser())
+							.find(parentStructureInode))
+					.asStructure() : null;
+		} catch (DotStateException | DotDataException | DotSecurityException e) {
+			throw new DotStateException("getParentStructure Struc not found, parentStructureInode:"
+					+ parentStructureInode, e);
 
-      }
+		}
 	}
 	
 	/**
-	 * @return Returns the parentStructureInode.
+	 *  @return Returns the parentStructureInode.
 	 */
 	public String getParentStructureInode() {
 		return parentStructureInode;
 	}
 	/**
+	 * Use at your own risk. This property should not be modified once the object is created through
+	 * the constructor {@link Relationship#Relationship(ContentType, ContentType, Field)}
 	 * @param parentStructureInode The parentStructureInode to set.
 	 */
+	@Deprecated
 	public void setParentStructureInode(String parentStructureInode) {
 		this.parentStructureInode = parentStructureInode;
 	}
@@ -133,8 +180,11 @@ public class Relationship extends Inode
 		return relationTypeValue;
 	}
 	/**
+	 * Use at your own risk. This property should not be modified once the object is created through
+	 * the constructor {@link Relationship#Relationship(ContentType, ContentType, Field)}
 	 * @param relationTypeValue The relationTypeValue to set.
 	 */
+	@Deprecated
 	public void setRelationTypeValue(String relationTypeValue) {
 		this.relationTypeValue = relationTypeValue;
 	}

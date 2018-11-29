@@ -1587,7 +1587,6 @@ create sequence user_preferences_seq;
 create sequence dashboard_usrpref_seq;
 create sequence chain_state_seq;
 create sequence trackback_sequence;
-create sequence language_seq;
 create sequence permission_reference_seq;
 create sequence summary_visits_seq;
 create sequence chain_link_code_seq;

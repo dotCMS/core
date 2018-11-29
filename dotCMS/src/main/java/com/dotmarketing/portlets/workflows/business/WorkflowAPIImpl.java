@@ -1,19 +1,11 @@
 package com.dotmarketing.portlets.workflows.business;
 
-import static com.dotmarketing.portlets.contentlet.util.ContentletUtil.isHost;
-import static com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet.FORCE_PUSH;
-import static com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet.WF_EXPIRE_DATE;
-import static com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet.WF_EXPIRE_TIME;
-import static com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet.WF_NEVER_EXPIRE;
-import static com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet.WF_PUBLISH_DATE;
-import static com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet.WF_PUBLISH_TIME;
-import static com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet.WHERE_TO_SEND;
-
 import com.dotcms.api.system.event.SystemMessageEventUtil;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
+import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.exception.ExceptionUtil;
@@ -21,11 +13,7 @@ import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.ErrorEntity;
 import com.dotcms.rest.api.v1.workflow.ActionFail;
 import com.dotcms.rest.api.v1.workflow.BulkActionsResultView;
-import com.dotcms.util.AnnotationUtils;
-import com.dotcms.util.CollectionsUtils;
-import com.dotcms.util.DotPreconditions;
-import com.dotcms.util.FriendClass;
-import com.dotcms.util.LicenseValiditySupplier;
+import com.dotcms.util.*;
 import com.dotcms.uuid.shorty.ShortyId;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
 import com.dotcms.workflow.form.AdditionalParamsBean;
@@ -33,25 +21,12 @@ import com.dotcms.workflow.form.AssignCommentBean;
 import com.dotcms.workflow.form.PushPublishBean;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.FactoryLocator;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.Permissionable;
-import com.dotmarketing.business.Role;
-import com.dotmarketing.business.RoleAPI;
+import com.dotmarketing.business.*;
 import com.dotmarketing.common.business.journal.DistributedJournalAPI;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
-import com.dotmarketing.exception.AlreadyExistException;
-import com.dotmarketing.exception.DoesNotExistException;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotDataValidationException;
-import com.dotmarketing.exception.DotHibernateException;
-import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.exception.InvalidLicenseException;
+import com.dotmarketing.exception.*;
 import com.dotmarketing.osgi.HostActivator;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
@@ -61,72 +36,22 @@ import com.dotmarketing.portlets.contentlet.util.ActionletUtil;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.MessageActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.Actionlet;
-import com.dotmarketing.portlets.workflows.actionlet.ArchiveContentActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.BatchAction;
-import com.dotmarketing.portlets.workflows.actionlet.CheckURLAccessibilityActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.CheckinContentActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.CheckoutContentActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.CommentOnWorkflowActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.CopyActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.DeleteContentActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.EmailActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.FourEyeApproverActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.MultipleApproverActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.NotifyAssigneeActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.NotifyUsersActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.PublishContentActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.PushNowActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.ResetTaskActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.SaveContentActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.SaveContentAsDraftActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.SetValueActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.TranslationActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.TwitterActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.UnarchiveContentActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.UnpublishContentActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;
-import com.dotmarketing.portlets.workflows.model.WorkflowAction;
-import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
-import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
-import com.dotmarketing.portlets.workflows.model.WorkflowComment;
-import com.dotmarketing.portlets.workflows.model.WorkflowHistory;
-import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
-import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
-import com.dotmarketing.portlets.workflows.model.WorkflowSearcher;
-import com.dotmarketing.portlets.workflows.model.WorkflowState;
-import com.dotmarketing.portlets.workflows.model.WorkflowStep;
-import com.dotmarketing.portlets.workflows.model.WorkflowTask;
-import com.dotmarketing.portlets.workflows.model.WorkflowTimelineItem;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.DateUtil;
-import com.dotmarketing.util.InodeUtils;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.LuceneQueryUtils;
-import com.dotmarketing.util.SecurityLogger;
-import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.WebKeys;
+import com.dotmarketing.portlets.workflows.actionlet.*;
+import com.dotmarketing.portlets.workflows.model.*;
+import com.dotmarketing.util.*;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Hashtable;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.StringTokenizer;
+import org.apache.commons.lang.time.StopWatch;
+import org.apache.commons.lang3.concurrent.ConcurrentUtils;
+import org.elasticsearch.search.query.QueryPhaseExecutionException;
+import org.osgi.framework.BundleContext;
+
+import javax.annotation.Nullable;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
@@ -138,11 +63,9 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import javax.annotation.Nullable;
-import org.apache.commons.lang.time.StopWatch;
-import org.apache.commons.lang3.concurrent.ConcurrentUtils;
-import org.elasticsearch.search.query.QueryPhaseExecutionException;
-import org.osgi.framework.BundleContext;
+
+import static com.dotmarketing.portlets.contentlet.util.ContentletUtil.isHost;
+import static com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet.*;
 
 public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
@@ -166,6 +89,9 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	private final DistributedJournalAPI<String> distributedJournalAPI =
 			APILocator.getDistributedJournalAPI();
+
+	private final ContentletIndexAPI contentletIndexAPI =
+			APILocator.getContentletIndexAPI();
 
 	// not very fancy, but the WorkflowImport is a friend of WorkflowAPI
 	private volatile FriendClass  friendClass = null;
@@ -224,6 +150,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				CheckURLAccessibilityActionlet.class,
                 EmailActionlet.class,
                 SetValueActionlet.class,
+                ReindexContentActionlet.class,
                 PushNowActionlet.class,
 				TranslationActionlet.class,
 				SaveContentActionlet.class,
@@ -515,7 +442,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	@Override
 	@WrapInTransaction
 	public void saveSchemeIdsForContentType(final ContentType contentType,
-											final List<String> schemesIds) throws DotDataException {
+											final Set<String> schemesIds) throws DotDataException {
 
 		try {
 
@@ -525,7 +452,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 					String.join(",", schemesIds), contentType.inode()));
 
 			workFlowFactory.saveSchemeIdsForContentType(contentType.inode(),
-					schemesIds.stream().map(this::getLongIdForScheme).collect(CollectionsUtils.toImmutableList()),
+					schemesIds.stream().map(this::getLongIdForScheme).collect(Collectors.toSet()),
 					this::consumeWorkflowTask);
 			if(schemesIds.isEmpty()){
 				contentTypeAPI.updateModDate(contentType);
@@ -1206,7 +1133,17 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	@WrapInTransaction
 	public void saveWorkflowTask(final WorkflowTask task, final WorkflowProcessor processor) throws DotDataException {
 
-		this.saveWorkflowTask(task);
+		this.saveWorkflowTaskInternal(task, processor, true);
+	}
+
+	private void saveWorkflowTaskInternal(final WorkflowTask task, final WorkflowProcessor processor, final boolean doIndex) throws DotDataException {
+
+		if (doIndex) {
+			this.saveWorkflowTask(task);
+		} else {
+			this.saveWorkflowTaskWithoutIndexing(task);
+		}
+
 		final WorkflowHistory history = new WorkflowHistory();
 		history.setWorkflowtaskId(task.getId());
 		history.setActionId(processor.getAction().getId());
@@ -1221,12 +1158,12 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		try {
 			history.setChangeDescription(
 					LanguageUtil.format(processor.getUser().getLocale(), "workflow.history.description", new String[]{
-						processor.getUser().getFullName(),
-						processor.getAction().getName(),
-						processor.getNextStep().getName(),
-						nextAssignName,
-						comment}, false)
-					);
+							processor.getUser().getFullName(),
+							processor.getAction().getName(),
+							processor.getNextStep().getName(),
+							nextAssignName,
+							comment}, false)
+			);
 		} catch (LanguageException e) {
 			Logger.error(WorkflowAPIImpl.class,e.getMessage());
 			Logger.debug(WorkflowAPIImpl.class,e.getMessage(),e);
@@ -1234,6 +1171,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 		saveWorkflowHistory(history);
 	}
+
+
 
 	@Override
 	@WrapInTransaction
@@ -2072,14 +2011,10 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 				this.saveWorkflowTask(processor);
 
-				if (UtilMethods.isSet(processor.getContentlet())) {
-				    HibernateUtil.addCommitListener(() -> {
-                        try {
-							this.distributedJournalAPI.addIdentifierReindex(processor.getContentlet().getIdentifier());
-						} catch (DotDataException e) {
-                            Logger.error(WorkflowAPIImpl.class, e.getMessage(), e);
-                        }
-                    });
+				if (UtilMethods.isSet(processor.getContentlet()) && processor.getContentlet().needsReindex()) {
+
+					this.contentletIndexAPI.indexContentListWaitFor
+							(Arrays.asList(processor.getContentlet()), null, true);
 				}
 			}
 		} catch(Exception e) {
@@ -2088,6 +2023,18 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			Logger.error(WorkflowAPIImpl.class, "There was an unexpected error: " + e.getMessage());
 			Logger.debug(WorkflowAPIImpl.class, e.getMessage(), e);
 			throw new DotWorkflowException(e.getMessage(), e);
+		} finally {
+
+			// not matters what we need to reindex in deferred the index just in case.
+			if (UtilMethods.isSet(processor.getContentlet()) &&
+					UtilMethods.isSet(processor.getContentlet().getIdentifier())) {
+
+				try {
+					this.distributedJournalAPI.addIdentifierReindex(processor.getContentlet().getIdentifier());
+				} catch (DotDataException e) {
+					Logger.error(WorkflowAPIImpl.class, e.getMessage(), e);
+				}
+			}
 		}
 	}
 
@@ -2131,7 +2078,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		}
 		task.setStatus(processor.getNextStep().getId());
 
-		saveWorkflowTask(task, processor);
+		saveWorkflowTaskWithoutIndexing(task, processor);
 
 		if (null == processor.getTask()) {
 			processor.setTask(task); // when the content is new there might be the case than an action is waiting for the task in some commit listener
@@ -2146,6 +2093,28 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			comment.setPostedBy(processor.getUser().getUserId());
 			saveComment(comment);
 		}
+	}
+
+	private void saveWorkflowTaskWithoutIndexing(final WorkflowTask task) throws DotDataException {
+
+		if (task.getLanguageId() <= 0) {
+
+			Logger.error(this, "The task: " + task.getId() +
+					", does not have language id, setting to the default one");
+			task.setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId());
+		}
+
+		this.workFlowFactory.saveWorkflowTask(task);
+
+		SecurityLogger.logInfo(this.getClass(),
+				"The Workflow task with id:" + task.getId() + " has been saved.");
+	}
+
+
+	@WrapInTransaction
+	private void saveWorkflowTaskWithoutIndexing(final WorkflowTask task, final WorkflowProcessor processor) throws DotDataException {
+
+		this.saveWorkflowTaskInternal(task, processor, false);
 	}
 
 	// todo: note; this method is not referer by anyone, should it be removed?

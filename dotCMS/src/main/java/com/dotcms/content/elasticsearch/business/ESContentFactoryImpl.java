@@ -1,8 +1,11 @@
 package com.dotcms.content.elasticsearch.business;
 
+import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.datetimeFormat;
+
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
+import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
 import com.dotcms.content.elasticsearch.util.ESClient;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.notifications.bean.NotificationType;
@@ -12,7 +15,13 @@ import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.util.I18NMessage;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.business.*;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.IdentifierAPI;
+import com.dotmarketing.business.IdentifierCache;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.query.ComplexCriteria;
 import com.dotmarketing.business.query.Criteria;
 import com.dotmarketing.business.query.GenericQueryFactory.Query;
@@ -41,10 +50,34 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.business.WorkFlowFactory;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
-import com.dotmarketing.util.*;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.DateUtil;
+import com.dotmarketing.util.InodeUtils;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.NumberUtil;
+import com.dotmarketing.util.RegEX;
+import com.dotmarketing.util.RegExMatch;
+import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.primitives.Ints;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
+import java.util.function.Consumer;
+import java.io.Serializable;
+import java.io.StringWriter;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.StringTokenizer;
 import org.apache.commons.lang.StringUtils;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.ActionListener;
@@ -65,18 +98,6 @@ import org.elasticsearch.search.sort.ScriptSortBuilder;
 import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortOrder;
 import org.springframework.util.NumberUtils;
-
-import java.io.Serializable;
-import java.io.StringWriter;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.*;
-import java.util.Calendar;
-import java.util.function.Consumer;
-
-import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.datetimeFormat;
 
 /**
  * Implementation class for the {@link ContentletFactory} interface. This class
@@ -1438,28 +1459,40 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
             if(UtilMethods.isSet(sortBy) ) {
             	sortBy = sortBy.toLowerCase();
-            	if(sortBy.endsWith("-order")) {
+            	if(sortBy.endsWith(ESMappingConstants.SUFFIX_ORDER)) {
             	    // related content ordering
-            	    int ind0=sortBy.indexOf('-'); // relationships tipicaly have a format stname1-stname2
-            	    int ind1=ind0>0 ? sortBy.indexOf('-',ind0+1) : -1;
-            	    if(ind1>0) {
-            	        String relName=sortBy.substring(0, ind1);
-            	        if((ind1+1)<sortBy.length()) {
-                	        String identifier=sortBy.substring(ind1+1, sortBy.length()-6);
-                            if (UtilMethods.isSet(identifier)) {
-                                final Script script = new Script(
-                                    Script.DEFAULT_SCRIPT_TYPE,
-                                    "expert_scripts",
-                                    "related",
-                                    Collections.emptyMap(),
-                                    ImmutableMap.of("relName", relName, "identifier", identifier));
+            	    // relationships typically have a format stname1-stname2(legacy relationships) or relationType (one-sided relationships)
+            	    if(sortBy.indexOf('-')>0) {
 
-                                srb.addSort(
-                                    SortBuilders
-                                        .scriptSort(script, ScriptSortBuilder.ScriptSortType.NUMBER)
-                                        .order(SortOrder.ASC));
+                        String identifier = sortBy
+                                .substring(sortBy.indexOf(StringPool.DASH) + 1,
+                                        sortBy.lastIndexOf(StringPool.DASH));
+
+                        if (UtilMethods.isSet(identifier)) {
+
+                            //Support for one-sided relationships
+                            String relName = sortBy.substring(0, sortBy.indexOf(StringPool.DASH));
+                            if (UtilMethods.isSet(identifier) && !relName.contains(StringPool.PERIOD)) {
+                                //Support for legacy relationships
+                                relName += StringPool.DASH + identifier
+                                        .substring(0, identifier.indexOf(StringPool.DASH));
+                                identifier = identifier
+                                        .substring(identifier.indexOf(StringPool.DASH) + 1);
                             }
-            	        }
+
+                            final Script script = new Script(
+                                Script.DEFAULT_SCRIPT_TYPE,
+                                "expert_scripts",
+                                "related",
+                                Collections.emptyMap(),
+                                ImmutableMap.of("relName", relName, "identifier", identifier));
+
+                            srb.addSort(
+                                SortBuilders
+                                    .scriptSort(script, ScriptSortBuilder.ScriptSortType.NUMBER)
+                                    .order(SortOrder.ASC));
+                        }
+
             	    }
             	}
             	else if(sortBy.startsWith("score")){

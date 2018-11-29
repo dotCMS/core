@@ -54,6 +54,7 @@ import com.dotmarketing.portlets.workflows.business.BaseWorkflowIntegrationTest;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
@@ -71,6 +72,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.felix.framework.OSGIUtil;
 import org.apache.struts.Globals;
@@ -174,9 +176,10 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
 
         // Assign contentType to Workflows
         workflowAPI.saveSchemeIdsForContentType(contentType,
-                Arrays.asList(
-                        systemWorkflow.getId(), documentWorkflow.getId()
-                )
+                Stream.of(
+                        systemWorkflow.getId(),
+                        documentWorkflow.getId()
+                ).collect(Collectors.toSet())
         );
 
         return contentType;
@@ -447,7 +450,7 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
                 add(newLanguageInstance("de", "DE", "German", "Germany")).
                 add(newLanguageInstance("ru", "RUS", "Russian", "Russia")).
                 add(newLanguageInstance("da", "DK ", "Danish", "Denmark")).
-                add(newLanguageInstance("en", "NZ ", "New Zealand", "Denmark")).
+                add(newLanguageInstance("en", "NZ ", "English", "New Zealand")).
                 build();
 
         final List<Language> savedNewLanguages = new ArrayList<>();
@@ -503,8 +506,10 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
                 contentletAPI.delete(contentlet, adminUser, false);
             }
 
+            final List<Long>savedLanguagesNowDeletedIds = new ArrayList<>();
             // Remove all the languages we just created from the db.. see if they get re-generated out of the push-publish process.
             for (final Language language : savedNewLanguages) {
+                savedLanguagesNowDeletedIds.add(language.getId());
                 languageAPI.deleteLanguage(language);
             }
 
@@ -532,11 +537,7 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
 
             final Comparator<Language> comparator = Comparator.comparing( Language::getId );
 
-            // Get Max Language id at this point of time.
-            final Language mostRecentlyAddedLangBeforePP = savedReinsertedLanguages.stream().max(comparator).get();
-            //Any other language inserted before this point has to have a greater id value.
-
-            // Now lets do push-publish
+            // Now lets do push-publish.
             final PublisherConfig publisherConfig = new PublisherConfig();
             final BundlePublisher bundlePublisher = new BundlePublisher();
             publisherConfig.setId(fileName);
@@ -549,9 +550,11 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
             //Push publish ends here.
 
             //Now we check the results.
-            //Should have used only the language there came by default. Meaning the dupes should have been ignored.
+            //Should have used only the language that came by default. Meaning the dupes should have been ignored.
             publishedContentlets = contentletAPI.findByStructure(contentType.inode(), adminUser, false,10, 0);
             assertEquals("We expected 5 instances of our custom type ", 5, publishedContentlets.size());
+
+            printContentletLanguageInfo(publishedContentlets);
 
             //Count number of instances already using an existing language.
 
@@ -559,16 +562,18 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
 
             assertEquals("We expected 2 languages already existing languages to be re-used.",2, contentletsWithReusedLanguages);
 
-            final long contentletsWithNewLanguages = publishedContentlets.stream().filter(contentlet -> contentlet.getLanguageId() > mostRecentlyAddedLangBeforePP.getId()).count();
+            //Now check the languages now restored.  They should match the ones we previously deleted.
+            final long contentletsWithNewLanguages = publishedContentlets.stream().filter(contentlet ->  savedLanguagesNowDeletedIds.contains(contentlet.getLanguageId())).count();
 
             assertEquals("We expected 3 new languages created after pp.",3, contentletsWithNewLanguages);
 
             //Expected language codes. These are created by PP
-            final Set<String> expectedNewLangs = new HashSet<>(Arrays.asList("ru","da","en"));
-            final boolean newLanguagesMatch = publishedContentlets.stream().filter(contentlet -> contentlet.getLanguageId() > mostRecentlyAddedLangBeforePP.getId()).allMatch(contentlet ->  {
+            final Set<String> expectedNewLangs = new HashSet<>(Arrays.asList("ru","da","en")); //Should have been created with the original ids that they originally had.
+            final boolean newLanguagesMatch = publishedContentlets.stream().
+              filter(contentlet -> savedLanguagesNowDeletedIds.contains(contentlet.getLanguageId())).allMatch(contentlet ->  {
                 final Language lang = languageAPI.getLanguage(contentlet.getLanguageId());
                 return expectedNewLangs.contains(lang.getLanguageCode());
-            } );
+              } );
 
             assertTrue("new Languages created are not a match.", newLanguagesMatch);
 
@@ -603,5 +608,14 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
 
     }
 
+
+    private void printContentletLanguageInfo(final List<Contentlet> publishedContentlets) {
+        publishedContentlets.forEach(contentlet -> {
+            Logger.info(RemoteReceiverLanguageResolutionTest.class,
+                    () -> "id: " + contentlet.getLanguageId() + " - " + contentlet
+                            .get(REQUIRED_TEXT_FIELD_NAME)
+            );
+        });
+    }
 
 }

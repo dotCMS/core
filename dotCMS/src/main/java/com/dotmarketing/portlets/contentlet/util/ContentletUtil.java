@@ -169,6 +169,11 @@ public class ContentletUtil {
 		if (s.isFileAsset() || s.isHTMLPageAsset()){
 			m.put("path", APILocator.getIdentifierAPI().find(c.getIdentifier()).getPath());
 		}
+		try {
+            m.put("hostName", APILocator.getHostAPI().find(c.getHost(), user, true).getHostname());
+        } catch (Exception e) {
+            Logger.warn(ContentletUtil.class, "unable to get host:" + c.getHost() + " : " + e.getMessage());
+        }
 
 		return m;
 	}

@@ -129,7 +129,7 @@ public class ReindexThread extends Thread {
 						 final NotificationAPI notificationAPI,
                          final UserAPI userAPI,
 						 final RoleAPI roleAPI) {
-
+		super("ReindexThread");
 		this.jAPI = jAPI;
 		this.notificationAPI = notificationAPI;
         this.userAPI = userAPI;

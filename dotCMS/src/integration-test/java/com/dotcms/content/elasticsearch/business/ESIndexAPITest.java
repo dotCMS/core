@@ -32,6 +32,7 @@ public class ESIndexAPITest {
 
 	final private ESIndexAPI esIndexAPI;
 	final private ContentletIndexAPI contentletIndexAPI;
+	private static final String BACKUP_REPOSITORY = "backupTest";
 
     public ESIndexAPITest() {
 		this.esIndexAPI = APILocator.getESIndexAPI();
@@ -63,7 +64,7 @@ public class ESIndexAPITest {
 
 	@After
 	public void cleanUp(){
-		esIndexAPI.deleteRepository("backup");
+		esIndexAPI.deleteRepository(BACKUP_REPOSITORY);
 	}
 
 	/**
@@ -74,7 +75,7 @@ public class ESIndexAPITest {
 	public void createSnapshotTest() throws IOException{
 		String indexName = getLiveIndex();
 		File snapshot = null;
-		snapshot = esIndexAPI.createSnapshot(ESIndexAPI.BACKUP_REPOSITORY, "backup", indexName);
+		snapshot = esIndexAPI.createSnapshot(BACKUP_REPOSITORY, "backup", indexName);
 		assertNotNull(snapshot);
 		snapshot.delete();
 	}
@@ -89,7 +90,7 @@ public class ESIndexAPITest {
 	@Test(expected = ElasticsearchException.class)
 	public void createSnapshotTest_invalidIndex() throws IOException{
 		String indexName = "live_xxxxxxxxx";
-		esIndexAPI.createSnapshot(ESIndexAPI.BACKUP_REPOSITORY, "backup", indexName);
+		esIndexAPI.createSnapshot(BACKUP_REPOSITORY, "backup", indexName);
 	}
 
 	/**
@@ -105,7 +106,7 @@ public class ESIndexAPITest {
 	public void uploadSnapshotTest_fromCurrentLive() throws IOException, InterruptedException, ExecutionException{
 		String indexName = getLiveIndex();
 		File snapshot = null;
-		snapshot = esIndexAPI.createSnapshot(ESIndexAPI.BACKUP_REPOSITORY, "backup", indexName);
+		snapshot = esIndexAPI.createSnapshot(BACKUP_REPOSITORY, "backup", indexName);
 		esIndexAPI.closeIndex(indexName);
 		ZipFile file = new ZipFile(snapshot.getAbsolutePath());
 		String pathToRepo = getPathToRepo();
@@ -130,7 +131,7 @@ public class ESIndexAPITest {
 		try{
 			String indexName = getLiveIndex();
 			
-			snapshot = esIndexAPI.createSnapshot(ESIndexAPI.BACKUP_REPOSITORY, "backup", indexName);
+			snapshot = esIndexAPI.createSnapshot(BACKUP_REPOSITORY, "backup", indexName);
 			file = new ZipFile(snapshot.getAbsolutePath());
 			String pathToRepo = getPathToRepo();
 			tempDir = new File(pathToRepo);
@@ -173,7 +174,7 @@ public class ESIndexAPITest {
 		esIndexAPI.createIndex(indexName);
 
 		//Create a snapshot and close the index (becuase the upload needs the index to be closed)
-		esIndexAPI.createSnapshot(ESIndexAPI.BACKUP_REPOSITORY, "backup", indexName);
+		esIndexAPI.createSnapshot(BACKUP_REPOSITORY, "backup", indexName);
 		esIndexAPI.closeIndex(indexName);
 
 		//Upload the snapshot
@@ -219,7 +220,7 @@ public class ESIndexAPITest {
 	public void uploadSnapshotTest_alreadyExistingIndex() throws IOException, InterruptedException, ExecutionException{
 		String indexName = getLiveIndex();
 		File snapshot = null;
-		snapshot = esIndexAPI.createSnapshot(ESIndexAPI.BACKUP_REPOSITORY, "backup", indexName);
+		snapshot = esIndexAPI.createSnapshot(BACKUP_REPOSITORY, "backup", indexName);
 		ZipFile file = new ZipFile(snapshot.getAbsolutePath());
 		String pathToRepo = getPathToRepo();
 		File tempDir = new File(pathToRepo);

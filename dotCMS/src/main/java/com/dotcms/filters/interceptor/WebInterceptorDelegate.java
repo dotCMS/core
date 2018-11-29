@@ -31,7 +31,7 @@ public interface WebInterceptorDelegate extends WebInterceptorAware {
      *         of the interceptor, returns {@code true}. Otherwise, returns,
      *         {@code false}.
      */
-    boolean intercept(final HttpServletRequest request,
+    DelegateResult intercept(final HttpServletRequest request,
                       final HttpServletResponse response) throws IOException;
 
     /**
@@ -63,4 +63,36 @@ public interface WebInterceptorDelegate extends WebInterceptorAware {
      * @param webInterceptorName webInterceptorName {@link WebInterceptor} to be move
      */
     void moveToLast(final String webInterceptorName);
+
+    /**
+     * Encapsulates the delegate result, if shouldContinue
+     * and also the request and the response (in case it was wrapped)
+     */
+    public class DelegateResult {
+
+        private final boolean             shouldContinue;
+        private final HttpServletRequest  request;
+        private final HttpServletResponse response;
+
+        public DelegateResult(final boolean shouldContinue,
+                      final HttpServletRequest request,
+                      final HttpServletResponse response) {
+
+            this.shouldContinue = shouldContinue;
+            this.request = request;
+            this.response = response;
+        }
+
+        public boolean isShouldContinue() {
+            return shouldContinue;
+        }
+
+        public HttpServletRequest getRequest() {
+            return request;
+        }
+
+        public HttpServletResponse getResponse() {
+            return response;
+        }
+    }
 } // E:O:F:WebInterceptorDelegate.
