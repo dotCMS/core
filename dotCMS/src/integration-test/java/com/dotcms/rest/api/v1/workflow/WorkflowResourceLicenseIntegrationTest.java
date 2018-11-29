@@ -2,6 +2,7 @@ package com.dotcms.rest.api.v1.workflow;
 
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.mock.response.MockAsyncResponse;
 import com.dotcms.repackage.javax.ws.rs.container.AsyncResponse;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
@@ -36,6 +37,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.swing.text.AbstractDocument;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -565,9 +567,10 @@ public class WorkflowResourceLicenseIntegrationTest {
     @Test
     public void Find_Available_Actions_Invalid_License() throws Exception {
         final HttpServletRequest request = mock(HttpServletRequest.class);
-        List<Contentlet> contetlets = APILocator.getContentletAPI().findAllContent(0,1);
-        Logger.error(this, "Contentlet: " + contetlets.get(0));
-        final Response response = nonLicenseWorkflowResource.findAvailableActions(request, contetlets.get(0).getInode(), null);
+        final ContentType contentType = APILocator.getContentTypeAPI(userAdmin).find("webPageContent");
+        final Contentlet contentlet = new ContentletDataGen(contentType.id()).setProperty("title", "content1").setProperty("body", "content1").nextPersisted();
+        Logger.error(this, "Contentlet: " + contentlet);
+        final Response response = nonLicenseWorkflowResource.findAvailableActions(request, contentlet.getInode(), null);
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
         ResponseEntityView ev = ResponseEntityView.class.cast(response.getEntity());
         List<WorkflowAction> actions = List.class.cast(ev.getEntity());
