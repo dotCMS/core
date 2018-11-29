@@ -114,15 +114,9 @@ public class RelationshipUtilTest {
     }
 
     private Contentlet createContentlet() throws DotDataException, DotSecurityException {
-        final ContentletDataGen contentletDataGen = new ContentletDataGen(
-                contentTypeAPI.find("Youtube").id());
-        Contentlet contentlet = contentletDataGen.next();
-
-        contentlet.setStringProperty("widgetTitle", "New YouTube Content");
-        contentlet.setStringProperty("url", "new-youtube-content");
-        contentlet = contentletDataGen.persist(contentlet);
-
-        return contentlet;
+        return new ContentletDataGen(contentTypeAPI.find("Youtube").id())
+                .setProperty("widgetTitle", "New YouTube Content")
+                .setProperty("url", "new-youtube-content").nextPersisted();
     }
 
 }

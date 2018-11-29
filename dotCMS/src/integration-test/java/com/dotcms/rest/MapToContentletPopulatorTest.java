@@ -62,7 +62,7 @@ public class MapToContentletPopulatorTest {
 
             contentlet = populator.populate(contentlet, properties);
 
-            assertTrue(UtilMethods.isSet(contentlet.get(Contentlet.RELATIONSHIP_KEY)));
+            assertNotNull(contentlet.get(Contentlet.RELATIONSHIP_KEY));
 
             Map<Relationship, List<Contentlet>>  resultMap = (Map<Relationship, List<Contentlet>> ) contentlet
                     .get(Contentlet.RELATIONSHIP_KEY);
@@ -102,7 +102,7 @@ public class MapToContentletPopulatorTest {
 
             contentlet = populator.populate(contentlet, properties);
 
-            assertTrue(UtilMethods.isSet(contentlet.get(Contentlet.RELATIONSHIP_KEY)));
+            assertNotNull(contentlet.get(Contentlet.RELATIONSHIP_KEY));
 
             Map<Relationship, List<Contentlet>>  resultMap = (Map<Relationship, List<Contentlet>> ) contentlet
                     .get(Contentlet.RELATIONSHIP_KEY);
@@ -155,7 +155,7 @@ public class MapToContentletPopulatorTest {
 
             contentlet = populator.populate(contentlet, properties);
 
-            assertTrue(UtilMethods.isSet(contentlet.get(Contentlet.RELATIONSHIP_KEY)));
+            assertNotNull(contentlet.get(Contentlet.RELATIONSHIP_KEY));
 
             Map<Relationship, List<Contentlet>>  resultMap = (Map<Relationship, List<Contentlet>> ) contentlet
                     .get(Contentlet.RELATIONSHIP_KEY);
@@ -199,12 +199,9 @@ public class MapToContentletPopulatorTest {
     }
 
     private Contentlet createContentlet(final ContentType contentType) {
-        final ContentletDataGen contentletDataGen = new ContentletDataGen(contentType.id());
-        Contentlet contentlet = contentletDataGen.next();
-        contentlet.setStringProperty("widgetTitle", "New YouTube Content");
-        contentlet.setStringProperty("url", "new-youtube-content");
-        contentlet = contentletDataGen.persist(contentlet);
-        return contentlet;
+        return new ContentletDataGen(contentType.id())
+                .setProperty("widgetTitle", "New YouTube Content")
+                .setProperty("url", "new-youtube-content").nextPersisted();
     }
 
 }
