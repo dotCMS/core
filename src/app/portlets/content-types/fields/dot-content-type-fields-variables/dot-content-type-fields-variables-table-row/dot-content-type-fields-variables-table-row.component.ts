@@ -92,17 +92,14 @@ export class DotContentTypeFieldsVariablesTableRowComponent implements OnInit {
      * @param {KeyboardEvent} $event
      * @memberof DotContentTypeFieldsVariablesTableRowComponent
      */
-    // tslint:disable-next-line:cyclomatic-complexity
     onPressEnter($event: KeyboardEvent): void {
         let elemRef: ElementRef;
-        if (this.fieldVariable.key === '' && $event.srcElement.classList.contains('field-variable-key-input')) {
+        if (this.keyInputInvalid($event)) {
             elemRef = this.keyCell;
-        } else if ((this.fieldVariable.key !== '' && $event.srcElement.classList.contains('field-variable-key-input')) ||
-            (this.fieldVariable.key !== '' && this.fieldVariable.value === '')) {
-            elemRef = this.valueCell;
-        } else if (this.fieldVariable.key !== '' && this.fieldVariable.value !== '') {
-            elemRef = this.saveButton;
+        } else if (this.fieldVariable.key !== '') {
+            elemRef = this.keyInputValid($event);
         }
+
         setTimeout(() => {
             elemRef.nativeElement.click();
         });
@@ -118,5 +115,20 @@ export class DotContentTypeFieldsVariablesTableRowComponent implements OnInit {
 
     private isFieldDisabled(): boolean {
         return this.fieldVariable.key === '' || this.fieldVariable.value === '' ? true : false;
+    }
+
+    private keyInputInvalid($event: KeyboardEvent): boolean {
+        return this.fieldVariable.key === '' && $event.srcElement.classList.contains('field-variable-key-input');
+    }
+
+    // tslint:disable-next-line:cyclomatic-complexity
+    private keyInputValid($event: KeyboardEvent): ElementRef {
+        let elemRef: ElementRef;
+        if ($event.srcElement.classList.contains('field-variable-key-input') || this.fieldVariable.value === '') {
+            elemRef = this.valueCell;
+        } else if (this.fieldVariable.value !== '') {
+            elemRef = this.saveButton;
+        }
+        return elemRef;
     }
 }
