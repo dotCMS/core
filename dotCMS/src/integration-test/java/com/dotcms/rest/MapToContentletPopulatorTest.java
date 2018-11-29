@@ -58,7 +58,7 @@ public class MapToContentletPopulatorTest {
         try {
             final Map<String, Object> properties = new HashMap<>();
             properties.put(Contentlet.STRUCTURE_INODE_KEY, contentType.id());
-            properties.put("Products-Youtube", "+Youtube.widgetTitle:YouTube, " + contentlet.getIdentifier());
+            properties.put("Products-Youtube", "+Youtube.url:new-youtube-content, " + contentlet.getIdentifier());
 
             contentlet = populator.populate(contentlet, properties);
 

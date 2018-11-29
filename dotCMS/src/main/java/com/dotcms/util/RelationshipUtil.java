@@ -84,7 +84,7 @@ public class RelationshipUtil {
 
         //Filter can be an identifier or a lucene query (comma separated)
         for (final String elem : filter.split(StringPool.COMMA)) {
-            if (UUIDUtil.isUUID(elem) && !relatedContentlets.containsKey(elem)) {
+            if (UUIDUtil.isUUID(elem.trim()) && !relatedContentlets.containsKey(elem.trim())) {
                 final Identifier identifier = identifierAPI.find(elem.trim());
                 final Contentlet relatedContentlet = contentletAPI
                         .findContentletForLanguage(language, identifier);
