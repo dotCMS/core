@@ -181,7 +181,7 @@ describe('LoginAsComponent', () => {
         fixture.detectChanges();
 
         const searchableDropdown = de.query(By.css('dot-searchable-dropdown'));
-        searchableDropdown.componentInstance.pageChange.emit({
+        searchableDropdown.triggerEventHandler('pageChange', {
             filter: 'filter',
             first: 1
         });
@@ -195,7 +195,7 @@ describe('LoginAsComponent', () => {
         fixture.detectChanges();
 
         const searchableDropdown = de.query(By.css('dot-searchable-dropdown'));
-        searchableDropdown.componentInstance.filterChange.emit('new filter');
+        searchableDropdown.triggerEventHandler('filterChange', 'new filter');
 
         expect(paginatorService.getWithOffset).toHaveBeenCalledWith(0);
         expect(paginatorService.filter).toEqual('new filter');
@@ -275,5 +275,18 @@ describe('LoginAsComponent', () => {
 
         error = de.query(By.css('.login-as__error-message'));
         expect(error.nativeElement.textContent).toBe('wrong password');
+    });
+
+    it('should clean error after user selection change', () => {
+        comp.visible = true;
+        comp.errorMessage = 'Error messsage';
+        fixture.detectChanges();
+
+        const searchableDropdown = de.query(By.css('dot-searchable-dropdown'));
+        searchableDropdown.triggerEventHandler('change', {
+            requestPassword: false
+        });
+
+        expect(comp.errorMessage).toEqual('');
     });
 });

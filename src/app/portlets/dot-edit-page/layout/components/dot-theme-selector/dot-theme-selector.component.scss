@@ -4,20 +4,6 @@
 $theme-item-dimension: 240px;
 
 :host ::ng-deep {
-    .ui-dialog {
-        min-width: 1056px !important;
-    }
-
-    @media (max-width: 1100px) {
-        .ui-dialog {
-            min-width: calc(100vw - 5vw) !important;
-        }
-    }
-
-    .ui-dialog .ui-dialog-content {
-        padding: 17px $basic-padding + 12 $dialog-padding;
-    }
-
     dot-site-selector {
         margin-left: 12px;
 
@@ -28,9 +14,18 @@ $theme-item-dimension: 240px;
         }
     }
 
-    .ui-datagrid-content {
-        max-width: 1056px;
+    .dialog__content {
+        min-width: 1096px;
+        padding: 17px $basic-padding + 12 $dialog-padding;
+    }
 
+    @media (max-width: 1100px) {
+        .dialog__content {
+            min-width: calc(100vw - 5vw) !important;
+        }
+    }
+
+    .ui-datagrid-content {
         .ui-g {
             margin: 0;
         }

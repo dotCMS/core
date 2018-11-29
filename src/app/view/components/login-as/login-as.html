@@ -5,7 +5,6 @@
     (hide)="close()"
 >
     <div class="login-as">
-        the error: {{errorMessage}}
         <!--TODO: manage errors on required fields and errors messages -->
         <p class="login-as__error-message" *ngIf="errorMessage">{{ errorMessage }}</p>
         <form [formGroup]="form" (ngSubmit)="doLoginAs()" id="login-as-form" #formEl="ngForm" novalidate>
