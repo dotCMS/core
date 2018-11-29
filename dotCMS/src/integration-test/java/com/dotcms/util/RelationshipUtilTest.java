@@ -59,8 +59,7 @@ public class RelationshipUtilTest {
         assertNotNull(testResults);
         assertNotNull(expectedResults);
         assertEquals(expectedResults.size(), testResults.size());
-        testResults.forEach(contentlet -> assertTrue(expectedResults.contains(contentlet)));
-
+        assertTrue(testResults.stream().allMatch(contentlet -> expectedResults.contains(contentlet)));
     }
 
     @Test
@@ -80,7 +79,7 @@ public class RelationshipUtilTest {
             assertNotNull(testResults);
             assertNotNull(expectedResults);
             assertEquals(expectedResults.size(), testResults.size());
-            testResults.forEach(elem -> assertTrue(expectedResults.contains(elem)));
+            assertTrue(testResults.stream().allMatch(elem -> expectedResults.contains(elem)));
         } finally {
             if(contentlet != null && contentlet.getInode() != null){
                 ContentletDataGen.remove(contentlet);
@@ -105,7 +104,7 @@ public class RelationshipUtilTest {
             assertNotNull(testResults);
             assertNotNull(expectedResults);
             assertEquals(expectedResults.size(), testResults.size());
-            testResults.forEach(elem -> assertTrue(expectedResults.contains(elem)));
+            assertTrue(testResults.stream().allMatch(elem -> expectedResults.contains(elem)));
         } finally {
             if (contentlet != null && contentlet.getInode() != null) {
                 ContentletDataGen.remove(contentlet);
