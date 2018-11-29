@@ -21,6 +21,7 @@ import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
@@ -136,6 +137,7 @@ public class UserAPITest extends IntegrationTestBase {
 		 */
 		Host host = new Host();
 		host.setHostname("test"+id+".demo.dotcms.com");
+		host.setIndexPolicy(IndexPolicy.FORCE);
 		host=hostAPI.save(host, systemUser, false);
 
 		/**
@@ -413,6 +415,7 @@ public class UserAPITest extends IntegrationTestBase {
 		contentAsset.setProperty(HTMLPageAssetAPIImpl.TEMPLATE_FIELD, template.getIdentifier());
 		contentAsset.setLanguageId(langId);
 		contentAsset.setFolder(testFolder.getInode());
+		contentAsset.setIndexPolicy(IndexPolicy.FORCE);
 		contentAsset=conAPI.checkin(contentAsset, userToDelete, false);
 		conAPI.publish(contentAsset, userToDelete, false);
 
@@ -427,6 +430,7 @@ public class UserAPITest extends IntegrationTestBase {
 		contentAsset2.setLanguageId(langId);
 		contentAsset2.setProperty("body", title);
 		contentAsset2.setFolder(testFolder.getInode());
+		contentAsset2.setIndexPolicy(IndexPolicy.FORCE);
 		contentAsset2=conAPI.checkin(contentAsset2, userToDelete, false);
 		conAPI.publish(contentAsset2, userToDelete, false);
 
@@ -530,8 +534,8 @@ public class UserAPITest extends IntegrationTestBase {
 		 * of the modified contentlets to finish processing.
 		 */
 
-		boolean isPageIndexed = APILocator.getContentletAPI().isInodeIndexed(page.getInode(), false);
-		Logger.info(this, "IsPageIndexed: " + isPageIndexed);
+//		boolean isPageIndexed = APILocator.getContentletAPI().isInodeIndexed(page.getInode(), false);
+//		Logger.info(this, "IsPageIndexed: " + isPageIndexed);
 
 		final StringBuilder luceneQuery = new StringBuilder("working:true +modUser:").append(userToDelete.getUserId());
 		final int limit = 0;
