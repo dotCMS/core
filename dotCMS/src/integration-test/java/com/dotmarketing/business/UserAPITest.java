@@ -534,9 +534,6 @@ public class UserAPITest extends IntegrationTestBase {
 		 * of the modified contentlets to finish processing.
 		 */
 
-//		boolean isPageIndexed = APILocator.getContentletAPI().isInodeIndexed(page.getInode(), false);
-//		Logger.info(this, "IsPageIndexed: " + isPageIndexed);
-
 		final StringBuilder luceneQuery = new StringBuilder("working:true +modUser:").append(userToDelete.getUserId());
 		final int limit = 0;
 		final int offset = -1;
