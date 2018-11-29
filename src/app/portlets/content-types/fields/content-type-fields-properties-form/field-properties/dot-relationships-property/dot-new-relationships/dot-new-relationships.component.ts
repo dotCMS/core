@@ -110,7 +110,7 @@ export class DotNewRelationshipsComponent implements OnInit, OnChanges {
                 this.contentType = contentType;
             });
         } else {
-            this.contentType = undefined;
+            this.contentType = null;
         }
     }
 }
