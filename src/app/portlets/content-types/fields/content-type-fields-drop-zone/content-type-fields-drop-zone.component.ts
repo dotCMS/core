@@ -20,7 +20,7 @@ import { DotEventsService } from '@services/dot-events/dot-events.service';
 import { FieldDivider } from '@portlets/content-types/fields/shared/field-divider.interface';
 import { takeUntil, take } from 'rxjs/operators';
 import { Subject } from 'rxjs';
-import { DotFieldVariableParams } from '../service/dot-field-variables.service';
+import { DotFieldVariableParams } from '../dot-content-type-fields-variables/models/dot-field-variable-params.interface';
 
 /**
  * Display all the Field Types

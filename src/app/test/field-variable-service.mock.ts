@@ -1,6 +1,6 @@
 import { Observable, of } from 'rxjs';
 import * as _ from 'lodash';
-import { DotFieldVariable } from '@portlets/content-types/fields/shared/dot-field-variable.interface';
+import { DotFieldVariable } from '@portlets/content-types/fields/dot-content-type-fields-variables/models/dot-field-variable.interface';
 
 export const mockFieldVariables: DotFieldVariable[] = [
     {
@@ -26,7 +26,7 @@ export const mockFieldVariables: DotFieldVariable[] = [
     },
 ];
 
-export class FieldVariablesServiceMock {
+export class DotFieldVariablesServiceMock {
     load(): Observable<DotFieldVariable[]> {
         return of(_.cloneDeep(mockFieldVariables));
     }

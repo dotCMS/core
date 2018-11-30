@@ -3,13 +3,8 @@ import { Observable } from 'rxjs';
 import { CoreWebService } from 'dotcms-js';
 import { RequestMethod } from '@angular/http';
 import { pluck } from 'rxjs/operators';
-import { DotFieldVariable } from '../shared/dot-field-variable.interface';
-
-export interface DotFieldVariableParams {
-    contentTypeId: string;
-    fieldId: string;
-    variable?: DotFieldVariable;
-}
+import { DotFieldVariable } from '../models/dot-field-variable.interface';
+import { DotFieldVariableParams } from '../models/dot-field-variable-params.interface';
 
 /**
  * Provide method to handle with the Field Variables

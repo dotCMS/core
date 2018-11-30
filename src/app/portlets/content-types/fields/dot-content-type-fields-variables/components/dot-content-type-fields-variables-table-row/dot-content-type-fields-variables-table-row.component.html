@@ -1,11 +1,12 @@
-<tr>
-    <td #keyCell [pEditableColumn]="fieldVariable.key" [pEditableColumnField]="'key'">
+<tr [ngClass]="{'field-variable-row-highlight': rowActiveHighlight}">
+    <td #keyCell [pEditableColumn]="fieldVariable.key" pEditableColumnField="key">
         <p-cellEditor>
             <ng-template pTemplate="input">
                 <input pInputText
                     class="field-variable-key-input"
                     type="text"
                     [placeholder]="messages['contenttypes.field.variables.key_input.placeholder']"
+                    (blur)="rowActiveHighlight = false"
                     (focus)="editFieldInit()"
                     (keyup)="editFieldInit()"
                     (keydown.escape)="onCancel($event)"
@@ -22,13 +23,14 @@
             </ng-template>
         </p-cellEditor>
     </td>
-    <td #valueCell [pEditableColumn]="fieldVariable.value" [pEditableColumnField]="'value'">
+    <td #valueCell [pEditableColumn]="fieldVariable.value" pEditableColumnField="value">
         <p-cellEditor>
             <ng-template pTemplate="input">
                 <input pInputText
                     class="field-variable-value-input"
                     type="text"
                     [placeholder]="messages['contenttypes.field.variables.value_input.placeholder']"
+                    (blur)="rowActiveHighlight = false"
                     (focus)="editFieldInit()"
                     (keyup)="editFieldInit()"
                     (keydown.escape)="onCancel($event)"
@@ -49,12 +51,16 @@
         <div id="content-type-fields__variables-actions-edit" *ngIf="showEditMenu">
             <button pButton secondary tiny
                 [label]="messages['contenttypes.action.cancel']"
+                (blur)="rowActiveHighlight = false"
+                (focus)="rowActiveHighlight = true"
                 (click)="onCancel($event)"></button>
             <button #saveButton
                 pButton tiny
                 class="content-type-fields__variables-actions-edit-save"
                 [label]="messages['contenttypes.action.save']"
                 [disabled]="saveDisabled"
+                (blur)="rowActiveHighlight = false"
+                (focus)="rowActiveHighlight = true"
                 (click)="saveVariable()"></button>
         </div>
         <div id="content-type-fields__variables-actions-main" *ngIf="!showEditMenu">

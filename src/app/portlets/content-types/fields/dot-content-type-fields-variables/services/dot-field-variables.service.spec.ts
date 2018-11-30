@@ -1,8 +1,9 @@
 import { Response, ResponseOptions, ConnectionBackend } from '@angular/http';
 import { MockBackend } from '@angular/http/testing';
-import { DotFieldVariablesService, DotFieldVariableParams } from './dot-field-variables.service';
-import { DOTTestBed } from '../../../../test/dot-test-bed';
-import { DotFieldVariable } from '../shared/dot-field-variable.interface';
+import { DotFieldVariablesService } from './dot-field-variables.service';
+import { DOTTestBed } from '../../../../../test/dot-test-bed';
+import { DotFieldVariable } from '../models/dot-field-variable.interface';
+import { DotFieldVariableParams } from '../models/dot-field-variable-params.interface';
 
 describe('FieldVariablesService', () => {
     beforeEach(() => {

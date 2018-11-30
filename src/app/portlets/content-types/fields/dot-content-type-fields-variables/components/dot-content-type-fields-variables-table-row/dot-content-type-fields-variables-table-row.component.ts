@@ -7,9 +7,9 @@ import {
     ViewChild,
     ElementRef
 } from '@angular/core';
-import { DotMessageService } from '../../../../../api/services/dot-messages-service';
+import { DotMessageService } from '../../../../../../api/services/dot-messages-service';
 import { take } from 'rxjs/operators';
-import { DotFieldVariable } from '../../shared/dot-field-variable.interface';
+import { DotFieldVariable } from '../../models/dot-field-variable.interface';
 
 @Component({
     selector: 'dot-content-type-fields-variables-table-row',
@@ -36,6 +36,7 @@ export class DotContentTypeFieldsVariablesTableRowComponent implements OnInit {
     @Output()
     delete: EventEmitter<number> = new EventEmitter(false);
 
+    rowActiveHighlight: Boolean = false;
     showEditMenu: Boolean = false;
     saveDisabled: Boolean = false;
     messages: { [key: string]: string } = {};
@@ -73,6 +74,7 @@ export class DotContentTypeFieldsVariablesTableRowComponent implements OnInit {
      * @memberof DotContentTypeFieldsVariablesTableRowComponent
      */
     editFieldInit(): void {
+        this.rowActiveHighlight = true;
         this.showEditMenu = true;
         this.saveDisabled = this.isFieldDisabled();
     }
@@ -97,7 +99,7 @@ export class DotContentTypeFieldsVariablesTableRowComponent implements OnInit {
         if (this.keyInputInvalid($event)) {
             elemRef = this.keyCell;
         } else if (this.fieldVariable.key !== '') {
-            elemRef = this.keyInputValid($event);
+            elemRef = this.getElementToFocus($event);
         }
 
         setTimeout(() => {
@@ -118,17 +120,21 @@ export class DotContentTypeFieldsVariablesTableRowComponent implements OnInit {
     }
 
     private keyInputInvalid($event: KeyboardEvent): boolean {
-        return this.fieldVariable.key === '' && $event.srcElement.classList.contains('field-variable-key-input');
+        return this.fieldVariable.key === '' && this.isKeyInput($event);
     }
 
     // tslint:disable-next-line:cyclomatic-complexity
-    private keyInputValid($event: KeyboardEvent): ElementRef {
+    private getElementToFocus($event: KeyboardEvent): ElementRef {
         let elemRef: ElementRef;
-        if ($event.srcElement.classList.contains('field-variable-key-input') || this.fieldVariable.value === '') {
+        if (this.isKeyInput($event) || this.fieldVariable.value === '') {
             elemRef = this.valueCell;
         } else if (this.fieldVariable.value !== '') {
             elemRef = this.saveButton;
         }
         return elemRef;
+    }
+
+    private isKeyInput($event: KeyboardEvent): boolean {
+        return $event.srcElement.classList.contains('field-variable-key-input');
     }
 }
