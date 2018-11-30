@@ -10,6 +10,8 @@ import {
 import { DotUploadFile } from '../models/dot-upload-file.model';
 import { FileSystemEntry, FileSystemDirectoryEntry } from '../models/file-system.model';
 
+const OVER_CLASS = 'over';
+
 @Directive({
     selector: '[dotDotDndFilesFolders]'
 })
@@ -33,7 +35,6 @@ export class DotDndFilesFoldersDirective implements OnInit {
     onDragLeave(evt) {
         evt.preventDefault();
         evt.stopPropagation();
-        // do some stuff
         this.removeOverClass();
     }
 
@@ -60,19 +61,15 @@ export class DotDndFilesFoldersDirective implements OnInit {
     }
 
     private addOverClass(): void {
-        if (!this.el.nativeElement.classList.contains('over')) {
-            this.el.nativeElement.classList.add('over');
+        if (!this.el.nativeElement.classList.contains(OVER_CLASS)) {
+            this.el.nativeElement.classList.add(OVER_CLASS);
         }
     }
 
     private removeOverClass(): void {
-        if (this.el.nativeElement.classList.contains('over')) {
-            this.el.nativeElement.classList.remove('over');
+        if (this.el.nativeElement.classList.contains(OVER_CLASS)) {
+            this.el.nativeElement.classList.remove(OVER_CLASS);
         }
-    }
-
-    private addToQueue(item: DotUploadFile) {
-        this.files.push(item);
     }
 
     private traverseFileTree(item: FileSystemEntry, path: string) {
@@ -92,7 +89,7 @@ export class DotDndFilesFoldersDirective implements OnInit {
                         if (entries.length === 0) {
                             const toUpload: DotUploadFile = new DotUploadFile(path, item);
                             this.zone.run(() => {
-                                this.addToQueue(toUpload);
+                                this.files.push(toUpload);
                             });
                         } else {
                             for (let i = 0; i < entries.length; i++) {
