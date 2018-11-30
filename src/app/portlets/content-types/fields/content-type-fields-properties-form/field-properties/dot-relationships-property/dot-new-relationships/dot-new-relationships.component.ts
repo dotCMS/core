@@ -59,7 +59,6 @@ export class DotNewRelationshipsComponent implements OnInit, OnChanges {
     }
 
     ngOnChanges(changes: SimpleChanges): void {
-        console.log('changes', changes);
         if (changes.velocityVar) {
             this.loadContentType(changes.velocityVar.currentValue);
         }
