@@ -9,8 +9,8 @@ import { DotPageSelectorService, DotPageAsset } from './service/dot-page-selecto
 import { DotPageSelectorResults, DotPageSeletorItem } from './models/dot-page-selector.models';
 import { DotMessageService } from '@services/dot-messages-service';
 
-const VALID_INPUT_REGEX = /^[a-zA-Z0-9_/-]*$/g;
-const REPLACE_INPUT_REGEX = /[^a-zA-Z0-9_/-]/g;
+const NO_SPECIAL_CHAR = /^[a-zA-Z0-9._/-]*$/g;
+const REPLACE_SPECIAL_CHAR = /[^a-zA-Z0-9._/-]/g;
 
 /**
  * Search and select a page asset
@@ -108,6 +108,7 @@ export class DotPageSelectorComponent implements ControlValueAccessor {
      */
     search(param: any): void {
         if (this.cleanInput(param).length) {
+            debugger;
             this.dotPageSelectorService
                 .search(this.cleanQuery(param.query))
                 .pipe(take(1))
@@ -202,6 +203,6 @@ export class DotPageSelectorComponent implements ControlValueAccessor {
     }
 
     private cleanQuery(query: string): string {
-        return !VALID_INPUT_REGEX.test(query) ? query.replace(REPLACE_INPUT_REGEX, '') : query;
+        return !NO_SPECIAL_CHAR.test(query) ? query.replace(REPLACE_SPECIAL_CHAR, '') : query;
     }
 }
