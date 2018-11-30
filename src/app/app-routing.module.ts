@@ -46,10 +46,10 @@ const PORTLETS_ANGULAR = [
         loadChildren: '@portlets/dot-rules/dot-rules.module#DotRulesModule'
     },
     {
-        canActivate: [MenuGuardService],
-        canActivateChild: [MenuGuardService],
+        // canActivate: [MenuGuardService],
+        // canActivateChild: [MenuGuardService],
         path: 'new-site-browser',
-        loadChildren: '@portlets/dot-browser/dot-browser.module#DotBrowserModule'
+        loadChildren: '@portlets/dot-site-browser/dot-site-browser.module#DotSiteBrowserModule'
     },
     {
         path: 'pl',
