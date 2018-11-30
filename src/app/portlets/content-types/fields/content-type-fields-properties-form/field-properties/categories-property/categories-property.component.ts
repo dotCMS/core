@@ -4,6 +4,7 @@ import { FieldProperty } from '../field-properties.model';
 import { PaginatorService } from '@services/paginator';
 import { FormGroup } from '@angular/forms';
 import { Category } from '../../../shared';
+import { take } from 'rxjs/operators';
 
 /**
  * List all the categories and allow select one.
@@ -39,6 +40,7 @@ export class CategoriesPropertyComponent implements OnInit {
                 'contenttypes.field.properties.category.label',
                 'contenttypes.field.properties.category.error.required'
             ])
+            .pipe(take(1))
             .subscribe((res) => {
                 this.i18nMessages = res;
             });

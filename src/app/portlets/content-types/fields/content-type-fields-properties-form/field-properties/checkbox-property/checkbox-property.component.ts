@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { FieldProperty } from '../field-properties.model';
 import { DotMessageService } from '@services/dot-messages-service';
 import { FormGroup } from '@angular/forms';
+import { take } from 'rxjs/operators';
 
 @Component({
     selector: 'dot-checkbox-property',
@@ -34,6 +35,7 @@ export class CheckboxPropertyComponent implements OnInit {
                 'contenttypes.field.properties.listed.label',
                 'contenttypes.field.properties.unique.label'
             ])
+            .pipe(take(1))
             .subscribe((res) => {
                 this.i18nMessages = res;
             });

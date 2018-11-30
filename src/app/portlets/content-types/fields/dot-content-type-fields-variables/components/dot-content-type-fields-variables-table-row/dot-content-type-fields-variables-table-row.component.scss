@@ -1,0 +1,36 @@
+@import "variables";
+
+:host {
+    display: contents;
+
+    input {
+        width: 100%;
+    }
+
+    .empty-placeholder {
+        color: $gray-light;
+    }
+
+    .field-variable-row-highlight {
+        background-color: $gray-bg;
+    }
+}
+
+.content-type-fields__variables-actions {
+
+    & > div {
+        text-align: right;
+    }
+
+    button {
+        margin-right: $basic-padding;
+
+        &:last-child {
+            margin-right: 0;
+        }
+    }
+
+    dot-icon-button button {
+        margin-right: 0;
+    }
+}

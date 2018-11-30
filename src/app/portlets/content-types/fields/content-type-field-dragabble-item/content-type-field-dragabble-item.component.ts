@@ -3,6 +3,7 @@ import { Component, Input, Output, EventEmitter, HostListener, OnInit } from '@a
 import { ContentTypeField } from '../shared';
 import { DotMessageService } from '@services/dot-messages-service';
 import { FieldService } from '../service';
+import { take } from 'rxjs/operators';
 
 /**
  * This display field after being dropped into a Content Type Drop zone
@@ -37,6 +38,7 @@ export class ContentTypesFieldDragabbleItemComponent implements OnInit {
                 'contenttypes.action.edit',
                 'contenttypes.action.delete'
             ])
+            .pipe(take(1))
             .subscribe((res) => {
                 this.i18nMessages = res;
                 this.fieldAttributes = [

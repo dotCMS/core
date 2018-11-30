@@ -158,7 +158,7 @@ export class ContentTypesEditComponent implements OnInit, OnDestroy {
      * @memberof ContentTypesEditComponent
      */
     setTemplateInfo(): void {
-        this.dotMessageService.messageMap$.subscribe(() => {
+        this.dotMessageService.messageMap$.pipe(take(1)).subscribe(() => {
             const type = this.contentTypesInfoService.getLabel(this.data.baseType);
             const contentTypeName = this.messagesKey[`contenttypes.content.${type}`];
 
@@ -221,13 +221,13 @@ export class ContentTypesEditComponent implements OnInit, OnDestroy {
     removeFields(fieldsToDelete: ContentTypeField[]): void {
         this.fieldService
             .deleteFields(this.data.id, fieldsToDelete)
-            .pipe(pluck('fields'))
+            .pipe(pluck('fields'), take(1))
             .subscribe(
                 (fields: ContentTypeField[]) => {
                     this.fields = fields;
                 },
                 (err: ResponseView) => {
-                    this.dotHttpErrorManagerService.handle(err).subscribe(() => {});
+                    this.dotHttpErrorManagerService.handle(err).pipe(take(1)).subscribe(() => {});
                 }
             );
     }
@@ -238,14 +238,14 @@ export class ContentTypesEditComponent implements OnInit, OnDestroy {
      * @memberof ContentTypesEditComponent
      */
     saveFields(fieldsToSave: ContentTypeField[]): void {
-        this.fieldService.saveFields(this.data.id, fieldsToSave).subscribe(
+        this.fieldService.saveFields(this.data.id, fieldsToSave).pipe(take(1)).subscribe(
             (fields: ContentTypeField[]) => {
                 if (this.updateOrNewField(fieldsToSave)) {
                     this.fields = fields;
                 }
             },
             (err: ResponseView) => {
-                this.dotHttpErrorManagerService.handle(err).subscribe(() => {});
+                this.dotHttpErrorManagerService.handle(err).pipe(take(1)).subscribe(() => {});
             }
         );
     }
@@ -301,7 +301,7 @@ export class ContentTypesEditComponent implements OnInit, OnDestroy {
     }
 
     private handleHttpError(err: ResponseView) {
-        this.dotHttpErrorManagerService.handle(err).subscribe((_handled: DotHttpErrorHandled) => {
+        this.dotHttpErrorManagerService.handle(err).pipe(take(1)).subscribe((_handled: DotHttpErrorHandled) => {
             this.dotRouterService.gotoPortlet('/content-types-angular');
         });
     }
@@ -309,7 +309,7 @@ export class ContentTypesEditComponent implements OnInit, OnDestroy {
     private updateContentType(value: any): void {
         const data = Object.assign({}, value, { id: this.data.id });
 
-        this.crudService.putData(`v1/contenttype/id/${this.data.id}`, data).subscribe(
+        this.crudService.putData(`v1/contenttype/id/${this.data.id}`, data).pipe(take(1)).subscribe(
             (contentType: ContentType) => {
                 this.data = contentType;
                 this.show = false;

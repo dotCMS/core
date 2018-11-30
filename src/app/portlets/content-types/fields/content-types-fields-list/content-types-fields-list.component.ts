@@ -1,6 +1,6 @@
 import { FieldService } from '../service';
 import { Component, OnInit } from '@angular/core';
-import { filter, flatMap, toArray } from 'rxjs/operators';
+import { filter, flatMap, toArray, take } from 'rxjs/operators';
 
 import { ContentTypeField, FieldType } from '../';
 
@@ -27,12 +27,14 @@ export class ContentTypesFieldsListComponent implements OnInit {
             .pipe(
                 flatMap((fields: FieldType[]) => fields),
                 filter((field: FieldType) => field.id !== 'tab_divider'),
-                toArray()
-            ).subscribe((fields: FieldType[]) => this.fieldTypes = fields.map(fieldType => {
+                toArray(),
+                take(1))
+            .subscribe((fields: FieldType[]) => this.fieldTypes = fields.map(fieldType => {
                 return {
                     clazz: fieldType.clazz,
                     name: fieldType.label
                 };
             }));
     }
+
 }

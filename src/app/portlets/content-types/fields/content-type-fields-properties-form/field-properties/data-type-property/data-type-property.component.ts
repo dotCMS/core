@@ -3,6 +3,7 @@ import { FormGroup } from '@angular/forms';
 import { DotMessageService } from '@services/dot-messages-service';
 import { FieldProperty } from '../field-properties.model';
 import { DATA_TYPE_PROPERTY_INFO } from '../../../service/data-type-property-info';
+import { take } from 'rxjs/operators';
 
 @Component({
     selector: 'dot-data-type-property',
@@ -34,6 +35,7 @@ export class DataTypePropertyComponent implements OnInit {
                 'contenttypes.field.properties.data_type.values.large_text',
                 'contenttypes.field.properties.data_type.values.system'
             ])
+            .pipe(take(1))
             .subscribe((res) => {
                 this.i18nMessages = res;
             });

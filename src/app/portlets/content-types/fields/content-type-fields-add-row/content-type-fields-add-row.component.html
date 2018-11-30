@@ -1,11 +1,12 @@
 <div class="dot-add-rows__container">
     <div class="dot-add-rows-button__container" *ngIf="rowState === 'add'"
         [ngClass]="{'dot-add-rows__add': rowState === 'add'}">
-        <button type="button" pButton link
-            label="{{ i18nMessages['contenttypes.dropzone.rows.add'] }}" (click)="setColumnSelect()"
-            icon="fa fa-plus"
-            [disabled]="disabled">
-        </button>
+        <p-splitButton 
+            label="{{ i18nMessages['contenttypes.dropzone.rows.add'] }}" 
+            icon="fa fa-plus" 
+            (onClick)="setColumnSelect()"
+            [disabled]="disabled"
+            [model]="actions"></p-splitButton>
     </div>
 
     <div class="dot-add-rows-columns-list__container" *ngIf="rowState === 'select'">

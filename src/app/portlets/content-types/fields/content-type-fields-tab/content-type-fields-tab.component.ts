@@ -3,6 +3,7 @@ import { FieldTab, ContentTypeField } from '../shared';
 import { DotMessageService } from '@services/dot-messages-service';
 import { FieldDivider } from '@portlets/content-types/fields/shared/field-divider.interface';
 import { DotAlertConfirmService } from '@services/dot-alert-confirm/dot-alert-confirm.service';
+import { take } from 'rxjs/operators';
 
 /**
  * Display Tab Field
@@ -41,6 +42,7 @@ export class ContentTypeFieldsTabComponent implements OnInit {
                 'contenttypes.content.field',
                 'contenttypes.action.cancel'
             ])
+            .pipe(take(1))
             .subscribe((res) => {
                 this.i18nMessages = res;
             });

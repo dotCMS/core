@@ -17,8 +17,7 @@ import { DragulaService } from 'ng2-dragula';
 import {
     FieldService,
     FieldDragDropService,
-    FieldPropertyService,
-    FieldVariablesService
+    FieldPropertyService
 } from './fields/service';
 import { ContentTypeFieldsAddRowModule } from './fields/content-type-fields-add-row';
 import { ContentTypeEditResolver } from './edit/content-types-edit-resolver.service';
@@ -26,7 +25,6 @@ import { ContentTypeEditResolver } from './edit/content-types-edit-resolver.serv
 import {
     ContentTypeFieldsDropZoneComponent,
     ContentTypeFieldsPropertiesFormComponent,
-    ContentTypeFieldsVariablesComponent,
     ContentTypeFieldsRowComponent,
     ContentTypeFieldsTabComponent,
     ContentTypesFieldDragabbleItemComponent,
@@ -35,7 +33,6 @@ import {
 import {
     ButtonModule,
     ConfirmDialogModule,
-    DataTableModule,
     DialogModule,
     DropdownModule,
     InputTextModule,
@@ -56,7 +53,6 @@ import {
     RegexCheckPropertyComponent,
     ValuesPropertyComponent
 } from './fields/content-type-fields-properties-form/field-properties';
-import { AddVariableFormComponent } from './fields/content-type-fields-variables/add-variable-form';
 
 import { DotAddToBundleModule } from '@components/_common/dot-add-to-bundle/dot-add-to-bundle.module';
 import { DotBaseTypeSelectorModule } from '@components/dot-base-type-selector/dot-base-type-selector.module';
@@ -77,6 +73,7 @@ import { MdInputTextModule } from '@directives/md-inputtext/md-input-text.module
 import { PushPublishContentTypesDialogModule } from '@components/_common/push-publish-dialog/push-publish-dialog.module';
 import { SearchableDropDownModule } from '@components/_common/searchable-dropdown';
 import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
+import { DotContentTypeFieldsVariablesModule } from './fields/dot-content-type-fields-variables/dot-content-type-fields-variables.module';
 import {
     DotRelationshipsModule
 } from './fields/content-type-fields-properties-form/field-properties/dot-relationships-property/dot-relationships.module';
@@ -87,8 +84,6 @@ import {
         CheckboxPropertyComponent,
         ContentTypeFieldsDropZoneComponent,
         ContentTypeFieldsPropertiesFormComponent,
-        ContentTypeFieldsVariablesComponent,
-        AddVariableFormComponent,
         ContentTypeFieldsRowComponent,
         ContentTypeFieldsTabComponent,
         ContentTypesEditComponent,
@@ -122,7 +117,6 @@ import {
         CommonModule,
         ConfirmDialogModule,
         ContentTypesRoutingModule,
-        DataTableModule,
         DialogModule,
         DotDialogModule,
         DotIconModule,
@@ -154,6 +148,7 @@ import {
         DotBaseTypeSelectorModule,
         MdInputTextModule,
         DotAutofocusModule,
+        DotContentTypeFieldsVariablesModule
         DotRelationshipsModule
     ],
     providers: [
@@ -163,7 +158,6 @@ import {
         DragulaService,
         FieldDragDropService,
         FieldPropertyService,
-        FieldVariablesService,
         FieldService,
         FormatDateService
     ]

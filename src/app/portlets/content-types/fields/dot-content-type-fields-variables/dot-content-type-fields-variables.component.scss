@@ -1,0 +1,15 @@
+@import "variables";
+
+:host {
+    display: block;
+    width: 500px;
+
+    dot-action-button {
+        display: flex;
+        float: right;
+        position: relative;
+        right: $basic-padding * 2;
+        top: -$basic-padding * 3;
+        z-index: 1;
+    }
+}

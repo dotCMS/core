@@ -11,6 +11,9 @@ import {
 import { HotkeysService, Hotkey } from 'angular2-hotkeys';
 import { DotMessageService } from '@services/dot-messages-service';
 import { DotEventsService } from '@services/dot-events/dot-events.service';
+import { takeUntil, take } from 'rxjs/operators';
+import { Subject } from 'rxjs/internal/Subject';
+import { MenuItem } from 'primeng/primeng';
 
 /**
  * Display select columns row
@@ -28,6 +31,7 @@ export class ContentTypeFieldsAddRowComponent implements OnDestroy, OnInit {
     rowState = 'add';
     selectedColumnIndex = 0;
     i18nMessages = {};
+    actions: MenuItem[];
 
     @Input()
     columns: number[] = [1, 2, 3, 4];
@@ -43,6 +47,7 @@ export class ContentTypeFieldsAddRowComponent implements OnDestroy, OnInit {
     selectColums: EventEmitter<number> = new EventEmitter<number>();
     @ViewChild('colContainer')
     colContainerElem: ElementRef;
+    private destroy$: Subject<boolean> = new Subject<boolean>();
 
     constructor(
         private dotEventsService: DotEventsService,
@@ -53,13 +58,18 @@ export class ContentTypeFieldsAddRowComponent implements OnDestroy, OnInit {
     ngOnInit(): void {
         this.setKeyboardEvent('ctrl+a', this.setColumnSelect.bind(this));
         this.loadMessages();
-        this.dotEventsService.listen('add-row').subscribe(() => {
-            this.setColumnSelect();
-        });
+        this.dotEventsService
+            .listen('add-row')
+            .pipe(takeUntil(this.destroy$))
+            .subscribe(() => {
+                this.setColumnSelect();
+            });
     }
 
     ngOnDestroy(): void {
         this.removeHotKeys();
+        this.destroy$.next(true);
+        this.destroy$.complete();
     }
 
     /**
@@ -180,11 +190,35 @@ export class ContentTypeFieldsAddRowComponent implements OnDestroy, OnInit {
     }
 
     private loadMessages(): void {
-        const i18nKeys = [...this.toolTips, 'contenttypes.dropzone.rows.add'];
+        const i18nKeys = [
+            ...this.toolTips,
+            'contenttypes.dropzone.rows.add',
+            'contenttypes.dropzone.rows.tab_divider'
+        ];
 
-        this.dotMessageService.getMessages(i18nKeys).subscribe((res) => {
+        this.dotMessageService.getMessages(i18nKeys).pipe(take(1)).subscribe((res) => {
             this.i18nMessages = res;
+            this.loadActions();
         });
+    }
+
+    private loadActions(): void {
+        this.actions = [
+            {
+                label: this.i18nMessages['contenttypes.dropzone.rows.add'],
+                icon: 'fa fa-plus',
+                command: () => {
+                    this.setColumnSelect();
+                }
+            },
+            {
+                label: this.i18nMessages['contenttypes.dropzone.rows.tab_divider'],
+                icon: 'fa fa-plus',
+                command: () => {
+                    this.dotEventsService.notify('add-tab-divider');
+                }
+            }
+        ];
     }
 
     private getNumberColumnsSelected() {

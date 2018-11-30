@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { FieldProperty } from '../field-properties.model';
 import { DotMessageService } from '@services/dot-messages-service';
 import { FormGroup } from '@angular/forms';
+import { take } from 'rxjs/operators';
 
 @Component({
     selector: 'dot-default-value-property',
@@ -23,6 +24,7 @@ export class DefaultValuePropertyComponent implements OnInit {
                 'contenttypes.field.properties.default_value.immutable_date.error.format',
                 'contenttypes.field.properties.default_value.immutable_date_time.error.format'
             ])
+            .pipe(take(1))
             .subscribe((messages: any) => {
                 this.setErrorLabelMap(messages);
                 this.errorLabel = this.getErrorLabel(this.property.field.clazz);

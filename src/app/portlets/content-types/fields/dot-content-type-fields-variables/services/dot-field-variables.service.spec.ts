@@ -1,13 +1,14 @@
 import { Response, ResponseOptions, ConnectionBackend } from '@angular/http';
 import { MockBackend } from '@angular/http/testing';
-import { FieldVariablesService, FieldVariableParams } from './';
-import { DOTTestBed } from '../../../../test/dot-test-bed';
-import { FieldVariable } from '../content-type-fields-variables';
+import { DotFieldVariablesService } from './dot-field-variables.service';
+import { DOTTestBed } from '../../../../../test/dot-test-bed';
+import { DotFieldVariable } from '../models/dot-field-variable.interface';
+import { DotFieldVariableParams } from '../models/dot-field-variable-params.interface';
 
 describe('FieldVariablesService', () => {
     beforeEach(() => {
-        this.injector = DOTTestBed.resolveAndCreate([FieldVariablesService]);
-        this.fieldVariableService = this.injector.get(FieldVariablesService);
+        this.injector = DOTTestBed.resolveAndCreate([DotFieldVariablesService]);
+        this.fieldVariableService = this.injector.get(DotFieldVariablesService);
         this.backend = this.injector.get(ConnectionBackend) as MockBackend;
         this.backend.connections.subscribe((connection: any) => (this.lastConnection = connection));
     });
@@ -32,12 +33,12 @@ describe('FieldVariablesService', () => {
             ]
         };
 
-        const params: FieldVariableParams = {
+        const params: DotFieldVariableParams = {
             contentTypeId: '1b',
             fieldId: '1'
         };
 
-        this.fieldVariableService.load(params).subscribe((variables: FieldVariable[]) => {
+        this.fieldVariableService.load(params).subscribe((variables: DotFieldVariable[]) => {
             expect(variables).toEqual(mockResponse.entity);
             expect(0).toBe(this.lastConnection.request.method); // 2 is GET method
             expect(this.lastConnection.request.url)
@@ -64,7 +65,7 @@ describe('FieldVariablesService', () => {
                 }
         };
 
-        const params: FieldVariableParams = {
+        const params: DotFieldVariableParams = {
             contentTypeId: '1b',
             fieldId: '1',
             variable: {
@@ -73,7 +74,7 @@ describe('FieldVariablesService', () => {
             }
         };
 
-        this.fieldVariableService.save(params).subscribe((variables: FieldVariable) => {
+        this.fieldVariableService.save(params).subscribe((variables: DotFieldVariable) => {
             expect(variables).toEqual(mockResponse.entity);
             expect(1).toBe(this.lastConnection.request.method); // 1 is POST method
             expect(this.lastConnection.request.url)
@@ -95,7 +96,7 @@ describe('FieldVariablesService', () => {
             entity: []
         };
 
-        const params: FieldVariableParams = {
+        const params: DotFieldVariableParams = {
             contentTypeId: '1b',
             fieldId: '1',
             variable: {
@@ -105,7 +106,7 @@ describe('FieldVariablesService', () => {
             }
         };
 
-        this.fieldVariableService.delete(params).subscribe((_variables: FieldVariable) => {
+        this.fieldVariableService.delete(params).subscribe((_variables: DotFieldVariable) => {
             expect(3).toBe(this.lastConnection.request.method); // 3 is DELETE method
             expect(this.lastConnection.request.url)
                 .toContain(`v1/contenttype/${params.contentTypeId}/fields/id/${params.fieldId}/variables/id/${params.variable.id}`);
