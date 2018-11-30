@@ -548,7 +548,7 @@
                 for (let i = 0; i < arrayLength; i++) {
                     let contentlet = allLangContentlets[i];
                     let entry = storeData.items.filter(item => item.id[0] == contentlet.languageId);
-                    if(entry){
+                    if(entry != undefined && entry.length > 0){
                         let url = entry[0].value[0];
                         let newUrl = queryStringUrlReplacement(url, 'inode', contentlet.inode);
                             newUrl = queryStringUrlReplacement(url, 'identifier', contentlet.identifier);
