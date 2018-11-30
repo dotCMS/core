@@ -1,9 +1,9 @@
 package com.dotmarketing.portlets.folders.business;
 
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.rendering.velocity.services.ContainerLoader;
-import com.dotcms.rendering.velocity.services.PageLoader;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
@@ -16,14 +16,11 @@ import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.util.Constants;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-
-import java.util.List;
 
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
 import static com.dotmarketing.util.StringUtils.builder;
@@ -53,13 +50,12 @@ public class ApplicationContainerFolderListener implements FolderListener {
 
                 try {
 
-                    final Container container = this.containerAPI
-                            .getContainerByFolder(containerFolder, folderEvent.getUser(), this.getChildVersion(child));
+                    final Container container = this.createFakeContainer(child);
 
                     if (null != container && UtilMethods.isSet(container.getIdentifier())) {
 
+                        this.invalidatedRelatedPages (container);
                         this.invalidateContainerCache(container);
-                        //this.invalidatedRelatedPages (container);
 
                         if (Constants.CONTAINER_META_INFO_FILE_NAME.equals(childName)) {
                             CacheLocator.getIdentifierCache().removeFromCacheByVersionable(container);
@@ -77,13 +73,6 @@ public class ApplicationContainerFolderListener implements FolderListener {
         }
     }
 
-    private boolean getChildVersion(final Object child) {
-        try {
-            return null != child && child instanceof Versionable && Versionable.class.cast(child).isLive();
-        } catch (DotDataException | DotSecurityException e) {
-            return false;
-        }
-    }
 
     @Override
     public void folderChildDeleted(final FolderEvent folderEvent) {
@@ -103,8 +92,8 @@ public class ApplicationContainerFolderListener implements FolderListener {
 
                     if (null != container && UtilMethods.isSet(container.getIdentifier())) {
 
+                        this.invalidatedRelatedPages (container);
                         this.invalidateContainerCache(container);
-                        //this.invalidatedRelatedPages (container);
 
                         // removing the whole container folder, so remove the relationship
                         if (Constants.CONTAINER_META_INFO_FILE_NAME.equals(childName)) {
@@ -122,6 +111,15 @@ public class ApplicationContainerFolderListener implements FolderListener {
             }
         }
     } // folderChildDeleted.
+
+
+    private boolean getChildVersion(final Object child) {
+        try {
+            return null != child && child instanceof Versionable && Versionable.class.cast(child).isLive();
+        } catch (DotDataException | DotSecurityException e) {
+            return false;
+        }
+    }
 
     /**
      * When the file to remove is the ContainerAPI.CONTAINER_META_INFO, since it does not exists we have to create a fake container with just the
@@ -225,19 +223,21 @@ public class ApplicationContainerFolderListener implements FolderListener {
                 ContainerAPI.PRE_LOOP.contains(childName);
     }
 
-    // todo: we should not need this
+    @CloseDBIfOpened
     private void invalidatedRelatedPages(final Container container) throws DotDataException, DotSecurityException {
 
-        final List<IHTMLPage> pageList = APILocator.getHTMLPageAssetAPI().
-                getHTMLPagesByContainer(container.getIdentifier());
+        /*final List<MultiTree> pageContents = MultiTreeFactory.getMultiTrees(container.getIdentifier());
 
-        if (UtilMethods.isSet(pageList)) {
+        if (UtilMethods.isSet(pageContents)) {
 
-            for (final IHTMLPage page : pageList) {
+            for (final MultiTree multiTree : pageContents) {
+
+                final HTMLPageAsset page = new HTMLPageAsset();
+                page.setIdentifier(multiTree.getHtmlPage());
 
                 new PageLoader().invalidate(page);
             }
-        }
+        }*/
     }
 
     private void invalidateContainerCache(final Container container) {

@@ -270,7 +270,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 
 		final Host host = this.hostAPI.find(folder.getHostId(), user, false);
 	    return this.containerFactory.getContainerByFolder(host, folder, user, showLive);
-    }
+    } // todo: create the getContainerByFolder including the host as parameter
 
     private Container getWorkingVersionInfoContainerById(final String id, final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 

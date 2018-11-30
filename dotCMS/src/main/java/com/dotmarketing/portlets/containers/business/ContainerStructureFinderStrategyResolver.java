@@ -3,6 +3,7 @@ package com.dotmarketing.portlets.containers.business;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotmarketing.beans.ContainerStructure;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
@@ -197,7 +198,7 @@ public class ContainerStructureFinderStrategyResolver {
                             containerStructure.setContainerId(container.getIdentifier());
                             containerStructure.setContainerInode(asset.getInode());
                             containerStructure.setId(asset.getIdentifier());
-                            containerStructure.setCode(toString(asset));
+                            containerStructure.setCode(wrapIntoDotParseDirective(asset));
                             containerStructure.setStructureId(contentType.get().id());
                             builder.add(containerStructure);
                         }
@@ -233,6 +234,19 @@ public class ContainerStructureFinderStrategyResolver {
             final String name = asset.getName();
 
             return StringUtils.remove(name, FILE_EXTENSION);
+        }
+
+        private String wrapIntoDotParseDirective (final FileAsset fileAsset) {
+
+            try {
+
+                final Host host = APILocator.getHostAPI().find(fileAsset.getHost(), APILocator.systemUser(), false);
+
+                return "#dotParse(\"//" + host.getHostname()  + fileAsset.getPath() + fileAsset.getFileName() + "\")";
+
+            } catch (DotSecurityException | DotDataException  e) {
+                return StringPool.BLANK;
+            }
         }
 
         private String toString (final FileAsset fileAsset) {

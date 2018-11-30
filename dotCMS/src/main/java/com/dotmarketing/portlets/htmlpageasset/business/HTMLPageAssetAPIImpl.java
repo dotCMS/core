@@ -293,7 +293,9 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
 
             for (final MultiTree pageContent : pageContents) {
 
-                builder.add(this.findPage(pageContent.getHtmlPage(), APILocator.systemUser(), false));
+                if (null != pageContent && UtilMethods.isSet(pageContent.getHtmlPage())) {
+                    builder.add(this.findPage(pageContent.getHtmlPage(), APILocator.systemUser(), false));
+                }
             }
         }
 
