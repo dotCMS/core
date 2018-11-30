@@ -52,7 +52,7 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 			ContentType contentType = contentTypeApi.find(type.id());
 			ContentType contentType2 = contentTypeApi.find(type.variable());
 			try {
-				assertThat("ContentType == ContentType2", contentType.equals(contentType2) && contentType.equals(type));
+				assertThat("Content Type Name By ID: " + contentType.name() + "is not the same as Content Type Name By Variable: " + contentType2.name(), contentType.equals(contentType2) && contentType.equals(type));
 			} catch (Throwable t) {
 
 				throw t;
