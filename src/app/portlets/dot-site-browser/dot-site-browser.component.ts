@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { DotUploadFile } from './models/dot-upload-file.model';
 
 @Component({
     selector: 'dot-site-browser',
@@ -6,7 +7,14 @@ import { Component, OnInit } from '@angular/core';
     styleUrls: ['./dot-site-browser.component.scss']
 })
 export class DotSiteBrowserComponent implements OnInit {
+    files: DotUploadFile[];
+
     constructor() {}
 
     ngOnInit() {}
+
+    getFiles($event: DotUploadFile[]) {
+        this.files = $event;
+        console.log($event);
+    }
 }
