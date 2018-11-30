@@ -583,7 +583,7 @@ public class WorkflowResourceLicenseIntegrationTest {
     @Test
     public void Find_Available_Default_Actions_Invalid_License() throws Exception {
         final HttpServletRequest request = mock(HttpServletRequest.class);
-        final ContentType defaultContentType = APILocator.getContentTypeAPI(APILocator.systemUser()).findDefault();
+        final ContentType defaultContentType = APILocator.getContentTypeAPI(userAdmin).find("webPageContent");
         final Response response = nonLicenseWorkflowResource.findAvailableDefaultActionsByContentType(request, defaultContentType.id());
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
         ResponseEntityView ev = ResponseEntityView.class.cast(response.getEntity());
@@ -621,7 +621,7 @@ public class WorkflowResourceLicenseIntegrationTest {
     @Test
     public void Find_Initial_Available_Default_Actions_Invalid_License() throws Exception {
         final HttpServletRequest request = mock(HttpServletRequest.class);
-        final ContentType defaultContentType = APILocator.getContentTypeAPI(APILocator.systemUser()).findDefault();
+        final ContentType defaultContentType = APILocator.getContentTypeAPI(userAdmin).find("webPageContent");
         final Response response = nonLicenseWorkflowResource.findInitialAvailableActionsByContentType(request, defaultContentType.id());
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
         ResponseEntityView ev = ResponseEntityView.class.cast(response.getEntity());
