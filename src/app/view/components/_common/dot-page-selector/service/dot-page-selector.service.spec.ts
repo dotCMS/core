@@ -20,7 +20,7 @@ describe('Service: DotPageSelector', () => {
         const query = {
             query: {
                 query_string: {
-                    query: `+basetype:5 +parentpath:*${searchParam}* +conhost:${hostId}`
+                    query: `+basetype:5 +path:*${searchParam}* +conhost:${hostId}`
                 }
             }
         };
@@ -51,7 +51,7 @@ describe('Service: DotPageSelector', () => {
         const query = {
             query: {
                 query_string: {
-                    query: `+basetype:5 +parentpath:*${searchParam}*`
+                    query: `+basetype:5 +path:*${searchParam}*`
                 }
             }
         };

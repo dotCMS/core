@@ -1,19 +1,37 @@
-import { toArray, defaultIfEmpty, map, pluck, flatMap, filter } from 'rxjs/operators';
+import { toArray, defaultIfEmpty, map, pluck, flatMap, filter, take } from 'rxjs/operators';
 import { CoreWebService } from 'dotcms-js';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { RequestMethod } from '@angular/http';
 import { StructureTypeView, ContentTypeView } from '@models/contentlet';
+import { ContentType } from '@portlets/content-types/shared/content-type.model';
 
 @Injectable()
-export class DotContentletService {
+export class DotContentTypeService {
     constructor(private coreWebService: CoreWebService) {}
 
     /**
-     * Get the content types from the endpoint
+     * Get a content type by id or variable name
+     * @param idOrVar content type's id or variable name
+     * @returns Content Type
+     */
+    getContentType(idOrVar: string): Observable<ContentType> {
+        return this.coreWebService
+            .requestView({
+                method: RequestMethod.Get,
+                url: `v1/contenttype/id/${idOrVar}`
+            })
+            .pipe(
+                take(1),
+                pluck('entity')
+            );
+    }
+
+    /**
+     *Get the content types from the endpoint
      *
-     * @returns Observable<StructureTypeView[]>
-     * @memberof ContentletService
+     * @returns {Observable<StructureTypeView[]>}
+     * @memberof DotContentTypeService
      */
     getContentTypes(): Observable<StructureTypeView[]> {
         return this.coreWebService

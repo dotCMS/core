@@ -152,6 +152,32 @@ describe('DotRenderHTMLService', () => {
         expect(result).toEqual(mockDotRenderedPage);
     });
 
+    it('should not crash when view as attribute is empty', () => {
+        let result: DotRenderedPage;
+        const param: DotRenderPageOptions = {
+            url: 'about-us',
+            viewAs: {
+            }
+        };
+        editPageService
+            .get(param)
+            .subscribe((renderedPage: DotRenderedPage) => (result = renderedPage));
+
+        lastConnection[0].mockRespond(
+            new Response(
+                new ResponseOptions({
+                    body: {
+                        entity: mockDotRenderedPage
+                    }
+                })
+            )
+        );
+        expect(lastConnection[0].request.url).toContain(
+            'v1/page/render/about-us'
+        );
+        expect(result).toEqual(mockDotRenderedPage);
+    });
+
     it('should get a rendered page in default mode', () => {
         let result: DotRenderedPage;
         const param: DotRenderPageOptions = {

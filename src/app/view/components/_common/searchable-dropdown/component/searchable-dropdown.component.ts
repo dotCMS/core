@@ -1,5 +1,4 @@
 import { debounceTime } from 'rxjs/operators';
-import { DotContainer } from '@models/container/dot-container.model';
 import {
     Component,
     ElementRef,
@@ -11,12 +10,14 @@ import {
     forwardRef,
     SimpleChanges,
     OnChanges,
-    OnInit
+    OnInit,
+    SimpleChange
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { DotMessageService } from '@services/dot-messages-service';
 import { fromEvent } from 'rxjs';
 import { OverlayPanel } from 'primeng/primeng';
+import * as _ from 'lodash';
 
 /**
  * Dropdown with pagination and global search
@@ -39,44 +40,66 @@ import { OverlayPanel } from 'primeng/primeng';
 })
 export class SearchableDropdownComponent implements ControlValueAccessor, OnChanges, OnInit {
     @Input()
-    data: string[];
+    data: any[];
+
     @Input()
     labelPropertyName: string | string[];
+
     @Input()
     valuePropertyName: string;
+
     @Input()
     pageLinkSize = 3;
+
     @Input()
     rows: number;
+
     @Input()
     totalRecords: number;
+
     @Input()
     placeholder = '';
+
     @Input()
     persistentPlaceholder: boolean;
+
     @Input()
     width: string;
+
     @Input()
     multiple: boolean;
+
     @Output()
     change: EventEmitter<any> = new EventEmitter();
+
     @Output()
     filterChange: EventEmitter<string> = new EventEmitter();
+
     @Output()
     hide: EventEmitter<any> = new EventEmitter();
+
     @Output()
     pageChange: EventEmitter<PaginationEvent> = new EventEmitter();
+
     @Output()
     show: EventEmitter<any> = new EventEmitter();
 
     @ViewChild('searchInput')
     searchInput: ElementRef;
+
     @ViewChild('searchPanel')
     searchPanelRef: OverlayPanel;
 
-    value: any = {};
+    @ViewChild('button')
+    button: ElementRef;
+
+    options: any[];
+
+    value: any;
     valueString = '';
 
+    label: string;
+    disabled = false;
     i18nMessages: {
         [key: string]: string;
     } = {};
@@ -86,9 +109,11 @@ export class SearchableDropdownComponent implements ControlValueAccessor, OnChan
     propagateChange = (_: any) => {};
 
     ngOnChanges(change: SimpleChanges): void {
-        if (change.placeholder && change.placeholder.currentValue) {
-            this.valueString = change.placeholder.currentValue;
+        if (this.usePlaceholder(change.placeholder) || change.persistentPlaceholder) {
+            this.setLabel();
         }
+
+        this.setOptions(change);
     }
 
     ngOnInit(): void {
@@ -128,12 +153,7 @@ export class SearchableDropdownComponent implements ControlValueAccessor, OnChan
      * @memberof SearchableDropdownComponent
      */
     writeValue(value: any): void {
-        this.value = value;
-        if (Array.isArray(this.labelPropertyName)) {
-            this.valueString = value ? value[this.labelPropertyName[0]] : this.placeholder;
-        } else {
-            this.valueString = value ? value[this.labelPropertyName] : this.placeholder;
-        }
+        this.setValue(value);
     }
 
     /**
@@ -154,7 +174,7 @@ export class SearchableDropdownComponent implements ControlValueAccessor, OnChan
      * @returns string
      * @memberof SearchableDropdownComponent
      */
-    getLabel(container: DotContainer): string {
+    getItemLabel(dropDownItem: any): string {
         let resultProps;
 
         if (Array.isArray(this.labelPropertyName)) {
@@ -162,18 +182,18 @@ export class SearchableDropdownComponent implements ControlValueAccessor, OnChan
                 if (item.indexOf('.') > -1) {
                     let propertyName;
                     item.split('.').forEach((nested) => {
-                        propertyName = propertyName ? propertyName[nested] : container[nested];
+                        propertyName = propertyName ? propertyName[nested] : dropDownItem[nested];
                     });
 
                     return propertyName;
                 }
 
-                return container[item];
+                return dropDownItem[item];
             });
 
             return resultProps.join(' - ');
         } else {
-            return container[this.labelPropertyName];
+            return dropDownItem[this.labelPropertyName];
         }
     }
 
@@ -186,17 +206,61 @@ export class SearchableDropdownComponent implements ControlValueAccessor, OnChan
      */
     handleClick(item: any): void {
         if (this.value !== item || this.multiple) {
-            this.value = item;
-            if (Array.isArray(this.labelPropertyName)) {
-                this.valueString = item[this.labelPropertyName[0]];
-            } else {
-                this.valueString = item[this.labelPropertyName];
-            }
-            this.propagateChange(!this.valuePropertyName ? item : item[this.valuePropertyName]);
+            this.setValue(item);
+            this.propagateChange(this.getValueToPropagate());
             this.change.emit(Object.assign({}, this.value));
         }
 
         this.searchPanelRef.hide();
+    }
+
+    /**
+     * Disabled the component, for more information see:
+     * {@link https://angular.io/api/forms/ControlValueAccessor#setdisabledstate}
+     *
+     * @param {boolean} isDisabled if it is true the component is disabled
+     * @memberof SearchableDropdownComponent
+     */
+    setDisabledState(isDisabled: boolean): void {
+        this.disabled = isDisabled;
+    }
+
+    /**
+     *Return the component's label
+     *
+     * @returns {string} compoenent's label
+     * @memberof SearchableDropdownComponent
+     */
+    setLabel(): void {
+        this.valueString = this.value ? this.value[this.getValueLabelPropertyName()] : this.placeholder;
+        this.label = this.persistentPlaceholder ? this.placeholder : this.valueString;
+    }
+
+    private setOptions(change: SimpleChanges): void {
+        if (change.data && change.data.currentValue) {
+            this.options = _.cloneDeep(change.data.currentValue).map(item => {
+                item.label = this.getItemLabel(item);
+                return item;
+            });
+        }
+    }
+
+    private usePlaceholder(placeholderChange: SimpleChange): boolean {
+        return placeholderChange && placeholderChange.currentValue && !this.value;
+    }
+
+    private setValue(newValue: any): void {
+        this.value = newValue;
+
+        this.setLabel();
+    }
+
+    private getValueLabelPropertyName(): string {
+        return Array.isArray(this.labelPropertyName) ? this.labelPropertyName[0] : this.labelPropertyName;
+    }
+
+    private getValueToPropagate(): string {
+        return !this.valuePropertyName ? this.value : this.value[this.valuePropertyName];
     }
 }
 

@@ -8,10 +8,10 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { DotMessageService } from '@services/dot-messages-service';
 import { Dropdown, SelectItem } from 'primeng/primeng';
 import { By } from '@angular/platform-browser';
-import { DotContentletService } from '@services/dot-contentlet/dot-contentlet.service';
+import { DotContentTypeService } from '@services/dot-content-type/dot-content-type.service';
 
 @Injectable()
-class MockDotContentletService {
+class MockDotContentTypeService {
     getAllContentTypes = jasmine
         .createSpy('getContentTypes')
         .and.returnValue(
@@ -38,8 +38,8 @@ describe('DotBaseTypeSelectorComponent', () => {
                     useValue: messageServiceMock
                 },
                 {
-                    provide: DotContentletService,
-                    useClass: MockDotContentletService
+                    provide: DotContentTypeService,
+                    useClass: MockDotContentTypeService
                 }
             ]
         });

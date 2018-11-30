@@ -1,4 +1,4 @@
-import {Component, ChangeDetectionStrategy, Input, Output, EventEmitter} from '@angular/core';
+import {Component, ChangeDetectionStrategy, Input, Output, EventEmitter, OnChanges} from '@angular/core';
 import {IBundle} from '../services/bundle-service';
 
 @Component({
@@ -9,7 +9,7 @@ import {IBundle} from '../services/bundle-service';
       <p-message  *ngIf="errorMessage" style="margin-bottom: 16px; display: block;" severity="error" [text]="errorMessage"></p-message>
       <cw-input-dropdown
         flex
-        [value]="bundleStores[0]?.id"
+        [value]="bundleStores ? bundleStores[0]?.id : null"
         allowAdditions="true"
         (onDropDownChange)="setSelectedBundle($event)"
         (enter)="addToBundle.emit(selectedBundle)">
@@ -25,7 +25,7 @@ import {IBundle} from '../services/bundle-service';
       </p-footer>
     </p-dialog>`
 })
-export class AddToBundleDialogComponent {
+export class AddToBundleDialogComponent implements OnChanges {
   @Input() hidden = false;
   @Input() bundleStores: IBundle[];
   @Input() errorMessage: string = null;
@@ -37,8 +37,8 @@ export class AddToBundleDialogComponent {
   public selectedBundle: IBundle = null;
 
   ngOnChanges(change): void {
-    if (change.bundleStores) {
-      this.selectedBundle = change.bundleStores.currentValue[0];
+    if (change.bundleStores && change.bundleStores.currentValue) {
+        this.selectedBundle = change.bundleStores.currentValue[0];
     }
   }
 

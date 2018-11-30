@@ -4,8 +4,9 @@ dot-searchable-dropdown {
     .ui-button {
         @extend #inputtext-normal-border;
         background: none;
+        border: 0;
         border-radius: 0;
-        padding-right: $dropdown-height + $basic-padding;
+        padding-right: $basic-padding;
         text-align: left;
         text-transform: none;
         width: auto;
@@ -15,6 +16,7 @@ dot-searchable-dropdown {
         &:focus {
             @extend #field-hover-state;
             @extend #inputtext-normal-border;
+            border: 0;
 
             .ui-button-text,
             [class^="ui-button-icon"] {

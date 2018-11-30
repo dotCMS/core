@@ -10,8 +10,11 @@ import { DotPersonasServiceMock } from '../../../test/dot-personas-service.mock'
 import { By } from '@angular/platform-browser';
 import { DotPersona } from '@models/dot-persona/dot-persona.model';
 import { Dropdown } from 'primeng/primeng';
+import { of } from 'rxjs';
 
 describe('DotPersonaSelectorComponent', () => {
+    let dotPersonasService: DotPersonasService;
+
     let component: DotPersonaSelectorComponent;
     let fixture: ComponentFixture<DotPersonaSelectorComponent>;
     let de: DebugElement;
@@ -21,7 +24,7 @@ describe('DotPersonaSelectorComponent', () => {
     });
 
     beforeEach(() => {
-        DOTTestBed.configureTestingModule({
+        const testbed = DOTTestBed.configureTestingModule({
             declarations: [DotPersonaSelectorComponent],
             imports: [BrowserAnimationsModule],
             providers: [
@@ -39,6 +42,8 @@ describe('DotPersonaSelectorComponent', () => {
         fixture = DOTTestBed.createComponent(DotPersonaSelectorComponent);
         component = fixture.componentInstance;
         de = fixture.debugElement;
+
+        dotPersonasService = testbed.get(DotPersonasService);
     });
 
     it('should emmit the selected persona', () => {
@@ -62,5 +67,14 @@ describe('DotPersonaSelectorComponent', () => {
         fixture.detectChanges();
         const pDropDown: Dropdown = de.query(By.css('p-dropdown')).componentInstance;
         expect(pDropDown.style).toEqual({ width: '100px' });
+    });
+
+    it('should disabled when just hava the default persona', () => {
+        spyOn(dotPersonasService, 'get').and.returnValue(of([]));
+
+        fixture.detectChanges();
+
+        const pDropDown: DebugElement = de.query(By.css('p-dropdown'));
+        expect(pDropDown.componentInstance.disabled).toBeTruthy();
     });
 });
