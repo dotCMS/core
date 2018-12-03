@@ -452,6 +452,7 @@ public class FieldAPITest extends IntegrationTestBase {
     public void testSaveRelationshipFieldBothSidesRequired_ShouldSucceed()
             throws DotSecurityException, DotDataException {
         final long time = System.currentTimeMillis();
+        final String newCardinality = String.valueOf(RELATIONSHIP_CARDINALITY.ONE_TO_ONE.ordinal());
 
         ContentType parentContentType = null;
         ContentType childContentType  = null;
@@ -481,7 +482,7 @@ public class FieldAPITest extends IntegrationTestBase {
 
             //Adding a RelationshipField to the child
             Field secondField = FieldBuilder.builder(RelationshipField.class).name("otherSideRel")
-                    .contentTypeId(childContentType.id()).values(CARDINALITY)
+                    .contentTypeId(childContentType.id()).values(newCardinality)
                     .relationType(fullFieldVar).required(true).build();
 
             secondField = fieldAPI.save(secondField, user);
@@ -495,6 +496,10 @@ public class FieldAPITest extends IntegrationTestBase {
             assertTrue(relationship.isParentRequired());
             assertTrue(secondField.required());
             assertFalse(field.required());
+            assertEquals(newCardinality, secondField.values());
+            assertEquals(newCardinality, field.values());
+            assertEquals(newCardinality, String.valueOf(relationship.getCardinality()));
+
 
         } finally {
             if (UtilMethods.isSet(parentContentType) && UtilMethods.isSet(parentContentType.id())) {
@@ -535,6 +540,109 @@ public class FieldAPITest extends IntegrationTestBase {
         } finally {
             if (UtilMethods.isSet(parentContentType) && UtilMethods.isSet(parentContentType.id())) {
                 contentTypeAPI.delete(parentContentType);
+            }
+        }
+    }
+
+    @Test
+    public void testUpdateOneSidedRelationshipField_shouldSucceed()
+            throws DotDataException, DotSecurityException {
+
+        ContentType parentContentType = null;
+        ContentType childContentType  = null;
+
+        final long time = System.currentTimeMillis();
+        final String newCardinality = String.valueOf(RELATIONSHIP_CARDINALITY.ONE_TO_ONE.ordinal());
+
+        try {
+            parentContentType = createAndSaveSimpleContentType("parentContentType" + time);
+            childContentType = createAndSaveSimpleContentType("childContentType" + time);
+
+            final Field parentTypeRelationshipField = createAndSaveManyToManyRelationshipField("newRel",
+                    parentContentType.id(), childContentType.variable(), CARDINALITY);
+
+            final Field updatedField = fieldAPI
+                    .save(FieldBuilder.builder(parentTypeRelationshipField).values(newCardinality)
+                            .required(true).build(), user);
+
+            final String fullFieldVar =
+                    parentContentType.variable() + StringPool.PERIOD + parentTypeRelationshipField.variable();
+
+            final Relationship relationship = relationshipAPI.byTypeValue(fullFieldVar);
+
+            assertNotNull(updatedField);
+            assertEquals(parentTypeRelationshipField.id(), updatedField.id());
+            assertEquals(newCardinality, updatedField.values());
+            assertEquals(newCardinality, String.valueOf(relationship.getCardinality()));
+            assertTrue(updatedField.required());
+            assertTrue(relationship.isChildRequired());
+            assertFalse(relationship.isParentRequired());
+        } finally {
+            if (UtilMethods.isSet(parentContentType) && UtilMethods.isSet(parentContentType.id())) {
+                contentTypeAPI.delete(parentContentType);
+            }
+
+            if (UtilMethods.isSet(childContentType) && UtilMethods.isSet(childContentType.id())) {
+                contentTypeAPI.delete(childContentType);
+            }
+        }
+    }
+
+    @Test
+    public void testUpdateParentFieldInARelationship_shouldSucceed()
+            throws DotDataException, DotSecurityException {
+
+        ContentType parentContentType = null;
+        ContentType childContentType  = null;
+
+        final long time = System.currentTimeMillis();
+        final String newCardinality = String.valueOf(RELATIONSHIP_CARDINALITY.ONE_TO_ONE.ordinal());
+
+        try {
+            parentContentType = createAndSaveSimpleContentType("parentContentType" + time);
+            childContentType = createAndSaveSimpleContentType("childContentType" + time);
+
+            final Field parentTypeRelationshipField = createAndSaveManyToManyRelationshipField("newRel",
+                    parentContentType.id(), childContentType.variable(), CARDINALITY);
+
+            final String fullFieldVar =
+                    parentContentType.variable() + StringPool.PERIOD + parentTypeRelationshipField.variable();
+
+            //Adding a RelationshipField to the child
+            Field secondField = FieldBuilder.builder(RelationshipField.class).name("otherSideRel")
+                    .contentTypeId(childContentType.id()).values(CARDINALITY)
+                    .relationType(fullFieldVar).required(true).build();
+
+            secondField = fieldAPI.save(secondField, user);
+
+            //Update fields (cardinality and required) on the parent field
+            final Field updatedField = fieldAPI
+                    .save(FieldBuilder.builder(parentTypeRelationshipField).values(newCardinality)
+                            .required(true).build(), user);
+
+            secondField = fieldAPI.find(secondField.id());
+
+            final Relationship relationship = relationshipAPI.byTypeValue(fullFieldVar);
+
+            assertNotNull(updatedField);
+            assertEquals(parentTypeRelationshipField.id(), updatedField.id());
+            assertTrue(updatedField.required());
+            assertTrue(relationship.isChildRequired());
+            assertFalse(relationship.isParentRequired());
+            assertEquals(newCardinality, updatedField.values());
+            assertEquals(newCardinality, String.valueOf(relationship.getCardinality()));
+
+            //new cardinality should have been updated on the child field and required field is set to false
+            assertEquals(newCardinality, secondField.values());
+            assertFalse(secondField.required());
+
+        } finally {
+            if (UtilMethods.isSet(parentContentType) && UtilMethods.isSet(parentContentType.id())) {
+                contentTypeAPI.delete(parentContentType);
+            }
+
+            if (UtilMethods.isSet(childContentType) && UtilMethods.isSet(childContentType.id())) {
+                contentTypeAPI.delete(childContentType);
             }
         }
     }
