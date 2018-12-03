@@ -29,11 +29,16 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import com.tngtech.java.junit.dataprovider.DataProvider;
+import com.tngtech.java.junit.dataprovider.DataProviderRunner;
+import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import java.util.Date;
 import java.util.List;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
+@RunWith(DataProviderRunner.class)
 public class FieldAPITest extends IntegrationTestBase {
 
     private static FieldAPI fieldAPI;
@@ -53,6 +58,31 @@ public class FieldAPITest extends IntegrationTestBase {
 
         contentTypeAPI  = APILocator.getContentTypeAPI(user);
         relationshipAPI = APILocator.getRelationshipAPI();
+    }
+
+    public static class TestCase {
+
+        boolean indexed;
+        boolean listed;
+        String cardinality;
+
+        public TestCase(final boolean indexed, final boolean listed, final String cardinality) {
+            this.indexed = indexed;
+            this.listed = listed;
+            this.cardinality = cardinality;
+        }
+    }
+
+    @DataProvider
+    public static Object[] testCases(){
+        return new TestCase[]{
+                //invalid indexed
+                new TestCase(false, false, CARDINALITY),
+                //invalid listed
+                new TestCase(true, true, CARDINALITY),
+                //invalid cardinality
+                new TestCase(true, false, "5")
+        };
     }
 
     @Test
@@ -420,34 +450,6 @@ public class FieldAPITest extends IntegrationTestBase {
         }
     }
 
-    @Test(expected = DotDataException.class)
-    public void testSavedRelationshipFieldWithInvalidCardinality()
-            throws DotSecurityException, DotDataException {
-        final long time = System.currentTimeMillis();
-
-        ContentType parentContentType = null;
-        ContentType childContentType  = null;
-
-        try {
-            parentContentType = createAndSaveSimpleContentType("parentContentType" + time);
-            childContentType = createAndSaveSimpleContentType("childContentType" + time);
-
-            //Adding a RelationshipField to the parent
-            createAndSaveManyToManyRelationshipField("newRel",
-                    parentContentType.id(), childContentType.variable(), "5");
-
-        } finally {
-            if (UtilMethods.isSet(parentContentType) && UtilMethods.isSet(parentContentType.id())) {
-                contentTypeAPI.delete(parentContentType);
-            }
-
-            if (UtilMethods.isSet(childContentType) && UtilMethods.isSet(childContentType.id())) {
-                contentTypeAPI.delete(childContentType);
-            }
-        }
-    }
-
-
     @Test
     public void testSaveRelationshipFieldBothSidesRequired_ShouldSucceed()
             throws DotSecurityException, DotDataException {
@@ -648,7 +650,8 @@ public class FieldAPITest extends IntegrationTestBase {
     }
 
     @Test(expected = DotDataException.class)
-    public void testSaveRelationshipField_whenIndexedPropertyIsSetToFalse_shouldThrowAnException()
+    @UseDataProvider("testCases")
+    public void testValidateRelationshipField_shouldThrowAnException(TestCase testCase)
             throws DotSecurityException, DotDataException {
 
 
@@ -657,25 +660,8 @@ public class FieldAPITest extends IntegrationTestBase {
         try {
             final Field field = FieldBuilder.builder(RelationshipField.class)
                     .name("testField" + time)
-                    .contentTypeId(type.id()).values(CARDINALITY).indexed(false).build();
-
-            fieldAPI.save(field, user);
-        }finally {
-            contentTypeAPI.delete(type);
-        }
-    }
-
-    @Test(expected = DotDataException.class)
-    public void testSaveRelationshipField_whenListedPropertyIsSetToTrue_shouldThrowAnException()
-            throws DotSecurityException, DotDataException {
-
-
-        final long time = System.currentTimeMillis();
-        final ContentType type = createAndSaveSimpleContentType("testContentType" + time);
-        try {
-            final Field field = FieldBuilder.builder(RelationshipField.class)
-                    .name("testField" + time)
-                    .contentTypeId(type.id()).values(CARDINALITY).listed(true).build();
+                    .contentTypeId(type.id()).values(testCase.cardinality).indexed(testCase.indexed)
+                    .listed(testCase.listed).build();
 
             fieldAPI.save(field, user);
         }finally {
