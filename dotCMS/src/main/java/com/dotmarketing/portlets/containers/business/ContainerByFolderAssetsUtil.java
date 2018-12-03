@@ -12,11 +12,13 @@ import com.dotmarketing.portlets.containers.model.FileAssetContainer;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Constants;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
 import org.apache.commons.io.IOUtils;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.context.Context;
+import org.apache.velocity.exception.ParseErrorException;
 
 import java.io.IOException;
 import java.io.StringWriter;
@@ -149,26 +151,31 @@ public class ContainerByFolderAssetsUtil {
         final Context context         = new VelocityContext();
         final StringWriter evalResult = new StringWriter();
 
-        context.put("dotJSON", new DotJSON());
-        VelocityUtil.getEngine().evaluate(context, evalResult, StringPool.BLANK, metaInfoVTLContent);
-        final DotJSON dotJSON = (DotJSON) context.get("dotJSON");
+        try {
+            context.put("dotJSON", new DotJSON());
+            VelocityUtil.getEngine().evaluate(context, evalResult, StringPool.BLANK, metaInfoVTLContent);
+            final DotJSON dotJSON = (DotJSON) context.get("dotJSON");
 
-        // todo: let's add it to cache
-        // cache.add(request, user, dotJSON);
-        final Map<String, Object> map = dotJSON.getMap();
-        if (UtilMethods.isSet(map)) {
+            // todo: let's add it to cache
+            // cache.add(request, user, dotJSON);
+            final Map<String, Object> map = dotJSON.getMap();
+            if (UtilMethods.isSet(map)) {
 
-            container.setTitle((String) map.getOrDefault(TITLE, container.getTitle()));
-            container.setFriendlyName((String) map.getOrDefault(FRIENDLY_NAME, StringPool.BLANK));
-            container.setMaxContentlets(ConversionUtils.toInt(map.get(MAX_CONTENTLETS),10));
-            container.setNotes((String) map.getOrDefault(NOTES, StringPool.BLANK));
+                container.setTitle((String) map.getOrDefault(TITLE, container.getTitle()));
+                container.setFriendlyName((String) map.getOrDefault(FRIENDLY_NAME, StringPool.BLANK));
+                container.setMaxContentlets(ConversionUtils.toInt(map.get(MAX_CONTENTLETS), 10));
+                container.setNotes((String) map.getOrDefault(NOTES, StringPool.BLANK));
 
-            this.removeDefaultMetaDataNames(map);
+                this.removeDefaultMetaDataNames(map);
 
-            for (final Map.Entry<String, Object> entry : map.entrySet()) {
+                for (final Map.Entry<String, Object> entry : map.entrySet()) {
 
-                container.addMetaData (entry.getKey(), entry.getValue());
+                    container.addMetaData(entry.getKey(), entry.getValue());
+                }
             }
+        } catch(ParseErrorException e) {
+            Logger.error(this, "Parsing error, setting the meta data of the container: " + container.getName() +
+                    ", velocity code: " + metaInfoVTLContent, e);
         }
     }
 

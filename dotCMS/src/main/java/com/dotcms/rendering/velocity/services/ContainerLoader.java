@@ -182,7 +182,7 @@ public class ContainerLoader implements DotLoader {
             // sb.append("$contentletList" + identifier.getId() + uuid + "<br>");
 
             // START CONTENT LOOP
-            sb.append("#foreach ($contentletId in $contentletList")
+            sb.append("#foreach ($contentletId in $contentletList") // todo:
                 .append(container.getIdentifier())
                 .append(uuid)
                 .append(")");

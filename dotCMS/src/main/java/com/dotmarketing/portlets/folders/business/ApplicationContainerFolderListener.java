@@ -3,14 +3,20 @@ package com.dotmarketing.portlets.folders.business;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.rendering.velocity.services.ContainerLoader;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
-import com.dotmarketing.business.*;
+import com.dotmarketing.beans.MultiTree;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.IdentifierAPI;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.MultiTreeAPI;
+import com.dotmarketing.factories.MultiTreeFactory;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
@@ -21,6 +27,9 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+
+import java.util.List;
+import java.util.Optional;
 
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
 import static com.dotmarketing.util.StringUtils.builder;
@@ -50,16 +59,20 @@ public class ApplicationContainerFolderListener implements FolderListener {
 
                 try {
 
-                    final Container container = this.createFakeContainer(child);
+                    // todo: the face container only works if it is the container.vtl
+                    // otherwise we have to fetch the object it self.
+                    final Container container = ContainerAPI.CONTAINER_META_INFO.contains(childName)?
+                            this.createFakeContainer(child):
+                            this.containerAPI.getContainerByFolder(containerFolder, folderEvent.getUser(), false);
 
                     if (null != container && UtilMethods.isSet(container.getIdentifier())) {
 
-                        this.invalidatedRelatedPages (container);
-                        this.invalidateContainerCache(container);
-
                         if (Constants.CONTAINER_META_INFO_FILE_NAME.equals(childName)) {
+                            this.invalidatedRelatedPages (container);
                             CacheLocator.getIdentifierCache().removeFromCacheByVersionable(container);
                         }
+
+                        this.invalidateContainerCache(container);
 
                         Logger.debug(this, () -> "The child: " + childName + " on the folder: " +
                                 containerFolder + ", has been removed, so the container was invalidated");
@@ -79,26 +92,33 @@ public class ApplicationContainerFolderListener implements FolderListener {
 
         if (null != folderEvent && null != folderEvent.getChild()) {
 
-            final String childName       = folderEvent.getChildName();
-            final Folder containerFolder = folderEvent.getParent();
-            final Object child           = folderEvent.getChild();
+            final String  childName                 = folderEvent.getChildName();
+            final Folder  containerFolder           = folderEvent.getParent();
+            final Object  child                     = folderEvent.getChild();
+            final Optional<ContentType> contentType = getContentType(folderEvent, childName);
+            final boolean isContentType             = contentType.isPresent();
 
-            if (this.isSpecialAsset (childName) || isContentType(folderEvent, childName)) {
+            if (isContentType || this.isSpecialAsset (childName)) {
                 try {
 
-                    final Container container = (ContainerAPI.CONTAINER_META_INFO.contains(childName))?
+                    final Container container = ContainerAPI.CONTAINER_META_INFO.contains(childName)?
                             this.createFakeContainer(child):
-                            this.containerAPI.getContainerByFolder(containerFolder, folderEvent.getUser(), this.getChildVersion(child));
+                            this.containerAPI.getContainerByFolder(containerFolder, folderEvent.getUser(), false);
 
                     if (null != container && UtilMethods.isSet(container.getIdentifier())) {
 
-                        this.invalidatedRelatedPages (container);
-                        this.invalidateContainerCache(container);
-
                         // removing the whole container folder, so remove the relationship
                         if (Constants.CONTAINER_META_INFO_FILE_NAME.equals(childName)) {
+                            this.invalidatedRelatedPages (container);
                             this.removeContainerFromTemplate(container, folderEvent.getUser());
                         }
+
+                        if (isContentType) {
+
+                            this.removeContentTypeMultitreesAssociated (contentType.get(), container);
+                        }
+
+                        this.invalidateContainerCache(container);
 
                         Logger.debug(this, () -> "The child: " + childName + " on the folder: " +
                                 containerFolder + ", has been removed, so the container was invalidated");
@@ -112,12 +132,13 @@ public class ApplicationContainerFolderListener implements FolderListener {
         }
     } // folderChildDeleted.
 
+    @WrapInTransaction
+    private void removeContentTypeMultitreesAssociated(final ContentType childContentTypeAsset, final Container container) throws DotDataException {
 
-    private boolean getChildVersion(final Object child) {
-        try {
-            return null != child && child instanceof Versionable && Versionable.class.cast(child).isLive();
-        } catch (DotDataException | DotSecurityException e) {
-            return false;
+        final List<MultiTree> multiTreeList = MultiTreeFactory
+                .getContainerStructureMultiTree(container.getIdentifier(), childContentTypeAsset.id());
+        for (final MultiTree multiTree : multiTreeList) {
+            MultiTreeFactory.deleteMultiTree(multiTree);
         }
     }
 
@@ -133,10 +154,12 @@ public class ApplicationContainerFolderListener implements FolderListener {
             final Contentlet webAsset = (Contentlet) child;
             container.setIdentifier(webAsset.getIdentifier());
             container.setInode(webAsset.getInode());
+            container.setOwner(webAsset.getOwner());
         } else {
             final Inode webAsset = (Inode) child;
             container.setIdentifier(webAsset.getIdentifier());
             container.setInode(webAsset.getInode());
+            container.setOwner(webAsset.getOwner());
         }
         return container;
     }
@@ -160,7 +183,7 @@ public class ApplicationContainerFolderListener implements FolderListener {
 
         try {
 
-            if (!this.isSpecialAsset (childName) && !isContentType(folderEvent, childName)) {
+            if (!this.isSpecialAsset (childName) && !getContentType(folderEvent, childName).isPresent()) {
 
                 return false; // is not a content type. do not do anything
             }
@@ -178,22 +201,24 @@ public class ApplicationContainerFolderListener implements FolderListener {
         return true;
     }
 
-    private boolean isContentType(final FolderEvent folderEvent, final String childName)  {
+    private Optional<ContentType> getContentType(final FolderEvent folderEvent, final String childName)  {
 
+        Optional<ContentType> contentType   = Optional.empty();
         final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(folderEvent.getUser());
-        final String contentTypeVarName = this.normalizeVelocityNameFromVTLName(childName);
+        final String contentTypeVarName     = this.normalizeVelocityNameFromVTLName(childName);
 
         try {
 
-            if (null == contentTypeAPI.find(contentTypeVarName)) {
-                return false;
+            final ContentType type = contentTypeAPI.find(contentTypeVarName);
+            if (null != contentTypeAPI.find(contentTypeVarName)) {
+                contentType = Optional.of(type);
             }
         } catch (DotSecurityException | DotDataException e) {
             // is not a content type. do not do anything
-            return false;
+            contentType   = Optional.empty();
         }
 
-        return true;
+        return contentType;
     }
 
     private String normalizeVelocityNameFromVTLName(final String childName) {
