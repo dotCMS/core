@@ -161,12 +161,15 @@ public class SimpleWebInterceptorDelegateImpl implements WebInterceptorDelegate 
     } // init.
 
     @Override
-    public boolean intercept(final HttpServletRequest request,
+    public DelegateResult intercept(final HttpServletRequest request,
                              final HttpServletResponse response)
             throws IOException {
 
-        boolean shouldContinue = true;
-        Result result         = null;
+        Result  result                     = null;
+        boolean shouldContinue             = true;
+        HttpServletRequest  requestResult  = request;
+        HttpServletResponse responseResult = response;
+
 
         if (!this.interceptors.isEmpty()) {
 
@@ -176,10 +179,20 @@ public class SimpleWebInterceptorDelegateImpl implements WebInterceptorDelegate 
                 if (webInterceptor.isActive() &&
                         this.anyMatchFilter(webInterceptor, request.getRequestURI())) {
 
-                    result          = webInterceptor.intercept(request, response);
-                    shouldContinue &= (Result.SKIP_NO_CHAIN != result);
+                    result          = webInterceptor.intercept(requestResult, responseResult);
+                    shouldContinue &= (Result.Type.SKIP_NO_CHAIN != result.getType());
 
-                    if (Result.NEXT != result) {
+                    if (null != result.getRequest()) {
+
+                        requestResult  = result.getRequest();
+                    }
+
+                    if (null != result.getRequest()) {
+
+                        responseResult  = result.getResponse();
+                    }
+
+                    if (Result.Type.NEXT != result.getType()) {
                         // if just one interceptor failed; we stopped the loop and do not continue the chain call
                         break;
                     }
@@ -187,7 +200,7 @@ public class SimpleWebInterceptorDelegateImpl implements WebInterceptorDelegate 
             }
         }
 
-        return shouldContinue;
+        return new DelegateResult(shouldContinue, requestResult, responseResult);
     } // intercept.
 
     @VisibleForTesting

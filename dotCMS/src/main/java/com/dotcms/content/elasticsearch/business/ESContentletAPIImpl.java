@@ -175,21 +175,22 @@ import org.springframework.beans.BeanUtils;
 public class ESContentletAPIImpl implements ContentletAPI {
 
     private static final String CAN_T_CHANGE_STATE_OF_CHECKED_OUT_CONTENT = "Can't change state of checked out content or where inode is not set. Use Search or Find then use method";
-    private static final String CANT_GET_LOCK_ON_CONTENT ="Only the CMS Admin or the user who locked the contentlet can lock/unlock it";
-    private static final String FAILED_TO_DELETE_UNARCHIVED_CONTENT = "Failed to delete unarchived content. Content must be archived first before it can be deleted.";
-    private static final String NEVER_EXPIRE = "NeverExpire";
+    private static final String CANT_GET_LOCK_ON_CONTENT                  = "Only the CMS Admin or the user who locked the contentlet can lock/unlock it";
+    private static final String FAILED_TO_DELETE_UNARCHIVED_CONTENT       = "Failed to delete unarchived content. Content must be archived first before it can be deleted.";
+    private static final String NEVER_EXPIRE                              = "NeverExpire";
+    private static final String CHECKIN_IN_PROGRESS                      = "__checkin_in_progress__";
 
     private final ESContentletIndexAPI indexAPI;
     private final ESContentFactoryImpl contentFactory;
-    private final PermissionAPI permissionAPI;
-    private final CategoryAPI categoryAPI;
-    private final RelationshipAPI relationshipAPI;
-    private final FieldAPI fieldAPI;
-    private final LanguageAPI languageAPI;
+    private final PermissionAPI        permissionAPI;
+    private final CategoryAPI          categoryAPI;
+    private final RelationshipAPI      relationshipAPI;
+    private final FieldAPI             fieldAPI;
+    private final LanguageAPI          languageAPI;
     private final DistributedJournalAPI<String> distributedJournalAPI;
-    private final TagAPI tagAPI;
+    private final TagAPI               tagAPI;
 
-    private int MAX_LIMIT = 10000;
+    private static final int MAX_LIMIT = 10000;
 
     private static final String backupPath = ConfigUtils.getBackupPath() + File.separator + "contentlets";
 
@@ -2202,7 +2203,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * @throws DotReindexStateException
      * @throws DotDataException
      */
-    private void refreshNoDeps(Contentlet contentlet) throws DotReindexStateException,
+    private void refreshNoDeps(final Contentlet contentlet) throws DotReindexStateException,
             DotDataException {
         indexAPI.addContentToIndex(contentlet, false);
         CacheLocator.getContentletCache().add(contentlet.getInode(), contentlet);
@@ -2517,8 +2518,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
         }
 
-        // Refresh the parent
-        refreshNoDeps(contentlet);
+        // Refresh the parent only if the contentlet is not already in the checkin
+        if (!contentlet.getBoolProperty(CHECKIN_IN_PROGRESS)) {
+            refreshNoDeps(contentlet);
+        }
     }
 
     @WrapInTransaction
@@ -3125,6 +3128,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 }
 
                 if (createNewVersion || (!createNewVersion && (contentRelationships != null || cats != null))) {
+                    contentlet.setBoolProperty(CHECKIN_IN_PROGRESS, Boolean.TRUE);
                     moveContentDependencies(workingContentlet, contentlet, contentRelationships, cats, user, respectFrontendRoles);
                 }
 
@@ -3530,8 +3534,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
           FileAsset asset = APILocator.getFileAssetAPI().fromContentlet(contentlet);
         }
 
-
-
         ActivityLogger.logInfo(getClass(), "Content Saved", "StartDate: " +contentPushPublishDate+ "; "
                 + "EndDate: " +contentPushExpireDate + "; User:" + user.getUserId() + "; ContentIdentifier: " + contentlet.getIdentifier(), contentlet.getHost());
 
@@ -3542,9 +3544,19 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
 
         return contentlet;
-        }finally{
-          contentlet.cleanup();
+        } finally {
+
+            this.cleanup(contentlet);
         }
+    }
+
+    private void cleanup(final Contentlet contentlet) {
+
+        if (contentlet.getMap().containsKey(CHECKIN_IN_PROGRESS)) {
+            contentlet.getMap().remove(CHECKIN_IN_PROGRESS);
+        }
+
+        contentlet.cleanup();
     }
 
     private void updateTemplateInAllLanguageVersions(final Contentlet contentlet, final User user)
@@ -3995,7 +4007,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     }else if(isFieldTypeDate(field)){
                         contentlet.setDateProperty(conVariable,value != null ? (Date)value : null);
                     }else if(isFieldTypeLong(field)){
-                        contentlet.setLongProperty(conVariable,value != null ? (Long)value : null);
+                        contentlet.setLongProperty(conVariable,value != null ? ((Number)value).longValue(): null);
                     }else if(isFieldTypeBinary(field)){
                         contentlet.setBinary(conVariable,(java.io.File)value);
                     } else {
