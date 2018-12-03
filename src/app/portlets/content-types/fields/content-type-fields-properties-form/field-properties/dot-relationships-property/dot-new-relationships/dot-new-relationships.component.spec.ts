@@ -253,6 +253,34 @@ describe('DotNewRelationshipsComponent', () => {
             const dotSearchableDropdown = de.query(By.css('dot-searchable-dropdown'));
             dotSearchableDropdown.componentInstance.change.emit(contentTypeMock);
         });
+
+
+        describe('inverse relationships', () => {
+            beforeEach(() => {
+                fixtureHostComponent.componentInstance.velocityVar = `${contentTypeMock.name}.${contentTypeMock.variable}`;
+            });
+
+            it('should not load any content type, and emit change event with the right variableValue', (done) => {
+                const contentTypeService = de.injector.get(DotContentTypeService);
+                spyOn(contentTypeService, 'getContentType');
+
+                fixtureHostComponent.detectChanges();
+
+                comp.change.subscribe((relationshipSelect: any) => {
+                    expect(relationshipSelect).toEqual(
+                        {
+                            velocityVar: `${contentTypeMock.name}.${contentTypeMock.variable}`,
+                            cardinality: undefined
+                        }
+                    );
+                    done();
+                });
+
+                comp.triggerChanged();
+
+                expect(contentTypeService.getContentType).not.toHaveBeenCalled();
+            });
+        });
     });
 
     describe('Cardinalitys Selector', () => {

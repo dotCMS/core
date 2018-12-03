@@ -76,7 +76,7 @@ export class DotNewRelationshipsComponent implements OnInit, OnChanges {
      */
     triggerChanged(): void {
         this.change.next({
-            velocityVar: this.contentType ? this.contentType.variable : undefined,
+            velocityVar: this.contentType ? this.contentType.variable : this.velocityVar,
             cardinality: this.currentCardinalityIndex
         });
     }
@@ -105,7 +105,7 @@ export class DotNewRelationshipsComponent implements OnInit, OnChanges {
     }
 
     private loadContentType(velocityVar: string) {
-        if (velocityVar) {
+        if (velocityVar && !velocityVar.includes('.')) {
             this.contentTypeService.getContentType(velocityVar).subscribe((contentType) => {
                 this.contentType = contentType;
             });
