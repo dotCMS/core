@@ -98,11 +98,11 @@ public class HTMLPageAssetRenderedAPIImplTest {
 
         final PageMode defaultEditPageMode = hTMLPageAssetRenderedAPIImpl.getDefaultEditPageMode(user, request, pageUri);
 
-        assertEquals(defaultEditPageMode, PageMode.PREVIEW_MODE);
+        assertEquals(PageMode.PREVIEW_MODE,defaultEditPageMode);
     }
 
     @Test
-    public void testShouldReturnLIVEEMODE_whenPageIsNotLockAndUserNotHaveReadPermission()
+    public void testShouldReturnADMINMODE_whenPageIsNotLockAndUserNotHaveReadPermission()
             throws DotSecurityException, DotDataException{
 
         final User user = mock(User.class);
@@ -129,7 +129,7 @@ public class HTMLPageAssetRenderedAPIImplTest {
 
         final PageMode defaultEditPageMode = hTMLPageAssetRenderedAPIImpl.getDefaultEditPageMode(user, request, pageUri);
 
-        assertEquals(defaultEditPageMode, PageMode.LIVE);
+        assertEquals(PageMode.ADMIN_MODE, defaultEditPageMode);
     }
 
     @Test
@@ -157,6 +157,6 @@ public class HTMLPageAssetRenderedAPIImplTest {
 
         final PageMode defaultEditPageMode = hTMLPageAssetRenderedAPIImpl.getDefaultEditPageMode(user, request, pageUri);
 
-        assertEquals(defaultEditPageMode, PageMode.EDIT_MODE);
+        assertEquals(PageMode.EDIT_MODE,defaultEditPageMode);
     }
 }
