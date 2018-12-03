@@ -19,6 +19,7 @@ import { ResponseView } from 'dotcms-js';
 import { DotEventsService } from '@services/dot-events/dot-events.service';
 import { MenuItem } from 'primeng/primeng';
 import { Subject } from 'rxjs';
+import { DotEditContentTypeCacheService } from '../fields/content-type-fields-properties-form/field-properties/dot-relationships-property/services/dot-edit-content-type-cache.service';
 import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
 
 /**
@@ -61,10 +62,12 @@ export class ContentTypesEditComponent implements OnInit, OnDestroy {
         private fieldService: FieldService,
         private route: ActivatedRoute,
         public dotMessageService: DotMessageService,
-        public router: Router
+        public router: Router,
+        private dotEditContentTypeCacheService: DotEditContentTypeCacheService
     ) {}
 
     ngOnInit(): void {
+
         this.route.data
             .pipe(
                 pluck('contentType'),
@@ -72,6 +75,7 @@ export class ContentTypesEditComponent implements OnInit, OnDestroy {
             )
             .subscribe((contentType: ContentType) => {
                 this.data = contentType;
+                this.dotEditContentTypeCacheService.set(contentType);
 
                 if (contentType.fields) {
                     this.fields = contentType.fields;

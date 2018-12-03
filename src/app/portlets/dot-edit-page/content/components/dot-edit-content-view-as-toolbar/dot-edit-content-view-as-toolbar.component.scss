@@ -15,13 +15,15 @@
 
 ::ng-deep {
     .ui-dropdown {
-        .ui-dropdown-label,
-        .ui-dropdown-trigger {
-            color: $gray;
+        &:not(.ui-state-disabled) {
+            .ui-dropdown-label,
+            .ui-dropdown-trigger {
+                color: $gray;
+            }
         }
     }
 
-    .ui-chkbox {
+    .ui-chkbox:not(.ui-state-disabled){
         .ui-chkbox-box.ui-state-default {
             border-color: $gray;
         }

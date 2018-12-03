@@ -1,10 +1,9 @@
 
-import {of as observableOf} from 'rxjs';
+import {of as observableOf, Observable, Subject} from 'rxjs';
 
 import {map, mergeMap} from 'rxjs/operators';
 import {Injectable} from '@angular/core';
 import {RequestMethod} from '@angular/http';
-import {Observable, BehaviorSubject} from 'rxjs';
 
 import {ApiRoot} from 'dotcms-js';
 import {CoreWebService} from 'dotcms-js';
@@ -28,6 +27,8 @@ export interface IPublishEnvironment {
 
 @Injectable()
 export class BundleService {
+  bundles$: Subject<IBundle[]> = new Subject();
+
   private _bundleStoreUrl: string;
   private _loggedUserUrl: string;
   private _addToBundleUrl: string;
@@ -36,7 +37,6 @@ export class BundleService {
   private _bundlesAry: IBundle[] = [];
   private _environmentsAry: IPublishEnvironment[] = [];
 
-  bundles$: BehaviorSubject<IBundle[]> = new BehaviorSubject([]);
 
   static fromServerBundleTransformFn(data): IBundle[] {
     return data.items || [];

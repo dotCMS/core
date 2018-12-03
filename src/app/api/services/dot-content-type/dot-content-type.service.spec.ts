@@ -1,9 +1,10 @@
 import { DOTTestBed } from '../../../test/dot-test-bed';
-import { DotContentletService } from './dot-contentlet.service';
 import { ConnectionBackend, ResponseOptions, Response } from '@angular/http';
 import { MockBackend } from '@angular/http/testing';
 import { mockDotContentlet } from '../../../test/dot-contentlet.mock';
 import { StructureTypeView } from '@models/contentlet/structure-type-view.model';
+import { DotContentTypeService } from './dot-content-type.service';
+import { ContentType } from '@portlets/content-types/shared/content-type.model';
 
 let lastConnection: any;
 
@@ -25,8 +26,8 @@ function isRecentContentType(type: StructureTypeView): boolean {
 
 describe('DotContentletService', () => {
     beforeEach(() => {
-        this.injector = DOTTestBed.resolveAndCreate([DotContentletService]);
-        this.dotContentletService = this.injector.get(DotContentletService);
+        this.injector = DOTTestBed.resolveAndCreate([DotContentTypeService]);
+        this.dotContentletService = this.injector.get(DotContentTypeService);
         this.backend = this.injector.get(ConnectionBackend) as MockBackend;
         this.backend.connections.subscribe((connection: any) => (lastConnection = connection));
     });
@@ -58,5 +59,34 @@ describe('DotContentletService', () => {
             expect(action).toBe(mockDotContentlet[0].types[0].action);
         });
         mockConnectionContentletResponse();
+    });
+
+    it('should get one content type by id or varName', () => {
+        const id = '1';
+        const contentTypeExpected = {
+            clazz: 'clazz',
+            defaultType: false,
+            fixed: false,
+            folder: 'folder',
+            host: 'host',
+            id: id,
+            name: 'content type name',
+            owner: 'user',
+            system: false,
+        };
+
+        this.dotContentletService.getContentType(id).subscribe((contentType: ContentType) => {
+            expect(contentType).toBe(contentTypeExpected);
+        });
+
+        lastConnection.mockRespond(
+            new Response(
+                new ResponseOptions({
+                    body: {
+                        entity: contentTypeExpected
+                    }
+                })
+            )
+        );
     });
 });

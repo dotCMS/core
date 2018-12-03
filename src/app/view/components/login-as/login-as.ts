@@ -161,6 +161,7 @@ export class LoginAsComponent implements OnInit, OnDestroy {
      * @memberof LoginAsComponent
      */
     userSelectedHandler(user: User): void {
+        this.errorMessage = '';
         this.needPassword = user.requestPassword || false;
     }
 

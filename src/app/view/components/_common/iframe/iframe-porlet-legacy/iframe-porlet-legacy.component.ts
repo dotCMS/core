@@ -6,11 +6,11 @@ import { BehaviorSubject } from 'rxjs';
 
 import { SiteService, DotcmsEventsService, LoggerService } from 'dotcms-js';
 
-import { DotContentletService } from '@services/dot-contentlet/dot-contentlet.service';
 import { DotLoadingIndicatorService } from '../dot-loading-indicator/dot-loading-indicator.service';
 import { DotMenuService } from '@services/dot-menu.service';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { DotIframeEventsHandler } from './services/iframe-events-handler.service';
+import { DotContentTypeService } from '@services/dot-content-type/dot-content-type.service';
 
 @Component({
     selector: 'dot-iframe-porlet',
@@ -22,7 +22,7 @@ export class IframePortletLegacyComponent implements OnInit {
     isLoading = false;
 
     constructor(
-        private contentletService: DotContentletService,
+        private contentletService: DotContentTypeService,
         private dotLoadingIndicatorService: DotLoadingIndicatorService,
         private dotMenuService: DotMenuService,
         private dotRouterService: DotRouterService,

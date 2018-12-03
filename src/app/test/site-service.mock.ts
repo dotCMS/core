@@ -56,4 +56,8 @@ export class SiteServiceMock {
     get switchSite$(): Observable<Site> {
         return this._switchSite$.asObservable();
     }
+
+    getCurrentSite(): Observable<Site> {
+        return observableOf(mockSites[0]);
+    }
 }

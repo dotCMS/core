@@ -175,7 +175,10 @@ describe('DotPageStateService', () => {
             service.reload$.subscribe((page: DotRenderedPageState) => {
                 expect(page).toBe(renderedPage);
             });
-            service.reload('/hello/world');
+
+            service.reload({
+                url: '/hello/world'
+            });
         });
     });
 
@@ -224,7 +227,14 @@ describe('DotPageStateService', () => {
                 ...noLockedByPage
             } = mockDotPage;
 
-            service.get('/hello/world', 2).subscribe((updatedPageState: DotRenderedPageState) => {
+            const options = {
+                url: '/hello/world',
+                viewAs: {
+                    language_id: 2
+                }
+            };
+
+            service.get(options).subscribe((updatedPageState: DotRenderedPageState) => {
                 expect(updatedPageState.page).toEqual(noLockedByPage);
                 expect(updatedPageState.state).toEqual({
                     locked: false,

@@ -41,15 +41,8 @@ const VALIDATIONS = {
         providerFn: (_constraint: TypeConstraint) => CustomValidators.required()
     }
 };
-
-const Registry = {};
-
 export class DataTypeModel {
     private _vFns: Function[];
-
-    static registerType(typeId: string, type: Function): void {
-        Registry[typeId] = type;
-    }
 
     constructor(
         public id: string,
@@ -61,7 +54,7 @@ export class DataTypeModel {
     validators(): Array<Function> {
         if (this._vFns == null) {
             this._vFns = [];
-            Object.keys(VALIDATIONS).forEach(vDefKey => {
+            Object.keys(VALIDATIONS).forEach((vDefKey) => {
                 const vDef: ValidatorDefinition = VALIDATIONS[vDefKey];
                 const constraint: TypeConstraint = this._constraints[vDef.key];
                 if (constraint) {
@@ -81,10 +74,6 @@ export class DataTypeModel {
 export class CwInputDefinition {
     private _vFns: Function[];
     private _validator: Function;
-
-    static registerType(typeId: string, type: Function): void {
-        Registry[typeId] = type;
-    }
 
     static fromJson(json: any, name: string): CwInputDefinition {
         const typeId = json.id || json.type;
@@ -155,10 +144,6 @@ export class CwSpacerInputDefinition extends CwInputDefinition {
     }
 }
 
-CwInputDefinition.registerType('text', CwInputDefinition);
-CwInputDefinition.registerType('datetime', CwInputDefinition);
-CwInputDefinition.registerType('number', CwInputDefinition);
-
 export class CwDropdownInputModel extends CwInputDefinition {
     options: { [key: string]: any };
     allowAdditions: boolean;
@@ -184,7 +169,6 @@ export class CwDropdownInputModel extends CwInputDefinition {
         this.selected = defV == null || defV === '' ? [] : [defV];
     }
 }
-CwInputDefinition.registerType('dropdown', CwDropdownInputModel);
 
 export class CwRestDropdownInputModel extends CwInputDefinition {
     optionUrl: string;
@@ -209,8 +193,6 @@ export class CwRestDropdownInputModel extends CwInputDefinition {
     }
 }
 
-CwInputDefinition.registerType('restDropdown', CwRestDropdownInputModel);
-
 export class ParameterDefinition {
     defaultValue: string;
     priority: number;
@@ -232,3 +214,11 @@ export class ParameterDefinition {
 
     constructor() {}
 }
+
+const Registry = {
+    text: CwInputDefinition,
+    datetime: CwInputDefinition,
+    number: CwInputDefinition,
+    dropdown: CwDropdownInputModel,
+    restDropdown: CwRestDropdownInputModel
+};

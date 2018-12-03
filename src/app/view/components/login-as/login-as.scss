@@ -1,14 +1,15 @@
 @import "mixins";
 @import "variables";
 
-form {
+.login-as {
     width: 300px;
+}
+
+.login-as__error-message {
+    color: $red;
+    margin-top: 0;
 }
 
 input[type="password"] {
     width: 100%;
-}
-
-.error-message {
-    color: $red;
 }

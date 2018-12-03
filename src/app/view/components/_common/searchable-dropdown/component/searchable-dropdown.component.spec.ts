@@ -1,21 +1,66 @@
 import { By } from '@angular/platform-browser';
-import { ComponentFixture, async } from '@angular/core/testing';
+import { ComponentFixture, async, fakeAsync, tick } from '@angular/core/testing';
 import { DOTTestBed } from '../../../../../test/dot-test-bed';
-import { SimpleChange, DebugElement } from '@angular/core';
+import { DebugElement, Component, Input } from '@angular/core';
 import { DotMessageService } from '@services/dot-messages-service';
 import { MockDotMessageService } from '../../../../../test/dot-message-service.mock';
 import { SEARCHABLE_NGFACES_MODULES } from '../searchable-dropdown.module';
 import { SearchableDropdownComponent } from './searchable-dropdown.component';
-import { fakeAsync, tick } from '@angular/core/testing';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { DotIconModule } from '../../dot-icon/dot-icon.module';
+import * as _ from 'lodash';
+@Component({
+    selector: 'dot-host-component',
+    template: `<dot-searchable-dropdown  [data] = "data"
+                                         [labelPropertyName] = "labelPropertyName"
+                                         [valuePropertyName] = "valuePropertyName"
+                                         [pageLinkSize] = "pageLinkSize"
+                                         [rows] = "rows"
+                                         [totalRecords] = "totalRecords"
+                                         [placeholder] = "placeholder"
+                                         [persistentPlaceholder] = "persistentPlaceholder"
+                                         [width] = "width"
+                                         [multiple] = "multiple">
+               </dot-searchable-dropdown>`
+})
+class HostTestComponent {
+    @Input()
+    data: any[];
+
+    @Input()
+    labelPropertyName: string | string[];
+
+    @Input()
+    valuePropertyName: string;
+
+    @Input()
+    pageLinkSize = 3;
+
+    @Input()
+    rows: number;
+
+    @Input()
+    totalRecords: number;
+
+    @Input()
+    placeholder = '';
+
+    @Input()
+    persistentPlaceholder: boolean;
+
+    @Input()
+    width: string;
+
+    @Input()
+    multiple: boolean;
+}
 
 describe('SearchableDropdownComponent', () => {
     const NROWS = 6;
 
-    let comp: SearchableDropdownComponent;
-    let fixture: ComponentFixture<SearchableDropdownComponent>;
+    let hostFixture: ComponentFixture<HostTestComponent>;
     let de: DebugElement;
+    let comp: SearchableDropdownComponent;
     const data = [];
     let rows: number;
     let pageLinkSize: number;
@@ -27,14 +72,14 @@ describe('SearchableDropdownComponent', () => {
         });
 
         DOTTestBed.configureTestingModule({
-            declarations: [SearchableDropdownComponent],
+            declarations: [SearchableDropdownComponent, HostTestComponent],
             imports: [...SEARCHABLE_NGFACES_MODULES, BrowserAnimationsModule, DotIconModule],
             providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
         });
 
-        fixture = DOTTestBed.createComponent(SearchableDropdownComponent);
-        comp = fixture.componentInstance;
-        de = fixture.debugElement;
+        hostFixture = DOTTestBed.createComponent(HostTestComponent);
+        de = hostFixture.debugElement.query(By.css('dot-searchable-dropdown'));
+        comp = de.componentInstance;
 
         for (let i = 0; i < NROWS; i++) {
             data[i] = {
@@ -49,18 +94,24 @@ describe('SearchableDropdownComponent', () => {
         rows = NROWS / 3;
         pageLinkSize = 1;
 
-        comp.totalRecords = NROWS;
-        comp.rows = rows;
-        comp.pageLinkSize = pageLinkSize;
+        hostFixture.componentInstance.totalRecords = NROWS;
+        hostFixture.componentInstance.rows = rows;
+        hostFixture.componentInstance.pageLinkSize = pageLinkSize;
+    }));
+
+    beforeEach(() => {
+        hostFixture.componentInstance.placeholder = 'placeholder';
+        hostFixture.detectChanges();
 
         mainButton = de.query(By.css('button'));
         mainButton.triggerEventHandler('click', {});
-    }));
+    });
 
     it('should renderer the pagination links', () => {
-        fixture.detectChanges();
 
-        const paginator = fixture.debugElement.query(By.css('p-paginator'));
+        hostFixture.detectChanges();
+
+        const paginator = de.query(By.css('p-paginator'));
 
         const componentInstance = paginator.componentInstance;
         const rowParameter = componentInstance.rows;
@@ -73,37 +124,40 @@ describe('SearchableDropdownComponent', () => {
     });
 
     it('should renderer the datas', () => {
-        comp.data = data;
-        comp.labelPropertyName = 'name';
+        hostFixture.componentInstance.data = data;
+        hostFixture.componentInstance.labelPropertyName = 'name';
 
-        fixture.detectChanges();
+        hostFixture.detectChanges();
 
-        const pDataList = fixture.debugElement.query(By.css('p-dataList')).componentInstance;
-        expect(comp.data).toEqual(pDataList.value);
+        const pDataList = de.query(By.css('p-dataList')).componentInstance;
+
+        expect(hostFixture.componentInstance.data.map(item => {
+            item.label = item.name;
+            return item;
+        })).toEqual(pDataList.value);
     });
 
     it('should render a string property in p-dataList', () => {
-        comp.data = data;
-        comp.labelPropertyName = 'name';
+        hostFixture.componentInstance.data = data;
+        hostFixture.componentInstance.labelPropertyName = 'name';
 
-        fixture.detectChanges();
+        hostFixture.detectChanges();
 
-        const dataListDataEl = fixture.debugElement.query(By.css('p-dataList ul li span'));
+        const dataListDataEl = de.query(By.css('p-dataList ul li span'));
         expect(dataListDataEl.nativeElement.textContent).toEqual('site-0');
     });
 
     it('should render a string array of properties in p-dataList', () => {
-        comp.data = data;
-        comp.labelPropertyName = ['name', 'parentPermissionable.hostname'];
+        hostFixture.componentInstance.data = data;
+        hostFixture.componentInstance.labelPropertyName = ['name', 'parentPermissionable.hostname'];
 
-        fixture.detectChanges();
+        hostFixture.detectChanges();
 
-        const dataListDataEl = fixture.debugElement.query(By.css('p-dataList ul li span'));
+        const dataListDataEl = de.query(By.css('p-dataList ul li span'));
         expect(dataListDataEl.nativeElement.textContent).toEqual('site-0 - demo.dotcms.com');
     });
 
-    it(
-        'should the pageChange call the paginate method',
+    it('should the pageChange call the paginate method',
         fakeAsync(() => {
             const first = 2;
             const page = 3;
@@ -116,11 +170,11 @@ describe('SearchableDropdownComponent', () => {
                 event = e;
             });
 
-            fixture.detectChanges();
-            const input = fixture.debugElement.query(By.css('input[type="text"]'));
+            hostFixture.detectChanges();
+            const input = hostFixture.debugElement.query(By.css('input[type="text"]'));
             input.nativeElement.value = filter;
 
-            const dataList = fixture.debugElement.query(By.css('p-dataList'));
+            const dataList = hostFixture.debugElement.query(By.css('p-dataList'));
             const dataListComponentInstance = dataList.componentInstance;
 
             dataListComponentInstance.onLazyLoad.emit({
@@ -142,19 +196,23 @@ describe('SearchableDropdownComponent', () => {
 
     describe('emit the change event', () => {
         let items;
+        let dataExpected;
 
         beforeEach(() => {
-            comp.data = data;
-            comp.labelPropertyName = 'name';
+            hostFixture.componentInstance.data = data;
+            hostFixture.componentInstance.labelPropertyName = 'name';
             spyOn(comp.change, 'emit');
 
-            fixture.detectChanges();
-            items = fixture.debugElement.queryAll(By.css('span'));
+            hostFixture.detectChanges();
+            items = de.queryAll(By.css('span'));
+
+            dataExpected = _.cloneDeep(data[0]);
+            dataExpected.label = dataExpected.name;
         });
 
         it('should change the value', () => {
             items[0].triggerEventHandler('click', null);
-            expect(comp.change.emit).toHaveBeenCalledWith(data[0]);
+            expect(comp.change.emit).toHaveBeenCalledWith(dataExpected);
         });
 
         it('should emit the same value twice when multiple equal true', () => {
@@ -163,7 +221,7 @@ describe('SearchableDropdownComponent', () => {
             items[0].triggerEventHandler('click', null);
             items[0].triggerEventHandler('click', null);
 
-            expect(comp.change.emit).toHaveBeenCalledWith(data[0]);
+            expect(comp.change.emit).toHaveBeenCalledWith(dataExpected);
             expect(comp.change.emit).toHaveBeenCalledTimes(2);
         });
 
@@ -171,33 +229,30 @@ describe('SearchableDropdownComponent', () => {
             items[0].triggerEventHandler('click', null);
             items[0].triggerEventHandler('click', null);
 
-            expect(comp.change.emit).toHaveBeenCalledWith(data[0]);
+            expect(comp.change.emit).toHaveBeenCalledWith(dataExpected);
             expect(comp.change.emit).toHaveBeenCalledTimes(1);
         });
     });
 
     it('should be valueString equals to placeholder', () => {
-        const placeholderValue = 'testing placeholder';
+        hostFixture.componentInstance.placeholder = 'testing placeholder';
 
-        comp.ngOnChanges({
-            placeholder: new SimpleChange(null, placeholderValue, true)
-        });
-
-        expect(placeholderValue).toEqual(comp.valueString);
+        hostFixture.detectChanges();
+        expect(hostFixture.componentInstance.placeholder ).toEqual(comp.valueString);
     });
 
     it('should set width', () => {
-        comp.width = '50%';
-        fixture.detectChanges();
+        hostFixture.componentInstance.width = '50%';
+        hostFixture.detectChanges();
 
-        const button = fixture.debugElement.query(By.css('button'));
+        const button = de.query(By.css('button'));
         expect('50%').toEqual(button.styles.width);
     });
 
     it('should width undefined', () => {
-        fixture.detectChanges();
+        hostFixture.detectChanges();
 
-        const button = fixture.debugElement.query(By.css('button'));
+        const button = de.query(By.css('button'));
         expect(button.styles.width).toBeNull();
     });
 });
