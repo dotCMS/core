@@ -1,30 +1,29 @@
 import { By } from '@angular/platform-browser';
-import { ComponentFixture } from '@angular/core/testing';
 import { DebugElement } from '@angular/core';
-import { DotContentTypeFieldsVariablesComponent } from './dot-content-type-fields-variables.component';
-import { DotActionButtonModule } from '@components/_common/dot-action-button/dot-action-button.module';
-import { MockDotMessageService } from '../../../../test/dot-message-service.mock';
-import { DOTTestBed } from '../../../../test/dot-test-bed';
-import { DotMessageService } from '../../../../api/services/dot-messages-service';
-import { DotIconButtonModule } from '../../../../view/components/_common/dot-icon-button/dot-icon-button.module';
-import { LoginService } from 'dotcms-js';
-import { LoginServiceMock } from '../../../../test/login-service.mock';
+import { ComponentFixture } from '@angular/core/testing';
 import { RouterTestingModule } from '@angular/router/testing';
-import {
-    DotFieldVariablesServiceMock,
-    mockFieldVariables
-} from '../../../../test/field-variable-service.mock';
-import { DotFieldVariablesService } from './services/dot-field-variables.service';
-import { TableModule } from 'primeng/table';
-import { of } from 'rxjs';
+import { DotContentTypeFieldsVariablesComponent } from './dot-content-type-fields-variables.component';
 // tslint:disable-next-line:max-line-length
 import { DotContentTypeFieldsVariablesTableRowModule } from './components/dot-content-type-fields-variables-table-row/dot-content-type-fields-variables-table-row.module';
+import { DotContentTypeFieldsVariablesTableRowComponent } from './components/dot-content-type-fields-variables-table-row/dot-content-type-fields-variables-table-row.component';
+import { DotActionButtonModule } from '@components/_common/dot-action-button/dot-action-button.module';
+import { DotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
+import { LoginService } from 'dotcms-js';
+import { DotMessageService } from '@services/dot-messages-service';
+import { DotFieldVariablesService } from './services/dot-field-variables.service';
+import { DOTTestBed } from '@tests/dot-test-bed';
+import { MockDotMessageService } from '@tests/dot-message-service.mock';
+import { LoginServiceMock } from '@tests/login-service.mock';
+import { DotFieldVariablesServiceMock, mockFieldVariables } from '@tests/field-variable-service.mock';
+import { TableModule } from 'primeng/table';
+import { of } from 'rxjs';
 
-fdescribe('ContentTypeFieldsVariablesComponent', () => {
+describe('DotContentTypeFieldsVariablesComponent', () => {
     let comp: DotContentTypeFieldsVariablesComponent;
     let fixture: ComponentFixture<DotContentTypeFieldsVariablesComponent>;
     let de: DebugElement;
     let dotFieldVariableService: DotFieldVariablesService;
+    let tableRow: DotContentTypeFieldsVariablesTableRowComponent;
 
     beforeEach(() => {
         const messageServiceMock = new MockDotMessageService({
@@ -89,6 +88,7 @@ fdescribe('ContentTypeFieldsVariablesComponent', () => {
         fixture.detectChanges();
         de.query(By.css('.action-header__primary-button')).triggerEventHandler('click', { stopPropagation: () => {} });
         expect(comp.fieldVariables.length).toBe(4);
+        expect(comp.fieldVariablesBackup.length).toBe(4);
     });
 
     it('should save a variable', () => {
@@ -100,11 +100,12 @@ fdescribe('ContentTypeFieldsVariablesComponent', () => {
         };
 
         fixture.detectChanges();
-        comp.saveVariable(0);
+        tableRow = de.query(By.css('dot-content-type-fields-variables-table-row')).componentInstance;
+        tableRow.save.emit(0);
         expect(dotFieldVariableService.save).toHaveBeenCalledWith(params);
     });
 
-    it('should delete a variable', () => {
+    it('should delete a variable from the server', () => {
         spyOn(dotFieldVariableService, 'delete').and.returnValue(of([]));
         fixture.detectChanges();
 
@@ -113,12 +114,50 @@ fdescribe('ContentTypeFieldsVariablesComponent', () => {
             fieldId: comp.field.fieldId,
             variable: mockFieldVariables[0]
         };
-        comp.deleteVariable(mockFieldVariables[0], 0);
+        tableRow = de.query(By.css('dot-content-type-fields-variables-table-row')).componentInstance;
+        tableRow.delete.emit(0);
 
         expect(dotFieldVariableService.delete).toHaveBeenCalledWith(params);
     });
 
-    it('should stoppropagation of keydown.enter event in the datatable', () => {
+    it('should delete an empty variable from the UI', () => {
+        spyOn(dotFieldVariableService, 'load').and.returnValue(of([{
+            key: 'test',
+            value: 'none'
+        }]));
+        fixture.detectChanges();
+
+        tableRow = de.query(By.css('dot-content-type-fields-variables-table-row')).componentInstance;
+        tableRow.delete.emit(0);
+
+        expect(comp.fieldVariables.length).toBe(0);
+    });
+
+    it('should delete an empty variable from the UI, when cancelled', () => {
+        spyOn(dotFieldVariableService, 'load').and.returnValue(of([{
+            key: 'test',
+            value: 'none'
+        }]));
+        fixture.detectChanges();
+
+        tableRow = de.query(By.css('dot-content-type-fields-variables-table-row')).componentInstance;
+        tableRow.cancel.emit(0);
+
+        expect(comp.fieldVariables.length).toBe(0);
+    });
+
+    it('should restore original value to variable in the UI, when cancelled', () => {
+        fixture.detectChanges();
+
+        comp.fieldVariablesBackup[0].value = 'Value Changed';
+
+        tableRow = de.query(By.css('dot-content-type-fields-variables-table-row')).componentInstance;
+        tableRow.cancel.emit(0);
+
+        expect(comp.fieldVariablesBackup[0]).toEqual(comp.fieldVariables[0]);
+    });
+
+    it('should stop propagation of keydown.enter event in the datatable', () => {
         fixture.detectChanges();
         const stopPropagationSpy = jasmine.createSpy('spy');
         const dataTable = de.query(By.css('p-table'));
@@ -128,5 +167,4 @@ fdescribe('ContentTypeFieldsVariablesComponent', () => {
 
         expect(stopPropagationSpy).toHaveBeenCalledTimes(1);
     });
-
 });
