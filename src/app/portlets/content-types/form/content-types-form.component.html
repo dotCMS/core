@@ -31,7 +31,6 @@
     </div>
     <span class="form__group-hint" *ngIf="!dateVarOptions.length" id="field-dates-hint">{{ dotMessageService.get('contenttypes.form.message.no.date.fields.defined') }}</span>
     <div class="form__group" *ngIf="form.get('detailPage')">
-        {{form.get('detailPage').value}}
         <dot-page-selector id="content-type-form-detail-page" formControlName="detailPage" [floatingLabel]="true" tabindex="7" [style]="{'width': '100%'}" label="{{ dotMessageService.get('contenttypes.form.field.detail.page') }}"></dot-page-selector>
     </div>
     <div class="form__group" *ngIf="form.get('urlMapPattern')">

@@ -1,3 +1,5 @@
+@import "variables";
+
 :host {
     ::ng-deep {
         .ui-autocomplete-panel {
@@ -7,5 +9,12 @@
         .ui-autocomplete-list-item {
             white-space: nowrap;
         }
+    }
+
+    .dot-page-selector__hint{
+        position: absolute;
+        right: 0;
+        top: $basic-padding * 3;
+        z-index: 1;
     }
 }

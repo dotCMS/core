@@ -148,7 +148,7 @@ import {
         DotBaseTypeSelectorModule,
         MdInputTextModule,
         DotAutofocusModule,
-        DotContentTypeFieldsVariablesModule
+        DotContentTypeFieldsVariablesModule,
         DotRelationshipsModule
     ],
     providers: [
