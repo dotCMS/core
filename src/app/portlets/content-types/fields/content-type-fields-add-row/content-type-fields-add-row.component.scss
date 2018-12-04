@@ -30,14 +30,6 @@ $row-height: 70px;
     align-items: baseline;
     height: 198px;
     justify-content: center;
-
-    ::ng-deep .ui-button.ui-button-icon-only {
-        margin-left: $basic-padding;
-
-        span.pi-caret-down {
-            color: $white;
-        }
-    }
 }
 
 .dot-add-rows-columns-list__container {

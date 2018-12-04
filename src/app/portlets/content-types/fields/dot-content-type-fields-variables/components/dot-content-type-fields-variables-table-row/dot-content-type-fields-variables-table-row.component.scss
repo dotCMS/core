@@ -18,17 +18,17 @@
     p-celleditor {
         span {
             display: block;
-            height: 34px;
+            height: $basic-padding * 4;
         }
         input {
-            height: 25px;
-            margin: 14px 0px 11px;
+            height: $basic-padding * 3;
+            margin: 12px 0px 10px;
         }
     }
 }
 
 ::ng-deep .ui-table .ui-table-tbody tr td {
-    padding: 3px $basic-padding * 2;
+    padding: 5px $basic-padding * 2;
 
     &.content-type-fields__variables-actions {
 

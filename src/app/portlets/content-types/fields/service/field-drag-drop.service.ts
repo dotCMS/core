@@ -181,7 +181,6 @@ export class FieldDragDropService {
         return this.isDraggingFromSource(source);
     }
 
-    // tslint:disable-next-line:cyclomatic-complexity
     private shouldMoveRow(
         _el: HTMLElement,
         source: HTMLElement,
@@ -192,7 +191,11 @@ export class FieldDragDropService {
         const isDragButton =
             handle.parentElement.classList.contains('row-header__drag') ||
             handle.classList.contains('row-header__drag');
-        return noDrag && (this.isDraggingFromSource(source) || isDragButton);
+        return noDrag && this.shouldDrag(source, isDragButton);
+    }
+
+    private shouldDrag(source: HTMLElement, isDragButton: boolean): boolean {
+        return this.isDraggingFromSource(source) || isDragButton;
     }
 
     private shouldAccepts(
