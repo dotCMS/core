@@ -4,7 +4,7 @@ import { DebugElement, Component} from '@angular/core';
 import { ContentTypeFieldsTabComponent } from './';
 import { By } from '@angular/platform-browser';
 import { ContentTypeField, FieldTab } from '../';
-import { IconButtonTooltipModule } from '@components/_common/icon-button-tooltip/icon-button-tooltip.module';
+import { DotIconButtonTooltipModule } from '@components/_common/icon-button-tooltip/icon-button-tooltip.module';
 import { DotMessageService } from '@services/dot-messages-service';
 import { MockDotMessageService } from '../../../../test/dot-message-service.mock';
 import { DotAlertConfirmService } from '@services/dot-alert-confirm';
@@ -49,7 +49,7 @@ describe('ContentTypeFieldsTabComponent', () => {
                 ContentTypeFieldsTabComponent,
                 DotTestHostComponent
             ],
-            imports: [IconButtonTooltipModule],
+            imports: [DotIconButtonTooltipModule],
             providers: [
                 DotAlertConfirmService,
                 {

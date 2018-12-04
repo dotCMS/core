@@ -1,5 +1,4 @@
 
 <h2 class="page-info__title">{{ pageState.page.title }}</h2>
-<button pButton icon="fa fa-clone" class="page-info__copy-url" (click)="copyUrlToClipboard()"></button>
-<dot-copy-button></dot-copy-button>
+<dot-copy-button [copy]="url$ | async"></dot-copy-button>
 

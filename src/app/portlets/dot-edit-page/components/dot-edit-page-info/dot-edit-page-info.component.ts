@@ -1,10 +1,11 @@
 import { Component, OnInit, Input, ElementRef, ViewChild } from '@angular/core';
 
 import { DotRenderedPageState } from '../../shared/models/dot-rendered-page-state.model';
-import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { DotMessageService } from '@services/dot-messages-service';
-import { DotClipboardUtil } from '../../../../api/util/clipboard/ClipboardUtil';
 import { SiteService } from 'dotcms-js';
+import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
+import { Site } from 'dotcms-js/lib/core/treeable/shared/site.model';
 
 /**
  * Basic page information for edit mode
@@ -19,17 +20,13 @@ import { SiteService } from 'dotcms-js';
     styleUrls: ['./dot-edit-page-info.component.scss']
 })
 export class DotEditPageInfoComponent implements OnInit {
-    @Input()
-    pageState: DotRenderedPageState;
-    @ViewChild('lockedPageMessage')
-    lockedPageMessage: ElementRef;
+    @Input() pageState: DotRenderedPageState;
 
-    constructor(
-        private dotClipboardUtil: DotClipboardUtil,
-        private dotGlobalMessageService: DotGlobalMessageService,
-        private siteService: SiteService,
-        public dotMessageService: DotMessageService
-    ) {}
+    @ViewChild('lockedPageMessage') lockedPageMessage: ElementRef;
+
+    url$: Observable<string>;
+
+    constructor(private siteService: SiteService, public dotMessageService: DotMessageService) {}
 
     ngOnInit() {
         this.dotMessageService
@@ -40,6 +37,8 @@ export class DotEditPageInfoComponent implements OnInit {
                 'editpage.toolbar.page.locked.by.user'
             ])
             .subscribe();
+
+        this.url$ = this.getFullUrl(this.pageState.page.pageURI);
     }
 
     /**
@@ -56,34 +55,17 @@ export class DotEditPageInfoComponent implements OnInit {
         }, 500);
     }
 
-    /**
-     * Copy url to clipboard
-     *
-     * @returns boolean
-     * @memberof DotEditPageToolbarComponent
-     */
-    copyUrlToClipboard(): void {
-        this.dotClipboardUtil
-            .copy(this.getFullUrl(this.pageState.page.pageURI))
-            .then(() => {
-                this.dotGlobalMessageService.display(
-                    this.dotMessageService.get('dot.common.message.pageurl.copied.clipboard')
-                );
+    private getFullUrl(url: string): Observable<string> {
+        return this.siteService.getCurrentSite().pipe(
+            map((site: Site) => {
+                return [
+                    location.protocol,
+                    '//',
+                    site.name,
+                    location.port ? `:${location.port}` : '',
+                    url
+                ].join('');
             })
-            .catch(() => {
-                this.dotGlobalMessageService.error(
-                    this.dotMessageService.get('dot.common.message.pageurl.copied.clipboard.error')
-                );
-            });
-    }
-
-    private getFullUrl(url: string): string {
-        return [
-            location.protocol,
-            '//',
-            this.siteService.currentSite['name'],
-            location.port ? `:${location.port}` : '',
-            url
-        ].join('');
+        );
     }
 }
