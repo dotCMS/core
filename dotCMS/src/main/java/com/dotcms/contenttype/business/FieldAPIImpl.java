@@ -47,6 +47,7 @@ import com.dotmarketing.business.PermissionLevel;
 import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotDataValidationException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.structure.model.Relationship;
@@ -186,7 +187,7 @@ public class FieldAPIImpl implements FieldAPI {
      * @param field
      * @throws DotDataException
      */
-    private void validateRelationshipField(Field field) throws DotDataException {
+    private void validateRelationshipField(Field field) throws DotDataValidationException {
 
         String errorMessage = null;
         if (!field.indexed()){
@@ -206,7 +207,7 @@ public class FieldAPIImpl implements FieldAPI {
 
         if (errorMessage != null){
             Logger.error(this, errorMessage);
-            throw new DotDataException(errorMessage);
+            throw new DotDataValidationException(errorMessage);
         }
     }
 
