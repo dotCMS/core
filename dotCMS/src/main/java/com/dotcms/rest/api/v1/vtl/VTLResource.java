@@ -17,6 +17,8 @@ import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.javax.ws.rs.core.UriInfo;
+import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
+import com.dotcms.repackage.org.glassfish.jersey.media.multipart.*;
 import com.dotcms.repackage.org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.PATCH;
@@ -40,6 +42,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.google.common.annotations.VisibleForTesting;
@@ -50,11 +53,8 @@ import org.apache.velocity.exception.MethodInvocationException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.io.StringWriter;
-import java.util.Map;
-import java.util.Optional;
+import java.io.*;
+import java.util.*;
 
 @Path("/vtl")
 public class VTLResource {
@@ -145,6 +145,68 @@ public class VTLResource {
         return processRequest(request, response, uriInfo, folderName, null, HTTPMethod.POST, bodyMap);
     }
 
+    @POST
+    @Path("/{folder}")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    public final Response postMultipart(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
+                                        FormDataMultiPart multipart,
+                                        @Context UriInfo uriInfo, @PathParam("folder") final String folderName) {
+
+        try {
+            final List<File> binaries = getBinariesFromMultipart(multipart);
+            final Map<String, String> bodyMap = getBodyMapFromMultipart(multipart);
+
+            return processRequest(request, response, uriInfo, folderName, null, HTTPMethod.POST, bodyMap,
+                    binaries.toArray(new File[0]));
+
+        } catch(Exception e) {
+            Logger.error(this,"Exception on VTL endpoint. GET method: " + e.getMessage(), e);
+            return ResponseUtil.mapExceptionResponse(e);
+        }
+    }
+
+    private Map<String, String> getBodyMapFromMultipart(final FormDataMultiPart multipart) throws IOException, JSONException {
+        Map<String, String> bodyMap = null;
+
+        for (BodyPart part : multipart.getBodyParts()) {
+            final ContentDisposition contentDisposition = part.getContentDisposition();
+            final String name = contentDisposition != null && contentDisposition.getParameters().containsKey("name")
+                    ? contentDisposition.getParameters().get("name")
+                    : "";
+
+            if (part.getMediaType().equals(MediaType.APPLICATION_JSON_TYPE) || name
+                    .equals("json")) {
+
+                bodyMap = webResource.processJSON(part.getEntityAs(InputStream.class));
+            }
+        }
+
+        return bodyMap;
+    }
+
+    private List<File> getBinariesFromMultipart(final FormDataMultiPart multipart) {
+        final List<File> binaries = new ArrayList<>();
+
+        for (FormDataBodyPart part : multipart.getFields("file")) {
+            String filename = part.getContentDisposition().getFileName();
+            java.io.File tmpFolder = new File(
+                    APILocator.getFileAssetAPI().getRealAssetPathTmpBinary() + UUIDUtil.uuid());
+            tmpFolder.mkdirs();
+            java.io.File tempFile = new File(
+                    tmpFolder.getAbsolutePath() + File.separator + filename);
+            if (tempFile.exists()) {
+                tempFile.delete();
+            }
+
+            binaries.add(tempFile);
+        }
+
+        return binaries;
+    }
+
     /**
      * Returns the output of a convention based "put.vtl" file, located under the given {folder} after being evaluated
      * using the velocity engine.
@@ -209,7 +271,8 @@ public class VTLResource {
                                     final UriInfo uriInfo, final String folderName,
                                     final String pathParam,
                                     final HTTPMethod httpMethod,
-                                    final Map<String, String> bodyMap) {
+                                    final Map<String, String> bodyMap,
+                                    final File...binaries) {
         final InitDataObject initDataObject = this.webResource.init
                 (null, false, request, false, null);
 
@@ -228,7 +291,8 @@ public class VTLResource {
             final Map<String, Object> contextParams = CollectionsUtils.map(
                     "pathParam", pathParam,
                     "queryParams", uriInfo.getQueryParameters(),
-                    "bodyMap", bodyMap);
+                    "bodyMap", bodyMap,
+                    "binaries", Arrays.asList(binaries));
 
             return evalVTLFile(request, response, getFileAsset, contextParams,
                     initDataObject.getUser(), cache);
