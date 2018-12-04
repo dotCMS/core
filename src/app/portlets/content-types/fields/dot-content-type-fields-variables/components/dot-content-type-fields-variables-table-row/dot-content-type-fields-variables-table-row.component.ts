@@ -40,6 +40,7 @@ export class DotContentTypeFieldsVariablesTableRowComponent implements OnInit {
     showEditMenu: Boolean = false;
     saveDisabled: Boolean = false;
     messages: { [key: string]: string } = {};
+    elemRef: ElementRef;
 
     constructor(public dotMessageService: DotMessageService) {}
 
@@ -95,15 +96,14 @@ export class DotContentTypeFieldsVariablesTableRowComponent implements OnInit {
      * @memberof DotContentTypeFieldsVariablesTableRowComponent
      */
     onPressEnter($event: KeyboardEvent): void {
-        let elemRef: ElementRef;
         if (this.keyInputInvalid($event)) {
-            elemRef = this.keyCell;
+            this.elemRef = this.keyCell;
         } else if (this.fieldVariable.key !== '') {
-            elemRef = this.getElementToFocus($event);
+            this.getElementToFocus($event);
         }
 
         setTimeout(() => {
-            elemRef.nativeElement.click();
+            this.elemRef.nativeElement.click();
         });
     }
 
@@ -124,14 +124,12 @@ export class DotContentTypeFieldsVariablesTableRowComponent implements OnInit {
     }
 
     // tslint:disable-next-line:cyclomatic-complexity
-    private getElementToFocus($event: KeyboardEvent): ElementRef {
-        let elemRef: ElementRef;
+    private getElementToFocus($event: KeyboardEvent): void {
         if (this.isKeyInput($event) || this.fieldVariable.value === '') {
-            elemRef = this.valueCell;
+            this.elemRef = this.valueCell;
         } else if (this.fieldVariable.value !== '') {
-            elemRef = this.saveButton;
+            this.elemRef = this.saveButton;
         }
-        return elemRef;
     }
 
     private isKeyInput($event: KeyboardEvent): boolean {
