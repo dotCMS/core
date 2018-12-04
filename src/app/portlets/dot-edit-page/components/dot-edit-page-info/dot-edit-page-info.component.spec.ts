@@ -17,10 +17,7 @@ import { DotCopyButtonModule } from '@components/dot-copy-button/dot-copy-button
 import { LOCATION_TOKEN } from 'src/app/providers';
 
 const messageServiceMock = new MockDotMessageService({
-    'dot.common.message.pageurl.copied.clipboard': 'Copied to clipboard',
-    'dot.common.message.pageurl.copied.clipboard.error': 'Can not copy to cliploard',
-    'editpage.toolbar.page.cant.edit': 'No permissions...',
-    'editpage.toolbar.page.locked.by.user': 'Page is locked by...'
+    'dot.common.message.pageurl.copy.clipboard': 'Copy url page'
 });
 
 describe('DotEditPageInfoComponent', () => {
@@ -87,6 +84,7 @@ describe('DotEditPageInfoComponent', () => {
         it('should have copy button', () => {
             const button: DebugElement = de.query(By.css('dot-copy-button '));
             expect(button.componentInstance.copy).toBe('http://demo.dotcms.com:9876/an/url/test');
+            expect(button.componentInstance.tooltipText).toBe('Copy url page');
         });
     });
 });

@@ -15,6 +15,7 @@ span {
     padding: 0 $basic-padding / 2;
     position: absolute;
     transition: opacity 100ms ease;
+    white-space: nowrap;
 }
 
 dot-icon-button:hover {

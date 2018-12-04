@@ -27,6 +27,7 @@ export class DotEditPageInfoComponent implements OnInit {
 
     url$: Observable<string>;
     apiLink: string;
+    copyTooltipText: Observable<string>;
 
     constructor(
         private siteService: SiteService,
@@ -35,14 +36,14 @@ export class DotEditPageInfoComponent implements OnInit {
     ) {}
 
     ngOnInit() {
-        this.dotMessageService
-            .getMessages([
-                'dot.common.message.pageurl.copied.clipboard',
-                'dot.common.message.pageurl.copied.clipboard.error',
-                'editpage.toolbar.page.cant.edit',
-                'editpage.toolbar.page.locked.by.user'
-            ])
-            .subscribe();
+        this.copyTooltipText = this.dotMessageService
+            .getMessages(['dot.common.message.pageurl.copy.clipboard'])
+            .pipe(
+                map(
+                    (messages: { [key: string]: string }) =>
+                        messages['dot.common.message.pageurl.copy.clipboard']
+                )
+            );
 
         this.url$ = this.getFullUrl(this.pageState.page.pageURI);
         this.apiLink = `/api/v1/page/render${this.pageState.page.pageURI}?language_id=${

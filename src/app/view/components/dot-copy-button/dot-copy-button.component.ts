@@ -39,7 +39,7 @@ export class DotCopyButtonComponent implements OnInit {
                 this.i18nMessages = messages;
 
                 if (!this.tooltipText) {
-                    this.tooltipText = this.i18nMessages['Copy'];
+                    this.tooltipText = this.tooltipText || this.i18nMessages['Copy'];
                 }
             });
     }
@@ -53,10 +53,11 @@ export class DotCopyButtonComponent implements OnInit {
         this.dotClipboardUtil
             .copy(this.copy)
             .then(() => {
+                const original = this.tooltipText;
                 this.tooltipText = this.i18nMessages['Copied'];
 
                 setTimeout(() => {
-                    this.tooltipText = this.i18nMessages['Copy'];
+                    this.tooltipText = original;
                 }, 1000);
             })
             .catch(() => {
