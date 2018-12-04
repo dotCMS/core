@@ -7,7 +7,7 @@ import {
     mockDotSiteSelectorResults
 } from '../dot-page-selector.component.spec';
 
-fdescribe('Service: DotPageSelector', () => {
+describe('Service: DotPageSelector', () => {
     beforeEach(() => {
         this.injector = DOTTestBed.resolveAndCreate([DotPageSelectorService]);
         this.dotPageSelectorService = this.injector.get(DotPageSelectorService);

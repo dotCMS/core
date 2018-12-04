@@ -124,7 +124,7 @@ let autocomplete: DebugElement;
 let autocompleteComp: AutoComplete;
 let dotPageSelectorService: DotPageSelectorService;
 
-fdescribe('DotPageSelectorComponent', () => {
+describe('DotPageSelectorComponent', () => {
     let hostFixture: ComponentFixture<FakeFormComponent>;
     const searchObj = { originalEvent: { target: { value: 'demo' } }, query: 'demo' };
     const specialSearchObj = { originalEvent: { target: { value: 'd#emo$%' } }, query: 'd#emo$%' };
@@ -171,7 +171,6 @@ fdescribe('DotPageSelectorComponent', () => {
 
     it('should pass attrs to autocomplete component', () => {
         expect(autocompleteComp.style).toEqual({ width: '100%' });
-        expect(autocompleteComp.field).toEqual('Hello World');
     });
 
     describe('ControlValueAccessor', () => {
