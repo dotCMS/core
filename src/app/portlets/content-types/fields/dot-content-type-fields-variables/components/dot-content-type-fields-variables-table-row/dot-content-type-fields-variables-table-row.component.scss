@@ -14,23 +14,40 @@
     .field-variable-row-highlight {
         background-color: $gray-bg;
     }
-}
 
-.content-type-fields__variables-actions {
-
-    & > div {
-        text-align: right;
-    }
-
-    button {
-        margin-right: $basic-padding;
-
-        &:last-child {
-            margin-right: 0;
+    p-celleditor {
+        span {
+            display: block;
+            height: 34px;
+        }
+        input {
+            height: 25px;
+            margin: 14px 0px 11px;
         }
     }
+}
 
-    dot-icon-button button {
-        margin-right: 0;
+::ng-deep .ui-table .ui-table-tbody tr td {
+    padding: 3px $basic-padding * 2;
+
+    &.content-type-fields__variables-actions {
+
+        padding: 10px 16px 3px;
+
+        & > div {
+            text-align: right;
+        }
+
+        button {
+            margin-right: $basic-padding;
+
+            &:last-child {
+                margin-right: 0;
+            }
+        }
+
+        dot-icon-button button {
+            margin-right: 0;
+        }
     }
 }
