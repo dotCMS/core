@@ -1,4 +1,4 @@
-import { Component, OnInit, Input, ElementRef, ViewChild } from '@angular/core';
+import { Component, OnInit, Input, ElementRef, ViewChild, Inject } from '@angular/core';
 
 import { DotRenderedPageState } from '../../shared/models/dot-rendered-page-state.model';
 import { DotMessageService } from '@services/dot-messages-service';
@@ -6,6 +6,7 @@ import { SiteService } from 'dotcms-js';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { Site } from 'dotcms-js/lib/core/treeable/shared/site.model';
+import { LOCATION_TOKEN } from 'src/app/providers';
 
 /**
  * Basic page information for edit mode
@@ -25,8 +26,13 @@ export class DotEditPageInfoComponent implements OnInit {
     @ViewChild('lockedPageMessage') lockedPageMessage: ElementRef;
 
     url$: Observable<string>;
+    apiLink: string;
 
-    constructor(private siteService: SiteService, public dotMessageService: DotMessageService) {}
+    constructor(
+        private siteService: SiteService,
+        public dotMessageService: DotMessageService,
+        @Inject(LOCATION_TOKEN) private location: Location
+    ) {}
 
     ngOnInit() {
         this.dotMessageService
@@ -39,6 +45,9 @@ export class DotEditPageInfoComponent implements OnInit {
             .subscribe();
 
         this.url$ = this.getFullUrl(this.pageState.page.pageURI);
+        this.apiLink = `/api/v1/page/render${this.pageState.page.pageURI}?language_id=${
+            this.pageState.page.languageId
+        }`;
     }
 
     /**
@@ -59,10 +68,10 @@ export class DotEditPageInfoComponent implements OnInit {
         return this.siteService.getCurrentSite().pipe(
             map((site: Site) => {
                 return [
-                    location.protocol,
+                    this.location.protocol,
                     '//',
-                    site.name,
-                    location.port ? `:${location.port}` : '',
+                    site.hostname,
+                    this.location.port ? `:${this.location.port}` : '',
                     url
                 ].join('');
             })
