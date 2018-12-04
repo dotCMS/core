@@ -4,7 +4,7 @@ import { DebugElement } from '@angular/core';
 import { ContentTypesFieldDragabbleItemComponent } from './content-type-field-dragabble-item.component';
 import { By } from '@angular/platform-browser';
 import { ContentTypeField } from '../';
-import { DotIconButtonTooltipModule } from '@components/_common/icon-button-tooltip/icon-button-tooltip.module';
+import { DotIconButtonTooltipModule } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.module';
 import { MockDotMessageService } from '../../../../test/dot-message-service.mock';
 import { DotMessageService } from '@services/dot-messages-service';
 import { FieldService } from '../service';
