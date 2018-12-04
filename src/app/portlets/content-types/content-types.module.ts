@@ -77,6 +77,7 @@ import { DotContentTypeFieldsVariablesModule } from './fields/dot-content-type-f
 import {
     DotRelationshipsModule
 } from './fields/content-type-fields-properties-form/field-properties/dot-relationships-property/dot-relationships.module';
+import { DotApiLinkModule } from '@components/dot-api-link/dot-api-link.module';
 
 @NgModule({
     declarations: [
@@ -116,12 +117,23 @@ import {
         CheckboxModule,
         CommonModule,
         ConfirmDialogModule,
+        ContentTypeFieldsAddRowModule,
         ContentTypesRoutingModule,
         DialogModule,
+        DotAddToBundleModule,
+        DotApiLinkModule,
+        DotAutofocusModule,
+        DotBaseTypeSelectorModule,
+        DotContentTypeFieldsVariablesModule,
         DotDialogModule,
-        DotIconModule,
+        DotDirectivesModule,
         DotIconButtonModule,
+        DotIconModule,
         DotMenuModule,
+        DotPageSelectorModule,
+        DotRelationshipsModule,
+        DotTextareaContentModule,
+        DotWorkflowsSelectorFieldModule,
         DragulaModule,
         DropdownModule,
         FieldValidationMessageModule,
@@ -130,26 +142,16 @@ import {
         IconButtonTooltipModule,
         InputTextModule,
         ListingDataTableModule,
+        MdInputTextModule,
+        MultiSelectModule,
         OverlayPanelModule,
         PushPublishContentTypesDialogModule,
         RadioButtonModule,
         ReactiveFormsModule,
         SearchableDropDownModule,
         SiteSelectorFieldModule,
-        ContentTypeFieldsAddRowModule,
         SplitButtonModule,
-        TabViewModule,
-        DotTextareaContentModule,
-        MultiSelectModule,
-        DotAddToBundleModule,
-        DotDirectivesModule,
-        DotWorkflowsSelectorFieldModule,
-        DotPageSelectorModule,
-        DotBaseTypeSelectorModule,
-        MdInputTextModule,
-        DotAutofocusModule,
-        DotContentTypeFieldsVariablesModule,
-        DotRelationshipsModule
+        TabViewModule
     ],
     providers: [
         ContentTypeEditResolver,

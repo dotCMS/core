@@ -10,6 +10,10 @@
     }
 }
 
+dot-icon {
+    color: $gray;
+}
+
 [tiny] :host {
     button {
         @extend #icon-button-tiny;
@@ -30,7 +34,7 @@
             }
         }
 
-        dot-icon::ng-deep .material-icons {
+        dot-icon {
             color: $white;
         }
     }

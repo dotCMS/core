@@ -6,6 +6,14 @@
     top: auto !important;
 }
 
+dot-api-link {
+    margin-left: $basic-padding * 2;
+}
+
+.content-type__api-link {
+    margin-left: $basic-padding * 2;
+}
+
 .content-type__edit-header {
     margin: $basic-padding * 3 0;
     display: flex;
@@ -34,8 +42,10 @@
 }
 
 .content-type__edit-subtitle {
-    font-size: $font-size-small;
+    align-items: center;
     color: $gray;
+    display: flex;
+    font-size: $font-size-small;
 }
 
 .content-type__edit-actions {
