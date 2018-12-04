@@ -108,7 +108,7 @@ export class DotPageSelectorService {
 
         return this.getSites(host).pipe(
             tap((results: DotPageSelectorResults) => {
-                this.setCurrentHost(<Site>results.data[0].payload);
+                 this.setCurrentHost(<Site>results.data[0].payload);
             }),
             switchMap(() => this.getPages(param))
         );
