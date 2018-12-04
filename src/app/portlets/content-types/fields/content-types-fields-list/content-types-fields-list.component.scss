@@ -17,6 +17,7 @@ $icon-size: $basic-padding * 3;
 }
 
 dot-icon {
+    color: $gray;
     margin-right: $basic-padding * 2;
 
     .content-types-fields-list__item:hover & {

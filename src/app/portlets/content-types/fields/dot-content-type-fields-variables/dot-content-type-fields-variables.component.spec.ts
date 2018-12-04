@@ -20,7 +20,7 @@ import { of } from 'rxjs';
 // tslint:disable-next-line:max-line-length
 import { DotContentTypeFieldsVariablesTableRowModule } from './components/dot-content-type-fields-variables-table-row/dot-content-type-fields-variables-table-row.module';
 
-fdescribe('ContentTypeFieldsVariablesComponent', () => {
+describe('ContentTypeFieldsVariablesComponent', () => {
     let comp: DotContentTypeFieldsVariablesComponent;
     let fixture: ComponentFixture<DotContentTypeFieldsVariablesComponent>;
     let de: DebugElement;
