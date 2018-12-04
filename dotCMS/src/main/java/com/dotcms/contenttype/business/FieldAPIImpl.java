@@ -134,20 +134,23 @@ public class FieldAPIImpl implements FieldAPI {
             fieldFactory.moveSortOrderForward(type.id(), field.sortOrder());
         }
 
-		Field result = fieldFactory.save(field);
+        if (field instanceof RelationshipField) {
+	        validateRelationshipField(field);
+        }
+
+        Field result = fieldFactory.save(field);
 
         //if RelationshipField, Relationship record must be added/updated
-      if (field instanceof RelationshipField) {
-          Optional<Relationship> relationship = getRelationshipForField(result, contentTypeAPI,
+        if (field instanceof RelationshipField) {
+            Optional<Relationship> relationship = getRelationshipForField(result, contentTypeAPI,
                   type);
 
-          if (relationship.isPresent()) {
+            if (relationship.isPresent()) {
               relationshipAPI.save(relationship.get());
               Logger.info(this,
                       "The relationship has been saved successfully for field " + field.name());
-          }
-
-      }
+            }
+       }
       //update Content Type mod_date to detect the changes done on the field
 		contentTypeAPI.updateModDate(type);
 		
@@ -179,6 +182,35 @@ public class FieldAPIImpl implements FieldAPI {
 	}
 
     /**
+     * Validates that properties n a relationship field are set correctly
+     * @param field
+     * @throws DotDataException
+     */
+    private void validateRelationshipField(Field field) throws DotDataException {
+
+        String errorMessage = null;
+        if (!field.indexed()){
+            errorMessage = "Relationship Field " + field.name() + " must always be indexed";
+        }
+
+        if (field.listed()){
+            errorMessage = "Relationship Field " + field.name() + " cannot be listed";
+        }
+
+        final int cardinality = Integer.parseInt(field.values());
+
+        //check if cardinality is valid
+        if (cardinality < 0 || cardinality >= RELATIONSHIP_CARDINALITY.values().length) {
+            errorMessage = "Cardinality value is incorrect";
+        }
+
+        if (errorMessage != null){
+            Logger.error(this, errorMessage);
+            throw new DotDataException(errorMessage);
+        }
+    }
+
+    /**
      * Verify if a relationship already exists for this field. Otherwise, a new relationship object
      * is created
      * @param field
@@ -194,11 +226,6 @@ public class FieldAPIImpl implements FieldAPI {
         ContentType relatedContentType;
         try {
             final int cardinality = Integer.parseInt(field.values());
-
-            //check if cardinality is valid
-            if (cardinality < 0 || cardinality >= RELATIONSHIP_CARDINALITY.values().length) {
-                throw new DotDataException("Cardinality value is incorrect");
-            }
 
             final String[] relationType = field.relationType().split("\\.");
 
