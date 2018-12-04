@@ -1,13 +1,13 @@
 package com.dotmarketing.portlets.htmlpageasset.business.render;
 
-import com.dotcms.repackage.com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.dotcms.repackage.com.google.common.collect.ImmutableList;
-import com.dotmarketing.beans.ContainerStructure;
-import com.dotmarketing.portlets.containers.model.Container;
-
 import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
+
+import com.dotcms.repackage.com.google.common.collect.ImmutableList;
+import com.dotmarketing.beans.ContainerStructure;
+import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 
 /**
  * Represents the information of the {@link Container} and its respective
@@ -26,6 +26,7 @@ public class ContainerRendered implements Serializable {
     private final Container container;
     private final List<ContainerStructure> containerStructures;
     private final Map<String, String> rendered;
+    private final Map<String,List<Contentlet>> contentlets;
 
     /**
      * Creates a new instance of the ContainerRendered.
@@ -35,7 +36,7 @@ public class ContainerRendered implements Serializable {
      *                           the browser.
      */
     public ContainerRendered(final Container container, final List<ContainerStructure> containerStructures,
-                             final Map<String, String> rendered) {
+                             final Map<String, String> rendered, final Map<String,List<Contentlet>> contentlets) {
         this.container = container;
 
         if (containerStructures != null) {
@@ -45,6 +46,11 @@ public class ContainerRendered implements Serializable {
         }
 
         this.rendered = rendered;
+        this.contentlets=contentlets;
+    }
+
+    public Map<String,List<Contentlet>> getContentlets() {
+        return contentlets;
     }
 
     /**

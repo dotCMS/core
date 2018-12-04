@@ -36,6 +36,7 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
+import com.google.common.collect.Lists;
 import com.liferay.portal.model.User;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -324,7 +325,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 	@Override
 	@SuppressWarnings({ "unchecked" })
 	public List<ContainerStructure> getContainerStructures(Container container) throws DotStateException, DotDataException, DotSecurityException  {
-		
+		if(null==container) return Lists.newArrayList();
 		//Gets the list from cache.
 		List<ContainerStructure> containerStructures = CacheLocator.getContentTypeCache().getContainerStructures(container.getIdentifier(), container.getInode());
 		

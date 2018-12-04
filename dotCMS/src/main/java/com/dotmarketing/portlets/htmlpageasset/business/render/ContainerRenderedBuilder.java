@@ -1,19 +1,28 @@
 package com.dotmarketing.portlets.htmlpageasset.business.render;
 
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
+
+import org.apache.velocity.context.Context;
+
+import com.beust.jcommander.internal.Maps;
 import com.dotcms.rendering.velocity.services.VelocityResourceKey;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.LayoutAPI;
-import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.containers.model.Container;
-import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
-import com.dotmarketing.portlets.htmlpageasset.business.render.page.HTMLPageAssetRenderedBuilder;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
@@ -23,12 +32,6 @@ import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.VelocityUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-import org.apache.velocity.context.Context;
-
-import java.util.*;
-import java.util.function.Function;
-import java.util.stream.Collector;
-import java.util.stream.Collectors;
 
 /**
  * Builder of {@link ContainerRendered}
@@ -45,25 +48,48 @@ public class ContainerRenderedBuilder {
         containerAPI = APILocator.getContainerAPI();
     }
 
-    public Collection<ContainerRendered> getContainers(final Template template, final PageMode mode)
+    public Collection<ContainerRendered> getContainers(final HTMLPageAsset page, final PageMode mode)
             throws DotSecurityException, DotDataException {
-        return getContainersRendered(template, null, mode);
+        return getContainersRendered(page, null, mode);
     }
 
-    public Collection<ContainerRendered> getContainersRendered(final Template template, final Context velocityContext,
+    public Collection<ContainerRendered> getContainersRendered(HTMLPageAsset page, final Context velocityContext,
                                                          PageMode mode)
 
             throws DotSecurityException, DotDataException {
 
-        if (template != null && !template.isDrawed()) {
-            return Collections.EMPTY_LIST;
-        }
+        
+        Template template =(mode.showLive) 
+                ?  templateAPI.findLiveTemplate(page.getTemplateId(), APILocator.systemUser(), false) 
+                :  templateAPI.findWorkingTemplate(page.getTemplateId(), APILocator.systemUser(), false) ;
+
 
         final TemplateLayout layout =  DotTemplateTool.themeLayout(template.getInode());
         final List<ContainerUUID> containersUUID = this.templateAPI.getContainersUUID(layout);
 
         final Map<String, List<ContainerUUID>> groupByContainerID =
                 containersUUID.stream().collect(Collectors.groupingBy(ContainerUUID::getIdentifier));
+
+        Map<String,List<Contentlet>> conMap = Maps.newHashMap();
+        if(velocityContext!=null) {
+            for(String key : groupByContainerID.keySet()) {
+                for(ContainerUUID uuid :groupByContainerID.get(key) ) {
+                    final String[] consStr = (String[]) velocityContext.get("contentletList" + uuid.getIdentifier() + uuid.getUUID());
+                    List<Contentlet> contentlets = Arrays.asList(consStr).stream().map(conId -> {
+                        try {
+                            return APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(conId);
+                        } catch (Exception e) {
+                            throw new DotStateException(e);
+                        }
+                    }).filter(Objects::nonNull).collect(Collectors.toList());
+                    conMap.put( "uuid-" + uuid.getUUID(), contentlets);
+                }
+            }
+        }
+
+
+        
+        
 
         return groupByContainerID.entrySet().stream().map(entry -> {
             final String containerId = entry.getKey();
@@ -74,13 +100,17 @@ public class ContainerRenderedBuilder {
 
                 Map<String, String> containersRendered = velocityContext != null ?
                         render(velocityContext, mode, entry.getValue(), container): null;
+                        
+                        
+                        
+                        
 
-                return new ContainerRendered(container, containerStructures, containersRendered);
-            } catch (DotDataException | DotSecurityException e) {
-                Logger.error(ContainerRenderedBuilder.class, e.getMessage());
-                throw new DotRuntimeException(e);
+                return new ContainerRendered(container, containerStructures, containersRendered,conMap);
+            } catch (Exception e) {
+                // if the container does not exists or is not valid for the mode, returns null to be filtrated
+                return null;
             }
-        }).collect(Collectors.toList());
+        }).filter(Objects::nonNull).collect(Collectors.toList());
     }
 
     private Container getContainer(PageMode mode, String containerId) throws DotDataException, DotSecurityException {
