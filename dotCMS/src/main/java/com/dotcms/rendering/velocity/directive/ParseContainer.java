@@ -16,7 +16,6 @@ public class ParseContainer extends DotDirective {
 
 	public  static final String DEFAULT_UUID_VALUE = MultiTree.LEGACY_RELATION_TYPE;
 	private static final long serialVersionUID     = 1L;
-	private final TemplatePathStrategyResolver templatePathResolver = TemplatePathStrategyResolver.getInstance();
 
 	@Override
 	public final String getName() {
@@ -32,11 +31,12 @@ public class ParseContainer extends DotDirective {
 	String resolveTemplatePath(final Context context, final Writer writer, final RenderParams params,
 			final String[] arguments) {
 
-		final Optional<TemplatePathStrategy> strategy = this.templatePathResolver.get(context, params, arguments);
+		final TemplatePathStrategyResolver templatePathResolver = TemplatePathStrategyResolver.getInstance();
+		final Optional<TemplatePathStrategy> strategy           = templatePathResolver.get(context, params, arguments);
 
 		return strategy.isPresent()?
 				strategy.get().apply(context, params, arguments):
-				this.templatePathResolver.getDefaultStrategy().apply(context, params, arguments);
+				templatePathResolver.getDefaultStrategy().apply(context, params, arguments);
 	}
 
 
