@@ -86,7 +86,6 @@ describe('DotEditPageInfoComponent', () => {
 
         it('should have copy button', () => {
             const button: DebugElement = de.query(By.css('dot-copy-button '));
-            console.log(button);
             expect(button.componentInstance.copy).toBe('http://demo.dotcms.com:9876/an/url/test');
         });
     });
