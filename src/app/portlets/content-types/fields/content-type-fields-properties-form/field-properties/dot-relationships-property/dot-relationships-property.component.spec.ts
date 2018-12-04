@@ -143,7 +143,8 @@ describe('DotRelationshipsPropertyComponent', () => {
             comp.property = {
                 name: 'relationship',
                 value: {
-                    velocityVar: 'velocityVar'
+                    velocityVar: 'velocityVar',
+                    cardinality: 1
                 },
                 field: {}
             };
@@ -158,9 +159,33 @@ describe('DotRelationshipsPropertyComponent', () => {
 
             const radios = de.queryAll(By.css('p-radioButton'));
 
+            const dotNewRelationships = de.query(By.css('dot-new-relationships'));
+
             expect(radios.length).toBe(0);
-            expect(de.query(By.css('dot-new-relationships'))).not.toBeUndefined();
+            expect(dotNewRelationships).toBeDefined();
             expect(de.query(By.css('dot-edit-relationships'))).toBeNull();
+
+            expect(dotNewRelationships.componentInstance.velocityVar).toEqual('velocityVar');
+            expect(dotNewRelationships.componentInstance.cardinality).toEqual(1);
+        });
+
+        describe('with inverse relationship', () => {
+            it('should not have existing and new radio buttonand should show dot-new-relationships', () => {
+
+                comp.property.value.velocityVar = 'contentType.fieldName';
+
+                fixture.detectChanges();
+
+                const radios = de.queryAll(By.css('p-radioButton'));
+                const dotNewRelationships = de.query(By.css('dot-new-relationships'));
+
+                expect(radios.length).toBe(0);
+                expect(dotNewRelationships).toBeDefined();
+                expect(de.query(By.css('dot-edit-relationships'))).toBeNull();
+
+                expect(dotNewRelationships.componentInstance.velocityVar).toEqual('contentType.fieldName');
+                expect(dotNewRelationships.componentInstance.cardinality).toEqual(1);
+            });
         });
     });
 });

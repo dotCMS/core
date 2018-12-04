@@ -56,13 +56,6 @@ export class DotRelationshipsPropertyComponent implements OnInit {
 
 
         this.beforeValue = _.cloneDeep(this.group.get(this.property.name).value);
-
-        const currentValue: DotRelationshipsPropertyValue = {
-            velocityVar: this.getVelocityVar(),
-            cardinality: this.group.get(this.property.name).value.cardinality
-        };
-
-        this.group.get(this.property.name).setValue(currentValue);
         this.editing = !!this.group.get(this.property.name).value.velocityVar;
     }
 
@@ -97,8 +90,4 @@ export class DotRelationshipsPropertyComponent implements OnInit {
             this.i18nMessages['contenttypes.field.properties.relationships.edit.error.required'];
     }
 
-    private getVelocityVar(): string {
-        const value = this.group.get(this.property.name).value.velocityVar;
-        return !!value ? value.split('.')[0] : '';
-    }
 }
