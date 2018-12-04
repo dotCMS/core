@@ -19,6 +19,16 @@
     }
 }
 
+dot-icon-button-tooltip /deep/ .material-icons,
+dot-icon {
+    color: $gray;
+}
+
+dot-icon {
+    margin-right: $basic-padding;
+}
+
+
 .field__properties,
 .field__icon {
     display: flex;
@@ -57,8 +67,4 @@
     & > * {
         margin: 0 $basic-padding / 4;
     }
-}
-
-dot-icon {
-    margin-right: $basic-padding;
 }

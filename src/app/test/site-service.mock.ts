@@ -1,4 +1,4 @@
-import { of as observableOf, Observable, Subject } from 'rxjs';
+import { of as observableOf, Observable, Subject, merge } from 'rxjs';
 import { Site } from 'dotcms-js';
 
 export const mockSites: Site[] = [
@@ -58,6 +58,6 @@ export class SiteServiceMock {
     }
 
     getCurrentSite(): Observable<Site> {
-        return observableOf(mockSites[0]);
+        return merge(observableOf(mockSites[0]), this.switchSite$);
     }
 }
