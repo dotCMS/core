@@ -1,7 +1,6 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { DotMessageDisplayService } from './services';
 import { MessageService } from 'primeng/api';
-import { DotMessage } from './model/dot-message.model';
 
 /**
  *Show message send from the Backend
@@ -23,7 +22,7 @@ export class DotMessageDisplayComponent implements OnInit, OnDestroy {
     ) {}
 
     ngOnInit() {
-        this.dotMessageDisplayService.messages().subscribe((dotMessage: DotMessage) => {
+        this.dotMessageDisplayService.messages().subscribe((dotMessage: Dot.Message) => {
             this.messageService.add({
                 life: dotMessage.life,
                 detail: dotMessage.message,

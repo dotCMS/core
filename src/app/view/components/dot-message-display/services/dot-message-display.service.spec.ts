@@ -1,6 +1,5 @@
 import { DOTTestBed } from 'src/app/test/dot-test-bed';
 import { DotMessageDisplayService } from './dot-message-display.service';
-import { DotMessage, DotMessageSeverity, DotMessageType } from '../model';
 import { DotcmsEventsService } from 'dotcms-js';
 import { DotcmsEventsServiceMock } from 'src/app/test/dotcms-events-service.mock';
 import { Router } from '@angular/router';
@@ -38,11 +37,11 @@ describe('DotMessageDisplayService', () => {
     });
 
     it('should emit a message', (done) => {
-        dotMessageDisplayService.messages().subscribe((message: DotMessage) => {
+        dotMessageDisplayService.messages().subscribe((message: Dot.Message.Message) => {
             expect(message).toEqual({
                 ...messageExpected,
-                severity: DotMessageSeverity.ERROR,
-                type: DotMessageType.SIMPLE_MESSAGE
+                severity: Dot.,
+                type: Dot.Message.Type.SIMPLE_MESSAGE
             });
             done();
         });
@@ -74,11 +73,11 @@ describe('DotMessageDisplayService', () => {
         it('should show message when currentPortlet is in portletIdList ', (done) => {
             messageExpected.portletIdList = ['content-types-angular'];
 
-            dotMessageDisplayService.messages().subscribe((message: DotMessage) => {
+            dotMessageDisplayService.messages().subscribe((message: Dot.Message.Message) => {
                 expect(message).toEqual({
                     ...messageExpected,
-                    severity: DotMessageSeverity.ERROR,
-                    type: DotMessageType.SIMPLE_MESSAGE
+                    severity: Dot.Message.Severity.ERROR,
+                    type: Dot.Message.Type.SIMPLE_MESSAGE
                 });
                 done();
             });

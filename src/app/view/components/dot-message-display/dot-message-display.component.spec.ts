@@ -7,16 +7,13 @@ import { MessageService } from 'primeng/api';
 import { By } from '@angular/platform-browser';
 import { DotMessageDisplayService } from './services';
 import { Observable, Subject } from 'rxjs';
-import { DotMessage } from './model';
-import { DotMessageSeverity } from './model';
-import { DotMessageType } from './model';
 
 
 @Injectable()
 export class DotMessageDisplayServiceMock {
-    messages$: Subject<DotMessage> = new Subject<DotMessage>();
+    messages$: Subject<Dot.Message.Message> = new Subject<Dot.Message.Message>();
 
-    messages(): Observable<DotMessage> {
+    messages(): Observable<Dot.Message.Message> {
         return this.messages$.asObservable();
     }
 
@@ -58,8 +55,8 @@ describe('DotMessageDisplayComponent', () => {
             life: 300,
             message: 'message',
             portletIdList: [],
-            severity: DotMessageSeverity.ERROR,
-            type: DotMessageType.SIMPLE_MESSAGE
+            severity: Dot.Message.Severity.ERROR,
+            type: Dot.Message.Type.SIMPLE_MESSAGE
         });
 
         expect(messageService.add).toHaveBeenCalledWith({
