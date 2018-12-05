@@ -669,7 +669,7 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 		long time = System.currentTimeMillis();
 
 		ContentType contentType = ContentTypeBuilder.builder(BaseContentType.getContentTypeClass(BaseContentType.CONTENT.ordinal()))
-				.description("ContentTypeSave " + time).name("ContentTypeSave " + time).folder(folder.getIdentifier())
+				.description("ContentTypeSave " + time).name("ContentTypeSave " + time).folder(folder.getInode())
 				.owner(APILocator.systemUser().toString()).variable("CTVariable" + time).build();
 
 		//Get Limited User
@@ -691,7 +691,7 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 		try{
 			contentType = contentTypeAPI.save(contentType);
 		}catch (DotSecurityException e){
-			assertFalse(testCase.shouldExecuteAction);
+			assertFalse(e.getMessage(), testCase.shouldExecuteAction);
 			return;
 		}finally {
 			if(UtilMethods.isSet(contentType.id())) {
