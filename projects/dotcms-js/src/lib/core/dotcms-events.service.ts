@@ -10,9 +10,7 @@ export class DotcmsEventsService {
     private socket: Protocol;
     private subjects: Subject<any>[] = [];
 
-    constructor(private socketFactory: SocketFactory, private loggerService: LoggerService) {
-        console.log('########################################');
-    }
+    constructor(private socketFactory: SocketFactory, private loggerService: LoggerService) {}
 
     /**
      * Close the socket
