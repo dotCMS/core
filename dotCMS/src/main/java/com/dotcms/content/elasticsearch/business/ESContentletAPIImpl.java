@@ -1,11 +1,12 @@
 package com.dotcms.content.elasticsearch.business;
 
-import static com.dotcms.exception.ExceptionUtil.getLocalizedMessageOrDefault;
-
 import com.dotcms.api.system.event.ContentletSystemEventUtil;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.business.DotMappingException;
+import com.dotcms.content.elasticsearch.business.event.ContentletCheckinEvent;
+import com.dotcms.content.elasticsearch.business.event.ContentletDeletedEvent;
+import com.dotcms.content.elasticsearch.business.event.ContentletPublishEvent;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.field.CategoryField;
 import com.dotcms.contenttype.model.field.ConstantField;
@@ -25,22 +26,11 @@ import com.dotcms.repackage.com.google.common.collect.Maps;
 import com.dotcms.repackage.com.google.common.collect.Sets;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.services.VanityUrlServices;
+import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.system.event.local.type.content.CommitListenerEvent;
 import com.dotcms.util.CollectionsUtils;
-import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.beans.MultiTree;
-import com.dotmarketing.beans.Permission;
-import com.dotmarketing.beans.Tree;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.DotCacheAdministrator;
-import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.FactoryLocator;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.RelationshipAPI;
-import com.dotmarketing.business.Role;
-import com.dotmarketing.business.Treeable;
+import com.dotmarketing.beans.*;
+import com.dotmarketing.business.*;
 import com.dotmarketing.business.query.GenericQueryFactory.Query;
 import com.dotmarketing.business.query.QueryUtil;
 import com.dotmarketing.business.query.ValidationException;
@@ -53,11 +43,7 @@ import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.FlushCacheRunnable;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.db.LocalTransaction;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotHibernateException;
-import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.exception.InvalidLicenseException;
+import com.dotmarketing.exception.*;
 import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.factories.MultiTreeFactory;
 import com.dotmarketing.factories.PublishFactory;
@@ -66,14 +52,7 @@ import com.dotmarketing.menubuilders.RefreshMenus;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.containers.model.Container;
-import com.dotmarketing.portlets.contentlet.business.BinaryFileFilter;
-import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
-import com.dotmarketing.portlets.contentlet.business.ContentletCache;
-import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
-import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
-import com.dotmarketing.portlets.contentlet.business.DotLockException;
-import com.dotmarketing.portlets.contentlet.business.DotReindexStateException;
-import com.dotmarketing.portlets.contentlet.business.HostAPI;
+import com.dotmarketing.portlets.contentlet.business.*;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
@@ -106,6 +85,7 @@ import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.dotmarketing.tag.business.TagAPI;
 import com.dotmarketing.tag.model.Tag;
+import com.dotmarketing.util.*;
 import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.Config;
@@ -132,37 +112,25 @@ import com.liferay.util.FileUtil;
 import com.liferay.util.StringPool;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.xml.DomDriver;
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.Serializable;
-import java.math.BigDecimal;
-import java.nio.file.Files;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import org.apache.commons.lang.StringUtils;
 import org.elasticsearch.action.search.SearchPhaseExecutionException;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.springframework.beans.BeanUtils;
+
+import java.io.*;
+import java.math.BigDecimal;
+import java.nio.file.Files;
+import java.text.SimpleDateFormat;
+import java.util.*;
+import java.util.Calendar;
+import java.util.Map.Entry;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
+import static com.dotcms.exception.ExceptionUtil.getLocalizedMessageOrDefault;
 
 /**
  * Implementation class for the {@link ContentletAPI} interface.
@@ -195,6 +163,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     private static final String backupPath = ConfigUtils.getBackupPath() + File.separator + "contentlets";
 
     private final ContentletSystemEventUtil contentletSystemEventUtil;
+    private final LocalSystemEventsAPI      localSystemEventsAPI;
 
     public static enum QueryType {
         search, suggest, moreLike, Facets
@@ -214,6 +183,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         distributedJournalAPI = APILocator.getDistributedJournalAPI();
         tagAPI = APILocator.getTagAPI();
         contentletSystemEventUtil = ContentletSystemEventUtil.getInstance();
+        localSystemEventsAPI      = APILocator.getLocalSystemEventsAPI();
     }
 
     @Override
@@ -509,7 +479,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 anyone who need it can subscribed to this commit listener event, on this case will be
                 mostly use it in order to invalidate this contentlet cache.
                  */
-                triggerCommitListenerEvent(contentlet);
+                triggerCommitListenerEvent(contentlet, user);
 
                 // by now, the publish event is making a duplicate reload events on the site browser
                 // so we decided to comment it out by now, and
@@ -1005,23 +975,28 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     @CloseDBIfOpened
     @Override
-    public List<Map<String, Object>> getContentletReferences(Contentlet contentlet, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException, DotContentletStateException {
-        List<Map<String, Object>> results = new ArrayList<Map<String, Object>>();
+    public List<Map<String, Object>> getContentletReferences(final Contentlet contentlet, final User user, final boolean respectFrontendRoles)
+            throws DotSecurityException, DotDataException, DotContentletStateException {
+
+        final List<Map<String, Object>> results = new ArrayList<Map<String, Object>>();
         if(contentlet == null || !InodeUtils.isSet(contentlet.getInode())){
             throw new DotContentletStateException("Contentlet must exist");
         }
         if(!permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)){
             throw new DotSecurityException("User " + (user != null ? user.getUserId() : "Unknown") + " cannot read Contentlet");
         }
-        Identifier id = APILocator.getIdentifierAPI().find(contentlet);
-        if (!InodeUtils.isSet(id.getId()))
+
+        final Identifier id = APILocator.getIdentifierAPI().find(contentlet);
+        if (!InodeUtils.isSet(id.getId())) {
             return results;
-        List<MultiTree> trees = MultiTreeFactory.getMultiTreesByChild(id.getId());
-        for (MultiTree tree : trees) {
-            IHTMLPage page = loadPageByIdentifier(tree.getParent1(), false, contentlet.getLanguageId(), APILocator.getUserAPI().getSystemUser(), false);
-            Container container = (Container) APILocator.getVersionableAPI().findWorkingVersion(tree.getParent2(), APILocator.getUserAPI().getSystemUser(), false);
+        }
+
+        final List<MultiTree> trees = MultiTreeFactory.getMultiTreesByChild(id.getId());
+        for (final MultiTree tree : trees) {
+            final IHTMLPage page = loadPageByIdentifier(tree.getParent1(), false, contentlet.getLanguageId(), APILocator.getUserAPI().getSystemUser(), false);
+            final Container container = APILocator.getContainerAPI().getWorkingContainerById(tree.getParent2(), APILocator.getUserAPI().getSystemUser(), false);
             if (InodeUtils.isSet(page.getInode()) && InodeUtils.isSet(container.getInode())) {
-                Map<String, Object> map = new HashMap<String, Object>();
+                final Map<String, Object> map = new HashMap<String, Object>();
                 map.put("page", page);
                 map.put("container", container);
                 results.add(map);
@@ -1409,23 +1384,33 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     @Override
-    public boolean delete(Contentlet contentlet, User user,boolean respectFrontendRoles) throws DotDataException,DotSecurityException {
-        List<Contentlet> contentlets = new ArrayList<Contentlet>();
+    public boolean delete(final Contentlet contentlet, final User user, final boolean respectFrontendRoles) throws DotDataException,DotSecurityException {
+        boolean deleted = false;
+        final List<Contentlet> contentlets = new ArrayList<Contentlet>();
         contentlets.add(contentlet);
+
         try {
-            return delete(contentlets, user, respectFrontendRoles);
+            deleted = delete(contentlets, user, respectFrontendRoles);
+            HibernateUtil.addCommitListener
+                    (()-> this.localSystemEventsAPI.notify(new ContentletDeletedEvent(contentlet, user)));
         } catch(DotDataException | DotSecurityException e) {
             logContentletActivity(contentlets, "Error Deleting Content", user);
             throw e;
         }
+
+        return deleted;
     }
 
     @Override
-    public boolean delete(Contentlet contentlet, User user,boolean respectFrontendRoles, boolean allVersions) throws DotDataException,DotSecurityException {
-        List<Contentlet> contentlets = new ArrayList<Contentlet>();
+    public boolean delete(final Contentlet contentlet, final User user, final boolean respectFrontendRoles, final boolean allVersions) throws DotDataException,DotSecurityException {
+
+        final List<Contentlet> contentlets = new ArrayList<Contentlet>();
         contentlets.add(contentlet);
+
         try {
             delete(contentlets, user, respectFrontendRoles, allVersions);
+            HibernateUtil.addCommitListener
+                    (()-> this.localSystemEventsAPI.notify(new ContentletDeletedEvent(contentlet, user)));
         } catch(DotDataException | DotSecurityException e) {
             logContentletActivity(contentlets, "Error Deleting Content", user);
             throw e;
@@ -2372,7 +2357,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             anyone who need it can subscribed to this commit listener event, on this case will be
             mostly use it in order to invalidate this contentlet cache.
              */
-            triggerCommitListenerEvent(contentlet);
+            triggerCommitListenerEvent(contentlet, user);
 
         } catch(DotDataException | DotStateException| DotSecurityException e) {
             ActivityLogger.logInfo(getClass(), "Error Unpublishing Content", "StartDate: " +contentPushPublishDate+ "; "
@@ -3537,6 +3522,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
         ActivityLogger.logInfo(getClass(), "Content Saved", "StartDate: " +contentPushPublishDate+ "; "
                 + "EndDate: " +contentPushExpireDate + "; User:" + user.getUserId() + "; ContentIdentifier: " + contentlet.getIdentifier(), contentlet.getHost());
 
+        // Creates the Local System event
+        this.createLocalCheckinEvent (contentlet, user, createNewVersion);
+
         //Create a System event for this contentlet
         if ( generateSystemEvent ) {
 
@@ -3557,6 +3545,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
 
         contentlet.cleanup();
+    }
+
+    private void createLocalCheckinEvent(Contentlet contentlet, User user, boolean createNewVersion) throws DotHibernateException {
+
+        HibernateUtil.addCommitListener
+                (()-> this.localSystemEventsAPI.notify(new ContentletCheckinEvent(contentlet, createNewVersion, user)));
     }
 
     private void updateTemplateInAllLanguageVersions(final Contentlet contentlet, final User user)
@@ -6224,8 +6218,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * mostly use it in order to invalidate this contentlet cache.
      *
      * @param contentlet Contentlet to be processed by the Commit listener event
+     * @param user       User that triggered the event
      */
-    private void triggerCommitListenerEvent(final Contentlet contentlet) {
+    private void triggerCommitListenerEvent(final Contentlet contentlet, final User user) {
 
         try {
             if (!contentlet.getBoolProperty(Contentlet.IS_TEST_MODE)) {
@@ -6233,7 +6228,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 HibernateUtil.addCommitListener(new FlushCacheRunnable() {
                     public void run() {
                         //Triggering event listener when this commit listener is executed
-                        APILocator.getLocalSystemEventsAPI()
+                        localSystemEventsAPI
                                 .asyncNotify(new CommitListenerEvent(contentlet));
                     }
                 });
@@ -6241,11 +6236,16 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                 HibernateUtil.addCommitListener(()-> {
                     //Triggering event listener when this commit listener is executed
-                    APILocator.getLocalSystemEventsAPI()
+                    localSystemEventsAPI
                             .notify(new CommitListenerEvent(contentlet));
                 }, 1001);
             }
 
+            HibernateUtil.addCommitListener(()-> {
+                //Triggering event listener when this commit listener is executed
+                localSystemEventsAPI
+                        .notify(new ContentletPublishEvent(contentlet, user));
+            });
         } catch (DotHibernateException e) {
             throw new DotRuntimeException(e);
         }

@@ -13,6 +13,7 @@ import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.PermissionLevel;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.business.FolderAPI;

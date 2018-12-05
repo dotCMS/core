@@ -1,10 +1,5 @@
 package com.dotmarketing.portlets.folders.business;
 
-import java.io.IOException;
-import java.util.List;
-import java.util.Locale;
-import java.util.TimeZone;
-
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.business.DotIdentifierStateException;
@@ -16,6 +11,11 @@ import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.liferay.portal.model.User;
+
+import java.io.IOException;
+import java.util.List;
+import java.util.Locale;
+import java.util.TimeZone;
 
 /**
  *
@@ -42,7 +42,7 @@ public abstract class FolderFactory {
 	
 	abstract boolean exists(String folderInode) throws DotDataException;
 
-	protected boolean isChildFolder(Folder folder1,Folder folder2) throws DotIdentifierStateException, DotDataException, DotSecurityException{
+	protected boolean isChildFolder(final Folder child, final Folder parent) throws DotIdentifierStateException, DotDataException, DotSecurityException{
 		return false;
 	}
 
