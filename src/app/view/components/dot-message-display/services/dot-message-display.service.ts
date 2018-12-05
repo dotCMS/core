@@ -7,7 +7,7 @@ import { DotRouterService } from '@services/dot-router/dot-router.service';
 
 
 /**
- *Handle message send by the Backend, this message are sended as Event through the {@see DotcmsEventsService}
+ *Handle message send by the Backend, this message are sended as Event through the {@link DotcmsEventsService}
  *
  * @export
  * @class DotMessageDisplayService

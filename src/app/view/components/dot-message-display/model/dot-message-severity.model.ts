@@ -1,6 +1,6 @@
 
 /**
- *{@see DotMessage}'s severity
+ *{@link DotMessage}'s severity
  *
  * @export
  * @enum {number}

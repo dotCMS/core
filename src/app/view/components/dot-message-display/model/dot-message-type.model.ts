@@ -1,6 +1,6 @@
 
 /**
- *{@see DotMessage}'s type
+ *{@link DotMessage} type
  *
  * @export
  * @enum {number}
