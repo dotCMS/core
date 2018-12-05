@@ -3,8 +3,8 @@
     contenteditable="true"
     [textContent]="label"
     (input)="label=$event.target.textContent"
-    (blur)="changeLabel()"
-    (keyup.enter)="changeLabel()"></div>
+    (blur)="changeLabel($event)"
+    (keydown.enter)="changeLabel($event)"></div>
 <dot-icon-button-tooltip
     tiny
     class="field__actions-delete"

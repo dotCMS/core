@@ -3,7 +3,6 @@
         [ngClass]="{'dot-add-rows__add': rowState === 'add'}">
         <p-splitButton 
             label="{{ i18nMessages['contenttypes.dropzone.rows.add'] }}" 
-            icon="fa fa-plus" 
             (onClick)="setColumnSelect()"
             [disabled]="disabled"
             [model]="actions"></p-splitButton>

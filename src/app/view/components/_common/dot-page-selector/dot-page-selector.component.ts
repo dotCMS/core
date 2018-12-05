@@ -108,7 +108,6 @@ export class DotPageSelectorComponent implements ControlValueAccessor {
      */
     search(param: any): void {
         if (this.cleanInput(param).length) {
-            debugger;
             this.dotPageSelectorService
                 .search(this.cleanQuery(param.query))
                 .pipe(take(1))
