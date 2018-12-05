@@ -25,6 +25,7 @@ import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Table;
 import com.liferay.portal.model.User;
 
+import java.sql.SQLException;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -70,6 +71,28 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
                 MultiTreeFactory.deleteMultiTree(multiTree);
             }
         }
+    }
+
+    @WrapInTransaction
+    @Override
+    public void deleteMultiTreesForInodes(final List<String> inodes) throws DotDataException {
+
+        if (UtilMethods.isSet(inodes)) {
+
+            try {
+
+                MultiTreeFactory.deleteMultiTreesForInodes(inodes);
+            } catch (SQLException e) {
+                throw new DotDataException(e);
+            }
+        }
+    }
+
+    @WrapInTransaction
+    @Override
+    public void deleteMultiTreesRelatedToIdentifier(final String identifier) throws DotDataException {
+
+        MultiTreeFactory.deleteMultiTreesRelatedToIdentifier(identifier);
     }
 
     @CloseDBIfOpened
@@ -154,7 +177,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
                 }
             }
         } catch (RuntimeException e) {
-
+            Logger.error(this, e.getMessage(), e);
         }
     }
 

@@ -48,6 +48,22 @@ public interface MultiTreeAPI {
     void deleteMultiTreeByIdentifier(Identifier identifier) throws DotDataException;
 
     /**
+     * Removes the references to these inodes on child and parents.
+     * @param inodes
+     * @throws DotDataException
+     */
+    void deleteMultiTreesForInodes(List<String> inodes) throws DotDataException;
+
+
+    /**
+     * deletes all the multi tress related to the identifier, including parents and child
+     * in addition for the pages related refresh the cache and publish relationships
+     * @param identifier String
+     * @throws DotDataException
+     */
+    void deleteMultiTreesRelatedToIdentifier(final String identifier) throws DotDataException;
+
+    /**
      * This method returns ALL multitree entries (in all languages) for a given page. It is up to
      * what ever page renderer to properly choose which multitree children to show for example, show
      * an english content on a spanish page when language fallback=true or specific content for a

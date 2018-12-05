@@ -59,7 +59,6 @@ public class ApplicationContainerFolderListener implements FolderListener {
 
                 try {
 
-                    // todo: the face container only works if it is the container.vtl
                     // otherwise we have to fetch the object it self.
                     final Container container = ContainerAPI.CONTAINER_META_INFO.contains(childName)?
                             this.createFakeContainer(child):
@@ -135,6 +134,8 @@ public class ApplicationContainerFolderListener implements FolderListener {
     @WrapInTransaction
     private void removeContentTypeMultitreesAssociated(final ContentType childContentTypeAsset, final Container container) throws DotDataException {
 
+
+
         final List<MultiTree> multiTreeList = MultiTreeFactory
                 .getContainerStructureMultiTree(container.getIdentifier(), childContentTypeAsset.id());
         for (final MultiTree multiTree : multiTreeList) {
@@ -170,8 +171,10 @@ public class ApplicationContainerFolderListener implements FolderListener {
         if(this.permissionAPI.doesUserHavePermission(container, PERMISSION_WRITE, user)) {
 
             CacheLocator.getIdentifierCache().removeFromCacheByVersionable(container);
+
             final Identifier identifier = new Identifier();
             identifier.setId(container.getIdentifier());
+
             this.multiTreeAPI.deleteMultiTreeByIdentifier(identifier);
         }
     } // removeContainerFromTemplate.
