@@ -73,6 +73,7 @@ import {
     DotRelationshipsModule
 } from './fields/content-type-fields-properties-form/field-properties/dot-relationships-property/dot-relationships.module';
 import { DotApiLinkModule } from '@components/dot-api-link/dot-api-link.module';
+import { DotCopyButtonModule } from '@components/dot-copy-button/dot-copy-button.module';
 
 @NgModule({
     declarations: [
@@ -120,9 +121,11 @@ import { DotApiLinkModule } from '@components/dot-api-link/dot-api-link.module';
         DotAutofocusModule,
         DotBaseTypeSelectorModule,
         DotContentTypeFieldsVariablesModule,
+        DotCopyButtonModule,
         DotDialogModule,
         DotDirectivesModule,
         DotIconButtonModule,
+        DotIconButtonTooltipModule,
         DotIconModule,
         DotMenuModule,
         DotPageSelectorModule,
@@ -134,7 +137,6 @@ import { DotApiLinkModule } from '@components/dot-api-link/dot-api-link.module';
         FieldValidationMessageModule,
         FormsModule,
         IFrameModule,
-        DotIconButtonTooltipModule,
         InputTextModule,
         ListingDataTableModule,
         MdInputTextModule,
