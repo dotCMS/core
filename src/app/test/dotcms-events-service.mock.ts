@@ -1,16 +1,17 @@
 import { Observable, Subject } from 'rxjs';
+import { DotEventData, EventTypeWrapper } from 'dotcms-js';
 
 export class DotcmsEventsServiceMock {
     private observers: Subject<any>[] = [];
 
-    subscribeTo(clientEventType: string): Observable<any> {
+    subscribeTo(clientEventType: string): Observable<DotEventData> {
         if (!this.observers[clientEventType]) {
             this.observers[clientEventType] = new Subject();
         }
         return this.observers[clientEventType].asObservable();
     }
 
-    subscribeToEvents(clientEventTypes: string[]): Observable<any> {
+    subscribeToEvents(clientEventTypes: string[]): Observable<EventTypeWrapper> {
         const subject: Subject<any> = new Subject<any>();
 
         clientEventTypes.forEach((eventType) =>
@@ -30,3 +31,4 @@ export class DotcmsEventsServiceMock {
         });
     }
 }
+

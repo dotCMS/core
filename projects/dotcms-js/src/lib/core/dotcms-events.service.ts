@@ -10,7 +10,9 @@ export class DotcmsEventsService {
     private socket: Protocol;
     private subjects: Subject<any>[] = [];
 
-    constructor(private socketFactory: SocketFactory, private loggerService: LoggerService) {}
+    constructor(private socketFactory: SocketFactory, private loggerService: LoggerService) {
+        console.log('########################################');
+    }
 
     /**
      * Close the socket
@@ -63,7 +65,7 @@ export class DotcmsEventsService {
      *                          messages in the Notification section.
      * @returns any The system events that a client will receive.
      */
-    subscribeTo(clientEventType: string): Observable<any> {
+    subscribeTo(clientEventType: string): Observable<DotEventData> {
         if (!this.subjects[clientEventType]) {
             this.subjects[clientEventType] = new Subject();
         }
@@ -88,6 +90,11 @@ export class DotcmsEventsService {
 }
 
 export interface EventTypeWrapper {
-    data: any;
+    data: DotEventData;
     eventType: string;
+}
+
+export interface DotEventData {
+    type: string;
+    data: {[key: string]: any};
 }

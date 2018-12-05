@@ -128,7 +128,7 @@ export class ToolbarNotificationsComponent implements OnInit {
 
     private subscribeToNotifications(): void {
         this.dotcmsEventsService.subscribeTo('NOTIFICATION').subscribe((res) => {
-            this.notifications.unshift(res.data);
+            this.notifications.unshift(<INotification> res.data);
             this.notificationsUnreadCount++;
             this.isNotificationsMarkedAsRead = false;
         });
