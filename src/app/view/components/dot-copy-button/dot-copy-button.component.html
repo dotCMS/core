@@ -1,2 +1,5 @@
-<dot-icon-button icon="file_copy" (click)="copyUrlToClipboard()"></dot-icon-button>
-<span>{{tooltipText}}</span>
+<span class="label" *ngIf="label; else button" (click)="copyUrlToClipboard($event)">{{label}}</span>
+<ng-template #button>
+    <dot-icon-button icon="file_copy" (click)="copyUrlToClipboard($event)"></dot-icon-button>
+</ng-template>
+<span class="tooltip">{{tooltipText}}</span>

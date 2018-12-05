@@ -6,11 +6,13 @@
     justify-content: center;
 }
 
-span {
+.tooltip {
     background-color: $gray;
-    bottom: -1.75rem;
     border-radius: $border-radius;
+    bottom: -1.75rem;
     color: $white;
+    font-size: $body-font-size-base;
+    line-height: 1.5;
     opacity: 0;
     padding: 0 $basic-padding / 2;
     position: absolute;
@@ -18,8 +20,13 @@ span {
     white-space: nowrap;
 }
 
+.label {
+    cursor: pointer;
+}
+
+.label:hover,
 dot-icon-button:hover {
-    & + span {
+    & + .tooltip {
         opacity: 1;
     }
 }
