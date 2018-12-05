@@ -109,6 +109,8 @@ public class ContentletTest {
             assertEquals(cachedContentType.fields().size(),
                     contentlet.getContentType().fields().size());
 
+            assertEquals(cachedContentType.inode(), contentlet.getContentType().inode());
+
             assertEquals(cachedContentType.modDate(), contentlet.getContentType().modDate());
 
         }finally{
