@@ -1,12 +1,9 @@
 import { DOTTestBed } from 'src/app/test/dot-test-bed';
 import { DotMessageDisplayService } from './dot-message-display.service';
-import { DotMessage } from '../model/dot-message.model';
-import { DotMessageSeverity } from '../model/dot-message-severity.model';
-import { DotMessageType } from '../model/dot-message-type.model';
+import { DotMessage, DotMessageSeverity, DotMessageType } from '../model';
 import { DotcmsEventsService } from 'dotcms-js';
 import { DotcmsEventsServiceMock } from 'src/app/test/dotcms-events-service.mock';
 import { Router } from '@angular/router';
-
 
 describe('DotMessageDisplayService', () => {
 

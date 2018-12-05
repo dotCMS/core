@@ -5,11 +5,11 @@ import { DOTTestBed } from '@tests/dot-test-bed';
 import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
 import { By } from '@angular/platform-browser';
-import { DotMessageDisplayService } from './services/dot-message-display.service';
+import { DotMessageDisplayService } from './services';
 import { Observable, Subject } from 'rxjs';
-import { DotMessage } from './model/dot-message.model';
-import { DotMessageSeverity } from './model/dot-message-severity.model';
-import { DotMessageType } from './model/dot-message-type.model';
+import { DotMessage } from './model';
+import { DotMessageSeverity } from './model';
+import { DotMessageType } from './model';
 
 
 @Injectable()
