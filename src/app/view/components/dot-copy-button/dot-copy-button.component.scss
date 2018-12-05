@@ -1,0 +1,25 @@
+@import "variables";
+
+:host {
+    position: relative;
+    display: flex;
+    justify-content: center;
+}
+
+span {
+    background-color: $gray;
+    bottom: -1.75rem;
+    border-radius: $border-radius;
+    color: $white;
+    opacity: 0;
+    padding: 0 $basic-padding / 2;
+    position: absolute;
+    transition: opacity 100ms ease;
+    white-space: nowrap;
+}
+
+dot-icon-button:hover {
+    & + span {
+        opacity: 1;
+    }
+}

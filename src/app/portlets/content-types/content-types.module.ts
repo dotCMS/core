@@ -7,18 +7,14 @@ import { ContentTypesPortletComponent } from './main';
 import { ContentTypesRoutingModule } from './content-types-routing.module';
 import { FieldValidationMessageModule } from '@components/_common/field-validation-message/file-validation-message.module';
 import { FormatDateService } from '@services/format-date-service';
-import { IconButtonTooltipModule } from '@components/_common/icon-button-tooltip/icon-button-tooltip.module';
+import { DotIconButtonTooltipModule } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.module';
 import { ListingDataTableModule } from '@components/listing-data-table/listing-data-table.module';
 import { NgModule } from '@angular/core';
 import { ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { SiteSelectorFieldModule } from '@components/_common/site-selector-field/site-selector-field.module';
 import { DragulaModule } from 'ng2-dragula';
 import { DragulaService } from 'ng2-dragula';
-import {
-    FieldService,
-    FieldDragDropService,
-    FieldPropertyService
-} from './fields/service';
+import { FieldService, FieldDragDropService, FieldPropertyService } from './fields/service';
 import { ContentTypeFieldsAddRowModule } from './fields/content-type-fields-add-row';
 import { ContentTypeEditResolver } from './edit/content-types-edit-resolver.service';
 
@@ -65,9 +61,8 @@ import { DotPageSelectorModule } from '@components/_common/dot-page-selector/dot
 import { DotTextareaContentModule } from '@components/_common/dot-textarea-content/dot-textarea-content.module';
 import { DotWorkflowService } from '@services/dot-workflow/dot-workflow.service';
 import { DotWorkflowsSelectorFieldModule } from '@components/_common/dot-workflows-selector-field/dot-workflows-selector-field.module';
-import {
-    DynamicFieldPropertyDirective
-} from './fields/content-type-fields-properties-form/field-properties/dynamic-field-property-directive/dynamic-field-property.directive';
+// tslint:disable-next-line:max-line-length
+import { DynamicFieldPropertyDirective } from './fields/content-type-fields-properties-form/field-properties/dynamic-field-property-directive/dynamic-field-property.directive';
 import { IFrameModule } from '@components/_common/iframe';
 import { MdInputTextModule } from '@directives/md-inputtext/md-input-text.module';
 import { PushPublishContentTypesDialogModule } from '@components/_common/push-publish-dialog/push-publish-dialog.module';
@@ -139,7 +134,7 @@ import { DotApiLinkModule } from '@components/dot-api-link/dot-api-link.module';
         FieldValidationMessageModule,
         FormsModule,
         IFrameModule,
-        IconButtonTooltipModule,
+        DotIconButtonTooltipModule,
         InputTextModule,
         ListingDataTableModule,
         MdInputTextModule,

@@ -21,6 +21,8 @@ dot-icon {
 }
 
 :host {
+    display: inline-block;
+
     &[float] {
         button {
             background-color: $brand-primary;
@@ -93,7 +95,7 @@ dot-icon {
         }
 
         &:hover {
-            background-color: $gray-bg;
+            background-color: rgba($black, 0.07);
         }
     }
 }
