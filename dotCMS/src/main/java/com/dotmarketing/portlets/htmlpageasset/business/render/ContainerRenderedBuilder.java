@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.htmlpageasset.business.render;
 
+
 import java.util.Collection;
 import java.util.Map;
 import java.util.Objects;
@@ -24,7 +25,6 @@ import com.dotmarketing.util.VelocityUtil;
 public class ContainerRenderedBuilder {
 
 
-
     public Collection<? extends ContainerRaw> getContainers(final HTMLPageAsset page, final PageMode mode)
             throws DotSecurityException, DotDataException {
         return getContainersRendered(page, null, mode);
@@ -43,6 +43,7 @@ public class ContainerRenderedBuilder {
         }
 
 
+
         return pcb.getContainersRaw().stream().map(cRaw -> {
             try {
                 Map<String, String> uuidsRendered = render(velocityContext, mode, cRaw);
@@ -50,9 +51,11 @@ public class ContainerRenderedBuilder {
             } catch (Exception e) {
                 // if the container does not exists or is not valid for the mode, returns null to be filtrated
                 return null;
+
             }
         }).filter(Objects::nonNull).collect(Collectors.toList());
     }
+
 
 
     private Map<String, String> render(Context velocityContext, PageMode mode, ContainerRaw cRaw) {
@@ -67,6 +70,5 @@ public class ContainerRenderedBuilder {
             }
         }
         return rendered;
-
     }
 }

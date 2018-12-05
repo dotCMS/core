@@ -1,5 +1,6 @@
 package com.dotcms.rendering.velocity.services;
 
+
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
@@ -44,8 +45,6 @@ import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Table;
 import com.liferay.portal.model.User;
@@ -187,7 +186,6 @@ public class PageContextBuilder implements Serializable {
                 
                 for (final String uniqueId : pageContents.row(containerId).keySet()) {
                     final Set<String> cons = pageContents.get(containerId, uniqueId);
-
 
 
                     boolean hasWritePermissionOnContainer = permissionAPI.doesUserHavePermission(container, PERMISSION_WRITE, user, false)

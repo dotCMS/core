@@ -1,7 +1,5 @@
 package com.dotcms.content.elasticsearch.business;
 
-import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.datetimeFormat;
-
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
@@ -15,13 +13,7 @@ import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.util.I18NMessage;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.FactoryLocator;
-import com.dotmarketing.business.IdentifierAPI;
-import com.dotmarketing.business.IdentifierCache;
-import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.*;
 import com.dotmarketing.business.query.ComplexCriteria;
 import com.dotmarketing.business.query.Criteria;
 import com.dotmarketing.business.query.GenericQueryFactory.Query;
@@ -50,34 +42,11 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.business.WorkFlowFactory;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.DateUtil;
-import com.dotmarketing.util.InodeUtils;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.NumberUtil;
-import com.dotmarketing.util.RegEX;
-import com.dotmarketing.util.RegExMatch;
-import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.*;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.primitives.Ints;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-import java.util.function.Consumer;
-import java.io.Serializable;
-import java.io.StringWriter;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.StringTokenizer;
 import org.apache.commons.lang.StringUtils;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.ActionListener;
@@ -98,6 +67,18 @@ import org.elasticsearch.search.sort.ScriptSortBuilder;
 import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortOrder;
 import org.springframework.util.NumberUtils;
+
+import java.io.Serializable;
+import java.io.StringWriter;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.Calendar;
+import java.util.*;
+import java.util.function.Consumer;
+
+import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.datetimeFormat;
 
 /**
  * Implementation class for the {@link ContentletFactory} interface. This class
@@ -655,8 +636,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
             // workaround for dbs where we can't have more than one constraint
             // or triggers
-            db.executeStatement("delete from multi_tree where child in (" + sInodeIds
-                    + ") or parent1 in (" + sInodeIds + ") or parent2 in (" + sInodeIds + ")");
+            APILocator.getMultiTreeAPI().deleteMultiTreesForInodes(inodes);
         } catch (SQLException e) {
             throw new DotDataException("Error deleting tree and multi-tree.", e);
         }
@@ -733,11 +713,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
         // workaround for dbs where we can't have more than one constraint
         // or triggers
-        db.setSQL( "delete from multi_tree where child = ? or parent1 = ? or parent2 = ?" );
-        db.addParam(conInode);
-        db.addParam(conInode);
-        db.addParam(conInode);
-        db.getResult();
+        APILocator.getMultiTreeAPI().deleteMultiTreesRelatedToIdentifier(conInode);
 
         contentletCache.remove(conInode);
         com.dotmarketing.portlets.contentlet.business.Contentlet c =
