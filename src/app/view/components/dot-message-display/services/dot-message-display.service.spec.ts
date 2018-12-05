@@ -50,7 +50,7 @@ describe('DotMessageDisplayService', () => {
             done();
         });
 
-        mockDotcmsEventsService.tiggerSubscribeTo('MESSAGE', {
+        mockDotcmsEventsService.triggerSubscribeTo('MESSAGE', {
             data: messageExpected,
             type: 'SIMPLE_MESSAGE'
         });
@@ -65,7 +65,7 @@ describe('DotMessageDisplayService', () => {
 
         dotMessageDisplayService.unsubscribe();
 
-        mockDotcmsEventsService.tiggerSubscribeTo('MESSAGE', {
+        mockDotcmsEventsService.triggerSubscribeTo('MESSAGE', {
             data: messageExpected,
             type: 'SIMPLE_MESSAGE'
         });
@@ -86,7 +86,7 @@ describe('DotMessageDisplayService', () => {
                 done();
             });
 
-            mockDotcmsEventsService.tiggerSubscribeTo('MESSAGE', {
+            mockDotcmsEventsService.triggerSubscribeTo('MESSAGE', {
                 data: messageExpected,
                 type: 'SIMPLE_MESSAGE'
             });
@@ -101,7 +101,7 @@ describe('DotMessageDisplayService', () => {
                 wasCalled = true;
             });
 
-            mockDotcmsEventsService.tiggerSubscribeTo('MESSAGE', {
+            mockDotcmsEventsService.triggerSubscribeTo('MESSAGE', {
                 data: messageExpected,
                 type: 'SIMPLE_MESSAGE'
             });

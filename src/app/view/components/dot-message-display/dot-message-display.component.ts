@@ -19,14 +19,15 @@ import { DotMessage } from './model/dot-message.model';
 export class DotMessageDisplayComponent implements OnInit, OnDestroy {
     constructor(
         private dotMessageDisplayService: DotMessageDisplayService,
-        private messageService: MessageService) {}
+        private messageService: MessageService
+    ) {}
 
     ngOnInit() {
         this.dotMessageDisplayService.messages().subscribe((dotMessage: DotMessage) => {
             this.messageService.add({
                 life: dotMessage.life,
                 detail: dotMessage.message,
-                severity: dotMessage.severity.toLowerCase(),
+                severity: dotMessage.severity.toLowerCase()
             });
         });
     }

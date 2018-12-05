@@ -21,7 +21,7 @@ export class DotcmsEventsServiceMock {
         return subject.asObservable();
     }
 
-    tiggerSubscribeTo(clientEventType: string, data: any): void {
+    triggerSubscribeTo(clientEventType: string, data: any): void {
         this.observers[clientEventType].next(data);
     }
 

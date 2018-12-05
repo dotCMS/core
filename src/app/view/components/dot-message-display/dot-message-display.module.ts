@@ -8,7 +8,7 @@ import { DotRouterService } from 'dotcms-js';
 @NgModule({
     imports: [CommonModule, ToastModule],
     declarations: [DotMessageDisplayComponent],
-    providers: [DotMessageDisplayService, DotRouterService],
+    providers: [DotMessageDisplayService],
     exports: [DotMessageDisplayComponent]
 })
 export class DotMessageDisplayModule {}
