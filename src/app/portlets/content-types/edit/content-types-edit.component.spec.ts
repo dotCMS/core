@@ -389,7 +389,6 @@ describe('ContentTypesEditComponent', () => {
         });
 
         it('should have copy variable button', () => {
-            console.log(de.query(By.css('dot-copy-button')));
             expect(de.query(By.css('dot-copy-button')).componentInstance.copy).toBe(
                 'helloVariable'
             );
