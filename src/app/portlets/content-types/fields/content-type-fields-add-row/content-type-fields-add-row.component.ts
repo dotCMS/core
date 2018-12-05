@@ -206,14 +206,12 @@ export class ContentTypeFieldsAddRowComponent implements OnDestroy, OnInit {
         this.actions = [
             {
                 label: this.i18nMessages['contenttypes.dropzone.rows.add'],
-                icon: 'fa fa-plus',
                 command: () => {
                     this.setColumnSelect();
                 }
             },
             {
                 label: this.i18nMessages['contenttypes.dropzone.rows.tab_divider'],
-                icon: 'fa fa-plus',
                 command: () => {
                     this.dotEventsService.notify('add-tab-divider');
                 }

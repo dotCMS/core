@@ -1,0 +1,3 @@
+<ng-container *ngIf="(link$ | async) as link">
+    <a [href]="link" target="_blank" [title]="link"><dot-icon name="code"></dot-icon> API</a>
+</ng-container>

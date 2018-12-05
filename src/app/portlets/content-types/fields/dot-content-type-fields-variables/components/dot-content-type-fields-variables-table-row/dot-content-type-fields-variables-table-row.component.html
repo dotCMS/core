@@ -50,6 +50,7 @@
     <td class="content-type-fields__variables-actions">
         <div id="content-type-fields__variables-actions-edit" *ngIf="showEditMenu">
             <button pButton secondary tiny
+                class="content-type-fields__variables-actions-edit-cancel"
                 [label]="messages['contenttypes.action.cancel']"
                 (blur)="rowActiveHighlight = false"
                 (focus)="rowActiveHighlight = true"

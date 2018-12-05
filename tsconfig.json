@@ -36,6 +36,9 @@
       "@shared/*": [
         "src/app/shared/*"
       ],
+      "@tests/*": [
+        "src/app/test/*"
+      ],
       "@models/*": [
         "src/app/shared/models/*"
       ],

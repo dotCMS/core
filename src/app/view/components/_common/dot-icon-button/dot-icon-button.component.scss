@@ -10,6 +10,10 @@
     }
 }
 
+dot-icon {
+    color: $gray;
+}
+
 [tiny] :host {
     button {
         @extend #icon-button-tiny;
@@ -17,6 +21,8 @@
 }
 
 :host {
+    display: inline-block;
+
     &[float] {
         button {
             background-color: $brand-primary;
@@ -30,7 +36,7 @@
             }
         }
 
-        dot-icon::ng-deep .material-icons {
+        dot-icon {
             color: $white;
         }
     }
@@ -89,7 +95,7 @@
         }
 
         &:hover {
-            background-color: $gray-bg;
+            background-color: rgba($black, 0.07);
         }
     }
 }

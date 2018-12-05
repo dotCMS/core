@@ -5,7 +5,7 @@ import { DOTTestBed } from '../../../../../test/dot-test-bed';
 import { DotFieldVariable } from '../models/dot-field-variable.interface';
 import { DotFieldVariableParams } from '../models/dot-field-variable-params.interface';
 
-describe('FieldVariablesService', () => {
+describe('DotFieldVariablesService', () => {
     beforeEach(() => {
         this.injector = DOTTestBed.resolveAndCreate([DotFieldVariablesService]);
         this.fieldVariableService = this.injector.get(DotFieldVariablesService);
