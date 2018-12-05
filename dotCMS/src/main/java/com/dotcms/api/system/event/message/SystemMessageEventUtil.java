@@ -105,7 +105,7 @@ public class SystemMessageEventUtil {
      *                   otherwise even if the message is for that particular user, if it is not in the portlet will be skipped. (note: this validation will happens on the client, Angular or whatever is the consumer)
      */
     public void pushSimpleErrorEvent (final ErrorEntity error, final List<String> users, final String... portletIds) {
-        final SystemMessage systemMessage = SystemMessageBuilder.getInstance()
+        final SystemMessage systemMessage = new SystemMessageBuilder()
                 .setMessage(error)
                 .setPortletIdList(portletIds)
                 .setSeverity(MessageSeverity.ERROR)
@@ -123,19 +123,6 @@ public class SystemMessageEventUtil {
     public void pushRichMediaEvent (final Object richMediaMessage) {
 
         this.pushRichMediaEvent(richMediaMessage, Collections.emptyList());
-    } // pushRichMediaEvent.
-
-    /**
-     * Sends a Simple rich media event (by now just html string) (RICH_MEDIA_MESSAGE), it will be send to all user, not matter what portlet is looking.
-     * @param richMediaMessage {@link Object} a rich media message
-     * @param userId    String user to send the message
-     * @param portletIds String array of portlet id that the message applies, could be null (null means all of them)
-     *                   the concept of portlet basically means, if the user is working on a specific portlet when the message is delivered, the message will be showed to the user,
-     *                   otherwise even if the message is for that particular user, if it is not in the portlet will be skipped. (note: this validation will happens on the client, Angular or whatever is the consumer)
-     */
-    public void pushRichMediaEvent (final Object richMediaMessage, final String userId, final String... portletIds) {
-
-        this.pushRichMediaEvent(richMediaMessage, Arrays.asList(userId), portletIds);
     } // pushRichMediaEvent.
 
     /**
@@ -275,7 +262,7 @@ public class SystemMessageEventUtil {
                                    final String... portletIds) {
 
         final Set<String> portletIdSet = (null != portletIds) ? new HashSet<>(Arrays.asList(portletIds)) : null;
-        final SystemMessage systemMessage = SystemMessageBuilder.getInstance()
+        final SystemMessage systemMessage = new SystemMessageBuilder()
                 .setMessage(message)
                 .setPortletIdList(portletIds)
                 .setType(messageType)

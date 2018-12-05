@@ -19,15 +19,7 @@ public class SystemMessageBuilder {
     private MessageSeverity severity = MessageSeverity.INFO;
     private MessageType type = MessageType.SIMPLE_MESSAGE;
 
-    private SystemMessageBuilder(){}
-
-    private static class SingletonHolder {
-        private static final SystemMessageBuilder INSTANCE = new SystemMessageBuilder();
-    }
-
-    public static SystemMessageBuilder getInstance() {
-        return SystemMessageBuilder.SingletonHolder.INSTANCE;
-    }
+    public SystemMessageBuilder(){}
 
     public SystemMessageBuilder setMessage(final Object message) {
         this.message = message;
