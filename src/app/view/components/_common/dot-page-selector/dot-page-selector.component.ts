@@ -50,7 +50,7 @@ export class DotPageSelectorComponent implements ControlValueAccessor {
         public dotMessageService: DotMessageService
     ) {
         this.dotMessageService
-            .getMessages(['page.selector.no.sites.results', 'page.selector.no.page.results'])
+            .getMessages(['page.selector.no.sites.results', 'page.selector.no.page.results', 'page.selector.hint'])
             .subscribe();
     }
 
@@ -108,7 +108,6 @@ export class DotPageSelectorComponent implements ControlValueAccessor {
      */
     search(param: any): void {
         if (this.cleanInput(param).length) {
-            debugger;
             this.dotPageSelectorService
                 .search(this.cleanQuery(param.query))
                 .pipe(take(1))

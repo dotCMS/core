@@ -32,3 +32,9 @@
         [suggestions]="results.data">
     </p-autoComplete>
 </ng-template>
+
+<dot-icon-button class="dot-page-selector__hint" icon="help_outline" (click)="hint.toggle($event)"></dot-icon-button>
+
+<p-overlayPanel [dismissable]="true" appendTo="body" #hint [style]="{'width':'350px'}">
+    <div [innerHTML]="dotMessageService.get('page.selector.hint')"></div>
+</p-overlayPanel>
