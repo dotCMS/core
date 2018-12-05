@@ -3,6 +3,14 @@ import { DotMessageDisplayService } from './services/dot-message-display.service
 import { MessageService } from 'primeng/api';
 import { DotMessage } from './model/dot-message.model';
 
+/**
+ *Show message send from the Backend
+ *
+ * @export
+ * @class DotMessageDisplayComponent
+ * @implements {OnInit}
+ * @implements {OnDestroy}
+ */
 @Component({
     providers: [MessageService],
     selector: 'dot-message-display',

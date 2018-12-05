@@ -5,6 +5,13 @@ import { DotMessage } from '../model/dot-message.model';
 import { map, takeUntil, filter } from 'rxjs/operators';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 
+
+/**
+ *Handle message send by the Backend, this message are sended as Event through the {@see DotcmsEventsService}
+ *
+ * @export
+ * @class DotMessageDisplayService
+ */
 @Injectable()
 export class DotMessageDisplayService {
 
@@ -22,10 +29,22 @@ export class DotMessageDisplayService {
         );
     }
 
+    /**
+     *Allow subscribe to recive new message
+     *
+     * @returns {Observable<DotMessage>}
+     * @memberof DotMessageDisplayService
+     */
     messages(): Observable<DotMessage> {
         return this.messages$;
     }
 
+
+    /**
+     *Unsubscribe to service's Observable
+     *
+     * @memberof DotMessageDisplayService
+     */
     unsubscribe(): void {
         this.destroy$.next(true);
         this.destroy$.complete();
