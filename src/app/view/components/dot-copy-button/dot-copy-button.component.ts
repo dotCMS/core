@@ -3,11 +3,20 @@ import { DotClipboardUtil } from 'src/app/api/util/clipboard/ClipboardUtil';
 import { DotMessageService } from '@services/dot-messages-service';
 import { take } from 'rxjs/operators';
 
+/**
+ * Icon button to copy to clipboard the string you pass to it,
+ * it use tooltip to indicate the user the action and the result.
+ *
+ * @export
+ * @class DotCopyButtonComponent
+ * @implements {OnInit}
+ */
 @Component({
     selector: 'dot-copy-button',
     templateUrl: './dot-copy-button.component.html',
     styleUrls: ['./dot-copy-button.component.scss']
 })
+
 export class DotCopyButtonComponent implements OnInit {
     @Input() copy = '';
 
@@ -45,7 +54,7 @@ export class DotCopyButtonComponent implements OnInit {
     }
 
     /**
-     * Copy url to clipboard
+     * Copy url to clipboard and update the tooltip text with the result
      *
      * @memberof DotCopyButtonComponent
      */
