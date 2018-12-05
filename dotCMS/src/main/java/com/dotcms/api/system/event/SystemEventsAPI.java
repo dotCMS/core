@@ -4,7 +4,6 @@ import java.util.Collection;
 
 import com.dotcms.api.system.event.dto.SystemEventDTO;
 import com.dotmarketing.exception.DotDataException;
-import com.liferay.portal.model.User;
 
 /**
  * This API allows users and other services to record and retrieve different
