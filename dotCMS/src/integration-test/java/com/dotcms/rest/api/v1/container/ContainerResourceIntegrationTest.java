@@ -17,6 +17,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.form.business.FormAPI;
 import com.dotmarketing.util.PageMode;
@@ -55,6 +56,7 @@ public class ContainerResourceIntegrationTest {
     private final VelocityUtil velocityUtil = mock(VelocityUtil.class);
     private final HttpServletRequest request = mock(HttpServletRequest.class);
     private final ShortyIdAPI shortyAPI = mock(ShortyIdAPI.class);
+    private final ContentletAPI contentletAPI = mock(ContentletAPI.class);
     private final User user = mock(User.class);
     private final HttpServletResponse response = mock(HttpServletResponse.class);
     private final ChainedContext context = mock(ChainedContext.class);
@@ -80,7 +82,7 @@ public class ContainerResourceIntegrationTest {
         when(formContent.getIdentifier()).thenReturn(formId);
 
         containerResource = new ContainerResource(webResource, paginationUtil, formAPI, containerAPI, versionableAPI,
-                velocityUtil, shortyAPI);
+                velocityUtil, shortyAPI, contentletAPI);
 
         IntegrationTestInitService.getInstance().init();
     }
