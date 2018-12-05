@@ -1,10 +1,8 @@
 package com.dotmarketing.portlets.htmlpageasset.business.render;
 
-import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 
-import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -19,14 +17,13 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
  * @version 4.2
  * @since Oct 6, 2017
  */
-public class ContainerRendered implements Serializable {
+public class ContainerRendered extends ContainerRaw {
 
     private static final long serialVersionUID = 1572918359580445566L;
 
-    private final Container container;
-    private final List<ContainerStructure> containerStructures;
+
     private final Map<String, String> rendered;
-    private final Map<String,List<Contentlet>> contentlets;
+
 
     /**
      * Creates a new instance of the ContainerRendered.
@@ -37,29 +34,23 @@ public class ContainerRendered implements Serializable {
      */
     public ContainerRendered(final Container container, final List<ContainerStructure> containerStructures,
                              final Map<String, String> rendered, final Map<String,List<Contentlet>> contentlets) {
-        this.container = container;
-
-        if (containerStructures != null) {
-            this.containerStructures = ImmutableList.copyOf(containerStructures);
-        } else {
-            this.containerStructures = ImmutableList.of();
-        }
+        super(container, containerStructures, contentlets);
 
         this.rendered = rendered;
-        this.contentlets=contentlets;
-    }
 
-    public Map<String,List<Contentlet>> getContentlets() {
-        return contentlets;
     }
-
+    
     /**
-     * Returns the page container.
+     * Creates a new instance of the ContainerRendered.
      *
-     * @return The {@link Container} in the page.
+     * @param container           The {@link Container} in the HTML Page.
+     * @param containerStructures The list of {@link ContainerStructure} relationships.
+     *                           the browser.
      */
-    public Container getContainer() {
-        return container;
+    public ContainerRendered(final ContainerRaw containerRaw, final Map<String, String> rendered) {
+        super(containerRaw.getContainer(), containerRaw.getContainerStructures(), containerRaw.getContentlets());
+        this.rendered = rendered;
+
     }
 
     /**
@@ -71,19 +62,10 @@ public class ContainerRendered implements Serializable {
         return rendered;
     }
 
-    /**
-     * Returns the relationships that determine what Content Types can be added to a specific
-     * Container.
-     *
-     * @return The list of {@link ContainerStructure} relationships.
-     */
-    public List<ContainerStructure> getContainerStructures() {
-        return containerStructures;
-    }
 
     @Override
     public String toString() {
-        return "ContainerRendered{" + "container=" + container + ", containerStructures=" +
-                containerStructures + ", rendered='" + rendered + '\'' + '}';
+        return "ContainerRendered{" + "container=" + getContainer() + ", containerStructures=" +
+                getContainerStructures() + ", rendered='" + rendered + '\'' + '}';
     }
 }

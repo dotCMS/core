@@ -107,12 +107,10 @@ public class PageResource {
         final User user = auth.getUser();
         Response res = null;
         try {
-            final PageView pageView = this.htmlPageAssetRenderedAPI.getPageMetadata(request, response, user, uri,
-                    PageMode.get(request));
-            final Response.ResponseBuilder responseBuilder = Response.ok(pageView);
+            final PageView pageView = this.htmlPageAssetRenderedAPI.getPageMetadata(request, response, user, uri, PageMode.get(request));
+            final Response.ResponseBuilder responseBuilder = Response.ok(new ResponseEntityView(pageView));
             responseBuilder.header("Access-Control-Expose-Headers", "Authorization");
-            responseBuilder.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, " +
-                    "Content-Type, " + "Accept, Authorization");
+            responseBuilder.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, " +   "Content-Type, " + "Accept, Authorization");
             res = responseBuilder.build();
         } catch (HTMLPageAssetNotFoundException e) {
             final String messageFormat =

@@ -29,6 +29,7 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotLockException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
+import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRaw;
 import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRendered;
 import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRenderedBuilder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
@@ -109,15 +110,15 @@ public class HTMLPageAssetRenderedBuilder {
         // (unless host is specified in the dotParse) github 14624
         final RenderParams params=new RenderParams(user,language, site, mode);
         request.setAttribute(RenderParams.RENDER_PARAMS_ATTRIBUTE, params);
-        
+        final User systemUser = APILocator.getUserAPI().getSystemUser();
         if (!rendered) {
-            final Collection<ContainerRendered> containers = this.containerRenderedBuilder.getContainers(htmlPageAssetInfo.getPage(),mode);
+            final Collection<? extends ContainerRaw> containers =  new PageContextBuilder(htmlPageAssetInfo.getPage(), systemUser, mode).getContainersRaw();
             return new PageView(site, template, containers, htmlPageAssetInfo, layout);
         } else {
-            final User systemUser = APILocator.getUserAPI().getSystemUser();
+           
             final Context velocityContext  = new PageContextBuilder(htmlPageAssetInfo.getPage(), systemUser, mode)
                     .addAll(VelocityUtil.getWebContext(request, response));
-            final Collection<ContainerRendered> containers = this.containerRenderedBuilder.getContainersRendered(htmlPageAssetInfo.getPage(),
+            final Collection<? extends ContainerRaw> containers = this.containerRenderedBuilder.getContainersRendered(htmlPageAssetInfo.getPage(),
                     velocityContext, mode);
             final boolean canCreateTemplates = layoutAPI.doesUserHaveAccessToPortlet("templates", user);
             final String pageHTML = this.getPageHTML();
