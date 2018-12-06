@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Observable, Subject } from 'rxjs';
 import { DotcmsEventsService, DotEventData } from 'dotcms-js';
+import { DotMessage } from '../model/dot-message.model';
 import { map, takeUntil, filter } from 'rxjs/operators';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 
@@ -14,7 +15,7 @@ import { DotRouterService } from '@services/dot-router/dot-router.service';
 @Injectable()
 export class DotMessageDisplayService {
 
-    private messages$: Observable<Dot.Message>;
+    private messages$: Observable<DotMessage>;
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
     constructor(
@@ -23,8 +24,8 @@ export class DotMessageDisplayService {
 
         this.messages$ = dotcmsEventsService.subscribeTo('MESSAGE').pipe(
             takeUntil(this.destroy$),
-            map((messageEvent: DotEventData) => <Dot.Message>messageEvent.data),
-            filter((dotMessage: Dot.Message) => this.hasPortletIdList(dotMessage))
+            map((messageEvent: DotEventData) => <DotMessage>messageEvent.data),
+            filter((dotMessage: DotMessage) => this.hasPortletIdList(dotMessage))
         );
     }
 
@@ -34,7 +35,7 @@ export class DotMessageDisplayService {
      * @returns {Observable<DotMessage>}
      * @memberof DotMessageDisplayService
      */
-    messages(): Observable<Dot.Message> {
+    messages(): Observable<DotMessage> {
         return this.messages$;
     }
 
@@ -49,7 +50,7 @@ export class DotMessageDisplayService {
         this.destroy$.complete();
     }
 
-    private hasPortletIdList(dotMessage: Dot.Message): boolean {
+    private hasPortletIdList(dotMessage: DotMessage): boolean {
         return !dotMessage.portletIdList || !dotMessage.portletIdList.length ||
             dotMessage.portletIdList.includes(this.dotRouterService.currentPortlet.id);
     }

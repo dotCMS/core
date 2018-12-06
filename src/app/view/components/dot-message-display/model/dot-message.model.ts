@@ -1,42 +1,17 @@
-namespace Dot {
-
-    /**
-    *Message send from the backend
-    *
-    * @export
-    * @interface DotMessage
-    */
-    export interface Message {
-        life: number;
-        message: string;
-        portletIdList: string[];
-        severity: Message.Severity;
-        type: Message.Type;
-    }
-
-    export namespace Message {
-        /**
-        *{@link DotMessage} type
-        *
-        * @export
-        * @enum {number}
-        */
-        export enum Type {
-            SIMPLE_MESSAGE = 'RAW_MESSAGE',
-            CONFIRMATION_MESSAGE = 'CONFIRMATION_MESSAGE',
-        }
+import { DotMessageSeverity } from './dot-message-severity.model';
+import { DotMessageType } from './dot-message-type.model';
 
 
-        /**
-        *{@link DotMessage}'s severity
-        *
-        * @export
-        * @enum {number}
-        */
-        export enum Severity {
-            INFO = 'INFO',
-            WARNING = 'WARNING',
-            ERROR = 'ERROR'
-        }
-    }
+/**
+ *Message send from the backend
+ *
+ * @export
+ * @interface DotMessage
+ */
+export interface DotMessage {
+    life: number;
+    message: string;
+    portletIdList: string[];
+    severity: DotMessageSeverity;
+    type: DotMessageType;
 }
