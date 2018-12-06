@@ -6,6 +6,7 @@ import { DOTTestBed } from '../../../../../../test/dot-test-bed';
 import { DotMessageService } from '@services/dot-messages-service';
 import { FormGroup, FormControl, NgControl } from '@angular/forms';
 import { By } from '@angular/platform-browser';
+import { DotCopyButtonModule } from '@components/dot-copy-button/dot-copy-button.module';
 
 @Component({
     selector: 'dot-field-validation-message',
@@ -30,7 +31,7 @@ describe('NamePropertyComponent', () => {
     beforeEach(async(() => {
         DOTTestBed.configureTestingModule({
             declarations: [NamePropertyComponent, TestFieldValidationMessageComponent],
-            imports: [],
+            imports: [DotCopyButtonModule],
             providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
         });
 
@@ -84,5 +85,26 @@ describe('NamePropertyComponent', () => {
     it('should focus on input on load using the directive', () => {
         const input = de.query(By.css('.name__input'));
         expect(input.attributes.dotAutofocus).toBeDefined();
+    });
+
+    it('should have copy variable button', () => {
+        comp.group = new FormGroup({
+            name: new FormControl('')
+        });
+
+        comp.property = {
+            name: 'name',
+            value: 'value',
+            field: {
+                variable: 'thisIsAVar'
+            }
+        };
+
+        fixture.detectChanges();
+
+        const copy: DebugElement = de.query(By.css('dot-copy-button'));
+
+        expect(copy.componentInstance.copy).toBe('thisIsAVar');
+        expect(copy.componentInstance.label).toBe('thisIsAVar');
     });
 });
