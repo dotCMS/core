@@ -191,7 +191,7 @@ public class ContentToolTest extends IntegrationTestBase {
             assertEquals(1, result.size());
 
             //lazy load related contentlet
-            List relatedContent = (List) result.get(0).get(field.variable());
+            final List relatedContent = (List) result.get(0).get(field.variable());
             assertNotNull(relatedContent);
             assertEquals(1, relatedContent.size());
             assertTrue(relatedContent.get(0) instanceof ContentMap);
