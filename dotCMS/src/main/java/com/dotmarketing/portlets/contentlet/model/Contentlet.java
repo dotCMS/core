@@ -1,12 +1,25 @@
 package com.dotmarketing.portlets.contentlet.model;
 
+import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.util.ConversionUtils;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.business.*;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.PermissionSummary;
+import com.dotmarketing.business.Permissionable;
+import com.dotmarketing.business.RelatedPermissionableGroup;
+import com.dotmarketing.business.Ruleable;
+import com.dotmarketing.business.Treeable;
+import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.business.Versionable;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -27,15 +40,20 @@ import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.model.User;
-import org.apache.commons.lang.builder.ToStringBuilder;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
 import java.nio.file.Files;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import org.apache.commons.lang.builder.ToStringBuilder;
 
 /**
  * Represents a content unit in the system. Ideally, every single domain object
@@ -95,7 +113,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	public static final String TEMP_BINARY_IMAGE_INODES_LIST = "tempBinaryImageInodesList";
 	public static final String RELATIONSHIP_KEY = "__##relationships##__";
 
-
+	private transient ContentType contentType;
     protected Map<String, Object> map = new ContentletHashMap();
 
 	private boolean lowIndexPriority = false;
@@ -337,17 +355,13 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 
 	/**
 	 * @deprecated As of dotCMS 4.1.0. Please use the following approach:
-	 *             <pre>
+	 * <pre>
 	 *             {@link #getContentType()}
 	 *             </pre>
-	 * 
-	 * @return
 	 */
-    public Structure getStructure() {
-    	Structure structure = null;
-    	structure = CacheLocator.getContentTypeCache().getStructureByInode(getStructureInode());
-        return structure;
-    }
+	public Structure getStructure() {
+		return new StructureTransformer(getContentType()).asStructure();
+	}
 
     /**
      * 
@@ -1270,21 +1284,36 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	public boolean hasLiveVersion() throws DotStateException, DotDataException {
 		return APILocator.getVersionableAPI().hasLiveVersion(this);
 	}
-	
+
 	/**
 	 * Get the contentlet Content Type
+	 *
 	 * @return the contentlet Content Type
-	 * @throws DotDataException
-	 * @throws DotSecurityException
 	 */
 	public ContentType getContentType() {
+
 		try {
-			return APILocator.getContentTypeAPI(APILocator.systemUser()).find(getContentTypeId());
+			final ContentType foundContentType =
+					APILocator.getContentTypeAPI(APILocator.systemUser())
+							.find(getContentTypeId());
+
+			if (null != foundContentType) {
+				this.contentType = foundContentType;
+			}
 		} catch (DotDataException | DotSecurityException e) {
-			throw new DotStateException(e);
+			if (!ExceptionUtil.causedBy(e, NotFoundInDbException.class)) {
+				throw new DotStateException(e);
+			} else {
+				Logger.warn(this,
+						() -> String.format(
+								"Unable to find Content Type for Contentlet [%s], Content Type deleted? - [%s]",
+								this.getIdentifier(),
+								e.getMessage()));
+			}
 		}
 
-    }
+		return this.contentType;
+	}
 	
 	/**
 	 * Get if the contentlet is a Vanity URL
