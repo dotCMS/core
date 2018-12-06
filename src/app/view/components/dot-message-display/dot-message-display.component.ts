@@ -25,9 +25,11 @@ export class DotMessageDisplayComponent implements OnInit, OnDestroy {
     ngOnInit() {
         this.dotMessageDisplayService.messages().subscribe((dotMessage: DotMessage) => {
             this.messageService.add({
-                life: dotMessage.life,
+                // life: dotMessage.life,
                 detail: dotMessage.message,
-                severity: dotMessage.severity.toLowerCase()
+                severity: dotMessage.severity.toLowerCase(),
+                closable: true,
+                sticky: true
             });
         });
     }
