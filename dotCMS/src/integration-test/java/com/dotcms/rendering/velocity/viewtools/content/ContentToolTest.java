@@ -104,13 +104,6 @@ public class ContentToolTest extends IntegrationTestBase {
         final ContentTool contentTool = getContentTool(languageId);
 
         try {
-        	// Wait a bit for newly persisted content to be indexed
-            Thread.sleep(2000);
-
-            // Ensure that newly persisted content is already indexed
-            Assert.assertTrue(
-            	contentletAPI.isInodeIndexed(contentlet.getInode())
-            );
 
             // Query contents through Content Tool
             final List<ContentMap> results = contentTool.pull(
