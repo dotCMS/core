@@ -17,6 +17,7 @@ import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.javax.ws.rs.core.UriInfo;
+import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
 import com.dotcms.repackage.org.glassfish.jersey.media.multipart.*;
 import com.dotcms.repackage.org.glassfish.jersey.server.JSONP;
@@ -54,6 +55,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.*;
+import java.nio.file.Files;
 import java.util.*;
 
 @Path("/vtl")
@@ -163,7 +165,30 @@ public class VTLResource {
                     binaries.toArray(new File[0]));
 
         } catch(Exception e) {
-            Logger.error(this,"Exception on VTL endpoint. GET method: " + e.getMessage(), e);
+            Logger.error(this,"Exception on VTL endpoint. POST method: " + e.getMessage(), e);
+            return ResponseUtil.mapExceptionResponse(e);
+        }
+    }
+
+    @PUT
+    @Path("/{folder}")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    public final Response putMultipart(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
+                                        FormDataMultiPart multipart,
+                                        @Context UriInfo uriInfo, @PathParam("folder") final String folderName) {
+
+        try {
+            final List<File> binaries = getBinariesFromMultipart(multipart);
+            final Map<String, String> bodyMap = getBodyMapFromMultipart(multipart);
+
+            return processRequest(request, response, uriInfo, folderName, null, HTTPMethod.PUT, bodyMap,
+                    binaries.toArray(new File[0]));
+
+        } catch(Exception e) {
+            Logger.error(this,"Exception on VTL endpoint. PUT method: " + e.getMessage(), e);
             return ResponseUtil.mapExceptionResponse(e);
         }
     }
@@ -180,27 +205,32 @@ public class VTLResource {
             if (part.getMediaType().equals(MediaType.APPLICATION_JSON_TYPE) || name
                     .equals("json")) {
 
-                bodyMap = webResource.processJSON(part.getEntityAs(InputStream.class));
+                bodyMap = WebResource.processJSON(part.getEntityAs(InputStream.class));
             }
         }
 
         return bodyMap;
     }
 
-    private List<File> getBinariesFromMultipart(final FormDataMultiPart multipart) {
+    private List<File> getBinariesFromMultipart(final FormDataMultiPart multipart) throws IOException {
         final List<File> binaries = new ArrayList<>();
 
         for (FormDataBodyPart part : multipart.getFields("file")) {
+            final InputStream input = part.getEntityAs(InputStream.class);
             String filename = part.getContentDisposition().getFileName();
             java.io.File tmpFolder = new File(
                     APILocator.getFileAssetAPI().getRealAssetPathTmpBinary() + UUIDUtil.uuid());
-            tmpFolder.mkdirs();
-            java.io.File tempFile = new File(
-                    tmpFolder.getAbsolutePath() + File.separator + filename);
-            if (tempFile.exists()) {
-                tempFile.delete();
+
+            if(!tmpFolder.mkdirs()) {
+                throw new IOException("Unable to create temp folder to save binaries");
             }
 
+            java.io.File tempFile = new File(
+                    tmpFolder.getAbsolutePath() + File.separator + filename);
+
+            Files.deleteIfExists(tempFile.toPath());
+
+            FileUtils.copyInputStreamToFile(input, tempFile);
             binaries.add(tempFile);
         }
 
