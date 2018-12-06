@@ -383,7 +383,7 @@ describe('ContentTypesEditComponent', () => {
         };
 
         it('should have api link component', () => {
-            expect(de.query(By.css('dot-api-link')).componentInstance.href).toBe(
+            expect(de.query(By.css('dot-api-link')).componentInstance.link).toBe(
                 '/api/v1/contenttype/id/1234567890'
             );
         });
