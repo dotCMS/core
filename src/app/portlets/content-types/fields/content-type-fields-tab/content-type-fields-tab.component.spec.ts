@@ -91,7 +91,7 @@ describe('ContentTypeFieldsTabComponent', () => {
             }
         });
 
-        labelInput.triggerEventHandler('blur', {});
+        labelInput.triggerEventHandler('blur', new KeyboardEvent('keydown', { key: 'Tab' }));
 
         labelInput.triggerEventHandler('input', {
             target: {
@@ -99,7 +99,7 @@ describe('ContentTypeFieldsTabComponent', () => {
             }
         });
 
-        labelInput.triggerEventHandler('keyup.enter', {});
+        labelInput.triggerEventHandler('keydown.enter', new KeyboardEvent('keydown', { key: 'Enter' }));
 
         hostFixture.detectChanges();
 
