@@ -133,9 +133,9 @@ describe('DotContentTypeFieldsVariablesTableRowComponent', () => {
 
     it('should focus on "Save" button, if entered valid "Key" & "Value"', () => {
         comp.fieldVariable = { key: 'TestKey', value: 'TestValue'};
+        comp.showEditMenu = true;
         fixture.detectChanges();
-        de.query(By.css('.field-variable-value-input'))
-            .triggerEventHandler('keydown.enter', new KeyboardEvent('keydown', { key: 'Enter' }));
+        de.query(By.css('.field-variable-value-input')).nativeElement.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
         expect(comp.elemRef).toBe(comp.saveButton);
     });
 
