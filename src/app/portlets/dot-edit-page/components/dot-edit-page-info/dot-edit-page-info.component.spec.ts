@@ -76,7 +76,7 @@ describe('DotEditPageInfoComponent', () => {
 
         it('should have api link', () => {
             const apiLink: DebugElement = de.query(By.css('dot-api-link'));
-            expect(apiLink.componentInstance.href).toBe(
+            expect(apiLink.componentInstance.link).toBe(
                 '/api/v1/page/render/an/url/test?language_id=1'
             );
         });

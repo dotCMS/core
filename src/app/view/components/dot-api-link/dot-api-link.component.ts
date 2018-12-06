@@ -1,23 +1,21 @@
-import { Component, OnChanges, Input, SimpleChanges } from '@angular/core';
-import { SiteService, Site } from 'dotcms-js';
-import { Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { Component, Input } from '@angular/core';
 
 @Component({
     selector: 'dot-api-link',
     templateUrl: './dot-api-link.component.html',
     styleUrls: ['./dot-api-link.component.scss']
 })
-export class DotApiLinkComponent implements OnChanges {
-    @Input() href: string;
+export class DotApiLinkComponent {
+    link: string;
 
-    link$: Observable<string>;
+    constructor() {}
 
-    constructor(private siteService: SiteService) {}
+    @Input('href')
+    set href(value: string) {
+        this.link = this.getFixedLink(value);
+    }
 
-    ngOnChanges(changes: SimpleChanges) {
-        this.link$ = this.siteService
-            .getCurrentSite()
-            .pipe(map((site: Site) => `//${site.hostname}${changes.href.currentValue || ''}`));
+    private getFixedLink(link: string): string {
+        return link.startsWith('/') ? link : `/${link}`;
     }
 }
