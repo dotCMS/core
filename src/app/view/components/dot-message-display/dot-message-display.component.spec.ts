@@ -23,8 +23,6 @@ export class DotMessageDisplayServiceMock {
     unsubscribe(): void {}
 }
 
-
-
 describe('DotMessageDisplayComponent', () => {
     let component: DotMessageDisplayComponent;
     const dotMessageDisplayServiceMock: DotMessageDisplayServiceMock = new DotMessageDisplayServiceMock();
