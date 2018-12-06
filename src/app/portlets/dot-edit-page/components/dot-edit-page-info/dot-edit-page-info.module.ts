@@ -4,10 +4,12 @@ import { DotEditPageInfoComponent } from './dot-edit-page-info.component';
 import { ButtonModule } from 'primeng/primeng';
 import { DotCopyButtonModule } from '@components/dot-copy-button/dot-copy-button.module';
 import { DotApiLinkModule } from '@components/dot-api-link/dot-api-link.module';
+import { LOCATION_TOKEN } from 'src/app/providers';
 
 @NgModule({
     imports: [CommonModule, ButtonModule, DotCopyButtonModule, DotApiLinkModule],
     exports: [DotEditPageInfoComponent],
     declarations: [DotEditPageInfoComponent],
+    providers: [{ provide: LOCATION_TOKEN, useValue: window.location }]
 })
 export class DotEditPageInfoModule {}
