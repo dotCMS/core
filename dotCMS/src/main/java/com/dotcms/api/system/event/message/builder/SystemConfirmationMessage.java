@@ -1,27 +1,28 @@
-package com.dotcms.api.system.event;
+package com.dotcms.api.system.event.message.builder;
+
+import com.dotcms.api.system.event.message.MessageSeverity;
+import com.dotcms.api.system.event.message.MessageType;
 
 import java.io.Serializable;
+import java.util.Set;
 
 /**
  * A confirmation message is a {@link SystemMessage} but includes callback to execute if the user choose YES or an optional if the answers is NO.
  * @author jsanca
  */
-public class SystemConfirmationMessage implements Serializable {
+public class SystemConfirmationMessage extends SystemMessage implements Serializable {
 
     private final String callbackOnYes;     // required
     private final String callbackOnNo;      // optional
-    private final SystemEventType type;     // inner type
-    private final SystemMessage   message;
 
-    public SystemConfirmationMessage(final String callbackOnYes,
-                                     final String callbackOnNo,
-                                     final SystemEventType type,
-                                     final SystemMessage message) {
 
+    public SystemConfirmationMessage(final Object message,
+                                     final String[] portletIdList,
+                                     final String callbackOnYes,
+                                     final String callbackOnNo) {
+        super(message, portletIdList, 3000l, MessageSeverity.INFO, MessageType.CONFIRMATION_MESSAGE);
         this.callbackOnYes = callbackOnYes;
         this.callbackOnNo = callbackOnNo;
-        this.type = type;
-        this.message = message;
     }
 
     public String getCallbackOnYes() {
@@ -32,21 +33,12 @@ public class SystemConfirmationMessage implements Serializable {
         return callbackOnNo;
     }
 
-    public SystemEventType getType() {
-        return type;
-    }
-
-    public SystemMessage getMessage() {
-        return message;
-    }
-
     @Override
     public String toString() {
         return "SystemConfirmationMessage{" +
                 "callbackOnYes='" + callbackOnYes + '\'' +
                 ", callbackOnNo='" + callbackOnNo + '\'' +
-                ", type=" + type +
-                ", message=" + message +
+                ", message=" + super.toString() +
                 '}';
     }
 }

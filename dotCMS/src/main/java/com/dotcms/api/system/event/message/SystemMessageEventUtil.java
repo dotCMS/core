@@ -1,5 +1,9 @@
-package com.dotcms.api.system.event;
+package com.dotcms.api.system.event.message;
 
+import com.dotcms.api.system.event.*;
+import com.dotcms.api.system.event.message.builder.SystemConfirmationMessage;
+import com.dotcms.api.system.event.message.builder.SystemMessage;
+import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.ErrorEntity;
 import com.dotmarketing.business.APILocator;
@@ -64,7 +68,7 @@ public class SystemMessageEventUtil {
      */
     public void pushSimpleTextEvent (final String message, final List<String> users, final String... portletIds) {
 
-        this.pushSimpleEvent (SystemEventType.RAW_MESSAGE, message, users, portletIds);
+        this.pushSimpleEvent (MessageType.SIMPLE_MESSAGE, message, users, portletIds);
     } // pushSimpleTextEvent.
 
 
@@ -101,8 +105,13 @@ public class SystemMessageEventUtil {
      *                   otherwise even if the message is for that particular user, if it is not in the portlet will be skipped. (note: this validation will happens on the client, Angular or whatever is the consumer)
      */
     public void pushSimpleErrorEvent (final ErrorEntity error, final List<String> users, final String... portletIds) {
+        final SystemMessage systemMessage = new SystemMessageBuilder()
+                .setMessage(error)
+                .setPortletIdList(portletIds)
+                .setSeverity(MessageSeverity.ERROR)
+                .create();
 
-        this.pushSimpleEvent (SystemEventType.RAW_ERROR_MESSAGE, error, users, portletIds);
+        this.pushMessage(systemMessage, users);
     } // pushSimpleErrorEvent.
 
     /////////////////////////////////
@@ -117,19 +126,6 @@ public class SystemMessageEventUtil {
     } // pushRichMediaEvent.
 
     /**
-     * Sends a Simple rich media event (by now just html string) (RICH_MEDIA_MESSAGE), it will be send to all user, not matter what portlet is looking.
-     * @param richMediaMessage {@link Object} a rich media message
-     * @param userId    String user to send the message
-     * @param portletIds String array of portlet id that the message applies, could be null (null means all of them)
-     *                   the concept of portlet basically means, if the user is working on a specific portlet when the message is delivered, the message will be showed to the user,
-     *                   otherwise even if the message is for that particular user, if it is not in the portlet will be skipped. (note: this validation will happens on the client, Angular or whatever is the consumer)
-     */
-    public void pushRichMediaEvent (final Object richMediaMessage, final String userId, final String... portletIds) {
-
-        this.pushRichMediaEvent(richMediaMessage, Arrays.asList(userId), portletIds);
-    } // pushRichMediaEvent.
-
-    /**
      * Sends a Simple rich media event (by now just html string) (RICH_MEDIA_MESSAGE) based on the parameters
      * @param richMediaMessage   {@link Object} a rich media message
      * @param users   user or list of user you want to send the message (null or empty means, send the message to all users)
@@ -139,7 +135,7 @@ public class SystemMessageEventUtil {
      */
     public void pushRichMediaEvent (final Object richMediaMessage, final List<String> users, final String... portletIds) {
 
-        this.pushSimpleEvent (SystemEventType.RICH_MEDIA_MESSAGE, richMediaMessage, users, portletIds);
+        this.pushSimpleEvent (MessageType.SIMPLE_MESSAGE, richMediaMessage, users, portletIds);
     } // pushRichMediaEvent.
 
     /////////////////////////////////
@@ -183,13 +179,12 @@ public class SystemMessageEventUtil {
     public void pushConfirmationSimpleTextEvent (final String callbackOnYes, final String callbackOnNo,
                                                  final String message, final List<String> users, final String... portletIds) {
 
-        final Set<String> portletIdSet = (null != portletIds) ? new HashSet<>(Arrays.asList(portletIds)) : null;
-        final Payload payload = this.createPayload(new SystemConfirmationMessage(callbackOnYes, callbackOnNo,
-                        SystemEventType.RAW_MESSAGE, new SystemMessage(message, portletIdSet)), users);
+        final Payload payload = this.createPayload(new SystemConfirmationMessage(message, portletIds, callbackOnYes,
+                callbackOnNo), users);
 
         try {
 
-            this.systemEventsAPI.push(new SystemEvent(SystemEventType.CONFIRMATION_MESSAGE,
+            this.systemEventsAPI.push(new SystemEvent(SystemEventType.MESSAGE,
                     payload));
         } catch (DotDataException e) {
             throw new CanNotPushSystemEventException(e);
@@ -237,13 +232,12 @@ public class SystemMessageEventUtil {
     public void pushConfirmationRichMediaEvent (final String callbackOnYes, final String callbackOnNo,
                                                  final Object message, final List<String> users, final String... portletIds) {
 
-        final Set<String> portletIdSet = (null != portletIds) ? new HashSet<>(Arrays.asList(portletIds)) : null;
-        final Payload payload = this.createPayload(new SystemConfirmationMessage(callbackOnYes, callbackOnNo,
-                SystemEventType.RICH_MEDIA_MESSAGE, new SystemMessage(message, portletIdSet)), users);
+        final Payload payload = this.createPayload(new SystemConfirmationMessage(message, portletIds, callbackOnYes,
+                callbackOnNo), users);
 
         try {
 
-            this.systemEventsAPI.push(new SystemEvent(SystemEventType.CONFIRMATION_MESSAGE,
+            this.systemEventsAPI.push(new SystemEvent(SystemEventType.MESSAGE,
                     payload));
         } catch (DotDataException e) {
             throw new CanNotPushSystemEventException(e);
@@ -252,11 +246,29 @@ public class SystemMessageEventUtil {
 
     ///**************
 
-    private Payload createPayload (final Object message,
-                                   final List<String> users, final String... portletIds) {
+    public void pushMessage (final SystemMessage message, final List<String> users) {
+
+        try {
+
+            this.systemEventsAPI.push(new SystemEvent(SystemEventType.MESSAGE, this.createPayload(message, users)));
+        } catch (DotDataException e) {
+            throw new CanNotPushSystemEventException(e);
+        }
+    } // pushSimpleTextEvent.
+
+    private Payload createPayload (final MessageType messageType,
+                                   final Object message,
+                                   final List<String> users,
+                                   final String... portletIds) {
 
         final Set<String> portletIdSet = (null != portletIds) ? new HashSet<>(Arrays.asList(portletIds)) : null;
-        return this.createPayload(new SystemMessage(message, portletIdSet), users);
+        final SystemMessage systemMessage = new SystemMessageBuilder()
+                .setMessage(message)
+                .setPortletIdList(portletIds)
+                .setType(messageType)
+                .create();
+
+        return this.createPayload(systemMessage, users);
     }
 
     private Payload createPayload (final SystemMessage message,
@@ -267,13 +279,14 @@ public class SystemMessageEventUtil {
 
         return new Payload(message, visibility, visibilityValue);
     }
-    private void pushSimpleEvent (final SystemEventType systemEventType, final Object message,
+
+    private void pushSimpleEvent (final MessageType messageType, final Object message,
                                   final List<String> users, final String... portletIds) {
 
         try {
 
-            this.systemEventsAPI.push(new SystemEvent(systemEventType,
-                    this.createPayload(message, users, portletIds)));
+            this.systemEventsAPI.push(new SystemEvent(SystemEventType.MESSAGE,
+                    this.createPayload(messageType, message, users, portletIds)));
         } catch (DotDataException e) {
             throw new CanNotPushSystemEventException(e);
         }

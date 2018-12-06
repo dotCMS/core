@@ -1,6 +1,6 @@
 package com.dotmarketing.portlets.workflows.business;
 
-import com.dotcms.api.system.event.SystemMessageEventUtil;
+import com.dotcms.api.system.event.message.SystemMessageEventUtil;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.concurrent.DotConcurrentFactory;
