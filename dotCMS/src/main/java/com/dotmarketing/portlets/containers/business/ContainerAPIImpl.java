@@ -27,7 +27,6 @@ import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Constants;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
-import com.google.common.collect.Lists;
 import com.liferay.portal.model.User;
 
 import java.util.*;

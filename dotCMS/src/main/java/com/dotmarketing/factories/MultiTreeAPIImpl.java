@@ -149,8 +149,11 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
                                     final boolean liveMode) throws DotDataException, DotSecurityException {
 
         try {
-            Template template = APILocator.getTemplateAPI().findWorkingTemplate(page.getTemplateId(), APILocator.getUserAPI().getSystemUser(), false);
-            if(!template.isDrawed()) return;
+            final Template template = APILocator.getTemplateAPI().findWorkingTemplate(page.getTemplateId(), APILocator.getUserAPI().getSystemUser(), false);
+            if(!template.isDrawed()) {
+                return;
+            }
+
             final TemplateLayout layout = DotTemplateTool.themeLayout(page.getTemplateId(), APILocator.getUserAPI().getSystemUser(), false);
             final List<ContainerUUID> containersUUID = this.templateAPI.getContainersUUID(layout);
 
