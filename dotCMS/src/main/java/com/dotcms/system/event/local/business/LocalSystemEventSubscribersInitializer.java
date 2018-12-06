@@ -40,7 +40,7 @@ public class LocalSystemEventSubscribersInitializer implements DotInitializer {
                         host, user, false);
 
                 APILocator.getFolderAPI().subscribeFolderListener(appContainerFolder, new ApplicationContainerFolderListener(),
-                        childName -> childName.endsWith(Constants.VELOCITY_FILE_EXTENSION));
+                        childName -> null != childName && childName.endsWith(Constants.VELOCITY_FILE_EXTENSION));
             }
         } catch (DotDataException | DotSecurityException e) {
 
