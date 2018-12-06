@@ -3,5 +3,23 @@
 .ui-toast {
     .ui-toast-message {
         background-color: $white;
+        border-radius: $border-radius;
+        box-shadow: $md-shadow-1;
+    }
+
+    .ui-toast-message-content {
+        padding: $basic-padding * 2;
+    }
+
+    .ui-toast-close-icon {
+        @include icon-button;
+        right: $basic-padding;
+        text-decoration: none;
+        top: $basic-padding;
+
+        &:before {
+            @include md-icon;
+            content: "close";
+        }
     }
 }

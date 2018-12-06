@@ -22,10 +22,7 @@ export class DotMessageDisplayService {
     ) {
         this.messages$ = dotcmsEventsService.subscribeTo('MESSAGE').pipe(
             takeUntil(this.destroy$),
-            map((messageEvent: DotEventData) => {
-                console.log('here');
-                return <DotMessage>messageEvent.data;
-            }),
+            map((messageEvent: DotEventData) => <DotMessage>messageEvent.data),
             filter((dotMessage: DotMessage) => this.hasPortletIdList(dotMessage))
         );
     }

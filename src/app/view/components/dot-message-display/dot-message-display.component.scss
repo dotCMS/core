@@ -1,0 +1,38 @@
+@import "variables";
+
+:host {
+    /deep/ {
+        .ui-toast-message-content {
+            display: flex;
+
+            h1, h2, h3, h4, h5, h6 {
+                font-size: $font-size-large;
+                font-weight: bold;
+            }
+
+            h1, h2, h3, h4, h5, h6, p {
+                margin: 0;
+            }
+        }
+    }
+
+    dot-icon {
+        margin-right: $basic-padding;
+
+        &.info {
+            color: $info;
+        }
+
+        &.error {
+            color: $error;
+        }
+
+        &.warning {
+            color: $warn;
+        }
+
+        /deep/ i {
+            font-size: 2.5rem;
+        }
+    }
+}

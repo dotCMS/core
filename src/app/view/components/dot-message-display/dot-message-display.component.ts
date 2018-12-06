@@ -14,9 +14,11 @@ import { DotMessage } from './model/dot-message.model';
 @Component({
     providers: [MessageService],
     selector: 'dot-message-display',
+    styleUrls: ['dot-message-display.component.scss'],
     templateUrl: 'dot-message-display.component.html'
 })
 export class DotMessageDisplayComponent implements OnInit, OnDestroy {
+
     constructor(
         private dotMessageDisplayService: DotMessageDisplayService,
         private messageService: MessageService
@@ -25,11 +27,9 @@ export class DotMessageDisplayComponent implements OnInit, OnDestroy {
     ngOnInit() {
         this.dotMessageDisplayService.messages().subscribe((dotMessage: DotMessage) => {
             this.messageService.add({
-                // life: dotMessage.life,
+                life: dotMessage.life,
                 detail: dotMessage.message,
-                severity: dotMessage.severity.toLowerCase(),
-                closable: true,
-                sticky: true
+                severity: dotMessage.severity.toLowerCase()
             });
         });
     }
