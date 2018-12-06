@@ -1,23 +1,5 @@
 package com.dotcms.rendering.velocity.services;
 
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
-
-import java.io.StringWriter;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import javax.servlet.http.HttpServletRequest;
-
-import org.apache.velocity.context.Context;
-
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -45,6 +27,14 @@ import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.Table;
 import com.liferay.portal.model.User;
+import org.apache.velocity.context.Context;
+
+import javax.servlet.http.HttpServletRequest;
+import java.io.StringWriter;
+import java.util.*;
+import java.util.stream.Collectors;
+
+import static com.dotmarketing.business.PermissionAPI.*;
 
 public class PageContextBuilder {
     private  final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
@@ -171,9 +161,9 @@ public class PageContextBuilder {
                     final Set<String> cons = pageContents.get(containerId, uniqueId);
 
                     final User systemUser = APILocator.getUserAPI().getSystemUser();
-                    final Container container = (live && APILocator.getVersionableAPI().findLiveVersion(containerId, systemUser, false) !=null) 
-                            ? (Container) APILocator.getVersionableAPI().findLiveVersion(containerId, systemUser, false) 
-                            : (Container) APILocator.getVersionableAPI().findWorkingVersion(containerId, systemUser, false);
+                    final Container container = (live && APILocator.getContainerAPI().getLiveContainerById(containerId, systemUser, false) !=null)
+                            ? APILocator.getContainerAPI().getLiveContainerById   (containerId, systemUser, false)
+                            : APILocator.getContainerAPI().getWorkingContainerById(containerId, systemUser, false);
 
                     if(container==null)continue;
                     boolean hasWritePermissionOnContainer =

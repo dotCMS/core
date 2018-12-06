@@ -1,19 +1,16 @@
 package com.dotmarketing.portlets.htmlpageasset.business.render;
 
+import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.rendering.velocity.services.VelocityResourceKey;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.LayoutAPI;
-import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.containers.model.Container;
-import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
-import com.dotmarketing.portlets.htmlpageasset.business.render.page.HTMLPageAssetRenderedBuilder;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
@@ -26,8 +23,6 @@ import com.liferay.util.StringPool;
 import org.apache.velocity.context.Context;
 
 import java.util.*;
-import java.util.function.Function;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 /**
@@ -51,7 +46,7 @@ public class ContainerRenderedBuilder {
     }
 
     public Collection<ContainerRendered> getContainersRendered(final Template template, final Context velocityContext,
-                                                         PageMode mode)
+                                                         final PageMode mode)
 
             throws DotSecurityException, DotDataException {
 
@@ -76,19 +71,22 @@ public class ContainerRenderedBuilder {
                         render(velocityContext, mode, entry.getValue(), container): null;
 
                 return new ContainerRendered(container, containerStructures, containersRendered);
-            } catch (DotDataException | DotSecurityException e) {
+            } catch (NotFoundInDbException e) {
+                // if the container does not exists or is not valid for the mode, returns null to be filtrated
+                return null;
+            } catch(DotDataException | DotSecurityException e) {
                 Logger.error(ContainerRenderedBuilder.class, e.getMessage());
                 throw new DotRuntimeException(e);
             }
-        }).collect(Collectors.toList());
+        }).filter(Objects::nonNull).collect(Collectors.toList());
     }
 
     private Container getContainer(PageMode mode, String containerId) throws DotDataException, DotSecurityException {
         final User systemUser = this.userAPI.getSystemUser();
 
         return (mode.showLive) ?
-                    (Container) APILocator.getVersionableAPI().findLiveVersion(containerId, systemUser, false) :
-                    (Container) APILocator.getVersionableAPI().findWorkingVersion(containerId, systemUser, false);
+                    APILocator.getContainerAPI().getLiveContainerById(containerId, systemUser, false) :
+                    APILocator.getContainerAPI().getWorkingContainerById(containerId, systemUser, false);
     }
 
     private Map<String, String> render(Context velocityContext, PageMode mode, Collection <ContainerUUID> uuids,

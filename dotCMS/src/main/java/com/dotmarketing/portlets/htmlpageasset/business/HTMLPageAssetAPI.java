@@ -128,6 +128,14 @@ public interface HTMLPageAssetAPI {
     List<IHTMLPage> getHTMLPages(Object parent, boolean live, boolean deleted, User user, boolean respectFrontEndRoles) throws DotDataException, DotSecurityException;
 
 	/**
+	 * Returns the Html Pages associated to the container
+	 *
+	 * @param containerId {@link String}
+	 * @return List of IHTMLPage
+	 */
+	List<IHTMLPage> getHTMLPagesByContainer(final String containerId) throws DotDataException, DotSecurityException;
+
+	/**
 	 * Returns a list of HTML pages that meet the specified filtering criteria.
 	 * 
 	 * @param parent
