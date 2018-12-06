@@ -96,7 +96,7 @@ public class WebInterceptorTest extends UnitTestBase {
         final HttpServletResponse response = mock(HttpServletResponse.class);
 
         when(request.getParameter("user")).thenReturn("admin");
-        when(request.getParameter("pass")).thenReturn("fail");
+        when(request.getParameter("pass")).thenReturn("fail"); // wrong pass
         final MyTestWebInterceptor myTestWebInterceptor =
                 new MyTestWebInterceptor();
 

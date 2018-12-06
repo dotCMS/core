@@ -95,7 +95,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	public static final String TEMP_BINARY_IMAGE_INODES_LIST = "tempBinaryImageInodesList";
 	public static final String RELATIONSHIP_KEY = "__##relationships##__";
 
-	private transient ContentType contentType;
+
     protected Map<String, Object> map = new ContentletHashMap();
 
 	private boolean lowIndexPriority = false;
@@ -179,14 +179,6 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 		if (null != indexPolicy) {
 			this.indexPolicyDependencies = indexPolicy;
 		}
-	}
-
-
-
-
-
-	public void setContentType(ContentType contentType) {
-		this.contentType = contentType;
 	}
 
 	@Override
@@ -1286,18 +1278,12 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 * @throws DotSecurityException
 	 */
 	public ContentType getContentType() {
-
-		if (null == this.contentType) {
-			try {
-				this.contentType =
-						APILocator.getContentTypeAPI(APILocator.systemUser())
-								.find(getContentTypeId());
-			} catch (DotDataException | DotSecurityException e) {
-				throw new DotStateException(e);
-			}
+		try {
+			return APILocator.getContentTypeAPI(APILocator.systemUser()).find(getContentTypeId());
+		} catch (DotDataException | DotSecurityException e) {
+			throw new DotStateException(e);
 		}
 
-		return this.contentType;
     }
 	
 	/**

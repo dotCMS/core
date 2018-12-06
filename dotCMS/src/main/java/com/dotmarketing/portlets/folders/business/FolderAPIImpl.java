@@ -4,8 +4,14 @@ import com.dotcms.api.system.event.*;
 import com.dotcms.api.system.event.verifier.ExcludeOwnerVerifierBean;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.content.elasticsearch.business.event.ContentletCheckinEvent;
+import com.dotcms.content.elasticsearch.business.event.ContentletDeletedEvent;
+import com.dotcms.content.elasticsearch.business.event.ContentletPublishEvent;
 import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.contenttype.model.type.FileAssetContentType;
 import com.dotcms.publisher.business.PublisherAPI;
+import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
+import com.dotcms.system.event.local.model.EventSubscriber;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
@@ -22,20 +28,21 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.menubuilders.RefreshMenus;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.util.AdminLogger;
-import com.dotmarketing.util.InodeUtils;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.*;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 import org.apache.commons.lang.StringUtils;
 
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.*;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static com.dotmarketing.business.APILocator.getPermissionAPI;
@@ -45,6 +52,7 @@ public class FolderAPIImpl implements FolderAPI  {
 
 	public static final String SYSTEM_FOLDER = "SYSTEM_FOLDER";
 	private final SystemEventsAPI systemEventsAPI = APILocator.getSystemEventsAPI();
+	private final LocalSystemEventsAPI localSystemEventsAPI = APILocator.getLocalSystemEventsAPI();
 	private final ContentletAPI contentletAPI = APILocator.getContentletAPI();
 
 	/**
@@ -734,8 +742,8 @@ public class FolderAPIImpl implements FolderAPI  {
 	}
 
 	@CloseDBIfOpened
-	public boolean isChildFolder(Folder folder1, Folder folder2) throws DotDataException,DotSecurityException {
-	   return folderFactory.isChildFolder(folder1, folder2);
+	public boolean isChildFolder(final Folder child, final Folder parent) throws DotDataException,DotSecurityException {
+	   return folderFactory.isChildFolder(child, parent);
 	}
 
 	@CloseDBIfOpened
@@ -878,5 +886,139 @@ public class FolderAPIImpl implements FolderAPI  {
 		List list = folderFactory.getChildrenClass(parent, Link.class, cond);
 
 		return permissionAPI.filterCollection(list, PermissionAPI.PERMISSION_READ, respectFrontEndPermissions, user);
+	}
+
+
+	/**
+	 * Subscribe a listener to handle changes over the folder
+	 * @param folder {@link Folder}
+	 * @param folderListener folderListener
+	 */
+	public void subscribeFolderListener (final Folder folder, final FolderListener folderListener) {
+
+		this.subscribeFolderListener(folder, folderListener, null);
+	}
+
+	/**
+	 * Subscribe a listener to handle changes over the folder, this one filters the child events by name.
+	 * @param @param folder {@link Folder}
+	 * @param folderListener folderListener
+	 * @param childNameFilter {@link Predicate} filter
+	 */
+	public void subscribeFolderListener (final Folder folder, final FolderListener folderListener, final Predicate<String> childNameFilter) {
+
+		if (null != folder) {
+
+			Logger.info(this, () -> "Subscribing the folder listener: " + folderListener.getId() +
+					", to the folder: " + folder);
+
+			// handle publish and unpublish
+			this.localSystemEventsAPI.subscribe(ContentletPublishEvent.class, new EventSubscriber<ContentletPublishEvent>() {
+
+				@Override
+				public String getId() {
+
+					return folderListener.getId() + StringPool.FORWARD_SLASH + ContentletPublishEvent.class.getName();
+				}
+
+				@Override
+				public void notify(final ContentletPublishEvent event) {
+
+					FolderAPIImpl.this.triggerChildModifiedEvent(event, folder, folderListener, childNameFilter);
+				}
+			});
+
+			// handle delete
+			this.localSystemEventsAPI.subscribe(ContentletDeletedEvent.class, new EventSubscriber<ContentletDeletedEvent>() {
+
+				@Override
+				public String getId() {
+
+					return folderListener.getId() + StringPool.FORWARD_SLASH + ContentletDeletedEvent.class.getName();
+				}
+
+				@Override
+				public void notify(final ContentletDeletedEvent event) {
+
+					FolderAPIImpl.this.triggerChildDeleteEvent(event, folder, folderListener, childNameFilter);
+				}
+			});
+
+			// handle checkin
+			this.localSystemEventsAPI.subscribe(ContentletCheckinEvent.class, new EventSubscriber<ContentletCheckinEvent>() {
+
+				@Override
+				public String getId() {
+
+					return folderListener.getId() + StringPool.FORWARD_SLASH + ContentletCheckinEvent.class.getName();
+				}
+
+				@Override
+				public void notify(final ContentletCheckinEvent event) {
+
+					FolderAPIImpl.this.triggerChildModifiedEvent(event, folder, folderListener, childNameFilter);
+				}
+			});
+		}
+	}
+
+	private void triggerChildModifiedEvent(final ContentletPublishEvent event,
+										   final Folder parentFolder,
+										   final FolderListener folderListener,
+										   final Predicate<String> childNameFilter) {
+
+		final Contentlet contentlet = event.getContentlet();
+		this.triggerChildEvent(contentlet, event.getUser(), event.getDate(), parentFolder, childNameFilter,
+				folderEvent-> folderListener.folderChildModified(folderEvent));
+	}
+
+	private void triggerChildModifiedEvent(final ContentletCheckinEvent event,
+										   final Folder parentFolder,
+										   final FolderListener folderListener,
+										   final Predicate<String> childNameFilter) {
+
+		final Contentlet contentlet = event.getContentlet();
+		this.triggerChildEvent(contentlet, event.getUser(), event.getDate(), parentFolder, childNameFilter,
+				folderEvent-> folderListener.folderChildModified(folderEvent));
+	}
+
+	private void triggerChildDeleteEvent(final ContentletDeletedEvent event,
+										 final Folder parentFolder,
+										 final FolderListener folderListener,
+										 final Predicate<String> childNameFilter) {
+
+		final Contentlet contentlet = event.getContentlet();
+		this.triggerChildEvent(contentlet, event.getUser(), event.getDate(), parentFolder, childNameFilter,
+				folderEvent-> folderListener.folderChildDeleted(folderEvent));
+	} // triggerChildDeleteEvent
+
+	private void triggerChildEvent (final Contentlet contentlet, final User user, final Date date,
+									final Folder parentFolder, final Predicate<String> childNameFilter,
+									final Consumer<FolderEvent> folderEventConsumer) {
+
+		if (null != contentlet && (contentlet instanceof IFileAsset || contentlet.getContentType() instanceof FileAssetContentType)) {
+
+			try {
+
+				final String name = contentlet instanceof  IFileAsset?
+						IFileAsset.class.cast(contentlet).getFileName(): (String)contentlet.getMap().get("fileName");
+
+				if (null != childNameFilter && !childNameFilter.test(name)) {
+					return;
+				}
+
+				final String fileAssetFolderParentId = contentlet instanceof  IFileAsset?
+						IFileAsset.class.cast(contentlet).getParent(): (String)contentlet.getMap().get(Contentlet.FOLDER_KEY);
+
+				final Folder childFolder = this.find(fileAssetFolderParentId, APILocator.systemUser(), false);
+				if (null != childFolder && this.isChildFolder(childFolder, parentFolder)) {
+
+					folderEventConsumer.accept(
+							new FolderEvent(UUIDUtil.uuid(), user, contentlet, name, childFolder, date));
+				}
+			} catch (DotSecurityException | DotDataException e) {
+				Logger.error(this, e.getMessage(), e);
+			}
+		}
 	}
 }

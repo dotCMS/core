@@ -47,6 +47,7 @@ import com.dotmarketing.business.PermissionLevel;
 import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotDataValidationException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.structure.model.Relationship;
@@ -134,20 +135,23 @@ public class FieldAPIImpl implements FieldAPI {
             fieldFactory.moveSortOrderForward(type.id(), field.sortOrder());
         }
 
-		Field result = fieldFactory.save(field);
+        if (field instanceof RelationshipField) {
+	        validateRelationshipField(field);
+        }
+
+        Field result = fieldFactory.save(field);
 
         //if RelationshipField, Relationship record must be added/updated
-      if (field instanceof RelationshipField) {
-          Optional<Relationship> relationship = getRelationshipForField(result, contentTypeAPI,
+        if (field instanceof RelationshipField) {
+            Optional<Relationship> relationship = getRelationshipForField(result, contentTypeAPI,
                   type);
 
-          if (relationship.isPresent()) {
+            if (relationship.isPresent()) {
               relationshipAPI.save(relationship.get());
               Logger.info(this,
                       "The relationship has been saved successfully for field " + field.name());
-          }
-
-      }
+            }
+       }
       //update Content Type mod_date to detect the changes done on the field
 		contentTypeAPI.updateModDate(type);
 		
@@ -179,6 +183,35 @@ public class FieldAPIImpl implements FieldAPI {
 	}
 
     /**
+     * Validates that properties n a relationship field are set correctly
+     * @param field
+     * @throws DotDataException
+     */
+    private void validateRelationshipField(Field field) throws DotDataValidationException {
+
+        String errorMessage = null;
+        if (!field.indexed()){
+            errorMessage = "Relationship Field " + field.name() + " must always be indexed";
+        }
+
+        if (field.listed()){
+            errorMessage = "Relationship Field " + field.name() + " cannot be listed";
+        }
+
+        final int cardinality = Integer.parseInt(field.values());
+
+        //check if cardinality is valid
+        if (cardinality < 0 || cardinality >= RELATIONSHIP_CARDINALITY.values().length) {
+            errorMessage = "Cardinality value is incorrect";
+        }
+
+        if (errorMessage != null){
+            Logger.error(this, errorMessage);
+            throw new DotDataValidationException(errorMessage);
+        }
+    }
+
+    /**
      * Verify if a relationship already exists for this field. Otherwise, a new relationship object
      * is created
      * @param field
@@ -195,11 +228,6 @@ public class FieldAPIImpl implements FieldAPI {
         try {
             final int cardinality = Integer.parseInt(field.values());
 
-            //check if cardinality is valid
-            if (cardinality < 0 || cardinality >= RELATIONSHIP_CARDINALITY.values().length) {
-                throw new DotDataException("Cardinality value is incorrect");
-            }
-
             final String[] relationType = field.relationType().split("\\.");
 
             //we need to find the id of the related structure using the velocityVarName set in the relationType
@@ -207,7 +235,8 @@ public class FieldAPIImpl implements FieldAPI {
                 relatedContentType = contentTypeAPI.find(relationType[0]);
             } catch (NotFoundInDbException e) {
                 final String errorMessage = "Unable to save relationships for field " + field.name()
-                        + " because the related content type " + relationType[0] + " was not found in DB."
+                        + " because the related content type " + relationType[0]
+                        + " was not found in DB."
                         + " A new attempt will be made when the related content type is saved.";
                 Logger.info(this, errorMessage);
                 Logger.debug(this, errorMessage, e);
@@ -226,15 +255,14 @@ public class FieldAPIImpl implements FieldAPI {
             //verify if the relationship already exists
             if (UtilMethods.isSet(relationship) && UtilMethods.isSet(relationship.getInode())) {
 
-                updateRelationshipObject(field, type, relationship, relatedContentType,
-                        relationType, cardinality);
+                updateRelationshipObject(field, type, relatedContentType, relationship, cardinality);
 
             } else {
                 //otherwise, a new relationship will be created
                 relationship = new Relationship(type, relatedContentType, field);
             }
 
-        } catch (DotSecurityException e){
+        } catch (DotSecurityException e) {
             Logger.error(this, "Error saving relationship for field: " + field.variable(), e);
             throw e;
         } catch (Exception e) {
@@ -249,16 +277,16 @@ public class FieldAPIImpl implements FieldAPI {
 
     /**
      * Update properties in a existing relationship
+     * In case the `required` property is set to true, the other side of the relationship (if exists) will be switched to not required
      * @param field
      * @param type
-     * @param relationship
      * @param relatedContentType
-     * @param relationType
+     * @param relationship
      * @param cardinality
      * @throws DotDataException
      */
-    private void updateRelationshipObject(final Field field, final ContentType type, final Relationship relationship,
-            final ContentType relatedContentType, final String[] relationType, final int cardinality)
+    private void updateRelationshipObject(final Field field, final ContentType type, final ContentType relatedContentType,
+            final Relationship relationship, final int cardinality)
             throws DotDataException {
         final String relationName = field.variable();
         //check which side of the relationship is being updated (parent or child)
@@ -267,12 +295,18 @@ public class FieldAPIImpl implements FieldAPI {
             relationship.setParentRelationName(relationName);
             relationship.setParentRequired(field.required());
 
+
             //only one side of the relationship can be required
-            if (field.required()) {
+            if (relationship.getChildRelationName() != null) {
                 //setting as not required the other side of the relationship
                 relationship.setChildRequired(false);
-                fieldFactory.save(FieldBuilder.builder(byContentTypeAndVar(relatedContentType,
-                        relationType[1])).required(false).build());
+                final FieldBuilder builder = FieldBuilder.builder(byContentTypeAndVar(relatedContentType, relationship.getChildRelationName()));
+                if(field.required()){
+                    builder.required(false);
+                }
+
+                //update cardinality in case it is changed
+                fieldFactory.save(builder.values(field.values()).build());
             }
         } else {
             //child is updated
@@ -280,11 +314,17 @@ public class FieldAPIImpl implements FieldAPI {
             relationship.setChildRequired(field.required());
 
             //only one side of the relationship can be required
-            if (field.required()) {
+            if (field.required() && relationship.getParentRelationName() != null) {
                 //setting as not required the other side of the relationship
                 relationship.setParentRequired(false);
-                fieldFactory.save(FieldBuilder.builder(byContentTypeAndVar(relatedContentType,
-                        relationType[1])).required(false).build());
+
+                final FieldBuilder builder = FieldBuilder.builder(byContentTypeAndVar(relatedContentType, relationship.getParentRelationName()));
+                if(field.required()){
+                    builder.required(false);
+                }
+
+                //update cardinality in case it is changed
+                fieldFactory.save(builder.values(field.values()).build());
             }
         }
         relationship.setCardinality(cardinality);

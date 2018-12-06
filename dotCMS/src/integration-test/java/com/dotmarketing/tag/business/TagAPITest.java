@@ -746,9 +746,10 @@ public class TagAPITest extends IntegrationTestBase {
 		persona.setProperty(PersonaAPI.KEY_TAG_FIELD, name);
 		persona.setProperty(PersonaAPI.TAGS_FIELD, othertags);
 		persona.setProperty(PersonaAPI.DESCRIPTION_FIELD,"test to delete");
+		persona.setIndexPolicy(IndexPolicy.FORCE);
 		persona=conAPI.checkin(persona, testUser, false);
+		persona.setIndexPolicy(IndexPolicy.FORCE);
 		conAPI.publish(persona, testUser, false);
-		assertTrue(conAPI.isInodeIndexed(persona.getInode(), 500));
 
 		/*if the persona is publish, the tag should be mark as persona
 		 * in the tag table 
@@ -766,6 +767,7 @@ public class TagAPITest extends IntegrationTestBase {
 		/*if the persona is not publish, the tag should not be mark as persona
 		 * in the tag table 
 		 */
+		persona.setIndexPolicy(IndexPolicy.FORCE);
 		conAPI.unpublish(persona, systemUser, false);
 		tag = tagAPI.getTagByNameAndHost(name, defaultHostId);
 		assertNotNull(tag);
@@ -778,6 +780,7 @@ public class TagAPITest extends IntegrationTestBase {
 		assertTrue(tag.getTagName().equals(othertags));		
 
 		//republish persona and check tags
+		persona.setIndexPolicy(IndexPolicy.FORCE);
 		conAPI.publish(persona, systemUser, false);
 		tag = tagAPI.getTagByNameAndHost(name, defaultHostId);
 		assertNotNull(tag);

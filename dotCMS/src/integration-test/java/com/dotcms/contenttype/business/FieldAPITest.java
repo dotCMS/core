@@ -29,11 +29,16 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import com.tngtech.java.junit.dataprovider.DataProvider;
+import com.tngtech.java.junit.dataprovider.DataProviderRunner;
+import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import java.util.Date;
 import java.util.List;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
+@RunWith(DataProviderRunner.class)
 public class FieldAPITest extends IntegrationTestBase {
 
     private static FieldAPI fieldAPI;
@@ -53,6 +58,31 @@ public class FieldAPITest extends IntegrationTestBase {
 
         contentTypeAPI  = APILocator.getContentTypeAPI(user);
         relationshipAPI = APILocator.getRelationshipAPI();
+    }
+
+    public static class TestCase {
+
+        boolean indexed;
+        boolean listed;
+        String cardinality;
+
+        public TestCase(final boolean indexed, final boolean listed, final String cardinality) {
+            this.indexed = indexed;
+            this.listed = listed;
+            this.cardinality = cardinality;
+        }
+    }
+
+    @DataProvider
+    public static Object[] testCases(){
+        return new TestCase[]{
+                //invalid indexed
+                new TestCase(false, false, CARDINALITY),
+                //invalid listed
+                new TestCase(true, true, CARDINALITY),
+                //invalid cardinality
+                new TestCase(true, false, "5")
+        };
     }
 
     @Test
@@ -420,38 +450,11 @@ public class FieldAPITest extends IntegrationTestBase {
         }
     }
 
-    @Test(expected = DotDataException.class)
-    public void testSavedRelationshipFieldWithInvalidCardinality()
-            throws DotSecurityException, DotDataException {
-        final long time = System.currentTimeMillis();
-
-        ContentType parentContentType = null;
-        ContentType childContentType  = null;
-
-        try {
-            parentContentType = createAndSaveSimpleContentType("parentContentType" + time);
-            childContentType = createAndSaveSimpleContentType("childContentType" + time);
-
-            //Adding a RelationshipField to the parent
-            createAndSaveManyToManyRelationshipField("newRel",
-                    parentContentType.id(), childContentType.variable(), "5");
-
-        } finally {
-            if (UtilMethods.isSet(parentContentType) && UtilMethods.isSet(parentContentType.id())) {
-                contentTypeAPI.delete(parentContentType);
-            }
-
-            if (UtilMethods.isSet(childContentType) && UtilMethods.isSet(childContentType.id())) {
-                contentTypeAPI.delete(childContentType);
-            }
-        }
-    }
-
-
     @Test
     public void testSaveRelationshipFieldBothSidesRequired_ShouldSucceed()
             throws DotSecurityException, DotDataException {
         final long time = System.currentTimeMillis();
+        final String newCardinality = String.valueOf(RELATIONSHIP_CARDINALITY.ONE_TO_ONE.ordinal());
 
         ContentType parentContentType = null;
         ContentType childContentType  = null;
@@ -481,7 +484,7 @@ public class FieldAPITest extends IntegrationTestBase {
 
             //Adding a RelationshipField to the child
             Field secondField = FieldBuilder.builder(RelationshipField.class).name("otherSideRel")
-                    .contentTypeId(childContentType.id()).values(CARDINALITY)
+                    .contentTypeId(childContentType.id()).values(newCardinality)
                     .relationType(fullFieldVar).required(true).build();
 
             secondField = fieldAPI.save(secondField, user);
@@ -495,6 +498,10 @@ public class FieldAPITest extends IntegrationTestBase {
             assertTrue(relationship.isParentRequired());
             assertTrue(secondField.required());
             assertFalse(field.required());
+            assertEquals(newCardinality, secondField.values());
+            assertEquals(newCardinality, field.values());
+            assertEquals(newCardinality, String.valueOf(relationship.getCardinality()));
+
 
         } finally {
             if (UtilMethods.isSet(parentContentType) && UtilMethods.isSet(parentContentType.id())) {
@@ -536,6 +543,129 @@ public class FieldAPITest extends IntegrationTestBase {
             if (UtilMethods.isSet(parentContentType) && UtilMethods.isSet(parentContentType.id())) {
                 contentTypeAPI.delete(parentContentType);
             }
+        }
+    }
+
+    @Test
+    public void testUpdateOneSidedRelationshipField_shouldSucceed()
+            throws DotDataException, DotSecurityException {
+
+        ContentType parentContentType = null;
+        ContentType childContentType  = null;
+
+        final long time = System.currentTimeMillis();
+        final String newCardinality = String.valueOf(RELATIONSHIP_CARDINALITY.ONE_TO_ONE.ordinal());
+
+        try {
+            parentContentType = createAndSaveSimpleContentType("parentContentType" + time);
+            childContentType = createAndSaveSimpleContentType("childContentType" + time);
+
+            final Field parentTypeRelationshipField = createAndSaveManyToManyRelationshipField("newRel",
+                    parentContentType.id(), childContentType.variable(), CARDINALITY);
+
+            final Field updatedField = fieldAPI
+                    .save(FieldBuilder.builder(parentTypeRelationshipField).values(newCardinality)
+                            .required(true).build(), user);
+
+            final String fullFieldVar =
+                    parentContentType.variable() + StringPool.PERIOD + parentTypeRelationshipField.variable();
+
+            final Relationship relationship = relationshipAPI.byTypeValue(fullFieldVar);
+
+            assertNotNull(updatedField);
+            assertEquals(parentTypeRelationshipField.id(), updatedField.id());
+            assertEquals(newCardinality, updatedField.values());
+            assertEquals(newCardinality, String.valueOf(relationship.getCardinality()));
+            assertTrue(updatedField.required());
+            assertTrue(relationship.isChildRequired());
+            assertFalse(relationship.isParentRequired());
+        } finally {
+            if (UtilMethods.isSet(parentContentType) && UtilMethods.isSet(parentContentType.id())) {
+                contentTypeAPI.delete(parentContentType);
+            }
+
+            if (UtilMethods.isSet(childContentType) && UtilMethods.isSet(childContentType.id())) {
+                contentTypeAPI.delete(childContentType);
+            }
+        }
+    }
+
+    @Test
+    public void testUpdateParentFieldInARelationship_shouldSucceed()
+            throws DotDataException, DotSecurityException {
+
+        ContentType parentContentType = null;
+        ContentType childContentType  = null;
+
+        final long time = System.currentTimeMillis();
+        final String newCardinality = String.valueOf(RELATIONSHIP_CARDINALITY.ONE_TO_ONE.ordinal());
+
+        try {
+            parentContentType = createAndSaveSimpleContentType("parentContentType" + time);
+            childContentType = createAndSaveSimpleContentType("childContentType" + time);
+
+            final Field parentTypeRelationshipField = createAndSaveManyToManyRelationshipField("newRel",
+                    parentContentType.id(), childContentType.variable(), CARDINALITY);
+
+            final String fullFieldVar =
+                    parentContentType.variable() + StringPool.PERIOD + parentTypeRelationshipField.variable();
+
+            //Adding a RelationshipField to the child
+            Field secondField = FieldBuilder.builder(RelationshipField.class).name("otherSideRel")
+                    .contentTypeId(childContentType.id()).values(CARDINALITY)
+                    .relationType(fullFieldVar).required(true).build();
+
+            secondField = fieldAPI.save(secondField, user);
+
+            //Update fields (cardinality and required) on the parent field
+            final Field updatedField = fieldAPI
+                    .save(FieldBuilder.builder(parentTypeRelationshipField).values(newCardinality)
+                            .required(true).build(), user);
+
+            secondField = fieldAPI.find(secondField.id());
+
+            final Relationship relationship = relationshipAPI.byTypeValue(fullFieldVar);
+
+            assertNotNull(updatedField);
+            assertEquals(parentTypeRelationshipField.id(), updatedField.id());
+            assertTrue(updatedField.required());
+            assertTrue(relationship.isChildRequired());
+            assertFalse(relationship.isParentRequired());
+            assertEquals(newCardinality, updatedField.values());
+            assertEquals(newCardinality, String.valueOf(relationship.getCardinality()));
+
+            //new cardinality should have been updated on the child field and required field is set to false
+            assertEquals(newCardinality, secondField.values());
+            assertFalse(secondField.required());
+
+        } finally {
+            if (UtilMethods.isSet(parentContentType) && UtilMethods.isSet(parentContentType.id())) {
+                contentTypeAPI.delete(parentContentType);
+            }
+
+            if (UtilMethods.isSet(childContentType) && UtilMethods.isSet(childContentType.id())) {
+                contentTypeAPI.delete(childContentType);
+            }
+        }
+    }
+
+    @Test(expected = DotDataException.class)
+    @UseDataProvider("testCases")
+    public void testValidateRelationshipField_shouldThrowAnException(TestCase testCase)
+            throws DotSecurityException, DotDataException {
+
+
+        final long time = System.currentTimeMillis();
+        final ContentType type = createAndSaveSimpleContentType("testContentType" + time);
+        try {
+            final Field field = FieldBuilder.builder(RelationshipField.class)
+                    .name("testField" + time)
+                    .contentTypeId(type.id()).values(testCase.cardinality).indexed(testCase.indexed)
+                    .listed(testCase.listed).build();
+
+            fieldAPI.save(field, user);
+        }finally {
+            contentTypeAPI.delete(type);
         }
     }
 

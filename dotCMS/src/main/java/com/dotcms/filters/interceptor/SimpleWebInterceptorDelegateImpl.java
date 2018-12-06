@@ -167,8 +167,8 @@ public class SimpleWebInterceptorDelegateImpl implements WebInterceptorDelegate 
 
         Result  result                     = null;
         boolean shouldContinue             = true;
-        HttpServletRequest  requestResult  = null;
-        HttpServletResponse responseResult = null;
+        HttpServletRequest  requestResult  = request;
+        HttpServletResponse responseResult = response;
 
 
         if (!this.interceptors.isEmpty()) {
@@ -179,13 +179,21 @@ public class SimpleWebInterceptorDelegateImpl implements WebInterceptorDelegate 
                 if (webInterceptor.isActive() &&
                         this.anyMatchFilter(webInterceptor, request.getRequestURI())) {
 
-                    result          = webInterceptor.intercept(request, response);
+                    result          = webInterceptor.intercept(requestResult, responseResult);
                     shouldContinue &= (Result.Type.SKIP_NO_CHAIN != result.getType());
+
+                    if (null != result.getRequest()) {
+
+                        requestResult  = result.getRequest();
+                    }
+
+                    if (null != result.getRequest()) {
+
+                        responseResult  = result.getResponse();
+                    }
 
                     if (Result.Type.NEXT != result.getType()) {
                         // if just one interceptor failed; we stopped the loop and do not continue the chain call
-                        requestResult  = result.getRequest();
-                        responseResult = result.getResponse();
                         break;
                     }
                 }

@@ -72,6 +72,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.felix.framework.OSGIUtil;
 import org.apache.struts.Globals;
@@ -175,9 +176,10 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
 
         // Assign contentType to Workflows
         workflowAPI.saveSchemeIdsForContentType(contentType,
-                Arrays.asList(
-                        systemWorkflow.getId(), documentWorkflow.getId()
-                )
+                Stream.of(
+                        systemWorkflow.getId(),
+                        documentWorkflow.getId()
+                ).collect(Collectors.toSet())
         );
 
         return contentType;

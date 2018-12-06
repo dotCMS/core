@@ -32,6 +32,10 @@ import com.liferay.portal.model.User;
 
 import static com.dotcms.util.CollectionsUtils.imap;
 
+/**
+ * @deprecated {@link com.dotcms.rest.api.v2.contenttype.FieldResource} should be used instead. Path:/v2/contenttype/{typeId}/fields
+ */
+@Deprecated
 @Path("/v1/contenttype/{typeId}/fields")
 public class FieldResource implements Serializable {
 	private final WebResource webResource;

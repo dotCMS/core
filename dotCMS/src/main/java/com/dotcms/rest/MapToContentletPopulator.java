@@ -4,6 +4,7 @@ import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
+import com.dotcms.util.RelationshipUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -105,7 +106,7 @@ public class MapToContentletPopulator  {
                 }
 
                 // look for relationships
-                contentlet.setProperty(RELATIONSHIP_KEY, this.getRelationshipListMap(map, type));
+                contentlet.setProperty(RELATIONSHIP_KEY, this.getRelationshipListMap(map, contentlet));
 
                 // fill fields
                 this.fillFields(contentlet, map, type, fieldMap);
@@ -268,22 +269,26 @@ public class MapToContentletPopulator  {
     } // processSeveralHostsOrFolders.
 
     private Map<Relationship, List<Contentlet>> getRelationshipListMap(final Map<String, Object> map,
-                                                                       final ContentType type) throws DotDataException {
+                                                                       final Contentlet contentlet) throws DotDataException {
 
         Map<Relationship, List<Contentlet>> relationships = null;
 
-        for (final Relationship relationship : APILocator.getRelationshipAPI().byContentType(type)) {
+        final ContentType contentType = contentlet.getContentType();
 
-            final String relationTypeValue = relationship.getRelationTypeValue();
-            final String query             = (String) map.get(relationTypeValue);
+        for (final Relationship relationship : APILocator.getRelationshipAPI().byContentType(contentType)) {
+
+            //searches for legacy relationships(those with legacy relation type value) and field
+            //relationships (those with period. For example: News.comments)
+            final String query = getRelationshipQuery(map, relationship);
 
             if (UtilMethods.isSet(query)) {
 
                 try {
 
-                    final List<Contentlet> contentlets = APILocator.getContentletAPI().search(
-                            query, 0, 0, null, APILocator.getUserAPI().getSystemUser(),
-                            false);
+                    final List<Contentlet> contentlets = RelationshipUtil
+                            .filterContentlet(contentlet.getLanguageId(), query,
+                                    APILocator.getUserAPI().getSystemUser());
+
                     if (contentlets.size() > 0) {
 
                         if(relationships==null) {
@@ -304,6 +309,31 @@ public class MapToContentletPopulator  {
 
         return relationships;
     } // getRelationshipListMap.
+
+    /**
+     * Gets the query to be used for filtering related contentlet. It supports legacy and field relationships
+     * @param fieldsMap
+     * @param relationship
+     * @return
+     */
+    private String getRelationshipQuery(Map<String, Object> fieldsMap, Relationship relationship){
+        final String relationTypeValue = relationship.getRelationTypeValue();
+
+        if (fieldsMap.containsKey(relationTypeValue)){
+
+            //returns a legacy relationship
+            return (String)fieldsMap.get(relationTypeValue);
+        } else {
+            //returns a field relationship
+            if (relationTypeValue.contains(StringPool.PERIOD) && fieldsMap
+                    .containsKey(relationship.getChildRelationName())) {
+                return (String) fieldsMap.get(relationship.getChildRelationName());
+            } else {
+                return (String) fieldsMap.get(relationship.getParentRelationName());
+            }
+        }
+
+    }
 
     private void processIdentifier(final Contentlet contentlet,
                                    final Map<String, Object> map) {

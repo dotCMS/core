@@ -131,7 +131,7 @@ public interface WorkFlowFactory {
 	 * @param workflowTaskConsumer {@link Consumer} in case you want to do something which the Workflow task, send a Consumer.
 	 * @throws DotDataException
 	 */
-	public void saveSchemeIdsForContentType(String contentTypeInode, List<String> schemesIds, Consumer<WorkflowTask> workflowTaskConsumer) throws DotDataException;
+	public void saveSchemeIdsForContentType(String contentTypeInode, Set<String> schemesIds, Consumer<WorkflowTask> workflowTaskConsumer) throws DotDataException;
 
 	public void saveScheme(WorkflowScheme scheme) throws DotDataException, AlreadyExistException;
 
