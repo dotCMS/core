@@ -10,6 +10,15 @@ dot-api-link {
     margin-left: $basic-padding * 2;
 }
 
+.content-type__edit-info {
+    display: flex;
+    align-items: center;
+
+    dot-copy-button {
+        margin-left: $basic-padding / 4;
+    }
+}
+
 .content-type__api-link {
     margin-left: $basic-padding * 2;
 }
@@ -46,6 +55,7 @@ dot-api-link {
     color: $gray;
     display: flex;
     font-size: $font-size-small;
+    margin-top: $basic-padding / 2;
 }
 
 .content-type__edit-actions {
