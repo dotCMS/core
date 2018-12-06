@@ -3,6 +3,7 @@
 
 <!-- TODO: Move this to iframe-portlet-legacy -->
 <dot-create-contentlet (close)="onCloseContentletEditor()"></dot-create-contentlet>
+<dot-message-display></dot-message-display>
 
 <div class="layout">
     <header class="layout__header">
@@ -13,7 +14,6 @@
             <dot-main-nav></dot-main-nav>
         </aside>
         <main class="layout__main">
-            <dot-message-display></dot-message-display>
             <router-outlet></router-outlet>
         </main>
     </div>

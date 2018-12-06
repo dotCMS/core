@@ -1,6 +1,5 @@
 import { Observable, Subject } from 'rxjs';
-import { DotEventData } from 'dotcms-js/lib/core/event/model/dot-event-data';
-import { DotEventTypeWrapper } from 'dotcms-js/lib/core/event/model/dot-event-type-wrapper';
+import { DotEventTypeWrapper, DotEventData } from 'dotcms-js';
 
 export class DotcmsEventsServiceMock {
     private observers: Subject<any>[] = [];
