@@ -1,12 +1,13 @@
 package com.dotcms.content.elasticsearch.business;
 
+import static com.dotcms.exception.ExceptionUtil.bubbleUpException;
 import static com.dotcms.exception.ExceptionUtil.getLocalizedMessageOrDefault;
 
 import com.dotcms.api.system.event.ContentletSystemEventUtil;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
-import com.dotcms.concurrent.lock.DotKeyLockManager;
-import com.dotcms.concurrent.lock.DotKeyLockManagerBuilder;
+import com.dotcms.concurrent.DotConcurrentFactory;
+import com.dotcms.concurrent.lock.IdentifierStripedLock;
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.field.CategoryField;
@@ -98,7 +99,6 @@ import com.dotmarketing.portlets.structure.model.Field.FieldType;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.structure.transform.ContentletRelationshipsTransformer;
-import com.dotmarketing.portlets.workflows.business.DotWorkflowException;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowComment;
 import com.dotmarketing.portlets.workflows.model.WorkflowHistory;
@@ -189,8 +189,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     private final LanguageAPI          languageAPI;
     private final DistributedJournalAPI<String> distributedJournalAPI;
     private final TagAPI               tagAPI;
-
-    private final DotKeyLockManager<String, Contentlet> contentletLockManager = DotKeyLockManagerBuilder.newStripedLockManager();
+    private final IdentifierStripedLock lockManager;
 
     private static final int MAX_LIMIT = 10000;
 
@@ -216,6 +215,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         distributedJournalAPI = APILocator.getDistributedJournalAPI();
         tagAPI = APILocator.getTagAPI();
         contentletSystemEventUtil = ContentletSystemEventUtil.getInstance();
+        lockManager = DotConcurrentFactory.getInstance().getIdentifierStripedLock();
     }
 
     @Override
@@ -2781,7 +2781,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
      *
      * @param contentletIn
      * @param contentRelationships
-     * @param cats
+     * @param categories
      * @param user
      * @param respectFrontendRoles
      * @param createNewVersion
@@ -2792,23 +2792,19 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * @throws DotContentletValidationException
      */
     @WrapInTransaction
-    private Contentlet checkin(Contentlet contentletIn, ContentletRelationships contentRelationships,
-            List<Category> cats,
-            User user, boolean respectFrontendRoles, boolean createNewVersion,
+    private Contentlet checkin(final Contentlet contentletIn, ContentletRelationships contentRelationships,
+            final List<Category> categories,
+            final User user, boolean respectFrontendRoles, boolean createNewVersion,
             boolean generateSystemEvent) throws DotDataException, DotSecurityException {
 
         Contentlet contentletOut = null;
         try {
 
             String wfPublishDate = contentletIn.getStringProperty("wfPublishDate");
-            String wfPublishTime = contentletIn.getStringProperty("wfPublishTime");
             String wfExpireDate = contentletIn.getStringProperty("wfExpireDate");
-            String wfExpireTime = contentletIn.getStringProperty("wfExpireTime");
 
             final String contentPushPublishDateBefore = UtilMethods.isSet(wfPublishDate) ? wfPublishDate : "N/D";
-            final String contentPushPublishTimeBefore = UtilMethods.isSet(wfPublishTime) ? wfPublishTime : "N/D";
             final String contentPushExpireDateBefore = UtilMethods.isSet(wfExpireDate) ? wfExpireDate : "N/D";
-            final String contentPushExpireTimeBefore = UtilMethods.isSet(wfExpireTime) ? wfExpireTime : "N/D";
 
             ActivityLogger.logInfo(getClass(), "Saving Content",
                     "StartDate: " + contentPushPublishDateBefore + "; "
@@ -2817,36 +2813,29 @@ public class ESContentletAPIImpl implements ContentletAPI {
                             + "; ContentIdentifier: " + (contentletIn != null ? contentletIn
                             .getIdentifier() : "Unknown"), contentletIn.getHost());
 
-            final String syncMe =
-                    (UtilMethods.isSet(contentletIn.getIdentifier())) ? contentletIn.getIdentifier()
-                            : UUIDGenerator.generateUuid();
+            final String lockKey =
+                    "ContentletIdentifier:" + (UtilMethods.isSet(contentletIn.getIdentifier()) ? contentletIn.getIdentifier() : UUIDGenerator.generateUuid());
             try {
-                contentletOut = contentletLockManager
-                        .lock(syncMe,
-                                () -> internalCheckin(contentletIn, contentRelationships, cats, user,
+                contentletOut = lockManager.tryLock(lockKey,
+                                () -> internalCheckin(
+                                        contentletIn, contentRelationships, categories, user,
                                         respectFrontendRoles, createNewVersion
                                 )
                         ); // end synchronized block
             } catch (final Throwable t) {
                  bubbleUpException(t);
             }
-            //if (contentletOut.isFileAsset()) { // todo unsedcode
-            //    FileAsset asset = APILocator.getFileAssetAPI().fromContentlet(contentletOut);
-            //}
 
             wfPublishDate = contentletOut.getStringProperty("wfPublishDate");
-            wfPublishTime = contentletOut.getStringProperty("wfPublishTime");
             wfExpireDate = contentletOut.getStringProperty("wfExpireDate");
-            wfExpireTime = contentletOut.getStringProperty("wfExpireTime");
 
             final String contentPushPublishDateAfter = UtilMethods.isSet(wfPublishDate) ? wfPublishDate : "N/D";
-            final String contentPushPublishTimeAfter = UtilMethods.isSet(wfPublishTime) ? wfPublishTime : "N/D";
             final String contentPushExpireDateAfter = UtilMethods.isSet(wfExpireDate) ? wfExpireDate : "N/D";
-            final String contentPushExpireTimeAfter = UtilMethods.isSet(wfExpireTime) ? wfExpireTime : "N/D";
 
             ActivityLogger.logInfo(getClass(), "Content Saved",
                     "StartDate: " + contentPushPublishDateAfter + "; "
-                            + "EndDate: " + contentPushExpireDateAfter + "; User:" + user.getUserId()
+                            + "EndDate: " + contentPushExpireDateAfter + "; User:" + (user != null ? user
+                            .getUserId() : "Unknown")
                             + "; ContentIdentifier: " + contentletOut.getIdentifier(),
                     contentletOut.getHost());
 
@@ -3565,27 +3554,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return contentlet;
     }
 
-    private void bubbleUpException(final Throwable t)
-            throws DotDataException, DotSecurityException, DotRuntimeException {
 
-        if (t instanceof DotDataException) {
-            throw (DotDataException) t;
-        }
-        if (t instanceof DotSecurityException) {
-            throw (DotSecurityException) t;
-        }
-        if (t instanceof DotContentletValidationException) {
-            throw (DotContentletValidationException) t;
-        }
-        if (t instanceof DotContentletStateException) {
-            throw (DotContentletStateException) t;
-        }
-        if (t instanceof DotWorkflowException) {
-            throw (DotWorkflowException) t;
-        }
-
-        throw new DotRuntimeException(t.getMessage(), t);
-    }
 
     private void cleanup(final Contentlet contentlet) {
        if(null != contentlet){
