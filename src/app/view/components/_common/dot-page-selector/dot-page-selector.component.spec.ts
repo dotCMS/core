@@ -7,16 +7,19 @@ import { DotPageSelectorComponent } from './dot-page-selector.component';
 import { DOTTestBed } from '../../../../test/dot-test-bed';
 import { DotPageSelectorService } from './service/dot-page-selector.service';
 import { FormGroup, FormBuilder } from '@angular/forms';
-import { AutoComplete, OverlayPanelModule } from 'primeng/primeng';
+import { AutoComplete } from 'primeng/primeng';
 import { DotDirectivesModule } from '@shared/dot-directives.module';
 import { MdInputTextModule } from '@directives/md-inputtext/md-input-text.module';
-import { DotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import {
     DotPageSelectorResults,
     DotPageSeletorItem
 } from '@components/_common/dot-page-selector/models/dot-page-selector.models';
 import { LoginService } from 'dotcms-js';
 import { LoginServiceMock } from '../../../../test/login-service.mock';
+import { DotFieldHelperModule } from '@components/dot-field-helper/dot-field-helper.module';
+import { DotMessageService } from '@services/dot-messages-service';
+import { MockDotMessageService } from '@tests/dot-message-service.mock';
+import { Site } from '../../../../../../projects/dotcms-js/src/lib/core/site.service';
 
 export const mockDotPageSelectorResults = {
     type: 'page',
@@ -75,6 +78,8 @@ class MockDotPageSelectorService {
         return observableOf(mockDotPageSelectorResults);
     }
 
+    setCurrentHost(_site: Site) {}
+
     getPageById(_param: string): Observable<DotPageSeletorItem> {
         return observableOf(mockDotPageSelectorResults.data[0]);
     }
@@ -107,13 +112,19 @@ class FakeFormComponent {
     }
 }
 
+const messageServiceMock = new MockDotMessageService({
+    'page.selector.no.sites.results': 'Search for sites have no results',
+    'page.selector.no.page.results': 'Search for pages have no results'
+});
+
 const config = host => {
     return {
         declarations: [host, DotPageSelectorComponent],
-        imports: [DotDirectivesModule, MdInputTextModule, DotIconButtonModule, OverlayPanelModule],
+        imports: [DotDirectivesModule, MdInputTextModule, DotFieldHelperModule],
         providers: [
             { provide: DotPageSelectorService, useClass: MockDotPageSelectorService },
-            { provide: LoginService, useClass: LoginServiceMock }
+            { provide: LoginService, useClass: LoginServiceMock },
+            { provide: DotMessageService, useValue: messageServiceMock }
         ]
     };
 };
@@ -124,9 +135,10 @@ let autocomplete: DebugElement;
 let autocompleteComp: AutoComplete;
 let dotPageSelectorService: DotPageSelectorService;
 
-describe('DotPageSelectorComponent', () => {
+fdescribe('DotPageSelectorComponent', () => {
     let hostFixture: ComponentFixture<FakeFormComponent>;
-    const searchObj = { originalEvent: { target: { value: 'demo' } }, query: 'demo' };
+    const searchPageObj = { originalEvent: { target: { value: 'demo' } }, query: 'demo' };
+    const searchHostObj = { originalEvent: { target: { value: '//host' } }, query: '//host' };
     const specialSearchObj = { originalEvent: { target: { value: 'd#emo$%' } }, query: 'd#emo$%' };
 
     beforeEach(
@@ -143,7 +155,6 @@ describe('DotPageSelectorComponent', () => {
         dotPageSelectorService = de.injector.get(DotPageSelectorService);
 
         spyOn(component.selected, 'emit');
-        spyOn(dotPageSelectorService, 'search').and.callThrough();
         spyOn(component, 'writeValue').and.callThrough();
 
         hostFixture.detectChanges();
@@ -160,17 +171,70 @@ describe('DotPageSelectorComponent', () => {
     });
 
     it('should search for pages', () => {
-        autocomplete.triggerEventHandler('completeMethod', searchObj);
-        expect(dotPageSelectorService.search).toHaveBeenCalledWith(searchObj.query);
+        spyOn(dotPageSelectorService, 'search').and.callThrough();
+        autocomplete.triggerEventHandler('completeMethod', searchPageObj);
+        expect(dotPageSelectorService.search).toHaveBeenCalledWith(searchPageObj.query);
+    });
+
+    it('should search for host', () => {
+        spyOn(dotPageSelectorService, 'search').and.returnValue(
+            observableOf(mockDotSiteSelectorResults)
+        );
+        autocomplete.triggerEventHandler('completeMethod', searchHostObj);
+
+        expect(dotPageSelectorService.search).toHaveBeenCalledWith(searchHostObj.query);
+
+    });
+
+    it('should set current host on selection', () => {
+        component.results = mockDotSiteSelectorResults;
+        spyOn(dotPageSelectorService, 'setCurrentHost');
+        autocomplete.triggerEventHandler('onSelect', mockDotSiteSelectorResults.data[0]);
+        expect(dotPageSelectorService.setCurrentHost).toHaveBeenCalledWith(
+            mockDotSiteSelectorResults.data[0].payload
+        );
     });
 
     it('should remove special characters when searching for pages', () => {
+        spyOn(dotPageSelectorService, 'search');
         autocomplete.triggerEventHandler('completeMethod', specialSearchObj);
         expect(dotPageSelectorService.search).toHaveBeenCalledWith('demo');
     });
 
     it('should pass attrs to autocomplete component', () => {
         expect(autocompleteComp.style).toEqual({ width: '100%' });
+    });
+
+    it('should display error when no results in pages', () => {
+        spyOn(dotPageSelectorService, 'search').and.returnValue(
+            observableOf({
+                type: 'page',
+                query: 'invalid',
+                data: []
+            })
+        );
+        autocomplete.triggerEventHandler('completeMethod', {
+            originalEvent: { target: { value: 'invalidPage' } },
+            query: 'invalidPage'
+        });
+
+        expect(component.message).toEqual('Search for pages have no results');
+    });
+
+    it('should display error when no results in hosts', () => {
+        spyOn(dotPageSelectorService, 'search').and.returnValue(
+            observableOf({
+                type: 'site',
+                query: 'invalid',
+                data: []
+            })
+        );
+        autocomplete.triggerEventHandler('completeMethod', {
+            originalEvent: { target: { value: '//invalid' } },
+            query: '//invalid'
+        });
+
+        expect(component.message).toEqual('Search for sites have no results');
     });
 
     describe('ControlValueAccessor', () => {
@@ -181,8 +245,12 @@ describe('DotPageSelectorComponent', () => {
         it('should emit selected item and propagate changes', () => {
             component.results = mockDotPageSelectorResults;
             autocomplete.triggerEventHandler('onSelect', mockDotPageSelectorResults.data[0]);
-            expect(component.selected.emit).toHaveBeenCalledWith(mockDotPageSelectorResults.data[0].payload);
-            expect(component.propagateChange).toHaveBeenCalledWith(mockDotPageSelectorResults.data[0].payload.identifier);
+            expect(component.selected.emit).toHaveBeenCalledWith(
+                mockDotPageSelectorResults.data[0].payload
+            );
+            expect(component.propagateChange).toHaveBeenCalledWith(
+                mockDotPageSelectorResults.data[0].payload.identifier
+            );
         });
 
         it('should write value', () => {

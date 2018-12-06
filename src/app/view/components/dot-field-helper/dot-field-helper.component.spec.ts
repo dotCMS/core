@@ -9,7 +9,7 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { DotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { DotIconButtonComponent } from '@components/_common/dot-icon-button/dot-icon-button.component';
 
-fdescribe('DotFieldHelperComponent', () => {
+describe('DotFieldHelperComponent', () => {
     let component: DotFieldHelperComponent;
     let fixture: ComponentFixture<DotFieldHelperComponent>;
     let de: DebugElement;
