@@ -5,6 +5,7 @@ import com.dotcms.repackage.com.fasterxml.jackson.core.JsonProcessingException;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.JsonSerializer;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.SerializerProvider;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRaw;
 import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRendered;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
@@ -41,7 +42,7 @@ public class PageView implements Serializable {
 
     private final Host site;
     private final Template template;
-    private final Collection<ContainerRendered> containers;
+    private final Collection<? extends ContainerRaw> containers;
     private final HTMLPageAssetInfo htmlPageAssetInfo;
     private final TemplateLayout layout;
 
@@ -57,7 +58,7 @@ public class PageView implements Serializable {
      */
     PageView(final Host site,
              final Template template,
-             final Collection<ContainerRendered> containers,
+             final Collection<? extends ContainerRaw> containers,
              final HTMLPageAssetInfo page,
              final TemplateLayout layout) {
 
@@ -100,7 +101,7 @@ public class PageView implements Serializable {
      *
      * @return The map of Containers.
      */
-    public Collection<ContainerRendered>  getContainers() {
+    public Collection<? extends ContainerRaw>  getContainers() {
         return this.containers;
     }
 
