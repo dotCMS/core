@@ -35,6 +35,7 @@ import { DotDirectivesModule } from '@shared/dot-directives.module';
 import { DotIconModule } from '@components/_common/dot-icon/dot-icon.module';
 import { DotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { MdInputTextModule } from '@directives/md-inputtext/md-input-text.module';
+import {DotFieldHelperModule} from '@components/dot-field-helper/dot-field-helper.module';
 
 @Component({
     selector: 'dot-site-selector-field',
@@ -124,7 +125,8 @@ describe('ContentTypesFormComponent', () => {
                 DotWorkflowsSelectorFieldModule,
                 DotIconModule,
                 DotIconButtonModule,
-                MdInputTextModule
+                MdInputTextModule,
+                DotFieldHelperModule
             ],
             providers: [
                 { provide: LoginService, useClass: LoginServiceMock },
@@ -581,25 +583,6 @@ describe('ContentTypesFormComponent', () => {
         it('should submit form correctly', () => {
             comp.submitForm();
 
-            expect(comp.submitForm).toHaveBeenCalledTimes(1);
-            expect(data).toEqual({
-                clazz: '',
-                description: '',
-                detailPage: '',
-                host: '',
-                name: 'A content type name',
-                urlMapPattern: '',
-                defaultType: null,
-                fixed: null,
-                folder: null,
-                system: null,
-                workflow: ['d61a59e1-a49c-46f2-a929-db2b4bfa88b2']
-            });
-        });
-
-        it('should submit form correctly on Enter', () => {
-            const form = fixture.debugElement.query(By.css('form'));
-            form.nativeElement.dispatchEvent(new KeyboardEvent('keyup', { key: 'Enter' }));
             expect(comp.submitForm).toHaveBeenCalledTimes(1);
             expect(data).toEqual({
                 clazz: '',

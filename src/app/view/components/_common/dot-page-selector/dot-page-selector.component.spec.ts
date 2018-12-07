@@ -135,7 +135,7 @@ let autocomplete: DebugElement;
 let autocompleteComp: AutoComplete;
 let dotPageSelectorService: DotPageSelectorService;
 
-fdescribe('DotPageSelectorComponent', () => {
+describe('DotPageSelectorComponent', () => {
     let hostFixture: ComponentFixture<FakeFormComponent>;
     const searchPageObj = { originalEvent: { target: { value: 'demo' } }, query: 'demo' };
     const searchHostObj = { originalEvent: { target: { value: '//host' } }, query: '//host' };

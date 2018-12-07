@@ -73,6 +73,7 @@ import {
     DotRelationshipsModule
 } from './fields/content-type-fields-properties-form/field-properties/dot-relationships-property/dot-relationships.module';
 import { DotApiLinkModule } from '@components/dot-api-link/dot-api-link.module';
+import { DotFieldHelperModule } from '@components/dot-field-helper/dot-field-helper.module';
 
 @NgModule({
     declarations: [
@@ -146,7 +147,8 @@ import { DotApiLinkModule } from '@components/dot-api-link/dot-api-link.module';
         SearchableDropDownModule,
         SiteSelectorFieldModule,
         SplitButtonModule,
-        TabViewModule
+        TabViewModule,
+        DotFieldHelperModule
     ],
     providers: [
         ContentTypeEditResolver,

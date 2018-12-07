@@ -39,7 +39,7 @@ const fullQuery = {
     }
 };
 
-fdescribe('Service: DotPageSelector', () => {
+describe('Service: DotPageSelector', () => {
     beforeEach(() => {
         this.injector = DOTTestBed.resolveAndCreate([DotPageSelectorService]);
         this.dotPageSelectorService = this.injector.get(DotPageSelectorService);

@@ -145,6 +145,7 @@ export class ContentTypesFormComponent implements OnInit, OnDestroy {
      * @memberof ContentTypesFormComponent
      */
     submitForm(): void {
+        debugger;
         if (this.canSave) {
             this.onSubmit.emit({
                 ...this.form.value,
