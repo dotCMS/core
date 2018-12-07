@@ -8,7 +8,7 @@
     }
 
     .ui-toast-message-content {
-        padding: $toast-padding;
+        padding: $toast-padding ($icon-button-size + $basic-padding) $toast-padding $toast-padding;
     }
 
     .ui-toast-close-icon {
@@ -20,6 +20,7 @@
         &:before {
             @include md-icon;
             content: "close";
+            font-size: $md-icon-size-big;
         }
     }
 }
