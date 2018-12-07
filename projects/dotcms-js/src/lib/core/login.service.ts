@@ -6,7 +6,7 @@ import { RequestMethod } from '@angular/http';
 import { Injectable } from '@angular/core';
 import { Observable, Subject, of } from 'rxjs';
 import { Router } from '@angular/router';
-import { DotcmsEventsService } from './dotcms-events.service';
+import { DotcmsEventsService } from './event/dotcms-events.service';
 import { LoggerService } from './logger.service';
 import { HttpCode } from './util/http-code';
 import { pluck, tap, map } from 'rxjs/operators';

@@ -85,17 +85,16 @@ class MockSearchableDropdownComponent implements ControlValueAccessor {
     @Output()
     pageChange: EventEmitter<PaginationEvent> = new EventEmitter();
 
-    writeValue(obj: any): void {
-        console.log('obj', obj);
+    writeValue(): void {
     }
-    registerOnChange(fn: any): void {
-        console.log('fn', fn);
+
+    registerOnChange(): void {
     }
-    registerOnTouched(fn: any): void {
-        console.log('fn', fn);
+
+    registerOnTouched(): void {
     }
-    setDisabledState?(isDisabled: boolean): void {
-        console.log('isDisabled', isDisabled);
+
+    setDisabledState?(): void {
     }
 }
 

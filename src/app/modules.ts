@@ -36,6 +36,7 @@ import { DotContentletEditorModule } from './view/components/dot-contentlet-edit
 import { DotWorkflowTaskDetailModule } from './view/components/dot-workflow-task-detail/dot-workflow-task-detail.module';
 import { DotCrumbtrailModule } from './view/components/dot-crumbtrail/dot-crumbtrail.module';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
+import { DotMessageDisplayModule } from '@components/dot-message-display/dot-message-display.module';
 
 export const CUSTOM_MODULES = [
     DotActionButtonModule,
@@ -47,6 +48,7 @@ export const CUSTOM_MODULES = [
     DotIconModule,
     DotTextareaContentModule,
     DotWorkflowTaskDetailModule,
+    DotMessageDisplayModule,
     FieldValidationMessageModule,
     IFrameModule,
     ListingDataTableModule,

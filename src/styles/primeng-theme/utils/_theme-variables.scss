@@ -216,3 +216,9 @@ $inputswitch-checked-thumb-color: $brand-primary;
 $inputswitch-warn-normal-track-color: rgba($orange, 0.38);
 $inputswitch-warn-checked-track-color: rgba($orange, 0.38);
 $inputswitch-warn-hecked-thumb-color: $orange;
+
+
+// TOAST
+$toast-padding: $basic-padding * 2;
+$toast-bgcolor: $white;
+$toast-border-radius: $border-radius;

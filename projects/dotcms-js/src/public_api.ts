@@ -4,7 +4,7 @@ export * from './lib/core/browser-util.service';
 export * from './lib/core/core-web.service';
 export * from './lib/core/dot-router.service';
 export * from './lib/core/dotcms-config.service';
-export * from './lib/core/dotcms-events.service';
+export * from './lib/core/event';
 export * from './lib/core/file/file-search.service';
 export * from './lib/core/file/file.services';
 export * from './lib/core/logger.service';
