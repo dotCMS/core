@@ -669,6 +669,25 @@ public class FieldAPITest extends IntegrationTestBase {
         }
     }
 
+    @Test(expected = DotDataException.class)
+    public void testValidateRelationshipFieldWithDash_shouldThrowAnException()
+            throws DotSecurityException, DotDataException {
+
+
+        final long time = System.currentTimeMillis();
+        final ContentType type = createAndSaveSimpleContentType("testContentType" + time);
+        try {
+            final Field field = FieldBuilder.builder(RelationshipField.class)
+                    .name("testField" + time)
+                    .contentTypeId(type.id()).values(CARDINALITY).indexed(false)
+                    .listed(false).variable("testContentType-videos").build();
+
+            fieldAPI.save(field, user);
+        }finally {
+            contentTypeAPI.delete(type);
+        }
+    }
+
     private ContentType createAndSaveSimpleContentType(final String name) throws DotSecurityException, DotDataException {
         return contentTypeAPI.save(ContentTypeBuilder.builder(SimpleContentType.class).folder(
                 FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST).name(name)

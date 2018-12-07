@@ -25,11 +25,10 @@ import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
-import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotDataValidationException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
@@ -96,7 +95,6 @@ public class FieldResource implements Serializable {
 
         final InitDataObject initData = this.webResource.init(null, false, req, false, null);
         final User user = initData.getUser();
-        final FieldAPI fapi = APILocator.getContentTypeFieldAPI();
 
         Response response = null;
 
@@ -108,7 +106,7 @@ public class FieldResource implements Serializable {
 
             } else {
 
-                field = fapi.save(field, user);
+                field = fieldAPI.save(field, user);
 
                 response = Response.ok(new ResponseEntityView(new JsonFieldTransformer(field).mapObject())).build();
             }
@@ -129,13 +127,12 @@ public class FieldResource implements Serializable {
 
         final InitDataObject initData = this.webResource.init(null, true, req, true, null);
         final User user = initData.getUser();
-        final ContentTypeAPI tapi = APILocator.getContentTypeAPI(user, true);
-        final FieldAPI fapi = APILocator.getContentTypeFieldAPI();
+        final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user, true);
 
         Response response = null;
 
         try {
-            List<Field> fields = fapi.byContentTypeId(tapi.find(typeId).id());
+            List<Field> fields = fieldAPI.byContentTypeId(contentTypeAPI.find(typeId).id());
 
             response = Response.ok(new ResponseEntityView(new JsonFieldTransformer(fields).mapList())).build();
 
@@ -157,13 +154,10 @@ public class FieldResource implements Serializable {
             @PathParam("fieldId") final String fieldId, @Context final HttpServletRequest req)
             throws DotDataException, DotSecurityException {
 
-        final InitDataObject initData = this.webResource.init(null, false, req, false, null);
-        final FieldAPI fapi = APILocator.getContentTypeFieldAPI();
-
         Response response = null;
         try {
 
-            Field field = fapi.find(fieldId);
+            Field field = fieldAPI.find(fieldId);
 
             response = Response.ok(new ResponseEntityView(new JsonFieldTransformer(field).mapObject())).build();
 
@@ -184,13 +178,10 @@ public class FieldResource implements Serializable {
             @PathParam("fieldVar") final String fieldVar, @Context final HttpServletRequest req)
             throws DotDataException, DotSecurityException {
 
-        final InitDataObject initData = this.webResource.init(null, false, req, false, null);
-        final FieldAPI fapi = APILocator.getContentTypeFieldAPI();
-
         Response response = null;
         try {
 
-            Field field = fapi.byContentTypeIdAndVar(typeId, fieldVar);
+            Field field = fieldAPI.byContentTypeIdAndVar(typeId, fieldVar);
 
             response = Response.ok(new ResponseEntityView(new JsonFieldTransformer(field).mapObject())).build();
 
@@ -214,7 +205,6 @@ public class FieldResource implements Serializable {
 
         final InitDataObject initData = this.webResource.init(null, false, req, false, null);
         final User user = initData.getUser();
-        final FieldAPI fapi = APILocator.getContentTypeFieldAPI();
 
         Response response = null;
 
@@ -226,15 +216,17 @@ public class FieldResource implements Serializable {
 
             } else {
 
-                Field currentField = fapi.find(fieldId);
+                Field currentField = fieldAPI.find(fieldId);
 
                 if (!currentField.id().equals(field.id())) {
 
-                    response = ExceptionMapperUtil.createResponse(null, "Field id '"+ fieldId +"' does not match a field with id '"+ field.id() +"'");
+                    throw new DotDataValidationException("Field id '"+ fieldId +"' does not match a field with id '"+ field.id() +"'");
 
+                } else if(!currentField.variable().equals(field.variable())){
+                    throw new DotDataValidationException("Field variable can not be modified, please use the following: " + currentField.variable());
                 } else {
 
-                    field = fapi.save(field, user);
+                    field = fieldAPI.save(field, user);
 
                     response = Response.ok(new ResponseEntityView(new JsonFieldTransformer(field).mapObject())).build();
                 }
@@ -258,7 +250,6 @@ public class FieldResource implements Serializable {
 
         final InitDataObject initData = this.webResource.init(null, false, req, false, null);
         final User user = initData.getUser();
-        final FieldAPI fapi = APILocator.getContentTypeFieldAPI();
 
         Response response = null;
 
@@ -270,15 +261,17 @@ public class FieldResource implements Serializable {
 
             } else {
 
-                Field currentField = fapi.byContentTypeIdAndVar(typeId, fieldVar);
+                Field currentField = fieldAPI.byContentTypeIdAndVar(typeId, fieldVar);
 
                 if (!currentField.id().equals(field.id())) {
 
-                    response = ExceptionMapperUtil.createResponse(null, "Field var '"+ fieldVar +"' does not match a field with id '"+ field.id() +"'");
+                    throw new DotDataValidationException("Field var '"+ fieldVar +"' does not match a field with id '"+ field.id() +"'");
 
+                } else if(!currentField.variable().equals(field.variable())){
+                    throw new DotDataValidationException("Field variable can not be modified");
                 } else {
 
-                    field = fapi.save(field, user);
+                    field = fieldAPI.save(field, user);
 
                     response = Response.ok(new ResponseEntityView(new JsonFieldTransformer(field).mapObject())).build();
                 }
@@ -367,14 +360,13 @@ public class FieldResource implements Serializable {
 
         final InitDataObject initData = this.webResource.init(null, false, req, false, null);
         final User user = initData.getUser();
-        final FieldAPI fapi = APILocator.getContentTypeFieldAPI();
 
         Response response = null;
         try {
 
-            Field field = fapi.byContentTypeIdAndVar(typeId, fieldVar);
+            Field field = fieldAPI.byContentTypeIdAndVar(typeId, fieldVar);
 
-            fapi.delete(field, user);
+            fieldAPI.delete(field, user);
 
             response = Response.ok(new ResponseEntityView(null)).build();
 
