@@ -1,5 +1,6 @@
 package com.dotmarketing.business;
 
+import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
 import static com.dotcms.exception.ExceptionUtil.bubbleUpException;
 
 import com.dotcms.business.WrapInTransaction;
@@ -3024,7 +3025,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 			    indexAPI.addContentToIndex(cont, false, true, true, bulk);
 			}
 			if(bulk.numberOfActions()>0)
-			    bulk.execute().actionGet();
+			    bulk.execute().actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS);
 
 			offset=offset+limit;
 		} while(contentlets.size()>0);
