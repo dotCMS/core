@@ -222,26 +222,6 @@ function futureChange() {
 	}
 	
 }
-
-
-document.addEventListener("click", function (evt) {
-    var body = document.getElementsByTagName("BODY")[0];
-		targetElement = evt.target;  // clicked element
-
-	do {
-		if (targetElement === body) {
-			// This is a click inside. Do nothing, just return.
-			return;
-		}
-		// Go up the DOM
-		targetElement = targetElement.parentNode;
-	} while (targetElement);
-
-	// This is a click outside.
-	stopBrowing();
-});
-
-
 </script>
 
 
