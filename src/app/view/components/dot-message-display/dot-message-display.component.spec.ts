@@ -10,6 +10,8 @@ import { Observable, Subject } from 'rxjs';
 import { DotMessage } from './model';
 import { DotMessageSeverity } from './model';
 import { DotMessageType } from './model';
+import { DotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
+import { DotIconModule } from '@components/_common/dot-icon/dot-icon.module';
 
 
 @Injectable()
@@ -30,7 +32,7 @@ describe('DotMessageDisplayComponent', () => {
 
     beforeEach(async(() => {
         DOTTestBed.configureTestingModule({
-            imports: [ToastModule],
+            imports: [ToastModule, DotIconModule, DotIconButtonModule],
             declarations: [DotMessageDisplayComponent],
             providers: [
                 { provide: DotMessageDisplayService, useValue: dotMessageDisplayServiceMock },
