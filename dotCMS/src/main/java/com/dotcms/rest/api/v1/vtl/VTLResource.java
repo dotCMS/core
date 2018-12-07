@@ -177,8 +177,8 @@ public class VTLResource {
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     public final Response putMultipart(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
-                                        FormDataMultiPart multipart,
-                                        @Context UriInfo uriInfo, @PathParam("folder") final String folderName) {
+                                        final FormDataMultiPart multipart,
+                                        @Context final UriInfo uriInfo, @PathParam("folder") final String folderName) {
 
         try {
             final List<File> binaries = getBinariesFromMultipart(multipart);
@@ -196,7 +196,7 @@ public class VTLResource {
     private Map<String, String> getBodyMapFromMultipart(final FormDataMultiPart multipart) throws IOException, JSONException {
         Map<String, String> bodyMap = null;
 
-        for (BodyPart part : multipart.getBodyParts()) {
+        for (final BodyPart part : multipart.getBodyParts()) {
             final ContentDisposition contentDisposition = part.getContentDisposition();
             final String name = contentDisposition != null && contentDisposition.getParameters().containsKey("name")
                     ? contentDisposition.getParameters().get("name")
@@ -215,22 +215,21 @@ public class VTLResource {
     private List<File> getBinariesFromMultipart(final FormDataMultiPart multipart) throws IOException {
         final List<File> binaries = new ArrayList<>();
 
-        for (FormDataBodyPart part : multipart.getFields("file")) {
-            final InputStream input = part.getEntityAs(InputStream.class);
-            String filename = part.getContentDisposition().getFileName();
-            java.io.File tmpFolder = new File(
+        for (final FormDataBodyPart part : multipart.getFields("file")) {
+            final File tmpFolder = new File(
                     APILocator.getFileAssetAPI().getRealAssetPathTmpBinary() + UUIDUtil.uuid());
 
             if(!tmpFolder.mkdirs()) {
                 throw new IOException("Unable to create temp folder to save binaries");
             }
 
-            java.io.File tempFile = new File(
+            final String filename = part.getContentDisposition().getFileName();
+            final File tempFile = new File(
                     tmpFolder.getAbsolutePath() + File.separator + filename);
 
             Files.deleteIfExists(tempFile.toPath());
 
-            FileUtils.copyInputStreamToFile(input, tempFile);
+            FileUtils.copyInputStreamToFile(part.getEntityAs(InputStream.class), tempFile);
             binaries.add(tempFile);
         }
 

@@ -117,8 +117,8 @@ public class VTLResourceIntegrationTest {
         try {
             final Response response = getResponseFromVTLResource(testCase, vtlFolder);
 
-            String expectedOutput = expectedOutput(testCase);
-            String actualOutput = actualOutput(testCase, response);
+            final String expectedOutput = expectedOutput(testCase);
+            final String actualOutput = actualOutput(testCase, response);
             assertEquals(expectedOutput, actualOutput);
         } finally {
             APILocator.getFolderAPI().delete(vtlFolder, APILocator.systemUser(), false);
@@ -173,7 +173,7 @@ public class VTLResourceIntegrationTest {
         return  output;
     }
 
-    private WebResource getSpiedWebResource(VTLResourceTestCase testCase, HttpServletRequest request) throws DotDataException, DotSecurityException {
+    private WebResource getSpiedWebResource(final VTLResourceTestCase testCase, final HttpServletRequest request) throws DotDataException, DotSecurityException {
         final User requestingUser = APILocator.getUserAPI().loadUserById(testCase.getUserId(),
                 APILocator.systemUser(), false);
 
