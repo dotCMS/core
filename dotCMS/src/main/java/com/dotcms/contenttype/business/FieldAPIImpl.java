@@ -111,7 +111,11 @@ public class FieldAPIImpl implements FieldAPI {
 	    	try {
 	    		oldField = fieldFactory.byId(field.id());
 
-	    		if (oldField.sortOrder() != field.sortOrder()){
+                if(!oldField.variable().equals(field.variable())){
+                    throw new DotDataValidationException("Field variable can not be modified, please use the following: " + oldField.variable());
+                }
+
+                if (oldField.sortOrder() != field.sortOrder()){
 	    		    if (oldField.sortOrder() > field.sortOrder()) {
                         fieldFactory.moveSortOrderForward(type.id(), field.sortOrder(), oldField.sortOrder());
                     } else {
@@ -132,6 +136,12 @@ public class FieldAPIImpl implements FieldAPI {
 	    		//Do nothing as Starter comes with id but field is unexisting yet
 	    	}
 	    }else {
+	        //This validation should only be for new fields, since the field velocity var name(variable) can not be modified
+            if(UtilMethods.isSet(field.variable()) && !field.variable().matches("^[a-zA-Z0-9]+")) {
+                final String errorMessage = "Field velocity var name "+ field.variable() +" contains characters not allowed, here is a suggestion of the variable: " + com.dotmarketing.util.StringUtils.camelCaseLower(field.variable());
+                Logger.error(this, errorMessage);
+                throw new DotDataValidationException(errorMessage);
+            }
             fieldFactory.moveSortOrderForward(type.id(), field.sortOrder());
         }
 
