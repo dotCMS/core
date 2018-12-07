@@ -11,33 +11,7 @@ import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 
-import com.dotcms.contenttype.model.field.BinaryField;
-import com.dotcms.contenttype.model.field.CategoryField;
-import com.dotcms.contenttype.model.field.CheckboxField;
-import com.dotcms.contenttype.model.field.ConstantField;
-import com.dotcms.contenttype.model.field.CustomField;
-import com.dotcms.contenttype.model.field.DataTypes;
-import com.dotcms.contenttype.model.field.DateField;
-import com.dotcms.contenttype.model.field.DateTimeField;
-import com.dotcms.contenttype.model.field.Field;
-import com.dotcms.contenttype.model.field.FieldBuilder;
-import com.dotcms.contenttype.model.field.FileField;
-import com.dotcms.contenttype.model.field.HiddenField;
-import com.dotcms.contenttype.model.field.HostFolderField;
-import com.dotcms.contenttype.model.field.ImageField;
-import com.dotcms.contenttype.model.field.KeyValueField;
-import com.dotcms.contenttype.model.field.LineDividerField;
-import com.dotcms.contenttype.model.field.MultiSelectField;
-import com.dotcms.contenttype.model.field.PermissionTabField;
-import com.dotcms.contenttype.model.field.RadioField;
-import com.dotcms.contenttype.model.field.RelationshipsTabField;
-import com.dotcms.contenttype.model.field.SelectField;
-import com.dotcms.contenttype.model.field.TabDividerField;
-import com.dotcms.contenttype.model.field.TagField;
-import com.dotcms.contenttype.model.field.TextAreaField;
-import com.dotcms.contenttype.model.field.TextField;
-import com.dotcms.contenttype.model.field.TimeField;
-import com.dotcms.contenttype.model.field.WysiwygField;
+import com.dotcms.contenttype.model.field.*;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.SimpleContentType;
@@ -90,7 +64,7 @@ public class FieldResourceTest {
 
         final String jsonField = "{"+
                 // IDENTITY VALUES
-                "	\"clazz\" : \"com.dotcms.contenttype.model.field.ImmutableRelationshipField\","+
+                "	\"clazz\" : \"" + ImmutableRelationshipField.class.getCanonicalName() +"\","+
                 "	\"contentTypeId\" : \"CONTENT_TYPE_ID\","+
                 "	\"name\" : \"YouTube Videos\","+
                 "   \"values\" :  1," +
@@ -114,7 +88,7 @@ public class FieldResourceTest {
 
         final String jsonField = "{"+
                 // IDENTITY VALUES
-                "	\"clazz\" : \"com.dotcms.contenttype.model.field.ImmutableRelationshipField\","+
+                "	\"clazz\" : \"" + ImmutableRelationshipField.class.getCanonicalName() +"\","+
                 "	\"contentTypeId\" : \"CONTENT_TYPE_ID\","+
                 "	\"name\" : \"YouTube Videos\","+
                 "   \"values\" :  1," +
@@ -132,7 +106,7 @@ public class FieldResourceTest {
 
         final String jsonFieldUpdate = "{"+
                 // IDENTITY VALUES
-                "	\"clazz\" : \"com.dotcms.contenttype.model.field.ImmutableRelationshipField\","+
+                "	\"clazz\" : \"" + ImmutableRelationshipField.class.getCanonicalName() +"\","+
                 "	\"contentTypeId\" : \"CONTENT_TYPE_ID\","+
                 "	\"id\" : \"CONTENT_TYPE_FIELD_ID\","+
                 "	\"name\" : \"YouTube Videos\","+

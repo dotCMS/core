@@ -132,7 +132,7 @@ public class FieldResource implements Serializable {
         Response response = null;
 
         try {
-            List<Field> fields = fieldAPI.byContentTypeId(contentTypeAPI.find(typeId).id());
+            final List<Field> fields = fieldAPI.byContentTypeId(contentTypeAPI.find(typeId).id());
 
             response = Response.ok(new ResponseEntityView(new JsonFieldTransformer(fields).mapList())).build();
 
@@ -154,10 +154,12 @@ public class FieldResource implements Serializable {
             @PathParam("fieldId") final String fieldId, @Context final HttpServletRequest req)
             throws DotDataException, DotSecurityException {
 
+        this.webResource.init(null, false, req, false, null);
+
         Response response = null;
         try {
 
-            Field field = fieldAPI.find(fieldId);
+            final Field field = fieldAPI.find(fieldId);
 
             response = Response.ok(new ResponseEntityView(new JsonFieldTransformer(field).mapObject())).build();
 
@@ -178,10 +180,12 @@ public class FieldResource implements Serializable {
             @PathParam("fieldVar") final String fieldVar, @Context final HttpServletRequest req)
             throws DotDataException, DotSecurityException {
 
+        this.webResource.init(null, false, req, false, null);
+
         Response response = null;
         try {
 
-            Field field = fieldAPI.byContentTypeIdAndVar(typeId, fieldVar);
+            final Field field = fieldAPI.byContentTypeIdAndVar(typeId, fieldVar);
 
             response = Response.ok(new ResponseEntityView(new JsonFieldTransformer(field).mapObject())).build();
 
@@ -216,7 +220,7 @@ public class FieldResource implements Serializable {
 
             } else {
 
-                Field currentField = fieldAPI.find(fieldId);
+                final Field currentField = fieldAPI.find(fieldId);
 
                 if (!currentField.id().equals(field.id())) {
 
@@ -261,7 +265,7 @@ public class FieldResource implements Serializable {
 
             } else {
 
-                Field currentField = fieldAPI.byContentTypeIdAndVar(typeId, fieldVar);
+                final Field currentField = fieldAPI.byContentTypeIdAndVar(typeId, fieldVar);
 
                 if (!currentField.id().equals(field.id())) {
 
@@ -336,7 +340,7 @@ public class FieldResource implements Serializable {
         Response response = null;
         try {
 
-            Field field = fieldAPI.find(fieldId);
+            final Field field = fieldAPI.find(fieldId);
             fieldAPI.delete(field, user);
 
             response = Response.ok(new ResponseEntityView(null)).build();
@@ -364,7 +368,7 @@ public class FieldResource implements Serializable {
         Response response = null;
         try {
 
-            Field field = fieldAPI.byContentTypeIdAndVar(typeId, fieldVar);
+            final Field field = fieldAPI.byContentTypeIdAndVar(typeId, fieldVar);
 
             fieldAPI.delete(field, user);
 

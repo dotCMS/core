@@ -21,6 +21,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotDataValidationException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.structure.model.Relationship;
@@ -669,7 +670,7 @@ public class FieldAPITest extends IntegrationTestBase {
         }
     }
 
-    @Test(expected = DotDataException.class)
+    @Test(expected = DotDataValidationException.class)
     public void testValidateRelationshipFieldWithDash_shouldThrowAnException()
             throws DotSecurityException, DotDataException {
 
