@@ -13,14 +13,12 @@ export class DotcmsEventsService {
     private subjects: Subject<any>[] = [];
 
     constructor(private socketFactory: SocketFactory, private loggerService: LoggerService) {
-        console.log('constructor#######################');
     }
 
     /**
      * Close the socket
      */
     destroy(): void {
-        console.log('destroy#######################');
         this.socket.destroy();
         this.socketFactory.clean();
         this.socket = null;
