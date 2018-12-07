@@ -44,7 +44,6 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static com.dotcms.cluster.bean.ServerPort.ES_TRANSPORT_TCP_PORT;
-import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 
 public class ESClient {
@@ -186,7 +185,7 @@ public class ESClient {
 
             settingsRequest.ifPresent(updateSettingsRequest -> _nodeInstance.client().admin().indices().updateSettings(
                 updateSettingsRequest
-            ).actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS));
+            ).actionGet());
 
         } catch (IndexNotFoundException e) {
             /*

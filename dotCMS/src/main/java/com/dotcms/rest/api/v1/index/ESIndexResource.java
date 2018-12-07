@@ -51,7 +51,6 @@ import java.nio.file.Files;
 import java.util.Date;
 import java.util.concurrent.ExecutionException;
 
-import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
 import static com.dotcms.util.DotPreconditions.checkArgument;
 
 /**
@@ -184,7 +183,7 @@ public class ESIndexResource {
 
         final Client client = new ESClient().getClient();
         final IndicesStatsResponse indicesStatsResponse =
-            client.admin().indices().prepareStats(indexName).setStore(true).execute().actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS);
+            client.admin().indices().prepareStats(indexName).setStore(true).execute().actionGet();
         final IndexStats indexStats = indicesStatsResponse.getIndex(indexName);
         return (indexStats !=null && indexStats.getTotal().docs != null) ? indexStats.getTotal().docs.getCount(): 0;
     }

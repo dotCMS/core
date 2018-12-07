@@ -16,7 +16,7 @@
 String indexName=request.getParameter("indexName");
 
 ESClient client=new ESClient();
-NodesStatsResponse ns=client.getClient().admin().cluster().nodesStats(new NodesStatsRequest()).actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS);
+NodesStatsResponse ns=client.getClient().admin().cluster().nodesStats(new NodesStatsRequest()).actionGet();
 %>
 <strong>Cluster: <%=ns.getClusterName() %></strong>
 <% for(NodeStats stats:ns.getNodes()) { %>

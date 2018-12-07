@@ -78,7 +78,6 @@ import java.util.Calendar;
 import java.util.*;
 import java.util.function.Consumer;
 
-import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
 import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.datetimeFormat;
 
 /**
@@ -766,7 +765,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
                 setSource(SearchSourceBuilder.searchSource().
                 fetchSource(new String[] {"inode"}, null)).
                 setQuery( builder ).
-                setSize( limit ).setFrom( offset ).execute().actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS);
+                setSize( limit ).setFrom( offset ).execute().actionGet();
         SearchHits hits = response.getHits();
         List<Contentlet> cons = new ArrayList<>();
 
@@ -872,7 +871,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
 			IndiciesInfo info=APILocator.getIndiciesAPI().loadIndicies();
 			SearchResponse response = request.setIndices((live ? info.live : info.working))
-			        .execute().actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS);
+			        .execute().actionGet();
 			SearchHits hits = response.getHits();
 			Contentlet contentlet = find(hits.getAt(0).getSourceAsMap().get("inode").toString());
 			return contentlet;
@@ -965,7 +964,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
 			SearchResponse response = createRequest(client.getClient(), "+conhost:"+hostId).
 			        setSize(limit).setFrom(offset).execute()
-					.actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS);
+					.actionGet();
 
 			SearchHits hits = response.getHits();
 
@@ -1272,7 +1271,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
         final SearchRequestBuilder searchRequestBuilder = client.prepareSearch().setSize(0);
         searchRequestBuilder.setQuery(qb);
         searchRequestBuilder.setIndices(indexToHit);
-        return searchRequestBuilder.execute().actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS).getHits().getTotalHits();
+        return searchRequestBuilder.execute().actionGet().getHits().getTotalHits();
 	}
 
     @Override
@@ -1304,7 +1303,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
         searchRequestBuilder.setIndices(
                 query.contains("+live:true") && !query.contains("+deleted:true")? info.live: info.working);
 
-        return searchRequestBuilder.execute().actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS).getHits().getTotalHits();
+        return searchRequestBuilder.execute().actionGet().getHits().getTotalHits();
     }
 
     @Override
@@ -1506,7 +1505,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
 
             try{
-            	resp = srb.execute().actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS);
+            	resp = srb.execute().actionGet();
             }catch (SearchPhaseExecutionException e) {
 				if(e.getMessage().contains("dotraw] in order to sort on")){
 					return new SearchHits(SearchHits.EMPTY,0,0);

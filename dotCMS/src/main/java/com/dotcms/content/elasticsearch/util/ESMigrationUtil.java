@@ -17,8 +17,6 @@ import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Logger;
 
-import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
-
 public class ESMigrationUtil {
 
 	
@@ -54,7 +52,7 @@ public class ESMigrationUtil {
 				//		new ESMappingAPIImpl().toJson(c)));
 
 			}
-			BulkResponse bulkResponse = bulkRequest.execute().actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS);
+			BulkResponse bulkResponse = bulkRequest.execute().actionGet();
 			if (bulkResponse.hasFailures()) {
 				Logger.error(this.getClass(), bulkResponse.buildFailureMessage());
 			}

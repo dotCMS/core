@@ -51,7 +51,6 @@ import java.text.DecimalFormatSymbols;
 import java.util.*;
 import java.util.Map.Entry;
 
-import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
 import static com.dotmarketing.business.PermissionAPI.*;
 
 
@@ -89,7 +88,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 		final ActionFuture<PutMappingResponse> lis = new ESClient().getClient().admin().indices()
 				.preparePutMapping().setIndices(indexName).setType(type)
 				.setSource(mapping, XContentType.JSON).execute();
-		return lis.actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS).isAcknowledged();
+		return lis.actionGet().isAcknowledged();
 	}
 
 	/**
@@ -105,7 +104,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 		final ActionFuture<PutMappingResponse> lis = new ESClient().getClient().admin().indices()
 				.preparePutMapping().setIndices(indexName).setType(type)
 				.setSource(mapping, XContentType.JSON).execute();
-		return lis.actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS).isAcknowledged();
+		return lis.actionGet().isAcknowledged();
 	}
 
 	/**
@@ -119,7 +118,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 	public  String getMapping(String index, String type) throws ElasticsearchException, IOException{
 
 		return new ESClient().getClient().admin().cluster().state(new ClusterStateRequest())
-				.actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS).getState().metaData().indices()
+				.actionGet().getState().metaData().indices()
 				.get(index).mapping(type).source().string();
 
 	}
