@@ -1,17 +1,18 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
+import { LoggerService } from './logger.service';
 import { Subject } from 'rxjs';
-import { Protocol } from '../util/protocol';
-import { SocketFactory } from '../socket-factory.service';
-import { DotEventTypeWrapper } from './model/dot-event-type-wrapper';
-import { DotEventData } from './model/dot-event-data';
+import { Protocol } from './util/protocol';
+import { SocketFactory } from './socket-factory.service';
+import { DotEventData, DotEventTypeWrapper } from './models';
 
 @Injectable()
 export class DotcmsEventsService {
     private socket: Protocol;
     private subjects: Subject<any>[] = [];
 
-    constructor(private socketFactory: SocketFactory) {}
+    constructor(private socketFactory: SocketFactory, private loggerService: LoggerService) {
+    }
 
     /**
      * Close the socket
@@ -26,6 +27,7 @@ export class DotcmsEventsService {
      * Start the socket
      */
     start(): void {
+        this.loggerService.debug('start DotcmsEventsService');
         if (!this.socket) {
             this.socketFactory.createSocket().subscribe((socket) => {
                 this.socket = socket;
@@ -36,9 +38,18 @@ export class DotcmsEventsService {
                             this.subjects[data.event] = new Subject();
                         }
                         this.subjects[data.event].next(data.payload);
+                    },
+                    (e) => {
+                        this.loggerService.debug(
+                            'Error in the System Events service: ' + e.message
+                        );
+                    },
+                    () => {
+                        this.loggerService.debug('Completed');
                     }
                 );
 
+                this.loggerService.debug('Connecting with socket');
                 socket.start();
             });
         }
