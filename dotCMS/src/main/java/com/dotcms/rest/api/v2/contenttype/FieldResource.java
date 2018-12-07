@@ -224,7 +224,7 @@ public class FieldResource implements Serializable {
 
                 if (!currentField.id().equals(field.id())) {
 
-                    throw new DotDataValidationException("Field id '"+ fieldId +"' does not match a field with id '"+ field.id() +"'");
+                    throw new DotDataValidationException("Field id '"+ field.id() +"' does not match a field with id '"+ currentField.id() +"'");
 
                 } else {
 
@@ -267,7 +267,7 @@ public class FieldResource implements Serializable {
 
                 if (!currentField.id().equals(field.id())) {
 
-                    throw new DotDataValidationException("Field var '"+ fieldVar +"' does not match a field with id '"+ field.id() +"'");
+                    throw new DotDataValidationException("Field id '"+ field.id() +"' does not match a field with id '"+ currentField.id() +"'");
 
                 } else {
 
