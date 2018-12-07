@@ -26,7 +26,7 @@ import org.junit.Test;
 /**
  * @author nollymar
  */
-public class ContentletTest {
+public class ContentletIntegrationTest {
 
     private static ContentTypeAPI contentTypeAPI;
     private static FieldAPI fieldAPI;
