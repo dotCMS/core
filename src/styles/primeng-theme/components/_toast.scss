@@ -2,13 +2,13 @@
 
 .ui-toast {
     .ui-toast-message {
-        background-color: $white;
-        border-radius: $border-radius;
+        background-color: $toast-bgcolor;
+        border-radius: $toast-border-radius;
         box-shadow: $md-shadow-1;
     }
 
     .ui-toast-message-content {
-        padding: $basic-padding * 2;
+        padding: $toast-padding;
     }
 
     .ui-toast-close-icon {

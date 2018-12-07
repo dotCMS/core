@@ -69,7 +69,7 @@ $toolbar-height: 48px;
             position: absolute;
             text-rendering: auto;
             top: 5px;
-            transition: transform 100ms ease-in;
+            transition: transform $basic-speed ease-in;
         }
 
         .ui-inputswitch-checked .ui-inputswitch-slider:after {
