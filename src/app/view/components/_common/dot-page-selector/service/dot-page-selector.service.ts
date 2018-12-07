@@ -1,6 +1,6 @@
-import {map, pluck, flatMap, toArray, switchMap, take} from 'rxjs/operators';
+import { map, pluck, flatMap, toArray, switchMap, take } from 'rxjs/operators';
 import { Injectable } from '@angular/core';
-import {Observable, of} from 'rxjs';
+import { Observable, of } from 'rxjs';
 import { RequestMethod } from '@angular/http';
 import { Site, ResponseView, CoreWebService } from 'dotcms-js';
 import {
@@ -105,14 +105,17 @@ export class DotPageSelectorService {
 
     private fullSearch(param: string): Observable<DotPageSelectorResults> {
         const host = this.parseUrl(param).host;
-        return this.getSites(host, true).pipe(take(1), switchMap( (results: DotPageSelectorResults) => {
-            if (results.data.length) {
-                this.setCurrentHost(<Site>results.data[0].payload);
-                return this.getPages(param);
-            } else {
-                return of(results);
-            }
-        }));
+        return this.getSites(host, true).pipe(
+            take(1),
+            switchMap((results: DotPageSelectorResults) => {
+                if (results.data.length) {
+                    this.setCurrentHost(<Site>results.data[0].payload);
+                    return this.getPages(param);
+                } else {
+                    return of(results);
+                }
+            })
+        );
     }
 
     private getEsResults(query: string): Observable<ResponseView> {
@@ -226,7 +229,7 @@ export class DotPageSelectorService {
     }
 
     private isSearchingForHost(query: string): boolean {
-        return query.startsWith('//'); // && !query.endsWith('/');
+        return query.startsWith('//');
     }
 
     private isTwoStepSearch(param): boolean {
@@ -247,14 +250,9 @@ export class DotPageSelectorService {
     }
 
     private shouldSearchPages(query: string): boolean {
-        // const parsedURL = this.parseUrl(query);
-        if (!this.isHostAndPath(query) || this.isReSearchingForHost(query)){
+        if (!this.isHostAndPath(query) || this.isReSearchingForHost(query)) {
             this.currentHost = null;
         }
-
-        // if (!parsedURL || this.isReSearchingForHost(query)) {
-        //     this.currentHost = null;
-        // }
 
         return !!(this.currentHost || !this.isSearchingForHost(query));
     }
