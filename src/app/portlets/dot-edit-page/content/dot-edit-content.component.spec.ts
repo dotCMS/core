@@ -325,7 +325,7 @@ describe('DotEditContentComponent', () => {
         expect(component.reload).toHaveBeenCalledTimes(1);
     });
 
-    describe("what's change", () => {
+    describe('what\'s change', () => {
         let viewAsToolbar: DebugElement;
 
         beforeEach(() => {

@@ -19,6 +19,7 @@ import { take } from 'rxjs/operators';
 
 export class DotCopyButtonComponent implements OnInit {
     @Input() copy = '';
+    @Input() label: string;
 
     i18nMessages: {
         [key: string]: string;
@@ -58,7 +59,9 @@ export class DotCopyButtonComponent implements OnInit {
      *
      * @memberof DotCopyButtonComponent
      */
-    copyUrlToClipboard(): void {
+    copyUrlToClipboard($event: MouseEvent): void {
+        $event.stopPropagation();
+
         this.dotClipboardUtil
             .copy(this.copy)
             .then(() => {

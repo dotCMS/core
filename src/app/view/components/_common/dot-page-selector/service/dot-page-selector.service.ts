@@ -90,7 +90,6 @@ export class DotPageSelectorService {
      * @memberof DotPageSelectorService
      */
     search(param: string): Observable<DotPageSelectorResults> {
-        debugger;
         if (this.isTwoStepSearch(param)) {
             return this.fullSearch(param);
         } else {
@@ -209,13 +208,11 @@ export class DotPageSelectorService {
     }
 
     private isHostAndPath(param: string): boolean {
-        debugger;
         const url: DotSimpleURL | { [key: string]: string } = this.parseUrl(param);
         return url && !!(url.host && url.pathname.length > 0);
     }
 
     private isReSearchingForHost(query: string): boolean {
-        debugger;
         return this.isSearchingForHost(query) && this.hostChanged(query);
     }
 
@@ -233,12 +230,10 @@ export class DotPageSelectorService {
     }
 
     private isTwoStepSearch(param): boolean {
-        debugger;
         return this.isHostAndPath(param) && (!this.currentHost || this.hostChanged(param));
     }
 
     private parseUrl(query: string): DotSimpleURL {
-        debugger;
         if (this.isSearchingForHost(query)) {
             try {
                 const url = new URL(`http:${query}`);
@@ -252,7 +247,6 @@ export class DotPageSelectorService {
     }
 
     private shouldSearchPages(query: string): boolean {
-        debugger;
         // const parsedURL = this.parseUrl(query);
         if (!this.isHostAndPath(query) || this.isReSearchingForHost(query)){
             this.currentHost = null;

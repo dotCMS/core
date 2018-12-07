@@ -41,8 +41,12 @@ dot-icon {
 }
 
 .field__name {
-    color: black;
-    line-height: $basic-padding * 3;
+    margin-right: $basic-padding / 2;
+}
+
+.field__name-inner {
+    align-items: center;
+    display: flex;
 }
 
 .field__name-wrapper {

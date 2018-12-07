@@ -1,20 +1,30 @@
 <dot-content-type-layout [contentTypeId]="data?.id" *ngIf="isEditMode()">
     <div class="content-type__edit-header" id="content-type-edit-header">
         <div class="content-type__form-header-left">
-
             <div class="content-type__edit-title">
-                <h4>{{ data.name }} </h4>
-                <div class="content-type__edit-subtitle">
-                    <span class="content-type__edit-variable">
-                        {{ messagesKey['contenttypes.content.variable'] }}: {{ data.variable }}
-                        <span class="content-type__edit-dot-separator">•</span> {{ messagesKey['contenttypes.form.identifier'] }}: {{ data.id }}
-                    </span>
-                    <dot-api-link href="/api/v1/contenttype/id/{{data.id}}"></dot-api-link>
-                </div>
+                <header>
+                    <h4>{{ data.name }}</h4>
+                    <dot-api-link href="api/v1/contenttype/id/{{data.id}}"></dot-api-link>
+                </header>
+            </div>
+
+            <div class="content-type__edit-info">
+                {{ messagesKey['contenttypes.content.variable'] }}:
+                <dot-copy-button [copy]="data.variable" [label]="data.variable"></dot-copy-button>
+                <span class="content-type__edit-dot-separator">•</span>
+                {{ messagesKey['contenttypes.form.identifier'] }}: {{ data.id }}
             </div>
         </div>
         <div class="content-type__edit-actions">
-            <button type="button" pButton secondary label="{{ messagesKey['contenttypes.action.edit'] }}" (click)="startFormDialog()" icon="fa fa-edit" id="form-edit-button"></button>
+            <button
+                type="button"
+                pButton
+                secondary
+                label="{{ messagesKey['contenttypes.action.edit'] }}"
+                (click)="startFormDialog()"
+                icon="fa fa-edit"
+                id="form-edit-button"
+            ></button>
             <dot-menu [float]="true" icon="add" [model]="contentTypeActions"></dot-menu>
         </div>
     </div>
@@ -22,7 +32,8 @@
         *ngIf="data.id"
         [fields]="fields"
         (saveFields)="saveFields($event)"
-        (removeFields)="removeFields($event)">
+        (removeFields)="removeFields($event)"
+    >
     </dot-content-type-fields-drop-zone>
 </dot-content-type-layout>
 
@@ -39,6 +50,7 @@
         [fields]="fields"
         [data]="data"
         (valid)="setDialogOkButtonState($event)"
-        (onSubmit)="handleFormSubmit($event)">
+        (onSubmit)="handleFormSubmit($event)"
+    >
     </dot-content-types-form>
 </dot-dialog>

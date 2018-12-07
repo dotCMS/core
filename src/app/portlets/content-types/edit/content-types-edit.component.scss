@@ -7,11 +7,7 @@
 }
 
 dot-api-link {
-    margin-left: $basic-padding * 2;
-}
-
-.content-type__api-link {
-    margin-left: $basic-padding * 2;
+    margin-left: $basic-padding;
 }
 
 .content-type__edit-header {
@@ -28,6 +24,12 @@ dot-api-link {
     font-size: $font-size-large;
     display: flex;
     flex-flow: column wrap;
+
+    header {
+        display: flex;
+        align-items: center;
+    }
+
     h4 {
         margin: 0;
         color: $black;
@@ -41,23 +43,24 @@ dot-api-link {
     vertical-align: middle;
 }
 
-.content-type__edit-subtitle {
+.content-type__edit-info {
     align-items: center;
     color: $gray;
     display: flex;
     font-size: $font-size-small;
+    margin-top: $basic-padding;
+
+    dot-copy-button {
+        margin-left: $basic-padding / 4;
+    }
+
 }
 
 .content-type__edit-actions {
     display: flex;
-    justify-content: flex-end;
-    align-self: center;
+    align-items: center;
 
     button {
         margin-right: $basic-padding;
-
-        &:last-child {
-            margin-right: 0;
-        }
     }
 }
