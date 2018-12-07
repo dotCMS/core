@@ -1,6 +1,6 @@
-import { map, pluck, flatMap, toArray, tap, switchMap } from 'rxjs/operators';
+import { map, pluck, flatMap, toArray, switchMap, take } from 'rxjs/operators';
 import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, of } from 'rxjs';
 import { RequestMethod } from '@angular/http';
 import { Site, ResponseView, CoreWebService } from 'dotcms-js';
 import {
@@ -105,12 +105,16 @@ export class DotPageSelectorService {
 
     private fullSearch(param: string): Observable<DotPageSelectorResults> {
         const host = this.parseUrl(param).host;
-
-        return this.getSites(host).pipe(
-            tap((results: DotPageSelectorResults) => {
-                 this.setCurrentHost(<Site>results.data[0].payload);
-            }),
-            switchMap(() => this.getPages(param))
+        return this.getSites(host, true).pipe(
+            take(1),
+            switchMap((results: DotPageSelectorResults) => {
+                if (results.data.length) {
+                    this.setCurrentHost(<Site>results.data[0].payload);
+                    return this.getPages(param);
+                } else {
+                    return of(results);
+                }
+            })
         );
     }
 
@@ -152,7 +156,9 @@ export class DotPageSelectorService {
     private getPagesSearchQuery(param: string): { [key: string]: {} } {
         const parsedUrl: DotSimpleURL = this.parseUrl(param);
 
-        let query = `${PAGE_BASE_TYPE_QUERY} +path:*${this.cleanPath(parsedUrl ? parsedUrl.pathname : param)}*`;
+        let query = `${PAGE_BASE_TYPE_QUERY} +path:*${this.cleanPath(
+            parsedUrl ? parsedUrl.pathname : param
+        )}*`;
 
         if (this.currentHost) {
             query += ` +conhostName:${this.currentHost.hostname}`;
@@ -175,8 +181,9 @@ export class DotPageSelectorService {
         };
     }
 
-    private getSites(param: string): Observable<DotPageSelectorResults> {
-        const query = `+contenttype:Host +host.hostName:*${this.getSiteName(param)}*`;
+    private getSites(param: string, specific?: boolean): Observable<DotPageSelectorResults> {
+        let query = '+contenttype:Host +host.hostName:';
+        query += specific ? this.getSiteName(param) : `*${this.getSiteName(param)}*`;
 
         return this.getEsResults(query).pipe(
             pluck('contentlets'),
@@ -214,16 +221,19 @@ export class DotPageSelectorService {
 
     private hostChanged(query: string): boolean {
         const parsedURL = this.parseUrl(query);
-        return this.currentHost && parsedURL && this.currentHost.hostname !== parsedURL.host;
+        return (
+            this.currentHost &&
+            parsedURL &&
+            this.currentHost.hostname.toLocaleLowerCase() !== parsedURL.host.toLocaleLowerCase()
+        );
     }
 
     private isSearchingForHost(query: string): boolean {
-        return query.startsWith('//') && !query.endsWith('/');
+        return query.startsWith('//');
     }
 
-
     private isTwoStepSearch(param): boolean {
-         return this.isHostAndPath(param) && ( !this.currentHost ||  this.hostChanged(param));
+        return this.isHostAndPath(param) && (!this.currentHost || this.hostChanged(param));
     }
 
     private parseUrl(query: string): DotSimpleURL {
@@ -240,8 +250,7 @@ export class DotPageSelectorService {
     }
 
     private shouldSearchPages(query: string): boolean {
-        const parsedURL = this.parseUrl(query);
-        if ( !parsedURL || this.isReSearchingForHost(query)) {
+        if (!this.isHostAndPath(query) || this.isReSearchingForHost(query)) {
             this.currentHost = null;
         }
 

@@ -51,6 +51,7 @@ export class DotPageSelectorComponent implements ControlValueAccessor {
     ) {
         this.dotMessageService
             .getMessages(['page.selector.no.sites.results', 'page.selector.no.page.results', 'page.selector.hint'])
+            .pipe(take(1))
             .subscribe();
     }
 
