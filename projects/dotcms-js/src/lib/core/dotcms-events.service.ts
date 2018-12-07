@@ -1,11 +1,10 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { LoggerService } from '../logger.service';
+import { LoggerService } from './logger.service';
 import { Subject } from 'rxjs';
-import { Protocol } from '../util/protocol';
-import { SocketFactory } from '../socket-factory.service';
-import { DotEventTypeWrapper } from './model/dot-event-type-wrapper';
-import { DotEventData } from './model/dot-event-data';
+import { Protocol } from './util/protocol';
+import { SocketFactory } from './socket-factory.service';
+import { DotEventData, DotEventTypeWrapper } from './models';
 
 @Injectable()
 export class DotcmsEventsService {

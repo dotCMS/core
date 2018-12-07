@@ -4,7 +4,7 @@ export * from './lib/core/browser-util.service';
 export * from './lib/core/core-web.service';
 export * from './lib/core/dot-router.service';
 export * from './lib/core/dotcms-config.service';
-export * from './lib/core/event';
+export * from './lib/core/dotcms-events.service';
 export * from './lib/core/file/file-search.service';
 export * from './lib/core/file/file.services';
 export * from './lib/core/logger.service';
@@ -45,6 +45,7 @@ export * from './lib/components/site-selector/site-selector.service';
 export * from './lib/components/site-treetable/site-treetable.service';
 
 // MODELS
+export * from './lib/core/models';
 export * from './lib/core/shared/user.model';
 export * from './lib/core/treeable/shared/folder.model';
 export * from './lib/core/util/settings.model';

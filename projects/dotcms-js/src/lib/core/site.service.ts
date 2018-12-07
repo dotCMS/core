@@ -4,8 +4,8 @@ import { Observable, Subject, of, merge } from 'rxjs';
 import { RequestMethod } from '@angular/http';
 import { pluck, map } from 'rxjs/operators';
 import { LoginService, Auth } from './login.service';
-import { DotcmsEventsService } from './event/dotcms-events.service';
 import { LoggerService } from './logger.service';
+import { DotcmsEventsService } from './dotcms-events.service';
 
 /**
  * Provide methods and data to hable the sites.
