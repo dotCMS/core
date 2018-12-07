@@ -226,8 +226,6 @@ public class FieldResource implements Serializable {
 
                     throw new DotDataValidationException("Field id '"+ fieldId +"' does not match a field with id '"+ field.id() +"'");
 
-                } else if(!currentField.variable().equals(field.variable())){
-                    throw new DotDataValidationException("Field variable can not be modified, please use the following: " + currentField.variable());
                 } else {
 
                     field = fieldAPI.save(field, user);
@@ -271,8 +269,6 @@ public class FieldResource implements Serializable {
 
                     throw new DotDataValidationException("Field var '"+ fieldVar +"' does not match a field with id '"+ field.id() +"'");
 
-                } else if(!currentField.variable().equals(field.variable())){
-                    throw new DotDataValidationException("Field variable can not be modified");
                 } else {
 
                     field = fieldAPI.save(field, user);
