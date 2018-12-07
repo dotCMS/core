@@ -8,6 +8,7 @@ import com.dotcms.repackage.com.fasterxml.jackson.databind.JsonSerializer;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.SerializerProvider;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRaw;
 import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRendered;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
@@ -35,7 +36,7 @@ public class HTMLPageAssetRendered extends PageView {
 
     public HTMLPageAssetRendered(final Host site,
                                  final Template template,
-                                 final Collection<ContainerRendered> containers,
+                                 final Collection<? extends ContainerRaw> containers,
                                  final HTMLPageAssetInfo page,
                                  final TemplateLayout layout,
                                  final String html,

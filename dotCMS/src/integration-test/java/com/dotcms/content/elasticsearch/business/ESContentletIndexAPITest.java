@@ -65,6 +65,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
 import static org.junit.Assert.*;
 
 /**
@@ -927,7 +928,7 @@ public class ESContentletIndexAPITest extends IntegrationTestBase {
             srb.addStoredField( "id" );
 
             try {
-                resp = srb.execute().actionGet();
+                resp = srb.execute().actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS);
             } catch ( SearchPhaseExecutionException e ) {
                 if ( e.getMessage().contains( "dotraw] in order to sort on" ) ) {
                     return new SearchHits( SearchHits.EMPTY, 0, 0 );

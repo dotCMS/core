@@ -19,6 +19,7 @@ import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
+import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.HashBasedTable;
@@ -148,6 +149,11 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
                                     final boolean liveMode) throws DotDataException, DotSecurityException {
 
         try {
+            final Template template = APILocator.getTemplateAPI().findWorkingTemplate(page.getTemplateId(), APILocator.getUserAPI().getSystemUser(), false);
+            if(!template.isDrawed()) {
+                return;
+            }
+
             final TemplateLayout layout = DotTemplateTool.themeLayout(page.getTemplateId(), APILocator.getUserAPI().getSystemUser(), false);
             final List<ContainerUUID> containersUUID = this.templateAPI.getContainersUUID(layout);
 

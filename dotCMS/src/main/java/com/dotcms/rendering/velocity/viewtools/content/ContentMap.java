@@ -37,6 +37,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.velocity.Template;
 import org.apache.velocity.app.VelocityEngine;
@@ -284,7 +285,9 @@ public class ContentMap {
 				return retMap;
 			} else if(f != null && f.getFieldType().equals(FieldType.RELATIONSHIP.toString())){
 				return perAPI.filterCollection((ArrayList) conAPI.getFieldValue(content, f),
-						PermissionAPI.PERMISSION_USE, true, user);
+						PermissionAPI.PERMISSION_USE, true, user).stream()
+						.map(contentlet -> new ContentMap((Contentlet) contentlet, user,
+								EDIT_OR_PREVIEW_MODE, host, context)).collect(Collectors.toList());
 			}
 
 			//ret could have been set by title

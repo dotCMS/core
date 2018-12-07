@@ -1,15 +1,27 @@
 package com.dotmarketing.portlets.htmlpageasset.business.render.page;
 
-import com.dotcms.business.CloseDB;
-import com.dotcms.cms.login.LoginServiceAPI;
+import java.util.Collection;
+import java.util.Optional;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.apache.velocity.context.Context;
+
+import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.rendering.velocity.directive.RenderParams;
 import com.dotcms.rendering.velocity.services.PageContextBuilder;
-import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.rendering.velocity.servlet.VelocityModeHandler;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
 import com.dotcms.visitor.domain.Visitor;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.business.*;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.LayoutAPI;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.PermissionLevel;
+import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -17,12 +29,12 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotLockException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
+import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRaw;
 import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRendered;
 import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRenderedBuilder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.personas.model.IPersona;
-import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Logger;
@@ -30,11 +42,6 @@ import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.VelocityUtil;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
-import org.apache.velocity.context.Context;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.util.*;
 
 /**
  * Builder of {@link HTMLPageAssetRendered}
@@ -88,6 +95,7 @@ public class HTMLPageAssetRenderedBuilder {
         return this;
     }
 
+    @CloseDBIfOpened
     public PageView build(final boolean rendered, final PageMode mode) throws DotDataException, DotSecurityException {
         final ContentletVersionInfo info = APILocator.getVersionableAPI().
                 getContentletVersionInfo(htmlPageAsset.getIdentifier(), htmlPageAsset.getLanguageId());
@@ -102,15 +110,15 @@ public class HTMLPageAssetRenderedBuilder {
         // (unless host is specified in the dotParse) github 14624
         final RenderParams params=new RenderParams(user,language, site, mode);
         request.setAttribute(RenderParams.RENDER_PARAMS_ATTRIBUTE, params);
-        
+        final User systemUser = APILocator.getUserAPI().getSystemUser();
         if (!rendered) {
-            final Collection<ContainerRendered> containers = this.containerRenderedBuilder.getContainers(template, mode);
+            final Collection<? extends ContainerRaw> containers =  new PageContextBuilder(htmlPageAssetInfo.getPage(), systemUser, mode).getContainersRaw();
             return new PageView(site, template, containers, htmlPageAssetInfo, layout);
         } else {
-            final User systemUser = APILocator.getUserAPI().getSystemUser();
+           
             final Context velocityContext  = new PageContextBuilder(htmlPageAssetInfo.getPage(), systemUser, mode)
                     .addAll(VelocityUtil.getWebContext(request, response));
-            final Collection<ContainerRendered> containers = this.containerRenderedBuilder.getContainersRendered(template,
+            final Collection<? extends ContainerRaw> containers = this.containerRenderedBuilder.getContainersRendered(htmlPageAssetInfo.getPage(),
                     velocityContext, mode);
             final boolean canCreateTemplates = layoutAPI.doesUserHaveAccessToPortlet("templates", user);
             final String pageHTML = this.getPageHTML();
@@ -123,7 +131,7 @@ public class HTMLPageAssetRenderedBuilder {
         }
     }
 
-    @CloseDB
+    @CloseDBIfOpened
     public String getPageHTML() throws DotSecurityException, DotDataException {
 
         final PageMode mode = PageMode.get(request);
