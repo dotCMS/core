@@ -1,11 +1,9 @@
 package com.dotmarketing.factories;
 
 
-import com.dotcms.business.CloseDB;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.rendering.velocity.services.PageLoader;
-
 import com.dotcms.util.transform.TransformerLocator;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
@@ -23,14 +21,18 @@ import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.util.Logger;
-
-import java.util.*;
-import java.util.stream.Collectors;
-
 import com.dotmarketing.util.PageMode;
+import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.Lists;
-import org.elasticsearch.cluster.routing.allocation.decider.Decision;
-import org.jetbrains.annotations.NotNull;
+import com.liferay.util.StringPool;
+import org.apache.commons.lang.StringUtils;
+
+import java.sql.SQLException;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static com.dotcms.util.CollectionsUtils.list;
 
@@ -47,8 +49,8 @@ import static com.dotcms.util.CollectionsUtils.list;
  */
 public class MultiTreeFactory {
 
-
-
+    static final String DELETE_ALL_MULTI_TREE_RELATED_TO_IDENTIFIER_SQL
+            = "delete from multi_tree where child = ? or parent1 = ? or parent2 = ?";
     static final String DELETE_SQL = "delete from multi_tree where parent1=? and parent2=? and child=? and  relation_type = ?";
     static final String DELETE_ALL_MULTI_TREE_SQL = "delete from multi_tree where parent1=? AND relation_type != ?";
     static final String SELECT_SQL =
@@ -57,7 +59,8 @@ public class MultiTreeFactory {
     static final String INSERT_SQL =
             "insert into multi_tree (parent1, parent2, child, relation_type, tree_order ) values (?,?,?,?,?)  ";
 
-    static final String SELECT_BY_ONE_PARENT = "select * from multi_tree where parent1 = ? or parent2 = ? order by tree_order";
+    static final String SELECT_BY_PAGE        = "select * from multi_tree where parent1 = ? order by tree_order";
+    static final String SELECT_BY_ONE_PARENT  = "select * from multi_tree where parent1 = ? or parent2 = ? order by tree_order";
     static final String SELECT_BY_TWO_PARENTS = "select * from multi_tree where parent1 = ? and parent2 = ?  order by tree_order";
     static final String SELECT_ALL = "select * from multi_tree  ";
     static final String SELECT_BY_CHILD = "select * from multi_tree where child = ?  order by parent1, parent2, relation_type ";
@@ -79,6 +82,27 @@ public class MultiTreeFactory {
         updateHTMLPageVersionTS(mTree.getHtmlPage());
         refreshPageInCache(mTree.getHtmlPage());
     }
+
+    public static void deleteMultiTreesRelatedToIdentifier(final String identifier) throws DotDataException {
+
+        final List<MultiTree> pagesRelatedList = getMultiTreesByPage(identifier);
+
+        new DotConnect().setSQL(DELETE_ALL_MULTI_TREE_RELATED_TO_IDENTIFIER_SQL)
+                .addParam(identifier)
+                .addParam(identifier)
+                .addParam(identifier)
+                .loadResult();
+
+        if (UtilMethods.isSet(pagesRelatedList)) {
+            for(final MultiTree multiTree : pagesRelatedList) {
+                updateHTMLPageVersionTS(multiTree.getHtmlPage());
+                refreshPageInCache(multiTree.getHtmlPage());
+            }
+        }
+    }
+
+
+
     public static void deleteMultiTree(final List<MultiTree> mTree) throws DotDataException {
         for(MultiTree tree : mTree) {
             deleteMultiTree(tree);
@@ -92,6 +116,7 @@ public class MultiTreeFactory {
     public static void deleteMultiTreeByChild(String contentIdentifier) throws DotDataException {
         deleteMultiTree(getMultiTreesByChild(contentIdentifier));
     }
+
     /**
      * Deletes multi-tree relationship given a MultiTree object. It also updates the version_ts of
      * all versions of the htmlpage passed in (multiTree.parent1)
@@ -101,13 +126,13 @@ public class MultiTreeFactory {
      * @throws DotSecurityException
      * 
      */
-    private static void _dbDelete(final MultiTree mTree) throws DotDataException {
+    private static void _dbDelete(final MultiTree multiTree) throws DotDataException {
 
-        DotConnect db = new DotConnect().setSQL(DELETE_SQL)
-            .addParam(mTree.getHtmlPage())
-            .addParam(mTree.getContainer())
-            .addParam(mTree.getContentlet())
-            .addParam(mTree.getRelationType());
+        final DotConnect db = new DotConnect().setSQL(DELETE_SQL)
+            .addParam(multiTree.getHtmlPage())
+            .addParam(multiTree.getContainer())
+            .addParam(multiTree.getContentlet())
+            .addParam(multiTree.getRelationType());
         db.loadResult();
 
     }
@@ -166,8 +191,22 @@ public class MultiTreeFactory {
     public static java.util.List<MultiTree> getMultiTrees(String parentInode) throws DotDataException {
 
         DotConnect db = new DotConnect().setSQL(SELECT_BY_ONE_PARENT)
-            .addParam(parentInode)
-            .addParam(parentInode);
+                .addParam(parentInode)
+                .addParam(parentInode);
+        return TransformerLocator.createMultiTreeTransformer(db.loadObjectResults()).asList();
+
+    }
+
+    /**
+     * Returns the tree with the pages that matched on the parent1
+     * @param parentInode
+     * @return
+     * @throws DotDataException
+     */
+    public static java.util.List<MultiTree> getMultiTreesByPage(final String parentInode) throws DotDataException {
+
+        final DotConnect db = new DotConnect().setSQL(SELECT_BY_PAGE)
+                .addParam(parentInode);
         return TransformerLocator.createMultiTreeTransformer(db.loadObjectResults()).asList();
 
     }
@@ -234,7 +273,7 @@ public class MultiTreeFactory {
     /**
      * Get a list of MultiTree for Contentlets using a specific Structure and specific Container
      * @param containerIdentifier
-     * @param structureIdentifier
+     * @param structureInode
      * @return List of MultiTree
      */
     public static List<MultiTree> getContainerStructureMultiTree(final String containerIdentifier, final String structureInode) {
@@ -271,9 +310,8 @@ public class MultiTreeFactory {
      * <li>The order in which this construct is added to the database.</li>
      * </ol>
      * 
-     * @param o - The multi-tree structure.
+     * @param mTrees - The multi-tree structure.
      * @throws DotDataException
-     * @throws DotSecurityException
      */
     @WrapInTransaction
     public static void saveMultiTrees(final List<MultiTree> mTrees) throws DotDataException {
@@ -430,8 +468,8 @@ public class MultiTreeFactory {
     /**
      * {link {@link #saveMultiTree(MultiTree)} The multitree does not respect language
      * @deprecated
-     * @param multiTreeEN
-     * @param english
+     * @param multiTree
+     * @param lang
      * @throws DotDataException
      */
     @Deprecated
@@ -449,5 +487,18 @@ public class MultiTreeFactory {
                 .addParam(containerId)
                 .addParam(oldRelationType)
                 .loadResult();
+    }
+
+    /**
+     * Removes the references to these inodes on child and parents.
+     * @param inodes
+     * @throws SQLException
+     */
+    public static void deleteMultiTreesForInodes(final List<String> inodes) throws  SQLException {
+
+        final String sInodeIds = StringUtils.join(inodes, StringPool.COMMA);
+        new DotConnect().
+                executeStatement("delete from multi_tree where child in (" + sInodeIds
+                + ") or parent1 in (" + sInodeIds + ") or parent2 in (" + sInodeIds + ")");
     }
 }

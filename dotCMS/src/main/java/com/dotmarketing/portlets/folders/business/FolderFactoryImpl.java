@@ -8,14 +8,7 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.beans.Inode.Type;
 import com.dotmarketing.beans.MultiTree;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.DotIdentifierStateException;
-import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.IdentifierAPI;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.Role;
-import com.dotmarketing.business.Treeable;
+import com.dotmarketing.business.*;
 import com.dotmarketing.cache.FolderCache;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -39,25 +32,13 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Hashtable;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
-import java.util.Stack;
-import java.util.StringTokenizer;
-import java.util.TimeZone;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.oro.text.regex.Pattern;
 import org.apache.oro.text.regex.Perl5Compiler;
 import org.apache.oro.text.regex.Perl5Matcher;
+
+import java.io.IOException;
+import java.util.*;
 
 /**
  *
@@ -830,22 +811,23 @@ public class FolderFactoryImpl extends FolderFactory {
 	/**
 	 * Checks if folder1 is child of folder2
 	 *
-	 * @param folder1
-	 * @param folder2
+	 * @param childFolder
+	 * @param parentFolderParam
 	 * @return
 	 * @throws DotDataException
 	 * @throws DotIdentifierStateException
 	 * @throws DotSecurityException
 	 */
-	protected boolean isChildFolder(Folder folder1, Folder folder2) throws  DotDataException, DotSecurityException {
-		Folder parentFolder = (Folder) APILocator.getFolderAPI().findParentFolder(folder1,APILocator.getUserAPI().getSystemUser(),false);
+	protected boolean isChildFolder(final Folder childFolder, final Folder parentFolderParam) throws  DotDataException, DotSecurityException {
+
+		final Folder parentFolder = APILocator.getFolderAPI().findParentFolder(childFolder,APILocator.getUserAPI().getSystemUser(),false);
 		if (parentFolder==null || !InodeUtils.isSet(parentFolder.getInode()))
 			return false;
 		else {
-			if (parentFolder.getInode().equalsIgnoreCase(folder2.getInode())) {
+			if (parentFolder.getInode().equalsIgnoreCase(parentFolderParam.getInode())) {
 				return true;
 			}
-			return isChildFolder(parentFolder, folder2);
+			return isChildFolder(parentFolder, parentFolderParam);
 		}
 	}
 

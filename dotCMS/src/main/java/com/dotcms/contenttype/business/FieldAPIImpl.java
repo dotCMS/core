@@ -47,6 +47,7 @@ import com.dotmarketing.business.PermissionLevel;
 import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotDataValidationException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.structure.model.Relationship;
@@ -110,7 +111,11 @@ public class FieldAPIImpl implements FieldAPI {
 	    	try {
 	    		oldField = fieldFactory.byId(field.id());
 
-	    		if (oldField.sortOrder() != field.sortOrder()){
+                if(!oldField.variable().equals(field.variable())){
+                    throw new DotDataValidationException("Field variable can not be modified, please use the following: " + oldField.variable());
+                }
+
+                if (oldField.sortOrder() != field.sortOrder()){
 	    		    if (oldField.sortOrder() > field.sortOrder()) {
                         fieldFactory.moveSortOrderForward(type.id(), field.sortOrder(), oldField.sortOrder());
                     } else {
@@ -131,6 +136,12 @@ public class FieldAPIImpl implements FieldAPI {
 	    		//Do nothing as Starter comes with id but field is unexisting yet
 	    	}
 	    }else {
+	        //This validation should only be for new fields, since the field velocity var name(variable) can not be modified
+            if(UtilMethods.isSet(field.variable()) && !field.variable().matches("^[a-zA-Z0-9]+")) {
+                final String errorMessage = "Field velocity var name "+ field.variable() +" contains characters not allowed, here is a suggestion of the variable: " + com.dotmarketing.util.StringUtils.camelCaseLower(field.variable());
+                Logger.error(this, errorMessage);
+                throw new DotDataValidationException(errorMessage);
+            }
             fieldFactory.moveSortOrderForward(type.id(), field.sortOrder());
         }
 
@@ -186,7 +197,7 @@ public class FieldAPIImpl implements FieldAPI {
      * @param field
      * @throws DotDataException
      */
-    private void validateRelationshipField(Field field) throws DotDataException {
+    private void validateRelationshipField(Field field) throws DotDataValidationException {
 
         String errorMessage = null;
         if (!field.indexed()){
@@ -206,7 +217,7 @@ public class FieldAPIImpl implements FieldAPI {
 
         if (errorMessage != null){
             Logger.error(this, errorMessage);
-            throw new DotDataException(errorMessage);
+            throw new DotDataValidationException(errorMessage);
         }
     }
 

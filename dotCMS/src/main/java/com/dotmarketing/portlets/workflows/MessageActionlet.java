@@ -1,6 +1,6 @@
 package com.dotmarketing.portlets.workflows;
 
-import com.dotcms.api.system.event.SystemMessageEventUtil;
+import com.dotcms.api.system.event.message.SystemMessageEventUtil;
 import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;
 import com.dotmarketing.portlets.workflows.model.MultiUserReferenceParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;

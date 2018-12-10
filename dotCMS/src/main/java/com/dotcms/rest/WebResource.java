@@ -455,7 +455,7 @@ public  class WebResource {
 
     }
 
-    protected static Map processJSON(InputStream input) throws JSONException, IOException {
+    public static Map processJSON(InputStream input) throws JSONException, IOException {
         HashMap<String,Object> map=new HashMap<String,Object>();
         JSONObject obj=new JSONObject(IOUtils.toString(input));
         Iterator<String> keys = obj.keys();
