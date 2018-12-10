@@ -219,7 +219,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
     public Container find(final String inode, final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 
 	    final  Identifier  identifier = APILocator.getIdentifierAPI().findFromInode(inode);
-        final Container container = this.isContainerFile(identifier)? // todo: ask if the working is ok?
+        final Container container = this.isContainerFile(identifier)?
 				this.getWorkingContainerByFolderPath(identifier.getParentPath(), identifier.getHostId(), user, respectFrontendRoles):
                 containerFactory.find(inode);
 
@@ -269,8 +269,15 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
     public Container getContainerByFolder(final Folder folder, final User user, final boolean showLive) throws DotSecurityException, DotDataException {
 
 		final Host host = this.hostAPI.find(folder.getHostId(), user, false);
-	    return this.containerFactory.getContainerByFolder(host, folder, user, showLive);
-    } // todo: create the getContainerByFolder including the host as parameter
+	    return this.getContainerByFolder(folder, host, user, showLive);
+    }
+
+	@CloseDBIfOpened
+	@Override
+	public Container getContainerByFolder(final Folder folder, final Host host, final User user, final boolean showLive) throws DotSecurityException, DotDataException {
+
+		return this.containerFactory.getContainerByFolder(host, folder, user, showLive);
+	}
 
     private Container getWorkingVersionInfoContainerById(final String id, final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 
@@ -580,14 +587,11 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 	@CloseDBIfOpened
 	@Override
 	public List<Container> findAllContainers(final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
-		RoleAPI roleAPI = APILocator.getRoleAPI();
-		if ((user != null)
-				&& roleAPI.doesUserHaveRole(user, roleAPI.loadCMSAdminRole())) {
-			return containerFactory.findAllContainers();
-		} else {
-
-			return containerFactory.findContainers(user, false, null, null, null,null, null, 0, -1, "title ASC");
-		}
+		final RoleAPI roleAPI = APILocator.getRoleAPI();
+		return (user != null
+				&& roleAPI.doesUserHaveRole(user, roleAPI.loadCMSAdminRole()))?
+			this.containerFactory.findAllContainers():
+			this.containerFactory.findContainers(user, false, null, null, null,null, null, 0, -1, "title ASC");
 	}
 
 	@CloseDBIfOpened
@@ -611,7 +615,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 	@Override
 	public List<Container> findContainersForStructure(final String structureInode,
 			final boolean workingOrLiveOnly) throws DotDataException {
-		return containerFactory.findContainersForStructure(structureInode, workingOrLiveOnly); // todo: add here the containers file based
+		return containerFactory.findContainersForStructure(structureInode, workingOrLiveOnly);
 	}
 
 	@Override
