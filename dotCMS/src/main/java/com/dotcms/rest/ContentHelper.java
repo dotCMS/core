@@ -21,7 +21,7 @@ import java.util.Set;
 public class ContentHelper {
 
     //This set contains all the properties that we want to prevent from making it to the final hydrated contentlet
-    private static final Set<String> privateInternalProperties = ImmutableSet.of(Contentlet.NULL_PROPERTIES);
+    private static final Set<String> privateInternalProperties = ImmutableSet.of(Contentlet.NULL_PROPERTIES, Contentlet.DISABLE_WORKFLOW, Contentlet.DONT_VALIDATE_ME, Contentlet.LAST_REVIEW_KEY, Contentlet.REVIEW_INTERNAL_KEY, Contentlet.DISABLED_WYSIWYG_KEY);
 
     private final MapToContentletPopulator mapToContentletPopulator;
     private final IdentifierAPI identifierAPI;
