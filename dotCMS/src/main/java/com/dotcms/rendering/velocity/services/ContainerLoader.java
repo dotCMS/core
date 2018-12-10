@@ -51,13 +51,14 @@ public class ContainerLoader implements DotLoader {
 
     @Override
     public void invalidate(Object obj, PageMode mode) {
-        Container container = (Container) obj;
+        final Container container = (Container) obj;
 
+        final VelocityResourceKey key =
+                new VelocityResourceKey(container, mode);
+        final DotResourceCache    veloctyResourceCache =
+                CacheLocator.getVeloctyResourceCache();
 
-          VelocityResourceKey key = new VelocityResourceKey(container, mode);
-            DotResourceCache vc = CacheLocator.getVeloctyResourceCache();
-            vc.remove(key);
-
+        veloctyResourceCache.remove(key);
     }
 
     private InputStream buildVelocity(Container container, String uuid, PageMode mode, String filePath) throws DotDataException, DotSecurityException {
