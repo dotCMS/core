@@ -27,7 +27,7 @@ public class LowerKeyMap<V> extends MapWrapper<String, V> implements Map<String,
     }
 
     @Override
-    public void putAll(@NotNull final Map<? extends String, ? extends V> m) {
+    public final void putAll(@NotNull final Map<? extends String, ? extends V> m) {
 
         for (final Map.Entry<? extends String, ? extends V> e : m.entrySet()) {
 
