@@ -1,18 +1,19 @@
 package com.dotcms.util;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import com.dotcms.repackage.javax.validation.constraints.NotNull;
+import java.io.Serializable;
 
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
+import org.elasticsearch.common.Nullable;
 
-public class MapWrapper<K,V> implements Map<K,V> {
+public class MapWrapper<K,V> implements Map<K,V>, Serializable {
 
     private final Map<K,V> delegate;
 
 
-    public MapWrapper(Map<K, V> delegate) {
+    public MapWrapper(final Map<K, V> delegate) {
         this.delegate = delegate;
     }
 
@@ -27,33 +28,33 @@ public class MapWrapper<K,V> implements Map<K,V> {
     }
 
     @Override
-    public boolean containsKey(Object key) {
+    public boolean containsKey(final Object key) {
         return this.delegate.containsKey(key);
     }
 
     @Override
-    public boolean containsValue(Object value) {
+    public boolean containsValue(final Object value) {
         return this.delegate.containsValue(value);
     }
 
     @Override
-    public V get(Object key) {
+    public V get(final Object key) {
         return this.delegate.get(key);
     }
 
     @Nullable
     @Override
-    public V put(K key, V value) {
+    public V put(final K key, final V value) {
         return delegate.put(key, value);
     }
 
     @Override
-    public V remove(Object key) {
+    public V remove(final Object key) {
         return delegate.remove(key);
     }
 
     @Override
-    public void putAll(@NotNull Map<? extends K, ? extends V> m) {
+    public void putAll(@NotNull final Map<? extends K, ? extends V> m) {
         delegate.putAll(m);
     }
 
