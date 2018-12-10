@@ -7,15 +7,19 @@ import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.*;
 import com.dotcms.contenttype.model.type.*;
 import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.FolderDataGen;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.PermissionLevel;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
@@ -52,7 +56,8 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 			ContentType contentType = contentTypeApi.find(type.id());
 			ContentType contentType2 = contentTypeApi.find(type.variable());
 			try {
-				assertThat("ContentType == ContentType2", contentType.equals(contentType2) && contentType.equals(type));
+				assertThat("Content Type By ID: " + contentType + " is not the same as Content Type By Variable: " + contentType2 + " or not the same as Type: " + type,
+						contentType.equals(contentType2) && contentType.equals(type));
 			} catch (Throwable t) {
 
 				throw t;
@@ -482,7 +487,7 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 
 		final PermissionAPI permAPI = Mockito.spy(APILocator.getPermissionAPI());
 		Mockito.doReturn(true).when(permAPI).doesUserHavePermissions(contentGenericType.getParentPermissionable(),
-				"PARENT:" + PermissionAPI.PERMISSION_CAN_ADD_CHILDREN + ", STRUCTURES:" + PermissionAPI.PERMISSION_PUBLISH,
+				"PARENT:" + PermissionAPI.PERMISSION_CAN_ADD_CHILDREN + ", STRUCTURES:" + PermissionAPI.PERMISSION_EDIT_PERMISSIONS,
 				limitedUserEditPermsPermOnCT);
 
 		contentTypeAPI = new ContentTypeAPIImpl(limitedUserEditPermsPermOnCT, false, FactoryLocator.getContentTypeFactory(),
@@ -639,6 +644,62 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 		} finally {
 			restorePermissionsForUser(limitedUser, existingPermissions);
 			contentTypeApi.delete(newType);
+		}
+		assertTrue(testCase.shouldExecuteAction);
+	}
+
+	@DataProvider
+	public static Object[] testCasesSaveContentTypePermissions() {
+		return new Object[] {
+				new TestCaseUpdateContentTypePermissions(PermissionAPI.PERMISSION_EDIT_PERMISSIONS, true),
+				new TestCaseUpdateContentTypePermissions(PermissionAPI.PERMISSION_PUBLISH, false),
+				new TestCaseUpdateContentTypePermissions(PermissionAPI.PERMISSION_EDIT, false),
+				new TestCaseUpdateContentTypePermissions(PermissionAPI.PERMISSION_READ, false)
+		};
+	}
+
+	@Test
+	@UseDataProvider("testCasesSaveContentTypePermissions")
+	public void testSaveContentTypeLimitedUserPermissions(final TestCaseUpdateContentTypePermissions testCase)
+			throws DotDataException, DotSecurityException{
+	    //Create Folder
+		final Folder folder = new FolderDataGen().host(APILocator.systemHost()).nextPersisted();
+
+		//Create Content Type
+		long time = System.currentTimeMillis();
+
+		ContentType contentType = ContentTypeBuilder.builder(BaseContentType.getContentTypeClass(BaseContentType.CONTENT.ordinal()))
+				.description("ContentTypeSave " + time).name("ContentTypeSave " + time).folder(folder.getInode())
+				.owner(APILocator.systemUser().toString()).variable("CTVariable" + time).build();
+
+		//Get Limited User
+		final User limitedUserEditPermsPermOnCT = APILocator.getUserAPI().loadUserById("dotcms.org.2795",
+				APILocator.systemUser(), false);
+
+		final PermissionAPI permAPI = Mockito.spy(APILocator.getPermissionAPI());
+		Mockito.doReturn(true).when(permAPI).doesUserHavePermissions(folder,
+				"PARENT:" + PermissionAPI.PERMISSION_CAN_ADD_CHILDREN + ", STRUCTURES:" + testCase.permissions,
+				limitedUserEditPermsPermOnCT);
+		//Give READ PERMISSIONS to the folder
+		Permission readPermissions = new Permission(folder.getPermissionId(),
+				APILocator.getRoleAPI().getUserRole(limitedUserEditPermsPermOnCT).getId(), PermissionAPI.PERMISSION_READ );
+		APILocator.getPermissionAPI().save( readPermissions, folder, user, false );
+
+		ContentTypeAPI contentTypeAPI = new ContentTypeAPIImpl(limitedUserEditPermsPermOnCT, false, FactoryLocator.getContentTypeFactory(),
+				FactoryLocator.getFieldFactory(), permAPI, APILocator.getContentTypeFieldAPI());
+		//Try to Save Content Type
+		try{
+			contentType = contentTypeAPI.save(contentType);
+		}catch (DotSecurityException e){
+			assertFalse(e.getMessage(), testCase.shouldExecuteAction);
+			return;
+		}finally {
+			if(UtilMethods.isSet(contentType.id())) {
+				//Delete content Type
+				contentTypeApi.delete(contentType);
+			}
+			//Delete folder
+			APILocator.getFolderAPI().delete(folder,user,false);
 		}
 		assertTrue(testCase.shouldExecuteAction);
 	}
@@ -999,6 +1060,21 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 	public void testPersonaContentTypeWithPublishExpireFields() throws Exception{
 		int base = BaseContentType.PERSONA.ordinal();
         createContentTypeWithPublishExpireFields(base);
+	}
+
+	@Test
+	public void testSave_GivenFixedTrueAndHostDifferentThanSYSTEMHOST_HostShouldBeSYSTEMHOST()
+			throws DotDataException, DotSecurityException {
+
+		final ContentType languageVariableType = contentTypeApi.find("Languagevariable");
+		final List<Field> fields = languageVariableType.fields();
+		final ContentType languageVariableTypeWithAnotherHost =
+				ContentTypeBuilder.builder(languageVariableType).host("ANY-OTHER-HOST").build();
+		languageVariableTypeWithAnotherHost.constructWithFields(fields);
+
+		final ContentType savedLanguagaVariableType = contentTypeApi.save(languageVariableTypeWithAnotherHost);
+		assertEquals(savedLanguagaVariableType.host(), Host.SYSTEM_HOST);
+		assertEquals(fields, savedLanguagaVariableType.fields());
 	}
 	
 	private void createContentTypeWithPublishExpireFields(int base) throws Exception{

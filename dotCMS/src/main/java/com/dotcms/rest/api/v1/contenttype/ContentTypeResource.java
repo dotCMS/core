@@ -49,8 +49,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
@@ -97,7 +99,7 @@ public class ContentTypeResource implements Serializable {
 		Response response = null;
 
 		try {
-			Logger.debug(this, String.format("Saving new content type", form.getRequestJson()));
+			Logger.debug(this, String.format("Saving new content type '%s' ", form.getRequestJson()));
 			final HttpSession session = req.getSession(false);
 			final Iterable<ContentTypeForm.ContentTypeFormEntry> typesToSave = form.getIterable();
 			final List<Map<Object, Object>> retTypes = new ArrayList<>();
@@ -105,7 +107,7 @@ public class ContentTypeResource implements Serializable {
 			// Validate input
 			for (final ContentTypeForm.ContentTypeFormEntry entry : typesToSave) {
 				final ContentType type = entry.contentType;
-				final List<String> workflowsIds = entry.workflowsIds;
+				final Set<String> workflowsIds = new HashSet<>(entry.workflowsIds);
 
 				if (UtilMethods.isSet(type.id()) && !UUIDUtil.isUUID(type.id())) {
 					return ExceptionMapperUtil.createResponse(null, "ContentType 'id' if set, should be a uuid");
@@ -135,7 +137,7 @@ public class ContentTypeResource implements Serializable {
 			throw new ForbiddenException(e);
 
 		} catch (Exception e) {
-
+			Logger.error(this, e.getMessage(), e);
 			response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
 		}
 
@@ -179,7 +181,7 @@ public class ContentTypeResource implements Serializable {
 
 					contentType = capi.save(contentType);
 
-					final List<String> workflowsIds = form.getWorkflowsIds();
+					final Set<String> workflowsIds = new HashSet<>(form.getWorkflowsIds());
 					workflowHelper.saveSchemesByContentType(id, user, workflowsIds);
 
 					ImmutableMap<Object, Object> responseMap = ImmutableMap.builder()

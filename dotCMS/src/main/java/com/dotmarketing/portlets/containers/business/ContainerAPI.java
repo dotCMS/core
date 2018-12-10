@@ -1,20 +1,20 @@
 package com.dotmarketing.portlets.containers.business;
 
 import com.dotcms.contenttype.model.type.ContentType;
-
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.liferay.portal.model.User;
 
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import com.liferay.portal.model.User;
 
 /**
  * Provides access to the information of {@link Container} objects in dotCMS.
@@ -29,6 +29,10 @@ import com.liferay.portal.model.User;
  *
  */
 public interface ContainerAPI {
+
+	public static final String PRE_LOOP             = ContainerByFolderAssetsUtil.PRE_LOOP;
+	public static final String POST_LOOP            = ContainerByFolderAssetsUtil.POST_LOOP;
+	public static final String CONTAINER_META_INFO  = ContainerByFolderAssetsUtil.CONTAINER_META_INFO;
 
 	/**
 	 * Copies container to the specified host
@@ -46,7 +50,7 @@ public interface ContainerAPI {
 	/**
 	 * Returns the working container by the id
 	 *
-	 * @param id
+	 * @param identifier
 	 * @param user
 	 * @param respectFrontendRoles
 	 * @return Container
@@ -56,9 +60,43 @@ public interface ContainerAPI {
 	public Container getWorkingContainerById(String identifier, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
 	/**
+	 * Returns the Container based on the folder; this method is mostly used when the container is file asset based.
+	 *
+	 * @param folder
+	 * @param showLive true if wants the live, false if wants the working
+	 * @return Container
+	 * @throws DotSecurityException
+	 * @throws DotDataException
+	 */
+	Container getContainerByFolder(final Folder folder, final User user, final boolean showLive) throws DotSecurityException, DotDataException;
+
+	/**
+	 * Returns the working container by path and host; this method is mostly used when the container is file asset based.
+	 * @param path
+	 * @param host
+	 * @param user
+	 * @param respectFrontEndPermissions
+	 * @return Container
+	 * @throws DotSecurityException
+	 * @throws DotDataException
+	 */
+	Container getWorkingContainerByFolderPath(final String path, final Host host, final User user, final boolean respectFrontEndPermissions) throws DotSecurityException, DotDataException;
+
+	/**
+	 * Returns the live container by path and host; this method is mostly used when the container is file asset based.
+	 * @param path
+	 * @param host
+	 * @param user
+	 * @param respectFrontEndPermissions
+	 * @return Container
+	 * @throws DotSecurityException
+	 * @throws DotDataException
+	 */
+	Container getLiveContainerByFolderPath(final String path, final Host host, final User user, final boolean respectFrontEndPermissions) throws DotSecurityException, DotDataException;
+	/**
 	 * Returns the live container by the id
 	 *
-	 * @param id
+	 * @param identifier
 	 * @param user
 	 * @param respectFrontendRoles
 	 * @return Container
@@ -73,13 +111,12 @@ public interface ContainerAPI {
 	 * Retrieves a list of container-structure relationships by container
 	 *
 	 * @param container
-	 * @return
+	 * @return List of ContainerStructure
 	 * @throws DotSecurityException
 	 * @throws DotDataException
 	 * @throws DotStateException
 	 *
 	 */
-
 	public List<ContainerStructure> getContainerStructures(Container container) throws DotStateException, DotDataException, DotSecurityException;
 
 	/**
@@ -87,7 +124,7 @@ public interface ContainerAPI {
 	 * Retrieves the list of structures related to the given container
 	 *
 	 * @param container
-	 * @return
+	 * @return List of Structure
 	 * @throws DotSecurityException
 	 * @throws DotDataException
 	 * @throws DotStateException
@@ -100,7 +137,6 @@ public interface ContainerAPI {
 	 * saves a list of container-structure relationships
 	 *
 	 * @param containerStructureList
-	 * @return
 	 * @throws DotSecurityException
 	 * @throws DotDataException
 	 * @throws DotStateException
@@ -113,7 +149,6 @@ public interface ContainerAPI {
 	 * Deletes the container-structure relationships for the given container identifier. Inode does not matter.
 	 *
 	 * @param container
-	 * @return
 	 * @throws DotSecurityException
 	 * @throws DotDataException
 	 * @throws DotStateException
@@ -139,7 +174,7 @@ public interface ContainerAPI {
 
 	/**
 	 * Retrieves all the containers attached to the given host
-	 * @param parentPermissionable
+	 * @param parentHost
 	 * @author David H Torres
 	 * @return
 	 * @throws DotDataException
@@ -149,7 +184,8 @@ public interface ContainerAPI {
 
 	/**
 	 * Retrieves the list of all containers in the system
-	 * @param parentPermissionable
+	 * @param user
+	 * @param respectFrontendRoles
 	 * @return
 	 * @throws DotDataException
 	 * @throws DotSecurityException
@@ -160,7 +196,7 @@ public interface ContainerAPI {
 	 * Save container
 	 *
 	 * @param container
-	 * @param structure
+	 * @param containerStructureList
 	 * @param host
 	 * @param user
 	 * @param respectFrontendRoles

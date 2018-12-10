@@ -1,5 +1,9 @@
 package com.dotcms.contenttype.transform.field;
 
+import static com.dotcms.util.CollectionsUtils.map;
+
+import com.dotcms.contenttype.model.field.ContentTypeFieldProperties;
+import com.dotcms.contenttype.model.field.ImmutableRelationshipField;
 import com.dotmarketing.util.UtilMethods;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -27,6 +31,7 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 public class JsonFieldTransformer implements FieldTransformer, JsonTransformer {
 
   private static final String CATEGORIES_PROPERTY_NAME = "categories";
+  private static final String VALUES = "values";
 
   final List<Field> list;
 
@@ -101,8 +106,12 @@ public class JsonFieldTransformer implements FieldTransformer, JsonTransformer {
       JSONObject jo = new JSONObject(input);
 
       if (jo.has(CATEGORIES_PROPERTY_NAME)){
-        final Object categories = jo.get(CATEGORIES_PROPERTY_NAME);
-        jo.put("values", categories);
+          final JSONObject categories = (JSONObject) jo.get(CATEGORIES_PROPERTY_NAME);
+          jo.put(VALUES, categories.get("inode"));
+      } else if (jo.has(ContentTypeFieldProperties.RELATIONSHIPS.getName())) {
+          final JSONObject relationship = (JSONObject) jo.get(ContentTypeFieldProperties.RELATIONSHIPS.getName());
+          jo.put(VALUES, relationship.get("cardinality"));
+          jo.put("relationType", relationship.get("velocityVar"));
       }
 
       return (Field) mapper.readValue(jo.toString(), Field.class);
@@ -157,7 +166,7 @@ public class JsonFieldTransformer implements FieldTransformer, JsonTransformer {
 
       if (ImmutableCategoryField.class.getName().equals(field.get("clazz"))) {
         try {
-          final Object values = field.get("values");
+          final Object values = field.get(VALUES);
           if (UtilMethods.isSet(values)) {
             final Category category = APILocator.getCategoryAPI()
                     .find(values.toString(), APILocator.getLoginServiceAPI().getLoggedInUser(),
@@ -172,6 +181,13 @@ public class JsonFieldTransformer implements FieldTransformer, JsonTransformer {
         } catch (final DotSecurityException e) {
           Logger.error(JsonFieldTransformer.class, e.getMessage());
         }
+      } else if (ImmutableRelationshipField.class.getName().equals(field.get("clazz"))) {
+        final String cardinality = field.get(VALUES).toString();
+        final String relationType = field.get("relationType").toString();
+
+        field.put(ContentTypeFieldProperties.RELATIONSHIPS.getName(), map(
+            "cardinality", Integer.parseInt(cardinality), "velocityVar", relationType
+        ));
       }
 
       return field;

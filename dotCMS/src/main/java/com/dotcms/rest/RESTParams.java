@@ -13,7 +13,8 @@ public enum RESTParams {
 	LIVE ("live"),
 	LANGUAGE ("language"),
     CALLBACK ("callback"),
-	INODE ("inode");
+	INODE ("inode"),
+	RESPECT_FRONT_END_ROLES ("respectFrontendRoles");
 
 	private final String  value;
 

@@ -13,9 +13,9 @@ import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Relationship;
 
 import com.dotmarketing.portlets.structure.transform.ContentletRelationshipsTransformer;
-import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import java.util.List;
+import java.util.Optional;
 import java.util.Map;
 
 // THIS IS A FAKE API SO PEOPLE CAN FIND AND USE THE RELATIONSHIPFACTORY
@@ -41,6 +41,25 @@ public class RelationshipAPIImpl implements RelationshipAPI {
 
     @CloseDBIfOpened
     @Override
+    public Relationship byTypeValue(final String typeValue) {
+        return this.relationshipFactory.byTypeValue(typeValue);
+    }
+
+    @CloseDBIfOpened
+    @Override
+    public Optional<Relationship> byParentChildRelationName(final ContentType contentType,
+            final String relationName) {
+        return this.relationshipFactory.byParentChildRelationName(contentType, relationName);
+    }
+
+    @CloseDBIfOpened
+    @Override
+    public List<Relationship> dbAllByTypeValue(final String typeValue) {
+        return this.relationshipFactory.dbAllByTypeValue(typeValue);
+    }
+
+    @CloseDBIfOpened
+    @Override
     public List<Relationship> byParent(ContentTypeIf parent) throws DotDataException {
         return this.relationshipFactory.byParent(parent);
     }
@@ -49,12 +68,6 @@ public class RelationshipAPIImpl implements RelationshipAPI {
     @Override
     public List<Relationship> byChild(ContentTypeIf child) throws DotDataException {
         return this.relationshipFactory.byChild(child);
-    }
-
-    @CloseDBIfOpened
-    @Override
-    public Relationship byTypeValue(String typeValue) {
-        return this.relationshipFactory.byTypeValue(typeValue);
     }
 
     @CloseDBIfOpened
@@ -122,7 +135,6 @@ public class RelationshipAPIImpl implements RelationshipAPI {
     @WrapInTransaction
     @Override
     public void save(Relationship relationship) throws DotDataException {
-        checkReadOnlyFields(relationship, relationship.getInode());
         this.relationshipFactory.save(relationship);
     }
 
@@ -207,6 +219,12 @@ public class RelationshipAPIImpl implements RelationshipAPI {
     public List<Relationship> getOneSidedRelationships(final ContentType contentType,
             final int limit, final int offset) throws DotDataException {
         return this.relationshipFactory.getOneSidedRelationships(contentType, limit, offset);
+    }
+
+    @CloseDBIfOpened
+    @Override
+    public long getOneSidedRelationshipsCount(final ContentType contentType) throws DotDataException {
+        return this.relationshipFactory.getOneSidedRelationshipsCount(contentType);
     }
 
     @Override

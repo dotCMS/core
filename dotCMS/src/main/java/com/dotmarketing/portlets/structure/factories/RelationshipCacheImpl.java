@@ -1,5 +1,7 @@
 package com.dotmarketing.portlets.structure.factories;
 
+import com.dotmarketing.util.UtilMethods;
+import java.util.Collections;
 import java.util.List;
 
 import com.dotcms.contenttype.model.type.ContentTypeIf;
@@ -43,33 +45,41 @@ public class RelationshipCacheImpl extends RelationshipCache {
 	}
 	@Override
 	public List<Relationship> getRelationshipsByStruct(ContentTypeIf struct) throws DotCacheException {
-		
-		return (List<Relationship>) cache.get("STRUCT" + struct.id(), primaryGroup);
+
+		return UtilMethods.isSet(struct) ? (List<Relationship>) cache
+				.get("STRUCT" + struct.id(), primaryGroup) : Collections.emptyList();
 		
 	}
 	@Override
 	public List<Relationship> getRelationshipsByType(ContentTypeIf type) throws DotCacheException {
-		
-		return (List<Relationship>) cache.get("STRUCT" + type.id(), primaryGroup);
+
+		return UtilMethods.isSet(type) ? (List<Relationship>) cache
+				.get("STRUCT" + type.id(), primaryGroup) : Collections.emptyList();
 		
 	}
 	@Override
 	public void putRelationshipsByStruct(ContentTypeIf struct, List<Relationship> rels)  {
-		
-		cache.put("STRUCT" + struct.id(), ImmutableList.copyOf(rels), primaryGroup);
+		if (UtilMethods.isSet(struct)) {
+			cache.put("STRUCT" + struct.id(), ImmutableList.copyOf(rels), primaryGroup);
+		}
 	}
 	@Override
 	public void putRelationshipsByType(ContentTypeIf type, List<Relationship> rels)  {
-		
-		cache.put("STRUCT" + type.id(), ImmutableList.copyOf(rels), primaryGroup);
+		if (UtilMethods.isSet(type)) {
+			cache.put("STRUCT" + type.id(), ImmutableList.copyOf(rels), primaryGroup);
+		}
 	}
 	@Override
 	public void removeRelationshipsByStruct(ContentTypeIf struct)  {
-		cache.remove("STRUCT" + struct.id(), primaryGroup);
+		if (UtilMethods.isSet(struct)) {
+			cache.remove("STRUCT" + struct.id(), primaryGroup);
+		}
 	}
 	@Override
 	public void removeRelationshipsByType(ContentTypeIf type)  {
-		cache.remove("STRUCT" + type.id(), primaryGroup);
+		if (UtilMethods.isSet(type)) {
+			cache.remove("STRUCT" + type.id(), primaryGroup);
+		}
 	}
 	
 	@Override

@@ -409,6 +409,10 @@ public class ContentResource {
         final String limitStr = paramsMap.get(RESTParams.LIMIT.getValue());
         final String offsetStr = paramsMap.get(RESTParams.OFFSET.getValue());
         final String inode = paramsMap.get(RESTParams.INODE.getValue());
+        final String respectFrontEndRolesKey = RESTParams.RESPECT_FRONT_END_ROLES.getValue().toLowerCase();
+        final boolean respectFrontendRoles = UtilMethods.isSet(paramsMap.get(respectFrontEndRolesKey))
+                ? Boolean.valueOf(paramsMap.get(respectFrontEndRolesKey))
+                : true;
         final long language = toLong(paramsMap.get(RESTParams.LANGUAGE.getValue()),
                 () -> APILocator.getLanguageAPI().getDefaultLanguage().getId());
         /* Limit and Offset Parameters Handling, if not passed, using default */
@@ -435,12 +439,12 @@ public class ContentResource {
             if (idPassed = UtilMethods.isSet(id)) {
                 Optional.ofNullable(
                         this.contentHelper.hydrateContentLet(APILocator.getContentletAPI()
-                                .findContentletByIdentifier(id, live, language, user, true)))
+                                .findContentletByIdentifier(id, live, language, user, respectFrontendRoles)))
                         .ifPresent(contentlets::add);
             } else if (inodePassed = UtilMethods.isSet(inode)) {
                 Optional.ofNullable(
                         this.contentHelper.hydrateContentLet(APILocator.getContentletAPI()
-                                .find(inode, user, true)))
+                                .find(inode, user, respectFrontendRoles)))
                         .ifPresent(contentlets::add);
             } else if (queryPassed = UtilMethods.isSet(query)) {
                 String tmDate = (String) request.getSession().getAttribute("tm_date");
@@ -448,8 +452,6 @@ public class ContentResource {
                 contentlets = ContentUtils.pull(luceneQuery, offset, limit, orderBy, user, tmDate);
             }
 
-            status = (null == contentlets || contentlets.isEmpty()) ?
-                    Optional.of(Status.NOT_FOUND) : status;
         } catch (DotSecurityException e) {
 
             Logger.debug(this, "Permission error: " + e.getMessage(), e);

@@ -738,6 +738,8 @@ ALTER TABLE [dbo].[QRTZ_EXCL_TRIGGERS] ADD
   )
 GO
 
+create index IDX_QRTZ_EXCL_TRIGGERS_QRTZ_EXCL_JOB_DETAILS on QRTZ_EXCL_TRIGGERS (JOB_NAME, JOB_GROUP);
+
 INSERT INTO [dbo].[QRTZ_EXCL_LOCKS] VALUES('TRIGGER_ACCESS');
 INSERT INTO [dbo].[QRTZ_EXCL_LOCKS] VALUES('JOB_ACCESS');
 INSERT INTO [dbo].[QRTZ_EXCL_LOCKS] VALUES('CALENDAR_ACCESS');
@@ -1243,7 +1245,7 @@ create table user_preferences (
    primary key (id)
 );
 create table language (
-   id numeric(19,0) identity not null,
+   id numeric(19,0) not null,
    language_code NVARCHAR(5) null,
    country_code NVARCHAR(255) null,
    language NVARCHAR(255) null,

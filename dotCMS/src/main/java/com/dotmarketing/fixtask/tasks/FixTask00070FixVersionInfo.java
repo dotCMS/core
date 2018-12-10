@@ -10,11 +10,9 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.Versionable;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.HibernateUtil;
-import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.fixtask.FixTask;
 import com.dotmarketing.portlets.cmsmaintenance.ajax.FixAssetsProcessStatus;
-import com.dotmarketing.portlets.contentlet.business.Contentlet;
 import com.dotmarketing.util.UtilMethods;
 
 public class FixTask00070FixVersionInfo implements FixTask {
@@ -26,29 +24,35 @@ public class FixTask00070FixVersionInfo implements FixTask {
     
     @SuppressWarnings("unchecked")
     @Override
-    public List<Map<String, Object>> executeFix() throws DotDataException, DotRuntimeException {
-        List<Map<String, Object>> returnValue = new ArrayList<Map<String, Object>>();
+    public List<Map<String, Object>> executeFix() throws DotRuntimeException {
+        final List<Map<String, Object>> returnValue = new ArrayList<>();
         if (!FixAssetsProcessStatus.getRunning()) {
             try {
                 FixAssetsProcessStatus.startProgress();
                 FixAssetsProcessStatus.setDescription("70 Fix versionInfo");
+                StringBuffer sb;
                 DotConnect dc=new DotConnect();
                 
                 String[] versionables=new String[] {
                         "template", Inode.Type.CONTAINERS.getTableName(),"links"};
                 for(String table : versionables) {
-                    String vitable=Inode.Type.valueOf(table.toUpperCase()).getVersionTableName();
-                    String sql = " select distinct id from "+table+" join identifier on (id=identifier) " +
+                    String vitable;
+                    if(Inode.Type.CONTAINERS.getTableName().equals(table)){
+                        vitable = Inode.Type.CONTAINERS.getVersionTableName();
+                    } else {
+                        vitable = Inode.Type.valueOf(table.toUpperCase()).getVersionTableName();
+                    }
+                    sb = new StringBuffer(" select distinct id from "+table+" join identifier on (id=identifier) " +
                     		     " left outer join " + vitable +
                     		     " on("+table+".identifier="+vitable+".identifier) " +
-                    		     " where working_inode is null";
-                    dc.setSQL(sql);
+                    		     " where working_inode is null");
+                    dc.setSQL(sb.toString());
                     List<Map<String, Object>> results = dc.loadObjectResults();
                     FixAssetsProcessStatus.addTotal(results.size());
                     for(Map<String, Object> rr : results) {
                         String id=rr.get("id").toString();
-                        sql="select inode from "+table+" where identifier=? order by mod_date desc";
-                        dc.setSQL(sql);
+                        sb = new StringBuffer("select inode from "+table+" where identifier=? order by mod_date desc");
+                        dc.setSQL(sb.toString());
                         dc.addParam(id);
                         List<Map<String, Object>> versions = dc.loadObjectResults();
                         String inode=versions.get(0).get("inode").toString();
@@ -60,21 +64,21 @@ public class FixTask00070FixVersionInfo implements FixTask {
                         FixAssetsProcessStatus.addAErrorFixed();
                     }
                 }
-                
+
                 // contentlets are different because of language_id
-                String sql="select distinct id,language_id from contentlet join identifier on(id=identifier) " +
-                		   "   left outer join contentlet_version_info " +
-                		   "   on (contentlet.identifier=contentlet_version_info.identifier " +
-                		   "   and contentlet.language_id=contentlet_version_info.lang) " +
-                		   " where working_inode is null";
-                dc.setSQL(sql);
+                sb = new StringBuffer("select distinct id,language_id from contentlet join identifier on(id=identifier) " +
+                        "   left outer join contentlet_version_info " +
+                        "   on (contentlet.identifier=contentlet_version_info.identifier " +
+                        "   and contentlet.language_id=contentlet_version_info.lang) " +
+                        " where working_inode is null");
+                dc.setSQL(sb.toString());
                 List<Map<String, Object>> results = dc.loadObjectResults();
                 FixAssetsProcessStatus.addTotal(results.size());
                 for(Map<String, Object> rr : results) {
                     String id=rr.get("id").toString();
                     Integer langId=Integer.parseInt(rr.get("language_id").toString());
-                    sql="select inode from contentlet where identifier=? and language_id=? order by mod_date desc";
-                    dc.setSQL(sql);
+                    sb = new StringBuffer("select inode from contentlet where identifier=? and language_id=? order by mod_date desc");
+                    dc.setSQL(sb.toString());
                     dc.addParam(id);
                     dc.addParam(langId);
                     List<Map<String, Object>> versions = dc.loadObjectResults();
@@ -102,7 +106,7 @@ public class FixTask00070FixVersionInfo implements FixTask {
     
     @Override
     public List<Map<String, String>> getModifiedData() {
-        return new ArrayList<Map<String,String>>();
+        return new ArrayList<>();
     }
     
 }

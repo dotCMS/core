@@ -551,20 +551,24 @@
 		<extension>xsl</extension>
 		<mime-type>application/xml</mime-type>
 	</mime-mapping>
+	<mime-mapping>
+		<extension>dotsass</extension>
+		<mime-type>text/css</mime-type>
+	</mime-mapping>
 	
 	<mime-mapping>
 		<extension>sass</extension>
-		<mime-type>text/plain</mime-type>
+		<mime-type>text/css</mime-type>
 	</mime-mapping>
 	
 	<mime-mapping>
         <extension>scss</extension>
-        <mime-type>text/plain</mime-type>
+        <mime-type>text/css</mime-type>
     </mime-mapping>
     
 	<mime-mapping>
 		<extension>less</extension>
-		<mime-type>text/plain</mime-type>
+		<mime-type>text/css</mime-type>
 	</mime-mapping>
 	
 	<welcome-file-list>

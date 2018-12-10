@@ -2,9 +2,11 @@ package com.dotcms.rest.api.v1.vtl;
 
 import com.dotcms.repackage.javax.ws.rs.core.MultivaluedMap;
 
+import java.io.File;
+
 public class VTLResourceTestCase {
 
-    private final String vtlFile;
+    private final File vtlFile;
     private final String folderName;
     private final MultivaluedMap<String, String> queryParameters;
     private final String pathParameter;
@@ -13,7 +15,7 @@ public class VTLResourceTestCase {
     private final int expectedException;
     private final String userId;
 
-    String getVtlFile() {
+    File getVtlFile() {
         return vtlFile;
     }
 
@@ -45,7 +47,7 @@ public class VTLResourceTestCase {
         return userId;
     }
 
-    private VTLResourceTestCase(final String vtlFile, final String folderName, final MultivaluedMap<String, String> queryParameters,
+    private VTLResourceTestCase(final File vtlFile, final String folderName, final MultivaluedMap<String, String> queryParameters,
                                 final String pathParameter, final String expectedJSON, final String expectedOutput,
                                 final int expectedException, final String user) {
         this.vtlFile = vtlFile;
@@ -59,7 +61,7 @@ public class VTLResourceTestCase {
     }
 
     public static class Builder {
-        private String vtlFile;
+        private File vtlFile;
         private String folderName;
         private MultivaluedMap<String, String> queryParameters;
         private String pathParameter;
@@ -68,7 +70,7 @@ public class VTLResourceTestCase {
         private int expectedException;
         private String user = "system";
 
-        Builder setVtlFile(final String vtlFile) {
+        Builder setVtlFile(final File vtlFile) {
             this.vtlFile = vtlFile;
             return this;
         }

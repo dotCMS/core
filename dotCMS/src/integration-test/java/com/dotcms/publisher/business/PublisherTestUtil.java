@@ -1,5 +1,8 @@
 package com.dotcms.publisher.business;
 
+import static java.lang.String.valueOf;
+import static org.junit.Assert.assertEquals;
+
 import com.dotcms.datagen.HTMLPageDataGen;
 import com.dotcms.enterprise.publishing.PublishDateUpdater;
 import com.dotcms.publisher.bundle.bean.Bundle;
@@ -9,10 +12,19 @@ import com.dotcms.publisher.endpoint.bean.factory.PublishingEndPointFactory;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointAPI;
 import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.publisher.environment.business.EnvironmentAPI;
+import com.dotcms.publisher.pusher.PushPublisher;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
+import com.dotcms.publisher.pusher.PushUtils;
 import com.dotcms.publisher.util.PublisherUtil;
 import com.dotcms.publisher.util.PusheableAsset;
-import com.dotcms.publishing.*;
+import com.dotcms.publishing.BundlerStatus;
+import com.dotcms.publishing.BundlerUtil;
+import com.dotcms.publishing.DotBundleException;
+import com.dotcms.publishing.DotPublishingException;
+import com.dotcms.publishing.IBundler;
+import com.dotcms.publishing.PublishStatus;
+import com.dotcms.publishing.Publisher;
+import com.dotcms.publishing.PublisherConfig;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
@@ -25,21 +37,26 @@ import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
-
 import java.io.File;
-import java.util.*;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
-
-import static java.lang.String.valueOf;
-import static org.junit.Assert.assertEquals;
 
 
 public class PublisherTestUtil {
 
     private final static String PROTOCOL = "http";
-
+    public static final String FILE = "file";
     /**
      * Creates a generic TestEnvironment
      * @param user
@@ -382,14 +399,102 @@ public class PublisherTestUtil {
         return folderTestPath.exists() && folderIdTestPath.exists();
     }
 
-    public static boolean existsPage(final String bundlePath, final Host host, final int countOrder,
-                                     final Folder folder, final HTMLPageAsset page) {
+    public static boolean existsPage(final String bundlePath, final Host host,
+            final Folder folder, final HTMLPageAsset page) {
 
-        final File pageTestPath   = new File(bundlePath,
+        boolean exists = false;
+
+        final String testPageName = page.getPageUrl() + ".content.xml";
+        final File pageParentPath = new File(bundlePath,
                 "/live/" + host.getHostname() + "/" + page.getLanguageId() + "/" +
-                        folder.getName() + "/" + countOrder + "-" + page.getPageUrl() + ".content.xml");
+                        folder.getName());
 
-        return pageTestPath.exists();
+        if (pageParentPath.exists()) {
+
+            //Getting the content of the parent folder
+            final String[] testPages = pageParentPath.list();
+            if (null != testPages) {
+
+                for (final String testPage : testPages) {
+
+                    //Verify if we found the page
+                    if (testPage.endsWith(testPageName)) {
+                        exists = true;
+                    }
+                }
+            }
+        }
+
+        return exists;
+    }
+
+    public static Map<String, Object> generateBundle ( final String bundleId, final PushPublisherConfig.Operation operation )
+    throws DotPublisherException, DotDataException, DotPublishingException, IllegalAccessException, InstantiationException, DotBundleException, IOException {
+
+        final PushPublisherConfig pconf = new PushPublisherConfig();
+        final PublisherAPI pubAPI = PublisherAPI.getInstance();
+
+        final List<PublishQueueElement> tempBundleContents = pubAPI.getQueueElementsByBundleId( bundleId );
+        final List<PublishQueueElement> assetsToPublish = new ArrayList<PublishQueueElement>();
+
+        for ( final PublishQueueElement queueElement : tempBundleContents ) {
+            assetsToPublish.add( queueElement );
+        }
+
+        pconf.setDownloading( true );
+        pconf.setOperation(operation);
+
+        pconf.setAssets( assetsToPublish );
+        //Queries creation
+        pconf.setLuceneQueries( PublisherUtil.prepareQueries( tempBundleContents ) );
+        pconf.setId( bundleId );
+        pconf.setUser( APILocator.getUserAPI().getSystemUser() );
+
+        //BUNDLERS
+
+        final List<Class<IBundler>> bundlers = new ArrayList<>();
+        final List<IBundler> confBundlers = new ArrayList<IBundler>();
+
+        final Publisher publisher = new PushPublisher();
+        publisher.init( pconf );
+        //Add the bundles for this publisher
+        for ( final Class <IBundler> clazz : publisher.getBundlers() ) {
+            if ( !bundlers.contains( clazz ) ) {
+                bundlers.add( clazz );
+            }
+        }
+
+        //Create a new bundle id for this generated bundle
+        final String newBundleId = UUID.randomUUID().toString();
+        pconf.setId( newBundleId );
+        final File bundleRoot = BundlerUtil.getBundleRoot( pconf );
+
+        // Run bundlers
+        BundlerUtil.writeBundleXML( pconf );
+        for ( final Class<IBundler> aClass : bundlers ) {
+
+            final IBundler bundler = aClass.newInstance();
+            confBundlers.add( bundler );
+            bundler.setConfig( pconf );
+            bundler.setPublisher(publisher);
+            final BundlerStatus bundlerStatus = new BundlerStatus( bundler.getClass().getName() );
+            //Generate the bundler
+            Logger.info(PublisherTestUtil.class, "Start of Bundler: " + aClass.getSimpleName());
+            bundler.generate( bundleRoot, bundlerStatus );
+            Logger.info(PublisherTestUtil.class, "End of Bundler: " + aClass.getSimpleName());
+        }
+
+        pconf.setBundlers( confBundlers );
+
+        //Compressing bundle
+        final List<File> list = new ArrayList<File>();
+        list.add( bundleRoot );
+        final File bundle = new File( bundleRoot + File.separator + ".." + File.separator + pconf.getId() + ".tar.gz" );
+
+        final Map<String, Object> bundleData = new HashMap<String, Object>();
+        bundleData.put( "id", newBundleId );
+        bundleData.put( FILE, PushUtils.compressFiles( list, bundle, bundleRoot.getAbsolutePath() ) );
+        return bundleData;
     }
 
 

@@ -1,20 +1,36 @@
 package com.dotcms.concurrent;
 
+import static com.dotcms.util.CollectionsUtils.map;
+
+import com.dotcms.concurrent.lock.DotKeyLockManagerBuilder;
+import com.dotcms.concurrent.lock.IdentifierStripedLock;
 import com.dotcms.util.ReflectionUtils;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.*;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.DelayQueue;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.RejectedExecutionHandler;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import static com.dotcms.util.CollectionsUtils.map;
 
 /**
  * Factory for concurrent {@link Executor} & {@link DotSubmitter}
@@ -62,6 +78,8 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
 
     public static final String BULK_ACTIONS_THREAD_POOL = "bulkActionsPool";
 
+    public static final String LOCK_MANAGER = "IdentifierStripedLock";
+
     /**
      * Used to keep the instance of the submitter
      * Should be volatile to avoid thread-caching
@@ -97,6 +115,10 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
 
     private final ThreadFactory defaultThreadFactory =
             this.getDefaultThreadFactory();
+
+
+    private final IdentifierStripedLock identifierStripedLock =
+           new IdentifierStripedLock(DotKeyLockManagerBuilder.newLockManager(LOCK_MANAGER));
 
     private final ThreadFactory getDefaultThreadFactory () {
 
@@ -322,6 +344,14 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
         this.submitterMap.put(name, submitter);
 
         return submitter;
+    }
+
+    /**
+     * returns an singleton instance of the identifier strip locked manager;
+     * @return
+     */
+    public IdentifierStripedLock getIdentifierStripedLock(){
+       return this.identifierStripedLock;
     }
 
     //// DelayQueueConsumer

@@ -17,7 +17,9 @@ import com.dotcms.rest.exception.ValidationException;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DoesNotExistException;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotDataValidationException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.InvalidLicenseException;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
@@ -26,6 +28,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetValidationException;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
+import com.dotmarketing.portlets.workflows.business.DotWorkflowException;
 import com.dotmarketing.portlets.workflows.business.WorkflowPortletAccessException;
 import com.dotmarketing.util.Logger;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -124,6 +127,35 @@ public class ExceptionUtil {
     public static boolean causedBy(final Throwable e, final Class<? extends Throwable>... exceptionClasses) {
 
         return causedBy(e, new HashSet<>(Arrays.asList(exceptionClasses)));
+    }
+
+    /**
+     *
+     * @param t
+     * @throws DotDataException
+     * @throws DotSecurityException
+     * @throws DotRuntimeException
+     */
+    public static void bubbleUpException(final Throwable t)
+            throws DotDataException, DotSecurityException, DotRuntimeException {
+
+        if (t instanceof DotDataException) {
+            throw (DotDataException) t;
+        }
+        if (t instanceof DotSecurityException) {
+            throw (DotSecurityException) t;
+        }
+        if (t instanceof DotContentletValidationException) {
+            throw (DotContentletValidationException) t;
+        }
+        if (t instanceof DotContentletStateException) {
+            throw (DotContentletStateException) t;
+        }
+        if (t instanceof DotWorkflowException) {
+            throw (DotWorkflowException) t;
+        }
+
+        throw new DotRuntimeException(t.getMessage(), t);
     }
 
     /**
@@ -264,7 +296,7 @@ public class ExceptionUtil {
                             errorMessage = "message.contentlet.relationship.bad";
                             break;
                         case VALIDATION_FAILED_BAD_CARDINALITY:
-                            errorMessage = "message.contentlet.relationship.caridanility.bad";
+                            errorMessage = "message.contentlet.relationship.cardinality.bad";
                             break;
                     }
 
@@ -335,5 +367,35 @@ public class ExceptionUtil {
         public String getMessage() {
             return message;
         }
+    }
+
+    /**
+     * Get the current thread stack trace as a simple string
+     * @return String
+     */
+    public static String getCurrentStackTraceAsString () {
+        final StringBuilder builder = new StringBuilder();
+        final StackTraceElement [] traces = Thread.currentThread().getStackTrace();
+        for (final StackTraceElement traceElement : traces) {
+            builder.append("\tat " + traceElement + "\n");
+        }
+        return builder.toString();
+    }
+    /**
+     * Get the current thread stack trace as a simple string
+     * @param limit {@link Integer} limit for the stack trace to attach
+     * @return String
+     */
+    public static String getCurrentStackTraceAsString (final int limit) {
+        final StringBuilder builder = new StringBuilder();
+        final StackTraceElement [] traces = Thread.currentThread().getStackTrace();
+        int count = limit;
+        for (final StackTraceElement traceElement : traces) {
+            builder.append("\tat " + traceElement + "\n");
+            if (count-- < 0) {
+                break;
+            }
+        }
+        return builder.toString();
     }
 }

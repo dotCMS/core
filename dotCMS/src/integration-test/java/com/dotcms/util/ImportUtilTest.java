@@ -17,7 +17,6 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.common.model.ContentletSearch;
-import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -1237,17 +1236,16 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
      * Remove the workflows created for the test
      */
     @AfterClass
-    public static void cleanup()
-            throws DotDataException, DotSecurityException, AlreadyExistException {
+    public static void cleanup() throws Exception {
         if (null != schemeStepActionResult1 && null != schemeStepActionResult1.getScheme()) {
             final WorkflowScheme wfScheme = schemeStepActionResult1.getScheme();
             workflowAPI.archive(wfScheme, user);
-            workflowAPI.deleteScheme(wfScheme, user);
+            workflowAPI.deleteScheme(wfScheme, user).get();
         }
         if (null != schemeStepActionResult2 && null != schemeStepActionResult2.getScheme()) {
             final WorkflowScheme wfScheme2 = schemeStepActionResult2.getScheme();
             workflowAPI.archive(wfScheme2, user);
-            workflowAPI.deleteScheme(wfScheme2, user);
+            workflowAPI.deleteScheme(wfScheme2, user).get();
         }
     }
 

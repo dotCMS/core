@@ -37,13 +37,10 @@
                     data = {"query": selectedInodes}; //No. it's not a bug. This variable sometimes holds a query.
                 }
                 getAvailableBulkActions(data);
-               //adjust dialog size to show the actions section
-               dojo.style(dijit.byId('workflowActionsDia').domNode, {height:'575px'});
+
         <%}else{%>
-                //adjust dialog size to hide the actions section
                 dojo.style(dijit.byId('workflowActionsDia').domNode, {height:'141px'});
             <%}%>
-        dijit.byId('workflowActionsDia').show();
     }
 
     /**
@@ -403,6 +400,7 @@
                            fireAction(actionId);
                        }
                     );
+                    dijit.byId('workflowActionsDia').show();
                 } else {
                     dojo.byId('bulkActionsContainer').innerHTML = errorMarkup();
                     console.error('No data was returned.');
@@ -445,7 +443,6 @@
 <style>
     #workflowActionsDia {
         width: 600px;
-        height: 575px;
     }
 
     #workflowActionsDia .listingTable {
@@ -459,7 +456,6 @@
 
     #bulkActionsContainer {
         overflow:auto;
-        height: 425px;
     }
 </style>
 

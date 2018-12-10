@@ -18,17 +18,6 @@
 %>
 
 <script language="javascript">
-    function addNewRelationship()
-    {
-        var href = "<portlet:actionURL windowState='<%=WindowState.MAXIMIZED.toString()%>'>";
-        href = href + "<portlet:param name='referer' value='<%=referer%>' />";
-        href = href + "<portlet:param name='struts_action' value='/ext/structure/edit_relationship'/>";
-        href = href + "<portlet:param name='structure_id' value='<%=currentContentTypeId != null ? currentContentTypeId : "all"%>' /> ";
-        href = href + "</portlet:actionURL>";
-
-        document.location.href = href;
-
-    }
     function deleteRelationship(inode) {
         if (confirm('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.structure.delete.relationship")) %>')) {
             var href = "<portlet:actionURL windowState='<%=WindowState.MAXIMIZED.toString()%>'>";
@@ -54,11 +43,6 @@
 				</div>
 				<div class="portlet-toolbar__info">
 
-				</div>
-				<div class="portlet-toolbar__actions-secondary">
-					<button dojoType="dijit.form.Button" onCLick="addNewRelationship()"   iconClass="plusIcon">
-						<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-New-Relationship")) %>
-					</button>
 				</div>
 			</div>
 			<!-- END Toolbar -->
@@ -129,7 +113,7 @@
 						</a>
 					</td>
 					<td align="center">
-						<%=relationship.getCardinality() == com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY.ONE_TO_MANY.ordinal()?"1-N":"M-N"%>
+						<%=LanguageUtil.get(pageContext, "relationship.cardinality." + relationship.getCardinality())%>
 					</td>
 					<td align="center"><%=(relationship.isParentRequired()) ? LanguageUtil.get(pageContext, "Yes") : LanguageUtil.get(pageContext, "No") %></td>
 					<td align="center"><%=(relationship.isChildRequired()) ? LanguageUtil.get(pageContext, "Yes") : LanguageUtil.get(pageContext, "No")%></td>

@@ -36,7 +36,7 @@ public class DefaultBackEndLoginRequiredWebInterceptor implements WebInterceptor
     // \A -> The beginning of the input
     // All paths needs to be in lower case as the URI is lowercase before to be evaluated
     private static final String DEFAULT_REQUIRED_URLS = "\\A/html/,\\A/c/,\\A/servlets/," +
-            "\\A/dottaillogservlet/,\\A/categoriesservlet/,\\A/dwr/,\\A/dotajaxdirector," +
+            "\\A/dottaillogservlet,\\A/categoriesservlet/,\\A/dwr/,\\A/dotajaxdirector," +
             "\\A/dotscheduledjobs,\\A/dotadmin/#/c/,\\A/jsontags/,\\A/edit/," +
             "\\A/dotadmin/c/";
 
@@ -137,7 +137,12 @@ public class DefaultBackEndLoginRequiredWebInterceptor implements WebInterceptor
                 + " <head>\n"
                 + "     <title>401</title>\n"
                 + " </head>\n"
-                + " <body></body>\n"
+                + " <body>"
+                + "     <h1>401 / Unauthorized</h1>\n"
+                + "     <p>This server could not verify that you are authorized to access the URL "
+                + "     requested. Either you supplied the wrong credentials (e.g., bad password), "
+                + "     or your browser doesn't understand how to supply the credentials required.</p>\n"
+                + " </body>\n"
                 + "</html>";
     }
 

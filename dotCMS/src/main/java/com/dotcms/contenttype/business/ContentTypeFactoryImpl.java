@@ -425,7 +425,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     }
 
     // deleting fields
-    APILocator.getContentTypeFieldAPI().deleteFieldsByContentType(type);
+    FactoryLocator.getFieldFactory().deleteByContentType(type);
 
     // make sure folders don't refer to this structure as default fileasset structure
 

@@ -21,6 +21,7 @@ public class HTMLPageAssetInfoSerializer extends JsonSerializer<HTMLPageAssetInf
                 .put("workingInode", htmlPageAssetInfo.getWorkingInode())
                 .put("shortyWorking", htmlPageAssetInfo.getShortyWorking())
                 .put("canEdit", htmlPageAssetInfo.isCanEdit())
+                .put("canRead", htmlPageAssetInfo.isCanRead())
                 .putAll(getLockMap(htmlPageAssetInfo));
 
         if(htmlPageAssetInfo.getLiveInode() != null) {

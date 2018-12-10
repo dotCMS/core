@@ -376,8 +376,10 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
       throws DotDataException, DotSecurityException {
     // Sets the host:
     try {
-      if (contentType.host() == null) {
+      if (contentType.host() == null || contentType.fixed()) {
+        final List<Field> existinFields = contentType.fields();
         contentType = ContentTypeBuilder.builder(contentType).host(Host.SYSTEM_HOST).build();
+        contentType.constructWithFields(existinFields);
       }
       if (!UUIDUtil.isUUID(contentType.host()) && !Host.SYSTEM_HOST.equalsIgnoreCase(contentType.host())) {
         HostAPI hapi = APILocator.getHostAPI();
@@ -393,7 +395,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     // check perms
     Permissionable parent = contentType.getParentPermissionable();
     if (!perms.doesUserHavePermissions(parent,
-        "PARENT:" + PermissionAPI.PERMISSION_CAN_ADD_CHILDREN + ", STRUCTURES:" + PermissionAPI.PERMISSION_PUBLISH,
+        "PARENT:" + PermissionAPI.PERMISSION_CAN_ADD_CHILDREN + ", STRUCTURES:" + PermissionAPI.PERMISSION_EDIT_PERMISSIONS,
         user)) {
       throw new DotSecurityException(
           "User-does-not-have-add-children-or-structure-permission-on-host-folder:" + parent);

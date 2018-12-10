@@ -92,6 +92,7 @@ public class BinaryExporterServlet extends HttpServlet {
 	private static final FileAssetAPI fileAssetAPI = APILocator.getFileAssetAPI();
 	private static final UserAPI userAPI = APILocator.getUserAPI();
 	Map<String, BinaryContentExporter> exportersByPathMapping;
+	private final ContentletAPI contentAPI = APILocator.getContentletAPI();
 
 	private long defaultLang = APILocator.getLanguageAPI().getDefaultLanguage().getId();
 
@@ -181,7 +182,6 @@ public class BinaryExporterServlet extends HttpServlet {
 		}
 
 		UserWebAPI userWebAPI = WebAPILocator.getUserWebAPI();
-		ContentletAPI contentAPI = APILocator.getContentletAPI();
 		BinaryContentExporter.BinaryContentExporterData data = null;
 		File inputFile = null;
 		HttpSession session = req.getSession(false);
@@ -200,12 +200,8 @@ public class BinaryExporterServlet extends HttpServlet {
         
 		try {
 			User user = userWebAPI.getLoggedInUser(req);
-			boolean respectFrontendRoles = !userWebAPI.isLoggedToBackend(req);
+
 			PageMode mode = PageMode.get(req);
-			//If session is in Admin Mode (Edit Mode) we should respect front end roles also.
-			if(mode.isAdmin){
-				respectFrontendRoles = true;
-			}
 
 			String downloadName = "file_asset";
 			long lang = WebAPILocator.getLanguageWebAPI().getLanguage(req).getId();
@@ -214,11 +210,18 @@ public class BinaryExporterServlet extends HttpServlet {
 			if (isContent){
 				Contentlet content = null;
 				if(byInode) {
-					if(isTempBinaryImage)
-						content = contentAPI.find(assetInode, APILocator.getUserAPI().getSystemUser(), respectFrontendRoles);
-					else
-						content = contentAPI.find(assetInode, user, respectFrontendRoles);
-					assetIdentifier = content.getIdentifier();
+
+					if (isTempBinaryImage)
+						content = contentAPI.find(assetInode, APILocator.getUserAPI().getSystemUser(), mode.respectAnonPerms);
+					else {
+						try {
+							content = contentAPI.find(assetInode, user, mode.respectAnonPerms);
+						} catch(DotSecurityException e) {
+							if (!mode.respectAnonPerms) {
+								content = getContentletLiveVersion(assetInode, user, lang);
+							}
+						}
+					}
 				} else {
 				    boolean live=userWebAPI.isLoggedToFrontend(req);
 
@@ -255,7 +258,7 @@ public class BinaryExporterServlet extends HttpServlet {
 							query.append("+working:true ");
 						}
 
-						List<Contentlet> foundContentlets = contentletAPI.search(query.toString(), 2, -1, null, user, respectFrontendRoles);
+						List<Contentlet> foundContentlets = contentletAPI.search(query.toString(), 2, -1, null, user, mode.respectAnonPerms);
 						if ( foundContentlets != null && !foundContentlets.isEmpty() ) {
 							//Prefer the contentlet with the session language
 							content = foundContentlets.get(0);
@@ -274,7 +277,7 @@ public class BinaryExporterServlet extends HttpServlet {
 						If the property DEFAULT_FILE_TO_DEFAULT_LANGUAGE is false OR the language in request/session
 						is equals to the default language, continue with the default behavior.
 						 */
-						content = contentAPI.findContentletByIdentifier(assetIdentifier, live, lang, user, respectFrontendRoles);
+						content = contentAPI.findContentletByIdentifier(assetIdentifier, live, lang, user, mode.respectAnonPerms);
 					}
 					assetInode = content.getInode();
 				}
@@ -282,7 +285,7 @@ public class BinaryExporterServlet extends HttpServlet {
                 // If the user is NOT logged in the backend then we cannot show content that is NOT live.
                 // Temporal files should be allowed any time
                 if(!isTempBinaryImage && !WebAPILocator.getUserWebAPI().isLoggedToBackend(req)) {
-                    if (!APILocator.getVersionableAPI().hasLiveVersion(content) && respectFrontendRoles) {
+                    if (!APILocator.getVersionableAPI().hasLiveVersion(content) && mode.respectAnonPerms) {
                         Logger.debug(this, "Content " + fieldVarName + " is not publish, with inode: "
                                 + content.getInode());
                         resp.sendError(404);
@@ -626,6 +629,15 @@ public class BinaryExporterServlet extends HttpServlet {
 			
 		}
 		
+	}
+
+	private Contentlet getContentletLiveVersion(String assetInode, User user, long lang) throws DotDataException, DotSecurityException {
+		Contentlet content;
+		final Contentlet contentTemp = contentAPI.find(assetInode,
+				APILocator.getUserAPI().getSystemUser(), false);
+		content = contentAPI.findContentletByIdentifier(contentTemp.getIdentifier(),
+				true, lang, user, true);
+		return content;
 	}
 
 	@SuppressWarnings("unchecked")

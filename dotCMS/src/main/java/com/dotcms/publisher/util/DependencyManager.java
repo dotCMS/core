@@ -1121,20 +1121,20 @@ public class DependencyManager {
 	}
 	
 	private void setLanguageDependencies(){
-		ContentletAPI contentletAPI = APILocator.getContentletAPI();
-		
+		final ContentletAPI contentletAPI = APILocator.getContentletAPI();
+		final Date date = new Date();
 		try{
-			for(String lang : languages){
-				String keyValueQuery = "+contentType:" + LanguageVariableAPI.LANGUAGEVARIABLE + " +languageId:" + lang;
-				List<Contentlet> listKeyValueLang = contentletAPI.search(keyValueQuery, 0, -1, StringPool.BLANK, user, false);
-				for(Contentlet keyValue : listKeyValueLang){
-					contents.addOrClean(keyValue.getIdentifier(),keyValue.getModDate());
-					contentsSet.add(keyValue.getIdentifier());
+		//We're no longer filtering by language here..
+		//The reason is We're simply collecting all available lang variables so we can infer additional languages used. see #15359
+				final String langVarsQuery = "+contentType:" + LanguageVariableAPI.LANGUAGEVARIABLE ;
+				final List<Contentlet> langVariables = contentletAPI.search(langVarsQuery, 0, -1, StringPool.BLANK, user, false);
+				for(final Contentlet langVar : langVariables){
+					contents.addOrClean(langVar.getIdentifier(),langVar.getModDate());
+					contentsSet.add(langVar.getIdentifier());
+					//Collect the languages
+					languages.addOrClean(Long.toString(langVar.getLanguageId()), date);
 				}
-				
-			}
-			
-			
+
 		}catch (Exception e){
 			Logger.error(this, e.getMessage(),e);
 		}

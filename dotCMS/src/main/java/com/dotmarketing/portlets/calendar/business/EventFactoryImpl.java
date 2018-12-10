@@ -1,15 +1,12 @@
 package com.dotmarketing.portlets.calendar.business;
 
 import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.datetimeFormat;
-import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.elasticSearchDateTimeFormat;
 
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.calendar.model.Event;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
@@ -21,9 +18,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.Field;
-import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
@@ -186,62 +181,6 @@ public class EventFactoryImpl extends EventFactory {
 	protected Structure getEventStructure() {
 		Structure eventStructure = CacheLocator.getContentTypeCache().getStructureByVelocityVarName(EventAPI.EVENT_STRUCTURE_VAR);
 		return eventStructure;
-	}
-
-
-	
-
-
-	private static void initEventEventRelation(Structure eventStructure) throws DotHibernateException {
-		
-		if(true)return;
-		Relationship relationship = FactoryLocator.getRelationshipFactory().byTypeValue("Event-Event");
-		
-		if (relationship == null) {
-
-			// Create the relationship
-			relationship = new Relationship();
-			relationship.setCardinality(0);
-			relationship.setChildRelationName("Event");
-			relationship.setParentRelationName("Event");
-			relationship.setChildStructureInode(eventStructure.getInode());
-			relationship.setParentStructureInode(eventStructure.getInode());
-			relationship.setRelationTypeValue("Event-Event");
-			relationship.setParentRequired(false);
-			relationship.setChildRequired(false);
-            try {
-              FactoryLocator.getRelationshipFactory().save(relationship);
-            } catch (DotDataException e) {
-                 throw new DotHibernateException(e.getMessage(),e);
-            }
-
-		}
-	}	
-	
-	private static void initBuidlingFacilityRelation(Structure buildingStructure, Structure facilityStructure) throws DotHibernateException {
-		if(true)return;
-		Relationship relationship = FactoryLocator.getRelationshipFactory().byTypeValue("Building-Facility");
-		
-		if (relationship == null || !InodeUtils.isSet(relationship.getInode())) {
-
-			// Create the relationship
-			relationship = new Relationship();
-			relationship.setCardinality(0);
-			relationship.setParentRelationName("Building");
-			relationship.setChildRelationName("Facility");
-			relationship.setParentStructureInode(buildingStructure.getInode());
-			relationship.setChildStructureInode(facilityStructure.getInode());
-			relationship.setRelationTypeValue("Building-Facility");
-			relationship.setParentRequired(true);
-			relationship.setChildRequired(false);
-		     try {
-		         FactoryLocator.getRelationshipFactory().save(relationship);
-		     } catch (DotDataException e) {
-		          throw new DotHibernateException(e.getMessage(),e);
-		     }
-			
-
-		}
 	}
 
 	protected Event convertToEvent (Contentlet cont) throws DotDataException, DotContentletStateException, DotSecurityException {

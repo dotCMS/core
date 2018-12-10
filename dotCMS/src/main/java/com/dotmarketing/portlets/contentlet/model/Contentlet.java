@@ -1,7 +1,11 @@
 package com.dotmarketing.portlets.contentlet.model;
 
+import com.dotcms.contenttype.exception.NotFoundInDbException;
+import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.util.ConversionUtils;
 import com.dotmarketing.beans.Host;
@@ -33,6 +37,7 @@ import com.dotmarketing.tag.model.TagInode;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.model.User;
 import java.io.File;
@@ -118,6 +123,36 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	private transient IndexPolicy indexPolicy = IndexPolicy.DEFER;
 	private transient IndexPolicy indexPolicyDependencies = IndexPolicy.DEFER;
 
+	private transient boolean needsReindex = false;
+
+	/**
+	 * Returns true if this contentlet needs reindex
+	 * @return true if needs reindex
+	 */
+	@JsonIgnore
+	@com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore
+	public boolean needsReindex() {
+		return needsReindex;
+	}
+
+	/**
+	 * Call this method when you want to mark the current contentlet as dirty, usually useful to determine if reindex or not in upon layers or next stages
+	 */
+	public void markAsDirty () {
+		this.needsReindex = true;
+	}
+
+	/**
+	 * When a content is reindex mark it as an indexed.
+	 */
+	public void markAsReindexed () {
+		this.needsReindex = false;
+	}
+
+	/**
+	 * Get the indexing policy for the contentlet @see {@link IndexPolicy}
+	 * @return IndexPolicy
+	 */
 	public IndexPolicy getIndexPolicy() {
 
 		return (null == this.indexPolicy)?
@@ -162,14 +197,6 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 		if (null != indexPolicy) {
 			this.indexPolicyDependencies = indexPolicy;
 		}
-	}
-
-
-
-
-
-	public void setContentType(ContentType contentType) {
-		this.contentType = contentType;
 	}
 
 	@Override
@@ -328,17 +355,13 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 
 	/**
 	 * @deprecated As of dotCMS 4.1.0. Please use the following approach:
-	 *             <pre>
-	 *             APILocator.getContentTypeAPI(user).find(content.getStructureInode());
+	 * <pre>
+	 *             {@link #getContentType()}
 	 *             </pre>
-	 * 
-	 * @return
 	 */
-    public Structure getStructure() {
-    	Structure structure = null;
-    	structure = CacheLocator.getContentTypeCache().getStructureByInode(getStructureInode());
-        return structure;
-    }
+	public Structure getStructure() {
+		return new StructureTransformer(getContentType()).asStructure();
+	}
 
     /**
      * 
@@ -757,6 +780,29 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 		return (String) map.get(HOST_KEY);
 	}
 
+    private transient Optional<com.dotcms.contenttype.model.field.Field> titleImageFieldVar = null;
+
+    public Optional<com.dotcms.contenttype.model.field.Field> getTitleImage() {
+
+        if (this.titleImageFieldVar != null)
+            return this.titleImageFieldVar;
+        try {
+            this.titleImageFieldVar = this.getContentType().fields().stream().filter(f -> {
+                try {
+                    return (f instanceof BinaryField && UtilMethods.isImage(this.getBinary(f.variable()).toString()));
+                } catch (Exception e) {
+                    return false;
+                }
+            }).findFirst();
+
+        } catch (Exception e) {
+            Logger.debug(this.getClass(), e.getMessage(), e);
+        }
+        return this.titleImageFieldVar;
+    }
+	
+	
+	
 	/**
 	 * 
 	 * @param host
@@ -1216,7 +1262,10 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 			super();
 		}
 
-		public Object put(String key, Object value) {
+		public Object put(final String key, final Object value) {
+
+			Contentlet.this.markAsDirty();
+
 			 if(value==null) {
 				 Object oldValue = this.get(key);
 				 this.remove(key);
@@ -1235,27 +1284,36 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	public boolean hasLiveVersion() throws DotStateException, DotDataException {
 		return APILocator.getVersionableAPI().hasLiveVersion(this);
 	}
-	
+
 	/**
 	 * Get the contentlet Content Type
+	 *
 	 * @return the contentlet Content Type
-	 * @throws DotDataException
-	 * @throws DotSecurityException
 	 */
 	public ContentType getContentType() {
 
-		if (null == this.contentType) {
-			try {
-				this.contentType =
-						APILocator.getContentTypeAPI(APILocator.systemUser())
-								.find(getContentTypeId());
-			} catch (DotDataException | DotSecurityException e) {
+		try {
+			final ContentType foundContentType =
+					APILocator.getContentTypeAPI(APILocator.systemUser())
+							.find(getContentTypeId());
+
+			if (null != foundContentType) {
+				this.contentType = foundContentType;
+			}
+		} catch (DotDataException | DotSecurityException e) {
+			if (!ExceptionUtil.causedBy(e, NotFoundInDbException.class)) {
 				throw new DotStateException(e);
+			} else {
+				Logger.warn(this,
+						() -> String.format(
+								"Unable to find Content Type for Contentlet [%s], Content Type deleted? - [%s]",
+								this.getIdentifier(),
+								e.getMessage()));
 			}
 		}
 
 		return this.contentType;
-    }
+	}
 	
 	/**
 	 * Get if the contentlet is a Vanity URL

@@ -1,22 +1,5 @@
 package com.dotcms.rendering.velocity.services;
 
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
-
-import java.io.StringWriter;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import javax.servlet.http.HttpServletRequest;
-
-import org.apache.velocity.context.Context;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.contenttype.model.type.BaseContentType;
@@ -24,6 +7,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
+import com.dotcms.repackage.com.google.common.collect.Lists;
 import com.dotcms.repackage.com.ibm.icu.text.SimpleDateFormat;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Identifier;
@@ -35,6 +19,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRaw;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
@@ -43,78 +28,94 @@ import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.collect.Maps;
 import com.google.common.collect.Table;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
+import org.apache.velocity.context.Context;
 
-public class PageContextBuilder {
-    private  final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+import javax.servlet.http.HttpServletRequest;
+import java.io.Serializable;
+import java.io.StringWriter;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import static com.dotmarketing.business.PermissionAPI.*;
+
+public class PageContextBuilder implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+
+    private final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
 
     final IHTMLPage htmlPage;
     final User user;
     final Map<String, Object> ctxMap;
     final PageMode mode;
-    final Date timeMachine;
-    List<Tag> pageFoundTags;
+    final List<Tag> pageFoundTags;
     final StringBuilder widgetPreExecute;
     final static String WIDGET_PRE_EXECUTE = "WIDGET_PRE_EXECUTE";
+    final List<ContainerRaw> containersRaw;
+    final long languageId;
 
-    public PageContextBuilder(IHTMLPage htmlPage, User user, PageMode mode, Date timeMachine)
+    public PageContextBuilder(final IHTMLPage htmlPage, final User user, final PageMode mode, final long languageId)
             throws DotSecurityException, DotDataException {
-        super();
+        this.pageFoundTags = Lists.newArrayList();
         this.htmlPage = htmlPage;
         this.user = user;
-        this.ctxMap = new HashMap<>();
         this.mode = mode;
-        this.timeMachine = timeMachine;
+        this.languageId=languageId;
         this.widgetPreExecute = new StringBuilder();
-        populateContext();
-        populateContainers();
+        this.ctxMap = populateContext();
+        this.containersRaw = populateContainers();
+
+    }
+
+    public PageContextBuilder(final IHTMLPage htmlPage, final User user, final PageMode mode)
+            throws DotSecurityException, DotDataException {
+        this(htmlPage,user, mode, htmlPage.getLanguageId());
     }
 
 
-
-    public PageContextBuilder(IHTMLPage htmlPage, User user, PageMode mode) throws DotSecurityException, DotDataException {
-        this(htmlPage, user, mode, null);
-    }
-
-    private void populateContext() throws DotDataException, DotSecurityException {
+    private Map<String, Object> populateContext() throws DotDataException, DotSecurityException {
+        final Map<String, Object> ctxMap = Maps.newHashMap();
         ctxMap.put(mode.name(), Boolean.TRUE);
-        
+
         // set the page cache var
         if (htmlPage.getCacheTTL() > 0 && LicenseUtil.getLevel() >= LicenseLevel.COMMUNITY.level) {
             ctxMap.put("dotPageCacheDate", new java.util.Date());
             ctxMap.put("dotPageCacheTTL", htmlPage.getCacheTTL());
         }
 
-        String templateId = htmlPage.getTemplateId();
+        final String templateId = htmlPage.getTemplateId();
 
-        Identifier pageIdent = APILocator.getIdentifierAPI()
-            .find(htmlPage.getIdentifier());
+        final Identifier pageIdent = APILocator.getIdentifierAPI().find(htmlPage.getIdentifier());
 
         // gets pageChannel for this path
-        java.util.StringTokenizer st = new java.util.StringTokenizer(String.valueOf(pageIdent.getURI()), "/");
+        final java.util.StringTokenizer st = new java.util.StringTokenizer(String.valueOf(pageIdent.getURI()), StringPool.SLASH);
         String pageChannel = null;
         if (st.hasMoreTokens()) {
             pageChannel = st.nextToken();
         }
 
         final User systemUser = APILocator.getUserAPI().getSystemUser();
-        final Template template = (mode.showLive) ?
+        final Template template = mode.showLive ?
                 (Template) APILocator.getVersionableAPI().findLiveVersion(templateId, systemUser, false)
                 : (Template) APILocator.getVersionableAPI().findWorkingVersion(templateId, systemUser, false);
 
         // to check user has permission to write on this page
-        List<PublishingEndPoint> receivingEndpoints = APILocator.getPublisherEndPointAPI()
-            .getReceivingEndPoints();
-        final boolean hasAddChildrenPermOverHTMLPage =
-                permissionAPI.doesUserHavePermission(htmlPage, PERMISSION_CAN_ADD_CHILDREN, user);
+        final List<PublishingEndPoint> receivingEndpoints = APILocator.getPublisherEndPointAPI().getReceivingEndPoints();
+        final boolean hasAddChildrenPermOverHTMLPage = permissionAPI.doesUserHavePermission(htmlPage, PERMISSION_CAN_ADD_CHILDREN, user);
         final boolean hasWritePermOverHTMLPage = permissionAPI.doesUserHavePermission(htmlPage, PERMISSION_WRITE, user);
         final boolean hasPublishPermOverHTMLPage = permissionAPI.doesUserHavePermission(htmlPage, PERMISSION_PUBLISH, user);
         final boolean hasRemotePublishPermOverHTMLPage =
                 hasPublishPermOverHTMLPage && LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level;
         final boolean hasEndPoints = UtilMethods.isSet(receivingEndpoints) && !receivingEndpoints.isEmpty();
-        final boolean canUserWriteOnTemplate = permissionAPI.doesUserHavePermission(template, PERMISSION_WRITE, user) && APILocator.getPortletAPI()
-                .hasTemplateManagerRights(user);
+        final boolean canUserWriteOnTemplate = permissionAPI.doesUserHavePermission(template, PERMISSION_WRITE, user)
+                && APILocator.getPortletAPI().hasTemplateManagerRights(user);
 
         ctxMap.put("dotPageMode", mode.name());
 
@@ -151,79 +152,79 @@ public class PageContextBuilder {
         ctxMap.put("HTMLPAGE_MOD_DATE", new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(htmlPage.getModDate()));
 
 
-
+        return ctxMap;
     }
 
 
-    private void populateContainers() throws DotDataException, DotSecurityException {
+    private List<ContainerRaw> populateContainers() throws DotDataException, DotSecurityException {
         final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
 
-        final boolean live = (request!=null && request.getSession(false) != null && request.getSession().getAttribute("tm_date")!=null) ? false : mode.showLive;
+        final boolean live =
+                request != null && request.getSession(false) != null && request.getSession().getAttribute("tm_date") != null ?
+                        false :
+                        mode.showLive;
 
-        final Table<String, String, Set<String>> pageContents = APILocator.getMultiTreeAPI()
-                .getPageMultiTrees(htmlPage, live);
-
+        final Table<String, String, Set<String>> pageContents = APILocator.getMultiTreeAPI().getPageMultiTrees(htmlPage, live);
+        final List<ContainerRaw> raws = Lists.newArrayList();
         if (!pageContents.isEmpty()) {
 
             for (final String containerId : pageContents.rowKeySet()) {
-                for (final String uniqueId : pageContents.row(containerId)
-                    .keySet()) {
+                final Container container =
+                        live && APILocator.getContainerAPI().getLiveContainerById(containerId, APILocator.systemUser(), false) != null
+                                ? APILocator.getContainerAPI().getLiveContainerById(containerId, APILocator.systemUser(), false)
+                                : APILocator.getContainerAPI().getWorkingContainerById(containerId, APILocator.systemUser(),false);
+
+
+                if (container == null) {
+                    continue;
+                }
+
+                final List<ContainerStructure> containerStructures = APILocator.getContainerAPI().getContainerStructures(container);
+                final Map<String, List<Contentlet>> contentMaps = Maps.newLinkedHashMap();
+                
+                for (final String uniqueId : pageContents.row(containerId).keySet()) {
                     final Set<String> cons = pageContents.get(containerId, uniqueId);
 
-                    final User systemUser = APILocator.getUserAPI().getSystemUser();
-                    final Container container = (live && APILocator.getVersionableAPI().findLiveVersion(containerId, systemUser, false) !=null) 
-                            ? (Container) APILocator.getVersionableAPI().findLiveVersion(containerId, systemUser, false) 
-                            : (Container) APILocator.getVersionableAPI().findWorkingVersion(containerId, systemUser, false);
 
-                    if(container==null)continue;
-                    boolean hasWritePermissionOnContainer =
-                            permissionAPI.doesUserHavePermission(container, PERMISSION_WRITE, user, false) && APILocator.getPortletAPI()
-                                .hasContainerManagerRights(user);
-                    boolean hasReadPermissionOnContainer = permissionAPI.doesUserHavePermission(container, PERMISSION_READ, user, false);
+                    final boolean hasWritePermissionOnContainer = permissionAPI.doesUserHavePermission(container, PERMISSION_WRITE, user, false)
+                            && APILocator.getPortletAPI().hasContainerManagerRights(user);
+                    final boolean hasReadPermissionOnContainer = permissionAPI.doesUserHavePermission(container, PERMISSION_READ, user, false);
                     ctxMap.put("EDIT_CONTAINER_PERMISSION" + container.getIdentifier(), hasWritePermissionOnContainer);
-                    if (Config.getBooleanProperty("SIMPLE_PAGE_CONTENT_PERMISSIONING", true))
+                    if (Config.getBooleanProperty("SIMPLE_PAGE_CONTENT_PERMISSIONING", true)) {
                         ctxMap.put("USE_CONTAINER_PERMISSION" + container.getIdentifier(), true);
-                    else
+                    } else {
                         ctxMap.put("USE_CONTAINER_PERMISSION" + container.getIdentifier(), hasReadPermissionOnContainer);
-
+                    }
                     // to check user has permission to write this container
                     boolean hasWritePermOverTheStructure = false;
 
-                    for (ContainerStructure cs : APILocator.getContainerAPI()
-                        .getContainerStructures(container)) {
-                        Structure st = CacheLocator.getContentTypeCache()
-                            .getStructureByInode(cs.getStructureId());
-
-                        hasWritePermOverTheStructure |= permissionAPI.doesUserHavePermission(st, PERMISSION_WRITE, user);
+                    for (final ContainerStructure containerStructure : containerStructures) {
+                        final Structure structure = CacheLocator.getContentTypeCache().getStructureByInode(containerStructure.getStructureId());
+                        hasWritePermOverTheStructure |= permissionAPI.doesUserHavePermission(structure, PERMISSION_WRITE, user);
                     }
 
                     ctxMap.put("ADD_CONTENT_PERMISSION" + container.getIdentifier(), new Boolean(hasWritePermOverTheStructure));
 
-                    List<Contentlet> contentlets = cons
-                            .stream()
-                            .map(id -> {
-                                    try{
-                                        return APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(id);
-                                    }
-                                    catch(Exception e) {
-                                        throw new DotStateException(e);
-                                    }
-                                }
-                            )
-                            .filter(Objects::nonNull)
-                            .collect(Collectors.toList());
-                    
-                    // get contentlets only for main frame
+                    final List<Contentlet> contentlets = cons.stream().map(id -> {
+                        try {
+                            final Contentlet contentlet = APILocator.getContentletAPI().findContentletForLanguage(this.languageId, APILocator.getIdentifierAPI().find(id));
+                            return (contentlet!=null) ? contentlet : APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(id);
+                        } catch (Exception e) {
+                            throw new DotStateException(e);
+                        }
+                    }).filter(Objects::nonNull).collect(Collectors.toList());
 
+
+                    contentMaps.put(uniqueId, contentlets);
                     if (contentlets != null) {
-                        for (Contentlet contentlet : contentlets) {
+                        for (final Contentlet contentlet : contentlets) {
                             ctxMap.put("EDIT_CONTENT_PERMISSION" + contentlet.getIdentifier(),
                                     permissionAPI.doesUserHavePermission(contentlet, PERMISSION_WRITE, user));
-                            ContentType type = contentlet.getContentType();
+                            final ContentType type = contentlet.getContentType();
                             if (type.baseType() == BaseContentType.WIDGET) {
-                                com.dotcms.contenttype.model.field.Field field = type.fieldMap() .get("widgetPreexecute");
+                                final com.dotcms.contenttype.model.field.Field field = type.fieldMap().get("widgetPreexecute");
                                 if (field != null && UtilMethods.isSet(field.values())) {
-                                  widgetPreExecute.append(field.values());
+                                    widgetPreExecute.append(field.values());
                                 }
                             }
 
@@ -233,8 +234,7 @@ public class PageContextBuilder {
 
 
                                 // Search for the tags associated to this contentlet inode
-                                List<Tag> contentletFoundTags = APILocator.getTagAPI()
-                                    .getTagsByInode(contentlet.getInode());
+                                final List<Tag> contentletFoundTags = APILocator.getTagAPI().getTagsByInode(contentlet.getInode());
                                 if (contentletFoundTags != null) {
                                     this.pageFoundTags.addAll(contentletFoundTags);
                                 }
@@ -244,10 +244,8 @@ public class PageContextBuilder {
                         }
                     }
 
-                    
-                    
-                    String[] contentlist = contentlets.stream()
-                            .map(con -> con.getIdentifier())
+
+                    final String[] contentlist = contentlets.stream().map(contentlet -> contentlet.getIdentifier())
                             .toArray(size -> new String[size]);
                     // sets contentletlist with all the files to load per
                     // container
@@ -255,57 +253,53 @@ public class PageContextBuilder {
 
                     if (ContainerUUID.UUID_LEGACY_VALUE.equals(uniqueId)) {
                         ctxMap.put("contentletList" + container.getIdentifier() + ContainerUUID.UUID_START_VALUE, contentlist);
-                    } else  if (ContainerUUID.UUID_START_VALUE.equals(uniqueId)) {
+                    } else if (ContainerUUID.UUID_START_VALUE.equals(uniqueId)) {
                         ctxMap.put("contentletList" + container.getIdentifier() + ContainerUUID.UUID_LEGACY_VALUE, contentlist);
                     }
 
                     ctxMap.put("totalSize" + container.getIdentifier() + uniqueId, new Integer(contentlets.size()));
 
                 }
+                raws.add(new ContainerRaw(container, containerStructures, contentMaps));
             }
         }
+        return raws;
     }
 
     public List<Tag> getPageFoundTags() {
-        return pageFoundTags;
+        return this.pageFoundTags;
     }
 
 
     final String getWidgetPreExecute() {
-      return this.widgetPreExecute.toString();
+        return this.widgetPreExecute.toString();
     }
 
 
     public Context addAll(Context incoming) {
 
         for (String key : this.ctxMap.keySet()) {
-            incoming.put(key, ctxMap.get(key));
+            incoming.put(key, this.ctxMap.get(key));
         }
-
-
 
         return incoming;
     }
 
 
-
     public String asString() {
-
 
         final StringWriter s = new StringWriter();
         for (String key : this.ctxMap.keySet()) {
-            s.append("#set($")
-                .append(key)
-                .append("=")
-                .append(new StringifyObject(ctxMap.get(key)).from())
-                .append(')');
+            s.append("#set($").append(key).append("=").append(new StringifyObject(this.ctxMap.get(key)).from()).append(')');
         }
-
 
         return s.toString();
 
     }
 
+    public List<ContainerRaw> getContainersRaw() {
+        return this.containersRaw;
+    }
 
 
 }
