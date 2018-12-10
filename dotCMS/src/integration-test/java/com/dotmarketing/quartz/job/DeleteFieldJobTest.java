@@ -79,60 +79,60 @@ public class DeleteFieldJobTest extends IntegrationTestBase {
         final String currentTime = String.valueOf(new Date().getTime());
 
         // Checkbox Field
-        final String checkboxFieldVarName = "checkboxFieldVarName_" + currentTime;
+        final String checkboxFieldVarName = "checkboxFieldVarName" + currentTime;
         // Date Field
-        final String dateFieldVarName = "dateFieldVarName_" + currentTime;
+        final String dateFieldVarName = "dateFieldVarName" + currentTime;
         // Time Field
-        final String timeFieldVarName = "timeFieldVarName_" + currentTime;
+        final String timeFieldVarName = "timeFieldVarName" + currentTime;
         // Date-Time Field
-        final String dateTimeFieldVarName = "dateTimeFieldVarName_" + currentTime;
+        final String dateTimeFieldVarName = "dateTimeFieldVarName" + currentTime;
         // Radio Field
-        final String radioFieldVarName = "radioFieldVarName_" + currentTime;
+        final String radioFieldVarName = "radioFieldVarName" + currentTime;
         // Select Field and its 4 types
-        final String selectTextFieldVarName = "selectTextFieldVarName_" + currentTime;
-        final String selectBooleanFieldVarName = "selectBooleanFieldVarName_" + currentTime;
-        final String selectDecimalFieldVarName = "selectDecimalFieldVarName_" + currentTime;
-        final String selectWholeNumberFieldVarName = "selectWholeNumberFieldVarName_" + currentTime;
+        final String selectTextFieldVarName = "selectTextFieldVarName" + currentTime;
+        final String selectBooleanFieldVarName = "selectBooleanFieldVarName" + currentTime;
+        final String selectDecimalFieldVarName = "selectDecimalFieldVarName" + currentTime;
+        final String selectWholeNumberFieldVarName = "selectWholeNumberFieldVarName" + currentTime;
         // Multi-Select Field
-        final String multiSelectFieldVarName = "multiSelectFieldVarName_" + currentTime;
+        final String multiSelectFieldVarName = "multiSelectFieldVarName" + currentTime;
         // Text Field and its 3 types
-        final String textFieldVarName = "textFieldVarName_" + currentTime;
-        final String textDecimalFieldVarName = "floatFieldVarName_" + currentTime;
-        final String textWholeNumberFieldVarName = "integerFieldVarName_" + currentTime;
+        final String textFieldVarName = "textFieldVarName" + currentTime;
+        final String textDecimalFieldVarName = "floatFieldVarName" + currentTime;
+        final String textWholeNumberFieldVarName = "integerFieldVarName" + currentTime;
         // Text Area Field
-        final String textAreaFieldVarName = "textAreaFieldVarName_" + currentTime;
+        final String textAreaFieldVarName = "textAreaFieldVarName" + currentTime;
         // WYSIWYG Field
-        final String wysiwygFieldVarName = "wysiwygFieldVarName_" + currentTime;
+        final String wysiwygFieldVarName = "wysiwygFieldVarName" + currentTime;
         // File Field
-        final String fileFieldVarName = "fileFieldVarName_" + currentTime;
+        final String fileFieldVarName = "fileFieldVarName" + currentTime;
         // Image Field
-        final String imageFieldVarName = "imageFieldVarName_" + currentTime;
+        final String imageFieldVarName = "imageFieldVarName" + currentTime;
         // Tag Field
-        final String tagFieldVarName = "tagFieldVarName_" + currentTime;
+        final String tagFieldVarName = "tagFieldVarName" + currentTime;
         // Category Field
-        final String categoryFieldVarName = "categoryFieldVarName_" + currentTime;
+        final String categoryFieldVarName = "categoryFieldVarName" + currentTime;
         // Line Divider Field
-        final String lineDividerFieldVarName = "lineDividerFieldVarName_" + currentTime;
+        final String lineDividerFieldVarName = "lineDividerFieldVarName" + currentTime;
         // Tab Divider Field
-        final String tabDividerFieldVarName = "tabDividerFieldVarName_" + currentTime;
+        final String tabDividerFieldVarName = "tabDividerFieldVarName" + currentTime;
         // Permissions Tab Field
-        final String permissionsTabFieldVarName = "permissionsTabFieldVarName_" + currentTime;
+        final String permissionsTabFieldVarName = "permissionsTabFieldVarName" + currentTime;
         // Relationships Tab Field
-        final String relationshipsTabFieldVarName = "relationshipsTabFieldVarName_" + currentTime;
+        final String relationshipsTabFieldVarName = "relationshipsTabFieldVarName" + currentTime;
         // Hidden Field
-        final String hiddenFieldVarName = "hiddenFieldVarName_" + currentTime;
+        final String hiddenFieldVarName = "hiddenFieldVarName" + currentTime;
         // Binary Field
-        final String binaryFieldVarName = "binaryFieldVarName_" + currentTime;
+        final String binaryFieldVarName = "binaryFieldVarName" + currentTime;
         // Custom Field
-        final String customFieldVarName = "customFieldVarName_" + currentTime;
+        final String customFieldVarName = "customFieldVarName" + currentTime;
         // Site or Folder Field
-        final String siteOrFolderFieldVarName = "siteOrFolderFieldVarName_" + currentTime;
+        final String siteOrFolderFieldVarName = "siteOrFolderFieldVarName" + currentTime;
         // Key/Value Field
-        final String keyValueFieldVarName = "keyValueFieldVarName_" + currentTime;
+        final String keyValueFieldVarName = "keyValueFieldVarName" + currentTime;
 
         // Create content type
-        final String contentTypeName = "DeleteFieldContentType_" + currentTime;
         final String contentTypeVelocityVarName = "deleteFieldVarName_" + currentTime;
+        final String contentTypeName = "DeleteFieldContentType_" + currentTime;
         Structure contentType = new Structure();
         contentType.setHost(site.getIdentifier());
         contentType.setDescription("Testing delete content types's field");
