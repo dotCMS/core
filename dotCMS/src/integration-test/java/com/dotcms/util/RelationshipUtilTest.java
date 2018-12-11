@@ -51,7 +51,7 @@ public class RelationshipUtilTest {
 
         final String filter = "+contentType:Youtube +(conhost:" + host.getIdentifier() + " conhost:SYSTEM_HOST) +catchall:how*";
         final List<Contentlet> testResults = RelationshipUtil
-                .filterContentlet(languageID, filter, user);
+                .filterContentlet(languageID, filter, user, false);
 
         final List<Contentlet> expectedResults = contentletAPI
                 .search(filter + " +languageId:" + languageID, 0, 0, null, user, false);
@@ -71,7 +71,7 @@ public class RelationshipUtilTest {
         try {
             final String query = "+identifier:" + contentlet.getIdentifier() + " +languageId:" + languageID;
             final List<Contentlet> testResults = RelationshipUtil
-                    .filterContentlet(languageID, contentlet.getIdentifier(), user);
+                    .filterContentlet(languageID, contentlet.getIdentifier(), user, false);
 
             final List<Contentlet> expectedResults = contentletAPI
                     .search(query, 0, 0, null, user, false);
@@ -96,7 +96,7 @@ public class RelationshipUtilTest {
         try {
             final String filter = "+contentType:Youtube";
             final List<Contentlet> testResults = RelationshipUtil
-                    .filterContentlet(languageID,  contentlet.getIdentifier() + "," + filter , user);
+                    .filterContentlet(languageID,  contentlet.getIdentifier() + "," + filter , user, false);
 
             final List<Contentlet> expectedResults = contentletAPI
                     .search(filter + " +languageId:" + languageID, 0, 0, null, user, false);
