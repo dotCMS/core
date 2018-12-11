@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output, AfterViewInit } from '@angular/core';
+import { Component, EventEmitter, Input, Output, AfterViewInit, OnInit } from '@angular/core';
 import { ServerSideTypeModel } from './services/ServerSideFieldModel';
 import { I18nService } from './services/system/locale/I18n';
 import {
@@ -56,7 +56,7 @@ import { LoggerService } from 'dotcms-js';
 </div>
 `
 })
-export class ConditionComponent implements AfterViewInit{
+export class ConditionComponent implements AfterViewInit, OnInit {
     @Input() condition: ConditionModel;
     @Input() index: number;
     @Input() conditionTypes: { [key: string]: ServerSideTypeModel } = {};
@@ -81,7 +81,9 @@ export class ConditionComponent implements AfterViewInit{
 
     typeDropdown: any;
 
-    constructor(private _resources: I18nService, private loggerService: LoggerService) {
+    constructor(private _resources: I18nService, private loggerService: LoggerService) { }
+
+    ngOnInit(): void {
         this.typeDropdown = {
             options: [],
             placeholder: this._resources.get(

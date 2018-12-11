@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output, AfterViewInit } from '@angular/core';
+import { Component, EventEmitter, Input, Output, AfterViewInit, OnInit } from '@angular/core';
 
 import { I18nService } from './services/system/locale/I18n';
 import { ServerSideTypeModel } from './services/ServerSideFieldModel';
@@ -42,7 +42,7 @@ import { LoggerService } from 'dotcms-js';
   </div>
 </div>`
 })
-export class RuleActionComponent implements AfterViewInit {
+export class RuleActionComponent implements AfterViewInit, OnInit {
     @Input() action: ActionModel;
     @Input() index = 0;
     @Input() actionTypePlaceholder: string;
@@ -53,13 +53,9 @@ export class RuleActionComponent implements AfterViewInit {
     updateRuleActionParameter: EventEmitter<RuleActionActionEvent> = new EventEmitter(false);
     @Output() deleteRuleAction: EventEmitter<RuleActionActionEvent> = new EventEmitter(false);
 
-    @Input() typeDropdown: any;
+    typeDropdown: any;
 
-    constructor(private _resources: I18nService, private loggerService: LoggerService) {
-        this.typeDropdown = {
-            options: []
-        };
-    }
+    constructor(private _resources: I18nService, private loggerService: LoggerService) {}
 
     ngOnChanges(change): void {
         if (change.action) {
@@ -69,6 +65,12 @@ export class RuleActionComponent implements AfterViewInit {
                 }
             }
         }
+    }
+
+    ngOnInit(): void {
+        this.typeDropdown = {
+            options: []
+        };
     }
 
     ngAfterViewInit(): void {
