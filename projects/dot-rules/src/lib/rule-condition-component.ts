@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output, AfterViewInit } from '@angular/core';
 import { ServerSideTypeModel } from './services/ServerSideFieldModel';
 import { I18nService } from './services/system/locale/I18n';
 import {
@@ -56,7 +56,7 @@ import { LoggerService } from 'dotcms-js';
 </div>
 `
 })
-export class ConditionComponent {
+export class ConditionComponent implements AfterViewInit{
     @Input() condition: ConditionModel;
     @Input() index: number;
     @Input() conditionTypes: { [key: string]: ServerSideTypeModel } = {};
@@ -81,7 +81,14 @@ export class ConditionComponent {
 
     typeDropdown: any;
 
-    constructor(private _resources: I18nService, private loggerService: LoggerService) {}
+    constructor(private _resources: I18nService, private loggerService: LoggerService) {
+        this.typeDropdown = {
+            options: [],
+            placeholder: this._resources.get(
+                'api.sites.ruleengine.rules.inputs.condition.type.placeholder'
+            )
+        };
+    }
 
     ngOnChanges(change): void {
         try {
@@ -92,21 +99,16 @@ export class ConditionComponent {
                     }
                 }
             }
-            if (change.conditionTypes && !this.typeDropdown) {
-                this.typeDropdown = {
-                    options: [],
-                    placeholder: this._resources.get(
-                        'api.sites.ruleengine.rules.inputs.condition.type.placeholder'
-                    )
-                };
-                Object.keys(this.conditionTypes).forEach(key => {
-                    const type = this.conditionTypes[key];
-                    this.typeDropdown.options.push(type._opt);
-                });
-            }
         } catch (e) {
             this.loggerService.error('ConditionComponent', 'ngOnChanges', e);
         }
+    }
+
+    ngAfterViewInit(): void {
+        Object.keys(this.conditionTypes).forEach(key => {
+            const type = this.conditionTypes[key];
+            this.typeDropdown.options.push(type._opt);
+        });
     }
 
     onTypeChange(type: string): void {
