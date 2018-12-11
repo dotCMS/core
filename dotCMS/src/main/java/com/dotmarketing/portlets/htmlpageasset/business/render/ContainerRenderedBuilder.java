@@ -57,7 +57,7 @@ public class ContainerRenderedBuilder {
 
         final Map<String, String> rendered = Maps.newHashMap();
         for (final String uuid : containerRaw.getContentlets().keySet()) {
-            final VelocityResourceKey key = new VelocityResourceKey(containerRaw.getContainer(), uuid, mode);
+            final VelocityResourceKey key = new VelocityResourceKey(containerRaw.getContainer(), uuid.replace("uuid-", ""), mode);
             try {
                 rendered.put(uuid, VelocityUtil.getInstance().mergeTemplate(key.path, velocityContext));
             } catch (Exception e) {

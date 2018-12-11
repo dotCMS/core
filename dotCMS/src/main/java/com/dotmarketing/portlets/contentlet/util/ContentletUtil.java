@@ -130,9 +130,12 @@ public class ContentletUtil {
 
 		for(com.dotcms.contenttype.model.field.Field f : type.fields()){
 			if(f instanceof BinaryField){
-			  File x = c.getBinary(f.variable());
-				m.put(f.variable(), "/dA/" +  c.getIdentifier() + "/" + f.variable() + "/" + x.getName()	);
+			  File fsFile = c.getBinary(f.variable());
+			  if(fsFile !=null && fsFile.exists()) {
+			    m.put(f.variable() + "Version", "/dA/" +  c.getInode() + "/" + f.variable() + "/" + fsFile.getName()  );
+				m.put(f.variable(), "/dA/" +  c.getIdentifier() + "/" + f.variable() + "/" + fsFile.getName()	);
 				m.put(f.variable() + "ContentAsset", c.getIdentifier() + "/" +f.variable()	);
+			  }
 			} else if(f instanceof CategoryField) {
 
 				List<Category> cats = null;

@@ -217,6 +217,7 @@ public class PageContextBuilder implements Serializable {
                 for (final Contentlet contentlet : contentlets) {
                     contentIdList.add(contentlet.getIdentifier());
                     try {
+                        System.out.println(contentlet);
                         cListAsMaps.add(ContentletUtil.getContentPrintableMap(user, contentlet));
                     } catch (IOException e) {
                         throw new DotStateException(e);
@@ -247,7 +248,7 @@ public class PageContextBuilder implements Serializable {
                     }
                 }
                 
-                contentMaps.put(uniqueId, cListAsMaps);
+                contentMaps.put((uniqueId.startsWith("uuid-")) ? uniqueId : "uuid-" + uniqueId, cListAsMaps);
                 String[] contentStrList = contentIdList.toArray(new String[0]);
                 
                 // sets contentletlist with all the files to load per
