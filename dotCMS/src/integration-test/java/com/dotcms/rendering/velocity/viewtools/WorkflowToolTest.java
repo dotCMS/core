@@ -30,6 +30,7 @@ import static org.mockito.Mockito.when;
 public class WorkflowToolTest {
 
     private static final String SAVE_WORKFLOW_ID = "b9d89c803d";
+    private static final String DELETE_WORKFLOW_ID = "777f1c6bc8";
 
     @BeforeClass
     public static void prepare() throws Exception{
@@ -60,8 +61,34 @@ public class WorkflowToolTest {
         case1.addAssertion(new Assertion((contentlet) -> "Daniel".equals(contentlet.get("firstName")), "First name does not match"));
         case1.addAssertion(new Assertion((contentlet) -> "Silva".equals(contentlet.get("lastName")), "Last name does not match"));
 
+        final String KNOWN_EMPLOYEE_ID = "69aaa4e9-a45a-453b-a29d-c518d64fef66";
+        final long SPANISH_LANG_ID = 2;
+
+        // CASE 2 - Updating an existing Employee contentlet should succeed
+        final WorkflowToolFireTestCase case2 = new WorkflowToolFireTestCase();
+
+        HashMap<String, Object> case2Properties = new HashMap<>();
+        case2Properties.put("identifier", KNOWN_EMPLOYEE_ID);
+        case2Properties.put("contentType", "Employee");
+        case2Properties.put("languageId", SPANISH_LANG_ID);
+        case2Properties.put("host1", "demo.dotcms.com");
+        case2Properties.put("firstName", "Updated Name");
+        case2Properties.put("lastName", "Updated Last Name");
+        case2Properties.put("jobTitle", "support");
+        case2Properties.put("email", "updated.mail@dotcms.com");
+        case2Properties.put("mobile", "5555555");
+        case2Properties.put("gender", "female");
+        case2.setProperties(case2Properties);
+
+        case2.setWorkflowActionId(SAVE_WORKFLOW_ID);
+        case2.addAssertion(new Assertion((contentlet) -> UtilMethods.isSet(contentlet.getIdentifier()), "Contentlet identifier is null"));
+        case2.addAssertion(new Assertion((contentlet) -> contentlet.getIdentifier().equals(KNOWN_EMPLOYEE_ID), "Unexpected Contentlet identifier"));
+        case2.addAssertion(new Assertion((contentlet) -> "Updated Name".equals(contentlet.get("firstName")), "First name does not match"));
+        case2.addAssertion(new Assertion((contentlet) -> "Updated Last Name".equals(contentlet.get("lastName")), "Last name does not match"));
+        case2.addAssertion(new Assertion((contentlet) -> contentlet.getLanguageId()==SPANISH_LANG_ID, "Last name does not match"));
+
         return new WorkflowToolFireTestCase[] {
-            case1
+                case1, case2 
         };
     }
 
@@ -94,7 +121,9 @@ public class WorkflowToolTest {
 
             savedContent = contentMap.getContentObject();
         } finally {
-            ContentletDataGen.remove(savedContent);
+            if(savedContent!=null && UtilMethods.isSet(savedContent.getIdentifier())) {
+                ContentletDataGen.remove(savedContent);
+            }
         }
     }
 
