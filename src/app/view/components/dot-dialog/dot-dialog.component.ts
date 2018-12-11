@@ -81,6 +81,7 @@ export class DotDialogComponent implements OnChanges {
     acceptAction(): void {
         if (this.actions && this.canTriggerAction(this.actions.accept)) {
             this.actions.accept.action();
+            this.unBindEvents();
         }
     }
 
@@ -170,7 +171,6 @@ export class DotDialogComponent implements OnChanges {
                 break;
             case 'Enter':
                 this.acceptAction();
-                this.unBindEvents();
                 break;
             default:
                 break;
