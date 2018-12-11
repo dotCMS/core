@@ -19,6 +19,8 @@
         span {
             display: block;
             height: $basic-padding * 4;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
         input {
             height: $basic-padding * 3;

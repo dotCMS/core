@@ -2,7 +2,6 @@
     class="tab__label no-drag"
     contenteditable="true"
     [textContent]="label"
-    (input)="label=$event.target.textContent"
     (blur)="changeLabel($event)"
     (keydown.enter)="changeLabel($event)"></div>
 <dot-icon-button-tooltip

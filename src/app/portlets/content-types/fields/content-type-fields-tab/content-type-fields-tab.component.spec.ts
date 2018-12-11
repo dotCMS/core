@@ -85,29 +85,15 @@ describe('ContentTypeFieldsTabComponent', () => {
         spyOn(comp.editTab, 'emit');
         const labelInput = de.query(By.css('.tab__label'));
 
-        labelInput.triggerEventHandler('input', {
-            target: {
-                textContent: 'hello world'
-            }
-        });
-
-        labelInput.triggerEventHandler('blur', new KeyboardEvent('keydown', { key: 'Tab' }));
-
-        labelInput.triggerEventHandler('input', {
-            target: {
-                textContent: 'hello world changed'
-            }
-        });
-
-        labelInput.triggerEventHandler('keydown.enter', new KeyboardEvent('keydown', { key: 'Enter' }));
-
-        hostFixture.detectChanges();
-
+        labelInput.nativeElement.textContent = 'hello world';
+        labelInput.nativeElement.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
         expect(comp.editTab.emit).toHaveBeenCalledWith({
             ...tabField,
             name: 'hello world'
         });
 
+        labelInput.nativeElement.textContent = 'hello world changed';
+        labelInput.nativeElement.dispatchEvent(new Event('blur'));
         expect(comp.editTab.emit).toHaveBeenCalledWith({
             ...tabField,
             name: 'hello world changed'
