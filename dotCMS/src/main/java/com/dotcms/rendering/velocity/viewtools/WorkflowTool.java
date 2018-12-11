@@ -59,7 +59,7 @@ public class WorkflowTool implements ViewTool {
 	private final CategoryAPI categoryAPI = APILocator.getCategoryAPI();
 	private final RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
 	private User user;
-	private boolean editOrPreviewMode =false;
+	private boolean editOrPreviewMode;
 	private Context context;
 	private Host currentHost;
 
@@ -67,7 +67,7 @@ public class WorkflowTool implements ViewTool {
 		HttpServletRequest request = ((ViewContext) initData).getRequest();
 		user = getUser(request);
 		this.context = ((ViewContext) initData).getVelocityContext();
-		PageMode mode = PageMode.get(request);
+		final PageMode mode = PageMode.get(request);
 		editOrPreviewMode =!mode.showLive;
 
 		try{
