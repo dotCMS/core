@@ -363,6 +363,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 	@CloseDBIfOpened
 	@Override
 	@SuppressWarnings({ "unchecked" })
+
 	public List<ContainerStructure> getContainerStructures(final Container container) throws DotStateException, DotDataException, DotSecurityException  {
 
 		final ContainerStructureFinderStrategyResolver resolver   =
@@ -373,6 +374,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 
 		final List<ContainerStructure> containerStructures = strategy.isPresent()? strategy.get().apply(container):
 				resolver.getDefaultStrategy().apply(container);
+
 
 		return containerStructures;
 	}

@@ -11,33 +11,7 @@ import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 
-import com.dotcms.contenttype.model.field.BinaryField;
-import com.dotcms.contenttype.model.field.CategoryField;
-import com.dotcms.contenttype.model.field.CheckboxField;
-import com.dotcms.contenttype.model.field.ConstantField;
-import com.dotcms.contenttype.model.field.CustomField;
-import com.dotcms.contenttype.model.field.DataTypes;
-import com.dotcms.contenttype.model.field.DateField;
-import com.dotcms.contenttype.model.field.DateTimeField;
-import com.dotcms.contenttype.model.field.Field;
-import com.dotcms.contenttype.model.field.FieldBuilder;
-import com.dotcms.contenttype.model.field.FileField;
-import com.dotcms.contenttype.model.field.HiddenField;
-import com.dotcms.contenttype.model.field.HostFolderField;
-import com.dotcms.contenttype.model.field.ImageField;
-import com.dotcms.contenttype.model.field.KeyValueField;
-import com.dotcms.contenttype.model.field.LineDividerField;
-import com.dotcms.contenttype.model.field.MultiSelectField;
-import com.dotcms.contenttype.model.field.PermissionTabField;
-import com.dotcms.contenttype.model.field.RadioField;
-import com.dotcms.contenttype.model.field.RelationshipsTabField;
-import com.dotcms.contenttype.model.field.SelectField;
-import com.dotcms.contenttype.model.field.TabDividerField;
-import com.dotcms.contenttype.model.field.TagField;
-import com.dotcms.contenttype.model.field.TextAreaField;
-import com.dotcms.contenttype.model.field.TextField;
-import com.dotcms.contenttype.model.field.TimeField;
-import com.dotcms.contenttype.model.field.WysiwygField;
+import com.dotcms.contenttype.model.field.*;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.SimpleContentType;
@@ -80,6 +54,75 @@ public class FieldResourceTest {
     public static void cleanUpData() throws DotDataException, DotSecurityException {
         ContentType contentType = getContentType();
         APILocator.getContentTypeAPI(APILocator.systemUser()).delete(contentType);
+    }
+
+    @Test
+    public void testCreateRelationshipFieldWithDash_Return400() throws Exception {
+        final FieldResource resource = new FieldResource();
+
+        final ContentType contentType = getContentType();
+
+        final String jsonField = "{"+
+                // IDENTITY VALUES
+                "	\"clazz\" : \"" + ImmutableRelationshipField.class.getCanonicalName() +"\","+
+                "	\"contentTypeId\" : \"CONTENT_TYPE_ID\","+
+                "	\"name\" : \"YouTube Videos\","+
+                "   \"values\" :  1," +
+                "   \"variable\": \"youtube-videos\","+
+                "   \"relationType\": \"Youtube\""+
+                "	}";
+
+        final Response response = resource.createContentTypeField(
+                contentType.id(), jsonField.replace("CONTENT_TYPE_ID", contentType.id()), getHttpRequest());
+
+        assertNotNull(response);
+        assertEquals(400, response.getStatus());
+        assertTrue("Error: " + response.getEntity().toString(), response.getEntity().toString().contains("contains characters not allowed"));
+    }
+
+    @Test
+    public void testUpdateFieldVariable_Return400() throws Exception {
+        final FieldResource resource = new FieldResource();
+
+        final ContentType contentType = getContentType();
+
+        final String jsonField = "{"+
+                // IDENTITY VALUES
+                "	\"clazz\" : \"" + ImmutableRelationshipField.class.getCanonicalName() +"\","+
+                "	\"contentTypeId\" : \"CONTENT_TYPE_ID\","+
+                "	\"name\" : \"YouTube Videos\","+
+                "   \"values\" :  1," +
+                "   \"variable\": \"youtubeVideos\","+
+                "   \"relationType\": \"Youtube\""+
+                "	}";
+
+        Response response = resource.createContentTypeField(
+                contentType.id(), jsonField.replace("CONTENT_TYPE_ID", contentType.id()), getHttpRequest());
+
+        assertNotNull(response);
+        assertEquals(200, response.getStatus());
+
+        final Map<String, Object> fieldMap = (Map<String, Object>) ((ResponseEntityView) response.getEntity()).getEntity();
+
+        final String jsonFieldUpdate = "{"+
+                // IDENTITY VALUES
+                "	\"clazz\" : \"" + ImmutableRelationshipField.class.getCanonicalName() +"\","+
+                "	\"contentTypeId\" : \"CONTENT_TYPE_ID\","+
+                "	\"id\" : \"CONTENT_TYPE_FIELD_ID\","+
+                "	\"name\" : \"YouTube Videos\","+
+                "   \"values\" :  1," +
+                "   \"variable\": \"youtube-Videos\","+
+                "   \"relationType\": \"Youtube\""+
+                "	}";
+
+        response = resource.updateContentTypeFieldById(
+                contentType.id(), (String) fieldMap.get("id"),
+                jsonFieldUpdate.replace("CONTENT_TYPE_ID", contentType.id()).replace("CONTENT_TYPE_FIELD_ID", (String) fieldMap.get("id")),
+                getHttpRequest());
+
+        assertNotNull(response);
+        assertEquals(400, response.getStatus());
+        assertTrue("Error: " + response.getEntity().toString(), response.getEntity().toString().contains("Field variable can not be modified"));
     }
 
 
@@ -978,7 +1021,7 @@ public class FieldResourceTest {
                                 "	\"name\" : \"The Host Field 2\","+
 
                                 // MANDATORY VALUES
-                                "	\"variable\" : \"theHostField2\","+
+                                "	\"variable\" : \"theHostField1\","+
                                 "	\"sortOrder\":\"12\","+
 
                                 "	\"hint\" : \"THE HINT 2\","+
@@ -994,7 +1037,7 @@ public class FieldResourceTest {
                         assertEquals(DataTypes.SYSTEM, field.dataType());
                         assertNotNull(field.id());
                         assertEquals("The Host Field 2", field.name());
-                        assertEquals("theHostField2", field.variable());
+                        assertEquals("theHostField1", field.variable());
 
                         assertEquals("THE HINT 2", field.hint());
 
@@ -1223,7 +1266,7 @@ public class FieldResourceTest {
                                 "	\"name\" : \"The Field 2\","+
 
                                 // MANDATORY VALUES
-                                "	\"variable\" : \"theField1\","+
+                                "	\"variable\" : \"theLinedividerField1\","+
                                 "	\"sortOrder\":\"12\""+
                                 "	}";
                     }
@@ -1234,7 +1277,7 @@ public class FieldResourceTest {
                         assertEquals(DataTypes.SYSTEM, field.dataType());
                         assertNotNull(field.id());
                         assertEquals("The Field 2", field.name());
-                        assertEquals("theField1", field.variable());
+                        assertEquals("theLinedividerField1", field.variable());
 
                         assertFalse(field.readOnly());
                         assertFalse(field.fixed());
@@ -1565,7 +1608,7 @@ public class FieldResourceTest {
                                 "	\"name\" : \"The Field 2\","+
 
                                 // MANDATORY VALUES
-                                "	\"variable\" : \"theField1\","+
+                                "	\"variable\" : \"theRelationshipField1\","+
                                 "	\"sortOrder\":\"12\""+
                                 "	}";
                     }
@@ -1576,7 +1619,7 @@ public class FieldResourceTest {
                         assertEquals(DataTypes.SYSTEM, field.dataType());
                         assertNotNull(field.id());
                         assertEquals("The Field 2", field.name());
-                        assertEquals("theField1", field.variable());
+                        assertEquals("theRelationshipField1", field.variable());
 
                         assertFalse(field.readOnly());
                         assertFalse(field.fixed());

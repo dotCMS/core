@@ -71,7 +71,7 @@ public class ApplicationContainerFolderListener implements FolderListener {
                             CacheLocator.getIdentifierCache().removeFromCacheByVersionable(container);
                         }
 
-                        this.invalidateContainerCache(container);
+                        this.invalidateContainerCache(container, containerFolder);
 
                         Logger.debug(this, () -> "The child: " + childName + " on the folder: " +
                                 containerFolder + ", has been removed, so the container was invalidated");
@@ -117,7 +117,7 @@ public class ApplicationContainerFolderListener implements FolderListener {
                             this.removeContentTypeMultitreesAssociated (contentType.get(), container);
                         }
 
-                        this.invalidateContainerCache(container);
+                        this.invalidateContainerCache(container, containerFolder);
 
                         Logger.debug(this, () -> "The child: " + childName + " on the folder: " +
                                 containerFolder + ", has been removed, so the container was invalidated");
@@ -133,8 +133,6 @@ public class ApplicationContainerFolderListener implements FolderListener {
 
     @WrapInTransaction
     private void removeContentTypeMultitreesAssociated(final ContentType childContentTypeAsset, final Container container) throws DotDataException {
-
-
 
         final List<MultiTree> multiTreeList = MultiTreeFactory
                 .getContainerStructureMultiTree(container.getIdentifier(), childContentTypeAsset.id());
@@ -268,10 +266,17 @@ public class ApplicationContainerFolderListener implements FolderListener {
         }*/
     }
 
-    private void invalidateContainerCache(final Container container) {
+    private void invalidateContainerCache(final Container container, final Folder containerFolder) {
+
+        final Container fileBasedContainer = new Container();
+
+        fileBasedContainer.setIdentifier(containerFolder.getPath());
+        new ContainerLoader().invalidate(fileBasedContainer);
+        CacheLocator.getContainerCache().remove(fileBasedContainer);
 
         new ContainerLoader().invalidate(container);
         CacheLocator.getContainerCache().remove(container);
+
         CacheLocator.getContentTypeCache().removeContainerStructures
                 (container.getIdentifier(), container.getInode());
     }

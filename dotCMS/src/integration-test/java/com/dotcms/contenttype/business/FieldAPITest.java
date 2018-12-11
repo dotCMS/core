@@ -21,6 +21,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotDataValidationException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.structure.model.Relationship;
@@ -662,6 +663,25 @@ public class FieldAPITest extends IntegrationTestBase {
                     .name("testField" + time)
                     .contentTypeId(type.id()).values(testCase.cardinality).indexed(testCase.indexed)
                     .listed(testCase.listed).build();
+
+            fieldAPI.save(field, user);
+        }finally {
+            contentTypeAPI.delete(type);
+        }
+    }
+
+    @Test(expected = DotDataValidationException.class)
+    public void testValidateRelationshipFieldWithDash_shouldThrowAnException()
+            throws DotSecurityException, DotDataException {
+
+
+        final long time = System.currentTimeMillis();
+        final ContentType type = createAndSaveSimpleContentType("testContentType" + time);
+        try {
+            final Field field = FieldBuilder.builder(RelationshipField.class)
+                    .name("testField" + time)
+                    .contentTypeId(type.id()).values(CARDINALITY).indexed(false)
+                    .listed(false).variable("testContentType-videos").build();
 
             fieldAPI.save(field, user);
         }finally {

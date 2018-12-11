@@ -45,6 +45,9 @@ import java.util.Date;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
+
+import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
+
 /**
  * @deprecated As of 2016-10-12, replaced by {@link com.dotcms.rest.api.v1.index.ESIndexResource}
  */
@@ -162,7 +165,7 @@ public class ESIndexResource {
     public static long indexDocumentCount(String indexName) {
         final Client client = new ESClient().getClient();
         final IndicesStatsResponse indicesStatsResponse =
-            client.admin().indices().prepareStats(indexName).setStore(true).execute().actionGet();
+            client.admin().indices().prepareStats(indexName).setStore(true).execute().actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS);
         final IndexStats indexStats = indicesStatsResponse.getIndex(indexName);
         return (indexStats !=null && indexStats.getTotal().docs != null) ? indexStats.getTotal().docs.getCount(): 0;
     }

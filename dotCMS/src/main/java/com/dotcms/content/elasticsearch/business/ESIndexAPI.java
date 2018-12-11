@@ -114,7 +114,7 @@ public class ESIndexAPI {
     public static final String BACKUP_REPOSITORY = "backup";
     private final String REPOSITORY_PATH = "path.repo";
 
-	private static final int INDEX_OPERATIONS_TIMEOUT_IN_MS =
+	public static final int INDEX_OPERATIONS_TIMEOUT_IN_MS =
 			Config.getIntProperty("ES_INDEX_OPERATIONS_TIMEOUT", 15000);
 
 	final private ESClient esclient;
@@ -161,7 +161,7 @@ public class ESIndexAPI {
         final Client client = esclient.getClient();
         final IndicesStatsResponse
             indicesStatsResponse =
-                client.admin().indices().prepareStats().setStore(true).execute().actionGet();
+                client.admin().indices().prepareStats().setStore(true).execute().actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS);
 
         return indicesStatsResponse.getIndices();
     }
@@ -257,11 +257,11 @@ public class ESIndexAPI {
                     //_doc has no real use-case besides being the most efficient sort order.
                     .addSort("_doc", SortOrder.DESC)
                     .execute()
-                    .actionGet();
+                    .actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS);
 
 			while (true) {
 				scrollResp = client.prepareSearchScroll(scrollResp.getScrollId()).setScroll(TimeValue.timeValueMinutes(2)).execute()
-						.actionGet();
+						.actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS);
 				boolean hitsRead = false;
 				for (SearchHit hit : scrollResp.getHits()) {
 					bw.write(hit.getId());
@@ -310,7 +310,7 @@ public class ESIndexAPI {
 
 			IndicesAdminClient iac = new ESClient().getClient().admin().indices();
 			DeleteIndexRequest req = new DeleteIndexRequest(indexName);
-			DeleteIndexResponse res = iac.delete(req).actionGet();
+			DeleteIndexResponse res = iac.delete(req).actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS);
 
             AdminLogger.log(this.getClass(), "delete", "Index: " + indexName + " deleted.");
 
@@ -405,7 +405,7 @@ public class ESIndexAPI {
     					    }
     					}
     				    if(req.numberOfActions()>0) {
-    				        req.execute().actionGet();
+    				        req.execute().actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS);
     				    }
 				    }
 				    finally {
@@ -548,7 +548,7 @@ public class ESIndexAPI {
                         .field("number_of_replicas",0)
                         .field("routing.allocation.include._name",nodeName)
                      .endObject()
-               .endObject().string(), XContentType.JSON)).actionGet();
+               .endObject().string(), XContentType.JSON)).actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS);
     }
 
 	/**
@@ -570,7 +570,7 @@ public class ESIndexAPI {
         client.admin().indices().updateSettings(
           new UpdateSettingsRequest(index).settings(builder
 				  .field("routing.allocation.include._name","*").endObject()
-				  .endObject().string(), XContentType.JSON)).actionGet();
+				  .endObject().string(), XContentType.JSON)).actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS);
     }
 
     /**
@@ -709,7 +709,7 @@ public class ESIndexAPI {
         ClusterHealthRequest req = new ClusterHealthRequest();
         ActionFuture<ClusterHealthResponse> chr = client.cluster().health(req);
 
-        ClusterHealthResponse res  = chr.actionGet();
+        ClusterHealthResponse res  = chr.actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS);
         Map<String,ClusterIndexHealth> map  = res.getIndices();
 
         return map;
@@ -747,7 +747,7 @@ public class ESIndexAPI {
 
 			UpdateSettingsRequestBuilder usrb = new ESClient().getClient().admin().indices().prepareUpdateSettings(indexName);
 			usrb.setSettings(newSettings);
-			usrb.execute().actionGet();
+			usrb.execute().actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS);
 		}
 
 		AdminLogger.log(this.getClass(), "updateReplicas", "Replicas updated to index: " + indexName);
@@ -760,7 +760,7 @@ public class ESIndexAPI {
 		   IndexResponse response = client.prepareIndex(idx, SiteSearchAPI.ES_SITE_SEARCH_MAPPING, id)
 			        .setSource(json)
 			        .execute()
-			        .actionGet();
+			        .actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS);
 
 		} catch (Exception e) {
 		    Logger.error(ESIndexAPI.class, e.getMessage(), e);
@@ -829,7 +829,7 @@ public class ESIndexAPI {
     	AdminLogger.log(this.getClass(), "closeIndex", "Trying to close index: " + indexName);
 
         Client client=new ESClient().getClient();
-        client.admin().indices().close(new CloseIndexRequest(indexName)).actionGet();
+        client.admin().indices().close(new CloseIndexRequest(indexName)).actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS);
 
         AdminLogger.log(this.getClass(), "closeIndex", "Index: " + indexName + " closed");
     }
@@ -838,7 +838,7 @@ public class ESIndexAPI {
     	AdminLogger.log(this.getClass(), "openIndex", "Trying to open index: " + indexName);
 
         Client client=new ESClient().getClient();
-        client.admin().indices().open(new OpenIndexRequest(indexName)).actionGet();
+        client.admin().indices().open(new OpenIndexRequest(indexName)).actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS);
 
         AdminLogger.log(this.getClass(), "openIndex", "Index: " + indexName + " opened");
     }
@@ -847,7 +847,7 @@ public class ESIndexAPI {
         Client client = new ESClient().getClient();
         ImmutableOpenMap<String, IndexMetaData>
             indexState =
-            client.admin().cluster().prepareState().execute().actionGet()
+            client.admin().cluster().prepareState().execute().actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS)
                 .getState().getMetaData().indices();
 
         List<String> closeIdx = new ArrayList<>();
@@ -1209,7 +1209,7 @@ public class ESIndexAPI {
 		if (isRepositoryExist(repositoryName)) {
 			try {
 				DeleteRepositoryResponse response = client.admin().cluster().prepareDeleteRepository(repositoryName)
-						.execute().actionGet();
+						.execute().actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS);
 				if (response.isAcknowledged()) {
 					Logger.info(this.getClass(), repositoryName + " repository has been deleted.");
 					result = true;

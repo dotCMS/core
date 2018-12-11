@@ -81,7 +81,7 @@ public class VelocityLiveMode extends VelocityModeHandler {
 
             // now we check identifier cache first (which DOES NOT have a 404 cache )
             Identifier id = APILocator.getIdentifierAPI().find(host, uri);
-            if (id == null || id.getId() == null) {
+            if (!host.isLive() || id == null || id.getId() == null) {
                 response.sendError(HttpServletResponse.SC_NOT_FOUND);
                 return;
             } else {

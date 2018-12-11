@@ -53,6 +53,7 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
 import static com.dotmarketing.util.StringUtils.builder;
 
 public class ESContentletIndexAPI implements ContentletIndexAPI{
@@ -476,7 +477,7 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 
 			indexContentletList(bulk, contentToIndex, reindexOnly);
 			if (bulk.numberOfActions() > 0) {
-				bulk.execute().actionGet();
+				bulk.execute().actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS);
 			}
 		} catch (DotStateException | DotSecurityException | DotMappingException e) {
 			throw new DotDataException(e.getMessage(), e);
@@ -778,7 +779,7 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 			}
 		}
 
-		bulk.execute().actionGet();
+		bulk.execute().actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS);
 	}
 
 	private void reindexDependenciesForDeletedContent(final Contentlet contentlet,
@@ -905,7 +906,7 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 
         List<String> existingIndex=new ArrayList<String>();
         for(String idx : indexNames)
-            if(client.admin().indices().exists(new IndicesExistsRequest(idx)).actionGet().isExists())
+            if(client.admin().indices().exists(new IndicesExistsRequest(idx)).actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS).isExists())
                 existingIndex.add(idx);
         indexNames=existingIndex;
 
