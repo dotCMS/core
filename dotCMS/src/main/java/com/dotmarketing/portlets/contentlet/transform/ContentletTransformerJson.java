@@ -2,6 +2,7 @@ package com.dotmarketing.portlets.contentlet.transform;
 
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
@@ -28,14 +29,14 @@ public class ContentletTransformerJson {
             Logger.error(getClass(),"Error loading user from db. ", e);
         }
         final Map<String, Object> conMap = new HashMap<>();
-        conMap.put("title", contentlet.getTitle());
-        conMap.put("modDate", UtilMethods.dateToJDBC(contentlet.getModDate()));
+        conMap.put(FileAssetAPI.TITLE_FIELD, contentlet.getTitle());
+        conMap.put(Contentlet.MOD_DATE_KEY, UtilMethods.dateToJDBC(contentlet.getModDate()));
         conMap.put("language", contentlet.getLanguageId());
-        conMap.put("inode", contentlet.getInode());
-        conMap.put("modUser", contentlet.getModUser());
+        conMap.put(Contentlet.INODE_KEY, contentlet.getInode());
+        conMap.put(Contentlet.MOD_USER_KEY, contentlet.getModUser());
         conMap.put("modUserName",  null == modUser ? "N/A" : modUser.getFullName());
-        conMap.put("folder", contentlet.getFolder());
-        conMap.put("host", contentlet.getHost());
+        conMap.put(Contentlet.FOLDER_KEY, contentlet.getFolder());
+        conMap.put(Contentlet.HOST_KEY, contentlet.getHost());
         return conMap;
     }
 
