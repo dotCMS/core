@@ -170,6 +170,7 @@ export class DotDialogComponent implements OnChanges {
                 break;
             case 'Enter':
                 this.acceptAction();
+                this.unBindEvents();
                 break;
             default:
                 break;
