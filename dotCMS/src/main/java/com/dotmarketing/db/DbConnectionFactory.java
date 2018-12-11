@@ -1,14 +1,19 @@
 
 package com.dotmarketing.db;
 
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.*;
 import com.liferay.util.JNDIUtil;
 import com.microsoft.sqlserver.jdbc.ISQLServerConnection;
+import com.opentable.db.postgres.embedded.EmbeddedPostgres;
 
 import javax.naming.*;
 import javax.sql.DataSource;
+
+import java.io.File;
+import java.io.IOException;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.Date;
@@ -91,22 +96,50 @@ public class DbConnectionFactory {
         connectionsHolder =
         new ThreadLocal<HashMap<String, Connection>>();
 
+    private static EmbeddedPostgres pg=null;
+    
+    
+    public void shutDownImbeddedDb() {
+        if(pg!=null) {
+            try {
+                pg.close();
+            } catch (IOException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+        }
+    }
+    
+    
+   
     public static DataSource getDataSource() {
 
         if (null == defaultDataSource) {
 
             synchronized (DbConnectionFactory.class) {
-
                 if (null == defaultDataSource) {
 
                     try {
                         final InitialContext ctx = new InitialContext();
                         defaultDataSource = (DataSource) JNDIUtil.lookup(ctx, Constants.DATABASE_DEFAULT_DATASOURCE);
+        
+
+                        
                     } catch (Exception e) {
-                        Logger.error(DbConnectionFactory.class,
-                                "---------- DBConnectionFactory: error getting dbconnection " + Constants.DATABASE_DEFAULT_DATASOURCE,
-                                e);
-                        throw new DotRuntimeException(e.toString());
+                        Logger.info(DbConnectionFactory.class, "Unable to find a datasource - creating a new one");
+                        try {
+                            File dir = new File(Config.CONTEXT.getRealPath("/WEB-INF/pg"));
+                            dir.mkdirs();
+                            
+                            
+                            pg = EmbeddedPostgres.builder().setDataDirectory(dir).start();
+                            defaultDataSource = pg.getPostgresDatabase();
+                        } catch (IOException e1) {
+                            throw new DotStateException(e1);
+
+                        }
+                        
+
                     }
                 }
             }

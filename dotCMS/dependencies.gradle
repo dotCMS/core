@@ -337,6 +337,26 @@ dependencies {
     testCompile "org.powermock:powermock-module-junit4:1.6.5"
     testCompile group: 'com.google.guava', name: 'guava', version: '19.0'
 
+
+    
+
+
+    /**
+     * Order matters here: OSGI-Core must come after felix.
+     */
+    compile(group: 'com.opentable.components', name: 'otj-pg-embedded', version: '0.12.6') {
+        exclude(group: 'commons-logging')
+        exclude(group: 'commons-codec')
+        exclude(group: 'commons-compress')
+        exclude(group: 'flyway-core')
+        exclude(group: 'commons-lang3')
+        exclude(group: 'org.slf4j')
+    }
+
+
+
+
+
     /**
      * Order matters here: OSGI-Core must come after felix.
      */
