@@ -7,15 +7,19 @@ import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.*;
 import com.dotcms.contenttype.model.type.*;
 import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.FolderDataGen;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.PermissionLevel;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
@@ -483,7 +487,7 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 
 		final PermissionAPI permAPI = Mockito.spy(APILocator.getPermissionAPI());
 		Mockito.doReturn(true).when(permAPI).doesUserHavePermissions(contentGenericType.getParentPermissionable(),
-				"PARENT:" + PermissionAPI.PERMISSION_CAN_ADD_CHILDREN + ", STRUCTURES:" + PermissionAPI.PERMISSION_PUBLISH,
+				"PARENT:" + PermissionAPI.PERMISSION_CAN_ADD_CHILDREN + ", STRUCTURES:" + PermissionAPI.PERMISSION_EDIT_PERMISSIONS,
 				limitedUserEditPermsPermOnCT);
 
 		contentTypeAPI = new ContentTypeAPIImpl(limitedUserEditPermsPermOnCT, false, FactoryLocator.getContentTypeFactory(),
@@ -640,6 +644,62 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 		} finally {
 			restorePermissionsForUser(limitedUser, existingPermissions);
 			contentTypeApi.delete(newType);
+		}
+		assertTrue(testCase.shouldExecuteAction);
+	}
+
+	@DataProvider
+	public static Object[] testCasesSaveContentTypePermissions() {
+		return new Object[] {
+				new TestCaseUpdateContentTypePermissions(PermissionAPI.PERMISSION_EDIT_PERMISSIONS, true),
+				new TestCaseUpdateContentTypePermissions(PermissionAPI.PERMISSION_PUBLISH, false),
+				new TestCaseUpdateContentTypePermissions(PermissionAPI.PERMISSION_EDIT, false),
+				new TestCaseUpdateContentTypePermissions(PermissionAPI.PERMISSION_READ, false)
+		};
+	}
+
+	@Test
+	@UseDataProvider("testCasesSaveContentTypePermissions")
+	public void testSaveContentTypeLimitedUserPermissions(final TestCaseUpdateContentTypePermissions testCase)
+			throws DotDataException, DotSecurityException{
+	    //Create Folder
+		final Folder folder = new FolderDataGen().host(APILocator.systemHost()).nextPersisted();
+
+		//Create Content Type
+		long time = System.currentTimeMillis();
+
+		ContentType contentType = ContentTypeBuilder.builder(BaseContentType.getContentTypeClass(BaseContentType.CONTENT.ordinal()))
+				.description("ContentTypeSave " + time).name("ContentTypeSave " + time).folder(folder.getInode())
+				.owner(APILocator.systemUser().toString()).variable("CTVariable" + time).build();
+
+		//Get Limited User
+		final User limitedUserEditPermsPermOnCT = APILocator.getUserAPI().loadUserById("dotcms.org.2795",
+				APILocator.systemUser(), false);
+
+		final PermissionAPI permAPI = Mockito.spy(APILocator.getPermissionAPI());
+		Mockito.doReturn(true).when(permAPI).doesUserHavePermissions(folder,
+				"PARENT:" + PermissionAPI.PERMISSION_CAN_ADD_CHILDREN + ", STRUCTURES:" + testCase.permissions,
+				limitedUserEditPermsPermOnCT);
+		//Give READ PERMISSIONS to the folder
+		Permission readPermissions = new Permission(folder.getPermissionId(),
+				APILocator.getRoleAPI().getUserRole(limitedUserEditPermsPermOnCT).getId(), PermissionAPI.PERMISSION_READ );
+		APILocator.getPermissionAPI().save( readPermissions, folder, user, false );
+
+		ContentTypeAPI contentTypeAPI = new ContentTypeAPIImpl(limitedUserEditPermsPermOnCT, false, FactoryLocator.getContentTypeFactory(),
+				FactoryLocator.getFieldFactory(), permAPI, APILocator.getContentTypeFieldAPI());
+		//Try to Save Content Type
+		try{
+			contentType = contentTypeAPI.save(contentType);
+		}catch (DotSecurityException e){
+			assertFalse(e.getMessage(), testCase.shouldExecuteAction);
+			return;
+		}finally {
+			if(UtilMethods.isSet(contentType.id())) {
+				//Delete content Type
+				contentTypeApi.delete(contentType);
+			}
+			//Delete folder
+			APILocator.getFolderAPI().delete(folder,user,false);
 		}
 		assertTrue(testCase.shouldExecuteAction);
 	}

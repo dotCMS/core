@@ -1,17 +1,34 @@
 package com.dotcms.exception;
 
+import static com.dotmarketing.portlets.contentlet.business.DotContentletValidationException.VALIDATION_FAILED_BADTYPE;
+import static com.dotmarketing.portlets.contentlet.business.DotContentletValidationException.VALIDATION_FAILED_BAD_CARDINALITY;
+import static com.dotmarketing.portlets.contentlet.business.DotContentletValidationException.VALIDATION_FAILED_BAD_REL;
+import static com.dotmarketing.portlets.contentlet.business.DotContentletValidationException.VALIDATION_FAILED_INVALID_REL_CONTENT;
+import static com.dotmarketing.portlets.contentlet.business.DotContentletValidationException.VALIDATION_FAILED_MAXLENGTH;
+import static com.dotmarketing.portlets.contentlet.business.DotContentletValidationException.VALIDATION_FAILED_PATTERN;
+import static com.dotmarketing.portlets.contentlet.business.DotContentletValidationException.VALIDATION_FAILED_REQUIRED;
+import static com.dotmarketing.portlets.contentlet.business.DotContentletValidationException.VALIDATION_FAILED_REQUIRED_REL;
+import static com.dotmarketing.portlets.contentlet.business.DotContentletValidationException.VALIDATION_FAILED_UNIQUE;
+
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ValidationException;
 import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.exception.*;
+import com.dotmarketing.exception.AlreadyExistException;
+import com.dotmarketing.exception.DoesNotExistException;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotDataValidationException;
+import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.exception.InvalidLicenseException;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetValidationException;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
+import com.dotmarketing.portlets.workflows.business.DotWorkflowException;
 import com.dotmarketing.portlets.workflows.business.WorkflowPortletAccessException;
 import com.dotmarketing.util.Logger;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -19,11 +36,15 @@ import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
-
-import static com.dotmarketing.portlets.contentlet.business.DotContentletValidationException.*;
+import java.util.Optional;
+import java.util.Set;
 
 /**
  * Exception Utils
@@ -106,6 +127,35 @@ public class ExceptionUtil {
     public static boolean causedBy(final Throwable e, final Class<? extends Throwable>... exceptionClasses) {
 
         return causedBy(e, new HashSet<>(Arrays.asList(exceptionClasses)));
+    }
+
+    /**
+     *
+     * @param t
+     * @throws DotDataException
+     * @throws DotSecurityException
+     * @throws DotRuntimeException
+     */
+    public static void bubbleUpException(final Throwable t)
+            throws DotDataException, DotSecurityException, DotRuntimeException {
+
+        if (t instanceof DotDataException) {
+            throw (DotDataException) t;
+        }
+        if (t instanceof DotSecurityException) {
+            throw (DotSecurityException) t;
+        }
+        if (t instanceof DotContentletValidationException) {
+            throw (DotContentletValidationException) t;
+        }
+        if (t instanceof DotContentletStateException) {
+            throw (DotContentletStateException) t;
+        }
+        if (t instanceof DotWorkflowException) {
+            throw (DotWorkflowException) t;
+        }
+
+        throw new DotRuntimeException(t.getMessage(), t);
     }
 
     /**

@@ -395,7 +395,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     // check perms
     Permissionable parent = contentType.getParentPermissionable();
     if (!perms.doesUserHavePermissions(parent,
-        "PARENT:" + PermissionAPI.PERMISSION_CAN_ADD_CHILDREN + ", STRUCTURES:" + PermissionAPI.PERMISSION_PUBLISH,
+        "PARENT:" + PermissionAPI.PERMISSION_CAN_ADD_CHILDREN + ", STRUCTURES:" + PermissionAPI.PERMISSION_EDIT_PERMISSIONS,
         user)) {
       throw new DotSecurityException(
           "User-does-not-have-add-children-or-structure-permission-on-host-folder:" + parent);

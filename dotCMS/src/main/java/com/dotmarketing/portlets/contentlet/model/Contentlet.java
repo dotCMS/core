@@ -1,8 +1,11 @@
 package com.dotmarketing.portlets.contentlet.model;
 
+import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.util.ConversionUtils;
 import com.dotmarketing.beans.Host;
@@ -181,14 +184,6 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 		}
 	}
 
-
-
-
-
-	public void setContentType(ContentType contentType) {
-		this.contentType = contentType;
-	}
-
 	@Override
     public String getCategoryId() {
     	return getInode();
@@ -345,17 +340,15 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 
 	/**
 	 * @deprecated As of dotCMS 4.1.0. Please use the following approach:
-	 *             <pre>
+	 * <pre>
 	 *             {@link #getContentType()}
 	 *             </pre>
-	 * 
-	 * @return
 	 */
-    public Structure getStructure() {
-    	Structure structure = null;
-    	structure = CacheLocator.getContentTypeCache().getStructureByInode(getStructureInode());
-        return structure;
-    }
+	public Structure getStructure() {
+		final ContentType type = this.getContentType();
+		return null != type?
+				new StructureTransformer(getContentType()).asStructure():null;
+	}
 
     /**
      * 
@@ -1278,27 +1271,36 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	public boolean hasLiveVersion() throws DotStateException, DotDataException {
 		return APILocator.getVersionableAPI().hasLiveVersion(this);
 	}
-	
+
 	/**
 	 * Get the contentlet Content Type
+	 *
 	 * @return the contentlet Content Type
-	 * @throws DotDataException
-	 * @throws DotSecurityException
 	 */
 	public ContentType getContentType() {
 
-		if (null == this.contentType) {
-			try {
-				this.contentType =
-						APILocator.getContentTypeAPI(APILocator.systemUser())
-								.find(getContentTypeId());
-			} catch (DotDataException | DotSecurityException e) {
+		try {
+			final ContentType foundContentType =
+					APILocator.getContentTypeAPI(APILocator.systemUser())
+							.find(getContentTypeId());
+
+			if (null != foundContentType) {
+				this.contentType = foundContentType;
+			}
+		} catch (DotDataException | DotSecurityException e) {
+			if (!ExceptionUtil.causedBy(e, NotFoundInDbException.class)) {
 				throw new DotStateException(e);
+			} else {
+				Logger.warn(this,
+						() -> String.format(
+								"Unable to find Content Type for Contentlet [%s], Content Type deleted? - [%s]",
+								this.getIdentifier(),
+								e.getMessage()));
 			}
 		}
 
 		return this.contentType;
-    }
+	}
 	
 	/**
 	 * Get if the contentlet is a Vanity URL

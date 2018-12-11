@@ -505,7 +505,6 @@ public class ContentTool implements ViewTool {
      * @param structureVariableName
      * @param startDate
      * @param endDate
-     * @param user
      * @return
      */
 	public List<Map<String, String>> getMostViewedContent(String structureVariableName, String startDate, String endDate) {

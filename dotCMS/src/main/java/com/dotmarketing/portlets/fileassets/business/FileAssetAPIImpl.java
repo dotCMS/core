@@ -12,10 +12,7 @@ import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotcms.tika.TikaUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.*;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -35,17 +32,15 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
+import com.liferay.util.StringPool;
+import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
+
+import java.io.*;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.zip.GZIPInputStream;
-import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 
 /**
  * This class is a bridge impl that will support the older
@@ -61,14 +56,17 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 	private final SystemEventsAPI systemEventsAPI;
 	final ContentletAPI contAPI;
 	final PermissionAPI perAPI;
+	private final IdentifierAPI identifierAPI;
 
 	public FileAssetAPIImpl() {
+
 		contAPI = APILocator.getContentletAPI();
 		perAPI = APILocator.getPermissionAPI();
 		systemEventsAPI = APILocator.getSystemEventsAPI();
+		identifierAPI   = APILocator.getIdentifierAPI();
 	}
 
-	/**
+	/*
 	 * This method will allow you to pass a file where the identifier is not set.  It the file exists on the set host/path
 	 * the identifier and all necessary data will be set in order to checkin as a new version of the existing file. The method will
 	 * call checkout for you so there is no need to do that work before calling this method
@@ -277,6 +275,24 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 	public boolean fileNameExists(Host host, Folder folder, String fileName, String identifier) throws  DotDataException{
 		return this.fileNameExists(host, folder, fileName, identifier, -1);
 	}
+
+	@CloseDBIfOpened
+	@Override
+	public boolean fileNameExists(final Host host, final Folder folder, final String fileName) throws  DotDataException {
+
+		if(!UtilMethods.isSet(fileName) || folder == null || host == null ) {
+			return false;
+		}
+
+
+		final Identifier folderId  = this.identifierAPI.find(folder);
+		final String path          = folder.getInode().equals(FolderAPI.SYSTEM_FOLDER)?
+				new StringBuilder(StringPool.FORWARD_SLASH).append(fileName).toString():
+				new StringBuilder(folderId.getPath()).append(fileName).toString();
+		final Identifier fileAsset = this.identifierAPI.find(host, path);
+
+		return (fileAsset!=null && InodeUtils.isSet(fileAsset.getId())  && !fileAsset.getAssetType().equals(Contentlet.FOLDER_KEY));
+	} // fileNameExists.
 
 	@CloseDBIfOpened
 	public boolean fileNameExists(Host host, Folder folder, String fileName, String identifier, long languageId) throws  DotDataException{

@@ -978,7 +978,7 @@ public class FieldResourceTest {
 						"	\"name\" : \"The Host Field 2\","+
 
 						// MANDATORY VALUES
-						"	\"variable\" : \"theHostField2\","+
+						"	\"variable\" : \"theHostField1\","+
 						"	\"sortOrder\":\"12\","+
 
 						"	\"hint\" : \"THE HINT 2\","+
@@ -994,7 +994,7 @@ public class FieldResourceTest {
 					assertEquals(DataTypes.SYSTEM, field.dataType());
 					assertNotNull(field.id());
 					assertEquals("The Host Field 2", field.name());
-					assertEquals("theHostField2", field.variable());
+					assertEquals("theHostField1", field.variable());
 
 					assertEquals("THE HINT 2", field.hint());
 
@@ -1223,7 +1223,7 @@ public class FieldResourceTest {
 						"	\"name\" : \"The Field 2\","+
 
 						// MANDATORY VALUES
-						"	\"variable\" : \"theField1\","+
+						"	\"variable\" : \"theLinedividerField1\","+
 						"	\"sortOrder\":\"12\""+
 					"	}";
 				}
@@ -1234,7 +1234,7 @@ public class FieldResourceTest {
 					assertEquals(DataTypes.SYSTEM, field.dataType());
 					assertNotNull(field.id());
 					assertEquals("The Field 2", field.name());
-					assertEquals("theField1", field.variable());
+					assertEquals("theLinedividerField1", field.variable());
 
 					assertFalse(field.readOnly());
 					assertFalse(field.fixed());
@@ -1565,7 +1565,7 @@ public class FieldResourceTest {
 						"	\"name\" : \"The Field 2\","+
 
 						// MANDATORY VALUES
-						"	\"variable\" : \"theField1\","+
+						"	\"variable\" : \"theRelationshipField1\","+
 						"	\"sortOrder\":\"12\""+
 					"	}";
 				}
@@ -1576,7 +1576,7 @@ public class FieldResourceTest {
 					assertEquals(DataTypes.SYSTEM, field.dataType());
 					assertNotNull(field.id());
 					assertEquals("The Field 2", field.name());
-					assertEquals("theField1", field.variable());
+					assertEquals("theRelationshipField1", field.variable());
 
 					assertFalse(field.readOnly());
 					assertFalse(field.fixed());
