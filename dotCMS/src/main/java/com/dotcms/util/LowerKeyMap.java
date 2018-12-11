@@ -8,6 +8,8 @@ import java.util.Map;
 
 public class LowerKeyMap<V> extends MapWrapper<String, V> implements Map<String, V>, Serializable {
 
+    private static final long serialVersionUID = 1L;
+
     public LowerKeyMap() {
         this(new HashMap<>());
     }
