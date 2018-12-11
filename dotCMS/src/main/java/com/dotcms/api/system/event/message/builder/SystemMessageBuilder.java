@@ -1,13 +1,8 @@
 package com.dotcms.api.system.event.message.builder;
 
-import com.dotcms.api.system.event.SystemEventsAPI;
 import com.dotcms.api.system.event.message.MessageSeverity;
 import com.dotcms.api.system.event.message.MessageType;
-import com.dotcms.api.system.event.message.SystemMessageEventUtil;
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotmarketing.business.APILocator;
-
-import java.util.Set;
+import com.dotmarketing.util.DateUtil;
 
 /**
  * Builder for {@link SystemMessage}
@@ -15,7 +10,7 @@ import java.util.Set;
 public class SystemMessageBuilder {
     private Object message;
     private String[] portletIdList;
-    private long life = 3000;
+    private long life = DateUtil.THREE_SECOND_MILLIS;
     private MessageSeverity severity = MessageSeverity.INFO;
     private MessageType type = MessageType.SIMPLE_MESSAGE;
 
