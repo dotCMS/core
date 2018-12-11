@@ -5,6 +5,10 @@ import com.dotcms.api.system.event.message.MessageType;
 import com.dotmarketing.util.DateUtil;
 
 /**
+ * Buider to create the SystemMessage (Approach to show message to specific users and/or porlets as a popup).
+ * - life time is by default 3 secs (the time displaying on the UI).
+ * - severity is the type of the Message see {@link MessageSeverity} for details
+ * - type is the actual type of the SystemMessage it could be SIMPLE (just a popup) or confirmation (it still on demo and not supported yet on the UI)
  * Builder for {@link SystemMessage}
  */
 public class SystemMessageBuilder {
