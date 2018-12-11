@@ -7,7 +7,6 @@ import java.util.Map;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.portlets.containers.model.Container;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
 
 /**
  * Represents the information of the {@link Container} and its respective {@link ContainerStructure}
@@ -24,7 +23,7 @@ public class ContainerRaw implements Serializable {
 
     private final Container container;
     private final List<ContainerStructure> containerStructures;
-    private final Map<String, List<Contentlet>> contentlets;
+    private final Map<String, List<Map<String,Object>>> contentlets;
 
     /**
      * Creates a new instance of the ContainerRendered.
@@ -32,13 +31,13 @@ public class ContainerRaw implements Serializable {
      * @param container The {@link Container} in the HTML Page.
      * @param containerStructures The list of {@link ContainerStructure} relationships. the browser.
      */
-    public ContainerRaw(final Container container, final List<ContainerStructure> containerStructures, final Map<String, List<Contentlet>> contentlets) {
+    public ContainerRaw(final Container container, final List<ContainerStructure> containerStructures, final Map<String, List<Map<String,Object>>> contentlets) {
         this.container = container;
         this.containerStructures =  (containerStructures != null)  ?  ImmutableList.copyOf(containerStructures) :  ImmutableList.of();
         this.contentlets = contentlets;
     }
 
-    public Map<String, List<Contentlet>> getContentlets() {
+    public Map<String, List<Map<String,Object>>> getContentlets() {
         return contentlets;
     }
 

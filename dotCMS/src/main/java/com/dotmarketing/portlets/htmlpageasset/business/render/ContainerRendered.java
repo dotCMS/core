@@ -5,7 +5,6 @@ import java.util.Map;
 
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.portlets.containers.model.Container;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
 
 /**
  * Represents the information of the {@link Container} and its respective
@@ -33,7 +32,7 @@ public class ContainerRendered extends ContainerRaw {
      *                           the browser.
      */
     public ContainerRendered(final Container container, final List<ContainerStructure> containerStructures,
-                             final Map<String, String> rendered, final Map<String,List<Contentlet>> contentlets) {
+                             final Map<String, String> rendered, final Map<String,List<Map<String,Object>>> contentlets) {
         super(container, containerStructures, contentlets);
 
         this.rendered = rendered;
