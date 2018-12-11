@@ -186,7 +186,7 @@ public class WorkflowTool implements ViewTool {
 	 * @throws DotToolException runtime exception to wrap the original exception
 	 */
 
-	public ContentMap fire(final Map<String, Object> properties, final String wfActionId) throws DotToolException {
+	public ContentMap fire(final Map<String, Object> properties, final String wfActionId) {
 		Contentlet contentlet = new Contentlet();
 
 		try {
