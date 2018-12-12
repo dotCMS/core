@@ -29,7 +29,6 @@ import java.util.List;
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 
 /**
  * Created by Jonathan Gamba.
@@ -96,7 +95,17 @@ public class ContentletCheckInTest extends ContentletBaseTest{
       }
   }
 
-
+    /**
+     * This test is meant to test Relationship Cardinality One to One
+     *
+     * It creates 2 content types and create a relationship between them, then create 2 contentlets
+     * one of each content type and relate them.
+     * Then creates a third contentlet and try to relate to the parent contentlet and since the cardinality is
+     * one to one, it throws a DotContentletValidationException.
+     *
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
   @Test(expected = DotContentletValidationException.class)
   public void test_checkinContentlet_RelationshipOneToOneCardinality() throws DotSecurityException, DotDataException{
       ContentType parentContentType = null;
@@ -154,6 +163,18 @@ public class ContentletCheckInTest extends ContentletBaseTest{
       }
   }
 
+    /**
+     * This test is meant to test Relationship Cardinality One to Many
+     *
+     * It creates 2 content types and create a relationship between them, then create 2 contentlets
+     * one of each content type and relate them.
+     * Then creates a third contentlet and relate it to the parent contentlet.
+     * After that, creates a new parent contentlet and try to relate a child contentlet to that new parent
+     * since the cardinality is one to many, it throws a DotContentletValidationException
+     *
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
     @Test(expected = DotContentletValidationException.class)
     public void test_checkinContentlet_RelationshipOneToManyCardinality() throws DotSecurityException, DotDataException{
         ContentType parentContentType = null;
@@ -227,6 +248,21 @@ public class ContentletCheckInTest extends ContentletBaseTest{
         }
     }
 
+    /**
+     * This test is meant to test Relationship Cardinality Many to Many
+     *
+     * It creates 2 content types and create a relationship between them, then create 2 contentlets
+     * one of each content type and relate them.
+     * Then creates a third contentlet and relate it to the parent contentlet.
+     * After that, creates a new parent contentlet and relate a child contentlet to that new parent.
+     *
+     * So at the end we have 2 parent contenlets and 2 child contentlets related like this:
+     * ParentContentlet1 -> childContentlet1 and childContentlet2
+     * ParentContentlet2 -> childContentlet1
+     *
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
     @Test
     public void test_checkinContentlet_RelationshipManyToManyCardinality() throws DotSecurityException, DotDataException{
         ContentType parentContentType = null;
@@ -312,7 +348,7 @@ public class ContentletCheckInTest extends ContentletBaseTest{
     }
 
     private Field createRelationshipField(final String relationshipName, final String parentTypeId,
-                                               final String childTypeVar, String cardinality)
+                                               final String childTypeVar, final String cardinality)
             throws DotSecurityException, DotDataException {
 
         final Field field = FieldBuilder.builder(RelationshipField.class).name(relationshipName)
