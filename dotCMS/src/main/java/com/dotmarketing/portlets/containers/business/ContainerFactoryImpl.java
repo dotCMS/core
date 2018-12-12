@@ -333,7 +333,8 @@ public class ContainerFactoryImpl implements ContainerFactory {
 			final String query = builder("+structureType:", Structure.STRUCTURE_TYPE_FILEASSET,
 					" +path:", Constants.CONTAINER_FOLDER_PATH, "/*",
 					" +path:*/container.vtl",
-					" +conhost:", host.getIdentifier()).toString();
+					" +conhost:", host.getIdentifier(),
+					" +working:true +deleted:false").toString();
 
 			containers =
 					this.permissionAPI.filterCollection(

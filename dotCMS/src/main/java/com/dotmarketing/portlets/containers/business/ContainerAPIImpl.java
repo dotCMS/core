@@ -588,8 +588,8 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 	@Override
 	public List<Container> findAllContainers(final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 		final RoleAPI roleAPI = APILocator.getRoleAPI();
-		return (user != null
-				&& roleAPI.doesUserHaveRole(user, roleAPI.loadCMSAdminRole()))?
+		return user != null
+				&& roleAPI.doesUserHaveRole(user, roleAPI.loadCMSAdminRole())?
 			this.containerFactory.findAllContainers():
 			this.containerFactory.findContainers(user, false, null, null, null,null, null, 0, -1, "title ASC");
 	}
