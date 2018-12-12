@@ -16,11 +16,14 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.containers.model.ContainerVersionInfo;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.*;
 import com.liferay.portal.model.User;
 
@@ -37,6 +40,7 @@ public class ContainerFactoryImpl implements ContainerFactory {
     private final FileAssetAPI  fileAssetAPI  = APILocator.getFileAssetAPI();
     private final HostAPI       hostAPI       = APILocator.getHostAPI();
 	private final IdentifierAPI identifierAPI = APILocator.getIdentifierAPI();
+	private final ContentletAPI contentletAPI = APILocator.getContentletAPI();
 
 
 	public void save(final Container container) throws DotDataException {
@@ -282,12 +286,10 @@ public class ContainerFactoryImpl implements ContainerFactory {
 																		   final String inode,  final String identifier,
 																		   final String parent, final String orderByParam) throws DotSecurityException, DotDataException {
 
-		// todo: when something happen cache and return an empty collection
 	    // todo: we are passing all the parameters but not sure if we need everything
 		try {
 			final Host host     			 = this.hostAPI.find(hostId, user, false);
-			final Folder folder 			 = this.folderAPI.findFolderByPath(Constants.CONTAINER_FOLDER_PATH, host, user, false);
-			final List<Folder> subFolders    = this.folderAPI.findSubFolders(folder, user, false); // todo: change this in order to get the information from the index
+			final List<Folder> subFolders    = this.findContainersAssetsByHost(host, user);
 			final List<Container> containers = this.getFolderContainers(host, user, subFolders);
 
 			// todo: order by???
@@ -303,7 +305,6 @@ public class ContainerFactoryImpl implements ContainerFactory {
 	private Collection<Container> findAllHostFolderAssetContainers() throws DotSecurityException, DotDataException {
 
 		final User       user  = APILocator.systemUser();
-		// todo: find another strategy in order to be less items
 		final List<Host> hosts = this.hostAPI.findAll(user, false);
 		final ImmutableList.Builder<Container> containers = new ImmutableList.Builder<>();
 
@@ -317,17 +318,39 @@ public class ContainerFactoryImpl implements ContainerFactory {
 
 	private List<Container> findHostContainers(final Host host, final User user) throws DotDataException, DotSecurityException {
 
-		// todo: replace this for ES call, not matter the host by sort by host
-		final List<Container> containers = new ArrayList<>();
-		final Optional<Folder> folder = this.findContainerFolderByHost(host, user);
+		final List<Folder> subFolders = this.findContainersAssetsByHost(host, user);
+		return this.getFolderContainers(host, user, subFolders);
+	}
 
-		if (folder.isPresent() && UtilMethods.isSet(folder.get().getIdentifier())) {
 
-			final List<Folder> subFolders = this.folderAPI.findSubFolders(folder.get(), user, false);
-			containers.addAll(this.getFolderContainers(host, user, subFolders));
+	private List<Folder> findContainersAssetsByHost(final Host host, final User user) {
+
+		List<Contentlet>           containers = null;
+		final List<Folder>         folders    = new ArrayList<>();
+
+		try{
+
+			final String query = builder("+structureType:", Structure.STRUCTURE_TYPE_FILEASSET,
+					" +path:", Constants.CONTAINER_FOLDER_PATH, "/*",
+					" +path:*/container.vtl",
+					" +conhost:", host.getIdentifier(),
+					" +working:true +deleted:false").toString();
+
+			containers =
+					this.permissionAPI.filterCollection(
+							this.contentletAPI.search(query,-1, 0, null , user, false),
+							PermissionAPI.PERMISSION_READ, false, user);
+
+			for(final Contentlet container : containers) {
+
+				folders.add(this.folderAPI.find(container.getFolder(), user, false));
+			}
+		} catch (Exception e) {
+			Logger.error(this.getClass(), e.getMessage(), e);
+			throw new DotRuntimeException(e.getMessage(), e);
 		}
 
-		return containers;
+		return folders;
 	}
 
 	private List<Container> getFolderContainers(final Host host, final User user, final List<Folder> subFolders) throws DotDataException {
@@ -336,7 +359,7 @@ public class ContainerFactoryImpl implements ContainerFactory {
 		for (final Folder subFolder : subFolders) {
 
 			try {
-				final Container container = this.getContainerByFolder(host, subFolder, null != user? user: APILocator.systemUser(), false); // todo: check eventually the false.
+				final Container container = this.getContainerByFolder(host, subFolder, null != user? user: APILocator.systemUser(), false);
 				containers.add(container);
 			} catch (DotSecurityException e) {
 

@@ -159,7 +159,7 @@ public class ContainerFinderStrategyResolver {
                 final Host site                = this.getHost(key.path);
                 final String baseContainerPath = this.getContainerPath (key.path, site.getHostname());
                 final Folder folder            = this.folderAPI.findFolderByPath(baseContainerPath, site, APILocator.systemUser(), false);
-                container                      = containerAPI.getContainerByFolder(folder, APILocator.systemUser(), key.mode.showLive);
+                container                      = containerAPI.getContainerByFolder(folder, site, APILocator.systemUser(), key.mode.showLive);
             } catch (DotDataException | DotSecurityException e) {
 
                 throw new DotStateException("cannot find container for : " +  key);

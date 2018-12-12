@@ -1,5 +1,7 @@
 package com.dotcms.rendering.velocity.services;
 
+import static org.mockito.Mockito.mock;
+
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.field.Field;
@@ -32,20 +34,19 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetNotFoundException;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.templates.model.Template;
-import com.dotmarketing.util.*;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.PageMode;
+import com.dotmarketing.util.UUIDGenerator;
+import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
+import java.util.ArrayList;
+import java.util.List;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
-
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.util.ArrayList;
-import java.util.List;
-
-import static org.mockito.Mockito.mock;
 
 public class HTMLPageAssetRenderedTest {
 
@@ -111,6 +112,8 @@ public class HTMLPageAssetRenderedTest {
         //Create Contentlet in English
         final Contentlet contentlet1 = new ContentletDataGen(contentGenericId)
                 .languageId(1)
+                .folder(folder)
+                .host(APILocator.systemHost())
                 .setProperty("title", "content1")
                 .setProperty("body", "content1")
                 .nextPersisted();
@@ -124,6 +127,8 @@ public class HTMLPageAssetRenderedTest {
         //Create Contentlet with English and Spanish Versions
         final Contentlet contentlet2English = new ContentletDataGen(contentGenericId)
                 .languageId(1)
+                .folder(folder)
+                .host(APILocator.systemHost())
                 .setProperty("title", "content2")
                 .setProperty("body", "content2")
                 .nextPersisted();
@@ -195,8 +200,14 @@ public class HTMLPageAssetRenderedTest {
             APILocator.getContainerAPI().delete(container,systemUser,false);
         }
 
+
+
+
         for(final String contentletId : contentletsIds){
             final Contentlet contentlet = contentletAPI.findContentletByIdentifierAnyLanguage(contentletId);
+            if(null == contentlet){
+               continue;
+            }
 
             contentlet.setIndexPolicy(IndexPolicy.FORCE);
             contentlet.setIndexPolicyDependencies(IndexPolicy.FORCE);
