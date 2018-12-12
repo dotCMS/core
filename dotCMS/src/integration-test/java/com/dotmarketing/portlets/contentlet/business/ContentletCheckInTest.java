@@ -21,10 +21,12 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.WebKeys;
+import com.google.common.collect.Maps;
 import com.liferay.portal.model.User;
 import java.io.File;
 import java.io.FileWriter;
 import java.util.List;
+import java.util.Map;
 
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
@@ -100,14 +102,68 @@ public class ContentletCheckInTest extends ContentletBaseTest{
      *
      * It creates 2 content types and create a relationship between them, then create 2 contentlets
      * one of each content type and relate them.
-     * Then creates a third contentlet and try to relate to the parent contentlet and since the cardinality is
+     *
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    @Test
+    public void test_checkinContentlet_RelationshipOneToOneCardinality_Success() throws DotSecurityException, DotDataException{
+        ContentType parentContentType = null;
+        ContentType childContentType = null;
+        try{
+            //Create content types
+            parentContentType = createContentType("parentContentType");
+            childContentType = createContentType("childContentType");
+
+            //Create Text and Relationship Fields
+            final String textFieldString = "title";
+            final String relationshipFieldString = "relationship";
+            createTextField(textFieldString,parentContentType.id());
+            createRelationshipField(relationshipFieldString,parentContentType.id(),childContentType.variable(), String.valueOf(WebKeys.Relationship.RELATIONSHIP_CARDINALITY.ONE_TO_ONE.ordinal()));
+            createTextField(textFieldString,childContentType.id());
+
+            //Create Contentlets
+            Contentlet contentletParent = new ContentletDataGen(parentContentType.id()).setProperty(textFieldString,"parent Contentlet").next();
+            final Contentlet contentletChild = new ContentletDataGen(childContentType.id()).setProperty(textFieldString,"child Contentlet").nextPersisted();
+
+            //Find Relationship
+            final Relationship relationship = relationshipAPI.byParent(parentContentType).get(0);
+
+            //Relate contentlets
+            Map<Relationship, List<Contentlet>> relationshipListMap = Maps.newHashMap();
+            relationshipListMap.put(relationship,CollectionsUtils.list(contentletChild));
+
+            //Checkin of the parent to validate Relationships
+            contentletParent = contentletAPI.checkin(contentletParent,relationshipListMap,user,false);
+
+            //List Related Contentlets
+            final List<Contentlet> relatedContent = contentletAPI.getRelatedContent(contentletParent,relationship,user,false);
+            assertNotNull(relatedContent);
+            assertEquals(1,relatedContent.size());
+
+
+        }finally {
+            if(parentContentType != null){
+                contentTypeAPI.delete(parentContentType);
+            }
+            if(childContentType != null){
+                contentTypeAPI.delete(childContentType);
+            }
+        }
+    }
+
+    /**
+     * This test is meant to test Relationship Cardinality One to One
+     *
+     * It creates 2 content types and create a relationship between them, then create 2 child contentlets
+     * and try to relate to the parent contentlet and since the cardinality is
      * one to one, it throws a DotContentletValidationException.
      *
      * @throws DotSecurityException
      * @throws DotDataException
      */
   @Test(expected = DotContentletValidationException.class)
-  public void test_checkinContentlet_RelationshipOneToOneCardinality() throws DotSecurityException, DotDataException{
+  public void test_checkinContentlet_RelationshipOneToOneCardinality_throwsDotContentletValidationException() throws DotSecurityException, DotDataException{
       ContentType parentContentType = null;
       ContentType childContentType = null;
       try{
@@ -123,35 +179,20 @@ public class ContentletCheckInTest extends ContentletBaseTest{
           createTextField(textFieldString,childContentType.id());
 
           //Create Contentlets
-          final Contentlet contentletParent = new ContentletDataGen(parentContentType.id()).setProperty(textFieldString,"parent Contentlet").nextPersisted();
+          Contentlet contentletParent = new ContentletDataGen(parentContentType.id()).setProperty(textFieldString,"parent Contentlet").next();
           final Contentlet contentletChild = new ContentletDataGen(childContentType.id()).setProperty(textFieldString,"child Contentlet").nextPersisted();
+          final Contentlet contentletChild2 = new ContentletDataGen(childContentType.id()).setProperty(textFieldString,"child Contentlet 2").nextPersisted();
 
           //Find Relationship
           final Relationship relationship = relationshipAPI.byParent(parentContentType).get(0);
 
           //Relate contentlets
-          contentletAPI.relateContent(contentletParent, relationship,
-                  CollectionsUtils.list(contentletChild), user, false);
+          Map<Relationship, List<Contentlet>> relationshipListMap = Maps.newHashMap();
+          relationshipListMap.put(relationship,CollectionsUtils.list(contentletChild,contentletChild2));
 
           //Checkin of the parent to validate Relationships
-          contentletParent.setInode("");
-          contentletAPI.checkin(contentletParent,contentletAPI.getAllRelationships(contentletParent),null,null,user,false);
+          contentletAPI.checkin(contentletParent,relationshipListMap,user,false);
 
-          //List Related Contentlets
-          final List<Contentlet> relatedContent = contentletAPI.getRelatedContent(contentletParent,relationship,user,false);
-          assertNotNull(relatedContent);
-          assertEquals(1,relatedContent.size());
-
-          //Create another contentlet Child
-          final Contentlet contentletChild2 = new ContentletDataGen(childContentType.id()).setProperty(textFieldString,"child Contentlet 2").nextPersisted();
-
-          //Relate 2 child contentlets to 1 parent
-          contentletAPI.relateContent(contentletParent, relationship,
-                  CollectionsUtils.list(contentletChild,contentletChild2), user, false);
-
-          //Checkin of the parent to validate Relationships, should throw an Exception
-          contentletParent.setInode("");
-          contentletAPI.checkin(contentletParent,contentletAPI.getAllRelationships(contentletParent),null,null,user,false);
 
       }finally {
           if(parentContentType != null){
@@ -166,17 +207,14 @@ public class ContentletCheckInTest extends ContentletBaseTest{
     /**
      * This test is meant to test Relationship Cardinality One to Many
      *
-     * It creates 2 content types and create a relationship between them, then create 2 contentlets
-     * one of each content type and relate them.
-     * Then creates a third contentlet and relate it to the parent contentlet.
-     * After that, creates a new parent contentlet and try to relate a child contentlet to that new parent
-     * since the cardinality is one to many, it throws a DotContentletValidationException
+     * It creates 2 content types and create a relationship between them, then create 2 child contentlets
+     * and relate to the parent contentlet.
      *
      * @throws DotSecurityException
      * @throws DotDataException
      */
-    @Test(expected = DotContentletValidationException.class)
-    public void test_checkinContentlet_RelationshipOneToManyCardinality() throws DotSecurityException, DotDataException{
+  @Test
+    public void test_checkinContentlet_RelationshipOneToManyCardinality_Success() throws DotSecurityException, DotDataException{
         ContentType parentContentType = null;
         ContentType childContentType = null;
         try{
@@ -192,51 +230,88 @@ public class ContentletCheckInTest extends ContentletBaseTest{
             createTextField(textFieldString,childContentType.id());
 
             //Create Contentlets
-            final Contentlet contentletParent = new ContentletDataGen(parentContentType.id()).setProperty(textFieldString,"parent Contentlet").nextPersisted();
+            Contentlet contentletParent = new ContentletDataGen(parentContentType.id()).setProperty(textFieldString,"parent Contentlet").next();
             final Contentlet contentletChild = new ContentletDataGen(childContentType.id()).setProperty(textFieldString,"child Contentlet").nextPersisted();
+            final Contentlet contentletChild2 = new ContentletDataGen(childContentType.id()).setProperty(textFieldString,"child Contentlet 2").nextPersisted();
 
             //Find Relationship
             final Relationship relationship = relationshipAPI.byParent(parentContentType).get(0);
 
             //Relate contentlets
-            contentletAPI.relateContent(contentletParent, relationship,
-                    CollectionsUtils.list(contentletChild), user, false);
+            Map<Relationship, List<Contentlet>> relationshipListMap = Maps.newHashMap();
+            relationshipListMap.put(relationship,CollectionsUtils.list(contentletChild,contentletChild2));
 
             //Checkin of the parent to validate Relationships
-            contentletParent.setInode("");
-            contentletAPI.checkin(contentletParent,contentletAPI.getAllRelationships(contentletParent),null,null,user,false);
+            contentletParent = contentletAPI.checkin(contentletParent,relationshipListMap,user,false);
 
             //List Related Contentlets
-            List<Contentlet> relatedContent = contentletAPI.getRelatedContent(contentletParent,relationship,user,false);
-            assertNotNull(relatedContent);
-            assertEquals(1,relatedContent.size());
-
-            //Create another contentlet Child
-            final Contentlet contentletChild2 = new ContentletDataGen(childContentType.id()).setProperty(textFieldString,"child Contentlet 2").nextPersisted();
-
-            //Relate 2 child contentlets to 1 parent
-            contentletAPI.relateContent(contentletParent, relationship,
-                    CollectionsUtils.list(contentletChild,contentletChild2), user, false);
-
-            //Checkin of the parent to validate Relationships
-            contentletParent.setInode("");
-            contentletAPI.checkin(contentletParent,contentletAPI.getAllRelationships(contentletParent),null,null,user,false);
-
-            //List Related Contentlets
-            relatedContent = contentletAPI.getRelatedContent(contentletParent,relationship,user,false);
+            final List<Contentlet> relatedContent = contentletAPI.getRelatedContent(contentletParent,relationship,user,false);
             assertNotNull(relatedContent);
             assertEquals(2,relatedContent.size());
 
-            //Create another contentlet Parent
-            final Contentlet contentletParent2 = new ContentletDataGen(parentContentType.id()).setProperty(textFieldString,"parent Contentlet 2").nextPersisted();
 
-            //Relate 1 Child to the new Parent contentlet
-            contentletAPI.relateContent(contentletParent2, relationship,
-                    CollectionsUtils.list(contentletChild), user, false);
+        }finally {
+            if(parentContentType != null){
+                contentTypeAPI.delete(parentContentType);
+            }
+            if(childContentType != null){
+                contentTypeAPI.delete(childContentType);
+            }
+        }
+    }
 
-            //Checkin of the parent to validate Relationships, should throw an Exception
-            contentletParent2.setInode("");
-            contentletAPI.checkin(contentletParent2,contentletAPI.getAllRelationships(contentletParent2),null,null,user,false);
+    /**
+     * This test is meant to test Relationship Cardinality One to Many
+     *
+     * It creates 2 content types and create a relationship between them, then create 2 child contentlets
+     * and 2 parent contentlets.
+     * Then try to relate both child contentlets to both parent contentlets and since the cardinality is
+     * one to many, it throws a DotContentletValidationException when trying to relate to the 2nd
+     * parent contentlet.
+     *
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    @Test(expected = DotContentletValidationException.class)
+    public void test_checkinContentlet_RelationshipOneToManyCardinality_throwsDotContentletValidationException() throws DotSecurityException, DotDataException{
+        ContentType parentContentType = null;
+        ContentType childContentType = null;
+        try{
+            //Create content types
+            parentContentType = createContentType("parentContentType");
+            childContentType = createContentType("childContentType");
+
+            //Create Text and Relationship Fields
+            final String textFieldString = "title";
+            final String relationshipFieldString = "relationship";
+            createTextField(textFieldString,parentContentType.id());
+            createRelationshipField(relationshipFieldString,parentContentType.id(),childContentType.variable(), String.valueOf(WebKeys.Relationship.RELATIONSHIP_CARDINALITY.ONE_TO_MANY.ordinal()));
+            createTextField(textFieldString,childContentType.id());
+
+            //Create Contentlets
+            Contentlet contentletParent = new ContentletDataGen(parentContentType.id()).setProperty(textFieldString,"parent Contentlet").next();
+            Contentlet contentletParent2 = new ContentletDataGen(parentContentType.id()).setProperty(textFieldString,"parent Contentlet").next();
+            final Contentlet contentletChild = new ContentletDataGen(childContentType.id()).setProperty(textFieldString,"child Contentlet").nextPersisted();
+            final Contentlet contentletChild2 = new ContentletDataGen(childContentType.id()).setProperty(textFieldString,"child Contentlet 2").nextPersisted();
+
+            //Find Relationship
+            final Relationship relationship = relationshipAPI.byParent(parentContentType).get(0);
+
+            //Relate contentlets
+            Map<Relationship, List<Contentlet>> relationshipListMap = Maps.newHashMap();
+            relationshipListMap.put(relationship,CollectionsUtils.list(contentletChild,contentletChild2));
+
+            //Checkin of the parent to validate Relationships
+            contentletParent = contentletAPI.checkin(contentletParent,relationshipListMap,user,false);
+
+            //List Related Contentlets
+            final List<Contentlet> relatedContent = contentletAPI.getRelatedContent(contentletParent,relationship,user,false);
+            assertNotNull(relatedContent);
+            assertEquals(2,relatedContent.size());
+
+            //Checkin of the parent to validate Relationships
+            contentletParent2 = contentletAPI.checkin(contentletParent2,relationshipListMap,user,false);
+
 
         }finally {
             if(parentContentType != null){
@@ -251,20 +326,15 @@ public class ContentletCheckInTest extends ContentletBaseTest{
     /**
      * This test is meant to test Relationship Cardinality Many to Many
      *
-     * It creates 2 content types and create a relationship between them, then create 2 contentlets
-     * one of each content type and relate them.
-     * Then creates a third contentlet and relate it to the parent contentlet.
-     * After that, creates a new parent contentlet and relate a child contentlet to that new parent.
-     *
-     * So at the end we have 2 parent contenlets and 2 child contentlets related like this:
-     * ParentContentlet1 -> childContentlet1 and childContentlet2
-     * ParentContentlet2 -> childContentlet1
+     * It creates 2 content types and create a relationship between them, then create 2 child contentlets
+     * and 2 parent contentlets.
+     * Then try to relate both child contentlets to both parent contentlets.
      *
      * @throws DotSecurityException
      * @throws DotDataException
      */
     @Test
-    public void test_checkinContentlet_RelationshipManyToManyCardinality() throws DotSecurityException, DotDataException{
+    public void test_checkinContentlet_RelationshipManyToManyCardinality_Success() throws DotSecurityException, DotDataException{
         ContentType parentContentType = null;
         ContentType childContentType = null;
         try{
@@ -280,56 +350,33 @@ public class ContentletCheckInTest extends ContentletBaseTest{
             createTextField(textFieldString,childContentType.id());
 
             //Create Contentlets
-            final Contentlet contentletParent = new ContentletDataGen(parentContentType.id()).setProperty(textFieldString,"parent Contentlet").nextPersisted();
+            Contentlet contentletParent = new ContentletDataGen(parentContentType.id()).setProperty(textFieldString,"parent Contentlet").next();
+            Contentlet contentletParent2 = new ContentletDataGen(parentContentType.id()).setProperty(textFieldString,"parent Contentlet 2").next();
             final Contentlet contentletChild = new ContentletDataGen(childContentType.id()).setProperty(textFieldString,"child Contentlet").nextPersisted();
+            final Contentlet contentletChild2 = new ContentletDataGen(childContentType.id()).setProperty(textFieldString,"child Contentlet 2").nextPersisted();
 
             //Find Relationship
             final Relationship relationship = relationshipAPI.byParent(parentContentType).get(0);
 
             //Relate contentlets
-            contentletAPI.relateContent(contentletParent, relationship,
-                    CollectionsUtils.list(contentletChild), user, false);
+            Map<Relationship, List<Contentlet>> relationshipListMap = Maps.newHashMap();
+            relationshipListMap.put(relationship,CollectionsUtils.list(contentletChild,contentletChild2));
 
             //Checkin of the parent to validate Relationships
-            contentletParent.setInode("");
-            contentletAPI.checkin(contentletParent,contentletAPI.getAllRelationships(contentletParent),null,null,user,false);
+            contentletParent = contentletAPI.checkin(contentletParent,relationshipListMap,user,false);
 
             //List Related Contentlets
             List<Contentlet> relatedContent = contentletAPI.getRelatedContent(contentletParent,relationship,user,false);
             assertNotNull(relatedContent);
-            assertEquals(1,relatedContent.size());
-
-            //Create another contentlet Child
-            final Contentlet contentletChild2 = new ContentletDataGen(childContentType.id()).setProperty(textFieldString,"child Contentlet 2").nextPersisted();
-
-            //Relate 2 child contentlets to 1 parent
-            contentletAPI.relateContent(contentletParent, relationship,
-                    CollectionsUtils.list(contentletChild,contentletChild2), user, false);
+            assertEquals(2,relatedContent.size());
 
             //Checkin of the parent to validate Relationships
-            contentletParent.setInode("");
-            contentletAPI.checkin(contentletParent,contentletAPI.getAllRelationships(contentletParent),null,null,user,false);
+            contentletParent2 = contentletAPI.checkin(contentletParent2,relationshipListMap,user,false);
 
-            //List Related Contentlets
-            relatedContent = contentletAPI.getRelatedContent(contentletParent,relationship,user,false);
+            relatedContent = contentletAPI.getRelatedContent(contentletParent2,relationship,user,false);
             assertNotNull(relatedContent);
             assertEquals(2,relatedContent.size());
 
-            //Create another contentlet Parent
-            final Contentlet contentletParent2 = new ContentletDataGen(parentContentType.id()).setProperty(textFieldString,"parent Contentlet 2").nextPersisted();
-
-            //Relate 1 Child to the new Parent contentlet
-            contentletAPI.relateContent(contentletParent2, relationship,
-                    CollectionsUtils.list(contentletChild), user, false);
-
-            //Checkin of the parent to validate Relationships, should throw an Exception
-            contentletParent2.setInode("");
-            contentletAPI.checkin(contentletParent2,contentletAPI.getAllRelationships(contentletParent2),null,null,user,false);
-
-            //List Related Contentlets
-            relatedContent = contentletAPI.getRelatedContent(contentletParent2,relationship,user,false);
-            assertNotNull(relatedContent);
-            assertEquals(1,relatedContent.size());
 
         }finally {
             if(parentContentType != null){
