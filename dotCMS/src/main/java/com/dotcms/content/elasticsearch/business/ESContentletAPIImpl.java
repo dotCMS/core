@@ -2878,6 +2878,27 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                 // check contentlet Host
                 User sysuser = APILocator.getUserAPI().getSystemUser();
+                // If host and folder are not set yet
+                if(!UtilMethods.isSet(contentlet.getHost())
+                		&& !UtilMethods.isSet(contentlet.getFolder())) {
+                	// Try to get host from sibling
+                	Contentlet crownPrince = getPrimarySibling(contentlet);
+                	if(UtilMethods.isSet(crownPrince) // if has a viable sibling, take siblings host/folder
+                			&& UtilMethods.isSet(crownPrince.getHost())
+                			&& UtilMethods.isSet(crownPrince.getFolder())) {
+                		contentlet.setHost(crownPrince.getHost());
+                		contentlet.setFolder(crownPrince.getFolder());
+                	} else { // Try to get host from Content Type
+                		String structHost = contentlet.getStructure().getHost();
+                		String structFolder = contentlet.getStructure().getFolder();
+                		if(UtilMethods.isSet(structHost)) {
+                			contentlet.setHost(structHost);
+                		}
+                		if(UtilMethods.isSet(structFolder)) {
+                			contentlet.setFolder(structFolder);
+                		}
+                	}
+                }
                 if (!UtilMethods.isSet(contentlet.getHost())) {
                     contentlet.setHost(APILocator.getHostAPI().findSystemHost(sysuser, true).getIdentifier());
                 }
@@ -2940,7 +2961,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                         if ( UtilMethods.isSet(value) ) {
 
-                            if ( structureHasAHostField ) {
+                            if ( structureHasAHostField || UtilMethods.isSet(contentlet.getHost())) {
                                 Host host = null;
                                 try {
                                     host = APILocator.getHostAPI().find(contentlet.getHost(), user, true);
@@ -6114,4 +6135,33 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return contentlet;
     }
 
+    
+    /**
+     * Added method for Content Hubs default host fix
+     */
+    private Contentlet getPrimarySibling(Contentlet contentlet) throws DotDataException, DotSecurityException {
+	    if(UtilMethods.isSet(contentlet.getIdentifier())) {	
+    		List<Contentlet> siblings = getSiblings(contentlet.getIdentifier());
+	    	if(UtilMethods.isSet(siblings) && siblings.size() > 0) {
+	    		if(siblings.size() == 1) {
+	    			return siblings.get(0);
+	    		} else {
+		    		Language defaultLanguage = languageAPI.getDefaultLanguage();
+		            long dLangId = defaultLanguage.getId();
+		            Contentlet def = siblings.stream()
+		            		.filter(sib -> dLangId == sib.getLanguageId())
+		            		.findAny()
+		            		.orElse(null);
+		            if(UtilMethods.isSet(def)) {
+		            	return def;
+		            } else {
+		            	return siblings.stream()
+		            			.min(Comparator.comparing(Contentlet::getLanguageId))
+		            			.orElse(null);
+		            }
+	    		}
+	    	}
+	    }
+    	return null;
+    }
 }
