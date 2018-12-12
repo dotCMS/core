@@ -140,6 +140,7 @@ public class ContentletCheckInTest extends ContentletBaseTest{
             final List<Contentlet> relatedContent = contentletAPI.getRelatedContent(contentletParent,relationship,user,false);
             assertNotNull(relatedContent);
             assertEquals(1,relatedContent.size());
+            assertEquals(contentletChild.getIdentifier(),relatedContent.get(0).getIdentifier());
 
 
         }finally {
@@ -248,6 +249,8 @@ public class ContentletCheckInTest extends ContentletBaseTest{
             final List<Contentlet> relatedContent = contentletAPI.getRelatedContent(contentletParent,relationship,user,false);
             assertNotNull(relatedContent);
             assertEquals(2,relatedContent.size());
+            assertEquals(contentletChild.getIdentifier(),relatedContent.get(0).getIdentifier());
+            assertEquals(contentletChild2.getIdentifier(),relatedContent.get(1).getIdentifier());
 
 
         }finally {
@@ -308,6 +311,9 @@ public class ContentletCheckInTest extends ContentletBaseTest{
             final List<Contentlet> relatedContent = contentletAPI.getRelatedContent(contentletParent,relationship,user,false);
             assertNotNull(relatedContent);
             assertEquals(2,relatedContent.size());
+            assertEquals(contentletChild.getIdentifier(),relatedContent.get(0).getIdentifier());
+            assertEquals(contentletChild2.getIdentifier(),relatedContent.get(1).getIdentifier());
+
 
             //Checkin of the parent to validate Relationships
             contentletParent2 = contentletAPI.checkin(contentletParent2,relationshipListMap,user,false);
@@ -369,6 +375,8 @@ public class ContentletCheckInTest extends ContentletBaseTest{
             List<Contentlet> relatedContent = contentletAPI.getRelatedContent(contentletParent,relationship,user,false);
             assertNotNull(relatedContent);
             assertEquals(2,relatedContent.size());
+            assertEquals(contentletChild.getIdentifier(),relatedContent.get(0).getIdentifier());
+            assertEquals(contentletChild2.getIdentifier(),relatedContent.get(1).getIdentifier());
 
             //Checkin of the parent to validate Relationships
             contentletParent2 = contentletAPI.checkin(contentletParent2,relationshipListMap,user,false);
@@ -376,6 +384,8 @@ public class ContentletCheckInTest extends ContentletBaseTest{
             relatedContent = contentletAPI.getRelatedContent(contentletParent2,relationship,user,false);
             assertNotNull(relatedContent);
             assertEquals(2,relatedContent.size());
+            assertEquals(contentletChild.getIdentifier(),relatedContent.get(0).getIdentifier());
+            assertEquals(contentletChild2.getIdentifier(),relatedContent.get(1).getIdentifier());
 
 
         }finally {
