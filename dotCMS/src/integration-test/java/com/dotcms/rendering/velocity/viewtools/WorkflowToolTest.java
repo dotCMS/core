@@ -122,7 +122,7 @@ public class WorkflowToolTest {
             savedContent = contentMap.getContentObject();
         } finally {
             if(savedContent!=null && UtilMethods.isSet(savedContent.getIdentifier())) {
-                new ContentletDataGen("").remove(savedContent);
+                ContentletDataGen.remove(savedContent);
             }
         }
     }
