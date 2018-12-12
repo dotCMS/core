@@ -4,7 +4,7 @@ import { NgModule } from '@angular/core';
 import { PushPublishContentTypesDialogComponent } from './push-publish-dialog.component';
 import { CalendarModule, DropdownModule, CheckboxModule } from 'primeng/primeng';
 import { PushPublishEnvSelectorModule } from '../dot-push-publish-env-selector/dot-push-publish-env-selector.module';
-import { FieldValidationMessageModule } from '../field-validation-message/file-validation-message.module';
+import { DotFieldValidationMessageModule } from '../dot-field-validation-message/dot-file-validation-message.module';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 
 @NgModule({
@@ -18,7 +18,7 @@ import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
         PushPublishEnvSelectorModule,
         ReactiveFormsModule,
         DropdownModule,
-        FieldValidationMessageModule,
+        DotFieldValidationMessageModule,
         CheckboxModule
     ]
 })

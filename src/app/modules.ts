@@ -1,6 +1,6 @@
 // CUSTOM MDOULES
 import { DotActionButtonModule } from './view/components/_common/dot-action-button/dot-action-button.module';
-import { FieldValidationMessageModule } from './view/components/_common/field-validation-message/file-validation-message.module';
+import { DotFieldValidationMessageModule } from './view/components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { ListingDataTableModule } from './view/components/listing-data-table/listing-data-table.module';
 import { SiteSelectorModule } from './view/components/_common/site-selector/site-selector.module';
 import { SearchableDropDownModule } from './view/components/_common/searchable-dropdown';
@@ -49,7 +49,7 @@ export const CUSTOM_MODULES = [
     DotTextareaContentModule,
     DotWorkflowTaskDetailModule,
     DotMessageDisplayModule,
-    FieldValidationMessageModule,
+    DotFieldValidationMessageModule,
     IFrameModule,
     ListingDataTableModule,
     SearchableDropDownModule,

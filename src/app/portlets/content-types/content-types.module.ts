@@ -5,7 +5,7 @@ import { ContentTypesInfoService } from '@services/content-types-info';
 import { ContentTypesLayoutComponent } from './layout';
 import { ContentTypesPortletComponent } from './main';
 import { ContentTypesRoutingModule } from './content-types-routing.module';
-import { FieldValidationMessageModule } from '@components/_common/field-validation-message/file-validation-message.module';
+import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { FormatDateService } from '@services/format-date-service';
 import { DotIconButtonTooltipModule } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.module';
 import { ListingDataTableModule } from '@components/listing-data-table/listing-data-table.module';
@@ -135,7 +135,7 @@ import { DotFieldHelperModule } from '@components/dot-field-helper/dot-field-hel
         DotWorkflowsSelectorFieldModule,
         DragulaModule,
         DropdownModule,
-        FieldValidationMessageModule,
+        DotFieldValidationMessageModule,
         FormsModule,
         IFrameModule,
         InputTextModule,
