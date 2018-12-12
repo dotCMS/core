@@ -127,7 +127,7 @@ public class ContentletUtil {
 		m.putAll(c.getMap());
 
 		ContentType type=c.getContentType();
-
+		m.put("contentType", type.variable());
 		for(com.dotcms.contenttype.model.field.Field f : type.fields()){
 			if(f instanceof BinaryField){
 			  File fsFile = c.getBinary(f.variable());
