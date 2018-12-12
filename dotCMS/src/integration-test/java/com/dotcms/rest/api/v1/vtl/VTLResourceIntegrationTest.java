@@ -125,6 +125,17 @@ public class VTLResourceIntegrationTest {
                         .setBodyMap(dynamicGetBodyMap)
                         .setResourceMethod(ResourceMethod.DYNAMIC_GET)
                         .build(),
+                new VTLResourceTestCase.Builder().setVtlFile(new File(ConfigTestHelper.getUrlToTestResource(VALID_GET_VTL_DOTJSON_OUTPUT).toURI()))
+                        .setFolderName(folderName)
+                        .setQueryParameters(queryParameters)
+                        .setPathParameter(KNOWN_EMPLOYEE_ID)
+                        .setExpectedJSON(null)
+                        .setExpectedOutput(null)
+                        .setExpectedException(Response.Status.FORBIDDEN.getStatusCode())
+                        .setBodyMap(dynamicGetBodyMap)
+                        .setUser(ANONYMOUS_USER_ID)
+                        .setResourceMethod(ResourceMethod.DYNAMIC_GET)
+                        .build(),
         };
     }
 
