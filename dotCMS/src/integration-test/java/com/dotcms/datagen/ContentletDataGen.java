@@ -176,7 +176,7 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
      */
     public static void archive(Contentlet contentlet) {
         try{
-            contentletAPI.archive(contentlet, user, false);
+            contentletAPI.archive(contentlet, APILocator.systemUser(), false);
         } catch (DotContentletStateException | DotDataException | DotSecurityException e) {
             throw new RuntimeException(e);
         }
@@ -189,7 +189,7 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
      */
     public static void delete(Contentlet contentlet) {
         try{
-            contentletAPI.delete(contentlet, user, false);
+            contentletAPI.delete(contentlet, APILocator.systemUser(), false);
         } catch (DotContentletStateException | DotDataException | DotSecurityException e) {
             throw new RuntimeException(e);
         }

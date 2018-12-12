@@ -71,6 +71,18 @@ public interface ContainerAPI {
 	Container getContainerByFolder(final Folder folder, final User user, final boolean showLive) throws DotSecurityException, DotDataException;
 
 	/**
+	 * Returns the Container based on the folder and host; this method is mostly used when the container is file asset based.
+	 * @param folder
+	 * @param host
+	 * @param user
+	 * @param showLive
+	 * @return
+	 * @throws DotSecurityException
+	 * @throws DotDataException
+	 */
+	Container getContainerByFolder(final Folder folder, final Host host, final User user, final boolean showLive) throws DotSecurityException, DotDataException;
+
+	/**
 	 * Returns the working container by path and host; this method is mostly used when the container is file asset based.
 	 * @param path
 	 * @param host
