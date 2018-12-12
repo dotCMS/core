@@ -146,6 +146,8 @@ public class VelocityLiveMode extends VelocityModeHandler {
                 persona = v.get().getPersona().getKeyTag();
             }
             final Context context = VelocityUtil.getInstance().getContext(request, response);
+            
+            request.setAttribute("velocityContext", context);
 
             final PageCacheParameters cacheParameters =
                     new BlockPageCache.PageCacheParameters(userId, language, urlMap, queryString, persona);
