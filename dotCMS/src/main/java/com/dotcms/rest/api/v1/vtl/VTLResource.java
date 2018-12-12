@@ -114,6 +114,18 @@ public class VTLResource {
         return processRequest(request, response, uriInfo, folderName, null, HTTPMethod.GET, bodyMap);
     }
 
+    @GET
+    @Path("/dynamic/{pathParam:.*}")
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
+    @Consumes({MediaType.APPLICATION_JSON})
+    public Response dynamicGet(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
+                        @Context UriInfo uriInfo, @PathParam("pathParam") final String pathParams,
+                               final Map<String, String> bodyMap) {
+
+        return processRequest(request, response, uriInfo, null, pathParams, HTTPMethod.GET, bodyMap);
+    }
+
     /**
      * Returns the output of a convention based "post.vtl" file, located under the given {folder} after being evaluated
      * using the velocity engine.
@@ -157,17 +169,8 @@ public class VTLResource {
                                         FormDataMultiPart multipart,
                                         @Context UriInfo uriInfo, @PathParam("folder") final String folderName) {
 
-        try {
-            final List<File> binaries = getBinariesFromMultipart(multipart);
-            final Map<String, String> bodyMap = getBodyMapFromMultipart(multipart);
+        return processMultiPartRequest(request, response, uriInfo, folderName, null, HTTPMethod.POST, multipart);
 
-            return processRequest(request, response, uriInfo, folderName, null, HTTPMethod.POST, bodyMap,
-                    binaries.toArray(new File[0]));
-
-        } catch(Exception e) {
-            Logger.error(this,"Exception on VTL endpoint. POST method: " + e.getMessage(), e);
-            return ResponseUtil.mapExceptionResponse(e);
-        }
     }
 
     @PUT
@@ -180,60 +183,20 @@ public class VTLResource {
                                         final FormDataMultiPart multipart,
                                         @Context final UriInfo uriInfo, @PathParam("folder") final String folderName) {
 
-        try {
-            final List<File> binaries = getBinariesFromMultipart(multipart);
-            final Map<String, String> bodyMap = getBodyMapFromMultipart(multipart);
-
-            return processRequest(request, response, uriInfo, folderName, null, HTTPMethod.PUT, bodyMap,
-                    binaries.toArray(new File[0]));
-
-        } catch(Exception e) {
-            Logger.error(this,"Exception on VTL endpoint. PUT method: " + e.getMessage(), e);
-            return ResponseUtil.mapExceptionResponse(e);
-        }
+        return processMultiPartRequest(request, response, uriInfo, folderName, null, HTTPMethod.PUT, multipart);
     }
 
-    private Map<String, String> getBodyMapFromMultipart(final FormDataMultiPart multipart) throws IOException, JSONException {
-        Map<String, String> bodyMap = null;
+    @PATCH
+    @Path("/{folder}/{pathParam: .*}")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    public final Response patchMultipart(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
+                                       final FormDataMultiPart multipart, @PathParam("pathParam") final String pathParam,
+                                       @Context final UriInfo uriInfo, @PathParam("folder") final String folderName) {
 
-        for (final BodyPart part : multipart.getBodyParts()) {
-            final ContentDisposition contentDisposition = part.getContentDisposition();
-            final String name = contentDisposition != null && contentDisposition.getParameters().containsKey("name")
-                    ? contentDisposition.getParameters().get("name")
-                    : "";
-
-            if (part.getMediaType().equals(MediaType.APPLICATION_JSON_TYPE) || name
-                    .equals("json")) {
-
-                bodyMap = WebResource.processJSON(part.getEntityAs(InputStream.class));
-            }
-        }
-
-        return bodyMap;
-    }
-
-    private List<File> getBinariesFromMultipart(final FormDataMultiPart multipart) throws IOException {
-        final List<File> binaries = new ArrayList<>();
-
-        for (final FormDataBodyPart part : multipart.getFields("file")) {
-            final File tmpFolder = new File(
-                    APILocator.getFileAssetAPI().getRealAssetPathTmpBinary() + UUIDUtil.uuid());
-
-            if(!tmpFolder.mkdirs()) {
-                throw new IOException("Unable to create temp folder to save binaries");
-            }
-
-            final String filename = part.getContentDisposition().getFileName();
-            final File tempFile = new File(
-                    tmpFolder.getAbsolutePath() + File.separator + filename);
-
-            Files.deleteIfExists(tempFile.toPath());
-
-            FileUtils.copyInputStreamToFile(part.getEntityAs(InputStream.class), tempFile);
-            binaries.add(tempFile);
-        }
-
-        return binaries;
+        return processMultiPartRequest(request, response, uriInfo, folderName, pathParam, HTTPMethod.PATCH, multipart);
     }
 
     /**
@@ -296,6 +259,23 @@ public class VTLResource {
         return processRequest(request, response, uriInfo, folderName, pathParams, HTTPMethod.DELETE, requestJSONMap);
     }
 
+    private Response processMultiPartRequest(final HttpServletRequest request, final HttpServletResponse response,
+                                    final UriInfo uriInfo, final String folderName,
+                                    final String pathParam,
+                                    final HTTPMethod httpMethod,
+                                             final FormDataMultiPart multipart) {
+        try {
+            final List<File> binaries = getBinariesFromMultipart(multipart);
+            final Map<String, String> bodyMap = getBodyMapFromMultipart(multipart);
+
+            return processRequest(request, response, uriInfo, folderName, pathParam, httpMethod, bodyMap,
+                    binaries.toArray(new File[0]));
+        }  catch(Exception e) {
+            Logger.error(this,"Exception on VTL endpoint. POST method: " + e.getMessage(), e);
+            return ResponseUtil.mapExceptionResponse(e);
+        }
+    }
+
     private Response processRequest(final HttpServletRequest request, final HttpServletResponse response,
                                     final UriInfo uriInfo, final String folderName,
                                     final String pathParam,
@@ -315,7 +295,14 @@ public class VTLResource {
         }
 
         try {
-            final FileAsset getFileAsset = getVTLFile(httpMethod, request, folderName, initDataObject.getUser());
+            Reader velocityReader;
+            if(UtilMethods.isSet(folderName)) {
+                final FileAsset getFileAsset = getVTLFile(httpMethod, request, folderName, initDataObject.getUser());
+                velocityReader = new InputStreamReader(getFileAsset.getInputStream());
+            } else {
+                String velocityString = bodyMap.get("velocity");
+                velocityReader = new StringReader(velocityString);
+            }
 
             final Map<String, Object> contextParams = CollectionsUtils.map(
                     "pathParam", pathParam,
@@ -323,7 +310,7 @@ public class VTLResource {
                     "bodyMap", bodyMap,
                     "binaries", Arrays.asList(binaries));
 
-            return evalVTLFile(request, response, getFileAsset, contextParams,
+            return evalVelocity(request, response, velocityReader, contextParams,
                     initDataObject.getUser(), cache);
         } catch(DotContentletStateException e) {
             final String errorMessage = "Unable to find velocity file '" +
@@ -343,9 +330,9 @@ public class VTLResource {
         session.setAttribute(WebKeys.CMS_USER, user);
     }
 
-    private Response evalVTLFile(final HttpServletRequest request, final HttpServletResponse response,
-                                 final FileAsset getFileAsset, final Map<String, Object> contextParams,
-                                 final User user, final DotJSONCache cache)
+    private Response evalVelocity(final HttpServletRequest request, final HttpServletResponse response,
+                                  final Reader velocityReader, final Map<String, Object> contextParams,
+                                  final User user, final DotJSONCache cache)
             throws Exception {
         final org.apache.velocity.context.Context context = VelocityUtil.getInstance().getContext(request, response);
         contextParams.forEach(context::put);
@@ -353,27 +340,25 @@ public class VTLResource {
 
         final StringWriter evalResult = new StringWriter();
 
-        try (Reader targetReader = new InputStreamReader(getFileAsset.getInputStream())) {
-            try {
-                VelocityUtil.getEngine().evaluate(context, evalResult, "", targetReader);
-            } catch(MethodInvocationException e) {
-                if(e.getCause() instanceof DotToolException) {
-                    throw (Exception) (e.getCause()).getCause();
-                }
+        try {
+            VelocityUtil.getEngine().evaluate(context, evalResult, "", velocityReader);
+        } catch(MethodInvocationException e) {
+            if(e.getCause() instanceof DotToolException) {
+                throw (Exception) (e.getCause()).getCause();
             }
-            final DotJSON dotJSON = (DotJSON) context.get("dotJSON");
+        }
+        final DotJSON dotJSON = (DotJSON) context.get("dotJSON");
 
-            if(dotJSON.size()==0) { // If dotJSON is not used let's return the raw evaluation of the velocity file
-                return Response.ok(evalResult.toString()).build();
-            } else {
-                // let's add it to cache
-                if(UtilMethods.isSet(dotJSON.get("errors"))) {
-                    return Response.status(Response.Status.BAD_REQUEST).entity(dotJSON.get("errors")).build();
-                }
-
-                cache.add(request, user, dotJSON);
-                return Response.ok(dotJSON.getMap()).build();
+        if(dotJSON.size()==0) { // If dotJSON is not used let's return the raw evaluation of the velocity file
+            return Response.ok(evalResult.toString()).build();
+        } else {
+            // let's add it to cache
+            if(UtilMethods.isSet(dotJSON.get("errors"))) {
+                return Response.status(Response.Status.BAD_REQUEST).entity(dotJSON.get("errors")).build();
             }
+
+            cache.add(request, user, dotJSON);
+            return Response.ok(dotJSON.getMap()).build();
         }
     }
 
@@ -387,6 +372,49 @@ public class VTLResource {
         final Contentlet getFileContent = contentletAPI.findContentletByIdentifier(identifier.getId(), true,
                 currentLanguage.getId(), user, true);
         return APILocator.getFileAssetAPI().fromContentlet(getFileContent);
+    }
+
+    private Map<String, String> getBodyMapFromMultipart(final FormDataMultiPart multipart) throws IOException, JSONException {
+        Map<String, String> bodyMap = null;
+
+        for (final BodyPart part : multipart.getBodyParts()) {
+            final ContentDisposition contentDisposition = part.getContentDisposition();
+            final String name = contentDisposition != null && contentDisposition.getParameters().containsKey("name")
+                    ? contentDisposition.getParameters().get("name")
+                    : "";
+
+            if (part.getMediaType().equals(MediaType.APPLICATION_JSON_TYPE) || name
+                    .equals("json")) {
+
+                bodyMap = WebResource.processJSON(part.getEntityAs(InputStream.class));
+            }
+        }
+
+        return bodyMap;
+    }
+
+    private List<File> getBinariesFromMultipart(final FormDataMultiPart multipart) throws IOException {
+        final List<File> binaries = new ArrayList<>();
+
+        for (final FormDataBodyPart part : multipart.getFields("file")) {
+            final File tmpFolder = new File(
+                    APILocator.getFileAssetAPI().getRealAssetPathTmpBinary() + UUIDUtil.uuid());
+
+            if(!tmpFolder.mkdirs()) {
+                throw new IOException("Unable to create temp folder to save binaries");
+            }
+
+            final String filename = part.getContentDisposition().getFileName();
+            final File tempFile = new File(
+                    tmpFolder.getAbsolutePath() + File.separator + filename);
+
+            Files.deleteIfExists(tempFile.toPath());
+
+            FileUtils.copyInputStreamToFile(part.getEntityAs(InputStream.class), tempFile);
+            binaries.add(tempFile);
+        }
+
+        return binaries;
     }
 
 }
