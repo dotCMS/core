@@ -175,23 +175,26 @@ public class VelocityUtil {
 	
 	public static ChainedContext getWebContext(Context ctx, HttpServletRequest request, HttpServletResponse response) {
 
+        if ( request.getAttribute( com.dotcms.rendering.velocity.Constants.VELOCITY_CONTEXT ) != null && request.getAttribute( com.dotcms.rendering.velocity.Constants.VELOCITY_CONTEXT ) instanceof ChainedContext ) {
+            return (ChainedContext) request.getAttribute( com.dotcms.rendering.velocity.Constants.VELOCITY_CONTEXT );
+        } 
+        
+
         if ( ctx == null ) {
             ctx = getBasicContext();
         }
-
-        // http://jira.dotmarketing.net/browse/DOTCMS-2917
-
-		//get the context from the request if possible
-        ChainedContext context;
-        if ( request.getAttribute( com.dotcms.rendering.velocity.Constants.VELOCITY_CONTEXT ) != null && request.getAttribute( com.dotcms.rendering.velocity.Constants.VELOCITY_CONTEXT ) instanceof ChainedContext ) {
-            return (ChainedContext) request.getAttribute( "velocityContext" );
-        } else {
-            RequestWrapper rw = new RequestWrapper( request );
-            if ( request.getAttribute( "User-Agent" ) != null && request.getAttribute( "User-Agent" ).equals( Constants.USER_AGENT_DOTCMS_BROWSER ) ) {
-                rw.setCustomUserAgentHeader( Constants.USER_AGENT_DOTCMS_BROWSER );
-            }
-            context = new ChainedContext( ctx, getEngine(), rw, response, Config.CONTEXT );
+        
+        
+        final RequestWrapper rw = new RequestWrapper( request );
+        if ( request.getAttribute( "User-Agent" ) != null && request.getAttribute( "User-Agent" ).equals( Constants.USER_AGENT_DOTCMS_BROWSER ) ) {
+            rw.setCustomUserAgentHeader( Constants.USER_AGENT_DOTCMS_BROWSER );
         }
+        
+        ChainedContext context = new ChainedContext( ctx, getEngine(), rw, response, Config.CONTEXT );
+        
+        
+        request.setAttribute( com.dotcms.rendering.velocity.Constants.VELOCITY_CONTEXT, context );
+        
 
         context.put("context", context);
 		Logger.debug(VelocityUtil.class, "ChainedContext=" + context);
