@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { CoreWebService } from './core-web.service';
 import { Observable, Subject, of, merge } from 'rxjs';
 import { RequestMethod } from '@angular/http';
-import { pluck, map } from 'rxjs/operators';
+import { pluck, map, take } from 'rxjs/operators';
 import { LoginService, Auth } from './login.service';
 import { LoggerService } from './logger.service';
 import { DotcmsEventsService } from './dotcms-events.service';
@@ -190,7 +190,7 @@ export class SiteService {
     }
 
     private loadCurrentSite(): void {
-        this.getCurrentSite().subscribe((currentSite: Site) => {
+        this.getCurrentSite().pipe(take(1)).subscribe((currentSite: Site) => {
             this.setCurrentSite(currentSite);
         });
     }
