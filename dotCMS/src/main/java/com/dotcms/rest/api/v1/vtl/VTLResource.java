@@ -33,6 +33,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.IdentifierAPI;
+import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -67,7 +68,8 @@ public class VTLResource {
     private final HostAPI hostAPI;
     private final IdentifierAPI identifierAPI;
     private final ContentletAPI contentletAPI;
-    private final String FILE_EXTENSION = ".vtl";
+    private final static String FILE_EXTENSION = ".vtl";
+    private static final String SCRIPTING_USER_ROLE_KEY = "Scripting Developer";
 
     public VTLResource() {
         this(APILocator.getHostAPI(), APILocator.getIdentifierAPI(), APILocator.getContentletAPI(),
@@ -89,7 +91,6 @@ public class VTLResource {
      *
      * "get.vtl" code determines whether the response is a JSON object or anything else (XML, text-plain).
      */
-
     @GET
     @Path("/{folder}/{pathParam:.*}")
     @NoCache
@@ -97,9 +98,9 @@ public class VTLResource {
     @Consumes({MediaType.APPLICATION_JSON})
     public Response get(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
                         @Context UriInfo uriInfo, @PathParam("folder") final String folderName,
-                        @PathParam("pathParam") final String pathParams, final Map<String, String> bodyMap) {
+                        @PathParam("pathParam") final String pathParam, final Map<String, String> bodyMap) {
 
-        return processRequest(request, response, uriInfo, folderName, pathParams, HTTPMethod.GET, bodyMap);
+        return processRequest(request, response, uriInfo, folderName, pathParam, HTTPMethod.GET, bodyMap);
     }
 
     @GET
@@ -112,18 +113,6 @@ public class VTLResource {
                         final Map<String, String> bodyMap) {
 
         return processRequest(request, response, uriInfo, folderName, null, HTTPMethod.GET, bodyMap);
-    }
-
-    @GET
-    @Path("/dynamic/{pathParam:.*}")
-    @NoCache
-    @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
-    @Consumes({MediaType.APPLICATION_JSON})
-    public Response dynamicGet(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
-                        @Context UriInfo uriInfo, @PathParam("pathParam") final String pathParams,
-                               final Map<String, String> bodyMap) {
-
-        return processRequest(request, response, uriInfo, null, pathParams, HTTPMethod.GET, bodyMap);
     }
 
     /**
@@ -140,10 +129,10 @@ public class VTLResource {
     @Consumes({MediaType.APPLICATION_JSON})
     public final Response post(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
                                @Context UriInfo uriInfo, @PathParam("folder") final String folderName,
-                               @PathParam("pathParam") final String pathParams,
+                               @PathParam("pathParam") final String pathParam,
                                    final Map<String, String> bodyMap) {
 
-        return processRequest(request, response, uriInfo, folderName, pathParams, HTTPMethod.POST, bodyMap);
+        return processRequest(request, response, uriInfo, folderName, pathParam, HTTPMethod.POST, bodyMap);
     }
 
     @POST
@@ -157,46 +146,6 @@ public class VTLResource {
                                final Map<String, String> bodyMap) {
 
         return processRequest(request, response, uriInfo, folderName, null, HTTPMethod.POST, bodyMap);
-    }
-
-    @POST
-    @Path("/{folder}")
-    @JSONP
-    @NoCache
-    @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
-    @Consumes(MediaType.MULTIPART_FORM_DATA)
-    public final Response postMultipart(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
-                                        FormDataMultiPart multipart,
-                                        @Context UriInfo uriInfo, @PathParam("folder") final String folderName) {
-
-        return processMultiPartRequest(request, response, uriInfo, folderName, null, HTTPMethod.POST, multipart);
-
-    }
-
-    @PUT
-    @Path("/{folder}")
-    @JSONP
-    @NoCache
-    @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
-    @Consumes(MediaType.MULTIPART_FORM_DATA)
-    public final Response putMultipart(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
-                                        final FormDataMultiPart multipart,
-                                        @Context final UriInfo uriInfo, @PathParam("folder") final String folderName) {
-
-        return processMultiPartRequest(request, response, uriInfo, folderName, null, HTTPMethod.PUT, multipart);
-    }
-
-    @PATCH
-    @Path("/{folder}/{pathParam: .*}")
-    @JSONP
-    @NoCache
-    @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
-    @Consumes(MediaType.MULTIPART_FORM_DATA)
-    public final Response patchMultipart(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
-                                       final FormDataMultiPart multipart, @PathParam("pathParam") final String pathParam,
-                                       @Context final UriInfo uriInfo, @PathParam("folder") final String folderName) {
-
-        return processMultiPartRequest(request, response, uriInfo, folderName, pathParam, HTTPMethod.PATCH, multipart);
     }
 
     /**
@@ -213,10 +162,23 @@ public class VTLResource {
     @Consumes({MediaType.APPLICATION_JSON})
     public final Response put(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
                                @Context UriInfo uriInfo, @PathParam("folder") final String folderName,
-                               @PathParam("pathParam") final String pathParams,
+                               @PathParam("pathParam") final String pathParam,
                                final Map<String, String> bodyMap) {
 
-        return processRequest(request, response, uriInfo, folderName, pathParams, HTTPMethod.PUT, bodyMap);
+        return processRequest(request, response, uriInfo, folderName, pathParam, HTTPMethod.PUT, bodyMap);
+    }
+
+    @PUT
+    @Path("/{folder}")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
+    @Consumes({MediaType.APPLICATION_JSON})
+    public final Response put(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
+                              @Context UriInfo uriInfo, @PathParam("folder") final String folderName,
+                              final Map<String, String> bodyMap) {
+
+        return processRequest(request, response, uriInfo, folderName, null, HTTPMethod.PUT, bodyMap);
     }
 
     /**
@@ -226,17 +188,30 @@ public class VTLResource {
      * "patch.vtl" code determines whether the response is a JSON object or anything else (XML, text-plain).
      */
     @PATCH
-    @Path("/{folder}/{path: .*}")
+    @Path("/{folder}/{pathParam: .*}")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
     @Consumes({MediaType.APPLICATION_JSON})
     public final Response patch(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
                               @Context UriInfo uriInfo, @PathParam("folder") final String folderName,
-                              @PathParam("path") final String pathParams,
+                              @PathParam("pathParam") final String pathParam,
                               final Map<String, String> bodyMap) {
 
-        return processRequest(request, response, uriInfo, folderName, pathParams, HTTPMethod.PATCH, bodyMap);
+        return processRequest(request, response, uriInfo, folderName, pathParam, HTTPMethod.PATCH, bodyMap);
+    }
+
+    @PATCH
+    @Path("/{folder}")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
+    @Consumes({MediaType.APPLICATION_JSON})
+    public final Response patch(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
+                                @Context UriInfo uriInfo, @PathParam("folder") final String folderName,
+                                final Map<String, String> bodyMap) {
+
+        return processRequest(request, response, uriInfo, folderName, null, HTTPMethod.PATCH, bodyMap);
     }
 
     /**
@@ -246,17 +221,241 @@ public class VTLResource {
      * "delete.vtl" code determines whether the response is a JSON object or anything else (XML, text-plain).
      */
     @DELETE
-    @Path("/{folder}/{path: .*}")
+    @Path("/{folder}/{pathParam: .*}")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
     @Consumes({MediaType.APPLICATION_JSON})
     public final Response delete(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
                                @Context UriInfo uriInfo, @PathParam("folder") final String folderName,
-                               @PathParam("path") final String pathParams,
+                               @PathParam("pathParam") final String pathParam,
                                final Map<String, String> requestJSONMap) {
 
-        return processRequest(request, response, uriInfo, folderName, pathParams, HTTPMethod.DELETE, requestJSONMap);
+        return processRequest(request, response, uriInfo, folderName, pathParam, HTTPMethod.DELETE, requestJSONMap);
+    }
+
+    @DELETE
+    @Path("/{folder}")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
+    @Consumes({MediaType.APPLICATION_JSON})
+    public final Response delete(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
+                                 @Context UriInfo uriInfo, @PathParam("folder") final String folderName,
+                                 final Map<String, String> requestJSONMap) {
+
+        return processRequest(request, response, uriInfo, folderName, null, HTTPMethod.DELETE, requestJSONMap);
+    }
+
+    /**
+     * Same as {@link #post} but supporting a multipart request
+     */
+    @POST
+    @Path("/{folder}/{pathParam: .*}")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    public final Response postMultipart(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
+                                        FormDataMultiPart multipart,
+                                        @PathParam("pathParam") final String pathParam,
+                                        @Context UriInfo uriInfo, @PathParam("folder") final String folderName) {
+
+        return processMultiPartRequest(request, response, uriInfo, folderName, pathParam, HTTPMethod.POST, multipart);
+
+    }
+
+    @POST
+    @Path("/{folder}")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    public final Response postMultipart(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
+                                        FormDataMultiPart multipart,
+                                        @Context UriInfo uriInfo, @PathParam("folder") final String folderName) {
+
+        return processMultiPartRequest(request, response, uriInfo, folderName, null, HTTPMethod.POST, multipart);
+
+    }
+
+    /**
+     * Same as {@link #put} but supporting a multipart request
+     */
+    @PUT
+    @Path("/{folder}/{pathParam: .*}")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    public final Response putMultipart(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
+                                        FormDataMultiPart multipart,
+                                        @PathParam("pathParam") final String pathParam,
+                                        @Context UriInfo uriInfo, @PathParam("folder") final String folderName) {
+
+        return processMultiPartRequest(request, response, uriInfo, folderName, pathParam, HTTPMethod.PUT, multipart);
+
+    }
+
+    @PUT
+    @Path("/{folder}")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    public final Response putMultipart(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
+                                       final FormDataMultiPart multipart,
+                                       @Context final UriInfo uriInfo, @PathParam("folder") final String folderName) {
+
+        return processMultiPartRequest(request, response, uriInfo, folderName, null, HTTPMethod.PUT, multipart);
+    }
+
+    /**
+     * Same as {@link #patch} but supporting a multipart request
+     */
+    @PATCH
+    @Path("/{folder}/{pathParam: .*}")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    public final Response patchMultipart(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
+                                        FormDataMultiPart multipart,
+                                        @PathParam("pathParam") final String pathParam,
+                                        @Context UriInfo uriInfo, @PathParam("folder") final String folderName) {
+
+        return processMultiPartRequest(request, response, uriInfo, folderName, pathParam, HTTPMethod.PATCH, multipart);
+
+    }
+
+    @PATCH
+    @Path("/{folder}")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    public final Response patchMultipart(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
+                                         final FormDataMultiPart multipart,
+                                         @Context final UriInfo uriInfo, @PathParam("folder") final String folderName) {
+
+        return processMultiPartRequest(request, response, uriInfo, folderName, null, HTTPMethod.PATCH, multipart);
+    }
+
+    /**
+     * Same as {@link #get} but supporting sending the velocity to be rendered embedded (properly escaped) in the JSON
+     * in a "velocity" property
+     */
+    @GET
+    @Path("/dynamic/{pathParam:.*}")
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
+    @Consumes({MediaType.APPLICATION_JSON})
+    public Response dynamicGet(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
+                               @Context UriInfo uriInfo, @PathParam("pathParam") final String pathParam,
+                               final Map<String, String> bodyMap) {
+
+        return processRequest(request, response, uriInfo, null, pathParam, HTTPMethod.GET, bodyMap);
+    }
+
+    @GET
+    @Path("/dynamic")
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
+    @Consumes({MediaType.APPLICATION_JSON})
+    public Response dynamicGet(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
+                               @Context UriInfo uriInfo,
+                               final Map<String, String> bodyMap) {
+
+        return processRequest(request, response, uriInfo, null, null, HTTPMethod.GET, bodyMap);
+    }
+
+    /**
+     * Same as {@link #post} but supporting sending the velocity to be rendered embedded (properly escaped) in the JSON
+     * in a "velocity" property
+     */
+    @POST
+    @Path("/dynamic/{pathParam:.*}")
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
+    @Consumes({MediaType.APPLICATION_JSON})
+    public Response dynamicPost(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
+                                @Context UriInfo uriInfo, @PathParam("pathParam") final String pathParam,
+                                final Map<String, String> bodyMap) {
+
+        return processRequest(request, response, uriInfo, null, pathParam, HTTPMethod.POST, bodyMap);
+    }
+
+    @POST
+    @Path("/dynamic")
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
+    @Consumes({MediaType.APPLICATION_JSON})
+    public Response dynamicPost(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
+                                @Context UriInfo uriInfo,
+                                final Map<String, String> bodyMap) {
+
+        return processRequest(request, response, uriInfo, null, null, HTTPMethod.POST, bodyMap);
+    }
+
+    /**
+     * Same as {@link #put} but supporting sending the velocity to be rendered embedded (properly escaped) in the JSON
+     * in a "velocity" property
+     */
+    @PUT
+    @Path("/dynamic/{pathParam:.*}")
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
+    @Consumes({MediaType.APPLICATION_JSON})
+    public Response dynamicPut(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
+                               @Context UriInfo uriInfo, @PathParam("pathParam") final String pathParam,
+                               final Map<String, String> bodyMap) {
+
+        return processRequest(request, response, uriInfo, null, pathParam, HTTPMethod.PUT, bodyMap);
+    }
+
+    @PUT
+    @Path("/dynamic")
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
+    @Consumes({MediaType.APPLICATION_JSON})
+    public Response dynamicPut(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
+                               @Context UriInfo uriInfo,
+                               final Map<String, String> bodyMap) {
+
+        return processRequest(request, response, uriInfo, null, null, HTTPMethod.PUT, bodyMap);
+    }
+
+    /**
+     * Same as {@link #patch} but supporting sending the velocity to be rendered embedded (properly escaped) in the JSON
+     * in a "velocity" property
+     */
+    @PATCH
+    @Path("/dynamic/{pathParam:.*}")
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
+    @Consumes({MediaType.APPLICATION_JSON})
+    public Response dynamicPatch(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
+                                 @Context UriInfo uriInfo, @PathParam("pathParam") final String pathParam,
+                                 final Map<String, String> bodyMap) {
+
+        return processRequest(request, response, uriInfo, null, pathParam, HTTPMethod.PATCH, bodyMap);
+    }
+
+
+    /**
+     * Same as {@link #delete} but supporting sending the velocity to be rendered embedded (properly escaped) in the JSON
+     * in a "velocity" property
+     */
+    @DELETE
+    @Path("/dynamic/{pathParam:.*}")
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
+    @Consumes({MediaType.APPLICATION_JSON})
+    public Response dynamicDelete(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
+                                  @Context UriInfo uriInfo, @PathParam("pathParam") final String pathParam,
+                                  final Map<String, String> bodyMap) {
+
+        return processRequest(request, response, uriInfo, null, pathParam, HTTPMethod.DELETE, bodyMap);
     }
 
     private Response processMultiPartRequest(final HttpServletRequest request, final HttpServletResponse response,
@@ -285,10 +484,11 @@ public class VTLResource {
         final InitDataObject initDataObject = this.webResource.init
                 (null, false, request, false, null);
 
-        setUserInSession(request.getSession(false), initDataObject.getUser());
+        final User user = initDataObject.getUser();
+        setUserInSession(request.getSession(false), user);
 
         final DotJSONCache cache = DotJSONCacheFactory.getCache(httpMethod);
-        final Optional<DotJSON> dotJSONOptional = cache.get(request, initDataObject.getUser());
+        final Optional<DotJSON> dotJSONOptional = cache.get(request, user);
 
         if(dotJSONOptional.isPresent()) {
             return Response.ok(dotJSONOptional.get().getMap()).build();
@@ -300,6 +500,13 @@ public class VTLResource {
                 final FileAsset getFileAsset = getVTLFile(httpMethod, request, folderName, initDataObject.getUser());
                 velocityReader = new InputStreamReader(getFileAsset.getInputStream());
             } else {
+                final RoleAPI roleAPI = APILocator.getRoleAPI();
+                final boolean canRenderVelocity = APILocator.getRoleAPI()
+                        .doesUserHaveRole(user, roleAPI.loadRoleByKey(SCRIPTING_USER_ROLE_KEY));
+                if(!canRenderVelocity) {
+                    Logger.info(this, "User does not have the required role");
+                    throw new DotSecurityException("User does not have the required role");
+                }
                 String velocityString = bodyMap.get("velocity");
                 velocityReader = new StringReader(velocityString);
             }
