@@ -1,18 +1,18 @@
 package com.dotcms.util;
 
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotValidationException;
 import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
@@ -21,6 +21,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -33,39 +34,48 @@ public class RelationshipUtil {
 
     private static final IdentifierAPI identifierAPI = APILocator.getIdentifierAPI();
 
-    private static final LanguageAPI languageAPI     = APILocator.getLanguageAPI();
-
     private final static RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
 
-    public static Relationship getRelationshipFromField(final Field field, final Contentlet contentlet){
+    /**
+     * Given a Relationship Field and a Content Type Velocity var name, returns the existing relationship
+     * @param field
+     * @param contentTypeVar
+     * @return
+     */
+    public static Relationship getRelationshipFromField(final Field field, final String contentTypeVar){
         final String fieldRelationType = field.getFieldRelationType();
         return APILocator.getRelationshipAPI().byTypeValue(
                 fieldRelationType.contains(StringPool.PERIOD) ? fieldRelationType
-                        : contentlet.getContentType().variable() + StringPool.PERIOD + field
+                        :contentTypeVar + StringPool.PERIOD + field
                                 .getVelocityVarName());
 
 
     }
 
-    public static Map<Relationship, List<Contentlet>> getRelatedContentFromQuery(
-            final Relationship relationship, final Contentlet contentlet, final String value,
-            final User user) throws DotDataException, DotSecurityException {
+    /**
+     * Returns a list of related contentlet given a comma separated list of lucene queries and/or contentlet identifiers
+     * Additionally, validates the contentlets returned by the query, actually belongs to the specified relationship in the
+     * given content type
+     * @param relationship
+     * @param contentType
+     * @param language Language ID of the contentlets to be returned when filtering by identifiers
+     * @param query Comma separated list of lucene queries and/or identifiers
+     * @param user
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    public static List<Contentlet> getRelatedContentFromQuery(
+            final Relationship relationship, final ContentType contentType, final long language,
+            final String query, final User user) throws DotDataException, DotSecurityException {
         List<Contentlet> relatedContentlets = Collections.EMPTY_LIST;
-        if (relationship != null && InodeUtils.isSet(relationship.getInode())) {
 
-            if (UtilMethods.isSet(value)) {
-                final long language = contentlet != null ? contentlet.getLanguageId() : languageAPI.getDefaultLanguage().getId();
-                relatedContentlets = filterContentlet(language, value, user);
-
-                if (contentlet != null){
-                    validateRelatedContent(relationship, contentlet, relatedContentlets);
-                }
-            }
-        } else {
-            throw new DotDataException("Error processing related content");
+        if (UtilMethods.isSet(query)) {
+            relatedContentlets = filterContentlet(language, query, user, true);
+            validateRelatedContent(relationship, contentType, relatedContentlets);
         }
 
-        return CollectionsUtils.map(relationship, relatedContentlets);
+        return relatedContentlets;
     }
 
     /**
@@ -78,7 +88,7 @@ public class RelationshipUtil {
      * @throws DotSecurityException
      */
     public static List<Contentlet> filterContentlet(final long language, final String filter,
-            final User user) throws DotDataException, DotSecurityException {
+            final User user, final boolean isCheckout) throws DotDataException, DotSecurityException {
 
         final Map<String, Contentlet> relatedContentlets = new HashMap<>();
 
@@ -88,40 +98,47 @@ public class RelationshipUtil {
                 final Identifier identifier = identifierAPI.find(elem.trim());
                 final Contentlet relatedContentlet = contentletAPI
                         .findContentletForLanguage(language, identifier);
-                relatedContentlets.put(relatedContentlet.getIdentifier(), relatedContentlet);
+                relatedContentlets.put(relatedContentlet.getIdentifier(), isCheckout ? contentletAPI
+                        .checkout(relatedContentlet.getInode(), user, false) : relatedContentlet);
             } else {
                 relatedContentlets
-                        .putAll(contentletAPI.search(elem, 0, 0, null, user, false).stream()
-                                .filter(contentlet -> !relatedContentlets
-                                        .containsKey(contentlet.getIdentifier())).collect(Collectors
-                                        .toMap(contentlet -> contentlet.getIdentifier(),
-                                                contentlet -> contentlet)));
+                        .putAll((isCheckout ? contentletAPI.checkoutWithQuery(elem, user, false)
+                                : contentletAPI.search(elem, 0, 0, null, user, false)).stream()
+                                .collect(Collectors
+                                        .toMap(Contentlet::getIdentifier, Function.identity())));
             }
         }
 
         return relatedContentlets.values().stream().collect(CollectionsUtils.toImmutableList());
     }
 
+    /**
+     * Validates related contentlets according to the specified relationship and content type
+     * @param relationship
+     * @param contentType
+     * @param relatedContentlets
+     * @throws DotValidationException
+     */
     private static void validateRelatedContent(final Relationship relationship,
-            final Contentlet contentlet, final List<Contentlet> relatedContentlets)
-            throws DotDataException {
+            final ContentType contentType, final List<Contentlet> relatedContentlets)
+            throws DotValidationException {
 
         //validates if the contentlet retrieved is using the correct type
-        if (relationshipAPI.isParent(relationship, contentlet.getContentType())) {
+        if (relationshipAPI.isParent(relationship, contentType)) {
             for (final Contentlet relatedContentlet : relatedContentlets) {
                 final Structure relatedStructure = relatedContentlet.getStructure();
                 if (!(relationshipAPI.isChild(relationship, relatedStructure))) {
-                    throw new DotDataException(
+                    throw new DotValidationException(
                             "The structure does not match the relationship" + relationship
                                     .getRelationTypeValue());
                 }
             }
         }
-        if (relationshipAPI.isChild(relationship, contentlet.getContentType())) {
+        if (relationshipAPI.isChild(relationship, contentType)) {
             for (final Contentlet relatedContentlet : relatedContentlets) {
                 final Structure relatedStructure = relatedContentlet.getStructure();
                 if (!(relationshipAPI.isParent(relationship, relatedStructure))) {
-                    throw new DotDataException(
+                    throw new DotValidationException(
                             "The structure does not match the relationship " + relationship
                                     .getRelationTypeValue());
                 }

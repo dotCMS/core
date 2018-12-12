@@ -1615,7 +1615,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
             for(final Field field : contentType.fields()){
                 final Object value = generateValue(field);
                 if( null != value){
-                    contentletFormData.put(field.name(), value);
+                    contentletFormData.put(field.variable(), value);
                 }
             }
             builder1.contentletFormData(contentletFormData);
@@ -1632,14 +1632,14 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
             assertNotNull(brandNewContentlet);
 
             for(final Field field : contentType.fields()){
-                assertNotNull(brandNewContentlet.get(field.name()));
+                assertNotNull(brandNewContentlet.get(field.variable()));
             }
 
             final FireActionForm.Builder builder2 = new FireActionForm.Builder();
             final Map <String,Object>contentletFormData2 = new HashMap<>();
             contentletFormData2.put("stInode", contentType.inode());
             for(final Field field : contentType.fields()){
-                contentletFormData2.put(field.name(), null);
+                contentletFormData2.put(field.variable(), null);
             }
             builder2.contentletFormData(contentletFormData2);
             final FireActionForm fireActionForm2 = new FireActionForm(builder2);
@@ -1656,7 +1656,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
             assertNotNull(fetchedContentlet);
 
             for(final Field field : contentType.fields()){
-                assertNull(fetchedContentlet.get(field.name()));
+                assertNull(fetchedContentlet.get(field.variable()));
             }
 
         } finally {
@@ -1886,7 +1886,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
             final String fieldName = "_" + clazz.getCanonicalName();
             final Field field = FieldBuilder.builder(clazz)
                     .dataType(fieldTypesMetaDataMap.get(clazz))
-                    .name(fieldName).variable(fieldName)
+                    .name(fieldName)
                     .required(required)
                     .contentTypeId(contentType.id()
             ).build();

@@ -169,7 +169,7 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
         // Add fields to the contentType
         final Field field =
                 FieldBuilder.builder(TextField.class).name(REQUIRED_TEXT_FIELD_NAME)
-                        .variable(REQUIRED_TEXT_FIELD_NAME)
+                        .variable("langNameField")
                         .required(true)
                         .contentTypeId(contentType.id()).dataType(DataTypes.TEXT).build();
         contentType = contentTypeAPI.save(contentType, Collections.singletonList(field));
@@ -197,7 +197,7 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
         contentlet.setHost(host.getIdentifier());
         contentlet.setLanguageId(language.getId());
         //Now lets add some lang info to the instance itself.
-        contentlet.setStringProperty(REQUIRED_TEXT_FIELD_NAME, language.toString());
+        contentlet.setStringProperty("langNameField", language.toString());
         contentlet.setIndexPolicy(IndexPolicy.FORCE);
 
         // Save the content
@@ -306,7 +306,8 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
             }
 
             if(null != contentType){
-            }  contentTypeAPI.delete(contentType);
+                contentTypeAPI.delete(contentType);
+            }
 
             if (null != bundle && null != endpoint && null != environment) {
                 cleanBundleEndpointEnv(bundle, endpoint, environment);
@@ -425,7 +426,8 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
             }
 
             if(null != contentType){
-            }  contentTypeAPI.delete(contentType);
+                contentTypeAPI.delete(contentType);
+            }
 
 
             if (null != bundle && null != endpoint && null != environment) {
@@ -593,7 +595,8 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
             }
 
             if(null != contentType){
-            }  contentTypeAPI.delete(contentType);
+                contentTypeAPI.delete(contentType);
+            }
 
 
             if (null != bundle && null != endpoint && null != environment) {
