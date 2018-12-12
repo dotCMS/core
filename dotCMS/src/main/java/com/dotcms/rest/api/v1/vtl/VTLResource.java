@@ -65,23 +65,13 @@ public class VTLResource {
     private final WebResource webResource;
     @VisibleForTesting
     static final String VTL_PATH = "/application/apivtl";
-    private final HostAPI hostAPI;
-    private final IdentifierAPI identifierAPI;
-    private final ContentletAPI contentletAPI;
-    private final static String FILE_EXTENSION = ".vtl";
-    private static final String SCRIPTING_USER_ROLE_KEY = "Scripting Developer";
 
     public VTLResource() {
-        this(APILocator.getHostAPI(), APILocator.getIdentifierAPI(), APILocator.getContentletAPI(),
-                new WebResource());
+        this(new WebResource());
     }
 
     @VisibleForTesting
-    VTLResource(final HostAPI hostAPI, final IdentifierAPI identifierAPI, final ContentletAPI contentletAPI,
-                final WebResource webResource) {
-        this.hostAPI = hostAPI;
-        this.identifierAPI = identifierAPI;
-        this.contentletAPI = contentletAPI;
+    VTLResource(final WebResource webResource) {
         this.webResource = webResource;
     }
 
@@ -494,22 +484,16 @@ public class VTLResource {
             return Response.ok(dotJSONOptional.get().getMap()).build();
         }
 
+        final VelocityReaderParams velocityReaderParams = new VelocityReaderParams.VelocityReaderParamsBuilder()
+                .setBodyMap(bodyMap)
+                .setFolderName(folderName)
+                .setHttpMethod(httpMethod)
+                .setRequest(request)
+                .setUser(user)
+                .build();
+
         try {
-            Reader velocityReader;
-            if(UtilMethods.isSet(folderName)) {
-                final FileAsset getFileAsset = getVTLFile(httpMethod, request, folderName, initDataObject.getUser());
-                velocityReader = new InputStreamReader(getFileAsset.getInputStream());
-            } else {
-                final RoleAPI roleAPI = APILocator.getRoleAPI();
-                final boolean canRenderVelocity = APILocator.getRoleAPI()
-                        .doesUserHaveRole(user, roleAPI.loadRoleByKey(SCRIPTING_USER_ROLE_KEY));
-                if(!canRenderVelocity) {
-                    Logger.info(this, "User does not have the required role");
-                    throw new DotSecurityException("User does not have the required role");
-                }
-                String velocityString = bodyMap.get("velocity");
-                velocityReader = new StringReader(velocityString);
-            }
+            final VelocityReader velocityReader = VelocityReaderFactory.getVelocityReader(UtilMethods.isSet(folderName));
 
             final Map<String, Object> contextParams = CollectionsUtils.map(
                     "pathParam", pathParam,
@@ -517,15 +501,9 @@ public class VTLResource {
                     "bodyMap", bodyMap,
                     "binaries", Arrays.asList(binaries));
 
-            return evalVelocity(request, response, velocityReader, contextParams,
+            return evalVelocity(request, response, velocityReader.getVelocity(velocityReaderParams), contextParams,
                     initDataObject.getUser(), cache);
-        } catch(DotContentletStateException e) {
-            final String errorMessage = "Unable to find velocity file '" +
-                    httpMethod.fileName() + FILE_EXTENSION + "' under path '" + VTL_PATH +
-                    StringPool.SLASH + folderName + StringPool.SLASH + "'";
-            Logger.error(this, errorMessage, e);
-            return ResponseUtil.mapExceptionResponse(new DotDataException(errorMessage));
-        } catch(Exception e) {
+        }  catch(Exception e) {
             Logger.error(this,"Exception on VTL endpoint. GET method: " + e.getMessage(), e);
             return ResponseUtil.mapExceptionResponse(e);
         }
@@ -569,18 +547,6 @@ public class VTLResource {
         }
     }
 
-    private FileAsset getVTLFile(final HTTPMethod httpMethod, final HttpServletRequest request, final String folderName,
-                                 final User user) throws DotDataException, DotSecurityException {
-        final Language currentLanguage = WebAPILocator.getLanguageWebAPI().getLanguage(request);
-        final Host site = this.hostAPI.resolveHostName(request.getServerName(), APILocator.systemUser(), false);
-        final String vtlFilePath = VTL_PATH + StringPool.SLASH + folderName + StringPool.SLASH
-                + httpMethod.fileName() + FILE_EXTENSION;
-        final Identifier identifier = identifierAPI.find(site, vtlFilePath);
-        final Contentlet getFileContent = contentletAPI.findContentletByIdentifier(identifier.getId(), true,
-                currentLanguage.getId(), user, true);
-        return APILocator.getFileAssetAPI().fromContentlet(getFileContent);
-    }
-
     private Map<String, String> getBodyMapFromMultipart(final FormDataMultiPart multipart) throws IOException, JSONException {
         Map<String, String> bodyMap = null;
 
@@ -622,6 +588,80 @@ public class VTLResource {
         }
 
         return binaries;
+    }
+
+    static class VelocityReaderParams {
+        private HTTPMethod httpMethod;
+        private HttpServletRequest request;
+        private String folderName;
+        private User user;
+        private final Map<String, String> bodyMap;
+
+        VelocityReaderParams(HTTPMethod httpMethod, HttpServletRequest request, String folderName, User user,
+                Map<String, String> bodyMap) {
+            this.httpMethod = httpMethod;
+            this.request = request;
+            this.folderName = folderName;
+            this.user = user;
+            this.bodyMap = bodyMap;
+        }
+
+        HTTPMethod getHttpMethod() {
+            return httpMethod;
+        }
+
+        public HttpServletRequest getRequest() {
+            return request;
+        }
+
+        public String getFolderName() {
+            return folderName;
+        }
+
+        public User getUser() {
+            return user;
+        }
+
+        Map<String, String> getBodyMap() {
+            return bodyMap;
+        }
+
+        public static class VelocityReaderParamsBuilder {
+            private HTTPMethod httpMethod;
+            private HttpServletRequest request;
+            private String folderName;
+            private User user;
+            private Map<String, String> bodyMap;
+
+            public VelocityReaderParamsBuilder setHttpMethod(HTTPMethod httpMethod) {
+                this.httpMethod = httpMethod;
+                return this;
+            }
+
+            public VelocityReaderParamsBuilder setRequest(HttpServletRequest request) {
+                this.request = request;
+                return this;
+            }
+
+            public VelocityReaderParamsBuilder setFolderName(String folderName) {
+                this.folderName = folderName;
+                return this;
+            }
+
+            public VelocityReaderParamsBuilder setUser(User user) {
+                this.user = user;
+                return this;
+            }
+
+            public VelocityReaderParamsBuilder setBodyMap(Map<String, String> bodyMap) {
+                this.bodyMap = bodyMap;
+                return this;
+            }
+
+            public VTLResource.VelocityReaderParams build() {
+                return new VTLResource.VelocityReaderParams(httpMethod, request, folderName, user, bodyMap);
+            }
+        }
     }
 
 }
