@@ -75,7 +75,7 @@
 
 p-dropdown {
     &.ng-dirty.ng-invalid.ng-touched,
-    &.ng-invalid.ng-touched {
+    &.ng-invalid.ng-dirty {
         .ui-dropdown:not(.ui-dropdown-open) {
             .ui-inputtext {
                 @extend #inputtext-error-border;

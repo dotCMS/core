@@ -1,5 +1,5 @@
 import { TestBed, async, ComponentFixture } from '@angular/core/testing';
-import { FieldValidationMessageComponent } from './field-validation-message';
+import { FieldValidationMessageComponent } from './dot-field-validation-message';
 import { By } from '@angular/platform-browser';
 import { DebugElement } from '@angular/core';
 
@@ -28,7 +28,7 @@ describe('FieldValidationComponent', () => {
         expect(de).toBeNull();
     });
 
-    it("should hide the message when field it's valid", () => {
+    it('should hide the message when field it is valid', () => {
         const fakeInput: any = {};
         fakeInput.valid = true;
         component.field = fakeInput;
@@ -37,9 +37,9 @@ describe('FieldValidationComponent', () => {
         expect(de).toBeNull();
     });
 
-    it("should show the message when field it's touched and invalid", () => {
+    it('should show the message when field it is dirty and invalid', () => {
         const fakeInput: any = {};
-        fakeInput.touched = true;
+        fakeInput.dirty = true;
         fakeInput.valid = false;
         component.field = fakeInput;
         component.message = 'Error message';

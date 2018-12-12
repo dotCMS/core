@@ -6,7 +6,7 @@ import { CommonModule } from '@angular/common';
 import { DropdownModule, RadioButtonModule } from 'primeng/primeng';
 import { NgModule } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { FieldValidationMessageModule } from '@components/_common/field-validation-message/file-validation-message.module';
+import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { SearchableDropDownModule } from '@components/_common/searchable-dropdown';
 import { DotNewRelationshipsComponent } from './dot-new-relationships/dot-new-relationships.component';
 import { DotEditRelationshipsComponent } from './dot-edit-relationship/dot-edit-relationships.component';
@@ -25,7 +25,7 @@ import { DotEditRelationshipsComponent } from './dot-edit-relationship/dot-edit-
     imports: [
         CommonModule,
         DropdownModule,
-        FieldValidationMessageModule,
+        DotFieldValidationMessageModule,
         FormsModule,
         RadioButtonModule,
         SearchableDropDownModule

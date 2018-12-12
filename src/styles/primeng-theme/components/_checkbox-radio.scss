@@ -126,7 +126,7 @@ p-radiobutton {
 // Validation
 p-checkbox {
     &.ng-dirty.ng-invalid,
-    &.ng-invalid.ng-touched {
+    &.ng-invalid.ng-dirty {
         .ui-chkbox .ui-chkbox-box.ui-state-default {
             border: solid 1px $red;
         }

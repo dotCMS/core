@@ -8,10 +8,10 @@ import { FormControl } from '@angular/forms';
 
 @Component({
     selector: 'dot-field-validation-message',
-    styleUrls: ['./field-validation-message.scss'],
-    templateUrl: './field-validation-message.html'
+    styleUrls: ['./dot-field-validation-message.scss'],
+    templateUrl: './dot-field-validation-message.html'
 })
-export class FieldValidationMessageComponent {
+export class DotFieldValidationMessageComponent {
     @Input()
     field: FormControl;
 

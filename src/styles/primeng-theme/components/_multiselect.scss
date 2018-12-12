@@ -58,7 +58,7 @@ p-multiselect {
     outline-width: 0;
 
     &.ng-dirty.ng-invalid.ng-touched,
-    &.ng-invalid.ng-touched {
+    &.ng-invalid.ng-dirty {
         .ui-multiselect:not(.ui-multiselect-open) {
             .ui-inputtext {
                 @extend #inputtext-error-border;
