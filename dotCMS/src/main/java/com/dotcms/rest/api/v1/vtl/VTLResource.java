@@ -592,10 +592,10 @@ public class VTLResource {
     }
 
     static class VelocityReaderParams {
-        private HTTPMethod httpMethod;
-        private HttpServletRequest request;
-        private String folderName;
-        private User user;
+        private final HTTPMethod httpMethod;
+        private final HttpServletRequest request;
+        private final String folderName;
+        private final User user;
         private final Map<String, String> bodyMap;
 
         VelocityReaderParams(final HTTPMethod httpMethod, final HttpServletRequest request, final String folderName,
