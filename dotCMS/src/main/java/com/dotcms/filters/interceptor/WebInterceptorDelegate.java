@@ -35,6 +35,16 @@ public interface WebInterceptorDelegate extends WebInterceptorAware {
                       final HttpServletResponse response) throws IOException;
 
     /**
+     * Executes all interceptors, if some of them fails, stop the execution and returns false.
+     * Otherwise true.
+     *
+     * @param request {@link HttpServletRequest}
+     * @param response {@link HttpServletResponse}
+     */
+    void after(final HttpServletRequest request,
+                             final HttpServletResponse response) throws IOException;
+
+    /**
      * Remove a {@link WebInterceptor}
      *
      * @param webInterceptorName name of the WebInterceptor to be remove

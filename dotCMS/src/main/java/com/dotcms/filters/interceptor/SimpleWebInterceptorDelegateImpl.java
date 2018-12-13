@@ -173,7 +173,7 @@ public class SimpleWebInterceptorDelegateImpl implements WebInterceptorDelegate 
 
         if (!this.interceptors.isEmpty()) {
 
-            for (WebInterceptor webInterceptor : this.interceptors) {
+            for (final WebInterceptor webInterceptor : this.interceptors) {
 
                 // if the filter applies just for some filter patterns.
                 if (webInterceptor.isActive() &&
@@ -202,6 +202,32 @@ public class SimpleWebInterceptorDelegateImpl implements WebInterceptorDelegate 
 
         return new DelegateResult(shouldContinue, requestResult, responseResult);
     } // intercept.
+
+    @Override
+    public void after(final HttpServletRequest request,
+                                    final HttpServletResponse response)
+            throws IOException {
+
+        final HttpServletRequest  requestResult  = request;
+        final HttpServletResponse responseResult = response;
+
+
+        if (!this.interceptors.isEmpty()) {
+
+            for (final WebInterceptor webInterceptor : this.interceptors) {
+
+                // if the filter applies just for some filter patterns.
+                if (webInterceptor.isActive() &&
+                        this.anyMatchFilter(webInterceptor, request.getRequestURI())) {
+
+                    if (!webInterceptor.afterIntercept(requestResult, responseResult)) {
+
+                        return;
+                    }
+                }
+            }
+        }
+    } // after.
 
     @VisibleForTesting
     public boolean anyMatchFilter(final WebInterceptor webInterceptor,
