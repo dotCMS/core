@@ -301,15 +301,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     @CloseDBIfOpened
     @Override
-    public Contentlet findContentletForLanguage(long languageId,    Identifier contentletId) throws DotDataException, DotSecurityException {
+    public Contentlet findContentletForLanguage(long languageId, Identifier contentletId) throws DotDataException, DotSecurityException {
         try {
             return findContentletByIdentifier(contentletId.getId(), false, languageId, APILocator.systemUser(), false);
-        }
-        catch(DotContentletStateException dcs) {
-            Logger.debug(this,"No working contentlet found for language");
+        } catch (DotContentletStateException dcs) {
+            Logger.debug(this, "No working contentlet found for language");
         }
         return null;
-
     }
 
     @CloseDBIfOpened
