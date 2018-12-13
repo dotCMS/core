@@ -358,7 +358,7 @@ public class ExceptionUtil {
         return getStackTraceAsString(traces);
     }
 
-    public static String getStackTraceAsString (final StackTraceElement [] traces) {
+    public static String getStackTraceAsString (final StackTraceElement... traces) {
 
         final StringBuilder builder = new StringBuilder();
         for (final StackTraceElement traceElement : traces) {

@@ -14,7 +14,6 @@ import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.util.PageMode;
 import com.liferay.portal.model.User;
 import org.apache.velocity.context.Context;
-import org.apache.velocity.exception.ParseErrorException;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -76,11 +75,7 @@ public class VelocityPreviewMode extends VelocityModeHandler {
         request.setAttribute("velocityContext", context);
         try(final Writer outStr = new BufferedWriter(new OutputStreamWriter(out))){
             this.getTemplate(htmlPage, mode).merge(context, outStr);
-        } catch (ParseErrorException e) {
-
-            this.handleParseError(e, htmlPage.getName(), user);
         }
-
     }
 
 }
