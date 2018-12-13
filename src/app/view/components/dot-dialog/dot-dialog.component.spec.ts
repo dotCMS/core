@@ -264,7 +264,7 @@ describe('DotDialogComponent', () => {
                         });
                     });
 
-                    it('should trigger accept action on Enter', () => {
+                    it('should trigger accept action on Enter and unbind events', () => {
                         hostComponent.actions = {
                             ...hostComponent.actions,
                             accept: {
