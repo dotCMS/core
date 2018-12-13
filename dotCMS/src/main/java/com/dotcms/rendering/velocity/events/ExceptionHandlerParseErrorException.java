@@ -71,17 +71,16 @@ public class ExceptionHandlerParseErrorException implements ExceptionHandler<Par
 
     boolean isEditMode(final Exception e) {
 
-        /*boolean ret = false;
+        boolean ret = false;
 
         for (final StackTraceElement ste : e.getStackTrace()) {
-            if (ste.getMethodName().indexOf("EditMode") > -1) {
+            if (ste.getClassName().indexOf("EditMode") > -1 || ste.getMethodName().indexOf("EditMode") > -1) {
 
                 ret = true;
                 break;
             }
         }
 
-        return ret;*/
-        return true;
+        return ret;
     }
 }
