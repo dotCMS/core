@@ -200,7 +200,7 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
     private Host resolveSite(final HttpServletRequest request, final User user, final PageMode mode) throws DotDataException, DotSecurityException {
         
         
-        final String hostId = request.getParameter("hostId");
+        final String hostId = request.getParameter("host_id");
         if (null != hostId) {
             return this.hostAPI.find(hostId, user, mode.respectAnonPerms);
         }
