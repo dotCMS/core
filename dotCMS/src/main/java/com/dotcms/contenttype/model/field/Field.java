@@ -201,6 +201,7 @@ public abstract class Field implements FieldIf, Serializable {
   public Map<String, FieldVariable> fieldVariablesMap() {
     Map<String, FieldVariable> fmap = new HashMap<>();
     for (FieldVariable fv : this.fieldVariables()) {
+      fmap.put(fv.id(), fv);
       fmap.put(fv.key(), fv);
     }
     return ImmutableMap.copyOf(fmap);
