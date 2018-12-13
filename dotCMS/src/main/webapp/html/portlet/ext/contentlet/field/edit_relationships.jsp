@@ -136,7 +136,11 @@
 			</script>
 	<%
 		}
-	%>
+    %>
+    
+    <style type="text/css" media="all">
+        @import url(/html/portlet/ext/contentlet/field/edit_relationships.css);
+    </style>
 
 	<div class="portlet-toolbar relationships-list">
 		<div class="portlet-toolbar__actions-primary">
@@ -145,15 +149,11 @@
 			   <%= targetStructure.getName() %>: </b><%=("yes".equals(isParent)) ? LanguageUtil.get(pageContext, "Child"): LanguageUtil.get(pageContext, "Parent") %>
 			(<%= rel.getRelationTypeValue() %>)
 		</div>
-		<div class="portlet-toolbar__actions-secondary">
-			<div id="<%= relationJsName %>relateMenu"></div>
-		</div>
 	</div>
 	
 		<table border="0" class="listingTable"  style="margin-bottom:30px;">
 				<thead>
 					<tr class="beta">
-					<th width="20"><B><font class="beta" size="2"></font></B></th>
 					<%
 							int nFields = 3;
 							boolean indexed = false;
@@ -165,7 +165,7 @@
 									indexed = true;
 									nFields++;
 					%>
-										<th><B><font class="beta" size="2"><%= f.getFieldName() %> </font></B>
+										<th><%= f.getFieldName() %>
 										</th>
 					<%
 								}
@@ -173,7 +173,7 @@
 
 							if (!indexed) {
 					%>
-										<th><B><font class="beta" size="2"> <%= LanguageUtil.get(pageContext, "No-Searchable-Fields-Found-Showing-the-Identity-Number") %> </font></B></th>
+										<th> <%= LanguageUtil.get(pageContext, "No-Searchable-Fields-Found-Showing-the-Identity-Number") %> </th>
 					<%
 							}
 					%>
@@ -181,14 +181,19 @@
 					<%
 						if(langs.size() > 1) {
 					%>
-						<th width="<%= langs.size() < 6 ? (langs.size() * 40) : 200 %>px;"><B><font class="beta" size="2"></font></B></th>
+						<th width="<%= langs.size() < 6 ? (langs.size() * 40) : 200 %>px;"><%= LanguageUtil.get(pageContext, "contenttypes.field.properties.relationship.table.language.header") %></th>
 					<%
 						}else{
 					%>
-						<th width="20"><B><font class="beta" size="2"></font></B></th>
+						<th width="20"><%= LanguageUtil.get(pageContext, "contenttypes.field.properties.relationship.table.language.header") %></th>
 					<%
 						}
-					%>
+                    %>
+                        <th align="center" width="20">
+                            <div class="portlet-toolbar__actions-secondary">
+                                <div id="<%= relationJsName %>relateMenu"></div>
+                            </div>
+                        </th>
 					</tr>
 				</thead>
 				<tbody id="<%=relationJsName%>Table">
@@ -276,7 +281,7 @@
 						    <%
 					    }
 					    %>
-					    	cont<%=UtilMethods.javaScriptifyVariable(cont.getInode())%>Siblings[cont<%=UtilMethods.javaScriptifyVariable(cont.getInode())%>Siblings.length] = cont<%=UtilMethods.javaScriptifyVariable(cont.getInode()+lang.getId())%>Sibling;
+                            cont<%=UtilMethods.javaScriptifyVariable(cont.getInode())%>Siblings[cont<%=UtilMethods.javaScriptifyVariable(cont.getInode())%>Siblings.length] = cont<%=UtilMethods.javaScriptifyVariable(cont.getInode()+lang.getId())%>Sibling;
 					    <%
 					    
 					}
@@ -354,11 +359,11 @@
 					var anchorValue = "";
 		
 					if (o != null) {
-						result = result + "<table width=\"100%\" class=\"relationLanguageFlag\"><tbody><tr>"
+						result = result + "<ul class=\"relationLanguageFlag\">";
 						
 						for(var sibIndex = 0; sibIndex < o['siblings'].length ; sibIndex++){
 																								
-							result = result + '<td  class=\"relationLanguageFlag\">';
+							result = result + '<li>';
 							langImg = o['siblings'][sibIndex]['langCode'];
 							langName = o['siblings'][sibIndex]['langName'];
 							
@@ -369,7 +374,7 @@
 									anchorValue = "<a href=\"javascript:<%= relationJsName %>editRelatedContent('" + o['siblings'][sibIndex]['inode'] + "', '"+ o['siblings'][sibIndex]['siblingInode'] +"', '"+ o['siblings'][sibIndex]['langId'] +"');\"" + ">" ;
 					 			}
 								
-								result = result +'&nbsp;&nbsp;' + anchorValue + '<img style="vertical-align: middle; border: solid 2px #33FF33; padding:2px; border-radius:5px;" src="/html/images/languages/' + langImg + '.gif" alt="'+langName+'">' + '</a>';
+								result = result + anchorValue + '<img name="' + o['siblings'][sibIndex]['inode'] + '" style="vertical-align: middle; border: solid 0px #33FF33; padding:2px; border-radius:5px;" src="/html/images/languages/' + langImg + '.gif" alt="'+langName+'"><label for="' + o['siblings'][sibIndex]['inode'] + '">(' + langImg + ')</label></a>';
 								
 							}else if(o['siblings'][sibIndex]['deleted'] == 'true'){
 								
@@ -378,7 +383,7 @@
 									anchorValue = "<a href=\"javascript:<%= relationJsName %>editRelatedContent('" + o['siblings'][sibIndex]['inode'] + "', '"+ o['siblings'][sibIndex]['siblingInode'] +"', '"+ o['siblings'][sibIndex]['langId'] +"');\"" + ">" ;
 					 			}
 
-								result = result + '&nbsp;&nbsp;'  + anchorValue + '<img style="vertical-align: middle; border: solid 2px #66664D; padding:2px; border-radius:5px;" src="/html/images/languages/' + langImg + '_gray.gif" alt="'+langName+'">' + '</a>';
+								result = result + anchorValue + '<img name="' + o['siblings'][sibIndex]['inode'] + '" style="vertical-align: middle; border: solid 0px #66664D; padding:2px; border-radius:5px;" src="/html/images/languages/' + langImg + '_gray.gif" alt="'+langName+'"><label for="' + o['siblings'][sibIndex]['inode'] + '">(' + langImg + ')</label></a>';
 								
 								
 							}else{
@@ -388,16 +393,13 @@
 									anchorValue = "<a href=\"javascript:<%= relationJsName %>editRelatedContent('" + o['siblings'][sibIndex]['inode'] + "', '"+ o['siblings'][sibIndex]['siblingInode'] +"', '"+ o['siblings'][sibIndex]['langId'] +"');\"" + ">" ;
 					 			}
 								
-								result = result + '&nbsp;&nbsp;'  + anchorValue + '<img style="vertical-align: middle; border: solid 2px #FFCC11; padding:2px; border-radius:5px;" src="/html/images/languages/' + langImg + '.gif" alt="'+langName+'">' + '</a>';
+								result = result + anchorValue + '<img name="' + o['siblings'][sibIndex]['inode'] + '" style="vertical-align: middle; border: solid 0px #FFCC11; padding:2px; border-radius:5px;" src="/html/images/languages/' + langImg + '.gif" alt="'+langName+'"><label for="' + o['siblings'][sibIndex]['inode'] + '">(' + langImg + ')</label></a>';
 								
 							}
 							
-							result = result + "</td>";
-							if((sibIndex+1)%6 == 0){
-								result = result + "</tr><tr>";
-							}
+							result = result + "</li>";
 						}
-						result = result + "</tr></tbody></table>";
+						result = result + "</ul>";
 					}
 					return result;
 				}
@@ -687,29 +689,9 @@
 
 				}
 
-				function <%= relationJsName %>CreateRow(item,hint){
+				function <%= relationJsName %>CreateRow(item,hint) {
 
 					var tr = document.createElement("tr");
-
-					// displays edit(pencil icon) and delete(X).
-					var actionTD = document.createElement("td");
-					actionTD.innerHTML = <%= relationJsName %>unrelateAction(item);
-					tr.appendChild(actionTD);
-
-					// to hold contentInode to reorder
-					var span = document.createElement("span");
-					dojo.addClass(span,"<%= relationJsName %>hiddenInodeField");
-					dojo.style(span,"display","none");
-					span.innerHTML = item['inode'];
-					tr.appendChild(span);
-
-					// to hold order sequence number to reorder
-					var order = document.createElement("input");
-					order.type="hidden";
-					order.id = "<%= relationJsName %>_order_" + item['id'];
-					dojo.addClass(order,"<%= relationJsName %>orderBox");
-					order.value = <%= relationJsName %>_order_tf();
-					tr.appendChild(order);
 
 					// displays each listed field
 					<%
@@ -756,7 +738,29 @@
 
 					<%
 					}
-					%>
+                    %>
+                    
+					// to hold contentInode to reorder
+					var span = document.createElement("span");
+					dojo.addClass(span,"<%= relationJsName %>hiddenInodeField");
+					dojo.style(span,"display","none");
+					span.innerHTML = item['inode'];
+					tr.appendChild(span);
+
+					// to hold order sequence number to reorder
+					var order = document.createElement("input");
+					order.type="hidden";
+					order.id = "<%= relationJsName %>_order_" + item['id'];
+					dojo.addClass(order,"<%= relationJsName %>orderBox");
+					order.value = <%= relationJsName %>_order_tf();
+					tr.appendChild(order);
+
+                    // displays edit(pencil icon) and delete(X).
+                    var actionTD = document.createElement("td");
+                    dojo.style(actionTD, "text-align", "center");
+                    actionTD.innerHTML = <%= relationJsName %>unrelateAction(item);
+					tr.appendChild(actionTD);
+
 
 					return {node: tr, data: item, type: "text"};
 				}
@@ -764,7 +768,7 @@
 
 				function <%= relationJsName %>init(){
 
-					// Initializing related contents table.
+                    // Initializing related contents table.
 					<%= relationJsName %>buildListing('<%= relationJsName %>Table',<%= relationJsName %>_Contents);
 
 					// connectin drag and drop to reorder functionality

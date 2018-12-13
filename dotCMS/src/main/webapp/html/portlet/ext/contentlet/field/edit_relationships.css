@@ -1,0 +1,58 @@
+.portlet-toolbar__actions-secondary .dijitComboButton {
+    display: block;
+}
+
+.portlet-toolbar__actions-secondary .dijitComboButton .dijitButtonNode {
+    border-bottom: 0;
+    padding: 0 0 0 16px;
+}
+
+.portlet-toolbar__actions-secondary .dijitComboButton .dijitButtonNode.dijitArrowButton {
+    padding: 0;
+}
+
+.listingTable {
+    box-shadow: 0 0 4px 0 rgba(0,0,0,0.2);
+}
+
+.listingTable td:first-child {
+    padding-left: 0;
+}
+
+.listingTable th {
+    color: #7E7A86;
+    font-size: 12px;
+    font-weight: normal;
+}
+
+.listingTable th:first-child,
+.listingTable > tbody > tr > td:first-child {
+    height: 57px;
+    padding-left: 30px;
+}
+
+.relationLanguageFlag {
+    margin-left: 0;
+}
+
+.relationLanguageFlag li {
+    display: inline;
+    margin-right: 4px;
+    white-space: nowrap;
+}
+
+.relationLanguageFlag li::before {
+    content: " \00b7";
+    margin-right: 8px;
+}
+
+
+.relationLanguageFlag li:first-child::before {
+    content: "";
+}
+
+.relationLanguageFlag li label {
+    color: #7E7A86;
+    cursor: pointer;
+    margin-left: 4px;
+}
