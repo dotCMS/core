@@ -282,6 +282,10 @@ describe('DotDialogComponent', () => {
 
                             hostFixture.detectChanges();
 
+                            dispatchKeydownEvent('Enter');
+
+                            hostFixture.detectChanges();
+
                             expect(accceptAction).toHaveBeenCalledTimes(1);
                         });
                     });
