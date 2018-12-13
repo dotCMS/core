@@ -37,8 +37,10 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 
+import static com.dotcms.rest.api.v1.vtl.RequestBodyVelocityReader.EMBEDDED_VELOCITY_KEY_NAME;
 import static com.dotcms.rest.api.v1.vtl.VTLResource.VTL_PATH;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.*;
@@ -46,11 +48,15 @@ import static org.mockito.Mockito.*;
 @RunWith(DataProviderRunner.class)
 public class VTLResourceIntegrationTest {
 
-    private final static String VALID_GET_VTL_DOTJSON_OUTPUT = "com/dotcms/rest/api/v1/vtl/valid_get_dotjson_response.vtl";
-    private final static String VALID_GET_VTL_RAW_OUTPUT = "com/dotcms/rest/api/v1/vtl/valid_get_raw_response.vtl";
-    private final static String INVALID_GET_VTL = "com/dotcms/rest/api/v1/vtl/invalid_get.vtl";
-    private final static String ONE_EMPLOYEE_JSON_RESPONSE = "com/dotcms/rest/api/v1/vtl/one_employee_json_response.json";
-    private final static String ONE_EMPLOYEE_XML_RESPONSE = "com/dotcms/rest/api/v1/vtl/one_employee_xml_response.xml";
+    enum ResourceMethod {
+        GET, DYNAMIC_GET
+    }
+
+    private static final String VALID_GET_VTL_DOTJSON_OUTPUT = "com/dotcms/rest/api/v1/vtl/valid_get_dotjson_response.vtl";
+    private static final String VALID_GET_VTL_RAW_OUTPUT = "com/dotcms/rest/api/v1/vtl/valid_get_raw_response.vtl";
+    private static final String INVALID_GET_VTL = "com/dotcms/rest/api/v1/vtl/invalid_get.vtl";
+    private static final String ONE_EMPLOYEE_JSON_RESPONSE = "com/dotcms/rest/api/v1/vtl/one_employee_json_response.json";
+    private static final String ONE_EMPLOYEE_XML_RESPONSE = "com/dotcms/rest/api/v1/vtl/one_employee_xml_response.xml";
 
     private static final String KNOWN_EMPLOYEE_ID = "37f93fcb-6124-46af-83b4-9ece6c1c5380";
 
@@ -71,6 +77,11 @@ public class VTLResourceIntegrationTest {
 
         final String folderName = System.currentTimeMillis() + "employees";
 
+        final Map<String, String> dynamicGetBodyMap = new HashMap<>();
+        final File getVTL = new File(ConfigTestHelper.getUrlToTestResource(VALID_GET_VTL_DOTJSON_OUTPUT).toURI());
+        final String getVTLasString = new String ( java.nio.file.Files.readAllBytes(getVTL.toPath()));
+        dynamicGetBodyMap.put(EMBEDDED_VELOCITY_KEY_NAME, getVTLasString);
+
         return new VTLResourceTestCase[] {
                 new VTLResourceTestCase.Builder().setVtlFile(new File(ConfigTestHelper.getUrlToTestResource(VALID_GET_VTL_DOTJSON_OUTPUT).toURI()))
                         .setFolderName(folderName)
@@ -78,12 +89,14 @@ public class VTLResourceIntegrationTest {
                         .setPathParameter(KNOWN_EMPLOYEE_ID)
                         .setExpectedJSON(FileUtil.read(new File(ConfigTestHelper.getUrlToTestResource(ONE_EMPLOYEE_JSON_RESPONSE).toURI())))
                         .setExpectedOutput(null)
+                        .setResourceMethod(ResourceMethod.GET)
                         .build(),
                 new VTLResourceTestCase.Builder().setVtlFile(new File(ConfigTestHelper.getUrlToTestResource(VALID_GET_VTL_RAW_OUTPUT).toURI()))
                         .setFolderName(folderName)
                         .setQueryParameters(queryParameters)
                         .setPathParameter(KNOWN_EMPLOYEE_ID)
                         .setExpectedJSON(FileUtil.read(new File(ConfigTestHelper.getUrlToTestResource(ONE_EMPLOYEE_XML_RESPONSE).toURI())))
+                        .setResourceMethod(ResourceMethod.GET)
                         .setExpectedOutput(null)
                         .build(),
                 new VTLResourceTestCase.Builder().setVtlFile(new File(ConfigTestHelper.getUrlToTestResource(INVALID_GET_VTL).toURI()))
@@ -93,6 +106,7 @@ public class VTLResourceIntegrationTest {
                         .setExpectedJSON(null)
                         .setExpectedOutput(null)
                         .setExpectedException(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode())
+                        .setResourceMethod(ResourceMethod.GET)
                         .build(),
                 new VTLResourceTestCase.Builder().setVtlFile(new File(ConfigTestHelper.getUrlToTestResource(VALID_GET_VTL_DOTJSON_OUTPUT).toURI()))
                         .setFolderName(folderName)
@@ -101,7 +115,28 @@ public class VTLResourceIntegrationTest {
                         .setExpectedJSON(FileUtil.read(new File(ConfigTestHelper.getUrlToTestResource(ONE_EMPLOYEE_JSON_RESPONSE).toURI())))
                         .setExpectedOutput(null)
                         .setUser(ANONYMOUS_USER_ID)
-                        .build()
+                        .setResourceMethod(ResourceMethod.GET)
+                        .build(),
+                new VTLResourceTestCase.Builder().setVtlFile(new File(ConfigTestHelper.getUrlToTestResource(VALID_GET_VTL_DOTJSON_OUTPUT).toURI()))
+                        .setFolderName(folderName)
+                        .setQueryParameters(queryParameters)
+                        .setPathParameter(KNOWN_EMPLOYEE_ID)
+                        .setExpectedJSON(FileUtil.read(new File(ConfigTestHelper.getUrlToTestResource(ONE_EMPLOYEE_JSON_RESPONSE).toURI())))
+                        .setExpectedOutput(null)
+                        .setBodyMap(dynamicGetBodyMap)
+                        .setResourceMethod(ResourceMethod.DYNAMIC_GET)
+                        .build(),
+                new VTLResourceTestCase.Builder().setVtlFile(new File(ConfigTestHelper.getUrlToTestResource(VALID_GET_VTL_DOTJSON_OUTPUT).toURI()))
+                        .setFolderName(folderName)
+                        .setQueryParameters(queryParameters)
+                        .setPathParameter(KNOWN_EMPLOYEE_ID)
+                        .setExpectedJSON(null)
+                        .setExpectedOutput(null)
+                        .setExpectedException(Response.Status.FORBIDDEN.getStatusCode())
+                        .setBodyMap(dynamicGetBodyMap)
+                        .setUser(ANONYMOUS_USER_ID)
+                        .setResourceMethod(ResourceMethod.DYNAMIC_GET)
+                        .build(),
         };
     }
 
@@ -125,7 +160,8 @@ public class VTLResourceIntegrationTest {
         }
     }
 
-    private Response getResponseFromVTLResource(final VTLResourceTestCase testCase, final Folder vtlFolder) throws IOException, DotSecurityException, DotDataException {
+    private Response getResponseFromVTLResource(final VTLResourceTestCase testCase, final Folder vtlFolder)
+            throws IOException, DotSecurityException, DotDataException {
         createVTLFile(testCase.getVtlFile(), vtlFolder);
 
         final HttpServletRequest request = getMockedRequest();
@@ -137,10 +173,19 @@ public class VTLResourceIntegrationTest {
 
         final WebResource webResource = getSpiedWebResource(testCase, request);
 
-        final VTLResource resource = new VTLResource(APILocator.getHostAPI(), APILocator.getIdentifierAPI(),
-                APILocator.getContentletAPI(), webResource);
-        return resource.get(request, servletResponse, uriInfo, testCase.getFolderName(),
-                testCase.getPathParameter(), null);
+
+        final HTTPMethodParams params = new HTTPMethodParamsBuilder()
+                .setRequest(request)
+                .setServletResponse(servletResponse)
+                .setUriInfo(uriInfo)
+                .setPathParam(testCase.getPathParameter())
+                .setBodyMap(testCase.getBodyMap())
+                .setFolderName(testCase.getFolderName())
+                .setWebResource(webResource)
+                .build();
+
+        final MethodToTest methodToTest = MethodToTestFactory.getMethodToTest(testCase.getResourceMethod());
+        return methodToTest.execute(params);
     }
 
     private String expectedOutput(final VTLResourceTestCase testCase) {
@@ -165,7 +210,7 @@ public class VTLResourceIntegrationTest {
             final ObjectMapper objectMapper = new ObjectMapper();
             output = objectMapper.writeValueAsString(response.getEntity());
         } else {
-            output      = Map.class.isInstance(response.getEntity())?
+            output = Map.class.isInstance(response.getEntity())?
                     (String) Map.class.cast(response.getEntity()).get("message"):
                     response.getEntity().toString();
         }
@@ -210,4 +255,53 @@ public class VTLResourceIntegrationTest {
                         APILocator.systemUser(), false);
     }
 
+    static class HTTPMethodParams {
+        private final HttpServletRequest request;
+        private final HttpServletResponse servletResponse;
+        private final UriInfo uriInfo;
+        private final String folderName;
+        private final String pathParam;
+        private final Map<String, String> bodyMap;
+        private final WebResource webResource;
+
+        public HttpServletRequest getRequest() {
+            return request;
+        }
+
+        HttpServletResponse getServletResponse() {
+            return servletResponse;
+        }
+
+        UriInfo getUriInfo() {
+            return uriInfo;
+        }
+
+        String getFolderName() {
+            return folderName;
+        }
+
+        String getPathParam() {
+            return pathParam;
+        }
+
+        Map<String, String> getBodyMap() {
+            return bodyMap;
+        }
+
+        WebResource getWebResource() {
+            return webResource;
+        }
+
+        HTTPMethodParams(final HttpServletRequest request, final HttpServletResponse servletResponse, final UriInfo uriInfo,
+                         final String folderName, final String pathParam, final Map<String, String> bodyMap,
+                         final WebResource webResource) {
+            this.request = request;
+            this.servletResponse = servletResponse;
+            this.uriInfo = uriInfo;
+            this.folderName = folderName;
+            this.pathParam = pathParam;
+            this.bodyMap = bodyMap;
+            this.webResource = webResource;
+        }
+    }
 }
