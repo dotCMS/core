@@ -315,11 +315,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if(languageId<=0) {
             languageId=APILocator.getLanguageAPI().getDefaultLanguage().getId();
         }
-
+        
         try {
             ContentletVersionInfo clvi = APILocator.getVersionableAPI().getContentletVersionInfo(identifier, languageId);
             if(clvi ==null){
-                throw new DotContentletStateException("No contenlet found for given identifier");
+                return null;
             }
             if(live){
                 return find(clvi.getLiveInode(), user, respectFrontendRoles);
