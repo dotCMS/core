@@ -45,7 +45,7 @@ public abstract class VelocityModeHandler {
                                         final String name,
                                         final User user) {
 
-        Logger.error(this, "The resource " + name + " has a parse error, msg: " + e.getMessage(), e);
+        Logger.warn(this, "The resource " + name + " has a parse error, msg: " + e.getMessage());
     }
 
     @FunctionalInterface
