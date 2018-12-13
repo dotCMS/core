@@ -40,6 +40,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.dotcms.rest.api.v1.vtl.RequestBodyVelocityReader.EMBEDDED_VELOCITY_KEY_NAME;
 import static com.dotcms.rest.api.v1.vtl.VTLResource.VTL_PATH;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.*;
@@ -51,11 +52,11 @@ public class VTLResourceIntegrationTest {
         GET, DYNAMIC_GET
     }
 
-    private final static String VALID_GET_VTL_DOTJSON_OUTPUT = "com/dotcms/rest/api/v1/vtl/valid_get_dotjson_response.vtl";
-    private final static String VALID_GET_VTL_RAW_OUTPUT = "com/dotcms/rest/api/v1/vtl/valid_get_raw_response.vtl";
-    private final static String INVALID_GET_VTL = "com/dotcms/rest/api/v1/vtl/invalid_get.vtl";
-    private final static String ONE_EMPLOYEE_JSON_RESPONSE = "com/dotcms/rest/api/v1/vtl/one_employee_json_response.json";
-    private final static String ONE_EMPLOYEE_XML_RESPONSE = "com/dotcms/rest/api/v1/vtl/one_employee_xml_response.xml";
+    private static final String VALID_GET_VTL_DOTJSON_OUTPUT = "com/dotcms/rest/api/v1/vtl/valid_get_dotjson_response.vtl";
+    private static final String VALID_GET_VTL_RAW_OUTPUT = "com/dotcms/rest/api/v1/vtl/valid_get_raw_response.vtl";
+    private static final String INVALID_GET_VTL = "com/dotcms/rest/api/v1/vtl/invalid_get.vtl";
+    private static final String ONE_EMPLOYEE_JSON_RESPONSE = "com/dotcms/rest/api/v1/vtl/one_employee_json_response.json";
+    private static final String ONE_EMPLOYEE_XML_RESPONSE = "com/dotcms/rest/api/v1/vtl/one_employee_xml_response.xml";
 
     private static final String KNOWN_EMPLOYEE_ID = "37f93fcb-6124-46af-83b4-9ece6c1c5380";
 
@@ -79,7 +80,7 @@ public class VTLResourceIntegrationTest {
         final Map<String, String> dynamicGetBodyMap = new HashMap<>();
         final File getVTL = new File(ConfigTestHelper.getUrlToTestResource(VALID_GET_VTL_DOTJSON_OUTPUT).toURI());
         final String getVTLasString = new String ( java.nio.file.Files.readAllBytes(getVTL.toPath()));
-        dynamicGetBodyMap.put("velocity", getVTLasString);
+        dynamicGetBodyMap.put(EMBEDDED_VELOCITY_KEY_NAME, getVTLasString);
 
         return new VTLResourceTestCase[] {
                 new VTLResourceTestCase.Builder().setVtlFile(new File(ConfigTestHelper.getUrlToTestResource(VALID_GET_VTL_DOTJSON_OUTPUT).toURI()))
@@ -291,8 +292,9 @@ public class VTLResourceIntegrationTest {
             return webResource;
         }
 
-        HTTPMethodParams(HttpServletRequest request, HttpServletResponse servletResponse, UriInfo uriInfo,
-                         String folderName, String pathParam, Map<String, String> bodyMap, WebResource webResource) {
+        HTTPMethodParams(final HttpServletRequest request, final HttpServletResponse servletResponse, final UriInfo uriInfo,
+                         final String folderName, final String pathParam, final Map<String, String> bodyMap,
+                         final WebResource webResource) {
             this.request = request;
             this.servletResponse = servletResponse;
             this.uriInfo = uriInfo;

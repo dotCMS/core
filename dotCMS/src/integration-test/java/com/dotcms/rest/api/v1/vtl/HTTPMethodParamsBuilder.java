@@ -16,37 +16,37 @@ public class HTTPMethodParamsBuilder {
     private Map<String, String> bodyMap;
     private WebResource webResource;
 
-    public HTTPMethodParamsBuilder setRequest(HttpServletRequest request) {
+    public HTTPMethodParamsBuilder setRequest(final HttpServletRequest request) {
         this.request = request;
         return this;
     }
 
-    public HTTPMethodParamsBuilder setServletResponse(HttpServletResponse servletResponse) {
+    HTTPMethodParamsBuilder setServletResponse(final HttpServletResponse servletResponse) {
         this.servletResponse = servletResponse;
         return this;
     }
 
-    public HTTPMethodParamsBuilder setUriInfo(UriInfo uriInfo) {
+    HTTPMethodParamsBuilder setUriInfo(final UriInfo uriInfo) {
         this.uriInfo = uriInfo;
         return this;
     }
 
-    public HTTPMethodParamsBuilder setFolderName(String folderName) {
+    HTTPMethodParamsBuilder setFolderName(final String folderName) {
         this.folderName = folderName;
         return this;
     }
 
-    public HTTPMethodParamsBuilder setPathParam(String pathParam) {
+    HTTPMethodParamsBuilder setPathParam(final String pathParam) {
         this.pathParam = pathParam;
         return this;
     }
 
-    public HTTPMethodParamsBuilder setBodyMap(Map<String, String> bodyMap) {
+    HTTPMethodParamsBuilder setBodyMap(final Map<String, String> bodyMap) {
         this.bodyMap = bodyMap;
         return this;
     }
 
-    public HTTPMethodParamsBuilder setWebResource(WebResource webResource) {
+    HTTPMethodParamsBuilder setWebResource(final WebResource webResource) {
         this.webResource = webResource;
         return this;
     }

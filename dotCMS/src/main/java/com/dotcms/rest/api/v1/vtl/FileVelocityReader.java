@@ -17,6 +17,20 @@ import java.io.Reader;
 
 import static com.dotcms.rest.api.v1.vtl.VTLResource.VTL_PATH;
 
+/**
+ * This strategy reads the velocity code from a {@link FileAsset} corresponding (via name-convention) to the requesting
+ * {@link com.dotcms.rest.api.v1.HTTPMethod} and returns it's content
+ * <p>
+ * File name convention (case-insensitive):
+ * <ul>
+ * <li>GET HTTP Method: get.vtl
+ * <li>POST HTTP Method: post.vtl
+ * <li>PUT HTTP Method: put.vtl
+ * <li>PATCH HTTP Method: patch.vtl
+ * <li>DELETE HTTP Method: delete.vtl
+ * </ul>
+ */
+
 public class FileVelocityReader implements VelocityReader {
     private static final String FILE_EXTENSION = ".vtl";
 

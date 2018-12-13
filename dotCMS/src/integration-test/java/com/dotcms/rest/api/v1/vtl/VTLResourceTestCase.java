@@ -2,11 +2,9 @@ package com.dotcms.rest.api.v1.vtl;
 
 import com.dotcms.repackage.javax.ws.rs.core.MultivaluedMap;
 import com.dotcms.rest.api.v1.vtl.VTLResourceIntegrationTest.ResourceMethod;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
 
 import java.io.File;
 import java.util.Map;
-import java.util.function.Predicate;
 
 public class VTLResourceTestCase {
 
@@ -63,7 +61,7 @@ public class VTLResourceTestCase {
 
     private VTLResourceTestCase(final File vtlFile, final String folderName, final MultivaluedMap<String, String> queryParameters,
                                 final String pathParameter, final String expectedJSON, final String expectedOutput,
-                                final int expectedException, final String user, Map<String, String> bodyMap,
+                                final int expectedException, final String user, final Map<String, String> bodyMap,
                                 final ResourceMethod resourceMethod) {
         this.vtlFile = vtlFile;
         this.folderName = folderName;

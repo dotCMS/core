@@ -1,5 +1,7 @@
 package com.dotcms.rest.api.v1.vtl;
 
+import com.google.common.annotations.VisibleForTesting;
+
 import com.dotcms.api.vtl.model.DotJSON;
 import com.dotcms.cache.DotJSONCache;
 import com.dotcms.cache.DotJSONCacheFactory;
@@ -19,7 +21,10 @@ import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.javax.ws.rs.core.UriInfo;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
-import com.dotcms.repackage.org.glassfish.jersey.media.multipart.*;
+import com.dotcms.repackage.org.glassfish.jersey.media.multipart.BodyPart;
+import com.dotcms.repackage.org.glassfish.jersey.media.multipart.ContentDisposition;
+import com.dotcms.repackage.org.glassfish.jersey.media.multipart.FormDataBodyPart;
+import com.dotcms.repackage.org.glassfish.jersey.media.multipart.FormDataMultiPart;
 import com.dotcms.repackage.org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.PATCH;
@@ -29,35 +34,30 @@ import com.dotcms.rest.api.v1.HTTPMethod;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.DotPreconditions;
-import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.IdentifierAPI;
-import com.dotmarketing.business.RoleAPI;
-import com.dotmarketing.business.web.WebAPILocator;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
-import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
-import com.dotmarketing.portlets.contentlet.business.HostAPI;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.fileassets.business.FileAsset;
-import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
-import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
-import com.liferay.util.StringPool;
+
 import org.apache.velocity.exception.MethodInvocationException;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.Reader;
+import java.io.StringWriter;
+import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-import java.io.*;
-import java.nio.file.Files;
-import java.util.*;
 
 @Path("/vtl")
 public class VTLResource {
@@ -409,7 +409,7 @@ public class VTLResource {
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
     @Consumes({MediaType.APPLICATION_JSON})
     public Response dynamicPut(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
-                               @Context UriInfo uriInfo,
+                               @Context final UriInfo uriInfo,
                                final Map<String, String> bodyMap) {
 
         return processRequest(request, response, uriInfo, null, null, HTTPMethod.PUT, bodyMap);
@@ -442,7 +442,7 @@ public class VTLResource {
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
     @Consumes({MediaType.APPLICATION_JSON})
     public Response dynamicDelete(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
-                                  @Context UriInfo uriInfo, @PathParam("pathParam") final String pathParam,
+                                  final @Context UriInfo uriInfo, @PathParam("pathParam") final String pathParam,
                                   final Map<String, String> bodyMap) {
 
         return processRequest(request, response, uriInfo, null, pathParam, HTTPMethod.DELETE, bodyMap);
@@ -529,6 +529,7 @@ public class VTLResource {
             VelocityUtil.getEngine().evaluate(context, evalResult, "", velocityReader);
         } catch(MethodInvocationException e) {
             if(e.getCause() instanceof DotToolException) {
+                Logger.error(this,"Error evaluating velocity: " + (e.getCause()).getCause().getMessage());
                 throw (Exception) (e.getCause()).getCause();
             }
         }
@@ -597,8 +598,8 @@ public class VTLResource {
         private User user;
         private final Map<String, String> bodyMap;
 
-        VelocityReaderParams(HTTPMethod httpMethod, HttpServletRequest request, String folderName, User user,
-                Map<String, String> bodyMap) {
+        VelocityReaderParams(final HTTPMethod httpMethod, final HttpServletRequest request, final String folderName,
+                             final User user, final Map<String, String> bodyMap) {
             this.httpMethod = httpMethod;
             this.request = request;
             this.folderName = folderName;
@@ -633,27 +634,27 @@ public class VTLResource {
             private User user;
             private Map<String, String> bodyMap;
 
-            public VelocityReaderParamsBuilder setHttpMethod(HTTPMethod httpMethod) {
+            public VelocityReaderParamsBuilder setHttpMethod(final HTTPMethod httpMethod) {
                 this.httpMethod = httpMethod;
                 return this;
             }
 
-            public VelocityReaderParamsBuilder setRequest(HttpServletRequest request) {
+            public VelocityReaderParamsBuilder setRequest(final HttpServletRequest request) {
                 this.request = request;
                 return this;
             }
 
-            public VelocityReaderParamsBuilder setFolderName(String folderName) {
+            public VelocityReaderParamsBuilder setFolderName(final String folderName) {
                 this.folderName = folderName;
                 return this;
             }
 
-            public VelocityReaderParamsBuilder setUser(User user) {
+            public VelocityReaderParamsBuilder setUser(final User user) {
                 this.user = user;
                 return this;
             }
 
-            public VelocityReaderParamsBuilder setBodyMap(Map<String, String> bodyMap) {
+            public VelocityReaderParamsBuilder setBodyMap(final Map<String, String> bodyMap) {
                 this.bodyMap = bodyMap;
                 return this;
             }
