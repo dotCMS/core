@@ -6,7 +6,7 @@ import { DOTTestBed } from '../../../../../../test/dot-test-bed';
 import { DotMessageService } from '@services/dot-messages-service';
 import { FormGroup, FormControl, Validators } from '@angular/forms';
 import { By } from '@angular/platform-browser';
-import { FieldValidationMessageComponent } from '@components/_common/field-validation-message/field-validation-message';
+import { DotFieldValidationMessageComponent } from '@components/_common/dot-field-validation-message/dot-field-validation-message';
 
 describe('DefaultValuePropertyComponent', () => {
     let comp: DefaultValuePropertyComponent;
@@ -22,7 +22,7 @@ describe('DefaultValuePropertyComponent', () => {
 
     beforeEach(async(() => {
         DOTTestBed.configureTestingModule({
-            declarations: [DefaultValuePropertyComponent, FieldValidationMessageComponent],
+            declarations: [DefaultValuePropertyComponent, DotFieldValidationMessageComponent],
             imports: [],
             providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
         });
@@ -94,7 +94,7 @@ describe('DefaultValuePropertyComponent', () => {
             value: null,
             field: {}
         };
-        comp.group.get('name').markAsTouched();
+        comp.group.get('name').markAsDirty();
         fixture.detectChanges();
 
         expect(de.query(By.css('dot-field-validation-message')).nativeElement.innerText).toContain(
