@@ -10,19 +10,17 @@
                 <input type="hidden" name="folderField" dojoAttachPoint="folderField" value=""/>
                 <input type="hidden" name="structure_inode" dojoAttachPoint="structure_inode" value="strInode">
                 <div class="sideMenuWrapper">
-                    
-                    
                     <div dojoAttachPoint="structures_select"></div>
-                    <div dojoAttachPoint="search_languages_table"></div>
-                    <div dojoAttachPoint="search_fields_table"></div>
-                    <div dojoAttachPoint="search_categories_table">
-                        <dl class="vertical" dojoAttachPoint="search_categories_list"></dl>
-                    </div>
                     <div dojoAttachPoint="search_general">
                         <dl class="vertical">
                             <dt><label><%= LanguageUtil.get(pageContext, "Search") %>:</label></dt>
                             <dd><input type="text" dojoType="dijit.form.TextBox" onKeyDown='contentSelector._doSearch()' name="allFieldTB" id="allFieldTB"></dd>
                         </dl>
+                    </div>
+                    <div dojoAttachPoint="search_languages_table"></div>
+                    <div dojoAttachPoint="search_fields_table"></div>
+                    <div dojoAttachPoint="search_categories_table">
+                        <dl class="vertical" dojoAttachPoint="search_categories_list"></dl>
                     </div>
                     <div class="clear"></div>
                     <div class="buttonRow">
