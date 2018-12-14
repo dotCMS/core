@@ -857,7 +857,13 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 
 		// Header based sorting functionality
 		var headerClicked =  function(scope,header) {
-			scope._doSearch(1,this.structureVelVar+"."+header["fieldVelocityVarName"]);
+            if ("__title__" === header["fieldVelocityVarName"]) {
+                scope._doSearch(1,this.structureVelVar+".title");
+            } else if ("__type__" === header["fieldVelocityVarName"]) {
+                scope._doSearch(1,this.structureVelVar+".type");
+            } else {
+                scope._doSearch(1,this.structureVelVar+"."+header["fieldVelocityVarName"]);
+            }
 		};
 		for (var i = 0; i < headers.length; i++) {
 			var header = headers[i];

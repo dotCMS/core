@@ -556,6 +556,8 @@ public class ContentletAjax {
 		Map<String, String> fieldsSearch = new HashMap<String, String>();
 		List<Object> headers = new ArrayList<Object>();
 		Map<String, Field> fieldsMapping = new HashMap<String, Field>();
+		final String[] structureInodes = structureInode.split(CONTENT_TYPES_INODE_SEPARATOR);
+
 		Structure st = null;
 		if(!Structure.STRUCTURE_TYPE_ALL.equals(structureInode) && !hasContentTypesInodeSeparator(structureInode)){
 		    st = CacheLocator.getContentTypeCache().getStructureByInode(structureInode);
@@ -563,8 +565,6 @@ public class ContentletAjax {
 		    luceneQuery.append("+contentType:" + st.getVelocityVarName() + " ");
 		} else if (!Structure.STRUCTURE_TYPE_ALL.equals(structureInode) && hasContentTypesInodeSeparator(structureInode)) {
 			luceneQuery.append("+contentType:(");
-
-			String[] structureInodes = structureInode.split(CONTENT_TYPES_INODE_SEPARATOR);
 
 			for (int i = 0; i < structureInodes.length; i++) {
 				st = CacheLocator.getContentTypeCache().getStructureByInode(structureInodes[i]);
@@ -602,7 +602,7 @@ public class ContentletAjax {
 		}
 		// Stores (database name,type description) pairs to catch certain field types.
 		List<Field> targetFields = new ArrayList<Field>();
-		if(st!=null){
+		if(st!=null && structureInodes.length == 1){
 		    targetFields = FieldsCache.getFieldsByStructureInode(st.getInode());
 		}
 		Map<String,String> fieldContentletNames = new HashMap<String,String>();
@@ -842,7 +842,11 @@ public class ContentletAjax {
 			orderBy = "wfCurrentStepName desc";
 		}else{
             if(orderBy.charAt(0)=='.'){
-                orderBy = st.getVelocityVarName() + orderBy;
+				if (structureInodes.length > 1) {
+					orderBy = orderBy.substring(1);
+				} else {
+					orderBy = st.getVelocityVarName() + orderBy;
+				}
             }
         }
 
