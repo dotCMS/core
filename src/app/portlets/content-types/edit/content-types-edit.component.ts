@@ -5,7 +5,7 @@ import { Component, ViewChild, OnInit, OnDestroy } from '@angular/core';
 import { ContentType } from '../shared/content-type.model';
 import { ContentTypesFormComponent } from '../form';
 import { CrudService } from '@services/crud';
-import { ContentTypeField } from '../fields/index';
+import { ContentTypeField, ContentTypeFieldsDropZoneComponent } from '../fields/index';
 import { FieldService } from '../fields/service';
 import { DotMessageService } from '@services/dot-messages-service';
 import { ContentTypesInfoService } from '@services/content-types-info';
@@ -37,6 +37,9 @@ import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
 export class ContentTypesEditComponent implements OnInit, OnDestroy {
     @ViewChild('form')
     contentTypesForm: ContentTypesFormComponent;
+
+    @ViewChild('fieldsDropZone')
+    fieldsDropZone: ContentTypeFieldsDropZoneComponent;
 
     contentTypeActions: MenuItem[];
     dialogCloseable = false;
@@ -245,7 +248,9 @@ export class ContentTypesEditComponent implements OnInit, OnDestroy {
                 }
             },
             (err: ResponseView) => {
-                this.dotHttpErrorManagerService.handle(err).pipe(take(1)).subscribe(() => {});
+                this.dotHttpErrorManagerService.handle(err).pipe(take(1)).subscribe(() => {
+                    this.fieldsDropZone.reset();
+                });
             }
         );
     }

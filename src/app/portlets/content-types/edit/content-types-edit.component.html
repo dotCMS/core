@@ -29,6 +29,7 @@
         </div>
     </div>
     <dot-content-type-fields-drop-zone
+        #fieldsDropZone
         *ngIf="data.id"
         [fields]="fields"
         (saveFields)="saveFields($event)"

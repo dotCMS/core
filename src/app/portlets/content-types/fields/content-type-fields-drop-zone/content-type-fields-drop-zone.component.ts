@@ -280,6 +280,10 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
         return row instanceof FieldTab;
     }
 
+    reset(): void {
+        this.fieldRows = this.getRowFields(this.fields);
+    }
+
     private setDroppedField(droppedField: ContentTypeField): void {
         this.formData = droppedField;
 
