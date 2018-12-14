@@ -2,6 +2,7 @@ package com.dotcms.filters.interceptor;
 
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.util.RegEX;
+import org.apache.commons.collections.iterators.ReverseListIterator;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -9,6 +10,7 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -20,9 +22,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class SimpleWebInterceptorDelegateImpl implements WebInterceptorDelegate {
 
-    private final AtomicBoolean alreadyStarted = new AtomicBoolean(false);
+    private final AtomicBoolean alreadyStarted      =
+            new AtomicBoolean(false);
     private final List<WebInterceptor> interceptors =
             new CopyOnWriteArrayList<>();
+    private final AtomicBoolean reverseOrderForPostInvoke =
+            new AtomicBoolean(false);
 
     @Override
     public void addBefore(final String webInterceptorName, final WebInterceptor webInterceptor) {
@@ -134,6 +139,11 @@ public class SimpleWebInterceptorDelegateImpl implements WebInterceptorDelegate 
         move(webInterceptorName, this.interceptors.size());
     }
 
+    public void reverseOrderForPostInvoke(final boolean reverseOrderForPostInvoke) {
+
+        this.reverseOrderForPostInvoke.set(reverseOrderForPostInvoke);
+    }
+
     /**
      * Call me on destroy
      */
@@ -187,7 +197,7 @@ public class SimpleWebInterceptorDelegateImpl implements WebInterceptorDelegate 
                         requestResult  = result.getRequest();
                     }
 
-                    if (null != result.getRequest()) {
+                    if (null != result.getResponse()) {
 
                         responseResult  = result.getResponse();
                     }
@@ -214,8 +224,12 @@ public class SimpleWebInterceptorDelegateImpl implements WebInterceptorDelegate 
 
         if (!this.interceptors.isEmpty()) {
 
-            for (final WebInterceptor webInterceptor : this.interceptors) {
+            final ListIterator<WebInterceptor> iterator = this.reverseOrderForPostInvoke.get()?
+                    new ReverseListIterator(this.interceptors):this.interceptors.listIterator();
 
+            while(iterator.hasNext()) {
+
+                final WebInterceptor webInterceptor = iterator.next();
                 // if the filter applies just for some filter patterns.
                 if (webInterceptor.isActive() &&
                         this.anyMatchFilter(webInterceptor, request.getRequestURI())) {
@@ -266,7 +280,7 @@ public class SimpleWebInterceptorDelegateImpl implements WebInterceptorDelegate 
             uftUri = uri;
         }
 
-        return RegEX.contains(uftUri, filterPattern);
+        return RegEX.contains(uftUri, filterPattern.trim());
     } // match.
 
     private void init(final WebInterceptor webInterceptor) {

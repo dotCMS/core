@@ -75,6 +75,14 @@ public interface WebInterceptorDelegate extends WebInterceptorAware {
     void moveToLast(final String webInterceptorName);
 
     /**
+     * Set to true if wants to iterate the afterIntercept calls in reverse order.
+     * Means the first interceptor will be called at the end for the afterIntercept call.
+     * Mostly useful when you want an interceptor being called at the very begin and at the end.
+     * @param inverseOrder
+     */
+    void reverseOrderForPostInvoke(boolean inverseOrder);
+
+    /**
      * Encapsulates the delegate result, if shouldContinue
      * and also the request and the response (in case it was wrapped)
      */

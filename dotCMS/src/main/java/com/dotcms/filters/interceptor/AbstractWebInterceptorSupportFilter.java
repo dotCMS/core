@@ -84,10 +84,12 @@ public abstract class AbstractWebInterceptorSupportFilter implements Filter {
 
         if (result.isShouldContinue()) {
 
-            chain.doFilter(null != result.getRequest()? result.getRequest():request,
-                    null != result.getResponse()? result.getResponse(): response);
+            final HttpServletRequest  requestInterceptor  = null != result.getRequest()? result.getRequest():request;
+            final HttpServletResponse responseInterceptor = null != result.getResponse()? result.getResponse(): response;
 
-            this.runAfterInterceptors(request, response);
+            chain.doFilter(requestInterceptor, responseInterceptor);
+
+            this.runAfterInterceptors(requestInterceptor, responseInterceptor);
         }
     } // doFilter.
 
