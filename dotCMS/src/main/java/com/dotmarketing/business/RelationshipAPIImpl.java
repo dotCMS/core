@@ -6,6 +6,7 @@ import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.business.RelationshipFactory;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeIf;
+import com.dotcms.util.DotPreconditions;
 import com.dotmarketing.beans.Tree;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -218,6 +219,7 @@ public class RelationshipAPIImpl implements RelationshipAPI {
     @Override
     public List<Relationship> getOneSidedRelationships(final ContentType contentType,
             final int limit, final int offset) throws DotDataException {
+        DotPreconditions.checkNotNull(contentType, IllegalArgumentException.class, "Content Type is required");
         return this.relationshipFactory.getOneSidedRelationships(contentType, limit, offset);
     }
 
