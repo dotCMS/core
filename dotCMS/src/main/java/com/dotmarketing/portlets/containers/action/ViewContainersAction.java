@@ -5,8 +5,6 @@ import com.dotcms.repackage.javax.portlet.RenderRequest;
 import com.dotcms.repackage.javax.portlet.RenderResponse;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.PermissionAsset;
-import com.dotmarketing.beans.Source;
-import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.portal.struts.DotPortletAction;
@@ -25,7 +23,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import javax.servlet.jsp.PageContext;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * <a href="ViewQuestionsAction.java.html"><b><i>View Source</i></b></a>
@@ -81,19 +78,8 @@ public class ViewContainersAction extends DotPortletAction {
 
 			if (null != currentResults && !currentResults.isEmpty()) {
 
-				final PaginatedArrayList<PermissionAsset> newResults = new PaginatedArrayList<>();
-
-				newResults.addAll(currentResults.stream()
-						.filter(asset -> WebAsset.class.cast(asset.getAsset()).getSource() == Source.DB)
-						.collect(Collectors.toList()));
-
-				final int diff = currentResults.size() - newResults.size();
-
-				newResults.setQuery(currentResults.getQuery());
-				newResults.setTotalResults(currentResults.getTotalResults() - diff);
-
-				req.setAttribute(WebKeys.CONTAINERS_VIEW, newResults);
-				req.setAttribute(WebKeys.CONTAINERS_VIEW_COUNT, newResults.getTotalResults());
+				req.setAttribute(WebKeys.CONTAINERS_VIEW, currentResults);
+				req.setAttribute(WebKeys.CONTAINERS_VIEW_COUNT, currentResults.getTotalResults());
 			}
 
 			return mapping.findForward("portlet.ext.containers.view_containers");
