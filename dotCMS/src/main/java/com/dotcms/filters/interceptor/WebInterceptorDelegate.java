@@ -75,12 +75,11 @@ public interface WebInterceptorDelegate extends WebInterceptorAware {
     void moveToLast(final String webInterceptorName);
 
     /**
-     * Set to true if wants to iterate the afterIntercept calls in reverse order.
-     * Means the first interceptor will be called at the end for the afterIntercept call.
-     * Mostly useful when you want an interceptor being called at the very begin and at the end.
-     * @param inverseOrder
+     * Set the order desire for the filter pipeline, see {@link OrderMode}
+     * By default uses FILO
+     * @param orderMode {@link OrderMode}
      */
-    void reverseOrderForPostInvoke(boolean inverseOrder);
+    void orderMode(final OrderMode orderMode);
 
     /**
      * Encapsulates the delegate result, if shouldContinue

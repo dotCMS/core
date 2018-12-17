@@ -26,6 +26,7 @@ public class SimpleWebInterceptorDelegateImpl implements WebInterceptorDelegate 
             new AtomicBoolean(false);
     private final List<WebInterceptor> interceptors =
             new CopyOnWriteArrayList<>();
+    private OrderMode orderMode = OrderMode.FILO;
     private final AtomicBoolean reverseOrderForPostInvoke =
             new AtomicBoolean(false);
 
@@ -139,9 +140,9 @@ public class SimpleWebInterceptorDelegateImpl implements WebInterceptorDelegate 
         move(webInterceptorName, this.interceptors.size());
     }
 
-    public void reverseOrderForPostInvoke(final boolean reverseOrderForPostInvoke) {
+    public void orderMode(final OrderMode orderMode) {
 
-        this.reverseOrderForPostInvoke.set(reverseOrderForPostInvoke);
+        this.orderMode = orderMode;
     }
 
     /**
@@ -224,7 +225,7 @@ public class SimpleWebInterceptorDelegateImpl implements WebInterceptorDelegate 
 
         if (!this.interceptors.isEmpty()) {
 
-            final ListIterator<WebInterceptor> iterator = this.reverseOrderForPostInvoke.get()?
+            final ListIterator<WebInterceptor> iterator = this.orderMode == OrderMode.FILO?
                     new ReverseListIterator(this.interceptors):this.interceptors.listIterator();
 
             while(iterator.hasNext()) {
