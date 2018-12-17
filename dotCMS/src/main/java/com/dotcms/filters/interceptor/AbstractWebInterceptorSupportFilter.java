@@ -33,10 +33,21 @@ public abstract class AbstractWebInterceptorSupportFilter implements Filter {
      * @return boolean true if all interceptors ran successfully.
      * @throws IOException
      */
-    protected WebInterceptorDelegate.DelegateResult runInterceptors (final HttpServletRequest req, HttpServletResponse res) throws IOException {
+    protected WebInterceptorDelegate.DelegateResult runInterceptors (final HttpServletRequest req, final HttpServletResponse res) throws IOException {
 
         return this.getDelegate(req).intercept(req, res);
     } // runInterceptor.
+
+    /**
+     * Runs all interceptors after method associated to this filter.
+     * @param req {@link HttpServletRequest}
+     * @param res {@link HttpServletResponse}
+     * @throws IOException
+     */
+    protected void runAfterInterceptors (final HttpServletRequest req, final HttpServletResponse res) throws IOException {
+
+        this.getDelegate(req).after(req, res);
+    } // runAfterInterceptors.
 
 
     protected WebInterceptorDelegate getDelegate (final HttpServletRequest req) {
@@ -73,9 +84,15 @@ public abstract class AbstractWebInterceptorSupportFilter implements Filter {
 
         if (result.isShouldContinue()) {
 
-            chain.doFilter(null != result.getRequest()? result.getRequest():request,
-                    null != result.getResponse()? result.getResponse(): response);
+            final HttpServletRequest  requestInterceptor  = null != result.getRequest()? result.getRequest():request;
+            final HttpServletResponse responseInterceptor = null != result.getResponse()? result.getResponse(): response;
+
+            chain.doFilter(requestInterceptor, responseInterceptor);
+
+            this.runAfterInterceptors(requestInterceptor, responseInterceptor);
         }
     } // doFilter.
+
+
 
 } // E:O:F:AbstractWebInterceptorSupportFilter.
