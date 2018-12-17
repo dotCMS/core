@@ -3,7 +3,6 @@ package com.dotcms.rendering.velocity.servlet;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.visitor.domain.Visitor;
-
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.UserProxy;
@@ -23,22 +22,14 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.WebKeys;
-
-import java.io.BufferedWriter;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.StringWriter;
-import java.io.Writer;
-import java.util.Optional;
+import com.liferay.portal.model.User;
+import org.apache.velocity.context.Context;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-
-import org.apache.velocity.context.Context;
-
-import com.liferay.portal.model.User;
+import java.io.*;
+import java.util.Optional;
 
 public class VelocityLiveMode extends VelocityModeHandler {
 
@@ -174,7 +165,6 @@ public class VelocityLiveMode extends VelocityModeHandler {
                     }
                 }
             }
-
         } finally {
 
             LicenseUtil.stopLiveMode();

@@ -29,6 +29,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.WebKeys;
 import com.google.common.annotations.VisibleForTesting;
+import com.liferay.portal.auth.PrincipalThreadLocal;
 import com.liferay.portal.model.User;
 
 import javax.servlet.http.HttpServletRequest;
@@ -168,6 +169,7 @@ public class PageResource {
             }
 
             request.getSession().setAttribute(com.liferay.portal.util.WebKeys.USER_ID, user.getUserId());
+            PrincipalThreadLocal.setName(user.getUserId());
 
             final PageView pageRendered = this.htmlPageAssetRenderedAPI.getPageRendered(request, response, user, uri, mode);
             final Response.ResponseBuilder responseBuilder = Response.ok(new ResponseEntityView(pageRendered));
