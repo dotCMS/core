@@ -794,8 +794,6 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 					Logger.warn(this, "Error getting field for relation type " + key, e);
 				}
 
-			} else {
-				relationshipsRecords.get(key).add(related);
 			}
 		}
 	}
