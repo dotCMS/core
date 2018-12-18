@@ -82,13 +82,13 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
             .pipe(take(1))
             .subscribe((messages: { [key: string]: string }) => {
                 this.i18nMessages = messages;
-
                 this.dialogActions = {
                     accept: {
                         action: () => {
                             this.propertiesForm.saveFieldProperties();
                         },
-                        label: this.i18nMessages['contenttypes.dropzone.action.save']
+                        label: this.i18nMessages['contenttypes.dropzone.action.save'],
+                        disabled: true
                     },
                     cancel: {
                         label: this.i18nMessages['contenttypes.dropzone.action.cancel'],
@@ -145,6 +145,7 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
     }
 
     ngOnChanges(changes: SimpleChanges): void {
+        console.log('changes');
         if (changes.fields.currentValue) {
             const fields = changes.fields.currentValue;
 
@@ -176,6 +177,7 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
      * @memberof ContentTypeFieldsDropZoneComponent
      */
     saveFieldsHandler(fieldToSave: ContentTypeField): void {
+        console.log('saveFields44')
         let fields: ContentTypeField[];
 
         if (fieldToSave.id) {
@@ -278,6 +280,22 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
      */
     isTab(row: FieldDivider): boolean {
         return row instanceof FieldTab;
+    }
+
+    /**
+     * Set the state for the ok action for the dialog
+     *
+     * @param {boolean} $event
+     * @memberof ContentTypeFieldsDropZoneComponent
+     */
+    setDialogOkButtonState(formChanged: boolean): void {
+        this.dialogActions = {
+            ...this.dialogActions,
+            accept: {
+                ...this.dialogActions.accept,
+                disabled: !formChanged
+            }
+        };
     }
 
     private setDroppedField(droppedField: ContentTypeField): void {
