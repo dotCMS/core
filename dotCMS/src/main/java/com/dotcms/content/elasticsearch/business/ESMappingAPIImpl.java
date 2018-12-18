@@ -195,7 +195,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 			Host conHost = APILocator.getHostAPI().find(ident.getHostId(), APILocator.getUserAPI().getSystemUser(), false);
 			
 			contentletMap.put(ESMappingConstants.TITLE, contentlet.getTitle());
-			contentletMap.put(ESMappingConstants.TITLE_IMAGE, contentlet.getTitleImage());
+			contentletMap.put(ESMappingConstants.TITLE_IMAGE, contentlet.getTitleImage().orElse(null));
 			contentletMap.put(ESMappingConstants.STRUCTURE_NAME, st.getVelocityVarName()); // marked for DEPRECATION
 			contentletMap.put(ESMappingConstants.CONTENT_TYPE, st.getVelocityVarName());
 			contentletMap.put(ESMappingConstants.STRUCTURE_TYPE, st.getStructureType()); // marked for DEPRECATION
