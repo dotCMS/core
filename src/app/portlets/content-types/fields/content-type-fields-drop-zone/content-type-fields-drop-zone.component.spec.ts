@@ -169,6 +169,11 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
         expect('fields-row-bag').toEqual(fieldsContainer.attributes['dragula']);
     });
 
+    it('should set Save button disable on load', () => {
+        fixture.detectChanges();
+        expect(comp.dialogActions.accept.disabled).toBeTruthy();
+    });
+
     it('should have a dialog', () => {
         const dialog = de.query(By.css('dot-dialog'));
         expect(dialog).not.toBeNull();
@@ -176,12 +181,14 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
 
     it('should reset values when close dialog', () => {
         comp.displayDialog = true;
+        spyOn(comp, 'setDialogOkButtonState');
         fixture.detectChanges();
         const dialog = de.query(By.css('dot-dialog')).componentInstance;
         dialog.hide.emit();
         expect(comp.displayDialog).toBe(false);
         expect(comp.formData).toBe(null);
         expect(comp.dialogActiveTab).toBe(null);
+        expect(comp.setDialogOkButtonState).toHaveBeenCalledWith(false);
     });
 
     it('should emit removeFields event', () => {

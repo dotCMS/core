@@ -145,7 +145,6 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
     }
 
     ngOnChanges(changes: SimpleChanges): void {
-        console.log('changes');
         if (changes.fields.currentValue) {
             const fields = changes.fields.currentValue;
 
@@ -211,6 +210,7 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
      * @memberof ContentTypeFieldsDropZoneComponent
      */
     removeFieldsWithoutId(): void {
+        console.log('hide dialog');
         const fieldRows: any = this.fieldRows;
 
         // TODO needs an improvement for performance reasons
@@ -231,6 +231,7 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
         this.formData = null;
         this.dialogActiveTab = null;
         this.propertiesForm.destroy();
+        this.setDialogOkButtonState(false);
     }
 
     /**
