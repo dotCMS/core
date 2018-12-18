@@ -20,6 +20,7 @@ import com.dotmarketing.portlets.contentlet.business.ContentletCache;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
+import com.dotmarketing.portlets.rules.parameter.display.DropdownInput.Option;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.tag.model.Tag;
@@ -53,6 +54,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class Contentlet implements Serializable, Permissionable, Categorizable, Versionable, Treeable, Ruleable  {
 
     private static final long serialVersionUID = 1L;
+    public static final String TITTLE_KEY = "title";
     public static final String INODE_KEY = "inode";
     public static final String LANGUAGEID_KEY = "languageId";
     public static final String STRUCTURE_INODE_KEY = "stInode";
@@ -78,6 +80,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	public static final String WORKFLOW_ASSIGN_KEY = "wfActionAssign";
 	public static final String WORKFLOW_COMMENTS_KEY = "wfActionComments";
 	public static final String WORKFLOW_BULK_KEY = "wfActionBulk";
+    public static final String DOT_NAME_KEY = "__DOTNAME__";
 
     public static final String DONT_VALIDATE_ME = "_dont_validate_me";
     public static final String DISABLE_WORKFLOW = "__disable_workflow__";
@@ -235,15 +238,15 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 
     		//Verifies if the content type has defined a title field
 			Optional<com.dotcms.contenttype.model.field.Field> fieldFound = this.getContentType().fields().stream().
-					filter(field -> field.variable().equals("title")).findAny();
+					filter(field -> field.variable().equals(TITTLE_KEY)).findAny();
 
 
 			if (fieldFound.isPresent()) {
-				return map.get("title")!=null?map.get("title").toString():null;
+				return map.get(TITTLE_KEY)!=null?map.get(TITTLE_KEY).toString():null;
 			}
 
 			String title = getContentletAPI().getName(this, getUserAPI().getSystemUser(), false);
-			map.put("title", title);
+			map.put(TITTLE_KEY, title);
 
     	    return title;
 		} catch (Exception e) {
@@ -767,12 +770,13 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 		return (String) map.get(HOST_KEY);
 	}
 
-    private transient Optional<com.dotcms.contenttype.model.field.Field> titleImageFieldVar = null;
+    private transient com.dotcms.contenttype.model.field.Field titleImageFieldVar = null;
 
     public Optional<com.dotcms.contenttype.model.field.Field> getTitleImage() {
 
-        if (this.titleImageFieldVar != null)
-            return this.titleImageFieldVar;
+        if (this.titleImageFieldVar != null){
+            return Optional.of(this.titleImageFieldVar);
+        }
         try {
             this.titleImageFieldVar = this.getContentType().fields().stream().filter(f -> {
                 try {
@@ -780,12 +784,12 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
                 } catch (Exception e) {
                     return false;
                 }
-            }).findFirst();
+            }).findFirst().orElse(null);
 
         } catch (Exception e) {
             Logger.debug(this.getClass(), e.getMessage(), e);
         }
-        return this.titleImageFieldVar;
+        return this.titleImageFieldVar != null ? Optional.of(this.titleImageFieldVar) : Optional.empty();
     }
 	
 	
