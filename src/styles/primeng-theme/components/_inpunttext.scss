@@ -48,7 +48,7 @@ textarea.ui-inputtext {
 // Validation
 .ui-inputtext {
     &.ng-dirty.ng-invalid,
-    &.ng-invalid.ng-touched {
+    &.ng-invalid.ng-dirty {
         @extend #inputtext-error-border;
     }
 }

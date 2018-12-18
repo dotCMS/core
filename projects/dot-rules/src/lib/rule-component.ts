@@ -59,12 +59,12 @@ const rsrc = {
     selector: 'rule',
     template: `<form [formGroup]="formModel" let rf="ngForm">
   <cw-add-to-bundle-dialog-container
-      [assetId]="rule._id || rule.key"
+      [assetId]="rule.key"
       [hidden]="!showAddToBundleDialog"
       (close)="showAddToBundleDialog = false; showMoreMenu = false"></cw-add-to-bundle-dialog-container>
   <cw-push-publish-dialog-container
       [environmentStores]="environmentStores"
-      [assetId]="rule._id || rule.key"
+      [assetId]="rule.key"
       [hidden]="!showPushPublishDialog"
       (close)="showPushPublishDialog = false; showMoreMenu = false"></cw-push-publish-dialog-container>
   <div class="cw-rule" [class.cw-hidden]="hidden" [class.cw-disabled]="!rule.enabled"

@@ -24,7 +24,7 @@ import { SiteService } from 'dotcms-js';
 
 import { ContentTypesFormComponent } from './content-types-form.component';
 import { DOTTestBed } from '../../../test/dot-test-bed';
-import { FieldValidationMessageModule } from '@components/_common/field-validation-message/file-validation-message.module';
+import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { LoginServiceMock } from '../../../test/login-service.mock';
 import { DotMessageService } from '@services/dot-messages-service';
 import { MockDotMessageService } from '../../../test/dot-message-service.mock';
@@ -120,7 +120,7 @@ describe('ContentTypesFormComponent', () => {
                     BrowserAnimationsModule,
                     ButtonModule,
                     DropdownModule,
-                    FieldValidationMessageModule,
+                    DotFieldValidationMessageModule,
                     InputTextModule,
                     OverlayPanelModule,
                     ReactiveFormsModule,

@@ -11,7 +11,7 @@ import {
     FieldDivider
 } from '../';
 import { ReactiveFormsModule } from '@angular/forms';
-import { FieldValidationMessageModule } from '@components/_common/field-validation-message/file-validation-message.module';
+import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { DotActionButtonModule } from '@components/_common/dot-action-button/dot-action-button.module';
 import { DotMessageService } from '@services/dot-messages-service';
 import { LoginService, SocketFactory } from 'dotcms-js';
@@ -137,7 +137,7 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
                 DotIconModule,
                 DragulaModule,
                 TableModule,
-                FieldValidationMessageModule,
+                DotFieldValidationMessageModule,
                 ReactiveFormsModule
             ],
             providers: [
@@ -317,7 +317,7 @@ describe('Load fields and drag and drop', () => {
                     }
                 ]),
                 DragulaModule,
-                FieldValidationMessageModule,
+                DotFieldValidationMessageModule,
                 DotContentTypeFieldsVariablesModule,
                 ReactiveFormsModule,
                 BrowserAnimationsModule,
