@@ -1,4 +1,4 @@
-package com.dotmarketing.portlets.contentlet.transform;
+package com.dotmarketing.portlets.contentlet.transform.poc;
 
 import java.util.ArrayList;
 import java.util.HashMap;

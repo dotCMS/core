@@ -9,7 +9,6 @@ import com.dotcms.rest.ContentHelper;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
@@ -123,7 +122,7 @@ public class ContentletUtil {
 		Map<String, Object> m = new HashMap<>();
 
 		c.setTags();
-		c = ContentHelper.getInstance().hydrateContentLet(c);
+		c = ContentHelper.getInstance().hydrateContentlet(c);
 		m.putAll(c.getMap());
 
 		ContentType type=c.getContentType();

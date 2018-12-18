@@ -14,7 +14,7 @@ import com.dotcms.rest.api.v1.browsertree.BrowserTreeResource;
 import com.dotcms.rest.api.v1.categories.CategoriesResource;
 import com.dotcms.rest.api.v1.container.ContainerResource;
 import com.dotcms.rest.api.v1.content.ContentRelationshipsResource;
-import com.dotcms.rest.api.v1.content.VersionResource;
+import com.dotcms.rest.api.v1.content.ContentVersionResource;
 import com.dotcms.rest.api.v1.contenttype.ContentTypeResource;
 import com.dotcms.rest.api.v1.contenttype.FieldResource;
 import com.dotcms.rest.api.v1.contenttype.FieldVariableResource;
@@ -144,7 +144,7 @@ public class DotRestApplication extends com.dotcms.repackage.javax.ws.rs.core.Ap
 					REST_CLASSES.add(RelationshipsResource.class);
 
 					REST_CLASSES.add(VTLResource.class);
-					REST_CLASSES.add(VersionResource.class);
+					REST_CLASSES.add(ContentVersionResource.class);
 				}
 			}
 		}

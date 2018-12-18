@@ -27,7 +27,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.contentlet.transform.ContentletTransformerJson;
+import com.dotmarketing.portlets.contentlet.transform.ContentletToMapTransformer;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Logger;
@@ -40,23 +40,28 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 
-@Path("/v1/versions")
-public class VersionResource {
+@Path("/v1/content/versions")
+public class ContentVersionResource {
 
-    public static final int MIN = 20;
-    public static final int MAX = 100;
+    private static final String FIND_BY_ID_ERROR_MESSAGE_KEY = "Unable-to-find-contentlet-by-id";
+    private static final String FIND_BY_INODE_ERROR_MESSAGE_KEY = "Unable-to-find-contentlet-by-inode";
+    private static final String DATATYPE_MISSMATCH_ERROR_MESSAGE_KEY = "Data-Type-Missmatch";
+    private static final String DATATYPE_MISSMATCH_2_ERROR_MESSAGE_KEY = "Data-Type-Missmatch2";
+
+    private static final int MIN = 20;
+    private static final int MAX = 100;
 
     private final WebResource webResource;
     private final ContentletAPI contentletAPI;
     private final LanguageAPI languageAPI;
 
 
-    public VersionResource() {
+    public ContentVersionResource() {
         this(APILocator.getContentletAPI(), APILocator.getLanguageAPI(), new WebResource());
     }
 
     @VisibleForTesting
-    public VersionResource(final ContentletAPI contentletAPI, final LanguageAPI languageAPI,
+    ContentVersionResource(final ContentletAPI contentletAPI, final LanguageAPI languageAPI,
             final WebResource webResource) {
         this.contentletAPI = contentletAPI;
         this.languageAPI = languageAPI;
@@ -73,7 +78,7 @@ public class VersionResource {
             @PathParam("identifier") final String identifier, @QueryParam("depth") final int limit)
             throws DotDataException, DotStateException, DotSecurityException {
 
-        final int showing = (limit > MAX) ? MAX : (limit < MIN) ? MIN : limit;
+        final int showing = limit > MAX ? MAX : limit < MIN ? MIN : limit;
         final InitDataObject auth = webResource.init(true, request, true);
 
         final User user = auth.getUser();
@@ -81,7 +86,7 @@ public class VersionResource {
             final ShortyId shorty = APILocator
                     .getShortyAPI().getShorty(identifier)
                     .orElseThrow(() -> new DoesNotExistException(
-                            getFormattedMessage(user.getLocale(), "Unable-to-find-contentlet-by-id",
+                            getFormattedMessage(user.getLocale(), FIND_BY_ID_ERROR_MESSAGE_KEY,
                                     identifier)));
             final Identifier identifierObj =
                     (shorty.type == ShortType.IDENTIFIER) ? APILocator.getIdentifierAPI()
@@ -91,8 +96,7 @@ public class VersionResource {
             final List<Map<String, Object>> versions = contentletAPI
                     .findAllVersions(identifierObj, user, false).stream()
                     .limit(showing)
-                    .map(this::contentletToMap).collect(Collectors
-                            .toList());
+                    .map(this::contentletToMap).collect(Collectors.toList());
 
             final Response.ResponseBuilder responseBuilder = Response
                     .ok(new ResponseEntityView(ImmutableMap.of("versions", versions)));
@@ -116,14 +120,14 @@ public class VersionResource {
             @PathParam("identifier") final String identifier, @QueryParam("depth") final int limit)
             throws DotStateException {
 
-        final int showing = (limit > MAX) ? MAX : (limit < MIN) ? MIN : limit;
+        final int showing = limit > MAX ? MAX : limit < MIN ? MIN : limit;
         final InitDataObject auth = webResource.init(true, request, true);
         final User user = auth.getUser();
         try {
             final ShortyId shorty = APILocator
                     .getShortyAPI().getShorty(identifier)
                     .orElseThrow(() -> new DoesNotExistException(
-                            getFormattedMessage(user.getLocale(), "Unable-to-find-contentlet-by-id",
+                            getFormattedMessage(user.getLocale(), FIND_BY_ID_ERROR_MESSAGE_KEY,
                                     identifier)));
             final Identifier identifierObj =
                     (shorty.type == ShortType.IDENTIFIER) ? APILocator.getIdentifierAPI()
@@ -137,8 +141,8 @@ public class VersionResource {
                     .collect(Collectors.groupingBy(Contentlet::getLanguageId));
             contentByLangMap.forEach((langId, contentlets) -> {
                 final Language lang = languageAPI.getLanguage(langId);
-                final List<Map<String, Object>> asMaps = contentlets.stream().map(
-                        this::contentletToMap).collect(Collectors.toList());
+                final List<Map<String, Object>> asMaps = contentlets.stream()
+                .map(this::contentletToMap).collect(Collectors.toList());
                 versions.put(lang.toString(), asMaps);
             });
 
@@ -167,17 +171,17 @@ public class VersionResource {
             final ShortyId shorty = APILocator
                     .getShortyAPI().getShorty(inode)
                     .orElseThrow(() -> new DoesNotExistException(getFormattedMessage(user.getLocale(),
-                            "Unable-to-find-contentlet-by-inode", inode)));
+                            FIND_BY_INODE_ERROR_MESSAGE_KEY, inode)));
 
             if (shorty.type != ShortType.INODE) {
                 throw new BadRequestException(
-                        getFormattedMessage(user.getLocale(), "Data-Type-Missmatch"));
+                        getFormattedMessage(user.getLocale(), DATATYPE_MISSMATCH_ERROR_MESSAGE_KEY));
             }
 
             final Contentlet contentlet = APILocator.getContentletAPI().find(inode, user, true);
             if (null == contentlet) {
                 throw new DoesNotExistException(
-                        getFormattedMessage(user.getLocale(), "Unable-to-find-contentlet-by-inode",
+                        getFormattedMessage(user.getLocale(), FIND_BY_INODE_ERROR_MESSAGE_KEY,
                                 inode));
             }
             final Response.ResponseBuilder responseBuilder = Response.ok(
@@ -201,7 +205,7 @@ public class VersionResource {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public Response diff(@Context final HttpServletRequest request,
             @PathParam("inode1") final String inode1, @PathParam("inode2") final String inode2)
-            throws DotDataException, DotStateException, DotSecurityException {
+            throws DotStateException {
 
         final InitDataObject auth = webResource.init(true, request, true);
         final User user = auth.getUser();
@@ -209,17 +213,17 @@ public class VersionResource {
             final ShortyId shorty1 = APILocator
                     .getShortyAPI().getShorty(inode1)
                     .orElseThrow(() -> new DoesNotExistException(
-                            getFormattedMessage(user.getLocale(), "Unable-to-find-contentlet-by-id",
+                            getFormattedMessage(user.getLocale(), FIND_BY_ID_ERROR_MESSAGE_KEY,
                                     inode1)));
             final ShortyId shorty2 = APILocator
                     .getShortyAPI().getShorty(inode2)
                     .orElseThrow(() -> new DoesNotExistException(
-                            getFormattedMessage(user.getLocale(), "Unable-to-find-contentlet-by-id",
+                            getFormattedMessage(user.getLocale(), FIND_BY_ID_ERROR_MESSAGE_KEY,
                                     inode2)));
             if (shorty1.type != ShortType.INODE
                     || shorty2.type != ShortType.INODE) {
                 throw new BadRequestException(
-                        getFormattedMessage(user.getLocale(), "Data-Type-Missmatch2"));
+                        getFormattedMessage(user.getLocale(), DATATYPE_MISSMATCH_2_ERROR_MESSAGE_KEY));
             }
 
             final Contentlet contentlet1 = APILocator
@@ -243,7 +247,7 @@ public class VersionResource {
         }
     }
 
-    private Map<String, Object> contentletToMap(final Contentlet con) {
-        return new ContentletTransformerJson(con).toMap();
+    private Map<String, Object> contentletToMap( final Contentlet con) {
+        return new ContentletToMapTransformer(con).toMaps().get(0);
     }
 }

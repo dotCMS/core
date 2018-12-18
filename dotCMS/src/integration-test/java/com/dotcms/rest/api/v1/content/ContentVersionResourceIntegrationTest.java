@@ -32,13 +32,13 @@ import javax.servlet.http.HttpServletRequest;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class VersionResourceIntegrationTest extends BaseWorkflowIntegrationTest {
+public class ContentVersionResourceIntegrationTest extends BaseWorkflowIntegrationTest {
 
     private static final String ADMIN_DEFAULT_ID = "dotcms.org.1";
     private static final String ADMIN_DEFAULT_MAIL = "admin@dotcms.com";
     private static final String ADMIN_NAME = "User Admin";
 
-    private static VersionResource versionResource;
+    private static ContentVersionResource versionResource;
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -56,7 +56,7 @@ public class VersionResourceIntegrationTest extends BaseWorkflowIntegrationTest 
         when(webResource
                 .init(anyBoolean(), any(HttpServletRequest.class), anyBoolean())).thenReturn(dataObject);
 
-        versionResource = new VersionResource(APILocator.getContentletAPI(),
+        versionResource = new ContentVersionResource(APILocator.getContentletAPI(),
                 APILocator.getLanguageAPI(), webResource);
 
     }
@@ -123,11 +123,11 @@ public class VersionResourceIntegrationTest extends BaseWorkflowIntegrationTest 
                                 c -> languageAPI.getLanguage(c.getLanguageId()).toString())
                                 );
 
-        for(Contentlet contentlet:contentByLangMap.get("en-us")){
+        for(final Contentlet contentlet:contentByLangMap.get("en-us")){
             assertTrue(enInodes.contains(contentlet.getInode()));
         }
 
-        for(Contentlet contentlet:contentByLangMap.get("es-es")){
+        for(final Contentlet contentlet:contentByLangMap.get("es-es")){
             assertTrue(esInodes.contains(contentlet.getInode()));
         }
 

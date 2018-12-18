@@ -1,4 +1,4 @@
-package com.dotmarketing.portlets.contentlet.transform;
+package com.dotmarketing.portlets.contentlet.transform.poc;
 
 import java.io.File;
 import java.io.IOException;
@@ -34,9 +34,10 @@ public class BinaryToMapTransformer implements FieldsToMapTransformer {
                 if (field instanceof BinaryField) {
                     try {
                         newMap.put(field.variable(), con.getBinary(field.variable()).getName());
-                    } catch (IOException e) {
+                    } catch (Exception e) {
                         // TODO Auto-generated catch block
                         e.printStackTrace();
+                        continue;
                     }
                     newMap.put(field.variable()+"Map", transform(field, con));
                 }

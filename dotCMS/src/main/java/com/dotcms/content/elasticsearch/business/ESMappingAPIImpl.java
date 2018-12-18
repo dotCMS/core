@@ -1,5 +1,10 @@
 package com.dotcms.content.elasticsearch.business;
 
+import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
+
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.content.business.ContentMappingAPI;
 import com.dotcms.content.business.DotMappingException;
@@ -15,7 +20,11 @@ import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
-import com.dotmarketing.business.*;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
@@ -27,14 +36,36 @@ import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.business.FieldAPI;
-import com.dotmarketing.portlets.structure.model.*;
+import com.dotmarketing.portlets.structure.model.Field;
+import com.dotmarketing.portlets.structure.model.FieldVariable;
+import com.dotmarketing.portlets.structure.model.KeyValueFieldUtil;
+import com.dotmarketing.portlets.structure.model.Relationship;
+import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.dotmarketing.tag.model.Tag;
-import com.dotmarketing.util.*;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.InodeUtils;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.ThreadSafeSimpleDateFormat;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
+import java.io.File;
+import java.io.IOException;
+import java.io.StringWriter;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Optional;
+import java.util.Set;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.time.FastDateFormat;
 import org.elasticsearch.ElasticsearchException;
@@ -42,17 +73,6 @@ import org.elasticsearch.action.ActionFuture;
 import org.elasticsearch.action.admin.cluster.state.ClusterStateRequest;
 import org.elasticsearch.action.admin.indices.mapping.put.PutMappingResponse;
 import org.elasticsearch.common.xcontent.XContentType;
-
-import java.io.File;
-import java.io.IOException;
-import java.io.StringWriter;
-import java.text.DecimalFormat;
-import java.text.DecimalFormatSymbols;
-import java.util.*;
-import java.util.Map.Entry;
-
-import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
-import static com.dotmarketing.business.PermissionAPI.*;
 
 
 public class ESMappingAPIImpl implements ContentMappingAPI {
@@ -175,6 +195,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 			Host conHost = APILocator.getHostAPI().find(ident.getHostId(), APILocator.getUserAPI().getSystemUser(), false);
 			
 			contentletMap.put(ESMappingConstants.TITLE, contentlet.getTitle());
+			contentletMap.put(ESMappingConstants.TITLE_IMAGE, contentlet.getTitleImage());
 			contentletMap.put(ESMappingConstants.STRUCTURE_NAME, st.getVelocityVarName()); // marked for DEPRECATION
 			contentletMap.put(ESMappingConstants.CONTENT_TYPE, st.getVelocityVarName());
 			contentletMap.put(ESMappingConstants.STRUCTURE_TYPE, st.getStructureType()); // marked for DEPRECATION

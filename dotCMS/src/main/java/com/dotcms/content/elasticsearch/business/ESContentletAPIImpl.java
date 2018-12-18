@@ -3905,7 +3905,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             throw new DotSecurityException("User: " + (user != null ? user.getUserId() : "Unknown")
                     + " cannot read Contentlet: " + (contentlet != null ? contentlet.getIdentifier() : "Unknown"));
         }
-        String returnValue = (String) contentlet.getMap().get("__DOTNAME__");
+        String returnValue = (String) contentlet.getMap().get(Contentlet.DOT_NAME_KEY);
         if(UtilMethods.isSet(returnValue)){
             return returnValue;
         }
@@ -3921,7 +3921,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     returnValue = contentlet.getMap().get(fld.getVelocityVarName()).toString();
                     returnValue = returnValue.length() > 250 ? returnValue.substring(0,250) : returnValue;
                     if(UtilMethods.isSet(returnValue)){
-                        contentlet.setStringProperty("__DOTNAME__", returnValue);
+                        contentlet.setStringProperty(Contentlet.DOT_NAME_KEY, returnValue);
                         return returnValue;
                     }
                 }

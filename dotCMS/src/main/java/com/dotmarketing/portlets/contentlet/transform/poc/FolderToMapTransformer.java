@@ -1,4 +1,4 @@
-package com.dotmarketing.portlets.contentlet.transform;
+package com.dotmarketing.portlets.contentlet.transform.poc;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -14,8 +14,6 @@ import com.liferay.portal.model.User;
  */
 public class FolderToMapTransformer implements FieldsToMapTransformer {
     final Map<String, Object> mapOfMaps;
-
-
 
     public FolderToMapTransformer(final Contentlet con, final User user) {
         if (con.getInode() == null || con.getIdentifier()==null) {
