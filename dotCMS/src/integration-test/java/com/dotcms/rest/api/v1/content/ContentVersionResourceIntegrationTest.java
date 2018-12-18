@@ -66,7 +66,7 @@ public class ContentVersionResourceIntegrationTest extends BaseWorkflowIntegrati
     public void test_Find_All_Expect_OK() throws DotDataException, DotSecurityException {
         final String identifier = "f4a02846-7ca4-4e08-bf07-a61366bbacbb";
         final HttpServletRequest request = mock(HttpServletRequest.class);
-        final Response response = versionResource.findAllVersions(request, identifier, 2);
+        final Response response = versionResource.findVersions(request, identifier, "0",2);
 
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
 
@@ -88,7 +88,7 @@ public class ContentVersionResourceIntegrationTest extends BaseWorkflowIntegrati
     @Test
     public void test_Find_All_Expect_404() throws DotDataException, DotSecurityException {
         final HttpServletRequest request = mock(HttpServletRequest.class);
-        final Response response = versionResource.findAllVersions(request, "nonsense", 2);
+        final Response response = versionResource.findVersions(request, "nonsense", "", 2);
         assertEquals(Status.NOT_FOUND.getStatusCode(), response.getStatus());
     }
 
@@ -98,15 +98,17 @@ public class ContentVersionResourceIntegrationTest extends BaseWorkflowIntegrati
         final String identifier = "a9f30020-54ef-494e-92ed-645e757171c2";
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final Response response = versionResource
-                .findAllVersionsGroupByLang(request, identifier, 2);
+                .findVersions(request, identifier, "1",2);
 
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
 
         final ResponseEntityView entityView = ResponseEntityView.class.cast(response.getEntity());
-        final Map versionsByLangMap = Map.class.cast(entityView.getEntity());
-        assertNotNull(versionsByLangMap);
-        final List<Map<String, Object>> enVersions = (List<Map<String, Object>>) versionsByLangMap.get("en-us");
-        final List<Map<String, Object>> esVersions = (List<Map<String, Object>>) versionsByLangMap.get("es-es");
+        final Map versionsMap = Map.class.cast(entityView.getEntity());
+        assertNotNull(versionsMap);
+        final Map<String,Object> versions = (Map<String,Object>)versionsMap.get("versions");
+
+        final List<Map<String, Object>> enVersions = (List<Map<String, Object>>) versions.get("en-us");
+        final List<Map<String, Object>> esVersions = (List<Map<String, Object>>) versions.get("es-es");
         assertFalse(enVersions.isEmpty());
         assertFalse(esVersions.isEmpty());
 
@@ -135,9 +137,9 @@ public class ContentVersionResourceIntegrationTest extends BaseWorkflowIntegrati
 
     @SuppressWarnings("unchecked")
     @Test
-    public void test_Find_All_By_Lang_Expect_404() {
+    public void test_Find_All_By_Lang_Expect_404()  throws DotDataException, DotSecurityException{
         final HttpServletRequest request = mock(HttpServletRequest.class);
-        final Response response = versionResource.findAllVersionsGroupByLang(request, "nonsense", 2);
+        final Response response = versionResource.findVersions(request, "nonsense", "1",2);
         assertEquals(Status.NOT_FOUND.getStatusCode(), response.getStatus());
     }
 

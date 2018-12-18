@@ -39,6 +39,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
+import org.apache.commons.lang3.BooleanUtils;
 
 @Path("/v1/content/versions")
 public class ContentVersionResource {
@@ -55,7 +56,6 @@ public class ContentVersionResource {
     private final ContentletAPI contentletAPI;
     private final LanguageAPI languageAPI;
 
-
     public ContentVersionResource() {
         this(APILocator.getContentletAPI(), APILocator.getLanguageAPI(), new WebResource());
     }
@@ -68,21 +68,25 @@ public class ContentVersionResource {
         this.webResource = webResource;
     }
 
-
     @GET
     @JSONP
     @NoCache
-    @Path("/all/{identifier}")
+    @Path("/")
     @Produces(MediaType.APPLICATION_JSON + ";charset=UTF-8")
-    public Response findAllVersions(@Context final HttpServletRequest request,
-            @PathParam("identifier") final String identifier, @QueryParam("depth") final int limit)
+    public Response findVersions(@Context final HttpServletRequest request,
+            @QueryParam("identifier") final String identifier, @QueryParam("groupByLang")final String groupByLangParam, @QueryParam("limit") final int limit)
             throws DotDataException, DotStateException, DotSecurityException {
 
+        final boolean groupByLang = "1".equals(groupByLangParam) || BooleanUtils.toBoolean(groupByLangParam);
         final int showing = limit > MAX ? MAX : limit < MIN ? MIN : limit;
         final InitDataObject auth = webResource.init(true, request, true);
 
         final User user = auth.getUser();
         try {
+
+            Logger.debug(this,
+                    "Getting versions for identifier: " + identifier + " grouping by language: '" + BooleanUtils.toStringYesNo(groupByLang)+ "' and limit: "+limit);
+
             final ShortyId shorty = APILocator
                     .getShortyAPI().getShorty(identifier)
                     .orElseThrow(() -> new DoesNotExistException(
@@ -93,14 +97,33 @@ public class ContentVersionResource {
                             .find(shorty.longId)
                             : APILocator.getIdentifierAPI().findFromInode(shorty.longId);
 
-            final List<Map<String, Object>> versions = contentletAPI
-                    .findAllVersions(identifierObj, user, false).stream()
-                    .limit(showing)
-                    .map(this::contentletToMap).collect(Collectors.toList());
+           ResponseEntityView responseEntityView = null;
+           if(groupByLang){
+               final Map<String, List<Map<String, Object>>> versionsByLang = new HashMap<>();
+               final Map<Long, List<Contentlet>> contentByLangMap = contentletAPI
+                       .findAllVersions(identifierObj, user, false).stream()
+                       .limit(showing)
+                       .collect(Collectors.groupingBy(Contentlet::getLanguageId));
+               contentByLangMap.forEach((langId, contentlets) -> {
+                   final Language lang = languageAPI.getLanguage(langId);
+                   final List<Map<String, Object>> asMaps = contentlets.stream()
+                           .map(this::contentletToMap).collect(Collectors.toList());
+                   versionsByLang.put(lang.toString(), asMaps);
+               });
 
-            final Response.ResponseBuilder responseBuilder = Response
-                    .ok(new ResponseEntityView(ImmutableMap.of("versions", versions)));
-            return responseBuilder.build();
+               responseEntityView = new ResponseEntityView(ImmutableMap.of("versions", versionsByLang));
+
+           } else {
+               final List<Map<String, Object>> versions = contentletAPI
+                       .findAllVersions(identifierObj, user, false).stream()
+                       .limit(showing)
+                       .map(this::contentletToMap).collect(Collectors.toList());
+
+               responseEntityView = new ResponseEntityView(ImmutableMap.of("versions", versions));
+           }
+
+            return Response.ok(responseEntityView).build();
+
         } catch (Exception ex) {
             Logger.error(this.getClass(),
                     "Exception on method findAllVersions with exception message: " + ex
@@ -110,57 +133,10 @@ public class ContentVersionResource {
 
     }
 
-
     @GET
     @JSONP
     @NoCache
-    @Path("/allByLang/{identifier}")
-    @Produces(MediaType.APPLICATION_JSON + ";charset=UTF-8")
-    public Response findAllVersionsGroupByLang(@Context final HttpServletRequest request,
-            @PathParam("identifier") final String identifier, @QueryParam("depth") final int limit)
-            throws DotStateException {
-
-        final int showing = limit > MAX ? MAX : limit < MIN ? MIN : limit;
-        final InitDataObject auth = webResource.init(true, request, true);
-        final User user = auth.getUser();
-        try {
-            final ShortyId shorty = APILocator
-                    .getShortyAPI().getShorty(identifier)
-                    .orElseThrow(() -> new DoesNotExistException(
-                            getFormattedMessage(user.getLocale(), FIND_BY_ID_ERROR_MESSAGE_KEY,
-                                    identifier)));
-            final Identifier identifierObj =
-                    (shorty.type == ShortType.IDENTIFIER) ? APILocator.getIdentifierAPI()
-                            .find(shorty.longId)
-                            : APILocator.getIdentifierAPI().findFromInode(shorty.longId);
-
-            final Map<String, List<Map<String, Object>>> versions = new HashMap<>();
-            final Map<Long, List<Contentlet>> contentByLangMap = contentletAPI
-                    .findAllVersions(identifierObj, user, false).stream()
-                    .limit(showing)
-                    .collect(Collectors.groupingBy(Contentlet::getLanguageId));
-            contentByLangMap.forEach((langId, contentlets) -> {
-                final Language lang = languageAPI.getLanguage(langId);
-                final List<Map<String, Object>> asMaps = contentlets.stream()
-                .map(this::contentletToMap).collect(Collectors.toList());
-                versions.put(lang.toString(), asMaps);
-            });
-
-            final Response.ResponseBuilder responseBuilder = Response
-                    .ok(new ResponseEntityView(versions));
-            return responseBuilder.build();
-        } catch (Exception ex) {
-            Logger.error(this.getClass(),
-                    "Exception on method findAllVersionsByLang with exception message: " + ex
-                            .getMessage(), ex);
-            return ResponseUtil.mapExceptionResponse(ex);
-        }
-    }
-
-    @GET
-    @JSONP
-    @NoCache
-    @Path("/version/{inode}")
+    @Path("/{inode}")
     @Produces(MediaType.APPLICATION_JSON + ";charset=UTF-8")
     public Response findByInode(@Context final HttpServletRequest request,
             @PathParam("inode") final String inode)
@@ -168,6 +144,8 @@ public class ContentVersionResource {
         final InitDataObject auth = webResource.init(true, request, true);
         final User user = auth.getUser();
         try {
+            Logger.debug(this,
+                    "Getting version for inode: " + inode );
             final ShortyId shorty = APILocator
                     .getShortyAPI().getShorty(inode)
                     .orElseThrow(() -> new DoesNotExistException(getFormattedMessage(user.getLocale(),
@@ -197,7 +175,6 @@ public class ContentVersionResource {
 
     }
 
-
     @GET
     @JSONP
     @NoCache
@@ -210,6 +187,10 @@ public class ContentVersionResource {
         final InitDataObject auth = webResource.init(true, request, true);
         final User user = auth.getUser();
         try {
+
+            Logger.debug(this,
+                    "Building diff between version '" + inode1 + "' and '" + inode2 + "'"  );
+
             final ShortyId shorty1 = APILocator
                     .getShortyAPI().getShorty(inode1)
                     .orElseThrow(() -> new DoesNotExistException(

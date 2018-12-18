@@ -4,6 +4,7 @@ import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.rest.ContentHelper;
+import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -30,11 +31,13 @@ public class ContentletToMapTransformer {
                     Contentlet.REVIEW_INTERNAL_KEY, Contentlet.DISABLED_WYSIWYG_KEY, Contentlet.DOT_NAME_KEY
             );
 
-    private ContentHelper contentHelper;
-    private UserAPI userAPI;
+    private final ContentHelper contentHelper;
+    private final UserAPI userAPI;
     private final List<Contentlet> contentlets;
 
     /**
+    *
+    *
      * Bulk transform constructor
      * @param contentlets input
      */
@@ -68,7 +71,7 @@ public class ContentletToMapTransformer {
      * @return List of transformed Maps
      */
     public List<Map<String, Object>> toMaps() {
-        return contentlets.stream().map(this::copy).map(this::transform).collect(Collectors.toList());
+        return contentlets.stream().map(this::copy).map(this::transform).collect(CollectionsUtils.toImmutableList());
     }
 
     /**
