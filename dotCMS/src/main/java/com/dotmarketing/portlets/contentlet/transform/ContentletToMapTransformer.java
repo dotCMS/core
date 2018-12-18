@@ -12,7 +12,6 @@ import com.dotmarketing.util.Logger;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.model.User;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -106,13 +105,10 @@ public class ContentletToMapTransformer {
      * @return Contentlet returns a contentlet, if there is something to add will create a new instance based on the current one in the parameter and the new attributes
      */
     public List<Contentlet> hydrate() {
-        final List<Contentlet> hydrated = new ArrayList<>(contentlets.size());
-        for(Contentlet contentlet:contentlets){
-          final Contentlet newContentlet = copy(contentlet);
-          newContentlet.getMap().putAll(transform(newContentlet));
-          hydrated.add(clean(newContentlet));
-        }
-        return hydrated;
+        return contentlets.stream().map(this::copy).map(newContentlet -> {
+            newContentlet.getMap().putAll(transform(newContentlet));
+            return clean(newContentlet);
+        }).collect(Collectors.toList());
     }
 
     /**
