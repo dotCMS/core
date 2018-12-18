@@ -239,9 +239,15 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 	public Container getWorkingContainerById(final String identifierParameter, final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 
         final  Identifier  identifier = APILocator.getIdentifierAPI().find(identifierParameter);
-        return this.isContainerFile(identifier)?
-                this.getWorkingContainerByFolderPath(identifier.getParentPath(), identifier.getHostId(), user, respectFrontendRoles):
-                this.getWorkingVersionInfoContainerById(identifierParameter, user, respectFrontendRoles);
+
+        if (null != identifier && UtilMethods.isSet(identifier.getId())) {
+
+			return this.isContainerFile(identifier) ?
+					this.getWorkingContainerByFolderPath(identifier.getParentPath(), identifier.getHostId(), user, respectFrontendRoles) :
+					this.getWorkingVersionInfoContainerById(identifierParameter, user, respectFrontendRoles);
+		}
+
+        return null;
 	}
 
     private boolean isContainerFile(final Identifier identifier) {
@@ -290,10 +296,15 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 	public Container getLiveContainerById(String id, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 
 		final  Identifier  identifier = APILocator.getIdentifierAPI().find(id);
-		return this.isContainerFile(identifier)?
-				this.getLiveContainerByFolderPath(identifier.getParentPath(),
-						this.hostAPI.find(identifier.getHostId(), user, respectFrontendRoles), user, respectFrontendRoles):
-				this.getLiveVersionInfoContainerById(id, user, respectFrontendRoles);
+
+		if (null != identifier && UtilMethods.isSet(identifier.getId())) {
+			return this.isContainerFile(identifier) ?
+					this.getLiveContainerByFolderPath(identifier.getParentPath(),
+							this.hostAPI.find(identifier.getHostId(), user, respectFrontendRoles), user, respectFrontendRoles) :
+					this.getLiveVersionInfoContainerById(id, user, respectFrontendRoles);
+		}
+
+		return null;
 	}
 
 	@CloseDBIfOpened
