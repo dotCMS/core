@@ -176,7 +176,6 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
      * @memberof ContentTypeFieldsDropZoneComponent
      */
     saveFieldsHandler(fieldToSave: ContentTypeField): void {
-        console.log('saveFields44')
         let fields: ContentTypeField[];
 
         if (fieldToSave.id) {
@@ -210,7 +209,6 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
      * @memberof ContentTypeFieldsDropZoneComponent
      */
     removeFieldsWithoutId(): void {
-        console.log('hide dialog');
         const fieldRows: any = this.fieldRows;
 
         // TODO needs an improvement for performance reasons
