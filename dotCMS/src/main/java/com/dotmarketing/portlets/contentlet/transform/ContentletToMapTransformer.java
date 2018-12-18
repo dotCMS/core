@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class ContentletToMapTransformer {
 
@@ -68,13 +69,7 @@ public class ContentletToMapTransformer {
      * @return List of transformed Maps
      */
     public List<Map<String, Object>> toMaps() {
-       final List<Map<String, Object>> transformed = new ArrayList<>(contentlets.size());
-        for(final Contentlet contentlet:contentlets){
-            transformed.add(
-               transform(copy(contentlet))
-            );
-        }
-        return transformed;
+        return contentlets.stream().map(this::copy).map(this::transform).collect(Collectors.toList());
     }
 
     /**
