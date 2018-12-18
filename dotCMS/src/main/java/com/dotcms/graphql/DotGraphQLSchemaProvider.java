@@ -1,8 +1,10 @@
 package com.dotcms.graphql;
 
+import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.graphql.datafetcher.ContentletDataFetcher;
 import com.dotcms.graphql.datafetcher.FieldDataFetcher;
+import com.dotcms.graphql.datafetcher.RelationshipFieldDataFetcher;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -65,9 +67,6 @@ public class DotGraphQLSchemaProvider implements GraphQLSchemaProvider {
         try {
 
 
-            // typeWiring for Employee
-            final ContentType employeeType = APILocator.getContentTypeAPI(APILocator.systemUser()).find("Employee");
-
             final RuntimeWiring.Builder builder = newRuntimeWiring();
             builder.type("Query", typeWiring ->
                 typeWiring.dataFetcher("search", new ContentletDataFetcher()));
@@ -81,8 +80,18 @@ public class DotGraphQLSchemaProvider implements GraphQLSchemaProvider {
             builder.type("Content", typeWiring ->
                 typeWiring.dataFetcher("title", new FieldDataFetcher()));
 
+            // typeWiring for Employee
+            final ContentType employeeType = APILocator.getContentTypeAPI(APILocator.systemUser()).find("Employee");
             employeeType.fields().stream().forEach((field) -> {
-                builder.type("Employee", typeWiring
+                builder.type(employeeType.variable(), typeWiring
+                    -> typeWiring.dataFetcher(field.variable(), new FieldDataFetcher()));
+            } );
+
+            // typeWiring for Youtube
+            final ContentType youtubeType = APILocator.getContentTypeAPI(APILocator.systemUser()).find("Youtube");
+
+            youtubeType.fields().stream().forEach((field) -> {
+                builder.type(youtubeType.variable(), typeWiring
                     -> typeWiring.dataFetcher(field.variable(), new FieldDataFetcher()));
             } );
 
@@ -90,8 +99,14 @@ public class DotGraphQLSchemaProvider implements GraphQLSchemaProvider {
             final ContentType newsType = APILocator.getContentTypeAPI(APILocator.systemUser()).find("News");
 
             newsType.fields().stream().forEach((field) -> {
-                builder.type("News", typeWiring
-                    -> typeWiring.dataFetcher(field.variable(), new FieldDataFetcher()));
+
+                if(field instanceof RelationshipField) {
+                    builder.type("News", typeWiring
+                        -> typeWiring.dataFetcher(field.variable(), new RelationshipFieldDataFetcher()));
+                } else {
+                    builder.type("News", typeWiring
+                        -> typeWiring.dataFetcher(field.variable(), new FieldDataFetcher()));
+                }
             } );
 
 
