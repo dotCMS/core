@@ -6,6 +6,7 @@ import { AutoCompleteModule } from 'primeng/primeng';
 import { FormsModule } from '@angular/forms';
 import { DotDirectivesModule } from '@shared/dot-directives.module';
 import { MdInputTextModule } from '@directives/md-inputtext/md-input-text.module';
+import { DotFieldHelperModule } from '@components/dot-field-helper/dot-field-helper.module';
 
 @NgModule({
     imports: [
@@ -13,7 +14,8 @@ import { MdInputTextModule } from '@directives/md-inputtext/md-input-text.module
         AutoCompleteModule,
         FormsModule,
         DotDirectivesModule,
-        MdInputTextModule
+        MdInputTextModule,
+        DotFieldHelperModule
     ],
     declarations: [DotPageSelectorComponent],
     providers: [DotPageSelectorService],

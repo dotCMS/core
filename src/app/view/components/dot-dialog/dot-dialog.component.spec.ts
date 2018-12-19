@@ -264,7 +264,7 @@ describe('DotDialogComponent', () => {
                         });
                     });
 
-                    it('should trigger accept action on Enter', () => {
+                    it('should trigger accept action on Enter and unbind events', () => {
                         hostComponent.actions = {
                             ...hostComponent.actions,
                             accept: {
@@ -277,6 +277,10 @@ describe('DotDialogComponent', () => {
 
                         hostFixture.whenStable().then(() => {
                             expect(component.visible).toBe(true);
+
+                            dispatchKeydownEvent('Enter');
+
+                            hostFixture.detectChanges();
 
                             dispatchKeydownEvent('Enter');
 

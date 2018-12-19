@@ -45,8 +45,8 @@
             }
         }
 
-        &.ng-dirty.ng-invalid.ng-touched,
-        &.ng-invalid.ng-touched {
+        &.ng-dirty.ng-invalid.ng-dirty,
+        &.ng-invalid.ng-dirty {
             & ~ label {
                 color: $red;
             }

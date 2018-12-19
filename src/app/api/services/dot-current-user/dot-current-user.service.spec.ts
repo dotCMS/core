@@ -37,7 +37,7 @@ describe('DotCurrentUserService', () => {
             );
 
             tick();
-            expect(this.lastConnection.request.url).toContain('api/v1/users/current');
+            expect(this.lastConnection.request.url).toContain('v1/users/current');
             expect(currentUser).toEqual(mockCurrentUserResponse);
         })
     );

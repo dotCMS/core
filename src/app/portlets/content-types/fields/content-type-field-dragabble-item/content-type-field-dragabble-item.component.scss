@@ -19,6 +19,16 @@
     }
 }
 
+dot-icon-button-tooltip /deep/ .material-icons,
+dot-icon {
+    color: $gray;
+}
+
+dot-icon {
+    margin-right: $basic-padding;
+}
+
+
 .field__properties,
 .field__icon {
     display: flex;
@@ -31,8 +41,12 @@
 }
 
 .field__name {
-    color: black;
-    line-height: $basic-padding * 3;
+    margin-right: $basic-padding / 2;
+}
+
+.field__name-inner {
+    align-items: center;
+    display: flex;
 }
 
 .field__name-wrapper {
@@ -57,8 +71,4 @@
     & > * {
         margin: 0 $basic-padding / 4;
     }
-}
-
-dot-icon {
-    margin-right: $basic-padding;
 }

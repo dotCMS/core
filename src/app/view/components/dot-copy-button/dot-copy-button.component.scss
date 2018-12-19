@@ -1,0 +1,33 @@
+@import "variables";
+
+:host {
+    position: relative;
+    display: inline-flex;
+    justify-content: center;
+    font-weight: normal;
+}
+
+.tooltip {
+    background-color: $gray;
+    border-radius: $border-radius;
+    bottom: -1.75rem;
+    color: $white;
+    font-size: $body-font-size-base;
+    line-height: 1.5;
+    opacity: 0;
+    padding: 0 $basic-padding / 2;
+    position: absolute;
+    transition: opacity 100ms ease;
+    white-space: nowrap;
+}
+
+.label {
+    cursor: pointer;
+}
+
+.label:hover,
+dot-icon-button:hover {
+    & + .tooltip {
+        opacity: 1;
+    }
+}

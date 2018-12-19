@@ -2,6 +2,7 @@ import { ContentTypeFieldsAddRowComponent } from './content-type-fields-add-row.
 import { DotMessageService } from '@services/dot-messages-service';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { TooltipModule } from 'primeng/primeng';
+import { SplitButtonModule } from 'primeng/splitbutton';
 import { ComponentFixture, fakeAsync, tick } from '@angular/core/testing';
 import { DOTTestBed } from '../../../../test/dot-test-bed';
 import { DebugElement } from '@angular/core';
@@ -11,19 +12,23 @@ import { TestHotkeysMock } from '../../../../test/hotkeys-service.mock';
 import { MockDotMessageService } from '../../../../test/dot-message-service.mock';
 import { DotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { DotEventsService } from '@services/dot-events/dot-events.service';
+import { RouterTestingModule } from '@angular/router/testing';
 
 describe('ContentTypeFieldsAddRowComponent', () => {
     let comp: ContentTypeFieldsAddRowComponent;
     let fixture: ComponentFixture<ContentTypeFieldsAddRowComponent>;
     let de: DebugElement;
     let testHotKeysMock: TestHotkeysMock;
+    let dotEventsService: DotEventsService;
 
     const messageServiceMock = new MockDotMessageService({
         'contenttypes.content.add_rows': 'Add Rows',
         'contenttypes.content.one_column': 'One column',
         'contenttypes.content.two_columns': 'Second column',
         'contenttypes.content.three_columns': 'Three columns',
-        'contenttypes.content.four_columns': 'Four columns'
+        'contenttypes.content.four_columns': 'Four columns',
+        'contenttypes.dropzone.rows.tab_divider': 'Add Tab',
+        'contenttypes.dropzone.rows.add': 'Add Row'
     });
 
     beforeEach(() => {
@@ -31,7 +36,7 @@ describe('ContentTypeFieldsAddRowComponent', () => {
 
         DOTTestBed.configureTestingModule({
             declarations: [ContentTypeFieldsAddRowComponent],
-            imports: [TooltipModule, BrowserAnimationsModule, DotIconButtonModule],
+            imports: [TooltipModule, BrowserAnimationsModule, DotIconButtonModule, SplitButtonModule, RouterTestingModule],
             providers: [
                 { provide: HotkeysService, useValue: testHotKeysMock },
                 { provide: DotMessageService, useValue: messageServiceMock }
@@ -41,6 +46,7 @@ describe('ContentTypeFieldsAddRowComponent', () => {
         fixture = DOTTestBed.createComponent(ContentTypeFieldsAddRowComponent);
         de = fixture.debugElement;
         comp = fixture.componentInstance;
+        dotEventsService = fixture.debugElement.injector.get(DotEventsService);
     });
 
     it('should render disabled input', () => {
@@ -66,9 +72,15 @@ describe('ContentTypeFieldsAddRowComponent', () => {
         comp.rowState = 'add';
         fixture.detectChanges();
         const addRowContainer = de.query(By.css('.dot-add-rows-button__container'));
-        const buttonElement = de.query(By.css('button'));
+        const buttonsElement = de.queryAll(By.css('button'));
         expect(addRowContainer.nativeElement.classList.contains('dot-add-rows__add')).toEqual(true);
-        expect(buttonElement).toBeTruthy();
+        expect(buttonsElement[0].nativeElement.textContent).toBe('Add Row');
+        buttonsElement[1].nativeElement.click();
+        fixture.detectChanges();
+        const splitOptionsBtn = de.queryAll(By.css('p-splitbutton .ui-menuitem-text'));
+        expect(splitOptionsBtn.length).toBe(2);
+        expect(splitOptionsBtn[0].nativeElement.innerText).toBe('Add Row');
+        expect(splitOptionsBtn[1].nativeElement.innerText).toBe('Add Tab');
     });
 
     it('should display row selection after click on Add Rows button and focus the first column selection', () => {
@@ -81,6 +93,16 @@ describe('ContentTypeFieldsAddRowComponent', () => {
         const firstColumRowContainer = de.query(By.css('.dot-add-rows-columns-list')).children[0];
         expect(addRowContainer).toBeTruthy();
         expect(firstColumRowContainer.nativeElement.classList.contains('active')).toEqual(true);
+    });
+
+    it('should bind send notification after click on Add Tab button', () => {
+        spyOn(dotEventsService, 'notify');
+        fixture.detectChanges();
+        de.queryAll(By.css('button'))[1].nativeElement.click();
+        fixture.detectChanges();
+        de.queryAll(By.css('p-splitbutton .ui-menuitem-link'))[1].nativeElement.click();
+        fixture.detectChanges();
+        expect(dotEventsService.notify).toHaveBeenCalledWith('add-tab-divider');
     });
 
     it('should bind keyboard events after click on Add Rows button', () => {
@@ -212,7 +234,6 @@ describe('ContentTypeFieldsAddRowComponent', () => {
         'should call setColumnSelect when "add-row" event received',
         fakeAsync(() => {
             fixture.detectChanges();
-            const dotEventsService = fixture.debugElement.injector.get(DotEventsService);
             spyOn(comp, 'setColumnSelect');
             dotEventsService.notify('add-row');
             tick();

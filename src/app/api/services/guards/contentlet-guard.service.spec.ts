@@ -4,10 +4,10 @@ import { Injectable } from '@angular/core';
 import { DotNavigationService } from '@components/dot-navigation/services/dot-navigation.service';
 import { ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
 import { ContentletGuardService } from './contentlet-guard.service';
-import { DotContentletService } from '../dot-contentlet/dot-contentlet.service';
+import { DotContentTypeService } from '@services/dot-content-type/dot-content-type.service';
 
 @Injectable()
-class MockDotContentletService {
+class MockDotContentTypeService {
     isContentTypeInMenu() {}
 }
 
@@ -19,7 +19,7 @@ class MockDotNavigationService {
 describe('ValidContentletGuardService', () => {
     let contentletGuardService: ContentletGuardService;
     let dotNavigationService: DotNavigationService;
-    let dotContentletService: DotContentletService;
+    let dotContentletService: DotContentTypeService;
     let mockRouterStateSnapshot: RouterStateSnapshot;
     let mockActivatedRouteSnapshot: ActivatedRouteSnapshot;
 
@@ -28,8 +28,8 @@ describe('ValidContentletGuardService', () => {
             providers: [
                 ContentletGuardService,
                 {
-                    provide: DotContentletService,
-                    useClass: MockDotContentletService
+                    provide: DotContentTypeService,
+                    useClass: MockDotContentTypeService
                 },
                 {
                     provide: DotNavigationService,
@@ -39,7 +39,7 @@ describe('ValidContentletGuardService', () => {
         });
 
         contentletGuardService = TestBed.get(ContentletGuardService);
-        dotContentletService = TestBed.get(DotContentletService);
+        dotContentletService = TestBed.get(DotContentTypeService);
         dotNavigationService = TestBed.get(DotNavigationService);
         mockRouterStateSnapshot = jasmine.createSpyObj<RouterStateSnapshot>('RouterStateSnapshot', [
             'toString'

@@ -81,6 +81,7 @@ export class DotDialogComponent implements OnChanges {
     acceptAction(): void {
         if (this.actions && this.canTriggerAction(this.actions.accept)) {
             this.actions.accept.action();
+            this.unBindEvents();
         }
     }
 

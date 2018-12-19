@@ -35,6 +35,13 @@ class MockDotMainNavComponent {
     collapsed: boolean;
 }
 
+@Component({
+    selector: 'dot-message-display',
+    template: ''
+})
+class MockDotMessageDisplayComponent {
+}
+
 describe('MainComponentLegacyComponent', () => {
     let fixture: ComponentFixture<MainComponentLegacyComponent>;
     let de: DebugElement;
@@ -43,7 +50,9 @@ describe('MainComponentLegacyComponent', () => {
 
     beforeEach(async(() => {
         DOTTestBed.configureTestingModule({
-            imports: [RouterTestingModule, DotContentletEditorModule],
+            imports: [
+                RouterTestingModule,
+                DotContentletEditorModule],
             providers: [
                 {
                     provide: LoginService,
@@ -55,7 +64,8 @@ describe('MainComponentLegacyComponent', () => {
                 MainComponentLegacyComponent,
                 MockDotDialogComponent,
                 MockDotMainNavComponent,
-                MockDotToolbarComponent
+                MockDotToolbarComponent,
+                MockDotMessageDisplayComponent
             ]
         }).compileComponents();
     }));

@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output, AfterViewInit, OnInit } from '@angular/core';
 
 import { I18nService } from './services/system/locale/I18n';
 import { ServerSideTypeModel } from './services/ServerSideFieldModel';
@@ -42,7 +42,7 @@ import { LoggerService } from 'dotcms-js';
   </div>
 </div>`
 })
-export class RuleActionComponent {
+export class RuleActionComponent implements AfterViewInit, OnInit {
     @Input() action: ActionModel;
     @Input() index = 0;
     @Input() actionTypePlaceholder: string;
@@ -53,20 +53,11 @@ export class RuleActionComponent {
     updateRuleActionParameter: EventEmitter<RuleActionActionEvent> = new EventEmitter(false);
     @Output() deleteRuleAction: EventEmitter<RuleActionActionEvent> = new EventEmitter(false);
 
-    @Input() typeDropdown: any;
+    typeDropdown: any;
 
     constructor(private _resources: I18nService, private loggerService: LoggerService) {}
 
     ngOnChanges(change): void {
-        if (change.ruleActionTypes && !this.typeDropdown) {
-            this.typeDropdown = {
-                options: []
-            };
-            Object.keys(this.ruleActionTypes).forEach(key => {
-                const type = this.ruleActionTypes[key];
-                this.typeDropdown.options.push(type._opt);
-            });
-        }
         if (change.action) {
             if (this.typeDropdown && this.action.type) {
                 if (this.action.type.key !== 'NoSelection') {
@@ -74,6 +65,19 @@ export class RuleActionComponent {
                 }
             }
         }
+    }
+
+    ngOnInit(): void {
+        this.typeDropdown = {
+            options: []
+        };
+    }
+
+    ngAfterViewInit(): void {
+        Object.keys(this.ruleActionTypes).forEach(key => {
+            const type = this.ruleActionTypes[key];
+            this.typeDropdown.options.push(type._opt);
+        });
     }
 
     onTypeChange(type: string): void {

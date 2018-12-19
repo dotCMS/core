@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { DotMessageService } from '@services/dot-messages-service';
 import { FieldProperty } from '../field-properties.model';
 import { FormGroup } from '@angular/forms';
+import { take } from 'rxjs/operators';
 
 @Component({
     selector: 'dot-regex-check-property',
@@ -34,6 +35,7 @@ export class RegexCheckPropertyComponent implements OnInit {
                 'contenttypes.field.properties.validation_regex.values.url_pattern',
                 'contenttypes.field.properties.validation_regex.values.no_html'
             ])
+            .pipe(take(1))
             .subscribe((res) => {
                 this.i18nMessages = res;
 

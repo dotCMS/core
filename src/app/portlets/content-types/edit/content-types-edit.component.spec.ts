@@ -9,7 +9,7 @@ import { DebugElement, Component, Input, Output, EventEmitter } from '@angular/c
 import { ContentTypeField } from '../fields';
 import { FieldService } from '../fields/service';
 import { Location } from '@angular/common';
-import { LoginService } from 'dotcms-js';
+import { LoginService, SiteService } from 'dotcms-js';
 import { LoginServiceMock } from '../../../test/login-service.mock';
 import { RouterTestingModule } from '@angular/router/testing';
 import { async } from '@angular/core/testing';
@@ -29,6 +29,10 @@ import { DotEventsService } from '@services/dot-events/dot-events.service';
 import { ContentType } from '@portlets/content-types/shared/content-type.model';
 import { MenuItem } from 'primeng/primeng';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
+import { DotEditContentTypeCacheService } from '../fields/content-type-fields-properties-form/field-properties/dot-relationships-property/services/dot-edit-content-type-cache.service';
+import { DotApiLinkModule } from '@components/dot-api-link/dot-api-link.module';
+import { SiteServiceMock } from 'src/app/test/site-service.mock';
+import { DotCopyButtonModule } from '@components/dot-copy-button/dot-copy-button.module';
 
 @Component({
     selector: 'dot-content-type-fields-drop-zone',
@@ -116,12 +120,18 @@ const getConfig = (route) => {
             BrowserAnimationsModule,
             DotIconModule,
             DotIconButtonModule,
-            DotDialogModule
+            DotDialogModule,
+            DotApiLinkModule,
+            DotCopyButtonModule
         ],
         providers: [
             {
                 provide: LoginService,
                 useClass: LoginServiceMock
+            },
+            {
+                provide: SiteService,
+                useClass: SiteServiceMock
             },
             {
                 provide: DotMessageService,
@@ -139,7 +149,8 @@ const getConfig = (route) => {
             FieldService,
             ContentTypesInfoService,
             DotMenuService,
-            Location
+            Location,
+            DotEditContentTypeCacheService
         ]
     };
 };
@@ -333,7 +344,8 @@ describe('ContentTypesEditComponent', () => {
         host: 'host',
         name: 'name',
         owner: 'owner',
-        system: false
+        system: false,
+        variable: 'helloVariable'
     };
 
     const configEditMode = getConfig({
@@ -369,6 +381,26 @@ describe('ContentTypesEditComponent', () => {
             fixture.detectChanges();
             dialog = de.query(By.css('dot-dialog'));
         };
+
+        it('should have api link component', () => {
+            expect(de.query(By.css('dot-api-link')).componentInstance.link).toBe(
+                '/api/v1/contenttype/id/1234567890'
+            );
+        });
+
+        it('should have copy variable button', () => {
+            expect(de.query(By.css('dot-copy-button')).componentInstance.copy).toBe(
+                'helloVariable'
+            );
+        });
+
+        it('should set data, fields and cache', () => {
+            expect(comp.data).toBe(fakeContentType);
+            expect(comp.fields).toBe(fakeContentType.fields);
+
+            const dotEditContentTypeCacheService = de.injector.get(DotEditContentTypeCacheService);
+            expect(dotEditContentTypeCacheService.get()).toEqual(fakeContentType);
+        });
 
         it('should have dot-content-type-layout', () => {
             const contentTypeLayout = de.query(By.css('dot-content-type-layout'));

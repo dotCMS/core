@@ -71,7 +71,7 @@ export class LoginContainerComponent {
                 },
                 (error: any) => {
                     if (this.isBadRequestOrUnathorized(error.status)) {
-                        this.message = JSON.parse(error._body).errors[0].message;
+                        this.message = error.bodyJsonObject.errors[0].message;
                     } else {
                         this.loggerService.debug(error);
                     }

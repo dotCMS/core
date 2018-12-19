@@ -1,4 +1,4 @@
-<form [formGroup]="form" class="content-type__form" id="content-type-form" novalidate (keyup.enter)="submitForm()">
+<form [formGroup]="form" class="content-type__form" id="content-type-form" novalidate>
     <div class="form__group">
         <span dotMdInputtext [label]="nameFieldLabel | async">
             <input pInputText type="text" id="content-type-form-name" name="name" formControlName="name" tabindex="1" #name dotAutofocus />
@@ -31,16 +31,12 @@
     </div>
     <span class="form__group-hint" *ngIf="!dateVarOptions.length" id="field-dates-hint">{{ dotMessageService.get('contenttypes.form.message.no.date.fields.defined') }}</span>
     <div class="form__group" *ngIf="form.get('detailPage')">
-        <dot-page-selector id="content-type-form-detail-page" formControlName="detailPage" [floatingLabel]="true" [hostIdentifier]="form.get('host').value" tabindex="7" [style]="{'width': '100%'}" label="{{ dotMessageService.get('contenttypes.form.field.detail.page') }}"></dot-page-selector>
+        <dot-page-selector id="content-type-form-detail-page" formControlName="detailPage" [floatingLabel]="true" tabindex="7" [style]="{'width': '100%'}" label="{{ dotMessageService.get('contenttypes.form.field.detail.page') }}"></dot-page-selector>
     </div>
     <div class="form__group" *ngIf="form.get('urlMapPattern')">
-        <dot-icon-button class="content-type-form-url-pattern" icon="help_outline" (click)="hint.toggle($event)"></dot-icon-button>
+        <dot-field-helper [message]="dotMessageService.get('contenttypes.hint.URL.map.pattern.hint1')"></dot-field-helper>
         <span dotMdInputtext [label]="dotMessageService.get('contenttypes.form.label.URL.pattern')">
             <input pInputText type="text" id="content-type-form-url-map-pattern" name="urlMapPattern" formControlName="urlMapPattern" tabindex="8" />
         </span>
     </div>
 </form>
-
-<p-overlayPanel [dismissable]="true" appendTo="body" #hint [style]="{'width':'350px'}">
-    <div [innerHTML]="dotMessageService.get('contenttypes.hint.URL.map.pattern.hint1')"></div>
-</p-overlayPanel>

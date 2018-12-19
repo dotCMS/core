@@ -8,11 +8,11 @@ import {
     FieldRow,
     ContentTypeFieldsAddRowModule,
     FieldTab,
-    FieldDivider,
-    ContentTypeFieldsVariablesComponent
+    FieldDivider
 } from '../';
 import { ReactiveFormsModule } from '@angular/forms';
-import { FieldValidationMessageModule } from '@components/_common/field-validation-message/file-validation-message.module';
+import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
+import { DotActionButtonModule } from '@components/_common/dot-action-button/dot-action-button.module';
 import { DotMessageService } from '@services/dot-messages-service';
 import { LoginService, SocketFactory } from 'dotcms-js';
 import { Router } from '@angular/router';
@@ -28,10 +28,12 @@ import { DotIconButtonModule } from '@components/_common/dot-icon-button/dot-ico
 import { DotIconModule } from '@components/_common/dot-icon/dot-icon.module';
 import { HotkeysService } from 'angular2-hotkeys';
 import { TestHotkeysMock } from '../../../../test/hotkeys-service.mock';
-import { AddVariableFormComponent } from '../content-type-fields-variables/add-variable-form';
 import { DragulaModule, DragulaService } from 'ng2-dragula';
 import * as _ from 'lodash';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
+import { TableModule } from 'primeng/table';
+import { DotContentTypeFieldsVariablesModule } from '../dot-content-type-fields-variables/dot-content-type-fields-variables.module';
+
 @Component({
     selector: 'dot-content-type-fields-row',
     template: ''
@@ -114,9 +116,7 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
 
         DOTTestBed.configureTestingModule({
             declarations: [
-                AddVariableFormComponent,
                 ContentTypeFieldsDropZoneComponent,
-                ContentTypeFieldsVariablesComponent,
                 TestContentTypeFieldsPropertiesFormComponent,
                 TestContentTypeFieldsRowComponent,
                 TestDotContentTypeFieldsTabComponent
@@ -130,11 +130,14 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
                 ]),
                 BrowserAnimationsModule,
                 ContentTypeFieldsAddRowModule,
+                DotContentTypeFieldsVariablesModule,
                 DotDialogModule,
+                DotActionButtonModule,
                 DotIconButtonModule,
                 DotIconModule,
                 DragulaModule,
-                FieldValidationMessageModule,
+                TableModule,
+                DotFieldValidationMessageModule,
                 ReactiveFormsModule
             ],
             providers: [
@@ -301,8 +304,6 @@ describe('Load fields and drag and drop', () => {
         DOTTestBed.configureTestingModule({
             declarations: [
                 ContentTypeFieldsDropZoneComponent,
-                ContentTypeFieldsVariablesComponent,
-                AddVariableFormComponent,
                 TestContentTypeFieldsRowComponent,
                 TestContentTypeFieldsPropertiesFormComponent,
                 TestDotContentTypeFieldsTabComponent,
@@ -316,11 +317,14 @@ describe('Load fields and drag and drop', () => {
                     }
                 ]),
                 DragulaModule,
-                FieldValidationMessageModule,
+                DotFieldValidationMessageModule,
+                DotContentTypeFieldsVariablesModule,
                 ReactiveFormsModule,
                 BrowserAnimationsModule,
+                DotActionButtonModule,
                 DotIconModule,
                 DotIconButtonModule,
+                TableModule,
                 ContentTypeFieldsAddRowModule,
                 DotDialogModule
             ],

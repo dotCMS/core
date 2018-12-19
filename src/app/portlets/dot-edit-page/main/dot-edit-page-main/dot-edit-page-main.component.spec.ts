@@ -134,10 +134,12 @@ describe('DotEditPageMainComponent', () => {
         });
 
         dotContentletEditorService.close$.next(true);
-        expect(dotPageStateService.reload).toHaveBeenCalledWith(
-            '/about-us/index',
-            mockDotRenderedPage.page.languageId
-        );
+        expect(dotPageStateService.reload).toHaveBeenCalledWith({
+            url: '/about-us/index',
+            viewAs: {
+                language_id: mockDotRenderedPage.page.languageId
+            }
+        });
     });
 
     describe('handle custom events from contentlet editor', () => {

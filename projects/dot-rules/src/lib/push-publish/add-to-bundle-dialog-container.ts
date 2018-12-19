@@ -1,4 +1,4 @@
-import {Component, ChangeDetectionStrategy, Input, Output, EventEmitter} from '@angular/core';
+import {Component, ChangeDetectionStrategy, Input, Output, EventEmitter, OnChanges} from '@angular/core';
 import {BehaviorSubject} from 'rxjs';
 import {BundleService, IBundle} from '../services/bundle-service';
 
@@ -13,7 +13,8 @@ import {BundleService, IBundle} from '../services/bundle-service';
   (addToBundle)="addToBundle($event)"
   ></cw-add-to-bundle-dialog-component>`
 })
-export class AddToBundleDialogContainer {
+// tslint:disable-next-line:component-class-suffix
+export class AddToBundleDialogContainer implements OnChanges {
   @Input() assetId: string;
   @Input() hidden = false;
 
@@ -21,15 +22,13 @@ export class AddToBundleDialogContainer {
   @Output() cancel: EventEmitter<boolean> = new EventEmitter(false);
 
   errorMessage: BehaviorSubject<string> = new BehaviorSubject(null);
-  bundlesLoaded = false;
 
   constructor(public bundleService: BundleService) {
 
   }
 
   ngOnChanges(change): void {
-    if (change.hidden && !this.hidden && !this.bundlesLoaded) {
-      this.bundlesLoaded = true;
+    if (change.hidden && !this.hidden) {
       this.bundleService.loadBundleStores();
     }
   }

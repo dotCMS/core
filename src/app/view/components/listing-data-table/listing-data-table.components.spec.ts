@@ -1,6 +1,6 @@
 import { of as observableOf, Observable } from 'rxjs';
 import { DotAlertConfirmService } from '@services/dot-alert-confirm/dot-alert-confirm.service';
-import { IconButtonTooltipModule } from '../_common/icon-button-tooltip/icon-button-tooltip.module';
+import { DotIconButtonTooltipModule } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.module';
 import { ActionMenuButtonComponent } from '../_common/action-menu-button/action-menu-button.component';
 import { DotActionButtonComponent } from '../_common/dot-action-button/dot-action-button.component';
 import { By } from '@angular/platform-browser';
@@ -20,6 +20,7 @@ import { DotDataTableAction } from '@models/data-table/dot-data-table-action';
 import { DotMenuModule } from '../_common/dot-menu/dot-menu.module';
 import { DotIconModule } from '../_common/dot-icon/dot-icon.module';
 import { DotIconButtonModule } from '../_common/dot-icon-button/dot-icon-button.module';
+
 
 describe('ListingDataTableComponent', () => {
     let comp: ListingDataTableComponent;
@@ -45,7 +46,7 @@ describe('ListingDataTableComponent', () => {
                 RouterTestingModule.withRoutes([
                     { path: 'test', component: ListingDataTableComponent }
                 ]),
-                IconButtonTooltipModule,
+                DotIconButtonTooltipModule,
                 MenuModule,
                 DotMenuModule,
                 DotIconModule,

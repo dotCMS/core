@@ -59,12 +59,12 @@ const rsrc = {
     selector: 'rule',
     template: `<form [formGroup]="formModel" let rf="ngForm">
   <cw-add-to-bundle-dialog-container
-      [assetId]="rule._id || rule.key"
+      [assetId]="rule.key"
       [hidden]="!showAddToBundleDialog"
       (close)="showAddToBundleDialog = false; showMoreMenu = false"></cw-add-to-bundle-dialog-container>
   <cw-push-publish-dialog-container
       [environmentStores]="environmentStores"
-      [assetId]="rule._id || rule.key"
+      [assetId]="rule.key"
       [hidden]="!showPushPublishDialog"
       (close)="showPushPublishDialog = false; showMoreMenu = false"></cw-push-publish-dialog-container>
   <div class="cw-rule" [class.cw-hidden]="hidden" [class.cw-disabled]="!rule.enabled"
@@ -73,12 +73,12 @@ const rsrc = {
     <div flex="70" layout="row" layout-align="start center" class="cw-header-info" >
       <i flex="none" class="caret icon cw-rule-caret large" [class.right]="!rule._expanded" [class.down]="rule._expanded" aria-hidden="true"></i>
       <div flex="70" layout="column">
-      <cw-input-text class="cw-rule-name-input"
-                     focused="{{rule.key == null}}"
-                     placeholder="{{rsrc('inputs.name.placeholder') | async}}"
-                     formControlName="name"
-                     (click)="$event.stopPropagation()">
-      </cw-input-text>
+          <input  pInputText
+                  class="cw-rule-name-input"
+                  placeholder="{{rsrc('inputs.name.placeholder') | async}}"
+                  formControlName="name"
+                  (click)="$event.stopPropagation()"
+                  dotAutofocus/>
       <div flex="50" [hidden]="!formModel.controls['name'].touched || formModel.controls['name'].valid"
         class="name cw-warn basic label">Name is required
       </div>
@@ -99,7 +99,7 @@ const rsrc = {
     </div>
     <div flex="30" layout="row" layout-align="end center" class="cw-header-actions" >
       <span class="cw-rule-status-text" title="{{statusText()}}">{{statusText(30)}}</span>
-      <p-inputSwitch [(ngModel)]="rule.enabled" (onChange)="setRuleEnabledState($event)" [disabled]="!saved" [ngModelOptions]="{standalone: true}" ></p-inputSwitch>
+      <p-inputSwitch [(ngModel)]="rule.enabled" (onChange)="setRuleEnabledState($event)" [ngModelOptions]="{standalone: true}" ></p-inputSwitch>
       <div class="cw-btn-group">
         <div class="ui basic icon buttons">
           <button class="ui button cw-delete-rule" aria-label="More Actions" (click)="showMoreMenu = !showMoreMenu; $event.stopPropagation()">

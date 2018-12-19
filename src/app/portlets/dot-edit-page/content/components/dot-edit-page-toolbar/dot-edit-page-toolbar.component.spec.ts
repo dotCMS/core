@@ -224,6 +224,16 @@ describe('DotEditPageToolbarComponent', () => {
         );
     });
 
+    it('should have disabled preview button', () => {
+        fixture.componentInstance.pageState.page.canRead = false;
+        fixture.detectChanges();
+
+        const editStateModel = component.states.find((state) => state.label === 'Preview');
+        expect(editStateModel.styleClass).toEqual(
+            'edit-page-toolbar__state-selector-item--disabled'
+        );
+    });
+
     it('should blink page is locked message', () => {
         spyOn(component.pageLockInfo, 'blinkLockMessage');
 

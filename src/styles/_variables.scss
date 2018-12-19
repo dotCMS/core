@@ -15,11 +15,6 @@ $gray: #7e7a86;
 $gray-light: #b3b1b8;
 $gray-bg: #f1f3f4;
 
-$orange: #f3762a;
-$white: #fff;
-$error: #d0021b;
-$red: #cb3927;
-
 $brand-primary: var(--color-main);
 $brand-primary_mod: var(--color-main_mod);
 $brand-primary_rgb: var(--color-main_rgb);
@@ -27,12 +22,21 @@ $brand-secondary: var(--color-sec);
 $brand-secondary_rgb: var(--color-sec_rgb);
 $brand-background: var(--color-background);
 
+$orange: #f3762a;
+$white: #fff;
+$red: #cb3927;
+
+$error: #d0021b;
+$warn: $orange;
+$info: $brand-secondary;
+
 // Basic stuffs
 $border-radius: 2px;
 $basic-padding: 8px;
 $field-height: 36px;
 $field-tiny-height: 28px;
 $field-disabled-opacity: 0.7;
+$icon-button-size: 32px;
 
 // TYPOGRAPHY
 $font-size-xx-large: 24px;
@@ -51,7 +55,7 @@ $md-icon-size-tiny: 14px;
 $md-icon-size-big: 24px;
 
 // ANIMATION
-$basic-speed: 100ms;
+$basic-speed: 150ms;
 
 // LAYOUT
 $basic-padding: 8px;
@@ -98,6 +102,7 @@ $md-shadow-5: 0 10px 20px 0 rgba(0, 0, 0, 0.15);
 // FORMS
 $label-color: rgba($gray-dark, 0.6);
 $label-font-size: $font-size-small;
+$form-field-spacing: $basic-padding * 2;
 
 // CONTENT TYPES
 $content-type-field-height: 74px;

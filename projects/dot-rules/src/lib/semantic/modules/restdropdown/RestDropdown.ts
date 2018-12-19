@@ -43,21 +43,21 @@ export class RestDropdown implements AfterViewInit, ControlValueAccessor {
   private _modelValue: string[];
   private _options: Observable<any[]>;
 
-  onChange: Function = (  ) => { };
-  onTouched: Function = (  ) => { };
-
   constructor(private _http: Http, private _apiRoot: ApiRoot, @Optional() public control: NgControl) {
-    if (control) {
-      control.valueAccessor = this;
+        if (control) {
+            control.valueAccessor = this;
+        }
+
+        this.placeholder = '';
+        this.optionValueField = 'key';
+        this.optionLabelField = 'value';
+        this.allowAdditions = false;
+        this.minSelections = 0;
+        this.maxSelections = 1;
     }
 
-    this.placeholder = '';
-    this.optionValueField = 'key';
-    this.optionLabelField = 'value';
-    this.allowAdditions = false;
-    this.minSelections = 0;
-    this.maxSelections = 1;
-  }
+  onChange: Function = (  ) => { };
+  onTouched: Function = (  ) => { };
 
   ngAfterViewInit(): void {
   }

@@ -40,7 +40,7 @@ describe('DotEditPageService', () => {
         ];
 
         service.save(pageId, model).subscribe(() => {
-            expect(lastConnection[0].request.url).toContain(`/v1/page/${pageId}/content`);
+            expect(lastConnection[0].request.url).toContain(`v1/page/${pageId}/content`);
             expect(lastConnection[0].request.method).toEqual(1);
             expect(lastConnection[0].request._body).toEqual(JSON.stringify(model));
         });

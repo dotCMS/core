@@ -14,19 +14,21 @@
         [paginator]="totalRecords > rows"
         [rows]="rows"
         [totalRecords]="totalRecords"
-        [value]="data"
+        [value]="options"
         class="searchable-dropdown__data-list">
         <ng-template let-item pTemplate="item">
-            <span [class.selected]="item[labelPropertyName] === valueString" (click)="handleClick(item)">{{ getLabel(item) }}</span>
+            <span [class.selected]="item[labelPropertyName] === valueString" (click)="handleClick(item)">{{ item.label }}</span>
         </ng-template>
     </p-dataList>
 </p-overlayPanel>
 
-<button dotMdRipple pButton
+<button #button dotMdRipple pButton
+    *ngIf="label"
     (click)="searchPanel.toggle($event)"
-    [label]="persistentPlaceholder ? placeholder : valueString"
+    [label]="label"
     icon="fa fa-caret-down"
     iconPos="right"
     type="button"
-    [ngStyle]="{ 'width': width }">
+    [ngStyle]="{ 'width': width }"
+    [disabled]="disabled">
 </button>

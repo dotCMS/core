@@ -4,10 +4,11 @@ import { DebugElement, Component} from '@angular/core';
 import { ContentTypeFieldsTabComponent } from './';
 import { By } from '@angular/platform-browser';
 import { ContentTypeField, FieldTab } from '../';
-import { IconButtonTooltipModule } from '@components/_common/icon-button-tooltip/icon-button-tooltip.module';
+import { DotIconButtonTooltipModule } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.module';
 import { DotMessageService } from '@services/dot-messages-service';
 import { MockDotMessageService } from '../../../../test/dot-message-service.mock';
 import { DotAlertConfirmService } from '@services/dot-alert-confirm';
+
 
 const tabField: ContentTypeField = {
     clazz: 'tab',
@@ -49,7 +50,7 @@ describe('ContentTypeFieldsTabComponent', () => {
                 ContentTypeFieldsTabComponent,
                 DotTestHostComponent
             ],
-            imports: [IconButtonTooltipModule],
+            imports: [DotIconButtonTooltipModule],
             providers: [
                 DotAlertConfirmService,
                 {
@@ -84,29 +85,15 @@ describe('ContentTypeFieldsTabComponent', () => {
         spyOn(comp.editTab, 'emit');
         const labelInput = de.query(By.css('.tab__label'));
 
-        labelInput.triggerEventHandler('input', {
-            target: {
-                textContent: 'hello world'
-            }
-        });
-
-        labelInput.triggerEventHandler('blur', {});
-
-        labelInput.triggerEventHandler('input', {
-            target: {
-                textContent: 'hello world changed'
-            }
-        });
-
-        labelInput.triggerEventHandler('keyup.enter', {});
-
-        hostFixture.detectChanges();
-
+        labelInput.nativeElement.textContent = 'hello world';
+        labelInput.nativeElement.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
         expect(comp.editTab.emit).toHaveBeenCalledWith({
             ...tabField,
             name: 'hello world'
         });
 
+        labelInput.nativeElement.textContent = 'hello world changed';
+        labelInput.nativeElement.dispatchEvent(new Event('blur'));
         expect(comp.editTab.emit).toHaveBeenCalledWith({
             ...tabField,
             name: 'hello world changed'

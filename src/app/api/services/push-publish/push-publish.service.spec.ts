@@ -52,7 +52,7 @@ describe('PushPublishService', () => {
 
             tick();
             expect(this.lastConnection.request.url).toContain(
-                'api/environment/loadenvironments/roleId/1234/name=0'
+                'environment/loadenvironments/roleId/1234/name=0'
             );
             expect(result).toEqual(mockResponse.splice(1));
         })

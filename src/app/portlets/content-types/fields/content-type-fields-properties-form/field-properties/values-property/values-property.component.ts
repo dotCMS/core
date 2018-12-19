@@ -3,6 +3,7 @@ import { DotMessageService } from '@services/dot-messages-service';
 import { FieldProperty } from '../field-properties.model';
 import { FormGroup } from '@angular/forms';
 import { DotTextareaContentComponent } from '@components/_common/dot-textarea-content/dot-textarea-content.component';
+import { take } from 'rxjs/operators';
 
 @Component({
     selector: 'dot-values-property',
@@ -23,6 +24,7 @@ export class ValuesPropertyComponent implements OnInit {
     ngOnInit() {
         this.dotMessageService
             .getMessages(['contenttypes.field.properties.value.label'])
+            .pipe(take(1))
             .subscribe((res) => {
                 this.i18nMessages = res;
             });

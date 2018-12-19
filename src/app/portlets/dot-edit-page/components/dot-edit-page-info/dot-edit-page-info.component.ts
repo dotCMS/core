@@ -1,10 +1,12 @@
-import { Component, OnInit, Input, ElementRef, ViewChild } from '@angular/core';
+import { Component, OnInit, Input, ElementRef, ViewChild, Inject } from '@angular/core';
 
 import { DotRenderedPageState } from '../../shared/models/dot-rendered-page-state.model';
-import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { DotMessageService } from '@services/dot-messages-service';
-import { DotClipboardUtil } from '../../../../api/util/clipboard/ClipboardUtil';
 import { SiteService } from 'dotcms-js';
+import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
+import { Site } from 'dotcms-js/lib/core/treeable/shared/site.model';
+import { LOCATION_TOKEN } from 'src/app/providers';
 
 /**
  * Basic page information for edit mode
@@ -19,27 +21,34 @@ import { SiteService } from 'dotcms-js';
     styleUrls: ['./dot-edit-page-info.component.scss']
 })
 export class DotEditPageInfoComponent implements OnInit {
-    @Input()
-    pageState: DotRenderedPageState;
-    @ViewChild('lockedPageMessage')
-    lockedPageMessage: ElementRef;
+    @Input() pageState: DotRenderedPageState;
+
+    @ViewChild('lockedPageMessage') lockedPageMessage: ElementRef;
+
+    url$: Observable<string>;
+    apiLink: string;
+    copyTooltipText: Observable<string>;
 
     constructor(
-        private dotClipboardUtil: DotClipboardUtil,
-        private dotGlobalMessageService: DotGlobalMessageService,
         private siteService: SiteService,
-        public dotMessageService: DotMessageService
+        public dotMessageService: DotMessageService,
+        @Inject(LOCATION_TOKEN) private location: Location
     ) {}
 
     ngOnInit() {
-        this.dotMessageService
-            .getMessages([
-                'dot.common.message.pageurl.copied.clipboard',
-                'dot.common.message.pageurl.copied.clipboard.error',
-                'editpage.toolbar.page.cant.edit',
-                'editpage.toolbar.page.locked.by.user'
-            ])
-            .subscribe();
+        this.copyTooltipText = this.dotMessageService
+            .getMessages(['dot.common.message.pageurl.copy.clipboard'])
+            .pipe(
+                map(
+                    (messages: { [key: string]: string }) =>
+                        messages['dot.common.message.pageurl.copy.clipboard']
+                )
+            );
+
+        this.url$ = this.getFullUrl(this.pageState.page.pageURI);
+        this.apiLink = `api/v1/page/render${this.pageState.page.pageURI}?language_id=${
+            this.pageState.page.languageId
+        }`;
     }
 
     /**
@@ -56,34 +65,17 @@ export class DotEditPageInfoComponent implements OnInit {
         }, 500);
     }
 
-    /**
-     * Copy url to clipboard
-     *
-     * @returns boolean
-     * @memberof DotEditPageToolbarComponent
-     */
-    copyUrlToClipboard(): void {
-        this.dotClipboardUtil
-            .copy(this.getFullUrl(this.pageState.page.pageURI))
-            .then(() => {
-                this.dotGlobalMessageService.display(
-                    this.dotMessageService.get('dot.common.message.pageurl.copied.clipboard')
-                );
+    private getFullUrl(url: string): Observable<string> {
+        return this.siteService.getCurrentSite().pipe(
+            map((site: Site) => {
+                return [
+                    this.location.protocol,
+                    '//',
+                    site.hostname,
+                    this.location.port ? `:${this.location.port}` : '',
+                    url
+                ].join('');
             })
-            .catch(() => {
-                this.dotGlobalMessageService.error(
-                    this.dotMessageService.get('dot.common.message.pageurl.copied.clipboard.error')
-                );
-            });
-    }
-
-    private getFullUrl(url: string): string {
-        return [
-            location.protocol,
-            '//',
-            this.siteService.currentSite['name'],
-            location.port ? `:${location.port}` : '',
-            url
-        ].join('');
+        );
     }
 }

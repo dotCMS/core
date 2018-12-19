@@ -78,7 +78,7 @@ describe('FieldService', () => {
         });
 
         it('should set name and contentTypeId', () => {
-            const requestBody = JSON.parse(this.lastConnection.request._body);
+            const requestBody = this.lastConnection.request._body;
 
             expect('1').toBe(requestBody[0].contentTypeId);
             expect('1').toBe(requestBody[1].contentTypeId);
@@ -126,7 +126,7 @@ describe('FieldService', () => {
         });
 
         it('should set name and contentTypeId', () => {
-            const requestBody = JSON.parse(this.lastConnection.request._body);
+            const requestBody = this.lastConnection.request._body;
 
             expect(2).toBe(requestBody.length);
             expect('1').toBe(requestBody[0]);

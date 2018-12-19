@@ -9,7 +9,7 @@ import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { DotMessageService } from '@services/dot-messages-service';
 import { PushPublishService } from '@services/push-publish/push-publish.service';
-import { FieldValidationMessageModule } from '../field-validation-message/file-validation-message.module';
+import { DotFieldValidationMessageModule } from '../dot-field-validation-message/dot-file-validation-message.module';
 
 class PushPublishServiceMock {
     pushPublishContent(): Observable<any> {
@@ -58,7 +58,7 @@ xdescribe('PushPublishContentTypesDialogComponent', () => {
             imports: [
                 PushPublishEnvSelectorModule,
                 BrowserAnimationsModule,
-                FieldValidationMessageModule
+                DotFieldValidationMessageModule
             ],
             providers: [
                 { provide: PushPublishService, useValue: pushPublishServiceMock },

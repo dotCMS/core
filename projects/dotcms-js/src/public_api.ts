@@ -45,6 +45,7 @@ export * from './lib/components/site-selector/site-selector.service';
 export * from './lib/components/site-treetable/site-treetable.service';
 
 // MODELS
+export * from './lib/core/models';
 export * from './lib/core/shared/user.model';
 export * from './lib/core/treeable/shared/folder.model';
 export * from './lib/core/util/settings.model';

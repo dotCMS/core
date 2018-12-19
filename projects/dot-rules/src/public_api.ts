@@ -19,7 +19,6 @@ export * from './lib/rule-condition-group-component';
 export * from './lib/rule-engine';
 export * from './lib/rule-engine.container';
 export * from './lib/semantic/elements/input-date/input-date';
-export * from './lib/semantic/elements/input-text/input-text';
 export * from './lib/semantic/modules/dropdown/dropdown';
 export * from './lib/semantic/modules/restdropdown/RestDropdown';
 export * from './lib/services/Action';

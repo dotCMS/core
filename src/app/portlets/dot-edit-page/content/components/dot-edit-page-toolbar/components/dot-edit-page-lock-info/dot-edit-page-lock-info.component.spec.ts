@@ -5,17 +5,13 @@ import { DebugElement } from '@angular/core';
 import { DOTTestBed } from '../../../../../../../test/dot-test-bed';
 
 import { DotEditPageLockInfoComponent } from './dot-edit-page-lock-info.component';
-import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { DotMessageService } from '@services/dot-messages-service';
 import { MockDotMessageService } from '../../../../../../../test/dot-message-service.mock';
 import { mockUser } from '../../../../../../../test/login-service.mock';
 import { DotRenderedPageState } from '@portlets/dot-edit-page/shared/models/dot-rendered-page-state.model';
 import { mockDotRenderedPage } from '../../../../../../../test/dot-rendered-page.mock';
-import { DotClipboardUtil } from '../../../../../../../api/util/clipboard/ClipboardUtil';
 
 const messageServiceMock = new MockDotMessageService({
-    'dot.common.message.pageurl.copied.clipboard': 'Copied to clipboard',
-    'dot.common.message.pageurl.copied.clipboard.error': 'Can not copy to cliploard',
     'editpage.toolbar.page.cant.edit': 'No permissions...',
     'editpage.toolbar.page.locked.by.user': 'Page is locked by...'
 });
@@ -29,8 +25,6 @@ describe('DotEditPageLockInfoComponent', () => {
         DOTTestBed.configureTestingModule({
             declarations: [DotEditPageLockInfoComponent],
             providers: [
-                DotClipboardUtil,
-                DotGlobalMessageService,
                 {
                     provide: DotMessageService,
                     useValue: messageServiceMock
@@ -134,7 +128,7 @@ describe('DotEditPageLockInfoComponent', () => {
                 fixture.detectChanges();
             });
 
-            it("should have don't have permissions messages", () => {
+            it('should have don\'t have permissions messages', () => {
                 const lockedMessage: DebugElement = de.query(
                     By.css('.page-info__cant-edit-message')
                 );
