@@ -7,7 +7,9 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotcms.repackage.com.google.common.collect.Maps;
 import com.dotcms.util.ConversionUtils;
+import com.dotcms.util.RelationshipUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.*;
 import com.dotmarketing.exception.DotDataException;
@@ -30,6 +32,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.model.User;
+import java.util.stream.Collectors;
 import org.apache.commons.lang.builder.ToStringBuilder;
 
 import java.io.File;
@@ -109,6 +112,8 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	private transient IndexPolicy indexPolicyDependencies = IndexPolicy.DEFER;
 
 	private transient boolean needsReindex = false;
+
+	private transient Map<String, List<String>> relatedIds = Maps.newConcurrentMap();
 
 	/**
 	 * Returns true if this contentlet needs reindex
@@ -201,7 +206,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 
 	/**
 	 * Create a contentlet based on a map (makes a copy of it)
-	 * @param map
+	 * @param contentlet
 	 */
 	public Contentlet(final Contentlet contentlet) {
 		this(contentlet.getMap());
@@ -738,7 +743,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 
 	/**
 	 * Sets the sort_order.
-	 * @param sort_order The sort_order to set
+	 * @param sortOrder The sort_order to set
 	 */
 	public void setSortOrder(long sortOrder) {
 		map.put(SORT_ORDER_KEY, sortOrder);
@@ -1351,5 +1356,48 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 
 	public boolean validateMe() {
 		return !UtilMethods.isSet(map.get(Contentlet.DONT_VALIDATE_ME));
+	}
+
+	/**
+	 * Returns a list of all contentlets related to this instance given a RelationshipField variable
+	 * @param variableName
+	 * @return
+	 */
+	public List<Contentlet> getRelated(final String variableName) {
+
+		if (this.relatedIds.containsKey(variableName)) {
+			return this.relatedIds.get(variableName).stream().map(identifier -> {
+				try {
+					return this.contentletAPI.findContentletByIdentifierAnyLanguage(identifier);
+				} catch (DotDataException | DotSecurityException e) {
+					throw new DotStateException(e);
+				}
+			}).collect(Collectors.toList());
+		} else {
+			try {
+				com.dotcms.contenttype.model.field.Field field = APILocator.getContentTypeFieldAPI()
+						.byContentTypeIdAndVar(getContentTypeId(), variableName);
+
+				final List<Contentlet> relatedList = this.contentletAPI
+						.getRelatedContent(this, RelationshipUtil
+										.getRelationshipFromField(field, getContentType().variable()),
+						this.userAPI.getSystemUser(), false);
+
+				if (UtilMethods.isSet(relatedList)) {
+					this.relatedIds.put(variableName,
+							relatedList.stream().map(contentlet -> contentlet.getIdentifier())
+									.collect(
+											Collectors.toList()));
+					return relatedList;
+				}
+			} catch (DotDataException e) {
+				Logger.warn(this, "No field found with this variable name " + variableName, e);
+				throw new DotStateException(e);
+			} catch (DotSecurityException e) {
+				throw new DotStateException(e);
+			}
+		}
+
+		return Collections.emptyList();
 	}
 }
