@@ -367,6 +367,11 @@
     	<servlet-name>PreviewDesignTemplateServlet</servlet-name>
     	<servlet-class>com.dotmarketing.portlets.templates.design.servlets.PreviewDesignTemplateServlet</servlet-class>
     </servlet>
+	<servlet>
+		<servlet-name>DotGraphQLHttpServlet</servlet-name>
+		<servlet-class>com.dotcms.graphql.DotGraphQLHttpServlet</servlet-class>
+		<load-on-startup>1</load-on-startup>
+	</servlet>
     
 	<!--END DOTMARKETING SERVLETS-->
 	
@@ -540,6 +545,10 @@
 	<servlet-mapping>
 		<servlet-name>PreviewDesignTemplateServlet</servlet-name>
 		<url-pattern>/servlets/template/design/preview</url-pattern>
+	</servlet-mapping>
+	<servlet-mapping>
+		<servlet-name>DotGraphQLHttpServlet</servlet-name>
+		<url-pattern>/graphql</url-pattern>
 	</servlet-mapping>
 	<!--END DOTMARKETING SERVLET-MAPPING-->
 	

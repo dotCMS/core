@@ -1,0 +1,47 @@
+interface Content {
+    identifier:ID!
+    title: String
+}
+
+type Employee implements Content {
+    identifier: ID!
+    title: String
+    firstName : String
+    lastName : String
+    jobTitle : String
+    phone : String
+    hostName : String
+    modDate : String
+}
+
+type News implements Content {
+    identifier: ID!
+    title: String
+    hostfolder : String
+    tags : String
+    byline : String
+    lead : String
+    sysPublishDate : String
+    story : String
+    image : String
+    youtubes: [Youtube]
+}
+
+type Youtube implements Content {
+    widgetCode : String
+    identifier: ID!
+    title: String
+    widgetTitle : String
+    author : String
+    thumbnail : String
+    thumbnail2 : String
+    url : String!
+}
+
+type Query {
+    search(query : String) : [Content]!
+}
+
+schema {
+    query: Query
+}
