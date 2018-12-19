@@ -31,28 +31,25 @@
     padding-left: 30px;
 }
 
-.relationLanguageFlag {
-    margin-left: 0;
+.relationLanguageFlag table {
+    border: 0;
+    width: 110px;
 }
 
-.relationLanguageFlag li {
-    display: inline;
-    margin-right: 4px;
-    white-space: nowrap;
+.relationLanguageFlag div.dijitButtonText {
+    text-transform: none;
 }
 
-.relationLanguageFlag li::before {
-    content: " \00b7";
-    margin-right: 8px;
+.relationLanguageFlag .dijitSelect .dijitArrowButton {
+    border: none;
 }
 
-
-.relationLanguageFlag li:first-child::before {
-    content: "";
+.dijitPopup.dijitMenuPopup .dijitMenu {
+    width: 300px!important;
 }
 
-.relationLanguageFlag li label {
-    color: #7E7A86;
-    cursor: pointer;
-    margin-left: 4px;
+.dijitPopup.dijitMenuPopup .dijitMenu .dijitMenuTable tr.dijitMenuItem {
+    display: inline-block!important;
+    padding-top: 8px;
+    width: 100px;
 }

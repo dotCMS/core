@@ -142,15 +142,6 @@
         @import url(/html/portlet/ext/contentlet/field/edit_relationships.css);
     </style>
 
-	<div class="portlet-toolbar relationships-list">
-		<div class="portlet-toolbar__actions-primary">
-			<b><%= (sortList.size()>1 && rel.isParentRequired() && !records.isHasParent()) ? "<span class='required'></span>"  :
-				   (sortList.size()>1 && rel.isChildRequired() && records.isHasParent()) ? "<span class='required'></span>" : ""  %>
-			   <%= targetStructure.getName() %>: </b><%=("yes".equals(isParent)) ? LanguageUtil.get(pageContext, "Child"): LanguageUtil.get(pageContext, "Parent") %>
-			(<%= rel.getRelationTypeValue() %>)
-		</div>
-	</div>
-	
 		<table border="0" class="listingTable"  style="margin-bottom:30px;">
 				<thead>
 					<tr class="beta">
@@ -181,11 +172,11 @@
 					<%
 						if(langs.size() > 1) {
 					%>
-						<th width="<%= langs.size() < 6 ? (langs.size() * 40) : 200 %>px;"><%= LanguageUtil.get(pageContext, "contenttypes.field.properties.relationship.table.language.header") %></th>
+						<th width="<%= langs.size() < 6 ? (langs.size() * 40) : 100 %>px;"></th>
 					<%
 						}else{
 					%>
-						<th width="20"><%= LanguageUtil.get(pageContext, "contenttypes.field.properties.relationship.table.language.header") %></th>
+						<th width="20"></th>
 					<%
 						}
                     %>
@@ -351,58 +342,62 @@
 				}
 		%>
 
+                function getCurrentLanguageIndex(o) {
+                    var languageName = document.getElementById("langcombo").value.split(' ')[0].toLowerCase();
+                    var index = 0;
+                    for (var sibIndex = 0; sibIndex < o['siblings'].length ; sibIndex++) {
+                        if (o['siblings'][sibIndex]['langName'].toLowerCase() === languageName) {
+                            index = sibIndex;
+                        }
+                    }
+
+                    return index;
+                }
+
 				//Function used to render language id
 				function <%= relationJsName %>_lang(o) {
 					var contentletLangCode = '<%= langAPI.getLanguageCodeAndCountry(contentlet.getLanguageId(),null)%>';
+                    var currentLanguageIndex = getCurrentLanguageIndex(o);
 					var lang = '';
 					var result = '';
-					var anchorValue = "";
-		
-					if (o != null) {
-						result = result + "<ul class=\"relationLanguageFlag\">";
-						
-						for(var sibIndex = 0; sibIndex < o['siblings'].length ; sibIndex++){
-																								
-							result = result + '<li>';
-							langImg = o['siblings'][sibIndex]['langCode'];
-							langName = o['siblings'][sibIndex]['langName'];
-							
-							if(o['siblings'][sibIndex]['live'] == 'true'){
-																								
-								anchorValue = "";
-								if (o != null){
-									anchorValue = "<a href=\"javascript:<%= relationJsName %>editRelatedContent('" + o['siblings'][sibIndex]['inode'] + "', '"+ o['siblings'][sibIndex]['siblingInode'] +"', '"+ o['siblings'][sibIndex]['langId'] +"');\"" + ">" ;
-					 			}
-								
-								result = result + anchorValue + '<img name="' + o['siblings'][sibIndex]['inode'] + '" style="vertical-align: middle; border: solid 0px #33FF33; padding:2px; border-radius:5px;" src="/html/images/languages/' + langImg + '.gif" alt="'+langName+'"><label for="' + o['siblings'][sibIndex]['inode'] + '">(' + langImg + ')</label></a>';
-								
-							}else if(o['siblings'][sibIndex]['deleted'] == 'true'){
-								
-								anchorValue = "";
-								if (o != null){
-									anchorValue = "<a href=\"javascript:<%= relationJsName %>editRelatedContent('" + o['siblings'][sibIndex]['inode'] + "', '"+ o['siblings'][sibIndex]['siblingInode'] +"', '"+ o['siblings'][sibIndex]['langId'] +"');\"" + ">" ;
-					 			}
+                    var anchorValue = "";
+                    var imgLangName = '';
 
-								result = result + anchorValue + '<img name="' + o['siblings'][sibIndex]['inode'] + '" style="vertical-align: middle; border: solid 0px #66664D; padding:2px; border-radius:5px;" src="/html/images/languages/' + langImg + '_gray.gif" alt="'+langName+'"><label for="' + o['siblings'][sibIndex]['inode'] + '">(' + langImg + ')</label></a>';
-								
-								
-							}else{
-								
-								anchorValue = "";
-								if (o != null){
-									anchorValue = "<a href=\"javascript:<%= relationJsName %>editRelatedContent('" + o['siblings'][sibIndex]['inode'] + "', '"+ o['siblings'][sibIndex]['siblingInode'] +"', '"+ o['siblings'][sibIndex]['langId'] +"');\"" + ">" ;
-					 			}
-								
-								result = result + anchorValue + '<img name="' + o['siblings'][sibIndex]['inode'] + '" style="vertical-align: middle; border: solid 0px #FFCC11; padding:2px; border-radius:5px;" src="/html/images/languages/' + langImg + '.gif" alt="'+langName+'"><label for="' + o['siblings'][sibIndex]['inode'] + '">(' + langImg + ')</label></a>';
-								
-							}
-							
-							result = result + "</li>";
+					if (o != null) {
+                        result = '<div class="relationLanguageFlag" id="' + o.id + '"><div value="' + currentLanguageIndex + '" data-dojo-type="dijit/form/Select">';
+
+						for(var sibIndex = 0; sibIndex < o['siblings'].length ; sibIndex++){
+							langImg = o['siblings'][sibIndex]['langCode'];
+                            langName = o['siblings'][sibIndex]['langName'];
+
+                            if (o['siblings'][sibIndex]['deleted'] == 'true') {
+                                imgLangName = langImg + '_gray';
+                            } else {
+                                imgLangName = langImg;
+                            }
+
+                            var dataTags = 'data-inode="' + o['siblings'][sibIndex]['inode'] + '" data-siblingInode="' + o['siblings'][sibIndex]['siblingInode'] + '" data-langId="' + o['siblings'][sibIndex]['langId'] + '"';
+                            var imgTag = '<img style="vertical-align: middle; padding:2px 8px 2px 2px;" src="/html/images/languages/' + imgLangName + '.gif" alt="' + langName +'">';
+                            result = result + '<span value="' + sibIndex + '"><span onclick="openContentletPage(this)" ' + dataTags + '>' + imgTag + '(' + langImg + ')</span></span>';
 						}
-						result = result + "</ul>";
+
+                        result = result + "</div></div>";
 					}
 					return result;
-				}
+                }
+
+                function openContentletPage(dropdownElem) {
+                    var inode = getDataTagValue(dropdownElem.outerHTML, 'inode');
+                    var siblingInode = getDataTagValue(dropdownElem.outerHTML, 'siblinginode');
+                    var langId = getDataTagValue(dropdownElem.outerHTML, 'langid');
+                    <%= relationJsName %>editRelatedContent( inode, siblingInode, langId);
+                }
+
+                function getDataTagValue(tag, attr) {
+                    var startIndex = tag.indexOf(attr + '="');
+                    var endIndex = tag.indexOf('"', startIndex + attr.length + 2);
+                    return tag.substring(startIndex, endIndex).replace(attr, '').replace(/="/, '');
+                }
 
 				//Function used to render the publish/unpublish info
 			   function <%= relationJsName %>_status(o) {
@@ -724,9 +719,11 @@
 					<%
 					if(langs.size() > 1) {
 					%>	// displays the publish/unpublish/archive status of the content and language flag, if multiple languages exists.
-						var langTD = document.createElement("td");					
+						var langTD = document.createElement("td");
+                        langTD.style.textAlign = 'right';
 						langTD.innerHTML = <%= relationJsName %>_lang(item);
-						tr.appendChild(langTD);
+                        tr.appendChild(langTD);
+                        setTimeout(function () { dojo.parser.parse(item.id); }, 0);
 					<%
 					}else{
 					%>
@@ -765,7 +762,6 @@
 					return {node: tr, data: item, type: "text"};
 				}
 
-
 				function <%= relationJsName %>init(){
 
                     // Initializing related contents table.
@@ -784,7 +780,6 @@
 
 				// to edit a related content, with proper referer
 				function <%= relationJsName %>editRelatedContent(inode, siblingInode, langId){
-
 					if (!confirm('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.contentlet.lose.unsaved.changes")) %>'))
 						return;
 
