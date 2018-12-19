@@ -53,6 +53,22 @@ public class RelationshipUtil {
     }
 
     /**
+     * Given a Relationship Field and a Content Type Velocity var name, returns the existing relationship
+     * @param field
+     * @param contentTypeVar
+     * @return
+     */
+    public static Relationship getRelationshipFromField(final com.dotcms.contenttype.model.field.Field field, final String contentTypeVar){
+        final String fieldRelationType = field.relationType();
+        return APILocator.getRelationshipAPI().byTypeValue(
+                fieldRelationType.contains(StringPool.PERIOD) ? fieldRelationType
+                        :contentTypeVar + StringPool.PERIOD + field
+                                .variable());
+
+
+    }
+
+    /**
      * Returns a list of related contentlet given a comma separated list of lucene queries and/or contentlet identifiers
      * Additionally, validates the contentlets returned by the query, actually belongs to the specified relationship in the
      * given content type
