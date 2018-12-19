@@ -109,8 +109,6 @@ public class DotGraphQLSchemaProvider implements GraphQLSchemaProvider {
                 }
             } );
 
-
-
             return  builder.build();
 
 //            return newRuntimeWiring()

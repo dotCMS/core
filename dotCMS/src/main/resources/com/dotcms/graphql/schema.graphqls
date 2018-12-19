@@ -24,8 +24,10 @@ type News implements Content {
     sysPublishDate : String
     story : String
     image : String
+    topic : String
     youtubes: [Youtube]
 }
+
 
 type Youtube implements Content {
     widgetCode : String

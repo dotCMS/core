@@ -9,9 +9,11 @@ import com.liferay.util.StringPool;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 
-public class RelationshipFieldDataFetcher implements DataFetcher<Object> {
+import java.util.List;
+
+public class RelationshipFieldDataFetcher implements DataFetcher<List<Contentlet>> {
     @Override
-    public Object get(DataFetchingEnvironment environment) throws Exception {
+    public List<Contentlet> get(DataFetchingEnvironment environment) throws Exception {
         final Contentlet contentlet = environment.getSource();
         final String fieldVar = environment.getField().getName();
         Field field = APILocator.getContentTypeFieldAPI().byContentTypeIdAndVar(contentlet.getContentTypeId(), fieldVar);
