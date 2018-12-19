@@ -8,6 +8,7 @@ import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.com.google.common.collect.Maps;
+import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.RelationshipUtil;
 import com.dotmarketing.beans.Host;
@@ -1370,6 +1371,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 				try {
 					return this.contentletAPI.findContentletByIdentifierAnyLanguage(identifier);
 				} catch (DotDataException | DotSecurityException e) {
+					Logger.warn(this, "No field found with this variable name " + variableName, e);
 					throw new DotStateException(e);
 				}
 			}).collect(Collectors.toList());
@@ -1387,13 +1389,11 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 					this.relatedIds.put(variableName,
 							relatedList.stream().map(contentlet -> contentlet.getIdentifier())
 									.collect(
-											Collectors.toList()));
+											CollectionsUtils.toImmutableList()));
 					return relatedList;
 				}
-			} catch (DotDataException e) {
+			} catch (DotDataException | DotSecurityException e) {
 				Logger.warn(this, "No field found with this variable name " + variableName, e);
-				throw new DotStateException(e);
-			} catch (DotSecurityException e) {
 				throw new DotStateException(e);
 			}
 		}
