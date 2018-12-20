@@ -466,70 +466,70 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 		return null;
 	}
 
-	@Override
-	protected void deleteIdentifier(Identifier ident) throws DotDataException {
-		DotConnect db = new DotConnect();
-		try {
-		    db.setSQL("delete from template_containers where template_id = ?");
-		    db.addParam(ident.getId());
-		    db.loadResult();
-			db.setSQL("delete from permission where inode_id = ?");
-			db.addParam(ident.getId());
-			db.loadResult();
-			db.setSQL("delete from permission_reference where asset_id = ? or reference_id = ? ");
-			db.addParam(ident.getId());
-			db.addParam(ident.getId());
-			db.loadResult();
-			db.setSQL("delete from tree where child = ? or parent =?");
-			db.addParam(ident.getId());
-			db.addParam(ident.getId());
-			db.loadResult();
-			db.setSQL("delete from multi_tree where child = ? or parent1 =? or parent2 = ?");
-			db.addParam(ident.getId());
-			db.addParam(ident.getId());
-			db.addParam(ident.getId());
-			db.loadResult();
-			db.setSQL("select inode from "+ Inode.Type.valueOf(ident.getAssetType().toUpperCase()).getTableName() +" where inode=?");
-			db.addParam(ident.getId());
-			List<Map<String,Object>> deleteme = db.loadResults();
+    @Override
+    protected void deleteIdentifier(Identifier ident) throws DotDataException {
+        DotConnect db = new DotConnect();
+        try {
+            db.setSQL("delete from template_containers where template_id = ?");
+            db.addParam(ident.getId());
+            db.loadResult();
+            db.setSQL("delete from permission where inode_id = ?");
+            db.addParam(ident.getId());
+            db.loadResult();
+            db.setSQL("delete from permission_reference where asset_id = ? or reference_id = ? ");
+            db.addParam(ident.getId());
+            db.addParam(ident.getId());
+            db.loadResult();
+            db.setSQL("delete from tree where child = ? or parent =?");
+            db.addParam(ident.getId());
+            db.addParam(ident.getId());
+            db.loadResult();
+            db.setSQL("delete from multi_tree where child = ? or parent1 =? or parent2 = ?");
+            db.addParam(ident.getId());
+            db.addParam(ident.getId());
+            db.addParam(ident.getId());
+            db.loadResult();
+            db.setSQL("select inode from " + Inode.Type.valueOf(ident.getAssetType().toUpperCase()).getTableName() + " where inode=?");
+            db.addParam(ident.getId());
+            List<Map<String, Object>> deleteme = db.loadResults();
 
-			String versionInfoTable=Inode.Type.valueOf(ident.getAssetType().toUpperCase()).getVersionTableName();
-			if(versionInfoTable!=null) {
-			    db.setSQL("delete from "+versionInfoTable+" where identifier = ?");
-			    db.addParam(ident.getId());
-			    db.loadResult();
-			}
-			db.setSQL("select id from workflow_task where webasset = ?");
-			db.addParam(ident.getId());
-			List<Map<String,Object>> tasksToDelete=db.loadResults();
-			for(Map<String,Object> task : tasksToDelete) {
-			    WorkflowTask wft = APILocator.getWorkflowAPI().findTaskById((String)task.get("id"));
-			    APILocator.getWorkflowAPI().deleteWorkflowTask(wft, APILocator.systemUser());
-			}
-			db.setSQL("delete from " + Inode.Type.valueOf(ident.getAssetType().toUpperCase()).getTableName() + " where identifier = ?");
-			db.addParam(ident.getId());
-			db.loadResult();
+            String versionInfoTable = Inode.Type.valueOf(ident.getAssetType().toUpperCase()).getVersionTableName();
+            if (versionInfoTable != null) {
+                db.setSQL("delete from " + versionInfoTable + " where identifier = ?");
+                db.addParam(ident.getId());
+                db.loadResult();
+            }
+            db.setSQL("select id from workflow_task where webasset = ?");
+            db.addParam(ident.getId());
+            List<Map<String, Object>> tasksToDelete = db.loadResults();
+            for (Map<String, Object> task : tasksToDelete) {
+                WorkflowTask wft = APILocator.getWorkflowAPI().findTaskById((String) task.get("id"));
+                APILocator.getWorkflowAPI().deleteWorkflowTask(wft, APILocator.systemUser());
+            }
+            db.setSQL("delete from " + Inode.Type.valueOf(ident.getAssetType().toUpperCase()).getTableName() + " where identifier = ?");
+            db.addParam(ident.getId());
+            db.loadResult();
 
-			StringWriter sw =  new StringWriter();
-			sw.append(" ( '03d3k' ");
-			for(Map<String,Object> m : deleteme){
-				sw.append(",'" + m.get("inode") + "' ");
-			}
-			sw.append("  ) ");
-			db.setSQL("delete from inode where inode in " + sw.toString());
-			db.loadResult();
-			
-			db.setSQL("delete from identifier where id=?");
-			db.addParam(ident.getId());
-			db.loadResult();
-			
-			ic.removeFromCacheByIdentifier(ident.getId());
-			ic.removeFromCacheByURI(ident.getHostId(), ident.getURI());
-		} catch (Exception e) {
-			Logger.error(IdentifierFactoryImpl.class, "deleteIdentifier failed:" + e, e);
-			throw new DotDataException(e.toString());
-		}
-	}
+            StringWriter sw = new StringWriter();
+            sw.append(" ( 'IM_A_FAKE_INODE_TO_START_THE_LIST' ");
+            for (Map<String, Object> m : deleteme) {
+                sw.append(",'" + m.get("inode") + "' ");
+            }
+            sw.append("  ) ");
+            db.setSQL("delete from inode where inode in " + sw.toString());
+            db.loadResult();
+
+            db.setSQL("delete from identifier where id=?");
+            db.addParam(ident.getId());
+            db.loadResult();
+
+            ic.removeFromCacheByIdentifier(ident.getId());
+            ic.removeFromCacheByURI(ident.getHostId(), ident.getURI());
+        } catch (Exception e) {
+            Logger.error(IdentifierFactoryImpl.class, "deleteIdentifier failed:" + e, e);
+            throw new DotDataException(e.toString());
+        }
+    }
 
 	@Override
 	protected String getAssetTypeFromDB(String identifier) throws DotDataException{
