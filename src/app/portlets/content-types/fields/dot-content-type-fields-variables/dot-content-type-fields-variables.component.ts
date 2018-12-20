@@ -182,7 +182,7 @@ export class DotContentTypeFieldsVariablesComponent implements OnInit, OnChanges
                         savedVariable,
                         variableIndex
                     );
-                    this.fieldVariablesBackup = _.cloneDeep(this.fieldVariables);
+                    this.fieldVariablesBackup[variableIndex] = _.cloneDeep(this.fieldVariables[variableIndex]);
                 },
                 (err: ResponseView) => {
                     this.dotHttpErrorManagerService
