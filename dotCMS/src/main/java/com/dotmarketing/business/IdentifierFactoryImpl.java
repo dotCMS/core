@@ -473,22 +473,27 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
             db.setSQL("delete from template_containers where template_id = ?");
             db.addParam(ident.getId());
             db.loadResult();
+            
             db.setSQL("delete from permission where inode_id = ?");
             db.addParam(ident.getId());
             db.loadResult();
+            
             db.setSQL("delete from permission_reference where asset_id = ? or reference_id = ? ");
             db.addParam(ident.getId());
             db.addParam(ident.getId());
             db.loadResult();
+            
             db.setSQL("delete from tree where child = ? or parent =?");
             db.addParam(ident.getId());
             db.addParam(ident.getId());
             db.loadResult();
+            
             db.setSQL("delete from multi_tree where child = ? or parent1 =? or parent2 = ?");
             db.addParam(ident.getId());
             db.addParam(ident.getId());
             db.addParam(ident.getId());
             db.loadResult();
+            
             db.setSQL("select inode from " + Inode.Type.valueOf(ident.getAssetType().toUpperCase()).getTableName() + " where inode=?");
             db.addParam(ident.getId());
             List<Map<String, Object>> deleteme = db.loadResults();
