@@ -17,6 +17,7 @@ import { LoginServiceMock } from '@tests/login-service.mock';
 import { DotFieldVariablesServiceMock, mockFieldVariables } from '@tests/field-variable-service.mock';
 import { TableModule } from 'primeng/table';
 import { of } from 'rxjs';
+import * as _ from 'lodash';
 
 describe('DotContentTypeFieldsVariablesComponent', () => {
     let comp: DotContentTypeFieldsVariablesComponent;
@@ -96,13 +97,18 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
         const params = {
             contentTypeId: comp.field.contentTypeId,
             fieldId: comp.field.fieldId,
-            variable: mockFieldVariables[0]
+            variable: mockFieldVariables[1]
         };
-
         fixture.detectChanges();
+        comp.fieldVariablesBackup[0] = _.cloneDeep(mockFieldVariables[1]);
+        comp.fieldVariablesBackup[2] = _.cloneDeep(mockFieldVariables[0]);
+
         tableRow = de.query(By.css('dot-content-type-fields-variables-table-row')).componentInstance;
-        tableRow.save.emit(0);
+        tableRow.save.emit(1);
         expect(dotFieldVariableService.save).toHaveBeenCalledWith(params);
+        expect(comp.fieldVariablesBackup[0]).not.toEqual(comp.fieldVariables[0]);
+        expect(comp.fieldVariablesBackup[1]).toEqual(comp.fieldVariables[1]);
+        expect(comp.fieldVariablesBackup[2]).not.toEqual(comp.fieldVariables[2]);
     });
 
     it('should delete a variable from the server', () => {

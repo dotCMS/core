@@ -7,7 +7,8 @@ import { By } from '@angular/platform-browser';
 import { ComponentFixture } from '@angular/core/testing';
 import { CrudService } from '@services/crud/crud.service';
 import { DOTTestBed } from '../../../test/dot-test-bed';
-import { DataTableModule, SharedModule, MenuModule } from 'primeng/primeng';
+import { SharedModule, MenuModule } from 'primeng/primeng';
+import { TableModule } from 'primeng/table';
 import { DebugElement, SimpleChange } from '@angular/core';
 import { FormatDateService } from '@services/format-date-service';
 import { ListingDataTableComponent } from './listing-data-table.component';
@@ -41,7 +42,7 @@ describe('ListingDataTableComponent', () => {
                 ActionMenuButtonComponent
             ],
             imports: [
-                DataTableModule,
+                TableModule,
                 SharedModule,
                 RouterTestingModule.withRoutes([
                     { path: 'test', component: ListingDataTableComponent }
@@ -63,7 +64,7 @@ describe('ListingDataTableComponent', () => {
 
         fixture = DOTTestBed.createComponent(ListingDataTableComponent);
         comp = fixture.componentInstance;
-        de = fixture.debugElement.query(By.css('p-dataTable'));
+        de = fixture.debugElement.query(By.css('p-table'));
         el = de.nativeElement;
 
         this.items = [
@@ -124,6 +125,15 @@ describe('ListingDataTableComponent', () => {
         ];
 
         this.url = '/test/';
+        comp.actions = [
+            {
+                menuItem: {
+                    icon: 'fa fa-trash',
+                    label: 'Remove',
+                    command: () => {}
+                }
+            }
+        ];
     });
 
     it('renderer basic datatable component', () => {
@@ -141,7 +151,6 @@ describe('ListingDataTableComponent', () => {
                 observer.next(Object.assign([], this.items));
             });
         });
-
         comp.columns = this.columns;
         comp.url = this.url;
         comp.multipleSelection = true;
@@ -152,16 +161,15 @@ describe('ListingDataTableComponent', () => {
         });
 
         fixture.detectChanges();
-
         const rows = el.querySelectorAll('tr');
-        expect(5).toEqual(rows.length);
+        expect(8).toEqual(rows.length);
 
         const headers = rows[0].querySelectorAll('th');
         expect(5).toEqual(headers.length);
 
         comp.columns.forEach((_col, index) =>
-            expect(!index ? '' : comp.columns[index - 1].header).toEqual(
-                headers[index].querySelector('span').textContent
+            expect(comp.columns[index].header).toEqual(
+                headers[index].textContent.trim()
             )
         );
 
@@ -169,11 +177,10 @@ describe('ListingDataTableComponent', () => {
             if (rowIndex) {
                 const cells = row.querySelectorAll('td');
                 const item = this.items[rowIndex - 1];
-
                 cells.forEach((_cell, cellIndex) => {
-                    if (cellIndex && cellIndex < 5) {
+                    if (cellIndex && cellIndex < 4) {
                         expect(cells[cellIndex].querySelector('span').textContent).toContain(
-                            item[comp.columns[cellIndex - 1].fieldName]
+                            item[comp.columns[cellIndex].fieldName]
                         );
                     }
                 });
@@ -181,8 +188,6 @@ describe('ListingDataTableComponent', () => {
         });
 
         expect(this.url).toEqual(this.paginatorService.url);
-        const checkboxs = fixture.debugElement.queryAll(By.css('input[type="checkbox"]'));
-        expect(5).toEqual(checkboxs.length);
     });
 
     it('renderer with format date column', () => {
@@ -210,14 +215,14 @@ describe('ListingDataTableComponent', () => {
         fixture.detectChanges();
 
         const rows = el.querySelectorAll('tr');
-        expect(5).toEqual(rows.length, 'tr');
+        expect(8).toEqual(rows.length, 'tr');
 
         const headers = rows[0].querySelectorAll('th');
         expect(5).toEqual(headers.length, 'th');
 
         comp.columns.forEach((_col, index) =>
-            expect(!index ? '' : comp.columns[index - 1].header).toEqual(
-                headers[index].querySelector('span').textContent
+            expect(comp.columns[index].header).toEqual(
+                headers[index].textContent.trim()
             )
         );
 
@@ -227,9 +232,9 @@ describe('ListingDataTableComponent', () => {
                 const item = this.items[rowIndex - 1];
 
                 cells.forEach((_cell, cellIndex) => {
-                    if (cellIndex && cellIndex < 5) {
-                        const textContent = cells[cellIndex].querySelector('span').textContent;
-                        const itemCOntent = item[comp.columns[cellIndex - 1].fieldName];
+                    if (cellIndex < 4) {
+                        const textContent = cells[cellIndex].textContent;
+                        const itemCOntent = item[comp.columns[cellIndex].fieldName];
                         expect(textContent).toContain(itemCOntent);
                     }
                 });
@@ -254,7 +259,7 @@ describe('ListingDataTableComponent', () => {
             url: new SimpleChange(null, this.url, true)
         });
 
-        const dataList = fixture.debugElement.query(By.css('p-dataTable'));
+        const dataList = fixture.debugElement.query(By.css('p-table'));
         const dataListComponentInstance = dataList.componentInstance;
 
         dataListComponentInstance.onLazyLoad.emit({
@@ -264,13 +269,10 @@ describe('ListingDataTableComponent', () => {
         fixture.detectChanges();
 
         const rows = el.querySelectorAll('tr');
-        expect(5).toEqual(rows.length);
+        expect(8).toEqual(rows.length);
 
         const headers = rows[0].querySelectorAll('th');
-        expect(4).toEqual(headers.length);
-
-        const checkboxs = fixture.debugElement.queryAll(By.css('input[type="checkbox"]'));
-        expect(0).toEqual(checkboxs.length);
+        expect(5).toEqual(headers.length);
     });
 
     it('should add a column if actions are received', () => {
@@ -298,7 +300,7 @@ describe('ListingDataTableComponent', () => {
         fixture.detectChanges();
 
         const rows = el.querySelectorAll('tr');
-        expect(rows[0].cells.length).toEqual(4);
+        expect(rows[0].cells.length).toEqual(5);
 
         comp.actions = fakeActions;
         fixture.detectChanges();

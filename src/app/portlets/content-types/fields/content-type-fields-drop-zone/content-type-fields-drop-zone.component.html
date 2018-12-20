@@ -20,7 +20,6 @@
             (removeTab)="removeTab($event)">
         </dot-content-type-fields-tab>
     </ng-template>
-
     <dot-add-rows (selectColums)="addRow($event)"></dot-add-rows>
 </div>
 
@@ -29,12 +28,12 @@
     [actions]="dialogActions"
     (hide)="removeFieldsWithoutId()"
     [header]="currentFieldType?.label">
-
     <p-tabView [activeIndex]="dialogActiveTab">
         <p-tabPanel [header]="i18nMessages['contenttypes.dropzone.tab.overview']">
             <dot-content-type-fields-properties-form
                 [formFieldData]="formData"
                 (saveField)="saveFieldsHandler($event)"
+                (valid)="setDialogOkButtonState($event)"
                 #fieldPropertiesForm>
             </dot-content-type-fields-properties-form>
         </p-tabPanel>

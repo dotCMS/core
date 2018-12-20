@@ -78,7 +78,6 @@ export class ListingDataTableComponent implements OnChanges, OnInit {
         }
 
         if (changes.columns && changes.columns.currentValue) {
-            console.log('---columns', changes.columns);
             this.dateColumns = changes.columns.currentValue.filter(
                 (column) => column.format === this.DATE_FORMAT
             );
@@ -98,7 +97,6 @@ export class ListingDataTableComponent implements OnChanges, OnInit {
     }
 
     handleRowClick($event): void {
-        console.log('--click');
         this.rowWasClicked.emit($event);
     }
 
@@ -145,7 +143,6 @@ export class ListingDataTableComponent implements OnChanges, OnInit {
     loadCurrentPage(): void {
         this.loading = true;
         if (this.columns) {
-            console.log('--- loadCurrentPage columns', this.columns);
             this.paginatorService.getCurrentPage().subscribe((items) => this.setItems(items));
         }
     }
@@ -177,7 +174,6 @@ export class ListingDataTableComponent implements OnChanges, OnInit {
 
     private setItems(items: any[]): void {
         this.items = this.dateColumns ? this.formatData(items) : items;
-        console.log('---items', this.items)
         this.loading = false;
     }
 }

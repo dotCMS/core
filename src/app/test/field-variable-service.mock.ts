@@ -12,17 +12,17 @@ export const mockFieldVariables: DotFieldVariable[] = [
     },
     {
         clazz: 'com.dotcms.contenttype.model.field.ImmutableFieldVariable',
-        fieldId: 'f965a51b-130a-435f-b646-41e07d685363',
+        fieldId: 'f965a51b-130a-435f-b646-41e07d685364',
         id: '9671d2c3-793b-41af-a485-e2c5fcba5fa',
-        key: 'Key1',
-        value: 'Value1'
+        key: 'Key2',
+        value: 'Value2'
     },
     {
         clazz: 'com.dotcms.contenttype.model.field.ImmutableFieldVariable',
-        fieldId: 'f965a51b-130a-435f-b646-41e07d685363',
+        fieldId: 'f965a51b-130a-435f-b646-41e07d685365',
         id: '9671d2c3-793b-41af-a485-e2c5fcba5fc',
-        key: 'Key1',
-        value: 'Value1'
+        key: 'Key3',
+        value: 'Value3'
     },
 ];
 
