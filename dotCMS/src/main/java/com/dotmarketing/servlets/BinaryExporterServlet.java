@@ -663,15 +663,6 @@ public class BinaryExporterServlet extends HttpServlet {
 		
 	}
 
-	/**
-	 *
-	 * @param assetInode
-	 * @param user
-	 * @param lang
-	 * @return
-	 * @throws DotDataException
-	 * @throws DotSecurityException
-	 */
 	private Contentlet getContentletLiveVersion(String assetInode, User user, long lang) throws DotDataException, DotSecurityException {
 		Contentlet content;
 		final Contentlet contentTemp = contentAPI.find(assetInode,
