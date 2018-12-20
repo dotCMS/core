@@ -15,18 +15,28 @@ import java.io.File;
 import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.websocket.server.HandshakeRequest;
 
+import graphql.schema.GraphQLArgument;
+import graphql.schema.GraphQLInterfaceType;
+import graphql.schema.GraphQLList;
+import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
+import graphql.schema.GraphQLType;
 import graphql.schema.idl.RuntimeWiring;
-import graphql.schema.idl.SchemaGenerator;
-import graphql.schema.idl.SchemaParser;
-import graphql.schema.idl.TypeDefinitionRegistry;
 import graphql.schema.idl.errors.SchemaProblem;
 import graphql.servlet.GraphQLSchemaProvider;
 
+import static graphql.Scalars.GraphQLID;
+import static graphql.Scalars.GraphQLString;
+import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
+import static graphql.schema.GraphQLObjectType.newObject;
 import static graphql.schema.idl.RuntimeWiring.newRuntimeWiring;
 
 public class DotGraphQLSchemaProvider implements GraphQLSchemaProvider {
@@ -43,14 +53,48 @@ public class DotGraphQLSchemaProvider implements GraphQLSchemaProvider {
     @Override
     public GraphQLSchema getSchema() {
         try {
-            final File schemaFile = loadSchema("com/dotcms/graphql/schema.graphqls");
 
-            SchemaParser schemaParser = new SchemaParser();
-            TypeDefinitionRegistry typeDefinitionRegistry = schemaParser.parse(schemaFile);
+            GraphQLInterfaceType contentInterface = GraphQLInterfaceType.newInterface().name("Content")
+                .field(newFieldDefinition()
+                    .name("identifier")
+                    .type(GraphQLID)
+                    .dataFetcher(new FieldDataFetcher()))
+                .field(newFieldDefinition()
+                    .name("title")
+                    .type(GraphQLString)
+                    .dataFetcher(new FieldDataFetcher()))
+                .typeResolver(new ContentResolver())
+                .build();
 
-            RuntimeWiring wiring = buildRuntimeWiring();
-            SchemaGenerator schemaGenerator = new SchemaGenerator();
-            return schemaGenerator.makeExecutableSchema(typeDefinitionRegistry, wiring);
+            GraphQLObjectType newsType = newObject()
+                .name("News")
+                .withInterface(contentInterface)
+                .field(newFieldDefinition()
+                    .name("identifier")
+                    .type(GraphQLID)
+                    .dataFetcher(new FieldDataFetcher()))
+                .field(newFieldDefinition()
+                    .name("title")
+                    .type(GraphQLString)
+                    .dataFetcher(new FieldDataFetcher()))
+                .build();
+
+
+            GraphQLObjectType queryType = newObject()
+                .name("Query")
+                .field(newFieldDefinition()
+                    .name("search")
+                    .argument(GraphQLArgument.newArgument()
+                        .name("query")
+                        .type(GraphQLString)
+                        .build())
+                    .type(GraphQLList.list(contentInterface))
+                    .dataFetcher(new ContentletDataFetcher()))
+                .build();
+
+            Set<GraphQLType> additionalTypes = new HashSet<>(Arrays.asList(newsType));
+
+            return new GraphQLSchema(queryType, null, additionalTypes);
         } catch(SchemaProblem e) {
             Logger.error(this, "Error with schema", e);
             throw e;
