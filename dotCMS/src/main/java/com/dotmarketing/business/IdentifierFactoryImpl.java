@@ -474,23 +474,23 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 		    db.addParam(ident.getId());
 		    db.loadResult();
 			db.setSQL("delete from permission where inode_id = ?");
-			db.addParam(ident.getInode());
+			db.addParam(ident.getId());
 			db.loadResult();
 			db.setSQL("delete from permission_reference where asset_id = ? or reference_id = ? ");
-			db.addParam(ident.getInode());
-			db.addParam(ident.getInode());
+			db.addParam(ident.getId());
+			db.addParam(ident.getId());
 			db.loadResult();
 			db.setSQL("delete from tree where child = ? or parent =?");
-			db.addParam(ident.getInode());
-			db.addParam(ident.getInode());
+			db.addParam(ident.getId());
+			db.addParam(ident.getId());
 			db.loadResult();
 			db.setSQL("delete from multi_tree where child = ? or parent1 =? or parent2 = ?");
-			db.addParam(ident.getInode());
-			db.addParam(ident.getInode());
-			db.addParam(ident.getInode());
+			db.addParam(ident.getId());
+			db.addParam(ident.getId());
+			db.addParam(ident.getId());
 			db.loadResult();
 			db.setSQL("select inode from "+ Inode.Type.valueOf(ident.getAssetType().toUpperCase()).getTableName() +" where inode=?");
-			db.addParam(ident.getInode());
+			db.addParam(ident.getId());
 			List<Map<String,Object>> deleteme = db.loadResults();
 
 			String versionInfoTable=Inode.Type.valueOf(ident.getAssetType().toUpperCase()).getVersionTableName();
@@ -518,7 +518,11 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 			sw.append("  ) ");
 			db.setSQL("delete from inode where inode in " + sw.toString());
 			db.loadResult();
-
+			
+			db.setSQL("delete from identifier where id=?");
+			db.addParam(ident.getId());
+			db.loadResult();
+			
 			ic.removeFromCacheByIdentifier(ident.getId());
 			ic.removeFromCacheByURI(ident.getHostId(), ident.getURI());
 		} catch (Exception e) {
