@@ -1,11 +1,13 @@
 package com.dotcms.rest.api.v2.contenttype;
 
 
-import com.dotcms.contenttype.business.ContentTypeAPI;
 import static com.dotcms.util.CollectionsUtils.imap;
+
+import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.field.JsonFieldTransformer;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.ws.rs.Consumes;
@@ -30,6 +32,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotDataValidationException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import java.io.Serializable;
@@ -38,7 +41,7 @@ import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 
 
-@Path("/v2/contenttype/{typeId}/fields")
+@Path("/v2/contenttype/{typeIdOrVarName}/fields")
 public class FieldResource implements Serializable {
     private final WebResource webResource;
     private final FieldAPI fieldAPI;
@@ -48,7 +51,7 @@ public class FieldResource implements Serializable {
     }
 
     @VisibleForTesting
-    public FieldResource(final WebResource webresource, final FieldAPI fieldAPI) {
+    private FieldResource(final WebResource webresource, final FieldAPI fieldAPI) {
         this.fieldAPI = fieldAPI;
         this.webResource = webresource;
     }
@@ -61,7 +64,7 @@ public class FieldResource implements Serializable {
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
-    public Response updateFields(@PathParam("typeId") final String typeId, final String fieldsJson,
+    public Response updateFields(@PathParam("typeIdOrVarName") final String typeIdOrVarName, final String fieldsJson,
             @Context final HttpServletRequest req) throws DotDataException, DotSecurityException {
 
         final InitDataObject initData = this.webResource.init(null, false, req, false, null);
@@ -75,8 +78,8 @@ public class FieldResource implements Serializable {
             for (final Field field : fields) {
                 fieldAPI.save(field, user);
             }
-
-            final List<Field> contentTypeFields = fieldAPI.byContentTypeId(typeId);
+            final ContentType contentType = APILocator.getContentTypeAPI(user).find(typeIdOrVarName);
+            final List<Field> contentTypeFields = fieldAPI.byContentTypeId(contentType.id());
             response = Response.ok(new ResponseEntityView(new JsonFieldTransformer(contentTypeFields).mapList())).build();
         } catch (Exception e) {
             response = ResponseUtil.mapExceptionResponse(e);
@@ -90,7 +93,7 @@ public class FieldResource implements Serializable {
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
-    public Response createContentTypeField(@PathParam("typeId") final String typeId, final String fieldJson,
+    public Response createContentTypeField(@PathParam("typeIdOrVarName") final String typeIdOrVarName, final String fieldJson,
             @Context final HttpServletRequest req) throws DotDataException, DotSecurityException {
 
         final InitDataObject initData = this.webResource.init(null, false, req, false, null);
@@ -122,7 +125,7 @@ public class FieldResource implements Serializable {
     @JSONP
     @NoCache
     @Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
-    public final Response getContentTypeFields(@PathParam("typeId") final String typeId,
+    public final Response getContentTypeFields(@PathParam("typeIdOrVarName") final String typeIdOrVarName,
             @Context final HttpServletRequest req) {
 
         final InitDataObject initData = this.webResource.init(null, true, req, true, null);
@@ -132,7 +135,10 @@ public class FieldResource implements Serializable {
         Response response = null;
 
         try {
-            final List<Field> fields = fieldAPI.byContentTypeId(contentTypeAPI.find(typeId).id());
+            //if we're dealing with a UUID we can use it right away. Otherwise Will attempt to resolve the ContentType out of a varName
+            final String contentTypeId = UUIDUtil.isUUID(typeIdOrVarName) ? typeIdOrVarName
+                    : APILocator.getContentTypeAPI(user).find(typeIdOrVarName).id();
+            final List<Field> fields = fieldAPI.byContentTypeId(contentTypeAPI.find(contentTypeId).id());
 
             response = Response.ok(new ResponseEntityView(new JsonFieldTransformer(fields).mapList())).build();
 
@@ -150,7 +156,7 @@ public class FieldResource implements Serializable {
     @JSONP
     @NoCache
     @Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
-    public Response getContentTypeFieldById(@PathParam("typeId") final String typeId,
+    public Response getContentTypeFieldById(
             @PathParam("fieldId") final String fieldId, @Context final HttpServletRequest req)
             throws DotDataException, DotSecurityException {
 
@@ -176,16 +182,18 @@ public class FieldResource implements Serializable {
     @JSONP
     @NoCache
     @Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
-    public Response getContentTypeFieldByVar(@PathParam("typeId") final String typeId,
+    public Response getContentTypeFieldByVar(@PathParam("typeIdOrVarName") final String typeIdOrVarName,
             @PathParam("fieldVar") final String fieldVar, @Context final HttpServletRequest req)
             throws DotDataException, DotSecurityException {
 
-        this.webResource.init(null, false, req, false, null);
-
+        final InitDataObject initData = this.webResource.init(null, false, req, false, null);
+        final User user = initData.getUser();
         Response response = null;
         try {
-
-            final Field field = fieldAPI.byContentTypeIdAndVar(typeId, fieldVar);
+            //if we're dealing with a UUID we can use it right away. Otherwise Will attempt to resolve the ContentType out of a varName
+            final String contentTypeId = UUIDUtil.isUUID(typeIdOrVarName) ? typeIdOrVarName
+                    : APILocator.getContentTypeAPI(user).find(typeIdOrVarName).id();
+            final Field field = fieldAPI.byContentTypeIdAndVar(contentTypeId, fieldVar);
 
             response = Response.ok(new ResponseEntityView(new JsonFieldTransformer(field).mapObject())).build();
 
@@ -204,7 +212,7 @@ public class FieldResource implements Serializable {
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
-    public Response updateContentTypeFieldById(@PathParam("typeId") final String typeId, @PathParam("fieldId") final String fieldId,
+    public Response updateContentTypeFieldById(@PathParam("fieldId") final String fieldId,
             final String fieldJson, @Context final HttpServletRequest req) throws DotDataException, DotSecurityException {
 
         final InitDataObject initData = this.webResource.init(null, false, req, false, null);
@@ -247,7 +255,7 @@ public class FieldResource implements Serializable {
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
-    public Response updateContentTypeFieldByVar(@PathParam("typeId") final String typeId, @PathParam("fieldVar") final String fieldVar,
+    public Response updateContentTypeFieldByVar(@PathParam("typeIdOrVarName") final String typeIdOrVarName, @PathParam("fieldVar") final String fieldVar,
             final String fieldJson, @Context final HttpServletRequest req) throws DotDataException, DotSecurityException {
 
         final InitDataObject initData = this.webResource.init(null, false, req, false, null);
@@ -262,8 +270,9 @@ public class FieldResource implements Serializable {
                 response = ExceptionMapperUtil.createResponse(null, "Field 'id' should be set");
 
             } else {
-
-                final Field currentField = fieldAPI.byContentTypeIdAndVar(typeId, fieldVar);
+                final String contentTypeId = UUIDUtil.isUUID(typeIdOrVarName) ? typeIdOrVarName
+                        : APILocator.getContentTypeAPI(user).find(typeIdOrVarName).id();
+                final Field currentField = fieldAPI.byContentTypeIdAndVar(contentTypeId, fieldVar);
 
                 if (!currentField.id().equals(field.id())) {
 
@@ -289,7 +298,7 @@ public class FieldResource implements Serializable {
     @JSONP
     @NoCache
     @Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
-    public Response deleteFields(@PathParam("typeId") final String typeId, final String[] fieldsID, @Context final HttpServletRequest req)
+    public Response deleteFields(@PathParam("typeIdOrVarName") final String typeIdOrVarName, final String[] fieldsID, @Context final HttpServletRequest req)
             throws DotDataException, DotSecurityException {
 
         final InitDataObject initData = this.webResource.init(null, false, req, false, null);
@@ -308,8 +317,9 @@ public class FieldResource implements Serializable {
                     continue;
                 }
             }
-
-            final List<Field> contentTypeFields = fieldAPI.byContentTypeId(typeId);
+            final String contentTypeId = UUIDUtil.isUUID(typeIdOrVarName) ? typeIdOrVarName
+                    : APILocator.getContentTypeAPI(user).find(typeIdOrVarName).id();
+            final List<Field> contentTypeFields = fieldAPI.byContentTypeId(contentTypeId);
             response = Response.ok(new ResponseEntityView(imap("deletedIds", deletedIds,
                     "fields", new JsonFieldTransformer(contentTypeFields).mapList()))).build();
 
@@ -326,7 +336,7 @@ public class FieldResource implements Serializable {
     @JSONP
     @NoCache
     @Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
-    public Response deleteContentTypeFieldById(@PathParam("typeId") final String typeId,
+    public Response deleteContentTypeFieldById(
             @PathParam("fieldId") final String fieldId, @Context final HttpServletRequest req)
             throws DotDataException, DotSecurityException {
 
@@ -354,7 +364,7 @@ public class FieldResource implements Serializable {
     @JSONP
     @NoCache
     @Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
-    public Response deleteContentTypeFieldByVar(@PathParam("typeId") final String typeId,
+    public Response deleteContentTypeFieldByVar(@PathParam("typeIdOrVarName") final String typeIdOrVarName,
             @PathParam("fieldVar") final String fieldVar, @Context final HttpServletRequest req)
             throws DotDataException, DotSecurityException {
 
@@ -363,8 +373,9 @@ public class FieldResource implements Serializable {
 
         Response response = null;
         try {
-
-            final Field field = fieldAPI.byContentTypeIdAndVar(typeId, fieldVar);
+            final String contentTypeId = UUIDUtil.isUUID(typeIdOrVarName) ? typeIdOrVarName
+                    : APILocator.getContentTypeAPI(user).find(typeIdOrVarName).id();
+            final Field field = fieldAPI.byContentTypeIdAndVar(contentTypeId, fieldVar);
 
             fieldAPI.delete(field, user);
 
