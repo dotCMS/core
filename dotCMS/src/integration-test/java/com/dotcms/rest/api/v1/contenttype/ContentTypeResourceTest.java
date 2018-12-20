@@ -1,7 +1,6 @@
 package com.dotcms.rest.api.v1.contenttype;
 
 import static com.dotcms.util.CollectionsUtils.list;
-import static com.dotmarketing.portlets.workflows.business.BaseWorkflowIntegrationTest.createContentTypeAndAssignPermissions;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -38,7 +37,6 @@ import com.dotcms.workflow.helper.WorkflowHelper;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -52,7 +50,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -167,6 +164,53 @@ public class ContentTypeResourceTest {
 			);
 		}
 	}
+
+	@Test
+	public void Simple_Test_Using_VarName() throws Exception {
+		final ContentTypeResource resource = new ContentTypeResource();
+		ContentTypeForm.ContentTypeFormDeserialize contentTypeFormDeserialize = new ContentTypeForm.ContentTypeFormDeserialize();
+		Response response = null;
+		Map<String, Object> fieldMap = null;
+		// Test Content Type Creation
+		RestUtilTest.verifySuccessResponse(
+				response = resource.createType(getHttpRequest(), contentTypeFormDeserialize.buildForm(JSON_CONTENT_TYPE_CREATE))
+		);
+		try{
+
+		    fieldMap = ((List<Map<String, Object>>)((ResponseEntityView) response.getEntity()).getEntity()).get(0);
+
+            // Test Content Type Retrieval by Var
+			RestUtilTest.verifySuccessResponse(
+					resource.getType((String) fieldMap.get("variable"), getHttpRequest())
+			);
+
+            // Test Content Type Update
+			RestUtilTest.verifySuccessResponse(
+					resource.updateType(
+							(String) fieldMap.get("variable"),
+							contentTypeFormDeserialize.buildForm(JSON_CONTENT_TYPE_UPDATE.replace("CONTENT_TYPE_ID", (String) fieldMap.get("id"))),
+							getHttpRequest()
+					)
+			);
+
+
+		}finally{
+            // Test Content Type Deletion
+			RestUtilTest.verifySuccessResponse(
+					resource.deleteType(
+							(String) fieldMap.get("variable"), getHttpRequest()
+					)
+			);
+
+			assertResponse_NOT_FOUND(
+					resource.getType(
+							(String) fieldMap.get("variable"), getHttpRequest()
+					)
+			);
+		}
+
+	}
+
 
 	@Test
 	public void getContentTypes() throws DotDataException {
