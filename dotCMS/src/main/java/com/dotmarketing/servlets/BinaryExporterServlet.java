@@ -681,11 +681,6 @@ public class BinaryExporterServlet extends HttpServlet {
 		return content;
 	}
 
-	/**
-	 *
-	 * @param map
-	 * @return
-	 */
 	@SuppressWarnings("unchecked")
 	private Map sortByKey(Map map) {
 		List list = new LinkedList(map.entrySet());
@@ -703,11 +698,6 @@ public class BinaryExporterServlet extends HttpServlet {
 		return result;
 	}
 
-	/**
-	 *
-	 * @param request
-	 * @return
-	 */
 	private Map<String,String[]> getURIParams(HttpServletRequest request){
 		String url = request.getRequestURI().toString();
 		url = (url.startsWith("/")) ? url.substring(1, url.length()) : url;
