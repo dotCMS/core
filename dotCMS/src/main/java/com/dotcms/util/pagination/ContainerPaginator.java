@@ -112,12 +112,4 @@ public class ContainerPaginator implements PaginatorOrdered<Container> {
         }
     }
 
-    private int compareByHost (final Container container1, final Container container2) {
-
-        try {
-            return Host.class.cast(container1.getParentPermissionable()).getHostname().compareTo(Host.class.cast(container2.getParentPermissionable()).getHostname());
-        } catch (DotDataException e) {
-            return 0;
-        }
-    }
 }
