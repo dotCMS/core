@@ -16,51 +16,56 @@ import com.google.common.collect.Maps;
 import net.jodah.failsafe.CircuitBreaker;
 
 
-public class CircuitBreakerBuilder {
+public class CircuitBreakerUrlBuilder {
     String proxyUrl = null;
     long timeout = Config.getIntProperty("URL_CONNECTION_TIMEOUT", 2000);
     CircuitBreaker circuitBreaker = null;
     Map<String, String> params = Maps.newHashMap();
     Map<String, String> headers = Maps.newHashMap();
     Method method = Method.GET;
+    boolean verbose = false;
 
-    public CircuitBreakerBuilder setUrl(String proxyUrl) {
+    public CircuitBreakerUrlBuilder setUrl(String proxyUrl) {
         this.proxyUrl = proxyUrl;
         return this;
 
     }
 
-    public CircuitBreakerBuilder setTimeout(long timeout) {
+    public CircuitBreakerUrlBuilder setTimeout(long timeout) {
         this.timeout = timeout;
         return this;
     }
 
-    public CircuitBreakerBuilder setCircuitBreaker(CircuitBreaker circuitBreaker) {
+    public CircuitBreakerUrlBuilder setCircuitBreaker(CircuitBreaker circuitBreaker) {
         this.circuitBreaker = circuitBreaker;
         return this;
     }
 
-    public CircuitBreakerBuilder setParams(Map<String, String> params) {
+    public CircuitBreakerUrlBuilder setParams(Map<String, String> params) {
         if (params == null) {
-            params= Maps.newHashMap();
+            params = Maps.newHashMap();
         }
         this.params = params;
         return this;
     }
 
-    public CircuitBreakerBuilder setHeaders(Map<String, String> headers) {
+    public CircuitBreakerUrlBuilder setHeaders(Map<String, String> headers) {
         if (headers == null) {
-            headers= Maps.newHashMap();
+            headers = Maps.newHashMap();
         }
         this.headers = headers;
         return this;
     }
 
-    public CircuitBreakerBuilder setMethod(Method method) {
+    public CircuitBreakerUrlBuilder setMethod(Method method) {
         this.method = method;
         return this;
     }
 
+    public CircuitBreakerUrlBuilder setVerbose(boolean verbose) {
+        this.verbose = verbose;
+        return this;
+    }
 
     public CircuitBreakerUrl build() {
         if (proxyUrl == null) {
@@ -85,7 +90,7 @@ public class CircuitBreakerBuilder {
                 break;
         }
 
-        return new CircuitBreakerUrl(this.proxyUrl, this.timeout, this.circuitBreaker, request, this.params, this.headers);
+        return new CircuitBreakerUrl(this.proxyUrl, this.timeout, this.circuitBreaker, request, this.params, this.headers, this.verbose);
 
 
     }

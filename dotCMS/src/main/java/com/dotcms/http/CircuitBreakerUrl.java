@@ -38,6 +38,7 @@ public class CircuitBreakerUrl {
     private final long timeoutMs;
     private final CircuitBreaker circuitBreaker;
     private final HttpRequestBase request;
+    private final boolean verbose;
     /**
      * 
      * @param proxyUrl
@@ -53,7 +54,7 @@ public class CircuitBreakerUrl {
      */
     public CircuitBreakerUrl(final String proxyUrl, final long timeoutMs) {
         this(proxyUrl, timeoutMs, CurcuitBreakerPool.getBreaker(proxyUrl + timeoutMs), new HttpGet(proxyUrl), ImmutableMap.of(),
-                ImmutableMap.of());
+                ImmutableMap.of(), false);
     }
     
     /**
@@ -64,7 +65,7 @@ public class CircuitBreakerUrl {
      * @param circuitBreaker
      */
     public CircuitBreakerUrl(final String proxyUrl, final long timeoutMs, final CircuitBreaker circuitBreaker) {
-        this(proxyUrl, timeoutMs, circuitBreaker, new HttpGet(proxyUrl), ImmutableMap.of(), ImmutableMap.of());
+        this(proxyUrl, timeoutMs, circuitBreaker, new HttpGet(proxyUrl), ImmutableMap.of(), ImmutableMap.of(), false);
     }
 
     /**
@@ -75,7 +76,7 @@ public class CircuitBreakerUrl {
      */
     public CircuitBreakerUrl(final String proxyUrl, final long timeoutMs, final String circuitBreakerKey) {
         this(proxyUrl, timeoutMs, CurcuitBreakerPool.getBreaker(circuitBreakerKey), new HttpGet(proxyUrl), ImmutableMap.of(),
-                ImmutableMap.of());
+                ImmutableMap.of(), false);
     }
 
     /**
@@ -90,11 +91,11 @@ public class CircuitBreakerUrl {
      */
     @VisibleForTesting
     public CircuitBreakerUrl(String proxyUrl, long timeoutMs, CircuitBreaker circuitBreaker, HttpRequestBase request,
-            Map<String, String> params, Map<String, String> headers) {
+            Map<String, String> params, Map<String, String> headers, boolean verbose) {
         this.proxyUrl = proxyUrl;
         this.timeoutMs = timeoutMs;
         this.circuitBreaker = circuitBreaker;
-
+        this.verbose=verbose;
         this.request = request;
         for (final String head : headers.keySet()) {
             request.addHeader(head, headers.get(head));
@@ -127,8 +128,13 @@ public class CircuitBreakerUrl {
 
     public void doOut(OutputStream outer) throws IOException {
         try (OutputStream out = outer) {
-            Logger.info(this.getClass(), "Circuitbreaker to " + request + " is " + circuitBreaker.getState());
-            Failsafe.with(circuitBreaker).onSuccess(connection -> Logger.info(this, "Connected to " + this.proxyUrl))
+            if(verbose) {
+                Logger.info(this.getClass(), "Circuitbreaker to " + request + " is " + circuitBreaker.getState());
+            }
+            Failsafe.with(circuitBreaker)
+                    .onSuccess(connection -> { 
+                        if(verbose) Logger.info(this, "success to " + this.proxyUrl);
+                    })
                     .onFailure(failure -> Logger.warn(this, "Connection attempts failed " + failure.getMessage())).run(ctx -> {
                         RequestConfig config = RequestConfig.custom()
                                 .setConnectTimeout(Math.toIntExact(this.timeoutMs))
@@ -145,8 +151,8 @@ public class CircuitBreakerUrl {
     }
 
 
-    public static CircuitBreakerBuilder builder() {
-        return new CircuitBreakerBuilder();
+    public static CircuitBreakerUrlBuilder builder() {
+        return new CircuitBreakerUrlBuilder();
     }
 
 

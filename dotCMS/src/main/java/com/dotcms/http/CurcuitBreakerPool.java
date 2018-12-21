@@ -42,6 +42,11 @@ public class CurcuitBreakerPool {
 
     }
     
+    @VisibleForTesting
+    public static void putBreaker(final String key, final CircuitBreaker breaker)  {
+        pool.put(key, breaker);
+    }
+    
     public static void flushPool(){
         pool.invalidateAll();
     }
