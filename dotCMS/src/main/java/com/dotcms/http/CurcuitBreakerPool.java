@@ -40,7 +40,6 @@ public class CurcuitBreakerPool {
             throw new DotExecutionException(e);
         }
 
-
     }
     
     public static void flushPool(){

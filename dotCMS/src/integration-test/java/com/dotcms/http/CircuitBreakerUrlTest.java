@@ -1,14 +1,17 @@
 package com.dotcms.http;
 
 import java.io.IOException;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.io.output.NullOutputStream;
 import org.junit.Test;
 
+import com.dotcms.http.CircuitBreakerUrl.Method;
 import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.collect.ImmutableMap;
 
 import net.jodah.failsafe.CircuitBreaker;
 import net.jodah.failsafe.CircuitBreakerOpenException;
@@ -19,27 +22,28 @@ public class CircuitBreakerUrlTest {
     final static String goodUrl = "https://dotcms.com";
     final static String badUrl = "https://localhost:9999/test";
 
-
+    final static String HEADER="X-MY-HEADER";
+    final static String HEADER_VALUE="SEEMS TO BE WORKING";
+    final static String PARAM="X-MY-PARAM";
+    final static String PARAM_VALUE="PARAM SEEMS TO BE WORKING";
+    
     @Test
     public void testGoodBreaker() throws Exception {
 
 
         final NullOutputStream nos = new NullOutputStream();
 
-
         final String key = "testBreaker";
         final int timeout = 2000;
 
         CircuitBreaker breaker = CurcuitBreakerPool.getBreaker(key);
-        
+
         assert (breaker.isClosed());
 
-
-
         for (int i = 0; i < 10; i++) {
-            
-            CircuitBreakerUrl cburl= CircuitBreakerUrl.builder().setUrl(goodUrl).setTimeout(timeout).setCircuitBreaker(breaker).build();
-            
+
+            CircuitBreakerUrl cburl = CircuitBreakerUrl.builder().setUrl(goodUrl).setTimeout(timeout).setCircuitBreaker(breaker).build();
+
             cburl.doOut(nos);
         }
         breaker = CurcuitBreakerPool.getBreaker(key);
@@ -52,7 +56,6 @@ public class CircuitBreakerUrlTest {
 
 
         final NullOutputStream nos = new NullOutputStream();
-
 
         final String key = "testBadBreaker";
         final int timeout = 2000;
@@ -69,11 +72,53 @@ public class CircuitBreakerUrlTest {
         }
         breaker = CurcuitBreakerPool.getBreaker(key);
 
-
         assert (breaker.isOpen());
     }
 
+    /*
+     * This requires 
+     * http://httpbin.org
+     * which can be run via docker
+     * docker run -p 80:80 kennethreitz/httpbin
+     */
 
+
+    //@Test
+    public void testHeaders() throws ExecutionException, CircuitBreakerOpenException, IOException {
+        Map<String, String> headers = ImmutableMap.of(HEADER, HEADER_VALUE);
+
+        CircuitBreakerUrl cburl = CircuitBreakerUrl.builder().setMethod(Method.GET).setUrl("http://localhost/get").setTimeout(1000)
+                .setHeaders(headers).build();
+
+
+        for (int i = 0; i < 10; i++) {
+            String x = cburl.doString();
+            assert (x.contains(HEADER_VALUE));
+        }
+
+    }
+    
+
+    /*
+     * This requires 
+     * http://httpbin.org
+     * which can be run via docker
+     * docker run -p 80:80 kennethreitz/httpbin
+     */
+    //@Test
+    public void testPost() throws ExecutionException, CircuitBreakerOpenException, IOException {
+        Map<String, String> params = ImmutableMap.of(PARAM, PARAM_VALUE);
+
+        CircuitBreakerUrl cburl = CircuitBreakerUrl.builder().setMethod(Method.POST).setUrl("http://localhost/post").setTimeout(1000)
+                .setParams(params).build();
+
+
+        for (int i = 0; i < 10; i++) {
+            String x = cburl.doString();
+            assert (x.contains(PARAM_VALUE));
+        }
+
+    }
     /*
      * @BeforeClass public static void prepare() throws Exception{ //Setting web app environment
      * IntegrationTestInitService.getInstance().init(); }
@@ -133,7 +178,7 @@ public class CircuitBreakerUrlTest {
 
         for (int i = 0; i < breaker.getSuccessThreshold().denominator; i++) {
             try {
-                new CircuitBreakerUrl(goodUrl, timeout,breaker).doOut(nos);
+                new CircuitBreakerUrl(goodUrl, timeout, breaker).doOut(nos);
             } catch (Exception e) {
                 // shoud not be here
                 assert (false);
@@ -142,25 +187,26 @@ public class CircuitBreakerUrlTest {
 
         assert (breaker.isClosed());
     }
-    
+
     @Test
     public void testBreakerPool() throws ExecutionException, InterruptedException, IOException {
-        
+
 
         final String key = UUIDUtil.uuid();
-        final int success =500;
+        final int success = 500;
 
         CircuitBreaker breaker = CurcuitBreakerPool.getBreaker(key);
         assert (breaker.isClosed());
         breaker.withSuccessThreshold(success);
-        assert (breaker.getSuccessThreshold().denominator==success);
-        
+        assert (breaker.getSuccessThreshold().denominator == success);
+
         CircuitBreaker breaker2 = CurcuitBreakerPool.getBreaker(key);
-        
+
         assert (breaker.equals(breaker2));
-        assert (breaker2.getSuccessThreshold().denominator==success);
-        
+        assert (breaker2.getSuccessThreshold().denominator == success);
+
     }
+
     @Test
     public void testToString() throws Exception {
 
@@ -170,23 +216,20 @@ public class CircuitBreakerUrlTest {
         CircuitBreaker breaker = CurcuitBreakerPool.getBreaker(key);
         assert (breaker.isClosed());
 
-
-
         for (int i = 0; i < 10; i++) {
-          String x =  new CircuitBreakerUrl(goodUrl, timeout, breaker).doString();
-          assert (x.length()>100);
+            String x = new CircuitBreakerUrl(goodUrl, timeout, breaker).doString();
+            assert (x.length() > 100);
         }
-        
-        
-        
+
+
     }
 
     public void testMemory() throws Exception {
         System.gc();
-        
+
         Thread.sleep(3000);
-        
-        
+
+
         long startMem = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
         final NullOutputStream nos = new NullOutputStream();
 
@@ -206,28 +249,25 @@ public class CircuitBreakerUrlTest {
         System.gc();
         Thread.sleep(3000);
         long endMem = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
-        
+
         System.out.println("start:" + UtilMethods.prettyMemory(startMem));
         System.out.println("end  :" + UtilMethods.prettyMemory(endMem));
-        System.out.println("diff :" + UtilMethods.prettyMemory(endMem-startMem));
+        System.out.println("diff :" + UtilMethods.prettyMemory(endMem - startMem));
     }
-    
+
     @Test
     public void testGet() throws Exception {
         for (int i = 0; i < 10; i++) {
             try {
-                new CircuitBreakerUrl(goodUrl, 2000).doOut(System.out);
+                String x = new CircuitBreakerUrl(goodUrl, 2000).doString();
+                assert (x.contains("Java"));
+                assert (x.contains("/application/themes/dotcms/js/bootstrap.min.js"));
+
             } catch (Exception e) {
                 assert (e instanceof CircuitBreakerOpenException);
             }
         }
     }
-    
-    
 
-    
-    
-    
-    
-    
+
 }
