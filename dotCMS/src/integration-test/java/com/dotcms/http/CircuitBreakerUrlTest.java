@@ -37,7 +37,10 @@ public class CircuitBreakerUrlTest {
 
 
         for (int i = 0; i < 10; i++) {
-            new CircuitBreakerUrl(goodUrl, timeout, breaker).doOut(nos);
+            
+            CircuitBreakerUrl cburl= CircuitBreakerUrl.builder().setUrl(goodUrl).setTimeout(timeout).setCircuitBreaker(breaker).build();
+            
+            cburl.doOut(nos);
         }
         breaker = CurcuitBreakerPool.getBreaker(key);
         assert (breaker.isClosed());
@@ -207,6 +210,17 @@ public class CircuitBreakerUrlTest {
         System.out.println("start:" + UtilMethods.prettyMemory(startMem));
         System.out.println("end  :" + UtilMethods.prettyMemory(endMem));
         System.out.println("diff :" + UtilMethods.prettyMemory(endMem-startMem));
+    }
+    
+    @Test
+    public void testGet() throws Exception {
+        for (int i = 0; i < 10; i++) {
+            try {
+                new CircuitBreakerUrl(goodUrl, 2000).doOut(System.out);
+            } catch (Exception e) {
+                assert (e instanceof CircuitBreakerOpenException);
+            }
+        }
     }
     
     
