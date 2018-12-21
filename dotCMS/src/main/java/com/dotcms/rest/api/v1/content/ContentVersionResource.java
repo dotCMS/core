@@ -57,6 +57,8 @@ public class ContentVersionResource {
     private static final String DATATYPE_MISSMATCH_ERROR_MESSAGE_KEY = "Data-Type-Missmatch";
     private static final String BAD_REQUEST_ERROR_MESSAGE_KEY = "Bad-Request";
 
+    private static final String VERSIONS = "versions";
+
     private static final int MIN = 20;
     private static final int MAX = 100;
 
@@ -103,12 +105,12 @@ public class ContentVersionResource {
                if(groupByLang){
                    final Map<String, List<Map<String, Object>>> versionsByLang = mapVersionsByLang(contentletAPI
                            .findAllVersions(identifierObj, user, respectFrontendRoles), showing);
-                   responseEntityView = new ResponseEntityView(ImmutableMap.of("versions", versionsByLang));
+                   responseEntityView = new ResponseEntityView(ImmutableMap.of(VERSIONS, versionsByLang));
                } else {
                    final List<Map<String, Object>> versions = mapVersions(contentletAPI
                             .findAllVersions(identifierObj, user, respectFrontendRoles), showing);
 
-                   responseEntityView = new ResponseEntityView(ImmutableMap.of("versions", versions));
+                   responseEntityView = new ResponseEntityView(ImmutableMap.of(VERSIONS, versions));
                }
            } else {
                final Set<String> inodesSet =
@@ -122,10 +124,10 @@ public class ContentVersionResource {
 
                    if(groupByLang){
                        final Map<String, List<Map<String, Object>>> versionsByLang = mapVersionsByLang(findByInodes(user, inodesSet, respectFrontendRoles), showing);
-                       responseEntityView = new ResponseEntityView(ImmutableMap.of("versions", versionsByLang));
+                       responseEntityView = new ResponseEntityView(ImmutableMap.of(VERSIONS, versionsByLang));
                    } else {
                        final Map<String,Map<String,Object>> versions = mapVersionsByInode(findByInodes(user, inodesSet, respectFrontendRoles), showing);
-                       responseEntityView = new ResponseEntityView(ImmutableMap.of("versions", versions));
+                       responseEntityView = new ResponseEntityView(ImmutableMap.of(VERSIONS, versions));
                    }
 
 
@@ -160,7 +162,7 @@ public class ContentVersionResource {
                         : APILocator.getIdentifierAPI().findFromInode(shorty.longId);
     }
 
-    private List<Contentlet> findByInodes(final User user, final Set<String> inodes, boolean respectFrontendRoles)
+    private List<Contentlet> findByInodes(final User user, final Set<String> inodes, final boolean respectFrontendRoles)
             throws DotStateException {
 
         final Set<String> notFound = new HashSet<>();
