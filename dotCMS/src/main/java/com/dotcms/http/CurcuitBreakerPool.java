@@ -15,8 +15,8 @@ public class CurcuitBreakerPool {
     
 
     final static int FAIL_AFTER = Config.getIntProperty("CIRCUIT_BREAKER_URL_MAX_FAILURES", 5);
-    final static int TRY_AGAIN_AFTER = Config.getIntProperty("CIRCUIT_BREAKER_URL_TRY_AGAIN_DELEY_SEC", 5);
-    final static int WORK_AFTER_SEC = Config.getIntProperty("CIRCUIT_BREAKER_URL_TRY_DELEY_SEC", 5);
+    final static int TRY_AGAIN_ATTEMPTS = Config.getIntProperty("CIRCUIT_BREAKER_URL_TRY_AGAIN_ATTEMPTS", 3);
+    final static int TRY_AGAIN_DELAY_SEC = Config.getIntProperty("CIRCUIT_BREAKER_URL_TRY_AGAIN_DELEY_SEC", 10);
     
     private static final Cache<String, CircuitBreaker> pool =
                     CacheBuilder.newBuilder()
@@ -32,8 +32,8 @@ public class CurcuitBreakerPool {
                 public CircuitBreaker call() {
                     return new CircuitBreaker()
                                     .withFailureThreshold(FAIL_AFTER)
-                                    .withSuccessThreshold(TRY_AGAIN_AFTER)
-                                    .withDelay(WORK_AFTER_SEC, TimeUnit.SECONDS);
+                                    .withSuccessThreshold(TRY_AGAIN_ATTEMPTS)
+                                    .withDelay(TRY_AGAIN_DELAY_SEC, TimeUnit.SECONDS);
                 }
             });
         } catch (ExecutionException e) {

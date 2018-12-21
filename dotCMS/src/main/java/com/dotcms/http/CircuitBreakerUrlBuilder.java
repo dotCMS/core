@@ -25,8 +25,8 @@ public class CircuitBreakerUrlBuilder {
     Method method = Method.GET;
     boolean verbose = false;
     int failAfter = CurcuitBreakerPool.FAIL_AFTER;
-    int tryAgainAfter = CurcuitBreakerPool.TRY_AGAIN_AFTER;
-    int workAfter = CurcuitBreakerPool.WORK_AFTER_SEC;
+    int tryAgainAttempts = CurcuitBreakerPool.TRY_AGAIN_ATTEMPTS;
+    int tryAgainAfterDelay = CurcuitBreakerPool.TRY_AGAIN_DELAY_SEC;
 
 
     public CircuitBreakerUrlBuilder setUrl(String proxyUrl) {
@@ -34,6 +34,30 @@ public class CircuitBreakerUrlBuilder {
         return this;
 
     }
+
+
+    public CircuitBreakerUrlBuilder setFailAfter(int failAfter) {
+        this.failAfter = failAfter;
+        return this;
+    }
+
+
+
+
+    public CircuitBreakerUrlBuilder setTryAgainAfterDelaySeconds(int tryAgainAfter) {
+        this.tryAgainAfterDelay = tryAgainAfter;
+        return this;
+    }
+
+
+
+
+    public CircuitBreakerUrlBuilder setTryAgainAttempts(int tryAgainAttempts) {
+        this.tryAgainAttempts = tryAgainAttempts;
+        return this;
+    }
+
+
 
     public CircuitBreakerUrlBuilder setTimeout(long timeout) {
         this.timeout = timeout;
@@ -76,7 +100,7 @@ public class CircuitBreakerUrlBuilder {
             throw new DotStateException("A URL must be set to use CircuitBreakerUrl");
         }
         if (this.circuitBreaker == null) {
-            this.circuitBreaker = CurcuitBreakerPool.getBreaker(this.proxyUrl + this.timeout, failAfter, tryAgainAfter, workAfter);
+            this.circuitBreaker = CurcuitBreakerPool.getBreaker(this.proxyUrl + this.timeout, failAfter, tryAgainAttempts, tryAgainAfterDelay);
         }
         HttpRequestBase request;
         switch (this.method) {
