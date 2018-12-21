@@ -26,7 +26,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 public abstract class FileAssetContentType extends ContentType implements UrlMapable, Expireable{
 
 	public static final String FILEASSET_SITE_OR_FOLDER_FIELD_VAR = "hostFolder";
-	public static final String FILEASSET_FIELD_VAR = "fileAsset";
+	public static final String FILEASSET_FILEASSET_FIELD_VAR = "fileAsset";
 	public static final String FILEASSET_TITLE_FIELD_VAR = "title";
 	public static final String FILEASSET_FILE_NAME_FIELD_VAR = "fileName";
 	public static final String FILEASSET_METADATA_FIELD_VAR = "metaData";
@@ -61,7 +61,7 @@ public abstract class FileAssetContentType extends ContentType implements UrlMap
 		fields.add(
 				ImmutableBinaryField.builder()
 				.name("File Asset")
-				.variable(FILEASSET_FIELD_VAR)
+				.variable(FILEASSET_FILEASSET_FIELD_VAR)
 				.sortOrder(fields.size())
 				.fixed(true)
 				.required(true)

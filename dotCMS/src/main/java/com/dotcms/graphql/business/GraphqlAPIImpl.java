@@ -4,8 +4,10 @@ import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.graphql.ContentResolver;
+import com.dotcms.graphql.CustomFieldType;
 import com.dotcms.graphql.datafetcher.ContentletDataFetcher;
 import com.dotcms.graphql.datafetcher.FieldDataFetcher;
+import com.dotcms.graphql.util.TypeUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 
@@ -23,17 +25,34 @@ import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLType;
 
-import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.*;
+import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.BASE_TYPE;
+import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.CATEGORIES;
+import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.CONTENTLET_FOLER;
+import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.CONTENTLET_HOST;
+import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.CONTENT_TYPE;
+import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.DELETED;
+import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.EXPIRE_DATE;
+import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.IDENTIFIER;
+import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.INODE;
+import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.LANGUAGE_ID;
+import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.LIVE;
+import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.LOCKED;
+import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.MOD_DATE;
+import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.PARENT_PATH;
+import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.PATH;
+import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.PUBLISH_DATE;
+import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.TITLE;
+import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.URL_MAP;
+import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.WORKFLOW_ASSIGN;
+import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.WORKFLOW_CREATED_BY;
+import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.WORKFLOW_MOD_DATE;
+import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.WORKFLOW_STEP;
+import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.WORKING;
 import static com.dotcms.contenttype.model.type.FileAssetContentType.FILEASSET_DESCRIPTION_FIELD_VAR;
-import static com.dotcms.contenttype.model.type.FileAssetContentType.FILEASSET_FIELD_VAR;
+import static com.dotcms.contenttype.model.type.FileAssetContentType.FILEASSET_FILEASSET_FIELD_VAR;
 import static com.dotcms.contenttype.model.type.FileAssetContentType.FILEASSET_FILE_NAME_FIELD_VAR;
-import static com.dotcms.contenttype.model.type.FileAssetContentType.FILEASSET_METADATA_FIELD_VAR;
 import static com.dotcms.contenttype.model.type.FileAssetContentType.FILEASSET_SITE_OR_FOLDER_FIELD_VAR;
 import static com.dotcms.contenttype.model.type.FileAssetContentType.FILEASSET_TITLE_FIELD_VAR;
-import static com.dotcms.contenttype.model.type.WidgetContentType.WIDGET_CODE_FIELD_VAR;
-import static com.dotcms.contenttype.model.type.WidgetContentType.WIDGET_PRE_EXECUTE_FIELD_VAR;
-import static com.dotcms.contenttype.model.type.WidgetContentType.WIDGET_TITLE_FIELD_VAR;
-import static com.dotcms.contenttype.model.type.WidgetContentType.WIDGET_USAGE_FIELD_VAR;
 import static graphql.Scalars.GraphQLBoolean;
 import static graphql.Scalars.GraphQLID;
 import static graphql.Scalars.GraphQLInt;
@@ -45,12 +64,13 @@ public class GraphqlAPIImpl implements GraphqlAPI {
 
     @Override
     public GraphQLSchema getSchema() {
-        return generateSchema();
+//        return generateSchema();
+        return null;
     }
 
     @Override
     public GraphQLType createSchemaType(ContentType contentType) {
-
+        return  null;
     }
 
     @Override
@@ -106,70 +126,38 @@ public class GraphqlAPIImpl implements GraphqlAPI {
 
     private Set<GraphQLType> createBaseTypes() {
 
-
+        return null;
     }
 
-    private static Map<String, GraphQLOutputType> contentInterfaceFields = new HashMap<>();
     // TODO: only widgetTitle returned here
 //    private static Map<String, GraphQLOutputType> widgetInterfaceFields = new HashMap<>();
     private static Map<String, GraphQLOutputType> fileAssetInterfaceFields = new HashMap<>();
 
-    private static Map<String, GraphQLOutputType> binaryTypeFields = new HashMap<>();
+    private static Map<String, GraphQLObjectType> customFieldTypes = new HashMap<>();
 
     static {
 
-
-        contentInterfaceFields.put(MOD_DATE, GraphQLString);
-        contentInterfaceFields.put(TITLE, GraphQLString);
-        contentInterfaceFields.put(CONTENT_TYPE, GraphQLString);
-        contentInterfaceFields.put(BASE_TYPE, GraphQLInt);
-        contentInterfaceFields.put(LIVE, GraphQLBoolean);
-        contentInterfaceFields.put(WORKING, GraphQLBoolean);
-        contentInterfaceFields.put(DELETED, GraphQLBoolean);
-        contentInterfaceFields.put(LOCKED, GraphQLBoolean);
-        contentInterfaceFields.put(LANGUAGE_ID, GraphQLBoolean);
-        contentInterfaceFields.put(IDENTIFIER, GraphQLID);
-        contentInterfaceFields.put(INODE, GraphQLID);
-        contentInterfaceFields.put(CONTENTLET_HOST, GraphQLID);
-        contentInterfaceFields.put(CONTENTLET_FOLER, GraphQLID);
-        contentInterfaceFields.put(PARENT_PATH, GraphQLString);
-        contentInterfaceFields.put(PATH, GraphQLString);
-        contentInterfaceFields.put(WORKFLOW_CREATED_BY, GraphQLString);
-        contentInterfaceFields.put(WORKFLOW_ASSIGN, GraphQLString);
-        contentInterfaceFields.put(WORKFLOW_STEP, GraphQLString);
-        contentInterfaceFields.put(WORKFLOW_MOD_DATE, GraphQLString);
-        contentInterfaceFields.put(PUBLISH_DATE, GraphQLString);
-        contentInterfaceFields.put(EXPIRE_DATE, GraphQLString);
-        contentInterfaceFields.put(URL_MAP, GraphQLString);
-        contentInterfaceFields.put(CATEGORIES, GraphQLString);
-
         fileAssetInterfaceFields.put(FILEASSET_SITE_OR_FOLDER_FIELD_VAR, GraphQLString);
-        fileAssetInterfaceFields.put(FILEASSET_FIELD_VAR, GraphQLString);
+        fileAssetInterfaceFields.put(FILEASSET_FILEASSET_FIELD_VAR, CustomFieldType.BINARY.getType());
         fileAssetInterfaceFields.put(FILEASSET_TITLE_FIELD_VAR, GraphQLString);
         fileAssetInterfaceFields.put(FILEASSET_FILE_NAME_FIELD_VAR, GraphQLString);
-        fileAssetInterfaceFields.put(FILEASSET_METADATA_FIELD_VAR, GraphQLString);
         fileAssetInterfaceFields.put(FILEASSET_DESCRIPTION_FIELD_VAR, GraphQLString);
 
-        binaryTypeFields.put()
+
 
 
     }
 
+//    private static Map<String, Graph>
+
 
     private GraphQLInterfaceType createContentInterface() {
 
-        final GraphQLInterfaceType.Builder builder = GraphQLInterfaceType.newInterface().name("Content");
+        final Map<String, GraphQLOutputType> contentInterfaceFields = new HashMap<>();
 
-        contentInterfaceFields.keySet().forEach((key)->{
-            builder.field(newFieldDefinition()
-                .name(key)
-                .type(contentInterfaceFields.get(key))
-                .dataFetcher(new FieldDataFetcher())
-            );
-        });
 
-        builder.typeResolver(new ContentResolver());
-        return builder.build();
+
+        return TypeUtil.createInterfaceType("Content", contentInterfaceFields, new ContentResolver());
     }
 
 }
