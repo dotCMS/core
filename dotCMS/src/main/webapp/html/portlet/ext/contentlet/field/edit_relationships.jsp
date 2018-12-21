@@ -136,24 +136,15 @@
 			</script>
 	<%
 		}
-	%>
+    %>
+    
+    <style type="text/css" media="all">
+        @import url(/html/portlet/ext/contentlet/field/edit_relationships.css);
+    </style>
 
-	<div class="portlet-toolbar relationships-list">
-		<div class="portlet-toolbar__actions-primary">
-			<b><%= (sortList.size()>1 && rel.isParentRequired() && !records.isHasParent()) ? "<span class='required'></span>"  :
-				   (sortList.size()>1 && rel.isChildRequired() && records.isHasParent()) ? "<span class='required'></span>" : ""  %>
-			   <%= targetStructure.getName() %>: </b><%=("yes".equals(isParent)) ? LanguageUtil.get(pageContext, "Child"): LanguageUtil.get(pageContext, "Parent") %>
-			(<%= rel.getRelationTypeValue() %>)
-		</div>
-		<div class="portlet-toolbar__actions-secondary">
-			<div id="<%= relationJsName %>relateMenu"></div>
-		</div>
-	</div>
-	
 		<table border="0" class="listingTable"  style="margin-bottom:30px;">
 				<thead>
 					<tr class="beta">
-					<th width="20"><B><font class="beta" size="2"></font></B></th>
 					<%
 							int nFields = 3;
 							boolean indexed = false;
@@ -165,7 +156,7 @@
 									indexed = true;
 									nFields++;
 					%>
-										<th><B><font class="beta" size="2"><%= f.getFieldName() %> </font></B>
+										<th><%= f.getFieldName() %>
 										</th>
 					<%
 								}
@@ -173,7 +164,7 @@
 
 							if (!indexed) {
 					%>
-										<th><B><font class="beta" size="2"> <%= LanguageUtil.get(pageContext, "No-Searchable-Fields-Found-Showing-the-Identity-Number") %> </font></B></th>
+										<th> <%= LanguageUtil.get(pageContext, "No-Searchable-Fields-Found-Showing-the-Identity-Number") %> </th>
 					<%
 							}
 					%>
@@ -181,14 +172,19 @@
 					<%
 						if(langs.size() > 1) {
 					%>
-						<th width="<%= langs.size() < 6 ? (langs.size() * 40) : 200 %>px;"><B><font class="beta" size="2"></font></B></th>
+						<th width="<%= langs.size() < 6 ? (langs.size() * 40) : 100 %>px;"></th>
 					<%
 						}else{
 					%>
-						<th width="20"><B><font class="beta" size="2"></font></B></th>
+						<th width="20"></th>
 					<%
 						}
-					%>
+                    %>
+                        <th align="center" width="20">
+                            <div class="portlet-toolbar__actions-secondary">
+                                <div id="<%= relationJsName %>relateMenu"></div>
+                            </div>
+                        </th>
 					</tr>
 				</thead>
 				<tbody id="<%=relationJsName%>Table">
@@ -276,7 +272,7 @@
 						    <%
 					    }
 					    %>
-					    	cont<%=UtilMethods.javaScriptifyVariable(cont.getInode())%>Siblings[cont<%=UtilMethods.javaScriptifyVariable(cont.getInode())%>Siblings.length] = cont<%=UtilMethods.javaScriptifyVariable(cont.getInode()+lang.getId())%>Sibling;
+                            cont<%=UtilMethods.javaScriptifyVariable(cont.getInode())%>Siblings[cont<%=UtilMethods.javaScriptifyVariable(cont.getInode())%>Siblings.length] = cont<%=UtilMethods.javaScriptifyVariable(cont.getInode()+lang.getId())%>Sibling;
 					    <%
 					    
 					}
@@ -346,61 +342,62 @@
 				}
 		%>
 
+                function getCurrentLanguageIndex(o) {
+                    var languageName = document.getElementById("langcombo").value.split(' ')[0].toLowerCase();
+                    var index = 0;
+                    for (var sibIndex = 0; sibIndex < o['siblings'].length ; sibIndex++) {
+                        if (o['siblings'][sibIndex]['langName'].toLowerCase() === languageName) {
+                            index = sibIndex;
+                        }
+                    }
+
+                    return index;
+                }
+
 				//Function used to render language id
 				function <%= relationJsName %>_lang(o) {
 					var contentletLangCode = '<%= langAPI.getLanguageCodeAndCountry(contentlet.getLanguageId(),null)%>';
+                    var currentLanguageIndex = getCurrentLanguageIndex(o);
 					var lang = '';
 					var result = '';
-					var anchorValue = "";
-		
-					if (o != null) {
-						result = result + "<table width=\"100%\" class=\"relationLanguageFlag\"><tbody><tr>"
-						
-						for(var sibIndex = 0; sibIndex < o['siblings'].length ; sibIndex++){
-																								
-							result = result + '<td  class=\"relationLanguageFlag\">';
-							langImg = o['siblings'][sibIndex]['langCode'];
-							langName = o['siblings'][sibIndex]['langName'];
-							
-							if(o['siblings'][sibIndex]['live'] == 'true'){
-																								
-								anchorValue = "";
-								if (o != null){
-									anchorValue = "<a href=\"javascript:<%= relationJsName %>editRelatedContent('" + o['siblings'][sibIndex]['inode'] + "', '"+ o['siblings'][sibIndex]['siblingInode'] +"', '"+ o['siblings'][sibIndex]['langId'] +"');\"" + ">" ;
-					 			}
-								
-								result = result +'&nbsp;&nbsp;' + anchorValue + '<img style="vertical-align: middle; border: solid 2px #33FF33; padding:2px; border-radius:5px;" src="/html/images/languages/' + langImg + '.gif" alt="'+langName+'">' + '</a>';
-								
-							}else if(o['siblings'][sibIndex]['deleted'] == 'true'){
-								
-								anchorValue = "";
-								if (o != null){
-									anchorValue = "<a href=\"javascript:<%= relationJsName %>editRelatedContent('" + o['siblings'][sibIndex]['inode'] + "', '"+ o['siblings'][sibIndex]['siblingInode'] +"', '"+ o['siblings'][sibIndex]['langId'] +"');\"" + ">" ;
-					 			}
+                    var anchorValue = "";
+                    var imgLangName = '';
 
-								result = result + '&nbsp;&nbsp;'  + anchorValue + '<img style="vertical-align: middle; border: solid 2px #66664D; padding:2px; border-radius:5px;" src="/html/images/languages/' + langImg + '_gray.gif" alt="'+langName+'">' + '</a>';
-								
-								
-							}else{
-								
-								anchorValue = "";
-								if (o != null){
-									anchorValue = "<a href=\"javascript:<%= relationJsName %>editRelatedContent('" + o['siblings'][sibIndex]['inode'] + "', '"+ o['siblings'][sibIndex]['siblingInode'] +"', '"+ o['siblings'][sibIndex]['langId'] +"');\"" + ">" ;
-					 			}
-								
-								result = result + '&nbsp;&nbsp;'  + anchorValue + '<img style="vertical-align: middle; border: solid 2px #FFCC11; padding:2px; border-radius:5px;" src="/html/images/languages/' + langImg + '.gif" alt="'+langName+'">' + '</a>';
-								
-							}
-							
-							result = result + "</td>";
-							if((sibIndex+1)%6 == 0){
-								result = result + "</tr><tr>";
-							}
+					if (o != null) {
+                        result = '<div class="relationLanguageFlag" id="' + o.id + '"><div value="' + currentLanguageIndex + '" data-dojo-type="dijit/form/Select">';
+
+						for(var sibIndex = 0; sibIndex < o['siblings'].length ; sibIndex++){
+							langImg = o['siblings'][sibIndex]['langCode'];
+                            langName = o['siblings'][sibIndex]['langName'];
+
+                            if (o['siblings'][sibIndex]['deleted'] == 'true') {
+                                imgLangName = langImg + '_gray';
+                            } else {
+                                imgLangName = langImg;
+                            }
+
+                            var dataTags = 'data-inode="' + o['siblings'][sibIndex]['inode'] + '" data-siblingInode="' + o['siblings'][sibIndex]['siblingInode'] + '" data-langId="' + o['siblings'][sibIndex]['langId'] + '"';
+                            var imgTag = '<img style="vertical-align: middle; padding:2px 8px 2px 2px;" src="/html/images/languages/' + imgLangName + '.gif" alt="' + langName +'">';
+                            result = result + '<span value="' + sibIndex + '"><span onclick="openContentletPage(this)" ' + dataTags + '>' + imgTag + '(' + langImg + ')</span></span>';
 						}
-						result = result + "</tr></tbody></table>";
+
+                        result = result + "</div></div>";
 					}
 					return result;
-				}
+                }
+
+                function openContentletPage(dropdownElem) {
+                    var inode = getDataTagValue(dropdownElem.outerHTML, 'inode');
+                    var siblingInode = getDataTagValue(dropdownElem.outerHTML, 'siblinginode');
+                    var langId = getDataTagValue(dropdownElem.outerHTML, 'langid');
+                    <%= relationJsName %>editRelatedContent( inode, siblingInode, langId);
+                }
+
+                function getDataTagValue(tag, attr) {
+                    var startIndex = tag.indexOf(attr + '="');
+                    var endIndex = tag.indexOf('"', startIndex + attr.length + 2);
+                    return tag.substring(startIndex, endIndex).replace(attr, '').replace(/="/, '');
+                }
 
 				//Function used to render the publish/unpublish info
 			   function <%= relationJsName %>_status(o) {
@@ -687,29 +684,9 @@
 
 				}
 
-				function <%= relationJsName %>CreateRow(item,hint){
+				function <%= relationJsName %>CreateRow(item,hint) {
 
 					var tr = document.createElement("tr");
-
-					// displays edit(pencil icon) and delete(X).
-					var actionTD = document.createElement("td");
-					actionTD.innerHTML = <%= relationJsName %>unrelateAction(item);
-					tr.appendChild(actionTD);
-
-					// to hold contentInode to reorder
-					var span = document.createElement("span");
-					dojo.addClass(span,"<%= relationJsName %>hiddenInodeField");
-					dojo.style(span,"display","none");
-					span.innerHTML = item['inode'];
-					tr.appendChild(span);
-
-					// to hold order sequence number to reorder
-					var order = document.createElement("input");
-					order.type="hidden";
-					order.id = "<%= relationJsName %>_order_" + item['id'];
-					dojo.addClass(order,"<%= relationJsName %>orderBox");
-					order.value = <%= relationJsName %>_order_tf();
-					tr.appendChild(order);
 
 					// displays each listed field
 					<%
@@ -742,9 +719,11 @@
 					<%
 					if(langs.size() > 1) {
 					%>	// displays the publish/unpublish/archive status of the content and language flag, if multiple languages exists.
-						var langTD = document.createElement("td");					
+						var langTD = document.createElement("td");
+                        langTD.style.textAlign = 'right';
 						langTD.innerHTML = <%= relationJsName %>_lang(item);
-						tr.appendChild(langTD);
+                        tr.appendChild(langTD);
+                        setTimeout(function () { dojo.parser.parse(item.id); }, 0);
 					<%
 					}else{
 					%>
@@ -756,15 +735,36 @@
 
 					<%
 					}
-					%>
+                    %>
+                    
+					// to hold contentInode to reorder
+					var span = document.createElement("span");
+					dojo.addClass(span,"<%= relationJsName %>hiddenInodeField");
+					dojo.style(span,"display","none");
+					span.innerHTML = item['inode'];
+					tr.appendChild(span);
+
+					// to hold order sequence number to reorder
+					var order = document.createElement("input");
+					order.type="hidden";
+					order.id = "<%= relationJsName %>_order_" + item['id'];
+					dojo.addClass(order,"<%= relationJsName %>orderBox");
+					order.value = <%= relationJsName %>_order_tf();
+					tr.appendChild(order);
+
+                    // displays edit(pencil icon) and delete(X).
+                    var actionTD = document.createElement("td");
+                    dojo.style(actionTD, "text-align", "center");
+                    actionTD.innerHTML = <%= relationJsName %>unrelateAction(item);
+					tr.appendChild(actionTD);
+
 
 					return {node: tr, data: item, type: "text"};
 				}
 
-
 				function <%= relationJsName %>init(){
 
-					// Initializing related contents table.
+                    // Initializing related contents table.
 					<%= relationJsName %>buildListing('<%= relationJsName %>Table',<%= relationJsName %>_Contents);
 
 					// connectin drag and drop to reorder functionality
@@ -780,7 +780,6 @@
 
 				// to edit a related content, with proper referer
 				function <%= relationJsName %>editRelatedContent(inode, siblingInode, langId){
-
 					if (!confirm('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.contentlet.lose.unsaved.changes")) %>'))
 						return;
 
