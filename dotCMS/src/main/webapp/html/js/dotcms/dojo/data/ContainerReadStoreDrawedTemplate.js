@@ -82,11 +82,6 @@ dojo.declare("dotcms.dojo.data.ContainerReadStoreDrawedTemplate", null, {
 			keywordArgs.sort = [""];
 		}
 
-        /*if (containersAdded) {
-            keywordArgs.exclude = containersAdded;
-        } else {
-            keywordArgs.exclude = [];
-        }*/
 		keywordArgs.exclude = []; // now, adding the ability to add repeated containers.
 		
 		ContainerAjaxDrawedTemplate.fetchContainersDesignTemplate(keywordArgs.query, keywordArgs.queryOptions, keywordArgs.start, keywordArgs.count, keywordArgs.sort, keywordArgs.exclude, fetchCallback);

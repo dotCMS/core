@@ -383,15 +383,6 @@ function addDrawedContainer(idDiv, container, value, error_msg, container_exist)
 
 	console.log("uuid", uuid);
 	// now, adding the ability to add repeated containers.
-	/*if(null!=div_container && null!=span_container){
-		alert(error_msg);
-		return;
-	}
-
-	if(container.maxContentlets>0 && hasContainer(value)){
-		alert(container_exist);
-		return;
-	}*/
 
 	//create the container span
 	var titleContainerSpan = document.createElement("span");
