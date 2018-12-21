@@ -7,6 +7,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 
@@ -48,6 +49,18 @@ public class DefaultVanityUrlHandler implements VanityUrlHandler {
         String rewrite = null;
         String queryString = null;
         VanityUrlResult vanityUrlResult = null;
+        
+        
+        
+        
+        String pageString = CircuitBreakerUrl.builder()
+            .setUrl("https://google.com")
+            .setHeaders(ImmutableMap.of("X-CUSTOM-HEADER", "TESTING"))
+            .setMethod(CircuitBreakerUrl.Method.POST)
+            .setParams(ImmutableMap.of("param1", "12345"))
+            .setTimeout(2000)
+            .build()
+            .doString();
 
         if (vanityUrl != null) {
             rewrite = InodeUtils.isSet(vanityUrl.getForwardTo()) ? vanityUrl.getForwardTo() : null;
