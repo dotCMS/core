@@ -66,6 +66,9 @@ public class DotGraphQLSchemaProvider implements GraphQLSchemaProvider {
                 .typeResolver(new ContentResolver())
                 .build();
 
+            // generate type for content type
+            // schemaAPI.generateType
+
             GraphQLObjectType newsType = newObject()
                 .name("News")
                 .withInterface(contentInterface)
@@ -94,7 +97,29 @@ public class DotGraphQLSchemaProvider implements GraphQLSchemaProvider {
 
             Set<GraphQLType> additionalTypes = new HashSet<>(Arrays.asList(newsType));
 
-            return new GraphQLSchema(queryType, null, additionalTypes);
+            final GraphQLSchema schema = new GraphQLSchema(queryType, null, additionalTypes);
+
+            // add new type, regenerate type
+            GraphQLObjectType myNewType = null;// graphqlTypeAPI.createType()
+            GraphQLSchema.Builder builder = GraphQLSchema.newSchema(schema);
+            builder.additionalType(myNewType);
+            GraphQLSchema schemaWithNewType = builder.build();
+
+            // delete type
+            String typeNameToDelete = "typeToDelete";
+            Set<GraphQLType> existingTypes = schemaWithNewType.getAdditionalTypes();
+            existingTypes.remove(schemaWithNewType.getType(typeNameToDelete));
+            GraphQLSchema.Builder builder2 = GraphQLSchema.newSchema(schema);
+            builder2.clearAdditionalTypes();
+            builder2.additionalTypes(existingTypes);
+            GraphQLSchema schemaWithoutType = builder.build();
+
+
+
+
+
+
+            return schema;
         } catch(SchemaProblem e) {
             Logger.error(this, "Error with schema", e);
             throw e;
