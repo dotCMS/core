@@ -24,6 +24,10 @@ public class CircuitBreakerUrlBuilder {
     Map<String, String> headers = Maps.newHashMap();
     Method method = Method.GET;
     boolean verbose = false;
+    int failAfter = CurcuitBreakerPool.FAIL_AFTER;
+    int tryAgainAfter = CurcuitBreakerPool.TRY_AGAIN_AFTER;
+    int workAfter = CurcuitBreakerPool.WORK_AFTER_SEC;
+
 
     public CircuitBreakerUrlBuilder setUrl(String proxyUrl) {
         this.proxyUrl = proxyUrl;
@@ -72,7 +76,7 @@ public class CircuitBreakerUrlBuilder {
             throw new DotStateException("A URL must be set to use CircuitBreakerUrl");
         }
         if (this.circuitBreaker == null) {
-            this.circuitBreaker = CurcuitBreakerPool.getBreaker(this.proxyUrl + this.timeout);
+            this.circuitBreaker = CurcuitBreakerPool.getBreaker(this.proxyUrl + this.timeout, failAfter, tryAgainAfter, workAfter);
         }
         HttpRequestBase request;
         switch (this.method) {

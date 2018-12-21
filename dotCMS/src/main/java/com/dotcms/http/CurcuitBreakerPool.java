@@ -13,10 +13,10 @@ import net.jodah.failsafe.CircuitBreaker;
 
 public class CurcuitBreakerPool {
     
-    private final static long DELAY     = Config.getLongProperty("URL_CONNECTION_CIRCUIT_BREAKER_DELEY_SEC", 30);
-    private final static int FAILURES   = Config.getIntProperty("URL_CONNECTION_CIRCUIT_BREAKER_FAILURES", 5);
-    private final static int SUCCESSES  = Config.getIntProperty("URL_CONNECTION_CIRCUIT_BREAKER_SUCCESSES", 3);
-    
+
+    final static int FAIL_AFTER = Config.getIntProperty("CIRCUIT_BREAKER_URL_MAX_FAILURES", 5);
+    final static int TRY_AGAIN_AFTER = Config.getIntProperty("CIRCUIT_BREAKER_URL_TRY_AGAIN_DELEY_SEC", 5);
+    final static int WORK_AFTER_SEC = Config.getIntProperty("CIRCUIT_BREAKER_URL_TRY_DELEY_SEC", 5);
     
     private static final Cache<String, CircuitBreaker> pool =
                     CacheBuilder.newBuilder()
@@ -31,9 +31,9 @@ public class CurcuitBreakerPool {
                 @Override
                 public CircuitBreaker call() {
                     return new CircuitBreaker()
-                                    .withFailureThreshold(FAILURES)
-                                    .withSuccessThreshold(SUCCESSES)
-                                    .withDelay(DELAY, TimeUnit.SECONDS);
+                                    .withFailureThreshold(FAIL_AFTER)
+                                    .withSuccessThreshold(TRY_AGAIN_AFTER)
+                                    .withDelay(WORK_AFTER_SEC, TimeUnit.SECONDS);
                 }
             });
         } catch (ExecutionException e) {
@@ -41,7 +41,23 @@ public class CurcuitBreakerPool {
         }
 
     }
-    
+    @VisibleForTesting
+    public static CircuitBreaker getBreaker(final String key, int failAfter, int tryAgainAfter, int workAgainAfter)  {
+        try {
+            return pool.get(key, new Callable<CircuitBreaker>() {
+                @Override
+                public CircuitBreaker call() {
+                    return new CircuitBreaker()
+                                    .withFailureThreshold(failAfter)
+                                    .withSuccessThreshold(tryAgainAfter)
+                                    .withDelay(workAgainAfter, TimeUnit.SECONDS);
+                }
+            });
+        } catch (ExecutionException e) {
+            throw new DotExecutionException(e);
+        }
+
+    }
     @VisibleForTesting
     public static void putBreaker(final String key, final CircuitBreaker breaker)  {
         pool.put(key, breaker);
