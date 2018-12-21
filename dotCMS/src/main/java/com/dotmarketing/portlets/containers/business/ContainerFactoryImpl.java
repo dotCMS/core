@@ -221,30 +221,29 @@ public class ContainerFactoryImpl implements ContainerFactory {
 		}
 
 		List<Container> resultList;
-		final DotConnect dc  = new DotConnect();
-		int countLimit 		 = 100;
+		final DotConnect dotConnect  = new DotConnect();
+		int countLimit 		         = 100;
 
 		try {
 
 			query.append(conditionBuffer.toString());
 			query.append(" order by asset.");
 			query.append(orderBy);
-			dc.setSQL(query.toString());
+			dotConnect.setSQL(query.toString());
 
 			if(paramValues!=null && paramValues.size()>0) {
 				for (final Object value : paramValues) {
-					dc.addParam((String)value);
+					dotConnect.addParam((String)value);
 				}
 			}
 
 			// adding the container from the site browser
-			toReturn.addAll(this.findFolderAssetContainers(user, includeArchived,
-					params, hostId, inode, identifier, parent, orderByParam));
+			toReturn.addAll(this.findFolderAssetContainers(user, hostId, orderByParam));
 
 			while(!done) {
 
-				dc.setStartRow(internalOffset).setMaxRows(internalLimit);
-				resultList = TransformerLocator.createContainerTransformer(dc.loadObjectResults()).asList();
+				dotConnect.setStartRow(internalOffset).setMaxRows(internalLimit);
+				resultList = TransformerLocator.createContainerTransformer(dotConnect.loadObjectResults()).asList();
 				toReturn.addAll(this.permissionAPI.filterCollection(resultList, PermissionAPI.PERMISSION_READ, false, user));
 				if(countLimit > 0 && toReturn.size() >= countLimit + offset) {
 					done = true;
@@ -255,24 +254,7 @@ public class ContainerFactoryImpl implements ContainerFactory {
 				internalOffset += internalLimit;
 			}
 
-			assets.setTotalResults(toReturn.size());
-
-			if(limit!=-1) {
-				int from = offset<toReturn.size()?offset:0;
-				int pageLimit = 0;
-				for(int i=from;i<toReturn.size();i++){
-					if(pageLimit<limit){
-						assets.add((Container) toReturn.get(i));
-						pageLimit+=1;
-					}else{
-						break;
-					}
-				}
-			} else {
-				for(int i=0;i<toReturn.size();i++){
-					assets.add((Container) toReturn.get(i));
-				}
-			}
+			getPaginatedAssets(offset, limit, assets, toReturn);
 		} catch (Exception e) {
 			Logger.error(ContainerFactoryImpl.class, "findContainers failed:" + e, e);
 			throw new DotRuntimeException(e.toString());
@@ -281,18 +263,63 @@ public class ContainerFactoryImpl implements ContainerFactory {
 		return assets;
 	}
 
-	private Collection<? extends Permissionable> findFolderAssetContainers(final User user, final boolean includeArchived,
-																		   final Map<String, Object> params, final String hostId,
-																		   final String inode,  final String identifier,
-																		   final String parent, final String orderByParam) throws DotSecurityException, DotDataException {
+	private void getPaginatedAssets(final int offset,
+									final int limit,
+									final PaginatedArrayList<Container> assets,
+									final List<Permissionable> toReturn) {
 
-	    // todo: we are passing all the parameters but not sure if we need everything
+		assets.setTotalResults(toReturn.size());
+
+		if(limit!=-1) {
+
+			final int from = offset<toReturn.size()?offset:0;
+			int pageLimit  = 0;
+
+			for(int i=from;i<toReturn.size();i++) {
+
+				if(pageLimit < limit) {
+					assets.add((Container) toReturn.get(i));
+					pageLimit+=1;
+				} else {
+					break;
+				}
+			}
+		} else {
+			for(int i=0;i<toReturn.size();i++) {
+
+				assets.add((Container) toReturn.get(i));
+			}
+		}
+	}
+
+	private Collection<? extends Permissionable> findFolderAssetContainers(final User user, final String hostId,
+																		   final String orderByParam) {
+
 		try {
+
 			final Host host     			 = this.hostAPI.find(hostId, user, false);
 			final List<Folder> subFolders    = this.findContainersAssetsByHost(host, user);
 			final List<Container> containers = this.getFolderContainers(host, user, subFolders);
 
-			// todo: order by???
+			if (UtilMethods.isSet(orderByParam)) {
+				switch (orderByParam) {
+					case "title asc":
+						containers.sort(Comparator.comparing(Container::getTitle));
+					break;
+
+                    case "title desc":
+                        containers.sort(Comparator.comparing(Container::getTitle).reversed());
+                        break;
+
+					case "modDate asc":
+						containers.sort(Comparator.comparing(Container::getModDate));
+						break;
+
+                    case "modDate desc":
+                        containers.sort(Comparator.comparing(Container::getModDate).reversed());
+                        break;
+				}
+			}
 
 			return containers;
 		} catch (Exception e) {
@@ -330,13 +357,19 @@ public class ContainerFactoryImpl implements ContainerFactory {
 
 		try{
 
-			final String query = builder("+structureType:", Structure.STRUCTURE_TYPE_FILEASSET,
+			final StringBuilder queryBuilder = builder("+structureType:", Structure.STRUCTURE_TYPE_FILEASSET,
 					" +path:", Constants.CONTAINER_FOLDER_PATH, "/*",
 					" +path:*/container.vtl",
-					" +conhost:", host.getIdentifier(),
-					" +working:true +deleted:false").toString();
+					" +working:true +deleted:false");
 
-			containers =
+			if (null != host) {
+
+			    queryBuilder.append(	" +conhost:" + host.getIdentifier());
+            }
+
+            final String query = queryBuilder.toString();
+
+            containers =
 					this.permissionAPI.filterCollection(
 							this.contentletAPI.search(query,-1, 0, null , user, false),
 							PermissionAPI.PERMISSION_READ, false, user);
@@ -359,7 +392,8 @@ public class ContainerFactoryImpl implements ContainerFactory {
 		for (final Folder subFolder : subFolders) {
 
 			try {
-				final Container container = this.getContainerByFolder(host, subFolder, null != user? user: APILocator.systemUser(), false);
+			    final User      userFinal = null != user? user: APILocator.systemUser();
+				final Container container = this.getContainerByFolder(null != host?host:APILocator.getHostAPI().find(subFolder.getHostId(), user, false), subFolder, userFinal, false);
 				containers.add(container);
 			} catch (DotSecurityException e) {
 
