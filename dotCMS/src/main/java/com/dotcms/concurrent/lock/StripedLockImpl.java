@@ -13,9 +13,9 @@ import java.util.concurrent.locks.Lock;
  */
 public class StripedLockImpl<K> implements DotKeyLockManager<K> {
 
-    static final int DEFAULT_STRIPES = 26;
+    static final int DEFAULT_STRIPES = 64;
 
-    static final int DEFAULT_TIME = 30;
+    static final int DEFAULT_TIME = 3;
 
     static final TimeUnit DEFAULT_TU = TimeUnit.SECONDS;
 
