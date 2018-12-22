@@ -1,16 +1,20 @@
 package com.dotcms.graphql.business;
 
 import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.contenttype.model.field.BinaryField;
+import com.dotcms.contenttype.model.field.CategoryField;
 import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.graphql.ContentResolver;
 import com.dotcms.graphql.CustomFieldType;
+import com.dotcms.graphql.InterfaceType;
 import com.dotcms.graphql.datafetcher.ContentletDataFetcher;
 import com.dotcms.graphql.datafetcher.FieldDataFetcher;
-import com.dotcms.graphql.util.TypeUtil;
+import com.dotcms.util.DotPreconditions;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -18,49 +22,24 @@ import java.util.Map;
 import java.util.Set;
 
 import graphql.schema.GraphQLArgument;
-import graphql.schema.GraphQLInterfaceType;
 import graphql.schema.GraphQLList;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLType;
 
-import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.BASE_TYPE;
-import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.CATEGORIES;
-import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.CONTENTLET_FOLER;
-import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.CONTENTLET_HOST;
-import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.CONTENT_TYPE;
-import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.DELETED;
-import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.EXPIRE_DATE;
-import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.IDENTIFIER;
-import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.INODE;
-import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.LANGUAGE_ID;
-import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.LIVE;
-import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.LOCKED;
-import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.MOD_DATE;
-import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.PARENT_PATH;
-import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.PATH;
-import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.PUBLISH_DATE;
-import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.TITLE;
-import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.URL_MAP;
-import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.WORKFLOW_ASSIGN;
-import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.WORKFLOW_CREATED_BY;
-import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.WORKFLOW_MOD_DATE;
-import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.WORKFLOW_STEP;
-import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.WORKING;
-import static com.dotcms.contenttype.model.type.FileAssetContentType.FILEASSET_DESCRIPTION_FIELD_VAR;
-import static com.dotcms.contenttype.model.type.FileAssetContentType.FILEASSET_FILEASSET_FIELD_VAR;
-import static com.dotcms.contenttype.model.type.FileAssetContentType.FILEASSET_FILE_NAME_FIELD_VAR;
-import static com.dotcms.contenttype.model.type.FileAssetContentType.FILEASSET_SITE_OR_FOLDER_FIELD_VAR;
-import static com.dotcms.contenttype.model.type.FileAssetContentType.FILEASSET_TITLE_FIELD_VAR;
-import static graphql.Scalars.GraphQLBoolean;
-import static graphql.Scalars.GraphQLID;
-import static graphql.Scalars.GraphQLInt;
 import static graphql.Scalars.GraphQLString;
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
 import static graphql.schema.GraphQLObjectType.newObject;
 
 public class GraphqlAPIImpl implements GraphqlAPI {
+
+    private Map<Class<? extends Field>, GraphQLObjectType> fieldClassGraphqlTypeMap = new HashMap<>();
+
+    public GraphqlAPIImpl() {
+        fieldClassGraphqlTypeMap.put(BinaryField.class, CustomFieldType.BINARY.getType());
+        fieldClassGraphqlTypeMap.put(CategoryField.class, CustomFieldType.CATEGORY.getType());
+    }
 
     @Override
     public GraphQLSchema getSchema() {
@@ -70,7 +49,33 @@ public class GraphqlAPIImpl implements GraphqlAPI {
 
     @Override
     public GraphQLType createSchemaType(ContentType contentType) {
-        return  null;
+
+        final GraphQLObjectType.Builder builder = GraphQLObjectType.newObject().name(contentType.variable());
+
+        // add CONTENT interface fields
+        builder.fields(InterfaceType.CONTENT.getType().getFieldDefinitions());
+
+        final List<Field> fields = contentType.fields();
+
+        fields.forEach((field)->{
+            builder.field(newFieldDefinition()
+                .name(field.variable())
+                .type(getGraphqlTypeForFieldClass(field.type()))
+                .dataFetcher(new FieldDataFetcher())
+            );
+        });
+
+        return builder.build();
+    }
+
+    private GraphQLOutputType getGraphqlTypeForFieldClass(final Class<Field> fieldClass) {
+
+        DotPreconditions.checkArgument(!fieldClass.getName().equals(RelationshipField.class.getName()),
+            "Unable to solve RelationshiFields at this point");
+
+        return fieldClassGraphqlTypeMap.get(fieldClass)!= null
+            ? fieldClassGraphqlTypeMap.get(fieldClass)
+            : GraphQLString;
     }
 
     @Override
@@ -99,14 +104,19 @@ public class GraphqlAPIImpl implements GraphqlAPI {
     }
 
     private GraphQLSchema generateSchema() throws DotDataException {
+
         final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
 
-        Set<GraphQLType> graphQLTypes = new HashSet<>(createBaseTypes());
+        Set<GraphQLType> graphQLTypes = new HashSet<>(InterfaceType.valuesAsSet());
 
         List<ContentType> allTypes = contentTypeAPI.findAll();
+
+        // create all types without relationship fields
         allTypes.forEach((type)->graphQLTypes.add(createSchemaType(type)));
 
-        final GraphQLInterfaceType contentInterface = createContentInterface();
+        // add relationship fields after creating all types
+
+
 
         // Root Type
         GraphQLObjectType rootType = newObject()
@@ -117,47 +127,11 @@ public class GraphqlAPIImpl implements GraphqlAPI {
                     .name("query")
                     .type(GraphQLString)
                     .build())
-                .type(GraphQLList.list(contentInterface))
+                .type(GraphQLList.list(InterfaceType.CONTENT.getType()))
                 .dataFetcher(new ContentletDataFetcher()))
             .build();
 
         return new GraphQLSchema(rootType, null, graphQLTypes);
-    }
-
-    private Set<GraphQLType> createBaseTypes() {
-
-        return null;
-    }
-
-    // TODO: only widgetTitle returned here
-//    private static Map<String, GraphQLOutputType> widgetInterfaceFields = new HashMap<>();
-    private static Map<String, GraphQLOutputType> fileAssetInterfaceFields = new HashMap<>();
-
-    private static Map<String, GraphQLObjectType> customFieldTypes = new HashMap<>();
-
-    static {
-
-        fileAssetInterfaceFields.put(FILEASSET_SITE_OR_FOLDER_FIELD_VAR, GraphQLString);
-        fileAssetInterfaceFields.put(FILEASSET_FILEASSET_FIELD_VAR, CustomFieldType.BINARY.getType());
-        fileAssetInterfaceFields.put(FILEASSET_TITLE_FIELD_VAR, GraphQLString);
-        fileAssetInterfaceFields.put(FILEASSET_FILE_NAME_FIELD_VAR, GraphQLString);
-        fileAssetInterfaceFields.put(FILEASSET_DESCRIPTION_FIELD_VAR, GraphQLString);
-
-
-
-
-    }
-
-//    private static Map<String, Graph>
-
-
-    private GraphQLInterfaceType createContentInterface() {
-
-        final Map<String, GraphQLOutputType> contentInterfaceFields = new HashMap<>();
-
-
-
-        return TypeUtil.createInterfaceType("Content", contentInterfaceFields, new ContentResolver());
     }
 
 }

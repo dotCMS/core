@@ -3,7 +3,9 @@ package com.dotcms.graphql;
 import com.dotcms.graphql.util.TypeUtil;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import graphql.schema.GraphQLInterfaceType;
 import graphql.schema.GraphQLOutputType;
@@ -31,6 +33,11 @@ import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.WORK
 import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.WORKFLOW_MOD_DATE;
 import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.WORKFLOW_STEP;
 import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.WORKING;
+import static com.dotcms.contenttype.model.type.FileAssetContentType.FILEASSET_DESCRIPTION_FIELD_VAR;
+import static com.dotcms.contenttype.model.type.FileAssetContentType.FILEASSET_FILEASSET_FIELD_VAR;
+import static com.dotcms.contenttype.model.type.FileAssetContentType.FILEASSET_FILE_NAME_FIELD_VAR;
+import static com.dotcms.contenttype.model.type.FileAssetContentType.FILEASSET_SITE_OR_FOLDER_FIELD_VAR;
+import static com.dotcms.contenttype.model.type.FileAssetContentType.FILEASSET_TITLE_FIELD_VAR;
 import static graphql.Scalars.GraphQLBoolean;
 import static graphql.Scalars.GraphQLID;
 import static graphql.Scalars.GraphQLInt;
@@ -72,9 +79,31 @@ public enum InterfaceType {
         contentFields.put(CATEGORIES, GraphQLString);
 
         interfaceTypes.put("CONTENT", TypeUtil.createInterfaceType("Content", contentFields, new ContentResolver()));
+
+        final Map<String, GraphQLOutputType> fileAssetFields = new HashMap<>();
+        fileAssetFields.put(FILEASSET_FILE_NAME_FIELD_VAR, GraphQLString);
+        fileAssetFields.put(FILEASSET_DESCRIPTION_FIELD_VAR, GraphQLString);
+        fileAssetFields.put(FILEASSET_FILEASSET_FIELD_VAR, CustomFieldType.BINARY.getType());
+        fileAssetFields.put(FILEASSET_TITLE_FIELD_VAR, GraphQLString);
+        fileAssetFields.put(FILEASSET_SITE_OR_FOLDER_FIELD_VAR, GraphQLString);
+
+        interfaceTypes.put("FILEASSET", TypeUtil.createInterfaceType("Fileasset", fileAssetFields, new ContentResolver()));
+
+
+
     }
 
     public GraphQLInterfaceType getType() {
         return interfaceTypes.get(this.name());
+    }
+
+    public static Set<GraphQLInterfaceType> valuesAsSet() {
+        final Set<GraphQLInterfaceType> types = new HashSet<>();
+
+        for(final InterfaceType type : InterfaceType.values()) {
+            types.add(type.getType());
+        }
+
+        return types;
     }
 }
