@@ -3,18 +3,23 @@ package com.dotmarketing.business;
 
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.RelationshipFactory;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeIf;
 import com.dotcms.util.DotPreconditions;
 import com.dotmarketing.beans.Tree;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
+import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
 
 import com.dotmarketing.portlets.structure.transform.ContentletRelationshipsTransformer;
 import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 import java.util.List;
 import java.util.Optional;
 import java.util.Map;
@@ -233,4 +238,39 @@ public class RelationshipAPIImpl implements RelationshipAPI {
     public ContentletRelationships getContentletRelationshipsFromMap(Contentlet contentlet, final Map<Relationship, List<Contentlet>> contentRelationships) {
         return new ContentletRelationshipsTransformer(contentlet, contentRelationships).findFirst();
     }
+
+    @Override
+    public Relationship getRelationshipFromField(final Field field, final User user)
+            throws DotDataException, DotSecurityException {
+
+        final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
+
+        final String contentTypeVar    = contentTypeAPI.find(field.getStructureInode()).variable();
+        final String fieldRelationType = field.getFieldRelationType();
+
+        return APILocator.getRelationshipAPI().byTypeValue(
+                fieldRelationType.contains(StringPool.PERIOD) ? fieldRelationType
+                        : contentTypeVar + StringPool.PERIOD + field
+                                .getVelocityVarName());
+
+
+    }
+
+    @Override
+    public Relationship getRelationshipFromField(final com.dotcms.contenttype.model.field.Field field, final User user)
+            throws DotDataException, DotSecurityException {
+
+        final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
+
+        final String contentTypeVar    = contentTypeAPI.find(field.contentTypeId()).variable();
+
+        final String fieldRelationType = field.relationType();
+        return APILocator.getRelationshipAPI().byTypeValue(
+                fieldRelationType.contains(StringPool.PERIOD) ? fieldRelationType
+                        :contentTypeVar + StringPool.PERIOD + field
+                                .variable());
+
+
+    }
+
 }

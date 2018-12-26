@@ -1091,6 +1091,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     public Object getFieldValue(Contentlet contentlet, Field theField){
         try {
 
+            final User user = APILocator.getUserAPI().getSystemUser();
             if(fieldAPI.isElementConstant(theField)){
                 if(contentlet.getMap().get(theField.getVelocityVarName())==null)
                     contentlet.getMap().put(theField.getVelocityVarName(), theField.getValues());
@@ -1104,11 +1105,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 else
                     return contentlet.getFolder();
             }else if(theField.getFieldType().equals(Field.FieldType.CATEGORY.toString())){
-                Category category = categoryAPI.find(theField.getValues(), APILocator.getUserAPI().getSystemUser(), false);
+                Category category = categoryAPI.find(theField.getValues(), user, false);
                 // Get all the Contentlets Categories
-                List<Category> selectedCategories = categoryAPI.getParents(contentlet, APILocator.getUserAPI().getSystemUser(), false);
+                List<Category> selectedCategories = categoryAPI.getParents(contentlet, user, false);
                 Set<Category> categoryList = new HashSet<Category>();
-                List<Category> categoryTree = categoryAPI.getAllChildren(category, APILocator.getUserAPI().getSystemUser(), false);
+                List<Category> categoryTree = categoryAPI.getAllChildren(category, user, false);
                 if (selectedCategories.size() > 0 && categoryTree != null) {
                     for (int k = 0; k < categoryTree.size(); k++) {
                         Category cat = (Category) categoryTree.get(k);
@@ -1121,14 +1122,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 }
                 return categoryList;
             }else if(theField.getFieldType().equals(FieldType.RELATIONSHIP.toString())) {
-
-                final String[] relationType = theField.getFieldRelationType().split("\\.");
-                final Relationship relationship = (relationType.length > 1) ? relationshipAPI
-                        .byTypeValue(theField.getFieldRelationType()) : relationshipAPI.byTypeValue(
-                        contentlet.getContentType().variable() + StringPool.PERIOD + theField
-                                .getVelocityVarName());
-
-                return relationshipAPI.dbRelatedContent(relationship, contentlet);
+                return contentlet.getRelated(theField.getVelocityVarName());
             }else{
                 return contentlet.get(theField.getVelocityVarName());
             }
