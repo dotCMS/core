@@ -1128,7 +1128,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                         contentlet.getContentType().variable() + StringPool.PERIOD + theField
                                 .getVelocityVarName());
 
-                return relationshipAPI.dbRelatedContent(relationship, contentlet);
+                return contentlet.getRelated(theField.getVelocityVarName());
             }else{
                 return contentlet.get(theField.getVelocityVarName());
             }
