@@ -101,6 +101,9 @@ public class ContainerFactoryImpl implements ContainerFactory {
 		return containers;
 	}
 
+	/*
+	* Finds all containers for all sites on the data base.
+	 */
 	private List<Container> findAllHostDataBaseContainers() throws DotDataException {
 
 		final String tableName 			 = Type.CONTAINERS.getTableName();
@@ -174,10 +177,20 @@ public class ContainerFactoryImpl implements ContainerFactory {
         return ContainerByFolderAssetsUtil.getInstance().fromAssets (folder, this.findContainerAssets(folder, user, showLive), showLive);
     }
 
+    /*
+    * Finds the containers on the file system, base on a folder
+    * showLive in true means get just container published.
+    */
 	private List<FileAsset> findContainerAssets(final Folder folder, final User user, final boolean showLive) throws DotDataException, DotSecurityException {
 		return this.fileAssetAPI.findFileAssetsByFolder(folder, null, showLive, user, false);
 	}
 
+	/**
+	 * If a folder under application/containers/ has a vtl with the name: container.vtl, means it is a container file based.
+	 * @param host    {@link Host}
+	 * @param folder  folder
+	 * @return boolean
+	 */
 	private boolean hasContainerAsset(final Host host, final Folder folder) {
 		try {
 
@@ -189,6 +202,9 @@ public class ContainerFactoryImpl implements ContainerFactory {
 		}
 	}
 
+	/*
+	 * Determine if the container is a file based.
+	 */
 	private boolean isValidContainerPath(final Folder folder) {
 		return null != folder && UtilMethods.isSet(folder.getPath()) && folder.getPath().contains(Constants.CONTAINER_FOLDER_PATH);
 	}
@@ -203,7 +219,7 @@ public class ContainerFactoryImpl implements ContainerFactory {
 		final ContentTypeAPI contentTypeAPI        = APILocator.getContentTypeAPI(user);
 		final StringBuffer conditionBuffer         = new StringBuffer();
 		final List<Object> paramValues 			   = this.getConditionParametersAndBuildConditionQuery(params, conditionBuffer);
-		final PaginatedArrayList<Container> assets = new PaginatedArrayList<Container>();
+		final PaginatedArrayList<Container> assets = new PaginatedArrayList<>();
 		final List<Permissionable> toReturn        = new ArrayList<>();
 		int     internalLimit                      = 500;
 		int     internalOffset                     = 0;
@@ -292,6 +308,12 @@ public class ContainerFactoryImpl implements ContainerFactory {
 		}
 	}
 
+	/**
+	 * Finds all file base container for an user. Also order by orderByParam values (title asc, title desc, modDate asc, modDate desc)
+	 * @param user {@link User} to check the permissions
+	 * @param hostId {@link String} host id to find the containers
+	 * @param orderByParam {@link String} order by parameter
+	 **/
 	private Collection<? extends Permissionable> findFolderAssetContainers(final User user, final String hostId,
 																		   final String orderByParam) {
 
@@ -302,7 +324,7 @@ public class ContainerFactoryImpl implements ContainerFactory {
 			final List<Container> containers = this.getFolderContainers(host, user, subFolders);
 
 			if (UtilMethods.isSet(orderByParam)) {
-				switch (orderByParam) {
+				switch (orderByParam.toLowerCase()) {
 					case "title asc":
 						containers.sort(Comparator.comparing(Container::getTitle));
 					break;
@@ -311,11 +333,11 @@ public class ContainerFactoryImpl implements ContainerFactory {
                         containers.sort(Comparator.comparing(Container::getTitle).reversed());
                         break;
 
-					case "modDate asc":
+					case "moddate asc":
 						containers.sort(Comparator.comparing(Container::getModDate));
 						break;
 
-                    case "modDate desc":
+                    case "moddate desc":
                         containers.sort(Comparator.comparing(Container::getModDate).reversed());
                         break;
 				}
@@ -329,6 +351,12 @@ public class ContainerFactoryImpl implements ContainerFactory {
 		}
 	}
 
+	/**
+	 * Finds all host folder container based on the system user
+	 * @return Collection
+	 * @throws DotSecurityException
+	 * @throws DotDataException
+	 */
 	private Collection<Container> findAllHostFolderAssetContainers() throws DotSecurityException, DotDataException {
 
 		final User       user  = APILocator.systemUser();
@@ -343,13 +371,28 @@ public class ContainerFactoryImpl implements ContainerFactory {
 		return containers.build();
 	}
 
+	/**
+	 * Find host container, check the permissions based on an user
+	 * @param host {@link Host}
+	 * @param user {@link User}
+	 * @return List
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
 	private List<Container> findHostContainers(final Host host, final User user) throws DotDataException, DotSecurityException {
 
 		final List<Folder> subFolders = this.findContainersAssetsByHost(host, user);
 		return this.getFolderContainers(host, user, subFolders);
 	}
 
-
+	/**
+	 * Finds the container.vtl on a specific host
+	 * returns even working versions but not archived
+	 * the search is based on the ES Index
+	 * @param host {@link Host}
+	 * @param user {@link User}
+	 * @return List of Folder
+	 */
 	private List<Folder> findContainersAssetsByHost(final Host host, final User user) {
 
 		List<Contentlet>           containers = null;
@@ -386,6 +429,14 @@ public class ContainerFactoryImpl implements ContainerFactory {
 		return folders;
 	}
 
+	/**
+	 * Gets the folder container based on the host and sub folders.
+	 * @param host {@link Host}
+	 * @param user {@link User}
+	 * @param subFolders {@link List}
+	 * @return List of Containers
+	 * @throws DotDataException
+	 */
 	private List<Container> getFolderContainers(final Host host, final User user, final List<Folder> subFolders) throws DotDataException {
 
 		final List<Container> containers = new ArrayList<>();
@@ -405,18 +456,6 @@ public class ContainerFactoryImpl implements ContainerFactory {
 		}
 
 		return containers;
-	}
-
-	private Optional<Folder> findContainerFolderByHost (final Host host, final User user) {
-
-		try {
-
-			return Optional.of(this.folderAPI.findFolderByPath(Constants.CONTAINER_FOLDER_PATH,
-					host, user, false));
-		} catch (Exception e) {
-
-			return Optional.empty();
-		}
 	}
 
 	private void buildFindContainersQuery(final boolean includeArchived, final String hostId, final String inode,
