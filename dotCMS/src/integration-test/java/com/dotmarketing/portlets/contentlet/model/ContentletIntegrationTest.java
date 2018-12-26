@@ -13,10 +13,10 @@ import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
-import com.dotcms.util.RelationshipUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -44,6 +44,7 @@ public class ContentletIntegrationTest {
     private static HostAPI hostAPI;
     private static Language defaultLanguage;
     private static LanguageAPI languageAPI;
+    private static RelationshipAPI relationshipAPI;
     private static UserAPI userAPI;
     private static User user;
     private static Host defaultHost;
@@ -66,6 +67,7 @@ public class ContentletIntegrationTest {
 
         contentletAPI   = APILocator.getContentletAPI();
         contentTypeAPI  = APILocator.getContentTypeAPI(user);
+        relationshipAPI = APILocator.getRelationshipAPI();
         defaultHost     = hostAPI.findDefaultHost(user, false);
         defaultLanguage = languageAPI.getDefaultLanguage();
     }
@@ -140,8 +142,7 @@ public class ContentletIntegrationTest {
         final Field field = createAndSaveRelationshipField("myChild", parentContentType.id(),
                 childContentType.variable(), CARDINALITY);
 
-        final Relationship relationship = RelationshipUtil
-                .getRelationshipFromField(field, parentContentType.variable());
+        final Relationship relationship = relationshipAPI.getRelationshipFromField(field, user);
 
         //Save related content
         parentContentlet = contentletAPI.checkin(parentContentlet,

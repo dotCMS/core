@@ -444,9 +444,8 @@ public class ImportUtil {
                         }
 
                         if (field.getFieldType().equals(FieldType.RELATIONSHIP.toString())) {
-                            contentTypeRelationshipsMap.put(field.getVelocityVarName(),
-                                    RelationshipUtil.getRelationshipFromField(field,
-                                            contentType.getVelocityVarName()));
+                            contentTypeRelationshipsMap.put(field.getVelocityVarName(), APILocator.getRelationshipAPI()
+                                    .getRelationshipFromField(field, user));
                         }
                         break;
                     }
