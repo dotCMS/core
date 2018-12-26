@@ -10,7 +10,6 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.UUIDUtil;
@@ -36,37 +35,6 @@ public class RelationshipUtil {
 
     private final static RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
 
-    /**
-     * Given a Relationship Field and a Content Type Velocity var name, returns the existing relationship
-     * @param field
-     * @param contentTypeVar
-     * @return
-     */
-    public static Relationship getRelationshipFromField(final Field field, final String contentTypeVar){
-        final String fieldRelationType = field.getFieldRelationType();
-        return APILocator.getRelationshipAPI().byTypeValue(
-                fieldRelationType.contains(StringPool.PERIOD) ? fieldRelationType
-                        :contentTypeVar + StringPool.PERIOD + field
-                                .getVelocityVarName());
-
-
-    }
-
-    /**
-     * Given a Relationship Field and a Content Type Velocity var name, returns the existing relationship
-     * @param field
-     * @param contentTypeVar
-     * @return
-     */
-    public static Relationship getRelationshipFromField(final com.dotcms.contenttype.model.field.Field field, final String contentTypeVar){
-        final String fieldRelationType = field.relationType();
-        return APILocator.getRelationshipAPI().byTypeValue(
-                fieldRelationType.contains(StringPool.PERIOD) ? fieldRelationType
-                        :contentTypeVar + StringPool.PERIOD + field
-                                .variable());
-
-
-    }
 
     /**
      * Returns a list of related contentlet given a comma separated list of lucene queries and/or contentlet identifiers
