@@ -1122,9 +1122,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 }
                 return categoryList;
             }else if(theField.getFieldType().equals(FieldType.RELATIONSHIP.toString())) {
-                return relationshipAPI
-                        .dbRelatedContent(relationshipAPI.getRelationshipFromField(theField, user),
-                                contentlet);
+                return contentlet.getRelated(theField.getVelocityVarName());
             }else{
                 return contentlet.get(theField.getVelocityVarName());
             }
