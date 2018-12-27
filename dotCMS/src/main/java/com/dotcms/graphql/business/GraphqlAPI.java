@@ -2,13 +2,12 @@ package com.dotcms.graphql.business;
 
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotmarketing.exception.DotDataException;
 
 import graphql.schema.GraphQLSchema;
-import graphql.schema.GraphQLType;
 
 public interface GraphqlAPI {
-    GraphQLSchema getSchema();
-    GraphQLType createSchemaType(final ContentType contentType);
+    GraphQLSchema getSchema() throws DotDataException;
     void updateSchemaType(final ContentType contentType);
     void deleteSchemaType(final String contentTypeVar);
     void createSchemaTypeField(final ContentType contentType, final Field field);

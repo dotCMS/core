@@ -1,6 +1,8 @@
 package com.dotcms.graphql;
 
+import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.graphql.util.TypeUtil;
+import com.dotmarketing.util.Logger;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -101,9 +103,22 @@ public enum InterfaceType {
         final Set<GraphQLInterfaceType> types = new HashSet<>();
 
         for(final InterfaceType type : InterfaceType.values()) {
-            types.add(type.getType());
+            if(type.getType()!=null) {
+                types.add(type.getType());
+            }
         }
 
         return types;
+    }
+
+    public static GraphQLInterfaceType getInterfaceForBaseType(final BaseContentType baseContentType) {
+        GraphQLInterfaceType type = null;
+        try {
+            type = InterfaceType.valueOf(baseContentType.name()).getType();
+        } catch (IllegalArgumentException e) {
+            Logger.debug(InterfaceType.class, "No GraphQL Interface for this base type: " + baseContentType.name());
+        }
+
+        return type;
     }
 }
