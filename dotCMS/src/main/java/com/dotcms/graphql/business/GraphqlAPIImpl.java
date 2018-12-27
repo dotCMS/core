@@ -183,12 +183,6 @@ public class GraphqlAPIImpl implements GraphqlAPI {
                 .dataFetcher(new ContentletDataFetcher()))
             .build();
 
-        try {
-            Thread.sleep(5000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
         final Set<GraphQLType> graphQLTypes = new HashSet<>(InterfaceType.valuesAsSet());
         // add here the rest of types
         graphQLTypes.addAll(allSchemaTypes.values());
