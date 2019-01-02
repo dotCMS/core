@@ -182,6 +182,7 @@ public class ContentletUtil {
 		}
 		try {
             m.put("hostName", APILocator.getHostAPI().find(contentlet.getHost(), user, true).getHostname());
+            m.put("baseType", contentlet.getContentType().baseType().name());
         } catch (Exception e) {
             Logger.warn(ContentletUtil.class, "unable to get host:" + contentlet.getHost() + " : " + e.getMessage());
         }
