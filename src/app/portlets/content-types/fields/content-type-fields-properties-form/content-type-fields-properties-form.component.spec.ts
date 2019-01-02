@@ -161,7 +161,7 @@ describe('ContentTypeFieldsPropertiesFormComponent', () => {
             startHostComponent();
         });
 
-        it('init form', () => {
+        it('should init form', () => {
             expect(mockFieldPropertyService.getProperties).toHaveBeenCalledWith('field.class');
             expect(comp.form.get('clazz').value).toBe('field.class');
 
@@ -170,9 +170,16 @@ describe('ContentTypeFieldsPropertiesFormComponent', () => {
             expect(comp.form.get('property3')).toBeNull();
         });
 
-        it('init field proeprties', () => {
+        it('should init field proeprties', () => {
             expect(comp.fieldProperties[0]).toBe('property1');
             expect(comp.fieldProperties[1]).toBe('property2');
+        });
+
+        it('should emit false to valid when saveFieldProperties is called', () => {
+            spyOn(comp.valid, 'next');
+            comp.saveFieldProperties();
+
+            expect(comp.valid.next).toHaveBeenCalledWith(false);
         });
     });
 

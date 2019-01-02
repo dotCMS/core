@@ -119,6 +119,7 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
         } else {
             this.fieldProperties.forEach(property => this.form.get(property).markAsTouched());
         }
+        this.valid.next(false);
     }
 
     destroy(): void {
