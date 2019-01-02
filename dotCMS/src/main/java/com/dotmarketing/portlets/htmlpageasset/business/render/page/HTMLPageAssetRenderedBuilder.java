@@ -115,9 +115,9 @@ public class HTMLPageAssetRenderedBuilder {
             final Collection<? extends ContainerRaw> containers =  new PageContextBuilder(htmlPageAssetInfo.getPage(), systemUser, mode).getContainersRaw();
             return new PageView(site, template, containers, htmlPageAssetInfo, layout);
         } else {
-            final PageContextBuilder pcb =  new PageContextBuilder(htmlPageAssetInfo.getPage(), systemUser, mode);
-            final Context velocityContext  = pcb.addAll(VelocityUtil.getWebContext(request, response));
-            final Collection<? extends ContainerRaw> containers = new ContainerRenderedBuilder(pcb.getContainersRaw(), velocityContext, mode).build();
+            final PageContextBuilder pageContextBuilder =  new PageContextBuilder(htmlPageAssetInfo.getPage(), systemUser, mode);
+            final Context velocityContext  = pageContextBuilder.addAll(VelocityUtil.getWebContext(request, response));
+            final Collection<? extends ContainerRaw> containers = new ContainerRenderedBuilder(pageContextBuilder.getContainersRaw(), velocityContext, mode).build();
             final boolean canCreateTemplates = layoutAPI.doesUserHaveAccessToPortlet("templates", user);
             final String pageHTML = this.getPageHTML();
             final boolean canEditTemplate = this.permissionAPI.doesUserHavePermission(template,
