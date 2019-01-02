@@ -218,8 +218,9 @@ public class PageContextBuilder implements Serializable {
                 for (final Contentlet contentlet : contentlets) {
                     contentIdList.add(contentlet.getIdentifier());
                     try {
-
-                        cListAsMaps.add(ContentletUtil.getContentPrintableMap(user, contentlet));
+                        Map<String,Object> m = ContentletUtil.getContentPrintableMap(user, contentlet);
+                        m.put("contentType", contentlet.getContentType().variable());
+                        cListAsMaps.add(m);
                     } catch (IOException e) {
                         throw new DotStateException(e);
                     }

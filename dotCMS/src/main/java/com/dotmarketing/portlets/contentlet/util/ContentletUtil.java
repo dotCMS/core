@@ -125,7 +125,11 @@ public class ContentletUtil {
 		contentlet = ContentHelper.getInstance().hydrateContentlet(contentlet);
 		m.putAll(contentlet.getMap());
 
+
+
+
 		ContentType type=contentlet.getContentType();
+		m.put("contentType", type.variable());
 
 		for(com.dotcms.contenttype.model.field.Field f : type.fields()){
 			if(f instanceof BinaryField){

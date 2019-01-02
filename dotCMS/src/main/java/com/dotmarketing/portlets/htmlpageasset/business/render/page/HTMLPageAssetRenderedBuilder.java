@@ -59,14 +59,14 @@ public class HTMLPageAssetRenderedBuilder {
     private final LayoutAPI layoutAPI;
     private final VersionableAPI versionableAPI;
 
-    private final ContainerRenderedBuilder containerRenderedBuilder;
+
 
     public HTMLPageAssetRenderedBuilder() {
         permissionAPI = APILocator.getPermissionAPI();
         userAPI = APILocator.getUserAPI();
         contentletAPI = APILocator.getContentletAPI();
         layoutAPI = APILocator.getLayoutAPI();
-        containerRenderedBuilder = new ContainerRenderedBuilder();
+
         versionableAPI = APILocator.getVersionableAPI();
     }
 
@@ -115,11 +115,9 @@ public class HTMLPageAssetRenderedBuilder {
             final Collection<? extends ContainerRaw> containers =  new PageContextBuilder(htmlPageAssetInfo.getPage(), systemUser, mode).getContainersRaw();
             return new PageView(site, template, containers, htmlPageAssetInfo, layout);
         } else {
-           
-            final Context velocityContext  = new PageContextBuilder(htmlPageAssetInfo.getPage(), systemUser, mode)
-                    .addAll(VelocityUtil.getWebContext(request, response));
-            final Collection<? extends ContainerRaw> containers = this.containerRenderedBuilder.getContainersRendered(htmlPageAssetInfo.getPage(),
-                    velocityContext, mode);
+            final PageContextBuilder pageContextBuilder =  new PageContextBuilder(htmlPageAssetInfo.getPage(), systemUser, mode);
+            final Context velocityContext  = pageContextBuilder.addAll(VelocityUtil.getWebContext(request, response));
+            final Collection<? extends ContainerRaw> containers = new ContainerRenderedBuilder(pageContextBuilder.getContainersRaw(), velocityContext, mode).build();
             final boolean canCreateTemplates = layoutAPI.doesUserHaveAccessToPortlet("templates", user);
             final String pageHTML = this.getPageHTML();
             final boolean canEditTemplate = this.permissionAPI.doesUserHavePermission(template,
