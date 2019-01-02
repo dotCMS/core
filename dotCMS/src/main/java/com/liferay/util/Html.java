@@ -32,6 +32,66 @@ package com.liferay.util;
  */
 public class Html {
 
+	public static final String H_1_BEGIN = "<h1>";
+	public static final String H_1_END   = "</h1>";
+
+	public static final String H_2_BEGIN = "<h2>";
+	public static final String H_2_END   = "</h2>";
+
+	public static final String H_3_BEGIN = "<h3>";
+	public static final String H_3_END   = "</h3>";
+
+	public static final String B_BEGIN   = "<b>";
+	public static final String B_END     = "</b>";
+
+	public static final String PRE_BEGIN = "<b>";
+	public static final String PRE_END   = "</b>";
+
+	public static final String BR        = "<br/>";
+
+	public static final String SPACE     = "&nbsp;";
+
+	public static String h1 (final String header) {
+
+		return new StringBuilder(H_1_BEGIN).append(header).append(H_1_END).toString();
+	}
+
+	public static String h2 (final String header) {
+
+		return new StringBuilder(H_2_BEGIN).append(header).append(H_2_END).toString();
+	}
+
+	public static String h3 (final String header) {
+
+		return new StringBuilder(H_3_BEGIN).append(header).append(H_3_END).toString();
+	}
+
+	public static String b (final String text) {
+
+		return new StringBuilder(B_BEGIN).append(text).append(B_END).toString();
+	}
+
+	public static String pre (final String text) {
+
+		return new StringBuilder(PRE_BEGIN).append(text).append(PRE_END).toString();
+	}
+
+	public static String br() {
+		return BR;
+	}
+
+	public static String space(final int howMany) {
+		final StringBuilder builder = new StringBuilder();
+
+		for (int i = 1; i <= howMany; ++i) {
+
+			builder.append(SPACE);
+		}
+
+		return builder.toString();
+	}
+
+
 	public static String formatFrom(String text) {
 		if (text == null) {
 			return null;

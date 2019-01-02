@@ -9,7 +9,6 @@ import com.dotcms.rest.ContentHelper;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
@@ -112,29 +111,33 @@ public class ContentletUtil {
 	 * (e.g. REST, ES portlet)
 	 *
 	 * @param user User from Front End with permission to read Special Fields.
-	 * @param c the contentlet to generate the printable map from
+	 * @param contentlet the contentlet to generate the printable map from
 	 *
 	 * @return Contentlet with the values in place.
 	 *
 	 * @throws DotDataException
 	 * @throws IOException 
      */
-	public static Map<String, Object> getContentPrintableMap(User user, Contentlet c) throws DotDataException, IOException {
+	public static Map<String, Object> getContentPrintableMap(User user, Contentlet contentlet) throws DotDataException, IOException {
 		Map<String, Object> m = new HashMap<>();
 
-		c.setTags();
-		c = ContentHelper.getInstance().hydrateContentLet(c);
-		m.putAll(c.getMap());
+		contentlet.setTags();
+		contentlet = ContentHelper.getInstance().hydrateContentlet(contentlet);
+		m.putAll(contentlet.getMap());
 
-		ContentType type=c.getContentType();
+
+
+
+		ContentType type=contentlet.getContentType();
 		m.put("contentType", type.variable());
+
 		for(com.dotcms.contenttype.model.field.Field f : type.fields()){
 			if(f instanceof BinaryField){
-			  File fsFile = c.getBinary(f.variable());
+			  File fsFile = contentlet.getBinary(f.variable());
 			  if(fsFile !=null && fsFile.exists()) {
-			    m.put(f.variable() + "Version", "/dA/" +  c.getInode() + "/" + f.variable() + "/" + fsFile.getName()  );
-				m.put(f.variable(), "/dA/" +  c.getIdentifier() + "/" + f.variable() + "/" + fsFile.getName()	);
-				m.put(f.variable() + "ContentAsset", c.getIdentifier() + "/" +f.variable()	);
+			    m.put(f.variable() + "Version", "/dA/" +  contentlet.getInode() + "/" + f.variable() + "/" + fsFile.getName()  );
+				m.put(f.variable(), "/dA/" +  contentlet.getIdentifier() + "/" + f.variable() + "/" + fsFile.getName()	);
+				m.put(f.variable() + "ContentAsset", contentlet.getIdentifier() + "/" +f.variable()	);
 			  }
 			} else if(f instanceof CategoryField) {
 
@@ -142,9 +145,9 @@ public class ContentletUtil {
 				
 				try {
 
-					cats = APILocator.getCategoryAPI().getParents(c, user, true);
+					cats = APILocator.getCategoryAPI().getParents(contentlet, user, true);
 				} catch (Exception e) {
-					Logger.error(ContentletUtil.class, String.format("Unable to get the Categories for given contentlet with inode= %s", c.getInode()));
+					Logger.error(ContentletUtil.class, String.format("Unable to get the Categories for given contentlet with inode= %s", contentlet.getInode()));
 				}
 
 				if(cats!=null && !cats.isEmpty()) {
@@ -168,19 +171,19 @@ public class ContentletUtil {
 							m.put(f.variable(), catsStr);
 						}
 					} catch (DotSecurityException e) {
-						Logger.error(ContentletUtil.class, String.format("Unable to get the Categories for given contentlet with inode= %s", c.getInode()));
+						Logger.error(ContentletUtil.class, String.format("Unable to get the Categories for given contentlet with inode= %s", contentlet.getInode()));
 					}
 				}
 			}
 		}
 
 		if (type .baseType() == BaseContentType.HTMLPAGE ||type .baseType() == BaseContentType.FILEASSET){
-			m.put("path", APILocator.getIdentifierAPI().find(c.getIdentifier()).getPath());
+			m.put("path", APILocator.getIdentifierAPI().find(contentlet.getIdentifier()).getPath());
 		}
 		try {
-            m.put("hostName", APILocator.getHostAPI().find(c.getHost(), user, true).getHostname());
+            m.put("hostName", APILocator.getHostAPI().find(contentlet.getHost(), user, true).getHostname());
         } catch (Exception e) {
-            Logger.warn(ContentletUtil.class, "unable to get host:" + c.getHost() + " : " + e.getMessage());
+            Logger.warn(ContentletUtil.class, "unable to get host:" + contentlet.getHost() + " : " + e.getMessage());
         }
 
 		return m;

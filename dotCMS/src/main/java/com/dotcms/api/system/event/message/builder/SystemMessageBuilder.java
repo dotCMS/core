@@ -1,21 +1,20 @@
 package com.dotcms.api.system.event.message.builder;
 
-import com.dotcms.api.system.event.SystemEventsAPI;
 import com.dotcms.api.system.event.message.MessageSeverity;
 import com.dotcms.api.system.event.message.MessageType;
-import com.dotcms.api.system.event.message.SystemMessageEventUtil;
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotmarketing.business.APILocator;
-
-import java.util.Set;
+import com.dotmarketing.util.DateUtil;
 
 /**
+ * Buider to create the SystemMessage (Approach to show message to specific users and/or porlets as a popup).
+ * - life time is by default 3 secs (the time displaying on the UI).
+ * - severity is the type of the Message see {@link MessageSeverity} for details
+ * - type is the actual type of the SystemMessage it could be SIMPLE (just a popup) or confirmation (it still on demo and not supported yet on the UI)
  * Builder for {@link SystemMessage}
  */
 public class SystemMessageBuilder {
     private Object message;
     private String[] portletIdList;
-    private long life = 3000;
+    private long life = DateUtil.THREE_SECOND_MILLIS;
     private MessageSeverity severity = MessageSeverity.INFO;
     private MessageType type = MessageType.SIMPLE_MESSAGE;
 

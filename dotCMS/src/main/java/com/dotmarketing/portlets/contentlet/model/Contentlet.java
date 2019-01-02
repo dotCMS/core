@@ -7,9 +7,22 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotcms.repackage.com.google.common.collect.Maps;
+import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.ConversionUtils;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.business.*;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.PermissionSummary;
+import com.dotmarketing.business.Permissionable;
+import com.dotmarketing.business.RelatedPermissionableGroup;
+import com.dotmarketing.business.RelationshipAPI;
+import com.dotmarketing.business.Ruleable;
+import com.dotmarketing.business.Treeable;
+import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.business.Versionable;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -30,15 +43,22 @@ import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.model.User;
-import org.apache.commons.lang.builder.ToStringBuilder;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
 import java.nio.file.Files;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
+import org.apache.commons.lang.builder.ToStringBuilder;
 
 /**
  * Represents a content unit in the system. Ideally, every single domain object
@@ -53,6 +73,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class Contentlet implements Serializable, Permissionable, Categorizable, Versionable, Treeable, Ruleable  {
 
     private static final long serialVersionUID = 1L;
+    public static final String TITTLE_KEY = "title";
     public static final String INODE_KEY = "inode";
     public static final String LANGUAGEID_KEY = "languageId";
     public static final String STRUCTURE_INODE_KEY = "stInode";
@@ -78,6 +99,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	public static final String WORKFLOW_ASSIGN_KEY = "wfActionAssign";
 	public static final String WORKFLOW_COMMENTS_KEY = "wfActionComments";
 	public static final String WORKFLOW_BULK_KEY = "wfActionBulk";
+    public static final String DOT_NAME_KEY = "__DOTNAME__";
 
     public static final String DONT_VALIDATE_ME = "_dont_validate_me";
     public static final String DISABLE_WORKFLOW = "__disable_workflow__";
@@ -109,6 +131,8 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	private transient IndexPolicy indexPolicyDependencies = IndexPolicy.DEFER;
 
 	private transient boolean needsReindex = false;
+
+	private transient Map<String, List<String>> relatedIds;
 
 	/**
 	 * Returns true if this contentlet needs reindex
@@ -201,7 +225,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 
 	/**
 	 * Create a contentlet based on a map (makes a copy of it)
-	 * @param map
+	 * @param contentlet
 	 */
 	public Contentlet(final Contentlet contentlet) {
 		this(contentlet.getMap());
@@ -235,15 +259,15 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 
     		//Verifies if the content type has defined a title field
 			Optional<com.dotcms.contenttype.model.field.Field> fieldFound = this.getContentType().fields().stream().
-					filter(field -> field.variable().equals("title")).findAny();
+					filter(field -> field.variable().equals(TITTLE_KEY)).findAny();
 
 
 			if (fieldFound.isPresent()) {
-				return map.get("title")!=null?map.get("title").toString():null;
+				return map.get(TITTLE_KEY)!=null?map.get(TITTLE_KEY).toString():null;
 			}
 
 			String title = getContentletAPI().getName(this, getUserAPI().getSystemUser(), false);
-			map.put("title", title);
+			map.put(TITTLE_KEY, title);
 
     	    return title;
 		} catch (Exception e) {
@@ -738,7 +762,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 
 	/**
 	 * Sets the sort_order.
-	 * @param sort_order The sort_order to set
+	 * @param sortOrder The sort_order to set
 	 */
 	public void setSortOrder(long sortOrder) {
 		map.put(SORT_ORDER_KEY, sortOrder);
@@ -767,12 +791,13 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 		return (String) map.get(HOST_KEY);
 	}
 
-    private transient Optional<com.dotcms.contenttype.model.field.Field> titleImageFieldVar = null;
+    private transient com.dotcms.contenttype.model.field.Field titleImageFieldVar = null;
 
     public Optional<com.dotcms.contenttype.model.field.Field> getTitleImage() {
 
-        if (this.titleImageFieldVar != null)
-            return this.titleImageFieldVar;
+        if (this.titleImageFieldVar != null){
+            return Optional.of(this.titleImageFieldVar);
+        }
         try {
             this.titleImageFieldVar = this.getContentType().fields().stream().filter(f -> {
                 try {
@@ -780,12 +805,12 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
                 } catch (Exception e) {
                     return false;
                 }
-            }).findFirst();
+            }).findFirst().orElse(null);
 
         } catch (Exception e) {
             Logger.debug(this.getClass(), e.getMessage(), e);
         }
-        return this.titleImageFieldVar;
+        return this.titleImageFieldVar != null ? Optional.of(this.titleImageFieldVar) : Optional.empty();
     }
 	
 	
@@ -1351,5 +1376,56 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 
 	public boolean validateMe() {
 		return !UtilMethods.isSet(map.get(Contentlet.DONT_VALIDATE_ME));
+	}
+
+	/**
+	 * Returns a list of all contentlets related to this instance given a RelationshipField variable
+	 * @param variableName
+	 * @return
+	 */
+	public List<Contentlet> getRelated(final String variableName) {
+
+		if (!UtilMethods.isSet(this.relatedIds)){
+			relatedIds = Maps.newConcurrentMap();
+		}
+
+		final RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
+
+		if (this.relatedIds.containsKey(variableName)) {
+			return this.relatedIds.get(variableName).stream().map(identifier -> {
+				try {
+					return APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(identifier);
+				} catch (DotDataException | DotSecurityException e) {
+					Logger.warn(this, "No field found with this variable name " + variableName, e);
+					throw new DotStateException(e);
+				}
+			}).collect(Collectors.toList());
+		} else {
+			try {
+				final User user = APILocator.getUserAPI().getSystemUser();
+				com.dotcms.contenttype.model.field.Field field = APILocator.getContentTypeFieldAPI()
+						.byContentTypeIdAndVar(getContentTypeId(), variableName);
+
+				final List<Contentlet> relatedList = APILocator.getContentletAPI()
+						.getRelatedContent(this, relationshipAPI
+										.getRelationshipFromField(field, user),
+						user, false);
+
+				if (UtilMethods.isSet(relatedList)) {
+					this.relatedIds.put(variableName,
+							relatedList.stream().map(contentlet -> contentlet.getIdentifier())
+									.collect(
+											CollectionsUtils.toImmutableList()));
+
+				}else{
+					this.relatedIds.put(variableName, Collections.emptyList());
+				}
+
+				return relatedList;
+			} catch (DotDataException | DotSecurityException e) {
+				Logger.warn(this, "No field found with this variable name " + variableName, e);
+				throw new DotStateException(e);
+			}
+		}
 	}
 }

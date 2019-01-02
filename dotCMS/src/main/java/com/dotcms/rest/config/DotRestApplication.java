@@ -1,9 +1,5 @@
 package com.dotcms.rest.config;
 
-import com.dotcms.rest.api.v1.relationships.RelationshipsResource;
-import java.util.HashSet;
-import java.util.Set;
-
 import com.dotcms.contenttype.model.field.FieldTypeResource;
 import com.dotcms.repackage.org.glassfish.jersey.media.multipart.MultiPartFeature;
 import com.dotcms.rest.RulesEnginePortlet;
@@ -14,12 +10,11 @@ import com.dotcms.rest.api.v1.authentication.ForgotPasswordResource;
 import com.dotcms.rest.api.v1.authentication.LoginFormResource;
 import com.dotcms.rest.api.v1.authentication.LogoutResource;
 import com.dotcms.rest.api.v1.authentication.ResetPasswordResource;
-import com.dotcms.rest.api.v1.vtl.VTLResource;
-import com.dotcms.rest.api.v1.theme.ThemeResource;
 import com.dotcms.rest.api.v1.browsertree.BrowserTreeResource;
 import com.dotcms.rest.api.v1.categories.CategoriesResource;
 import com.dotcms.rest.api.v1.container.ContainerResource;
 import com.dotcms.rest.api.v1.content.ContentRelationshipsResource;
+import com.dotcms.rest.api.v1.content.ContentVersionResource;
 import com.dotcms.rest.api.v1.contenttype.ContentTypeResource;
 import com.dotcms.rest.api.v1.contenttype.FieldResource;
 import com.dotcms.rest.api.v1.contenttype.FieldVariableResource;
@@ -27,10 +22,12 @@ import com.dotcms.rest.api.v1.event.EventsResource;
 import com.dotcms.rest.api.v1.folder.FolderResource;
 import com.dotcms.rest.api.v1.languages.LanguagesResource;
 import com.dotcms.rest.api.v1.menu.MenuResource;
+import com.dotcms.rest.api.v1.page.NavResource;
 import com.dotcms.rest.api.v1.page.PageResource;
 import com.dotcms.rest.api.v1.personas.PersonaResource;
-import com.dotcms.rest.api.v1.sites.ruleengine.rules.RuleResource;
+import com.dotcms.rest.api.v1.relationships.RelationshipsResource;
 import com.dotcms.rest.api.v1.site.SiteResource;
+import com.dotcms.rest.api.v1.sites.ruleengine.rules.RuleResource;
 import com.dotcms.rest.api.v1.sites.ruleengine.rules.actions.ActionResource;
 import com.dotcms.rest.api.v1.sites.ruleengine.rules.conditions.ConditionGroupResource;
 import com.dotcms.rest.api.v1.sites.ruleengine.rules.conditions.ConditionResource;
@@ -38,13 +35,16 @@ import com.dotcms.rest.api.v1.sites.ruleengine.rules.conditions.ConditionValueRe
 import com.dotcms.rest.api.v1.system.AppContextInitResource;
 import com.dotcms.rest.api.v1.system.ConfigurationResource;
 import com.dotcms.rest.api.v1.system.i18n.I18NResource;
+import com.dotcms.rest.api.v1.system.monitor.MonitorResource;
 import com.dotcms.rest.api.v1.system.role.RoleResource;
 import com.dotcms.rest.api.v1.system.ruleengine.actionlets.ActionletsResource;
 import com.dotcms.rest.api.v1.system.ruleengine.conditionlets.ConditionletsResource;
-import com.dotcms.rest.api.v1.system.monitor.MonitorResource;
+import com.dotcms.rest.api.v1.theme.ThemeResource;
 import com.dotcms.rest.api.v1.user.UserResource;
+import com.dotcms.rest.api.v1.vtl.VTLResource;
 import com.dotcms.rest.personas.PersonasResourcePortlet;
-import com.dotcms.rest.api.v1.page.NavResource;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * This class provides the list of all the REST end-points in dotCMS. Every new
@@ -144,6 +144,7 @@ public class DotRestApplication extends com.dotcms.repackage.javax.ws.rs.core.Ap
 					REST_CLASSES.add(RelationshipsResource.class);
 
 					REST_CLASSES.add(VTLResource.class);
+					REST_CLASSES.add(ContentVersionResource.class);
 				}
 			}
 		}

@@ -56,6 +56,19 @@ public interface WebInterceptor extends Serializable {
 	}
 
 	/**
+	 * Optional method called after the doFilter in case you need to do something with the request/response at the end of the request
+	 * @param req
+	 *   - The {@link HttpServletRequest} object.
+	 * @param res
+	 *  - The {@link HttpServletResponse} object.
+	 * @return boolean true means continue with the next interceptor, false stop the chain.
+	 * @throws IOException
+	 */
+	default boolean afterIntercept(final HttpServletRequest req, final HttpServletResponse res)  {
+		return true;
+	}
+
+	/**
 	 * Called in any request. Returns true if you want to continue the chain
 	 * call, false otherwise.
 	 * 
@@ -68,5 +81,6 @@ public interface WebInterceptor extends Serializable {
 	 */
 	Result intercept(HttpServletRequest req, HttpServletResponse res)
             throws IOException;
+
 
 } // E:O:F:WebInterceptor.

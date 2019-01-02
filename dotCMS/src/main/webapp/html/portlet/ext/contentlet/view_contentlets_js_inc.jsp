@@ -675,10 +675,12 @@
                         dojo.require("dijit.form.DateTextBox");
                 var result = "<input onchange='doSearch()' type=\"text\" displayedValue=\""+value+"\" constraints={datePattern:'MM/dd/yyyy'} dojoType=\"dijit.form.DateTextBox\" validate='return false;' invalidMessage=\"\"  id=\"" + selectedStruct+"."+ fieldContentlet + "Field\" name=\"" + selectedStruct+"."+ fieldContentlet + "\" >";
                 return result;
-          }
-
-
-          else{
+          }else if(type=="relationship"){
+               var result = "<select onkeyup=\"reloadRelationshipBox(this, '" + field["fieldRelationType"] + "', '" + selectedStruct+"."+ fieldContentlet + "Field');return true;\" onchange=\"loadHiddenRelationshipField(this,'" + selectedStruct+"."+ fieldContentlet + "Field')\" data-dojo-type=\"dijit/form/ComboBox\"" + selectedStruct+"."+ fieldContentlet + "Field\" name=\"" + selectedStruct+"."+ fieldContentlet + "\">\n";
+               result += "</select>\n";
+               result += "<input type=\"hidden\" id=\"" + selectedStruct+"."+ fieldContentlet + "Field\" />";
+               return result;
+          }else{
                 dijit.registry.remove(selectedStruct+"."+ fieldContentlet + "Field");
                 if(dijit.byId(selectedStruct+"."+ fieldContentlet + "Field")){
                         dijit.byId(selectedStruct+"."+ fieldContentlet + "Field").destroy();

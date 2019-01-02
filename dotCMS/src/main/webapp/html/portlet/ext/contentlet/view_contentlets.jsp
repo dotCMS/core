@@ -265,6 +265,61 @@
         data: dataItems
     });
 
+    function reloadRelationshipBox(box, relatedType, hiddenField){
+        var boxValue = box.get('value');
+
+        if (boxValue.trim()!=''){
+            if (relatedType.indexOf(".") != -1){
+                relatedType = relatedType.split('.')[0];
+            }
+
+            var xhrArgs = {
+                url: "/api/content/query/+contentType:" + relatedType + " +(inode:*" + boxValue + "* title:*" + boxValue + "* identifier:*" + boxValue + "*)",
+                handleAs : "json",
+                load: function(data) {
+
+                    let dataItems = {
+                        searchAttr: "name",
+                        items: []
+                    };
+
+                    for (let i=0; i<data.contentlets.length;++i) {
+
+                        let entity = data.contentlets[i];
+
+                        dataItems.items[i] = { name: entity.title, id: entity.identifier };
+                    }
+
+                    dojoSchemeStore = new dojo.data.ItemFileReadStore({
+                        data: dataItems
+                    });
+
+                    if (null != box) {
+
+                        box.set('store', dojoSchemeStore);
+                        box.toggleDropDown();
+                    }
+                }
+            }
+            dojo.xhrGet(xhrArgs);
+        }else{
+            dojoSchemeStore = new dojo.data.ItemFileReadStore({
+                data: []
+            });
+            box.set('store', dojoSchemeStore);
+            document.getElementById(hiddenField).value = '';
+            doSearch(null, "<%=orderBy%>");
+        }
+
+    }
+
+    function loadHiddenRelationshipField(box, hiddenField){
+        if (box.item){
+            document.getElementById(hiddenField).value = box.item.id;
+            doSearch(null, "<%=orderBy%>");
+        }
+    }
+
     // Workflow Schemes
     var dojoSchemeStore = null;
 

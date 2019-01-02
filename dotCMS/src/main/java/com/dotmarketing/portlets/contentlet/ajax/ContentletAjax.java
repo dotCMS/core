@@ -842,7 +842,16 @@ public class ContentletAjax {
 			orderBy = "wfCurrentStepName desc";
 		}else{
             if(orderBy.charAt(0)=='.'){
-                orderBy = st.getVelocityVarName() + orderBy;
+				final String[] structureInodes = structureInode.split(CONTENT_TYPES_INODE_SEPARATOR);
+
+				if (structureInodes.length > 1) {
+					final String[] orderBySplit = orderBy.split(" ");
+					final String fieldName = orderBySplit[0].substring(1);
+					final String orderHow = orderBySplit.length > 1 ? orderBySplit[1] : "";
+					orderBy = fieldName.equals("widgetTitle") ? "title " + orderHow : orderBy;
+				} else {
+					orderBy = st.getVelocityVarName() + orderBy;
+				}
             }
         }
 

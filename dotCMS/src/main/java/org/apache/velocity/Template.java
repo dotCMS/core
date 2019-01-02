@@ -19,21 +19,13 @@ package org.apache.velocity;
  * under the License.
  */
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
-import java.io.Writer;
-import java.util.List;
-
+import com.dotcms.rendering.velocity.events.DotVelocityExceptionHandlerFactory;
+import com.dotcms.rendering.velocity.events.ExceptionHandler;
+import com.dotcms.rendering.velocity.util.VelocityUtil;
+import com.dotmarketing.util.Logger;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.context.InternalContextAdapterImpl;
-import org.apache.velocity.exception.MethodInvocationException;
-import org.apache.velocity.exception.ParseErrorException;
-import org.apache.velocity.exception.ResourceNotFoundException;
-import org.apache.velocity.exception.TemplateInitException;
-import org.apache.velocity.exception.VelocityException;
+import org.apache.velocity.exception.*;
 import org.apache.velocity.runtime.RuntimeConstants;
 import org.apache.velocity.runtime.RuntimeServices;
 import org.apache.velocity.runtime.directive.Scope;
@@ -43,10 +35,9 @@ import org.apache.velocity.runtime.parser.node.SimpleNode;
 import org.apache.velocity.runtime.resource.Resource;
 import org.apache.velocity.runtime.resource.ResourceManager;
 
-import com.dotcms.rendering.velocity.util.VelocityUtil;
-
-import com.dotmarketing.util.Logger;
-
+import java.io.*;
+import java.util.List;
+import java.util.Optional;
 
 
 /**
@@ -144,24 +135,50 @@ public class Template extends Resource
             }
             catch( UnsupportedEncodingException  uce )
             {
-                String msg = "Template.process : Unsupported input encoding : " + encoding
+                final String msg = "Template.process : Unsupported input encoding : " + encoding
                 + " for template " + name;
 
-                errorCondition  = new ParseErrorException( msg );
-                throw errorCondition;
+                final ParseErrorException pex = new ParseErrorException( msg );
+                final Optional<ExceptionHandler<ParseErrorException>> exceptionExceptionHandler =
+                        DotVelocityExceptionHandlerFactory.get(pex);
+
+                if (exceptionExceptionHandler.isPresent()) {
+                    exceptionExceptionHandler.get().handle(pex);
+                } else {
+                    errorCondition  = pex;
+                    throw errorCondition;
+                }
+
             }
             catch ( ParseException pex )
             {
                 /*
                  *  remember the error and convert
                  */
-                errorCondition =  new ParseErrorException(pex, name);
-                throw errorCondition;
+                final ParseErrorException parseErrorException =  new ParseErrorException(pex, name);
+                final Optional<ExceptionHandler<ParseErrorException>> exceptionExceptionHandler =
+                        DotVelocityExceptionHandlerFactory.get(parseErrorException);
+
+                if (exceptionExceptionHandler.isPresent()) {
+                    exceptionExceptionHandler.get().handle(parseErrorException);
+                } else {
+                    errorCondition  = parseErrorException;
+                    throw errorCondition;
+                }
             }
             catch ( TemplateInitException pex )
             {
-                errorCondition = new ParseErrorException( pex, name);
-                throw errorCondition;
+
+                final ParseErrorException parseErrorException =  new ParseErrorException(pex, name);
+                final Optional<ExceptionHandler<ParseErrorException>> exceptionExceptionHandler =
+                        DotVelocityExceptionHandlerFactory.get(parseErrorException);
+
+                if (exceptionExceptionHandler.isPresent()) {
+                    exceptionExceptionHandler.get().handle(parseErrorException);
+                } else {
+                    errorCondition  = parseErrorException;
+                    throw errorCondition;
+                }
             }
             /**
              * pass through runtime exceptions
@@ -200,6 +217,8 @@ public class Template extends Resource
             errorCondition = new ResourceNotFoundException("Unknown resource error for resource " + name );
             throw errorCondition;
         }
+
+        return false;
     }
 
     /**
@@ -338,10 +357,17 @@ public class Template extends Resource
                         * the macro lib was found, but didn't parse - syntax error
                         *  note it and throw
                         */
-                        Logger.error(this,"template.merge(): " +
+                        final Optional<ExceptionHandler<ParseErrorException>> exceptionExceptionHandler =
+                                DotVelocityExceptionHandlerFactory.get(pe);
+
+                        Logger.error(this, "template.merge(): " +
                                 "syntax error in template " +
                                 (String) macroLibraries.get(i) + ".");
-                        throw pe;
+                        if (exceptionExceptionHandler.isPresent()) {
+                            exceptionExceptionHandler.get().handle(pe);
+                        } else {
+                            throw pe;
+                        }
                     }
                     
                     catch (Exception e)

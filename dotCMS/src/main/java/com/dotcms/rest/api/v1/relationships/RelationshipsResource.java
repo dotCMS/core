@@ -114,36 +114,17 @@ public class RelationshipsResource {
         final InitDataObject initData = this.webResource.init(null, true, request, true, null);
         final User user = initData.getUser();
         final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
-        ContentType contentType;
-
-        if (UtilMethods.isSet(contentTypeId)) {
-            //Validate if contentTypeId is valid
-            try {
-                contentType = contentTypeAPI.find(contentTypeId);
-
-            } catch (DotSecurityException | DotDataException e) {
-                Logger.error(this, e.getMessage(), e);
-                return ExceptionMapperUtil
-                        .createResponse(map("message", "Invalid Content Type"),
-                                "Invalid Content Type",
-                                Status.BAD_REQUEST);
-            }
-        } else {
-            return ExceptionMapperUtil
-                    .createResponse(map("message", "Content Type ID is required"),
-                            "Content Type ID is required",
-                            Status.BAD_REQUEST);
-        }
 
         final PaginationUtil paginationUtil = new PaginationUtil(new RelationshipPaginator());
 
         try {
+            final ContentType contentType = contentTypeAPI.find(contentTypeId);
 
             final Map<String, Object> params = map(RelationshipPaginator.CONTENT_TYPE_PARAM,
                     contentType);
             return paginationUtil.getPage(request, user, null, page, perPage, params);
-        } catch (JsonProcessingRuntimeException e) {
-            Logger.error(this, e.getMessage(), e);
+        } catch (Exception e) {
+
             return ResponseUtil.mapExceptionResponse(e);
         }
     }

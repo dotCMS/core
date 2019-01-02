@@ -116,7 +116,7 @@ public class FieldResourceTest {
                 "	}";
 
         response = resource.updateContentTypeFieldById(
-                contentType.id(), (String) fieldMap.get("id"),
+                (String) fieldMap.get("id"),
                 jsonFieldUpdate.replace("CONTENT_TYPE_ID", contentType.id()).replace("CONTENT_TYPE_FIELD_ID", (String) fieldMap.get("id")),
                 getHttpRequest());
 
@@ -131,8 +131,8 @@ public class FieldResourceTest {
         final FieldResource resource = new FieldResource();
 
         ContentType contentType = getContentType();
-
-        final Response response = resource.getContentTypeFields(contentType.id(), getHttpRequest());
+       //Test using ContentType Id
+        Response response = resource.getContentTypeFields(contentType.id(), getHttpRequest());
 
         assertResponse_OK(response);
 
@@ -147,8 +147,23 @@ public class FieldResourceTest {
 
             assertTrue(field.getClass().getSimpleName().startsWith("Immutable"));
         }
-    }
+        //Now test using variable name
+        response = resource.getContentTypeFields(contentType.variable(), getHttpRequest());
+        assertResponse_OK(response);
 
+        fields = (List) ((ResponseEntityView) response.getEntity()).getEntity();
+
+        assertFalse(fields.isEmpty());
+
+        for(Object fieldMap : fields){
+            Field field = convertMapToField((Map<String, Object>) fieldMap);
+
+            assertNotNull(field);
+
+            assertTrue(field.getClass().getSimpleName().startsWith("Immutable"));
+        }
+
+    }
 
     @Test
     public void testFieldBinary() throws Exception {
@@ -2333,7 +2348,7 @@ public class FieldResourceTest {
 
                 // Test Field Retrieval by Id
                 assertResponse_OK(
-                        response = resource.getContentTypeFieldById(contentType.id(), (String) fieldMap.get("id"), getHttpRequest())
+                        response = resource.getContentTypeFieldById((String) fieldMap.get("id"), getHttpRequest())
                 );
 
                 assertNotNull(
@@ -2347,7 +2362,7 @@ public class FieldResourceTest {
                 // Test Field Update
                 assertResponse_OK(
                         response = resource.updateContentTypeFieldById(
-                                contentType.id(), (String) fieldMap.get("id"),
+                                (String) fieldMap.get("id"),
                                 getJsonFieldUpdate().replace("CONTENT_TYPE_ID", contentType.id()).replace("CONTENT_TYPE_FIELD_ID", (String) fieldMap.get("id")),
                                 getHttpRequest()
                         )
@@ -2378,11 +2393,11 @@ public class FieldResourceTest {
 
                 // Test Field Deletion
                 assertResponse_OK(
-                        response = resource.deleteContentTypeFieldById(contentType.id(), (String) fieldMap.get("id"), getHttpRequest())
+                        response = resource.deleteContentTypeFieldById((String) fieldMap.get("id"), getHttpRequest())
                 );
 
                 assertResponse_NOT_FOUND(
-                        response = resource.getContentTypeFieldById(contentType.id(), (String) fieldMap.get("id"), getHttpRequest())
+                        response = resource.getContentTypeFieldById((String) fieldMap.get("id"), getHttpRequest())
                 );
             }
         }
