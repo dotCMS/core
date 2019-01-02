@@ -1406,7 +1406,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 				com.dotcms.contenttype.model.field.Field field = APILocator.getContentTypeFieldAPI()
 						.byContentTypeIdAndVar(getContentTypeId(), variableName);
 
-				final List<Contentlet> relatedList = this.contentletAPI
+				final List<Contentlet> relatedList = APILocator.getContentletAPI()
 						.getRelatedContent(this, relationshipAPI
 										.getRelationshipFromField(field, user),
 						user, false);
