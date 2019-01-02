@@ -249,7 +249,7 @@ export class ContentTypesEditComponent implements OnInit, OnDestroy {
             },
             (err: ResponseView) => {
                 this.dotHttpErrorManagerService.handle(err).pipe(take(1)).subscribe(() => {
-                    this.fieldsDropZone.reset();
+                    this.fieldsDropZone.cancelLastDragAndDrop();
                 });
             }
         );

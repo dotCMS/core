@@ -280,7 +280,12 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
         return row instanceof FieldTab;
     }
 
-    reset(): void {
+    /**
+     *Cancel the last drag and drop operation
+     *
+     * @memberof ContentTypeFieldsDropZoneComponent
+     */
+    cancelLastDragAndDrop(): void {
         this.fieldRows = this.getRowFields(this.fields);
     }
 

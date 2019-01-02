@@ -46,7 +46,7 @@ class TestContentTypeFieldsDropZoneComponent {
     @Output()
     removeFields = new EventEmitter<ContentTypeField[]>();
 
-    reset(): void {
+    cancelLastDragAndDrop(): void {
     }
 }
 
@@ -516,7 +516,7 @@ describe('ContentTypesEditComponent', () => {
 
         it('should handle 403 when user doesn\'t have permission to save feld', () => {
             const dropZone = de.query(By.css('dot-content-type-fields-drop-zone'));
-            spyOn(dropZone.componentInstance, 'reset').and.callThrough();
+            spyOn(dropZone.componentInstance, 'cancelLastDragAndDrop').and.callThrough();
 
             const newFieldsAdded: ContentTypeField[] = [
                 {
@@ -544,7 +544,7 @@ describe('ContentTypesEditComponent', () => {
             contentTypeFieldsDropZone.componentInstance.saveFields.emit(newFieldsAdded);
 
             expect(dotHttpErrorManagerService.handle).toHaveBeenCalledTimes(1);
-            expect(dropZone.componentInstance.reset).toHaveBeenCalledTimes(1);
+            expect(dropZone.componentInstance.cancelLastDragAndDrop).toHaveBeenCalledTimes(1);
         });
 
         it('should remove fields on dropzone event', () => {

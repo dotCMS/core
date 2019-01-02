@@ -231,7 +231,7 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
         expect(comp.fieldRows).toEqual([fieldRow1]);
     });
 
-    it('should reset fields ', () => {
+    it('should cancel last drag and drop operation fields', () => {
         comp.fields = [];
 
         const fieldRow1: FieldRow = new FieldRow();
@@ -244,9 +244,8 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
         const fieldRow2 = new FieldRow();
         comp.fieldRows = [fieldRow1, fieldRow2];
 
-        comp.reset();
+        comp.cancelLastDragAndDrop();
 
-        console.log('comp.fieldRows', comp.fieldRows);
         expect(comp.fieldRows.length).toEqual(1);
         expect((<FieldRow> comp.fieldRows[0]).columns.length).toEqual(1);
         expect((<FieldRow> comp.fieldRows[0]).columns[0].fields).toEqual([]);
