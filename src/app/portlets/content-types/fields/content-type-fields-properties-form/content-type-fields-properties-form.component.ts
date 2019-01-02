@@ -6,28 +6,30 @@ import {
     SimpleChanges,
     ViewChild,
     OnChanges,
-    OnInit
+    OnInit,
+    OnDestroy
 } from '@angular/core';
 import { FormGroup, FormBuilder, AbstractControl } from '@angular/forms';
 import { DotMessageService } from '@services/dot-messages-service';
 import { ContentTypeField } from '../shared';
 import { FieldPropertyService } from '../service/';
-import { take } from 'rxjs/operators';
+import { take, takeUntil } from 'rxjs/operators';
+import * as _ from 'lodash';
+import { Subject } from 'rxjs';
 
 @Component({
     selector: 'dot-content-type-fields-properties-form',
     styleUrls: ['./content-type-fields-properties-form.component.scss'],
-    templateUrl: './content-type-fields-properties-form.component.html',
+    templateUrl: './content-type-fields-properties-form.component.html'
 })
-export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnInit {
-    @Output()
-    saveField: EventEmitter<any> = new EventEmitter();
+export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnInit, OnDestroy {
+    @Output() saveField: EventEmitter<any> = new EventEmitter();
 
-    @Input()
-    formFieldData: ContentTypeField;
+    @Output() valid: EventEmitter<boolean> = new EventEmitter();
 
-    @ViewChild('properties')
-    propertiesContainer;
+    @Input() formFieldData: ContentTypeField;
+
+    @ViewChild('properties') propertiesContainer;
 
     form: FormGroup;
     fieldProperties: string[] = [];
@@ -36,6 +38,9 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
     i18nMessages: {
         [key: string]: string;
     } = {};
+
+    private originalValue: any;
+    private destroy$: Subject<boolean> = new Subject<boolean>();
 
     constructor(
         private fb: FormBuilder,
@@ -93,9 +98,14 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
                 'contenttypes.field.properties.validation_regex.values.url_pattern'
             ])
             .pipe(take(1))
-            .subscribe((res) => {
+            .subscribe(res => {
                 this.i18nMessages = res;
             });
+    }
+
+    ngOnDestroy(): void {
+        this.destroy$.next(true);
+        this.destroy$.complete();
     }
 
     /**
@@ -107,14 +117,15 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
         if (this.form.valid) {
             this.saveField.emit(this.form.value);
         } else {
-            this.fieldProperties.forEach((property) => this.form.get(property).markAsTouched());
+            this.fieldProperties.forEach(property => this.form.get(property).markAsTouched());
         }
+        this.valid.next(false);
     }
 
-    public destroy(): void {
+    destroy(): void {
         this.fieldProperties = [];
         const propertiesContainer = this.propertiesContainer.nativeElement;
-        propertiesContainer.childNodes.forEach((child) => {
+        propertiesContainer.childNodes.forEach(child => {
             if (child.tagName) {
                 propertiesContainer.removeChild(child);
             }
@@ -126,8 +137,8 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
 
         if (properties) {
             properties
-                .filter((property) => this.fieldPropertyService.existsComponent(property))
-                .forEach((property) => {
+                .filter(property => this.fieldPropertyService.existsComponent(property))
+                .forEach(property => {
                     formFields[property] = [
                         {
                             value:
@@ -147,6 +158,18 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
 
         this.form = this.fb.group(formFields);
         this.setAutoCheckValues();
+        this.notifyFormChanges();
+    }
+
+    private notifyFormChanges() {
+        this.originalValue = this.form.value;
+        this.form.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(() => {
+            this.valid.next(this.isFormValueUpdated());
+        });
+    }
+
+    private isFormValueUpdated(): boolean {
+        return !_.isEqual(this.form.value, this.originalValue);
     }
 
     private isPropertyDisabled(property: string): boolean {
@@ -158,7 +181,7 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
 
     private sortProperties(properties: string[]): void {
         this.fieldProperties = properties
-            .filter((property) => this.fieldPropertyService.existsComponent(property))
+            .filter(property => this.fieldPropertyService.existsComponent(property))
             .sort(
                 (property1, proeprty2) =>
                     this.fieldPropertyService.getOrder(property1) -
@@ -168,8 +191,8 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
 
     private setAutoCheckValues(): void {
         [this.form.get('searchable'), this.form.get('listed'), this.form.get('unique')]
-            .filter((checkbox) => !!checkbox)
-            .forEach((checkbox) => {
+            .filter(checkbox => !!checkbox)
+            .forEach(checkbox => {
                 this.handleCheckValues(checkbox);
             });
     }
@@ -182,7 +205,7 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
             this.handleDisabledIndexed(true);
         }
 
-        checkbox.valueChanges.subscribe((res) => {
+        checkbox.valueChanges.subscribe(res => {
             checkbox === this.form.get('unique')
                 ? this.handleUniqueValuesChecked(res)
                 : this.setIndexedValueChecked(res);

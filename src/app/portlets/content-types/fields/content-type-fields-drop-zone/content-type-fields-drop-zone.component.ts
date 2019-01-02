@@ -82,13 +82,13 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
             .pipe(take(1))
             .subscribe((messages: { [key: string]: string }) => {
                 this.i18nMessages = messages;
-
                 this.dialogActions = {
                     accept: {
                         action: () => {
                             this.propertiesForm.saveFieldProperties();
                         },
-                        label: this.i18nMessages['contenttypes.dropzone.action.save']
+                        label: this.i18nMessages['contenttypes.dropzone.action.save'],
+                        disabled: true
                     },
                     cancel: {
                         label: this.i18nMessages['contenttypes.dropzone.action.cancel'],
@@ -229,6 +229,7 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
         this.formData = null;
         this.dialogActiveTab = null;
         this.propertiesForm.destroy();
+        this.setDialogOkButtonState(false);
     }
 
     /**
@@ -281,12 +282,28 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
     }
 
     /**
-     *Cancel the last drag and drop operation
+     * Cancel the last drag and drop operation
      *
      * @memberof ContentTypeFieldsDropZoneComponent
      */
     cancelLastDragAndDrop(): void {
         this.fieldRows = this.getRowFields(this.fields);
+    }
+
+    /**
+     * Set the state for the ok action for the dialog
+     *
+     * @param {boolean} $event
+     * @memberof ContentTypeFieldsDropZoneComponent
+     */
+    setDialogOkButtonState(formChanged: boolean): void {
+        this.dialogActions = {
+            ...this.dialogActions,
+            accept: {
+                ...this.dialogActions.accept,
+                disabled: !formChanged
+            }
+        };
     }
 
     private setDroppedField(droppedField: ContentTypeField): void {
