@@ -132,7 +132,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 
 	private transient boolean needsReindex = false;
 
-	private transient Map<String, List<String>> relatedIds = Maps.newConcurrentMap();
+	private transient Map<String, List<String>> relatedIds;
 
 	/**
 	 * Returns true if this contentlet needs reindex
@@ -1385,12 +1385,16 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 */
 	public List<Contentlet> getRelated(final String variableName) {
 
+		if (!UtilMethods.isSet(this.relatedIds)){
+			relatedIds = Maps.newConcurrentMap();
+		}
+
 		final RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
 
 		if (this.relatedIds.containsKey(variableName)) {
 			return this.relatedIds.get(variableName).stream().map(identifier -> {
 				try {
-					return this.contentletAPI.findContentletByIdentifierAnyLanguage(identifier);
+					return APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(identifier);
 				} catch (DotDataException | DotSecurityException e) {
 					Logger.warn(this, "No field found with this variable name " + variableName, e);
 					throw new DotStateException(e);
@@ -1398,7 +1402,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 			}).collect(Collectors.toList());
 		} else {
 			try {
-				final User user = this.userAPI.getSystemUser();
+				final User user = APILocator.getUserAPI().getSystemUser();
 				com.dotcms.contenttype.model.field.Field field = APILocator.getContentTypeFieldAPI()
 						.byContentTypeIdAndVar(getContentTypeId(), variableName);
 
