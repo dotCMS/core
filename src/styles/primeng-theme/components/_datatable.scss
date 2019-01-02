@@ -1,12 +1,9 @@
 @import "variables";
 
-.ui-datatable,
-.ui-table {
+.ui-datatable {
     .ui-datatable-thead > tr > th,
-    .ui-table-thead > tr > th,
     .ui-datatable-tfoot > tr > td,
-    .ui-datatable-data > tr > td,
-    .ui-table-tbody > tr > td {
+    .ui-datatable-data > tr > td {
         border-width: 0px;
         padding: $datatable-cell-padding;
 
@@ -29,8 +26,7 @@
         }
     }
 
-    .ui-datatable-thead > tr > th,
-    .ui-table-thead > tr > th {
+    .ui-datatable-thead > tr > th {
         color: $datatable-head-color;
         font-size: $font-size-small;
         font-weight: normal;
@@ -42,13 +38,8 @@
         }
     }
 
-    .ui-datatable-data > tr > td,
-    .ui-table-tbody > tr > td {
+    .ui-datatable-data > tr > td {
         border-bottom: $datatable-cell-border;
-    }
-
-    .ui-table-tbody tr:hover {
-        background-color: rgba($brand-primary_rgb, 0.1);
     }
 
     .ui-datatable-loading {
