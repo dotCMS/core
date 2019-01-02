@@ -1,19 +1,25 @@
 package com.dotcms.rendering.velocity.viewtools;
 
+import com.dotcms.rendering.velocity.viewtools.content.ContentMap;
 import com.dotcms.rendering.velocity.viewtools.exception.DotToolException;
 import com.dotcms.rest.MapToContentletPopulator;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.Permissionable;
 import java.util.List;
 import java.util.Map;
 
 import com.dotmarketing.business.RelationshipAPI;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicyProvider;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
+import org.apache.velocity.context.Context;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
 
@@ -53,10 +59,22 @@ public class WorkflowTool implements ViewTool {
 	private final CategoryAPI categoryAPI = APILocator.getCategoryAPI();
 	private final RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
 	private User user;
+	private boolean editOrPreviewMode;
+	private Context context;
+	private Host currentHost;
 
 	public void init(final Object initData) {
 		HttpServletRequest request = ((ViewContext) initData).getRequest();
 		user = getUser(request);
+		this.context = ((ViewContext) initData).getVelocityContext();
+		final PageMode mode = PageMode.get(request);
+		editOrPreviewMode =!mode.showLive;
+
+		try{
+			this.currentHost = WebAPILocator.getHostWebAPI().getCurrentHost(request);
+		}catch(Exception e){
+			Logger.error(this, "Error finding current host", e);
+		}
 	}
 
 	public WorkflowTask findTaskByContentlet(Contentlet contentlet) throws DotDataException {
@@ -168,7 +186,7 @@ public class WorkflowTool implements ViewTool {
 	 * @throws DotToolException runtime exception to wrap the original exception
 	 */
 
-	public Contentlet fire(final Map<String, Object> properties, final String wfActionId) throws DotToolException {
+	public ContentMap fire(final Map<String, Object> properties, final String wfActionId) {
 		Contentlet contentlet = new Contentlet();
 
 		try {
@@ -201,7 +219,7 @@ public class WorkflowTool implements ViewTool {
 			throw new DotToolException(e);
 		}
 
-		return  contentlet;
+		return new ContentMap(contentlet,user, editOrPreviewMode,currentHost,context);
 	}
 
 }

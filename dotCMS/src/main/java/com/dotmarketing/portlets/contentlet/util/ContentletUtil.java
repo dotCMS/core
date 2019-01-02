@@ -1,10 +1,14 @@
 package com.dotmarketing.portlets.contentlet.util;
 
+import com.dotcms.contenttype.model.field.BinaryField;
+import com.dotcms.contenttype.model.field.CategoryField;
+import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
+import com.dotcms.rest.ContentHelper;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
@@ -107,42 +111,49 @@ public class ContentletUtil {
 	 * (e.g. REST, ES portlet)
 	 *
 	 * @param user User from Front End with permission to read Special Fields.
-	 * @param c the contentlet to generate the printable map from
+	 * @param contentlet the contentlet to generate the printable map from
 	 *
 	 * @return Contentlet with the values in place.
 	 *
 	 * @throws DotDataException
 	 * @throws IOException 
      */
-	public static Map<String, Object> getContentPrintableMap(User user, Contentlet c) throws DotDataException, IOException {
+	public static Map<String, Object> getContentPrintableMap(User user, Contentlet contentlet) throws DotDataException, IOException {
 		Map<String, Object> m = new HashMap<>();
 
-		c.setTags();
+		contentlet.setTags();
+		contentlet = ContentHelper.getInstance().hydrateContentlet(contentlet);
+		m.putAll(contentlet.getMap());
 
-		m.putAll(c.getMap());
 
-		Structure s = c.getStructure();
 
-		for(Field f : FieldsCache.getFieldsByStructureInode(s.getInode())){
-			if(f.getFieldType().equals(Field.FieldType.BINARY.toString()) && c.get(f.getVelocityVarName())!=null){
-			  File x = c.getBinary(f.getVelocityVarName());
-				m.put(f.getVelocityVarName(), "/contentAsset/raw-data/" +  c.getIdentifier() + "/" + f.getVelocityVarName() + "/" + x.getName()	);
-				m.put(f.getVelocityVarName() + "ContentAsset", c.getIdentifier() + "/" +f.getVelocityVarName()	);
-			} else if(f.getFieldType().equals(Field.FieldType.CATEGORY.toString())) {
+
+		ContentType type=contentlet.getContentType();
+		m.put("contentType", type.variable());
+
+		for(com.dotcms.contenttype.model.field.Field f : type.fields()){
+			if(f instanceof BinaryField){
+			  File fsFile = contentlet.getBinary(f.variable());
+			  if(fsFile !=null && fsFile.exists()) {
+			    m.put(f.variable() + "Version", "/dA/" +  contentlet.getInode() + "/" + f.variable() + "/" + fsFile.getName()  );
+				m.put(f.variable(), "/dA/" +  contentlet.getIdentifier() + "/" + f.variable() + "/" + fsFile.getName()	);
+				m.put(f.variable() + "ContentAsset", contentlet.getIdentifier() + "/" +f.variable()	);
+			  }
+			} else if(f instanceof CategoryField) {
 
 				List<Category> cats = null;
 				
 				try {
 
-					cats = APILocator.getCategoryAPI().getParents(c, user, true);
+					cats = APILocator.getCategoryAPI().getParents(contentlet, user, true);
 				} catch (Exception e) {
-					Logger.error(ContentletUtil.class, String.format("Unable to get the Categories for given contentlet with inode= %s", c.getInode()));
+					Logger.error(ContentletUtil.class, String.format("Unable to get the Categories for given contentlet with inode= %s", contentlet.getInode()));
 				}
 
 				if(cats!=null && !cats.isEmpty()) {
 					try {
 
-						final Category parentCategory        = APILocator.getCategoryAPI().find(f.getValues(), user, true);
+						final Category parentCategory        = APILocator.getCategoryAPI().find(f.values(), user, true);
 						final List<Category> childCategories = new ArrayList<>();
 
 						if(parentCategory != null) {
@@ -157,22 +168,22 @@ public class ContentletUtil {
 
 						if (!childCategories.isEmpty()){
 							String catsStr = childCategories.stream().map(Category::getCategoryName).collect(Collectors.joining(", "));
-							m.put(f.getVelocityVarName(), catsStr);
+							m.put(f.variable(), catsStr);
 						}
 					} catch (DotSecurityException e) {
-						Logger.error(ContentletUtil.class, String.format("Unable to get the Categories for given contentlet with inode= %s", c.getInode()));
+						Logger.error(ContentletUtil.class, String.format("Unable to get the Categories for given contentlet with inode= %s", contentlet.getInode()));
 					}
 				}
 			}
 		}
 
-		if (s.isFileAsset() || s.isHTMLPageAsset()){
-			m.put("path", APILocator.getIdentifierAPI().find(c.getIdentifier()).getPath());
+		if (type .baseType() == BaseContentType.HTMLPAGE ||type .baseType() == BaseContentType.FILEASSET){
+			m.put("path", APILocator.getIdentifierAPI().find(contentlet.getIdentifier()).getPath());
 		}
 		try {
-            m.put("hostName", APILocator.getHostAPI().find(c.getHost(), user, true).getHostname());
+            m.put("hostName", APILocator.getHostAPI().find(contentlet.getHost(), user, true).getHostname());
         } catch (Exception e) {
-            Logger.warn(ContentletUtil.class, "unable to get host:" + c.getHost() + " : " + e.getMessage());
+            Logger.warn(ContentletUtil.class, "unable to get host:" + contentlet.getHost() + " : " + e.getMessage());
         }
 
 		return m;

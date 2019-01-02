@@ -35,6 +35,16 @@ public interface WebInterceptorDelegate extends WebInterceptorAware {
                       final HttpServletResponse response) throws IOException;
 
     /**
+     * Executes all interceptors, if some of them fails, stop the execution and returns false.
+     * Otherwise true.
+     *
+     * @param request {@link HttpServletRequest}
+     * @param response {@link HttpServletResponse}
+     */
+    void after(final HttpServletRequest request,
+                             final HttpServletResponse response) throws IOException;
+
+    /**
      * Remove a {@link WebInterceptor}
      *
      * @param webInterceptorName name of the WebInterceptor to be remove
@@ -63,6 +73,13 @@ public interface WebInterceptorDelegate extends WebInterceptorAware {
      * @param webInterceptorName webInterceptorName {@link WebInterceptor} to be move
      */
     void moveToLast(final String webInterceptorName);
+
+    /**
+     * Set the order desire for the filter pipeline, see {@link OrderMode}
+     * By default uses FILO
+     * @param orderMode {@link OrderMode}
+     */
+    void orderMode(final OrderMode orderMode);
 
     /**
      * Encapsulates the delegate result, if shouldContinue

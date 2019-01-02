@@ -464,60 +464,29 @@ public class FolderAPIImpl implements FolderAPI  {
 			ContentletAPI capi = APILocator.getContentletAPI();
 
 			/************ conList *****************/
-			HibernateUtil.getSession().clear();
 			List<Contentlet> conList = capi.findContentletsByFolder(folder, user, false);
-			for (Contentlet c : conList) {
-				// Find all multi-language contentlets and archive them
-
-				Identifier ident = APILocator.getIdentifierAPI().find(c.getIdentifier());
-
-	            List<Contentlet> otherLanguageCons = capi.findAllVersions(ident, user, false);
-	            for (Contentlet cv : otherLanguageCons) {
-					if(cv.isLive()){
-						capi.unpublish(cv, user, false);
-					}
-					if(!cv.isArchived()){
-						capi.archive(cv, user, false);
-					}
-	            }
-				capi.delete(c, user, false);
-			}
+			capi.destroy(conList, user, false);
+			
 
 			/************ Links *****************/
-			HibernateUtil.getSession().clear();
 			List<Link> links = getLinks(folder, user, respectFrontEndPermissions);
 			for (Link linker : links) {
 				Link link = (Link) linker;
 
 					Identifier identifier = APILocator.getIdentifierAPI().find(link);
-					if (!InodeUtils.isSet(identifier.getInode())) {
+					if (!InodeUtils.isSet(identifier.getId())) {
 						Logger.warn(FolderFactory.class, "Link with Inode [" + link.getInode() + "] doesn't have a valid associated Identifier.");
 						continue;
 					}
 
-					permissionAPI.removePermissions(link);
 					APILocator.getMenuLinkAPI().delete(link, user, false);
-
-
 			}
 
 			/******** delete possible orphaned identifiers under the folder *********/
-			HibernateUtil.getSession().clear();
 			Identifier ident=APILocator.getIdentifierAPI().find(folder);
 			List<Identifier> orphanList=APILocator.getIdentifierAPI().findByParentPath(folder.getHostId(), ident.getURI());
 			for(Identifier orphan : orphanList) {
 			    APILocator.getIdentifierAPI().delete(orphan);
-			    HibernateUtil.getSession().clear();
-			    try {
-    			    DotConnect dc = new DotConnect();
-    			    dc.setSQL("delete from identifier where id=?");
-    			    dc.addParam(orphan.getId());
-    			    dc.loadResult();
-			    } catch(Exception ex) {
-					Logger.warn(this, "Can't delete orphan Identifier [" + orphan.getId() + "]: " + ex.getMessage(),
-							ex);
-				}
-			    HibernateUtil.getSession().clear();
 			}
 
 			/************ Structures *****************/

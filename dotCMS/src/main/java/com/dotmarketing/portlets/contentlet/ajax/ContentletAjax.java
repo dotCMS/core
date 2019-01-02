@@ -841,7 +841,7 @@ public class ContentletAjax {
 		}else if (orderBy.endsWith("__wfstep__ desc")){
 			orderBy = "wfCurrentStepName desc";
 		}else{
-            if(orderBy.charAt(0)=='.'){
+            if(orderBy.charAt(0)=='.'){	
 				if (structureInodes.length > 1) {
 					orderBy = orderBy.substring(1);
 				} else {

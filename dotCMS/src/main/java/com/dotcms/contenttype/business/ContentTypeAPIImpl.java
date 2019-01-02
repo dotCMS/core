@@ -77,7 +77,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     try {
       String actionUrl = ContentTypeUtil.getInstance().getActionUrl(type, user);
       ContentTypePayloadDataWrapper contentTypePayloadDataWrapper = new ContentTypePayloadDataWrapper(actionUrl, type);
-      APILocator.getSystemEventsAPI().push(SystemEventType.DELETE_BASE_CONTENT_TYPE, new Payload(
+      APILocator.getSystemEventsAPI().pushAsync(SystemEventType.DELETE_BASE_CONTENT_TYPE, new Payload(
           contentTypePayloadDataWrapper, Visibility.PERMISSION, String.valueOf(PermissionAPI.PERMISSION_READ)));
     } catch (DotStateException | DotDataException e) {
       Logger.error(ContentType.class, e.getMessage(), e);

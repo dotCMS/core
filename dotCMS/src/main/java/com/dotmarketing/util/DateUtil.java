@@ -1,12 +1,12 @@
 package com.dotmarketing.util;
 
-import static com.dotcms.util.DotPreconditions.checkNotNull;
-
 import com.dotcms.content.elasticsearch.business.ESContentFactoryImpl;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Company;
 import com.liferay.util.StringPool;
+import org.apache.commons.lang.StringUtils;
+
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
@@ -14,14 +14,10 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Calendar;
-import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import org.apache.commons.lang.StringUtils;
+
+import static com.dotcms.util.DotPreconditions.checkNotNull;
 
 /**
  * Provides utility methods to interact with {@link Date} objects, date formats,
@@ -34,9 +30,16 @@ import org.apache.commons.lang.StringUtils;
  */
 public class DateUtil {
 
+
 	public static final long SECOND_MILLIS = 1000;
 	public static final long MINUTE_MILLIS = 60 * SECOND_MILLIS;
 	public static final long HOUR_MILLIS   = 60 * MINUTE_MILLIS;
+
+	public static final long TWO_SECOND_MILLIS   = 2 * SECOND_MILLIS;
+	public static final long THREE_SECOND_MILLIS = 3 * SECOND_MILLIS;
+	public static final long FOUR_SECOND_MILLIS  = 4 * SECOND_MILLIS;
+	public static final long FIVE_SECOND_MILLIS  = 5 * SECOND_MILLIS;
+
 
 	public static final String DIFF_YEARS = "diffYears";
 	public static final String DIFF_MONTHS = "diffMonths";

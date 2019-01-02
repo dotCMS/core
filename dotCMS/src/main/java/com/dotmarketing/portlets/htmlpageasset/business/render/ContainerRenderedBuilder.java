@@ -14,6 +14,7 @@ import com.dotmarketing.util.VelocityUtil;
 import org.apache.velocity.context.Context;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -24,22 +25,30 @@ import java.util.stream.Collectors;
 public class ContainerRenderedBuilder {
 
 
-    public Collection<? extends ContainerRaw> getContainers(final HTMLPageAsset page, final PageMode mode)
-            throws DotSecurityException, DotDataException {
-        return getContainersRendered(page, null, mode);
+    final PageMode mode;
+    final Context velocityContext;
+    final List<ContainerRaw> containerRaws;
+
+
+    public ContainerRenderedBuilder(final HTMLPageAsset page, final PageMode mode) throws DotDataException, DotSecurityException {
+        this(new PageContextBuilder(page, APILocator.systemUser(), mode).getContainersRaw(), null, mode);
+
+
     }
 
+    public ContainerRenderedBuilder(List<ContainerRaw> raws, final Context velocityContext, final PageMode mode) {
+        this.containerRaws = raws;
+        this.velocityContext = velocityContext;
+        this.mode = mode;
 
-    public Collection<? extends ContainerRaw> getContainersRendered(final HTMLPageAsset page, final Context velocityContext, final PageMode mode)
-            throws DotSecurityException, DotDataException {
+    }
 
-        final PageContextBuilder pageContextBuilder = new PageContextBuilder(page, APILocator.systemUser(), mode);
-
+    public Collection<? extends ContainerRaw> build() {
         if (velocityContext == null) {
-            return pageContextBuilder.getContainersRaw();
+            return this.containerRaws;
         }
 
-        return pageContextBuilder.getContainersRaw().stream().map(containerRaw -> {
+        return this.containerRaws.stream().map(containerRaw -> {
             try {
                 final Map<String, String> uuidsRendered = render(velocityContext, mode, containerRaw);
                 return new ContainerRendered(containerRaw, uuidsRendered);
@@ -49,15 +58,16 @@ public class ContainerRenderedBuilder {
 
             }
         }).filter(Objects::nonNull).collect(Collectors.toList());
-    }
 
+
+    }
 
 
     private Map<String, String> render(final Context velocityContext, final PageMode mode, final ContainerRaw containerRaw) {
 
         final Map<String, String> rendered = Maps.newHashMap();
         for (final String uuid : containerRaw.getContentlets().keySet()) {
-            final VelocityResourceKey key = new VelocityResourceKey(containerRaw.getContainer(), uuid, mode);
+            final VelocityResourceKey key = new VelocityResourceKey(containerRaw.getContainer(), uuid.replace("uuid-", ""), mode);
             try {
                 rendered.put(uuid, VelocityUtil.getInstance().mergeTemplate(key.path, velocityContext));
             } catch (Exception e) {

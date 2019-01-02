@@ -341,12 +341,14 @@
                                             request.setAttribute("relationshipRecords", contentletRelationships.getRelationshipsRecordsByField(f.getFieldRelationType()));
                                         }else{
                                             request.setAttribute("relationshipRecords", contentletRelationships.getRelationshipsRecordsByField(structure.getVelocityVarName() + "." + f.getVelocityVarName()));
-                                        }
-                                    } else {
-                                        request.setAttribute("relationshipRecords", legacyRelationshipRecords);
-                                    }
+                                        }%>
+                                        <jsp:include page="/html/portlet/ext/contentlet/field/edit_relationships.jsp"/>
+                                <%  } else {
+                                        request.setAttribute("relationshipRecords", legacyRelationshipRecords); %>
+                                        <jsp:include page="/html/portlet/ext/contentlet/edit_contentlet_relationships.jsp"/>
+                                <%  }
                                 %>
-                                <jsp:include page="/html/portlet/ext/contentlet/edit_contentlet_relationships.jsp"/>
+
                             </div>
                         <% }
                         counter++;

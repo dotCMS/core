@@ -1,8 +1,10 @@
 package com.dotcms.rest.api.v1.vtl;
 
 import com.dotcms.repackage.javax.ws.rs.core.MultivaluedMap;
+import com.dotcms.rest.api.v1.vtl.VTLResourceIntegrationTest.ResourceMethod;
 
 import java.io.File;
+import java.util.Map;
 
 public class VTLResourceTestCase {
 
@@ -14,6 +16,8 @@ public class VTLResourceTestCase {
     private final String expectedOutput;
     private final int expectedException;
     private final String userId;
+    private final Map<String, String> bodyMap;
+    private final ResourceMethod resourceMethod;
 
     File getVtlFile() {
         return vtlFile;
@@ -47,9 +51,18 @@ public class VTLResourceTestCase {
         return userId;
     }
 
+    public ResourceMethod getResourceMethod() {
+        return resourceMethod;
+    }
+
+    public Map<String, String> getBodyMap() {
+        return bodyMap;
+    }
+
     private VTLResourceTestCase(final File vtlFile, final String folderName, final MultivaluedMap<String, String> queryParameters,
                                 final String pathParameter, final String expectedJSON, final String expectedOutput,
-                                final int expectedException, final String user) {
+                                final int expectedException, final String user, final Map<String, String> bodyMap,
+                                final ResourceMethod resourceMethod) {
         this.vtlFile = vtlFile;
         this.folderName = folderName;
         this.queryParameters = queryParameters;
@@ -58,6 +71,8 @@ public class VTLResourceTestCase {
         this.expectedOutput = expectedOutput;
         this.expectedException = expectedException;
         this.userId = user;
+        this.bodyMap = bodyMap;
+        this.resourceMethod = resourceMethod;
     }
 
     public static class Builder {
@@ -69,6 +84,8 @@ public class VTLResourceTestCase {
         private String expectedOutput;
         private int expectedException;
         private String user = "system";
+        private Map<String, String> bodyMap = null;
+        private ResourceMethod resourceMethod = ResourceMethod.GET;
 
         Builder setVtlFile(final File vtlFile) {
             this.vtlFile = vtlFile;
@@ -110,9 +127,19 @@ public class VTLResourceTestCase {
             return this;
         }
 
+        Builder setBodyMap(final Map<String, String> bodyMap) {
+            this.bodyMap = bodyMap;
+            return this;
+        }
+
+        Builder setResourceMethod(final ResourceMethod resourceMethod) {
+            this.resourceMethod = resourceMethod;
+            return this;
+        }
+
         VTLResourceTestCase build() {
             return new VTLResourceTestCase(vtlFile, folderName, queryParameters, pathParameter,expectedJSON,
-                    expectedOutput, expectedException, user);
+                    expectedOutput, expectedException, user, bodyMap, resourceMethod);
         }
     }
 }

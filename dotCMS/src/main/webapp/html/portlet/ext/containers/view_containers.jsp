@@ -294,7 +294,7 @@ function processDelete(inode, referer) {
 			<a class="beta" href="<portlet:renderURL windowState="<%= WindowState.MAXIMIZED.toString() %>">
 			<portlet:param name="struts_action" value="/ext/containers/view_containers" />
 			<portlet:param name="pageNumber" value="<%= String.valueOf(pageNumber) %>" />
-			<portlet:param name="orderby" value="<%=orderby.equals(\"modDate desc\")?\"modDate asc\":\"modDate desc\"%>" /></portlet:renderURL>">
+			<portlet:param name="orderby" value="<%=orderby.equals(\"mod_date desc\")?\"mod_date asc\":\"mod_date desc\"%>" /></portlet:renderURL>">
 			<%= LanguageUtil.get(pageContext, "Mod-Date") %></a>
 		</th>
 	</tr>

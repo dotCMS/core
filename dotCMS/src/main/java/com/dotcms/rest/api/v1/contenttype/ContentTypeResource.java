@@ -146,12 +146,12 @@ public class ContentTypeResource implements Serializable {
 
 
 	@PUT
-	@Path("/id/{id}")
+	@Path("/id/{idOrVar}")
 	@JSONP
 	@NoCache
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
-	public Response updateType(@PathParam("id") final String id, final ContentTypeForm form,
+	public Response updateType(@PathParam("idOrVar") final String idOrVar, final ContentTypeForm form,
 							   @Context final HttpServletRequest req) throws DotDataException {
 
 		final InitDataObject initData = this.webResource.init(null, false, req, false, null);
@@ -163,7 +163,7 @@ public class ContentTypeResource implements Serializable {
 		try {
 			ContentType contentType = form.getContentType();
 
-			Logger.debug(this, String.format("Updating content type", form.getRequestJson()));
+			Logger.debug(this, String.format("Updating content type  '%s' ", form.getRequestJson()));
 
 			if (!UtilMethods.isSet(contentType.id())) {
 
@@ -171,22 +171,22 @@ public class ContentTypeResource implements Serializable {
 
 			} else {
 
-				ContentType currentContentType = capi.find(id);
+				ContentType currentContentType = capi.find(idOrVar);
 
 				if (!currentContentType.id().equals(contentType.id())) {
 
-					response = ExceptionMapperUtil.createResponse(null, "Field id '"+ id +"' does not match a content-type with id '"+ contentType.id() +"'");
+					response = ExceptionMapperUtil.createResponse(null, "Field id '"+ idOrVar +"' does not match a content-type with id '"+ contentType.id() +"'");
 
 				} else {
 
 					contentType = capi.save(contentType);
 
 					final Set<String> workflowsIds = new HashSet<>(form.getWorkflowsIds());
-					workflowHelper.saveSchemesByContentType(id, user, workflowsIds);
+					workflowHelper.saveSchemesByContentType(contentType.id(), user, workflowsIds);
 
 					ImmutableMap<Object, Object> responseMap = ImmutableMap.builder()
 							.putAll(new JsonContentTypeTransformer(contentType).mapObject())
-							.put("workflows", this.workflowHelper.findSchemesByContentType(id, initData.getUser()))
+							.put("workflows", this.workflowHelper.findSchemesByContentType(contentType.id(), initData.getUser()))
 							.build();
 
 					response = Response.ok(new ResponseEntityView(responseMap)).build();
@@ -213,11 +213,11 @@ public class ContentTypeResource implements Serializable {
 
 
 	@DELETE
-	@Path("/id/{id}")
+	@Path("/id/{idOrVar}")
 	@JSONP
 	@NoCache
 	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-	public Response deleteType(@PathParam("id") final String id, @Context final HttpServletRequest req)
+	public Response deleteType(@PathParam("idOrVar") final String idOrVar, @Context final HttpServletRequest req)
 			throws DotDataException, JSONException {
 
 		final InitDataObject initData = this.webResource.init(null, true, req, true, null);
@@ -229,13 +229,9 @@ public class ContentTypeResource implements Serializable {
 
 			ContentType type = null;
 			try {
-				type = contentTypeAPI.find(id);
+				type = contentTypeAPI.find(idOrVar);
 			} catch (NotFoundInDbException nfdb) {
-				try {
-					type = contentTypeAPI.find(id);
-				} catch (NotFoundInDbException nfdb2) {
-					return Response.status(404).build();
-				}
+				return Response.status(404).build();
 			}
 
 			contentTypeAPI.delete(type);
