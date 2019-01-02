@@ -130,7 +130,7 @@ public class ContentletUtil {
 
 		ContentType type=contentlet.getContentType();
 		m.put("contentType", type.variable());
-
+        m.put("baseType", type.baseType().name());
 		for(com.dotcms.contenttype.model.field.Field f : type.fields()){
 			if(f instanceof BinaryField){
 			  File fsFile = contentlet.getBinary(f.variable());
@@ -182,7 +182,6 @@ public class ContentletUtil {
 		}
 		try {
             m.put("hostName", APILocator.getHostAPI().find(contentlet.getHost(), user, true).getHostname());
-            m.put("baseType", contentlet.getContentType().baseType().name());
         } catch (Exception e) {
             Logger.warn(ContentletUtil.class, "unable to get host:" + contentlet.getHost() + " : " + e.getMessage());
         }
