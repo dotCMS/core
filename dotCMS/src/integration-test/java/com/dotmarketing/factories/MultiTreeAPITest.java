@@ -7,6 +7,8 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -16,9 +18,13 @@ import com.dotcms.IntegrationTestBase;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.startup.runonce.Task04315UpdateMultiTreePK;
+import com.google.common.collect.Table;
 
 public class MultiTreeAPITest extends IntegrationTestBase {
     
@@ -161,23 +167,93 @@ public class MultiTreeAPITest extends IntegrationTestBase {
     
     
     @Test
-    public void testGetMultiTreeIdentifierIdentifierIdentifierString() throws Exception {
+    public void testGetPageMultiTrees() throws Exception {
+        // GET ANY REAL PAGE (NO ES)
+        Map<String, Object> map = new DotConnect().setSQL("select contentlet_version_info.* from contentlet_version_info where working_inode in (select inode from contentlet where structure_inode in (select inode from structure where velocity_var_name='htmlpageasset'))").setMaxRows(1).loadObjectResults().get(0);
+        final HTMLPageAsset page = APILocator.getHTMLPageAssetAPI().fromContentlet(APILocator.getContentletAPIImpl().find(map.get("working_inode").toString(), APILocator.systemUser(), false));
+     
+        // GET ANY REAL CONTENT (NO ES)
+        map = new DotConnect().setSQL("select contentlet_version_info.* from contentlet_version_info where working_inode in (select inode from contentlet where structure_inode in (select inode from structure where velocity_var_name='webPageContent'))").setMaxRows(1).loadObjectResults().get(0);
+        final Contentlet content = APILocator.getContentletAPIImpl().find(map.get("working_inode").toString(), APILocator.systemUser(), false);
+        
+        // GET ANY REAL CONTAINER (NO ES)
+        map = new DotConnect().setSQL("select container_version_info.* from container_version_info where working_inode").setMaxRows(1).loadObjectResults().get(0);
+        final Container container = APILocator.getContainerAPI().find(map.get("working_inode").toString(), APILocator.systemUser(), false);
+        
+        
+        //delete these out
+        APILocator.getMultiTreeAPI().deleteMultiTreeByParent(container.getIdentifier());
+        
+        Table<String, String, Set<String>> trees= APILocator.getMultiTreeAPI().getPageMultiTrees(page, false);
+        
+        Table<String, String, Set<String>> cachedTrees= APILocator.getMultiTreeAPI().getPageMultiTrees(page, false);
+        
 
         
+        // should be the same object coming from in memory cache
+        assert(trees==cachedTrees);
+        
+        CacheLocator.getMultiTreeCache().removePageMultiTrees(page.getIdentifier());
+        
+        
+        trees= APILocator.getMultiTreeAPI().getPageMultiTrees(page, false);
+        
+        // cache flush forced a cache reload, so different objects in memory
+        assert(trees!=cachedTrees);
+        
+        // but the objects should contain the same data
+        assert(trees.equals(cachedTrees));
+
+        // there is no container entry 
+        assert(!(cachedTrees.rowKeySet().contains(container.getIdentifier())));
+
+        
+        
+        
+        
+        MultiTree multiTree = new MultiTree();
+        multiTree.setHtmlPage(page);
+        multiTree.setContainer(container);
+        multiTree.setContentlet(content);
+        multiTree.setRelationType("abc");
+        multiTree.setTreeOrder( 1 );
+        
+        
+        
+        
+        
+        
+        // check cache flush on save
+        APILocator.getMultiTreeAPI().saveMultiTree( multiTree );
+        Table<String, String, Set<String>> addedTrees= APILocator.getMultiTreeAPI().getPageMultiTrees(page, false);
+        assert(cachedTrees!=addedTrees);
+        
+        // did we get a new object from the cache?
+        assert(!(cachedTrees.equals(addedTrees)));
+        assert(addedTrees.rowKeySet().contains(container.getIdentifier()));
+        
+        // check cache flush on delete
+        APILocator.getMultiTreeAPI().deleteMultiTree(multiTree );
+        Table<String, String, Set<String>> deletedTrees= APILocator.getMultiTreeAPI().getPageMultiTrees(page, false);
+        // did we get a new object from the cache?
+        assert(!(addedTrees.equals(deletedTrees)));
+        assert(!(deletedTrees.rowKeySet().contains(container.getIdentifier())));
         
         
     }
 
-    @Test
-    public void testGetMultiTreeInode() throws Exception {
 
-    }
 
     @Test
     public void testMultiTreeForContainerStructure() throws Exception {
 
-        //Search for an existing Container Structure (contentlet)
-        final Contentlet contentlet = APILocator.getContentletAPIImpl().findAllContent(0,1).get(0);
+        //THIS USES THE INDEX WHICH IS SOMETIMES NOT THERE LOCALLY
+        //final Contentlet contentlet = APILocator.getContentletAPIImpl().findAllContent(0,1).get(0);
+        
+        Map<String, Object> map = new DotConnect().setSQL("select * from contentlet_version_info").setMaxRows(1).loadObjectResults().get(0);
+        final Contentlet contentlet = APILocator.getContentletAPIImpl().find(map.get("working_inode").toString(), APILocator.systemUser(), false);
+        
+        
 
         //Create a MultiTree and relate it to that Contentlet
         MultiTree mt = new MultiTree()
