@@ -1423,10 +1423,8 @@ public class ImportExportUtil {
                         }
                         else if(obj instanceof MultiTree){
                             final MultiTree t = (MultiTree) obj;
-                            LocalTransaction.wrap(() -> {
+                            APILocator.getMultiTreeAPI().saveMultiTree(t);
 
-                                APILocator.getMultiTreeAPI().saveMultiTree(t);
-                            });
                         } else{
                             try {
 

@@ -63,11 +63,7 @@ import com.liferay.util.StringPool;
  */
 public class MultiTreeAPIImpl implements MultiTreeAPI {
 
-    final VersionableAPI versionableAPI = APILocator.getVersionableAPI();
-    final ContainerAPI containerAPI = APILocator.getContainerAPI();
-    final ContentletAPI contentletAPI = APILocator.getContentletAPI();
-    final User systemUser = APILocator.systemUser();
-    final TemplateAPI templateAPI = APILocator.getTemplateAPI();
+
 
     static final String DELETE_ALL_MULTI_TREE_RELATED_TO_IDENTIFIER_SQL =
             "delete from multi_tree where child = ? or parent1 = ? or parent2 = ?";
@@ -546,13 +542,15 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
         final List<MultiTree> multiTrees = this.getMultiTrees(page.getIdentifier());
 
         for (final MultiTree multiTree : multiTrees) {
-
+            final ContainerAPI containerAPI = APILocator.getContainerAPI();
+            final ContentletAPI contentletAPI = APILocator.getContentletAPI();
+            final User systemUser = APILocator.systemUser();
             Container container = null;
 
             try {
 
-                container = (liveMode) ? this.containerAPI.getLiveContainerById(multiTree.getContainer(), systemUser, false)
-                        : this.containerAPI.getWorkingContainerById(multiTree.getContainer(), systemUser, false);
+                container = (liveMode) ? containerAPI.getLiveContainerById(multiTree.getContainer(), systemUser, false)
+                        : containerAPI.getWorkingContainerById(multiTree.getContainer(), systemUser, false);
                 if (container == null && !liveMode) {
                     continue;
                 }
@@ -591,6 +589,8 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
             throws DotDataException, DotSecurityException {
 
         try {
+            
+            
             final Template template =
                     APILocator.getTemplateAPI().findWorkingTemplate(page.getTemplateId(), APILocator.getUserAPI().getSystemUser(), false);
             if (!template.isDrawed()) {
@@ -598,14 +598,14 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
             }
 
             final TemplateLayout layout = DotTemplateTool.themeLayout(page.getTemplateId(), APILocator.getUserAPI().getSystemUser(), false);
-            final List<ContainerUUID> containersUUID = this.templateAPI.getContainersUUID(layout);
+            final List<ContainerUUID> containersUUID = APILocator.getTemplateAPI().getContainersUUID(layout);
 
             for (final ContainerUUID containerUUID : containersUUID) {
 
                 Container container = null;
                 try {
-                    container = (liveMode) ? this.containerAPI.getLiveContainerById(containerUUID.getIdentifier(), systemUser, false)
-                            : this.containerAPI.getWorkingContainerById(containerUUID.getIdentifier(), systemUser, false);
+                    container = (liveMode) ? APILocator.getContainerAPI().getLiveContainerById(containerUUID.getIdentifier(), APILocator.systemUser(), false)
+                            : APILocator.getContainerAPI().getWorkingContainerById(containerUUID.getIdentifier(), APILocator.systemUser(), false);
 
                     if (container == null && !liveMode) {
                         continue;
