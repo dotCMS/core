@@ -16,6 +16,54 @@ export class PatternLibraryComponent implements OnInit {
     dialogShow = false;
     dialog2Show = false;
     dateFieldMinDate = new Date();
+    contentTypeColumns = [
+        {
+            fieldName: 'name',
+            header: 'Name',
+            sortable: true
+        },
+        {
+            fieldName: 'variable',
+            header: 'Variable',
+            sortable: true
+        },
+        {
+            fieldName: 'description',
+            header: 'Description',
+            sortable: true
+        },
+        {
+            fieldName: 'nEntries',
+            header: 'Entries',
+            width: '7%'
+        },
+        {
+            fieldName: 'modDate',
+            format: 'date',
+            header: 'Last Edit Date',
+            sortable: true,
+            width: '13%'
+        }
+    ];
+
+    rowActions = [
+        {
+            menuItem: {
+                command: () => {},
+                icon: 'delete',
+                label: 'Remove'
+            }
+        }
+    ];
+
+    actionHeaderOptions = {
+        primary: {
+            model: {
+                label: 'Delete',
+                icon: 'delete'
+            }
+        }
+    };
 
     cols2 = [
         { field: 'vin', header: 'Vin' },

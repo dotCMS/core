@@ -7,6 +7,7 @@ import { FormsModule } from '@angular/forms';
 import { DotIconButtonModule } from '../dot-icon-button/dot-icon-button.module';
 import { MultiSelectModule, InputSwitchModule } from 'primeng/primeng';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
+import { ListingDataTableModule } from '@components/listing-data-table/listing-data-table.module';
 import { TableModule } from 'primeng/table';
 
 const routes: Routes = [
@@ -26,7 +27,8 @@ const routes: Routes = [
         DotDialogModule,
         MultiSelectModule,
         TableModule,
-        InputSwitchModule
+        InputSwitchModule,
+        ListingDataTableModule
     ],
     declarations: [PatternLibraryComponent]
 })
