@@ -195,7 +195,8 @@ public class BinaryMap {
                 fileDimension = ImageUtil.getInstance().getDimension(getFile());
             }
         } catch (Exception e) {
-            Logger.error(this, e.getMessage());
+            String contentId = (content == null ? null : content.getIdentifier());
+            Logger.debug(this, "Error getting height for binary map, id: " + contentId, e);
         }
 
         return fileDimension.height;
@@ -208,7 +209,8 @@ public class BinaryMap {
                 fileDimension = ImageUtil.getInstance().getDimension(getFile());
             }
         } catch (Exception e) {
-            Logger.error(this, e.getMessage());
+            String contentId = (content == null ? null : content.getIdentifier());
+            Logger.debug(this, "Error getting width for binary map, id: " + contentId, e);
         }
 
         return fileDimension.width;
