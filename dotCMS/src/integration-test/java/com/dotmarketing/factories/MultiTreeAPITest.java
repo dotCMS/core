@@ -177,7 +177,7 @@ public class MultiTreeAPITest extends IntegrationTestBase {
         final Contentlet content = APILocator.getContentletAPIImpl().find(map.get("working_inode").toString(), APILocator.systemUser(), false);
         
         // GET ANY REAL CONTAINER (NO ES)
-        map = new DotConnect().setSQL("select container_version_info.* from container_version_info where working_inode").setMaxRows(1).loadObjectResults().get(0);
+        map = new DotConnect().setSQL("select container_version_info.* from container_version_info").setMaxRows(1).loadObjectResults().get(0);
         final Container container = APILocator.getContainerAPI().find(map.get("working_inode").toString(), APILocator.systemUser(), false);
         
         MultiTree multiTree = new MultiTree();
