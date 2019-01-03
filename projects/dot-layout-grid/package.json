@@ -2,7 +2,7 @@
     "name": "dot-layout-grid",
     "version": "0.0.1",
     "peerDependencies": {
-        "@angular/common": "^7.1.3",
-        "@angular/core": "^7.1.3"
+        "@angular/common": "^6.0.0 || ^7.1.3",
+        "@angular/core": "^6.0.0 || ^7.1.3"
     }
 }
