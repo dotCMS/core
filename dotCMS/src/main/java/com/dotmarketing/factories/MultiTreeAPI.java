@@ -4,6 +4,7 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.google.common.collect.Table;
 
@@ -80,5 +81,45 @@ public interface MultiTreeAPI {
 
     void updateMultiTree(final String pageId, final String containerId, final String oldRelationType,
             final String newRelationType) throws DotDataException;
+
+    void saveMultiTrees(List<MultiTree> mTrees) throws DotDataException;
+
+    void deleteMultiTree(List<MultiTree> mTree) throws DotDataException;
+
+    void deleteMultiTreeByParent(String pageOrContainer) throws DotDataException;
+
+    void deleteMultiTreeByChild(String contentIdentifier) throws DotDataException;
+
+    List<MultiTree> getAllMultiTrees();
+
+    List<MultiTree> getMultiTreesByPage(String parentInode) throws DotDataException;
+
+    List<MultiTree> getMultiTrees(String htmlPage, String container, String relationType);
+
+    List<MultiTree> getMultiTrees(IHTMLPage htmlPage, Container container) throws DotDataException;
+
+    List<MultiTree> getMultiTrees(String htmlPage, String container) throws DotDataException;
+
+    List<MultiTree> getMultiTrees(IHTMLPage htmlPage, Container container, String relationType);
+
+    List<MultiTree> getContainerMultiTrees(String containerIdentifier) throws DotDataException;
+
+    List<MultiTree> getMultiTreesByChild(String contentIdentifier) throws DotDataException;
+
+    List<MultiTree> getContainerStructureMultiTree(String containerIdentifier, String structureInode);
+
+    List<String> getContainersId(String pageId) throws DotDataException;
+
+    MultiTree getMultiTree(Identifier htmlPage, Identifier container, Identifier childContent, String relationType) throws DotDataException;
+
+    MultiTree getMultiTree(String htmlPage, String container, String childContent, String relationType) throws DotDataException;
+
+    MultiTree getMultiTree(String htmlPage, String container, String childContent) throws DotDataException;
+
+    List<MultiTree> getMultiTrees(Identifier parent) throws DotDataException;
+
+    List<MultiTree> getMultiTrees(Identifier htmlPage, Identifier container) throws DotDataException;
+
+    List<MultiTree> getMultiTrees(String parentInode) throws DotDataException;
 
 }

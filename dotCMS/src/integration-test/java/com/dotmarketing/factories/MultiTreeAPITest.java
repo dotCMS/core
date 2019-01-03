@@ -1,14 +1,10 @@
 package com.dotmarketing.factories;
 
-import com.dotcms.IntegrationTestBase;
-import com.dotcms.util.IntegrationTestInitService;
-
-import com.dotmarketing.beans.MultiTree;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.portlets.containers.model.Container;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
-import com.dotmarketing.startup.runonce.Task04315UpdateMultiTreePK;
+import static com.dotcms.util.CollectionsUtils.list;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import java.util.List;
 
@@ -16,11 +12,15 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import static com.dotcms.util.CollectionsUtils.list;
-import static org.junit.Assert.*;
-import static org.junit.Assert.assertEquals;
+import com.dotcms.IntegrationTestBase;
+import com.dotcms.util.IntegrationTestInitService;
+import com.dotmarketing.beans.MultiTree;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.startup.runonce.Task04315UpdateMultiTreePK;
 
-public class MultiTreeFactoryTest extends IntegrationTestBase {
+public class MultiTreeAPITest extends IntegrationTestBase {
     
 
     private static final String CONTAINER = "CONTAINER";
@@ -53,7 +53,7 @@ public class MultiTreeFactoryTest extends IntegrationTestBase {
                         .setTreeOrder(j)
                         .setRelationType(RELATION_TYPE + i);
 
-                MultiTreeFactory.saveMultiTree(mt);
+                APILocator.getMultiTreeAPI().saveMultiTree(mt);
             }
         }
 
@@ -63,13 +63,13 @@ public class MultiTreeFactoryTest extends IntegrationTestBase {
     public  void testDeletes() throws Exception {
         deleteInitialData();
         buildInitalData() ;
-        List<MultiTree> all = MultiTreeFactory.getAllMultiTrees();
+        List<MultiTree> all = APILocator.getMultiTreeAPI().getAllMultiTrees();
         
-        List<MultiTree> list = MultiTreeFactory.getMultiTrees(PAGE);
+        List<MultiTree> list = APILocator.getMultiTreeAPI().getMultiTrees(PAGE);
 
         deleteInitialData();
-        assertTrue("multiTree deletes", MultiTreeFactory.getAllMultiTrees().size() < all.size() );
-        assertTrue("multiTree deletes", MultiTreeFactory.getAllMultiTrees().size() == all.size() - list.size() );
+        assertTrue("multiTree deletes", APILocator.getMultiTreeAPI().getAllMultiTrees().size() < all.size() );
+        assertTrue("multiTree deletes", APILocator.getMultiTreeAPI().getAllMultiTrees().size() == all.size() - list.size() );
     }
     
     
@@ -77,13 +77,13 @@ public class MultiTreeFactoryTest extends IntegrationTestBase {
     public  void testReorder() throws Exception {
         deleteInitialData();
         buildInitalData() ;
-        MultiTree tree = MultiTreeFactory.getMultiTree(PAGE, CONTAINER+0, CONTENTLET +0, RELATION_TYPE+0);
+        MultiTree tree = APILocator.getMultiTreeAPI().getMultiTree(PAGE, CONTAINER+0, CONTENTLET +0, RELATION_TYPE+0);
         assertTrue("multiTree reorders", tree.getTreeOrder()==0 );
-        MultiTreeFactory.saveMultiTree(tree.setTreeOrder(7));
-        tree = MultiTreeFactory.getMultiTree(PAGE, CONTAINER+ 0, CONTENTLET + 0, RELATION_TYPE+0);
+        APILocator.getMultiTreeAPI().saveMultiTree(tree.setTreeOrder(7));
+        tree = APILocator.getMultiTreeAPI().getMultiTree(PAGE, CONTAINER+ 0, CONTENTLET + 0, RELATION_TYPE+0);
         assertTrue("multiTree reorders", tree.getTreeOrder()==4 );
-        MultiTreeFactory.saveMultiTree(tree.setTreeOrder(2));
-        List<MultiTree> list = MultiTreeFactory.getMultiTrees(PAGE, CONTAINER+0, RELATION_TYPE+0);
+        APILocator.getMultiTreeAPI().saveMultiTree(tree.setTreeOrder(2));
+        List<MultiTree> list = APILocator.getMultiTreeAPI().getMultiTrees(PAGE, CONTAINER+0, RELATION_TYPE+0);
         assertTrue("multiTree reorders", list.get(2).equals(tree));
 
     }
@@ -93,7 +93,7 @@ public class MultiTreeFactoryTest extends IntegrationTestBase {
         deleteInitialData();
         buildInitalData() ;
         
-        List<MultiTree> list = MultiTreeFactory.getMultiTreesByChild(CONTENTLET + "0");
+        List<MultiTree> list = APILocator.getMultiTreeAPI().getMultiTreesByChild(CONTENTLET + "0");
         
         assertTrue("getByChild returns all results", list.size() == runs );
         
@@ -106,10 +106,10 @@ public class MultiTreeFactoryTest extends IntegrationTestBase {
     @AfterClass
     public static void deleteInitialData() throws Exception {
 
-        List<MultiTree> list = MultiTreeFactory.getMultiTrees(PAGE);
+        List<MultiTree> list = APILocator.getMultiTreeAPI().getMultiTrees(PAGE);
 
         for(MultiTree tree : list) {
-            MultiTreeFactory.deleteMultiTree(tree);
+            APILocator.getMultiTreeAPI().deleteMultiTree(tree);
         }
 
     }
@@ -127,9 +127,9 @@ public class MultiTreeFactoryTest extends IntegrationTestBase {
                 .setTreeOrder(0)
                 .setRelationType(RELATION_TYPE + 0);
         
-        MultiTreeFactory.saveMultiTree(mt);
+        APILocator.getMultiTreeAPI().saveMultiTree(mt);
         
-        MultiTree mt2 = MultiTreeFactory.getMultiTree(mt.getHtmlPage(), mt.getContainer(), mt.getContentlet(), mt.getRelationType());
+        MultiTree mt2 = APILocator.getMultiTreeAPI().getMultiTree(mt.getHtmlPage(), mt.getContainer(), mt.getContentlet(), mt.getRelationType());
         assertTrue("multiTree save and get equals", mt.equals(mt2));
     }
     
@@ -151,10 +151,10 @@ public class MultiTreeFactoryTest extends IntegrationTestBase {
         multiTree.setParent2( CONTAINER +time);
         multiTree.setChild( CONTENTLET +time);
         multiTree.setTreeOrder( 1 );
-        MultiTreeFactory.saveMultiTree( multiTree );
+        APILocator.getMultiTreeAPI().saveMultiTree( multiTree );
         
         
-        MultiTree mt2 = MultiTreeFactory.getMultiTree(PAGE+time, CONTAINER +time, CONTENTLET +time, Container.LEGACY_RELATION_TYPE);
+        MultiTree mt2 = APILocator.getMultiTreeAPI().getMultiTree(PAGE+time, CONTAINER +time, CONTENTLET +time, Container.LEGACY_RELATION_TYPE);
         
         assertTrue("multiTree save without relationtype and get equals", multiTree.equals(mt2));
     }
@@ -186,22 +186,22 @@ public class MultiTreeFactoryTest extends IntegrationTestBase {
                 .setContentlet(contentlet.getIdentifier())
                 .setTreeOrder(1)
                 .setRelationType(RELATION_TYPE);
-        MultiTreeFactory.saveMultiTree( mt );
+        APILocator.getMultiTreeAPI().saveMultiTree( mt );
 
 
         //Search multitrees for the Contentlet, verify its not empty
-        List<MultiTree> multiTrees = MultiTreeFactory.getContainerStructureMultiTree(CONTAINER, contentlet.getStructureInode());
+        List<MultiTree> multiTrees = APILocator.getMultiTreeAPI().getContainerStructureMultiTree(CONTAINER, contentlet.getStructureInode());
         assertNotNull(multiTrees);
         assertFalse(multiTrees.isEmpty());
 
         //Delete the multitree
-        MultiTreeFactory.deleteMultiTree(mt);
+        APILocator.getMultiTreeAPI().deleteMultiTree(mt);
 
         //Search again the relationship should be gone.
-        multiTrees = MultiTreeFactory.getContainerStructureMultiTree(CONTAINER, contentlet.getStructureInode());
+        multiTrees = APILocator.getMultiTreeAPI().getContainerStructureMultiTree(CONTAINER, contentlet.getStructureInode());
         assertTrue(multiTrees.isEmpty());
 
-        MultiTreeFactory.deleteMultiTree(mt);
+        APILocator.getMultiTreeAPI().deleteMultiTree(mt);
     }
 
     @Test
@@ -210,12 +210,12 @@ public class MultiTreeFactoryTest extends IntegrationTestBase {
         final String containerId = CONTAINER + "0";
         final String relationType = RELATION_TYPE + "0";
 
-        MultiTreeFactory.updateMultiTree(PAGE, containerId, relationType, NEW_RELATION_TYPE);
-        List<MultiTree> multiTrees = MultiTreeFactory.getMultiTrees(PAGE, containerId, relationType);
+        APILocator.getMultiTreeAPI().updateMultiTree(PAGE, containerId, relationType, NEW_RELATION_TYPE);
+        List<MultiTree> multiTrees = APILocator.getMultiTreeAPI().getMultiTrees(PAGE, containerId, relationType);
 
         assertTrue(multiTrees.isEmpty());
 
-        List<MultiTree> multiTreesNewRelationType = MultiTreeFactory.getMultiTrees(PAGE, containerId, NEW_RELATION_TYPE);
+        List<MultiTree> multiTreesNewRelationType = APILocator.getMultiTreeAPI().getMultiTrees(PAGE, containerId, NEW_RELATION_TYPE);
 
         assertFalse(multiTreesNewRelationType.isEmpty());
         assertTrue(multiTreesNewRelationType.size() == 5);
@@ -250,15 +250,15 @@ public class MultiTreeFactoryTest extends IntegrationTestBase {
         multiTree2.setRelationType("1");
         multiTree2.setTreeOrder( 2 );
 
-        MultiTreeFactory.saveMultiTrees( parent1, list(multiTree1, multiTree2) );
+        APILocator.getMultiTreeAPI().saveMultiTrees( parent1, list(multiTree1, multiTree2) );
 
-        List<MultiTree> multiTrees = MultiTreeFactory.getMultiTrees(parent1);
+        List<MultiTree> multiTrees = APILocator.getMultiTreeAPI().getMultiTrees(parent1);
 
         assertEquals(2, multiTrees.size());
 
-        MultiTree mtFromDB1 = MultiTreeFactory.getMultiTree(parent1, multiTree1.getContainer(),
+        MultiTree mtFromDB1 = APILocator.getMultiTreeAPI().getMultiTree(parent1, multiTree1.getContainer(),
                 multiTree1.getContentlet(), multiTree1.getRelationType());
-        MultiTree mtFromDB2 = MultiTreeFactory.getMultiTree(parent1, multiTree2.getContainer(),
+        MultiTree mtFromDB2 = APILocator.getMultiTreeAPI().getMultiTree(parent1, multiTree2.getContainer(),
                 multiTree2.getContentlet(), multiTree2.getRelationType());
 
 
@@ -281,10 +281,10 @@ public class MultiTreeFactoryTest extends IntegrationTestBase {
         multiTree1.setRelationType("1");
         multiTree1.setTreeOrder( 1 );
 
-        MultiTreeFactory.saveMultiTrees( parent1, list(multiTree1) );
-        MultiTreeFactory.saveMultiTrees( parent1, list() );
+        APILocator.getMultiTreeAPI().saveMultiTrees( parent1, list(multiTree1) );
+        APILocator.getMultiTreeAPI().saveMultiTrees( parent1, list() );
 
-        List<MultiTree> multiTrees = MultiTreeFactory.getMultiTrees(parent1);
+        List<MultiTree> multiTrees = APILocator.getMultiTreeAPI().getMultiTrees(parent1);
 
         assertEquals(0, multiTrees.size());
     }
@@ -322,10 +322,10 @@ public class MultiTreeFactoryTest extends IntegrationTestBase {
         multiTree3.setRelationType("-1");
         multiTree3.setTreeOrder( 3 );
 
-        MultiTreeFactory.saveMultiTrees( parent1, list(multiTree1, multiTree2, multiTree3) );
-        MultiTreeFactory.saveMultiTrees( parent1, list(multiTree1) );
+        APILocator.getMultiTreeAPI().saveMultiTrees( parent1, list(multiTree1, multiTree2, multiTree3) );
+        APILocator.getMultiTreeAPI().saveMultiTrees( parent1, list(multiTree1) );
 
-        List<MultiTree> multiTrees = MultiTreeFactory.getMultiTrees(parent1);
+        List<MultiTree> multiTrees = APILocator.getMultiTreeAPI().getMultiTrees(parent1);
 
         assertEquals(2, multiTrees.size());
         assertTrue(multiTrees.contains(multiTree1));

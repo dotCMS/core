@@ -1425,7 +1425,7 @@ public class ImportExportUtil {
                             final MultiTree t = (MultiTree) obj;
                             LocalTransaction.wrap(() -> {
 
-                                MultiTreeFactory.saveMultiTree(t);
+                                APILocator.getMultiTreeAPI().saveMultiTree(t);
                             });
                         } else{
                             try {

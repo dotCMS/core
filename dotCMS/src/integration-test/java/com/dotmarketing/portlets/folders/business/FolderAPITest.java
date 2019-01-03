@@ -295,7 +295,7 @@ public class FolderAPITest {//24 contentlets
 		}
 		/*Relate content to page*/
 		final MultiTree m = new MultiTree(contentAsset4.getIdentifier(), container.getIdentifier(), contentAsset2.getIdentifier());
-		MultiTreeFactory.saveMultiTree(m);
+		APILocator.getMultiTreeAPI().saveMultiTree(m);
 		
 
 		final Folder destinationftest = folderAPI
@@ -338,7 +338,7 @@ public class FolderAPITest {//24 contentlets
 		pages = htmlPageAssetAPI.getLiveHTMLPages(newftest3,user, false);
 		Assert.assertTrue(pages.size() == 1 && pages.get(0).getTitle().equals(page2Str));		
 		
-		final List<MultiTree> mt= MultiTreeFactory.getMultiTrees(pages.get(0).getIdentifier());
+		final List<MultiTree> mt= APILocator.getMultiTreeAPI().getMultiTrees(pages.get(0).getIdentifier());
 		Assert.assertTrue(mt.size() ==1 && mt.get(0).getParent2().equals(container.getIdentifier()) && mt.get(0).getChild().equals(contentAsset2.getIdentifier()) );
 
 		contentletAPI.archive(contentAsset1,user,false);
@@ -450,7 +450,7 @@ public class FolderAPITest {//24 contentlets
 		}
 		/*Relate content to page*/
 		MultiTree m = new MultiTree(contentAsset2.getIdentifier(), container.getIdentifier(), contentAsset3.getIdentifier());
-		MultiTreeFactory.saveMultiTree(m);
+		APILocator.getMultiTreeAPI().saveMultiTree(m);
 
 		/*Adding file asset to folder fcopy1*/
 		File destFile = testFolder.newFile(LOGO_GIF_1);
@@ -576,7 +576,7 @@ public class FolderAPITest {//24 contentlets
 		
 		/*Relate content to page*/
 		final MultiTree m2 = new MultiTree(contentAsset7.getIdentifier(), container.getIdentifier(), contentAsset8.getIdentifier());
-		MultiTreeFactory.saveMultiTree(m2);
+		APILocator.getMultiTreeAPI().saveMultiTree(m2);
 		
 		/*Copy folder*/
 		Thread.sleep(2000);
@@ -594,7 +594,7 @@ public class FolderAPITest {//24 contentlets
 				.getPageByPath(newftest1.getPath()+page1Str, host, langId, false);
 		Assert.assertTrue(page != null && page.getTitle().contains(pageStr));
 
-		List<MultiTree> mt= MultiTreeFactory.getMultiTrees(page.getIdentifier());
+		List<MultiTree> mt= APILocator.getMultiTreeAPI().getMultiTrees(page.getIdentifier());
 		Assert.assertTrue(mt.size() ==1 && mt.get(0).getParent2().equals(container.getIdentifier()) && mt.get(0).getChild().equals(contentAsset3.getIdentifier()) );
 		Thread.sleep(3000);
 		List<FileAsset> files = fileAssetAPI
@@ -628,7 +628,7 @@ public class FolderAPITest {//24 contentlets
 				.getPageByPath(newftest3.getPath()+pageStr3, host, langId, false);
 		Assert.assertTrue(page != null && page.getTitle().contains(pageStr3));
 		
-		mt= MultiTreeFactory.getMultiTrees(page.getIdentifier());
+		mt= APILocator.getMultiTreeAPI().getMultiTrees(page.getIdentifier());
 		Assert.assertTrue(mt.size() ==1 && mt.get(0).getParent2().equals(container.getIdentifier()) && mt.get(0).getChild().equals(contentAsset8.getIdentifier()) );
 
 		for(Contentlet contentlet : folderAPI.getLiveContent(newftest1,user,false)){

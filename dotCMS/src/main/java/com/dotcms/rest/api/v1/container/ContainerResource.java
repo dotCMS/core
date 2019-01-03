@@ -374,7 +374,7 @@ public class ContainerResource implements Serializable {
                 .setContentlet(contentletId)
                 .setRelationType(uid);
 
-        MultiTreeFactory.deleteMultiTree(mt);
+        APILocator.getMultiTreeAPI().deleteMultiTree(mt);
 
         return Response.ok("ok").build();
     }

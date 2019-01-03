@@ -839,7 +839,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         //Get the contentlet Identifier to gather the related pages
         Identifier identifier = APILocator.getIdentifierAPI().find( contentlet );
         //Get the identifier's number of the related pages
-        List<MultiTree> multiTrees = MultiTreeFactory.getMultiTreesByChild( identifier.getId() );
+        List<MultiTree> multiTrees = APILocator.getMultiTreeAPI().getMultiTreesByChild( identifier.getId() );
         for ( MultiTree multitree : multiTrees ) {
             //Get the Identifiers of the related pages
             Identifier htmlPageIdentifier = APILocator.getIdentifierAPI().find( multitree.getParent1() );
@@ -1022,12 +1022,12 @@ public class ContentletAPITest extends ContentletBaseTest {
             // let's add the content to the page in english (create the page-container-content relationship)
             MultiTree multiTreeEN = new MultiTree(englishPage.getIdentifier(), container.getIdentifier(),
                 contentInEnglish.getIdentifier(),UUID,0);
-            MultiTreeFactory.saveMultiTree(multiTreeEN, english);
+            APILocator.getMultiTreeAPI().saveMultiTree(multiTreeEN);
 
             // let's add the content to the page in spanish (create the page-container-content relationship)
             MultiTree multiTreeSP = new MultiTree(spanishPage.getIdentifier(), container.getIdentifier(),
                 contentInSpanish.getIdentifier(),UUID,0);
-            MultiTreeFactory.saveMultiTree(multiTreeSP, spanish);
+            APILocator.getMultiTreeAPI().saveMultiTree(multiTreeSP);
 
             // let's get the references for english content
             List<Map<String, Object>> references = contentletAPI.getContentletReferences(contentInEnglish, user, false);
@@ -1166,7 +1166,7 @@ public class ContentletAPITest extends ContentletBaseTest {
             Identifier identifier = APILocator.getIdentifierAPI().find( contentlet );
 
             //Search for related html pages and containers
-            List<MultiTree> multiTrees = MultiTreeFactory.getMultiTreesByChild( identifier.getId() );
+            List<MultiTree> multiTrees = APILocator.getMultiTreeAPI().getMultiTreesByChild( identifier.getId() );
             if ( multiTrees != null && !multiTrees.isEmpty() ) {
 
                 for ( MultiTree multiTree : multiTrees ) {

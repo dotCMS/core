@@ -459,7 +459,7 @@ public class UserAPITest extends IntegrationTestBase {
 		 * Relate content to page
 		 */
 		MultiTree m = new MultiTree(contentAsset.getIdentifier(), container.getIdentifier(), contentAsset2.getIdentifier());
-		MultiTreeFactory.saveMultiTree(m);
+		APILocator.getMultiTreeAPI().saveMultiTree(m);
 
 		/**
 		 * Add menu link
