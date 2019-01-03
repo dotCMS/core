@@ -419,7 +419,7 @@ describe('ContentTypesEditComponent', () => {
             const editButton: DebugElement = fixture.debugElement.query(
                 By.css('#form-edit-button')
             );
-            expect(editButton.nativeElement.outerText).toBe('Edit');
+            expect(editButton.nativeElement.textContent).toBe('Edit');
             expect(editButton.nativeElement.disabled).toBe(false);
             expect(editButton).toBeTruthy();
         });
