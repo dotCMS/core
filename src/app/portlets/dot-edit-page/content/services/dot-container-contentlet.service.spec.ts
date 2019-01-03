@@ -44,7 +44,7 @@ describe('DotContainerContentletService', () => {
 
             dotContainerContentletService
                 .getContentletToContainer(pageContainer, pageContent)
-                .subscribe((resp) => resp);
+                .subscribe(resp => resp);
 
             tick();
             expect(lastConnection.request.url).toContain(
@@ -77,7 +77,7 @@ describe('DotContainerContentletService', () => {
 
             dotContainerContentletService
                 .getFormToContainer(pageContainer, form)
-                .subscribe((resp) => resp);
+                .subscribe(resp => resp);
 
             tick();
             expect(lastConnection.request.url).toContain(

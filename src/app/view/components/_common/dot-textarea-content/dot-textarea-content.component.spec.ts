@@ -47,7 +47,7 @@ describe('DotTextareaContentComponent', () => {
         );
 
         selectFieldWrapper.children.forEach((option) => {
-            const optionText = cleanOptionText(option.nativeElement.innerText);
+            const optionText = cleanOptionText(option.nativeElement.textContent);
             expect(['Plain', 'Code', 'WYSIWYG'].indexOf(optionText)).toBeGreaterThan(-1);
         });
     });
@@ -69,7 +69,7 @@ describe('DotTextareaContentComponent', () => {
             const selectedOption = de.query(
                 By.css('.textarea-content__select-field .ui-state-active')
             );
-            const defaultOptionText = cleanOptionText(selectedOption.nativeElement.innerText);
+            const defaultOptionText = cleanOptionText(selectedOption.nativeElement.textContent);
             expect(defaultOptionText).toBe('Plain');
         });
     }));
@@ -97,7 +97,7 @@ describe('DotTextareaContentComponent', () => {
             By.css('.textarea-content__select-field .ui-selectbutton')
         );
         selectFieldWrapper.children.forEach((option) => {
-            const optionText = cleanOptionText(option.nativeElement.innerText);
+            const optionText = cleanOptionText(option.nativeElement.textContent);
             expect(['Plain', 'WYSIWYG'].indexOf(optionText)).toBeGreaterThan(
                 -1,
                 `${optionText} exist`
@@ -112,7 +112,7 @@ describe('DotTextareaContentComponent', () => {
             By.css('.textarea-content__select-field .ui-selectbutton')
         );
         selectFieldWrapper.children.forEach((option) => {
-            const optionText = cleanOptionText(option.nativeElement.innerText);
+            const optionText = cleanOptionText(option.nativeElement.textContent);
             expect(['Plain', 'Code'].indexOf(optionText)).toBeGreaterThan(
                 -1,
                 `${optionText} exist`

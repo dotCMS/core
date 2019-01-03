@@ -282,6 +282,15 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
     }
 
     /**
+     * Cancel the last drag and drop operation
+     *
+     * @memberof ContentTypeFieldsDropZoneComponent
+     */
+    cancelLastDragAndDrop(): void {
+        this.fieldRows = this.getRowFields(this.fields);
+    }
+
+    /**
      * Set the state for the ok action for the dialog
      *
      * @param {boolean} $event
