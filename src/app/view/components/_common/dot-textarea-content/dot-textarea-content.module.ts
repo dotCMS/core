@@ -13,6 +13,7 @@ import { TinymceModule } from 'angular2-tinymce';
         SelectButtonModule,
         FormsModule,
         TinymceModule.withConfig({
+            skin_url: '/dotadmin/assets/tinymce/skins/lightgray',
             menubar: false,
             resize: false,
             auto_focus: false
