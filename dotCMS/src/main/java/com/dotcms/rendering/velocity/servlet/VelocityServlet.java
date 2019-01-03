@@ -75,21 +75,19 @@ public class VelocityServlet extends HttpServlet {
 
             request.setRequestUri(uri);
             final PageMode mode = PageMode.getWithNavigateMode(request);
-
             try {
                 VelocityModeHandler.modeHandler(mode, request, response).serve();
             } catch (ResourceNotFoundException rnfe) {
                 Logger.error(this, "ResourceNotFoundException" + rnfe.toString(), rnfe);
                 response.sendError(HttpServletResponse.SC_NOT_FOUND);
-            } catch (ParseErrorException pee) {
-                Logger.error(this, "Template Parse Exception : " + pee.toString(), pee);
-                response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Template Parse Exception");
-            } catch (MethodInvocationException mie) {
-                Logger.error(this, "MethodInvocationException" + mie.toString(), mie);
-                response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "MethodInvocationException Error on template");
+            } catch (java.lang.IllegalStateException state) {
+                Logger.debug(this, "IllegalStateException" + state.toString());
+                // Eat this, client disconnect noise
             } catch (Exception e) {
-                Logger.error(this, "Exception" + e.toString(), e);
-                response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Exception Error on template");
+                //Logger.error(this, e.getClass().getSimpleName()  + " " + e.toString(), e);
+                if(!response.isCommitted()) {
+                    response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Exception Error on template");
+                }
             }
         }
     }
