@@ -1,6 +1,7 @@
 package com.dotcms.graphql;
 
 import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.graphql.resolver.ContentResolver;
 import com.dotcms.graphql.util.TypeUtil;
 import com.dotmarketing.util.Logger;
 

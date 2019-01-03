@@ -1,14 +1,7 @@
 package com.dotcms.graphql.util;
 
-import com.dotcms.contenttype.model.field.BinaryField;
-import com.dotcms.contenttype.model.field.CategoryField;
-import com.dotcms.contenttype.model.field.CustomField;
-import com.dotcms.contenttype.model.field.Field;
-import com.dotcms.graphql.ContentResolver;
-import com.dotcms.graphql.CustomFieldType;
 import com.dotcms.graphql.datafetcher.FieldDataFetcher;
 
-import java.util.HashMap;
 import java.util.Map;
 
 import graphql.schema.GraphQLInterfaceType;

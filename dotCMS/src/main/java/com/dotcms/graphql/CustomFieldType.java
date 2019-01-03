@@ -1,6 +1,5 @@
 package com.dotcms.graphql;
 
-import com.dotcms.graphql.business.GraphqlAPIImpl;
 import com.dotcms.graphql.util.TypeUtil;
 
 import java.util.HashMap;

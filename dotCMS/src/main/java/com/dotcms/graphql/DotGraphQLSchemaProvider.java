@@ -30,6 +30,7 @@ import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLType;
 import graphql.schema.idl.RuntimeWiring;
+import graphql.schema.idl.SchemaGenerator;
 import graphql.schema.idl.errors.SchemaProblem;
 import graphql.servlet.GraphQLSchemaProvider;
 
@@ -54,75 +55,70 @@ public class DotGraphQLSchemaProvider implements GraphQLSchemaProvider {
     public GraphQLSchema getSchema() {
         try {
 
-            GraphQLInterfaceType contentInterface = GraphQLInterfaceType.newInterface().name("Content")
-                .field(newFieldDefinition()
-                    .name("identifier")
-                    .type(GraphQLID)
-                    .dataFetcher(new FieldDataFetcher()))
-                .field(newFieldDefinition()
-                    .name("title")
-                    .type(GraphQLString)
-                    .dataFetcher(new FieldDataFetcher()))
-                .typeResolver(new ContentResolver())
-                .build();
+//            GraphQLInterfaceType contentInterface = GraphQLInterfaceType.newInterface().name("Content")
+//                .field(newFieldDefinition()
+//                    .name("identifier")
+//                    .type(GraphQLID)
+//                    .dataFetcher(new FieldDataFetcher()))
+//                .field(newFieldDefinition()
+//                    .name("title")
+//                    .type(GraphQLString)
+//                    .dataFetcher(new FieldDataFetcher()))
+//                .typeResolver(new ContentResolver())
+//                .build();
+//
+//            // generate type for content type
+//            // schemaAPI.generateType
+//
+//            GraphQLObjectType newsType = newObject()
+//                .name("News")
+//                .withInterface(contentInterface)
+//                .field(newFieldDefinition()
+//                    .name("identifier")
+//                    .type(GraphQLID)
+//                    .dataFetcher(new FieldDataFetcher()))
+//                .field(newFieldDefinition()
+//                    .name("title")
+//                    .type(GraphQLString)
+//                    .dataFetcher(new FieldDataFetcher()))
+//                .build();
+//
+//
+//            GraphQLObjectType queryType = newObject()
+//                .name("Query")
+//                .field(newFieldDefinition()
+//                    .name("search")
+//                    .argument(GraphQLArgument.newArgument()
+//                        .name("query")
+//                        .type(GraphQLString)
+//                        .build())
+//                    .type(GraphQLList.list(contentInterface))
+//                    .dataFetcher(new ContentletDataFetcher()))
+//                .build();
+//
+//            Set<GraphQLType> additionalTypes = new HashSet<>(Arrays.asList(newsType));
+//
+//            final GraphQLSchema schema = new GraphQLSchema(queryType, null, additionalTypes);
+//
+//            // add new type, regenerate type
+//            GraphQLObjectType myNewType = null;// graphqlTypeAPI.createType()
+//            GraphQLSchema.Builder builder = GraphQLSchema.newSchema(schema);
+//            builder.additionalType(myNewType);
+//            GraphQLSchema schemaWithNewType = builder.build();
+//
+//            // delete type
+//            String typeNameToDelete = "typeToDelete";
+//            Set<GraphQLType> existingTypes = schemaWithNewType.getAdditionalTypes();
+//            existingTypes.remove(schemaWithNewType.getType(typeNameToDelete));
+//            GraphQLSchema.Builder builder2 = GraphQLSchema.newSchema(schema);
+//            builder2.clearAdditionalTypes();
+//            builder2.additionalTypes(existingTypes);
+//            GraphQLSchema schemaWithoutType = builder.build();
 
-            // generate type for content type
-            // schemaAPI.generateType
-
-            GraphQLObjectType newsType = newObject()
-                .name("News")
-                .withInterface(contentInterface)
-                .field(newFieldDefinition()
-                    .name("identifier")
-                    .type(GraphQLID)
-                    .dataFetcher(new FieldDataFetcher()))
-                .field(newFieldDefinition()
-                    .name("title")
-                    .type(GraphQLString)
-                    .dataFetcher(new FieldDataFetcher()))
-                .build();
-
-
-            GraphQLObjectType queryType = newObject()
-                .name("Query")
-                .field(newFieldDefinition()
-                    .name("search")
-                    .argument(GraphQLArgument.newArgument()
-                        .name("query")
-                        .type(GraphQLString)
-                        .build())
-                    .type(GraphQLList.list(contentInterface))
-                    .dataFetcher(new ContentletDataFetcher()))
-                .build();
-
-            Set<GraphQLType> additionalTypes = new HashSet<>(Arrays.asList(newsType));
-
-            final GraphQLSchema schema = new GraphQLSchema(queryType, null, additionalTypes);
-
-            // add new type, regenerate type
-            GraphQLObjectType myNewType = null;// graphqlTypeAPI.createType()
-            GraphQLSchema.Builder builder = GraphQLSchema.newSchema(schema);
-            builder.additionalType(myNewType);
-            GraphQLSchema schemaWithNewType = builder.build();
-
-            // delete type
-            String typeNameToDelete = "typeToDelete";
-            Set<GraphQLType> existingTypes = schemaWithNewType.getAdditionalTypes();
-            existingTypes.remove(schemaWithNewType.getType(typeNameToDelete));
-            GraphQLSchema.Builder builder2 = GraphQLSchema.newSchema(schema);
-            builder2.clearAdditionalTypes();
-            builder2.additionalTypes(existingTypes);
-            GraphQLSchema schemaWithoutType = builder.build();
-
-
-
-
-
-
-            return schema;
-        } catch(SchemaProblem e) {
-            Logger.error(this, "Error with schema", e);
-            throw e;
+            return APILocator.getGraphqlAPI().getSchema();
+        } catch(DotDataException e) {
+            Logger.error(this, "Error with Schema retrieval/generation", e);
+            throw new DotRuntimeException(e);
         }
     }
 
@@ -131,69 +127,69 @@ public class DotGraphQLSchemaProvider implements GraphQLSchemaProvider {
         return null;
     }
 
-    private RuntimeWiring buildRuntimeWiring() {
-
-        try {
-
-
-            final RuntimeWiring.Builder builder = newRuntimeWiring();
-            builder.type("Query", typeWiring ->
-                typeWiring.dataFetcher("search", new ContentletDataFetcher()));
-
-            builder.type("Content", typeWiring ->
-                typeWiring.typeResolver(new ContentResolver()));
-
-            builder.type("Content", typeWiring ->
-                typeWiring.dataFetcher("identifier", new FieldDataFetcher()));
-
-            builder.type("Content", typeWiring ->
-                typeWiring.dataFetcher("title", new FieldDataFetcher()));
-
-            // typeWiring for Employee
-            final ContentType employeeType = APILocator.getContentTypeAPI(APILocator.systemUser()).find("Employee");
-            employeeType.fields().stream().forEach((field) -> {
-                builder.type(employeeType.variable(), typeWiring
-                    -> typeWiring.dataFetcher(field.variable(), new FieldDataFetcher()));
-            } );
-
-            // typeWiring for Youtube
-            final ContentType youtubeType = APILocator.getContentTypeAPI(APILocator.systemUser()).find("Youtube");
-
-            youtubeType.fields().stream().forEach((field) -> {
-                builder.type(youtubeType.variable(), typeWiring
-                    -> typeWiring.dataFetcher(field.variable(), new FieldDataFetcher()));
-            } );
-
-            // typeWiring for news
-            final ContentType newsType = APILocator.getContentTypeAPI(APILocator.systemUser()).find("News");
-
-            newsType.fields().stream().forEach((field) -> {
-
-                if(field instanceof RelationshipField) {
-                    builder.type("News", typeWiring
-                        -> typeWiring.dataFetcher(field.variable(), new RelationshipFieldDataFetcher()));
-                } else {
-                    builder.type("News", typeWiring
-                        -> typeWiring.dataFetcher(field.variable(), new FieldDataFetcher()));
-                }
-            } );
-
-
-
-            return  builder.build();
-
-//            return newRuntimeWiring()
-//                .type("Query", typeWiring ->
-//                    typeWiring.dataFetcher("content", new ContentletDataFetcher()))
-//                .type("Content", typeWiring ->
-//                    typeWiring.dataFetcher("map", new FieldDataFetcher()))
-//                .build();
-        } catch(DotSecurityException | DotDataException e) {
-            Logger.error(this, "Error building runtime wiring", e);
-        }
-
-        return null;
-    }
+//    private RuntimeWiring buildRuntimeWiring() {
+//
+//        try {
+//
+//
+//            final RuntimeWiring.Builder builder = newRuntimeWiring();
+//            builder.type("Query", typeWiring ->
+//                typeWiring.dataFetcher("search", new ContentletDataFetcher()));
+//
+//            builder.type("Content", typeWiring ->
+//                typeWiring.typeResolver(new ContentResolver()));
+//
+//            builder.type("Content", typeWiring ->
+//                typeWiring.dataFetcher("identifier", new FieldDataFetcher()));
+//
+//            builder.type("Content", typeWiring ->
+//                typeWiring.dataFetcher("title", new FieldDataFetcher()));
+//
+//            // typeWiring for Employee
+//            final ContentType employeeType = APILocator.getContentTypeAPI(APILocator.systemUser()).find("Employee");
+//            employeeType.fields().stream().forEach((field) -> {
+//                builder.type(employeeType.variable(), typeWiring
+//                    -> typeWiring.dataFetcher(field.variable(), new FieldDataFetcher()));
+//            } );
+//
+//            // typeWiring for Youtube
+//            final ContentType youtubeType = APILocator.getContentTypeAPI(APILocator.systemUser()).find("Youtube");
+//
+//            youtubeType.fields().stream().forEach((field) -> {
+//                builder.type(youtubeType.variable(), typeWiring
+//                    -> typeWiring.dataFetcher(field.variable(), new FieldDataFetcher()));
+//            } );
+//
+//            // typeWiring for news
+//            final ContentType newsType = APILocator.getContentTypeAPI(APILocator.systemUser()).find("News");
+//
+//            newsType.fields().stream().forEach((field) -> {
+//
+//                if(field instanceof RelationshipField) {
+//                    builder.type("News", typeWiring
+//                        -> typeWiring.dataFetcher(field.variable(), new RelationshipFieldDataFetcher()));
+//                } else {
+//                    builder.type("News", typeWiring
+//                        -> typeWiring.dataFetcher(field.variable(), new FieldDataFetcher()));
+//                }
+//            } );
+//
+//
+//
+//            return  builder.build();
+//
+////            return newRuntimeWiring()
+////                .type("Query", typeWiring ->
+////                    typeWiring.dataFetcher("content", new ContentletDataFetcher()))
+////                .type("Content", typeWiring ->
+////                    typeWiring.dataFetcher("map", new FieldDataFetcher()))
+////                .build();
+//        } catch(DotSecurityException | DotDataException e) {
+//            Logger.error(this, "Error building runtime wiring", e);
+//        }
+//
+//        return null;
+//    }
 
     private File loadSchema(final String fileName) {
         Path path;
