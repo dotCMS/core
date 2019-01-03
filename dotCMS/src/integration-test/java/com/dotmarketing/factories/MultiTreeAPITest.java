@@ -169,26 +169,30 @@ public class MultiTreeAPITest extends IntegrationTestBase {
     @Test
     public void testGetPageMultiTrees() throws Exception {
         // GET ANY REAL PAGE (NO ES)
-        Map<String, Object> map = new DotConnect().setSQL("select contentlet_version_info.* from contentlet_version_info where working_inode in (select inode from contentlet where structure_inode in (select inode from structure where velocity_var_name='htmlpageasset'))").setMaxRows(1).loadObjectResults().get(0);
+        Map<String, Object> map = new DotConnect().setSQL("select contentlet_version_info.* from contentlet_version_info where working_inode in (select inode from contentlet where structure_inode in (select inode from structure where lower(velocity_var_name)='htmlpageasset'))").setMaxRows(1).loadObjectResults().get(0);
         final HTMLPageAsset page = APILocator.getHTMLPageAssetAPI().fromContentlet(APILocator.getContentletAPIImpl().find(map.get("working_inode").toString(), APILocator.systemUser(), false));
      
         // GET ANY REAL CONTENT (NO ES)
-        map = new DotConnect().setSQL("select contentlet_version_info.* from contentlet_version_info where working_inode in (select inode from contentlet where structure_inode in (select inode from structure where velocity_var_name='webPageContent'))").setMaxRows(1).loadObjectResults().get(0);
+        map = new DotConnect().setSQL("select contentlet_version_info.* from contentlet_version_info where working_inode in (select inode from contentlet where structure_inode in (select inode from structure where lower(velocity_var_name)='webpagecontent'))").setMaxRows(1).loadObjectResults().get(0);
         final Contentlet content = APILocator.getContentletAPIImpl().find(map.get("working_inode").toString(), APILocator.systemUser(), false);
         
         // GET ANY REAL CONTAINER (NO ES)
         map = new DotConnect().setSQL("select container_version_info.* from container_version_info where working_inode").setMaxRows(1).loadObjectResults().get(0);
         final Container container = APILocator.getContainerAPI().find(map.get("working_inode").toString(), APILocator.systemUser(), false);
         
+        MultiTree multiTree = new MultiTree();
+        multiTree.setHtmlPage(page);
+        multiTree.setContainer(container);
+        multiTree.setContentlet(content);
+        multiTree.setRelationType("abc");
+        multiTree.setTreeOrder( 1 );
         
-        //delete these out
-        APILocator.getMultiTreeAPI().deleteMultiTreeByParent(container.getIdentifier());
-        
+        //delete out any previous relation
+        APILocator.getMultiTreeAPI().deleteMultiTree(multiTree);
+        CacheLocator.getMultiTreeCache().clearCache();
         Table<String, String, Set<String>> trees= APILocator.getMultiTreeAPI().getPageMultiTrees(page, false);
         
         Table<String, String, Set<String>> cachedTrees= APILocator.getMultiTreeAPI().getPageMultiTrees(page, false);
-        
-
         
         // should be the same object coming from in memory cache
         assert(trees==cachedTrees);
@@ -207,22 +211,7 @@ public class MultiTreeAPITest extends IntegrationTestBase {
         // there is no container entry 
         assert(!(cachedTrees.rowKeySet().contains(container.getIdentifier())));
 
-        
-        
-        
-        
-        MultiTree multiTree = new MultiTree();
-        multiTree.setHtmlPage(page);
-        multiTree.setContainer(container);
-        multiTree.setContentlet(content);
-        multiTree.setRelationType("abc");
-        multiTree.setTreeOrder( 1 );
-        
-        
-        
-        
-        
-        
+
         // check cache flush on save
         APILocator.getMultiTreeAPI().saveMultiTree( multiTree );
         Table<String, String, Set<String>> addedTrees= APILocator.getMultiTreeAPI().getPageMultiTrees(page, false);
@@ -235,6 +224,7 @@ public class MultiTreeAPITest extends IntegrationTestBase {
         // check cache flush on delete
         APILocator.getMultiTreeAPI().deleteMultiTree(multiTree );
         Table<String, String, Set<String>> deletedTrees= APILocator.getMultiTreeAPI().getPageMultiTrees(page, false);
+        
         // did we get a new object from the cache?
         assert(!(addedTrees.equals(deletedTrees)));
         assert(!(deletedTrees.rowKeySet().contains(container.getIdentifier())));
