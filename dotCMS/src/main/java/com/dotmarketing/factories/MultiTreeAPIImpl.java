@@ -6,6 +6,7 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -20,6 +21,7 @@ import com.dotcms.util.transform.TransformerLocator;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.common.db.DotConnect;
@@ -458,6 +460,9 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
 
     private void refreshPageInCache(final String pageIdentifier) throws DotDataException {
+        
+        
+        CacheLocator.getMultiTreeCache().removePageMultiTrees(pageIdentifier);
         final Set<String> inodes = new HashSet<String>();
         final List<ContentletVersionInfo> infos = APILocator.getVersionableAPI().findContentletVersionInfos(pageIdentifier);
         for (ContentletVersionInfo versionInfo : infos) {
@@ -528,6 +533,15 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     public Table<String, String, Set<String>> getPageMultiTrees(final IHTMLPage page, final boolean liveMode)
             throws DotDataException, DotSecurityException {
 
+        
+        Optional<Table<String, String, Set<String>>> pageContentsOpt =  CacheLocator.getMultiTreeCache().getPageMultiTrees(page.getIdentifier(), liveMode);
+        
+        if(pageContentsOpt.isPresent()) {
+            return pageContentsOpt.get();
+        }
+        
+        
+        
         final Table<String, String, Set<String>> pageContents = HashBasedTable.create();
         final List<MultiTree> multiTrees = this.getMultiTrees(page.getIdentifier());
 
@@ -567,7 +581,8 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
         }
 
         this.addEmptyContainers(page, pageContents, liveMode);
-
+        
+        CacheLocator.getMultiTreeCache().putPageMultiTrees(page.getIdentifier(), liveMode, pageContents);
         return pageContents;
     }
 
