@@ -20,7 +20,7 @@ public class MultiTree implements Serializable {
     private static final long serialVersionUID = 1L;
 
     public static final String LEGACY_RELATION_TYPE = "LEGACY_RELATION_TYPE";
-
+    public static final String LEGACY_INSTANCE_ID = LEGACY_RELATION_TYPE;
     /** identifier field */
     private String parent1;
 
@@ -31,33 +31,33 @@ public class MultiTree implements Serializable {
     private String child;
 
     /** nullable persistent field */
-    private String relationType = LEGACY_RELATION_TYPE;
+    private String instanceId = LEGACY_RELATION_TYPE;
 
     /** nullable persistent field */
     private int treeOrder;
 
     /** full constructor */
-    public MultiTree(String htmlPage, String container, String child, String relationType, int treeOrder) {
+    public MultiTree(String htmlPage, String container, String child, String instanceId, int treeOrder) {
         this.parent1 = htmlPage;
         this.parent2 = container;
         this.child = child;
-        this.relationType = (relationType == null) ? LEGACY_RELATION_TYPE : relationType;
+        this.instanceId = (instanceId == null) ? LEGACY_INSTANCE_ID : instanceId;
         this.treeOrder = (treeOrder < 0) ? 0 : treeOrder;
     }
 
     /** default constructor */
     public MultiTree() {
-        this(null, null, null, LEGACY_RELATION_TYPE, 0);
+        this(null, null, null, LEGACY_INSTANCE_ID, 0);
     }
     
 
     private MultiTree(MultiTree tree) {
-        this(tree.parent1, tree.parent2, tree.child, tree.relationType, tree.treeOrder);
+        this(tree.parent1, tree.parent2, tree.child, tree.instanceId, tree.treeOrder);
     }
     
     /** minimal constructor */
     public MultiTree(String htmlPage, String container, String child) {
-        this(htmlPage, container, child, LEGACY_RELATION_TYPE, 0);
+        this(htmlPage, container, child, LEGACY_INSTANCE_ID, 0);
     }
 
     /**
@@ -86,8 +86,8 @@ public class MultiTree implements Serializable {
         return setContentlet(child);
     }
 
-    public java.lang.String getRelationType() {
-        return this.relationType;
+    public String getRelationType() {
+        return this.instanceId;
     }
 
     public MultiTree setContentlet(final String contentlet) {
@@ -97,8 +97,14 @@ public class MultiTree implements Serializable {
     public MultiTree setContentlet(final Contentlet contentlet) {
         return this.setContentlet(contentlet.getIdentifier());
     }
-    public MultiTree setRelationType(java.lang.String relationType) {
-        this.relationType = (relationType == null) ? LEGACY_RELATION_TYPE : relationType;
+    
+    @Deprecated
+    public MultiTree setRelationType(String relationType) {
+        return setInstanceId(relationType);
+    }
+    
+    public MultiTree setInstanceId(String relationType) {
+        this.instanceId = (relationType == null) ? LEGACY_INSTANCE_ID : relationType;
         return new MultiTree(this);
     }
 
@@ -125,7 +131,7 @@ public class MultiTree implements Serializable {
         return new EqualsBuilder().append(this.parent1, castOther.parent1)
             .append(this.parent2, castOther.parent2)
             .append(this.child, castOther.child)
-            .append(this.relationType, castOther.relationType)
+            .append(this.instanceId, castOther.instanceId)
             .isEquals();
     }
     
@@ -136,7 +142,7 @@ public class MultiTree implements Serializable {
         return new EqualsBuilder().append(this.parent1, castOther.parent1)
             .append(this.parent2, castOther.parent2)
             .append(this.child, castOther.child)
-            .append(this.relationType, castOther.relationType)
+            .append(this.instanceId, castOther.instanceId)
             .append(this.treeOrder, castOther.treeOrder)
             .isEquals();
     }

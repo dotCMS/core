@@ -57,7 +57,7 @@ public class MultiTreeAPITest extends IntegrationTestBase {
                         .setHtmlPage(PAGE)
                         .setContentlet(CONTENTLET + j)
                         .setTreeOrder(j)
-                        .setRelationType(RELATION_TYPE + i);
+                        .setInstanceId(RELATION_TYPE + i);
 
                 APILocator.getMultiTreeAPI().saveMultiTree(mt);
             }
@@ -131,7 +131,7 @@ public class MultiTreeAPITest extends IntegrationTestBase {
                 .setHtmlPage(PAGE)
                 .setContentlet("NEW_ONE")
                 .setTreeOrder(0)
-                .setRelationType(RELATION_TYPE + 0);
+                .setInstanceId(RELATION_TYPE + 0);
         
         APILocator.getMultiTreeAPI().saveMultiTree(mt);
         
@@ -153,9 +153,9 @@ public class MultiTreeAPITest extends IntegrationTestBase {
 
         
         MultiTree multiTree = new MultiTree();
-        multiTree.setParent1( PAGE+time);
-        multiTree.setParent2( CONTAINER +time);
-        multiTree.setChild( CONTENTLET +time);
+        multiTree.setHtmlPage( PAGE+time);
+        multiTree.setContainer( CONTAINER +time);
+        multiTree.setContentlet( CONTENTLET +time);
         multiTree.setTreeOrder( 1 );
         APILocator.getMultiTreeAPI().saveMultiTree( multiTree );
         
@@ -184,7 +184,7 @@ public class MultiTreeAPITest extends IntegrationTestBase {
         multiTree.setHtmlPage(page);
         multiTree.setContainer(container);
         multiTree.setContentlet(content);
-        multiTree.setRelationType("abc");
+        multiTree.setInstanceId("abc");
         multiTree.setTreeOrder( 1 );
         
         //delete out any previous relation
@@ -251,7 +251,7 @@ public class MultiTreeAPITest extends IntegrationTestBase {
                 .setHtmlPage(PAGE)
                 .setContentlet(contentlet.getIdentifier())
                 .setTreeOrder(1)
-                .setRelationType(RELATION_TYPE);
+                .setInstanceId(RELATION_TYPE);
         APILocator.getMultiTreeAPI().saveMultiTree( mt );
 
 
@@ -280,21 +280,21 @@ public class MultiTreeAPITest extends IntegrationTestBase {
 
         final String parent1 = PAGE + time;
 
-        MultiTree multiTree1 = new MultiTree();
-        multiTree1.setParent1( parent1 );
-        multiTree1.setParent2( CONTAINER +time);
-        multiTree1.setChild( CONTENTLET +time);
-        multiTree1.setRelationType("1");
-        multiTree1.setTreeOrder( 1 );
+        MultiTree multiTree1 = new MultiTree()
+        .setHtmlPage(parent1 )
+        .setContainer( CONTAINER +time)
+        .setContentlet( CONTENTLET +time)
+        .setInstanceId("1")
+        .setTreeOrder( 1 );
 
         long time2 = time + 1;
 
-        MultiTree multiTree2 = new MultiTree();
-        multiTree2.setParent1( parent1 );
-        multiTree2.setParent2( CONTAINER + time2);
-        multiTree2.setChild( CONTENTLET + time2);
-        multiTree2.setRelationType("1");
-        multiTree2.setTreeOrder( 2 );
+        MultiTree multiTree2 = new MultiTree()
+        .setHtmlPage( parent1 )
+        .setContainer( CONTAINER + time2)
+        .setContentlet( CONTENTLET + time2)
+        .setInstanceId("1")
+        .setTreeOrder( 2 );
 
         APILocator.getMultiTreeAPI().saveMultiTrees( parent1, list(multiTree1, multiTree2) );
 
@@ -324,7 +324,7 @@ public class MultiTreeAPITest extends IntegrationTestBase {
         multiTree1.setHtmlPage( parent1 );
         multiTree1.setContainer( CONTAINER +time);
         multiTree1.setContentlet( CONTENTLET +time);
-        multiTree1.setRelationType("1");
+        multiTree1.setInstanceId("1");
         multiTree1.setTreeOrder( 1 );
 
         APILocator.getMultiTreeAPI().saveMultiTrees( parent1, list(multiTree1) );
@@ -347,25 +347,25 @@ public class MultiTreeAPITest extends IntegrationTestBase {
         multiTree1.setHtmlPage( parent1 );
         multiTree1.setContainer( CONTAINER +time);
         multiTree1.setContentlet( CONTENTLET +time);
-        multiTree1.setRelationType("1");
+        multiTree1.setInstanceId("1");
         multiTree1.setTreeOrder( 1 );
 
         long time2 = time + 1;
 
         MultiTree multiTree2 = new MultiTree();
-        multiTree2.setParent1( parent1 );
-        multiTree2.setParent2( CONTAINER + time2);
-        multiTree2.setChild( CONTENTLET + time2);
-        multiTree2.setRelationType("1");
+        multiTree2.setHtmlPage( parent1 );
+        multiTree2.setContainer( CONTAINER + time2);
+        multiTree2.setContentlet( CONTENTLET + time2);
+        multiTree2.setInstanceId("1");
         multiTree2.setTreeOrder( 2 );
 
         long time3 = time + 2;
 
         MultiTree multiTree3 = new MultiTree();
-        multiTree3.setParent1( parent1 );
-        multiTree3.setParent2( CONTAINER + time3);
-        multiTree3.setChild( CONTENTLET + time3);
-        multiTree3.setRelationType("-1");
+        multiTree3.setHtmlPage( parent1 );
+        multiTree3.setContainer( CONTAINER + time3);
+        multiTree3.setContentlet( CONTENTLET + time3);
+        multiTree3.setInstanceId("-1");
         multiTree3.setTreeOrder( 3 );
 
         APILocator.getMultiTreeAPI().saveMultiTrees( parent1, list(multiTree1, multiTree2, multiTree3) );
