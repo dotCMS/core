@@ -334,9 +334,9 @@ var cmsfile=null;
 			}
 
 		    <%final Context ctx = VelocityUtil.getWebContext(request, response);%>
-		    <%ctx.put("content", contentlet);%>
-		    <%ctx.put("contentlet", contentlet);%>
-			<%for(com.dotcms.contenttype.model.field.Field field : contentlet.getContentType().fields()){%>
+		    <%ctx.put("content", request.getAttribute("contentlet"));%>
+		    <%ctx.put("contentlet", request.getAttribute("contentlet"));%>
+			<%for(com.dotcms.contenttype.model.field.Field field : ((Contentlet)request.getAttribute("contentlet")).getContentType().fields()){%>
 			     <%if(field instanceof WysiwygField && field.fieldVariablesMap().containsKey("tinymceprops")){%>
 				     var <%=field.variable()%>tinyPropOverride={};
 				     try{
