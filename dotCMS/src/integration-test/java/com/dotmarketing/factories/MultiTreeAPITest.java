@@ -182,69 +182,70 @@ public class MultiTreeAPITest extends IntegrationTestBase {
         final Template template = new TemplateDataGen().nextPersisted();
         final Folder folder = new FolderDataGen().nextPersisted();
         final HTMLPageAsset page = new HTMLPageDataGen(folder, template).nextPersisted();
-        Structure structure = new StructureDataGen().nextPersisted();
-        Container container = new ContainerDataGen().withStructure(structure, "").nextPersisted();
-        Contentlet content = new ContentletDataGen(structure.getInode()).nextPersisted();
+        final Structure structure = new StructureDataGen().nextPersisted();
+        final Container container = new ContainerDataGen().withStructure(structure, "").nextPersisted();
+        final Contentlet content = new ContentletDataGen(structure.getInode()).nextPersisted();
 
         
-        
-        MultiTree multiTree = new MultiTree();
-        multiTree.setHtmlPage(page);
-        multiTree.setContainer(container);
-        multiTree.setContentlet(content);
-        multiTree.setInstanceId("abc");
-        multiTree.setTreeOrder( 1 );
-        
-        //delete out any previous relation
-        APILocator.getMultiTreeAPI().deleteMultiTree(multiTree);
-        CacheLocator.getMultiTreeCache().clearCache();
-        Table<String, String, Set<String>> trees= APILocator.getMultiTreeAPI().getPageMultiTrees(page, false);
-        
-        Table<String, String, Set<String>> cachedTrees= APILocator.getMultiTreeAPI().getPageMultiTrees(page, false);
-        
-        // should be the same object coming from in memory cache
-        assert(trees==cachedTrees);
-        
-        CacheLocator.getMultiTreeCache().removePageMultiTrees(page.getIdentifier());
-        
-        
-        trees= APILocator.getMultiTreeAPI().getPageMultiTrees(page, false);
-        
-        // cache flush forced a cache reload, so different objects in memory
-        assert(trees!=cachedTrees);
-        
-        // but the objects should contain the same data
-        assert(trees.equals(cachedTrees));
-
-        // there is no container entry 
-        assert(!(cachedTrees.rowKeySet().contains(container.getIdentifier())));
-
-
-        // check cache flush on save
-        APILocator.getMultiTreeAPI().saveMultiTree( multiTree );
-        Table<String, String, Set<String>> addedTrees= APILocator.getMultiTreeAPI().getPageMultiTrees(page, false);
-        assert(cachedTrees!=addedTrees);
-        
-        // did we get a new object from the cache?
-        assert(!(cachedTrees.equals(addedTrees)));
-        assert(addedTrees.rowKeySet().contains(container.getIdentifier()));
-        
-        // check cache flush on delete
-        APILocator.getMultiTreeAPI().deleteMultiTree(multiTree );
-        Table<String, String, Set<String>> deletedTrees= APILocator.getMultiTreeAPI().getPageMultiTrees(page, false);
-        
-        // did we get a new object from the cache?
-        assert(!(addedTrees.equals(deletedTrees)));
-        assert(!(deletedTrees.rowKeySet().contains(container.getIdentifier())));
-        
-        
-        ContentletDataGen.remove(content);
-        ContainerDataGen.remove(container);
-        StructureDataGen.remove(structure);
-        HTMLPageDataGen.remove(page);
-        FolderDataGen.remove(folder);
-        TemplateDataGen.remove(template);
-
+        try {
+            MultiTree multiTree = new MultiTree();
+            multiTree.setHtmlPage(page);
+            multiTree.setContainer(container);
+            multiTree.setContentlet(content);
+            multiTree.setInstanceId("abc");
+            multiTree.setTreeOrder( 1 );
+            
+            //delete out any previous relation
+            APILocator.getMultiTreeAPI().deleteMultiTree(multiTree);
+            CacheLocator.getMultiTreeCache().clearCache();
+            Table<String, String, Set<String>> trees= APILocator.getMultiTreeAPI().getPageMultiTrees(page, false);
+            
+            Table<String, String, Set<String>> cachedTrees= APILocator.getMultiTreeAPI().getPageMultiTrees(page, false);
+            
+            // should be the same object coming from in memory cache
+            assert(trees==cachedTrees);
+            
+            CacheLocator.getMultiTreeCache().removePageMultiTrees(page.getIdentifier());
+            
+            
+            trees= APILocator.getMultiTreeAPI().getPageMultiTrees(page, false);
+            
+            // cache flush forced a cache reload, so different objects in memory
+            assert(trees!=cachedTrees);
+            
+            // but the objects should contain the same data
+            assert(trees.equals(cachedTrees));
+    
+            // there is no container entry 
+            assert(!(cachedTrees.rowKeySet().contains(container.getIdentifier())));
+    
+    
+            // check cache flush on save
+            APILocator.getMultiTreeAPI().saveMultiTree( multiTree );
+            Table<String, String, Set<String>> addedTrees= APILocator.getMultiTreeAPI().getPageMultiTrees(page, false);
+            assert(cachedTrees!=addedTrees);
+            
+            // did we get a new object from the cache?
+            assert(!(cachedTrees.equals(addedTrees)));
+            assert(addedTrees.rowKeySet().contains(container.getIdentifier()));
+            
+            // check cache flush on delete
+            APILocator.getMultiTreeAPI().deleteMultiTree(multiTree );
+            Table<String, String, Set<String>> deletedTrees= APILocator.getMultiTreeAPI().getPageMultiTrees(page, false);
+            
+            // did we get a new object from the cache?
+            assert(!(addedTrees.equals(deletedTrees)));
+            assert(!(deletedTrees.rowKeySet().contains(container.getIdentifier())));
+            
+        }
+        finally {
+            ContentletDataGen.remove(content);
+            ContainerDataGen.remove(container);
+            StructureDataGen.remove(structure);
+            HTMLPageDataGen.remove(page);
+            FolderDataGen.remove(folder);
+            TemplateDataGen.remove(template);
+        }
 
         
         
