@@ -14,10 +14,9 @@ public class MultiTreeCache implements Cachable {
 
     private final static String LIVE_GROUP = "pageMultiTreesLive";
     private final static String WORKING_GROUP = "pageMultiTreesWorking";
-    
-    private final static String[] GROUPS =  {LIVE_GROUP, WORKING_GROUP};
-    
-    
+    private final static String[] GROUPS = {LIVE_GROUP, WORKING_GROUP};
+
+
     private DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
 
     @Override
@@ -27,8 +26,8 @@ public class MultiTreeCache implements Cachable {
 
 
     @SuppressWarnings("unchecked")
-    public Optional<Table<String, String, Set<String>>> getPageMultiTrees(final String pageIdentifier, boolean live) {
-        String group = (live) ? LIVE_GROUP : WORKING_GROUP;
+    public Optional<Table<String, String, Set<String>>> getPageMultiTrees(final String pageIdentifier, final boolean live) {
+        final String group = (live) ? LIVE_GROUP : WORKING_GROUP;
 
         try {
             return Optional.ofNullable((Table<String, String, Set<String>>) cache.get(pageIdentifier, group));
@@ -38,14 +37,14 @@ public class MultiTreeCache implements Cachable {
         }
     }
 
-    public void putPageMultiTrees(final String pageIdentifier, boolean live, final Table<String, String, Set<String>> multiTrees) {
-        String group = (live) ? LIVE_GROUP : WORKING_GROUP;
+    public void putPageMultiTrees(final String pageIdentifier, final boolean live, final Table<String, String, Set<String>> multiTrees) {
+        final String group = (live) ? LIVE_GROUP : WORKING_GROUP;
         cache.put(pageIdentifier, multiTrees, group);
     }
 
 
-    public void removePageMultiTrees(final String pageIdentifier, boolean live) {
-        String group = (live) ? LIVE_GROUP : WORKING_GROUP;
+    public void removePageMultiTrees(final String pageIdentifier, final boolean live) {
+        final String group = (live) ? LIVE_GROUP : WORKING_GROUP;
         removePageMultiTrees(pageIdentifier, group);
     }
 
@@ -55,7 +54,7 @@ public class MultiTreeCache implements Cachable {
         }
     }
 
-    public void removePageMultiTrees(final String pageIdentifier, String group) {
+    public void removePageMultiTrees(final String pageIdentifier, final String group) {
         cache.remove(pageIdentifier, group);
     }
 
@@ -67,7 +66,6 @@ public class MultiTreeCache implements Cachable {
 
     @Override
     public void clearCache() {
-        DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
 
         for (final String group : getGroups()) {
             cache.flushGroup(group);
