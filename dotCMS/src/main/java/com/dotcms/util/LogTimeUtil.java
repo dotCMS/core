@@ -4,6 +4,7 @@ import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import java.util.function.Supplier;
 import org.apache.commons.lang.time.StopWatch;
+import org.apache.logging.log4j.Level;
 
 /**
  * This util logs the total time for a calling delegate method.
@@ -23,11 +24,12 @@ public class LogTimeUtil {
      * @param <T>
      * @return
      */
-    public <T> T logTime (final ReturnableDelegate<T> delegate, final Supplier<String> messageSupplier) throws Throwable {
+    public <T> T logTime (final ReturnableDelegate<T> delegate, final Supplier<String> messageSupplier,
+                          final String loggingLevel) throws Throwable {
 
         T methodReturn = null;
 
-        if (Logger.isDebugEnabled(this.getClass())) {
+        if (Logger.isDebugEnabled(this.getClass()) || Level.INFO.toString().equals(loggingLevel)) {
             final StopWatch stopWatch = new StopWatch();
 
             stopWatch.start();
@@ -36,11 +38,16 @@ public class LogTimeUtil {
 
             stopWatch.stop();
 
-            Logger.debug(this, messageSupplier.get() +
+            if(Level.INFO.toString().equals(loggingLevel)) {
+                Logger.info(this, messageSupplier.get() +
                     ", duration:" +
-                    DateUtil.millisToSeconds(stopWatch.getTime()) + " seconds");
+                    stopWatch.getTime() + " millis");
+            } else  {
+                Logger.debug(this, messageSupplier.get() +
+                    ", duration:" +
+                    stopWatch.getTime() + " millis");
+            }
         } else {
-
             methodReturn = delegate.execute();
         }
 

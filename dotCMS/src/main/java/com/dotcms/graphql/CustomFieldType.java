@@ -1,5 +1,7 @@
 package com.dotcms.graphql;
 
+import com.dotcms.graphql.datafetcher.MapFieldPropertiesDataFetcher;
+import com.dotcms.graphql.datafetcher.FieldDataFetcher;
 import com.dotcms.graphql.util.TypeUtil;
 
 import java.util.HashMap;
@@ -25,7 +27,8 @@ public enum CustomFieldType {
         binaryTypeFields.put("mime", GraphQLString);
         binaryTypeFields.put("isImage", GraphQLString);
 
-        customFieldTypes.put("BINARY", TypeUtil.createObjectType("Binary", binaryTypeFields));
+        customFieldTypes.put("BINARY", TypeUtil.createObjectType("Binary", binaryTypeFields,
+            new MapFieldPropertiesDataFetcher()));
 
         final Map<String, GraphQLOutputType> categoryTypeFields = new HashMap<>();
         categoryTypeFields.put("inode", GraphQLString);
@@ -35,7 +38,8 @@ public enum CustomFieldType {
         categoryTypeFields.put("keywords", GraphQLString);
         categoryTypeFields.put("velocityVar", GraphQLString);
 
-        customFieldTypes.put("CATEGORY", TypeUtil.createObjectType("Category", categoryTypeFields));
+        customFieldTypes.put("CATEGORY", TypeUtil.createObjectType("Category", categoryTypeFields,
+            new FieldDataFetcher()));
     }
 
     public GraphQLObjectType getType() {

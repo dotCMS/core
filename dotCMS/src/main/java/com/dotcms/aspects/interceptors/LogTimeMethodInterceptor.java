@@ -3,8 +3,10 @@ package com.dotcms.aspects.interceptors;
 import com.dotcms.aspects.DelegateMethodInvocation;
 import com.dotcms.aspects.MethodInterceptor;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotcms.util.LogTime;
 import com.dotcms.util.LogTimeUtil;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 
 /**
@@ -31,11 +33,13 @@ public class LogTimeMethodInterceptor implements MethodInterceptor<Object> {
 
         final Object target  = delegate.getTarget();
         final Method method  = delegate.getMethod();
+        final LogTime annotation = method.getAnnotation(LogTime.class);
 
         return  this.logTimeUtil.logTime(
                 delegate::proceed,
                 () -> "Call for class: " +
                             ((null != target)? target.getClass().getName(): "Null" ) + "#" +
-                            ((null != method)?method.getName():"Null")) ;
+                            ((null != method)?method.getName():"Null"),
+                            annotation.loggingLevel()) ;
     } // invoke.
 } // E:O:F:LogTimeMethodInterceptor.

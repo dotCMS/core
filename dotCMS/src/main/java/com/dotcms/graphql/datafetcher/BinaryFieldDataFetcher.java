@@ -14,7 +14,7 @@ import java.util.Map;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 
-public class BinaryDataFetcher implements DataFetcher<Map<String, Object>> {
+public class BinaryFieldDataFetcher implements DataFetcher<Map<String, Object>> {
     @Override
     public Map<String, Object> get(DataFetchingEnvironment environment) throws Exception {
 

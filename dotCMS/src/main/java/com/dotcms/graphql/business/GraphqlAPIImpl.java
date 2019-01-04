@@ -11,13 +11,15 @@ import com.dotcms.contenttype.model.field.TimeField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.graphql.CustomFieldType;
 import com.dotcms.graphql.InterfaceType;
-import com.dotcms.graphql.datafetcher.BinaryDataFetcher;
+import com.dotcms.graphql.datafetcher.BinaryFieldDataFetcher;
+import com.dotcms.graphql.datafetcher.CategoryFieldDataFetcher;
 import com.dotcms.graphql.datafetcher.ContentletDataFetcher;
 import com.dotcms.graphql.datafetcher.FieldDataFetcher;
 import com.dotcms.graphql.datafetcher.RelationshipFieldDataFetcher;
 import com.dotcms.graphql.event.GraphqlTypeCreatedEvent;
 import com.dotcms.graphql.listener.RelationshipFieldTypeCreatedListener;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
+import com.dotcms.util.LogTime;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -68,20 +70,21 @@ public class GraphqlAPIImpl implements GraphqlAPI {
         this.fieldClassGraphqlTypeMap.put(TimeField.class, ExtendedScalars.Time);
 
         // custom data fetchers
-        this.fieldClassGraphqlDataFetcher.put(BinaryField.class, new BinaryDataFetcher());
+        this.fieldClassGraphqlDataFetcher.put(BinaryField.class, new BinaryFieldDataFetcher());
+        this.fieldClassGraphqlDataFetcher.put(CategoryField.class, new CategoryFieldDataFetcher());
 
     }
 
     @Override
     public GraphQLSchema getSchema() throws DotDataException {
         GraphQLSchema innerSchema = schema;
-        if(this.schema == null) {
-            synchronized (this) {
-                if(this.schema == null) {
+//        if(this.schema == null) {
+//            synchronized (this) {
+//                if(this.schema == null) {
                     this.schema = generateSchema();
-                }
-            }
-        }
+//                }
+//            }
+//        }
 
         printSchema();
         return innerSchema;
@@ -206,8 +209,8 @@ public class GraphqlAPIImpl implements GraphqlAPI {
 
     }
 
+    @LogTime(loggingLevel = "INFO")
     private GraphQLSchema generateSchema() throws DotDataException {
-
         final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
 
         List<ContentType> allTypes = contentTypeAPI.findAll();
