@@ -1,13 +1,17 @@
 package com.dotmarketing.portlets.hostvariable.bussiness;
 
 import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.portlets.hostvariable.model.HostVariable;
 import com.dotmarketing.util.InodeUtils;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.repackage.net.sf.hibernate.ObjectNotFoundException;
 import org.apache.commons.beanutils.BeanUtils;
 
@@ -81,6 +85,17 @@ public class HostVariableFactoryImpl extends HostVariableFactory{
 			return hvarsforid;
 		}
 	
-	
+    @Override
+    public void updateUserReferences(final String userToDelete, final String userToReplace) throws DotDataException {
+
+        new DotConnect().setSQL("update host_variable set user_id=?, last_mod_date=? where user_id=?")
+            .addParam(userToReplace)
+            .addParam(new Date())
+            .addParam(userToDelete)
+            .loadResult();
+
+        CacheLocator.getHostVariablesCache().clearCache();
+    }
+
 	
 }

@@ -23,4 +23,6 @@ public interface HostVariableAPI {
 	HostVariable copy (HostVariable sourceVariable, Host destinationHost, User user, boolean respectFrontendRoles) 
 		throws DotDataException, DotSecurityException;
 
+    void updateUserReferences(String userToDelete, String userToReplace) throws DotDataException;
+
 }
