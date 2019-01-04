@@ -84,7 +84,6 @@ public class VelocityServlet extends HttpServlet {
                 Logger.debug(this, "IllegalStateException" + state.toString());
                 // Eat this, client disconnect noise
             } catch (Exception e) {
-                //Logger.error(this, e.getClass().getSimpleName()  + " " + e.toString(), e);
                 if(!response.isCommitted()) {
                     response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Exception Error on template");
                 }

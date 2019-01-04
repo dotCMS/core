@@ -1,5 +1,6 @@
 package com.dotmarketing.cache;
 
+import java.util.Arrays;
 import java.util.Optional;
 import java.util.Set;
 
@@ -49,9 +50,7 @@ public class MultiTreeCache implements Cachable {
     }
 
     public void removePageMultiTrees(final String pageIdentifier) {
-        for (final String group : getGroups()) {
-            removePageMultiTrees(pageIdentifier, group);
-        }
+        Arrays.asList(getGroups()).forEach(group -> removePageMultiTrees(pageIdentifier, group));
     }
 
     public void removePageMultiTrees(final String pageIdentifier, final String group) {
