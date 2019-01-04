@@ -66,7 +66,6 @@ public class MultiTreeCache implements Cachable {
     @Override
     public void clearCache() {
         Arrays.asList(getGroups()).forEach(group ->  cache.flushGroup(group));
-
     }
 
 }
