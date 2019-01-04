@@ -15,6 +15,12 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.datagen.ContainerDataGen;
+import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.FolderDataGen;
+import com.dotcms.datagen.HTMLPageDataGen;
+import com.dotcms.datagen.StructureDataGen;
+import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
@@ -22,7 +28,10 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.startup.runonce.Task04315UpdateMultiTreePK;
 import com.google.common.collect.Table;
 
@@ -168,17 +177,16 @@ public class MultiTreeAPITest extends IntegrationTestBase {
     
     @Test
     public void testGetPageMultiTrees() throws Exception {
-        // GET ANY REAL PAGE (NO ES)
-        Map<String, Object> map = new DotConnect().setSQL("select contentlet_version_info.* from contentlet_version_info where working_inode in (select inode from contentlet where structure_inode in (select inode from structure where lower(velocity_var_name)='htmlpageasset'))").setMaxRows(1).loadObjectResults().get(0);
-        final HTMLPageAsset page = APILocator.getHTMLPageAssetAPI().fromContentlet(APILocator.getContentletAPIImpl().find(map.get("working_inode").toString(), APILocator.systemUser(), false));
-     
-        // GET ANY REAL CONTENT (NO ES)
-        map = new DotConnect().setSQL("select contentlet_version_info.* from contentlet_version_info where working_inode in (select inode from contentlet where structure_inode in (select inode from structure where lower(velocity_var_name)='webpagecontent'))").setMaxRows(1).loadObjectResults().get(0);
-        final Contentlet content = APILocator.getContentletAPIImpl().find(map.get("working_inode").toString(), APILocator.systemUser(), false);
+
+
+        final Template template = new TemplateDataGen().nextPersisted();
+        final Folder folder = new FolderDataGen().nextPersisted();
+        final HTMLPageAsset page = new HTMLPageDataGen(folder, template).nextPersisted();
+        Structure structure = new StructureDataGen().nextPersisted();
+        Container container = new ContainerDataGen().withStructure(structure, "").nextPersisted();
+        Contentlet content = new ContentletDataGen(structure.getInode()).nextPersisted();
+
         
-        // GET ANY REAL CONTAINER (NO ES)
-        map = new DotConnect().setSQL("select container_version_info.* from container_version_info").setMaxRows(1).loadObjectResults().get(0);
-        final Container container = APILocator.getContainerAPI().find(map.get("working_inode").toString(), APILocator.systemUser(), false);
         
         MultiTree multiTree = new MultiTree();
         multiTree.setHtmlPage(page);
@@ -228,6 +236,17 @@ public class MultiTreeAPITest extends IntegrationTestBase {
         // did we get a new object from the cache?
         assert(!(addedTrees.equals(deletedTrees)));
         assert(!(deletedTrees.rowKeySet().contains(container.getIdentifier())));
+        
+        
+        ContentletDataGen.remove(content);
+        ContainerDataGen.remove(container);
+        StructureDataGen.remove(structure);
+        HTMLPageDataGen.remove(page);
+        FolderDataGen.remove(folder);
+        TemplateDataGen.remove(template);
+
+
+        
         
         
     }

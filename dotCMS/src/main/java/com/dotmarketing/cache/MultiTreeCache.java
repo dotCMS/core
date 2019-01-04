@@ -12,13 +12,13 @@ import com.google.common.collect.Table;
 
 public class MultiTreeCache implements Cachable {
 
-    final static String LIVE_GROUP = "pageMultiTreesLive";
-    final static String WORKING_GROUP = "pageMultiTreesWorking";
+    private final static String LIVE_GROUP = "pageMultiTreesLive";
+    private final static String WORKING_GROUP = "pageMultiTreesWorking";
     
-    final static String[] GROUPS =  {LIVE_GROUP, WORKING_GROUP};
+    private final static String[] GROUPS =  {LIVE_GROUP, WORKING_GROUP};
     
     
-    DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
+    private DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
 
     @Override
     public String getPrimaryGroup() {

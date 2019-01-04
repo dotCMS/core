@@ -63,32 +63,25 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
 
 
-    static final String DELETE_ALL_MULTI_TREE_RELATED_TO_IDENTIFIER_SQL =
+    private static final String DELETE_ALL_MULTI_TREE_RELATED_TO_IDENTIFIER_SQL =
             "delete from multi_tree where child = ? or parent1 = ? or parent2 = ?";
-    static final String DELETE_SQL = "delete from multi_tree where parent1=? and parent2=? and child=? and  relation_type = ?";
-    static final String DELETE_ALL_MULTI_TREE_SQL = "delete from multi_tree where parent1=? AND relation_type != ?";
-    static final String SELECT_SQL = "select * from multi_tree where parent1 = ? and parent2 = ? and child = ? and  relation_type = ?";
+    private static final String DELETE_SQL = "delete from multi_tree where parent1=? and parent2=? and child=? and  relation_type = ?";
+    private static final String DELETE_ALL_MULTI_TREE_SQL = "delete from multi_tree where parent1=? AND relation_type != ?";
+    private static final String SELECT_SQL = "select * from multi_tree where parent1 = ? and parent2 = ? and child = ? and  relation_type = ?";
 
-    static final String INSERT_SQL = "insert into multi_tree (parent1, parent2, child, relation_type, tree_order ) values (?,?,?,?,?)  ";
+    private static final String INSERT_SQL = "insert into multi_tree (parent1, parent2, child, relation_type, tree_order ) values (?,?,?,?,?)  ";
 
-    static final String SELECT_BY_PAGE = "select * from multi_tree where parent1 = ? order by tree_order";
-    static final String SELECT_BY_ONE_PARENT = "select * from multi_tree where parent1 = ? or parent2 = ? order by tree_order";
-    static final String SELECT_BY_TWO_PARENTS = "select * from multi_tree where parent1 = ? and parent2 = ?  order by tree_order";
-    static final String SELECT_ALL = "select * from multi_tree  ";
-    static final String SELECT_BY_CHILD = "select * from multi_tree where child = ?  order by parent1, parent2, relation_type ";
-    static final String SELECT_BY_PARENTS_AND_RELATIONS =
+    private static final String SELECT_BY_PAGE = "select * from multi_tree where parent1 = ? order by tree_order";
+    private static final String SELECT_BY_ONE_PARENT = "select * from multi_tree where parent1 = ? or parent2 = ? order by tree_order";
+    private static final String SELECT_BY_TWO_PARENTS = "select * from multi_tree where parent1 = ? and parent2 = ?  order by tree_order";
+    private static final String SELECT_ALL = "select * from multi_tree  ";
+    private static final String SELECT_BY_CHILD = "select * from multi_tree where child = ?  order by parent1, parent2, relation_type ";
+    private static final String SELECT_BY_PARENTS_AND_RELATIONS =
             " select * from multi_tree where parent1 = ? and parent2 = ? and relation_type = ? order by tree_order";
 
     private static final String SELECT_BY_CONTAINER_AND_STRUCTURE = "SELECT mt.* FROM multi_tree mt JOIN contentlet c "
             + " ON c.identifier = mt.child WHERE mt.parent2 = ? AND c.structure_inode = ? ";
 
-
-    static final String UPDATE_RELATION_TYPE_SQL =
-            "UPDATE multi_tree SET relation_type = ? WHERE parent1 = ? and parent2 = ? and relation_type = ?";
-
-    static final String UPDATE_PAGE_UUID_TO_DEFAULT_SQL = "UPDATE multi_tree SET relation_type = ? WHERE parent1 = ?";
-    static final String UPDATE_PAGE_CONTAINER_UUID_TO_DEFAULT_SQL =
-            "UPDATE multi_tree SET relation_type = ? WHERE parent1 = ? and parent2 = ?";
 
     @WrapInTransaction
     @Override
