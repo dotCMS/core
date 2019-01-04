@@ -1164,14 +1164,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         final ContentletRelationships cRelationships = new ContentletRelationships(contentlet);
         final ContentType contentType = contentlet.getContentType();
-        final List<ContentletRelationshipRecords> matches = cRelationships.getRelationshipsRecords();
         final List<Relationship> relationships = FactoryLocator.getRelationshipFactory()
                 .byContentType(contentType);
 
         for (Relationship relationship : relationships) {
-
-            ContentletRelationshipRecords records;
-            List<Contentlet> contentletList = null;
 
             if (FactoryLocator.getRelationshipFactory().sameParentAndChild(relationship)) {
 
@@ -1179,46 +1175,46 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 //on both roles as parent and a child of the relationship
 
                 //Pulling as child
-                records = cRelationships.new ContentletRelationshipRecords(relationship, false);
-                contentletList = new ArrayList<Contentlet> ();
-                try {
-                    contentletList.addAll(getRelatedContent(contentlet, relationship, false,
-                            APILocator.getUserAPI().getSystemUser(), true));
-                } catch (DotSecurityException e) {
-                    Logger.error(this,"Unable to get system user",e);
-                }
-                records.setRecords(contentletList);
-                matches.add(records);
+                pullRelated(contentlet, cRelationships, relationship, false);
 
                 //Pulling as parent
-                records = cRelationships.new ContentletRelationshipRecords(relationship, true);
-                contentletList = new ArrayList<> ();
-                try {
-                    contentletList.addAll(getRelatedContent(contentlet, relationship, true,
-                            APILocator.getUserAPI().getSystemUser(), true));
-                } catch (DotSecurityException e) {
-                    Logger.error(this,"Unable to get system user",e);
-                }
-                records.setRecords(contentletList);
-                matches.add(records);
+                pullRelated(contentlet, cRelationships, relationship, true);
 
             } else {
-                records = cRelationships.new ContentletRelationshipRecords(relationship,
-                        FactoryLocator.getRelationshipFactory()
-                                .isParent(relationship, contentType));
-                try {
-                    contentletList = getRelatedContent(contentlet, relationship,
-                            APILocator.getUserAPI().getSystemUser(), true);
-                } catch (DotSecurityException e) {
-                    Logger.error(this, "Unable to get system user", e);
-                }
-
-                records.setRecords(contentletList);
-                matches.add(records);
+                pullRelated(contentlet, cRelationships, relationship,
+                        FactoryLocator.getRelationshipFactory().isParent(relationship, contentType));
             }
         }
 
         return cRelationships;
+    }
+
+    private void pullRelated(Contentlet contentlet, ContentletRelationships cRelationships, Relationship relationship, boolean hasParent)
+            throws DotDataException {
+
+        final boolean selfRelated = FactoryLocator.getRelationshipFactory().sameParentAndChild(relationship);
+        if (selfRelated && ((hasParent && relationship.getParentRelationName() == null) || (!hasParent
+                && relationship.getChildRelationName() == null))) {
+            return;
+        }
+
+        final List<Contentlet> contentletList = new ArrayList<>();
+        final ContentletRelationshipRecords records = cRelationships.new ContentletRelationshipRecords(
+                relationship, hasParent);
+
+        try {
+            if (selfRelated) {
+                contentletList.addAll(getRelatedContent(contentlet, relationship, hasParent,
+                        APILocator.getUserAPI().getSystemUser(), true));
+            }else{
+                contentletList.addAll(getRelatedContent(contentlet, relationship,
+                        APILocator.getUserAPI().getSystemUser(), true));
+            }
+        } catch (DotSecurityException e) {
+            Logger.error(this, "Unable to get system user", e);
+        }
+        records.setRecords(contentletList);
+        cRelationships.getRelationshipsRecords().add(records);
     }
 
     @CloseDBIfOpened
@@ -4650,7 +4646,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         List<ContentletRelationshipRecords> relationshipsRecords = new ArrayList<ContentletRelationshipRecords> ();
         relationshipsData.setRelationshipsRecords(relationshipsRecords);
         for(Entry<Relationship, List<Contentlet>> relEntry : contentRelationships.entrySet()) {
-            Relationship relationship = (Relationship) relEntry.getKey();
+            Relationship relationship = relEntry.getKey();
             boolean hasParent = FactoryLocator.getRelationshipFactory().isParent(relationship, st);
             ContentletRelationshipRecords records = relationshipsData.new ContentletRelationshipRecords(relationship, hasParent);
             records.setRecords(relEntry.getValue());
