@@ -127,60 +127,92 @@ public class ContentletIntegrationTest {
     @Test
     public void testGetRelatedForOneSidedRelationship()
             throws DotDataException, DotSecurityException {
-        //Create Content Types
-        final ContentType parentContentType = getNewContentType();
-        final ContentType childContentType = getNewContentType();
 
-        //Create Content
-        Contentlet parentContentlet = new ContentletDataGen(parentContentType.id())
-                .languageId(defaultLanguage.getId()).next();
+        ContentType parentContentType = null;
+        ContentType childContentType  = null;
 
-        final Contentlet childContentlet = new ContentletDataGen(childContentType.id())
-                .languageId(defaultLanguage.getId()).nextPersisted();
+        try{
 
-        //Create Relationship
-        final Field field = createAndSaveRelationshipField("myChild", parentContentType.id(),
-                childContentType.variable(), CARDINALITY);
+            //Create Content Types
+            parentContentType = getNewContentType();
+            childContentType = getNewContentType();
 
-        final Relationship relationship = relationshipAPI.getRelationshipFromField(field, user);
+            //Create Content
+            Contentlet parentContentlet = new ContentletDataGen(parentContentType.id())
+                    .languageId(defaultLanguage.getId()).next();
 
-        //Save related content
-        parentContentlet = contentletAPI.checkin(parentContentlet,
-                CollectionsUtils.map(relationship, CollectionsUtils.list(childContentlet)), user,
-                false);
+            final Contentlet childContentlet = new ContentletDataGen(childContentType.id())
+                    .languageId(defaultLanguage.getId()).nextPersisted();
 
-        //No cached value
-        List<Contentlet> result = parentContentlet.getRelated(field.variable());
+            //Create Relationship
+            final Field field = createAndSaveRelationshipField("myChild", parentContentType.id(),
+                    childContentType.variable(), CARDINALITY);
 
-        assertEquals(1, result.size());
-        assertEquals(childContentlet.getIdentifier(), result.get(0).getIdentifier());
+            final Relationship relationship = relationshipAPI.getRelationshipFromField(field, user);
 
-        //Cached value
-        result = parentContentlet.getRelated(field.variable());
+            //Save related content
+            parentContentlet = contentletAPI.checkin(parentContentlet,
+                    CollectionsUtils.map(relationship, CollectionsUtils.list(childContentlet)), user,
+                    false);
 
-        assertEquals(1, result.size());
-        assertEquals(childContentlet.getIdentifier(), result.get(0).getIdentifier());
+            //No cached value
+            List<Contentlet> result = parentContentlet.getRelated(field.variable());
+
+            assertEquals(1, result.size());
+            assertEquals(childContentlet.getIdentifier(), result.get(0).getIdentifier());
+
+            //Cached value
+            result = parentContentlet.getRelated(field.variable());
+
+            assertEquals(1, result.size());
+            assertEquals(childContentlet.getIdentifier(), result.get(0).getIdentifier());
+
+        }finally{
+
+            if (parentContentType !=null && parentContentType.id() != null){
+                contentTypeAPI.delete(parentContentType);
+            }
+
+            if (childContentType !=null && childContentType.id() != null){
+                contentTypeAPI.delete(childContentType);
+            }
+        }
     }
 
     @Test
     public void testGetRelatedWhenNoRelatedContentShouldReturnEmptyList()
             throws DotDataException, DotSecurityException {
 
-        //Create Content Types
-        final ContentType parentContentType = getNewContentType();
-        final ContentType childContentType = getNewContentType();
+        ContentType parentContentType = null;
+        ContentType childContentType  = null;
 
-        //Create Content
-        final Contentlet contentlet = new ContentletDataGen(parentContentType.id())
-                .languageId(defaultLanguage.getId()).nextPersisted();
+        try {
+            //Create Content Types
+            parentContentType = getNewContentType();
+            childContentType = getNewContentType();
 
-        //Create Relationship
-        final Field field = createAndSaveRelationshipField("myChild", parentContentType.id(),
-                childContentType.variable(), CARDINALITY);
+            //Create Content
+            final Contentlet contentlet = new ContentletDataGen(parentContentType.id())
+                    .languageId(defaultLanguage.getId()).nextPersisted();
 
-        final List<Contentlet> result = contentlet.getRelated(field.variable());
+            //Create Relationship
+            final Field field = createAndSaveRelationshipField("myChild", parentContentType.id(),
+                    childContentType.variable(), CARDINALITY);
 
-        assertTrue(result.isEmpty());
+            final List<Contentlet> result = contentlet.getRelated(field.variable());
+
+            assertTrue(result.isEmpty());
+
+        }finally {
+
+            if (parentContentType !=null && parentContentType.id() != null){
+                contentTypeAPI.delete(parentContentType);
+            }
+
+            if (childContentType !=null && childContentType.id() != null){
+                contentTypeAPI.delete(childContentType);
+            }
+        }
     }
 
     @Test(expected = DotStateException.class)
@@ -190,11 +222,16 @@ public class ContentletIntegrationTest {
         //Create Content Type.
         final ContentType contentType = getNewContentType();
 
-        //Create Content
-        final Contentlet contentlet = new ContentletDataGen(contentType.id())
-                .languageId(defaultLanguage.getId()).nextPersisted();
+        try {
+            //Create Content
+            final Contentlet contentlet = new ContentletDataGen(contentType.id())
+                    .languageId(defaultLanguage.getId()).nextPersisted();
 
-        contentlet.getRelated("AnyField");
+            contentlet.getRelated("AnyField");
+
+        }finally{
+            contentTypeAPI.delete(contentType);
+        }
     }
 
     private ContentType getNewContentType() throws DotSecurityException, DotDataException {
