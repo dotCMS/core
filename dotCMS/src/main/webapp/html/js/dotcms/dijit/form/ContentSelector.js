@@ -812,7 +812,6 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 			// Select button functionality
 			var selected =  function(scope,content) {
 				scope._onContentSelected(content);
-
 			};
 			if(this.multiple=='false') {
 				var asset = cellData
@@ -821,18 +820,8 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 				if(selectRow.onclick==undefined){
 					selectRow.onclick = dojo.hitch(this, selected, this, asset);
 				}
-				
-				
-
-				
 			}
 
-			
-			if (i % 2 == 1){
-				// row.setAttribute("bgcolor","#EEEEEE");
-			}
-
-            
             var cell = row.insertCell (row.cells.length);
             var iconName = this._getIconName(cellData['__type__']);
             cell.innerHTML = '<img style="border:1px solid #eeeeee" onError="contentSelector._replaceWithIcon(this.parentElement, \'' + iconName + '\')" src="/dA/' + cellData.inode + '/64w">';
