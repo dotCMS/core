@@ -795,17 +795,47 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 		cell.setAttribute("className","beta");
 		cell.setAttribute("width","5%");
 
+		
+		var style = document.createElement('style');
+		style.type = 'text/css';
+		style.innerHTML = '.selectMeRowInIframe { cursor: pointer; } .selectMeRowInIframe:hover{background:#DFE8F6;}';
+		document.getElementsByTagName('head')[0].appendChild(style);
+		
+		
 		//Filling data
 		for (var i = 0; i < data.length; i++) {
+            var cellData = data[i];
 			var row = table.insertRow(table.rows.length);
+			row.id="rowId" +i;
+			row.className="selectMeRowInIframe";
+
+			// Select button functionality
+			var selected =  function(scope,content) {
+				scope._onContentSelected(content);
+
+			};
+			if(this.multiple=='false') {
+				var asset = cellData
+				var selectRow = dojo.byId("rowId" +i);
+				//alert(selectRow)
+				if(selectRow.onclick==undefined){
+					selectRow.onclick = dojo.hitch(this, selected, this, asset);
+				}
+				
+				
+
+				
+			}
+
+			
 			if (i % 2 == 1){
 				// row.setAttribute("bgcolor","#EEEEEE");
 			}
-            var cellData = data[i];
+
             
             var cell = row.insertCell (row.cells.length);
             var iconName = this._getIconName(cellData['__type__']);
-            cell.innerHTML = '<img style="border:1px solid #eeeeee" onError="contentSelector._replaceWithIcon(this.parentElement, \'' + iconName + '\')" src="/dA/' + cellData.inode + '/32w">';
+            cell.innerHTML = '<img style="border:1px solid #eeeeee" onError="contentSelector._replaceWithIcon(this.parentElement, \'' + iconName + '\')" src="/dA/' + cellData.inode + '/64w">';
             cell.setAttribute("style","text-align: center;");
 
 			for (var j = 0; j < this.headers.length; j++) {
@@ -839,11 +869,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 		dojo.parser.parse(this.results_table);
 
 
-		// Select button functionality
-		var selected =  function(scope,content) {
-			scope._onContentSelected(content);
 
-		};
 
 		if(this.multiple=='false') {
 			for (var i = 0; i < data.length; i++) {
@@ -1018,6 +1044,6 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
     },
 
 	_replaceWithIcon: function (parentElement, iconName) {
-        parentElement.innerHTML = '<span class="' + iconName +'"></span>'
+        parentElement.innerHTML = '<span class="' + iconName +'" style="font-size:24px"></span>'
     }
 });
