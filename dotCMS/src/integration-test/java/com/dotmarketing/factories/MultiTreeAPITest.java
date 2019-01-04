@@ -270,26 +270,6 @@ public class MultiTreeAPITest extends IntegrationTestBase {
         APILocator.getMultiTreeAPI().deleteMultiTree(mt);
     }
 
-    @Test
-    public void testUpdateMultiTree_GivenSomeMultiTreeWithRelationType_ShouldUpdateRelationType() throws Exception {
-        final String NEW_RELATION_TYPE = "New Relation Type";
-        final String containerId = CONTAINER + "0";
-        final String relationType = RELATION_TYPE + "0";
-
-        APILocator.getMultiTreeAPI().updateMultiTree(PAGE, containerId, relationType, NEW_RELATION_TYPE);
-        List<MultiTree> multiTrees = APILocator.getMultiTreeAPI().getMultiTrees(PAGE, containerId, relationType);
-
-        assertTrue(multiTrees.isEmpty());
-
-        List<MultiTree> multiTreesNewRelationType = APILocator.getMultiTreeAPI().getMultiTrees(PAGE, containerId, NEW_RELATION_TYPE);
-
-        assertFalse(multiTreesNewRelationType.isEmpty());
-        assertTrue(multiTreesNewRelationType.size() == 5);
-
-        for (MultiTree multiTree : multiTreesNewRelationType) {
-            assertEquals(NEW_RELATION_TYPE, multiTree.getRelationType());
-        }
-    }
 
 
     @Test

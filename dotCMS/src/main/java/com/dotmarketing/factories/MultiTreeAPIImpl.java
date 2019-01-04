@@ -23,7 +23,6 @@ import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.db.Params;
 import com.dotmarketing.exception.DotDataException;
@@ -36,7 +35,6 @@ import com.dotmarketing.portlets.contentlet.business.DotContentletStateException
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
-import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
@@ -160,17 +158,17 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     @CloseDBIfOpened
     @Override
     public MultiTree getMultiTree(final Identifier htmlPage, final Identifier container, final Identifier childContent,
-            final String relationType) throws DotDataException {
-        return getMultiTree(htmlPage.getId(), container.getId(), childContent.getId(), relationType);
+            final String containerInstance) throws DotDataException {
+        return getMultiTree(htmlPage.getId(), container.getId(), childContent.getId(), containerInstance);
     }
 
     @CloseDBIfOpened
     @Override
-    public MultiTree getMultiTree(final String htmlPage, final String container, final String childContent, final String relationType)
+    public MultiTree getMultiTree(final String htmlPage, final String container, final String childContent, final String containerInstance)
             throws DotDataException {
 
         final DotConnect db =
-                new DotConnect().setSQL(SELECT_SQL).addParam(htmlPage).addParam(container).addParam(childContent).addParam(relationType);
+                new DotConnect().setSQL(SELECT_SQL).addParam(htmlPage).addParam(container).addParam(childContent).addParam(containerInstance);
         db.loadResult();
 
         return TransformerLocator.createMultiTreeTransformer(db.loadObjectResults()).findFirst();
@@ -252,11 +250,11 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
     @CloseDBIfOpened
     @Override
-    public java.util.List<MultiTree> getMultiTrees(final String htmlPage, final String container, final String relationType) {
+    public java.util.List<MultiTree> getMultiTrees(final String htmlPage, final String container, final String containerInstance) {
         try {
 
             final DotConnect db =
-                    new DotConnect().setSQL(SELECT_BY_PARENTS_AND_RELATIONS).addParam(htmlPage).addParam(container).addParam(relationType);
+                    new DotConnect().setSQL(SELECT_BY_PARENTS_AND_RELATIONS).addParam(htmlPage).addParam(container).addParam(containerInstance);
             return TransformerLocator.createMultiTreeTransformer(db.loadObjectResults()).asList();
         } catch (Exception e) {
             Logger.error(MultiTreeAPIImpl.class, "getMultiTree failed:" + e, e);
@@ -281,8 +279,8 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
     @CloseDBIfOpened
     @Override
-    public java.util.List<MultiTree> getMultiTrees(final IHTMLPage htmlPage, final Container container, final String relationType) {
-        return getMultiTrees(htmlPage.getIdentifier(), container.getIdentifier(), relationType);
+    public java.util.List<MultiTree> getMultiTrees(final IHTMLPage htmlPage, final Container container, final String containerInstance) {
+        return getMultiTrees(htmlPage.getIdentifier(), container.getIdentifier(), containerInstance);
     }
 
     @CloseDBIfOpened
@@ -484,14 +482,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     }
 
 
-    @Override
-    @WrapInTransaction
-    public void updateMultiTree(final String pageId, final String containerId, final String oldRelationType, final String newRelationType)
-            throws DotDataException {
 
-        new DotConnect().setSQL(UPDATE_RELATION_TYPE_SQL).addParam(newRelationType).addParam(pageId).addParam(containerId)
-                .addParam(oldRelationType).loadResult();
-    }
 
 
     @WrapInTransaction
@@ -509,13 +500,13 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
     @WrapInTransaction
     @Override
-    public void deleteMultiTreesForInodes(final List<String> inodes) throws DotDataException {
+    public void deleteMultiTreesForIdentifiers(final List<String> identifiers) throws DotDataException {
 
-        if (UtilMethods.isSet(inodes)) {
+        if (UtilMethods.isSet(identifiers)) {
 
             try {
 
-                final String sInodeIds = StringUtils.join(inodes, StringPool.COMMA);
+                final String sInodeIds = StringUtils.join(identifiers, StringPool.COMMA);
                 new DotConnect().executeStatement("delete from multi_tree where child in (" + sInodeIds + ") or parent1 in (" + sInodeIds
                         + ") or parent2 in (" + sInodeIds + ")");
             } catch (SQLException e) {
