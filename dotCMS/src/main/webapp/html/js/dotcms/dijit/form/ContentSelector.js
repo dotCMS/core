@@ -816,7 +816,6 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 			if(this.multiple=='false') {
 				var asset = cellData
 				var selectRow = dojo.byId("rowId" +i);
-				//alert(selectRow)
 				if(selectRow.onclick==undefined){
 					selectRow.onclick = dojo.hitch(this, selected, this, asset);
 				}
