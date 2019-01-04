@@ -653,6 +653,9 @@ public class ContentletAjax {
 					allLanguages = false;
 				}
 				if(fieldName.equalsIgnoreCase("conhost")){
+					fieldValue = fieldValue.equalsIgnoreCase("current") ?
+							this.getCurrentSiteId(sess) : fieldValue;
+
 					if(!filterSystemHost  && !fieldValue.equals(Host.SYSTEM_HOST)){
 						try {
 							luceneQuery.append("+(conhost:" + fieldValue + " conhost:" + APILocator.getHostAPI().findSystemHost(APILocator.getUserAPI().getSystemUser(), true).getIdentifier() + ") ");
@@ -1172,6 +1175,15 @@ public class ContentletAjax {
 		Logger.debug(ContentletAjax.class, "searchContentletsByUser: Time to process results= " + (after - before) + " ms.");
 
 		return results;
+	}
+
+	private String getCurrentSiteId(final HttpSession sess) {
+		final String hostId = (String) sess.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);
+
+		if(null==hostId){
+			return WebAPILocator.getHostWebAPI().getHost(req);
+		}else{
+			return hostAPI.find(hostId, user, false);
 	}
 
 	private void setCurrentStep(final User currentUser,

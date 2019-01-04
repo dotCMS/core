@@ -613,7 +613,10 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 				fieldsValues[fieldsValues.length] = "conFolder";
 				fieldsValues[fieldsValues.length] = folderValue;
 			}
-		}
+		} else {
+            fieldsValues[fieldsValues.length] = "conHost";
+            fieldsValues[fieldsValues.length] = "current";
+        }
 
 		if(this.radiobuttonsIds[this.dialogCounter]) {
 			for(var i=0;i < this.radiobuttonsIds[this.dialogCounter].length ;i++ ){
