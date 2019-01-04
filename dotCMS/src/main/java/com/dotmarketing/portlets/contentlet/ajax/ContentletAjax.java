@@ -556,6 +556,7 @@ public class ContentletAjax {
 		Map<String, String> fieldsSearch = new HashMap<String, String>();
 		List<Object> headers = new ArrayList<Object>();
 		Map<String, Field> fieldsMapping = new HashMap<String, Field>();
+		final String[] structureInodes = structureInode.split(CONTENT_TYPES_INODE_SEPARATOR);
 		Structure st = null;
 		if(!Structure.STRUCTURE_TYPE_ALL.equals(structureInode) && !hasContentTypesInodeSeparator(structureInode)){
 		    st = CacheLocator.getContentTypeCache().getStructureByInode(structureInode);
@@ -563,8 +564,6 @@ public class ContentletAjax {
 		    luceneQuery.append("+contentType:" + st.getVelocityVarName() + " ");
 		} else if (!Structure.STRUCTURE_TYPE_ALL.equals(structureInode) && hasContentTypesInodeSeparator(structureInode)) {
 			luceneQuery.append("+contentType:(");
-
-			String[] structureInodes = structureInode.split(CONTENT_TYPES_INODE_SEPARATOR);
 
 			for (int i = 0; i < structureInodes.length; i++) {
 				st = CacheLocator.getContentTypeCache().getStructureByInode(structureInodes[i]);
@@ -602,9 +601,11 @@ public class ContentletAjax {
 		}
 		// Stores (database name,type description) pairs to catch certain field types.
 		List<Field> targetFields = new ArrayList<Field>();
-		if(st!=null){
+
+		if(st!=null  && structureInodes.length == 1){
 		    targetFields = FieldsCache.getFieldsByStructureInode(st.getInode());
 		}
+
 		Map<String,String> fieldContentletNames = new HashMap<String,String>();
 		Map<String,Field> decimalFields = new HashMap<String,Field>();//DOTCMS-5478
 		for( Field f : targetFields ) {
@@ -653,6 +654,10 @@ public class ContentletAjax {
 					allLanguages = false;
 				}
 				if(fieldName.equalsIgnoreCase("conhost")){
+					fieldValue = fieldValue.equalsIgnoreCase("current") ?
+							(String) sess.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID)
+							: fieldValue;
+
 					if(!filterSystemHost  && !fieldValue.equals(Host.SYSTEM_HOST)){
 						try {
 							luceneQuery.append("+(conhost:" + fieldValue + " conhost:" + APILocator.getHostAPI().findSystemHost(APILocator.getUserAPI().getSystemUser(), true).getIdentifier() + ") ");
@@ -842,13 +847,8 @@ public class ContentletAjax {
 			orderBy = "wfCurrentStepName desc";
 		}else{
             if(orderBy.charAt(0)=='.'){
-				final String[] structureInodes = structureInode.split(CONTENT_TYPES_INODE_SEPARATOR);
-
 				if (structureInodes.length > 1) {
-					final String[] orderBySplit = orderBy.split(" ");
-					final String fieldName = orderBySplit[0].substring(1);
-					final String orderHow = orderBySplit.length > 1 ? orderBySplit[1] : "";
-					orderBy = fieldName.equals("widgetTitle") ? "title " + orderHow : orderBy;
+					orderBy = orderBy.substring(1);
 				} else {
 					orderBy = st.getVelocityVarName() + orderBy;
 				}
