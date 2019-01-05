@@ -6,6 +6,7 @@ import com.dotcms.contenttype.model.field.CategoryField;
 import com.dotcms.contenttype.model.field.DateField;
 import com.dotcms.contenttype.model.field.DateTimeField;
 import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.ImageField;
 import com.dotcms.contenttype.model.field.ImmutableRelationshipField;
 import com.dotcms.contenttype.model.field.TimeField;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -15,6 +16,7 @@ import com.dotcms.graphql.datafetcher.BinaryFieldDataFetcher;
 import com.dotcms.graphql.datafetcher.CategoryFieldDataFetcher;
 import com.dotcms.graphql.datafetcher.ContentletDataFetcher;
 import com.dotcms.graphql.datafetcher.FieldDataFetcher;
+import com.dotcms.graphql.datafetcher.ImageFieldDataFetcher;
 import com.dotcms.graphql.datafetcher.RelationshipFieldDataFetcher;
 import com.dotcms.graphql.event.GraphqlTypeCreatedEvent;
 import com.dotcms.graphql.listener.RelationshipFieldTypeCreatedListener;
@@ -49,6 +51,7 @@ import graphql.schema.idl.SchemaPrinter;
 
 import static graphql.Scalars.GraphQLString;
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
+import static graphql.schema.GraphQLList.list;
 import static graphql.schema.GraphQLObjectType.newObject;
 
 public class GraphqlAPIImpl implements GraphqlAPI {
@@ -64,7 +67,8 @@ public class GraphqlAPIImpl implements GraphqlAPI {
     public GraphqlAPIImpl() {
         // custom type mappings
         this.fieldClassGraphqlTypeMap.put(BinaryField.class, CustomFieldType.BINARY.getType());
-        this.fieldClassGraphqlTypeMap.put(CategoryField.class, CustomFieldType.CATEGORY.getType());
+        this.fieldClassGraphqlTypeMap.put(CategoryField.class, list(CustomFieldType.CATEGORY.getType()));
+        this.fieldClassGraphqlTypeMap.put(ImageField.class, CustomFieldType.IMAGE.getType());
         this.fieldClassGraphqlTypeMap.put(DateTimeField.class, ExtendedScalars.DateTime);
         this.fieldClassGraphqlTypeMap.put(DateField.class, ExtendedScalars.Date);
         this.fieldClassGraphqlTypeMap.put(TimeField.class, ExtendedScalars.Time);
@@ -72,6 +76,7 @@ public class GraphqlAPIImpl implements GraphqlAPI {
         // custom data fetchers
         this.fieldClassGraphqlDataFetcher.put(BinaryField.class, new BinaryFieldDataFetcher());
         this.fieldClassGraphqlDataFetcher.put(CategoryField.class, new CategoryFieldDataFetcher());
+        this.fieldClassGraphqlDataFetcher.put(ImageField.class, new ImageFieldDataFetcher());
 
     }
 
@@ -229,7 +234,7 @@ public class GraphqlAPIImpl implements GraphqlAPI {
                     .name("query")
                     .type(GraphQLString)
                     .build())
-                .type(GraphQLList.list(InterfaceType.CONTENT.getType()))
+                .type(list(InterfaceType.CONTENT.getType()))
                 .dataFetcher(new ContentletDataFetcher()))
             .build();
 

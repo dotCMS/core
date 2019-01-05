@@ -14,7 +14,8 @@ import static graphql.Scalars.GraphQLString;
 
 public enum CustomFieldType {
     BINARY,
-    CATEGORY;
+    CATEGORY,
+    IMAGE;
 
     private static Map<String, GraphQLObjectType> customFieldTypes = new HashMap<>();
 
@@ -39,7 +40,19 @@ public enum CustomFieldType {
         categoryTypeFields.put("velocityVar", GraphQLString);
 
         customFieldTypes.put("CATEGORY", TypeUtil.createObjectType("Category", categoryTypeFields,
-            new FieldDataFetcher()));
+            new MapFieldPropertiesDataFetcher()));
+
+        final Map<String, GraphQLOutputType> imageTypeFields = new HashMap<>();
+        imageTypeFields.put("name", GraphQLString);
+        imageTypeFields.put("link", GraphQLString);
+        imageTypeFields.put("size", GraphQLString);
+        imageTypeFields.put("width", GraphQLString);
+        imageTypeFields.put("height", GraphQLString);
+        imageTypeFields.put("contentType", GraphQLString);
+        imageTypeFields.put("metadata", GraphQLString);
+
+        customFieldTypes.put("IMAGE", TypeUtil.createObjectType("Image", imageTypeFields,
+            new MapFieldPropertiesDataFetcher()));
     }
 
     public GraphQLObjectType getType() {
