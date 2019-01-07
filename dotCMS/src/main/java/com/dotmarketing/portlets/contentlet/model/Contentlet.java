@@ -791,26 +791,30 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 		return (String) map.get(HOST_KEY);
 	}
 
-    private transient com.dotcms.contenttype.model.field.Field titleImageFieldVar = null;
-
+	private final static String TITLE_IMAGE_NOT_FOUND = "TITLE_IMAGE_NOT_FOUND";
+    private transient String titleImageFieldVar = null;
+    
     public Optional<com.dotcms.contenttype.model.field.Field> getTitleImage() {
-
-        if (this.titleImageFieldVar != null){
-            return Optional.of(this.titleImageFieldVar);
+        final ContentType type = getContentType();
+        if(type==null || type.fieldMap()==null || TITLE_IMAGE_NOT_FOUND.equals(this.titleImageFieldVar)) {
+            return Optional.empty();
         }
-        try {
-            this.titleImageFieldVar = this.getContentType().fields().stream().filter(f -> {
+        
+        if(this.titleImageFieldVar == null) {
+            String returnVal = TITLE_IMAGE_NOT_FOUND;
+            for(final com.dotcms.contenttype.model.field.Field f : type.fields()) {
                 try {
-                    return (f instanceof BinaryField && UtilMethods.isImage(this.getBinary(f.variable()).toString()));
+                    if(f instanceof BinaryField && UtilMethods.isImage(this.getBinary(f.variable()).toString())){
+                        returnVal=f.variable();
+                        break;
+                    }
                 } catch (Exception e) {
-                    return false;
+                    Logger.debug(this.getClass(), e.getMessage(), e);
                 }
-            }).findFirst().orElse(null);
-
-        } catch (Exception e) {
-            Logger.debug(this.getClass(), e.getMessage(), e);
+            }
+            this.titleImageFieldVar=returnVal;
         }
-        return this.titleImageFieldVar != null ? Optional.of(this.titleImageFieldVar) : Optional.empty();
+        return Optional.ofNullable(type.fieldMap().get(this.titleImageFieldVar));
     }
 	
 	

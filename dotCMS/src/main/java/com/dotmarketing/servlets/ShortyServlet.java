@@ -12,21 +12,17 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 
+import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
 import com.dotcms.uuid.shorty.ShortType;
 import com.dotcms.uuid.shorty.ShortyId;
-
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
-import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
-
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 
@@ -165,8 +161,8 @@ public class ShortyServlet extends HttpServlet {
       }
 
     }
-
-    return (con.getTitleImage().isPresent() ) ? con.getTitleImage().get().variable():NOT_FOUND ;
+    
+    return (ESMappingConstants.TITLE_IMAGE.equals(tryField) && con.getTitleImage().isPresent() ) ? con.getTitleImage().get().variable():NOT_FOUND ;
   }
 
 }

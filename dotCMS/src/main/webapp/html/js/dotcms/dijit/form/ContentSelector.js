@@ -826,7 +826,12 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 
             var cell = row.insertCell (row.cells.length);
             var iconName = this._getIconName(cellData['__type__']);
-            cell.innerHTML = '<img style="border:1px solid #eeeeee" onError="contentSelector._replaceWithIcon(this.parentElement, \'' + iconName + '\')" src="/dA/' + cellData.inode + '/64w">';
+            var hasTitleImage = (cellData.hasTitleImage ==='true');
+
+            cell.innerHTML = (hasTitleImage) 
+            	? '<img style="border:1px solid silver" onError="contentSelector._replaceWithIcon(this.parentElement, \'' + iconName + '\')" src="/dA/' + cellData.inode + '/titleImage/64w" alt="' + cellData['__title__'].replace(/[^A-Za-z0-9_]/g, ' ') + '" >' 
+            	: '<span class="' + iconName +'" style="font-size:24px"></span>';
+
             cell.setAttribute("style","text-align: center;");
 
 			for (var j = 0; j < this.headers.length; j++) {
