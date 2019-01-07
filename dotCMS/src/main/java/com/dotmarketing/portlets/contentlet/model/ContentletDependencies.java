@@ -2,6 +2,7 @@ package com.dotmarketing.portlets.contentlet.model;
 
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
+import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.liferay.portal.model.User;
 
 import java.util.List;
@@ -103,6 +104,11 @@ public class ContentletDependencies {
 
         public ContentletDependencies.Builder workflowActionId(final String workflowActionId) {
             this.workflowActionId = workflowActionId;
+            return this;
+        }
+
+        public ContentletDependencies.Builder workflowActionId(final WorkflowAction workflowAction) {
+            this.workflowActionId = workflowAction.getId();
             return this;
         }
 
