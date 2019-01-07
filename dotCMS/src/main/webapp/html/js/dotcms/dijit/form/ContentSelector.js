@@ -531,7 +531,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 
 	_doSearch: function (page, sortBy) {
 
-		var fieldsValues = new Array ();
+        var fieldsValues = new Array ();
 
 		fieldsValues[fieldsValues.length] = "languageId";
 
@@ -545,7 +545,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 		else
             fieldsValues[fieldsValues.length] = "";
             
-        var allField = dijit.byId("allFieldTB").getValue();
+        var allField = this.generalSearch.value;
 
         if (allField != undefined && allField.length>0 ) {
 
@@ -1020,8 +1020,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 		this.nextDiv.style.display = "none";
 		this.previousDiv.style.display = "none";
         this.relateDiv.style.display = "none";
-        var searchInput = document.getElementById("allFieldTB");
-        searchInput.value = "";
+        this.generalSearch.value = "";
 
 		this._hideMatchingResults ();
 	},
