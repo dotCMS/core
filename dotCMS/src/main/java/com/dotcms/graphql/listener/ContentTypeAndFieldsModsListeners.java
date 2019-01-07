@@ -8,9 +8,10 @@ import com.dotcms.graphql.business.GraphqlAPI;
 import com.dotcms.system.event.local.model.Subscriber;
 import com.dotmarketing.business.APILocator;
 
+@SuppressWarnings("unused")
 public class ContentTypeAndFieldsModsListeners {
 
-    final GraphqlAPI graphqlAPI = APILocator.getGraphqlAPI();
+    private final GraphqlAPI graphqlAPI = APILocator.getGraphqlAPI();
 
     @Subscriber
     public void onContentTypeSaved(final ContentTypeSavedEvent event) {
