@@ -7,12 +7,10 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.UtilMethods;
-import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import javax.servlet.http.HttpServletResponse;
 
 /**
  * This class implements the methods defined in the {@link VanityUrlHandler}
