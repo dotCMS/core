@@ -84,9 +84,7 @@ public class ContentletToMapTransformer {
         final Map<String, Object> properties = contentlet.getMap();
         properties.put(Contentlet.CONTENT_TYPE_KEY , type != null ? type.variable() : NA );
         properties.put(Contentlet.TITTLE_KEY, contentlet.getTitle());
-
-        properties.put(ESMappingConstants.TITLE_IMAGE, contentlet.getTitleImage().isPresent() );
-
+        properties.put(Contentlet.TITLE_IMAGE_KEY, contentlet.getTitleImage().isPresent() );
 
         if (!properties.containsKey(HTMLPageAssetAPI.URL_FIELD)) {
             final String url = contentHelper.getUrl(contentlet);

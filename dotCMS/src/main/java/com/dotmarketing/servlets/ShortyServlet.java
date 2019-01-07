@@ -162,7 +162,7 @@ public class ShortyServlet extends HttpServlet {
 
     }
     
-    return (ESMappingConstants.TITLE_IMAGE.equals(tryField) && con.getTitleImage().isPresent() ) ? con.getTitleImage().get().variable():NOT_FOUND ;
+    return (Contentlet.TITLE_IMAGE_KEY.equals(tryField) && con.getTitleImage().isPresent() ) ? con.getTitleImage().get().variable():NOT_FOUND ;
   }
 
 }

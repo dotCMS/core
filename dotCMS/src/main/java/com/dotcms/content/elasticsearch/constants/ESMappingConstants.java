@@ -39,7 +39,7 @@ public final class ESMappingConstants {
      * Contentlet properties
      */
     public static final String TITLE = "title";
-    public static final String TITLE_IMAGE = "titleImage";
+
     public static final String STRUCTURE_NAME = "structureName";
     public static final String CONTENT_TYPE = "contentType";
     public static final String STRUCTURE_TYPE = "structureType";

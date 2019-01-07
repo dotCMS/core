@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.contentlet.model;
 
+import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.type.BaseContentType;
@@ -101,6 +102,10 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	public static final String WORKFLOW_BULK_KEY = "wfActionBulk";
     public static final String DOT_NAME_KEY = "__DOTNAME__";
 
+    public static final String TITLE_IMAGE_KEY="titleImage";
+    
+    
+    
     public static final String DONT_VALIDATE_ME = "_dont_validate_me";
     public static final String DISABLE_WORKFLOW = "__disable_workflow__";
 
@@ -792,15 +797,15 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	}
 
 	private final static String TITLE_IMAGE_NOT_FOUND = "TITLE_IMAGE_NOT_FOUND";
-    private transient String titleImageFieldVar = null;
+
     
     public Optional<com.dotcms.contenttype.model.field.Field> getTitleImage() {
         final ContentType type = getContentType();
-        if(type==null || type.fieldMap()==null || TITLE_IMAGE_NOT_FOUND.equals(this.titleImageFieldVar)) {
+        if(type==null || type.fieldMap()==null || TITLE_IMAGE_NOT_FOUND.equals(map.get(TITLE_IMAGE_KEY))) {
             return Optional.empty();
         }
         
-        if(this.titleImageFieldVar == null) {
+        if(map.get(TITLE_IMAGE_KEY) == null) {
             String returnVal = TITLE_IMAGE_NOT_FOUND;
             for(final com.dotcms.contenttype.model.field.Field f : type.fields()) {
                 try {
@@ -812,9 +817,9 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
                     Logger.debug(this.getClass(), e.getMessage(), e);
                 }
             }
-            this.titleImageFieldVar=returnVal;
+            map.put(TITLE_IMAGE_KEY, returnVal);
         }
-        return Optional.ofNullable(type.fieldMap().get(this.titleImageFieldVar));
+        return Optional.ofNullable(type.fieldMap().get(String.valueOf(map.get(TITLE_IMAGE_KEY))));
     }
 	
 	

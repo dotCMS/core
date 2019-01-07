@@ -52,7 +52,7 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
 
             //New Properties expected
             assertNotNull(transformed.get(Contentlet.TITTLE_KEY));
-            assertNotNull(transformed.get(ESMappingConstants.TITLE_IMAGE));
+            assertNotNull(transformed.get(Contentlet.TITLE_IMAGE_KEY));
             assertNotNull(transformed.get(Contentlet.CONTENT_TYPE_KEY));
             assertNotNull(transformed.get(HTMLPageAssetAPI.URL_FIELD));
 
