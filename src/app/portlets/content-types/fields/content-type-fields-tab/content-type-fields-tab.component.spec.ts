@@ -83,21 +83,38 @@ describe('ContentTypeFieldsTabComponent', () => {
 
     it('should emit change evt with onBlur & keyUp.enter', () => {
         spyOn(comp.editTab, 'emit');
+        const preventDefaultSpy = jasmine.createSpy('spy');
+        const stopPropagationSpy = jasmine.createSpy('spy');
         const labelInput = de.query(By.css('.tab__label'));
 
-        labelInput.nativeElement.textContent = 'hello world';
-        labelInput.nativeElement.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+        labelInput.triggerEventHandler('keydown.enter', {
+            preventDefault: preventDefaultSpy,
+            stopPropagation: stopPropagationSpy,
+            target: {
+                textContent: 'hello world'
+            }
+        });
+
         expect(comp.editTab.emit).toHaveBeenCalledWith({
             ...tabField,
             name: 'hello world'
         });
 
-        labelInput.nativeElement.textContent = 'hello world changed';
-        labelInput.nativeElement.dispatchEvent(new Event('blur'));
+        labelInput.triggerEventHandler('blur', {
+            preventDefault: preventDefaultSpy,
+            stopPropagation: stopPropagationSpy,
+            target: {
+                textContent: 'hello world changed'
+            }
+        });
+
         expect(comp.editTab.emit).toHaveBeenCalledWith({
             ...tabField,
             name: 'hello world changed'
         });
+
+        expect(preventDefaultSpy).toHaveBeenCalledTimes(2);
+        expect(stopPropagationSpy).toHaveBeenCalledTimes(2);
     });
 
     it('should emit delete evt', () => {

@@ -55,7 +55,7 @@ export class ContentTypeFieldsTabComponent implements OnInit {
      */
     changeLabel($event: any): void {
         $event.stopPropagation();
-
+        $event.preventDefault();
         const label = $event.target.textContent;
         if (label && label !== this.fieldTab.getFieldDivider().name) {
             this.editTab.emit({
