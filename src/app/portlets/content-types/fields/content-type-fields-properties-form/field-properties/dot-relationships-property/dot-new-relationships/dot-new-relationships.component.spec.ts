@@ -256,17 +256,11 @@ describe('DotNewRelationshipsComponent', () => {
         it('should set the correct labels', () => {
             fixtureHostComponent.detectChanges();
             const labels = de.queryAll(By.css('label'));
-            const contentTypeLabel = labels[0].nativeElement.innerHTML;
-            const relationshipsLabel = labels[1].nativeElement.innerHTML;
+            const contentTypeLabel = labels[0].nativeElement.textContent;
+            const relationshipsLabel = labels[1].nativeElement.textContent;
 
-            expect(contentTypeLabel).toEqual(
-                messageServiceMock.get(
-                    'contenttypes.field.properties.relationships.contentType.label'
-                ) + '*'
-            );
-            expect(relationshipsLabel).toEqual(
-                messageServiceMock.get('contenttypes.field.properties.relationships.label')
-            );
+            expect(contentTypeLabel).toEqual('Content Type*');
+            expect(relationshipsLabel).toEqual('Relationship');
         });
 
         describe('inverse relationships', () => {
