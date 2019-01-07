@@ -830,8 +830,13 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
             cell.setAttribute("style","text-align: center;");
 
 			for (var j = 0; j < this.headers.length; j++) {
-				var header = this.headers[j];
-				var cell = row.insertCell (row.cells.length);
+                var header = this.headers[j];
+                var cell = row.insertCell (row.cells.length);
+                
+                if (header.fieldVelocityVarName === '__title__') {
+                    cell.style.width = '50%';
+                }
+
 				cell.setAttribute("onClick","javascript: toggleCheckbox("+i+")");
 				var value = cellData[header["fieldVelocityVarName"]];
 				if (value != null)
