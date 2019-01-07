@@ -13,6 +13,7 @@
         (onLazyLoad)="loadDataPaginationEvent($event)"
         (onRowSelect)="handleRowClick($event)"
         [sortOrder]="sortOrder && sortOrder.toLowerCase() === 'desc' ? -1 : 1"
+        [rows]="40"
         selectionMode="single"
         dataKey="id"
         [loading]="loading" loadingIcon="fa fa-spinner pi-spin">
