@@ -29,9 +29,9 @@ import net.jodah.failsafe.FailsafeException;
 
 /**
  * Defaults to GET requests with 2000 timeout
- * @author will
- * 
+ * <p>
  * Usage:
+ * <pre>
  *     String pageString = CircuitBreakerUrl.builder()
  *           .setUrl("https://google.com")
  *           .setHeaders(ImmutableMap.of("X-CUSTOM-HEADER", "TESTING"))
@@ -40,12 +40,11 @@ import net.jodah.failsafe.FailsafeException;
  *           .setTimeout(2000)
  *           .build()
  *           .doString();
- *         
+ *  </pre>
+ * </p>
  *
+ * @author will
  */
-
-
-
 public class CircuitBreakerUrl {
 
     private final String proxyUrl;
