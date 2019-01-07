@@ -176,6 +176,11 @@ public class ContainerStructureFinderStrategyResolver {
         @Override
         public List<ContainerStructure> apply(final Container container) {
 
+            if (null == container) {
+
+                return Collections.emptyList();
+            }
+
             final ImmutableList.Builder<ContainerStructure> builder =
                     new ImmutableList.Builder<>();
             final List<FileAsset> assets =
