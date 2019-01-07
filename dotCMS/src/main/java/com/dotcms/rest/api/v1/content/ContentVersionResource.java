@@ -78,6 +78,19 @@ public class ContentVersionResource {
         this.webResource = webResource;
     }
 
+    /**
+     * This method retrieves all versions for a piece content either by a given identifier or a set of inodes.
+     * You can also provide the optional param (groupByLang) to organize the resulting list by language
+     * @param request The ServletRequest
+     * @param inodes The set of (comma separated) inodes to look for.
+     * @param identifier The Content identifier. You must provide an Identifier or a set of inodes but not both. If you do so the identifier will take precendence.
+     * @param groupByLangParam If this param happens to have a value that could be interpreted as true (groupByLangParam=1, groupByLangParam=true), it'll cause the output to be arranged in bunches of the same language.
+     * @param limit Numeric param that will limit the output.
+     * @return
+     * @throws DotDataException
+     * @throws DotStateException
+     * @throws DotSecurityException
+     */
     @GET
     @JSONP
     @NoCache
@@ -147,6 +160,13 @@ public class ContentVersionResource {
 
     }
 
+    /**
+     * Utility method to get an identifier object. Given a full identifier string or a shorty
+     * @param identifier The input string
+     * @param user Current user
+     * @return An Identifier object
+     * @throws DotDataException A Wrapping Data Exception
+     */
     private Identifier getIdentifier(final String identifier, final User user ) throws DotDataException{
         if(!UtilMethods.isSet(identifier)){
           return null;
@@ -162,6 +182,15 @@ public class ContentVersionResource {
                         : APILocator.getIdentifierAPI().findFromInode(shorty.longId);
     }
 
+    /**
+     * Given a Set of inodes This will return the respective Contentlets
+     * If the inode does not belong into the database an exception will be raised.
+     * @param user current user
+     * @param inodes Set of inodes
+     * @param respectFrontendRoles We're in the FrontEnd or Backend
+     * @return list of contentlets
+     * @throws DotStateException
+     */
     private List<Contentlet> findByInodes(final User user, final Set<String> inodes, final boolean respectFrontendRoles)
             throws DotStateException {
 
@@ -189,14 +218,32 @@ public class ContentVersionResource {
         }).filter(Objects::nonNull).collect(Collectors.toList());
     }
 
+    /**
+     * Map an input list of contentlets into a list of Maps (Using a transformer)
+     * @param input list of contentlets
+     * @param limit cuts the number of items to be processed
+     * @return a List of Maps
+     */
     private List<Map<String, Object>> mapVersions(final List<Contentlet> input, final int limit){
         return input.stream().limit(limit).map(this::contentletToMap).collect(Collectors.toList());
     }
 
+    /**
+     * Maps an input list of contentlets into a list of Maps (Using a transformer)
+     * @param input list of contentlets
+     * @param limit cuts the number of items to be processed
+     * @return a Map of Maps (Organized by inode)
+     */
     private Map<String,Map<String,Object>> mapVersionsByInode(final List<Contentlet> input, final int limit){
         return input.stream().limit(limit).collect(Collectors.toMap(Contentlet::getInode,this::contentletToMap));
     }
 
+    /**
+     * Arrange content grouping by language
+     * @param input list of contentlets
+     * @param limit cuts the number of items to be processed
+     * @return A Map o lists, on which each entry (Mapped by language) is a list of contents.
+     */
     private Map<String, List<Map<String, Object>>> mapVersionsByLang(final List<Contentlet> input, final int limit){
         final Map<String, List<Map<String, Object>>> versionsByLang = new HashMap<>();
         final Map<Long, List<Contentlet>> contentByLangMap = input.stream().limit(limit).collect(Collectors.groupingBy(Contentlet::getLanguageId));
@@ -210,6 +257,13 @@ public class ContentVersionResource {
     }
 
 
+    /**
+     * Simple method to be used specifically with only one inode
+     * @param request ServletRequest
+     * @param inode The inode it-self
+     * @return A ServletResponse
+     * @throws DotStateException
+     */
     @GET
     @JSONP
     @NoCache
@@ -253,6 +307,11 @@ public class ContentVersionResource {
 
     }
 
+    /**
+     * Used to call and transform a Contentlet
+     * @param con A Contentlet
+     * @return Transformed Map
+     */
     private Map<String, Object> contentletToMap( final Contentlet con) {
         return new ContentletToMapTransformer(con).toMaps().get(0);
     }
