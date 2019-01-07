@@ -113,7 +113,7 @@ public class ContentVersionResource {
            if(null != identifier){
 
                Logger.debug(this,
-                       "Getting versions for identifier: " + identifier + " grouping by language: '" + BooleanUtils.toStringYesNo(groupByLang)+ "' and limit: "+limit);
+                       ()->"Getting versions for identifier: " + identifier + " grouping by language: '" + BooleanUtils.toStringYesNo(groupByLang)+ "' and limit: "+limit);
 
                if(groupByLang){
                    final Map<String, List<Map<String, Object>>> versionsByLang = mapVersionsByLang(contentletAPI
@@ -133,7 +133,7 @@ public class ContentVersionResource {
                if(null != inodesSet) {
 
                    Logger.debug(this,
-                           "Getting versions for inodes: " + StringUtils.join(inodesSet, ',') + " grouping by language: '" + BooleanUtils.toStringYesNo(groupByLang)+ "' and limit: "+limit);
+                           ()->"Getting versions for inodes: " + StringUtils.join(inodesSet, ',') + " grouping by language: '" + BooleanUtils.toStringYesNo(groupByLang)+ "' and limit: "+limit);
 
                    if(groupByLang){
                        final Map<String, List<Map<String, Object>>> versionsByLang = mapVersionsByLang(findByInodes(user, inodesSet, respectFrontendRoles), showing);
@@ -277,7 +277,7 @@ public class ContentVersionResource {
         final User user = auth.getUser();
         try {
             Logger.debug(this,
-                    "Getting version for inode: " + inode );
+                    ()->"Getting version for inode: " + inode );
             final ShortyId shorty = APILocator
                     .getShortyAPI().getShorty(inode)
                     .orElseThrow(() -> new DoesNotExistException(getFormattedMessage(user.getLocale(),
