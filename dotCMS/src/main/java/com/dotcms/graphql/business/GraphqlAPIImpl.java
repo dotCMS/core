@@ -27,6 +27,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.structure.model.Relationship;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
@@ -82,26 +83,31 @@ public class GraphqlAPIImpl implements GraphqlAPI {
 
     @Override
     public GraphQLSchema getSchema() throws DotDataException {
-        GraphQLSchema innerSchema = schema;
-//        if(this.schema == null) {
-//            synchronized (this) {
-//                if(this.schema == null) {
-                    this.schema = generateSchema();
-//                }
-//            }
-//        }
+        GraphQLSchema innerSchema = this.schema;
+        if(innerSchema == null) {
+            synchronized (this) {
+                innerSchema = this.schema;
+                if(innerSchema == null) {
+                    this.schema = innerSchema = generateSchema();
+                }
+            }
+        }
 
         printSchema();
         return innerSchema;
     }
 
+    @Override
+    public void invalidateSchema() {
+        this.schema = null;
+    }
+
     private void printSchema() {
-        // TODO: remove printing the schema or make it a config tool
         SchemaPrinter printer = new SchemaPrinter();
         try {
             Files.write(Paths.get("/Users/danielsilva/Documents/schema.graphqls"), printer.print(schema).getBytes());
         } catch (IOException e) {
-            e.printStackTrace();
+            Logger.error(this, "Error printing schema", e);
         }
     }
 
@@ -187,31 +193,6 @@ public class GraphqlAPIImpl implements GraphqlAPI {
         return fieldClassGraphqlDataFetcher.get(fieldClass)!= null
             ? fieldClassGraphqlDataFetcher.get(fieldClass)
             : new FieldDataFetcher();
-    }
-
-    @Override
-    public void updateSchemaType(ContentType contentType) {
-
-    }
-
-    @Override
-    public void deleteSchemaType(String contentTypeVar) {
-
-    }
-
-    @Override
-    public void createSchemaTypeField(ContentType contentType, Field field) {
-
-    }
-
-    @Override
-    public void updateSchemaTypeField(ContentType contentType, Field field) {
-
-    }
-
-    @Override
-    public void deleteSchemaTypeField(ContentType contentType, String fieldVar) {
-
     }
 
     @LogTime(loggingLevel = "INFO")
