@@ -34,6 +34,7 @@ import com.dotcms.rest.api.v1.sites.ruleengine.rules.conditions.ConditionResourc
 import com.dotcms.rest.api.v1.sites.ruleengine.rules.conditions.ConditionValueResource;
 import com.dotcms.rest.api.v1.system.AppContextInitResource;
 import com.dotcms.rest.api.v1.system.ConfigurationResource;
+import com.dotcms.rest.api.v1.system.StartupResource;
 import com.dotcms.rest.api.v1.system.i18n.I18NResource;
 import com.dotcms.rest.api.v1.system.monitor.MonitorResource;
 import com.dotcms.rest.api.v1.system.role.RoleResource;
@@ -145,6 +146,7 @@ public class DotRestApplication extends com.dotcms.repackage.javax.ws.rs.core.Ap
 
 					REST_CLASSES.add(VTLResource.class);
 					REST_CLASSES.add(ContentVersionResource.class);
+					REST_CLASSES.add(StartupResource.class);
 				}
 			}
 		}

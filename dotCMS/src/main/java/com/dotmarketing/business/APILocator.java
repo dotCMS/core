@@ -111,6 +111,8 @@ import com.dotmarketing.portlets.workflows.business.WorkflowAPIImpl;
 import com.dotmarketing.sitesearch.business.SiteSearchAPI;
 import com.dotmarketing.sitesearch.business.SiteSearchAuditAPI;
 import com.dotmarketing.sitesearch.business.SiteSearchAuditAPIImpl;
+import com.dotmarketing.startup.StartupAPI;
+import com.dotmarketing.startup.StartupAPIImpl;
 import com.dotmarketing.tag.business.TagAPI;
 import com.dotmarketing.tag.business.TagAPIImpl;
 import com.dotmarketing.util.Config;
@@ -870,6 +872,15 @@ public class APILocator extends Locator<APIIndex>{
     }
 
 	/**
+	 * Creates a single instance of the {@link StartupAPI}
+	 *
+	 * @return The {@link StartupAPI} class.
+	 */
+	public static StartupAPI getStartupAPI() {
+		return (StartupAPI) getInstance(APIIndex.STARTUP_API);
+	}
+
+	/**
 	 * Creates a single instance of the {@link LanguageVariableAPI}
 	 *
 	 * @return The {@link LanguageVariableAPI} class.
@@ -1030,6 +1041,7 @@ enum APIIndex
 	MULTI_TREE_API,
 	HTMLPAGE_ASSET_RENDERED_API,
 	CLUSTER_API,
+	STARTUP_API,
 	THEME_API;
 
 
@@ -1103,6 +1115,7 @@ enum APIIndex
 			case HTMLPAGE_ASSET_RENDERED_API: return new HTMLPageAssetRenderedAPIImpl();
 			case CLUSTER_API: return new ClusterAPIImpl();
 			case THEME_API: return new ThemeAPIImpl();
+			case STARTUP_API: return new StartupAPIImpl();
 		}
 		throw new AssertionError("Unknown API index: " + this);
 	}
