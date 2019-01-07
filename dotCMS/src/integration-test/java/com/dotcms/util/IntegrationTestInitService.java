@@ -55,7 +55,9 @@ public class IntegrationTestInitService {
             // Init other dotCMS services.
             DotInitializationService.getInstance().initialize();
 
-            this.tryUpgradeTask();
+            if (Config.getBooleanProperty("dotcms.integrationtest.run.upgradetask", true)) {
+                this.tryUpgradeTask();
+            }
 
             initCompleted.set(true);
         }
@@ -72,20 +74,37 @@ public class IntegrationTestInitService {
         for (final Class<?> alwaysTaskClass : alwaysTaskClasses) {
 
             try {
+
+                Logger.info(this, ()->"Running the upgrade task: " + alwaysTaskClass.getCanonicalName());
                 startupAPI.runStartup(alwaysTaskClass);
             } catch (DotDataException e) {
-                fail(e.getMessage());
+                Logger.info(this, ()->"Error on running the upgrade task: " +
+                        alwaysTaskClass.getCanonicalName() + ", msg: " + e.getMessage());
+
+                if (Config.getBooleanProperty("dotcms.integrationtest.run.upgradetask.stoponerror", true)) {
+                    fail(e.getMessage());
+                }
             }
         }
         Logger.info(this, ()->"Ran the always upgrade tasks");
 
         Logger.info(this, ()->"Running the once upgrade tasks");
+
         for (final Class<?> onceTaskClass : onceTaskClasses) {
 
             try {
+
+                Logger.info(this, ()->"Running the upgrade task: " + onceTaskClass.getCanonicalName());
                 startupAPI.runStartup(onceTaskClass);
-            } catch (DotDataException e) {
-                fail(e.getMessage());
+                Logger.info(this, ()->"Ran the upgrade task: " + onceTaskClass.getCanonicalName());
+            } catch (Exception e) {
+
+                Logger.info(this, ()->"Error on running the upgrade task: " +
+                        onceTaskClass.getCanonicalName() + ", msg: " + e.getMessage());
+
+                if (Config.getBooleanProperty("dotcms.integrationtest.run.upgradetask.stoponerror", true)) {
+                    fail(e.getMessage());
+                }
             }
         }
         Logger.info(this, ()->"Ran the once upgrade tasks");
