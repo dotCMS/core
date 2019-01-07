@@ -19,7 +19,9 @@ package org.apache.velocity.tools.view.tools;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.dotcms.http.CircuitBreakerUrl;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -95,16 +97,11 @@ public class ImportTool extends ImportSupport implements ViewTool {
      */
     public String read(String url, int timeout, Map<String, String> headers) {
         try {
-            // check the URL
-            if (url == null || url.equals("")) {
-                LOG.warn("Import URL is null or empty");
-                return null;
-            }
-
-            return acquireString(url, timeout, headers);
+            String x = CircuitBreakerUrl.builder().setHeaders(headers).setUrl(url).setTimeout(timeout).build().doString();
+            return x;
         }
-        catch (Exception ex) {
-            LOG.error("Exception while importing URL: " + ex.getMessage());
+        catch(Exception e) {
+            Logger.warn(this.getClass(), e.getMessage());
             return null;
         }
     }

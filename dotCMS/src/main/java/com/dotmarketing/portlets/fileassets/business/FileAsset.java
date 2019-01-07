@@ -99,7 +99,7 @@ public class FileAsset extends Contentlet implements IFileAsset {
                 fileDimension = ImageUtil.getInstance().getDimension(getFileAsset());
             }
         } catch (Exception e) {
-            Logger.error(this, e.getMessage());
+            Logger.debug(this, "Error getting height for file asset, id: " + getIdentifier(), e);
         }
 
         return fileDimension.height;
@@ -112,7 +112,7 @@ public class FileAsset extends Contentlet implements IFileAsset {
                 fileDimension = ImageUtil.getInstance().getDimension(getFileAsset());
             }
         } catch (Exception e) {
-            Logger.error(this, e.getMessage());
+            Logger.debug(this, "Error getting width for file asset, id: " + getIdentifier(), e);
         }
 
         return fileDimension.width;

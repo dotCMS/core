@@ -1,17 +1,18 @@
 package com.dotmarketing.portlets.templates.design.util;
 
 import com.dotcms.rendering.velocity.directive.ParseContainer;
-import com.dotmarketing.portlets.containers.model.Container;
+import com.dotcms.repackage.org.jsoup.Jsoup;
+import com.dotcms.repackage.org.jsoup.nodes.Document;
+import com.dotcms.repackage.org.jsoup.nodes.Element;
+import com.dotcms.repackage.org.jsoup.select.Elements;
 import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.portlets.templates.design.bean.PreviewFileAsset;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayoutRow;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.UtilMethods;
-import com.dotcms.repackage.org.jsoup.Jsoup;
-import com.dotcms.repackage.org.jsoup.nodes.Document;
-import com.dotcms.repackage.org.jsoup.nodes.Element;
-import com.dotcms.repackage.org.jsoup.select.Elements;
+import com.liferay.util.StringPool;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -377,8 +378,8 @@ public class DesignTemplateUtil {
 
             if (parseContainerArguments != null) {
 				String[] splitArguments = parseContainerArguments.split(",");
-				String id = splitArguments[0];
-				String uuid = splitArguments.length > 1 ? splitArguments[1] : ParseContainer.DEFAULT_UUID_VALUE;
+				String id = cleanId(splitArguments[0]);
+				String uuid = splitArguments.length > 1 ? cleanId(splitArguments[1]) : ParseContainer.DEFAULT_UUID_VALUE;
 
 				containers.add(new ContainerUUID(id, uuid));
 			}
@@ -386,6 +387,11 @@ public class DesignTemplateUtil {
 
         return containers;
     }
+
+    private static String cleanId(final String identifier) {
+
+    	return StringUtils.remove(identifier, StringPool.APOSTROPHE);
+	}
 
 	private static void getMetatagContainers(Document templateBody){
 		Element head = templateBody.head();

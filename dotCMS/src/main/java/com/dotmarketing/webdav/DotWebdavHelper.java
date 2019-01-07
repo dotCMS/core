@@ -788,12 +788,15 @@ public class DotWebdavHelper {
 				APILocator.getFileAssetAPI().cleanThumbnailsFromFileAsset(destinationFile);
 				
 				//Wipe out empty versions that Finder creates
-				List<Contentlet> versions = conAPI.findAllVersions(identifier, user, false);
-				for(Contentlet c : versions){
-					Logger.debug(this, "inode " + c.getInode() + " size: " + c.getBinary(FileAssetAPI.BINARY_FIELD).length());
-					if(c.getBinary(FileAssetAPI.BINARY_FIELD).length() == 0){
-						Logger.debug(this, "deleting version " + c.getInode());
-						conAPI.deleteVersion(c, user, false);
+				final List<Contentlet> versions = conAPI.findAllVersions(identifier, user, false);
+				for(final Contentlet contentlet : versions){
+
+					final File binary = contentlet.getBinary(FileAssetAPI.BINARY_FIELD);
+
+					Logger.debug(this, "inode " + contentlet.getInode() + " size: " + (null != binary? binary.length():0));
+					if(null == binary || binary.length() == 0){
+						Logger.debug(this, "deleting version " + contentlet.getInode());
+						conAPI.deleteVersion(contentlet, user, false);
 						break;
 					}
 				}

@@ -30,12 +30,12 @@ public class ContainerByFolderAssetsUtil {
 
     private static final int DEFAULT_MAX_CONTENTLETS = 10;
     private static final String TITLE                = "title";
-    private static final String FRIENDLY_NAME        = "friendly_name";
+    private static final String DESCRIPTION          = "description";
     private static final String MAX_CONTENTLETS      = "max_contentlets";
     private static final String NOTES                = "notes";
 
     private static String [] DEFAULT_META_DATA_NAMES_ARRAY
-            = new String[] { TITLE, FRIENDLY_NAME, MAX_CONTENTLETS, NOTES};
+            = new String[] { TITLE, DESCRIPTION, MAX_CONTENTLETS, NOTES};
 
     static final String PRE_LOOP             = "preloop.vtl";
     static final String POST_LOOP            = "postloop.vtl";
@@ -121,6 +121,7 @@ public class ContainerByFolderAssetsUtil {
         container.setTitle      (containerFolder.getTitle());
         container.setMaxContentlets(DEFAULT_MAX_CONTENTLETS);
         container.setLanguage(metaInfoFileAsset.getLanguageId());
+        container.setFriendlyName((String)metaInfoFileAsset.getMap().getOrDefault(DESCRIPTION, container.getTitle()));
 
         preLoop.ifPresent (value -> container.setPreLoop (value));
         postLoop.ifPresent(value -> container.setPostLoop(value));
@@ -162,7 +163,7 @@ public class ContainerByFolderAssetsUtil {
             if (UtilMethods.isSet(map)) {
 
                 container.setTitle((String) map.getOrDefault(TITLE, container.getTitle()));
-                container.setFriendlyName((String) map.getOrDefault(FRIENDLY_NAME, StringPool.BLANK));
+                container.setFriendlyName((String) map.getOrDefault(DESCRIPTION, container.getFriendlyName()));
                 container.setMaxContentlets(ConversionUtils.toInt(map.get(MAX_CONTENTLETS), 10));
                 container.setNotes((String) map.getOrDefault(NOTES, StringPool.BLANK));
 
