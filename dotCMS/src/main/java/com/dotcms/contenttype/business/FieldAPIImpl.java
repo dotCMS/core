@@ -386,7 +386,7 @@ public class FieldAPIImpl implements FieldAPI {
           throw new DotDataException("You cannot delete a fixed or read only field");
       }
 
-      Structure structure = new StructureTransformer(type).asStructure();
+      final Structure structure = new StructureTransformer(type).asStructure();
       com.dotmarketing.portlets.structure.model.Field legacyField = new LegacyFieldTransformer(field).asOldField();
 
 
@@ -408,7 +408,7 @@ public class FieldAPIImpl implements FieldAPI {
       fieldFactory.delete(field);
 
       ActivityLogger.logInfo(ActivityLogger.class, "Delete Field Action",
-          String.format("User %s/%s eleted field %s from %s Content Type.", user.getUserId(), user.getFirstName(),
+          String.format("User %s/%s deleted field %s from %s Content Type.", user.getUserId(), user.getFirstName(),
               field.name(), structure.getName()));
 
       //update Content Type mod_date to detect the changes done on the field

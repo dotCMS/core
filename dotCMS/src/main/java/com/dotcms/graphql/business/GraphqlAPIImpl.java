@@ -27,10 +27,13 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.structure.model.Relationship;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -103,11 +106,21 @@ public class GraphqlAPIImpl implements GraphqlAPI {
     }
 
     private void printSchema() {
-        SchemaPrinter printer = new SchemaPrinter();
-        try {
-            Files.write(Paths.get("/Users/danielsilva/Documents/schema.graphqls"), printer.print(schema).getBytes());
-        } catch (IOException e) {
-            Logger.error(this, "Error printing schema", e);
+        if (Config.getBooleanProperty("PRINT_GRAPHQL_SCHEMA", false)) {
+            SchemaPrinter printer = new SchemaPrinter();
+            try {
+                File graphqlDirectory = new File(ConfigUtils.getGraphqlPath());
+
+                if(!graphqlDirectory.exists()) {
+                    graphqlDirectory.mkdirs();
+                }
+
+                File schemaFile = new File(graphqlDirectory.getPath() + File.separator + "schema.graphqls");
+                schemaFile.createNewFile();
+                Files.write(schemaFile.toPath(), printer.print(schema).getBytes());
+            } catch (IOException e) {
+                Logger.error(this, "Error printing schema", e);
+            }
         }
     }
 
