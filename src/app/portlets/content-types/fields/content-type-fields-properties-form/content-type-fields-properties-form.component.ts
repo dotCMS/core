@@ -164,7 +164,7 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
     private notifyFormChanges() {
         this.originalValue = this.form.value;
         this.form.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(() => {
-            this.valid.next(this.isFormValueUpdated());
+            this.valid.next(this.isFormValueUpdated() &&  this.form.valid);
         });
     }
 
