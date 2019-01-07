@@ -54,7 +54,6 @@ dojo.declare("dotcms.dijit.form.RolesFilteringSelect", [dijit._Widget, dijit._Te
 	templatePath: dojo.moduleUrl("dotcms", "dijit/form/RolesFilteringSelect.html"),
 
 	postCreate: function (elem) {
-		debugger;
 		var url = dojo.moduleUrl("dotcms",
 			"dijit/form/RolesFilteringSelectTree.html");
 		var templateString = dojo._getText(url);
@@ -76,6 +75,7 @@ dojo.declare("dotcms.dijit.form.RolesFilteringSelect", [dijit._Widget, dijit._Te
 	},
 	
 	postCreateCallback: function(treeData) {
+
 		this.treeData = treeData;
 		
 		var dataModel = { identifier: 'id', label: 'name', items: [ { id: 'root', name: 'Roles', top: true, 
