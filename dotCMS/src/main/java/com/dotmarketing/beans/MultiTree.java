@@ -31,7 +31,7 @@ public class MultiTree implements Serializable {
     private String child;
 
     /** nullable persistent field */
-    private String instanceId = LEGACY_RELATION_TYPE;
+    private String relationType = LEGACY_RELATION_TYPE;
 
     /** nullable persistent field */
     private int treeOrder;
@@ -41,7 +41,7 @@ public class MultiTree implements Serializable {
         this.parent1 = htmlPage;
         this.parent2 = container;
         this.child = child;
-        this.instanceId = (instanceId == null) ? LEGACY_INSTANCE_ID : instanceId;
+        this.relationType = (instanceId == null) ? LEGACY_INSTANCE_ID : instanceId;
         this.treeOrder = (treeOrder < 0) ? 0 : treeOrder;
     }
 
@@ -52,7 +52,7 @@ public class MultiTree implements Serializable {
     
 
     private MultiTree(MultiTree tree) {
-        this(tree.parent1, tree.parent2, tree.child, tree.instanceId, tree.treeOrder);
+        this(tree.parent1, tree.parent2, tree.child, tree.relationType, tree.treeOrder);
     }
     
     /** minimal constructor */
@@ -87,7 +87,7 @@ public class MultiTree implements Serializable {
     }
 
     public String getRelationType() {
-        return this.instanceId;
+        return this.relationType;
     }
 
     public MultiTree setContentlet(final String contentlet) {
@@ -104,7 +104,7 @@ public class MultiTree implements Serializable {
     }
     
     public MultiTree setInstanceId(String relationType) {
-        this.instanceId = (relationType == null) ? LEGACY_INSTANCE_ID : relationType;
+        this.relationType = (relationType == null) ? LEGACY_INSTANCE_ID : relationType;
         return new MultiTree(this);
     }
 
@@ -131,7 +131,7 @@ public class MultiTree implements Serializable {
         return new EqualsBuilder().append(this.parent1, castOther.parent1)
             .append(this.parent2, castOther.parent2)
             .append(this.child, castOther.child)
-            .append(this.instanceId, castOther.instanceId)
+            .append(this.relationType, castOther.relationType)
             .isEquals();
     }
     
@@ -142,7 +142,7 @@ public class MultiTree implements Serializable {
         return new EqualsBuilder().append(this.parent1, castOther.parent1)
             .append(this.parent2, castOther.parent2)
             .append(this.child, castOther.child)
-            .append(this.instanceId, castOther.instanceId)
+            .append(this.relationType, castOther.relationType)
             .append(this.treeOrder, castOther.treeOrder)
             .isEquals();
     }
