@@ -64,7 +64,7 @@ export abstract class Protocol {
 
     protected reconnect(): void {
         this.destroy();
-        setTimeout(this.start(), 0);
+        setTimeout(() => { this.start(); }, 0);
     }
 
     // Exponential Backoff Formula by Prof. Douglas Thain

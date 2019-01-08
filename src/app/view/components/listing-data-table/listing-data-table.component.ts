@@ -8,7 +8,8 @@ import {
     ElementRef,
     OnInit
 } from '@angular/core';
-import { DataTable, LazyLoadEvent } from 'primeng/primeng';
+import { LazyLoadEvent } from 'primeng/primeng';
+import { Table } from 'primeng/table';
 import { ActionHeaderOptions, ButtonAction } from '@models/action-header';
 import { DataTableColumn } from '@models/data-table/data-table-column';
 import { LoggerService } from 'dotcms-js';
@@ -49,7 +50,7 @@ export class ListingDataTableComponent implements OnChanges, OnInit {
     @ViewChild('gf')
     globalSearch: ElementRef;
     @ViewChild('dataTable')
-    dataTable: DataTable;
+    dataTable: Table;
 
     readonly DATE_FORMAT = 'date';
 
