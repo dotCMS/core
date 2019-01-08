@@ -20,8 +20,8 @@ import {IBundle} from '../services/bundle-service';
         ></cw-input-option>
       </cw-input-dropdown>
       <p-footer>
-        <button type="button" pButton (click)="addToBundle.emit(selectedBundle)" label="Add" [disabled]="!selectedBundle"></button>
         <button type="button" pButton (click)="cancel.emit()" label="Cancel" class="ui-button-secondary"></button>
+        <button type="button" pButton (click)="addToBundle.emit(selectedBundle)" label="Add" [disabled]="!selectedBundle"></button>
       </p-footer>
     </p-dialog>`
 })
