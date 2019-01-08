@@ -13,18 +13,23 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
+import com.dotcms.contenttype.model.field.BinaryField;
+import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.FileField;
+import com.dotcms.contenttype.model.field.ImageField;
 import com.dotcms.uuid.shorty.ShortType;
 import com.dotcms.uuid.shorty.ShortyId;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.liferay.portal.language.LanguageUtil;
-import com.liferay.portal.model.User;
 
 public class ShortyServlet extends HttpServlet {
 
@@ -99,7 +104,6 @@ public class ShortyServlet extends HttpServlet {
     
 
     Optional<ShortyId> shortOpt = APILocator.getShortyAPI().getShorty(id);
-    User user = WebAPILocator.getUserWebAPI().getLoggedInFrontendUser(request);
     boolean live = mode.showLive;
     if (!live) {
       response.setHeader("Pragma", "no-cache");
@@ -114,23 +118,16 @@ public class ShortyServlet extends HttpServlet {
     ShortyId shorty = shortOpt.get();
     String path = (isImage) ? "/contentAsset/image" : "/contentAsset/raw-data";
 
+    Contentlet con = (shorty.type == ShortType.IDENTIFIER)
+                ? APILocator.getContentletAPI().findContentletByIdentifier(shorty.longId, false, -1,
+                        APILocator.systemUser(), false)
+                : APILocator.getContentletAPI().find(shorty.longId, APILocator.systemUser(), false);
 
-    if (shorty.type == ShortType.IDENTIFIER) {
-      Contentlet con = APILocator.getContentletAPI().findContentletByIdentifier(shorty.longId, false, -1,
-          APILocator.getUserAPI().getSystemUser(), false);
 
-      String field = resolveField(con, fieldName);
 
-      path += "/" + shorty.longId + "/" + field;
 
-    } else {
-      Contentlet con =
-          APILocator.getContentletAPI().find(shorty.longId, APILocator.getUserAPI().getSystemUser(), false);
+    path += inodePath(con, fieldName, live) +  "/byInode/true";
 
-      String field = resolveField(con, fieldName);
-
-      path += "/" + shorty.longId + "/" + field + "/byInode/true";
-    }
 
     if(isImage){
       path += "/filter/";
@@ -153,16 +150,48 @@ public class ShortyServlet extends HttpServlet {
 
 
 
-  private String resolveField(Contentlet con, final String tryField) {
-    if (!NOT_FOUND.equals(tryField)) {
-      Object obj = con.getMap().get(tryField);
-      if (obj instanceof File) {
-        return tryField;
-      }
+    private final String inodePath(Contentlet con, final String tryField, boolean live) throws DotStateException, DotDataException {
+
+        final Optional<Field> fieldOpt = resolveField(con, tryField);
+
+        if (!fieldOpt.isPresent()) {
+            return "/" + con.getInode() + "/" + NOT_FOUND ;
+        }
+        
+        final Field field = fieldOpt.get();
+        if (field instanceof ImageField || field instanceof FileField) {
+            String id = con.getStringProperty(field.variable());
+            ContentletVersionInfo cvi = APILocator.getVersionableAPI().getContentletVersionInfo(id, con.getLanguageId());
+            String inode = (live) ? cvi.getLiveInode() : cvi.getWorkingInode();
+            return "/" + inode + "/" + NOT_FOUND ;
+        } else {
+            return "/" + con.getInode() + "/" + field.variable() ;
+        }
 
     }
+
+
+    private final Optional<Field> resolveField(final Contentlet con, final String tryField) {
+
+        if (Contentlet.TITLE_IMAGE_KEY.equals(tryField) && con.getTitleImage().isPresent()) {
+            return Optional.of(con.getTitleImage().get());
+        } else if (!NOT_FOUND.equals(tryField)) {
+            Field field = con.getContentType().fieldMap().get(tryField);
+            if (field!=null && (field instanceof BinaryField || field instanceof ImageField || field instanceof FileField)){
+                return Optional.of(field);
+            }
+        }
+        for (Field f : con.getContentType().fields()) {
+            if (f instanceof BinaryField) {
+                return Optional.of(f);
+            }
+        }
+        return Optional.empty();
+    }
     
-    return (Contentlet.TITLE_IMAGE_KEY.equals(tryField) && con.getTitleImage().isPresent() ) ? con.getTitleImage().get().variable():NOT_FOUND ;
-  }
+    
+    
+    
+    
 
 }

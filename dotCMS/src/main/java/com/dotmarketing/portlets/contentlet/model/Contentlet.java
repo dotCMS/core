@@ -3,6 +3,7 @@ package com.dotmarketing.portlets.contentlet.model;
 import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.BinaryField;
+import com.dotcms.contenttype.model.field.ImageField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
@@ -810,6 +811,10 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
             for(final com.dotcms.contenttype.model.field.Field f : type.fields()) {
                 try {
                     if(f instanceof BinaryField && UtilMethods.isImage(this.getBinary(f.variable()).toString())){
+                            returnVal=f.variable();
+                            break;
+                    }
+                    else if( f instanceof ImageField) {
                         returnVal=f.variable();
                         break;
                     }
