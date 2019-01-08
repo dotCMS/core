@@ -134,10 +134,10 @@ public class ApplicationContainerFolderListener implements FolderListener {
     @WrapInTransaction
     private void removeContentTypeMultitreesAssociated(final ContentType childContentTypeAsset, final Container container) throws DotDataException {
 
-        final List<MultiTree> multiTreeList = MultiTreeFactory
+        final List<MultiTree> multiTreeList = APILocator.getMultiTreeAPI()
                 .getContainerStructureMultiTree(container.getIdentifier(), childContentTypeAsset.id());
         for (final MultiTree multiTree : multiTreeList) {
-            MultiTreeFactory.deleteMultiTree(multiTree);
+            APILocator.getMultiTreeAPI().deleteMultiTree(multiTree);
         }
     }
 

@@ -688,7 +688,7 @@ public class DependencyManager {
 						structuresSet.add(containerStructure.getStructureId());
 					}
 
-					List<MultiTree> treeList = MultiTreeFactory.getMultiTrees(workingPage,container);
+					List<MultiTree> treeList = APILocator.getMultiTreeAPI().getMultiTrees(workingPage,container);
 
 					for (MultiTree mt : treeList) {
 						String contentIdentifier = mt.getChild();

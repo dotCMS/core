@@ -254,7 +254,7 @@ public class ContainerAPIImplTest extends IntegrationTestBase  {
         final WorkflowAction unpublishAction = workflowAPI.findAction
                 (SystemWorkflowConstants.WORKFLOW_PUBLISH_ACTION_ID, APILocator.systemUser());
 
-        return workflowAPI.fireContentWorkflow(contentlet,
+        return null == contentlet? contentlet: workflowAPI.fireContentWorkflow(contentlet,
                 new ContentletDependencies.Builder()
                         .indexPolicy(IndexPolicy.FORCE)
                         .workflowActionId(unpublishAction)
@@ -315,16 +315,29 @@ public class ContainerAPIImplTest extends IntegrationTestBase  {
 
     private boolean existsFileAssetContainerForTesting(final Host defaultHost) {
 
-        final FolderAPI folderAPI = APILocator.getFolderAPI();
+        final FolderAPI    folderAPI    = APILocator.getFolderAPI();
+        final FileAssetAPI fileAssetAPI = APILocator.getFileAssetAPI();
+        boolean exists = false;
         try {
             final Folder    folder    = folderAPI.findFolderByPath
-                    (Constants.CONTAINER_FOLDER_PATH, defaultHost, APILocator.systemUser(), true);
+                    (Constants.CONTAINER_FOLDER_PATH + "/testcontainer", defaultHost, APILocator.systemUser(), true);
 
-            return null != folder && UtilMethods.isSet(folder.getIdentifier());
+            if(null != folder && UtilMethods.isSet(folder.getIdentifier())) {
+
+                final List<FileAsset> fileAssets = fileAssetAPI.findFileAssetsByFolder
+                        (folder, null, true, APILocator.systemUser(), false);
+
+                if (UtilMethods.isSet(fileAssets)) {
+
+                   exists = fileAssets.stream().anyMatch(fileAsset -> "container.vtl".equalsIgnoreCase(fileAsset.getFileName()));
+                }
+            }
         } catch (DotDataException | DotSecurityException e) {
 
             return false;
         }
+
+        return exists;
     }
 
     private void creatApplicationContainerFolder(final Host defaultHost) {

@@ -623,10 +623,10 @@ public class EditContainerAction extends DotPortletAction implements
 
 		for (ContainerStructure oldCS : oldContainerStructures) {
 			if (!newContainerStructures.containsKey(oldCS.getStructureId())) {
-				List<MultiTree> multiTreeList = MultiTreeFactory
+				List<MultiTree> multiTreeList = APILocator.getMultiTreeAPI()
 						.getContainerStructureMultiTree(oldCS.getContainerId(), oldCS.getStructureId());
 				for (MultiTree mt : multiTreeList) {
-					MultiTreeFactory.deleteMultiTree(mt);
+				    APILocator.getMultiTreeAPI().deleteMultiTree(mt);
 				}
 			}
 		}

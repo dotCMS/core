@@ -637,7 +637,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
             // workaround for dbs where we can't have more than one constraint
             // or triggers
-            APILocator.getMultiTreeAPI().deleteMultiTreesForInodes(inodes);
+            APILocator.getMultiTreeAPI().deleteMultiTreesForIdentifiers(inodes);
         } catch (SQLException e) {
             throw new DotDataException("Error deleting tree and multi-tree.", e);
         }

@@ -989,13 +989,13 @@ public class WebAssetFactory {
 			List<MultiTree> multiTrees = new ArrayList<MultiTree>();
 			if (currWebAsset instanceof Container)
 			{
-				multiTrees = MultiTreeFactory.getMultiTrees(identifier);
+				multiTrees = APILocator.getMultiTreeAPI().getMultiTrees(identifier);
 			}
 			if(UtilMethods.isSet(multiTrees))
 			{
 				for(MultiTree multiTree : multiTrees)
 				{
-					MultiTreeFactory.deleteMultiTree(multiTree);
+					APILocator.getMultiTreeAPI().deleteMultiTree(multiTree);
 				}
 			}
 			//### END Get and delete the multitree entries ###

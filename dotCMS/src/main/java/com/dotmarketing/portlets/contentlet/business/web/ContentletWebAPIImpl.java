@@ -255,14 +255,14 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 				if (InodeUtils.isSet(htmlParentId.getId()) && InodeUtils.isSet(containerParent.getInode()) && InodeUtils.isSet(contentlet.getInode())) {
 					Identifier containerIdentifier = identifierAPI.find(containerParent);
 					Identifier contenletIdentifier = identifierAPI.find(contentlet);
-					MultiTree multiTree = MultiTreeFactory.getMultiTree(htmlParentId, containerIdentifier,
+					MultiTree multiTree = APILocator.getMultiTreeAPI().getMultiTree(htmlParentId, containerIdentifier,
 							contenletIdentifier, MultiTree.LEGACY_RELATION_TYPE);
 					Logger.debug(this, "Getting multitree for=" + htmlpage_inode + " ," + containerParent.getInode()
 							+ " ," + contentlet.getIdentifier());
 					Logger.debug(this, "Coming from multitree parent1=" + multiTree.getParent1() + " parent2="
 							+ multiTree.getParent2());
 
-					int contentletCount = MultiTreeFactory.getMultiTrees(htmlParentId).size();
+					int contentletCount = APILocator.getMultiTreeAPI().getMultiTrees(htmlParentId).size();
 
 					if (!InodeUtils.isSet(multiTree.getParent1()) && !InodeUtils.isSet(multiTree.getParent2()) && !InodeUtils.isSet(multiTree.getChild())) {
 						Logger.debug(this, "MTree is null!!! Creating new one!");
@@ -280,8 +280,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 									.getContentletVersionInfo(pageIdentifier,
 											contentletLang);
 							if (versionInfo != null) {
-								MultiTreeFactory.saveMultiTree(mTree,
-										contentlet.getLanguageId());
+							    APILocator.getMultiTreeAPI().saveMultiTree(mTree);
 							} else {
 								// The language in the page and the contentlet 
 								// do not match
@@ -301,7 +300,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 								throw new DotLanguageException(msg);
 							}
 						} else {
-							MultiTreeFactory.saveMultiTree(mTree);
+						    APILocator.getMultiTreeAPI().saveMultiTree(mTree);
 						}
 					}
 
