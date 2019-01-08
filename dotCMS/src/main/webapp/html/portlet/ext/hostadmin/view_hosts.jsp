@@ -141,11 +141,11 @@
             </div>
             <hr/>
             <div class="buttonRow">
+				<button dojoType="dijit.form.Button" onClick="hostAdmin.cancelCreateHost(); stopEvent; return false;" class="dijitButtonFlat">
+					<%= LanguageUtil.get(pageContext, "Cancel") %>
+				</button>
                 <button dojoType="dijit.form.Button" onClick="hostAdmin.goToStep2(); stopEvent; return false; " iconClass="nextIcon">
                     <%= LanguageUtil.get(pageContext, "Next") %>
-                </button>
-                <button dojoType="dijit.form.Button" onClick="hostAdmin.cancelCreateHost(); stopEvent; return false;" class="dijitButtonFlat">
-                    <%= LanguageUtil.get(pageContext, "Cancel") %>
                 </button>
             </div>
         </div>
@@ -239,14 +239,14 @@
 
         <div class="buttonRow" style="clear: both;">
             <hr/>
+			<button dojoType="dijit.form.Button" onClick="hostAdmin.cancelCreateHost(); dojo.stopEvent; return false;" class="dijitButtonFlat">
+				<%= LanguageUtil.get(pageContext, "Cancel") %>
+			</button>
             <button dojoType="dijit.form.Button" onClick="hostAdmin.goToStep1(); dojo.stopEvent; return false; ">
                 <%= LanguageUtil.get(pageContext, "Previous") %>
             </button>
             <button dojoType="dijit.form.Button" onClick="hostAdmin.gotoCreateHost(); dojo.stopEvent; return false; ">
                 <%= LanguageUtil.get(pageContext, "Next") %>
-            </button>
-            <button dojoType="dijit.form.Button" onClick="hostAdmin.cancelCreateHost(); dojo.stopEvent; return false;" class="dijitButtonFlat">
-                <%= LanguageUtil.get(pageContext, "Cancel") %>
             </button>
         </div>
         

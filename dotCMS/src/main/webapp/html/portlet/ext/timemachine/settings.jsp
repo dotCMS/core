@@ -298,23 +298,21 @@
             </dl>
         </div>
         <div class="buttonRow">
-        <span class="showScheduler">
-            <button dojoType="dijit.form.Button" id="saveButton" onClick="save()" iconClass="calListIcon">
-                <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "TIMEMACHINE-SAVE")) %>
-            </button>
-        </span>
-
-            <span class="showRunNow">
-            <button dojoType="dijit.form.Button" id="runButton" onClick="runNow();" iconClass="republishIcon">
-                <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "TIMEMACHINE-RUN")) %>
-            </button>
-        </span>
-
             <span class="showScheduler">
-            <button dojoType="dijit.form.Button" class="dijitButtonFlat" id="disableButton" onClick="disableJob();" iconClass="deleteIcon">
-                <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "TIMEMACHINE-DISABLE")) %>
-            </button>
-        </span>
+                <button dojoType="dijit.form.Button" class="dijitButtonFlat" id="disableButton" onClick="disableJob();" iconClass="deleteIcon">
+                    <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "TIMEMACHINE-DISABLE")) %>
+                </button>
+            </span>
+            <span class="showRunNow">
+                <button dojoType="dijit.form.Button" id="runButton" onClick="runNow();" iconClass="republishIcon">
+                    <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "TIMEMACHINE-RUN")) %>
+                </button>
+            </span>
+            <span class="showScheduler">
+                <button dojoType="dijit.form.Button" id="saveButton" onClick="save()" iconClass="calListIcon">
+                    <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "TIMEMACHINE-SAVE")) %>
+                </button>
+            </span>
         </div>
 
     </form>

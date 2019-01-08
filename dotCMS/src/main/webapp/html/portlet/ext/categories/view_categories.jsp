@@ -1060,8 +1060,8 @@
 				</dl>
 			</div>
 			<div class="buttonRow">
+                <button dojoType="dijit.form.Button" tabindex="5" onclick="dijit.byId('add_category_dialog').hide()" type="button" class="dijitButtonFlat"><%= LanguageUtil.get(pageContext, "Cancel") %></button>
 				<button dojoType="dijit.form.Button" tabindex="4" onclick="saveOrUpdateCategory(true)" type="button"><%= LanguageUtil.get(pageContext, "Save") %></button>
-				<button dojoType="dijit.form.Button" tabindex="5" onclick="dijit.byId('add_category_dialog').hide()" type="button" class="dijitButtonFlat"><%= LanguageUtil.get(pageContext, "Cancel") %></button>
 			</div>
 		</form>
 	</div>

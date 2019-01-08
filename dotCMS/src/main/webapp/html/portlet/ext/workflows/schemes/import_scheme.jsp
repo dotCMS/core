@@ -10,12 +10,12 @@
     </div>
 
     <div class="buttonRow" style="margin-top: 20px;">
+        <button dojoType="dijit.form.Button"
+            onClick='schemeAdmin.hideImport()' class="dijitButtonFlat" type="button">
+                <%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "cancel"))%>
+        </button>
         <button dojoType="dijit.form.Button" onClick='schemeAdmin.importScheme()' iconClass="saveIcon" type="button">
             <%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "save"))%>
-        </button>
-        <button dojoType="dijit.form.Button"
-                onClick='schemeAdmin.hideImport()' class="dijitButtonFlat" type="button">
-            <%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "cancel"))%>
         </button>
     </div>
 

@@ -47,11 +47,11 @@ String inode=request.getParameter( "inode" );// DOTCMS-7085
             <div dojoType="dijit.ProgressBar" style="width:200px;text-align:center;" indeterminate="true" jsId="saveAddBundleProgress" id="saveAddBundleProgress"></div>
         </div>
 		<div class="buttonRow">
-			<button dojoType="dijit.form.Button" type="button" id="addToBundleSaveButton">
-				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "add")) %>
-			</button>
 			<button dojoType="dijit.form.Button" class="dijitButtonFlat" onClick="dijit.byId('addToBundleDia').hide()" type="button">
 				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "cancel")) %>
+			</button>
+			<button dojoType="dijit.form.Button" type="button" id="addToBundleSaveButton">
+				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "add")) %>
 			</button>
 		</div>
 

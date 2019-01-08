@@ -130,13 +130,13 @@ final String inode = request.getParameter("inode");// DOTCMS-7085
         </div>
 
 		<div class="buttonRow">
+			<button dojoType="dijit.form.Button" class="dijitButtonFlat" type="button" id="remotePublishCancelButton" >
+				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "cancel")) %>
+			</button>
 			<button dojoType="dijit.form.Button" type="button" id="remotePublishSaveButton">
 				<%=  hasPushPublishActionlet ?
 						UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "publisher_dialog_push")) :
 						UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "publisher_dialog_save")) %>
-			</button>
-			<button dojoType="dijit.form.Button" class="dijitButtonFlat" type="button" id="remotePublishCancelButton" >
-				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "cancel")) %>
 			</button>
 		</div>
 
@@ -150,11 +150,11 @@ final String inode = request.getParameter("inode");// DOTCMS-7085
 		</div>
 
 		<div class="buttonRow">
-			<button dojoType="dijit.form.Button" type="button" id="remotePublishSaveButton">
-				<%=  UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "publisher_dialog_push"))%>
-			</button>
 			<button dojoType="dijit.form.Button" class="dijitButtonFlat" type="button" id="remotePublishCancelButton" >
 				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "cancel")) %>
+			</button>
+			<button dojoType="dijit.form.Button" type="button" id="remotePublishSaveButton">
+				<%=  UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "publisher_dialog_push"))%>
 			</button>
 		</div>
 

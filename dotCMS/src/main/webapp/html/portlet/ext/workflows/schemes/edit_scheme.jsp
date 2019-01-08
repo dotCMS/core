@@ -127,12 +127,12 @@
 		<%}%>
         </div>
         <div>
+			<button dojoType="dijit.form.Button" onClick='schemeAdmin.saveAddEdit()' iconClass="saveIcon" type="button">
+				<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "save"))%>
+			</button>
             <button dojoType="dijit.form.Button"
                     onClick='schemeAdmin.hideAddEdit()' class="dijitButtonFlat" type="button">
                 <%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "cancel"))%>
-            </button>
-            <button dojoType="dijit.form.Button" onClick='schemeAdmin.saveAddEdit()' iconClass="saveIcon" type="button">
-                <%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "save"))%>
             </button>
         </div>
 	</div>
