@@ -1,4 +1,4 @@
-package com.dotcms.graphql;
+package com.dotcms.graphql.resolver;
 
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 

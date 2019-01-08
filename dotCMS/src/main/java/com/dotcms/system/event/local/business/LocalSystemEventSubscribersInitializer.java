@@ -1,6 +1,7 @@
 package com.dotcms.system.event.local.business;
 
 import com.dotcms.config.DotInitializer;
+import com.dotcms.graphql.listener.ContentTypeAndFieldsModsListeners;
 import com.dotcms.services.VanityUrlServices;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -25,6 +26,9 @@ public class LocalSystemEventSubscribersInitializer implements DotInitializer {
     public void init() {
 
         APILocator.getLocalSystemEventsAPI().subscribe(VanityUrlServices.getInstance());
+
+        APILocator.getLocalSystemEventsAPI().subscribe(new ContentTypeAndFieldsModsListeners());
+
         this.initApplicationContainerFolderListener();
     }
 
