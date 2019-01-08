@@ -7,6 +7,7 @@ import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.repackage.javax.ws.rs.*;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
+import com.dotcms.repackage.javax.ws.rs.QueryParam;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.javax.ws.rs.core.Response.Status;
@@ -16,6 +17,7 @@ import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
 import com.dotcms.rest.*;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
@@ -27,9 +29,12 @@ import com.dotmarketing.util.PageMode;
 
 import com.liferay.portal.model.User;
 
+import java.util.List;
+import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import java.util.*;
 
 @Path("/es")
 public class ESContentResourcePortlet extends BaseRestPortlet {
@@ -40,17 +45,19 @@ public class ESContentResourcePortlet extends BaseRestPortlet {
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
 	@Path("search")
-	public Response search(@Context HttpServletRequest request, @Context HttpServletResponse response, String esQueryStr) throws DotDataException, DotSecurityException{
+	public Response search(
+			@Context HttpServletRequest request,
+			@Context HttpServletResponse response,
+			String esQueryStr,
+			@QueryParam("distinctLang") boolean distinctLang,
+			@QueryParam("live") Boolean liveQueryParam,
+			@QueryParam("workingSite") boolean workingSite) throws DotDataException, DotSecurityException{
 
 		InitDataObject initData = webResource.init(null, true, request, false, null);
-		HttpSession session = request.getSession();
 		User user = initData.getUser();
 		ResourceResponse responseResource = new ResourceResponse(initData.getParamsMap());
 
-
-
-		PageMode mode = PageMode.get(request);
-
+		final boolean live = (liveQueryParam == null) ? PageMode.get(request).showLive : liveQueryParam;
 		JSONObject esQuery;
 
 		try {
@@ -61,21 +68,25 @@ public class ESContentResourcePortlet extends BaseRestPortlet {
 		}
 
 		try {
-			ESSearchResults esresult = esapi.esSearch(esQuery.toString(), mode.showLive, user, mode.showLive);
-			
-			JSONObject json = new JSONObject();
-			JSONArray jsonCons = new JSONArray();
+			final ESSearchResults esresult = esapi.esSearch(esQuery.toString(), live, user, live);
 
-			for(Object x : esresult){
-				Contentlet c = (Contentlet) x;
-				try {
-					jsonCons.put(ContentResource.contentletToJSON(c, request, response, "false", user));
-				} catch (Exception e) {
-					Logger.warn(this.getClass(), "unable JSON contentlet " + c.getIdentifier());
-					Logger.debug(this.getClass(), "unable to find contentlet", e);
-				}
-			}
+			final JSONArray jsonCons = applyFilters(distinctLang, workingSite, esresult)
+					.stream()
+					.map(contentlet -> {
+						try {
+							return ContentResource
+									.contentletToJSON(contentlet, request, response, "false", user);
+						} catch (Exception e) {
+							Logger.warn(this.getClass(),
+									"unable JSON contentlet " + contentlet.getIdentifier());
+							Logger.debug(this.getClass(), "unable to find contentlet", e);
+							return null;
+						}
+					})
+					.filter(Objects::nonNull)
+					.collect(JSONArray::new, JSONArray::put, JSONArray::put);
 
+			final JSONObject json = new JSONObject();
 			try {
 				json.put("contentlets", jsonCons);
 			} catch (JSONException e) {
@@ -110,12 +121,74 @@ public class ESContentResourcePortlet extends BaseRestPortlet {
 		}
 	}
 
+	private Collection<Contentlet> applyFilters(
+			final boolean distinctLang,
+			final boolean workingSite,
+			final ESSearchResults esresult) throws DotDataException {
+
+		final Collection<Contentlet> contentlets = distinctLang ?
+				this.filterDistinctLangContentlet(esresult) :
+				esresult;
+
+		return workingSite ? filterByWorkingSite(contentlets) : contentlets;
+	}
+
+	private Collection<Contentlet> filterByWorkingSite(final Collection<Contentlet> contentlets)
+			throws DotDataException {
+
+		final User systemUser = APILocator.getUserAPI().getSystemUser();
+
+		final Map<String, Host> hosts = contentlets.stream()
+				.map(Contentlet::getHost)
+				.distinct()
+				.map(hostId -> {
+					try {
+						return APILocator.getHostAPI().find(hostId, systemUser, false);
+					} catch (DotDataException | DotSecurityException e) {
+						return null;
+					}
+				})
+				.filter(Objects::nonNull)
+				.collect(Collectors.toMap(Host::getIdentifier, host -> host));
+
+		return contentlets.stream()
+			.filter(contentlet -> {
+				try {
+					return hosts.get(contentlet.getHost()).isLive();
+				} catch (DotDataException | DotSecurityException e) {
+					return false;
+				}
+			})
+			.collect(Collectors.toSet());
+	}
+
+	private Collection<Contentlet> filterDistinctLangContentlet(final Collection<Contentlet> contentlets) {
+		final Map<String, Contentlet> result = new HashMap<>();
+
+		for (final Contentlet contentlet : contentlets) {
+			final String contenletId = contentlet.getIdentifier();
+
+			if (!result.containsKey(contenletId)) {
+				result.put(contenletId, contentlet);
+			}
+		}
+
+		return result.values();
+	}
+
 	@POST
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes({MediaType.APPLICATION_JSON})
 	@Path("search")
-	public Response searchPost(@Context HttpServletRequest request, @Context HttpServletResponse response, String esQuery) throws DotDataException, DotSecurityException{
-		return search(request, response, esQuery);
+	public Response searchPost(
+			@Context HttpServletRequest request,
+			@Context HttpServletResponse response,
+			String esQuery,
+			@QueryParam("distinctLang") boolean distinctLang,
+			@QueryParam("live") Boolean liveQueryParam,
+			@QueryParam("workingSite") boolean workingSite) throws DotDataException, DotSecurityException{
+
+		return search(request, response, esQuery, distinctLang, liveQueryParam, workingSite);
 	}
 	
 	@GET
