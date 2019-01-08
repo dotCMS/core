@@ -58,7 +58,7 @@
 			</div>
 		</div>
 		<div class="portlet-toolbar__info">
-			
+
 		</div>
     	<div class="portlet-toolbar__actions-secondary">
 			<%
@@ -111,7 +111,7 @@
 <!-- Add Host Dialog -->
 <div id="addHostDialog" dojoType="dijit.Dialog" class="noDijitDialogTitleBar">
     <form id="addHostDialogForm" dojoType="dijit.form.Form">
-    	
+
     	<!-- Dialog step 1 -->
         <div id="addHostStep1">
             <h2><%=LanguageUtil.get(pageContext, "Create-a-new-Host")%></h2>
@@ -141,16 +141,16 @@
             </div>
             <hr/>
             <div class="buttonRow">
-				<button dojoType="dijit.form.Button" onClick="hostAdmin.cancelCreateHost(); stopEvent; return false;" class="dijitButtonFlat">
-					<%= LanguageUtil.get(pageContext, "Cancel") %>
-				</button>
+			    <button dojoType="dijit.form.Button" onClick="hostAdmin.cancelCreateHost(); stopEvent; return false;" class="dijitButtonFlat">
+			        <%= LanguageUtil.get(pageContext, "Cancel") %>
+			    </button>
                 <button dojoType="dijit.form.Button" onClick="hostAdmin.goToStep2(); stopEvent; return false; " iconClass="nextIcon">
                     <%= LanguageUtil.get(pageContext, "Next") %>
                 </button>
             </div>
         </div>
         <!-- END Step 1 -->
-        
+
     	<!-- Dialog step 2 -->
     	<div id="addHostStep2" style="display: none">
         	<h2><%= LanguageUtil.get(pageContext, "Select-a-Host-to-copy") %></h2>
@@ -172,9 +172,9 @@
 						<%= LanguageUtil.get(pageContext, "View-site") %>: <a id="websitePreviewLink" target="_blank" href=""></a>
 					</div>
          		</td>
-         		
+
          		<td style="width:10%">&nbsp;</td>
-         		
+
          		<td style="width:60%">
          			<b><%= LanguageUtil.get(pageContext, "What-to-copy") %></b><br/>
 					<div class="yui-g" style="margin-bottom: 16px;">
@@ -239,9 +239,9 @@
 
         <div class="buttonRow" style="clear: both;">
             <hr/>
-			<button dojoType="dijit.form.Button" onClick="hostAdmin.cancelCreateHost(); dojo.stopEvent; return false;" class="dijitButtonFlat">
-				<%= LanguageUtil.get(pageContext, "Cancel") %>
-			</button>
+		    <button dojoType="dijit.form.Button" onClick="hostAdmin.cancelCreateHost(); dojo.stopEvent; return false;" class="dijitButtonFlat">
+		        <%= LanguageUtil.get(pageContext, "Cancel") %>
+		    </button>
             <button dojoType="dijit.form.Button" onClick="hostAdmin.goToStep1(); dojo.stopEvent; return false; ">
                 <%= LanguageUtil.get(pageContext, "Previous") %>
             </button>
@@ -249,11 +249,11 @@
                 <%= LanguageUtil.get(pageContext, "Next") %>
             </button>
         </div>
-        
-    
+
+
 		</div>
 		<!-- End Step 2 -->
-		
+
 	</form>
 </div>
 

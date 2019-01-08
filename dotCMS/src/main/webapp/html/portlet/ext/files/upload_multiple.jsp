@@ -143,22 +143,22 @@ if(request.getParameter(WebKeys.IN_FRAME)!=null){
 					<div class="buttonRow">
 						<select dojoType="dijit.form.FilteringSelect" name="wfActionId" id="wfActionId" store="actionStore" value="" >
 				        </select>
-						 <button dojoType="dijit.form.Button" class="dijitButtonFlat" type="button">
-							 <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "cancel")) %>
-							 <script type="dojo/method" event="onClick" args="evt">
-								 try{
+						<button dojoType="dijit.form.Button" class="dijitButtonFlat" type="button">
+							<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "cancel")) %>
+							<script type="dojo/method" event="onClick" args="evt">
+								try{
 									 if(dijit.byId('addFileDialog')){
 									 dijit.byId('addFileDialog').hide();
-								 } else {
+									} else {
 									 if(parent.closeAddFileDialog) {
 										 parent.closeAddFileDialog();
 									 }
-								 }
-								 }catch(e){
-								 	console.error(e);
-								 }
-							 </script>
-						 </button>
+									}
+								}catch(e){
+									console.error(e);
+								}
+							</script>
+						</button>
                         <button dojoType="dijit.form.Button" onClick="doUpload('')" id="saveButton">
 					        <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Execute")) %>
 					        <script type="dojo/method" event="onClick" args="evt">

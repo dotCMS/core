@@ -41,9 +41,9 @@
 		</dl>
 
 		<div class="buttonRow">
-			<button dojoType="dijit.form.Button" type="button" iconClass="cancelIcon" onClick="cancelAddNewRole()">
-				<%= LanguageUtil.get(pageContext, "Cancel") %>
-			</button>
+		    <button dojoType="dijit.form.Button" type="button" iconClass="cancelIcon" onClick="cancelAddNewRole()">
+		        <%= LanguageUtil.get(pageContext, "Cancel") %>
+		    </button>
 		    <button dojoType="dijit.form.Button" type="button" iconClass="saveIcon" onClick="saveRole()">
 		        <%= LanguageUtil.get(pageContext, "Save") %>
 		    </button>
@@ -91,9 +91,9 @@
 		    <button dojoType="dijit.form.Button" type="button" onClick="cancelEditLayout()" class="dijitButtonFlat">
 		        <%= LanguageUtil.get(pageContext, "Cancel") %>
 		    </button>
-			<button dojoType="dijit.form.Button" type="button" onClick="saveLayout()">
-				<%= LanguageUtil.get(pageContext, "Save") %>
-			</button>
+		    <button dojoType="dijit.form.Button" type="button" onClick="saveLayout()">
+		        <%= LanguageUtil.get(pageContext, "Save") %>
+		    </button>
 		</div>
 	</form>
 </div>
