@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.contentlet.model;
 
+import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.type.BaseContentType;
@@ -101,6 +102,10 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	public static final String WORKFLOW_BULK_KEY = "wfActionBulk";
     public static final String DOT_NAME_KEY = "__DOTNAME__";
 
+    public static final String TITLE_IMAGE_KEY="titleImage";
+    
+    
+    
     public static final String DONT_VALIDATE_ME = "_dont_validate_me";
     public static final String DISABLE_WORKFLOW = "__disable_workflow__";
 
@@ -791,26 +796,30 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 		return (String) map.get(HOST_KEY);
 	}
 
-    private transient com.dotcms.contenttype.model.field.Field titleImageFieldVar = null;
+	private final static String TITLE_IMAGE_NOT_FOUND = "TITLE_IMAGE_NOT_FOUND";
 
+    
     public Optional<com.dotcms.contenttype.model.field.Field> getTitleImage() {
-
-        if (this.titleImageFieldVar != null){
-            return Optional.of(this.titleImageFieldVar);
+        final ContentType type = getContentType();
+        if(type==null || type.fieldMap()==null || TITLE_IMAGE_NOT_FOUND.equals(map.get(TITLE_IMAGE_KEY))) {
+            return Optional.empty();
         }
-        try {
-            this.titleImageFieldVar = this.getContentType().fields().stream().filter(f -> {
+        
+        if(map.get(TITLE_IMAGE_KEY) == null) {
+            String returnVal = TITLE_IMAGE_NOT_FOUND;
+            for(final com.dotcms.contenttype.model.field.Field f : type.fields()) {
                 try {
-                    return (f instanceof BinaryField && UtilMethods.isImage(this.getBinary(f.variable()).toString()));
+                    if(f instanceof BinaryField && UtilMethods.isImage(this.getBinary(f.variable()).toString())){
+                        returnVal=f.variable();
+                        break;
+                    }
                 } catch (Exception e) {
-                    return false;
+                    Logger.debug(this.getClass(), e.getMessage(), e);
                 }
-            }).findFirst().orElse(null);
-
-        } catch (Exception e) {
-            Logger.debug(this.getClass(), e.getMessage(), e);
+            }
+            map.put(TITLE_IMAGE_KEY, returnVal);
         }
-        return this.titleImageFieldVar != null ? Optional.of(this.titleImageFieldVar) : Optional.empty();
+        return Optional.ofNullable(type.fieldMap().get(String.valueOf(map.get(TITLE_IMAGE_KEY))));
     }
 	
 	
