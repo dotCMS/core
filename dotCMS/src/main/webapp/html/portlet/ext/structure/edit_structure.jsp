@@ -822,7 +822,10 @@
 
 					<!-- START Button Row -->
 					<div class="buttonRow" id="editStructureButtonRow">
-						<%if(InodeUtils.isSet(structure.getInode())){ // >0%>
+                        <button dojoType="dijit.form.Button" onClick="cancel" type="button" class="dijitButtonFlat">
+                            <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Cancel")) %>
+                        </button>
+                        <%if(InodeUtils.isSet(structure.getInode())){ // >0%>
 						<% if (hasWritePermissions && !structure.isFixed()) { %>
 						<button dojoType="dijit.form.Button" id="delete" onClick="deleteStructure('<%=structure.getInode()%>');" type="button" class="dijitButtonDanger">
 							<%if(structure.getStructureType() == 3 ){%>
@@ -840,9 +843,6 @@
 							<%}else{ %>
 							<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Save")) %>
 							<%} %>
-						</button>
-						<button dojoType="dijit.form.Button" onClick="cancel" type="button" class="dijitButtonFlat">
-							<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Cancel")) %>
 						</button>
 					</div>
 					<!-- END Button Row -->

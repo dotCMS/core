@@ -198,10 +198,10 @@
 
 <!-- START Button Row -->
 <div class="buttonRow">
+	<button dojoType="dijit.form.Button" onClick="dijit.byId('sample').show();" iconClass="infoIcon"><%= LanguageUtil.get(pageContext, "help") %></button>
 	<button dojoType="dijit.form.Button" type="button" name="load" id="loadButton" onClick="doLoadSubmit()" iconClass="uploadIcon">
 		<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Load-Users")) %>
 	</button>
-	<button dojoType="dijit.form.Button" onClick="dijit.byId('sample').show();" iconClass="infoIcon"><%= LanguageUtil.get(pageContext, "help") %></button>
 </div>
 <!-- END Button Row -->
 
