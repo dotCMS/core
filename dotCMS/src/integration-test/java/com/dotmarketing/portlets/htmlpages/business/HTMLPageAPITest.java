@@ -162,7 +162,7 @@ public class HTMLPageAPITest extends IntegrationTestBase {
         assertEquals(5, conns.size());
 
         for(Contentlet cc : conns) {
-            MultiTreeFactory.saveMultiTree(
+            APILocator.getMultiTreeAPI().saveMultiTree(
               new MultiTree(page.getIdentifier(),container.getIdentifier(),cc.getIdentifier()));
         }
 

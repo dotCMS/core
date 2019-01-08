@@ -139,9 +139,11 @@ abstract class DotDirective extends InputBase {
       
       return false;
     } catch (Exception e) {
-      String msg = "Exception rendering " + this.getName() + " (" + templatePath + ") at "
-          + VelocityException.formatFileString(this);
-      Logger.error(this, msg, e);
+        if(!e.getClass().getSimpleName().equals("ClientAbortException")) {
+            String msg = "Exception rendering " + this.getName() + " (" + templatePath + ") at "
+                    + VelocityException.formatFileString(this);
+            Logger.error(this, msg, e);
+        }
       return false;
     } finally {
       context.popCurrentTemplateName();

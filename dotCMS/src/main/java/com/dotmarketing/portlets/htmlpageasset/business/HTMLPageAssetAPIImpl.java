@@ -286,7 +286,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
     @Override
     public List<IHTMLPage> getHTMLPagesByContainer(final String containerId) throws DotDataException, DotSecurityException {
 
-        final List<MultiTree> pageContents = MultiTreeFactory.getMultiTrees(containerId);
+        final List<MultiTree> pageContents = APILocator.getMultiTreeAPI().getMultiTrees(containerId);
         final ImmutableList.Builder<IHTMLPage> builder = new ImmutableList.Builder<>();
 
         if (UtilMethods.isSet(pageContents)) {
