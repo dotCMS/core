@@ -842,7 +842,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         //Get the contentlet Identifier to gather the related pages
         final Identifier identifier = APILocator.getIdentifierAPI().find(contentlet);
         //Get the identifier's number of the related pages
-        final List<MultiTree> multitrees = MultiTreeFactory.getMultiTreesByChild(identifier.getId());
+        final List<MultiTree> multitrees = APILocator.getMultiTreeAPI().getMultiTreesByChild(identifier.getId());
 
         for(MultiTree multitree : multitrees)
         {
@@ -1031,7 +1031,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             return results;
         }
 
-        final List<MultiTree> trees = MultiTreeFactory.getMultiTreesByChild(id.getId());
+        final List<MultiTree> trees = APILocator.getMultiTreeAPI().getMultiTreesByChild(id.getId());
         for (final MultiTree tree : trees) {
             final IHTMLPage page = loadPageByIdentifier(tree.getParent1(), false, contentlet.getLanguageId(), APILocator.getUserAPI().getSystemUser(), false);
             final Container container = APILocator.getContainerAPI().getWorkingContainerById(tree.getParent2(), APILocator.getUserAPI().getSystemUser(), false);
@@ -1606,7 +1606,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             contentletsVersion.addAll(findAllVersions(APILocator.getIdentifierAPI().find(con.getIdentifier()), user,
                     respectFrontendRoles));
             // Remove page contents (if the content is a Content Page)
-            List<MultiTree> mts = MultiTreeFactory.getMultiTreesByChild(con.getIdentifier());
+            List<MultiTree> mts = APILocator.getMultiTreeAPI().getMultiTreesByChild(con.getIdentifier());
             for (MultiTree mt : mts) {
                 Identifier pageIdent = APILocator.getIdentifierAPI().find(mt.getParent1());
                 if (pageIdent != null && UtilMethods.isSet(pageIdent.getInode())) {
@@ -1619,7 +1619,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                         Logger.warn(this.getClass(), "Page with id:" +pageIdent.getId() +" does not exist" );
                     }
                 }
-                MultiTreeFactory.deleteMultiTree(mt);
+                APILocator.getMultiTreeAPI().deleteMultiTree(mt);
             }
             logContentletActivity(con, "Content Destroyed", user);
         }
@@ -5423,11 +5423,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         if (contentletToCopy.isHTMLPage()) {
             // If the content is an HTML Page then copy page associated contentlets
-            final List<MultiTree> pageContents = MultiTreeFactory
-                    .getMultiTrees(contentletToCopy.getIdentifier());
+            final List<MultiTree> pageContents = APILocator.getMultiTreeAPI().getMultiTrees(contentletToCopy.getIdentifier());
             for (final MultiTree multitree : pageContents) {
 
-                MultiTreeFactory.saveMultiTree(new MultiTree(resultContentlet.getIdentifier(),
+                APILocator.getMultiTreeAPI().saveMultiTree(new MultiTree(resultContentlet.getIdentifier(),
                         multitree.getContainer(),
                         multitree.getContentlet(),
                         MultiTree.LEGACY_RELATION_TYPE,

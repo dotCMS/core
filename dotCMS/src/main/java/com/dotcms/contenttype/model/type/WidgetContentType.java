@@ -18,14 +18,14 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 @Value.Immutable
 public abstract class WidgetContentType extends ContentType implements Expireable{
 	
-	private final String WIDGET_CODE_FIELD_NAME = "Widget Code";
-	private final String WIDGET_CODE_FIELD_VAR = "widgetCode";
-	private final String WIDGET_USAGE_FIELD_NAME = "Widget Usage";
-	private final String WIDGET_USAGE_FIELD_VAR = "widgetUsage";
-	private final String WIDGET_TITLE_FIELD_NAME = "Widget Title";
-	private final String WIDGET_TITLE_FIELD_VAR = "widgetTitle";
-	private final String WIDGET_PRE_EXECUTE_FIELD_NAME = "Widget Pre-Execute";
-	private final String WIDGET_PRE_EXECUTE_FIELD_VAR = "widgetPreexecute";
+	public static final String WIDGET_CODE_FIELD_NAME = "Widget Code";
+	public static final String WIDGET_CODE_FIELD_VAR = "widgetCode";
+	public static final String WIDGET_USAGE_FIELD_NAME = "Widget Usage";
+	public static final String WIDGET_USAGE_FIELD_VAR = "widgetUsage";
+	public static final String WIDGET_TITLE_FIELD_NAME = "Widget Title";
+	public static final String WIDGET_TITLE_FIELD_VAR = "widgetTitle";
+	public static final String WIDGET_PRE_EXECUTE_FIELD_NAME = "Widget Pre-Execute";
+	public static final String WIDGET_PRE_EXECUTE_FIELD_VAR = "widgetPreexecute";
 	public abstract static class Builder implements ContentTypeBuilder {}
 	private static final long serialVersionUID = 1L;
 

@@ -299,7 +299,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 
         for (ContentletSearch page : pages) {
             Set<String> containerId =
-                    MultiTreeFactory.getMultiTrees(page.getIdentifier())
+                    APILocator.getMultiTreeAPI().getMultiTrees(page.getIdentifier())
                     .stream()
                     .map(MultiTree::getContainer)
                     .collect(Collectors.toSet());

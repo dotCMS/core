@@ -961,7 +961,7 @@
 
 			</script>
 
-			<div id="<%= relationJsName %>Dialog" dojoType="dotcms.dijit.form.ContentSelector" 
+			<div jsId="contentSelector" id="<%= relationJsName %>Dialog" dojoType="dotcms.dijit.form.ContentSelector" 
 			     structureInode="<%= targetStructure.getInode() %>" 
 			     relationJsName="<%= relationJsName %>" 
 			     multiple="true" 

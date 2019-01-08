@@ -20,7 +20,7 @@ public class MultiTree implements Serializable {
     private static final long serialVersionUID = 1L;
 
     public static final String LEGACY_RELATION_TYPE = "LEGACY_RELATION_TYPE";
-
+    public static final String LEGACY_INSTANCE_ID = LEGACY_RELATION_TYPE;
     /** identifier field */
     private String parent1;
 
@@ -37,17 +37,17 @@ public class MultiTree implements Serializable {
     private int treeOrder;
 
     /** full constructor */
-    public MultiTree(String htmlPage, String container, String child, String relationType, int treeOrder) {
+    public MultiTree(String htmlPage, String container, String child, String instanceId, int treeOrder) {
         this.parent1 = htmlPage;
         this.parent2 = container;
         this.child = child;
-        this.relationType = (relationType == null) ? LEGACY_RELATION_TYPE : relationType;
+        this.relationType = (instanceId == null) ? LEGACY_INSTANCE_ID : instanceId;
         this.treeOrder = (treeOrder < 0) ? 0 : treeOrder;
     }
 
     /** default constructor */
     public MultiTree() {
-        this(null, null, null, LEGACY_RELATION_TYPE, 0);
+        this(null, null, null, LEGACY_INSTANCE_ID, 0);
     }
     
 
@@ -57,7 +57,7 @@ public class MultiTree implements Serializable {
     
     /** minimal constructor */
     public MultiTree(String htmlPage, String container, String child) {
-        this(htmlPage, container, child, LEGACY_RELATION_TYPE, 0);
+        this(htmlPage, container, child, LEGACY_INSTANCE_ID, 0);
     }
 
     /**
@@ -86,7 +86,7 @@ public class MultiTree implements Serializable {
         return setContentlet(child);
     }
 
-    public java.lang.String getRelationType() {
+    public String getRelationType() {
         return this.relationType;
     }
 
@@ -97,8 +97,14 @@ public class MultiTree implements Serializable {
     public MultiTree setContentlet(final Contentlet contentlet) {
         return this.setContentlet(contentlet.getIdentifier());
     }
-    public MultiTree setRelationType(java.lang.String relationType) {
-        this.relationType = (relationType == null) ? LEGACY_RELATION_TYPE : relationType;
+    
+    @Deprecated
+    public MultiTree setRelationType(String relationType) {
+        return setInstanceId(relationType);
+    }
+    
+    public MultiTree setInstanceId(String relationType) {
+        this.relationType = (relationType == null) ? LEGACY_INSTANCE_ID : relationType;
         return new MultiTree(this);
     }
 

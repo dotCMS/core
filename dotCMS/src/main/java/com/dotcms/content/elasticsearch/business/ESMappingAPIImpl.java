@@ -59,13 +59,11 @@ import java.io.StringWriter;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Optional;
 import java.util.Set;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.time.FastDateFormat;
@@ -196,7 +194,6 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 			Host conHost = APILocator.getHostAPI().find(ident.getHostId(), APILocator.getUserAPI().getSystemUser(), false);
 			
 			contentletMap.put(ESMappingConstants.TITLE, contentlet.getTitle());
-			contentletMap.put(ESMappingConstants.TITLE_IMAGE, contentlet.getTitleImage().orElse(null));
 			contentletMap.put(ESMappingConstants.STRUCTURE_NAME, st.getVelocityVarName()); // marked for DEPRECATION
 			contentletMap.put(ESMappingConstants.CONTENT_TYPE, st.getVelocityVarName());
 			contentletMap.put(ESMappingConstants.STRUCTURE_TYPE, st.getStructureType()); // marked for DEPRECATION

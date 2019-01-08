@@ -44,9 +44,9 @@ dojo.provide("dotcms.dijit.form.RolesFilteringSelect");
 
 dojo.require("dijit._Widget");
 dojo.require("dijit._Templated");
-dojo.require("dojo.data.ItemFileReadStore")
-dojo.require("dijit.tree.TreeStoreModel")
-dojo.require("dijit.Tree")
+dojo.require("dojo.data.ItemFileReadStore");
+dojo.require("dijit.tree.TreeStoreModel");
+dojo.require("dijit.Tree");
 
 dojo.declare("dotcms.dijit.form.RolesFilteringSelect", [dijit._Widget, dijit._Templated], {
 	
@@ -54,15 +54,18 @@ dojo.declare("dotcms.dijit.form.RolesFilteringSelect", [dijit._Widget, dijit._Te
 	templatePath: dojo.moduleUrl("dotcms", "dijit/form/RolesFilteringSelect.html"),
 
 	postCreate: function (elem) {
-		
-		var url = dojo.moduleUrl("dotcms", "dijit/form/RolesFilteringSelectTree.html")
+		var url = dojo.moduleUrl("dotcms",
+			"dijit/form/RolesFilteringSelectTree.html");
 		var templateString = dojo._getText(url);
-		var html = dojo.string.substitute(templateString, { id: this.id })
-        var domObj = dojo._toDom(html);
-		dojo.place(domObj, dojo.body(), 'last')
-		this.rolesTreeContainer = dojo.byId('rolesTreeContainer-' + this.id)
-		this.rolesTreeWrapper = dojo.byId('rolesTreeWrapper-' + this.id)
-		this.rolesTree = dojo.byId('rolesTree-' + this.id)
+		var html = dojo.string.substitute(templateString, {id: this.id});
+		var domObj = dojo._toDom(html);
+		if(null != dojo.byId(domObj.id)){
+           dojo.destroy(domObj.id);
+        }
+        dojo.place(domObj, dojo.body(), 'last');
+		this.rolesTreeContainer = dojo.byId('rolesTreeContainer-' + this.id);
+		this.rolesTreeWrapper = dojo.byId('rolesTreeWrapper-' + this.id);
+		this.rolesTree = dojo.byId('rolesTree-' + this.id);
 		
 		/*
 		 * Ajax call to retrieve tree data 
@@ -72,7 +75,7 @@ dojo.declare("dotcms.dijit.form.RolesFilteringSelect", [dijit._Widget, dijit._Te
 	},
 	
 	postCreateCallback: function(treeData) {
-		
+
 		this.treeData = treeData;
 		
 		var dataModel = { identifier: 'id', label: 'name', items: [ { id: 'root', name: 'Roles', top: true, 
@@ -165,9 +168,10 @@ dojo.declare("dotcms.dijit.form.RolesFilteringSelect", [dijit._Widget, dijit._Te
 		if(query == '') {
 			for(var i = 0; i < this.flatTree.length; i++) {
 				var role = this.flatTree[i];
-				var treeNode = dojo.byId(this.id + '-tree-treeNode-' + this._norm(role.id))
-				if(treeNode)
-					dojo.style(treeNode, { display: ''})
+				var treeNode = dojo.byId(this.id + '-tree-treeNode-' + this._norm(role.id));
+				if(treeNode){
+                    dojo.style(treeNode, { display: ''});
+                }
 			}
 			return;	
 		}
@@ -179,7 +183,7 @@ dojo.declare("dotcms.dijit.form.RolesFilteringSelect", [dijit._Widget, dijit._Te
 			var role = this.flatTree[i];
 			var roleId = this._norm(role.id);
 			
-			var treeNode = dojo.byId(this.id + '-rolesTree-treeNode-' + roleId)
+			var treeNode = dojo.byId(this.id + '-rolesTree-treeNode-' + roleId);
 			if(treeNode) {
 				if(!this._findRole(roleId, branches)) {
 					dojo.style(treeNode, { display: 'none'});
@@ -227,7 +231,7 @@ dojo.declare("dotcms.dijit.form.RolesFilteringSelect", [dijit._Widget, dijit._Te
 	
 	_getRolesFlatUpBranches: function (roles) {
 		
-		var branches = []
+		var branches = [];
 		
 		for(var i = 0; i < roles.length; i++) {
 			var role = roles[i];
@@ -295,4 +299,4 @@ dojo.declare("dotcms.dijit.form.RolesFilteringSelect", [dijit._Widget, dijit._Te
 		return true;		
 	}
 	
-})
+});

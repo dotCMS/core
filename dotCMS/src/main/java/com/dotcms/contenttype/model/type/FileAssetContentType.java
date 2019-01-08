@@ -25,6 +25,12 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 @Value.Immutable
 public abstract class FileAssetContentType extends ContentType implements UrlMapable, Expireable{
 
+	public static final String FILEASSET_SITE_OR_FOLDER_FIELD_VAR = "hostFolder";
+	public static final String FILEASSET_FILEASSET_FIELD_VAR = "fileAsset";
+	public static final String FILEASSET_TITLE_FIELD_VAR = "title";
+	public static final String FILEASSET_FILE_NAME_FIELD_VAR = "fileName";
+	public static final String FILEASSET_METADATA_FIELD_VAR = "metaData";
+	public static final String FILEASSET_DESCRIPTION_FIELD_VAR = "description";
 
 	
 	private static final long serialVersionUID = 1L;
@@ -43,7 +49,7 @@ public abstract class FileAssetContentType extends ContentType implements UrlMap
 				ImmutableHostFolderField.builder()
 				.name("Site or Folder")
 				.dataType(DataTypes.SYSTEM)
-				.variable("hostFolder")
+				.variable(FILEASSET_SITE_OR_FOLDER_FIELD_VAR)
 				.sortOrder(fields.size())
 				.required(true)
 				.fixed(true)
@@ -55,7 +61,7 @@ public abstract class FileAssetContentType extends ContentType implements UrlMap
 		fields.add(
 				ImmutableBinaryField.builder()
 				.name("File Asset")
-				.variable("fileAsset")
+				.variable(FILEASSET_FILEASSET_FIELD_VAR)
 				.sortOrder(fields.size())
 				.fixed(true)
 				.required(true)
@@ -66,7 +72,7 @@ public abstract class FileAssetContentType extends ContentType implements UrlMap
 				ImmutableTextField.builder()
 				.name("Title")
 				.dataType(DataTypes.TEXT)
-				.variable("title")
+				.variable(FILEASSET_TITLE_FIELD_VAR)
 				.fixed(true)
 				.indexed(true)
 				.searchable(true)
@@ -79,7 +85,7 @@ public abstract class FileAssetContentType extends ContentType implements UrlMap
 				ImmutableTextField.builder()
 				.name("File Name")
 				.dataType(DataTypes.TEXT)
-				.variable("fileName")
+				.variable(FILEASSET_FILE_NAME_FIELD_VAR)
 				.fixed(true)
 				.indexed(true)
 				.searchable(true)
@@ -100,7 +106,7 @@ public abstract class FileAssetContentType extends ContentType implements UrlMap
 				ImmutableKeyValueField.builder()
 				.name("Metadata")
 				.dataType(DataTypes.LONG_TEXT)
-				.variable("metaData")
+				.variable(FILEASSET_METADATA_FIELD_VAR)
 				.fixed(true)
 				.indexed(true)
 				.readOnly(true)
@@ -137,7 +143,7 @@ public abstract class FileAssetContentType extends ContentType implements UrlMap
 				ImmutableTextAreaField.builder()
 				.name("Description")
 				.dataType(DataTypes.LONG_TEXT)
-				.variable("description")
+				.variable(FILEASSET_DESCRIPTION_FIELD_VAR)
 				.fixed(true)
 				.indexed(true)
 				.sortOrder(fields.size())

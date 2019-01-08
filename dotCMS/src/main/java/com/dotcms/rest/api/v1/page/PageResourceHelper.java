@@ -212,7 +212,7 @@ public class PageResourceHelper implements Serializable {
         final Table<String, String, Set<String>> pageContents = multiTreeAPI.getPageMultiTrees(page, false);
 
         final String pageIdentifier = page.getIdentifier();
-        MultiTreeFactory.deleteMultiTreeByParent(pageIdentifier);
+        APILocator.getMultiTreeAPI().deleteMultiTreeByParent(pageIdentifier);
         final List<MultiTree> multiTrees = new ArrayList<>();
 
         for (final String containerId : pageContents.rowKeySet()) {

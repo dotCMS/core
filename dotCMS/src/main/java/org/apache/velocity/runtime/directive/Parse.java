@@ -284,10 +284,13 @@ public class Parse extends InputBase
         }
         catch ( Exception e )
         {
-            String msg = "Exception rendering #parse(" + arg + ") at " +
-                    VelocityException.formatFileString(this);
-            Logger.error(this,msg, e);
-            throw new VelocityException(msg, e);
+            if(!e.getClass().getSimpleName().equals("ClientAbortException")) {
+                String msg = "Exception rendering #parse(" + arg + ") at " +
+                        VelocityException.formatFileString(this);
+                Logger.error(this,msg, e);
+                throw new VelocityException(msg, e);
+            }
+            
         }
         finally
         {

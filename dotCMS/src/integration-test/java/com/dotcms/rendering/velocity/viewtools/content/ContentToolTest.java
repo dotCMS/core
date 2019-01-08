@@ -123,6 +123,179 @@ public class ContentToolTest extends IntegrationTestBase {
     }
 
     @Test
+    public void testPullRelated() throws DotDataException, DotSecurityException {
+
+        ContentType parentContentType = null;
+        ContentType childContentType = null;
+
+        final long time = System.currentTimeMillis();
+
+        try {
+            //creates parent content type
+            parentContentType = createAndSaveSimpleContentType("parentContentType" + time);
+
+            //creates child content type
+            childContentType = createAndSaveSimpleContentType("childContentType" + time);
+
+            Field field = createField(childContentType.variable(), parentContentType.id(),
+                    childContentType.variable(),
+                    String.valueOf(RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal()));
+
+            //One side of the relationship is set parentContentType --> childContentType
+            field = fieldAPI.save(field, user);
+
+            //creates a new parent contentlet
+            ContentletDataGen contentletDataGen = new ContentletDataGen(parentContentType.id());
+            final Contentlet parentContenlet = contentletDataGen.languageId(defaultLanguage.getId())
+                    .nextPersisted();
+
+            //creates a new child contentlet
+            contentletDataGen = new ContentletDataGen(childContentType.id());
+            final Contentlet childContenlet = contentletDataGen.languageId(defaultLanguage.getId())
+                    .nextPersisted();
+
+            final String fullFieldVar =
+                    parentContentType.variable() + StringPool.PERIOD + field.variable();
+
+            final Relationship relationship = relationshipAPI.byTypeValue(fullFieldVar);
+
+            //relates parent contentlet with the child contentlet
+            contentletAPI.relateContent(parentContenlet, relationship,
+                    CollectionsUtils.list(childContenlet), user, false);
+
+            final ContentTool contentTool = getContentTool(defaultLanguage.getId());
+
+            final List<ContentMap> result = contentTool
+                    .pullRelated(relationship.getRelationTypeValue(),
+                            parentContenlet.getIdentifier(), "+working:true", false, 1, null);
+
+            assertNotNull(result);
+            assertEquals(1, result.size());
+            assertEquals(childContenlet.getIdentifier(),result.get(0).getContentObject().getIdentifier());
+
+        } finally {
+
+            //clean up environment
+            if (parentContentType != null && parentContentType.id() != null) {
+                contentTypeAPI.delete(parentContentType);
+            }
+
+            if (childContentType != null && childContentType.id() != null) {
+                contentTypeAPI.delete(childContentType);
+            }
+        }
+    }
+
+    @Test
+    public void testPullRelatedField_success() throws DotDataException, DotSecurityException {
+
+        ContentType parentContentType = null;
+        ContentType childContentType = null;
+
+        final long time = System.currentTimeMillis();
+
+        try {
+            //creates parent content type
+            parentContentType = createAndSaveSimpleContentType("parentContentType" + time);
+
+            //creates child content type
+            childContentType = createAndSaveSimpleContentType("childContentType" + time);
+
+            Field field = createField(childContentType.variable(), parentContentType.id(),
+                    childContentType.variable(),
+                    String.valueOf(RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal()));
+
+            //One side of the relationship is set parentContentType --> childContentType
+            field = fieldAPI.save(field, user);
+
+            //creates a new parent contentlet
+            ContentletDataGen contentletDataGen = new ContentletDataGen(parentContentType.id());
+            final Contentlet parentContenlet = contentletDataGen.languageId(defaultLanguage.getId())
+                    .nextPersisted();
+
+            //creates a new child contentlet
+            contentletDataGen = new ContentletDataGen(childContentType.id());
+            final Contentlet childContenlet = contentletDataGen.languageId(defaultLanguage.getId())
+                    .nextPersisted();
+
+            final String fullFieldVar =
+                    parentContentType.variable() + StringPool.PERIOD + field.variable();
+
+            final Relationship relationship = relationshipAPI.byTypeValue(fullFieldVar);
+
+            //relates parent contentlet with the child contentlet
+            contentletAPI.relateContent(parentContenlet, relationship,
+                    CollectionsUtils.list(childContenlet), user, false);
+
+            final ContentTool contentTool = getContentTool(defaultLanguage.getId());
+
+            final List<ContentMap> result = contentTool
+                    .pullRelatedField(
+                            parentContenlet.getIdentifier(), fullFieldVar,"+working:true");
+
+            assertNotNull(result);
+            assertEquals(1, result.size());
+            assertEquals(childContenlet.getIdentifier(),result.get(0).getContentObject().getIdentifier());
+
+        } finally {
+
+            //clean up environment
+            if (parentContentType != null && parentContentType.id() != null) {
+                contentTypeAPI.delete(parentContentType);
+            }
+
+            if (childContentType != null && childContentType.id() != null) {
+                contentTypeAPI.delete(childContentType);
+            }
+        }
+    }
+
+    @Test(expected = RuntimeException.class)
+    public void testPullRelatedField_whenInvalidFieldIsSent_throwsAnException()
+            throws DotDataException, DotSecurityException {
+        ContentType parentContentType = null;
+        ContentType childContentType = null;
+
+        final long time = System.currentTimeMillis();
+
+        try {
+            //creates parent content type
+            parentContentType = createAndSaveSimpleContentType("parentContentType" + time);
+
+            //creates child content type
+            childContentType = createAndSaveSimpleContentType("childContentType" + time);
+
+            Field field = createField(childContentType.variable(), parentContentType.id(),
+                    childContentType.variable(),
+                    String.valueOf(RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal()));
+
+            //One side of the relationship is set parentContentType --> childContentType
+            field = fieldAPI.save(field, user);
+
+            //creates a new parent contentlet
+            ContentletDataGen contentletDataGen = new ContentletDataGen(parentContentType.id());
+            final Contentlet parentContenlet = contentletDataGen.languageId(defaultLanguage.getId())
+                    .nextPersisted();
+
+            final ContentTool contentTool = getContentTool(defaultLanguage.getId());
+
+            contentTool.pullRelatedField(
+                            parentContenlet.getIdentifier(), field.variable(),"+working:true");
+
+        } finally {
+
+            //clean up environment
+            if (parentContentType != null && parentContentType.id() != null) {
+                contentTypeAPI.delete(parentContentType);
+            }
+
+            if (childContentType != null && childContentType.id() != null) {
+                contentTypeAPI.delete(childContentType);
+            }
+        }
+    }
+
+    @Test
     public void testPullRelatedContent_whenRelationshipFieldExists_shouldReturnContentMapList()
             throws DotSecurityException, DotDataException {
 
@@ -133,24 +306,14 @@ public class ContentToolTest extends IntegrationTestBase {
 
         try {
             //creates parent content type
-            parentContentType = contentTypeAPI
-                    .save(ContentTypeBuilder.builder(SimpleContentType.class).folder(
-                            FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST)
-                            .name("parentContentType" + time)
-                            .owner(user.getUserId()).build());
+            parentContentType = createAndSaveSimpleContentType("parentContentType" + time);
 
             //creates child content type
-            childContentType = contentTypeAPI
-                    .save(ContentTypeBuilder.builder(SimpleContentType.class).folder(
-                            FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST)
-                            .name("childContentType" + time)
-                            .owner(user.getUserId()).build());
+            childContentType = createAndSaveSimpleContentType("childContentType" + time);
 
-            Field field = FieldBuilder.builder(RelationshipField.class)
-                    .name(childContentType.variable())
-                    .contentTypeId(parentContentType.id()).values(String.valueOf(
-                            RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal()))
-                    .relationType(childContentType.variable()).build();
+            Field field = createField(childContentType.variable(), parentContentType.id(),
+                    childContentType.variable(),
+                    String.valueOf(RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal()));
 
             //One side of the relationship is set parentContentType --> childContentType
             field = fieldAPI.save(field, user);
@@ -202,6 +365,19 @@ public class ContentToolTest extends IntegrationTestBase {
                 contentTypeAPI.delete(childContentType);
             }
         }
+    }
+
+    private ContentType createAndSaveSimpleContentType(final String name) throws DotSecurityException, DotDataException {
+        return contentTypeAPI.save(ContentTypeBuilder.builder(SimpleContentType.class).folder(
+                FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST).name(name)
+                .owner(user.getUserId()).build());
+    }
+
+
+    private Field createField(String fieldName, String contentTypeId, String relationType, String cardinality){
+        return FieldBuilder.builder(RelationshipField.class).name(fieldName)
+                .contentTypeId(contentTypeId).values(cardinality)
+                .relationType(relationType).required(false).build();
     }
 
     private ContentTool getContentTool(final long languageId){
