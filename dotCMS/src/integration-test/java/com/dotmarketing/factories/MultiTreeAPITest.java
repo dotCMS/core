@@ -1,26 +1,41 @@
 package com.dotmarketing.factories;
 
-import com.dotcms.IntegrationTestBase;
-import com.dotcms.util.IntegrationTestInitService;
-
-import com.dotmarketing.beans.MultiTree;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.portlets.containers.model.Container;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
-import com.dotmarketing.startup.runonce.Task04315UpdateMultiTreePK;
+import static com.dotcms.util.CollectionsUtils.list;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import static com.dotcms.util.CollectionsUtils.list;
-import static org.junit.Assert.*;
-import static org.junit.Assert.assertEquals;
+import com.dotcms.IntegrationTestBase;
+import com.dotcms.datagen.ContainerDataGen;
+import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.FolderDataGen;
+import com.dotcms.datagen.HTMLPageDataGen;
+import com.dotcms.datagen.StructureDataGen;
+import com.dotcms.datagen.TemplateDataGen;
+import com.dotcms.util.IntegrationTestInitService;
+import com.dotmarketing.beans.MultiTree;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.startup.runonce.Task04315UpdateMultiTreePK;
+import com.google.common.collect.Table;
 
-public class MultiTreeFactoryTest extends IntegrationTestBase {
+public class MultiTreeAPITest extends IntegrationTestBase {
     
 
     private static final String CONTAINER = "CONTAINER";
@@ -51,9 +66,9 @@ public class MultiTreeFactoryTest extends IntegrationTestBase {
                         .setHtmlPage(PAGE)
                         .setContentlet(CONTENTLET + j)
                         .setTreeOrder(j)
-                        .setRelationType(RELATION_TYPE + i);
+                        .setInstanceId(RELATION_TYPE + i);
 
-                MultiTreeFactory.saveMultiTree(mt);
+                APILocator.getMultiTreeAPI().saveMultiTree(mt);
             }
         }
 
@@ -63,13 +78,13 @@ public class MultiTreeFactoryTest extends IntegrationTestBase {
     public  void testDeletes() throws Exception {
         deleteInitialData();
         buildInitalData() ;
-        List<MultiTree> all = MultiTreeFactory.getAllMultiTrees();
+        List<MultiTree> all = APILocator.getMultiTreeAPI().getAllMultiTrees();
         
-        List<MultiTree> list = MultiTreeFactory.getMultiTrees(PAGE);
+        List<MultiTree> list = APILocator.getMultiTreeAPI().getMultiTrees(PAGE);
 
         deleteInitialData();
-        assertTrue("multiTree deletes", MultiTreeFactory.getAllMultiTrees().size() < all.size() );
-        assertTrue("multiTree deletes", MultiTreeFactory.getAllMultiTrees().size() == all.size() - list.size() );
+        assertTrue("multiTree deletes", APILocator.getMultiTreeAPI().getAllMultiTrees().size() < all.size() );
+        assertTrue("multiTree deletes", APILocator.getMultiTreeAPI().getAllMultiTrees().size() == all.size() - list.size() );
     }
     
     
@@ -77,13 +92,13 @@ public class MultiTreeFactoryTest extends IntegrationTestBase {
     public  void testReorder() throws Exception {
         deleteInitialData();
         buildInitalData() ;
-        MultiTree tree = MultiTreeFactory.getMultiTree(PAGE, CONTAINER+0, CONTENTLET +0, RELATION_TYPE+0);
+        MultiTree tree = APILocator.getMultiTreeAPI().getMultiTree(PAGE, CONTAINER+0, CONTENTLET +0, RELATION_TYPE+0);
         assertTrue("multiTree reorders", tree.getTreeOrder()==0 );
-        MultiTreeFactory.saveMultiTree(tree.setTreeOrder(7));
-        tree = MultiTreeFactory.getMultiTree(PAGE, CONTAINER+ 0, CONTENTLET + 0, RELATION_TYPE+0);
+        APILocator.getMultiTreeAPI().saveMultiTree(tree.setTreeOrder(7));
+        tree = APILocator.getMultiTreeAPI().getMultiTree(PAGE, CONTAINER+ 0, CONTENTLET + 0, RELATION_TYPE+0);
         assertTrue("multiTree reorders", tree.getTreeOrder()==4 );
-        MultiTreeFactory.saveMultiTree(tree.setTreeOrder(2));
-        List<MultiTree> list = MultiTreeFactory.getMultiTrees(PAGE, CONTAINER+0, RELATION_TYPE+0);
+        APILocator.getMultiTreeAPI().saveMultiTree(tree.setTreeOrder(2));
+        List<MultiTree> list = APILocator.getMultiTreeAPI().getMultiTrees(PAGE, CONTAINER+0, RELATION_TYPE+0);
         assertTrue("multiTree reorders", list.get(2).equals(tree));
 
     }
@@ -93,7 +108,7 @@ public class MultiTreeFactoryTest extends IntegrationTestBase {
         deleteInitialData();
         buildInitalData() ;
         
-        List<MultiTree> list = MultiTreeFactory.getMultiTreesByChild(CONTENTLET + "0");
+        List<MultiTree> list = APILocator.getMultiTreeAPI().getMultiTreesByChild(CONTENTLET + "0");
         
         assertTrue("getByChild returns all results", list.size() == runs );
         
@@ -106,10 +121,10 @@ public class MultiTreeFactoryTest extends IntegrationTestBase {
     @AfterClass
     public static void deleteInitialData() throws Exception {
 
-        List<MultiTree> list = MultiTreeFactory.getMultiTrees(PAGE);
+        List<MultiTree> list = APILocator.getMultiTreeAPI().getMultiTrees(PAGE);
 
         for(MultiTree tree : list) {
-            MultiTreeFactory.deleteMultiTree(tree);
+            APILocator.getMultiTreeAPI().deleteMultiTree(tree);
         }
 
     }
@@ -125,11 +140,11 @@ public class MultiTreeFactoryTest extends IntegrationTestBase {
                 .setHtmlPage(PAGE)
                 .setContentlet("NEW_ONE")
                 .setTreeOrder(0)
-                .setRelationType(RELATION_TYPE + 0);
+                .setInstanceId(RELATION_TYPE + 0);
         
-        MultiTreeFactory.saveMultiTree(mt);
+        APILocator.getMultiTreeAPI().saveMultiTree(mt);
         
-        MultiTree mt2 = MultiTreeFactory.getMultiTree(mt.getHtmlPage(), mt.getContainer(), mt.getContentlet(), mt.getRelationType());
+        MultiTree mt2 = APILocator.getMultiTreeAPI().getMultiTree(mt.getHtmlPage(), mt.getContainer(), mt.getContentlet(), mt.getRelationType());
         assertTrue("multiTree save and get equals", mt.equals(mt2));
     }
     
@@ -147,37 +162,108 @@ public class MultiTreeFactoryTest extends IntegrationTestBase {
 
         
         MultiTree multiTree = new MultiTree();
-        multiTree.setParent1( PAGE+time);
-        multiTree.setParent2( CONTAINER +time);
-        multiTree.setChild( CONTENTLET +time);
+        multiTree.setHtmlPage( PAGE+time);
+        multiTree.setContainer( CONTAINER +time);
+        multiTree.setContentlet( CONTENTLET +time);
         multiTree.setTreeOrder( 1 );
-        MultiTreeFactory.saveMultiTree( multiTree );
+        APILocator.getMultiTreeAPI().saveMultiTree( multiTree );
         
         
-        MultiTree mt2 = MultiTreeFactory.getMultiTree(PAGE+time, CONTAINER +time, CONTENTLET +time, Container.LEGACY_RELATION_TYPE);
+        MultiTree mt2 = APILocator.getMultiTreeAPI().getMultiTree(PAGE+time, CONTAINER +time, CONTENTLET +time, Container.LEGACY_RELATION_TYPE);
         
         assertTrue("multiTree save without relationtype and get equals", multiTree.equals(mt2));
     }
     
     
     @Test
-    public void testGetMultiTreeIdentifierIdentifierIdentifierString() throws Exception {
+    public void testGetPageMultiTrees() throws Exception {
+
+
+        final Template template = new TemplateDataGen().nextPersisted();
+        final Folder folder = new FolderDataGen().nextPersisted();
+        final HTMLPageAsset page = new HTMLPageDataGen(folder, template).nextPersisted();
+        final Structure structure = new StructureDataGen().nextPersisted();
+        final Container container = new ContainerDataGen().withStructure(structure, "").nextPersisted();
+        final Contentlet content = new ContentletDataGen(structure.getInode()).nextPersisted();
+
+        
+        try {
+            MultiTree multiTree = new MultiTree();
+            multiTree.setHtmlPage(page);
+            multiTree.setContainer(container);
+            multiTree.setContentlet(content);
+            multiTree.setInstanceId("abc");
+            multiTree.setTreeOrder( 1 );
+            
+            //delete out any previous relation
+            APILocator.getMultiTreeAPI().deleteMultiTree(multiTree);
+            CacheLocator.getMultiTreeCache().clearCache();
+            Table<String, String, Set<String>> trees= APILocator.getMultiTreeAPI().getPageMultiTrees(page, false);
+            
+            Table<String, String, Set<String>> cachedTrees= APILocator.getMultiTreeAPI().getPageMultiTrees(page, false);
+            
+            // should be the same object coming from in memory cache
+            assert(trees==cachedTrees);
+            
+            CacheLocator.getMultiTreeCache().removePageMultiTrees(page.getIdentifier());
+            
+            
+            trees= APILocator.getMultiTreeAPI().getPageMultiTrees(page, false);
+            
+            // cache flush forced a cache reload, so different objects in memory
+            assert(trees!=cachedTrees);
+            
+            // but the objects should contain the same data
+            assert(trees.equals(cachedTrees));
+    
+            // there is no container entry 
+            assert(!(cachedTrees.rowKeySet().contains(container.getIdentifier())));
+    
+    
+            // check cache flush on save
+            APILocator.getMultiTreeAPI().saveMultiTree( multiTree );
+            Table<String, String, Set<String>> addedTrees= APILocator.getMultiTreeAPI().getPageMultiTrees(page, false);
+            assert(cachedTrees!=addedTrees);
+            
+            // did we get a new object from the cache?
+            assert(!(cachedTrees.equals(addedTrees)));
+            assert(addedTrees.rowKeySet().contains(container.getIdentifier()));
+            
+            // check cache flush on delete
+            APILocator.getMultiTreeAPI().deleteMultiTree(multiTree );
+            Table<String, String, Set<String>> deletedTrees= APILocator.getMultiTreeAPI().getPageMultiTrees(page, false);
+            
+            // did we get a new object from the cache?
+            assert(!(addedTrees.equals(deletedTrees)));
+            assert(!(deletedTrees.rowKeySet().contains(container.getIdentifier())));
+            
+        }
+        finally {
+            ContentletDataGen.remove(content);
+            ContainerDataGen.remove(container);
+            StructureDataGen.remove(structure);
+            HTMLPageDataGen.remove(page);
+            FolderDataGen.remove(folder);
+            TemplateDataGen.remove(template);
+        }
 
         
         
         
     }
 
-    @Test
-    public void testGetMultiTreeInode() throws Exception {
 
-    }
 
     @Test
     public void testMultiTreeForContainerStructure() throws Exception {
 
-        //Search for an existing Container Structure (contentlet)
-        final Contentlet contentlet = APILocator.getContentletAPIImpl().findAllContent(0,1).get(0);
+        //THIS USES THE INDEX WHICH IS SOMETIMES NOT THERE LOCALLY
+        //final Contentlet contentlet = APILocator.getContentletAPIImpl().findAllContent(0,1).get(0);
+        
+        Map<String, Object> map = new DotConnect().setSQL("select * from contentlet_version_info").setMaxRows(1).loadObjectResults().get(0);
+        final Contentlet contentlet = APILocator.getContentletAPIImpl().find(map.get("working_inode").toString(), APILocator.systemUser(), false);
+        
+        
 
         //Create a MultiTree and relate it to that Contentlet
         MultiTree mt = new MultiTree()
@@ -185,45 +271,25 @@ public class MultiTreeFactoryTest extends IntegrationTestBase {
                 .setHtmlPage(PAGE)
                 .setContentlet(contentlet.getIdentifier())
                 .setTreeOrder(1)
-                .setRelationType(RELATION_TYPE);
-        MultiTreeFactory.saveMultiTree( mt );
+                .setInstanceId(RELATION_TYPE);
+        APILocator.getMultiTreeAPI().saveMultiTree( mt );
 
 
         //Search multitrees for the Contentlet, verify its not empty
-        List<MultiTree> multiTrees = MultiTreeFactory.getContainerStructureMultiTree(CONTAINER, contentlet.getStructureInode());
+        List<MultiTree> multiTrees = APILocator.getMultiTreeAPI().getContainerStructureMultiTree(CONTAINER, contentlet.getStructureInode());
         assertNotNull(multiTrees);
         assertFalse(multiTrees.isEmpty());
 
         //Delete the multitree
-        MultiTreeFactory.deleteMultiTree(mt);
+        APILocator.getMultiTreeAPI().deleteMultiTree(mt);
 
         //Search again the relationship should be gone.
-        multiTrees = MultiTreeFactory.getContainerStructureMultiTree(CONTAINER, contentlet.getStructureInode());
+        multiTrees = APILocator.getMultiTreeAPI().getContainerStructureMultiTree(CONTAINER, contentlet.getStructureInode());
         assertTrue(multiTrees.isEmpty());
 
-        MultiTreeFactory.deleteMultiTree(mt);
+        APILocator.getMultiTreeAPI().deleteMultiTree(mt);
     }
 
-    @Test
-    public void testUpdateMultiTree_GivenSomeMultiTreeWithRelationType_ShouldUpdateRelationType() throws Exception {
-        final String NEW_RELATION_TYPE = "New Relation Type";
-        final String containerId = CONTAINER + "0";
-        final String relationType = RELATION_TYPE + "0";
-
-        MultiTreeFactory.updateMultiTree(PAGE, containerId, relationType, NEW_RELATION_TYPE);
-        List<MultiTree> multiTrees = MultiTreeFactory.getMultiTrees(PAGE, containerId, relationType);
-
-        assertTrue(multiTrees.isEmpty());
-
-        List<MultiTree> multiTreesNewRelationType = MultiTreeFactory.getMultiTrees(PAGE, containerId, NEW_RELATION_TYPE);
-
-        assertFalse(multiTreesNewRelationType.isEmpty());
-        assertTrue(multiTreesNewRelationType.size() == 5);
-
-        for (MultiTree multiTree : multiTreesNewRelationType) {
-            assertEquals(NEW_RELATION_TYPE, multiTree.getRelationType());
-        }
-    }
 
 
     @Test
@@ -234,31 +300,31 @@ public class MultiTreeFactoryTest extends IntegrationTestBase {
 
         final String parent1 = PAGE + time;
 
-        MultiTree multiTree1 = new MultiTree();
-        multiTree1.setParent1( parent1 );
-        multiTree1.setParent2( CONTAINER +time);
-        multiTree1.setChild( CONTENTLET +time);
-        multiTree1.setRelationType("1");
-        multiTree1.setTreeOrder( 1 );
+        MultiTree multiTree1 = new MultiTree()
+        .setHtmlPage(parent1 )
+        .setContainer( CONTAINER +time)
+        .setContentlet( CONTENTLET +time)
+        .setInstanceId("1")
+        .setTreeOrder( 1 );
 
         long time2 = time + 1;
 
-        MultiTree multiTree2 = new MultiTree();
-        multiTree2.setParent1( parent1 );
-        multiTree2.setParent2( CONTAINER + time2);
-        multiTree2.setChild( CONTENTLET + time2);
-        multiTree2.setRelationType("1");
-        multiTree2.setTreeOrder( 2 );
+        MultiTree multiTree2 = new MultiTree()
+        .setHtmlPage( parent1 )
+        .setContainer( CONTAINER + time2)
+        .setContentlet( CONTENTLET + time2)
+        .setInstanceId("1")
+        .setTreeOrder( 2 );
 
-        MultiTreeFactory.saveMultiTrees( parent1, list(multiTree1, multiTree2) );
+        APILocator.getMultiTreeAPI().saveMultiTrees( parent1, list(multiTree1, multiTree2) );
 
-        List<MultiTree> multiTrees = MultiTreeFactory.getMultiTrees(parent1);
+        List<MultiTree> multiTrees = APILocator.getMultiTreeAPI().getMultiTrees(parent1);
 
         assertEquals(2, multiTrees.size());
 
-        MultiTree mtFromDB1 = MultiTreeFactory.getMultiTree(parent1, multiTree1.getContainer(),
+        MultiTree mtFromDB1 = APILocator.getMultiTreeAPI().getMultiTree(parent1, multiTree1.getContainer(),
                 multiTree1.getContentlet(), multiTree1.getRelationType());
-        MultiTree mtFromDB2 = MultiTreeFactory.getMultiTree(parent1, multiTree2.getContainer(),
+        MultiTree mtFromDB2 = APILocator.getMultiTreeAPI().getMultiTree(parent1, multiTree2.getContainer(),
                 multiTree2.getContentlet(), multiTree2.getRelationType());
 
 
@@ -278,13 +344,13 @@ public class MultiTreeFactoryTest extends IntegrationTestBase {
         multiTree1.setHtmlPage( parent1 );
         multiTree1.setContainer( CONTAINER +time);
         multiTree1.setContentlet( CONTENTLET +time);
-        multiTree1.setRelationType("1");
+        multiTree1.setInstanceId("1");
         multiTree1.setTreeOrder( 1 );
 
-        MultiTreeFactory.saveMultiTrees( parent1, list(multiTree1) );
-        MultiTreeFactory.saveMultiTrees( parent1, list() );
+        APILocator.getMultiTreeAPI().saveMultiTrees( parent1, list(multiTree1) );
+        APILocator.getMultiTreeAPI().saveMultiTrees( parent1, list() );
 
-        List<MultiTree> multiTrees = MultiTreeFactory.getMultiTrees(parent1);
+        List<MultiTree> multiTrees = APILocator.getMultiTreeAPI().getMultiTrees(parent1);
 
         assertEquals(0, multiTrees.size());
     }
@@ -301,31 +367,31 @@ public class MultiTreeFactoryTest extends IntegrationTestBase {
         multiTree1.setHtmlPage( parent1 );
         multiTree1.setContainer( CONTAINER +time);
         multiTree1.setContentlet( CONTENTLET +time);
-        multiTree1.setRelationType("1");
+        multiTree1.setInstanceId("1");
         multiTree1.setTreeOrder( 1 );
 
         long time2 = time + 1;
 
         MultiTree multiTree2 = new MultiTree();
-        multiTree2.setParent1( parent1 );
-        multiTree2.setParent2( CONTAINER + time2);
-        multiTree2.setChild( CONTENTLET + time2);
-        multiTree2.setRelationType("1");
+        multiTree2.setHtmlPage( parent1 );
+        multiTree2.setContainer( CONTAINER + time2);
+        multiTree2.setContentlet( CONTENTLET + time2);
+        multiTree2.setInstanceId("1");
         multiTree2.setTreeOrder( 2 );
 
         long time3 = time + 2;
 
         MultiTree multiTree3 = new MultiTree();
-        multiTree3.setParent1( parent1 );
-        multiTree3.setParent2( CONTAINER + time3);
-        multiTree3.setChild( CONTENTLET + time3);
-        multiTree3.setRelationType("-1");
+        multiTree3.setHtmlPage( parent1 );
+        multiTree3.setContainer( CONTAINER + time3);
+        multiTree3.setContentlet( CONTENTLET + time3);
+        multiTree3.setInstanceId("-1");
         multiTree3.setTreeOrder( 3 );
 
-        MultiTreeFactory.saveMultiTrees( parent1, list(multiTree1, multiTree2, multiTree3) );
-        MultiTreeFactory.saveMultiTrees( parent1, list(multiTree1) );
+        APILocator.getMultiTreeAPI().saveMultiTrees( parent1, list(multiTree1, multiTree2, multiTree3) );
+        APILocator.getMultiTreeAPI().saveMultiTrees( parent1, list(multiTree1) );
 
-        List<MultiTree> multiTrees = MultiTreeFactory.getMultiTrees(parent1);
+        List<MultiTree> multiTrees = APILocator.getMultiTreeAPI().getMultiTrees(parent1);
 
         assertEquals(2, multiTrees.size());
         assertTrue(multiTrees.contains(multiTree1));
