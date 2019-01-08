@@ -1,5 +1,5 @@
 <%@page import="org.apache.velocity.context.Context"%>
-<%@page import="com.dotcms.rendering.velocity.util.VelocityUtil"%>
+
 <%@page import="com.dotcms.contenttype.model.field.WysiwygField"%>
 <%@page import="com.dotmarketing.portlets.contentlet.model.Contentlet"%>
 
@@ -332,26 +332,26 @@ var cmsfile=null;
 				!confirm('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.contentlet.switch.wysiwyg.view")) %>')) {
 				return;
 			}
-
-		    <%final Context ctx = VelocityUtil.getWebContext(request, response);%>
-		    <%ctx.put("content", contentlet);%>
-		    <%ctx.put("contentlet", contentlet);%>
-			<%for(com.dotcms.contenttype.model.field.Field field : contentlet.getContentType().fields()){%>
-			     <%if(field instanceof WysiwygField && field.fieldVariablesMap().containsKey("tinymceprops")){%>
-				     var <%=field.variable()%>tinyPropOverride={};
-				     try{
-				    	   <%ctx.put("field", field);%>
-				    	  <%=field.variable()%>tinyPropOverride =  <%= VelocityUtil.getInstance().parseVelocity(field.fieldVariablesMap().get("tinymceprops").value(),ctx) %>;
-				     }
-				     catch(e){
-				    	 showDotCMSErrorMessage("Enable to initialize WYSIWYG " + e.message);
-				     }
-
-				 <%}else{%>
-				         var <%=field.variable()%>tinyPropOverride =  tinyMCEProps;
-			     <%}%>
-			<%}%>
+		    <%if(request.getAttribute("contentlet")!=null){%>
+			    <%final Context ctx = com.dotcms.rendering.velocity.util.VelocityUtil.getInstance().getWebContext(request, response);%>
+			    <%ctx.put("content", request.getAttribute("contentlet"));%>
+			    <%ctx.put("contentlet", request.getAttribute("contentlet"));%>
+				<%for(com.dotcms.contenttype.model.field.Field field : ((Contentlet)request.getAttribute("contentlet")).getContentType().fields()){%>
+				     <%if(field instanceof WysiwygField && field.fieldVariablesMap().containsKey("tinymceprops")){%>
+					     var <%=field.variable()%>tinyPropOverride={};
+					     try{
+					    	   <%ctx.put("field", field);%>
+					    	  <%=field.variable()%>tinyPropOverride =  <%= com.dotcms.rendering.velocity.util.VelocityUtil.getInstance().parseVelocity(field.fieldVariablesMap().get("tinymceprops").value(),ctx) %>;
+					     }
+					     catch(e){
+					    	 showDotCMSErrorMessage("Enable to initialize WYSIWYG " + e.message);
+					     }
 	
+					 <%}else{%>
+					         var <%=field.variable()%>tinyPropOverride =  tinyMCEProps;
+				     <%}%>
+				<%}%>
+			<%}%>
 			console.log(textAreaId + "tinyPropOverride", eval(textAreaId + "tinyPropOverride"));
 			
 

@@ -1,19 +1,21 @@
 package com.dotcms.util.pagination;
 
-import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Source;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
-import com.dotmarketing.portlets.containers.business.ContainerFactory;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 
-import java.util.Collection;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
 import java.util.Map;
 
 import static com.dotcms.util.CollectionsUtils.map;
@@ -56,10 +58,58 @@ public class ContainerPaginator implements PaginatorOrdered<Container> {
         }
 
         try {
-            return (PaginatedArrayList) containerAPI.findContainers(user, false, params, hostId,
+            final PaginatedArrayList<Container> allContainers =
+                    (PaginatedArrayList<Container>) containerAPI.findContainers(user, false, params, hostId,
                     null, null, null, offset, limit, orderByDirection);
+
+            if (!UtilMethods.isSet(hostId)) {
+
+                final List<Container> fileContainers = new ArrayList<>();
+                final List<Container> dbContainers   = new ArrayList<>();
+
+                for (final Container container : allContainers) {
+
+                    if (container.getSource() == Source.DB) {
+
+                        dbContainers.add  (container);
+                    } else {
+                        fileContainers.add(container);
+                    }
+                }
+
+                if (direction == OrderDirection.ASC) {
+
+                    dbContainers.stream().sorted   (Comparator.comparing(this::hostname));
+                    fileContainers.stream().sorted (Comparator.comparing(this::hostname));
+                } else {
+
+                    dbContainers.stream().sorted   (Comparator.comparing(this::hostname).reversed());
+                    fileContainers.stream().sorted (Comparator.comparing(this::hostname).reversed());
+                }
+
+
+                final PaginatedArrayList<Container> sortedByHostContainers = new PaginatedArrayList<>();
+                sortedByHostContainers.setQuery(allContainers.getQuery());
+                sortedByHostContainers.setTotalResults(allContainers.getTotalResults());
+
+                sortedByHostContainers.addAll(fileContainers);
+                sortedByHostContainers.addAll(dbContainers);
+                return sortedByHostContainers;
+            }
+
+            return allContainers;
         } catch (DotSecurityException|DotDataException e) {
             throw new PaginationException(e);
         }
     }
+
+    private String hostname (final Container container) {
+
+        try {
+            return Host.class.cast(container.getParentPermissionable()).getHostname();
+        } catch (DotDataException e) {
+            return StringPool.BLANK;
+        }
+    }
+
 }

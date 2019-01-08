@@ -57,6 +57,7 @@ import java.io.StringWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * This resource provides all the different end-points associated to information and actions that
@@ -149,12 +150,14 @@ public class ContainerResource implements Serializable {
         final InitDataObject initData = webResource.init(null, true, request, true, null);
         final User user = initData.getUser();
 
-        final String checkedHostId = this.checkHost(request, hostId, user);
+        final Optional<String> checkedHostId = this.checkHost(request, hostId, user);
 
         try {
 
             final Map<String, Object> extraParams = Maps.newHashMap();
-            extraParams.put(ContainerPaginator.HOST_PARAMETER_ID, checkedHostId);
+            if (checkedHostId.isPresent()) {
+                extraParams.put(ContainerPaginator.HOST_PARAMETER_ID, checkedHostId.get());
+            }
             return this.paginationUtil.getPage(request, user, filter, page, perPage, orderBy, OrderDirection.valueOf(direction),
                     extraParams);
         } catch (Exception e) {
@@ -164,7 +167,7 @@ public class ContainerResource implements Serializable {
         }
     }
 
-    private String checkHost(final HttpServletRequest request, final String hostId, final User user) {
+    private Optional<String> checkHost(final HttpServletRequest request, final String hostId, final User user) {
 
         String checkedHostId = null;
 
@@ -180,8 +183,8 @@ public class ContainerResource implements Serializable {
         }
 
         return (null == checkedHostId)?
-                WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request).getIdentifier():
-                checkedHostId;
+                Optional.empty():
+                Optional.of(checkedHostId);
     }
 
     @GET

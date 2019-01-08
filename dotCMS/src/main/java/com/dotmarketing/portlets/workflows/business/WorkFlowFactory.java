@@ -32,7 +32,7 @@ import java.util.function.Consumer;
  */
 public interface WorkFlowFactory {
 
-	public static final String SYSTEM_WORKFLOW_ID           = "d61a59e1-a49c-46f2-a929-db2b4bfa88b2";
+	String SYSTEM_WORKFLOW_ID           = SystemWorkflowConstants.SYSTEM_WORKFLOW_ID;
 
 	public void deleteComment(WorkflowComment comment) throws DotDataException;
 

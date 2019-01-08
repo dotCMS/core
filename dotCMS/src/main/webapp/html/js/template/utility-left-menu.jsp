@@ -365,6 +365,10 @@ function removeGrid(yuiBId){
 	mainDiv.removeChild(childToRemove);
 }
 
+function getUUID (container) {
+
+    return Date.now();
+}
 /**
  * This function add a container into a div in the design template phase.
  *
@@ -373,33 +377,27 @@ function removeGrid(yuiBId){
  * @param value
  */
 function addDrawedContainer(idDiv, container, value, error_msg, container_exist){
-	var div_container = document.getElementById(idDiv.value+"_div_"+value);
+	var div_container  = document.getElementById(idDiv.value+"_div_"+value);
 	var span_container = document.getElementById(idDiv.value+"_span_"+value);
+	var uuid           = getUUID (span_container);
 
-	if(null!=div_container && null!=span_container){
-		alert(error_msg);
-		return;
-	}
-
-	if(container.maxContentlets>0 && hasContainer(value)){
-		alert(container_exist);
-		return;
-	}
+	console.log("uuid", uuid);
+	// now, adding the ability to add repeated containers.
 
 	//create the container span
 	var titleContainerSpan = document.createElement("span");
 	titleContainerSpan.setAttribute("class", "titleContainerSpan");
-	titleContainerSpan.setAttribute("id", idDiv.value+"_span_"+value);
+	titleContainerSpan.setAttribute("id", idDiv.value+"_span_"+value+"_"+uuid);
 	titleContainerSpan.setAttribute("title","container_"+value);
-	titleContainerSpan.innerHTML=getRemoveContainer(idDiv.value,value)+"<div class=\"clear\"></div>"+getContainerMockContent(container.title);
+	titleContainerSpan.innerHTML=getRemoveContainer(idDiv.value,value, uuid)+"<div class=\"clear\"></div>"+getContainerMockContent(container.title);
 
 	var containerDivHidden = document.createElement("div");
 
 	containerDivHidden.setAttribute("style","display: none;");
 	//set the title for better recognize the container's div
 	containerDivHidden.setAttribute("title","container_"+value);
-	containerDivHidden.setAttribute("id", idDiv.value+"_div_"+value);
-	containerDivHidden.innerHTML='#parseContainer(\'' + value + '\')\n';
+	containerDivHidden.setAttribute("id", idDiv.value+"_div_"+value+"_"+uuid);
+	containerDivHidden.innerHTML='#parseContainer(\'' + value + '\',\''+uuid+'\')\n';
 
 	var div = document.getElementById(idDiv.value);
 
@@ -434,10 +432,11 @@ function addDrawedContainer(idDiv, container, value, error_msg, container_exist)
     parseCurrentContainers();
 }
 
-function removeDrawedContainer(idDiv,idContainer){
+function removeDrawedContainer(idDiv,idContainer, uuid){
 	var div = document.getElementById(idDiv);
 	var containers = new Array();
 	var containerToRemove = new Array();
+	console.log("removeDrawedContainer", idDiv, idContainer, uuid);
 	if (div.hasChildNodes()){
 		var nodes = div.childNodes;
 		for(var i=0; i<nodes.length; i++) {
@@ -451,7 +450,7 @@ function removeDrawedContainer(idDiv,idContainer){
 		var nodes = div.childNodes;
 		for(var i=0; i<nodes.length; i++) {
 			var child = nodes[i];
-			if(child.getAttribute("id")==idDiv+"_span_"+idContainer || child.getAttribute("id")==idDiv+"_div_"+idContainer) //this element is a container
+			if(child.getAttribute("id")==idDiv+"_span_"+idContainer + "_" + uuid || child.getAttribute("id")==idDiv+"_div_"+idContainer) //this element is a container
 				containerToRemove.push(child);
 		}
 	}
@@ -576,8 +575,8 @@ function getAddContainer(idDiv){
 	return '<div class="addContainerSpan"><a href="javascript: showAddContainerDialog(\''+idDiv+'\');" title="'+addContainerMSG+'"><span class="plusBlueIcon"></span>'+addContainerMSG+'</a></div>';
 }
 
-function getRemoveContainer(idDiv, idContainer){
-	return '<div class="removeDiv"><a href="javascript: removeDrawedContainer(\''+idDiv+'\',\''+idContainer+'\');" title="'+removeContainerMSG+'"><span class="minusIcon"></span>'+removeContainerMSG+'</a></div>';
+function getRemoveContainer(idDiv, idContainer, uuid){
+	return '<div class="removeDiv"><a href="javascript: removeDrawedContainer(\''+idDiv+'\',\''+idContainer+'\',\''+ uuid+'\');" title="'+removeContainerMSG+'"><span class="minusIcon"></span>'+removeContainerMSG+'</a></div>';
 }
 
 function hasContainer(value){
