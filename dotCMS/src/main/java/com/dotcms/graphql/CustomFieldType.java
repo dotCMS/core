@@ -15,7 +15,8 @@ import static graphql.Scalars.GraphQLString;
 public enum CustomFieldType {
     BINARY,
     CATEGORY,
-    IMAGE;
+    IMAGE,
+    SITE_OR_FOLDER;
 
     private static Map<String, GraphQLObjectType> customFieldTypes = new HashMap<>();
 
@@ -52,6 +53,24 @@ public enum CustomFieldType {
         imageTypeFields.put("metadata", GraphQLString);
 
         customFieldTypes.put("IMAGE", TypeUtil.createObjectType("Image", imageTypeFields,
+            new MapFieldPropertiesDataFetcher()));
+
+        final Map<String, GraphQLOutputType> siteOrFolderTypeFields = new HashMap<>();
+        // folder fields
+        siteOrFolderTypeFields.put("id", GraphQLString);
+        siteOrFolderTypeFields.put("fileMask", GraphQLString);
+        siteOrFolderTypeFields.put("sortOrder", GraphQLString);
+        siteOrFolderTypeFields.put("name", GraphQLString);
+        siteOrFolderTypeFields.put("path", GraphQLString);
+        siteOrFolderTypeFields.put("title", GraphQLString);
+        siteOrFolderTypeFields.put("defaultFileType", GraphQLString);
+        siteOrFolderTypeFields.put("aliases", GraphQLString);
+        siteOrFolderTypeFields.put("tagStorage", GraphQLString);
+
+        // site fields
+
+
+        customFieldTypes.put("SITE_OR_FOLDER", TypeUtil.createObjectType("SiteOrFolder", siteOrFolderTypeFields,
             new MapFieldPropertiesDataFetcher()));
     }
 
