@@ -718,9 +718,9 @@ public class RemotePublishAjaxAction extends AjaxAction {
         String bundleName = null;
         try {
             @SuppressWarnings ("unchecked")
-            List<FileItem> items = (List<FileItem>) upload.parseRequest( request );
+            List<FileItem> items = upload.parseRequest( request );
             InputStream bundle = items.get( 0 ).getInputStream();
-            bundleName = sanitizeBundleName(items.get(0).getName());
+            bundleName = BundlerUtil.sanitizeBundleName(items.get(0).getName());
             String bundlePath = ConfigUtils.getBundlePath() + File.separator;
             String bundleFolder = bundleName.substring( 0, bundleName.indexOf( ".tar.gz" ) );
             String endpointId = getUser().getUserId();
@@ -741,30 +741,6 @@ public class RemotePublishAjaxAction extends AjaxAction {
             out.print( "<html><head><script>isLoaded = true;</script></head><body><textarea>{'status':'error'}</textarea></body></html>" );
         }
 
-    }
-
-    /**
-     * Checks the name of the bundle file coming from the request to make sure that it is correct. For example, in
-     * Microsoft Edge on Windows 10, the name includes the absolute path to the file instead of the file name only. We
-     * need to strip the absolute path away.
-     *
-     * @param bundleName The name of the bundle file.
-     *
-     * @return The sanitized bundle file name.
-     */
-    private String sanitizeBundleName(String bundleName) throws DotPublisherException {
-        if (!UtilMethods.isSet(bundleName)) {
-            final String errorMsg = "The name for the uploaded bundle is null or empty";
-            Logger.error(this, errorMsg);
-            throw new DotPublisherException(errorMsg);
-        }
-        if (!bundleName.contains(File.separator)) {
-            return bundleName;
-        } else {
-            final int indexOfSeparator = bundleName.lastIndexOf(File.separator);
-            bundleName = bundleName.substring(indexOfSeparator + 1);
-            return bundleName;
-        }
     }
 
     /**
