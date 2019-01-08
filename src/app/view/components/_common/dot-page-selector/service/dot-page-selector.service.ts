@@ -122,17 +122,12 @@ export class DotPageSelectorService {
         return this.coreWebService.requestView({
             body: this.getRequestBodyQuery(query),
             method: RequestMethod.Post,
-            url: 'es/search'
+            url: 'es/search?live=false&distinctLang=true&workingSite=true'
         });
     }
 
     private getPages(query: string): Observable<DotPageSelectorResults> {
-        return this.coreWebService
-            .requestView({
-                body: this.getPagesSearchQuery(query),
-                method: RequestMethod.Post,
-                url: 'es/search'
-            })
+        return this.getEsResults(this.getPagesSearchQuery(query))
             .pipe(
                 pluck('contentlets'),
                 flatMap((pages: DotPageAsset[]) => pages),
@@ -153,7 +148,7 @@ export class DotPageSelectorService {
             );
     }
 
-    private getPagesSearchQuery(param: string): { [key: string]: {} } {
+    private getPagesSearchQuery(param: string): string{
         const parsedUrl: DotSimpleURL = this.parseUrl(param);
 
         let query = `${PAGE_BASE_TYPE_QUERY} +path:*${this.cleanPath(
@@ -164,7 +159,7 @@ export class DotPageSelectorService {
             query += ` +conhostName:${this.currentHost.hostname}`;
         }
 
-        return this.getRequestBodyQuery(query);
+        return query;
     }
 
     private cleanPath(path: string): string {

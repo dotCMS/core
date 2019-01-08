@@ -96,7 +96,7 @@ describe('Service: DotPageSelector', () => {
         );
         expect(result).toEqual(mockDotPageSelectorResults);
         expect(this.dotPageSelectorService.currentHost).toEqual(null);
-        expect(this.lastConnection.request.url).toContain('es/search');
+        expect(this.lastConnection.request.url).toContain('es/search?live=false&distinctLang=true&workingSite=true');
         expect(this.lastConnection.request.method).toEqual(1);
         expect(this.lastConnection.request._body).toEqual(pageQuery);
     });
@@ -117,7 +117,7 @@ describe('Service: DotPageSelector', () => {
             )
         );
         expect(result).toEqual(mockDotSiteSelectorResults);
-        expect(this.lastConnection.request.url).toContain('es/search');
+        expect(this.lastConnection.request.url).toContain('es/search?live=false&distinctLang=true&workingSite=true');
         expect(this.lastConnection.request.method).toEqual(1);
         expect(this.lastConnection.request._body).toEqual(hostQuery);
     });
