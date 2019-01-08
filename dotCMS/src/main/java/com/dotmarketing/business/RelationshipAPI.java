@@ -1,15 +1,18 @@
 package com.dotmarketing.business;
 
 import com.dotcms.contenttype.model.type.ContentType;
-import java.util.List;
-import java.util.Map;
-
 import com.dotcms.contenttype.model.type.ContentTypeIf;
 import com.dotmarketing.beans.Tree;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
+import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
+import com.liferay.portal.model.User;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 public interface RelationshipAPI {
 
@@ -17,7 +20,24 @@ public interface RelationshipAPI {
 
   Relationship byInode(String inode);
 
-  List<Relationship> byParent(ContentTypeIf parent) throws DotDataException;
+  /**
+   * Search a list of relationships that contain the string typeValue.
+   * @param typeValue
+   * @return
+   */
+  List<Relationship> dbAllByTypeValue(final String typeValue);
+
+  /**
+   * Returns an {@link Optional} of {@link Relationship} for the given content type (parent or child)
+   * and the given relationName (child relation name or parent relation name)
+   * @param contentType
+   * @param relationName
+   * @return
+   */
+  Optional<Relationship> byParentChildRelationName(ContentType contentType,
+          String relationName);
+
+    List<Relationship> byParent(ContentTypeIf parent) throws DotDataException;
 
   List<Relationship> byChild(ContentTypeIf child) throws DotDataException;
 
@@ -89,6 +109,25 @@ public interface RelationshipAPI {
   List<Relationship> getOneSidedRelationships(final ContentType contentType, final int limit,
           final int offset) throws DotDataException;
 
+  long getOneSidedRelationshipsCount(final ContentType contentType) throws DotDataException;
+
   ContentletRelationships getContentletRelationshipsFromMap(final Contentlet contentlet, final Map<Relationship,
           List<Contentlet>> contentRelationships);
+
+  /**
+   * Given a Relationship Field, returns the existing relationship
+   * @param field
+   * @param user
+   * @return
+   */
+  Relationship getRelationshipFromField(Field field, final User user) throws DotDataException, DotSecurityException;
+
+  /**
+   * Given a Relationship Field, returns the existing relationship
+   * @param field
+   * @param user
+   * @return
+   */
+  Relationship getRelationshipFromField(final com.dotcms.contenttype.model.field.Field field, final User user)
+          throws DotDataException, DotSecurityException;
 }

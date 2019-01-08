@@ -498,7 +498,7 @@ public class DirectorAction extends DotPortletAction {
 	
 	                if (InodeUtils.isSet(identifier.getInode()) && InodeUtils.isSet(htmlPageIdentifier.getInode()) && InodeUtils.isSet(containerIdentifier.getInode())) {
 	                    MultiTree mTree = new MultiTree(htmlPageIdentifier.getInode(),containerIdentifier.getInode(),identifier.getInode());
-	                    java.util.List<MultiTree> treeList=  MultiTreeFactory.getMultiTrees(htmlPage.getIdentifier(), container.getIdentifier());
+	                    java.util.List<MultiTree> treeList=  APILocator.getMultiTreeAPI().getMultiTrees(htmlPage.getIdentifier(), container.getIdentifier());
 	                    for (int i = 0; i < treeList.size(); i++) {
 	                    	if(treeList.get(i).getChild().equals(identifier.getInode())){
 	                    	duplicateContentCheck = true;
@@ -513,8 +513,7 @@ public class DirectorAction extends DotPortletAction {
 	                                        htmlPage.getIdentifier(),
 	                                        contentlet.getLanguageId());
 	                        if (versionInfo != null) {
-	                            MultiTreeFactory.saveMultiTree(mTree,
-	                                    contentlet.getLanguageId());
+	                            APILocator.getMultiTreeAPI().saveMultiTree(mTree);
 	                        } else {
 	                            // The language in the page and the 
 	                            // contentlet do not match
@@ -592,9 +591,9 @@ public class DirectorAction extends DotPortletAction {
 	
 					Identifier htmlPageIdentifier = APILocator.getIdentifierAPI().find(htmlPage);
 					Identifier containerIdentifier = APILocator.getIdentifierAPI().find(container);
-					MultiTree multiTree = MultiTreeFactory.getMultiTree(htmlPageIdentifier,containerIdentifier,identifier, MultiTree.LEGACY_RELATION_TYPE);
+					MultiTree multiTree = APILocator.getMultiTreeAPI().getMultiTree(htmlPageIdentifier,containerIdentifier,identifier, MultiTree.LEGACY_RELATION_TYPE);
 					Logger.debug(DirectorAction.class, "multiTree=" + multiTree);
-					MultiTreeFactory.deleteMultiTree(multiTree);
+					APILocator.getMultiTreeAPI().deleteMultiTree(multiTree);
 				} catch (DotRuntimeException e) {
 					Logger.error(this, "Unable to remove content from page", e);
 				} finally {
@@ -686,17 +685,17 @@ public class DirectorAction extends DotPortletAction {
 	
 						if( newPosition == x ) {
 							iden = APILocator.getIdentifierAPI().find(contentlet);
-							multiTree = MultiTreeFactory.getMultiTree(idenHtmlPage,idenContainer,iden, MultiTree.LEGACY_RELATION_TYPE);
+							multiTree = APILocator.getMultiTreeAPI().getMultiTree(idenHtmlPage,idenContainer,iden, MultiTree.LEGACY_RELATION_TYPE);
 							multiTree.setTreeOrder(x);
-							MultiTreeFactory.saveMultiTree(multiTree, htmlPage.getLanguageId());
+							APILocator.getMultiTreeAPI().saveMultiTree(multiTree);
 							x++;
 						}
 	
 						if (!c.getInode().equalsIgnoreCase(contentlet.getInode())) {
 							iden = APILocator.getIdentifierAPI().find(c);
-							multiTree = MultiTreeFactory.getMultiTree(idenHtmlPage,idenContainer,iden, MultiTree.LEGACY_RELATION_TYPE);
+							multiTree = APILocator.getMultiTreeAPI().getMultiTree(idenHtmlPage,idenContainer,iden, MultiTree.LEGACY_RELATION_TYPE);
 							multiTree.setTreeOrder(x);
-							MultiTreeFactory.saveMultiTree(multiTree, htmlPage.getLanguageId());
+							APILocator.getMultiTreeAPI().saveMultiTree(multiTree);
 							x++;
 						}
 	
@@ -755,17 +754,17 @@ public class DirectorAction extends DotPortletAction {
 	
 						if (!c.getInode().equalsIgnoreCase(contentlet.getInode())) {
 							iden = APILocator.getIdentifierAPI().find(c);
-							multiTree = MultiTreeFactory.getMultiTree(idenHtmlPage,idenContainer,iden, MultiTree.LEGACY_RELATION_TYPE);
+							multiTree = APILocator.getMultiTreeAPI().getMultiTree(idenHtmlPage,idenContainer,iden, MultiTree.LEGACY_RELATION_TYPE);
 							multiTree.setTreeOrder(x);
-							MultiTreeFactory.saveMultiTree(multiTree, htmlPage.getLanguageId());
+							APILocator.getMultiTreeAPI().saveMultiTree(multiTree);
 							x++;
 						}
  
 						if( newPosition == x ) {
 							iden = APILocator.getIdentifierAPI().find(contentlet);
-							multiTree = MultiTreeFactory.getMultiTree(idenHtmlPage,idenContainer,iden, MultiTree.LEGACY_RELATION_TYPE);
+							multiTree = APILocator.getMultiTreeAPI().getMultiTree(idenHtmlPage,idenContainer,iden, MultiTree.LEGACY_RELATION_TYPE);
 							multiTree.setTreeOrder(x);
-							MultiTreeFactory.saveMultiTree(multiTree, htmlPage.getLanguageId());
+							APILocator.getMultiTreeAPI().saveMultiTree(multiTree);
 							x++;
 						}
 	

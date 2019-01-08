@@ -49,7 +49,14 @@ public class DotJSON implements Serializable {
             try {
                 cacheTTL = (int) this.map.get(CACHE_TTL_KEY);
             } catch (ClassCastException e) {
-                Logger.error(this, "Unable to parse Cache TTL Value in DotJSON Object");
+                Logger.warn(this, "Unable to parse Cache TTL Value in DotJSON Object. " +
+                        "Trying parsing as string now.");
+                try {
+                    cacheTTL = Integer.parseInt((String) this.map.get(CACHE_TTL_KEY));
+                } catch(NumberFormatException nfe) {
+                    Logger.error(this, "Unable to parse Cache TTL Value in DotJSON Object. Returning" +
+                            "default cacheTTL value '0'");
+                }
             }
         }
 

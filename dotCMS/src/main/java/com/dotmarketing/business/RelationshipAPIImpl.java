@@ -3,19 +3,25 @@ package com.dotmarketing.business;
 
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.RelationshipFactory;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeIf;
+import com.dotcms.util.DotPreconditions;
 import com.dotmarketing.beans.Tree;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
+import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
 
 import com.dotmarketing.portlets.structure.transform.ContentletRelationshipsTransformer;
-import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 import java.util.List;
+import java.util.Optional;
 import java.util.Map;
 
 // THIS IS A FAKE API SO PEOPLE CAN FIND AND USE THE RELATIONSHIPFACTORY
@@ -41,6 +47,25 @@ public class RelationshipAPIImpl implements RelationshipAPI {
 
     @CloseDBIfOpened
     @Override
+    public Relationship byTypeValue(final String typeValue) {
+        return this.relationshipFactory.byTypeValue(typeValue);
+    }
+
+    @CloseDBIfOpened
+    @Override
+    public Optional<Relationship> byParentChildRelationName(final ContentType contentType,
+            final String relationName) {
+        return this.relationshipFactory.byParentChildRelationName(contentType, relationName);
+    }
+
+    @CloseDBIfOpened
+    @Override
+    public List<Relationship> dbAllByTypeValue(final String typeValue) {
+        return this.relationshipFactory.dbAllByTypeValue(typeValue);
+    }
+
+    @CloseDBIfOpened
+    @Override
     public List<Relationship> byParent(ContentTypeIf parent) throws DotDataException {
         return this.relationshipFactory.byParent(parent);
     }
@@ -49,12 +74,6 @@ public class RelationshipAPIImpl implements RelationshipAPI {
     @Override
     public List<Relationship> byChild(ContentTypeIf child) throws DotDataException {
         return this.relationshipFactory.byChild(child);
-    }
-
-    @CloseDBIfOpened
-    @Override
-    public Relationship byTypeValue(String typeValue) {
-        return this.relationshipFactory.byTypeValue(typeValue);
     }
 
     @CloseDBIfOpened
@@ -122,7 +141,6 @@ public class RelationshipAPIImpl implements RelationshipAPI {
     @WrapInTransaction
     @Override
     public void save(Relationship relationship) throws DotDataException {
-        checkReadOnlyFields(relationship, relationship.getInode());
         this.relationshipFactory.save(relationship);
     }
 
@@ -206,11 +224,53 @@ public class RelationshipAPIImpl implements RelationshipAPI {
     @Override
     public List<Relationship> getOneSidedRelationships(final ContentType contentType,
             final int limit, final int offset) throws DotDataException {
+        DotPreconditions.checkNotNull(contentType, IllegalArgumentException.class, "Content Type is required");
         return this.relationshipFactory.getOneSidedRelationships(contentType, limit, offset);
+    }
+
+    @CloseDBIfOpened
+    @Override
+    public long getOneSidedRelationshipsCount(final ContentType contentType) throws DotDataException {
+        return this.relationshipFactory.getOneSidedRelationshipsCount(contentType);
     }
 
     @Override
     public ContentletRelationships getContentletRelationshipsFromMap(Contentlet contentlet, final Map<Relationship, List<Contentlet>> contentRelationships) {
         return new ContentletRelationshipsTransformer(contentlet, contentRelationships).findFirst();
     }
+
+    @Override
+    public Relationship getRelationshipFromField(final Field field, final User user)
+            throws DotDataException, DotSecurityException {
+
+        final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
+
+        final String contentTypeVar    = contentTypeAPI.find(field.getStructureInode()).variable();
+        final String fieldRelationType = field.getFieldRelationType();
+
+        return APILocator.getRelationshipAPI().byTypeValue(
+                fieldRelationType.contains(StringPool.PERIOD) ? fieldRelationType
+                        : contentTypeVar + StringPool.PERIOD + field
+                                .getVelocityVarName());
+
+
+    }
+
+    @Override
+    public Relationship getRelationshipFromField(final com.dotcms.contenttype.model.field.Field field, final User user)
+            throws DotDataException, DotSecurityException {
+
+        final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
+
+        final String contentTypeVar    = contentTypeAPI.find(field.contentTypeId()).variable();
+
+        final String fieldRelationType = field.relationType();
+        return APILocator.getRelationshipAPI().byTypeValue(
+                fieldRelationType.contains(StringPool.PERIOD) ? fieldRelationType
+                        :contentTypeVar + StringPool.PERIOD + field
+                                .variable());
+
+
+    }
+
 }

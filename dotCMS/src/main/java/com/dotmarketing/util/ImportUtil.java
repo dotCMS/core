@@ -1,6 +1,9 @@
 package com.dotmarketing.util;
 
+import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.repackage.com.csvreader.CsvReader;
+import com.dotcms.util.LowerKeyMap;
+import com.dotcms.util.RelationshipUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
@@ -13,6 +16,7 @@ import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotDataValidationException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
@@ -32,6 +36,7 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Field;
+import com.dotmarketing.portlets.structure.model.Field.FieldType;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
@@ -56,6 +61,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Provides utility methods to import content into dotCMS. The data source is a
@@ -64,7 +72,7 @@ import java.util.Set;
  * analyzing the data in a CSV file before importing it will generate a summary
  * of the operation, indicating inconsistencies, errors, warnings, or just
  * useful information for the user.
- * 
+ *
  * @author root
  * @version 1.x
  * @since Mar 22, 2012
@@ -106,7 +114,7 @@ public class ImportUtil {
 	 * the system try to import the contents right away. The method will also
 	 * return a summary with the status of the operation.</li>
 	 * </ul>
-	 * 
+	 *
 	 * @param importId
 	 *            - The ID of this data import.
 	 * @param currentSiteId
@@ -196,9 +204,9 @@ public class ImportUtil {
                 HashMap<Integer,Boolean> onlyParent=new HashMap<Integer,Boolean>();
                 HashMap<Integer,Boolean> onlyChild=new HashMap<Integer,Boolean>();
                 if (csvHeaders != null) {
-                    importHeaders(csvHeaders, contentType, keyfields, preview, isMultilingual, user, results, headers, keyFields, uniqueFields,relationships,onlyChild,onlyParent);
+                    importHeaders(csvHeaders, contentType, keyfields, isMultilingual, user, results, headers, keyFields, uniqueFields,relationships,onlyChild,onlyParent);
                 } else {
-                    importHeaders(csvreader.getHeaders(), contentType, keyfields, preview, isMultilingual, user, results, headers, keyFields, uniqueFields,relationships,onlyChild,onlyParent);
+                    importHeaders(csvreader.getHeaders(), contentType, keyfields, isMultilingual, user, results, headers, keyFields, uniqueFields,relationships,onlyChild,onlyParent);
                 }
                 lineNumber++;
 
@@ -327,7 +335,7 @@ public class ImportUtil {
 	/**
 	 * Reads the CSV file headers in order to find inconsistencies or errors.
 	 * Such situations will be saved in the {@code results} list.
-	 * 
+	 *
 	 * @param headerLine
 	 *            - The line in the CSV file containing the data headers.
 	 * @param contentType
@@ -336,10 +344,6 @@ public class ImportUtil {
 	 * @param keyFieldsInodes
 	 *            - The Inodes of the fields used to associated existing dotCMS
 	 *            contentlets with the information in this file. Can be empty.
-	 * @param preview
-	 *            - Set to {@code true} if an analysis and evaluation of the
-	 *            imported data will be generated <b>before</b> actually
-	 *            importing the data. Otherwise, set to {@code false}.
 	 * @param isMultilingual
 	 *            - If set to {@code true}, the CSV file will import contents in
 	 *            more than one language. Otherwise, set to {@code false}.
@@ -365,15 +369,22 @@ public class ImportUtil {
 	 * @throws Exception
 	 *             An error occurred when validating the CSV data.
 	 */
-    private static void importHeaders(String[] headerLine, Structure contentType, String[] keyFieldsInodes, boolean preview, boolean isMultilingual, User user, HashMap<String, List<String>> results, HashMap<Integer, Field> headers, HashMap<Integer, Field> keyFields, List<Field> uniqueFields, HashMap<Integer, Relationship> relationships,HashMap<Integer,Boolean> onlyChild, HashMap<Integer,Boolean> onlyParent) throws Exception  {
+    private static void importHeaders(String[] headerLine, Structure contentType, String[] keyFieldsInodes, boolean isMultilingual, User user, HashMap<String, List<String>> results, HashMap<Integer, Field> headers, HashMap<Integer, Field> keyFields, List<Field> uniqueFields, HashMap<Integer, Relationship> relationships,HashMap<Integer,Boolean> onlyChild, HashMap<Integer,Boolean> onlyParent) throws Exception  {
 
         int importableFields = 0;
 
         //Importing headers and storing them in a hashmap to be reused later in the whole import process
-        List<Field> fields = FieldsCache.getFieldsByStructureInode(contentType.getInode());
-        List<Relationship> contentTypeRelationships = FactoryLocator.getRelationshipFactory().byContentType(contentType);
-        List<String> requiredFields = new ArrayList<String>();
-        List<String> headerFields = new ArrayList<String>();
+        final List<Field> fields = FieldsCache.getFieldsByStructureInode(contentType.getInode());
+        final List<Relationship> contentTypeRelationships = FactoryLocator.getRelationshipFactory()
+                .byContentType(contentType);
+        final Map<String, Relationship> contentTypeRelationshipsMap = new LowerKeyMap<>();
+        final List<String> requiredFields = new ArrayList<>();
+        final List<String> headerFields = new ArrayList<>();
+
+        //Saves relationships as map for efficient search in getRelationships method
+        contentTypeRelationshipsMap.putAll(contentTypeRelationships.stream().collect(
+                Collectors.toMap(Relationship::getRelationTypeValue, Function.identity())));
+
         for(Field field:fields){
             if(field.isRequired()){
             	requiredFields.add(field.getVelocityVarName());
@@ -431,6 +442,11 @@ public class ImportUtil {
                             if (fieldInode.equals(field.getInode()))
                                 keyFields.put(i, field);
                         }
+
+                        if (field.getFieldType().equals(FieldType.RELATIONSHIP.toString())) {
+                            contentTypeRelationshipsMap.put(field.getVelocityVarName(), APILocator.getRelationshipAPI()
+                                    .getRelationshipFromField(field, user));
+                        }
                         break;
                     }
                 }
@@ -454,22 +470,8 @@ public class ImportUtil {
                 onlyCh=true;
             }
 
-            //Check if the header is a relationship
-            for(Relationship relationship : contentTypeRelationships)
-            {
-                if(relationship.getRelationTypeValue().equalsIgnoreCase(header))
-                {
-                    found = true;
-                    relationships.put(i,relationship);
-                    onlyParent.put(i, onlyP);
-                    onlyChild.put(i, onlyCh);
-
-                    // special case when the relationship has the same structure for parent and child, set only as child
-                    if(relationship.getChildStructureInode().equals(relationship.getParentStructureInode()) && !onlyCh && !onlyP) {
-                        onlyChild.put(i, true);
-                    }
-                }
-            }
+            found = getRelationships(relationships, onlyChild, onlyParent, i, found,
+                    header, onlyP, onlyCh, contentTypeRelationshipsMap);
 
             if ((!found) && !(isMultilingual && (header.equals(languageCodeHeader) || header.equals(countryCodeHeader)))) {
                 results.get("warnings").add(
@@ -540,7 +542,46 @@ public class ImportUtil {
         }
     }
 
-	/**
+    /**
+     *
+     * @param relationships
+     * @param onlyChild
+     * @param onlyParent
+     * @param i
+     * @param found
+     * @param header
+     * @param onlyP
+     * @param onlyCh
+     * @param contentTypeRelationshipsMap
+     * @return
+     */
+    private static boolean getRelationships(
+            final HashMap<Integer, Relationship> relationships,
+            final HashMap<Integer, Boolean> onlyChild,
+            final HashMap<Integer, Boolean> onlyParent, final int i, boolean found,
+            final String header,
+            final boolean onlyP, final boolean onlyCh,
+            final Map<String, Relationship> contentTypeRelationshipsMap) {
+
+        final Relationship relationship = contentTypeRelationshipsMap.get(header.toLowerCase());
+
+        //Check if the header is a relationship
+        if (relationship != null) {
+            found = true;
+            relationships.put(i, relationship);
+            onlyParent.put(i, onlyP);
+            onlyChild.put(i, onlyCh);
+
+            // special case when the relationship has the same structure for parent and child, set only as child
+            if (relationship.getChildStructureInode().equals(relationship.getParentStructureInode())
+                    && !onlyCh && !onlyP) {
+                onlyChild.put(i, true);
+            }
+        }
+        return found;
+    }
+
+    /**
 	 * Imports content extracted from a CSV upload file. This method will
 	 * receive and handle line by line of the import file.
 	 *
@@ -772,36 +813,12 @@ public class ImportUtil {
             for (Integer column : relationships.keySet()) {
                 Relationship relationship = relationships.get(column);
                 String relatedQuery = line[column];
-                List<Contentlet> relatedContentlets = new ArrayList<>();
-                boolean error = false;
-                if (UtilMethods.isSet(relatedQuery)) {
-                    relatedContentlets = conAPI.checkoutWithQuery(relatedQuery, user, false);
+                List<Contentlet> relatedContentlets;
+                try{
+                    relatedContentlets = RelationshipUtil
+                            .getRelatedContentFromQuery(relationship, new StructureTransformer(contentType).from(), language,
+                                    relatedQuery, user);
 
-                    //validate if the contenlet retrieved are from the correct typ
-                    if (FactoryLocator.getRelationshipFactory()
-                            .isParent(relationship, contentType)) {
-                        for (Contentlet contentlet : relatedContentlets) {
-                            Structure relatedStructure = contentlet.getStructure();
-                            if (!(FactoryLocator.getRelationshipFactory()
-                                    .isChild(relationship, relatedStructure))) {
-                                error = true;
-                                break;
-                            }
-                        }
-                    }
-                    if (FactoryLocator.getRelationshipFactory()
-                            .isChild(relationship, contentType)) {
-                        for (Contentlet contentlet : relatedContentlets) {
-                            Structure relatedStructure = contentlet.getStructure();
-                            if (!(FactoryLocator.getRelationshipFactory()
-                                    .isParent(relationship, relatedStructure))) {
-                                error = true;
-                                break;
-                            }
-                        }
-                    }
-                }
-                if (!error) {
                     //If no error add the relatedContentlets
                     if(onlyChild.get(column)) {
                         csvRelationshipRecordsChildOnly.put(relationship, relatedContentlets);
@@ -810,8 +827,9 @@ public class ImportUtil {
                     } else {
                         csvRelationshipRecords.put(relationship, relatedContentlets);
                     }
-                } else {
-                    //else add the error message
+                } catch(DotDataValidationException e){
+                    //add the error message
+                    Logger.warn(ImportUtil.class, e.getMessage(), e);
                     String localLineMessage = LanguageUtil.get(user, "Line--");
                     String structureDoesNoMatchMessage = LanguageUtil.get(user, "the-structure-does-not-match-the-relationship");
                     results.get("warnings").add(localLineMessage + lineNumber + ". " + structureDoesNoMatchMessage);
@@ -1124,7 +1142,7 @@ public class ImportUtil {
                     Field field = headers.get(column);
                     Object value = values.get(column);
 
-                    if (field.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString())) { // DOTCMS-4484												
+                    if (field.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString())) { // DOTCMS-4484
 
                         //Verify if the value belongs to a Host or to a Folder
                         Folder folder = null;
@@ -1241,8 +1259,12 @@ public class ImportUtil {
 
                 if(!ignoreLine){
                     //Check the new contentlet with the validator
+                    ContentletRelationships contentletRelationships = loadRelationshipRecords(
+                            csvRelationshipRecordsParentOnly, csvRelationshipRecordsChildOnly,
+                            csvRelationshipRecords, cont);
+
                     try {
-                        conAPI.validateContentlet(cont, new ArrayList<>(categories));
+                        conAPI.validateContentlet(cont, contentletRelationships, new ArrayList<>(categories));
                     } catch (DotContentletValidationException ex) {
                         StringBuffer sb = new StringBuffer("Line #" + lineNumber + " contains errors\n");
                         HashMap<String,List<Field>> errors = (HashMap<String,List<Field>>) ex.getNotValidFields();
@@ -1310,24 +1332,6 @@ public class ImportUtil {
                     //If not preview save the contentlet
                     if (!preview) {
                         cont.setLowIndexPriority(true);
-                        //Load the old relationShips and add the new ones
-                        ContentletRelationships contentletRelationships = conAPI.getAllRelationships(cont);
-                        List<ContentletRelationships.ContentletRelationshipRecords> relationshipRecords = contentletRelationships.getRelationshipsRecords();
-                        for(ContentletRelationships.ContentletRelationshipRecords relationshipRecord : relationshipRecords) {
-                            List<Contentlet> csvRelatedContentlet = csvRelationshipRecords.get(relationshipRecord.getRelationship());
-                            if(UtilMethods.isSet(csvRelatedContentlet)) {
-                                relationshipRecord.getRecords().addAll(csvRelatedContentlet);
-                            }
-                            csvRelatedContentlet = csvRelationshipRecordsChildOnly.get(relationshipRecord.getRelationship());
-                            if(UtilMethods.isSet(csvRelatedContentlet) && relationshipRecord.isHasParent()) {
-                                relationshipRecord.getRecords().addAll(csvRelatedContentlet);
-                            }
-                            csvRelatedContentlet = csvRelationshipRecordsParentOnly.get(relationshipRecord.getRelationship());
-                            if(UtilMethods.isSet(csvRelatedContentlet) && !relationshipRecord.isHasParent()) {
-                                relationshipRecord.getRecords().addAll(csvRelatedContentlet);
-                            }
-                        }
-                        //END Load the old relationShips and add the new ones
 
                         if (userCanExecuteAction) {
 
@@ -1425,6 +1429,46 @@ public class ImportUtil {
             Logger.error(ImportUtil.class,e.getMessage(),e);
             throw new DotRuntimeException(e.getMessage(),e);
         }
+    }
+
+    /**
+     *
+     * @param csvRelationshipRecordsParentOnly
+     * @param csvRelationshipRecordsChildOnly
+     * @param csvRelationshipRecords
+     * @param cont
+     * @return
+     * @throws DotDataException
+     */
+    @NotNull
+    private static ContentletRelationships loadRelationshipRecords(
+            HashMap<Relationship, List<Contentlet>> csvRelationshipRecordsParentOnly,
+            HashMap<Relationship, List<Contentlet>> csvRelationshipRecordsChildOnly,
+            HashMap<Relationship, List<Contentlet>> csvRelationshipRecords, Contentlet cont)
+            throws DotDataException {
+        //Load the old relationShips and add the new ones
+        ContentletRelationships contentletRelationships = conAPI.getAllRelationships(cont);
+        List<ContentletRelationships.ContentletRelationshipRecords> relationshipRecords = contentletRelationships
+                .getRelationshipsRecords();
+        for (ContentletRelationships.ContentletRelationshipRecords relationshipRecord : relationshipRecords) {
+            List<Contentlet> csvRelatedContentlet = csvRelationshipRecords
+                    .get(relationshipRecord.getRelationship());
+            if (UtilMethods.isSet(csvRelatedContentlet)) {
+                relationshipRecord.getRecords().addAll(csvRelatedContentlet);
+            }
+            csvRelatedContentlet = csvRelationshipRecordsChildOnly
+                    .get(relationshipRecord.getRelationship());
+            if (UtilMethods.isSet(csvRelatedContentlet) && relationshipRecord.isHasParent()) {
+                relationshipRecord.getRecords().addAll(csvRelatedContentlet);
+            }
+            csvRelatedContentlet = csvRelationshipRecordsParentOnly
+                    .get(relationshipRecord.getRelationship());
+            if (UtilMethods.isSet(csvRelatedContentlet) && !relationshipRecord.isHasParent()) {
+                relationshipRecord.getRecords().addAll(csvRelatedContentlet);
+            }
+        }
+        //END Load the old relationShips and add the new ones
+        return contentletRelationships;
     }
 
     /**

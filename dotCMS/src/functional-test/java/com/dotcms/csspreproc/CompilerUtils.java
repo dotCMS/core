@@ -4,6 +4,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import java.io.File;
@@ -22,13 +23,13 @@ class CompilerUtils {
         fileAsset.setStringProperty(FileAssetAPI.TITLE_FIELD, file.getName());
         fileAsset.setStringProperty(FileAssetAPI.FILE_NAME_FIELD, file.getName());
         fileAsset.setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId());
+        fileAsset.setIndexPolicy(IndexPolicy.FORCE);
         fileAsset = APILocator.getContentletAPI()
                 .checkin(fileAsset, APILocator.getUserAPI().getSystemUser(), false);
 
+        fileAsset.setIndexPolicy(IndexPolicy.FORCE);
         APILocator.getContentletAPI()
                 .publish(fileAsset, APILocator.getUserAPI().getSystemUser(), false);
-        APILocator.getContentletAPI().isInodeIndexed(fileAsset.getInode());
-        APILocator.getContentletAPI().isInodeIndexed(fileAsset.getInode(), true);
 
         try {
             Thread.sleep(2000);

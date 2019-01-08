@@ -17,6 +17,7 @@ import com.dotmarketing.portlets.rules.parameter.display.NumericInput;
 import com.dotmarketing.portlets.rules.parameter.display.TextInput;
 import com.dotmarketing.portlets.rules.parameter.type.NumericType;
 import com.dotmarketing.portlets.rules.parameter.type.TextType;
+import com.dotmarketing.util.Logger;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -101,10 +102,16 @@ public class VisitorsGeolocationConditionlet extends Conditionlet<VisitorsGeoloc
     
     @Override
     public boolean evaluate(HttpServletRequest request, HttpServletResponse response, Instance instance) {
-        Location visitorsLocation = lookupLocation(request);
-        Location inputLocation = new Location(instance.latitude, instance.longitude);
-        //noinspection unchecked
-        return instance.comparison.perform(visitorsLocation, inputLocation, instance.distance);
+        try {
+            Location visitorsLocation = lookupLocation(request);
+            Location inputLocation = new Location(instance.latitude, instance.longitude);
+            //noinspection unchecked
+            return instance.comparison.perform(visitorsLocation, inputLocation, instance.distance);
+        }
+        catch(RuleEvaluationFailedException e) {
+            Logger.warn(this.getClass(), e.getMessage());
+        }
+        return false;
     }
 
     private Location lookupLocation(HttpServletRequest request) {

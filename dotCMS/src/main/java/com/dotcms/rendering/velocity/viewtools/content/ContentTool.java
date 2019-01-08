@@ -1,5 +1,10 @@
 package com.dotcms.rendering.velocity.viewtools.content;
 
+import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotmarketing.exception.DotDataValidationException;
+import com.dotmarketing.portlets.structure.model.Relationship;
+import com.liferay.util.StringPool;
 import java.io.StringWriter;
 import java.util.List;
 import java.util.Map;
@@ -213,7 +218,6 @@ public class ContentTool implements ViewTool {
 	 * @param query - Lucene Query used to search for content - Will append live, working, deleted, and language if not passed
 	 * @param currentPage Current page number for pagination the first page would be one.
 	 * @param contentsPerPage Number of contentlets you are displaying per page
-	 * @param offset offset to start the results from 
 	 * @param sort - Velocity variable name to sort by.  this is a string and can contain multiple values "sort1 acs, sort2 desc"
 	 * @return Returns empty List if no results are found
 	 * 
@@ -368,8 +372,8 @@ public class ContentTool implements ViewTool {
 	 * @param contentletIdentifier - Identifier of the contentlet
 	 * @param condition - Extra conditions to add to the query. like +title:Some Title.  Can be Null
 	 * @param pullParents Should the related pull be based on Parents or Children
-	 * @param limit 0 is the dotCMS max limit which is 10000. Becareful when searching for unlimited amount as all content will load into memory
-	 * @param sort - Velocity variable name to sort by.  this is a string and can contain multiple values "sort1 acs, sort2 desc". Can be Null
+	 * @param limit 0 is the dotCMS max limit which is 10000. Be careful when searching for unlimited amount as all content will load into memory
+	 * @param sort - Velocity variable name to sort by.  This is a string and can contain multiple values "sort1 acs, sort2 desc". Can be Null
 	 * @return Returns empty List if no results are found
 	 * @throws DotSecurityException 
 	 * @throws DotDataException 
@@ -391,6 +395,92 @@ public class ContentTool implements ViewTool {
             }
             throw new RuntimeException(ex);
         }
+	}
+
+	/**
+	 * Returns a list of related content given a RelationshipField and additional filtering criteria
+	 * @param contentletIdentifier - Identifier of the contentlet
+	 * @param fieldVariable - Full field variable (including the content type variable, ie.: news.youtubes where 'news' is the content type variable and 'youtubes' is the field variable)
+	 * @param condition - Extra conditions to add to the query. like +title:Some Title.  Can be Null
+	 * @param limit - 0 is the dotCMS max limit which is 10000. Be careful when searching for unlimited amount as all content will load into memory
+	 * @param offset - Starting position of the resulting list. -1 is the default value and the first results of the pagination are returned
+	 * @param sort - Velocity variable name to sort by.  This is a string and can contain multiple values "sort1 acs, sort2 desc". Can be Null
+	 * @return Returns empty List if no results are found
+	 */
+	public List<ContentMap> pullRelatedField(String contentletIdentifier, String fieldVariable,
+			String condition, int limit, int offset, String sort) {
+		try {
+			PaginatedArrayList<ContentMap> ret = new PaginatedArrayList();
+
+			if (!fieldVariable.contains(StringPool.PERIOD)) {
+				final String message = "Invalid field variable " + fieldVariable;
+				if (Config.getBooleanProperty("ENABLE_FRONTEND_STACKTRACE", false)) {
+					Logger.error(this, message);
+				}
+				throw new RuntimeException(new DotDataValidationException(message));
+			}
+
+			final ContentType contentType = APILocator.getContentTypeAPI(user)
+					.find(fieldVariable.split("\\" + StringPool.PERIOD)[0]);
+			final Field field = APILocator.getContentTypeFieldAPI()
+					.byContentTypeAndVar(contentType, fieldVariable.split("\\" + StringPool.PERIOD)[1]);
+			final Relationship relationship = APILocator.getRelationshipAPI()
+					.getRelationshipFromField(field, user);
+			List<Contentlet> cons = ContentUtils
+					.pullRelatedField(relationship, contentletIdentifier,
+							addDefaultsToQuery(condition), limit, offset, sort, user, tmDate);
+
+			for (Contentlet cc : cons) {
+				ret.add(new ContentMap(cc, user, EDIT_OR_PREVIEW_MODE, currentHost, context));
+			}
+			return ret;
+		} catch (Throwable ex) {
+			if (Config.getBooleanProperty("ENABLE_FRONTEND_STACKTRACE", false)) {
+				Logger.error(this,
+						"error in ContentTool.pullRelated. URL: " + req.getRequestURL().toString(),
+						ex);
+			}
+			throw new RuntimeException(ex);
+		}
+	}
+
+	/**
+	 * Returns a list of related content given a RelationshipField and additional filtering criteria
+	 * @param contentletIdentifier - Identifier of the contentlet
+	 * @param fieldVariable - Full field variable (including the content type variable, ie.: news.youtubes where 'news' is the content type variable and 'youtubes' is the field variable)
+	 * @param condition - Extra conditions to add to the query. like +title:Some Title.  Can be Null
+	 * @param limit - 0 is the dotCMS max limit which is 10000. Be careful when searching for unlimited amount as all content will load into memory
+	 * @param sort - Velocity variable name to sort by.  This is a string and can contain multiple values "sort1 acs, sort2 desc". Can be Null
+	 * @return Returns empty List if no results are found
+	 */
+	public List<ContentMap> pullRelatedField(String contentletIdentifier, String fieldVariable,
+			String condition, int limit, String sort) {
+		return pullRelatedField(contentletIdentifier, fieldVariable, condition, limit, -1, sort);
+	}
+
+	/**
+	 * Returns a list of related content given a RelationshipField and additional filtering criteria
+	 * @param contentletIdentifier - Identifier of the contentlet
+	 * @param fieldVariable - Full field variable (including the content type variable, ie.: news.youtubes where 'news' is the content type variable and 'youtubes' is the field variable)
+	 * @param condition - Extra conditions to add to the query. like +title:Some Title.  Can be Null
+	 * @param sort - Velocity variable name to sort by.  This is a string and can contain multiple values "sort1 acs, sort2 desc". Can be Null
+	 * @return Returns empty List if no results are found
+	 */
+	public List<ContentMap> pullRelatedField(String contentletIdentifier, String fieldVariable,
+			String condition, String sort) {
+		return pullRelatedField(contentletIdentifier, fieldVariable, condition, 0, sort);
+	}
+
+	/**
+	 * Returns a list of related content given a RelationshipField and additional filtering criteria
+	 * @param contentletIdentifier - Identifier of the contentlet
+	 * @param fieldVariable - Full field variable (including the content type variable, ie.: news.youtubes where 'news' is the content type variable and 'youtubes' is the field variable)
+	 * @param condition - Extra conditions to add to the query. like +title:Some Title.  Can be Null
+	 * @return Returns empty List if no results are found
+	 */
+	public List<ContentMap> pullRelatedField(String contentletIdentifier, String fieldVariable,
+			String condition) {
+		return pullRelatedField(contentletIdentifier, fieldVariable, condition, null);
 	}
 	
 	public List<ContentMap> pullPersonalized(String query, int limit, int offset, String secondarySort) {	
@@ -505,7 +595,6 @@ public class ContentTool implements ViewTool {
      * @param structureVariableName
      * @param startDate
      * @param endDate
-     * @param user
      * @return
      */
 	public List<Map<String, String>> getMostViewedContent(String structureVariableName, String startDate, String endDate) {

@@ -3,6 +3,7 @@ package com.dotcms.content.elasticsearch.business;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
+import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
 import com.dotcms.content.elasticsearch.util.ESClient;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.notifications.bean.NotificationType;
@@ -45,6 +46,7 @@ import com.dotmarketing.util.*;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.primitives.Ints;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 import org.apache.commons.lang.StringUtils;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.ActionListener;
@@ -72,10 +74,11 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.*;
 import java.util.Calendar;
+import java.util.*;
 import java.util.function.Consumer;
 
+import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
 import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.datetimeFormat;
 
 /**
@@ -634,8 +637,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
             // workaround for dbs where we can't have more than one constraint
             // or triggers
-            db.executeStatement("delete from multi_tree where child in (" + sInodeIds
-                    + ") or parent1 in (" + sInodeIds + ") or parent2 in (" + sInodeIds + ")");
+            APILocator.getMultiTreeAPI().deleteMultiTreesForIdentifiers(inodes);
         } catch (SQLException e) {
             throw new DotDataException("Error deleting tree and multi-tree.", e);
         }
@@ -712,11 +714,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
         // workaround for dbs where we can't have more than one constraint
         // or triggers
-        db.setSQL( "delete from multi_tree where child = ? or parent1 = ? or parent2 = ?" );
-        db.addParam(conInode);
-        db.addParam(conInode);
-        db.addParam(conInode);
-        db.getResult();
+        APILocator.getMultiTreeAPI().deleteMultiTreesRelatedToIdentifier(conInode);
 
         contentletCache.remove(conInode);
         com.dotmarketing.portlets.contentlet.business.Contentlet c =
@@ -768,7 +766,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
                 setSource(SearchSourceBuilder.searchSource().
                 fetchSource(new String[] {"inode"}, null)).
                 setQuery( builder ).
-                setSize( limit ).setFrom( offset ).execute().actionGet();
+                setSize( limit ).setFrom( offset ).execute().actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS);
         SearchHits hits = response.getHits();
         List<Contentlet> cons = new ArrayList<>();
 
@@ -874,7 +872,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
 			IndiciesInfo info=APILocator.getIndiciesAPI().loadIndicies();
 			SearchResponse response = request.setIndices((live ? info.live : info.working))
-			        .execute().actionGet();
+			        .execute().actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS);
 			SearchHits hits = response.getHits();
 			Contentlet contentlet = find(hits.getAt(0).getSourceAsMap().get("inode").toString());
 			return contentlet;
@@ -967,7 +965,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
 			SearchResponse response = createRequest(client.getClient(), "+conhost:"+hostId).
 			        setSize(limit).setFrom(offset).execute()
-					.actionGet();
+					.actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS);
 
 			SearchHits hits = response.getHits();
 
@@ -1274,7 +1272,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
         final SearchRequestBuilder searchRequestBuilder = client.prepareSearch().setSize(0);
         searchRequestBuilder.setQuery(qb);
         searchRequestBuilder.setIndices(indexToHit);
-        return searchRequestBuilder.execute().actionGet().getHits().getTotalHits();
+        return searchRequestBuilder.execute().actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS).getHits().getTotalHits();
 	}
 
     @Override
@@ -1306,7 +1304,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
         searchRequestBuilder.setIndices(
                 query.contains("+live:true") && !query.contains("+deleted:true")? info.live: info.working);
 
-        return searchRequestBuilder.execute().actionGet().getHits().getTotalHits();
+        return searchRequestBuilder.execute().actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS).getHits().getTotalHits();
     }
 
     @Override
@@ -1438,28 +1436,40 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
             if(UtilMethods.isSet(sortBy) ) {
             	sortBy = sortBy.toLowerCase();
-            	if(sortBy.endsWith("-order")) {
+            	if(sortBy.endsWith(ESMappingConstants.SUFFIX_ORDER)) {
             	    // related content ordering
-            	    int ind0=sortBy.indexOf('-'); // relationships tipicaly have a format stname1-stname2
-            	    int ind1=ind0>0 ? sortBy.indexOf('-',ind0+1) : -1;
-            	    if(ind1>0) {
-            	        String relName=sortBy.substring(0, ind1);
-            	        if((ind1+1)<sortBy.length()) {
-                	        String identifier=sortBy.substring(ind1+1, sortBy.length()-6);
-                            if (UtilMethods.isSet(identifier)) {
-                                final Script script = new Script(
-                                    Script.DEFAULT_SCRIPT_TYPE,
-                                    "expert_scripts",
-                                    "related",
-                                    Collections.emptyMap(),
-                                    ImmutableMap.of("relName", relName, "identifier", identifier));
+            	    // relationships typically have a format stname1-stname2(legacy relationships) or relationType (one-sided relationships)
+            	    if(sortBy.indexOf('-')>0) {
 
-                                srb.addSort(
-                                    SortBuilders
-                                        .scriptSort(script, ScriptSortBuilder.ScriptSortType.NUMBER)
-                                        .order(SortOrder.ASC));
+                        String identifier = sortBy
+                                .substring(sortBy.indexOf(StringPool.DASH) + 1,
+                                        sortBy.lastIndexOf(StringPool.DASH));
+
+                        if (UtilMethods.isSet(identifier)) {
+
+                            //Support for one-sided relationships
+                            String relName = sortBy.substring(0, sortBy.indexOf(StringPool.DASH));
+                            if (UtilMethods.isSet(identifier) && !relName.contains(StringPool.PERIOD)) {
+                                //Support for legacy relationships
+                                relName += StringPool.DASH + identifier
+                                        .substring(0, identifier.indexOf(StringPool.DASH));
+                                identifier = identifier
+                                        .substring(identifier.indexOf(StringPool.DASH) + 1);
                             }
-            	        }
+
+                            final Script script = new Script(
+                                Script.DEFAULT_SCRIPT_TYPE,
+                                "expert_scripts",
+                                "related",
+                                Collections.emptyMap(),
+                                ImmutableMap.of("relName", relName, "identifier", identifier));
+
+                            srb.addSort(
+                                SortBuilders
+                                    .scriptSort(script, ScriptSortBuilder.ScriptSortType.NUMBER)
+                                    .order(SortOrder.ASC));
+                        }
+
             	    }
             	}
             	else if(sortBy.startsWith("score")){
@@ -1496,7 +1506,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
 
             try{
-            	resp = srb.execute().actionGet();
+            	resp = srb.execute().actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS);
             }catch (SearchPhaseExecutionException e) {
 				if(e.getMessage().contains("dotraw] in order to sort on")){
 					return new SearchHits(SearchHits.EMPTY,0,0);

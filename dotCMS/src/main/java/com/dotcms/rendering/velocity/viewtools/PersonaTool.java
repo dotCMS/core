@@ -114,7 +114,7 @@ public class PersonaTool implements ViewTool {
 		try {
 			
 			Host host = WebAPILocator.getHostWebAPI().getCurrentHost(request);
-			List<Persona> personas = APILocator.getPersonaAPI().getPersonas(host, false, false, user, false);
+			List<Persona> personas = APILocator.getPersonaAPI().getPersonas(host, false, false, user, true);
 
 			return personas;
 		} catch (DotDataException | DotSecurityException | PortalException | SystemException e) {

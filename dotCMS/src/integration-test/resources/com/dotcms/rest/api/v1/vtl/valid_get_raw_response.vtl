@@ -1,0 +1,31 @@
+#if($pathParam)
+   #set($employeeList = [$dotcontent.find($pathParam)])
+#else
+    #set($employeeList = $dotcontent.pull("+structureName:Employee +(conhost:$host.identifier conhost:SYSTEM_HOST)",0,"Employee.lastName"))
+#end
+
+<employees>
+
+	#foreach($employee in $employeeList)
+
+		<employee>
+				<firstName>$employee.firstName</firstName>
+				<lastName>$employee.lastName</lastName>
+				<jobTitle>$employee.jobTitle</jobTitle>
+				<profilePicPath>$!{employee.photo.shortyUrl}</profilePicPath>
+				##<seniorManagement>$!{employee.seniorManagement.selectedValues[0]}</seniorManagement>
+				<phone>$employee.phone</phone>
+				<mobile>$employee.mobile</mobile>
+				<fax>$employee.fax</fax>
+				<email>$employee.email</email>
+				<firstName>$employee.firstName</firstName>
+
+				#foreach($department in $dotcontent.pullRelated("Department-Employee","$!{employee.identifier}",true,1,"modDate"))
+					#set($departmentName = $department.departmentName)
+					<departmentName>$departmentName</departmentName>
+				#end
+
+		</employee>
+	#end
+
+</employees>

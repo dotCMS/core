@@ -1,5 +1,14 @@
 package com.dotmarketing.portlets.workflows.business;
 
+import static com.dotmarketing.portlets.workflows.business.BaseWorkflowIntegrationTest.createContentTypeAndAssignPermissions;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
 import com.dotcms.contenttype.business.FieldAPI;
@@ -12,7 +21,11 @@ import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
-import com.dotmarketing.business.*;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Role;
+import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
@@ -25,22 +38,40 @@ import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.portlets.workflows.actionlet.*;
-import com.dotmarketing.portlets.workflows.model.*;
+import com.dotmarketing.portlets.workflows.actionlet.ArchiveContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.CheckinContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.DeleteContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.PublishContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.ResetTaskActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.SaveContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.SaveContentAsDraftActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.UnarchiveContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.UnpublishContentActionlet;
+import com.dotmarketing.portlets.workflows.model.WorkflowAction;
+import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
+import com.dotmarketing.portlets.workflows.model.WorkflowComment;
+import com.dotmarketing.portlets.workflows.model.WorkflowHistory;
+import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
+import com.dotmarketing.portlets.workflows.model.WorkflowState;
+import com.dotmarketing.portlets.workflows.model.WorkflowStep;
+import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
-
-import java.io.IOException;
-import java.util.*;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-
-import static com.dotmarketing.portlets.workflows.business.BaseWorkflowIntegrationTest.createContentTypeAndAssignPermissions;
-import static org.junit.Assert.*;
 
 /**
  * Test the workflowAPI
@@ -1426,7 +1457,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
                     DOCUMENT_MANAGEMENT_WORKFLOW_NAME + UtilMethods
                             .dateToHTMLDate(new Date(), DATE_FORMAT));
 
-            final List<String> schemes = new ArrayList<>();
+            final Set<String> schemes = new HashSet<>();
             schemes.add(workflowScheme6.getId());
             workflowAPI.saveSchemeIdsForContentType(contentType4, schemes);
 
@@ -1637,7 +1668,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
                     DOCUMENT_MANAGEMENT_WORKFLOW_NAME + UtilMethods
                             .dateToHTMLDate(new Date(), DATE_FORMAT));
 
-            final List<String> schemes = new ArrayList<>();
+            final Set<String> schemes = new HashSet<>();
             schemes.add(workflowScheme7.getId());
             workflowAPI.saveSchemeIdsForContentType(contentType5, schemes);
 
@@ -2184,7 +2215,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
                     DOCUMENT_MANAGEMENT_WORKFLOW_NAME + "_2_" + UtilMethods
                             .dateToHTMLDate(new Date(), DATE_FORMAT));
 
-            final List<String> schemeIds = new ArrayList<>();
+            final Set<String> schemeIds = new HashSet<>();
             schemeIds.add(workflowSchemeA.getId());
 
             workflowAPI.saveSchemeIdsForContentType(keepWfTaskStatusContentType, schemeIds);
@@ -2298,7 +2329,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
             assertTrue(WORKFLOW_SCHEME_CACHE_WITH_WRONG_SIZE, schemesInCache.size() == 0);
 
             //1. Test Adding one scheme
-            final List<String> schemeIds = new ArrayList<>();
+            final Set<String> schemeIds = new HashSet<>();
             schemeIds.add(workflowSchemeC.getId());
             workflowAPI.saveSchemeIdsForContentType(contentType, schemeIds);
 
@@ -2398,7 +2429,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
                     DOCUMENT_MANAGEMENT_WORKFLOW_NAME + "_5_" + UtilMethods
                             .dateToHTMLDate(new Date(), DATE_FORMAT));
 
-            final List<String> schemeIds = new ArrayList<>();
+            final Set<String> schemeIds = new HashSet<>();
             schemeIds.add(workflowScheme.getId());
             workflowAPI.saveSchemeIdsForContentType(contentType, schemeIds);
 

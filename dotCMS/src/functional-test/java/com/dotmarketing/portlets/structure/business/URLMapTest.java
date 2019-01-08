@@ -133,7 +133,7 @@ public class URLMapTest {
 			APILocator.getVersionableAPI().setLive(widget);
 
 			// add the widget to the detail page
-			MultiTreeFactory.saveMultiTree( new MultiTree( htmlPage.getIdentifier(), container.getIdentifier(), widget.getIdentifier() ) );
+			APILocator.getMultiTreeAPI().saveMultiTree( new MultiTree( htmlPage.getIdentifier(), container.getIdentifier(), widget.getIdentifier() ) );
 
 			
 			// STRUCTURE

@@ -7,17 +7,19 @@ import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
+import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.repackage.com.csvreader.CsvReader;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
+import com.dotmarketing.beans.Tree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.common.model.ContentletSearch;
-import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -27,6 +29,7 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
+import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.actionlet.PublishContentActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.SaveContentActionlet;
@@ -38,7 +41,12 @@ import com.dotmarketing.portlets.workflows.model.*;
 import com.dotmarketing.util.ImportUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
+import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
+import com.tngtech.java.junit.dataprovider.DataProvider;
+import com.tngtech.java.junit.dataprovider.DataProviderRunner;
+import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
@@ -47,6 +55,7 @@ import org.junit.Test;
 import java.io.*;
 import java.nio.charset.Charset;
 import java.util.*;
+import org.junit.runner.RunWith;
 
 import static org.junit.Assert.*;
 
@@ -56,6 +65,8 @@ import static org.junit.Assert.*;
  * 
  * @author Jonathan Gamba Date: 3/10/14
  */
+
+@RunWith(DataProviderRunner.class)
 public class ImportUtilTest extends BaseWorkflowIntegrationTest {
 
     private static User user;
@@ -66,6 +77,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
     private static BaseWorkflowIntegrationTest.CreateSchemeStepActionResult schemeStepActionResult1 = null;
     private static BaseWorkflowIntegrationTest.CreateSchemeStepActionResult schemeStepActionResult2 = null;
     private static ContentletAPI contentletAPI;
+    private static RelationshipAPI relationshipAPI;
     private static ShortyIdAPI shortyIdAPI;
     private static WorkflowAPI workflowAPI;
     private static WorkflowAction saveAction;
@@ -103,6 +115,31 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
     private static final String TEST_WITH_WF_ACTION_ON_DROPDOWN_BUT_NO_PERMISSIONS = ", Test with WF Action ID set on dropdown but not permission, ";
     private static final String TEST_WITH_WF_ACTION_ON_CSV_BUT_NO_PERMISSIONS_AND_USING_DROPDOWN_ACTION = ", Test with WF Action ID set on CSV (but no permission) and using dropdown action, ";
 
+    public static class RelationshipTestCase {
+
+        boolean useLucene;
+        boolean legacyRelationship;
+
+        public RelationshipTestCase(final boolean useLucene, final boolean legacyRelationship) {
+            this.useLucene = useLucene;
+            this.legacyRelationship = legacyRelationship;
+        }
+    }
+
+    @DataProvider
+    public static Object[] relationshipTestCases(){
+        return new RelationshipTestCase[]{
+                //Importing legacy relationships using a lucene query
+                new RelationshipTestCase(true, true),
+                //Importing legacy relationships using identifiers
+                new RelationshipTestCase(false, true),
+                //Importing relationships 2.0 using a lucene query
+                new RelationshipTestCase(true, false),
+                //Importing relationships 2.0 using identifiers
+                new RelationshipTestCase(false, false)
+        };
+    }
+
     @BeforeClass
     public static void prepare() throws Exception {
         //Setting web app environment
@@ -117,6 +154,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         final RoleAPI roleAPI = APILocator.getRoleAPI();
         contentletAPI = APILocator.getContentletAPI();
         shortyIdAPI = APILocator.getShortyAPI();
+        relationshipAPI = APILocator.getRelationshipAPI();
 
         // creates the scheme, step1 and action1
         schemeStepActionResult1 = createSchemeStepActionActionlet
@@ -1137,6 +1175,198 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         }
     }
 
+    @Test
+    public void importFile_success_when_lineContainsLegacySelfRelatedContent()
+            throws DotSecurityException, DotDataException, IOException {
+
+        //Creates content type
+        final ContentType type = createTestContentType("selfRelatedType", "selfRelatedType");
+        final Structure structure = new StructureTransformer(type).asStructure();
+
+        try {
+            //Saves legacy self relationship
+            final Relationship relationship = new Relationship(structure, structure,
+                    "selRelatedParent", "selfRelatedChild",
+                    RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal(), false, false);
+            relationshipAPI.save(relationship);
+
+            //Creates parent and child contentlets
+            final ContentletDataGen contentletDataGen = new ContentletDataGen(type.id());
+            contentletDataGen.languageId(defaultLanguage.getId());
+
+            final Contentlet parentContentlet = contentletDataGen
+                    .setProperty(TITLE_FIELD_NAME, "parent contentlet")
+                    .setProperty(BODY_FIELD_NAME, "parent contentlet").nextPersisted();
+
+            final Contentlet childContentlet = contentletDataGen
+                    .setProperty(TITLE_FIELD_NAME, "child contentlet")
+                    .setProperty(BODY_FIELD_NAME, "child contentlet").nextPersisted();
+
+            //Creating csv
+            final Reader reader = createTempFile(
+                    TITLE_FIELD_NAME + ", " + BODY_FIELD_NAME + ", " + relationship
+                            .getRelationTypeValue() + "-RELPARENT, " + relationship
+                            .getRelationTypeValue() + "-RELCHILD"
+                            + "\r\n" +
+                            "Self related test, Testing Site, +identifier:"
+                            + parentContentlet.getIdentifier() + ", +identifier:" + childContentlet
+                            .getIdentifier());
+
+            final HashMap<String, List<String>> results = importContentWithRelationships(type,
+                    reader, new String[]{type.fieldMap().get(TITLE_FIELD_NAME).inode(),
+                            type.fieldMap().get(BODY_FIELD_NAME).inode()});
+
+            validateRelationshipResults(relationship, parentContentlet, childContentlet, results);
+
+        } finally {
+            if (type != null) {
+                contentTypeApi.delete(type);
+            }
+        }
+    }
+
+    @UseDataProvider("relationshipTestCases")
+    @Test
+    public void importFile_success_when_lineContainsRelationships(final RelationshipTestCase relationshipTestCase)
+            throws DotSecurityException, DotDataException, IOException {
+
+        //Creates content types
+        ContentType parentContentType = null;
+        ContentType childContentType  = null;
+        com.dotcms.contenttype.model.field.Field field = null;
+        HashMap<String, List<String>> results;
+        Relationship relationship;
+        final int cardinality = RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal();
+
+        try {
+
+            parentContentType = createTestContentType("parentContentType", "parentContentType");
+            childContentType = createTestContentType("childContentType", "childContentType");
+            final Structure parentStructure = new StructureTransformer(parentContentType).asStructure();
+            final Structure childStructure = new StructureTransformer(childContentType).asStructure();
+
+            //Saves relationship parent --> child
+            if (relationshipTestCase.legacyRelationship){
+                relationship = new Relationship(parentStructure, childStructure,
+                        parentContentType.name(), childContentType.name(), cardinality
+                        , false, false);
+                relationshipAPI.save(relationship);
+            } else {
+                field = FieldBuilder.builder(RelationshipField.class).name("testRelationship").variable("testRelationship")
+                        .contentTypeId(parentContentType.id()).values(String.valueOf(cardinality))
+                        .relationType(childContentType.variable()).build();
+
+                field = fieldAPI.save(field, user);
+                relationship = relationshipAPI.byTypeValue(
+                        parentContentType.variable() + StringPool.PERIOD + field.variable());
+            }
+
+            //Creates child contentlet
+            final ContentletDataGen contentletDataGen = new ContentletDataGen(childContentType.id());
+            contentletDataGen.languageId(defaultLanguage.getId());
+
+            final Contentlet childContentlet = contentletDataGen
+                    .setProperty(TITLE_FIELD_NAME, "child contentlet")
+                    .setProperty(BODY_FIELD_NAME, "child contentlet").nextPersisted();
+
+            //Creating csv
+            final Reader reader = createTempFile(
+                    TITLE_FIELD_NAME + ", " + BODY_FIELD_NAME + ", " + (relationshipTestCase.legacyRelationship? relationship
+                            .getRelationTypeValue(): field.variable())
+                            + "\r\n" +
+                            "Import related content test, Import related content test, " + (relationshipTestCase.useLucene? "+identifier:":"")
+                            + childContentlet.getIdentifier());
+
+            if (relationshipTestCase.legacyRelationship) {
+                results = importContentWithRelationships(parentContentType, reader,
+                        new String[]{parentContentType.fieldMap().get(TITLE_FIELD_NAME).inode(),
+                                parentContentType.fieldMap().get(BODY_FIELD_NAME).inode()});
+            } else {
+                results = importContentWithRelationships(parentContentType, reader,
+                        new String[]{parentContentType.fieldMap().get(TITLE_FIELD_NAME).inode(),
+                                parentContentType.fieldMap().get(BODY_FIELD_NAME).inode(),
+                                field.inode()});
+            }
+
+            validateRelationshipResults(relationship, null, childContentlet, results);
+
+        } finally {
+            if (parentContentType != null) {
+                contentTypeApi.delete(parentContentType);
+            }
+
+            if (childContentType != null) {
+                contentTypeApi.delete(childContentType);
+            }
+        }
+    }
+
+    /**
+     *
+     * @param relationship
+     * @param parentContentlet
+     * @param childContentlet
+     * @param results
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    private void validateRelationshipResults(Relationship relationship, Contentlet parentContentlet,
+            Contentlet childContentlet, HashMap<String, List<String>> results)
+            throws DotDataException, DotSecurityException {
+        //Validations
+        validate(results, true, false, false);
+
+        //Validate that contentlet has been created
+        final List<String> lastInode = results.get("lastInode");
+        assertNotNull(lastInode);
+        assertEquals(1, lastInode.size());
+
+        final Contentlet contentlet = contentletAPI.find(lastInode.get(0), user, false);
+
+        //Validates the parent relationship has been added
+        if (parentContentlet != null) {
+            final List<Tree> parentTrees = relationshipAPI
+                    .relatedContentTrees(relationship, contentlet, false);
+            assertNotNull(parentTrees);
+            assertEquals(1, parentTrees.size());
+            assertEquals(parentContentlet.getIdentifier(), parentTrees.get(0).getParent());
+        }
+
+        //Validates the child relationship has been added
+        if (childContentlet != null) {
+            final List<Tree> childTrees = relationshipAPI
+                    .relatedContentTrees(relationship, contentlet, true);
+            assertNotNull(childTrees);
+            assertEquals(1, childTrees.size());
+            assertEquals(childContentlet.getIdentifier(), childTrees.get(0).getChild());
+        }
+    }
+
+    /**
+     *
+     * @param type
+     * @param reader
+     * @param keyFields
+     * @return
+     * @throws IOException
+     * @throws DotDataException
+     */
+    private HashMap<String, List<String>> importContentWithRelationships(ContentType type,
+            Reader reader, final String[] keyFields) throws IOException, DotDataException {
+
+        final CsvReader csvreader = new CsvReader(reader);
+        csvreader.setSafetySwitch(false);
+
+        final String[] csvHeaders = csvreader.getHeaders();
+
+        //Preview=false
+        return ImportUtil
+                .importFile(0L, defaultSite.getInode(), type.inode(),
+                        keyFields, false, false,
+                        user, defaultLanguage.getId(), csvHeaders, csvreader, -1, -1,
+                        reader, null);
+    }
+
     /**
      * Create content type for import with different actions and with the schemeStepActionResult2
      * workflow associated
@@ -1237,17 +1467,16 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
      * Remove the workflows created for the test
      */
     @AfterClass
-    public static void cleanup()
-            throws DotDataException, DotSecurityException, AlreadyExistException {
+    public static void cleanup() throws Exception {
         if (null != schemeStepActionResult1 && null != schemeStepActionResult1.getScheme()) {
             final WorkflowScheme wfScheme = schemeStepActionResult1.getScheme();
             workflowAPI.archive(wfScheme, user);
-            workflowAPI.deleteScheme(wfScheme, user);
+            workflowAPI.deleteScheme(wfScheme, user).get();
         }
         if (null != schemeStepActionResult2 && null != schemeStepActionResult2.getScheme()) {
             final WorkflowScheme wfScheme2 = schemeStepActionResult2.getScheme();
             workflowAPI.archive(wfScheme2, user);
-            workflowAPI.deleteScheme(wfScheme2, user);
+            workflowAPI.deleteScheme(wfScheme2, user).get();
         }
     }
 

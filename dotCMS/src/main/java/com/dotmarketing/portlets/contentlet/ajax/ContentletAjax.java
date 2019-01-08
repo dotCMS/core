@@ -556,6 +556,7 @@ public class ContentletAjax {
 		Map<String, String> fieldsSearch = new HashMap<String, String>();
 		List<Object> headers = new ArrayList<Object>();
 		Map<String, Field> fieldsMapping = new HashMap<String, Field>();
+		final String[] structureInodes = structureInode.split(CONTENT_TYPES_INODE_SEPARATOR);
 		Structure st = null;
 		if(!Structure.STRUCTURE_TYPE_ALL.equals(structureInode) && !hasContentTypesInodeSeparator(structureInode)){
 		    st = CacheLocator.getContentTypeCache().getStructureByInode(structureInode);
@@ -563,8 +564,6 @@ public class ContentletAjax {
 		    luceneQuery.append("+contentType:" + st.getVelocityVarName() + " ");
 		} else if (!Structure.STRUCTURE_TYPE_ALL.equals(structureInode) && hasContentTypesInodeSeparator(structureInode)) {
 			luceneQuery.append("+contentType:(");
-
-			String[] structureInodes = structureInode.split(CONTENT_TYPES_INODE_SEPARATOR);
 
 			for (int i = 0; i < structureInodes.length; i++) {
 				st = CacheLocator.getContentTypeCache().getStructureByInode(structureInodes[i]);
@@ -602,9 +601,11 @@ public class ContentletAjax {
 		}
 		// Stores (database name,type description) pairs to catch certain field types.
 		List<Field> targetFields = new ArrayList<Field>();
-		if(st!=null){
+
+		if(st!=null  && structureInodes.length == 1){
 		    targetFields = FieldsCache.getFieldsByStructureInode(st.getInode());
 		}
+
 		Map<String,String> fieldContentletNames = new HashMap<String,String>();
 		Map<String,Field> decimalFields = new HashMap<String,Field>();//DOTCMS-5478
 		for( Field f : targetFields ) {
@@ -653,6 +654,10 @@ public class ContentletAjax {
 					allLanguages = false;
 				}
 				if(fieldName.equalsIgnoreCase("conhost")){
+					fieldValue = fieldValue.equalsIgnoreCase("current") ?
+							(String) sess.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID)
+							: fieldValue;
+
 					if(!filterSystemHost  && !fieldValue.equals(Host.SYSTEM_HOST)){
 						try {
 							luceneQuery.append("+(conhost:" + fieldValue + " conhost:" + APILocator.getHostAPI().findSystemHost(APILocator.getUserAPI().getSystemUser(), true).getIdentifier() + ") ");
@@ -842,7 +847,11 @@ public class ContentletAjax {
 			orderBy = "wfCurrentStepName desc";
 		}else{
             if(orderBy.charAt(0)=='.'){
-                orderBy = st.getVelocityVarName() + orderBy;
+				if (structureInodes.length > 1) {
+					orderBy = orderBy.substring(1);
+				} else {
+					orderBy = st.getVelocityVarName() + orderBy;
+				}
             }
         }
 
@@ -1879,19 +1888,27 @@ public class ContentletAjax {
 						.getNotValidRelationship();
 				final Set<String> auxKeys = notValidRelationships.keySet();
 				for (final String key : auxKeys) {
-					String errorMessage = "";
+					StringBuilder errorMessage = new StringBuilder();
 					if (key.equals(
 							DotContentletValidationException.VALIDATION_FAILED_REQUIRED_REL)) {
-						errorMessage = "<b>Required Relationship</b>";
+						errorMessage.append("<b>").append(LanguageUtil
+								.get(user, "message.contentlet.relationship.required"))
+								.append("</b>");
 					} else if (key
 							.equals(DotContentletValidationException.VALIDATION_FAILED_INVALID_REL_CONTENT)) {
-						errorMessage = "<b>Invalid Relationship-Contentlet</b>";
+						errorMessage.append("<b>").append(LanguageUtil
+								.get(user, "message.contentlet.relationship.invalid"))
+								.append("</b>");
 					} else if (key
 							.equals(DotContentletValidationException.VALIDATION_FAILED_BAD_REL)) {
-						errorMessage = "<b>Bad Relationship</b>";
+						errorMessage.append("<b>").append(LanguageUtil
+								.get(user, "message.contentlet.relationship.bad"))
+								.append("</b>");
 					} else if (key
 							.equals(DotContentletValidationException.VALIDATION_FAILED_BAD_CARDINALITY)) {
-						errorMessage = "<b>One to Many Relation Violated</b>";
+						errorMessage.append("<b>").append(LanguageUtil
+								.get(user, "message.contentlet.relationship.cardinality.bad"))
+								.append("</b>");
 					}
 
 					sb.append(errorMessage).append(":<br>");

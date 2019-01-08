@@ -166,6 +166,10 @@ public class ContentUtils {
 		}
 		
 		public static PaginatedArrayList<Contentlet> pull(String query, int offset,int limit, String sort, User user, String tmDate){
+			return pull(query, offset, limit, sort, user, tmDate, false);
+		}
+
+		public static PaginatedArrayList<Contentlet> pull(String query, int offset,int limit, String sort, User user, String tmDate, boolean respectFrontendRoles){
 		    PaginatedArrayList<Contentlet> ret = new PaginatedArrayList<Contentlet>();
 		    
 			try {
@@ -184,8 +188,8 @@ public class ContentUtils {
 		            				" TO "+ffdate+"] "+notexpired;
 		            String lquery=query + " +live:true " + notexpired;
 		            
-		            PaginatedArrayList<Contentlet> wc=(PaginatedArrayList<Contentlet>)conAPI.search(wquery, limit, offset, sort, user, true);
-		            PaginatedArrayList<Contentlet> lc=(PaginatedArrayList<Contentlet>)conAPI.search(lquery, limit, offset, sort, user, true);
+		            PaginatedArrayList<Contentlet> wc=(PaginatedArrayList<Contentlet>)conAPI.search(wquery, limit, offset, sort, user, respectFrontendRoles);
+		            PaginatedArrayList<Contentlet> lc=(PaginatedArrayList<Contentlet>)conAPI.search(lquery, limit, offset, sort, user, respectFrontendRoles);
 		            ret.setQuery(lquery);
 		            // merging both results avoiding repeated inodes
 		            Set<String> inodes=new HashSet<String>();
@@ -233,7 +237,7 @@ public class ContentUtils {
 			    }
 			    else {
 			        // normal query
-			        PaginatedArrayList<Contentlet> conts=(PaginatedArrayList<Contentlet>)conAPI.search(query, limit, offset, sort, user, true);
+			        PaginatedArrayList<Contentlet> conts=(PaginatedArrayList<Contentlet>)conAPI.search(query, limit, offset, sort, user, respectFrontendRoles);
 			        ret.setTotalResults(conts.getTotalResults());
 			        ret.setQuery(query);
 			        contentlets=conts;
@@ -299,7 +303,6 @@ public class ContentUtils {
 		 * @param query - Lucene Query used to search for content - Will append live, working, deleted, and language if not passed
 		 * @param currentPage Current page number for pagination the first page would be one.
 		 * @param contentsPerPage Number of contentlets you are displaying per page
-		 * @param offset offset to start the results from 
 		 * @param sort - Velocity variable name to sort by.  this is a string and can contain multiple values "sort1 acs, sort2 desc"
 		 * @return Returns empty List if no results are found
 		 * 
@@ -469,33 +472,72 @@ public class ContentUtils {
 		 * @throws DotDataException 
 		 * @return Returns empty List if no results are found
 		 */
-		public static List<Contentlet> pullRelated(String relationshipName, String contentletIdentifier, String condition, boolean pullParents, int limit, String sort, User user, String tmDate) {	
-			Relationship rel = FactoryLocator.getRelationshipFactory().byTypeValue(relationshipName);
+		public static List<Contentlet> pullRelated(String relationshipName, String contentletIdentifier, String condition, boolean pullParents, int limit, String sort, User user, String tmDate) {
+			final Relationship relationship = FactoryLocator.getRelationshipFactory()
+					.byTypeValue(relationshipName);
 			String relNameForQuery = "";
-			if(rel.getParentStructureInode().equals(rel.getChildStructureInode())){
+			if(relationship.getParentStructureInode().equals(relationship.getChildStructureInode())){
 				if(pullParents){
 					relNameForQuery = relationshipName.trim() + "-child";
 				}else{
 					relNameForQuery = relationshipName.trim() + "-parent";
 				}
 			}
-			
-			if(!UtilMethods.isSet(relNameForQuery))//DOTCMS-5328
-				relNameForQuery = rel.getRelationTypeValue();
-			
-			contentletIdentifier = RecurrenceUtil.getBaseEventIdentifier(contentletIdentifier);
-			
-						
-			String pullquery = "+type:content +" + relNameForQuery + ":" + contentletIdentifier;
-					
-			if(UtilMethods.isSet(condition)){
-		           pullquery += " " + condition;
-			}
 
-			if(!UtilMethods.isSet(sort)){ 
-				sort = relationshipName + "-" + contentletIdentifier + "-order";
-			}
-			return pull(pullquery, limit, sort, user, tmDate);
+			return getPullResults(relationship, contentletIdentifier, condition, limit, -1, sort,
+					user, tmDate, relNameForQuery);
 		}
+
+	/**
+	 * Logic used for `pullRelated` and `pullRelatedField` methods
+	 * @param relationship
+	 * @param contentletIdentifier
+	 * @param condition
+	 * @param limit
+	 * @param offset
+	 * @param sort
+	 * @param user
+	 * @param tmDate
+	 * @param relNameForQuery
+	 * @return
+	 */
+	private static List<Contentlet> getPullResults(final Relationship relationship,
+			String contentletIdentifier, final String condition, final int limit, final int offset, String sort, final User user,
+			final String tmDate, String relNameForQuery) {
+		if(!UtilMethods.isSet(relNameForQuery))//DOTCMS-5328
+			relNameForQuery = relationship.getRelationTypeValue();
+
+		contentletIdentifier = RecurrenceUtil.getBaseEventIdentifier(contentletIdentifier);
+
+		String pullquery = "+type:content +" + relNameForQuery + ":" + contentletIdentifier;
+
+		if(UtilMethods.isSet(condition)){
+			   pullquery += " " + condition;
+		}
+
+		if(!UtilMethods.isSet(sort)){
+			sort = relationship.getRelationTypeValue() + "-" + contentletIdentifier + "-order";
+		}
+		return pull(pullquery, offset, limit, sort, user, tmDate);
+	}
+
+	/**
+	 * Returns a list of related content given a Relationship and additional filtering criteria
+	 * @param relationship
+	 * @param contentletIdentifier - Identifier of the contentlet
+	 * @param condition - Extra conditions to add to the query. like +title:Some Title.  Can be Null
+	 * @param limit - 0 is the dotCMS max limit which is 10000. Be careful when searching for unlimited amount as all content will load into memory
+	 * @param offset - Starting position of the resulting list. -1 is the default value and the first results of the pagination are returned
+	 * @param sort - Velocity variable name to sort by.  This is a string and can contain multiple values "sort1 acs, sort2 desc". Can be Null
+	 * @param user
+	 * @param tmDate
+	 * @return Returns empty List if no results are found
+	 */
+	public static List<Contentlet> pullRelatedField(final Relationship relationship,
+			final String contentletIdentifier, final String condition, final int limit,
+			final int offset, final String sort, final User user, final String tmDate) {
+		return getPullResults(relationship, contentletIdentifier, condition, limit, offset, sort,
+				user, tmDate, null);
+	}
 		
 }

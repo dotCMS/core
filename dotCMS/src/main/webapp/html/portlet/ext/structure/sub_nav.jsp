@@ -17,14 +17,6 @@ function allStructureSubNav()
 	document.location.href = href;
 }
 
-function addNewRelationshipSubNav()
-{
-	var href = "<portlet:actionURL windowState='<%=WindowState.MAXIMIZED.toString()%>'>";
-	href = href + "<portlet:param name='struts_action' value='/ext/structure/edit_relationship' />";
-	href = href + "</portlet:actionURL>";			
-	document.location.href = href;
-}
-
 function allRelationshipsSubNav()
 {
 	var href = "<portlet:actionURL windowState='<%=WindowState.MAXIMIZED.toString()%>'>";
@@ -36,7 +28,7 @@ function allRelationshipsSubNav()
 <!--table border="0" cellpadding="4" cellspacing="0" width="100%">
 <tr class="beta">
 	<td>
-		<a class="gamma" href="#" onCLick="allStructureSubNav();"><%= LanguageUtil.get(pageContext, "View-all-Structures") %></a> | <a class="gamma" href="#" onCLick="addNewStructureSubNav();" ><%= LanguageUtil.get(pageContext, "Add-New-Structure") %></a> | <a class="gamma" href="#" onCLick="allRelationshipsSubNav();"><%= LanguageUtil.get(pageContext, "View-all-Relationships") %></a> | <a class="gamma" href="#" onCLick="addNewRelationshipSubNav();" ><%= LanguageUtil.get(pageContext, "Add-New-Relationship") %></a>
+		<a class="gamma" href="#" onCLick="allStructureSubNav();"><%= LanguageUtil.get(pageContext, "View-all-Structures") %></a> | <a class="gamma" href="#" onCLick="addNewStructureSubNav();" ><%= LanguageUtil.get(pageContext, "Add-New-Structure") %></a> | <a class="gamma" href="#" onCLick="allRelationshipsSubNav();"><%= LanguageUtil.get(pageContext, "View-all-Relationships") %></a>
 	</td>
 </tr>
 </table-->

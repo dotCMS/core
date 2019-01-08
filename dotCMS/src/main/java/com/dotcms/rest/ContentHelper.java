@@ -7,10 +7,9 @@ import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.struts.ContentletForm;
-import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
+import com.dotmarketing.portlets.contentlet.transform.ContentletToMapTransformer;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-
 import java.util.Map;
 
 /**
@@ -36,7 +35,7 @@ public class ContentHelper {
     }
 
     @VisibleForTesting
-    protected ContentHelper(final IdentifierAPI identifierAPI,
+    public ContentHelper(final IdentifierAPI identifierAPI,
                             final MapToContentletPopulator mapToContentletPopulator) {
 
         this.identifierAPI            = identifierAPI;
@@ -55,27 +54,14 @@ public class ContentHelper {
         return this.mapToContentletPopulator.populate(contentlet, stringObjectMap);
     }
     /**
-     * Adds needed things that are not coming by default from the api to the contentlet.
-     * If there is anything new to add, returns copy with the new attributes inside, otherwise returns the same instance.
+     * Serves as an Entry point to the ContentletToMapTransformer
+     * @See ContentletToMapTransformer
      * @param contentlet {@link Contentlet} original contentlet to hydrate, won't be modified.
      * @return Contentlet returns a contentlet, if there is something to add will create a new instance based on the current one in the parameter and the new attributes, otherwise will the same instance
      */
-    public Contentlet hydrateContentLet (final Contentlet contentlet) {
-
-        Contentlet newContentlet = contentlet;
-        if (null != contentlet && !contentlet.getMap().containsKey(HTMLPageAssetAPI.URL_FIELD)) {
-
-            final String url = this.getUrl(contentlet);
-            if (null != url) {
-                // making a copy to avoid issues on modifying cache objects.
-                newContentlet = new Contentlet();
-                newContentlet.getMap().putAll(contentlet.getMap());
-                newContentlet.getMap().put(HTMLPageAssetAPI.URL_FIELD, url);
-            }
-        }
-
-        return newContentlet;
-    } // hydrateContentLet.
+    public Contentlet hydrateContentlet(final Contentlet contentlet) {
+       return new ContentletToMapTransformer(contentlet).hydrate().get(0);
+    } // hydrateContentlet.
 
     /**
      * Gets if possible the url associated to this asset contentlet

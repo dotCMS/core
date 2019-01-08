@@ -1017,7 +1017,7 @@ create table user_preferences (
    primary key (id)
 );
 create table language (
-   id bigint not null auto_increment,
+   id bigint not null,
    language_code varchar(5),
    country_code varchar(255),
    language varchar(255),

@@ -26,7 +26,7 @@ GitHub pull requests are the preferred method to contribute code to dotCMS.  Bef
 
 ## Requirements
 
-dotCMS requires a Java 8 Runtime Environment (JRE) or a Java 7 Development Kit (JDK). For a complete list of requirements, see [this page](http://dotcms.com/docs/latest/dotcms-technology-requirements).
+For a complete list of requirements, see [this page](http://dotcms.com/docs/latest/dotcms-technology-requirements).
 
 ## Getting Help
 

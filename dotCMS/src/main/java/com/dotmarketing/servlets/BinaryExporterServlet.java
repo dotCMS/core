@@ -7,7 +7,9 @@ import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.util.DownloadUtil;
 import com.dotcms.uuid.shorty.ShortType;
+import com.dotcms.uuid.shorty.ShortyException;
 import com.dotcms.uuid.shorty.ShortyId;
+import com.dotcms.uuid.shorty.ShortyIdAPI;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
@@ -65,24 +67,27 @@ import javax.servlet.http.HttpSession;
 import org.apache.commons.collections.LRUMap;
 
 /**
+ * This servlet allows you invoke content exporters over binary fields. With the following URL syntax you are able to
+ * invoke an specific content exporter on a piece of content:
  *
- * This servlet allows you invoke content exporters over binary fields.
- * With the following URL syntax you are able to invoke an specific content exporter on a piece of content.
- *
+ * <pre>
  * /contentAsset/{exporter path}/{content identifier}/{binary field - optional}?{byInode=true&}{exporter specific parameters}
+ * </pre>
  *
- * {exporter path} is the exporter specific path set by the exporter class. I.E. every exporter must implement an interface method call getPathMapping that
- * defines the path of what the exporter is going to be bound. E.G. The com.dotmarketing.portlets.contentlet.business.exporter.ImageResizeFieldExporter binds
- * to the resize-image path so it can be invoked as /contentAsset/resize-image/...
+ * <p>The {@code {exporter path}} is the exporter specific path set by the exporter class. I.E. every exporter must implement
+ * an interface method call getPathMapping that defines the path of what the exporter is going to be bound. E.G. The
+ * {@code com.dotmarketing.portlets.contentlet.business.exporter.ImageResizeFieldExporter} binds to the
+ * {@code resize-image} path so it can be invoked as {@code /contentAsset/resize-image/...}<p/>
  *
- * {content identifier} is the identifier of the piece of content that wants to be retrieved. Special case occurs when the url parameter "byInode=true" is set
- * then the content specific inode must be passed here.
+ * <p>The {@code {content identifier}} is the identifier of the piece of content that wants to be retrieved. Special case
+ * occurs when the url parameter {@code byInode=true} is set then the content specific inode must be passed here.<p/>
  *
- * {binary field - optional} is the binary field velocity name (refer to the structure manager to fidn out which is your field velocity name). This url part could be
- * obeyed for certain exporters that operate over the entire content instead of an specific field like with an XML content exporter for example.
+ * <p>The {@code {binary field - optional}} is the binary field velocity name (refer to the structure manager to find out
+ * which is your field velocity name). This url part could be obeyed for certain exporters that operate over the entire
+ * content instead of an specific field like with an XML content exporter for example.</p>
  *
- * {exporter specific parameters} is for exporter specific parameters, refer to the exporter documentation. Exporters like the thubmnail generator takes parameters
- * like the width or height of the thumbnail to be generated.
+ * <p>The {@code {exporter specific parameters}} is for exporter specific parameters, refer to the exporter documentation.
+ * Exporters like the thubmnail generator takes parameters like the width or height of the thumbnail to be generated.</p>
  *
  * @author David Torres 2010
  *
@@ -90,7 +95,9 @@ import org.apache.commons.collections.LRUMap;
 public class BinaryExporterServlet extends HttpServlet {
 
 	private static final FileAssetAPI fileAssetAPI = APILocator.getFileAssetAPI();
-	private static final UserAPI userAPI = APILocator.getUserAPI();
+	private static final ShortyIdAPI shortyIdApi = APILocator.getShortyAPI();
+	private final ContentletAPI contentAPI = APILocator.getContentletAPI();
+
 	Map<String, BinaryContentExporter> exportersByPathMapping;
 
 	private long defaultLang = APILocator.getLanguageAPI().getDefaultLanguage().getId();
@@ -100,7 +107,7 @@ public class BinaryExporterServlet extends HttpServlet {
 	public void init() throws ServletException {
 		super.init();
 
-		exportersByPathMapping = new HashMap<String, BinaryContentExporter>();
+		exportersByPathMapping = new HashMap<>();
 
 		Iterator<String> keys = Config.getKeys();
 
@@ -137,6 +144,17 @@ public class BinaryExporterServlet extends HttpServlet {
 
 	private static final long serialVersionUID = 1L;
 
+	/**
+	 * Processes incoming requests for binary files. Requests issued to this servlet might come directly
+	 * to it or through another servlet, such as the {@code SpeedyAssetServlet} class which is accessed using
+	 * the legacy {@code /dotAsset/} path to display files.
+	 *
+	 * @param req  The {@link HttpServletRequest} object.
+	 * @param resp The {@link HttpServletResponse} object.
+	 *
+	 * @throws ServletException
+	 * @throws IOException
+	 */
 	@SuppressWarnings("unchecked")
 	@Override
 	public void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -145,12 +163,8 @@ public class BinaryExporterServlet extends HttpServlet {
 		String[] uriPieces = uri.split("/");
 		String exporterPath = uriPieces[1];
 		String uuid = uriPieces[2];
-		Optional<ShortyId> shortOpt = APILocator.getShortyAPI().getShorty(uuid);
-		ShortyId shorty = shortOpt.isPresent() ? shortOpt.get() : APILocator.getShortyAPI().noShorty(uuid);
-		boolean isContent= (shorty.subType == ShortType.CONTENTLET);
-		uuid = shorty.longId;
 
-		Map<String, String[]> params = new HashMap<String, String[]>();
+		Map<String, String[]> params = new HashMap<>();
 		params.putAll(req.getParameterMap());
 		// only set uri params if they are not set in the query string - meaning
 		// the query string will override the uri params.
@@ -161,10 +175,30 @@ public class BinaryExporterServlet extends HttpServlet {
 			}
 		}
 		params = sortByKey(params);
-
+		boolean byInode = params.containsKey("byInode");
+		// Default to a no-shortyId value
+		ShortyId shorty = shortyIdApi.noShorty(uuid);
+		try {
+			// Try to get the ShortyId from a valid expected UUID value
+			final Optional<ShortyId> shortOpt = shortyIdApi.getShorty(uuid);
+			if (shortOpt.isPresent()) {
+				shorty = shortOpt.get();
+				// Double-check if the passed-in value is an Inode or not
+				byInode = byInode || shorty.type == ShortType.INODE;
+			} else {
+				// If the value is not a valid UUID, it probably is a legacy Identifier/Inode
+				shortyIdApi.validShorty(uuid);
+			}
+		} catch (final ShortyException e) {
+			// The Inode/Identifier length and/or format is not valid for a UUID, probably belonged
+			// to a Legacy File which is just a consecutive number. This old format needs to be supported
+			final ShortType shortType = (byInode ? ShortType.INODE : ShortType.IDENTIFIER);
+			shorty = new ShortyId(uuid, uuid, shortType, ShortType.CONTENTLET);
+		}
+		uuid = shorty.longId;
+		final boolean isContent= (shorty.subType == ShortType.CONTENTLET);
 		String assetInode = null;
 		String assetIdentifier = null;
-		boolean byInode = params.containsKey("byInode") || shorty.type == ShortType.INODE ;
 		if (byInode){
 			assetInode = uuid;
 		}
@@ -181,7 +215,6 @@ public class BinaryExporterServlet extends HttpServlet {
 		}
 
 		UserWebAPI userWebAPI = WebAPILocator.getUserWebAPI();
-		ContentletAPI contentAPI = APILocator.getContentletAPI();
 		BinaryContentExporter.BinaryContentExporterData data = null;
 		File inputFile = null;
 		HttpSession session = req.getSession(false);
@@ -200,12 +233,8 @@ public class BinaryExporterServlet extends HttpServlet {
         
 		try {
 			User user = userWebAPI.getLoggedInUser(req);
-			boolean respectFrontendRoles = !userWebAPI.isLoggedToBackend(req);
+
 			PageMode mode = PageMode.get(req);
-			//If session is in Admin Mode (Edit Mode) we should respect front end roles also.
-			if(mode.isAdmin){
-				respectFrontendRoles = true;
-			}
 
 			String downloadName = "file_asset";
 			long lang = WebAPILocator.getLanguageWebAPI().getLanguage(req).getId();
@@ -214,11 +243,18 @@ public class BinaryExporterServlet extends HttpServlet {
 			if (isContent){
 				Contentlet content = null;
 				if(byInode) {
-					if(isTempBinaryImage)
-						content = contentAPI.find(assetInode, APILocator.getUserAPI().getSystemUser(), respectFrontendRoles);
-					else
-						content = contentAPI.find(assetInode, user, respectFrontendRoles);
-					assetIdentifier = content.getIdentifier();
+
+					if (isTempBinaryImage)
+						content = contentAPI.find(assetInode, APILocator.getUserAPI().getSystemUser(), mode.respectAnonPerms);
+					else {
+						try {
+							content = contentAPI.find(assetInode, user, mode.respectAnonPerms);
+						} catch(DotSecurityException e) {
+							if (!mode.respectAnonPerms) {
+								content = getContentletLiveVersion(assetInode, user, lang);
+							}
+						}
+					}
 				} else {
 				    boolean live=userWebAPI.isLoggedToFrontend(req);
 
@@ -255,7 +291,7 @@ public class BinaryExporterServlet extends HttpServlet {
 							query.append("+working:true ");
 						}
 
-						List<Contentlet> foundContentlets = contentletAPI.search(query.toString(), 2, -1, null, user, respectFrontendRoles);
+						List<Contentlet> foundContentlets = contentletAPI.search(query.toString(), 2, -1, null, user, mode.respectAnonPerms);
 						if ( foundContentlets != null && !foundContentlets.isEmpty() ) {
 							//Prefer the contentlet with the session language
 							content = foundContentlets.get(0);
@@ -264,7 +300,7 @@ public class BinaryExporterServlet extends HttpServlet {
 							}
 						} else {
 							Logger.error(this, "Content with Identifier [" + assetIdentifier + "] not found.");
-							resp.sendError(404);
+							resp.sendError(HttpServletResponse.SC_NOT_FOUND);
 							return;
 						}
 
@@ -274,7 +310,7 @@ public class BinaryExporterServlet extends HttpServlet {
 						If the property DEFAULT_FILE_TO_DEFAULT_LANGUAGE is false OR the language in request/session
 						is equals to the default language, continue with the default behavior.
 						 */
-						content = contentAPI.findContentletByIdentifier(assetIdentifier, live, lang, user, respectFrontendRoles);
+						content = contentAPI.findContentletByIdentifier(assetIdentifier, live, lang, user, mode.respectAnonPerms);
 					}
 					assetInode = content.getInode();
 				}
@@ -282,10 +318,9 @@ public class BinaryExporterServlet extends HttpServlet {
                 // If the user is NOT logged in the backend then we cannot show content that is NOT live.
                 // Temporal files should be allowed any time
                 if(!isTempBinaryImage && !WebAPILocator.getUserWebAPI().isLoggedToBackend(req)) {
-                    if (!APILocator.getVersionableAPI().hasLiveVersion(content) && respectFrontendRoles) {
-                        Logger.debug(this, "Content " + fieldVarName + " is not publish, with inode: "
-                                + content.getInode());
-                        resp.sendError(404);
+                    if (!APILocator.getVersionableAPI().hasLiveVersion(content) && mode.respectAnonPerms) {
+						Logger.debug(this, "Content '" + fieldVarName + "' with inode: " + content.getInode() + " is not published");
+						resp.sendError(HttpServletResponse.SC_NOT_FOUND);
                         return;
                     }
                 }
@@ -298,8 +333,8 @@ public class BinaryExporterServlet extends HttpServlet {
 				try {
 					field = APILocator.getContentTypeFieldAPI().byContentTypeAndVar(type, fieldVarName);
 				} catch (NotFoundInDbException e) {
-					Logger.debug(this,"Field " + fieldVarName + " does not exist within structure " + type.variable());
-					resp.sendError(404);
+					Logger.debug(this,"Field " + fieldVarName + " does not exist within Content Type: " + type.variable());
+					resp.sendError(HttpServletResponse.SC_NOT_FOUND);
 					return;
 				}
 
@@ -308,15 +343,15 @@ public class BinaryExporterServlet extends HttpServlet {
 				else
 					inputFile = contentAPI.getBinaryFile(content.getInode(), field.variable(), user);
 				if(inputFile == null){
-					Logger.debug(this,"binary file '" + fieldVarName + "' does not exist for inode " + content.getInode());
-					resp.sendError(404);
+					Logger.debug(this,"Binary file '" + fieldVarName + "' does not exist for inode " + content.getInode());
+					resp.sendError(HttpServletResponse.SC_NOT_FOUND);
 					return;
 				}
 				downloadName = inputFile.getName();
 
 				//if we're looking at a front end user then we should always restrict (vtl, vm) files, .
 				if(ResourceLink.isDownloadRestricted(downloadName, content, user, req)){
-					resp.sendError(404);
+					resp.sendError(HttpServletResponse.SC_NOT_FOUND);
 					DbConnectionFactory.closeSilently();
 					return;
 				}
@@ -546,19 +581,19 @@ public class BinaryExporterServlet extends HttpServlet {
               resp.sendError(HttpServletResponse.SC_NOT_FOUND);
             }
 		} catch (PortalException e) {
-			Logger.error(BinaryExporterServlet.class, e.getMessage());
+			Logger.error(BinaryExporterServlet.class, "[PortalException] An error occurred when accessing '" + uri + "': " + e.getMessage());
 			Logger.debug(BinaryExporterServlet.class, e.getMessage(),e);
             if(!resp.isCommitted()){
               resp.sendError(HttpServletResponse.SC_NOT_FOUND);
             }
 		} catch (SystemException e) {
-			Logger.error(BinaryExporterServlet.class, e.getMessage());
+			Logger.error(BinaryExporterServlet.class, "[SystemException] An error occurred when accessing '" + uri + "': " + e.getMessage());
 			Logger.debug(BinaryExporterServlet.class, e.getMessage(),e);
             if(!resp.isCommitted()){
               resp.sendError(HttpServletResponse.SC_NOT_FOUND);
             }
 		} catch (DotDataException e) {
-			Logger.error(BinaryExporterServlet.class, e.getMessage());
+			Logger.error(BinaryExporterServlet.class, "[DotDataException] An error occurred when accessing '" + uri + "': " + e.getMessage());
 			Logger.debug(BinaryExporterServlet.class, e.getMessage(),e);
 	         if(!resp.isCommitted()){
 	           resp.sendError(HttpServletResponse.SC_NOT_FOUND);
@@ -575,20 +610,20 @@ public class BinaryExporterServlet extends HttpServlet {
 				}
 			  }
 			} catch (Exception e1) {
-				Logger.error(BinaryExporterServlet.class,e1.getMessage(),e1);
+				Logger.error(BinaryExporterServlet.class, "An error occurred when accessing '" + uri + "': " + e1.getMessage(), e1);
 	            if(!resp.isCommitted()){
 	              resp.sendError(HttpServletResponse.SC_NOT_FOUND);
 	            }
 			}
 		} catch (BinaryContentExporterException e) {
 			Logger.debug(BinaryExporterServlet.class, e.getMessage(),e);
-			Logger.error(BinaryExporterServlet.class, e.getMessage());
+			Logger.error(BinaryExporterServlet.class, "[BinaryContentExporterException] An error occurred when accessing '" + uri + "': " + e.getMessage());
 			if(!resp.isCommitted()){
 			  resp.sendError(HttpServletResponse.SC_NOT_FOUND);
 			}
 		}catch (Exception e) {
 			Logger.debug(BinaryExporterServlet.class, e.getMessage(),e);
-			Logger.error(BinaryExporterServlet.class, e.getMessage());
+			Logger.error(BinaryExporterServlet.class, "[Exception] An error occurred when accessing '" + uri + "': " + e.getMessage());
             if(!resp.isCommitted()){
               resp.sendError(HttpServletResponse.SC_NOT_FOUND);
             }
@@ -628,6 +663,15 @@ public class BinaryExporterServlet extends HttpServlet {
 		
 	}
 
+	private Contentlet getContentletLiveVersion(String assetInode, User user, long lang) throws DotDataException, DotSecurityException {
+		Contentlet content;
+		final Contentlet contentTemp = contentAPI.find(assetInode,
+				APILocator.getUserAPI().getSystemUser(), false);
+		content = contentAPI.findContentletByIdentifier(contentTemp.getIdentifier(),
+				true, lang, user, true);
+		return content;
+	}
+
 	@SuppressWarnings("unchecked")
 	private Map sortByKey(Map map) {
 		List list = new LinkedList(map.entrySet());
@@ -645,60 +689,11 @@ public class BinaryExporterServlet extends HttpServlet {
 		return result;
 	}
 
-
-
-	// Tries to find out whether this is content or a file
-private boolean isContent(String id, boolean byInode, long langId, boolean respectFrontendRoles) throws DotStateException, DotDataException, DotSecurityException{
-
-
-
-		if(cacheMisses.containsKey(id+byInode)){
-			throw new DotStateException("404 - Unable to find id:" + id);
-		}
-
-
-		if(byInode){
-			try {
-				Contentlet c =APILocator.getContentletAPI().find(id, userAPI.getSystemUser(), true);
-				if(c != null && c.getInode() != null)
-					return true;
-			} catch (Exception e) {
-				Logger.debug(this.getClass(), "Unable to find contentlet " + id);
-			}
-		}
-
-		else{
-			try {
-
-				//Lest try first to find the identifier in cache
-				Identifier identifier = APILocator.getIdentifierAPI().loadFromCache(id);
-				if ( identifier != null ) {
-					return "contentlet".equals(identifier.getAssetType());
-				}
-
-				//If not found in cache trying in the index
-				String luceneQuery = "+identifier:" + id;
-				List<Contentlet> foundContentlets = APILocator.getContentletAPI().search(luceneQuery, 0, -1, null, userAPI.getSystemUser(), false);
-				if ( foundContentlets != null && !foundContentlets.isEmpty() ) {
-					return true;
-				}
-
-			} catch (Exception e) {
-				Logger.debug(this.getClass(), "cant find identifier " + id);
-			}
-		}
-		cacheMisses.put(id+byInode, true);
-		throw new DotStateException("404 - Unable to find id:" + id);
-
-	}
-	@SuppressWarnings("deprecation")
-	private Map cacheMisses = new LRUMap(1000);
-
 	private Map<String,String[]> getURIParams(HttpServletRequest request){
 		String url = request.getRequestURI().toString();
 		url = (url.startsWith("/")) ? url.substring(1, url.length()) : url;
 		String p[] = url.split("/");
-		Map<String, String[]> map = new HashMap<String, String[]>();
+		Map<String, String[]> map = new HashMap<>();
 
 		String key =null;
 		for(String x : p){
@@ -712,9 +707,6 @@ private boolean isContent(String id, boolean byInode, long langId, boolean respe
 		}
 
 		return map;
-
 	}
-
-
 
 }

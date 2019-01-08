@@ -191,7 +191,7 @@ public class PublisherQueueJob implements StatefulJob {
 							If we are getting errors creating the bundle we should stop trying to publish it, this is not just a connection error,
 							there is something wrong with a bundler or creating the bundle.
 							 */
-							Logger.error(PublisherQueueJob.class, "Unable to publish Bundle: " + e.getMessage(), e);
+							Logger.error(PublisherQueueJob.class, "Unable to publish Bundle '" + pconf.getId() + "': " + e.getMessage(), e);
 							PushPublishLogger.log(this.getClass(), "Status Update: Failed to bundle");
 							pubAuditAPI.updatePublishAuditStatus(pconf.getId(), PublishAuditStatus.Status.FAILED_TO_BUNDLE, historyPojo);
 							pubAPI.deleteElementsFromPublishQueueTable(pconf.getId());
@@ -248,58 +248,64 @@ public class PublisherQueueJob implements StatefulJob {
 		}
 	}
 
+	/**
+	 * Obtains the list of Endpoints inside each Push Publishing Environment and verifies the publishing status of a
+	 * bundle that was recently pushed. Most of the times, the system can fail to obtain the status of a bundle:
+	 * <ol>
+	 *     <li>A network connection error between the sending  and receiving (Endpoint) environment.</li>
+	 *     <li>The physical file of the bundle in the receiving Endpoint is not accessible or has been deleted.</li>
+	 * </ol>
+	 *
+	 * @param bundleAudit Contains status information of a bundle that was recently pushed.
+	 * @return The response status of the bundle for each Endpoint according to the Push Publishing setup.
+	 * @throws DotDataException The information of a specific Endpoint could not be retrieved.
+	 * @throws DotPublisherException The audit status of the bundle could not be retrieved.
+	 */
 	private Map<String, Map<String, EndpointDetail>> collectEndpointInfoFromRemote(final PublishAuditStatus bundleAudit)
 			throws DotDataException, DotPublisherException {
-		Map<String, Map<String, EndpointDetail>> endpointTrackingMap = new HashMap<>();
-		PublishAuditHistory localHistory = bundleAudit.getStatusPojo();
-		Map<String, Map<String, EndpointDetail>> endpointsMap = localHistory.getEndpointsMap();
+		final Map<String, Map<String, EndpointDetail>> endpointTrackingMap = new HashMap<>();
+		final PublishAuditHistory localHistory = bundleAudit.getStatusPojo();
+		final Map<String, Map<String, EndpointDetail>> endpointsMap = localHistory.getEndpointsMap();
 		// For each group (environment)
-		for ( String groupID : endpointsMap.keySet() ) {
-            Map<String, EndpointDetail> endpointsGroup = endpointsMap.get(groupID);
-            // For each end-point (server) in the group
-            for ( String endpointID : endpointsGroup.keySet() ) {
-                PublishingEndPoint targetEndpoint = endpointAPI.findEndPointById(endpointID);
-
-                if ( targetEndpoint != null && !targetEndpoint.isSending() ) {
+		for (final String groupID : endpointsMap.keySet() ) {
+			final Map<String, EndpointDetail> endpointsGroup = endpointsMap.get(groupID);
+			// For each end-point (server) in the group
+			for (final String endpointID : endpointsGroup.keySet() ) {
+				final PublishingEndPoint targetEndpoint = endpointAPI.findEndPointById(endpointID);
+				if (targetEndpoint != null && !targetEndpoint.isSending()) {
 					ThreadContext.put(ENDPOINT_NAME, ENDPOINT_NAME + "=" + targetEndpoint.getServerName());
-                    // Don't poll status for static publishing
-                    if (!AWSS3Publisher.PROTOCOL_AWS_S3.equalsIgnoreCase(targetEndpoint.getProtocol())
-                            && !StaticPublisher.PROTOCOL_STATIC.equalsIgnoreCase(targetEndpoint.getProtocol())) {
-                        try {
-                            // Try to get the status of the remote end-points to
-                            // update the local history
-                            final PublishAuditHistory remoteHistory = getRemoteHistoryFromEndpoint(bundleAudit, targetEndpoint);
-
-                            if (remoteHistory != null) {
-                                updateLocalPublishDatesFromRemote(localHistory, remoteHistory);
-                                endpointTrackingMap.putAll(remoteHistory.getEndpointsMap());
-                                updateLocalEndpointDetailFromRemote(localHistory, groupID, endpointID, remoteHistory);
-                            }
-                        } catch (Exception e) {
-                            // An error occurred when retrieving the end-point's audit info.
-                            // Usually caused by a network problem.
-                            Logger.error(PublisherQueueJob.class,
-                                    String.format(
-                                            "An error occurred when accessing end-point '%s' with IP %s: %s",
-                                            targetEndpoint.getServerName(), targetEndpoint.getAddress(),
-                                            e.getMessage()),
-                                    e);
-                            String failedAuditUpdate = "failed-remote-group-" + System.currentTimeMillis();
-                            EndpointDetail detail = new EndpointDetail();
-                            detail.setStatus(Status.FAILED_TO_PUBLISH.getCode());
-                            endpointTrackingMap.put(failedAuditUpdate, map(failedAuditUpdate, detail));
-
-                            PushPublishLogger.log(this.getClass(), "Status update: Failed to publish bundle");
-                        }
-                    } else {
-                        PublishAuditStatus pas = pubAuditAPI.getPublishAuditStatus(bundleAudit.getBundleId());
-                        endpointTrackingMap.putAll(pas.getStatusPojo().getEndpointsMap());
-                    }
-                }
-            }
-        }
-
-        return endpointTrackingMap;
+					// Don't poll status for static publishing
+					if (!AWSS3Publisher.PROTOCOL_AWS_S3.equalsIgnoreCase(targetEndpoint.getProtocol())
+							&& !StaticPublisher.PROTOCOL_STATIC.equalsIgnoreCase(targetEndpoint.getProtocol())) {
+						try {
+							// Try to get the status of the remote end-points to
+							// update the local history
+							final PublishAuditHistory remoteHistory = getRemoteHistoryFromEndpoint(bundleAudit, targetEndpoint);
+							if (remoteHistory != null) {
+								updateLocalPublishDatesFromRemote(localHistory, remoteHistory);
+								endpointTrackingMap.putAll(remoteHistory.getEndpointsMap());
+								updateLocalEndpointDetailFromRemote(localHistory, groupID, endpointID, remoteHistory);
+							}
+						} catch (final Exception e) {
+							// An error occurred when retrieving the end-point's audit info.
+							// Usually caused by a network problem.
+							Logger.error(PublisherQueueJob.class, "An error occurred when updating audit status from " +
+									"endpoint=[" + targetEndpoint.toURL() + "], bundle=[" + bundleAudit.getBundleId()
+									+ "] : " + e.getMessage(), e);
+							final String failedAuditUpdate = "failed-remote-group-" + System.currentTimeMillis();
+							final EndpointDetail detail = new EndpointDetail();
+							detail.setStatus(Status.FAILED_TO_PUBLISH.getCode());
+							endpointTrackingMap.put(failedAuditUpdate, map(failedAuditUpdate, detail));
+							PushPublishLogger.log(this.getClass(), "Status update: Failed to update bundle audit status.");
+						}
+					} else {
+						final PublishAuditStatus auditStatus = pubAuditAPI.getPublishAuditStatus(bundleAudit.getBundleId());
+						endpointTrackingMap.putAll(auditStatus.getStatusPojo().getEndpointsMap());
+					}
+				}
+			}
+		}
+		return endpointTrackingMap;
 	}
 
 	@NotNull

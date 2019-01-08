@@ -4,7 +4,6 @@ import com.dotcms.rendering.velocity.services.VelocityType;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.repackage.jersey.repackaged.com.google.common.collect.ImmutableMap;
 import com.dotcms.visitor.business.VisitorAPI;
-
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.HostWebAPI;
@@ -14,20 +13,19 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
+import com.liferay.portal.model.User;
+import org.apache.velocity.Template;
+import org.apache.velocity.exception.ParseErrorException;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.StringWriter;
-import java.io.Writer;
 import java.util.Map;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import org.apache.velocity.Template;
 
 public abstract class VelocityModeHandler {
 
@@ -42,6 +40,13 @@ public abstract class VelocityModeHandler {
             .put(PageMode.ADMIN_MODE, VelocityAdminMode::new)
             .put(PageMode.NAVIGATE_EDIT_MODE, VelocityNavigateEditMode::new)
             .build();
+
+    protected void handleParseException(final ParseErrorException e,
+                                        final String name,
+                                        final User user) {
+
+        Logger.warn(this, "The resource " + name + " has a parse error, msg: " + e.getMessage());
+    }
 
     @FunctionalInterface
     private interface Function {
@@ -76,6 +81,5 @@ public abstract class VelocityModeHandler {
         return VelocityUtil.getEngine().getTemplate(mode.name() + File.separator + page.getIdentifier() + "_"
                 + page.getLanguageId() + "." + VelocityType.HTMLPAGE.fileExtension);
     }
-
 
 }

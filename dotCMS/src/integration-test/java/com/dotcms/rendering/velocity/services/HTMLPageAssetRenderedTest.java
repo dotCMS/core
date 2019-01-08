@@ -1,5 +1,7 @@
 package com.dotcms.rendering.velocity.services;
 
+import static org.mockito.Mockito.mock;
+
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.field.Field;
@@ -15,6 +17,7 @@ import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHttpRequest;
 import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
@@ -36,23 +39,21 @@ import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
+import java.util.ArrayList;
+import java.util.List;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.util.ArrayList;
-import java.util.List;
-
-import static org.mockito.Mockito.mock;
 
 public class HTMLPageAssetRenderedTest {
 
     private static String contentGenericId;
     private static String containerId;
     private static Template template;
+    private static Container container;
     private static User systemUser;
     private static final String contentFallbackProperty = "DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE";
     private static final String pageFallbackProperty = "DEFAULT_PAGE_TO_DEFAULT_LANGUAGE";
@@ -83,9 +84,25 @@ public class HTMLPageAssetRenderedTest {
         final ContentType contentGenericType = contentTypeAPI.find("webPageContent");
         contentGenericId = contentGenericType.id();
 
-        //Get a Container that includes ContentGeneric
-        final List<Container> container = APILocator.getContainerAPI().findContainersForStructure(contentGenericId,true);
-        containerId = container.get(0).getIdentifier();
+        /**
+         * Create new container
+         */
+        container = new Container();
+        final String containerName = "containerHTMLPageRenderedTest" + System.currentTimeMillis();
+
+        container.setFriendlyName(containerName);
+        container.setTitle(containerName);
+        container.setOwner(systemUser.getUserId());
+        container.setMaxContentlets(5);
+
+        final List<ContainerStructure> csList = new ArrayList<ContainerStructure>();
+        final ContainerStructure cs = new ContainerStructure();
+        cs.setStructureId(contentGenericType.id());
+        cs.setCode("$!{body}");
+        csList.add(cs);
+        container = APILocator.getContainerAPI().save(container, csList, APILocator.systemHost(), systemUser, false);
+        PublishFactory.publishAsset(container, systemUser, false, false);
+        containerId = container.getIdentifier();
 
         //Create a Template
         template = new TemplateDataGen().title("PageContextBuilderTemplate"+System.currentTimeMillis())
@@ -95,6 +112,8 @@ public class HTMLPageAssetRenderedTest {
         //Create Contentlet in English
         final Contentlet contentlet1 = new ContentletDataGen(contentGenericId)
                 .languageId(1)
+                .folder(folder)
+                .host(APILocator.systemHost())
                 .setProperty("title", "content1")
                 .setProperty("body", "content1")
                 .nextPersisted();
@@ -108,6 +127,8 @@ public class HTMLPageAssetRenderedTest {
         //Create Contentlet with English and Spanish Versions
         final Contentlet contentlet2English = new ContentletDataGen(contentGenericId)
                 .languageId(1)
+                .folder(folder)
+                .host(APILocator.systemHost())
                 .setProperty("title", "content2")
                 .setProperty("body", "content2")
                 .nextPersisted();
@@ -175,8 +196,18 @@ public class HTMLPageAssetRenderedTest {
             APILocator.getTemplateAPI().delete(template,systemUser,false);
         }
 
+        if(container != null){
+            APILocator.getContainerAPI().delete(container,systemUser,false);
+        }
+
+
+
+
         for(final String contentletId : contentletsIds){
             final Contentlet contentlet = contentletAPI.findContentletByIdentifierAnyLanguage(contentletId);
+            if(null == contentlet){
+               continue;
+            }
 
             contentlet.setIndexPolicy(IndexPolicy.FORCE);
             contentlet.setIndexPolicyDependencies(IndexPolicy.FORCE);
