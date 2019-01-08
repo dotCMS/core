@@ -47,6 +47,23 @@
         form.submit();
     }
 
+    function convertRelationship() {
+		var confirmDialog = confirm("Changing this relationship will change this content type and the related content type by adding a new relationship field to both types. Relationship, cardinality, and the parent child nature will be maintained, only content related by this the current relationship will now be related by the new relationship fields and the old relationship will be deleted. Any API calls or lucene queries that rely on the old methods of calling related content will need to be modified to a different syntax in order to function properly (see documentation for more details).\n" +
+				"\n" +
+				"Are you sure you would like to convert this relationship?");
+		if(confirmDialog==true) {
+			var form = document.getElementById("relationshipForm");
+			var action = "<portlet:actionURL windowState='<%=WindowState.MAXIMIZED.toString()%>'>";
+			action = action + "<portlet:param name='struts_action' value='/ext/structure/edit_relationship' />";
+			action = action + "<portlet:param name='<%=com.liferay.portal.util.Constants.CMD%>' value='<%=Constants.CONVERT%>' />";
+			action = action + "<portlet:param name='structure_id' value='<%=currentContentTypeId != null ? currentContentTypeId : "all"%>' /> ";
+			action = action + "</portlet:actionURL>";
+
+			form.action = action;
+			form.submit();
+		}
+	}
+
     // DOTCMS - 4028
     var structureInodes = [
         <%
@@ -224,19 +241,20 @@
 			</div>
 
 			<div class="buttonRow">
-				<%if(!disabled){%>
-				<button id="saveButton" dojoType="dijit.form.Button" onCLick="saveRelationship();return false;">
-					<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Save")) %>
-				</button>
 
 				<button dojoType="dijit.form.Button" onCLick="cancel();return false;" class="dijitButtonFlat">
 					<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Cancel")) %>
 				</button>
-				<%}else{ %>
-				<button dojoType="dijit.form.Button" onCLick="cancel();return false;" class="dijitButtonFlat">
-					<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Cancel")) %>
+				<%if(!relationshipForm.getRelationTypeValue().matches("[a-zA-z0-9]+\\.[a-zA-Z0-9]+")){%>
+				<button dojoType="dijit.form.Button" onCLick="convertRelationship();return false">
+					<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Convert-Relationship")) %>
 				</button>
-				<%} %>
+				<%}%>
+				<%if(!disabled){%>
+				<button id="saveButton" dojoType="dijit.form.Button" onCLick="saveRelationship();return false;">
+					<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Save")) %>
+				</button>
+				<%}%>
 			</div>
 
 		</div>
