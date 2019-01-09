@@ -414,11 +414,11 @@
 					</div>
 					<div class="content-edit-actions">
 						<div>
-							<a onClick='mainAdmin.show(stepAdmin.baseJsp + "?schemeId=<%=schemeId%>")'>
-								<%=LanguageUtil.get(pageContext, "Cancel")%>
-							</a>
 							<a id="saveButtonDiv" class="saveButtonHide" onClick="actionAdmin.saveAction('<%=schemeId %>');">
 								<%=LanguageUtil.get(pageContext, "Save")%>
+							</a>
+							<a onClick='mainAdmin.show(stepAdmin.baseJsp + "?schemeId=<%=schemeId%>")'>
+								<%=LanguageUtil.get(pageContext, "Cancel")%>
 							</a>
 						</div>
 					</div>
