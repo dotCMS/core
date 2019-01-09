@@ -7,6 +7,14 @@ import com.dotmarketing.tag.model.TagInode;
 
 import java.util.List;
 
+/**
+ * Provides access to all the operations related to the handling of Tags in dotCMS.
+ * <p>Tags are a method of labeling content with one or more terms so that content can be found and extracted
+ * dynamically for display on a page. Tags may be single words, or phrases of multiple words separated by spaces.</p>
+ *
+ * @author root
+ * @since Mar 22, 2012
+ */
 public interface TagAPI {
 
 	/**
@@ -94,14 +102,14 @@ public interface TagAPI {
 	 *
 	 * @param name               name of the tag to get
 	 * @param userId             owner of the tag
-	 * @param hostId             host identifier
+	 * @param siteId             Site identifier
 	 * @param persona            True if is a persona key tag
 	 * @param searchInSystemHost True if we want to search in the system host before to decide if a tag with the given
 	 *                           name exist or not
 	 * @return Tag
 	 * @throws Exception
 	 */
-	public Tag getTagAndCreate(String name, String userId, String hostId, boolean persona, boolean searchInSystemHost) throws DotDataException, DotSecurityException;
+	public Tag getTagAndCreate(String name, String userId, String siteId, boolean persona, boolean searchInSystemHost) throws DotDataException, DotSecurityException;
 
 	/**
 	 * Gets a Tag by name, validates the existance of the tag, if it doesn't exists then is created
@@ -404,4 +412,5 @@ public interface TagAPI {
 	 * @throws Exception 
 	 */
 	public List<Tag> getTagsInText ( String text, String userId, String hostId ) throws DotSecurityException, DotDataException;
+
 }
