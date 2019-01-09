@@ -1,12 +1,23 @@
 package com.dotcms.rest.api.v1.page;
 
 
+import static com.dotcms.util.CollectionsUtils.map;
+
+import com.dotcms.content.elasticsearch.business.ESSearchResults;
+import com.dotcms.enterprise.LicenseUtil;
+import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.repackage.javax.ws.rs.*;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
+import com.dotcms.repackage.javax.ws.rs.core.Response.Status;
+import com.dotcms.repackage.org.codehaus.jettison.json.JSONArray;
+import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
+import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
 import com.dotcms.repackage.org.glassfish.jersey.server.JSONP;
+import com.dotcms.rest.ContentResource;
 import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.ResourceResponse;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
@@ -16,9 +27,13 @@ import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionLevel;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
 import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetNotFoundException;
 import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetRenderedAPI;
 import com.dotmarketing.portlets.htmlpageasset.business.render.page.PageView;
@@ -32,6 +47,13 @@ import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.auth.PrincipalThreadLocal;
 import com.liferay.portal.model.User;
 
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -51,6 +73,7 @@ public class PageResource {
     private final PageResourceHelper pageResourceHelper;
     private final WebResource webResource;
     private final HTMLPageAssetRenderedAPI htmlPageAssetRenderedAPI;
+    private final ContentletAPI esapi = APILocator.getContentletAPI();
 
     /**
      * Creates an instance of this REST end-point.
@@ -398,5 +421,98 @@ public class PageResource {
         }
 
         return res;
+    }
+
+    @NoCache
+    @GET
+    @Produces({"application/html", "application/javascript"})
+    @Path("search")
+    public Response searchPage(
+                @Context HttpServletRequest request,
+                @Context HttpServletResponse response,
+                @QueryParam("path") String path,
+                @QueryParam("live") Boolean liveQueryParam,
+                @QueryParam("onlyLiveSites") boolean workingSite)
+            throws DotDataException, DotSecurityException {
+
+        InitDataObject initData = webResource.init(null, true, request, false, null);
+        User user = initData.getUser();
+        ResourceResponse responseResource = new ResourceResponse(initData.getParamsMap());
+
+        final boolean live = (liveQueryParam == null) ? PageMode.get(request).showLive : liveQueryParam;
+
+        final String esQuery = String.format("{"
+                    + "query: {"
+                        + "query_string: {"
+                            + "query: \"+basetype:5 +path:*%s* languageid:1^10\""
+                        + "}"
+                    + "}"
+                + "}", path);
+
+        final ESSearchResults esresult = esapi.esSearch(esQuery, live, user, live);
+        final Set<Map<String, Object>> contentletMaps = applyFilters(workingSite, esresult)
+                .stream()
+                .map(contentlet -> {
+                    try {
+                        return ContentletUtil.getContentPrintableMap(user, contentlet);
+                    } catch (DotDataException | IOException e) {
+                        return null;
+                    }
+                })
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        return Response.ok(new ResponseEntityView(contentletMaps)).build();
+    }
+
+    private Collection<Contentlet> applyFilters(
+            final boolean workingSite,
+            final ESSearchResults esresult) throws DotDataException {
+
+        final Collection<Contentlet> contentlets = this.removeMultiLangVersion(esresult);
+        return workingSite ? filterByWorkingSite(contentlets) : contentlets;
+    }
+
+    private Collection<Contentlet> filterByWorkingSite(final Collection<Contentlet> contentlets)
+            throws DotDataException {
+
+        final User systemUser = APILocator.getUserAPI().getSystemUser();
+
+        final Map<String, Host> hosts = contentlets.stream()
+                .map(Contentlet::getHost)
+                .distinct()
+                .map(hostId -> {
+                    try {
+                        return APILocator.getHostAPI().find(hostId, systemUser, false);
+                    } catch (DotDataException | DotSecurityException e) {
+                        return null;
+                    }
+                })
+                .filter(Objects::nonNull)
+                .collect(Collectors.toMap(Host::getIdentifier, host -> host));
+
+        return contentlets.stream()
+                .filter(contentlet -> {
+                    try {
+                        return hosts.get(contentlet.getHost()).isLive();
+                    } catch (DotDataException | DotSecurityException e) {
+                        return false;
+                    }
+                })
+                .collect(Collectors.toSet());
+    }
+
+    private Collection<Contentlet> removeMultiLangVersion(final Collection<Contentlet> contentlets) {
+        final Map<String, Contentlet> result = new HashMap<>();
+
+        for (final Contentlet contentlet : contentlets) {
+            final String contenletId = contentlet.getIdentifier();
+
+            if (!result.containsKey(contenletId)) {
+                result.put(contenletId, contentlet);
+            }
+        }
+
+        return result.values();
     }
 }
