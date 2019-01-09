@@ -784,12 +784,12 @@
 
 	<!-- START Button Row -->
 	<div class="buttonRow content-type-button-row">
-		<button id="saveButton" dojoType="dijit.form.Button" type="button" onClick="addNewField();">
-	   <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Save-Field")) %>
-	</button>
 		<button id="cancelButton" dojoType="dijit.form.Button" type="button" onClick="cancel" class="dijitButtonFlat">
-	   <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Cancel")) %>
-	</button>
+			<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Cancel")) %>
+		</button>
+		<button id="saveButton" dojoType="dijit.form.Button" type="button" onClick="addNewField();">
+		   <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Save-Field")) %>
+		</button>
 	</div>
 	<!-- END Button Row -->
 </div>

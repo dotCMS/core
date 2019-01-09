@@ -1059,9 +1059,9 @@
 					<dd><textarea dojoType="dijit.form.Textarea" id="addCatKeywords" tabindex="3" style="min-height:100px; max-height:100px"></textarea></dd>
 				</dl>
 			</div>
-			<div class="buttonRow">
+			<div class="buttonRow-right">
+            	<button dojoType="dijit.form.Button" tabindex="5" onclick="dijit.byId('add_category_dialog').hide()" type="button" class="dijitButtonFlat"><%= LanguageUtil.get(pageContext, "Cancel") %></button>
 				<button dojoType="dijit.form.Button" tabindex="4" onclick="saveOrUpdateCategory(true)" type="button"><%= LanguageUtil.get(pageContext, "Save") %></button>
-				<button dojoType="dijit.form.Button" tabindex="5" onclick="dijit.byId('add_category_dialog').hide()" type="button" class="dijitButtonFlat"><%= LanguageUtil.get(pageContext, "Cancel") %></button>
 			</div>
 		</form>
 	</div>
