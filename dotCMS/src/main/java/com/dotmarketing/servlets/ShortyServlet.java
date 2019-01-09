@@ -1,6 +1,5 @@
 package com.dotmarketing.servlets;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.Optional;
 import java.util.StringTokenizer;
@@ -27,7 +26,6 @@ import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
-import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
@@ -83,8 +81,8 @@ public class ShortyServlet extends HttpServlet {
     }
 
     tokens.nextToken();
-    String id = tokens.nextToken();
-    String fieldName = tokens.hasMoreTokens() ? tokens.nextToken() : FILE_ASSEST_DEFAULT;
+    final String id = tokens.nextToken();
+    final String fieldName = tokens.hasMoreTokens() ? tokens.nextToken() : FILE_ASSEST_DEFAULT;
     uri=uri.toLowerCase();
 
     int w = 0;
@@ -100,13 +98,13 @@ public class ShortyServlet extends HttpServlet {
       // let this one die''
     }
 
-    boolean jpeg = uri.contains("jpeg");
-    boolean jpegp = jpeg && uri.contains("jpegp");
-    boolean isImage = jpeg || w+h>0;
+    final boolean jpeg = uri.contains("jpeg");
+    final boolean jpegp = jpeg && uri.contains("jpegp");
+    final boolean isImage = jpeg || w+h>0;
     
 
     Optional<ShortyId> shortOpt = APILocator.getShortyAPI().getShorty(id);
-    boolean live = mode.showLive;
+    final boolean live = mode.showLive;
     if (!live) {
       response.setHeader("Pragma", "no-cache");
       response.setHeader("Cache-Control", "no-cache");
@@ -117,10 +115,10 @@ public class ShortyServlet extends HttpServlet {
       response.sendError(404);
       return;
     }
-    ShortyId shorty = shortOpt.get();
+    final ShortyId shorty = shortOpt.get();
     String path = (isImage) ? "/contentAsset/image" : "/contentAsset/raw-data";
 
-    Contentlet con = (shorty.type == ShortType.IDENTIFIER)
+    final Contentlet con = (shorty.type == ShortType.IDENTIFIER)
                 ? APILocator.getContentletAPI().findContentletByIdentifier(shorty.longId, false, -1,
                         APILocator.systemUser(), false)
                 : APILocator.getContentletAPI().find(shorty.longId, APILocator.systemUser(), false);
@@ -152,36 +150,39 @@ public class ShortyServlet extends HttpServlet {
 
 
 
-    private final String inodePath(final Contentlet con, final String tryField, final boolean live) throws DotStateException, DotDataException {
+    protected final String inodePath(final Contentlet con, final String tryField, final boolean live)
+            throws DotStateException, DotDataException {
 
         final Optional<Field> fieldOpt = resolveField(con, tryField);
 
         if (!fieldOpt.isPresent()) {
-            return "/" + con.getInode() + "/" + FILE_ASSEST_DEFAULT ;
+            return "/" + con.getInode() + "/" + FILE_ASSEST_DEFAULT;
         }
-        
+
         final Field field = fieldOpt.get();
         if (field instanceof ImageField || field instanceof FileField) {
             String id = con.getStringProperty(field.variable());
+
             ContentletVersionInfo cvi = APILocator.getVersionableAPI().getContentletVersionInfo(id, con.getLanguageId());
-            String inode = (live) ? cvi.getLiveInode() : cvi.getWorkingInode();
-            return "/" + inode + "/" + FILE_ASSEST_DEFAULT ;
-        } else {
-            return "/" + con.getInode() + "/" + field.variable() ;
+            if (cvi != null) {
+                String inode = (live) ? cvi.getLiveInode() : cvi.getWorkingInode();
+                return "/" + inode + "/" + FILE_ASSEST_DEFAULT;
+            }
         }
+
+        return "/" + con.getInode() + "/" + field.variable();
 
     }
 
 
-    private final Optional<Field> resolveField(final Contentlet con, final String tryField) {
+    protected final Optional<Field> resolveField(final Contentlet con, final String tryField) {
 
-        
-        return Contentlet.TITLE_IMAGE_KEY.equals(tryField)
-            ? con.getTitleImage() 
-            : con.getContentType().fieldMap().containsKey(tryField)  
-                ? Optional.of(con.getContentType().fieldMap().get(tryField))
-                : con.getContentType().fields().stream().filter(f -> (f instanceof BinaryField || f instanceof ImageField || f instanceof FileField) ).findFirst();
-        
+
+        return Contentlet.TITLE_IMAGE_KEY.equals(tryField) ? con.getTitleImage()
+                : con.getContentType().fieldMap().containsKey(tryField) ? Optional.of(con.getContentType().fieldMap().get(tryField))
+                        : con.getContentType().fields().stream()
+                                .filter(f -> (f instanceof BinaryField || f instanceof ImageField || f instanceof FileField)).findFirst();
+
     }
     
 }

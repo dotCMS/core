@@ -367,7 +367,13 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
     public void setContentTypeId(String id) {
     	map.put(STRUCTURE_INODE_KEY, id);
     }
-
+    /**
+     * 
+     * @param type
+     */
+    public void setContentType(final ContentType type) {
+        map.put(STRUCTURE_INODE_KEY, type.id());
+    }
 	/**
 	 * @deprecated As of dotCMS 4.1.0. Please use the following approach:
 	 * <pre>
@@ -534,7 +540,16 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	public void setStringProperty(String fieldVarName,String stringValue) throws DotRuntimeException {
 		map.put(fieldVarName, stringValue);
 	}
-
+	
+    /**
+     * 
+     * @param fieldVarName
+     * @param stringValue
+     * @throws DotRuntimeException
+     */
+    public void setStringProperty(com.dotcms.contenttype.model.field.Field field,String stringValue) throws DotRuntimeException {
+        map.put(field.variable(), stringValue);
+    }
 	/**
 	 * 
 	 * @param fieldVarName
@@ -544,7 +559,9 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	public void setLongProperty(String fieldVarName, long longValue) throws DotRuntimeException {
 		map.put(fieldVarName, longValue);
 	}
-
+    public void setLongProperty(com.dotcms.contenttype.model.field.Field field,long stringValue) throws DotRuntimeException {
+        map.put(field.variable(), stringValue);
+    }
 	/**
 	 * 
 	 * @param fieldVarName
@@ -568,6 +585,15 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	public void setBoolProperty(String fieldVarName, boolean boolValue) throws DotRuntimeException {
 		map.put(fieldVarName, boolValue);
 	}
+    /**
+     * 
+     * @param fieldVarName
+     * @param boolValue
+     * @throws DotRuntimeException
+     */
+    public void setBoolProperty(com.dotcms.contenttype.model.field.Field field, boolean boolValue) throws DotRuntimeException {
+        map.put(field.variable(), boolValue);
+    }
 
 	/**
 	 * 
@@ -592,6 +618,16 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	public void setDateProperty(String fieldVarName, Date dateValue) throws DotRuntimeException {
 		map.put(fieldVarName, dateValue);
 	}
+	
+    /**
+     * 
+     * @param field
+     * @param dateValue
+     * @throws DotRuntimeException
+     */
+    public void setDateProperty(com.dotcms.contenttype.model.field.Field field, Date dateValue) throws DotRuntimeException {
+        map.put(field.variable(), dateValue);
+    }
 
 	/**
 	 * 
@@ -616,6 +652,16 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	public void setFloatProperty(String fieldVarName, float floatValue) throws DotRuntimeException {
 		map.put(fieldVarName, floatValue);
 	}
+	
+    /**
+     * 
+     * @param fieldVarName
+     * @param floatValue
+     * @throws DotRuntimeException
+     */
+    public void setFloatProperty(com.dotcms.contenttype.model.field.Field field, float floatValue) throws DotRuntimeException {
+        map.put(field.variable(), floatValue);
+    }
 
 	/**
 	 * 
@@ -811,10 +857,10 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
             for(final com.dotcms.contenttype.model.field.Field f : type.fields()) {
                 try {
                     if(f instanceof BinaryField && UtilMethods.isImage(this.getBinary(f.variable()).toString())){
-                            returnVal=f.variable();
-                            break;
+                        returnVal=f.variable();
+                        break;
                     }
-                    else if( f instanceof ImageField) {
+                    else if( f instanceof ImageField && UtilMethods.isSet(get(f.variable()))) {
                         returnVal=f.variable();
                         break;
                     }
@@ -936,6 +982,16 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	public void setBinary(String velocityVarName, File newFile)throws IOException{
 		map.put(velocityVarName, newFile);
 	}
+	
+    /**
+     * 
+     * @param field
+     * @param newFile
+     * @throws IOException
+     */
+    public void setBinary(com.dotcms.contenttype.model.field.Field field, File newFile)throws IOException{
+        map.put(field.variable(), newFile);
+    }
 
 	/**
 	 * 
