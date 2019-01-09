@@ -130,4 +130,12 @@ public interface RelationshipAPI {
    */
   Relationship getRelationshipFromField(final com.dotcms.contenttype.model.field.Field field, final User user)
           throws DotDataException, DotSecurityException;
+
+  /**
+   * It converts an old Relationship to the new Relationship Field
+   * @param oldRelationship
+   * @throws DotDataException
+   * @throws DotSecurityException
+   */
+  void convertRelationshipToRelationshipField(final Relationship oldRelationship) throws DotDataException, DotSecurityException;
 }
