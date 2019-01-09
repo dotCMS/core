@@ -29,7 +29,7 @@
     }
 }
 
-::ng-deep .ui-table .ui-table-tbody tr td {
+::ng-deep .ui-table .ui-table-tbody tr.field-variable-row td {
     padding: 5px $basic-padding * 2;
 
     &.content-type-fields__variables-actions {
