@@ -280,6 +280,7 @@ public class RelationshipAPIImpl implements RelationshipAPI {
 
     }
 
+    @WrapInTransaction
     public void convertRelationshipToRelationshipField(final Relationship oldRelationship) throws DotDataException, DotSecurityException{
         //Transform Structures to Content Types
         final ContentType parentContentType = new StructureTransformer(oldRelationship.getParentStructure()).from();
@@ -293,8 +294,9 @@ public class RelationshipAPIImpl implements RelationshipAPI {
         final Relationship newRelationship = byTypeValue(parentContentType.variable()+"."+parentRelationshipField.variable());
         //Update tree table entries with the new Relationship
         final DotConnect dc = new DotConnect ();
-        dc.setSQL("update tree set relation_type = '" + newRelationship.getRelationTypeValue() +
-                "' where relation_type = '" + oldRelationship.getRelationTypeValue() + "'");
+        dc.setSQL("update tree set relation_type = ? where relation_type = ?");
+        dc.addParam(newRelationship.getRelationTypeValue());
+        dc.addParam(oldRelationship.getRelationTypeValue());
         dc.loadResult();
         //Delete the old relationship
         APILocator.getRelationshipAPI().delete(oldRelationship);

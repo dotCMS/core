@@ -41,12 +41,18 @@ public class RelationshipAPITest extends IntegrationTestBase {
     private static Relationship relationship = null;
     private static Structure structure = null;
     private static User user = null;
+    private static RelationshipAPI relationshipAPI = null;
+    private static ContentTypeAPI contentTypeAPI = null;
 
     @BeforeClass
     public static void prepare () throws Exception {
 
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
+
+        user = APILocator.systemUser();
+        relationshipAPI = APILocator.getRelationshipAPI();
+        contentTypeAPI = APILocator.getContentTypeAPI(user);
 
         structure = new Structure();
         structure.setFixed(false);
@@ -60,8 +66,7 @@ public class RelationshipAPITest extends IntegrationTestBase {
         relationship.setRelationTypeValue("IT-Parent-Child" + System.currentTimeMillis());
         relationship.setParentStructureInode(structure.getInode());
         relationship.setChildStructureInode(structure.getInode());
-        APILocator.getRelationshipAPI().create(relationship);
-        user = APILocator.systemUser();
+        relationshipAPI.create(relationship);
     }
 
     @AfterClass
@@ -71,7 +76,7 @@ public class RelationshipAPITest extends IntegrationTestBase {
         DbConnectionFactory.closeConnection();
 
         if (relationship != null) {
-            APILocator.getRelationshipAPI().delete(relationship);
+            relationshipAPI.delete(relationship);
         }
         //Clean up
         if (structure != null) {
@@ -96,7 +101,7 @@ public class RelationshipAPITest extends IntegrationTestBase {
 
         //An exception will be thrown because the relationship is duplicated
         //See method declaration, it is expecting this DotDataException
-        APILocator.getRelationshipAPI().create(duplicated);
+        relationshipAPI.create(duplicated);
 
     }
 
@@ -117,7 +122,7 @@ public class RelationshipAPITest extends IntegrationTestBase {
 
         //An exception will be thrown because the relationship modified the relationTypeValue
         //See method declaration, it is expecting this DotValidationException
-        APILocator.getRelationshipAPI().save(modified, relationship.getInode());
+        relationshipAPI.save(modified, relationship.getInode());
 
     }
 
@@ -147,9 +152,9 @@ public class RelationshipAPITest extends IntegrationTestBase {
             //Create an old Relationship
             final Structure parentStructure = new StructureTransformer(parentContentType).asStructure();
             final Structure childStructure = new StructureTransformer(childContentType).asStructure();
-            APILocator.getRelationshipAPI().save(new Relationship(parentStructure,childStructure,parentContentType.name(),
-                    childContentType.name(),0,false,false));
-            final Relationship relationship = APILocator.getRelationshipAPI().byParent(parentStructure).get(0);
+            final Relationship relationship = new Relationship(parentStructure,childStructure,parentContentType.name(),
+                    childContentType.name(),0,false,false);
+            relationshipAPI.save(relationship);
 
             //Create Contentlets
             Contentlet contentletParent = new ContentletDataGen(parentContentType.id())
@@ -174,10 +179,10 @@ public class RelationshipAPITest extends IntegrationTestBase {
             assertEquals(contentletChild2.getIdentifier(),relatedContent.get(1).getIdentifier());
 
             //Migrate Relationship
-            APILocator.getRelationshipAPI().convertRelationshipToRelationshipField(relationship);
+            relationshipAPI.convertRelationshipToRelationshipField(relationship);
 
             //Check old relationship does not exists
-            assertNull(APILocator.getRelationshipAPI().byInode(relationship.getInode()));
+            assertNull(relationshipAPI.byInode(relationship.getInode()));
 
             //Check Content is still related
             relatedContent = APILocator.getContentletAPI().getRelatedContent(contentletParent,relationship,user,false);
@@ -188,16 +193,74 @@ public class RelationshipAPITest extends IntegrationTestBase {
 
         }finally {
             if(parentContentType != null){
-                APILocator.getContentTypeAPI(user).delete(parentContentType);
+                contentTypeAPI.delete(parentContentType);
             }
             if(childContentType != null){
-                APILocator.getContentTypeAPI(user).delete(childContentType);
+                contentTypeAPI.delete(childContentType);
+            }
+        }
+    }
+
+    @Test
+    public void testconvertRelationshipToRelationshipField_SelfRelated_Success() throws DotDataException, DotSecurityException {
+        ContentType parentContentType = null;
+        try {
+            //Create content types
+            parentContentType = createContentType("ContentType" + System.currentTimeMillis());
+
+            //Create Text Fields
+            final String titleFieldString = "title";
+            final Field field = FieldBuilder.builder(TextField.class)
+                    .name(titleFieldString)
+                    .contentTypeId(parentContentType.id())
+                    .build();
+            APILocator.getContentTypeFieldAPI().save(field, user);
+
+            //Create an old Relationship
+            final Structure parentStructure = new StructureTransformer(parentContentType).asStructure();
+            final Relationship relationship = new Relationship(parentStructure,parentStructure,"parent" + parentContentType.name(),
+                    "child" + parentContentType.name(),0,false,false);
+            relationshipAPI.save(relationship);
+
+            //Create Contentlets
+            Contentlet contentletParent = new ContentletDataGen(parentContentType.id())
+                    .setProperty(titleFieldString,"parent Contentlet").next();
+            final Contentlet contentletChild = new ContentletDataGen(parentContentType.id()).setProperty(titleFieldString,"child Contentlet").nextPersisted();
+
+            //Relate contentlets
+            Map<Relationship, List<Contentlet>> relationshipListMap = Maps.newHashMap();
+            relationshipListMap.put(relationship, CollectionsUtils.list(contentletChild));
+
+            //Checkin of the parent to validate Relationships
+            contentletParent = APILocator.getContentletAPI().checkin(contentletParent,relationshipListMap,user,false);
+
+            //List Related Contentlets
+            List<Contentlet> relatedContent = APILocator.getContentletAPI().getRelatedContent(contentletParent,relationship,user,false);
+            assertNotNull(relatedContent);
+            assertEquals(1,relatedContent.size());
+            assertEquals(contentletChild.getIdentifier(),relatedContent.get(0).getIdentifier());
+
+            //Migrate Relationship
+            relationshipAPI.convertRelationshipToRelationshipField(relationship);
+
+            //Check old relationship does not exists
+            assertNull(relationshipAPI.byInode(relationship.getInode()));
+
+            //Check Content is still related
+            relatedContent = APILocator.getContentletAPI().getRelatedContent(contentletParent,relationship,user,false);
+            assertNotNull(relatedContent);
+            assertEquals(1,relatedContent.size());
+            assertEquals(contentletChild.getIdentifier(),relatedContent.get(0).getIdentifier());
+
+        }finally {
+            if(parentContentType != null){
+                contentTypeAPI.delete(parentContentType);
             }
         }
     }
 
     private ContentType createContentType(final String name) throws DotSecurityException, DotDataException {
-        return APILocator.getContentTypeAPI(user).save(ContentTypeBuilder.builder(SimpleContentType.class).folder(
+        return contentTypeAPI.save(ContentTypeBuilder.builder(SimpleContentType.class).folder(
                 FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST).name(name)
                 .owner(user.getUserId()).build());
     }
