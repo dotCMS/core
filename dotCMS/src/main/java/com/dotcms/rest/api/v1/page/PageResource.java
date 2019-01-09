@@ -423,21 +423,30 @@ public class PageResource {
         return res;
     }
 
+    /**
+     * Return all the page that contains the path parameter
+     *
+     * @param request
+     * @param path to filter
+     * @param liveQueryParam if it is true then return page only with live version, if it is false return both live and working version
+     * @param onlyLiveSites if it is true then filter page only from live sites
+     * @return
+     * @throws DotDataException throw if a DotDataException occur
+     * @throws DotSecurityException throw if the user don't have the right permissions
+     */
     @NoCache
     @GET
     @Produces({"application/html", "application/javascript"})
     @Path("search")
     public Response searchPage(
                 @Context HttpServletRequest request,
-                @Context HttpServletResponse response,
                 @QueryParam("path") String path,
                 @QueryParam("live") Boolean liveQueryParam,
-                @QueryParam("onlyLiveSites") boolean workingSite)
+                @QueryParam("onlyLiveSites") boolean onlyLiveSites)
             throws DotDataException, DotSecurityException {
 
         InitDataObject initData = webResource.init(null, true, request, false, null);
         User user = initData.getUser();
-        ResourceResponse responseResource = new ResourceResponse(initData.getParamsMap());
 
         final boolean live = (liveQueryParam == null) ? PageMode.get(request).showLive : liveQueryParam;
 
@@ -450,7 +459,7 @@ public class PageResource {
                 + "}", path);
 
         final ESSearchResults esresult = esapi.esSearch(esQuery, live, user, live);
-        final Set<Map<String, Object>> contentletMaps = applyFilters(workingSite, esresult)
+        final Set<Map<String, Object>> contentletMaps = applyFilters(onlyLiveSites, esresult)
                 .stream()
                 .map(contentlet -> {
                     try {
