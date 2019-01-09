@@ -2,7 +2,7 @@ import { map, pluck, flatMap, toArray, switchMap, take } from 'rxjs/operators';
 import { Injectable } from '@angular/core';
 import { Observable, of } from 'rxjs';
 import { RequestMethod } from '@angular/http';
-import { Site, ResponseView, CoreWebService } from 'dotcms-js';
+import { Site, CoreWebService } from 'dotcms-js';
 import {
     DotPageSeletorItem,
     DotPageSelectorResults,
@@ -118,23 +118,13 @@ export class DotPageSelectorService {
         );
     }
 
-    private getEsResults(query: string): Observable<ResponseView> {
+    private getPages(path: string): Observable<DotPageSelectorResults> {
         return this.coreWebService.requestView({
-            body: this.getRequestBodyQuery(query),
-            method: RequestMethod.Post,
-            url: 'es/search'
-        });
-    }
-
-    private getPages(query: string): Observable<DotPageSelectorResults> {
-        return this.coreWebService
-            .requestView({
-                body: this.getPagesSearchQuery(query),
-                method: RequestMethod.Post,
-                url: 'es/search'
+                method: RequestMethod.Get,
+                url: `v1/page/search?path=${path}&onlyLiveSites=true&live=false`
             })
             .pipe(
-                pluck('contentlets'),
+                pluck('entity'),
                 flatMap((pages: DotPageAsset[]) => pages),
                 map((page: DotPageAsset) => {
                     return {
@@ -147,28 +137,10 @@ export class DotPageSelectorService {
                     return {
                         data: items,
                         type: 'page',
-                        query: query.replace(HOST_FULL_REGEX, '')
+                        query: path.replace(HOST_FULL_REGEX, '')
                     };
                 })
             );
-    }
-
-    private getPagesSearchQuery(param: string): { [key: string]: {} } {
-        const parsedUrl: DotSimpleURL = this.parseUrl(param);
-
-        let query = `${PAGE_BASE_TYPE_QUERY} +path:*${this.cleanPath(
-            parsedUrl ? parsedUrl.pathname : param
-        )}*`;
-
-        if (this.currentHost) {
-            query += ` +conhostName:${this.currentHost.hostname}`;
-        }
-
-        return this.getRequestBodyQuery(query);
-    }
-
-    private cleanPath(path: string): string {
-        return path.replace(/\//g, '\\/');
     }
 
     private getRequestBodyQuery(query: string): { [key: string]: {} } {
@@ -185,25 +157,30 @@ export class DotPageSelectorService {
         let query = '+contenttype:Host +host.hostName:';
         query += specific ? this.getSiteName(param) : `*${this.getSiteName(param)}*`;
 
-        return this.getEsResults(query).pipe(
-            pluck('contentlets'),
-            flatMap((sites: Site[]) => sites),
-            map((site: Site) => {
-                return {
-                    label: `//${site.hostname}/`,
-                    payload: site,
-                    isHost: true
-                };
-            }),
-            toArray(),
-            map((items: DotPageSeletorItem[]) => {
-                return {
-                    data: items,
-                    type: 'site',
-                    query: param
-                };
+        return this.coreWebService.requestView({
+                body: this.getRequestBodyQuery(query),
+                method: RequestMethod.Post,
+                url: 'es/search'
             })
-        );
+            .pipe(
+                pluck('contentlets'),
+                flatMap((sites: Site[]) => sites),
+                map((site: Site) => {
+                    return {
+                        label: `//${site.hostname}/`,
+                        payload: site,
+                        isHost: true
+                    };
+                }),
+                toArray(),
+                map((items: DotPageSeletorItem[]) => {
+                    return {
+                        data: items,
+                        type: 'site',
+                        query: param
+                    };
+                })
+            );
     }
 
     private getSiteName(site: string): string {
