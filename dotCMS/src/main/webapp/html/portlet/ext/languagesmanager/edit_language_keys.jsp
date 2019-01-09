@@ -506,20 +506,17 @@
 			<div dojoType="dijit.ProgressBar" style="width:200px;text-align:center;" indeterminate="true" jsId="loadProgress" id="loadProgress"></div>
 		</div>
     	<div class="portlet-toolbar__actions-secondary">
+			<button dojoType="dijit.form.Button" onClick="cancelEdit('fm');return false;" iconClass="cancelIcon" class="dijitButtonFlat">
+				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Cancel-Changes")) %>
+			</button>
 		    <button dojoType="dijit.form.Button" onClick="addNewProperty();return false;" iconClass="plusIcon">
 		       <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-New-Property")) %>
 		    </button>
-		    
+			<button dojoType="dijit.form.Button" onClick="discardChanges('fm');return false;" iconClass="cancelIcon">
+				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Reset-Changes")) %>
+			</button>
 		    <button dojoType="dijit.form.Button"  onClick="doSubmit('fm');return false;" iconClass="saveIcon">
 		       <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Save-Changes")) %>
-		    </button>
-		    
-		    <button dojoType="dijit.form.Button" onClick="discardChanges('fm');return false;" iconClass="cancelIcon">
-		       <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Reset-Changes")) %>
-		    </button>
-		    
-		    <button dojoType="dijit.form.Button" onClick="cancelEdit('fm');return false;" iconClass="cancelIcon">
-		       <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Cancel-Changes")) %>
 		    </button>
     	</div>
    </div>

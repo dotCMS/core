@@ -115,16 +115,15 @@
 		</dl>
 	</div>
 
-	<div class="buttonRow">
+	<div class="buttonRow-right">
+		<button dojoType="dijit.form.Button"
+			onClick='stepAdmin.hideEdit()' iconClass="cancelIcon"
+			type="button" class="dijitButtonFlat">
+				<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "cancel"))%>
+		</button>
 		<button dojoType="dijit.form.Button" onClick='stepAdmin.editStep()' iconClass="saveIcon"
 				type="button" id="editStepBtn">
 			<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "save"))%>
-		</button>
-
-		<button dojoType="dijit.form.Button"
-				onClick='stepAdmin.hideEdit()' iconClass="cancelIcon"
-				type="button" class="dijitButtonFlat">
-			<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "cancel"))%>
 		</button>
 	</div>
 
