@@ -297,7 +297,7 @@
                 </dd>
             </dl>
         </div>
-        <div class="buttonRow">
+        <div class="buttonRow-right">
             <span class="showScheduler">
                 <button dojoType="dijit.form.Button" class="dijitButtonFlat" id="disableButton" onClick="disableJob();" iconClass="deleteIcon">
                     <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "TIMEMACHINE-DISABLE")) %>

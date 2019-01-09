@@ -140,7 +140,7 @@ if(request.getParameter(WebKeys.IN_FRAME)!=null){
 						canUserWriteToFile = perAPI.doesUserHavePermission(folder,PermissionAPI.PERMISSION_CAN_ADD_CHILDREN,user);
                      %>
 
-					<div class="buttonRow">
+					<div class="buttonRow-right">
 						<select dojoType="dijit.form.FilteringSelect" name="wfActionId" id="wfActionId" store="actionStore" value="" >
 				        </select>
 						<button dojoType="dijit.form.Button" class="dijitButtonFlat" type="button">

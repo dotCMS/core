@@ -140,7 +140,7 @@
 	            </label>
             </div>
             <hr/>
-            <div class="buttonRow">
+            <div class="buttonRow-right">
 			    <button dojoType="dijit.form.Button" onClick="hostAdmin.cancelCreateHost(); stopEvent; return false;" class="dijitButtonFlat">
 			        <%= LanguageUtil.get(pageContext, "Cancel") %>
 			    </button>
@@ -237,7 +237,7 @@
          	</tr>
          </table>
 
-        <div class="buttonRow" style="clear: both;">
+        <div class="buttonRow-right" style="clear: both;">
             <hr/>
 		    <button dojoType="dijit.form.Button" onClick="hostAdmin.cancelCreateHost(); dojo.stopEvent; return false;" class="dijitButtonFlat">
 		        <%= LanguageUtil.get(pageContext, "Cancel") %>

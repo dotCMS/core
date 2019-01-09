@@ -129,7 +129,7 @@ final String inode = request.getParameter("inode");// DOTCMS-7085
             <div dojoType="dijit.ProgressBar" style="width:200px;text-align:center;" indeterminate="true" jsId="saveRemotePublishProgress" id="saveRemotePublishProgress"></div>
         </div>
 
-		<div class="buttonRow">
+		<div class="buttonRow-right">
 			<button dojoType="dijit.form.Button" class="dijitButtonFlat" type="button" id="remotePublishCancelButton" >
 				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "cancel")) %>
 			</button>
@@ -149,7 +149,7 @@ final String inode = request.getParameter("inode");// DOTCMS-7085
 			<div dojoType="dijit.ProgressBar" style="width:200px;text-align:center;" indeterminate="true" jsId="saveRemotePublishProgress" id="saveRemotePublishProgress"></div>
 		</div>
 
-		<div class="buttonRow">
+		<div class="buttonRow-right">
 			<button dojoType="dijit.form.Button" class="dijitButtonFlat" type="button" id="remotePublishCancelButton" >
 				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "cancel")) %>
 			</button>

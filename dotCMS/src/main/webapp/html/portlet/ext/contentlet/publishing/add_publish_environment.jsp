@@ -164,7 +164,7 @@
 		</dl>
 	</div>
 
-	<div class="buttonRow">
+	<div class="buttonRow-right">
 		<button dojoType="dijit.form.Button" onClick="backToEnvironmentList(false)" id="closeSave" class="dijitButtonFlat"><%= LanguageUtil.get(pageContext, "Cancel") %></button>
 		<button dojoType="dijit.form.Button" type="submit" id="save" onclick="saveEnvironment()"><%= LanguageUtil.get(pageContext, "Save") %></button>
 	</div>
