@@ -1,5 +1,11 @@
 package com.dotcms.contenttype.transform.contenttype;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
+
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.JsonTransformer;
@@ -10,11 +16,6 @@ import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
 import com.fasterxml.jackson.core.JsonProcessingException;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 public class JsonContentTypeTransformer implements ContentTypeTransformer, JsonTransformer {
   final List<ContentType> list;
@@ -137,17 +138,24 @@ public class JsonContentTypeTransformer implements ContentTypeTransformer, JsonT
   public Map<String, Object> mapObject() {
     try {
       ContentType type = from();
-      Map<String, Object> typeMap = mapper.convertValue(type, HashMap.class);
+      final Map<String, Object> typeMap = mapper.convertValue(type, TreeMap.class);
       typeMap.put("fields", new JsonFieldTransformer(type.fields()).mapList());
       typeMap.put("baseType", type.baseType());
       typeMap.remove("acceptedDataTypes");
       typeMap.remove("dbColumn");
-
+      typeMap.remove("versionable");
+      typeMap.entrySet().removeIf(k-> (Boolean.FALSE == k.getValue() ));
+      typeMap.entrySet().removeIf(k-> (k.getValue() instanceof Collection && ((Collection)k.getValue()).isEmpty()));
       return typeMap;
     } catch (Exception e) {
       throw new DotStateException(e);
     }
   }
+  
+
+  
+  
+  
 
 }
 

@@ -53,6 +53,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
@@ -262,7 +264,7 @@ public class ContentTypeResource implements Serializable {
 		final User user = initData.getUser();
 		ContentTypeAPI tapi = APILocator.getContentTypeAPI(user, true);
 		Response response = Response.status(404).build();
-		final Map<String, Object> resultMap = new HashMap<>();
+		final Map<String, Object> resultMap = new TreeMap<>();
 		final HttpSession session = req.getSession(false);
 		try {
 

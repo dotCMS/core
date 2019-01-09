@@ -7,9 +7,11 @@ import com.dotcms.contenttype.model.field.ImmutableRelationshipField;
 import com.dotmarketing.util.UtilMethods;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldVariable;
@@ -159,7 +161,7 @@ public class JsonFieldTransformer implements FieldTransformer, JsonTransformer {
   public Map<String, Object> mapObject() {
     try {
       final Field f = from();
-      final Map<String, Object> field = mapper.convertValue(f, HashMap.class);
+      final Map<String, Object> field = mapper.convertValue(f, TreeMap.class);
       field.put("fieldVariables", new JsonFieldVariableTransformer(f.fieldVariables()).mapList());
       field.remove("acceptedDataTypes");
       field.remove("dbColumn");
@@ -189,7 +191,8 @@ public class JsonFieldTransformer implements FieldTransformer, JsonTransformer {
             "cardinality", Integer.parseInt(cardinality), "velocityVar", relationType
         ));
       }
-
+      field.entrySet().removeIf(k-> (Boolean.FALSE == k.getValue() ));
+      field.entrySet().removeIf(k-> k.getValue() instanceof Collection && ((Collection)k.getValue()).isEmpty());
       return field;
     } catch (Exception e) {
       throw new DotStateException(e);
