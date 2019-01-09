@@ -23,22 +23,6 @@ const hostSpecificQuery = {
     }
 };
 
-const pageQuery = {
-    query: {
-        query_string: {
-            query: `+basetype:5 +path:*about-us*`
-        }
-    }
-};
-
-const fullQuery = {
-    query: {
-        query_string: {
-            query: `+basetype:5 +path:*about-us* +conhostName:demo.dotcms.com`
-        }
-    }
-};
-
 describe('Service: DotPageSelector', () => {
     beforeEach(() => {
         this.injector = DOTTestBed.resolveAndCreate([DotPageSelectorService]);
@@ -89,16 +73,15 @@ describe('Service: DotPageSelector', () => {
             new Response(
                 new ResponseOptions({
                     body: {
-                        contentlets: [mockDotPageSelectorResults.data[0].payload]
+                        entity: [mockDotPageSelectorResults.data[0].payload]
                     }
                 })
             )
         );
         expect(result).toEqual(mockDotPageSelectorResults);
         expect(this.dotPageSelectorService.currentHost).toEqual(null);
-        expect(this.lastConnection.request.url).toContain('es/search?live=false&distinctLang=true&workingSite=true');
-        expect(this.lastConnection.request.method).toEqual(1);
-        expect(this.lastConnection.request._body).toEqual(pageQuery);
+        expect(this.lastConnection.request.url).toContain(`v1/page/search?path=about-us&onlyLiveSites=true&live=false`);
+        expect(this.lastConnection.request.method).toEqual(0);
     });
 
     it('should make a host search', () => {
@@ -117,7 +100,7 @@ describe('Service: DotPageSelector', () => {
             )
         );
         expect(result).toEqual(mockDotSiteSelectorResults);
-        expect(this.lastConnection.request.url).toContain('es/search?live=false&distinctLang=true&workingSite=true');
+        expect(this.lastConnection.request.url).toContain('es/search');
         expect(this.lastConnection.request.method).toEqual(1);
         expect(this.lastConnection.request._body).toEqual(hostQuery);
     });
@@ -142,7 +125,7 @@ describe('Service: DotPageSelector', () => {
             new Response(
                 new ResponseOptions({
                     body: {
-                        contentlets: [mockDotPageSelectorResults.data[0].payload]
+                        entity: [mockDotPageSelectorResults.data[0].payload]
                     }
                 })
             )
@@ -153,7 +136,8 @@ describe('Service: DotPageSelector', () => {
             mockDotSiteSelectorResults.data[0].payload
         );
         expect(connections[0].request._body).toEqual(hostSpecificQuery);
-        expect(connections[1].request._body).toEqual(fullQuery);
+        expect(connections[0].request.url).toEqual('es/search');
+        expect(connections[1].request.url).toEqual('v1/page/search?path=//demo.dotcms.com/about-us&onlyLiveSites=true&live=false');
     });
 
     it('should return empty results on Full Search if host is invalid', () => {
@@ -215,13 +199,6 @@ describe('Service: DotPageSelector', () => {
     it('should return empty results when page is invalid', () => {
         let result;
         const searchParam = 'invalidPage';
-        const query = {
-            query: {
-                query_string: {
-                    query: `+basetype:5 +path:*${searchParam}*`
-                }
-            }
-        };
         this.dotPageSelectorService.search(searchParam).subscribe(res => {
             result = res;
         });
@@ -230,7 +207,7 @@ describe('Service: DotPageSelector', () => {
             new Response(
                 new ResponseOptions({
                     body: {
-                        contentlets: []
+                        entity: []
                     }
                 })
             )
@@ -240,8 +217,7 @@ describe('Service: DotPageSelector', () => {
             query: 'invalidPage',
             type: 'page'
         });
-        expect(this.lastConnection.request.url).toContain('es/search');
-        expect(this.lastConnection.request.method).toEqual(1);
-        expect(this.lastConnection.request._body).toEqual(query);
+        expect(this.lastConnection.request.url).toContain('v1/page/search?path=invalidPage&onlyLiveSites=true&live=false');
+        expect(this.lastConnection.request.method).toEqual(0);
     });
 });
