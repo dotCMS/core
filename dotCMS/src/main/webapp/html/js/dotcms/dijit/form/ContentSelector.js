@@ -136,9 +136,8 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
         if (structure.inode === 'catchall') {
             this.search_general.style.display = "block";
         } else {
+            this.generalSearch.set('value', '');
             this.search_general.style.display = "none";
-            var searchInput = document.getElementById("allFieldTB");
-            searchInput.value = "";
         }
 
 		!isNg && this.dialog.set('title', structure["name"] ? structure["name"] : "");
@@ -1043,7 +1042,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 		this.nextDiv.style.display = "none";
 		this.previousDiv.style.display = "none";
         this.relateDiv.style.display = "none";
-        this.generalSearch.value = "";
+        this.generalSearch.set('value', '');
 
 		this._hideMatchingResults ();
 	},
