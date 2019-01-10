@@ -1,23 +1,14 @@
 package com.dotcms.rest.api.v1.page;
 
 
-import static com.dotcms.util.CollectionsUtils.map;
 
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
-import com.dotcms.enterprise.LicenseUtil;
-import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.repackage.javax.ws.rs.*;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
-import com.dotcms.repackage.javax.ws.rs.core.Response.Status;
-import com.dotcms.repackage.org.codehaus.jettison.json.JSONArray;
-import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
-import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
 import com.dotcms.repackage.org.glassfish.jersey.server.JSONP;
-import com.dotcms.rest.ContentResource;
 import com.dotcms.rest.InitDataObject;
-import com.dotcms.rest.ResourceResponse;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
@@ -27,7 +18,6 @@ import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionLevel;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -52,7 +42,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -439,14 +428,15 @@ public class PageResource {
     @Produces({"application/html", "application/javascript"})
     @Path("search")
     public Response searchPage(
-                @Context HttpServletRequest request,
-                @QueryParam("path") String path,
-                @QueryParam("live") Boolean liveQueryParam,
-                @QueryParam("onlyLiveSites") boolean onlyLiveSites)
+                @Context final HttpServletRequest request,
+                @QueryParam("path") final String path,
+                @QueryParam("live") final Boolean liveQueryParam,
+                @QueryParam("onlyLiveSites") final boolean onlyLiveSites)
             throws DotDataException, DotSecurityException {
 
-        InitDataObject initData = webResource.init(null, true, request, false, null);
-        User user = initData.getUser();
+        final InitDataObject initData = webResource.init(null, true, request,
+                false, null);
+        final User user = initData.getUser();
 
         final boolean live = (liveQueryParam == null) ? PageMode.get(request).showLive : liveQueryParam;
 
