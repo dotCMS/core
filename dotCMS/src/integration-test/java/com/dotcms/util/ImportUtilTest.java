@@ -1234,12 +1234,11 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         ContentType parentContentType = null;
         ContentType childContentType  = null;
         com.dotcms.contenttype.model.field.Field field = null;
-        HashMap<String, List<String>> results;
-        Relationship relationship;
+
         final int cardinality = RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal();
 
         try {
-
+            final Relationship relationship;
             parentContentType = createTestContentType("parentContentType", "parentContentType");
             childContentType = createTestContentType("childContentType", "childContentType");
             final Structure parentStructure = new StructureTransformer(parentContentType).asStructure();
@@ -1277,6 +1276,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                             "Import related content test, Import related content test, " + (relationshipTestCase.useLucene? "+identifier:":"")
                             + childContentlet.getIdentifier());
 
+            final HashMap<String, List<String>> results;
             if (relationshipTestCase.legacyRelationship) {
                 results = importContentWithRelationships(parentContentType, reader,
                         new String[]{parentContentType.fieldMap().get(TITLE_FIELD_NAME).inode(),
@@ -1308,11 +1308,11 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         //Creates content types
         ContentType parentContentType = null;
         com.dotcms.contenttype.model.field.Field field;
-        HashMap<String, List<String>> results;
-        Relationship relationship;
+
         final int cardinality = RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal();
 
         try {
+
             parentContentType = createTestContentType("parentContentType", "parentContentType");
 
             field = FieldBuilder.builder(RelationshipField.class).name("testRelationship")
@@ -1321,7 +1321,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                     .relationType(parentContentType.variable()).build();
 
             field = fieldAPI.save(field, user);
-            relationship = relationshipAPI.byTypeValue(
+            final Relationship relationship = relationshipAPI.byTypeValue(
                     parentContentType.variable() + StringPool.PERIOD + field.variable());
 
             //Creates child contentlet
@@ -1340,7 +1340,8 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                             "Import related content test, Import related content test, "
                             + childContentlet.getIdentifier());
 
-            results = importContentWithRelationships(parentContentType, reader,
+            final HashMap<String, List<String>> results = importContentWithRelationships(
+                    parentContentType, reader,
                     new String[]{parentContentType.fieldMap().get(TITLE_FIELD_NAME).inode(),
                             parentContentType.fieldMap().get(BODY_FIELD_NAME).inode(),
                             field.inode()});
