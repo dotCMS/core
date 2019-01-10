@@ -16,14 +16,14 @@ public class ContentTypeDataGen extends AbstractDataGen<ContentType> {
 
     private final long currentTime = System.currentTimeMillis();
     private BaseContentType baseContentType = BaseContentType.CONTENT;
-    private String description = "test-structure-desc-" + currentTime;
+    private String descriptionField = "test-structure-desc-" + currentTime;
     private boolean fixedField;
     private String name = "test-structure-name-" + currentTime;
     private Date iDateField = new Date();
-    private String detailPage = "";
-    private boolean system;
+    private String detailPageField = "";
+    private boolean systemField;
     private Inode.Type type = Inode.Type.STRUCTURE;
-    private String velocityVarName = "test-structure-varname-" + currentTime;
+    private String velocityVarNameField = "test-structure-varname-" + currentTime;
 
     @SuppressWarnings("unused")
     public ContentTypeDataGen baseContentType(final BaseContentType baseContentType) {
@@ -33,7 +33,7 @@ public class ContentTypeDataGen extends AbstractDataGen<ContentType> {
 
     @SuppressWarnings("unused")
     public ContentTypeDataGen description(final String description) {
-        this.description = description;
+        this.descriptionField = description;
         return this;
     }
 
@@ -57,13 +57,13 @@ public class ContentTypeDataGen extends AbstractDataGen<ContentType> {
 
     @SuppressWarnings("unused")
     public ContentTypeDataGen detailPage(final String detailPage) {
-        this.detailPage = detailPage;
+        this.detailPageField = detailPage;
         return this;
     }
 
     @SuppressWarnings("unused")
     public ContentTypeDataGen system(final boolean system) {
-        this.system = system;
+        this.systemField = system;
         return this;
     }
 
@@ -75,7 +75,7 @@ public class ContentTypeDataGen extends AbstractDataGen<ContentType> {
 
     @SuppressWarnings("unused")
     public ContentTypeDataGen velocityVarName(final String velocityVarName) {
-        this.velocityVarName = velocityVarName;
+        this.velocityVarNameField = velocityVarName;
         return this;
     }
 
@@ -101,14 +101,14 @@ public class ContentTypeDataGen extends AbstractDataGen<ContentType> {
     public ContentType next() {
         final Structure s = new Structure();
         s.setStructureType(baseContentType.getType());
-        s.setDescription(description);
+        s.setDescription(descriptionField);
         s.setFixed(fixedField);
         s.setName(name);
         s.setOwner(user.getUserId());
-        s.setDetailPage(detailPage);
-        s.setSystem(system);
+        s.setDetailPage(detailPageField);
+        s.setSystem(systemField);
         s.setType(type.getValue());
-        s.setVelocityVarName(velocityVarName);
+        s.setVelocityVarName(velocityVarNameField);
         s.setFolder(folder.getInode());
         s.setHost(host.getIdentifier());
         s.setIDate(iDateField);
