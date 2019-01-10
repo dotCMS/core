@@ -12,6 +12,14 @@
         field="label"
         [ngModel]="val"
         [suggestions]="results.data">
+            <ng-template let-item pTemplate="item" >
+                <div class='dot-page-selector__item'>
+                    <span *ngIf="results.type === 'site'">{{ item.label }}</span>
+                    <span class="dot-page-selector__item-url" *ngIf="results.type === 'page'" style=" ">{{ item.payload.path }}</span>
+                    <span class="dot-page-selector__item-host" *ngIf="results.type === 'page'" >{{ item.payload.hostName }}</span>
+                </div>
+
+            </ng-template>
     </p-autoComplete>
 </span>
 <div *ngIf="message" class="ui-messages-error" [textContent]="message"></div>

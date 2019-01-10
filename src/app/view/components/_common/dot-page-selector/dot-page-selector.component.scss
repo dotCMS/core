@@ -17,4 +17,27 @@
         top: $basic-padding * 3;
         z-index: 1;
     }
+
+}
+
+.dot-page-selector__item {
+    display: grid;
+    grid-column-gap: $basic-padding;
+
+    span {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    &-url {
+        grid-column: 1;
+        width: 190px;
+    }
+
+    &-host {
+        grid-column: 2;
+        width: 190px;
+        text-align: right;
+    }
 }
