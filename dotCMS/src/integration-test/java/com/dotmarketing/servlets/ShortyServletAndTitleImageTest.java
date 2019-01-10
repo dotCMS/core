@@ -20,6 +20,7 @@ import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
@@ -33,32 +34,32 @@ public class ShortyServletAndTitleImageTest {
     final static byte[] pngPixel=Base64.getDecoder().decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==");
     final static byte[] gifPixel=Base64.getDecoder().decode("R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==");
     final static byte[] txtBlah = "Here is a text blah".getBytes();
-    private static User user = null;
-    private static Host host = null;
+    private static User user ;
+    private static Host host ;
     
     @BeforeClass
-    public static void prepare() throws Exception {
-        IntegrationTestInitService.getInstance().init();
+    public static void prepare()  {
+        try {
+            IntegrationTestInitService.getInstance().init();
+            user = APILocator.systemUser();
+            host = APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false);
+        } catch (Exception e) {
+            throw new DotRuntimeException(e);
+        }
 
-        user = APILocator.systemUser();
-        host = APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false);
 
     }
 
     
-
-
-    
-    
     @Test
     public void test_getTitleImage() throws Exception{
-        File txtFile=File.createTempFile("tmp", ".txt");
+        final File txtFile=File.createTempFile("tmp", ".txt");
         Files.write(txtFile.toPath(), txtBlah);
-        File pngFile=File.createTempFile("tmp", ".png");
+        final File pngFile=File.createTempFile("tmp", ".png");
         Files.write(pngFile.toPath(), pngPixel);
-        File gifFile=File.createTempFile("tmp", ".gif");
+        final File gifFile=File.createTempFile("tmp", ".gif");
         Files.write(gifFile.toPath(), gifPixel);
-        Folder folder = new FolderDataGen().nextPersisted();
+        final Folder folder = new FolderDataGen().nextPersisted();
         Contentlet fileAsset = new FileAssetDataGen(folder, pngFile).nextPersisted();
         
         assertTrue("we HAVE a title image  ", fileAsset.getTitleImage().isPresent());
@@ -88,11 +89,11 @@ public class ShortyServletAndTitleImageTest {
     }
     @Test
     public void test_titleImage_Field() throws Exception{
-        File txtFile=File.createTempFile("tmp", ".txt");
+        final File txtFile=File.createTempFile("tmp", ".txt");
         Files.write(txtFile.toPath(), txtBlah);
-        File pngFile=File.createTempFile("tmp", ".png");
+        final File pngFile=File.createTempFile("tmp", ".png");
         Files.write(pngFile.toPath(), pngPixel);
-        File gifFile=File.createTempFile("tmp", ".gif");
+        final File gifFile=File.createTempFile("tmp", ".gif");
         Files.write(gifFile.toPath(), gifPixel);
         final ShortyServlet servlet = new ShortyServlet();
         Contentlet fileAsset = new FileAssetDataGen(host, pngFile).nextPersisted();
@@ -100,7 +101,7 @@ public class ShortyServletAndTitleImageTest {
         fileAsset.setInode(null);
         fileAsset = APILocator.getContentletAPI().checkin(fileAsset, user, false);
 
-        ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
         
         
         int i=0;

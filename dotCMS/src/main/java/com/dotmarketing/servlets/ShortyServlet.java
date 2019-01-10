@@ -161,11 +161,11 @@ public class ShortyServlet extends HttpServlet {
 
         final Field field = fieldOpt.get();
         if (field instanceof ImageField || field instanceof FileField) {
-            String id = con.getStringProperty(field.variable());
+            final String relatedImageId = con.getStringProperty(field.variable());
 
-            ContentletVersionInfo cvi = APILocator.getVersionableAPI().getContentletVersionInfo(id, con.getLanguageId());
+            ContentletVersionInfo cvi = APILocator.getVersionableAPI().getContentletVersionInfo(relatedImageId, con.getLanguageId());
             if (cvi != null) {
-                String inode = (live) ? cvi.getLiveInode() : cvi.getWorkingInode();
+                final String inode = (live) ? cvi.getLiveInode() : cvi.getWorkingInode();
                 return "/" + inode + "/" + FILE_ASSEST_DEFAULT;
             }
         }

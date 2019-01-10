@@ -14,8 +14,8 @@ import com.liferay.portal.model.User;
 
 public class ContentTypeDataGen extends AbstractDataGen<ContentType> {
 
-    private long currentTime = System.currentTimeMillis();
-    private BaseContentType structureType = BaseContentType.CONTENT;
+    private final long currentTime = System.currentTimeMillis();
+    private BaseContentType baseContentType = BaseContentType.CONTENT;
     private String description = "test-structure-desc-" + currentTime;
     private boolean fixed;
     private String name = "test-structure-name-" + currentTime;
@@ -26,81 +26,81 @@ public class ContentTypeDataGen extends AbstractDataGen<ContentType> {
     private String velocityVarName = "test-structure-varname-" + currentTime;
 
     @SuppressWarnings("unused")
-    public ContentTypeDataGen structureType(BaseContentType structureType) {
-        this.structureType = structureType;
+    public ContentTypeDataGen baseContentType(final BaseContentType baseContentType) {
+        this.baseContentType = baseContentType;
         return this;
     }
 
     @SuppressWarnings("unused")
-    public ContentTypeDataGen description(String description) {
+    public ContentTypeDataGen description(final String description) {
         this.description = description;
         return this;
     }
 
     @SuppressWarnings("unused")
-    public ContentTypeDataGen fixed(boolean fixed) {
+    public ContentTypeDataGen fixed(final boolean fixed) {
         this.fixed = fixed;
         return this;
     }
 
     @SuppressWarnings("unused")
-    public ContentTypeDataGen name(String name) {
+    public ContentTypeDataGen name(final String name) {
         this.name = name;
         return this;
     }
 
     @SuppressWarnings("unused")
-    public ContentTypeDataGen iDate(Date iDate) {
+    public ContentTypeDataGen iDate(final Date iDate) {
         this.iDate = iDate;
         return this;
     }
 
     @SuppressWarnings("unused")
-    public ContentTypeDataGen detailPage(String detailPage) {
+    public ContentTypeDataGen detailPage(final String detailPage) {
         this.detailPage = detailPage;
         return this;
     }
 
     @SuppressWarnings("unused")
-    public ContentTypeDataGen system(boolean system) {
+    public ContentTypeDataGen system(final boolean system) {
         this.system = system;
         return this;
     }
 
     @SuppressWarnings("unused")
-    public ContentTypeDataGen type(Inode.Type type) {
+    public ContentTypeDataGen type(final Inode.Type type) {
         this.type = type;
         return this;
     }
 
     @SuppressWarnings("unused")
-    public ContentTypeDataGen velocityVarName(String velocityVarName) {
+    public ContentTypeDataGen velocityVarName(final String velocityVarName) {
         this.velocityVarName = velocityVarName;
         return this;
     }
 
     @SuppressWarnings("unused")
-    public ContentTypeDataGen folder(Folder folder) {
+    public ContentTypeDataGen folder(final Folder folder) {
         this.folder = folder;
         return this;
     }
 
     @SuppressWarnings("unused")
-    public ContentTypeDataGen host(Host host) {
+    public ContentTypeDataGen host(final Host host) {
         this.host = host;
         return this;
     }
 
     @SuppressWarnings("unused")
-    public ContentTypeDataGen user(User user) {
+    public ContentTypeDataGen user(final User user) {
         this.user = user;
         return this;
     }
 
     @Override
     public ContentType next() {
-        Structure s = new Structure();
-        s.setStructureType(structureType.getType());
+        final Structure s = new Structure();
+        s.setStructureType(baseContentType.getType());
         s.setDescription(description);
         s.setFixed(fixed);
         s.setName(name);
@@ -116,19 +116,19 @@ public class ContentTypeDataGen extends AbstractDataGen<ContentType> {
     }
 
     @Override
-    public ContentType persist(ContentType object) {
+    public ContentType persist(final ContentType contentType) {
         try {
-            object = APILocator.getContentTypeAPI(APILocator.systemUser()).save(object);
+            return APILocator.getContentTypeAPI(APILocator.systemUser()).save(contentType);
         } catch (Exception e) {
             throw new RuntimeException("Unable to persist ContentType.", e);
         }
 
-        return object;
+
     }
 
-    public static void remove(ContentType object) {
+    public static void remove(final ContentType contentType) {
         try {
-            APILocator.getContentTypeAPI(APILocator.systemUser()).delete(object);
+            APILocator.getContentTypeAPI(APILocator.systemUser()).delete(contentType);
         } catch (Exception e) {
             throw new RuntimeException("Unable to remove ContentType.", e);
         }
