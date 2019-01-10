@@ -801,7 +801,19 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 		
 		var style = document.createElement('style');
 		style.type = 'text/css';
-		style.innerHTML = '.selectMeRowInIframe { cursor: pointer; } .selectMeRowInIframe:hover{background:#DFE8F6;}';
+		style.innerHTML = `
+			.selectMeRowInIframe { cursor: pointer; } 
+			.selectMeRowInIframe:hover{background:#DFE8F6;}
+			.listingTitleImg {
+			  border: 1px solid #ddd; 
+			  border-radius: 4px;  
+			  padding: 3px; 
+			  width: 64px; 
+			  cursor: pointer;
+			  max-height:100px
+			  overflow:hide;
+			}
+			`;
 		document.getElementsByTagName('head')[0].appendChild(style);
 		
 		
@@ -829,8 +841,8 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
             var hasTitleImage = (cellData.hasTitleImage ==='true');
 
             cell.innerHTML = (hasTitleImage) 
-            	? '<img style="border:1px solid silver" onError="contentSelector._replaceWithIcon(this.parentElement, \'' + iconName + '\')" src="/dA/' + cellData.inode + '/titleImage/64w" alt="' + cellData['__title__'].replace(/[^A-Za-z0-9_]/g, ' ') + '" >' 
-            	: '<span class="' + iconName +'" style="font-size:24px"></span>';
+            	? '<img class="listingTitleImg" onError="contentSelector._replaceWithIcon(this.parentElement, \'' + iconName + '\')" src="/dA/' + cellData.inode + '/titleImage/256w" alt="' + cellData['__title__'].replace(/[^A-Za-z0-9_]/g, ' ') + '" >' 
+            	: '<span class="' + iconName +'" style="font-size:24px;width:auto;"></span>';
 
             
             cell.setAttribute("style","text-align: center;");
@@ -1051,6 +1063,6 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
     },
 
 	_replaceWithIcon: function (parentElement, iconName) {
-        parentElement.innerHTML = '<span class="' + iconName +'" style="font-size:24px"></span>'
+        parentElement.innerHTML = '<span class="' + iconName +'" style="font-size:24px;width:auto;"></span>'
     }
 });
