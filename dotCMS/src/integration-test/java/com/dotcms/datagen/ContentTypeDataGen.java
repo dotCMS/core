@@ -17,9 +17,9 @@ public class ContentTypeDataGen extends AbstractDataGen<ContentType> {
     private final long currentTime = System.currentTimeMillis();
     private BaseContentType baseContentType = BaseContentType.CONTENT;
     private String description = "test-structure-desc-" + currentTime;
-    private boolean fixed;
+    private boolean fixedField;
     private String name = "test-structure-name-" + currentTime;
-    private Date iDate = new Date();
+    private Date iDateField = new Date();
     private String detailPage = "";
     private boolean system;
     private Inode.Type type = Inode.Type.STRUCTURE;
@@ -39,7 +39,7 @@ public class ContentTypeDataGen extends AbstractDataGen<ContentType> {
 
     @SuppressWarnings("unused")
     public ContentTypeDataGen fixed(final boolean fixed) {
-        this.fixed = fixed;
+        this.fixedField = fixed;
         return this;
     }
 
@@ -51,7 +51,7 @@ public class ContentTypeDataGen extends AbstractDataGen<ContentType> {
 
     @SuppressWarnings("unused")
     public ContentTypeDataGen iDate(final Date iDate) {
-        this.iDate = iDate;
+        this.iDateField = iDate;
         return this;
     }
 
@@ -102,7 +102,7 @@ public class ContentTypeDataGen extends AbstractDataGen<ContentType> {
         final Structure s = new Structure();
         s.setStructureType(baseContentType.getType());
         s.setDescription(description);
-        s.setFixed(fixed);
+        s.setFixed(fixedField);
         s.setName(name);
         s.setOwner(user.getUserId());
         s.setDetailPage(detailPage);
@@ -111,7 +111,7 @@ public class ContentTypeDataGen extends AbstractDataGen<ContentType> {
         s.setVelocityVarName(velocityVarName);
         s.setFolder(folder.getInode());
         s.setHost(host.getIdentifier());
-        s.setIDate(iDate);
+        s.setIDate(iDateField);
         return new StructureTransformer(s).from();
     }
 
