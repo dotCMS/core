@@ -1,7 +1,9 @@
 package com.dotmarketing.portlets.contentlet.model;
 
+import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.BinaryField;
+import com.dotcms.contenttype.model.field.ImageField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
@@ -101,6 +103,10 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	public static final String WORKFLOW_BULK_KEY = "wfActionBulk";
     public static final String DOT_NAME_KEY = "__DOTNAME__";
 
+    public static final String TITLE_IMAGE_KEY="titleImage";
+    
+    
+    
     public static final String DONT_VALIDATE_ME = "_dont_validate_me";
     public static final String DISABLE_WORKFLOW = "__disable_workflow__";
 
@@ -361,7 +367,13 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
     public void setContentTypeId(String id) {
     	map.put(STRUCTURE_INODE_KEY, id);
     }
-
+    /**
+     * 
+     * @param type
+     */
+    public void setContentType(final ContentType type) {
+        map.put(STRUCTURE_INODE_KEY, type.id());
+    }
 	/**
 	 * @deprecated As of dotCMS 4.1.0. Please use the following approach:
 	 * <pre>
@@ -528,7 +540,16 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	public void setStringProperty(String fieldVarName,String stringValue) throws DotRuntimeException {
 		map.put(fieldVarName, stringValue);
 	}
-
+	
+    /**
+     * 
+     * @param fieldVarName
+     * @param stringValue
+     * @throws DotRuntimeException
+     */
+    public void setStringProperty(com.dotcms.contenttype.model.field.Field field,String stringValue) throws DotRuntimeException {
+        map.put(field.variable(), stringValue);
+    }
 	/**
 	 * 
 	 * @param fieldVarName
@@ -538,7 +559,9 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	public void setLongProperty(String fieldVarName, long longValue) throws DotRuntimeException {
 		map.put(fieldVarName, longValue);
 	}
-
+    public void setLongProperty(com.dotcms.contenttype.model.field.Field field,long stringValue) throws DotRuntimeException {
+        map.put(field.variable(), stringValue);
+    }
 	/**
 	 * 
 	 * @param fieldVarName
@@ -562,6 +585,15 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	public void setBoolProperty(String fieldVarName, boolean boolValue) throws DotRuntimeException {
 		map.put(fieldVarName, boolValue);
 	}
+    /**
+     * 
+     * @param fieldVarName
+     * @param boolValue
+     * @throws DotRuntimeException
+     */
+    public void setBoolProperty(com.dotcms.contenttype.model.field.Field field, boolean boolValue) throws DotRuntimeException {
+        map.put(field.variable(), boolValue);
+    }
 
 	/**
 	 * 
@@ -586,6 +618,16 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	public void setDateProperty(String fieldVarName, Date dateValue) throws DotRuntimeException {
 		map.put(fieldVarName, dateValue);
 	}
+	
+    /**
+     * 
+     * @param field
+     * @param dateValue
+     * @throws DotRuntimeException
+     */
+    public void setDateProperty(com.dotcms.contenttype.model.field.Field field, Date dateValue) throws DotRuntimeException {
+        map.put(field.variable(), dateValue);
+    }
 
 	/**
 	 * 
@@ -610,6 +652,16 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	public void setFloatProperty(String fieldVarName, float floatValue) throws DotRuntimeException {
 		map.put(fieldVarName, floatValue);
 	}
+	
+    /**
+     * 
+     * @param fieldVarName
+     * @param floatValue
+     * @throws DotRuntimeException
+     */
+    public void setFloatProperty(com.dotcms.contenttype.model.field.Field field, float floatValue) throws DotRuntimeException {
+        map.put(field.variable(), floatValue);
+    }
 
 	/**
 	 * 
@@ -791,26 +843,34 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 		return (String) map.get(HOST_KEY);
 	}
 
-    private transient com.dotcms.contenttype.model.field.Field titleImageFieldVar = null;
+	private final static String TITLE_IMAGE_NOT_FOUND = "TITLE_IMAGE_NOT_FOUND";
 
+    
     public Optional<com.dotcms.contenttype.model.field.Field> getTitleImage() {
-
-        if (this.titleImageFieldVar != null){
-            return Optional.of(this.titleImageFieldVar);
+        final ContentType type = getContentType();
+        if(type==null || type.fieldMap()==null || TITLE_IMAGE_NOT_FOUND.equals(map.get(TITLE_IMAGE_KEY))) {
+            return Optional.empty();
         }
-        try {
-            this.titleImageFieldVar = this.getContentType().fields().stream().filter(f -> {
+        
+        if(map.get(TITLE_IMAGE_KEY) == null) {
+            String returnVal = TITLE_IMAGE_NOT_FOUND;
+            for(final com.dotcms.contenttype.model.field.Field f : type.fields()) {
                 try {
-                    return (f instanceof BinaryField && UtilMethods.isImage(this.getBinary(f.variable()).toString()));
+                    if(f instanceof BinaryField && UtilMethods.isImage(this.getBinary(f.variable()).toString())){
+                        returnVal=f.variable();
+                        break;
+                    }
+                    else if( f instanceof ImageField && UtilMethods.isSet(get(f.variable()))) {
+                        returnVal=f.variable();
+                        break;
+                    }
                 } catch (Exception e) {
-                    return false;
+                    Logger.debug(this.getClass(), e.getMessage(), e);
                 }
-            }).findFirst().orElse(null);
-
-        } catch (Exception e) {
-            Logger.debug(this.getClass(), e.getMessage(), e);
+            }
+            map.put(TITLE_IMAGE_KEY, returnVal);
         }
-        return this.titleImageFieldVar != null ? Optional.of(this.titleImageFieldVar) : Optional.empty();
+        return Optional.ofNullable(type.fieldMap().get(String.valueOf(map.get(TITLE_IMAGE_KEY))));
     }
 	
 	
@@ -922,6 +982,16 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	public void setBinary(String velocityVarName, File newFile)throws IOException{
 		map.put(velocityVarName, newFile);
 	}
+	
+    /**
+     * 
+     * @param field
+     * @param newFile
+     * @throws IOException
+     */
+    public void setBinary(com.dotcms.contenttype.model.field.Field field, File newFile)throws IOException{
+        map.put(field.variable(), newFile);
+    }
 
 	/**
 	 * 
