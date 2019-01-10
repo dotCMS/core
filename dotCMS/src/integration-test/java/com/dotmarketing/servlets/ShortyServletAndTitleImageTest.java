@@ -52,7 +52,7 @@ public class ShortyServletAndTitleImageTest {
 
     
     @Test
-    public void test_getTitleImage() throws Exception{
+    public void test_Contentlet_getTitleImage_Returns_Proper_Field() throws Exception{
         final File txtFile=File.createTempFile("tmp", ".txt");
         Files.write(txtFile.toPath(), txtBlah);
         final File pngFile=File.createTempFile("tmp", ".png");
@@ -88,7 +88,7 @@ public class ShortyServletAndTitleImageTest {
         
     }
     @Test
-    public void test_titleImage_Field() throws Exception{
+    public void test_ShortyServlet_Returns_Proper_Field() throws Exception{
         final File txtFile=File.createTempFile("tmp", ".txt");
         Files.write(txtFile.toPath(), txtBlah);
         final File pngFile=File.createTempFile("tmp", ".png");
