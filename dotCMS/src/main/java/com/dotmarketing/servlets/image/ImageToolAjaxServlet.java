@@ -131,16 +131,18 @@ public class ImageToolAjaxServlet extends HttpServlet {
     }
     
     private void doDownload(String fileUrl, HttpServletRequest request, HttpServletResponse response) throws IOException{
-		if(!fileUrl.startsWith("/contentAsset/image/")) {
-		    response.sendError(HttpServletResponse.SC_NOT_FOUND);
-		    return;
-		}
-        fileUrl+=(fileUrl.indexOf("?") < 0) ? "?":"&"; 
+        if(!fileUrl.startsWith("/contentAsset/image/")) {
+            response.sendError(HttpServletResponse.SC_NOT_FOUND);
+            return;
+        }
+		fileUrl+=(fileUrl.indexOf("?") < 0) ? "?":"&"; 
 		fileUrl+= "force_download=true&r" +new Random( 1756547574 ).nextInt();
-
+		System.out.println(fileUrl);
 		response.sendRedirect(SecurityUtils.stripReferer(request, fileUrl));
 		return;
-
+    	
+    	
+    	
     }
     
     private void doSave(HttpServletRequest request,HttpServletResponse response, String inode, String fieldId, String fileName) throws IOException{
