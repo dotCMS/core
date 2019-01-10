@@ -1327,9 +1327,8 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             //Creates child contentlet
             final ContentletDataGen contentletDataGen = new ContentletDataGen(
                     parentContentType.id());
-            contentletDataGen.languageId(defaultLanguage.getId());
 
-            final Contentlet childContentlet = contentletDataGen
+            final Contentlet childContentlet = contentletDataGen.languageId(defaultLanguage.getId())
                     .setProperty(TITLE_FIELD_NAME, "child contentlet")
                     .setProperty(BODY_FIELD_NAME, "child contentlet").nextPersisted();
 
