@@ -1,7 +1,7 @@
 package com.dotmarketing.startup.runonce;
 
-import com.dotmarketing.beans.Inode;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.common.db.DotDatabaseMetaData;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -23,6 +23,8 @@ import java.util.UUID;
  *
  */
 public class Task03120AddInodeToContainerStructure implements StartupTask {
+
+    private final DotDatabaseMetaData databaseMetaData = new DotDatabaseMetaData();
 
     private static final String SQL_ADD_INODE_COLUMN = "ALTER TABLE container_structures ADD container_inode varchar(36)";
     private static final String ORACLE_ADD_INODE_COLUMN = "ALTER TABLE container_structures ADD container_inode varchar2(36)";
@@ -62,7 +64,8 @@ public class Task03120AddInodeToContainerStructure implements StartupTask {
      */
     @Override
     public boolean forceRun() {
-        return true;
+
+        return !databaseMetaData.existsColumns(DbConnectionFactory.getConnection(), "container_structures", "container_inode");
     }
 
     /**

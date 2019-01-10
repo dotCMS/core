@@ -1,6 +1,7 @@
 package com.dotmarketing.startup.runonce;
 
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.common.db.DotDatabaseMetaData;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -16,7 +17,7 @@ public class Task04365RelationshipUniqueConstraint extends AbstractJDBCStartupTa
 
     @Override
     public boolean forceRun() {
-        return true;
+        return !new DotDatabaseMetaData().existsUniqueConstraint(DbConnectionFactory.getConnection(), "relationship", "unique_relation_type_value");
     }
 
     @Override

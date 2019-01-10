@@ -1,5 +1,7 @@
 package com.dotmarketing.startup.runonce;
 
+import com.dotmarketing.common.db.DotDatabaseMetaData;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.startup.AbstractJDBCStartupTask;
 
 import java.util.List;
@@ -10,9 +12,13 @@ import java.util.List;
  */
 public class Task03520AlterTagsForPersonas extends AbstractJDBCStartupTask {
 
+    private final DotDatabaseMetaData databaseMetaData = new DotDatabaseMetaData();
+
     @Override
     public boolean forceRun () {
-        return true;
+        return !this.databaseMetaData.existsColumns(DbConnectionFactory.getConnection(), "tag", "persona", "mod_date") &&
+                !this.databaseMetaData.existsColumns(DbConnectionFactory.getConnection(), "tag_inode", "mod_date") &&
+                !this.existsIndexOnTable(DbConnectionFactory.getConnection(), "tag", "tag_is_persona_index");
     }
 
     /**

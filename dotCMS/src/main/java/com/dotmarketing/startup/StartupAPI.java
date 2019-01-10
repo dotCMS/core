@@ -13,16 +13,22 @@ import java.util.List;
 public interface StartupAPI {
 
     /**
-     * Returns the start up (run always) tasks
+     * Returns the start up (run always) tasks sorted
      * @return List of start up classes
      */
     List<Class<?>> getStartupRunAlwaysTaskClasses();
 
     /**
-     * Returns the start up (run once) tasks
+     * Returns the start up (run once) tasks sorted
      * @return List of start up classes
      */
     List<Class<?>> getStartupRunOnceTaskClasses();
+
+    /**
+     * Returns the start up (run once) tasks without any sort
+     * @return List of start up classes
+     */
+    List<Class<?>> getStartupRunOnceTaskClassesUnsorted();
 
     /**
      * Returns all start up tasks (run always and once)

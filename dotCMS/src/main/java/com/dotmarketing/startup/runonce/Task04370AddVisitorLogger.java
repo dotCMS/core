@@ -14,7 +14,12 @@ import java.sql.SQLException;
 public class Task04370AddVisitorLogger implements StartupTask {
 
     public boolean forceRun() {
-        return true;
+        try {
+            return new DotConnect().setSQL("select * from log_mapper where LOG_NAME=?")
+                    .addParam("visitor-v3.log").loadObjectResults().stream().count() == 0;
+        } catch (DotDataException e) {
+            return true;
+        }
     }
 
     public void executeUpgrade() throws DotDataException, DotRuntimeException {

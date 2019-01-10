@@ -1,8 +1,10 @@
 package com.dotmarketing.startup.runonce;
 
-import java.util.List;
-
+import com.dotmarketing.common.db.DotDatabaseMetaData;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.startup.AbstractJDBCStartupTask;
+
+import java.util.List;
 
 /**
  * This upgrade task will perform an update operation on all the records of the
@@ -21,7 +23,7 @@ public class Task04105LowercaseVanityUrls extends AbstractJDBCStartupTask {
 
     @Override
     public boolean forceRun() {
-        return true;
+        return new DotDatabaseMetaData().existsTable(DbConnectionFactory.getConnection(), "virtual_link");
     }
 
     @Override

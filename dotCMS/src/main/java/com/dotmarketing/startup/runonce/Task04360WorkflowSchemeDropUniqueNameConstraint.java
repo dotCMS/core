@@ -23,7 +23,8 @@ public class Task04360WorkflowSchemeDropUniqueNameConstraint implements StartupT
 
     @Override
     public boolean forceRun() {
-        return Boolean.TRUE;
+        return new DotDatabaseMetaData().existsUniqueConstraint(DbConnectionFactory.getConnection(),
+                "workflow_scheme", "unique_workflow_scheme_name");
     }
 
     @Override

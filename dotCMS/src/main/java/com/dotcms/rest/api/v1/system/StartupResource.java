@@ -97,8 +97,7 @@ public class StartupResource {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public Response listTasks (@Context final HttpServletRequest request) {
 
-        final InitDataObject initData = this.webResource.init(null, true, request, true, null);
-        final User           user     = initData.getUser();
+        this.webResource.init(null, true, request, true, null);
         Response             response = null;
 
         try {

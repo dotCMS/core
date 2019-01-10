@@ -1,15 +1,18 @@
 package com.dotmarketing.startup.runonce;
 
-import java.sql.SQLException;
-
 import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.common.db.DotDatabaseMetaData;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.startup.StartupTask;
 
+import java.sql.SQLException;
+
 public class Task03015CreateClusterConfigModel implements StartupTask {
+
+	private final DotDatabaseMetaData dotDatabaseMetaData = new DotDatabaseMetaData();
 
 	private void createPushedAssetsTable(DotConnect dc) throws SQLException, DotDataException {
 		if(DbConnectionFactory.isMsSql()) {
@@ -65,7 +68,8 @@ public class Task03015CreateClusterConfigModel implements StartupTask {
 
 	@Override
 	public boolean forceRun() {
-		return true;
+
+		return !this.dotDatabaseMetaData.existsTable(DbConnectionFactory.getConnection(), "dot_cluster", "cluster_server", "cluster_server_uptime");
 	}
 
 }

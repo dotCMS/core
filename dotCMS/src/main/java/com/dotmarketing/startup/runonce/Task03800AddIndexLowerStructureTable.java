@@ -1,5 +1,6 @@
 package com.dotmarketing.startup.runonce;
 
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.startup.AbstractJDBCStartupTask;
 
 import java.util.List;
@@ -15,7 +16,7 @@ public class Task03800AddIndexLowerStructureTable extends AbstractJDBCStartupTas
 
     @Override
     public boolean forceRun() {
-        return true;
+        return !this.existsIndexOnTable(DbConnectionFactory.getConnection(), "structure", "idx_lower_structure_name");
     }
 
     @Override

@@ -1,8 +1,10 @@
 package com.dotmarketing.startup.runonce;
 
-import java.util.List;
-
+import com.dotmarketing.common.db.DotDatabaseMetaData;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.startup.AbstractJDBCStartupTask;
+
+import java.util.List;
 
 /**
  * Task to lower Case all the url in the virtual_link table
@@ -12,10 +14,12 @@ import com.dotmarketing.startup.AbstractJDBCStartupTask;
  */
 public class Task03150LoweCaseURLOnVirtualLinksTable extends AbstractJDBCStartupTask {
 
+	private final DotDatabaseMetaData databaseMetaData = new DotDatabaseMetaData();
+
 	private final String SQL_QUERY ="UPDATE virtual_link SET url=LOWER(url);";
 	@Override
 	public boolean forceRun() {
-		return true;        
+		return this.databaseMetaData.existsTable(DbConnectionFactory.getConnection(), "virtual_link");
 	}
 
 	/**

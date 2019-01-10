@@ -1,12 +1,13 @@
 package com.dotmarketing.startup.runonce;
 
-import java.sql.SQLException;
-
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.common.db.DotDatabaseMetaData;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.startup.StartupTask;
+
+import java.sql.SQLException;
 
 public class Task03715AddFKForPublishingBundleTable implements StartupTask {
 
@@ -62,7 +63,7 @@ public class Task03715AddFKForPublishingBundleTable implements StartupTask {
 
     @Override
     public boolean forceRun() {
-        return true;
+        return !new DotDatabaseMetaData().existsForeignKey(DbConnectionFactory.getConnection(), "publishing_bundle", "FK_publishing_bundle_owner");
     }
 
 }

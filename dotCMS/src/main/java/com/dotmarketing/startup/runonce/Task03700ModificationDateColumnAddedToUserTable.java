@@ -1,5 +1,7 @@
 package com.dotmarketing.startup.runonce;
 
+import com.dotmarketing.common.db.DotDatabaseMetaData;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.startup.AbstractJDBCStartupTask;
 
 import java.util.List;
@@ -13,9 +15,11 @@ import java.util.List;
  */
 public class Task03700ModificationDateColumnAddedToUserTable extends AbstractJDBCStartupTask {
 
+	private final DotDatabaseMetaData databaseMetaData = new DotDatabaseMetaData();
+
 	@Override
 	public boolean forceRun() {
-		return true;
+		return !databaseMetaData.existsColumns(DbConnectionFactory.getConnection(), "user_", "mod_date");
 	}
 
 	/**

@@ -1,8 +1,9 @@
 package com.dotmarketing.startup.runonce;
 
-import java.util.List;
-
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.startup.AbstractJDBCStartupTask;
+
+import java.util.List;
 
 /**
  * Task to create a new index for publishing_pushed_assets table
@@ -15,7 +16,7 @@ public class Task03160PublishingPushedAssetsTable extends AbstractJDBCStartupTas
 	private final String SQL_QUERY = "CREATE INDEX idx_pushed_assets_3 ON publishing_pushed_assets (asset_id, environment_id);"; 
 	@Override
 	public boolean forceRun() {
-		return true;
+		return !this.existsIndexOnTable(DbConnectionFactory.getConnection(), "publishing_pushed_assets", "idx_pushed_assets_3");
 	}
 
 	/**

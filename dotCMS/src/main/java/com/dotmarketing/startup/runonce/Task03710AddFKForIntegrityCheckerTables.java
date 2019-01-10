@@ -1,14 +1,17 @@
 package com.dotmarketing.startup.runonce;
 
-import java.sql.SQLException;
-
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.common.db.DotDatabaseMetaData;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.startup.StartupTask;
 
+import java.sql.SQLException;
+
 public class Task03710AddFKForIntegrityCheckerTables implements StartupTask {
+
+    private final DotDatabaseMetaData databaseMetaData = new DotDatabaseMetaData();
 
     private void createMissingFKForIRTables(DotConnect dc) throws SQLException, DotDataException {
         if(DbConnectionFactory.isMsSql()) {
@@ -103,7 +106,11 @@ public class Task03710AddFKForIntegrityCheckerTables implements StartupTask {
 
     @Override
     public boolean forceRun() {
-        return true;
+        return !databaseMetaData.existsForeignKey(DbConnectionFactory.getConnection(), "folders_ir", "FK_folder_ir_ep")        &&
+                !databaseMetaData.existsForeignKey(DbConnectionFactory.getConnection(), "structures_ir", "FK_structure_ir_ep") &&
+                !databaseMetaData.existsForeignKey(DbConnectionFactory.getConnection(), "schemes_ir", "FK_scheme_ir_ep")       &&
+                !databaseMetaData.existsForeignKey(DbConnectionFactory.getConnection(), "htmlpages_ir", "FK_page_ir_ep")       &&
+                !databaseMetaData.existsForeignKey(DbConnectionFactory.getConnection(), "fileassets_ir", "FK_file_ir_ep");
     }
 
 }

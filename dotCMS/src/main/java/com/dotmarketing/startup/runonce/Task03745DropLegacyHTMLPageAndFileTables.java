@@ -1,13 +1,15 @@
 package com.dotmarketing.startup.runonce;
 
-import java.sql.SQLException;
-import java.util.*;
-
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.common.db.DotDatabaseMetaData;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.startup.StartupTask;
+
+import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.List;
 
 public class Task03745DropLegacyHTMLPageAndFileTables implements StartupTask {
 	
@@ -15,7 +17,7 @@ public class Task03745DropLegacyHTMLPageAndFileTables implements StartupTask {
 
 	@Override
 	public boolean forceRun() {
-		return true;
+		return new DotDatabaseMetaData().existsTable(DbConnectionFactory.getConnection(), "htmlpage_version_info","htmlpage", "fileasset_version_info", "file_asset");
 	}
 
 	@Override

@@ -1,8 +1,5 @@
 package com.dotmarketing.startup;
 
-import static com.dotcms.util.CollectionsUtils.getMapValue;
-import static com.dotcms.util.CollectionsUtils.map;
-
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -11,18 +8,13 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import java.sql.Connection;
-import java.sql.DatabaseMetaData;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import org.apache.commons.lang.StringUtils;
+
+import java.sql.*;
+import java.util.*;
+
+import static com.dotcms.util.CollectionsUtils.getMapValue;
+import static com.dotcms.util.CollectionsUtils.map;
 
 /**
  * Derived classes should avoid use of transactions. MSSQL might have problems
@@ -1185,6 +1177,19 @@ public abstract class AbstractJDBCStartupTask implements StartupTask {
 					"An error occurred when processing the foreign keys [drop = " + executeDrop + "]: " + e.getMessage(), e);
 		}
 		return ret;
+	}
+
+	protected boolean existsIndexOnTable (final Connection conn, final String table, final String indexName) {
+
+		boolean existsIndexOnTable = false;
+		final List<Index> indices = this.getIndexes(conn, Arrays.asList(table), false);
+
+		if (UtilMethods.isSet(indices)) {
+
+			existsIndexOnTable = indices.stream().anyMatch(index -> indexName.equalsIgnoreCase(index.indexName));
+		}
+
+		return existsIndexOnTable;
 	}
 
 	/**

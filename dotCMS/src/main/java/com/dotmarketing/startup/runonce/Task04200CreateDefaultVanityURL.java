@@ -204,7 +204,12 @@ public class Task04200CreateDefaultVanityURL extends AbstractJDBCStartupTask {
 
 	@Override
 	public boolean forceRun() {
-		return true;
+		try {
+			return new DotConnect().setSQL("select * from inode where inode=?")
+					.addParam(DEFAULT_VANITY_URL_STRUCTURE_INODE).loadObjectResults().stream().count()==0;
+		} catch (DotDataException e) {
+			return true;
+		}
 	}
 
 	@Override

@@ -3,9 +3,11 @@
  */
 package com.dotmarketing.startup.runonce;
 
-import java.util.List;
-
+import com.dotmarketing.common.db.DotDatabaseMetaData;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.startup.AbstractJDBCStartupTask;
+
+import java.util.List;
 
 /**
  * @author Oscar Arrieta.
@@ -16,12 +18,13 @@ import com.dotmarketing.startup.AbstractJDBCStartupTask;
  */
 public class Task03060AddClusterServerAction extends AbstractJDBCStartupTask {
 
+	private final DotDatabaseMetaData databaseMetaData = new DotDatabaseMetaData();
 	/* (non-Javadoc)
 	 * @see com.dotmarketing.startup.StartupTask#forceRun()
 	 */
 	@Override
 	public boolean forceRun() {
-		return true;
+		return !databaseMetaData.existsTable(DbConnectionFactory.getConnection(), "cluster_server_action");
 	}
 
 	/* (non-Javadoc)

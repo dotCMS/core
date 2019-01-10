@@ -1,8 +1,9 @@
 package com.dotmarketing.startup.runonce;
 
-import java.util.List;
-
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.startup.AbstractJDBCStartupTask;
+
+import java.util.List;
 
 public class Task03030CreateIndicesForVersionTables extends AbstractJDBCStartupTask {
 
@@ -15,7 +16,13 @@ public class Task03030CreateIndicesForVersionTables extends AbstractJDBCStartupT
 
     @Override
     public boolean forceRun() {
-       return true;
+
+       return !this.existsIndexOnTable(DbConnectionFactory.getConnection(), "contentlet_version_info", "idx_contentlet_vi_version_ts") &&
+               !this.existsIndexOnTable(DbConnectionFactory.getConnection(), "container_version_info", "idx_container_vi_version_ts") &&
+               !this.existsIndexOnTable(DbConnectionFactory.getConnection(), "template_version_info", "idx_template_vi_version_ts") &&
+               !this.existsIndexOnTable(DbConnectionFactory.getConnection(), "htmlpage_version_info", "idx_htmlpage_vi_version_ts") &&
+               !this.existsIndexOnTable(DbConnectionFactory.getConnection(), "fileasset_version_info", "idx_fileasset_vi_version_ts") &&
+               !this.existsIndexOnTable(DbConnectionFactory.getConnection(), "link_version_info", "idx_link_vi_version_ts");
     }
 
     @Override

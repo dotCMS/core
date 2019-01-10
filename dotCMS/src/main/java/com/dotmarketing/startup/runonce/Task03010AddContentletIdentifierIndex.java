@@ -1,9 +1,9 @@
 package com.dotmarketing.startup.runonce;
 
-import java.util.List;
-
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.startup.AbstractJDBCStartupTask;
+
+import java.util.List;
 
 public class Task03010AddContentletIdentifierIndex extends AbstractJDBCStartupTask {
     	
@@ -12,7 +12,8 @@ public class Task03010AddContentletIdentifierIndex extends AbstractJDBCStartupTa
 	
 	@Override
     public boolean forceRun() {
-        return true;
+
+        return !this.existsIndexOnTable(DbConnectionFactory.getConnection(), "contentlet", "idx_contentlet_identifier");
     }
     
     @Override

@@ -1,5 +1,7 @@
 package com.dotmarketing.startup.runonce;
 
+import com.dotmarketing.common.db.DotDatabaseMetaData;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.startup.AbstractJDBCStartupTask;
 
 import java.util.List;
@@ -9,9 +11,11 @@ import java.util.List;
  */
 public class Task03555AddFlagToDeleteUsers extends AbstractJDBCStartupTask {
 
+    private final DotDatabaseMetaData databaseMetaData = new DotDatabaseMetaData();
+
     @Override
     public boolean forceRun () {
-        return true;
+        return !this.databaseMetaData.existsColumns(DbConnectionFactory.getConnection(), "user_", "delete_in_progress", "delete_date");
     }
 
     /**

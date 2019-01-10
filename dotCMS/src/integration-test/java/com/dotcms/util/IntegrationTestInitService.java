@@ -6,6 +6,7 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.startup.StartupAPI;
+import com.dotmarketing.startup.runonce.Task03005CreateModDateForFieldIfNeeded;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.liferay.util.SystemProperties;
@@ -68,7 +69,7 @@ public class IntegrationTestInitService {
         final StartupAPI startupAPI = APILocator.getStartupAPI();
 
         final List<Class<?>> alwaysTaskClasses = startupAPI.getStartupRunAlwaysTaskClasses();
-        final List<Class<?>> onceTaskClasses   = startupAPI.getStartupRunOnceTaskClasses();
+        final List<Class<?>> onceTaskClasses   = startupAPI.getStartupRunOnceTaskClassesUnsorted();
 
         Logger.info(this, ()->"Running the always upgrade tasks");
         for (final Class<?> alwaysTaskClass : alwaysTaskClasses) {
@@ -76,6 +77,7 @@ public class IntegrationTestInitService {
             try {
 
                 Logger.info(this, ()->"Running the upgrade task: " + alwaysTaskClass.getCanonicalName());
+
                 startupAPI.runStartup(alwaysTaskClass);
             } catch (DotDataException e) {
                 Logger.info(this, ()->"Error on running the upgrade task: " +
@@ -90,20 +92,28 @@ public class IntegrationTestInitService {
 
         Logger.info(this, ()->"Running the once upgrade tasks");
 
+        boolean is257UpgradeTask = false; // we want to test from 2.5.7 release, the first UT is Task03005CreateModDateForFieldIfNeeded.
         for (final Class<?> onceTaskClass : onceTaskClasses) {
 
             try {
 
-                Logger.info(this, ()->"Running the upgrade task: " + onceTaskClass.getCanonicalName());
-                startupAPI.runStartup(onceTaskClass);
-                Logger.info(this, ()->"Ran the upgrade task: " + onceTaskClass.getCanonicalName());
+                if (!is257UpgradeTask && onceTaskClass.equals(Task03005CreateModDateForFieldIfNeeded.class)) {
+
+                    is257UpgradeTask = true;
+                }
+
+                if (is257UpgradeTask) {
+                    Logger.info(this, () -> "Running the upgrade task: " + onceTaskClass.getCanonicalName());
+                    startupAPI.runStartup(onceTaskClass);
+                    Logger.info(this, () -> "Ran the upgrade task: " + onceTaskClass.getCanonicalName());
+                }
             } catch (Exception e) {
 
                 Logger.info(this, ()->"Error on running the upgrade task: " +
                         onceTaskClass.getCanonicalName() + ", msg: " + e.getMessage());
 
                 if (Config.getBooleanProperty("dotcms.integrationtest.run.upgradetask.stoponerror", true)) {
-                    fail(e.getMessage());
+                    fail(onceTaskClass + ": " + e.getMessage());
                 }
             }
         }

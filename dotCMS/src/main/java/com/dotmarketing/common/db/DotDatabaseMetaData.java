@@ -3,6 +3,7 @@ package com.dotmarketing.common.db;
 import com.dotcms.util.CloseUtils;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
 
 import java.sql.*;
@@ -313,5 +314,161 @@ public class DotDatabaseMetaData {
             CloseUtils.closeQuietly(preparedStatement);
         }
     } // executeDropForeignKeyMySql.
+
+    /**
+     * True only if all columns exists
+     * @param tableName   String table names
+     * @param columnNames String array (column names)
+     * @return boolean
+     */
+    public boolean existsColumns(final Connection conn, final String tableName, final String... columnNames) {
+
+        DatabaseMetaData databaseMetaData = null;
+        String           schema           = null;
+        ResultSet        tablesResultSet  = null;
+        String           table            = tableName;
+
+        try {
+
+            databaseMetaData = conn.getMetaData();
+            if (DbConnectionFactory.isOracle()) {
+                table  = table.toUpperCase();
+                schema = databaseMetaData.getUserName();
+            }
+
+            for (final String columnName : columnNames) {
+
+                tablesResultSet = databaseMetaData.getColumns
+                        (conn.getCatalog(), schema, table, columnName);
+
+                // checks if the table exists
+                if (!tablesResultSet.next()) {
+
+                    return false;
+                }
+            }
+        } catch (SQLException e) {
+            Logger.error(this,
+                    "An error occurred when calling the existsColumns method: " + e.getMessage(), e);
+        }
+        return true;
+    }
+
+    /**
+     * True only if all tables exists
+     * @param tableNames String array (table names)
+     * @return boolean
+     */
+    public boolean existsTable(final Connection conn, final String... tableNames) {
+
+        DatabaseMetaData databaseMetaData = null;
+        String           schema           = null;
+        ResultSet        tablesResultSet  = null;
+
+        try {
+
+            databaseMetaData = conn.getMetaData();
+
+            for (String table : tableNames) {
+
+                if (DbConnectionFactory.isOracle()) {
+                    table  = table.toUpperCase();
+                    schema = databaseMetaData.getUserName();
+                }
+
+                tablesResultSet = databaseMetaData.getTables
+                        (conn.getCatalog(), schema, table, new String[] {"TABLE"});
+
+                // checks if the table exists
+                if (!tablesResultSet.next()) {
+
+                    return false;
+                }
+            }
+        } catch (SQLException e) {
+            Logger.error(this,
+                    "An error occurred when calling the existsTable method: " + e.getMessage(), e);
+        }
+        return true;
+    }
+
+    public boolean existsForeignKey(final Connection connection, final String tableName, final String foreignKeyName) {
+
+        final  List<ForeignKey>  foreignKeys = this.getForeignKeys(connection, tableName);
+
+        if (UtilMethods.isSet(foreignKeys)) {
+
+            return foreignKeys.stream().anyMatch(fk -> fk.getForeignKeyName().equalsIgnoreCase(foreignKeyName));
+        }
+
+        return false;
+    }
+
+    /**
+     * Reads all the unique constraints associated to every table in the specified
+     * list.
+     *
+     * @param conn
+     *            - The database connection object to access the dotCMS data.
+     * @param tables
+     *            - The list of database tables whose foreign keys will be
+     *            retrieved.
+     *
+     * @return The list of foreign keys associated to the tables.
+     */
+    public List<Constraint> getUniqueConstraints(final Connection conn, final String... tables) {
+
+        final List<Constraint> constraints = new ArrayList<>();
+        DatabaseMetaData databaseMetaData     = null;
+        ResultSet        resultSet            = null;
+        Constraint       constraint           = null;
+        String           schema               = null;
+
+        try {
+
+            databaseMetaData = conn.getMetaData();
+
+            for (String table : tables) {
+
+                if (DbConnectionFactory.isOracle()) {
+                    table = table.toUpperCase();
+                    schema = databaseMetaData.getUserName();
+                }
+
+                resultSet = databaseMetaData.getIndexInfo
+                        (conn.getCatalog(), schema, table, true, false);
+
+                // Iterates over the foreign foreignKey columns
+                while (resultSet.next()) {
+
+                    constraint = new Constraint(
+                            resultSet.getString("TABLE_NAME"),
+                            resultSet.getBoolean("NON_UNIQUE"),
+                            resultSet.getString("INDEX_NAME"),
+                            resultSet.getString("COLUMN_NAME")
+                    );
+
+                    constraints.add(constraint);
+                }
+            }
+        } catch (SQLException e) {
+            Logger.error(this,
+                    "An error occurred when getting the the foreign keys: " + e.getMessage(), e);
+        }
+
+        return Collections.unmodifiableList(constraints);
+    } // getForeignKeys.
+
+    public boolean existsUniqueConstraint(final Connection connection, final String tableName, final String constraintName) {
+
+        final List<Constraint> constraints = this.getUniqueConstraints(connection, tableName);
+
+        if (UtilMethods.isSet(constraints)) {
+
+            return constraints.stream().anyMatch(fk -> fk.getName().equalsIgnoreCase(constraintName));
+        }
+
+        return false;
+    }
 } // E:O:F:DotDatabaseMetaData.
 

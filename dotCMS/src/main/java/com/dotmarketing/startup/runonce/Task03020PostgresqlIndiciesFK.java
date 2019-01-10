@@ -1,17 +1,18 @@
 package com.dotmarketing.startup.runonce;
 
-import java.util.List;
-import java.util.Map;
-
-import com.dotmarketing.beans.Inode;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.common.db.DotDatabaseMetaData;
 import com.dotmarketing.db.DbConnectionFactory;
-import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.startup.AbstractJDBCStartupTask;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 
+import java.util.List;
+import java.util.Map;
+
 public class Task03020PostgresqlIndiciesFK extends AbstractJDBCStartupTask {
+
+    private final DotDatabaseMetaData dotDatabaseMetaData = new DotDatabaseMetaData();
 
     @Override
     public boolean forceRun() {
@@ -31,7 +32,10 @@ public class Task03020PostgresqlIndiciesFK extends AbstractJDBCStartupTask {
 			}
     	}
 
-        return DbConnectionFactory.isPostgres() && !indicesExist && Config.getBooleanProperty("ENABLE_Task01320PostgresqlIndiciesFK",true);
+        return DbConnectionFactory.isPostgres() &&
+                !indicesExist &&
+                Config.getBooleanProperty("ENABLE_Task01320PostgresqlIndiciesFK",true) &&
+                this.dotDatabaseMetaData.existsTable(DbConnectionFactory.getConnection(), "fileasset_version_info");
     }
 
     @Override

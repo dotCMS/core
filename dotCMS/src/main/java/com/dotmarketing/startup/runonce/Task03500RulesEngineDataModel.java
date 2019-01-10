@@ -1,5 +1,7 @@
 package com.dotmarketing.startup.runonce;
 
+import com.dotmarketing.common.db.DotDatabaseMetaData;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.startup.AbstractJDBCStartupTask;
 
 import java.util.List;
@@ -16,6 +18,7 @@ import java.util.List;
  */
 public class Task03500RulesEngineDataModel extends AbstractJDBCStartupTask {
 
+    private final DotDatabaseMetaData databaseMetaData = new DotDatabaseMetaData();
 
     private final StringBuilder MYSQL = new StringBuilder()
             // create RULE table
@@ -331,7 +334,7 @@ public class Task03500RulesEngineDataModel extends AbstractJDBCStartupTask {
 
     @Override
     public boolean forceRun() {
-        return true;
+        return !databaseMetaData.existsTable(DbConnectionFactory.getConnection(),"dot_rule");
     }
 
     /**

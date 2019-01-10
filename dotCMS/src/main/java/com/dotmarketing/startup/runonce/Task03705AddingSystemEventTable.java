@@ -1,8 +1,10 @@
 package com.dotmarketing.startup.runonce;
 
-import java.util.List;
-
+import com.dotmarketing.common.db.DotDatabaseMetaData;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.startup.AbstractJDBCStartupTask;
+
+import java.util.List;
 
 /**
  * Creates the new {@code system_event} table. The main goal of this table is to
@@ -16,9 +18,11 @@ import com.dotmarketing.startup.AbstractJDBCStartupTask;
  */
 public class Task03705AddingSystemEventTable extends AbstractJDBCStartupTask {
 
+	private final DotDatabaseMetaData databaseMetaData = new DotDatabaseMetaData();
+
 	@Override
 	public boolean forceRun() {
-		return true;
+		return !this.databaseMetaData.existsTable(DbConnectionFactory.getConnection(), "system_event");
 	}
 
 	/**

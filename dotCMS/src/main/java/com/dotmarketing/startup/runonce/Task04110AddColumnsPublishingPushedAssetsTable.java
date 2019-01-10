@@ -1,9 +1,11 @@
 package com.dotmarketing.startup.runonce;
 
 
-import java.util.List;
-
+import com.dotmarketing.common.db.DotDatabaseMetaData;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.startup.AbstractJDBCStartupTask;
+
+import java.util.List;
 
 
 /**
@@ -15,7 +17,7 @@ public class Task04110AddColumnsPublishingPushedAssetsTable extends AbstractJDBC
 
 	@Override
 	public boolean forceRun() {
-		return true;
+		return !new DotDatabaseMetaData().existsColumns(DbConnectionFactory.getConnection(), "publishing_pushed_assets", "endpoint_ids", "publisher");
 	}
 
 	@Override

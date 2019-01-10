@@ -1,14 +1,18 @@
 package com.dotmarketing.startup.runonce;
 
-import java.util.List;
-
+import com.dotmarketing.common.db.DotDatabaseMetaData;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.startup.AbstractJDBCStartupTask;
+
+import java.util.List;
 
 public class Task03025CreateFoundationForNotificationSystem extends AbstractJDBCStartupTask {
 
+	private final DotDatabaseMetaData dotDatabaseMetaData = new DotDatabaseMetaData();
+
 	@Override
 	public boolean forceRun() {
-		return true;
+		return !this.dotDatabaseMetaData.existsTable(DbConnectionFactory.getConnection(), "notification");
 	}
 
 	@Override
@@ -48,7 +52,6 @@ public class Task03025CreateFoundationForNotificationSystem extends AbstractJDBC
 
 	@Override
 	protected List<String> getTablesToDropConstraints() {
-		// TODO Auto-generated method stub
 		return null;
 	}
 

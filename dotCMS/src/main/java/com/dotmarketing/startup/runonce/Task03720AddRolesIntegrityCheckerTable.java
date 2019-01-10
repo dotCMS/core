@@ -1,12 +1,13 @@
 package com.dotmarketing.startup.runonce;
 
-import java.sql.SQLException;
-
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.common.db.DotDatabaseMetaData;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.startup.StartupTask;
+
+import java.sql.SQLException;
 
 public class Task03720AddRolesIntegrityCheckerTable implements StartupTask {
 
@@ -52,7 +53,7 @@ public class Task03720AddRolesIntegrityCheckerTable implements StartupTask {
 
     @Override
     public boolean forceRun() {
-        return true;
+        return !new DotDatabaseMetaData().existsTable(DbConnectionFactory.getConnection(), "cms_roles_ir");
     }
 
 }

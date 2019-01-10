@@ -43,6 +43,11 @@ public class StartupAPIImpl implements StartupAPI {
         return allStartupTasksClasses.build();
     }
 
+    @Override
+    public List<Class<?>> getStartupRunOnceTaskClassesUnsorted() {
+        return TaskLocatorUtil.getStartupRunOnceTaskClasses();
+    }
+
     @WrapInTransaction
     @Override
     public void runStartup(final Class<?> startupClass) throws DotDataException, DotRuntimeException {
@@ -50,9 +55,14 @@ public class StartupAPIImpl implements StartupAPI {
         final StartupTask startupTask = (StartupTask) ReflectionUtils.newInstance(startupClass);
         if (null != startupTask) {
 
-            Logger.debug(this, ()-> "Running the start up class: " + startupClass.getCanonicalName());
-            startupTask.executeUpgrade();
-            Logger.debug(this, ()-> "Ran the start up class: "     + startupClass.getCanonicalName());
+            if (startupTask.forceRun()) {
+                Logger.debug(this, () -> "Running the start up class: " + startupClass.getCanonicalName());
+                startupTask.executeUpgrade();
+                Logger.debug(this, () -> "Ran the start up class: " + startupClass.getCanonicalName());
+            } else {
+
+                Logger.debug(this, () -> "Skipping the start up class: " + startupClass.getCanonicalName());
+            }
         } else {
 
             throw new DoesNotExistException("The start up class: "       + startupClass.getCanonicalName() +
