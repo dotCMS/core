@@ -336,12 +336,9 @@
                             <div class="fieldValue">
                                 <%
                                     if(f.getFieldType().equals(Field.FieldType.RELATIONSHIP.toString())){
-                                        if (f.getFieldRelationType() != null && f.getFieldRelationType().contains(".")){
-                                            //field on the other side of the relationship
-                                            request.setAttribute("relationshipRecords", contentletRelationships.getRelationshipsRecordsByField(f.getFieldRelationType()));
-                                        }else{
-                                            request.setAttribute("relationshipRecords", contentletRelationships.getRelationshipsRecordsByField(structure.getVelocityVarName() + "." + f.getVelocityVarName()));
-                                        }%>
+                                        //field on the other side of the relationship
+                                        request.setAttribute("relationshipRecords", contentletRelationships.getRelationshipsRecordsByField(f));
+                                %>
                                         <jsp:include page="/html/portlet/ext/contentlet/field/edit_relationships.jsp"/>
                                 <%  } else {
                                         request.setAttribute("relationshipRecords", legacyRelationshipRecords); %>
