@@ -31,6 +31,8 @@ public abstract class FileAssetContentType extends ContentType implements UrlMap
 	public static final String FILEASSET_FILE_NAME_FIELD_VAR = "fileName";
 	public static final String FILEASSET_METADATA_FIELD_VAR = "metaData";
 	public static final String FILEASSET_DESCRIPTION_FIELD_VAR = "description";
+	public static final String FILEASSET_SHOW_ON_MENU_FIELD_VAR = "showOnMenu";
+	public static final String FILEASSET_SORT_ORDER_FIELD_VAR = "sortOrder";
 
 	
 	private static final long serialVersionUID = 1L;
@@ -118,7 +120,7 @@ public abstract class FileAssetContentType extends ContentType implements UrlMap
 				ImmutableCheckboxField.builder()
 				.name("Show on Menu")
 				.dataType(DataTypes.TEXT)
-				.variable("showOnMenu")
+				.variable(FILEASSET_SHOW_ON_MENU_FIELD_VAR)
 				.values("|true")
 				.defaultValue("false")
 				.fixed(true)
@@ -131,7 +133,7 @@ public abstract class FileAssetContentType extends ContentType implements UrlMap
 				ImmutableTextField.builder()
 				.name("Sort Order")
 				.dataType(DataTypes.INTEGER)
-				.variable("sortOrder")
+				.variable(FILEASSET_SORT_ORDER_FIELD_VAR)
 				.fixed(true)
 				.searchable(true)
 				.defaultValue("0")

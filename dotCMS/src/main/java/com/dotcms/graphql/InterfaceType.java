@@ -39,12 +39,16 @@ import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.WORK
 import static com.dotcms.contenttype.model.type.FileAssetContentType.FILEASSET_DESCRIPTION_FIELD_VAR;
 import static com.dotcms.contenttype.model.type.FileAssetContentType.FILEASSET_FILEASSET_FIELD_VAR;
 import static com.dotcms.contenttype.model.type.FileAssetContentType.FILEASSET_FILE_NAME_FIELD_VAR;
+import static com.dotcms.contenttype.model.type.FileAssetContentType.FILEASSET_METADATA_FIELD_VAR;
+import static com.dotcms.contenttype.model.type.FileAssetContentType.FILEASSET_SHOW_ON_MENU_FIELD_VAR;
 import static com.dotcms.contenttype.model.type.FileAssetContentType.FILEASSET_SITE_OR_FOLDER_FIELD_VAR;
+import static com.dotcms.contenttype.model.type.FileAssetContentType.FILEASSET_SORT_ORDER_FIELD_VAR;
 import static com.dotcms.contenttype.model.type.FileAssetContentType.FILEASSET_TITLE_FIELD_VAR;
 import static graphql.Scalars.GraphQLBoolean;
 import static graphql.Scalars.GraphQLID;
 import static graphql.Scalars.GraphQLInt;
 import static graphql.Scalars.GraphQLString;
+import static graphql.schema.GraphQLList.list;
 
 public enum InterfaceType {
     CONTENT,
@@ -88,7 +92,10 @@ public enum InterfaceType {
         fileAssetFields.put(FILEASSET_DESCRIPTION_FIELD_VAR, GraphQLString);
         fileAssetFields.put(FILEASSET_FILEASSET_FIELD_VAR, CustomFieldType.BINARY.getType());
         fileAssetFields.put(FILEASSET_TITLE_FIELD_VAR, GraphQLString);
+        fileAssetFields.put(FILEASSET_METADATA_FIELD_VAR, list(CustomFieldType.KEY_VALUE.getType()));
         fileAssetFields.put(FILEASSET_SITE_OR_FOLDER_FIELD_VAR, GraphQLString);
+        fileAssetFields.put(FILEASSET_SHOW_ON_MENU_FIELD_VAR, GraphQLBoolean);
+        fileAssetFields.put(FILEASSET_SORT_ORDER_FIELD_VAR, GraphQLInt);
 
         interfaceTypes.put("FILEASSET", TypeUtil.createInterfaceType("Fileasset", fileAssetFields, new ContentResolver()));
 
