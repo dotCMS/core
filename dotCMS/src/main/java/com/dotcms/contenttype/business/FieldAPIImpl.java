@@ -109,6 +109,11 @@ public class FieldAPIImpl implements FieldAPI {
   @Override
   public Field save(final Field field, final User user) throws DotDataException, DotSecurityException {
 
+      if(!UtilMethods.isSet(field.contentTypeId())){
+          Logger.error(this, "ContentTypeId needs to be set to save the Field");
+          throw new DotDataValidationException("ContentTypeId needs to be set to save the Field");
+      }
+
 		ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
 		ContentType type = contentTypeAPI.find(field.contentTypeId()) ;
 		permissionAPI.checkPermission(type, PermissionLevel.EDIT_PERMISSIONS, user);
@@ -211,6 +216,9 @@ public class FieldAPIImpl implements FieldAPI {
     private void validateRelationshipField(Field field) throws DotDataValidationException {
 
         String errorMessage = null;
+        if(!UtilMethods.isSet(field.relationType())){
+            errorMessage = "Relation Type needs to be set";
+        }
         if (!field.indexed()){
             errorMessage = "Relationship Field " + field.name() + " must always be indexed";
         }
@@ -218,12 +226,16 @@ public class FieldAPIImpl implements FieldAPI {
         if (field.listed()){
             errorMessage = "Relationship Field " + field.name() + " cannot be listed";
         }
+        if(!UtilMethods.isSet(field.values())){
+            errorMessage = "Relationship Cardinality needs to be set";
+        }else {
 
-        final int cardinality = Integer.parseInt(field.values());
+            final int cardinality = Integer.parseInt(field.values());
 
-        //check if cardinality is valid
-        if (cardinality < 0 || cardinality >= RELATIONSHIP_CARDINALITY.values().length) {
-            errorMessage = "Cardinality value is incorrect";
+            //check if cardinality is valid
+            if (cardinality < 0 || cardinality >= RELATIONSHIP_CARDINALITY.values().length) {
+                errorMessage = "Cardinality value is incorrect";
+            }
         }
 
         if (errorMessage != null){
