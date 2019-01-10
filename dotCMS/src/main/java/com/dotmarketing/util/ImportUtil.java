@@ -444,8 +444,30 @@ public class ImportUtil {
                         }
 
                         if (field.getFieldType().equals(FieldType.RELATIONSHIP.toString())) {
-                            contentTypeRelationshipsMap.put(field.getVelocityVarName(), APILocator.getRelationshipAPI()
-                                    .getRelationshipFromField(field, user));
+
+                            final Relationship fieldRelationship = APILocator.getRelationshipAPI()
+                                    .getRelationshipFromField(field, user);
+                            contentTypeRelationshipsMap
+                                    .put(field.getVelocityVarName().toLowerCase(),
+                                            fieldRelationship);
+                            contentTypeRelationshipsMap
+                                    .remove(fieldRelationship.getRelationTypeValue().toLowerCase());
+
+                            //considering case when importing self-related content
+                            if (fieldRelationship.getChildStructureInode()
+                                    .equals(fieldRelationship.getParentStructureInode())) {
+                                if (fieldRelationship.getParentRelationName() != null
+                                        && fieldRelationship.getParentRelationName()
+                                        .equals(field.getVelocityVarName())) {
+                                    onlyParent.put(i, true);
+                                    onlyChild.put(i, false);
+                                } else if (fieldRelationship.getChildRelationName() != null
+                                        && fieldRelationship.getChildRelationName()
+                                        .equals(field.getVelocityVarName())) {
+                                    onlyParent.put(i, false);
+                                    onlyChild.put(i, true);
+                                }
+                            }
                         }
                         break;
                     }
@@ -569,13 +591,19 @@ public class ImportUtil {
         if (relationship != null) {
             found = true;
             relationships.put(i, relationship);
-            onlyParent.put(i, onlyP);
-            onlyChild.put(i, onlyCh);
 
-            // special case when the relationship has the same structure for parent and child, set only as child
-            if (relationship.getChildStructureInode().equals(relationship.getParentStructureInode())
-                    && !onlyCh && !onlyP) {
-                onlyChild.put(i, true);
+            if (!onlyParent.containsKey(i)){
+                onlyParent.put(i, onlyP);
+            }
+
+            if (!onlyChild.containsKey(i)) {
+                // special case when the relationship has the same structure for parent and child, set only as child
+                if (relationship.getChildStructureInode().equals(relationship.getParentStructureInode())
+                        && !onlyCh && !onlyP) {
+                    onlyChild.put(i, true);
+                }else{
+                    onlyChild.put(i, onlyCh);
+                }
             }
         }
         return found;

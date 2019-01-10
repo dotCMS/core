@@ -1193,10 +1193,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
             throws DotDataException {
 
         final boolean selfRelated = FactoryLocator.getRelationshipFactory().sameParentAndChild(relationship);
-        if (selfRelated && ((hasParent && relationship.getParentRelationName() == null) || (!hasParent
-                && relationship.getChildRelationName() == null))) {
-            return;
-        }
 
         final List<Contentlet> contentletList = new ArrayList<>();
         final ContentletRelationshipRecords records = cRelationships.new ContentletRelationshipRecords(

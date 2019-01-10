@@ -1301,6 +1301,129 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         }
     }
 
+    @Test
+    public void importFile_success_when_lineContainsOneSidedSelfRelationship()
+            throws DotSecurityException, DotDataException, IOException {
+
+        //Creates content types
+        ContentType parentContentType = null;
+        com.dotcms.contenttype.model.field.Field field;
+        HashMap<String, List<String>> results;
+        Relationship relationship;
+        final int cardinality = RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal();
+
+        try {
+            parentContentType = createTestContentType("parentContentType", "parentContentType");
+
+            field = FieldBuilder.builder(RelationshipField.class).name("testRelationship")
+                    .variable("testRelationship")
+                    .contentTypeId(parentContentType.id()).values(String.valueOf(cardinality))
+                    .relationType(parentContentType.variable()).build();
+
+            field = fieldAPI.save(field, user);
+            relationship = relationshipAPI.byTypeValue(
+                    parentContentType.variable() + StringPool.PERIOD + field.variable());
+
+            //Creates child contentlet
+            final ContentletDataGen contentletDataGen = new ContentletDataGen(
+                    parentContentType.id());
+            contentletDataGen.languageId(defaultLanguage.getId());
+
+            final Contentlet childContentlet = contentletDataGen
+                    .setProperty(TITLE_FIELD_NAME, "child contentlet")
+                    .setProperty(BODY_FIELD_NAME, "child contentlet").nextPersisted();
+
+            //Creating csv
+            final Reader reader = createTempFile(
+                    TITLE_FIELD_NAME + ", " + BODY_FIELD_NAME + ", " + field.variable()
+                            + "\r\n" +
+                            "Import related content test, Import related content test, "
+                            + childContentlet.getIdentifier());
+
+            results = importContentWithRelationships(parentContentType, reader,
+                    new String[]{parentContentType.fieldMap().get(TITLE_FIELD_NAME).inode(),
+                            parentContentType.fieldMap().get(BODY_FIELD_NAME).inode(),
+                            field.inode()});
+
+            validateRelationshipResults(relationship, null, childContentlet, results);
+
+        } finally {
+            if (parentContentType != null) {
+                contentTypeApi.delete(parentContentType);
+            }
+        }
+    }
+
+    @Test
+    public void importFile_success_when_lineContainsBothSidedSelfRelationship()
+            throws DotSecurityException, DotDataException, IOException {
+
+        //Creates content types
+        ContentType parentContentType = null;
+        com.dotcms.contenttype.model.field.Field field;
+        com.dotcms.contenttype.model.field.Field secondField;
+        HashMap<String, List<String>> results;
+        Relationship relationship;
+        final int cardinality = RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal();
+
+        try {
+            parentContentType = createTestContentType("parentContentType", "parentContentType");
+
+            //child field
+            field = FieldBuilder.builder(RelationshipField.class).name("testRelationship")
+                    .variable("testRelationship")
+                    .contentTypeId(parentContentType.id()).values(String.valueOf(cardinality))
+                    .relationType(parentContentType.variable()).build();
+
+            field = fieldAPI.save(field, user);
+            final String fullFieldVar =
+                    parentContentType.variable() + StringPool.PERIOD + field.variable();
+            relationship = relationshipAPI.byTypeValue(fullFieldVar);
+
+            //parent field
+            secondField = FieldBuilder.builder(RelationshipField.class)
+                    .name("testRelationshipParent").variable("testRelationshipParent")
+                    .contentTypeId(parentContentType.id()).values(String.valueOf(cardinality))
+                    .relationType(fullFieldVar).build();
+
+            secondField = fieldAPI.save(secondField, user);
+
+            //Creates child contentlet
+            final ContentletDataGen contentletDataGen = new ContentletDataGen(
+                    parentContentType.id());
+            contentletDataGen.languageId(defaultLanguage.getId());
+
+            final Contentlet childContentlet = contentletDataGen
+                    .setProperty(TITLE_FIELD_NAME, "child contentlet")
+                    .setProperty(BODY_FIELD_NAME, "child contentlet").nextPersisted();
+
+            final Contentlet parentContentlet = contentletDataGen
+                    .setProperty(TITLE_FIELD_NAME, "parent contentlet")
+                    .setProperty(BODY_FIELD_NAME, "parent contentlet").nextPersisted();
+
+            //Creating csv
+            final Reader reader = createTempFile(
+                    TITLE_FIELD_NAME + ", " + BODY_FIELD_NAME + ", " + field.variable() + ", "
+                            + secondField.variable()
+                            + "\r\n" +
+                            "Import related content test, Import related content test, "
+                            + childContentlet.getIdentifier() + ", " + parentContentlet
+                            .getIdentifier());
+
+            results = importContentWithRelationships(parentContentType, reader,
+                    new String[]{parentContentType.fieldMap().get(TITLE_FIELD_NAME).inode(),
+                            parentContentType.fieldMap().get(BODY_FIELD_NAME).inode(),
+                            field.inode(), secondField.inode()});
+
+            validateRelationshipResults(relationship, parentContentlet, childContentlet, results);
+
+        } finally {
+            if (parentContentType != null) {
+                contentTypeApi.delete(parentContentType);
+            }
+        }
+    }
+
     /**
      *
      * @param relationship
