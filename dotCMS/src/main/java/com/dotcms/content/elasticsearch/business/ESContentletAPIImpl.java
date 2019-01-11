@@ -1323,7 +1323,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }catch (Exception e) {
             if(e.getMessage() != null && e.getMessage().contains("[query_fetch]")){
                 try{
-                    APILocator.getContentletIndexAPI().addContentToIndex(contentlet,false,true);
+                    APILocator.getContentletIndexAPI().addContentToIndex(contentlet,false,false);
                     return permissionAPI.filterCollection(searchByIdentifier(q, 1, 0, rel.getRelationTypeValue() + "" + contentlet.getIdentifier() + "-order" , user, respectFrontendRoles, PermissionAPI.PERMISSION_READ, true), PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
                 }catch(Exception ex){
                     throw new DotDataException("Unable to look up related content",ex);

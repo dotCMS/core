@@ -53,3 +53,12 @@
     padding-top: 8px;
     width: 100px;
 }
+.listingTitleImg {
+    border: 1px solid #ddd; 
+    border-radius: 4px;  
+    padding: 3px; 
+    width: 64px; 
+    cursor: pointer;
+    max-height:100px
+    overflow:hide;
+}

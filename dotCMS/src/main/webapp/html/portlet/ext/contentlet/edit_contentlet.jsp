@@ -339,7 +339,7 @@
                                         //field on the other side of the relationship
                                         request.setAttribute("relationshipRecords", contentletRelationships.getRelationshipsRecordsByField(f));
                                 %>
-                                        <jsp:include page="/html/portlet/ext/contentlet/field/edit_relationships.jsp"/>
+                                        <jsp:include page="/html/portlet/ext/contentlet/field/relationship_field.jsp"/>
                                 <%  } else {
                                         request.setAttribute("relationshipRecords", legacyRelationshipRecords); %>
                                         <jsp:include page="/html/portlet/ext/contentlet/edit_contentlet_relationships.jsp"/>

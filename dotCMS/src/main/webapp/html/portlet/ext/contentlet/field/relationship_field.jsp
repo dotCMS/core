@@ -19,12 +19,30 @@
 <%@page import="com.dotmarketing.business.IdentifierCache"%>
 <%@page import="com.dotmarketing.business.FactoryLocator"%>
 <%@page import="java.util.HashMap"%>
-
+<%@page import="com.dotmarketing.business.PermissionAPI"%>
+<%@page import="com.dotmarketing.util.UtilHTML"%>
 <%
 	LanguageAPI langAPI = APILocator.getLanguageAPI();
+	ContentletAPI contentletAPI = APILocator.getContentletAPI();
+	PermissionAPI conPerAPI = APILocator.getPermissionAPI();
 	List<Language> langs = langAPI.getLanguages();
-	List<Language> languages = (List<Language>)request.getAttribute (com.dotmarketing.util.WebKeys.LANGUAGES);
+	
+	
+    
+    List<ContentletRelationships.ContentletRelationshipRecords> recordList = (List<ContentletRelationships.ContentletRelationshipRecords>)request.getAttribute("relationshipRecords");
+
+    // if we don't a relationship in our attributes
+    if(recordList==null || recordList.isEmpty()){
+        return;
+    }
+    
+    Contentlet contentlet = (Contentlet) request.getAttribute("contentlet");
+    ContentletRelationships.ContentletRelationshipRecords  records = recordList.get(0);
+    Relationship relationship = records.getRelationship();
+    List<Contentlet> relatedContents = records.getRecords();
+    
 	boolean canUserPublishContentlet = (request.getAttribute("canUserPublishContentlet") != null) ? ((Boolean)request.getAttribute("canUserPublishContentlet")).booleanValue() : false;
+    boolean canUserWriteToContentlet = (InodeUtils.isSet(contentlet.getInode())) ?  conPerAPI.doesUserHavePermission(contentlet,PermissionAPI.PERMISSION_WRITE,user) : true;
 
 	java.util.Map<String, String[]> params = new java.util.HashMap<String, String[]>();
 	params.put("struts_action",new String[] {"/ext/contentlet/view_contentlets_popup"});
@@ -33,18 +51,14 @@
 	DateFormat modDateFormat = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT, locale);
 	modDateFormat.setTimeZone(timeZone);
 
-	Contentlet contentlet = (Contentlet) request.getAttribute("contentlet");
+
 	String contentletInode = String.valueOf(contentlet.getInode());
-	Map con = contentlet.getMap();
 
-	Language defaultLang = langAPI.getDefaultLanguage();
-    String languageId = String.valueOf(defaultLang.getId());
-
-    PermissionAPI conPerAPI = APILocator.getPermissionAPI();
-	boolean canUserWriteToContentlet = true;
-	if(InodeUtils.isSet(contentlet.getInode()))
-		canUserWriteToContentlet = conPerAPI.doesUserHavePermission(contentlet,PermissionAPI.PERMISSION_WRITE,user);
-
+    final List<String> listOfRelatedInodes = new ArrayList<>();
+    for(Contentlet relatedContent : relatedContents ){
+        listOfRelatedInodes.add(relatedContent.getInode());
+    }
+    
 	//Variable used to return after the work is done with the contentlet
 	String referer = "";
 	if (request.getParameter("referer") != null) {
@@ -57,290 +71,71 @@
 		referer = PortletURLUtil.getActionURL(request,WindowState.MAXIMIZED.toString(),params);
 	}
 
-	/* for managing automatic relationships coming form the add content on the relationships tab */
-	String relwith = request.getParameter("relwith");/*for the relationship*/
-	String relisparent = request.getParameter("relisparent");
-	String reltype = request.getParameter("reltype");
 
-	if (relwith!=null) {
-%>
+	boolean thereCanBeOnlyOne = false;
 
-<%@page import="com.dotmarketing.business.PermissionAPI"%><input type="hidden" name="relwith"	value="<%=relwith%>" id="relwith"/>
-	<input type="hidden" name="relisparent"	value="<%=relisparent%>" id="relisparent"/>
-	<input type="hidden" name="reltype"	value="<%=reltype%>" id="reltype"/>
+	Structure targetStructure = null;
+	String relationType= relationship.getRelationTypeValue();
+	String relationName = "";
 
-<%
+	String relationTypeValue = relationship.getRelationTypeValue();
+	String relationJsName = "rel_" + UtilMethods.javaScriptifyVariable(relationTypeValue) + "_" + (records.isHasParent()?"P":"C");
+
+	if (records.isHasParent()) {
+		targetStructure = relationship.getChildStructure();
+		relationName = relationship.getChildRelationName();
+		thereCanBeOnlyOne = (relationship.getCardinality() == 2 );
+	
+	} else {
+		targetStructure = relationship.getParentStructure();
+		relationName = relationship.getParentRelationName();
+		thereCanBeOnlyOne = (relationship.getCardinality() != 2);
 	}
- 	List<ContentletRelationships.ContentletRelationshipRecords> relationshipRecords = (List<ContentletRelationships.ContentletRelationshipRecords>)request.getAttribute("relationshipRecords");
-
-	if (relationshipRecords.size() > 0) {
-
-		List<ContentletRelationships.ContentletRelationshipRecords> sortList = new ArrayList<ContentletRelationships.ContentletRelationshipRecords>();
-		for (ContentletRelationshipRecords records : relationshipRecords) {
-			if(records.isHasParent()){
-				sortList.add( sortList.size(), records);
-			}
-			else{
-				sortList.add(0,records);
-			}
-		}
-		int counter=100;
-		int searchCounter=1;
-		int dialogCounter=1;
-		for (ContentletRelationshipRecords records : sortList) {
-			Relationship rel = records.getRelationship();
-			List<Contentlet> contentletsList = records.getRecords();
-			Structure targetStructure = null;
-			String relationType= null;
-			String relationName = "";
-			String parentInode="";
-			String isParent="";
-			String relationTypeValue = rel.getRelationTypeValue();
-			String relationJsName = "rel_" + UtilMethods.javaScriptifyVariable(relationTypeValue) + "_" + (records.isHasParent()?"P":"C");
-			relationType= rel.getRelationTypeValue();
-			if (records.isHasParent()) {
-				targetStructure = rel.getChildStructure();
-				relationName = rel.getChildRelationName();
-				isParent="yes";
-
-			} else {
-				targetStructure = rel.getParentStructure();
-				relationName = rel.getParentRelationName();
-				isParent="no";
-			}
-
+	
 
 %>
-			<%
-			    //if coming from an automatic relationship addind action will display relationships tab
-				if (request.getParameter("relend")!=null) {
-			%>
 
-				<script>
-				displayProperties('relationships');
-				</script>
-			<%
-				}
-			%>
 
-	<%
-		if ((rel.isChildRequired() && records.isHasParent()) || (rel.isParentRequired() && !records.isHasParent())) {
-	%>
-			<script type="text/javascript">
-				dojo.ready(function(){
-                    var mainTabContainerTablistRelationships = dojo.byId("mainTabContainer_tablist_relationships");
-                    if (mainTabContainerTablistRelationships) {
-                        dojo.html.set(dojo.byId("mainTabContainer_tablist_relationships"), '<span class="required"></span>&nbsp;<%= LanguageUtil.get(pageContext, "Relationships") %>');
-                    }
-				});
-			</script>
-	<%
-		}
-    %>
-    
     <style type="text/css" media="all">
-        @import url(/html/portlet/ext/contentlet/field/edit_relationships.css);
+        @import url(/html/portlet/ext/contentlet/field/relationship_field.css);
     </style>
 
-		<table border="0" class="listingTable"  style="margin-bottom:30px;">
-				<thead>
-					<tr class="beta">
-					<%
-							int nFields = 3;
-							boolean indexed = false;
-							boolean hasListedFields = false;
-							List<Field> targetFields = targetStructure.getFields();
-							for (Field f : targetFields) {
-								if (f.isListed()) {
-										hasListedFields = true;
-									indexed = true;
-									nFields++;
-					%>
-										<th><%= f.getFieldName() %>
-										</th>
-					<%
-								}
-							}
-
-							if (!indexed) {
-					%>
-										<th> <%= LanguageUtil.get(pageContext, "No-Searchable-Fields-Found-Showing-the-Identity-Number") %> </th>
-					<%
-							}
-					%>
-
-					<%
-						if(langs.size() > 1) {
-					%>
-						<th width="<%= langs.size() < 6 ? (langs.size() * 40) : 100 %>px;"></th>
-					<%
-						}else{
-					%>
-						<th width="20"></th>
-					<%
-						}
-                    %>
-                        <th align="center" width="20">
-                            <div class="portlet-toolbar__actions-secondary">
-                                <div id="<%= relationJsName %>relateMenu"></div>
-                            </div>
-                        </th>
-					</tr>
-				</thead>
-				<tbody id="<%=relationJsName%>Table">
-				</tbody>
-			</table>
-
-			<!-- Hidden relationship fields -->
+	<table border="0" class="listingTable" style="margin-bottom: 30px;">
+		<thead>
+			<tr>
+				<th style="min-width: 100px"></th>
+				<th width="100%"><%=LanguageUtil.get(pageContext, "Title")%></th>
+				<th style="min-width: 100px"></th>
+				<th style="min-width: 60px"></th>
+				<th>
+					<div class="portlet-toolbar__actions-secondary">
+						<div id="<%=relationJsName%>relateMenu" style="background: white"></div>
+					</div>
+				</th>
+			</tr>
+		</thead>
+		<tbody id="<%=relationJsName%>Table">
+		</tbody>
+	</table>
+	
+<!-- Hidden relationship fields -->
 
 			<input type="hidden" name="<%= relationJsName %>Inode" id="<%= relationJsName %>Inode">
 			<input type="hidden" name="selected<%= relationJsName %>Inode" id="selected<%= relationJsName %>Inode">
-			<input type="hidden" name="<%= relationJsName %>_inodes" id="<%= relationJsName %>_inodes">
+			<input type="hidden"  name="<%= relationJsName %>_inodes" id="<%= relationJsName %>_inodes">
 
 			<!--  Javascripts -->
 			<script	language="javascript">
+			
+	            dojo.require("dojo.dnd.Container");
+	            dojo.require("dojo.dnd.Manager");
+	            dojo.require("dojo.dnd.Source");
+	            dojo.require("dotcms.dijit.form.ContentSelector");
+			
+			
 				//Initializing the relationship table data array
-
-				var hasListedFields = <%= hasListedFields %>;
 				var <%= relationJsName %>_Contents = new Array ();
-		<%String lastIdentifier = "";
-
-
-
-
-				boolean parent = false;
-				for (Contentlet cont : contentletsList) {
-
-				    try{
-				        parent = cont.getBoolProperty("dotCMSParentOnTree") ;
-				    }
-				    catch(Exception e){
-
-				    }
-				   	if(parent && FactoryLocator.getRelationshipFactory().sameParentAndChild(rel)){
-			        	//continue;
-			        }
-				   	
-				   	
-				   	
-				   	
-					/**********   GIT 1057     *******/
-					
-					ContentletAPI contentletAPI = APILocator.getContentletAPI();
-					Contentlet languageContentlet = null;
-				    %>
-				    var cont<%=UtilMethods.javaScriptifyVariable(cont.getInode())%>Siblings = new Array();
-				    <%
-					for(Language lang : langs){
-						try{
-							languageContentlet = null;
-							languageContentlet = contentletAPI.findContentletByIdentifier(cont.getIdentifier(), true, lang.getId(), user, false);
-						}catch (Exception e) {
-							try{
-							languageContentlet = contentletAPI.findContentletByIdentifier(cont.getIdentifier(), false, lang.getId(), user, false);
-							}catch (Exception e1) {	}
-						}
-					    %>
-					    var cont<%=UtilMethods.javaScriptifyVariable(cont.getInode()+lang.getId())%>Sibling = new Array();
-					    <%
-					    if((languageContentlet == null) || (!UtilMethods.isSet(languageContentlet.getInode()))){
-					    	%>
-					    	cont<%=UtilMethods.javaScriptifyVariable(cont.getInode()+lang.getId())%>Sibling['langCode'] = '<%=langAPI.getLanguageCodeAndCountry(lang.getId(),null)%>';
-							cont<%=UtilMethods.javaScriptifyVariable(cont.getInode()+lang.getId())%>Sibling['langName'] = '<%=lang.getLanguage() %>';
-							cont<%=UtilMethods.javaScriptifyVariable(cont.getInode()+lang.getId())%>Sibling['langId'] = '<%=lang.getId() %>';
-					    	cont<%=UtilMethods.javaScriptifyVariable(cont.getInode()+lang.getId())%>Sibling['inode'] = '';
-							cont<%=UtilMethods.javaScriptifyVariable(cont.getInode()+lang.getId())%>Sibling['parent'] = '<%=parent %>';
-							cont<%=UtilMethods.javaScriptifyVariable(cont.getInode()+lang.getId())%>Sibling['working'] = 'false';
-							cont<%=UtilMethods.javaScriptifyVariable(cont.getInode()+lang.getId())%>Sibling['live'] = 'false';
-							cont<%=UtilMethods.javaScriptifyVariable(cont.getInode()+lang.getId())%>Sibling['deleted'] = 'true';
-							cont<%=UtilMethods.javaScriptifyVariable(cont.getInode()+lang.getId())%>Sibling['locked'] = 'false';
-							cont<%=UtilMethods.javaScriptifyVariable(cont.getInode()+lang.getId())%>Sibling['siblingInode'] = '<%=cont.getInode()%>';
-							
-						    <%
-					    }else{
-					    	%>
-					    	cont<%=UtilMethods.javaScriptifyVariable(cont.getInode()+lang.getId())%>Sibling['langCode'] = '<%=langAPI.getLanguageCodeAndCountry(lang.getId(),null)%>';
-							cont<%=UtilMethods.javaScriptifyVariable(cont.getInode()+lang.getId())%>Sibling['langName'] = '<%=lang.getLanguage() %>';
-							cont<%=UtilMethods.javaScriptifyVariable(cont.getInode()+lang.getId())%>Sibling['langId'] = '<%=lang.getId() %>';
-					    	cont<%=UtilMethods.javaScriptifyVariable(cont.getInode()+lang.getId())%>Sibling['inode'] = '<%=languageContentlet.getInode()%>';
-							cont<%=UtilMethods.javaScriptifyVariable(cont.getInode()+lang.getId())%>Sibling['parent'] = '<%=parent %>';
-							cont<%=UtilMethods.javaScriptifyVariable(cont.getInode()+lang.getId())%>Sibling['working'] = '<%=String.valueOf(languageContentlet.isWorking())%>';
-							cont<%=UtilMethods.javaScriptifyVariable(cont.getInode()+lang.getId())%>Sibling['live'] = '<%=String.valueOf(languageContentlet.isLive())%>';
-							cont<%=UtilMethods.javaScriptifyVariable(cont.getInode()+lang.getId())%>Sibling['deleted'] = '<%=String.valueOf(languageContentlet.isArchived())%>';
-							cont<%=UtilMethods.javaScriptifyVariable(cont.getInode()+lang.getId())%>Sibling['locked'] = '<%=Boolean.valueOf(languageContentlet.isLocked() && ! languageContentlet.getModUser().equals(user.getUserId()))%>';
-							cont<%=UtilMethods.javaScriptifyVariable(cont.getInode()+lang.getId())%>Sibling['siblingInode'] = '<%=cont.getInode()%>';
-						    <%
-					    }
-					    %>
-                            cont<%=UtilMethods.javaScriptifyVariable(cont.getInode())%>Siblings[cont<%=UtilMethods.javaScriptifyVariable(cont.getInode())%>Siblings.length] = cont<%=UtilMethods.javaScriptifyVariable(cont.getInode()+lang.getId())%>Sibling;
-					    <%
-					    
-					}
-					
-				/**********   GIT 1057     *******/							 				   	
-
-					String languageCode;
-					String languageName;
-					Language language = langAPI.getLanguage(cont.getLanguageId());%>
-				var cont = new Array();
-				cont['inode'] = '<%=cont.getInode()%>';
-		<%languageCode = langAPI.getLanguageCodeAndCountry(cont.getLanguageId(),null);
-				languageName =  language.getLanguage();%>
-				cont['langCode'] = '<%=languageCode%>';
-				cont['langName'] = '<%=languageName%>';
-				cont['parent'] = '<%=parent%>';
-				cont['working'] = '<%=String.valueOf(cont.isWorking())%>';
-				cont['live'] = '<%=String.valueOf(cont.isLive())%>';
-				cont['deleted'] = '<%=String.valueOf(cont.isArchived())%>';
-				cont['locked'] = '<%=Boolean.valueOf(cont.isLocked() && ! cont.getModUser().equals(user.getUserId()))%>';
-				cont['siblings'] = cont<%=UtilMethods.javaScriptifyVariable(cont.getInode())%>Siblings;
-
-		<%
-					for (Field f : targetFields) {
-						if (f.isListed()) {
-						    String fieldName = f.getFieldName();
-						    	ContentletAPI rconAPI = APILocator.getContentletAPI();
-							Object fieldValueObj = rconAPI.getFieldValue(cont, f);
-							String fieldValue = "";
-							if (fieldValueObj != null) {
-								if (fieldValueObj instanceof java.util.Date) {
-								    fieldValue = modDateFormat.format(fieldValueObj);
-								} else if (fieldValueObj instanceof java.sql.Timestamp){
-								    java.util.Date fieldDate = new java.util.Date(((java.sql.Timestamp)fieldValueObj).getTime());
-								    fieldValue = modDateFormat.format(fieldDate);
-								} else {
-								    fieldValue = fieldValueObj.toString();
-								}
-							}
-		 %>
-		 cont['<%=UtilMethods.escapeSingleQuotes(fieldName)%>'] = '<%=fieldValue.replaceAll("'","\\\\'").replaceAll("\n","").replaceAll("\r","").trim()%>';
-		 <%
-						}
-					}
-					if (!hasListedFields) {
-					    Identifier contid = APILocator.getIdentifierAPI().find(cont);
-		%>
-				 		cont['identifier'] = '<%=contid.getInode()%>';
-		<%
-					}
-
-		%>
-					cont['id'] = '<%=cont.getIdentifier()%>';
-		<%
-					if(!lastIdentifier.equalsIgnoreCase(cont.getIdentifier()) )
-					{
-		%>
-					cont['groupStart'] = true;
-		<%
-					  lastIdentifier = cont.getIdentifier();
-					}//end if( lastIdentifier != cont.getIdentifier() )
-		%>
-
-				<%= relationJsName %>_Contents[<%= relationJsName %>_Contents.length] = cont;
-		<%
-
-				}
-		%>
+				
 
                 function getCurrentLanguageIndex(o) {
                     var languageName = document.getElementById("langcombo").value.split(' ')[0].toLowerCase();
@@ -399,30 +194,6 @@
                     return tag.substring(startIndex, endIndex).replace(attr, '').replace(/="/, '');
                 }
 
-				//Function used to render the publish/unpublish info
-			   function <%= relationJsName %>_status(o) {
-
-				var strHTML = '&nbsp;';
-
-			    if (o != null) {
-
-				 live = o['live'];
-				 deleted = o['deleted'];
-				 working = o['working'];
-                 var strHTML = new String();
-
-			        if (live && live != "false") {
-			            strHTML = strHTML + "<span class=\"liveIcon\"></span>";
-			        } else if (deleted && deleted != "false") {
-			            strHTML = strHTML + "<span class=\"archivedIcon\"></span>";
-			        } else if (working && working != "false") {
-			            strHTML = strHTML + "<span class=\"workingIcon\"></span>";
-			        }
-			    }
-
-			    return strHTML;
-			}
-
 				//Function used to render relationship order number
 				var <%= relationJsName %>_current_order = 1;
 				var <%= relationJsName %>_identifier_current_order = 1;
@@ -440,25 +211,21 @@
 
 				//Adding the rendering functions based on the relationship
 				//listed fields
-		<%
-				int fieldsCount = 3;
-				for (Field f : targetFields) {
-					if (f.isListed()) {
-					    fieldsCount++;
-					    String fieldName = f.getFieldName();
-					    String functionName = relationJsName + "_" + UtilMethods.javaScriptifyVariable(fieldName) + "_func";
-		 %>
-	 		function <%= functionName %> (o) {
+
+	 		function <%= relationJsName%>_func (o) {
 				var value = "";
 				if (o != null){
-					value = "<a class=\"beta\" href=\"javascript:<%= relationJsName %>editRelatedContent('" + o['inode'] + "', '"+ o['siblingInode'] +"', '"+ o['langId'] +"');\"" + ">" + o['<%=UtilMethods.escapeSingleQuotes(fieldName)%>'] + "</a>";
+					value = "<a class=\"beta\" href=\"javascript:<%= relationJsName %>editRelatedContent('" + o['inode'] + "', '"+ o['siblingInode'] +"', '"+ o['langId'] +"');\"" + ">" + o['<%= relationJsName %>'] + "</a>";
 	 			}
 	 			return value;
 			}
-		 <%
-					}
-				}
-		%>
+
+	 		
+            function numberOfRows<%= relationJsName%> () {
+            	var dataRows = document.querySelectorAll('.dataRow<%=relationJsName%>');
+            	return dataRows.length;
+            }
+	 		
 				//Removes the given inode from the relationship table
 				function <%= relationJsName %>_removeContentFromRelationship (identifier) {
 					var relationList = <%= relationJsName %>_Contents;
@@ -495,20 +262,17 @@
                     dijit.byId("<%= relationJsName %>Dialog")._doSearchPage1();
 				}
 
-				//Callback received from the relate content
-				function callback<%= relationJsName %>(content){
-				//identifier refers to contentlet family to add...
-					  setTimeout("ContentletAjax.getContentletData ('" + content.inode + "', <%= relationJsName %>_addRelationshipCallback)", 50);
-				}
 
 				//Invoked when a contentlet is selected to fill the contentlet data in the table
 				function <%= relationJsName %>_addRelationshipCallback(selectedData){
+					console.log("selectedData", selectedData);
+					
 					var data = new Array();
 					var dataToRelate = new Array();
-					
+                    var entries        = numberOfRows<%= relationJsName%>();
 					// Eliminating existing relations
 					for (var indexJ = 0; indexJ < selectedData.length; indexJ++) {
-						var relationExists = false;
+						var relationExists = (<%=thereCanBeOnlyOne%> && (entries > 0 || dataToRelate.length>0)) ? true : false;
 						for (var indexI = 0; indexI < <%= relationJsName %>_Contents.length; indexI++) {
 							if(selectedData[indexJ]['id'] == <%= relationJsName %>_Contents[indexI]['id']){
 								relationExists = true;
@@ -564,7 +328,6 @@
 						dataNoRep[i]['groupStart'] = true;
 					}
 
-// 					data[0]['groupStart'] = true;
 					<%= relationJsName %>RelatedCons.insertNodes(false,dataNoRep);
 					<%= relationJsName %>_Contents = <%= relationJsName %>_Contents.concat(dataNoRep);
 					renumberRecolorAndReorder<%= relationJsName %>();
@@ -610,7 +373,7 @@
 				//Build the hidden fields required to save the relationships
 				function <%= relationJsName %>_saveRelations () {
 					var hiddenField = document.getElementById ('<%= relationJsName %>_inodes');
-					hiddenField.value = "<%= rel.getInode() %>,";
+					hiddenField.value = "<%= relationship.getInode() %>,";
 					for (var i = 0; i < <%= relationJsName %>_Contents.length; i++) {
 						if (<%= relationJsName %>_Contents[i]['inode'] != null)
 							hiddenField.value = hiddenField.value + <%= relationJsName %>_Contents[i]['inode'] + ",";
@@ -622,15 +385,12 @@
 			    function <%= relationJsName %>_addContentlet(structureInode) {
 
 					var referer = "<portlet:actionURL windowState='<%= WindowState.MAXIMIZED.toString() %>'>";
-					referer += 		"<portlet:param name='struts_action' value='/ext/contentlet/edit_contentlet' />";
-					referer += 		"<portlet:param name='cmd' value='edit' />";					
+					referer += 	"<portlet:param name='struts_action' value='/ext/contentlet/edit_contentlet' />";
+					referer += "<portlet:param name='cmd' value='edit' />";					
 					referer += "</portlet:actionURL>";
 					referer += "&inode="+'<%=contentletInode%>';
 					referer += "&lang=" + '<%= contentlet.getLanguageId() %>';
 					referer += "&relend=true";					
-					<%if( request.getAttribute("isRelationsihpAField") != null && !(Boolean)request.getAttribute("isRelationsihpAField")){ //DOTCMS-6893 %>
-						referer += "&is_rel_tab=true";
-					<%}%>
 					referer += "&referer=" + '<%=java.net.URLDecoder.decode(referer, "UTF-8")%>';
 
 
@@ -642,12 +402,11 @@
 					//href += "&_content_selectedStructure=" + structureInode ; 
 					href += "&inode" + "";
 					href += "&selectedStructure=" + structureInode ;
-					href += "&lang=" + '<%= languageId %>';
+					href += "&lang=" + '<%= langAPI.getDefaultLanguage().getId() %>';
 					href += "&relwith=" +'<%=contentletInode%>';
-					href += "&relisparent=" + '<%= isParent %>';
 					href += "&reltype=" + '<%= relationType.toString() %>';
 					href += "&relname=" + '<%= relationJsName %>';
-					href += "&relname_inodes=" + '<%= rel.getInode()%>';
+					href += "&relname_inodes=" + '<%= relationship.getInode()%>';
 					href += "&referer=" + escape(referer);
 
 					if (!confirm('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.contentlet.lose.unsaved.changes")) %>'))
@@ -655,94 +414,66 @@
 
 					window.location=href;
 				}
+			    
 
-				dojo.addOnLoad(
-						function(){
-							<%= relationJsName %>_saveRelations ();
-						}
-				);
 				// DOTCMS-6097
 
-				dojo.require("dojo.dnd.Container");
-				dojo.require("dojo.dnd.Manager");
-				dojo.require("dojo.dnd.Source");
 
 				var <%= relationJsName %>RelatedCons;
-				
-				<jsp:include page="/html/portlet/ext/contentlet/field/tiny_mce_config.jsp"/>
+
 
 				function <%= relationJsName %>buildListing(nodeId,data){
 					var srcNode = document.getElementById(nodeId);
-					<%if(isParent.equals("no")){//DOTCMS-6878%>
-						<%= relationJsName %>RelatedCons = new dojo.dnd.Source(srcNode,{creator: <%= relationJsName %>CreateRow,isSource:false});
-					<%}else{%>
-						<%= relationJsName %>RelatedCons = new dojo.dnd.Source(srcNode,{creator: <%= relationJsName %>CreateRow});
-					<%}%>
+	
+					<%= relationJsName %>RelatedCons = new dojo.dnd.Source(srcNode,{creator: CreateRow<%= relationJsName %>});
+
 					<%= relationJsName %>RelatedCons.insertNodes(false,data);
 					//http://jira.dotmarketing.net/browse/DOTCMS-6465
 					<%= relationJsName %>RelatedCons.isDragging = false;
 
 				}
 
-				function <%= relationJsName %>CreateRow(item,hint) {
+				
+				
+				function CreateRow<%= relationJsName %>(item,hint) {
+					var row = document.createElement("tr");
+					row.className="dataRow<%= relationJsName %>";
+					
+					var imgCell = row.insertCell (row.cells.length);
+					imgCell.style.whiteSpace="nowrap";
+					imgCell.style.textAlign = 'center';
 
-					var tr = document.createElement("tr");
+		            imgCell.innerHTML = (item.hasTitleImage ==='true')
+		                ? '<img class="listingTitleImg" src="/dA/' + item.inode + '/titleImage/64w"  >' 
+		                : '<span class="'+item.iconClass+'" style="font-size:24px;width:auto;"></span>';
+	                
+	                var titleCell = row.insertCell (row.cells.length);
+	                titleCell.style.whiteSpace="nowrap";
+	                titleCell.innerHTML = item.title;
 
-					// displays each listed field
-					<%
-					for (Field f : targetFields) {
-						if (f.isListed()) {
-						    String fieldName = f.getFieldName();
-						    String functionName = relationJsName + "_" + UtilMethods.javaScriptifyVariable(fieldName) + "_func";
-			 		%>
-						 	var field<%= functionName %>TD = document.createElement("td");
-						 	var div = document.createElement("div");
-						 	div.style.width = '100%';
-						 	div.style.overflow = 'hidden';
-						 	div.innerHTML = <%= functionName %>(item);
-							field<%= functionName %>TD.appendChild(div);
-							tr.appendChild(field<%= functionName %>TD);
-			 		<%
-						}
-					}
-
-
-					if (!indexed) {
-					%>	// displays content's identifier, if no listed fields exist.
-					 	var identifierTD = document.createElement("td");
-					 	identifierTD.innerHTML = identifier_func(item);
-						tr.appendChild(identifierTD);
-					<%
-					}
-					%>
-
-					<%
-					if(langs.size() > 1) {
-					%>	// displays the publish/unpublish/archive status of the content and language flag, if multiple languages exists.
-						var langTD = document.createElement("td");
+	                var langTD = document.createElement("td");
+	                row.appendChild(langTD);
+	                // displays the publish/unpublish/archive status of the content and language flag, if multiple languages exists.
+					<%if(langs.size() > 1) {%>	
+					    langTD.style.whiteSpace="nowrap";
                         langTD.style.textAlign = 'right';
 						langTD.innerHTML = <%= relationJsName %>_lang(item);
-                        tr.appendChild(langTD);
                         setTimeout(function () { dojo.parser.parse(item.id); }, 0);
-					<%
-					}else{
-					%>
-
+					<%}%>
+				    
 					// displays the publish/unpublish/archive status of the content only.
 					var statusTD = document.createElement("td");
-					statusTD.innerHTML = <%= relationJsName %>_status(item);
-					tr.appendChild(statusTD);
+					statusTD.innerHTML = item.statusIcons;
+					row.appendChild(statusTD);
 
-					<%
-					}
-                    %>
+
                     
 					// to hold contentInode to reorder
 					var span = document.createElement("span");
 					dojo.addClass(span,"<%= relationJsName %>hiddenInodeField");
 					dojo.style(span,"display","none");
 					span.innerHTML = item['inode'];
-					tr.appendChild(span);
+					row.appendChild(span);
 
 					// to hold order sequence number to reorder
 					var order = document.createElement("input");
@@ -750,16 +481,16 @@
 					order.id = "<%= relationJsName %>_order_" + item['id'];
 					dojo.addClass(order,"<%= relationJsName %>orderBox");
 					order.value = <%= relationJsName %>_order_tf();
-					tr.appendChild(order);
+					row.appendChild(order);
 
                     // displays edit(pencil icon) and delete(X).
                     var actionTD = document.createElement("td");
                     dojo.style(actionTD, "text-align", "center");
                     actionTD.innerHTML = <%= relationJsName %>unrelateAction(item);
-					tr.appendChild(actionTD);
+                    row.appendChild(actionTD);
 
 
-					return {node: tr, data: item, type: "text"};
+					return {node: row, data: item, type: "text"};
 				}
 
 				function <%= relationJsName %>init(){
@@ -846,6 +577,22 @@
 					}
 					<%= relationJsName %>_reorder();
 					<%= relationJsName %>setButtonState();
+					var cons = numberOfRows<%= relationJsName%>();
+					
+					return;
+					dojo.destroy("<%=relationJsName%>TableMessage")
+
+                   if(cons== undefined || cons==0 ){
+                        var srcNode = document.getElementById("<%=relationJsName%>Table");
+                        var row = document.createElement("tr");
+                        row.id="<%=relationJsName%>TableMessage"
+                        var cell = row.insertCell (0);
+                        cell.setAttribute("colspan", "100");
+                        cell.setAttribute("style","text-align:center");
+                        cell.innerHTML = <%=thereCanBeOnlyOne%> ? "<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.relationship.selectOne")) %>" : "<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.relationship.selectMulti")) %>";
+                        srcNode.appendChild(row);
+                    } 
+					
 				}
 
 				function recolor<%= relationJsName %>Rows() {
@@ -868,46 +615,39 @@
 				}
 
 
-				// parent/child/permissions regarding relate new/existing content.
-				var <%= relationJsName %>canRelateNew;
-				var <%= relationJsName %>canRelateExisting;
+
 
 				function <%= relationJsName %>setButtonState(){
 
-					<%= relationJsName %>canRelateNew = true;//always true
-					<%= relationJsName %>canRelateExisting = true;
-					var prefix = '<%= relationJsName %>';
-					var isParentString = '<%= isParent.toLowerCase().trim() %>';
-					var isParent = false;
-					if(isParentString == "yes")
-						isParent = true;
-					var entries = eval(prefix + "_Contents").length;
-
-					if(isNewContentlet){// for both parent/child
-						var <%= relationJsName %>canRelateNew = false;
+					canRelateNew       = true; //always true
+					canRelateExisting  = true;
+                    var entries        = numberOfRows<%= relationJsName%>();
+					if(<%=!InodeUtils.isSet(contentletInode)%>){// for both parent/child
+						canRelateNew = false;
 					}
-					if(!isNewContentlet && !isParent){
-						if(entries == 0)
-							var <%= relationJsName %>canRelateNew = true;
-						else
-							var <%= relationJsName %>canRelateNew = false;
+					else if (<%=thereCanBeOnlyOne%> && entries > 0){
+						canRelateNew = false;
 					}
+					else{
+						canRelateNew = true;
+					}
+							
 
-					<% if (!records.isHasParent() && rel.getCardinality() == com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY.ONE_TO_MANY.ordinal()) { %>
-					if (<%= relationJsName %>_Contents.length > 0)
-						<%= relationJsName %>canRelateExisting = false;
-					else
-						<%= relationJsName %>canRelateExisting = true;
-					<% } %>
+					if (<%=thereCanBeOnlyOne%> && entries > 0){
+						canRelateExisting = false;
+					}
+					else{
+						canRelateExisting = true;
+					}
 
 					var canUserWriteToContentlet = <%= canUserWriteToContentlet %>;
 
 					if(!canUserWriteToContentlet){
-						<%= relationJsName %>canRelateExisting = false;
-						<%= relationJsName %>canRelateNew = false;
+						canRelateExisting = false;
+						canRelateNew = false;
 					}
 
-					addRelateButtons<%= relationJsName %>(<%= relationJsName %>canRelateExisting,<%= relationJsName %>canRelateNew);
+					addRelateButtons<%= relationJsName %>(canRelateExisting,canRelateNew);
 				}
 
 				function addRelateButtons<%= relationJsName %>(canRelateExisting,canRelateNew) {
@@ -958,6 +698,18 @@
 			        dojo.byId("<%= relationJsName %>relateMenu").appendChild(button.domNode);
 			    }
 
+				
+                dojo.addOnLoad(
+	                function(){
+	                	// Load initial relationships
+	                    ContentletAjax.getContentletsData ('<%=String.join(",", listOfRelatedInodes)%>', <%= relationJsName %>_addRelationshipCallback);
+	                }
+                );
+				
+				
+				
+				
+				
 			</script>
 
 			<div id="<%= relationJsName %>Dialog" dojoType="dotcms.dijit.form.ContentSelector" 
@@ -966,51 +718,11 @@
 			     multiple="true" 
 			     onContentSelected="callback<%= relationJsName %>" 
 			     title="<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "search")) %>" 
-			     counter_radio="<%= counter %>" 
-			     searchCounter="<%= searchCounter %>" 
+			     counter_radio="<%= System.currentTimeMillis() %>" 
+			     searchCounter="<%= System.currentTimeMillis() %>" 
 			     contentletLanguageId="<%=contentlet.getLanguageId() %>"
-			     dialogCounter="<%= dialogCounter %>">
+			     dialogCounter="<%= System.currentTimeMillis() %>">
 			 </div>
-<%
-            counter=counter+100;
-            searchCounter+=10000;
-            dialogCounter++;
-		}
-%>
-			<script type="text/javascript">
-			dojo.require("dotcms.dijit.form.ContentSelector");
-			var isNewContentlet = false;
-			<%if(!InodeUtils.isSet(contentletInode)){%>
-				isNewContentlet = true;
- 			<%}%>
-			<%if(UtilMethods.isSet(request.getAttribute("is_rel_tab")) && (request.getAttribute("is_rel_tab").toString().equalsIgnoreCase("true"))){%>
-				dojo.addOnLoad(
-				  function(){
-						  dijit.byId('mainTabContainer').selectChild('relationships');
 
-				  }
-				);
-			<%}%>
-			function toggleCheckbox(id){				
-				var chk = document.getElementById(id);
-				var elems = chk.getElementsByTagName ("input");				
-				var len = elems.length;	
-				
-				for ( var i = 0; i < len; i++ ){
-					if (elems[i].checked){
-						dijit.byId(elems[i].id).set("checked",false);
-				    }else{
-				    	dijit.byId(elems[i].id).set("checked",true);
-				    }				
-				}
-			}
-			</script>
-<%
-	} else {
-%>
-	<b><%= LanguageUtil.get(pageContext, "No-Relationships-Found") %></b>
-<%
-	}
-%>
 
 
