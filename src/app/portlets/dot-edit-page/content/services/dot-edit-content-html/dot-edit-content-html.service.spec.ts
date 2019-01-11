@@ -303,7 +303,6 @@ describe('DotEditContentHtmlService', () => {
     });
 
     it('should not render relocated contentlet', () => {
-        this.dotEditContentHtmlService.remoteRendered = true;
         spyOn(this.dotEditContentHtmlService, 'renderRelocatedContentlet').and.callThrough();
 
         const dataObj = {
@@ -314,9 +313,18 @@ describe('DotEditContentHtmlService', () => {
             contentlet: {
                 identifier: '456',
                 inode: '456'
-            },
-            remoteRendered: true
+            }
         };
+
+        const pageState: DotRenderedPageState = new DotRenderedPageState(mockUser, {
+            ...mockDotRenderedPage,
+            page: {
+                ...mockDotPage,
+                rendered: fakeHTML,
+                remoteRendered: true
+            }
+        });
+        this.dotEditContentHtmlService.initEditMode(pageState, { nativeElement: fakeIframeEl });
 
         this.dotEditContentHtmlService.contentletEvents$.next({
             name: 'relocate',
