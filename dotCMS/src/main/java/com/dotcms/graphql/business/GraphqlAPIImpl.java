@@ -29,6 +29,7 @@ import com.dotcms.graphql.datafetcher.KeyValueFieldDataFetcher;
 import com.dotcms.graphql.datafetcher.MultiValueFieldDataFetcher;
 import com.dotcms.graphql.datafetcher.RelationshipFieldDataFetcher;
 import com.dotcms.graphql.datafetcher.SiteOrFolderFieldDataFetcher;
+import com.dotcms.graphql.datafetcher.TagsFieldDataFetcher;
 import com.dotcms.graphql.event.GraphqlTypeCreatedEvent;
 import com.dotcms.graphql.listener.RelationshipFieldTypeCreatedListener;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
@@ -100,7 +101,7 @@ public class GraphqlAPIImpl implements GraphqlAPI {
         this.fieldClassGraphqlDataFetcher.put(KeyValueField.class, new KeyValueFieldDataFetcher());
         this.fieldClassGraphqlDataFetcher.put(CheckboxField.class, new MultiValueFieldDataFetcher());
         this.fieldClassGraphqlDataFetcher.put(MultiSelectField.class, new MultiValueFieldDataFetcher());
-        this.fieldClassGraphqlDataFetcher.put(TagField.class, new MultiValueFieldDataFetcher());
+        this.fieldClassGraphqlDataFetcher.put(TagField.class, new TagsFieldDataFetcher());
         this.fieldClassGraphqlDataFetcher.put(HostFolderField.class, new SiteOrFolderFieldDataFetcher());
 
     }

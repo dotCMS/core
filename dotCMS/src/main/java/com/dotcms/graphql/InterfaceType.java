@@ -64,7 +64,7 @@ public enum InterfaceType {
         contentFields.put(MOD_DATE, GraphQLString);
         contentFields.put(TITLE, GraphQLString);
         contentFields.put(CONTENT_TYPE, GraphQLString);
-        contentFields.put(BASE_TYPE, GraphQLInt);
+        contentFields.put(BASE_TYPE, GraphQLString);
         contentFields.put(LIVE, GraphQLBoolean);
         contentFields.put(WORKING, GraphQLBoolean);
         contentFields.put(DELETED, GraphQLBoolean);
@@ -88,6 +88,7 @@ public enum InterfaceType {
         interfaceTypes.put("CONTENT", TypeUtil.createInterfaceType("Content", contentFields, new ContentResolver()));
 
         final Map<String, GraphQLOutputType> fileAssetFields = new HashMap<>();
+        fileAssetFields.putAll(contentFields);
         fileAssetFields.put(FILEASSET_FILE_NAME_FIELD_VAR, GraphQLString);
         fileAssetFields.put(FILEASSET_DESCRIPTION_FIELD_VAR, GraphQLString);
         fileAssetFields.put(FILEASSET_FILEASSET_FIELD_VAR, CustomFieldType.BINARY.getType());
@@ -98,8 +99,6 @@ public enum InterfaceType {
         fileAssetFields.put(FILEASSET_SORT_ORDER_FIELD_VAR, GraphQLInt);
 
         interfaceTypes.put("FILEASSET", TypeUtil.createInterfaceType("Fileasset", fileAssetFields, new ContentResolver()));
-
-
 
     }
 
