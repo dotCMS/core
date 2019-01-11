@@ -77,7 +77,11 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
     ) {
         if (!this.customEventsHandler) {
             this.customEventsHandler = {
+                'remote-render-edit': ({pathname}) => {
+                    this.dotRouterService.goToEditPage(pathname.slice(1));
+                },
                 'load-edit-mode-page': (pageRendered: DotRenderedPage) => {
+                    console.log('HERE', pageRendered);
                     const dotRenderedPageState = new DotRenderedPageState(
                         this.pageState.user,
                         pageRendered
