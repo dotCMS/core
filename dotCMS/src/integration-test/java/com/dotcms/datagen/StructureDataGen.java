@@ -23,6 +23,7 @@ public class StructureDataGen extends AbstractDataGen<Structure> {
     private Date iDate = new Date();
     private String detailPage = "";
     private boolean system;
+    private boolean defaultType;
     private Inode.Type type = Inode.Type.STRUCTURE;
     private String velocityVarName = "test-structure-varname-" + currentTime;
 
@@ -69,6 +70,12 @@ public class StructureDataGen extends AbstractDataGen<Structure> {
     }
 
     @SuppressWarnings("unused")
+    public StructureDataGen defaultType(boolean defaultType) {
+        this.defaultType = defaultType;
+        return this;
+    }
+
+    @SuppressWarnings("unused")
     public StructureDataGen type(Inode.Type type) {
         this.type = type;
         return this;
@@ -108,6 +115,7 @@ public class StructureDataGen extends AbstractDataGen<Structure> {
         s.setOwner(user.getUserId());
         s.setDetailPage(detailPage);
         s.setSystem(system);
+        s.setDefaultStructure(defaultType);
         s.setType(type.getValue());
         s.setVelocityVarName(velocityVarName);
         s.setFolder(folder.getInode());
