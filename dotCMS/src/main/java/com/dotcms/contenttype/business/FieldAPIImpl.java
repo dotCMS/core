@@ -70,7 +70,6 @@ import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import org.apache.commons.lang.StringUtils;
@@ -323,9 +322,10 @@ public class FieldAPIImpl implements FieldAPI {
 
 
             //only one side of the relationship can be required
-            if (relationship.getChildRelationName() != null) {
+            if (relationship.getChildRelationName() != null && field.required() && relationship.isChildRequired()) {
                 //setting as not required the other side of the relationship
                 relationship.setChildRequired(false);
+
                 sendRelationshipErrorMessage(relationship.getParentRelationName(), user);
                 final FieldBuilder builder = FieldBuilder.builder(byContentTypeAndVar(relatedContentType, relationship.getChildRelationName()));
                 if(field.required()){
@@ -341,10 +341,11 @@ public class FieldAPIImpl implements FieldAPI {
             relationship.setChildRequired(field.required());
 
             //only one side of the relationship can be required
-            if (field.required() && relationship.getParentRelationName() != null) {
+            if (field.required() && relationship.getParentRelationName() != null && relationship.isParentRequired()) {
                 //setting as not required the other side of the relationship
                 relationship.setParentRequired(false);
                 sendRelationshipErrorMessage(relationship.getChildRelationName(), user);
+
                 final FieldBuilder builder = FieldBuilder.builder(byContentTypeAndVar(relatedContentType, relationship.getParentRelationName()));
                 if(field.required()){
                     builder.required(false);
@@ -362,7 +363,7 @@ public class FieldAPIImpl implements FieldAPI {
             final User user
     ) {
 
-        SystemMessageEventUtil systemMessageEventUtil = SystemMessageEventUtil.getInstance();
+        final SystemMessageEventUtil systemMessageEventUtil = SystemMessageEventUtil.getInstance();
 
         try {
             systemMessageEventUtil.pushMessage(
