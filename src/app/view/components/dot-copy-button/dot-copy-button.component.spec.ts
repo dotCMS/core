@@ -14,7 +14,7 @@ const messageServiceMock = new MockDotMessageService({
     Copied: 'Copied'
 });
 
-fdescribe('DotCopyButtonComponent', () => {
+describe('DotCopyButtonComponent', () => {
     let component: DotCopyButtonComponent;
     let fixture: ComponentFixture<DotCopyButtonComponent>;
     let de: DebugElement;
