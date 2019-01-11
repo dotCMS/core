@@ -403,4 +403,6 @@ dependencies {
     compile 'com.graphql-java:graphql-java-extended-scalars:1.0'
 
     compile 'net.jodah:failsafe:1.1.1'
+    compile 'com.rainerhahnekamp:sneakythrow:1.1.0'
+    
 }
