@@ -59,6 +59,6 @@
     padding: 3px; 
     width: 64px; 
     cursor: pointer;
-    max-height:100px
-    overflow:hide;
+    max-height:70px;
+    overflow:hidden;
 }

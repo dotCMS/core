@@ -355,42 +355,58 @@
 <script>
 function showRelationshipReturn(){
 
-
-
     var backInode = localStorage.getItem("dotcms.relationships.relationshipReturnValue");
     
+    var myCon = "<%=contentlet.getInode()%>";
+    if(myCon === ""){
+    	try{
+    	    myCon = workingContentletInode;
+    	}catch(err) {
+    		   // no my con
+    	}
+    }
+
     
-    if(backInode ==null || backInode == undefined || backInode=='' || backInode =="null") {
+    
+    var referer="<%=UtilMethods.webifyString(request.getParameter("referer"))%>";
+    if(backInode ==null || backInode == undefined || backInode=='' || backInode =="null" || referer =="") {
+    	localStorage.removeItem("dotcms.relationships.relationshipReturnValue")
+        return;
+    }
+
+
+    backInode = JSON.parse(backInode);
+
+    if(backInode.inode ==  myCon){
+        localStorage.removeItem("dotcms.relationships.relationshipReturnValue")
         return;
     }
     
-    backInode = JSON.parse(backInode);
-    console.log(backInode)
-
-
 
     var backButtonTmpl = `
-           <div class="content-edit-actions" id="relationshipReturnValueButton">
-          &larr; Return to ${backInode.title}
-           </div>
+		<div class="content-edit-actions" style="cursor:pointer;padding:5px;overflow:hidden" id="relationshipReturnValueButton">
+			<table>
+				<tr>
+			        
+			        <td><a href="#"><%= LanguageUtil.get(pageContext, "message.relationship.returnTo") %>${backInode.title}</a></td>
+			        <td style="width:30px;text-align:center">&larr;</td>
+				</tr>
+			</table>
+		</div>
     `
 
     document.write(backButtonTmpl)
     var button = document.getElementById("relationshipReturnValueButton");
 
-
     button.addEventListener("click", function(e) {
-       var customEvent = document.createEvent("CustomEvent");
-       customEvent.initCustomEvent("ng-event", false, false,  {
-           name: "edit-contentlet",
-           data: { inode: backInode  }
-       });
-
-       document.dispatchEvent(customEvent);
+    	window.location.href="<%=request.getParameter("referer")%>";
        localStorage.removeItem("dotcms.relationships.relationshipReturnValue");
     });
-
 }
 
 showRelationshipReturn();
 </script>
+
+
+
+
