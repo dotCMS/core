@@ -1,5 +1,10 @@
 package com.dotmarketing.portlets.structure.action;
 
+import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.FieldBuilder;
+import com.dotcms.contenttype.model.field.RelationshipField;
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
@@ -13,6 +18,7 @@ import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.TreeFactory;
 import com.dotmarketing.portal.struts.DotPortletAction;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
@@ -35,30 +41,30 @@ import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionMapping;
 
 public class EditRelationshipAction extends DotPortletAction {
-	
+
 	public void processAction(
 			ActionMapping mapping, ActionForm form, PortletConfig config,
 			ActionRequest req, ActionResponse res)
-	throws Exception {
-		
+			throws Exception {
+
 		String cmd = req.getParameter(Constants.CMD);
-		String referer = req.getParameter("referer");		
+		String referer = req.getParameter("referer");
 		if (!UtilMethods.isSet(referer)) {
 			Map<String, String[]> params = new HashMap<String, String[]> ();
 			params.put("struts_action", new String[] {"/ext/structure/view_relationships"});
 			referer = PortletURLUtil.getActionURL(req, WindowState.MAXIMIZED.toString(), params);
 		}
-		
+
 		//Retrive the field in the request
 		_retrieveRelationship(form,req,res);
 
-		HibernateUtil.startTransaction();		       
-		
+		HibernateUtil.startTransaction();
+
 		/*
 		 * saving the field
 		 */
 		if ((cmd != null) && cmd.equals(Constants.ADD)) {
-			try 
+			try
 			{
 				Logger.debug(this, "Calling Add/Edit Method");
 				if (Validator.validate(req, form, mapping)) {
@@ -66,27 +72,27 @@ public class EditRelationshipAction extends DotPortletAction {
 						_sendToReferral(req,res,referer);
 						return;
 					}
-				} 
-			} 
-			catch (Exception ae) 
+				}
+			}
+			catch (Exception ae)
 			{
 				_handleException(ae, req);
 				return;
-			}			
+			}
 		}
 		/*
 		 * If we are deleting the field,
 		 * run the delete action and return to the list
 		 *
 		 */
-		else if ((cmd != null) && cmd.equals(Constants.DELETE)) 
+		else if ((cmd != null) && cmd.equals(Constants.DELETE))
 		{
-			try 
+			try
 			{
 				Logger.debug(this, "Calling Delete Method");
 				_deleteRelationship(form,req,res);
-			} 
-			catch (Exception ae) 
+			}
+			catch (Exception ae)
 			{
 				_handleException(ae, req);
 				return;
@@ -96,14 +102,45 @@ public class EditRelationshipAction extends DotPortletAction {
 			else
 				setForward(req, "portlet.ext.structure.view_relationships");
 			return;
-		} 
+		} else if ((cmd != null) && cmd.equals(Constants.CONVERT)){
+			try
+			{
+				Logger.debug(this, "Calling Convert Method");
+				if (_convertRelationship(form,req,res)) {
+					_sendToReferral(req,res,referer);
+					return;
+				}
+			}
+			catch (Exception ae)
+			{
+				_handleException(ae, req);
+				return;
+			}
+		}
 		HibernateUtil.closeAndCommitTransaction();
-		
+
 		//otherwise edit field
 		_loadForm(form, req, res);
-		setForward(req, "portlet.ext.structure.edit_relationship");		
+		setForward(req, "portlet.ext.structure.edit_relationship");
 	}
-	
+
+	private boolean _convertRelationship(ActionForm form,ActionRequest req, ActionResponse res)
+	{
+		try{
+			final RelationshipForm relationshipForm = (RelationshipForm) form;
+			final Relationship oldRelationship = APILocator.getRelationshipAPI().byInode(relationshipForm.getInode());
+
+			APILocator.getRelationshipAPI().convertRelationshipToRelationshipField(oldRelationship);
+
+			SessionMessages.add(req, "message","message.relationship.converted");
+			return true;
+		}catch(Exception ex) {
+			Logger.warn(EditRelationshipAction.class,ex.toString());
+			SessionMessages.add(req, "error", ex.getMessage());
+		}
+		return false;
+	}
+
 	private void _retrieveRelationship(ActionForm form,ActionRequest req, ActionResponse res)
 	{
 		Relationship relationship = new Relationship();
@@ -116,15 +153,15 @@ public class EditRelationshipAction extends DotPortletAction {
 		{
 			relationship = new Relationship ();
 		}
-		
+
 		if(relationship.isFixed()){
 			String message = "warning.object.isfixed";
 			SessionMessages.add(req, "message", message);
 		}
-		
+
 		req.setAttribute(WebKeys.Relationship.RELATIONSHIP_EDIT,relationship);
 	}
-	
+
 	private void _loadForm(ActionForm form,ActionRequest req, ActionResponse res)
 	{
 		try
@@ -133,11 +170,11 @@ public class EditRelationshipAction extends DotPortletAction {
 			if ((cmd == null) || !cmd.equals(Constants.ADD)) {
 				RelationshipForm relationshipForm = (RelationshipForm) form;
 				Relationship relationship = (Relationship) req.getAttribute(WebKeys.Relationship.RELATIONSHIP_EDIT);
-						
+
 				//Copy properties to the form
 				BeanUtils.copyProperties(relationshipForm, relationship);
 			}
-			
+
 			List structures = StructureFactory.getStructures();
 			req.setAttribute(WebKeys.Relationship.STRUCTURES_LIST, structures);
 		}
@@ -146,7 +183,7 @@ public class EditRelationshipAction extends DotPortletAction {
 			Logger.error(EditRelationshipAction.class,ex.toString(), ex);
 		}
 	}
-	
+
 	private boolean _saveRelationship(ActionForm form,ActionRequest req, ActionResponse res)
 	{
 		try
@@ -155,7 +192,7 @@ public class EditRelationshipAction extends DotPortletAction {
 			Relationship relationship = (Relationship) req.getAttribute(WebKeys.Relationship.RELATIONSHIP_EDIT);
 			Structure parentStructure = null;
 			Structure childStructure  = null;
-			if(InodeUtils.isSet(relationshipForm.getParentStructureInode()) || 
+			if(InodeUtils.isSet(relationshipForm.getParentStructureInode()) ||
 					InodeUtils.isSet(relationshipForm.getChildStructureInode())){
 				parentStructure = CacheLocator.getContentTypeCache()
 						.getStructureByInode(relationshipForm.getParentStructureInode());
@@ -177,7 +214,7 @@ public class EditRelationshipAction extends DotPortletAction {
 					if (InodeUtils.isSet(relationship.getInode()) && !relationshipTypeValue
 							.equals(lastRelationshipTypeValue)) {
 						DotConnect dc = new DotConnect ();
-						dc.setSQL("update tree set relation_type = '" + relationshipTypeValue + 
+						dc.setSQL("update tree set relation_type = '" + relationshipTypeValue +
 								"' where relation_type = '" + lastRelationshipTypeValue + "'");
 						dc.getResult();
 					}
@@ -202,7 +239,7 @@ public class EditRelationshipAction extends DotPortletAction {
 					return true;
 				}else{
 					throw new DotRuntimeException("Error: cannot save a fixed relationship");
-				}	
+				}
 			}else{
 				String message = parentStructure!=null?"message.relationship.childstructureinodemsg":childStructure!=null?"message.relationship.parentstructureinodemsg":"";
 				SessionMessages.add(req, "error", message);
@@ -220,21 +257,21 @@ public class EditRelationshipAction extends DotPortletAction {
 		}
 		return false;
 	}
-	
+
 	private void _deleteRelationship(ActionForm form,ActionRequest req, ActionResponse res) throws DotHibernateException
 	{
 		Relationship relationship = (Relationship) req.getAttribute(WebKeys.Relationship.RELATIONSHIP_EDIT);
-		
+
 		TreeFactory.deleteTreesByRelationType(relationship.getRelationTypeValue());
-		
+
 		try {
-          APILocator.getRelationshipAPI().delete(relationship);
-        } catch (DotDataException e) {
-          throw new DotHibernateException(e.getMessage(),e);
-        }
-		
+			APILocator.getRelationshipAPI().delete(relationship);
+		} catch (DotDataException e) {
+			throw new DotHibernateException(e.getMessage(),e);
+		}
+
 		String message = "message.relationship.deleted";
-		SessionMessages.add(req, "message",message);				
+		SessionMessages.add(req, "message",message);
 	}
-	
+
 }

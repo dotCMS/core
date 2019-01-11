@@ -143,10 +143,10 @@
 								</form>
 							</div>
 							<div class="buttonRow view-user__buttonRow">
-								<button dojoType="dijit.form.Button" onclick="saveUserDetails()" type="button"><%= LanguageUtil.get(pageContext, "Save") %></button>
 								<%if(hasAdminRole){ %>
 									<button dojoType="dijit.form.Button" onclick="showDeleteUserBox()" type="button" class="dijitButtonDanger" id="deleteButton"><%= LanguageUtil.get(pageContext, "Delete") %></button>
 								<%} %>
+								<button dojoType="dijit.form.Button" onclick="saveUserDetails()" type="button"><%= LanguageUtil.get(pageContext, "Save") %></button>
 							</div>
 							<%if(hasAdminRole){ %>
 							<div id="deleteUserDialog" title="<%= LanguageUtil.get(pageContext, "delete-User") %>" dojoType="dijit.Dialog" style="display: none; width:300px;">
@@ -194,8 +194,8 @@
 						</div>
 
 						<div class="buttonRow">
-							<button dojoType="dijit.form.Button" onclick="saveRoles()" type="button"><%= LanguageUtil.get(pageContext, "Save") %></button>
 							<button dojoType="dijit.form.Button" onclick="resetUserRoles()" type="button" class="dijitButtonFlat"><%= LanguageUtil.get(pageContext, "Reset") %></button>
+							<button dojoType="dijit.form.Button" onclick="saveRoles()" type="button"><%= LanguageUtil.get(pageContext, "Save") %></button>
 						</div>
 					</div>
 					<!-- END Roles Tab -->
@@ -287,9 +287,9 @@
 										<dt><%= LanguageUtil.get(pageContext, "Cell") %>:</dt>
 										<dd><input id="addressCell" type="text" dojoType="dijit.form.ValidationTextBox" /></dd>
 									</dl>
-									<div class="buttonRow">
-										<button dojoType="dijit.form.Button" type="button" onClick="saveAddress()"><%= LanguageUtil.get(pageContext, "Save") %></button>
+									<div class="buttonRow-right">
 										<button dojoType="dijit.form.Button" type="button" onClick="cancelSaveAddress()" class="dijitButtonFlat"><%= LanguageUtil.get(pageContext, "Cancel") %></button>
+										<button dojoType="dijit.form.Button" type="button" onClick="saveAddress()"><%= LanguageUtil.get(pageContext, "Save") %></button>
 									</div>
 								</form>
 							</div>

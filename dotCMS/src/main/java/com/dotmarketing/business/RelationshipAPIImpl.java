@@ -5,10 +5,14 @@ import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.RelationshipFactory;
+import com.dotcms.contenttype.model.field.FieldBuilder;
+import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeIf;
+import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.util.DotPreconditions;
 import com.dotmarketing.beans.Tree;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -18,8 +22,11 @@ import com.dotmarketing.portlets.structure.model.Relationship;
 
 import com.dotmarketing.portlets.structure.transform.ContentletRelationshipsTransformer;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+
+import javax.management.relation.Relation;
 import java.util.List;
 import java.util.Optional;
 import java.util.Map;
@@ -271,6 +278,46 @@ public class RelationshipAPIImpl implements RelationshipAPI {
                                 .variable());
 
 
+    }
+
+    @WrapInTransaction
+    public void convertRelationshipToRelationshipField(final Relationship oldRelationship) throws DotDataException, DotSecurityException{
+        //Transform Structures to Content Types
+        final ContentType parentContentType = new StructureTransformer(oldRelationship.getParentStructure()).from();
+        final ContentType childContentType = new StructureTransformer(oldRelationship.getChildStructure()).from();
+        //Create Relationship Fields
+        final com.dotcms.contenttype.model.field.Field parentRelationshipField = createRelationshipField(oldRelationship.getChildRelationName(),parentContentType.id(),
+                oldRelationship.getCardinality(),oldRelationship.isChildRequired(),childContentType.variable());
+        createRelationshipField(oldRelationship.getParentRelationName(), childContentType.id(),
+                oldRelationship.getCardinality(), oldRelationship.isParentRequired(), parentContentType.variable()+"."+parentRelationshipField.variable());
+        //Get the new Relationship
+        final Relationship newRelationship = byTypeValue(parentContentType.variable()+"."+parentRelationshipField.variable());
+        //Update tree table entries with the new Relationship
+        final DotConnect dc = new DotConnect ();
+        dc.setSQL("update tree set relation_type = ? where relation_type = ?");
+        dc.addParam(newRelationship.getRelationTypeValue());
+        dc.addParam(oldRelationship.getRelationTypeValue());
+        dc.loadResult();
+        //Delete the old relationship
+        APILocator.getRelationshipAPI().delete(oldRelationship);
+        //Reindex both Content Types, so the content show the relationships
+        APILocator.getContentletAPI().refresh(oldRelationship.getParentStructure());
+        APILocator.getContentletAPI().refresh(oldRelationship.getChildStructure());
+    }
+
+    private com.dotcms.contenttype.model.field.Field createRelationshipField(final String fieldName, final String parentContentTypeID, final int cardinality, final boolean isRequired, final String childContentTypeVariable)
+            throws DotDataException, DotSecurityException {
+        final com.dotcms.contenttype.model.field.Field field = FieldBuilder.builder(RelationshipField.class)
+                .name(fieldName)
+                .contentTypeId(parentContentTypeID)
+                .values(String.valueOf(WebKeys.Relationship.RELATIONSHIP_CARDINALITY.values()[cardinality].ordinal()))
+                .indexed(true)
+                .listed(false)
+                .required(isRequired)
+                .relationType(childContentTypeVariable)
+                .build();
+
+        return APILocator.getContentTypeFieldAPI().save(field,APILocator.systemUser());
     }
 
 }

@@ -109,9 +109,9 @@
 		<table align="center">
 			<tr>
 				<td colspan="2" class="buttonRow" style="text-align: center;white-space: nowrap;">
-					<button dojoType="dijit.form.Button" type="submit" id="save" iconClass="saveIcon"  onclick="updateBundle()"><%= LanguageUtil.get(pageContext, "Save") %></button>
-					&nbsp;
 					<button dojoType="dijit.form.Button" onClick="backToBundleList()" id="closeSave" iconClass="cancelIcon"><%= LanguageUtil.get(pageContext, "Cancel") %></button>
+					&nbsp;
+					<button dojoType="dijit.form.Button" type="submit" id="save" iconClass="saveIcon"  onclick="updateBundle()"><%= LanguageUtil.get(pageContext, "Save") %></button>
 
 			    </td>
 		    </tr>

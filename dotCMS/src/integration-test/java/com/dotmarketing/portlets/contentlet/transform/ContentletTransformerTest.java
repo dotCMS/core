@@ -8,7 +8,13 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+
+import org.junit.BeforeClass;
+import org.junit.Test;
+
 import com.dotcms.rest.ContentHelper;
 import com.dotcms.rest.MapToContentletPopulator;
 import com.dotcms.util.IntegrationTestInitService;
@@ -20,11 +26,6 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.struts.ContentletForm;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.workflows.business.BaseWorkflowIntegrationTest;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import org.junit.BeforeClass;
-import org.junit.Test;
 
 public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
 
@@ -52,7 +53,6 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
 
             //New Properties expected
             assertNotNull(transformed.get(Contentlet.TITTLE_KEY));
-            assertNotNull(transformed.get(ESMappingConstants.TITLE_IMAGE));
             assertNotNull(transformed.get(Contentlet.CONTENT_TYPE_KEY));
             assertNotNull(transformed.get(HTMLPageAssetAPI.URL_FIELD));
 

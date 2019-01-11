@@ -1025,7 +1025,7 @@ public class ContentletAjax {
 				searchResult.put("__type__", "<div class='typeCCol'><span class='" + spanClass +"'></span>&nbsp;" + typeStringToShow +"</div>");
 
 				String fieldValue = UtilMethods.dateToHTMLDate(con.getModDate()) + " " + UtilMethods.dateToHTMLTime(con.getModDate());
-
+				searchResult.put("hasTitleImage", String.valueOf(con.getTitleImage().isPresent()));
 				searchResult.put("modDate", fieldValue);
 				String user = "";
 				User contentEditor = null;
