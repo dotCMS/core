@@ -37,7 +37,7 @@
     }
     
     Contentlet contentlet = (Contentlet) request.getAttribute("contentlet");
-    String contentTitle = contentlet.getTitle();
+    String contentTitle = (contentlet !=null) ? contentlet.getTitle() : "";
     ContentletRelationships.ContentletRelationshipRecords  records = recordList.get(0);
     Relationship relationship = records.getRelationship();
     List<Contentlet> relatedContents = records.getRecords();

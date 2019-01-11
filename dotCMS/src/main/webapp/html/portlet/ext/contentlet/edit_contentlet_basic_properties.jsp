@@ -360,11 +360,11 @@ function showRelationshipReturn(){
     var backInode = localStorage.getItem("dotcms.relationships.relationshipReturnValue");
     
     
-    if(backInode!=null || backInode != undefined || backInode!='' || backInode!="null") {
-        //localStorage.removeItem("dotcms.relationships.relationshipReturnValue");
-        backInode = JSON.parse(backInode);
-        
+    if(backInode ==null || backInode == undefined || backInode=='' || backInode =="null") {
+        return;
     }
+    
+    backInode = JSON.parse(backInode);
     console.log(backInode)
 
 
