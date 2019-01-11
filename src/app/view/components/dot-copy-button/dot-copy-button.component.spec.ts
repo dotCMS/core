@@ -7,13 +7,14 @@ import { DotMessageService } from '@services/dot-messages-service';
 import { MockDotMessageService } from 'src/app/test/dot-message-service.mock';
 import { DotClipboardUtil } from 'src/app/api/util/clipboard/ClipboardUtil';
 import { DotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
+import { TooltipModule } from 'primeng/primeng';
 
 const messageServiceMock = new MockDotMessageService({
     Copy: 'Copy',
     Copied: 'Copied'
 });
 
-describe('DotCopyButtonComponent', () => {
+fdescribe('DotCopyButtonComponent', () => {
     let component: DotCopyButtonComponent;
     let fixture: ComponentFixture<DotCopyButtonComponent>;
     let de: DebugElement;
@@ -31,7 +32,7 @@ describe('DotCopyButtonComponent', () => {
                 },
                 DotClipboardUtil
             ],
-            imports: [DotIconButtonModule]
+            imports: [DotIconButtonModule, TooltipModule]
         }).compileComponents();
     }));
 
@@ -64,11 +65,6 @@ describe('DotCopyButtonComponent', () => {
         it('should not have label', () => {
             label = de.query(By.css('.label'));
             expect(label).toBeNull();
-        });
-
-        it('should have tooltip', () => {
-            const tooltip: DebugElement = de.query(By.css('span'));
-            expect(tooltip.nativeElement.textContent).toBe('Copy');
         });
 
         it('should copy text to clipboard', () => {
@@ -109,6 +105,12 @@ describe('DotCopyButtonComponent', () => {
 
         it('should show label', () => {
             expect(label.nativeElement.textContent).toBe('Label');
+        });
+
+        it('should have pTooltip attributes', () => {
+            expect(label.attributes.appendTo).toEqual('body');
+            expect(label.attributes.tooltipPosition).toEqual('bottom');
+            expect(label.attributes.hideDelay).toEqual('800');
         });
 
         it('should not show button', () => {

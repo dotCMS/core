@@ -55,6 +55,12 @@
     font-size: $label-font-size;
     color: $label-color;
     margin-top: $basic-padding;
+    display: inline-grid;
+    grid-gap: $basic-padding / 2;
+
+    dot-copy-button {
+        grid-column: 2;
+    }
 }
 
 .form__hint-icon {
