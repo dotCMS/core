@@ -401,10 +401,12 @@ public class ContainerAPIImplTest extends IntegrationTestBase  {
             fileAsset.setBinary(FileAssetAPI.BINARY_FIELD, this.createTempFile(title,"$dotJSON.put(\"title\", \"Test Container\")\n" +
                                                     "$dotJSON.put(\"max_contentlets\", 25)\n" +
                                                     "$dotJSON.put(\"notes\", \"Medium Column:Blog,Events,Generic,Location,Media,News,Documents,Products\")\n"));
+            fileAsset.setBoolProperty(Contentlet.IS_TEST_MODE, true);
 
             return workflowAPI.fireContentWorkflow(fileAsset,
                     new ContentletDependencies.Builder()
                             .indexPolicy(IndexPolicy.FORCE)
+                            .indexPolicyDependencies(IndexPolicy.FORCE)
                             .workflowActionId(saveAction)
                             .modUser(APILocator.systemUser())
                             .build());
