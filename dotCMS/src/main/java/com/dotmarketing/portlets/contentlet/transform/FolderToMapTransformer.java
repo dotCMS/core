@@ -5,6 +5,9 @@ import java.util.Map;
 
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotHibernateException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.liferay.portal.model.User;
@@ -22,11 +25,10 @@ public class FolderToMapTransformer implements FieldsToMapTransformer {
             throw new DotStateException("Contentlet needs an identifier to get properties");
         }
 
-        final Map<String, Object> newMap = new HashMap<>();
-        Map<String, Object> map = new HashMap<>();
+        final Map<String, Object> map = new HashMap<>();
         try {
             
-            Folder  folder= APILocator.getFolderAPI().find(con.getFolder(), user, true);
+            final Folder  folder= APILocator.getFolderAPI().find(con.getFolder(), user, true);
             map.put("id", folder.getIdentifier());
             map.put("fileMask", folder.getFilesMasks());
             map.put("sortOrder", folder.getSortOrder());
@@ -34,13 +36,13 @@ public class FolderToMapTransformer implements FieldsToMapTransformer {
             map.put("path", folder.getPath());
             map.put("title", folder.getTitle());
             map.put("defaultFileType", folder.getDefaultFileType());
-        } catch (Exception e) {
+        } catch (DotSecurityException | DotDataException e) {
             throw new DotStateException(String.format("Unable to get the Identifier for given contentlet with id= %s", con.getIdentifier()), e);
 
         }
+        final Map<String, Object> newMap = new HashMap<>();
         newMap.put("folder", con.getFolder());
         newMap.put("folderMap", map);
-        
 
         this.mapOfMaps = newMap;
     }

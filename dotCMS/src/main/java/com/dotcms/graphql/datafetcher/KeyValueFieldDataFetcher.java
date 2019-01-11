@@ -12,13 +12,13 @@ import graphql.schema.DataFetchingEnvironment;
 
 public class KeyValueFieldDataFetcher implements DataFetcher<List<Map<String, String>> > {
     @Override
-    public List<Map<String, String>> get(DataFetchingEnvironment environment) throws Exception {
+    public List<Map<String, String>> get(final DataFetchingEnvironment environment) throws Exception {
         final Contentlet contentlet = environment.getSource();
         final String var = environment.getField().getName();
-        List<Map<String, String>> keyValueMaps = new ArrayList<>();
+        final List<Map<String, String>> keyValueMaps = new ArrayList<>();
 
         contentlet.getKeyValueProperty(var).forEach((key, value) -> {
-            Map<String, String> keyValueMap = new HashMap<>();
+            final Map<String, String> keyValueMap = new HashMap<>();
             keyValueMap.put("key", key);
             keyValueMap.put("value", (String) value);
             keyValueMaps.add(keyValueMap);

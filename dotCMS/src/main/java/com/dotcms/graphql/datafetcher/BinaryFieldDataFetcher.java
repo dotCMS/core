@@ -10,7 +10,7 @@ import graphql.schema.DataFetchingEnvironment;
 
 public class BinaryFieldDataFetcher implements DataFetcher<Map<String, Object>> {
     @Override
-    public Map<String, Object> get(DataFetchingEnvironment environment) throws Exception {
+    public Map<String, Object> get(final DataFetchingEnvironment environment) throws Exception {
         final Contentlet contentlet = environment.getSource();
         final String var = environment.getField().getName();
         final BinaryToMapTransformer transformer = new BinaryToMapTransformer(contentlet);

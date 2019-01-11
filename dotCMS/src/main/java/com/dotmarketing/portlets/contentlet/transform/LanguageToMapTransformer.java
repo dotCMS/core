@@ -42,15 +42,15 @@ public class LanguageToMapTransformer implements FieldsToMapTransformer {
 
         final Map<String, Object> map = new HashMap<>();
 
-        Language l = APILocator.getLanguageAPI().getLanguage(con.getLanguageId());
-        map.put("id", l.getId());
-        map.put("language", l.getLanguage());
-        map.put("languageCode", l.getLanguageCode());
-        map.put("country", l.getCountry());
-        map.put("countryCode", l.getCountryCode());
-        String iso  = UtilMethods.isSet(l.getCountryCode())
-                ?  l.getLanguageCode() + "-" + l.getCountryCode() 
-                : l.getLanguageCode();
+        final Language language = APILocator.getLanguageAPI().getLanguage(con.getLanguageId());
+        map.put("id", language.getId());
+        map.put("language", language.getLanguage());
+        map.put("languageCode", language.getLanguageCode());
+        map.put("country", language.getCountry());
+        map.put("countryCode", language.getCountryCode());
+        final String iso  = UtilMethods.isSet(language.getCountryCode())
+                ?  language.getLanguageCode() + "-" + language.getCountryCode()
+                : language.getLanguageCode();
         map.put("isoCode", iso.toLowerCase());
         
 

@@ -11,7 +11,7 @@ import graphql.schema.DataFetchingEnvironment;
 
 public class TagsFieldDataFetcher implements DataFetcher<List<String>> {
     @Override
-    public List<String> get(DataFetchingEnvironment environment) throws Exception {
+    public List<String> get(final DataFetchingEnvironment environment) throws Exception {
         final Contentlet contentlet = environment.getSource();
         final String var = environment.getField().getName();
         String values = (String) contentlet.get(var);

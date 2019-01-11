@@ -8,7 +8,7 @@ import graphql.schema.DataFetchingEnvironment;
 
 public class FileFieldDataFetcher implements DataFetcher<Contentlet> {
     @Override
-    public Contentlet get(DataFetchingEnvironment environment) throws Exception {
+    public Contentlet get(final DataFetchingEnvironment environment) throws Exception {
         final Contentlet contentlet = environment.getSource();
         final String var = environment.getField().getName();
         final String fileAssetIdentifier = (String) contentlet.get(var);

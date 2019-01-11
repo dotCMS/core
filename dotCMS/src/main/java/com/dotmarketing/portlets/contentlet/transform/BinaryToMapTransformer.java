@@ -13,6 +13,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 
 /**
@@ -35,8 +36,7 @@ public class BinaryToMapTransformer implements FieldsToMapTransformer {
                     try {
                         newMap.put(field.variable(), con.getBinary(field.variable()).getName());
                     } catch (IOException e) {
-                        // TODO Auto-generated catch block
-                        e.printStackTrace();
+                        Logger.warn(this, "Unable to get Binary from field with var " + field.variable());
                     }
                     newMap.put(field.variable()+"Map", transform(field, con));
                 }
@@ -56,23 +56,21 @@ public class BinaryToMapTransformer implements FieldsToMapTransformer {
 
     @NotNull
     private Map<String, Object> transform(final Field field, final Contentlet con) {
-
-
-
-        final Map<String, Object> map = new HashMap<>();
-        File f;
+        File file;
         try {
-            f = con.getBinary(field.variable());
+            file = con.getBinary(field.variable());
         } catch (IOException e) {
             throw new DotStateException(e);
         }
-        map.put("versionPath", "/dA/" + APILocator.getShortyAPI().shortify(con.getInode()) + "/" + field.variable() + "/" + f.getName());
-        map.put("idPath", "/dA/" + APILocator.getShortyAPI().shortify(con.getIdentifier()) + "/" + field.variable() + "/" + f.getName());
-        map.put("name", f.getName());
-        map.put("size", f.length());
-        map.put("mime", Config.CONTEXT.getMimeType(f.getName()));
-        map.put("isImage", UtilMethods.isImage(f.getName()));
 
+        final Map<String, Object> map = new HashMap<>();
+
+        map.put("versionPath", "/dA/" + APILocator.getShortyAPI().shortify(con.getInode()) + "/" + field.variable() + "/" + file.getName());
+        map.put("idPath", "/dA/" + APILocator.getShortyAPI().shortify(con.getIdentifier()) + "/" + field.variable() + "/" + file.getName());
+        map.put("name", file.getName());
+        map.put("size", file.length());
+        map.put("mime", Config.CONTEXT.getMimeType(file.getName()));
+        map.put("isImage", UtilMethods.isImage(file.getName()));
 
         return map;
     }

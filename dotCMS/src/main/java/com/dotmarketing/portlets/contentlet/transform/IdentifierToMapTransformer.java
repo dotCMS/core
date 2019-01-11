@@ -22,11 +22,10 @@ public class IdentifierToMapTransformer implements FieldsToMapTransformer {
             throw new DotStateException("Contentlet needs an identifier to get properties");
         }
 
-        final Map<String, Object> newMap = new HashMap<>();
-        Map<String, Object> map = new HashMap<>();
+        final Map<String, Object> map = new HashMap<>();
         try {
             
-            Identifier id = APILocator.getIdentifierAPI().find(con.getIdentifier());
+            final Identifier id = APILocator.getIdentifierAPI().find(con.getIdentifier());
             map.put("id", id.getId());
             map.put("parentPath", id.getParentPath());
             map.put("path", id.getPath());
@@ -36,9 +35,9 @@ public class IdentifierToMapTransformer implements FieldsToMapTransformer {
             throw new DotStateException(String.format("Unable to get the Identifier for given contentlet with id= %s", con.getIdentifier()), e);
 
         }
+        final Map<String, Object> newMap = new HashMap<>();
         newMap.put("identifier", con.getIdentifier());
         newMap.put("identifierMap", map);
-        
 
         this.mapOfMaps = newMap;
     }

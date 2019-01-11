@@ -1,8 +1,6 @@
 package com.dotcms.graphql;
 
-import com.dotcms.graphql.datafetcher.KeyValueFieldDataFetcher;
 import com.dotcms.graphql.datafetcher.MapFieldPropertiesDataFetcher;
-import com.dotcms.graphql.datafetcher.FieldDataFetcher;
 import com.dotcms.graphql.util.TypeUtil;
 
 import java.util.HashMap;
@@ -10,7 +8,6 @@ import java.util.Map;
 
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
-import graphql.schema.PropertyDataFetcher;
 
 import static graphql.Scalars.GraphQLString;
 

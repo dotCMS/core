@@ -10,7 +10,7 @@ import java.util.List;
 
 public class MultiValueFieldDataFetcher implements DataFetcher<List<String>> {
     @Override
-    public List<String> get(DataFetchingEnvironment environment) throws Exception {
+    public List<String> get(final DataFetchingEnvironment environment) throws Exception {
         final Contentlet contentlet = environment.getSource();
         final String var = environment.getField().getName();
         final String values = (String) contentlet.get(var);

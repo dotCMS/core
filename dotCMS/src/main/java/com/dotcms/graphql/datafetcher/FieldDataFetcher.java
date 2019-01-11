@@ -7,7 +7,7 @@ import graphql.schema.DataFetchingEnvironment;
 
 public class FieldDataFetcher implements DataFetcher<Object> {
     @Override
-    public Object get(DataFetchingEnvironment environment) throws Exception {
+    public Object get(final DataFetchingEnvironment environment) throws Exception {
         final Contentlet contentlet = environment.getSource();
         final String var = environment.getField().getName();
         return contentlet.get(var);

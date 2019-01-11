@@ -12,7 +12,7 @@ import graphql.schema.DataFetchingEnvironment;
 
 public class CategoryFieldDataFetcher implements DataFetcher<List<Map<String, Object>>> {
     @Override
-    public List<Map<String, Object>> get(DataFetchingEnvironment environment) throws Exception {
+    public List<Map<String, Object>> get(final DataFetchingEnvironment environment) throws Exception {
         final Contentlet contentlet = environment.getSource();
         final String var = environment.getField().getName();
 
