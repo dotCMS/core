@@ -1,5 +1,9 @@
 package com.dotcms.rendering.velocity.servlet;
 
+import com.dotcms.api.system.event.message.MessageSeverity;
+import com.dotcms.api.system.event.message.MessageType;
+import com.dotcms.api.system.event.message.SystemMessageEventUtil;
+import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
 import com.dotcms.rendering.velocity.services.VelocityType;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.repackage.jersey.repackaged.com.google.common.collect.ImmutableMap;
@@ -16,6 +20,8 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.liferay.portal.model.User;
+import com.dotmarketing.util.DateUtil;
+import org.apache.commons.lang.WordUtils;
 import org.apache.velocity.Template;
 import org.apache.velocity.exception.ParseErrorException;
 
@@ -25,6 +31,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.Arrays;
 import java.util.Map;
 
 public abstract class VelocityModeHandler {
@@ -81,5 +88,4 @@ public abstract class VelocityModeHandler {
         return VelocityUtil.getEngine().getTemplate(mode.name() + File.separator + page.getIdentifier() + "_"
                 + page.getLanguageId() + "." + VelocityType.HTMLPAGE.fileExtension);
     }
-
 }

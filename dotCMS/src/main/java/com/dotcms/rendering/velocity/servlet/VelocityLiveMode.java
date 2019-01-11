@@ -24,6 +24,7 @@ import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 import org.apache.velocity.context.Context;
+import org.apache.velocity.exception.ParseErrorException;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -164,9 +165,11 @@ public class VelocityLiveMode extends VelocityModeHandler {
                         CacheLocator.getBlockPageCache().add(htmlPage, trimmedPage, cacheParameters);
                     }
                 }
+            } catch (ParseErrorException e) {
+
+                this.handleParseException(e, htmlPage.getName(), user);
             }
         } finally {
-
             LicenseUtil.stopLiveMode();
         }
     }

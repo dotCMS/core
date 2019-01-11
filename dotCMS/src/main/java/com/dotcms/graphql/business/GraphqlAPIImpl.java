@@ -9,6 +9,7 @@ import com.dotcms.contenttype.model.field.DateField;
 import com.dotcms.contenttype.model.field.DateTimeField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FileField;
+import com.dotcms.contenttype.model.field.HostFolderField;
 import com.dotcms.contenttype.model.field.ImageField;
 import com.dotcms.contenttype.model.field.KeyValueField;
 import com.dotcms.contenttype.model.field.MultiSelectField;
@@ -27,6 +28,7 @@ import com.dotcms.graphql.datafetcher.FileFieldDataFetcher;
 import com.dotcms.graphql.datafetcher.KeyValueFieldDataFetcher;
 import com.dotcms.graphql.datafetcher.MultiValueFieldDataFetcher;
 import com.dotcms.graphql.datafetcher.RelationshipFieldDataFetcher;
+import com.dotcms.graphql.datafetcher.SiteOrFolderFieldDataFetcher;
 import com.dotcms.graphql.event.GraphqlTypeCreatedEvent;
 import com.dotcms.graphql.listener.RelationshipFieldTypeCreatedListener;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
@@ -88,6 +90,7 @@ public class GraphqlAPIImpl implements GraphqlAPI {
         this.fieldClassGraphqlTypeMap.put(CheckboxField.class, list(GraphQLString));
         this.fieldClassGraphqlTypeMap.put(MultiSelectField.class, list(GraphQLString));
         this.fieldClassGraphqlTypeMap.put(TagField.class, list(GraphQLString));
+        this.fieldClassGraphqlTypeMap.put(HostFolderField.class, CustomFieldType.SITE_OR_FOLDER.getType());
 
         // custom data fetchers
         this.fieldClassGraphqlDataFetcher.put(BinaryField.class, new BinaryFieldDataFetcher());
@@ -98,6 +101,7 @@ public class GraphqlAPIImpl implements GraphqlAPI {
         this.fieldClassGraphqlDataFetcher.put(CheckboxField.class, new MultiValueFieldDataFetcher());
         this.fieldClassGraphqlDataFetcher.put(MultiSelectField.class, new MultiValueFieldDataFetcher());
         this.fieldClassGraphqlDataFetcher.put(TagField.class, new MultiValueFieldDataFetcher());
+        this.fieldClassGraphqlDataFetcher.put(HostFolderField.class, new SiteOrFolderFieldDataFetcher());
 
     }
 

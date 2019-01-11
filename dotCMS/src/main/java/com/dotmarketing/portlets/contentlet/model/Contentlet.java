@@ -74,11 +74,13 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 
     private static final long serialVersionUID = 1L;
     public static final String TITTLE_KEY = "title";
+    public static final String HAS_TITLE_IMAGE_KEY = "hasTitleImage";
     public static final String INODE_KEY = "inode";
     public static final String LANGUAGEID_KEY = "languageId";
     public static final String STRUCTURE_INODE_KEY = "stInode";
     public static final String STRUCTURE_NAME_KEY = "stName";
     public static final String CONTENT_TYPE_KEY = "contentType";
+    public static final String BASE_TYPE_KEY = "baseType";
     public static final String LAST_REVIEW_KEY = "lastReview";
     public static final String NEXT_REVIEW_KEY = "nextReview";
     public static final String REVIEW_INTERNAL_KEY = "reviewInternal";
@@ -93,6 +95,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
     public static final String IDENTIFIER_KEY = "identifier";
     public static final String SORT_ORDER_KEY = "sortOrder";
     public static final String HOST_KEY = "host";
+    public static final String HOST_NAME = "hostName";
     public static final String FOLDER_KEY = "folder";
 	public static final String NULL_PROPERTIES = "nullProperties";
 	public static final String WORKFLOW_ACTION_KEY = "wfActionId";
