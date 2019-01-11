@@ -18,6 +18,8 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 import java.util.List;
+import java.util.stream.Collectors;
+
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
@@ -58,7 +60,8 @@ public class ViewRelationshipsAction extends DotPortletAction {
 				.variable("all")
 				.name("all").build()
 				: APILocator.getContentTypeAPI(user).find(structureId);
-		List<Relationship> list = FactoryLocator.getRelationshipFactory().byContentType(type , orderBy);
+		List<Relationship> list = FactoryLocator.getRelationshipFactory().byContentType(type , orderBy).stream()
+				.filter(relationship -> !(relationship.getRelationTypeValue().matches("[a-zA-z0-9]+\\.[a-zA-Z0-9]+"))).collect(Collectors.toList());
 		req.setAttribute(WebKeys.Relationship.RELATIONSHIPS, list);
 	}
 }
