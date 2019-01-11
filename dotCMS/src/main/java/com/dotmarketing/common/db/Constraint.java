@@ -17,6 +17,14 @@ public class Constraint {
         this.columnName = columnName;
     }
 
+    public String getTable() {
+        return table;
+    }
+
+    public boolean isUnique() {
+        return unique;
+    }
+
     public String getName() {
         return name;
     }

@@ -24,7 +24,7 @@ import com.liferay.portal.model.User;
 
 import javax.servlet.http.HttpServletRequest;
 
-@Path("/v1/startup")
+@Path("/v1/startuptasks")
 public class StartupResource {
 
     private final WebResource webResource;
@@ -52,7 +52,7 @@ public class StartupResource {
      * @return Response
      */
     @POST()
-    @Path("/{startupClass}")
+    @Path("/{startupClass}/run")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})

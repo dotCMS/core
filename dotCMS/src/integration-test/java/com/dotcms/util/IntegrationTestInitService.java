@@ -88,9 +88,9 @@ public class IntegrationTestInitService {
                 }
             }
         }
-        Logger.info(this, ()->"Ran the always upgrade tasks");
+        Logger.info(this, ()->"Ran the run-always upgrade tasks");
 
-        Logger.info(this, ()->"Running the once upgrade tasks");
+        Logger.info(this, ()->"Running the run-once upgrade tasks");
 
         boolean is257UpgradeTask = false; // we want to test from 2.5.7 release, the first UT is Task03005CreateModDateForFieldIfNeeded.
         for (final Class<?> onceTaskClass : onceTaskClasses) {
@@ -117,7 +117,7 @@ public class IntegrationTestInitService {
                 }
             }
         }
-        Logger.info(this, ()->"Ran the once upgrade tasks");
+        Logger.info(this, ()->"Ran the run-once upgrade tasks");
     }
 
     public void mockStrutsActionModule() {
