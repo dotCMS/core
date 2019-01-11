@@ -56,6 +56,7 @@ export class DotEditContentHtmlService {
     private rowsMaxHeight: number[] = [];
     private docClickSubscription: Subscription;
     private updateContentletInode = false;
+    private remoteRendered: boolean;
 
     private readonly docClickHandlers;
 
@@ -93,6 +94,7 @@ export class DotEditContentHtmlService {
      * @memberof DotEditContentHtmlService
      */
     renderPage(pageState: DotRenderedPageState, iframeEl: ElementRef): Promise<any> {
+        this.remoteRendered = pageState.page.remoteRendered;
         return new Promise((resolve, _reject) => {
             this.iframe = iframeEl;
             const iframeElement = this.getEditPageIframe();
@@ -608,7 +610,9 @@ export class DotEditContentHtmlService {
             },
             // When a user drag and drop a contentlet in the iframe
             relocate: (contentletEvent: any) => {
-                this.renderRelocatedContentlet(contentletEvent.data);
+                if (!this.remoteRendered) {
+                    this.renderRelocatedContentlet(contentletEvent.data);
+                }
             },
             'deleted-contenlet': () => {
                 this.removeCurrentContentlet();

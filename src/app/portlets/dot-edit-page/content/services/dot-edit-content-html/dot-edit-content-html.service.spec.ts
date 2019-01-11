@@ -278,18 +278,60 @@ describe('DotEditContentHtmlService', () => {
     });
 
     it('should render relocated contentlet', () => {
-        spyOn(this.dotEditContentHtmlService, 'renderRelocatedContentlet');
+        const dotContainerContentletService = this.injector.get(DotContainerContentletService);
+        spyOn(dotContainerContentletService, 'getContentletToContainer').and.callThrough();
+        spyOn(this.dotEditContentHtmlService, 'renderRelocatedContentlet').and.callThrough();
+
+        const dataObj = {
+            container: {
+                identifier: '123',
+                uuid: '456'
+            },
+            contentlet: {
+                identifier: '456',
+                inode: '456'
+            }
+        };
 
         this.dotEditContentHtmlService.contentletEvents$.next({
             name: 'relocate',
-            data: {
-                identifier: '456'
-            }
+            data: dataObj
         });
 
-        expect(this.dotEditContentHtmlService.renderRelocatedContentlet).toHaveBeenCalledWith({
-            identifier: '456'
+        expect(this.dotEditContentHtmlService.renderRelocatedContentlet).toHaveBeenCalledWith(dataObj);
+        expect(dotContainerContentletService.getContentletToContainer).toHaveBeenCalledWith(dataObj.container, dataObj.contentlet);
+    });
+
+    it('should not render relocated contentlet', () => {
+        spyOn(this.dotEditContentHtmlService, 'renderRelocatedContentlet').and.callThrough();
+
+        const dataObj = {
+            container: {
+                identifier: '123',
+                uuid: '456'
+            },
+            contentlet: {
+                identifier: '456',
+                inode: '456'
+            }
+        };
+
+        const pageState: DotRenderedPageState = new DotRenderedPageState(mockUser, {
+            ...mockDotRenderedPage,
+            page: {
+                ...mockDotPage,
+                rendered: fakeHTML,
+                remoteRendered: true
+            }
         });
+        this.dotEditContentHtmlService.initEditMode(pageState, { nativeElement: fakeIframeEl });
+
+        this.dotEditContentHtmlService.contentletEvents$.next({
+            name: 'relocate',
+            data: dataObj
+        });
+
+        expect(this.dotEditContentHtmlService.renderRelocatedContentlet).not.toHaveBeenCalled();
     });
 
     it('should render added contentlet', () => {
