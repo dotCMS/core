@@ -130,14 +130,14 @@ public class ContentletAjax {
 	private ContentletWebAPI contentletWebAPI = WebAPILocator.getContentletWebAPI();
 	private LanguageAPI langAPI = APILocator.getLanguageAPI();
 
-	public List<Map<String, Object>> getContentletsData(String commaSeparatedStringOfIds) {
+	public List<Map<String, Object>> getContentletsData(String inodesStr) {
 		List<Map<String,Object>> rows = new ArrayList<Map<String, Object>>();
 
-		if(commaSeparatedStringOfIds == null || !UtilMethods.isSet(commaSeparatedStringOfIds)) {
+		if(inodesStr == null || !UtilMethods.isSet(inodesStr)) {
 			return rows;
 		}
 
-		String[] inodes =  commaSeparatedStringOfIds.split(",");
+		String[] inodes =  inodesStr.split(",");
 		for (String inode : inodes) {
 			Map<String, Object> contenletData = getContentletData(inode);
 			if(contenletData != null)
