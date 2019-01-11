@@ -273,13 +273,13 @@ public class HostAPITest {
                         .find(testStructure.getVelocityVarName());
                 Assert.assertNotNull(
                         foundContentType);
-                Assert.assertEquals(foundContentType.id(), testStructure.id());
-                Assert.assertEquals(foundContentType.variable(),
-                        testStructure.getVelocityVarName());
+                Assert.assertEquals(testStructure.id(), foundContentType.id());
+                Assert.assertEquals(testStructure.getVelocityVarName(),
+                        foundContentType.variable());
 
                 //Make sure the host was changed to SYSTEM_HOST
-                Assert.assertEquals(foundContentType.host(),
-                        APILocator.getHostAPI().findSystemHost().getIdentifier());
+                Assert.assertEquals(APILocator.getHostAPI().findSystemHost().getIdentifier(),
+                        foundContentType.host());
             } catch (Exception e) {
                 Assert.fail(String.format("Unable to create delete test content type [%s] [%s]",
                         testStructure.id(),
