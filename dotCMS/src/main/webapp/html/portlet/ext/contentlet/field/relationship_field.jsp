@@ -37,6 +37,7 @@
     }
     
     Contentlet contentlet = (Contentlet) request.getAttribute("contentlet");
+    String contentTitle = contentlet.getTitle();
     ContentletRelationships.ContentletRelationshipRecords  records = recordList.get(0);
     Relationship relationship = records.getRelationship();
     List<Contentlet> relatedContents = records.getRecords();
@@ -384,6 +385,13 @@
 				//Add new content
 			    function <%= relationJsName %>_addContentlet(structureInode) {
 
+
+		
+			    	var myNode = (currentContentletInode==null || currentContentletInode=='') ? workingContentletInode : currentContentletInode;
+			    	var relationshipReturnValue = { inode: myNode, title: "<%=UtilMethods.escapeDoubleQuotes(contentTitle)%>" };
+			    	
+			    	localStorage.setItem("dotcms.relationships.relationshipReturnValue",  JSON.stringify(relationshipReturnValue));
+			    	
 					var referer = "<portlet:actionURL windowState='<%= WindowState.MAXIMIZED.toString() %>'>";
 					referer += 	"<portlet:param name='struts_action' value='/ext/contentlet/edit_contentlet' />";
 					referer += "<portlet:param name='cmd' value='edit' />";					

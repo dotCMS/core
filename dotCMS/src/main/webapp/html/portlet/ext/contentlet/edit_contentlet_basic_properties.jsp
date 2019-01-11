@@ -352,4 +352,45 @@
 
 	</div>
 
+<script>
+function showRelationshipReturn(){
 
+
+
+    var backInode = localStorage.getItem("dotcms.relationships.relationshipReturnValue");
+    
+    
+    if(backInode!=null || backInode != undefined || backInode!='' || backInode!="null") {
+        //localStorage.removeItem("dotcms.relationships.relationshipReturnValue");
+        backInode = JSON.parse(backInode);
+        
+    }
+    console.log(backInode)
+
+
+
+    var backButtonTmpl = `
+           <div class="content-edit-actions" id="relationshipReturnValueButton">
+          &larr; Return to ${backInode.title}
+           </div>
+    `
+
+    document.write(backButtonTmpl)
+    var button = document.getElementById("relationshipReturnValueButton");
+
+
+    button.addEventListener("click", function(e) {
+       var customEvent = document.createEvent("CustomEvent");
+       customEvent.initCustomEvent("ng-event", false, false,  {
+           name: "edit-contentlet",
+           data: { inode: backInode  }
+       });
+
+       document.dispatchEvent(customEvent);
+       localStorage.removeItem("dotcms.relationships.relationshipReturnValue");
+    });
+
+}
+
+showRelationshipReturn();
+</script>
