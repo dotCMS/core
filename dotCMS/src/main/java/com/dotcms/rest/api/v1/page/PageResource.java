@@ -62,21 +62,31 @@ public class PageResource {
     private final PageResourceHelper pageResourceHelper;
     private final WebResource webResource;
     private final HTMLPageAssetRenderedAPI htmlPageAssetRenderedAPI;
-    private final ContentletAPI esapi = APILocator.getContentletAPI();
+    private final ContentletAPI esapi;
 
     /**
      * Creates an instance of this REST end-point.
      */
     public PageResource() {
-        this(PageResourceHelper.getInstance(), new WebResource(), APILocator.getHTMLPageAssetRenderedAPI());
+        this(
+            PageResourceHelper.getInstance(),
+            new WebResource(),
+            APILocator.getHTMLPageAssetRenderedAPI(),
+            APILocator.getContentletAPI()
+        );
     }
 
     @VisibleForTesting
-    protected PageResource(final PageResourceHelper pageResourceHelper, final WebResource webResource,
-                           final HTMLPageAssetRenderedAPI htmlPageAssetRenderedAPI) {
+    PageResource(
+            final PageResourceHelper pageResourceHelper,
+            final WebResource webResource,
+            final HTMLPageAssetRenderedAPI htmlPageAssetRenderedAPI,
+            final ContentletAPI esapi) {
+
         this.pageResourceHelper = pageResourceHelper;
         this.webResource = webResource;
         this.htmlPageAssetRenderedAPI = htmlPageAssetRenderedAPI;
+        this.esapi = esapi;
     }
 
     /**
@@ -435,7 +445,7 @@ public class PageResource {
             throws DotDataException, DotSecurityException {
 
         final InitDataObject initData = webResource.init(null, true, request,
-                false, null);
+                true, null);
         final User user = initData.getUser();
 
         final boolean live = (liveQueryParam == null) ? PageMode.get(request).showLive : liveQueryParam;
