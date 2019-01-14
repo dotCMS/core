@@ -106,4 +106,45 @@ public class PageResourceTest {
         assertEquals(responseMap.get("identifier"), contentlet.getIdentifier());
         assertEquals(responseMap.get("inode"), contentlet.getInode());
     }
+
+    /**
+     * Should return about-us/index page, when pass path with the host
+     *
+     * @throws JSONException
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    @Test
+    public void testPathParamWithHost()
+            throws DotSecurityException, DotDataException {
+        String path = "//demo.dotcms.com/about-us/index";
+
+        final SearchResponse searchResponse = mock(SearchResponse.class);
+
+        final Contentlet contentlet = APILocator.getContentletAPI()
+                .findContentletByIdentifierAnyLanguage("a9f30020-54ef-494e-92ed-645e757171c2");
+
+        final List contentlets = list(contentlet);
+        final ESSearchResults results = new ESSearchResults(searchResponse, contentlets);
+        final String query = String.format("{"
+                + "query: {"
+                + "query_string: {"
+                + "query: \"+basetype:5 +path:*%s* +conhostName:demo.dotcms.com languageid:1^10\""
+                + "}"
+                + "}"
+                + "}", "about-us/index".replace("/", "\\\\/"));
+
+
+        when(esapi.esSearch(query, false, user, false)).thenReturn(results);
+
+        final Response response = pageResource.searchPage(request, path, false, true);
+        RestUtilTest.verifySuccessResponse(response);
+
+        final Collection contentLetsResponse = (Collection) ((ResponseEntityView) response.getEntity()).getEntity();
+        assertEquals(contentLetsResponse.size(), 1);
+
+        final Map responseMap = (Map) contentLetsResponse.iterator().next();
+        assertEquals(responseMap.get("identifier"), contentlet.getIdentifier());
+        assertEquals(responseMap.get("inode"), contentlet.getInode());
+    }
 }

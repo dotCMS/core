@@ -37,6 +37,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.auth.PrincipalThreadLocal;
 import com.liferay.portal.model.User;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -426,7 +427,7 @@ public class PageResource {
      * Return all the page that contains the path parameter
      *
      * @param request
-     * @param queryParamPath path to filter, if it start with '//' then the path contains the site name
+     * @param path path to filter, if it start with '//' then the path contains the site name
      * @param liveQueryParam if it is true then return page only with live version, if it is false return both live and working version
      * @param onlyLiveSites if it is true then filter page only from live sites
      * @return
@@ -473,9 +474,10 @@ public class PageResource {
         String path;
 
         if (pathParam.startsWith("//")) {
-            final String hostName = pathParam.split("/")[1];
-            hostFilter = String.format("+conhostName:$s", hostName);
-            path = pathParam.substring(pathParam.indexOf(hostName + "/"));
+            String[] pathSplit = pathParam.split("/");
+            final String hostName = pathSplit[2];
+            hostFilter = String.format("+conhostName:%s", hostName);
+            path = String.join("/", Arrays.copyOfRange(pathSplit, 3, pathSplit.length));
         } else {
             path = pathParam;
         }
