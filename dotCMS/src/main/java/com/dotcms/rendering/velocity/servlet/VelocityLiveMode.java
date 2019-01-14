@@ -167,7 +167,7 @@ public class VelocityLiveMode extends VelocityModeHandler {
                 }
             } catch (ParseErrorException e) {
 
-                this.handleParseException(e, htmlPage.getName(), user);
+                this.processException(user, htmlPage.getName(), e);
             }
         } finally {
             LicenseUtil.stopLiveMode();
