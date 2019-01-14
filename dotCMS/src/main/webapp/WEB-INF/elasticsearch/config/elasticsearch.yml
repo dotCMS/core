@@ -87,11 +87,12 @@
 #
 #action.destructive_requires_name: true
 
-cluster.name: dotCMSContentIndex_5x
-path.data: esdata
-path.repo: essnapshot/snapshots
-path.logs: tomcat8/logs
+
+cluster.name: dotCMSContentIndex_3x
+path.data: /Users/jsanca/gitsources/dotcms-master/tomcat8/webapps/ROOT/dotsecure/esdata
+path.repo: /Users/jsanca/gitsources/dotcms-master/tomcat8/webapps/ROOT/dotsecure/essnapshot/snapshots
+path.logs: /Users/jsanca/gitsources/dotcms-master/tomcat8/logs
 http.port: 9200
 http.host: localhost
-http.enabled: false
+http.enabled: true
 http.cors.enabled: false
