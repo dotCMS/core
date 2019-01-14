@@ -1,12 +1,12 @@
 package com.dotmarketing.portlets.contentlet.transform;
 
-import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
-import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.rest.ContentHelper;
 import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.util.Logger;
@@ -16,7 +16,6 @@ import com.liferay.portal.model.User;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -84,7 +83,14 @@ public class ContentletToMapTransformer {
         final Map<String, Object> properties = contentlet.getMap();
         properties.put(Contentlet.CONTENT_TYPE_KEY , type != null ? type.variable() : NA );
         properties.put(Contentlet.TITTLE_KEY, contentlet.getTitle());
-        properties.put("hasTitleImage", contentlet.getTitleImage().isPresent() );
+        properties.put(Contentlet.HAS_TITLE_IMAGE_KEY, contentlet.getTitleImage().isPresent() );
+        properties.put(Contentlet.BASE_TYPE_KEY, type.baseType().name());
+        try {
+            properties.put(Contentlet.HOST_NAME, APILocator.getHostAPI().find(contentlet.getHost(), APILocator.systemUser()
+                , true).getHostname());
+        } catch (DotDataException | DotSecurityException e) {
+            Logger.warn(this, "Unable to set property: " + Contentlet.HOST_NAME, e);
+        }
 
         if (!properties.containsKey(HTMLPageAssetAPI.URL_FIELD)) {
             final String url = contentHelper.getUrl(contentlet);

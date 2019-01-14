@@ -676,13 +676,14 @@
                 var result = "<input onchange='doSearch()' type=\"text\" displayedValue=\""+value+"\" constraints={datePattern:'MM/dd/yyyy'} dojoType=\"dijit.form.DateTextBox\" validate='return false;' invalidMessage=\"\"  id=\"" + selectedStruct+"."+ fieldContentlet + "Field\" name=\"" + selectedStruct+"."+ fieldContentlet + "\" >";
                 return result;
           }else if(type=="relationship"){
-               var result = "<select id=\"" + selectedStruct+"."+ fieldContentlet + "Field\" onkeyup=\"reloadRelationshipBox(this, '" + field["fieldRelationType"] + "', '" + selectedStruct+"."+ fieldContentlet + "Field');return true;\" " +
-                   "onchange=\"loadHiddenRelationshipField(this,'" + selectedStruct+"."+ fieldContentlet + "Field')\" data-dojo-type=\"dijit/form/ComboBox\"" + selectedStruct+"."+ fieldContentlet + "Field\"" +
-                   "name=\"" + selectedStruct+"."+ fieldContentlet + "\">\n";
-               result += "</select>\n";
-               result += "<input type=\"hidden\" id=\"" + selectedStruct+"."+ fieldContentlet + "Field\" />";
-                result += "<span class='hint-text'><%= LanguageUtil.get(pageContext, "Type-id-or-title-related-content") %></span>";
-               return result;
+              dijit.registry.remove(selectedStruct+"."+ fieldContentlet +"Field");
+              var result = "<select id=\"" + selectedStruct+"."+ fieldContentlet + "Field\" onkeyup=\"reloadRelationshipBox(this, '" + field["fieldRelationType"] + "', '" + selectedStruct+"."+ fieldContentlet + "Field');return true;\" " +
+                  "onchange=\"loadHiddenRelationshipField(this,'" + selectedStruct+"."+ fieldContentlet + "Field')\" data-dojo-type=\"dijit/form/ComboBox\"" + selectedStruct+"."+ fieldContentlet + "Field\"" +
+                  "name=\"" + selectedStruct+"."+ fieldContentlet + "\">\n";
+              result += "</select>\n";
+              result += "<input type=\"hidden\" id=\"" + selectedStruct+"."+ fieldContentlet + "Field\" />";
+              result += "<span class='hint-text'><%= LanguageUtil.get(pageContext, "Type-id-or-title-related-content") %></span>";
+              return result;
           }else{
                 dijit.registry.remove(selectedStruct+"."+ fieldContentlet + "Field");
                 if(dijit.byId(selectedStruct+"."+ fieldContentlet + "Field")){

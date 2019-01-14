@@ -1,4 +1,11 @@
-package com.dotcms.graphql;
+package com.dotmarketing.portlets.contentlet.transform;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.jetbrains.annotations.NotNull;
 
 import com.dotcms.contenttype.model.field.CategoryField;
 import com.dotcms.contenttype.model.field.Field;
@@ -10,12 +17,10 @@ import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.liferay.portal.model.User;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.List;
-
-public class CategoryToMapTransformer {
+/**
+ * DBTransformer that converts DB objects into Contentlet instances
+ */
+public class CategoryToMapTransformer implements FieldsToMapTransformer {
     final Map<String, Object> mapOfMaps;
     final List<Category> cats ;
 
@@ -37,19 +42,21 @@ public class CategoryToMapTransformer {
                     newMap.put(field.variable(), transform(field, con, user));
                 }
             }
-
+            
         }
 
         this.mapOfMaps = newMap;
     }
 
-
+    
+    @Override
     public Map<String, Object> asMap() {
         return this.mapOfMaps;
     }
 
 
 
+    @NotNull
     private Map<String, Object> transform(final Field field, final Contentlet con, final User user) {
 
         final Map<String, Object> map = new HashMap<>();
@@ -67,16 +74,17 @@ public class CategoryToMapTransformer {
                 }
             }
             map.put("categories", childCategories);
-
+            
         } catch (Exception e) {
             throw new DotStateException(String.format("Unable to get the Categories for given contentlet with inode= %s", con.getInode()), e);
 
         }
-
+        
 
 
         return map;
     }
+    @NotNull
     private Map<String, Object> transform(final Category cat) {
 
         final Map<String, Object> map = new HashMap<>();
@@ -91,5 +99,6 @@ public class CategoryToMapTransformer {
         map.put("velocityVar", cat.getCategoryVelocityVarName());
         return map;
     }
-
+    
 }
+

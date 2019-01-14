@@ -4,6 +4,7 @@ import com.dotcms.rendering.velocity.events.PreviewEditParseErrorException;
 import com.dotcms.rendering.velocity.services.PageContextBuilder;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.rendering.velocity.viewtools.content.ContentMap;
+import com.dotcms.repackage.javax.ws.rs.HEAD;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -15,6 +16,7 @@ import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.util.PageMode;
 import com.liferay.portal.model.User;
 import org.apache.velocity.context.Context;
+import org.apache.velocity.exception.ParseErrorException;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -77,7 +79,6 @@ public class VelocityPreviewMode extends VelocityModeHandler {
         try(final Writer outStr = new BufferedWriter(new OutputStreamWriter(out))){
             this.getTemplate(htmlPage, mode).merge(context, outStr);
         } catch (PreviewEditParseErrorException e) {
-
             this.processException(user, htmlPage.getName(), e);
         }
     }

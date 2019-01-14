@@ -3,11 +3,19 @@ package com.dotcms.graphql.business;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.CategoryField;
+import com.dotcms.contenttype.model.field.CheckboxField;
+import com.dotcms.contenttype.model.field.ColumnField;
 import com.dotcms.contenttype.model.field.DateField;
 import com.dotcms.contenttype.model.field.DateTimeField;
 import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.FileField;
+import com.dotcms.contenttype.model.field.HostFolderField;
 import com.dotcms.contenttype.model.field.ImageField;
-import com.dotcms.contenttype.model.field.ImmutableRelationshipField;
+import com.dotcms.contenttype.model.field.KeyValueField;
+import com.dotcms.contenttype.model.field.MultiSelectField;
+import com.dotcms.contenttype.model.field.RelationshipField;
+import com.dotcms.contenttype.model.field.RowField;
+import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.field.TimeField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.graphql.CustomFieldType;
@@ -16,8 +24,12 @@ import com.dotcms.graphql.datafetcher.BinaryFieldDataFetcher;
 import com.dotcms.graphql.datafetcher.CategoryFieldDataFetcher;
 import com.dotcms.graphql.datafetcher.ContentletDataFetcher;
 import com.dotcms.graphql.datafetcher.FieldDataFetcher;
-import com.dotcms.graphql.datafetcher.ImageFieldDataFetcher;
+import com.dotcms.graphql.datafetcher.FileFieldDataFetcher;
+import com.dotcms.graphql.datafetcher.KeyValueFieldDataFetcher;
+import com.dotcms.graphql.datafetcher.MultiValueFieldDataFetcher;
 import com.dotcms.graphql.datafetcher.RelationshipFieldDataFetcher;
+import com.dotcms.graphql.datafetcher.SiteOrFolderFieldDataFetcher;
+import com.dotcms.graphql.datafetcher.TagsFieldDataFetcher;
 import com.dotcms.graphql.event.GraphqlTypeCreatedEvent;
 import com.dotcms.graphql.listener.RelationshipFieldTypeCreatedListener;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
@@ -36,7 +48,6 @@ import com.liferay.portal.model.User;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -46,7 +57,6 @@ import java.util.Set;
 import graphql.scalars.ExtendedScalars;
 import graphql.schema.DataFetcher;
 import graphql.schema.GraphQLArgument;
-import graphql.schema.GraphQLList;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLSchema;
@@ -72,15 +82,27 @@ public class GraphqlAPIImpl implements GraphqlAPI {
         // custom type mappings
         this.fieldClassGraphqlTypeMap.put(BinaryField.class, CustomFieldType.BINARY.getType());
         this.fieldClassGraphqlTypeMap.put(CategoryField.class, list(CustomFieldType.CATEGORY.getType()));
-        this.fieldClassGraphqlTypeMap.put(ImageField.class, CustomFieldType.IMAGE.getType());
+        this.fieldClassGraphqlTypeMap.put(ImageField.class, InterfaceType.FILEASSET.getType());
+        this.fieldClassGraphqlTypeMap.put(FileField.class, InterfaceType.FILEASSET.getType());
         this.fieldClassGraphqlTypeMap.put(DateTimeField.class, ExtendedScalars.DateTime);
         this.fieldClassGraphqlTypeMap.put(DateField.class, ExtendedScalars.Date);
         this.fieldClassGraphqlTypeMap.put(TimeField.class, ExtendedScalars.Time);
+        this.fieldClassGraphqlTypeMap.put(KeyValueField.class, list(CustomFieldType.KEY_VALUE.getType()));
+        this.fieldClassGraphqlTypeMap.put(CheckboxField.class, list(GraphQLString));
+        this.fieldClassGraphqlTypeMap.put(MultiSelectField.class, list(GraphQLString));
+        this.fieldClassGraphqlTypeMap.put(TagField.class, list(GraphQLString));
+        this.fieldClassGraphqlTypeMap.put(HostFolderField.class, CustomFieldType.SITE_OR_FOLDER.getType());
 
         // custom data fetchers
         this.fieldClassGraphqlDataFetcher.put(BinaryField.class, new BinaryFieldDataFetcher());
         this.fieldClassGraphqlDataFetcher.put(CategoryField.class, new CategoryFieldDataFetcher());
-        this.fieldClassGraphqlDataFetcher.put(ImageField.class, new ImageFieldDataFetcher());
+        this.fieldClassGraphqlDataFetcher.put(ImageField.class, new FileFieldDataFetcher());
+        this.fieldClassGraphqlDataFetcher.put(FileField.class, new FileFieldDataFetcher());
+        this.fieldClassGraphqlDataFetcher.put(KeyValueField.class, new KeyValueFieldDataFetcher());
+        this.fieldClassGraphqlDataFetcher.put(CheckboxField.class, new MultiValueFieldDataFetcher());
+        this.fieldClassGraphqlDataFetcher.put(MultiSelectField.class, new MultiValueFieldDataFetcher());
+        this.fieldClassGraphqlDataFetcher.put(TagField.class, new TagsFieldDataFetcher());
+        this.fieldClassGraphqlDataFetcher.put(HostFolderField.class, new SiteOrFolderFieldDataFetcher());
 
     }
 
@@ -139,15 +161,16 @@ public class GraphqlAPIImpl implements GraphqlAPI {
         final List<Field> fields = contentType.fields();
 
         fields.forEach((field)->{
-
-            if(field.getClass().getName().equals(ImmutableRelationshipField.class.getName())) {
-                handleRelationshipField(contentType, graphqlObjectTypes, builder, field);
-            } else {
-                builder.field(newFieldDefinition()
-                    .name(field.variable())
-                    .type(getGraphqlTypeForFieldClass(field.type()))
-                    .dataFetcher(getGraphqlDataFetcherForFieldClass(field.type()))
-                );
+            if(!(field instanceof RowField) && !(field instanceof ColumnField)) {
+                if (field instanceof RelationshipField) {
+                    handleRelationshipField(contentType, graphqlObjectTypes, builder, field);
+                } else {
+                    builder.field(newFieldDefinition()
+                        .name(field.variable())
+                        .type(getGraphqlTypeForFieldClass(field.type()))
+                        .dataFetcher(getGraphqlDataFetcherForFieldClass(field.type()))
+                    );
+                }
             }
         });
 

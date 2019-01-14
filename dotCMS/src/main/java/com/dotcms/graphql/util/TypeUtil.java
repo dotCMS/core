@@ -8,6 +8,7 @@ import graphql.schema.DataFetcher;
 import graphql.schema.GraphQLInterfaceType;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
+import graphql.schema.PropertyDataFetcher;
 import graphql.schema.TypeResolver;
 
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
@@ -22,7 +23,7 @@ public class TypeUtil {
             builder.field(newFieldDefinition()
                 .name(key)
                 .type(typeFields.get(key))
-                .dataFetcher(dataFetcher)
+                .dataFetcher(dataFetcher!=null?dataFetcher:new PropertyDataFetcher<String>(key))
             );
         });
 
