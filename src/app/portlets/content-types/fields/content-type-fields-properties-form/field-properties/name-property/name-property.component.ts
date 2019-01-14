@@ -6,6 +6,7 @@ import { take } from 'rxjs/operators';
 
 @Component({
     selector: 'dot-name-property',
+    styleUrls: ['./name-property.component.scss'],
     templateUrl: './name-property.component.html'
 })
 export class NamePropertyComponent implements OnInit {
