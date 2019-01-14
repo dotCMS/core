@@ -162,60 +162,27 @@ public class ContentletAjax {
 			}catch(Exception e){
 				Logger.debug(this, e.getMessage());
 			}
-			if(contentlet == null || !UtilMethods.isSet(contentlet.getInode()))
+			if(contentlet == null || !UtilMethods.isSet(contentlet.getInode())) {
 				return null;
-
-			Structure targetStructure = contentlet.getStructure();
-			List<Field> targetFields = FieldsCache.getFieldsByStructureInode(targetStructure.getInode());
-
-			String identifier = String.valueOf(contentlet.getIdentifier());
-
-			boolean hasListedFields = false;
-
-			for (Field f : targetFields) {
-
-				if (f.isIndexed() || f.isListed()) {
-					hasListedFields = true;
-					String fieldName = f.getFieldName();
-					Object fieldValueObj = "";
-					try{
-						fieldValueObj = conAPI.getFieldValue(contentlet, f);
-					}catch (Exception e) {
-						Logger.error(ContentletAjax.class, "Unable to get value for field", e);
-					}
-					String fieldValue = "";
-					if (fieldValueObj instanceof java.util.Date) {
-						if (fieldValueObj != null)
-							fieldValue = modDateFormat.format(fieldValueObj);
-					} else if (fieldValueObj instanceof java.sql.Timestamp) {
-						if (fieldValueObj != null) {
-							java.util.Date fieldDate = new java.util.Date(((java.sql.Timestamp) fieldValueObj).getTime());
-							fieldValue = modDateFormat.format(fieldDate);
-						}
-					} else {
-						if (fieldValueObj != null)
-							fieldValue = fieldValueObj.toString();
-					}
-					result.put(fieldName, fieldValue);
-				}
-			}
-			if( !hasListedFields ) {
-				result.put("identifier", identifier);
 			}
 
+            result.put("iconClass", UtilHTML.getIconClass(contentlet));
+			result.put("identifier", contentlet.getIdentifier());
+			result.put("statusIcons", UtilHTML.getStatusIcons(contentlet));
+			result.put("hasTitleImage", String.valueOf(contentlet.getTitleImage().isPresent()));
+			result.put("title", String.valueOf(contentlet.getTitle()));
 			result.put("inode", String.valueOf(contentlet.getInode()));
 			result.put("working", String.valueOf(contentlet.isWorking()));
 			result.put("live", String.valueOf(contentlet.isLive()));
 			result.put("deleted", String.valueOf(contentlet.isArchived()));
 			result.put("locked", String.valueOf(contentlet.isLocked()));
-			result.put("id", identifier); // Duplicates value for identifier key in map so that UI does not get broken
+			result.put("id", contentlet.getIdentifier());// Duplicates value for identifier key in map so that UI does not get broken
 			Language language = langAPI.getLanguage(contentlet.getLanguageId());
 			String languageCode = langAPI.getLanguageCodeAndCountry(contentlet.getLanguageId(),null);
 			String languageName =  language.getLanguage();
 			result.put("langCode", languageCode);
 			result.put("langName", languageName);
 			result.put("langId", language.getId()+"");
-			result.put("hasListedFields", Boolean.toString(hasListedFields) );
 			result.put("siblings", getContentSiblingsData(inode));
 
 		} catch (DotDataException e) {
@@ -1009,23 +976,13 @@ public class ContentletAjax {
 				final Contentlet contentlet = con;
 				searchResult.put("__title__", conAPI.getName(contentlet, currentUser, false));
 
-				String spanClass = (type.baseType().ordinal() ==1)
-						? "contentIcon"
-								:  (type.baseType().ordinal() ==2)
-								? "gearIcon"
-										:  (type.baseType().ordinal() ==3)
-										? "formIcon"
-											:  (type.baseType().ordinal() ==4)
-											? "uknIcon " + UtilMethods.getFileExtension( ident.getURI()) + "Icon"
-												:  (type.baseType().ordinal() ==5)
-												? "pageIcon"
-														: "personaIcon";
+				String spanClass = UtilHTML.getIconClass(contentlet);
 
 				String typeStringToShow = type.name();
 				searchResult.put("__type__", "<div class='typeCCol'><span class='" + spanClass +"'></span>&nbsp;" + typeStringToShow +"</div>");
 
 				String fieldValue = UtilMethods.dateToHTMLDate(con.getModDate()) + " " + UtilMethods.dateToHTMLTime(con.getModDate());
-
+				searchResult.put("hasTitleImage", String.valueOf(con.getTitleImage().isPresent()));
 				searchResult.put("modDate", fieldValue);
 				String user = "";
 				User contentEditor = null;

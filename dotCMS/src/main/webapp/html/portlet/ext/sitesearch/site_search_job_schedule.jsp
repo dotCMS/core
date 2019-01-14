@@ -275,23 +275,21 @@ boolean hasPath = false;
 	</div>
 
 	<div class="buttonRow" style="white-space: nowrap;">
-		<span class="showScheduler" style='<%=(runNow) ? "display: none; " : "" %>;'>
-			<button dojoType="dijit.form.Button"
-				id="saveButton" onClick="scheduleJob()"
-				iconClass="calListIcon"><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Schedule")) %>
-			</button>
-		</span>
-
+		<button dojoType="dijit.form.Button"
+			id="cacnelButton" onClick="showJobsListingPane();"
+			class="dijitButtonFlat"><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Cancel")) %>
+		</button>
 		<span class="showRunNow" style='<%=(!runNow) ? "display: none; " : "" %>;'>
 			<button dojoType="dijit.form.Button"
 				id="saveAndExecuteButton" onClick="scheduleJob();"
 				iconClass="republishIcon"><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Execute")) %>
 			</button>
 		</span>
-
-		<button dojoType="dijit.form.Button"
-			id="cacnelButton" onClick="showJobsListingPane();"
-			class="dijitButtonFlat"><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Cancel")) %>
-		</button>
+		<span class="showScheduler" style='<%=(runNow) ? "display: none; " : "" %>;'>
+			<button dojoType="dijit.form.Button"
+				id="saveButton" onClick="scheduleJob()"
+				iconClass="calListIcon"><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Schedule")) %>
+			</button>
+		</span>
 	</div>
 </form>

@@ -713,19 +713,18 @@ public class RemotePublishAjaxAction extends AjaxAction {
 
         FileItemFactory factory = new DiskFileItemFactory();
         ServletFileUpload upload = new ServletFileUpload( factory );
-        @SuppressWarnings ("unchecked")
-        List<FileItem> items = (List<FileItem>) upload.parseRequest( request );
-
-        InputStream bundle = items.get( 0 ).getInputStream();
-        String bundleName = items.get( 0 ).getName();
-        String bundlePath = ConfigUtils.getBundlePath() + File.separator;
-        String bundleFolder = bundleName.substring( 0, bundleName.indexOf( ".tar.gz" ) );
-        String endpointId = getUser().getUserId();
-        response.setContentType( "text/html; charset=utf-8" );
         PrintWriter out = response.getWriter();
-
         PublishAuditStatus status;
+        String bundleName = null;
         try {
+            @SuppressWarnings ("unchecked")
+            List<FileItem> items = upload.parseRequest( request );
+            InputStream bundle = items.get( 0 ).getInputStream();
+            bundleName = BundlerUtil.sanitizeBundleName(items.get(0).getName());
+            String bundlePath = ConfigUtils.getBundlePath() + File.separator;
+            String bundleFolder = bundleName.substring( 0, bundleName.indexOf( ".tar.gz" ) );
+            String endpointId = getUser().getUserId();
+            response.setContentType( "text/html; charset=utf-8" );
             status = PublishAuditAPI.getInstance().updateAuditTable( endpointId, endpointId, bundleFolder );
 
             // Write file on FS
@@ -738,6 +737,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
             out.print( "<html><head><script>isLoaded = true;</script></head><body><textarea>{'status':'success'}</textarea></body></html>" );
 
         } catch ( DotPublisherException e ) {
+            Logger.error(this, String.format("An error occurred when uploading bundle '%s'", bundleName), e);
             out.print( "<html><head><script>isLoaded = true;</script></head><body><textarea>{'status':'error'}</textarea></body></html>" );
         }
 

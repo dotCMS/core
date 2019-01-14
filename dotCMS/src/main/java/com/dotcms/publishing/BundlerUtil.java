@@ -1,6 +1,7 @@
 package com.dotcms.publishing;
 
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
+import com.dotcms.publisher.business.DotPublisherException;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.util.ConfigUtils;
@@ -316,4 +317,29 @@ public class BundlerUtil {
             bob.append(" ) " );
         }
     }
+
+    /**
+     * Checks the name of the bundle file coming from the request to make sure that it is correct.
+     * For example, in Microsoft Edge on Windows 10, the name includes the absolute path to the file
+     * instead of the file name only. We need to strip the absolute path away.
+     *
+     * @param bundleName The name of the bundle file.
+     * @return The sanitized bundle file name.
+     */
+    public static String sanitizeBundleName(String bundleName) throws DotPublisherException {
+
+        if (!UtilMethods.isSet(bundleName)) {
+            final String errorMsg = "The name for the uploaded bundle is null or empty";
+            Logger.error(BundlerUtil.class, errorMsg);
+            throw new DotPublisherException(errorMsg);
+        }
+        if (!bundleName.contains(File.separator)) {
+            return bundleName;
+        } else {
+            final int indexOfSeparator = bundleName.lastIndexOf(File.separator);
+            bundleName = bundleName.substring(indexOfSeparator + 1);
+            return bundleName;
+        }
+    }
+
 }

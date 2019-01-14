@@ -21,7 +21,7 @@
                     <div dojoAttachPoint="search_general">
                         <dl class="vertical">
                             <dt><label><%= LanguageUtil.get(pageContext, "Search") %>:</label></dt>
-                            <dd><input type="text" dojoType="dijit.form.TextBox" onKeyDown='contentSelector._doSearch()' name="allFieldTB" id="allFieldTB"></dd>
+                            <dd><input type="text" dojoType="dijit.form.TextBox" onKeyDown='contentSelector._doSearch()' dojoAttachPoint="generalSearch"></dd>
                         </dl>
                     </div>
                     <div class="clear"></div>

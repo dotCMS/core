@@ -330,9 +330,9 @@
 				</dd>
 			</dl>
 		</div>
-		<div class="buttonRow">
-			<button dojoType="dijit.form.Button" type="submit" id="save" onclick="saveEndpoint()"><%= LanguageUtil.get(pageContext, "Save") %></button>
+		<div class="buttonRow-right">
 			<button dojoType="dijit.form.Button" onClick="backToEndpointsList(true)" id="closeSave" class="dijitButtonFlat"><%= LanguageUtil.get(pageContext, "Cancel") %></button>
+			<button dojoType="dijit.form.Button" type="submit" id="save" onclick="saveEndpoint()"><%= LanguageUtil.get(pageContext, "Save") %></button>
 		</div>
 	</div>
 </div>

@@ -66,7 +66,7 @@ public class ContentVersionResourceIntegrationTest extends BaseWorkflowIntegrati
     public void test_Find_All_Expect_OK() throws DotDataException, DotSecurityException {
         final String identifier = "f4a02846-7ca4-4e08-bf07-a61366bbacbb";
         final HttpServletRequest request = mock(HttpServletRequest.class);
-        final Response response = versionResource.findVersions(request, identifier, "0",2);
+        final Response response = versionResource.findVersions(request, null, identifier, "0",2);
 
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
 
@@ -88,7 +88,7 @@ public class ContentVersionResourceIntegrationTest extends BaseWorkflowIntegrati
     @Test
     public void test_Find_All_Expect_404() throws DotDataException, DotSecurityException {
         final HttpServletRequest request = mock(HttpServletRequest.class);
-        final Response response = versionResource.findVersions(request, "nonsense", "", 2);
+        final Response response = versionResource.findVersions(request, null,"nonsense", "", 2);
         assertEquals(Status.NOT_FOUND.getStatusCode(), response.getStatus());
     }
 
@@ -98,7 +98,7 @@ public class ContentVersionResourceIntegrationTest extends BaseWorkflowIntegrati
         final String identifier = "a9f30020-54ef-494e-92ed-645e757171c2";
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final Response response = versionResource
-                .findVersions(request, identifier, "1",2);
+                .findVersions(request, null, identifier, "1",2);
 
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
 
@@ -139,16 +139,24 @@ public class ContentVersionResourceIntegrationTest extends BaseWorkflowIntegrati
     @Test
     public void test_Find_All_By_Lang_Expect_404()  throws DotDataException, DotSecurityException{
         final HttpServletRequest request = mock(HttpServletRequest.class);
-        final Response response = versionResource.findVersions(request, "nonsense", "1",2);
+        final Response response = versionResource.findVersions(request, null,"nonsense", "1",2);
         assertEquals(Status.NOT_FOUND.getStatusCode(), response.getStatus());
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void test_Bad_Request_404()  throws DotDataException, DotSecurityException{
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        final Response response = versionResource.findVersions(request, null,null, "1",2);
+        assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
     }
 
 
     @SuppressWarnings("unchecked")
     @Test
-    public void test_diff() throws DotDataException, DotSecurityException {
+    public void test_find_multiple_inodes() throws DotDataException, DotSecurityException {
         final HttpServletRequest request = mock(HttpServletRequest.class);
-        final Response response = versionResource.diff(request, "4e5acb67-3743-40f5-a207-8b8e6b63fa7b", "a8fc0128-e25e-435b-95f1-364687e9665e");
+        final Response response = versionResource.findVersions(request, "4e5acb67-3743-40f5-a207-8b8e6b63fa7b,a8fc0128-e25e-435b-95f1-364687e9665e", null, null, 10);
         assertEquals(Status.OK.getStatusCode(), response.getStatus());
     }
 

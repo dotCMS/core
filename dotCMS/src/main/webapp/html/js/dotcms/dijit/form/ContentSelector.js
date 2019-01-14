@@ -136,9 +136,8 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
         if (structure.inode === 'catchall') {
             this.search_general.style.display = "block";
         } else {
+            this.generalSearch.set('value', '');
             this.search_general.style.display = "none";
-            var searchInput = document.getElementById("allFieldTB");
-            searchInput.value = "";
         }
 
 		!isNg && this.dialog.set('title', structure["name"] ? structure["name"] : "");
@@ -531,7 +530,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 
 	_doSearch: function (page, sortBy) {
 
-		var fieldsValues = new Array ();
+        var fieldsValues = new Array ();
 
 		fieldsValues[fieldsValues.length] = "languageId";
 
@@ -545,7 +544,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 		else
             fieldsValues[fieldsValues.length] = "";
             
-        var allField = dijit.byId("allFieldTB").getValue();
+        var allField = this.generalSearch.value;
 
         if (allField != undefined && allField.length>0 ) {
 
@@ -801,7 +800,19 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 		
 		var style = document.createElement('style');
 		style.type = 'text/css';
-		style.innerHTML = '.selectMeRowInIframe { cursor: pointer; } .selectMeRowInIframe:hover{background:#DFE8F6;}';
+		style.innerHTML = `
+			.selectMeRowInIframe { cursor: pointer; } 
+			.selectMeRowInIframe:hover{background:#DFE8F6;}
+			.listingTitleImg {
+			  border: 1px solid #ddd; 
+			  border-radius: 4px;  
+			  padding: 3px; 
+			  width: 64px; 
+			  cursor: pointer;
+			  max-height:100px
+			  overflow:hide;
+			}
+			`;
 		document.getElementsByTagName('head')[0].appendChild(style);
 		
 		
@@ -826,12 +837,23 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 
             var cell = row.insertCell (row.cells.length);
             var iconName = this._getIconName(cellData['__type__']);
-            cell.innerHTML = '<img style="border:1px solid #eeeeee" onError="contentSelector._replaceWithIcon(this.parentElement, \'' + iconName + '\')" src="/dA/' + cellData.inode + '/64w">';
+            var hasTitleImage = (cellData.hasTitleImage ==='true');
+
+            cell.innerHTML = (hasTitleImage) 
+            	? '<img class="listingTitleImg" onError="contentSelector._replaceWithIcon(this.parentElement, \'' + iconName + '\')" src="/dA/' + cellData.inode + '/titleImage/256w" alt="' + cellData['__title__'].replace(/[^A-Za-z0-9_]/g, ' ') + '" >' 
+            	: '<span class="' + iconName +'" style="font-size:24px;width:auto;"></span>';
+
+            
             cell.setAttribute("style","text-align: center;");
 
 			for (var j = 0; j < this.headers.length; j++) {
-				var header = this.headers[j];
-				var cell = row.insertCell (row.cells.length);
+                var header = this.headers[j];
+                var cell = row.insertCell (row.cells.length);
+                
+                if (header.fieldVelocityVarName === '__title__') {
+                    cell.style.width = '50%';
+                }
+
 				cell.setAttribute("onClick","javascript: toggleCheckbox("+i+")");
 				var value = cellData[header["fieldVelocityVarName"]];
 				if (value != null)
@@ -1020,8 +1042,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 		this.nextDiv.style.display = "none";
 		this.previousDiv.style.display = "none";
         this.relateDiv.style.display = "none";
-        var searchInput = document.getElementById("allFieldTB");
-        searchInput.value = "";
+        this.generalSearch.set('value', '');
 
 		this._hideMatchingResults ();
 	},
@@ -1041,6 +1062,6 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
     },
 
 	_replaceWithIcon: function (parentElement, iconName) {
-        parentElement.innerHTML = '<span class="' + iconName +'" style="font-size:24px"></span>'
+        parentElement.innerHTML = '<span class="' + iconName +'" style="font-size:24px;width:auto;"></span>'
     }
 });

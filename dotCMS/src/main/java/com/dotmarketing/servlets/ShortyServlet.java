@@ -1,6 +1,5 @@
 package com.dotmarketing.servlets;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.Optional;
 import java.util.StringTokenizer;
@@ -12,29 +11,31 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 
+import com.dotcms.contenttype.model.field.BinaryField;
+import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.FileField;
+import com.dotcms.contenttype.model.field.ImageField;
 import com.dotcms.uuid.shorty.ShortType;
 import com.dotcms.uuid.shorty.ShortyId;
-
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.web.WebAPILocator;
-import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.structure.model.Field;
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
+import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
-
 import com.liferay.portal.language.LanguageUtil;
-import com.liferay.portal.model.User;
 
 public class ShortyServlet extends HttpServlet {
 
   private static final long serialVersionUID = 1L;
 
-  final static String NOT_FOUND = "fileAsset";
+  final static String FILE_ASSEST_DEFAULT = FileAssetAPI.BINARY_FIELD;
 
   
   public final static String SHORTY_SERVLET_FORWARD_PATH = "shorty.servlet.forward.path";
@@ -80,8 +81,8 @@ public class ShortyServlet extends HttpServlet {
     }
 
     tokens.nextToken();
-    String id = tokens.nextToken();
-    String fieldName = tokens.hasMoreTokens() ? tokens.nextToken() : NOT_FOUND;
+    final String id = tokens.nextToken();
+    final String fieldName = tokens.hasMoreTokens() ? tokens.nextToken() : FILE_ASSEST_DEFAULT;
     uri=uri.toLowerCase();
 
     int w = 0;
@@ -97,14 +98,13 @@ public class ShortyServlet extends HttpServlet {
       // let this one die''
     }
 
-    boolean jpeg = uri.contains("jpeg");
-    boolean jpegp = jpeg && uri.contains("jpegp");
-    boolean isImage = jpeg || w+h>0;
+    final boolean jpeg = uri.contains("jpeg");
+    final boolean jpegp = jpeg && uri.contains("jpegp");
+    final boolean isImage = jpeg || w+h>0;
     
 
     Optional<ShortyId> shortOpt = APILocator.getShortyAPI().getShorty(id);
-    User user = WebAPILocator.getUserWebAPI().getLoggedInFrontendUser(request);
-    boolean live = mode.showLive;
+    final boolean live = mode.showLive;
     if (!live) {
       response.setHeader("Pragma", "no-cache");
       response.setHeader("Cache-Control", "no-cache");
@@ -115,26 +115,19 @@ public class ShortyServlet extends HttpServlet {
       response.sendError(404);
       return;
     }
-    ShortyId shorty = shortOpt.get();
+    final ShortyId shorty = shortOpt.get();
     String path = (isImage) ? "/contentAsset/image" : "/contentAsset/raw-data";
 
+    final Contentlet con = (shorty.type == ShortType.IDENTIFIER)
+                ? APILocator.getContentletAPI().findContentletByIdentifier(shorty.longId, false, -1,
+                        APILocator.systemUser(), false)
+                : APILocator.getContentletAPI().find(shorty.longId, APILocator.systemUser(), false);
 
-    if (shorty.type == ShortType.IDENTIFIER) {
-      Contentlet con = APILocator.getContentletAPI().findContentletByIdentifier(shorty.longId, false, -1,
-          APILocator.getUserAPI().getSystemUser(), false);
 
-      String field = resolveField(con, fieldName);
 
-      path += "/" + shorty.longId + "/" + field;
 
-    } else {
-      Contentlet con =
-          APILocator.getContentletAPI().find(shorty.longId, APILocator.getUserAPI().getSystemUser(), false);
+    path += inodePath(con, fieldName, live) +  "/byInode/true";
 
-      String field = resolveField(con, fieldName);
-
-      path += "/" + shorty.longId + "/" + field + "/byInode/true";
-    }
 
     if(isImage){
       path += "/filter/";
@@ -157,16 +150,39 @@ public class ShortyServlet extends HttpServlet {
 
 
 
-  private String resolveField(Contentlet con, final String tryField) {
-    if (!NOT_FOUND.equals(tryField)) {
-      Object obj = con.getMap().get(tryField);
-      if (obj instanceof File) {
-        return tryField;
-      }
+    protected final String inodePath(final Contentlet con, final String tryField, final boolean live)
+            throws DotStateException, DotDataException {
+
+        final Optional<Field> fieldOpt = resolveField(con, tryField);
+
+        if (!fieldOpt.isPresent()) {
+            return "/" + con.getInode() + "/" + FILE_ASSEST_DEFAULT;
+        }
+
+        final Field field = fieldOpt.get();
+        if (field instanceof ImageField || field instanceof FileField) {
+            final String relatedImageId = con.getStringProperty(field.variable());
+
+            ContentletVersionInfo cvi = APILocator.getVersionableAPI().getContentletVersionInfo(relatedImageId, con.getLanguageId());
+            if (cvi != null) {
+                final String inode = (live) ? cvi.getLiveInode() : cvi.getWorkingInode();
+                return "/" + inode + "/" + FILE_ASSEST_DEFAULT;
+            }
+        }
+
+        return "/" + con.getInode() + "/" + field.variable();
 
     }
 
-    return (con.getTitleImage().isPresent() ) ? con.getTitleImage().get().variable():NOT_FOUND ;
-  }
 
+    protected final Optional<Field> resolveField(final Contentlet con, final String tryField) {
+
+
+        return Contentlet.TITLE_IMAGE_KEY.equals(tryField) ? con.getTitleImage()
+                : con.getContentType().fieldMap().containsKey(tryField) ? Optional.of(con.getContentType().fieldMap().get(tryField))
+                        : con.getContentType().fields().stream()
+                                .filter(f -> (f instanceof BinaryField || f instanceof ImageField || f instanceof FileField)).findFirst();
+
+    }
+    
 }

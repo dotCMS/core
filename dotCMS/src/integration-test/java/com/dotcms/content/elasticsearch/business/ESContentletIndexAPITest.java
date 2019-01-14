@@ -805,7 +805,7 @@ public class ESContentletIndexAPITest extends IntegrationTestBase {
         multiTree.setParent2( container.getIdentifier() );
         multiTree.setChild( contentlet.getIdentifier() );
         multiTree.setTreeOrder( 1 );
-        MultiTreeFactory.saveMultiTree( multiTree );
+        APILocator.getMultiTreeAPI().saveMultiTree( multiTree );
 
         return htmlPage;
     }

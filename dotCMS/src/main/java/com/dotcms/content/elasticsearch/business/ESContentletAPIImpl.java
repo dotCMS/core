@@ -842,7 +842,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         //Get the contentlet Identifier to gather the related pages
         final Identifier identifier = APILocator.getIdentifierAPI().find(contentlet);
         //Get the identifier's number of the related pages
-        final List<MultiTree> multitrees = MultiTreeFactory.getMultiTreesByChild(identifier.getId());
+        final List<MultiTree> multitrees = APILocator.getMultiTreeAPI().getMultiTreesByChild(identifier.getId());
 
         for(MultiTree multitree : multitrees)
         {
@@ -1031,7 +1031,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             return results;
         }
 
-        final List<MultiTree> trees = MultiTreeFactory.getMultiTreesByChild(id.getId());
+        final List<MultiTree> trees = APILocator.getMultiTreeAPI().getMultiTreesByChild(id.getId());
         for (final MultiTree tree : trees) {
             final IHTMLPage page = loadPageByIdentifier(tree.getParent1(), false, contentlet.getLanguageId(), APILocator.getUserAPI().getSystemUser(), false);
             final Container container = APILocator.getContainerAPI().getWorkingContainerById(tree.getParent2(), APILocator.getUserAPI().getSystemUser(), false);
@@ -1164,14 +1164,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         final ContentletRelationships cRelationships = new ContentletRelationships(contentlet);
         final ContentType contentType = contentlet.getContentType();
-        final List<ContentletRelationshipRecords> matches = cRelationships.getRelationshipsRecords();
         final List<Relationship> relationships = FactoryLocator.getRelationshipFactory()
                 .byContentType(contentType);
 
         for (Relationship relationship : relationships) {
-
-            ContentletRelationshipRecords records;
-            List<Contentlet> contentletList = null;
 
             if (FactoryLocator.getRelationshipFactory().sameParentAndChild(relationship)) {
 
@@ -1179,46 +1175,42 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 //on both roles as parent and a child of the relationship
 
                 //Pulling as child
-                records = cRelationships.new ContentletRelationshipRecords(relationship, false);
-                contentletList = new ArrayList<Contentlet> ();
-                try {
-                    contentletList.addAll(getRelatedContent(contentlet, relationship, false,
-                            APILocator.getUserAPI().getSystemUser(), true));
-                } catch (DotSecurityException e) {
-                    Logger.error(this,"Unable to get system user",e);
-                }
-                records.setRecords(contentletList);
-                matches.add(records);
+                pullRelated(contentlet, cRelationships, relationship, false);
 
                 //Pulling as parent
-                records = cRelationships.new ContentletRelationshipRecords(relationship, true);
-                contentletList = new ArrayList<> ();
-                try {
-                    contentletList.addAll(getRelatedContent(contentlet, relationship, true,
-                            APILocator.getUserAPI().getSystemUser(), true));
-                } catch (DotSecurityException e) {
-                    Logger.error(this,"Unable to get system user",e);
-                }
-                records.setRecords(contentletList);
-                matches.add(records);
+                pullRelated(contentlet, cRelationships, relationship, true);
 
             } else {
-                records = cRelationships.new ContentletRelationshipRecords(relationship,
-                        FactoryLocator.getRelationshipFactory()
-                                .isParent(relationship, contentType));
-                try {
-                    contentletList = getRelatedContent(contentlet, relationship,
-                            APILocator.getUserAPI().getSystemUser(), true);
-                } catch (DotSecurityException e) {
-                    Logger.error(this, "Unable to get system user", e);
-                }
-
-                records.setRecords(contentletList);
-                matches.add(records);
+                pullRelated(contentlet, cRelationships, relationship,
+                        FactoryLocator.getRelationshipFactory().isParent(relationship, contentType));
             }
         }
 
         return cRelationships;
+    }
+
+    private void pullRelated(Contentlet contentlet, ContentletRelationships cRelationships, Relationship relationship, boolean hasParent)
+            throws DotDataException {
+
+        final boolean selfRelated = FactoryLocator.getRelationshipFactory().sameParentAndChild(relationship);
+
+        final List<Contentlet> contentletList = new ArrayList<>();
+        final ContentletRelationshipRecords records = cRelationships.new ContentletRelationshipRecords(
+                relationship, hasParent);
+
+        try {
+            if (selfRelated) {
+                contentletList.addAll(getRelatedContent(contentlet, relationship, hasParent,
+                        APILocator.getUserAPI().getSystemUser(), true));
+            }else{
+                contentletList.addAll(getRelatedContent(contentlet, relationship,
+                        APILocator.getUserAPI().getSystemUser(), true));
+            }
+        } catch (DotSecurityException e) {
+            Logger.error(this, "Unable to get system user", e);
+        }
+        records.setRecords(contentletList);
+        cRelationships.getRelationshipsRecords().add(records);
     }
 
     @CloseDBIfOpened
@@ -1331,7 +1323,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }catch (Exception e) {
             if(e.getMessage() != null && e.getMessage().contains("[query_fetch]")){
                 try{
-                    APILocator.getContentletIndexAPI().addContentToIndex(contentlet,false,true);
+                    APILocator.getContentletIndexAPI().addContentToIndex(contentlet,false,false);
                     return permissionAPI.filterCollection(searchByIdentifier(q, 1, 0, rel.getRelationTypeValue() + "" + contentlet.getIdentifier() + "-order" , user, respectFrontendRoles, PermissionAPI.PERMISSION_READ, true), PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
                 }catch(Exception ex){
                     throw new DotDataException("Unable to look up related content",ex);
@@ -1610,7 +1602,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             contentletsVersion.addAll(findAllVersions(APILocator.getIdentifierAPI().find(con.getIdentifier()), user,
                     respectFrontendRoles));
             // Remove page contents (if the content is a Content Page)
-            List<MultiTree> mts = MultiTreeFactory.getMultiTreesByChild(con.getIdentifier());
+            List<MultiTree> mts = APILocator.getMultiTreeAPI().getMultiTreesByChild(con.getIdentifier());
             for (MultiTree mt : mts) {
                 Identifier pageIdent = APILocator.getIdentifierAPI().find(mt.getParent1());
                 if (pageIdent != null && UtilMethods.isSet(pageIdent.getInode())) {
@@ -1623,7 +1615,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                         Logger.warn(this.getClass(), "Page with id:" +pageIdent.getId() +" does not exist" );
                     }
                 }
-                MultiTreeFactory.deleteMultiTree(mt);
+                APILocator.getMultiTreeAPI().deleteMultiTree(mt);
             }
             logContentletActivity(con, "Content Destroyed", user);
         }
@@ -4650,7 +4642,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         List<ContentletRelationshipRecords> relationshipsRecords = new ArrayList<ContentletRelationshipRecords> ();
         relationshipsData.setRelationshipsRecords(relationshipsRecords);
         for(Entry<Relationship, List<Contentlet>> relEntry : contentRelationships.entrySet()) {
-            Relationship relationship = (Relationship) relEntry.getKey();
+            Relationship relationship = relEntry.getKey();
             boolean hasParent = FactoryLocator.getRelationshipFactory().isParent(relationship, st);
             ContentletRelationshipRecords records = relationshipsData.new ContentletRelationshipRecords(relationship, hasParent);
             records.setRecords(relEntry.getValue());
@@ -5427,11 +5419,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         if (contentletToCopy.isHTMLPage()) {
             // If the content is an HTML Page then copy page associated contentlets
-            final List<MultiTree> pageContents = MultiTreeFactory
-                    .getMultiTrees(contentletToCopy.getIdentifier());
+            final List<MultiTree> pageContents = APILocator.getMultiTreeAPI().getMultiTrees(contentletToCopy.getIdentifier());
             for (final MultiTree multitree : pageContents) {
 
-                MultiTreeFactory.saveMultiTree(new MultiTree(resultContentlet.getIdentifier(),
+                APILocator.getMultiTreeAPI().saveMultiTree(new MultiTree(resultContentlet.getIdentifier(),
                         multitree.getContainer(),
                         multitree.getContentlet(),
                         MultiTree.LEGACY_RELATION_TYPE,

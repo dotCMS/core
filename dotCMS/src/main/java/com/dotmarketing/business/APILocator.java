@@ -2,11 +2,9 @@ package com.dotmarketing.business;
 
 import com.dotcms.api.system.event.SystemEventsAPI;
 import com.dotcms.api.system.event.SystemEventsFactory;
+import com.dotcms.api.tree.TreeableAPI;
 import com.dotcms.cluster.business.ClusterAPI;
 import com.dotcms.cluster.business.ClusterAPIImpl;
-import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
-import com.dotcms.system.event.local.business.LocalSystemEventsAPIFactory;
-import com.dotcms.api.tree.TreeableAPI;
 import com.dotcms.cluster.business.ServerAPI;
 import com.dotcms.cluster.business.ServerAPIImpl;
 import com.dotcms.cms.login.LoginServiceAPI;
@@ -28,6 +26,8 @@ import com.dotcms.enterprise.linkchecker.LinkCheckerAPIImpl;
 import com.dotcms.enterprise.priv.ESSearchProxy;
 import com.dotcms.enterprise.publishing.sitesearch.ESSiteSearchAPI;
 import com.dotcms.enterprise.rules.RulesAPI;
+import com.dotcms.graphql.business.GraphqlAPI;
+import com.dotcms.graphql.business.GraphqlAPIImpl;
 import com.dotcms.keyvalue.business.KeyValueAPI;
 import com.dotcms.keyvalue.business.KeyValueAPIImpl;
 import com.dotcms.languagevariable.business.LanguageVariableAPI;
@@ -47,6 +47,8 @@ import com.dotcms.publishing.PublisherAPIImpl;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.api.v1.system.websocket.WebSocketContainerAPI;
 import com.dotcms.rest.api.v1.system.websocket.WebSocketContainerAPIFactory;
+import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
+import com.dotcms.system.event.local.business.LocalSystemEventsAPIFactory;
 import com.dotcms.timemachine.business.TimeMachineAPI;
 import com.dotcms.timemachine.business.TimeMachineAPIImpl;
 import com.dotcms.util.*;
@@ -780,6 +782,15 @@ public class APILocator extends Locator<APIIndex>{
 		return new FieldAPIImpl();
 	}
 
+	/**
+	 * Creates a single instance of the {@link com.dotcms.graphql.business.GraphqlAPI} class.
+	 *
+	 * @return The {@link com.dotcms.graphql.business.GraphqlAPI} class.
+	 */
+	public static GraphqlAPI getGraphqlAPI() {
+		return (GraphqlAPI) getInstance(APIIndex.GRAPHQL_API);
+	}
+
     /**
      * Returns the dotCMS System User object.
      * 
@@ -1042,7 +1053,8 @@ enum APIIndex
 	HTMLPAGE_ASSET_RENDERED_API,
 	CLUSTER_API,
 	STARTUP_API,
-	THEME_API;
+	THEME_API,
+	GRAPHQL_API;
 
 
 	Object create() {
@@ -1116,6 +1128,7 @@ enum APIIndex
 			case CLUSTER_API: return new ClusterAPIImpl();
 			case THEME_API: return new ThemeAPIImpl();
 			case STARTUP_API: return new StartupAPIImpl();
+			case GRAPHQL_API: return  new GraphqlAPIImpl();
 		}
 		throw new AssertionError("Unknown API index: " + this);
 	}
