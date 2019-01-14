@@ -642,12 +642,11 @@ public class PortalRequestProcessor extends StxxTilesRequestProcessor {
 
 		String userId = PortalUtil.getUserId(req);
 
-		String portalURL = PortalUtil.getPortalURL(req, req.isSecure());
+
 		String ctxPath = (String)ses.getAttribute(WebKeys.CTX_PATH);
 
 		StringBuffer defaultPathSB = new StringBuffer();
 
-		defaultPathSB.append(portalURL);
 		defaultPathSB.append(ctxPath);
 
 		if (userId != null) {
@@ -689,7 +688,7 @@ public class PortalRequestProcessor extends StxxTilesRequestProcessor {
 
 		StringBuffer lastPathSB = new StringBuffer();
 
-		lastPathSB.append(portalURL);
+
 		lastPathSB.append(ctxPath);
 		lastPathSB.append(lastPath);
 		lastPathSB.append(Http.parameterMapToStringNoEncode(parameterMap));

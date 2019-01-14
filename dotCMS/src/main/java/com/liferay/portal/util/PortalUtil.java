@@ -387,62 +387,6 @@ public class PortalUtil {
 		return getLocale(reqImpl.getHttpServletRequest());
 	}
 
-	public static String getPortalURL(HttpServletRequest req, boolean secure) {
-		StringBuffer sb = new StringBuffer();
-
-		String serverProtocol = GetterUtil.getString(
-			PropsUtil.get(PropsUtil.WEB_SERVER_PROTOCOL));
-
-		if (secure || Http.HTTPS.equals(serverProtocol)) {
-			sb.append(Http.HTTPS_WITH_SLASH);
-		}
-		else {
-			sb.append(Http.HTTP_WITH_SLASH);
-		}
-
-		String serverHost = PropsUtil.get(PropsUtil.WEB_SERVER_HOST);
-
-		if (Validator.isNull(serverHost)) {
-			sb.append(req.getServerName());
-		}
-		else {
-			sb.append(serverHost);
-		}
-
-		int serverHttpPort = GetterUtil.get(
-			PropsUtil.get(PropsUtil.WEB_SERVER_HTTP_PORT), -1);
-
-		if (serverHttpPort == -1) {
-			if (!secure && (req.getServerPort() != Http.HTTP_PORT)) {
-				sb.append(StringPool.COLON).append(req.getServerPort());
-			}
-		}
-		else {
-			if (!secure && (req.getServerPort() != serverHttpPort)) {
-				if (serverHttpPort != Http.HTTP_PORT) {
-					sb.append(StringPool.COLON).append(serverHttpPort);
-				}
-			}
-		}
-
-		int serverHttpsPort = GetterUtil.get(
-			PropsUtil.get(PropsUtil.WEB_SERVER_HTTPS_PORT), -1);
-
-		if (serverHttpsPort == -1) {
-			if (secure && (req.getServerPort() != Http.HTTPS_PORT)) {
-				sb.append(StringPool.COLON).append(req.getServerPort());
-			}
-		}
-		else {
-			if (secure && (req.getServerPort() != serverHttpsPort)) {
-				if (serverHttpsPort != Http.HTTPS_PORT) {
-					sb.append(StringPool.COLON).append(serverHttpsPort);
-				}
-			}
-		}
-
-		return sb.toString();
-	}
 
 	public static PortletConfig getPortletConfig(
 		Portlet portlet, ServletContext ctx) {
