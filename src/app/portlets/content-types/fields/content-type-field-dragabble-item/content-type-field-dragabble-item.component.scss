@@ -38,15 +38,19 @@ dot-icon {
     justify-content: center;
     flex-direction: column;
     flex-grow: 1;
+    overflow: hidden;
 }
 
 .field__name {
     margin-right: $basic-padding / 2;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .field__name-inner {
     align-items: center;
     display: flex;
+    overflow: hidden;
 }
 
 .field__name-wrapper {
@@ -59,6 +63,8 @@ dot-icon {
     color: gray;
     font-size: $font-size-small;
     line-height: $font-size-small;
+    overflow: hidden;
+    display: flex;
 }
 
 .field__attribute {
@@ -68,6 +74,9 @@ dot-icon {
 }
 
 .field__actions {
+    flex-shrink: 0;
+    margin-left: $basic-padding;
+
     & > * {
         margin: 0 $basic-padding / 4;
     }

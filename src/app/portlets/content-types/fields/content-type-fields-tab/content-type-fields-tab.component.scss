@@ -40,6 +40,7 @@ $tab-name-height: 32px;
     text-align: center;
     text-transform: uppercase;
     z-index: 1;
+    margin-right: $basic-padding * 3;
 
     &:focus {
         outline-width: 0;
