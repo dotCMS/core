@@ -416,7 +416,7 @@ public class PageResource {
      * Return all the page that contains the path parameter
      *
      * @param request
-     * @param path to filter
+     * @param queryParamPath path to filter, if it start with '//' then the path contains the site name
      * @param liveQueryParam if it is true then return page only with live version, if it is false return both live and working version
      * @param onlyLiveSites if it is true then filter page only from live sites
      * @return
@@ -440,13 +440,7 @@ public class PageResource {
 
         final boolean live = (liveQueryParam == null) ? PageMode.get(request).showLive : liveQueryParam;
 
-        final String esQuery = String.format("{"
-                    + "query: {"
-                        + "query_string: {"
-                            + "query: \"+basetype:5 +path:*%s* languageid:1^10\""
-                        + "}"
-                    + "}"
-                + "}", path);
+        final String esQuery = getPageByPathESQuery(path);
 
         final ESSearchResults esresult = esapi.esSearch(esQuery, live, user, live);
         final Set<Map<String, Object>> contentletMaps = applyFilters(onlyLiveSites, esresult)
@@ -462,6 +456,29 @@ public class PageResource {
                 .collect(Collectors.toSet());
 
         return Response.ok(new ResponseEntityView(contentletMaps)).build();
+    }
+
+    private String getPageByPathESQuery(final String pathParam) {
+        String hostFilter = "";
+        String path;
+
+        if (pathParam.startsWith("//")) {
+            final String hostName = pathParam.split("/")[1];
+            hostFilter = String.format("+conhostName:$s", hostName);
+            path = pathParam.substring(pathParam.indexOf(hostName + "/"));
+        } else {
+            path = pathParam;
+        }
+
+        path = path.replace("/", "\\\\/");
+
+        return String.format("{"
+            + "query: {"
+                + "query_string: {"
+                    + "query: \"+basetype:5 +path:*%s* %s languageid:1^10\""
+                + "}"
+            + "}"
+        + "}", path, hostFilter);
     }
 
     private Collection<Contentlet> applyFilters(
