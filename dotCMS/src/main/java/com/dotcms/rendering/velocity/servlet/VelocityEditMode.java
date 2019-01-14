@@ -71,7 +71,7 @@ public class VelocityEditMode extends VelocityModeHandler {
         try(final Writer outStr = new BufferedWriter(new OutputStreamWriter(out))){
             this.getTemplate(htmlPage, mode).merge(context, outStr);
         } catch (ParseErrorException e) {
-            this.handleParseException(e, htmlPage.getName(), user);
+            this.processException(user, htmlPage.getName(), e);
         }
     }
 

@@ -1,5 +1,17 @@
 package com.dotcms.rendering.velocity.events;
 
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.rendering.velocity.services.DotResourceLoader;
+import com.dotcms.rendering.velocity.util.VelocityUtil;
+import com.dotcms.rendering.velocity.viewtools.exception.DotToolException;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
+import com.dotmarketing.util.UtilMethods;
+import org.apache.velocity.VelocityContext;
+import org.apache.velocity.app.VelocityEngine;
+import org.apache.velocity.exception.ParseErrorException;
+
+import javax.servlet.http.HttpServletRequest;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -8,17 +20,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import com.dotcms.rendering.velocity.viewtools.exception.DotToolException;
-import org.apache.velocity.VelocityContext;
-import org.apache.velocity.app.VelocityEngine;
-import org.apache.velocity.exception.ParseErrorException;
-
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
-
-import com.dotcms.rendering.velocity.services.DotResourceLoader;
-import com.dotcms.rendering.velocity.util.VelocityUtil;
 
 
 public class MethodExceptionEventHandlerImpl implements org.apache.velocity.app.event.MethodExceptionEventHandler {
@@ -180,11 +181,19 @@ public class MethodExceptionEventHandlerImpl implements org.apache.velocity.app.
 
 		boolean ret = false;
 
-		for (StackTraceElement ste : e.getStackTrace()) {
-			if (ste.getMethodName().indexOf("EditMode") > -1) {
-				
-				ret = true;
-				break;
+		final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+
+		if (null != request) {
+
+			final PageMode pageMode = PageMode.get(request);
+			ret = PageMode.EDIT_MODE == pageMode;
+		} else {
+			for (StackTraceElement ste : e.getStackTrace()) {
+				if (ste.getMethodName().indexOf("EditMode") > -1) {
+
+					ret = true;
+					break;
+				}
 			}
 		}
 

@@ -41,11 +41,9 @@ public abstract class VelocityModeHandler {
             .put(PageMode.NAVIGATE_EDIT_MODE, VelocityNavigateEditMode::new)
             .build();
 
-    protected void handleParseException(final ParseErrorException e,
-                                        final String name,
-                                        final User user) {
+    protected void processException(final User user, final String name, final ParseErrorException e) {
 
-        Logger.warn(this, "The resource " + name + " has a parse error, msg: " + e.getMessage());
+        Logger.warn(this, "ParseErrorException on the page: " + name + ", with the user: " + user.getNickName(), e);
     }
 
     @FunctionalInterface
