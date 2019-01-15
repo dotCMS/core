@@ -182,8 +182,8 @@ public class JsonFieldTransformer implements FieldTransformer, JsonTransformer {
           Logger.error(JsonFieldTransformer.class, e.getMessage());
         }
       } else if (ImmutableRelationshipField.class.getName().equals(field.get("clazz"))) {
-        final String cardinality = field.get(VALUES).toString();
-        final String relationType = field.get("relationType").toString();
+        final String cardinality = field.remove(VALUES).toString();
+        final String relationType = field.remove("relationType").toString();
 
         field.put(ContentTypeFieldProperties.RELATIONSHIPS.getName(), map(
             "cardinality", Integer.parseInt(cardinality), "velocityVar", relationType
