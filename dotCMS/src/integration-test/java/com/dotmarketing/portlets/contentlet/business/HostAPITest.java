@@ -7,6 +7,8 @@ import com.dotcms.LicenseTestUtil;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.model.type.ContentTypeBuilder;
+import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.datagen.StructureDataGen;
 import com.dotcms.enterprise.HostAssetsJobProxy;
 import com.dotcms.util.IntegrationTestInitService;
@@ -241,6 +243,12 @@ public class HostAPITest {
 
         User user = APILocator.getUserAPI().getSystemUser();
 
+        //Get the current default content type
+        ContentType existingDefaultContentType = null;
+        if (defaultType) {
+            existingDefaultContentType = APILocator.getContentTypeAPI(user).findDefault();
+        }
+
         final String newHostName = "test" + System.currentTimeMillis() + ".dotcms.com";
 
         //Create a new test host
@@ -251,13 +259,7 @@ public class HostAPITest {
         archiveHost(host, user);
 
         //Create a test content type
-        Structure testStructure = new StructureDataGen()
-                .structureType(BaseContentType.CONTENT)
-                .defaultType(defaultType)
-                .system(system)
-                .host(host)
-                .nextPersisted();
-        createStructure(testStructure, newHostIdentifier, user);
+        final ContentType testContentType = createContentType(host, defaultType, system, user);
 
         //Delete the just created host
         deleteHost(host, user);
@@ -270,11 +272,16 @@ public class HostAPITest {
             //Make sure the content type was NOT deleted
             try {
                 final ContentType foundContentType = APILocator.getContentTypeAPI(user)
-                        .find(testStructure.getVelocityVarName());
+                        .find(testContentType.variable());
                 Assert.assertNotNull(
                         foundContentType);
-                Assert.assertEquals(testStructure.id(), foundContentType.id());
-                Assert.assertEquals(testStructure.getVelocityVarName(),
+                Assert.assertEquals(system, foundContentType.system());
+                Assert.assertEquals(defaultType, foundContentType.defaultType());
+                Assert.assertEquals(testContentType.system(), foundContentType.system());
+                Assert.assertEquals(testContentType.defaultType(),
+                        foundContentType.defaultType());
+                Assert.assertEquals(testContentType.id(), foundContentType.id());
+                Assert.assertEquals(testContentType.variable(),
                         foundContentType.variable());
 
                 //Make sure the host was changed to SYSTEM_HOST
@@ -282,32 +289,63 @@ public class HostAPITest {
                         foundContentType.host());
             } catch (Exception e) {
                 Assert.fail(String.format("Unable to create delete test content type [%s] [%s]",
-                        testStructure.id(),
+                        testContentType.id(),
                         e.getMessage()));
+            } finally {
+
+                //Cleaning up the test data
+                try {
+                    if (defaultType && null != existingDefaultContentType) {
+                        APILocator.getContentTypeAPI(user).setAsDefault(existingDefaultContentType);
+                    }
+                } catch (Exception e) {
+                    //Do nothing...
+                }
+
+                try {
+                    ContentType clonedContentType = ContentTypeBuilder.builder(testContentType)
+                            .system(false).defaultType(false).build();
+                    APILocator.getContentTypeAPI(user).delete(clonedContentType);
+                } catch (Exception e) {
+                    //Do nothing...
+                }
             }
         } else {
 
             //Make sure the content type was deleted also
             try {
                 final ContentType foundContentType = APILocator.getContentTypeAPI(user)
-                        .find(testStructure.getVelocityVarName());
+                        .find(testContentType.variable());
                 Assert.assertNull(
                         foundContentType);//The find should throw NotFoundInDbException but just in case
             } catch (NotFoundInDbException e) {
                 //Expected, the content type should be deleted
             } catch (Exception e) {
                 Assert.fail(String.format("Unable to create delete test content type [%s] [%s]",
-                        testStructure.id(),
+                        testContentType.id(),
                         e.getMessage()));
             }
         }
     }
 
     /**
-     * Creates a test structure for a given host id
+     * Creates a test content type for a given host
      */
-    private void createStructure(final Structure structure, final String hostId, final User user)
+    private ContentType createContentType(final Host host, final boolean defaultType,
+            final boolean system,
+            final User user)
             throws DotDataException, DotSecurityException {
+
+        Structure structure = new StructureDataGen()
+                .structureType(BaseContentType.CONTENT)
+                .system(system)
+                .host(host)
+                .nextPersisted();
+
+        ContentType contentType = new StructureTransformer(structure).from();
+        if (defaultType) {
+            contentType = APILocator.getContentTypeAPI(user).setAsDefault(contentType);
+        }
 
         final String structureId = structure.id();
         final String structureVarName = structure.getVelocityVarName();
@@ -317,9 +355,13 @@ public class HostAPITest {
         //Make sure was created properly
         ContentType foundContentType = APILocator.getContentTypeAPI(user).find(structureVarName);
         Assert.assertNotNull(foundContentType);
-        Assert.assertEquals(foundContentType.id(), structureId);
-        Assert.assertEquals(foundContentType.variable(), structureVarName);
-        Assert.assertEquals(foundContentType.host(), hostId);
+        Assert.assertEquals(structureId, foundContentType.id());
+        Assert.assertEquals(defaultType, foundContentType.defaultType());
+        Assert.assertEquals(system, foundContentType.system());
+        Assert.assertEquals(structureVarName, foundContentType.variable());
+        Assert.assertEquals(host.getIdentifier(), foundContentType.host());
+
+        return contentType;
     }
 
     /**
