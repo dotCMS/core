@@ -474,7 +474,7 @@ public class PageResource {
         String path;
 
         if (pathParam.startsWith("//")) {
-            String[] pathSplit = pathParam.split("/");
+            final String[] pathSplit = pathParam.split("/");
             final String hostName = pathSplit[2];
             hostFilter = String.format("+conhostName:%s", hostName);
             path = String.join("/", Arrays.copyOfRange(pathSplit, 3, pathSplit.length));

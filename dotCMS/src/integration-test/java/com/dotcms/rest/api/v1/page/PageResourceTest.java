@@ -17,16 +17,11 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
 import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetRenderedAPI;
 import com.dotmarketing.util.json.JSONException;
 import com.liferay.portal.model.User;
-import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.junit.Before;
@@ -76,7 +71,7 @@ public class PageResourceTest {
     @Test
     public void testPathParam()
             throws DotSecurityException, DotDataException {
-        String path = "about-us/index";
+        final String path = "about-us/index";
 
         final SearchResponse searchResponse = mock(SearchResponse.class);
 
@@ -117,7 +112,7 @@ public class PageResourceTest {
     @Test
     public void testPathParamWithHost()
             throws DotSecurityException, DotDataException {
-        String path = "//demo.dotcms.com/about-us/index";
+        final String path = "//demo.dotcms.com/about-us/index";
 
         final SearchResponse searchResponse = mock(SearchResponse.class);
 
