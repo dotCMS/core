@@ -47,7 +47,7 @@ export class FieldService {
             .requestView({
                 body: fields,
                 method: RequestMethod.Put,
-                url: `v1/contenttype/${contentTypeId}/fields`
+                url: `v2/contenttype/${contentTypeId}/fields`
             })
             .pipe(pluck('entity'));
     }
@@ -65,7 +65,7 @@ export class FieldService {
             .requestView({
                 body: fields.map((field) => field.id),
                 method: RequestMethod.Delete,
-                url: `v1/contenttype/${contentTypeId}/fields`
+                url: `v2/contenttype/${contentTypeId}/fields`
             })
             .pipe(pluck('entity'));
     }
