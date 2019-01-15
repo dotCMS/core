@@ -136,9 +136,8 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
         if (structure.inode === 'catchall') {
             this.search_general.style.display = "block";
         } else {
+            this.generalSearch.set('value', '');
             this.search_general.style.display = "none";
-            var searchInput = document.getElementById("allFieldTB");
-            searchInput.value = "";
         }
 
 		!isNg && this.dialog.set('title', structure["name"] ? structure["name"] : "");
@@ -531,7 +530,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 
 	_doSearch: function (page, sortBy) {
 
-		var fieldsValues = new Array ();
+        var fieldsValues = new Array ();
 
 		fieldsValues[fieldsValues.length] = "languageId";
 
@@ -545,7 +544,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 		else
             fieldsValues[fieldsValues.length] = "";
             
-        var allField = dijit.byId("allFieldTB").getValue();
+        var allField = this.generalSearch.value;
 
         if (allField != undefined && allField.length>0 ) {
 
@@ -613,7 +612,10 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 				fieldsValues[fieldsValues.length] = "conFolder";
 				fieldsValues[fieldsValues.length] = folderValue;
 			}
-		}
+		} else {
+            fieldsValues[fieldsValues.length] = "conHost";
+            fieldsValues[fieldsValues.length] = "current";
+        }
 
 		if(this.radiobuttonsIds[this.dialogCounter]) {
 			for(var i=0;i < this.radiobuttonsIds[this.dialogCounter].length ;i++ ){
@@ -795,22 +797,63 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 		cell.setAttribute("className","beta");
 		cell.setAttribute("width","5%");
 
+		
+		var style = document.createElement('style');
+		style.type = 'text/css';
+		style.innerHTML = `
+			.selectMeRowInIframe { cursor: pointer; } 
+			.selectMeRowInIframe:hover{background:#DFE8F6;}
+			.listingTitleImg {
+			  border: 1px solid #ddd; 
+			  border-radius: 4px;  
+			  padding: 3px; 
+			  width: 64px; 
+			  cursor: pointer;
+			  max-height:100px
+			  overflow:hide;
+			}
+			`;
+		document.getElementsByTagName('head')[0].appendChild(style);
+		
+		
 		//Filling data
 		for (var i = 0; i < data.length; i++) {
-			var row = table.insertRow(table.rows.length);
-			if (i % 2 == 1){
-				// row.setAttribute("bgcolor","#EEEEEE");
-			}
             var cellData = data[i];
-            
+			var row = table.insertRow(table.rows.length);
+			row.id="rowId" +i;
+			row.className="selectMeRowInIframe";
+
+			// Select button functionality
+			var selected =  function(scope,content) {
+				scope._onContentSelected(content);
+			};
+			if(this.multiple=='false') {
+				var asset = cellData
+				var selectRow = dojo.byId("rowId" +i);
+				if(selectRow.onclick==undefined){
+					selectRow.onclick = dojo.hitch(this, selected, this, asset);
+				}
+			}
+
             var cell = row.insertCell (row.cells.length);
             var iconName = this._getIconName(cellData['__type__']);
-            cell.innerHTML = '<img style="border:1px solid #eeeeee" onError="contentSelector._replaceWithIcon(this.parentElement, \'' + iconName + '\')" src="/dA/' + cellData.inode + '/32w">';
+            var hasTitleImage = (cellData.hasTitleImage ==='true');
+
+            cell.innerHTML = (hasTitleImage) 
+            	? '<img class="listingTitleImg" onError="contentSelector._replaceWithIcon(this.parentElement, \'' + iconName + '\')" src="/dA/' + cellData.inode + '/titleImage/256w" alt="' + cellData['__title__'].replace(/[^A-Za-z0-9_]/g, ' ') + '" >' 
+            	: '<span class="' + iconName +'" style="font-size:24px;width:auto;"></span>';
+
+            
             cell.setAttribute("style","text-align: center;");
 
 			for (var j = 0; j < this.headers.length; j++) {
-				var header = this.headers[j];
-				var cell = row.insertCell (row.cells.length);
+                var header = this.headers[j];
+                var cell = row.insertCell (row.cells.length);
+                
+                if (header.fieldVelocityVarName === '__title__') {
+                    cell.style.width = '50%';
+                }
+
 				cell.setAttribute("onClick","javascript: toggleCheckbox("+i+")");
 				var value = cellData[header["fieldVelocityVarName"]];
 				if (value != null)
@@ -839,11 +882,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 		dojo.parser.parse(this.results_table);
 
 
-		// Select button functionality
-		var selected =  function(scope,content) {
-			scope._onContentSelected(content);
 
-		};
 
 		if(this.multiple=='false') {
 			for (var i = 0; i < data.length; i++) {
@@ -857,7 +896,13 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 
 		// Header based sorting functionality
 		var headerClicked =  function(scope,header) {
-			scope._doSearch(1,this.structureVelVar+"."+header["fieldVelocityVarName"]);
+            if ("__title__" === header["fieldVelocityVarName"]) {
+                scope._doSearch(1,this.structureVelVar+".title");
+            } else if ("__type__" === header["fieldVelocityVarName"]) {
+                scope._doSearch(1,this.structureVelVar+".structurename");
+            } else {
+                scope._doSearch(1,this.structureVelVar+"."+header["fieldVelocityVarName"]);
+            }
 		};
 		for (var i = 0; i < headers.length; i++) {
 			var header = headers[i];
@@ -997,8 +1042,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 		this.nextDiv.style.display = "none";
 		this.previousDiv.style.display = "none";
         this.relateDiv.style.display = "none";
-        var searchInput = document.getElementById("allFieldTB");
-        searchInput.value = "";
+        this.generalSearch.set('value', '');
 
 		this._hideMatchingResults ();
 	},
@@ -1018,6 +1062,6 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
     },
 
 	_replaceWithIcon: function (parentElement, iconName) {
-        parentElement.innerHTML = '<span class="' + iconName +'"></span>'
+        parentElement.innerHTML = '<span class="' + iconName +'" style="font-size:24px;width:auto;"></span>'
     }
 });

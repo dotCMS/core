@@ -72,13 +72,13 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 		<input id="createIndexAlias" dojoType="dijit.form.TextBox" class="dotFormInput"/><br/><br/>
 		<label for="createIndexNumShards">Shards:</label>
 		<input id="createIndexNumShards" dojoType="dijit.form.TextBox" class="dotFormInput"/><br/><br/>
-		<div class="buttonRow">
+		<div class="buttonRow-right">
+			<button dojoType="dijit.form.Button" class="dijitButtonFlat" onClick="dijit.byId('createIndexDialog').hide()">
+				<%= LanguageUtil.get(pageContext,"Cancel") %>
+			</button>
 			<button dojoType="dijit.form.Button"  iconClass="addIcon"
 				onClick="doCreateSiteSearch(dijit.byId('createIndexAlias').attr('value'),dijit.byId('createIndexNumShards').attr('value'))">
 				<%= LanguageUtil.get(pageContext,"Create-SiteSearch-Index") %>
-			</button>
-			<button dojoType="dijit.form.Button" class="dijitButtonFlat" onClick="dijit.byId('createIndexDialog').hide()">
-				<%= LanguageUtil.get(pageContext,"Cancel") %>
 			</button>
 		</div>
 	</div>

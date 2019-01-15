@@ -1,5 +1,11 @@
 package com.dotcms.contenttype.business;
 
+import static com.dotcms.util.CollectionsUtils.list;
+
+import com.dotcms.api.system.event.message.MessageSeverity;
+import com.dotcms.api.system.event.message.MessageType;
+import com.dotcms.api.system.event.message.SystemMessageEventUtil;
+import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.business.DotMappingException;
@@ -32,6 +38,8 @@ import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.field.TextAreaField;
 import com.dotcms.contenttype.model.field.TimeField;
 import com.dotcms.contenttype.model.field.WysiwygField;
+import com.dotcms.contenttype.model.field.event.FieldDeletedEvent;
+import com.dotcms.contenttype.model.field.event.FieldSavedEvent;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
@@ -39,6 +47,7 @@ import com.dotcms.rendering.velocity.services.ContentTypeLoader;
 import com.dotcms.rendering.velocity.services.ContentletLoader;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
+import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
@@ -46,8 +55,10 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionLevel;
 import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotDataValidationException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.structure.model.Relationship;
@@ -56,6 +67,8 @@ import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
+import com.liferay.portal.language.LanguageException;
+import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import java.util.List;
 import java.util.Optional;
@@ -76,6 +89,7 @@ public class FieldAPIImpl implements FieldAPI {
   private final ContentletAPI contentletAPI;
   private final UserAPI userAPI;
   private final RelationshipAPI relationshipAPI;
+  private final LocalSystemEventsAPI localSystemEventsAPI;
 
   private final FieldFactory fieldFactory = new FieldFactoryImpl();
 
@@ -83,23 +97,31 @@ public class FieldAPIImpl implements FieldAPI {
       this(APILocator.getPermissionAPI(),
           APILocator.getContentletAPI(),
           APILocator.getUserAPI(),
-          APILocator.getRelationshipAPI());
+          APILocator.getRelationshipAPI(),
+          APILocator.getLocalSystemEventsAPI());
   }
 
   @VisibleForTesting
   public FieldAPIImpl(final PermissionAPI perAPI,
                         final ContentletAPI conAPI,
                         final UserAPI userAPI,
-                        final RelationshipAPI relationshipAPI) {
+                        final RelationshipAPI relationshipAPI,
+                        final LocalSystemEventsAPI localSystemEventsAPI) {
       this.permissionAPI   = perAPI;
       this.contentletAPI   = conAPI;
       this.userAPI         = userAPI;
       this.relationshipAPI = relationshipAPI;
+      this.localSystemEventsAPI = localSystemEventsAPI;
   }
 
   @WrapInTransaction
   @Override
   public Field save(final Field field, final User user) throws DotDataException, DotSecurityException {
+
+      if(!UtilMethods.isSet(field.contentTypeId())){
+          Logger.error(this, "ContentTypeId needs to be set to save the Field");
+          throw new DotDataValidationException("ContentTypeId needs to be set to save the Field");
+      }
 
 		ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
 		ContentType type = contentTypeAPI.find(field.contentTypeId()) ;
@@ -188,8 +210,12 @@ public class FieldAPIImpl implements FieldAPI {
                           structure.getName()));
       }
 
+      HibernateUtil.addCommitListener(()-> {
+          localSystemEventsAPI.notify(new FieldSavedEvent(result));
+      });
+
       return result;
-	}
+  }
 
     /**
      * Validates that properties n a relationship field are set correctly
@@ -199,6 +225,9 @@ public class FieldAPIImpl implements FieldAPI {
     private void validateRelationshipField(Field field) throws DotDataValidationException {
 
         String errorMessage = null;
+        if(!UtilMethods.isSet(field.relationType())){
+            errorMessage = "Relation Type needs to be set";
+        }
         if (!field.indexed()){
             errorMessage = "Relationship Field " + field.name() + " must always be indexed";
         }
@@ -206,12 +235,16 @@ public class FieldAPIImpl implements FieldAPI {
         if (field.listed()){
             errorMessage = "Relationship Field " + field.name() + " cannot be listed";
         }
+        if(!UtilMethods.isSet(field.values())){
+            errorMessage = "Relationship Cardinality needs to be set";
+        }else {
 
-        final int cardinality = Integer.parseInt(field.values());
+            final int cardinality = Integer.parseInt(field.values());
 
-        //check if cardinality is valid
-        if (cardinality < 0 || cardinality >= RELATIONSHIP_CARDINALITY.values().length) {
-            errorMessage = "Cardinality value is incorrect";
+            //check if cardinality is valid
+            if (cardinality < 0 || cardinality >= RELATIONSHIP_CARDINALITY.values().length) {
+                errorMessage = "Cardinality value is incorrect";
+            }
         }
 
         if (errorMessage != null){
@@ -259,7 +292,7 @@ public class FieldAPIImpl implements FieldAPI {
             //verify if the relationship already exists
             if (UtilMethods.isSet(relationship) && UtilMethods.isSet(relationship.getInode())) {
 
-                updateRelationshipObject(field, type, relatedContentType, relationship, cardinality);
+                updateRelationshipObject(field, type, relatedContentType, relationship, cardinality, user);
 
             } else {
                 //otherwise, a new relationship will be created
@@ -290,7 +323,7 @@ public class FieldAPIImpl implements FieldAPI {
      * @throws DotDataException
      */
     private void updateRelationshipObject(final Field field, final ContentType type, final ContentType relatedContentType,
-            final Relationship relationship, final int cardinality)
+            final Relationship relationship, final int cardinality, final User user)
             throws DotDataException {
         final String relationName = field.variable();
         //check which side of the relationship is being updated (parent or child)
@@ -301,9 +334,11 @@ public class FieldAPIImpl implements FieldAPI {
 
 
             //only one side of the relationship can be required
-            if (relationship.getChildRelationName() != null) {
+            if (relationship.getChildRelationName() != null && field.required() && relationship.isChildRequired()) {
                 //setting as not required the other side of the relationship
                 relationship.setChildRequired(false);
+
+                sendRelationshipErrorMessage(relationship.getParentRelationName(), user);
                 final FieldBuilder builder = FieldBuilder.builder(byContentTypeAndVar(relatedContentType, relationship.getChildRelationName()));
                 if(field.required()){
                     builder.required(false);
@@ -318,9 +353,10 @@ public class FieldAPIImpl implements FieldAPI {
             relationship.setChildRequired(field.required());
 
             //only one side of the relationship can be required
-            if (field.required() && relationship.getParentRelationName() != null) {
+            if (field.required() && relationship.getParentRelationName() != null && relationship.isParentRequired()) {
                 //setting as not required the other side of the relationship
                 relationship.setParentRequired(false);
+                sendRelationshipErrorMessage(relationship.getChildRelationName(), user);
 
                 final FieldBuilder builder = FieldBuilder.builder(byContentTypeAndVar(relatedContentType, relationship.getParentRelationName()));
                 if(field.required()){
@@ -332,6 +368,31 @@ public class FieldAPIImpl implements FieldAPI {
             }
         }
         relationship.setCardinality(cardinality);
+    }
+
+    private void sendRelationshipErrorMessage(
+            final String relationName,
+            final User user
+    ) {
+
+        final SystemMessageEventUtil systemMessageEventUtil = SystemMessageEventUtil.getInstance();
+
+        try {
+            systemMessageEventUtil.pushMessage(
+                new SystemMessageBuilder()
+                    .setMessage(LanguageUtil.format(
+                            user.getLocale(),
+                            "contenttypes.field.properties.relationship.required.error",
+                            relationName)
+                    )
+                    .setSeverity(MessageSeverity.INFO)
+                    .setType(MessageType.SIMPLE_MESSAGE)
+                    .create(),
+                list(user.getUserId())
+            );
+        } catch (LanguageException e) {
+            throw new DotRuntimeException(e);
+        }
     }
 
     @WrapInTransaction
@@ -364,67 +425,71 @@ public class FieldAPIImpl implements FieldAPI {
   @Override
   public void delete(final Field field, final User user) throws DotDataException, DotSecurityException {
 
-		  final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
-		  final ContentType type = contentTypeAPI.find(field.contentTypeId());
+      final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
+      final ContentType type = contentTypeAPI.find(field.contentTypeId());
 
-		  permissionAPI.checkPermission(type, PermissionLevel.EDIT_PERMISSIONS, user);
+      permissionAPI.checkPermission(type, PermissionLevel.EDIT_PERMISSIONS, user);
 
-		  Field oldField = fieldFactory.byId(field.id());
-		  if(oldField.fixed() || oldField.readOnly()){
-		    throw new DotDataException("You cannot delete a fixed or read only field");
-		  }
+      Field oldField = fieldFactory.byId(field.id());
+      if(oldField.fixed() || oldField.readOnly()){
+          throw new DotDataException("You cannot delete a fixed or read only field");
+      }
 
-		  Structure structure = new StructureTransformer(type).asStructure();
-		  com.dotmarketing.portlets.structure.model.Field legacyField = new LegacyFieldTransformer(field).asOldField();
-
-
-	      if (!(field instanceof CategoryField) &&
-	              !(field instanceof ConstantField) &&
-	              !(field instanceof HiddenField) &&
-	        	  !(field instanceof LineDividerField) &&
-	        	  !(field instanceof TabDividerField) &&
-                  !(field instanceof RelationshipsTabField) &&
-	        	  !(field instanceof RelationshipField) &&
-	        	  !(field instanceof PermissionTabField) &&
-	        	  !(field instanceof HostFolderField) &&
-	        	  structure != null
-	      ) {
-	    	  this.contentletAPI.cleanField(structure, legacyField, this.userAPI.getSystemUser(), false);
-	      }
-
-          fieldFactory.moveSortOrderBackward(type.id(), oldField.sortOrder());
-          fieldFactory.delete(field);
-
-          ActivityLogger.logInfo(ActivityLogger.class, "Delete Field Action",
-                  String.format("User %s/%s eleted field %s from %s Content Type.", user.getUserId(), user.getFirstName(),
-                          field.name(), structure.getName()));
-
-	      //update Content Type mod_date to detect the changes done on the field
-	      contentTypeAPI.updateModDate(type);
-
-	      CacheLocator.getContentTypeCache().remove(structure);
+      final Structure structure = new StructureTransformer(type).asStructure();
+      com.dotmarketing.portlets.structure.model.Field legacyField = new LegacyFieldTransformer(field).asOldField();
 
 
-	      //Refreshing permissions
-	      if (field instanceof HostFolderField) {
-	    	  try {
-	    		  this.contentletAPI.cleanHostField(structure, this.userAPI.getSystemUser(), false);
-	    	  } catch(DotMappingException e) {}
+      if (!(field instanceof CategoryField) &&
+          !(field instanceof ConstantField) &&
+          !(field instanceof HiddenField) &&
+          !(field instanceof LineDividerField) &&
+          !(field instanceof TabDividerField) &&
+          !(field instanceof RelationshipsTabField) &&
+          !(field instanceof RelationshipField) &&
+          !(field instanceof PermissionTabField) &&
+          !(field instanceof HostFolderField) &&
+          structure != null
+      ) {
+          this.contentletAPI.cleanField(structure, legacyField, this.userAPI.getSystemUser(), false);
+      }
 
-	    	  this.permissionAPI.resetChildrenPermissionReferences(structure);
-	      }
+      fieldFactory.moveSortOrderBackward(type.id(), oldField.sortOrder());
+      fieldFactory.delete(field);
 
-          //if RelationshipField, Relationship record must be updated/deleted
-          if (field instanceof RelationshipField) {
-              removeRelationshipLink(field, type);
-          }
+      ActivityLogger.logInfo(ActivityLogger.class, "Delete Field Action",
+          String.format("User %s/%s deleted field %s from %s Content Type.", user.getUserId(), user.getFirstName(),
+              field.name(), structure.getName()));
 
-	      // rebuild contentlets indexes
-	      if(field.indexed()){
-	        contentletAPI.reindex(structure);
-	      }
-	      // remove the file from the cache
-          new ContentletLoader().invalidate(structure);
+      //update Content Type mod_date to detect the changes done on the field
+      contentTypeAPI.updateModDate(type);
+
+      CacheLocator.getContentTypeCache().remove(structure);
+
+
+      //Refreshing permissions
+      if (field instanceof HostFolderField) {
+          try {
+              this.contentletAPI.cleanHostField(structure, this.userAPI.getSystemUser(), false);
+          } catch(DotMappingException e) {}
+
+          this.permissionAPI.resetChildrenPermissionReferences(structure);
+      }
+
+      //if RelationshipField, Relationship record must be updated/deleted
+      if (field instanceof RelationshipField) {
+          removeRelationshipLink(field, type);
+      }
+
+      // rebuild contentlets indexes
+      if(field.indexed()){
+          contentletAPI.reindex(structure);
+      }
+      // remove the file from the cache
+      new ContentletLoader().invalidate(structure);
+
+      HibernateUtil.addCommitListener(()-> {
+          localSystemEventsAPI.notify(new FieldDeletedEvent(field.variable()));
+      });
   }
 
 

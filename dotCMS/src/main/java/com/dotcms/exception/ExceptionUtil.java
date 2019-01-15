@@ -359,7 +359,6 @@ public class ExceptionUtil {
     }
 
     public static String getStackTraceAsString (final StackTraceElement... traces) {
-
         final StringBuilder builder = new StringBuilder();
         for (final StackTraceElement traceElement : traces) {
             builder.append("\tat " + traceElement + "\n");

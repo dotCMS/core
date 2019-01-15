@@ -231,11 +231,11 @@ dojo.require("dotcms.dojo.data.StructureReadStore");
 
 			<!-- START Buttons -->
 			<div class="buttonRow" id="editFolderButtonRow">
-			<button dojoType="dijit.form.Button" onClick="save('fm');" type="button">
-				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "save" )) %>
-			</button>
 			<button dojoType="dijit.form.Button" onClick="goBack();" class="dijitButtonFlat" type="button">
 				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "cancel")) %>
+			</button>
+			<button dojoType="dijit.form.Button" onClick="save('fm');" type="button">
+				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "save" )) %>
 			</button>
 			</div>
 			<!-- END Buttons -->

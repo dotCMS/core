@@ -180,7 +180,7 @@ public class PersonaActionletFTest {
 
 		/*Relate widget to page*/
 		MultiTree m = new MultiTree(contentAsset.getIdentifier(), container.getIdentifier(), contentAsset2.getIdentifier());
-		MultiTreeFactory.saveMultiTree(m);
+		APILocator.getMultiTreeAPI().saveMultiTree(m);
 
 
 		//Call page to see if the persona functionality is working

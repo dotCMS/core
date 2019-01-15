@@ -2039,12 +2039,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 							} else if (field.getFieldType().equals(FieldType.RELATIONSHIP.toString())) {
 								String fieldRelationType = field.getFieldRelationType();
 								text = loadRelationships(relationships
-										.getRelationshipsRecordsByField(
-												fieldRelationType.contains(StringPool.PERIOD)
-														? fieldRelationType
-														: content.getContentType().variable()
-																+ StringPool.PERIOD + field
-																.getVelocityVarName()));
+										.getRelationshipsRecordsByField(field));
 							} else{
 								if (value instanceof Date || value instanceof Timestamp) {
 									if(field.getFieldType().equals(Field.FieldType.DATE.toString())) {

@@ -23,6 +23,13 @@ public interface ContainerFactory {
 	 * @throws DotDataException
 	 */
 	void save(Container container) throws DotDataException;
+
+    /**
+     * Save an existing container
+     * @param container
+     * @param existingId
+     * @throws DotDataException
+     */
 	void save(Container container, String existingId) throws DotDataException;
 	
     /**
@@ -101,6 +108,12 @@ public interface ContainerFactory {
 	Container getLiveContainerByFolderPath(String path, Host host, User user,
 										   boolean respectFrontEndPermissions) throws DotSecurityException, DotDataException;
 
+    /**
+     * Find container associated to the structure
+     * @param structureIdentifier String
+     * @return List
+     * @throws DotDataException
+     */
 	List<Container> findContainersForStructure(String structureIdentifier) throws DotDataException;
 
 	/**
@@ -131,6 +144,4 @@ public interface ContainerFactory {
      * @throws DotSecurityException
      */
 	Container find(String inode) throws DotDataException, DotSecurityException;
-
-
 }

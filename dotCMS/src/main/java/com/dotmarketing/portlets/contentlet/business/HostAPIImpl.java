@@ -7,8 +7,10 @@ import com.dotcms.api.system.event.Visibility;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.concurrent.DotConcurrentFactory;
+import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.notifications.bean.NotificationType;
@@ -695,7 +697,19 @@ public class HostAPIImpl implements HostAPI {
                         c.setProperty(Contentlet.DONT_VALIDATE_ME, true);
                         contentAPI.delete(c, user, respectFrontendRoles);
                     }
-                    APILocator.getContentTypeAPI(user, respectFrontendRoles).delete(type);
+
+                    ContentTypeAPI contentTypeAPI = APILocator
+                            .getContentTypeAPI(user, respectFrontendRoles);
+                    //Validate if are allow to delete this content type
+                    if (!type.system() && !type.defaultType()) {
+                        contentTypeAPI.delete(type);
+                    } else {
+                        //If we can not delete it we need to change the host to SYSTEM_HOST
+                        ContentType clonedContentType = ContentTypeBuilder.builder(type)
+                                .host(findSystemHost(user, false).getIdentifier()).build();
+                        contentTypeAPI.save(clonedContentType);
+                    }
+
                 }
 
                 // wipe bad old containers

@@ -36,16 +36,11 @@ import java.util.stream.Collectors;
 
 import static com.dotcms.util.CollectionsUtils.list;
 
+@Deprecated
 /**
- * This class provides utility routines to interact with the Multi-Tree structures in the system. A
- * Multi-Tree represents the relationship between a Legacy or Content Page, a container, and a
- * contentlet.
- * <p>
- * Therefore, the content of a page can be described as the sum of several Multi-Tree records which
- * represent each piece of information contained in it.
- * </p>
- * 
- * @author will
+ * Slated for removal in > 5.1
+ * Use  {@link com.dotmarketing.factories.MultiTreeAPI}
+ * e.g. APILocator.getMultiTreeAPI().getMultiTreesByParent(String id)
  */
 public class MultiTreeFactory {
 

@@ -71,6 +71,10 @@
 		</table>
 	<%}%>
 	<div class="wfAddActionButtonRow">
+		<button dojoType="dijit.form.Button" class="dijitButtonFlat"
+		onClick='dijit.byId("actionClassParamsDia").destroyRecursive()' >
+			<%=LanguageUtil.get(pageContext, "Cancel")%>
+		</button>
 	<%if(params != null && params.size() > 0) {%>
 		<button dojoType="dijit.form.Button"
 			onClick="actionClassAdmin.saveActionParameters();" iconClass="saveIcon">
@@ -78,11 +82,7 @@
 		</button>
 			&nbsp;
 	<%} %>
-		<button dojoType="dijit.form.Button"
-			onClick='dijit.byId("actionClassParamsDia").destroyRecursive()'
-			>
-			<%=LanguageUtil.get(pageContext, "Cancel")%>
-		</button>
+
 	</div>
 
 </div>

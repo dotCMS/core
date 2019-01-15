@@ -46,10 +46,8 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 	protected HostAPI          hostAPI;
 	protected FolderAPI        folderAPI;
 
-
-
 	/**
-	 * 
+	 * Constructor
 	 */
 	public ContainerAPIImpl () {
 
@@ -151,9 +149,9 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 	}
 
 	/**
-	 * 
-	 * @param webAsset
-	 * @param existingId
+	 * Save an existing container as a web asset
+	 * @param webAsset {@link WebAsset}
+	 * @param existingId {@link String}
 	 * @throws DotDataException
 	 */
 	@WrapInTransaction
@@ -162,16 +160,17 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 	}
 
 	/**
-	 *
-	 * @param containerTitle
-	 * @param destination
-	 * @return
+	 * Appends the name of the container
+	 * @param containerTitle {@link String}
+	 * @param destination    {@link Host}
+	 * @return String
 	 * @throws DotDataException
 	 */
 	@CloseDBIfOpened
 	@SuppressWarnings("unchecked")
 	private String getAppendToContainerTitle(final String containerTitle, final Host destination)
 			throws DotDataException {
+
 		List<Container> containers;
 		String temp = new String(containerTitle);
 		String result = "";
@@ -187,10 +186,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 		dc.setSQL(sql);
 		dc.addParam(destination.getIdentifier());
 
-
 		containers = TransformerLocator.createContainerTransformer(dc.loadObjectResults()).asList();
-
-
 
 		boolean isContainerTitle = false;
 
@@ -239,16 +235,37 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 	public Container getWorkingContainerById(final String identifierParameter, final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 
         final  Identifier  identifier = APILocator.getIdentifierAPI().find(identifierParameter);
-        return this.isContainerFile(identifier)?
-                this.getWorkingContainerByFolderPath(identifier.getParentPath(), identifier.getHostId(), user, respectFrontendRoles):
-                this.getWorkingVersionInfoContainerById(identifierParameter, user, respectFrontendRoles);
+
+        if (null != identifier && UtilMethods.isSet(identifier.getId())) {
+
+			return this.isContainerFile(identifier) ?
+					this.getWorkingContainerByFolderPath(identifier.getParentPath(), identifier.getHostId(), user, respectFrontendRoles) :
+					this.getWorkingVersionInfoContainerById(identifierParameter, user, respectFrontendRoles);
+		}
+
+        return null;
 	}
 
+    /**
+     * If the container asset name is container.vtl, returns true
+     * @param identifier {@link Identifier}
+     * @return boolean
+     */
     private boolean isContainerFile(final Identifier identifier) {
 
         return null != identifier && Constants.CONTAINER_META_INFO_FILE_NAME.equals(identifier.getAssetName());
     }
 
+    /**
+     * Gets the working version of the container based on a folder path
+     * @param path    {@link String}
+     * @param hostId  {@link String}
+     * @param user    {@link User}
+     * @param respectFrontEndPermissions {@link Boolean}
+     * @return Container
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
 	private Container getWorkingContainerByFolderPath(final String path, final String hostId, final User user,
 													 final boolean respectFrontEndPermissions) throws DotSecurityException, DotDataException {
 
@@ -279,21 +296,35 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 		return this.containerFactory.getContainerByFolder(host, folder, user, showLive);
 	}
 
-    private Container getWorkingVersionInfoContainerById(final String id, final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+    /**
+     * Get the container data base, base on the {@link VersionableAPI}
+     * @param containerId {@link String}
+     * @param user {@link User}
+     * @param respectFrontendRoles boolean
+     * @return Container
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    private Container getWorkingVersionInfoContainerById(final String containerId, final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 
-        final VersionInfo info       = APILocator.getVersionableAPI().getVersionInfo(id);
-        return (info !=null)  ? find(info.getWorkingInode(), user, respectFrontendRoles) : null;
+        final  VersionInfo info = APILocator.getVersionableAPI().getVersionInfo(containerId);
+        return info !=null? find(info.getWorkingInode(), user, respectFrontendRoles): null;
     }
 
 	@Override
 	@SuppressWarnings("unchecked")
-	public Container getLiveContainerById(String id, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+	public Container getLiveContainerById(final String containerId, final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 
-		final  Identifier  identifier = APILocator.getIdentifierAPI().find(id);
-		return this.isContainerFile(identifier)?
-				this.getLiveContainerByFolderPath(identifier.getParentPath(),
-						this.hostAPI.find(identifier.getHostId(), user, respectFrontendRoles), user, respectFrontendRoles):
-				this.getLiveVersionInfoContainerById(id, user, respectFrontendRoles);
+		final  Identifier  identifier = APILocator.getIdentifierAPI().find(containerId);
+
+		if (null != identifier && UtilMethods.isSet(identifier.getId())) {
+			return this.isContainerFile(identifier) ?
+					this.getLiveContainerByFolderPath(identifier.getParentPath(),
+							this.hostAPI.find(identifier.getHostId(), user, respectFrontendRoles), user, respectFrontendRoles) :
+					this.getLiveVersionInfoContainerById(containerId, user, respectFrontendRoles);
+		}
+
+		return null;
 	}
 
 	@CloseDBIfOpened
@@ -304,9 +335,18 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 		return this.containerFactory.getLiveContainerByFolderPath(path, host, user, respectFrontEndPermissions);
 	}
 
-	private Container getLiveVersionInfoContainerById(final String id, final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+    /**
+     * Get the lie version of the container
+     * @param containerId {@link String}
+     * @param user        {@link User}
+     * @param respectFrontendRoles {@link Boolean}
+     * @return Container
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+	private Container getLiveVersionInfoContainerById(final String containerId, final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 
-		final VersionInfo info = APILocator.getVersionableAPI().getVersionInfo(id);
+		final VersionInfo info = APILocator.getVersionableAPI().getVersionInfo(containerId);
 		return (info !=null && UtilMethods.isSet(info.getLiveInode())) ? find(info.getLiveInode(), user, respectFrontendRoles) : null;
 	}
 

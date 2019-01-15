@@ -488,7 +488,8 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 				limitedUserEditPermsPermOnCT);
 
 		contentTypeAPI = new ContentTypeAPIImpl(limitedUserEditPermsPermOnCT, false, FactoryLocator.getContentTypeFactory(),
-				FactoryLocator.getFieldFactory(), permAPI, APILocator.getContentTypeFieldAPI());
+				FactoryLocator.getFieldFactory(), permAPI, APILocator.getContentTypeFieldAPI(),
+				APILocator.getLocalSystemEventsAPI());
 
 		try {
 			List<Field> fields = APILocator.getContentTypeFieldAPI().byContentTypeId(contentGenericType.id());
@@ -543,7 +544,8 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 				limitedUserEditPermsPermOnCT);
 
 		final ContentTypeAPI contentTypeAPI = new ContentTypeAPIImpl(limitedUserEditPermsPermOnCT, false, FactoryLocator.getContentTypeFactory(),
-				FactoryLocator.getFieldFactory(), permAPI, APILocator.getContentTypeFieldAPI());
+				FactoryLocator.getFieldFactory(), permAPI, APILocator.getContentTypeFieldAPI(),
+				APILocator.getLocalSystemEventsAPI());
 
 		try {
 			contentTypeAPI.delete(newType);
@@ -683,7 +685,8 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 		APILocator.getPermissionAPI().save( readPermissions, folder, user, false );
 
 		ContentTypeAPI contentTypeAPI = new ContentTypeAPIImpl(limitedUserEditPermsPermOnCT, false, FactoryLocator.getContentTypeFactory(),
-				FactoryLocator.getFieldFactory(), permAPI, APILocator.getContentTypeFieldAPI());
+				FactoryLocator.getFieldFactory(), permAPI, APILocator.getContentTypeFieldAPI(),
+				APILocator.getLocalSystemEventsAPI());
 		//Try to Save Content Type
 		try{
 			contentType = contentTypeAPI.save(contentType);
@@ -728,7 +731,8 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 		ContentletDataGen contentletDataGen = new ContentletDataGen(newTypeId);
 		contentletDataGen.nextPersisted();
 		final ContentTypeAPI contentTypeAPI = new ContentTypeAPIImpl(limitedUserEditPermsPermOnCT, false, FactoryLocator.getContentTypeFactory(),
-				FactoryLocator.getFieldFactory(), APILocator.getPermissionAPI(), APILocator.getContentTypeFieldAPI());
+				FactoryLocator.getFieldFactory(), APILocator.getPermissionAPI(), APILocator.getContentTypeFieldAPI(),
+				APILocator.getLocalSystemEventsAPI());
 
 		try {
 			contentTypeAPI.delete(newType);

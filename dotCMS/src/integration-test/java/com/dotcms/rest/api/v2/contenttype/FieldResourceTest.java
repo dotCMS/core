@@ -57,6 +57,51 @@ public class FieldResourceTest {
     }
 
     @Test
+    public void testCreateRelationshipFieldWithoutContentTypeId_Return400() throws Exception {
+        final FieldResource resource = new FieldResource();
+
+        final ContentType contentType = getContentType();
+
+        final String jsonField = "{"+
+                // IDENTITY VALUES
+                "	\"clazz\" : \"" + ImmutableRelationshipField.class.getCanonicalName() +"\","+
+                "	\"name\" : \"YouTube Videos\","+
+                "   \"values\" :  1," +
+                "   \"variable\": \"youtubeVideos\","+
+                "   \"relationType\": \"Youtube\""+
+                "	}";
+
+        final Response response = resource.createContentTypeField(null,jsonField,getHttpRequest());
+
+        assertNotNull(response);
+        assertEquals(400, response.getStatus());
+        assertTrue("Error: " + response.getEntity().toString(), response.getEntity().toString().contains("ContentTypeId needs to be set to save the Field"));
+    }
+
+    @Test
+    public void testCreateRelationshipFieldWithoutRelationType_Return400() throws Exception {
+        final FieldResource resource = new FieldResource();
+
+        final ContentType contentType = getContentType();
+
+        final String jsonField = "{"+
+                // IDENTITY VALUES
+                "	\"clazz\" : \"" + ImmutableRelationshipField.class.getCanonicalName() +"\","+
+                "	\"contentTypeId\" : \"CONTENT_TYPE_ID\","+
+                "	\"name\" : \"YouTube Videos\","+
+                "   \"values\" :  1," +
+                "   \"variable\": \"youtubeVideos\","+
+                "	}";
+
+        final Response response = resource.createContentTypeField(
+                contentType.id(), jsonField.replace("CONTENT_TYPE_ID", contentType.id()), getHttpRequest());
+
+        assertNotNull(response);
+        assertEquals(400, response.getStatus());
+        assertTrue("Error: " + response.getEntity().toString(), response.getEntity().toString().contains("Relation Type needs to be set"));
+    }
+
+    @Test
     public void testCreateRelationshipFieldWithDash_Return400() throws Exception {
         final FieldResource resource = new FieldResource();
 
