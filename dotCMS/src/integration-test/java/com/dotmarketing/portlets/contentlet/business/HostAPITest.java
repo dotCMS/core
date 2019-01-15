@@ -259,7 +259,7 @@ public class HostAPITest {
         archiveHost(host, user);
 
         //Create a test content type
-        final ContentType testContentType = createStructure(host, defaultType, system, user);
+        final ContentType testContentType = createContentType(host, defaultType, system, user);
 
         //Delete the just created host
         deleteHost(host, user);
@@ -329,9 +329,9 @@ public class HostAPITest {
     }
 
     /**
-     * Creates a test structure for a given host id
+     * Creates a test content type for a given host
      */
-    private ContentType createStructure(final Host host, final boolean defaultType,
+    private ContentType createContentType(final Host host, final boolean defaultType,
             final boolean system,
             final User user)
             throws DotDataException, DotSecurityException {
