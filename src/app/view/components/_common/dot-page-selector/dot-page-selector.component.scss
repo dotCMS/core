@@ -21,23 +21,23 @@
 }
 
 .dot-page-selector__item {
-    display: grid;
-    grid-column-gap: $basic-padding;
+    display: flex;
+    max-width: 380px;
 
     span {
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
+        text-align: left;
     }
 
-    &-url {
-        grid-column: 1;
-        width: 190px;
+    &-host, &-url {
+        flex-basis: 50%;
     }
 
     &-host {
-        grid-column: 2;
-        width: 190px;
-        text-align: right;
+        padding-left: $basic-padding / 2;
     }
 }
+
+

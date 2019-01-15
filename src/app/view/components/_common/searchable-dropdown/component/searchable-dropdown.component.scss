@@ -50,6 +50,9 @@ dot-searchable-dropdown {
             display: block;
             padding: $basic-padding / 2;
             transition: background-color $basic-speed ease-in;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
 
             &.selected {
                 font-weight: bold;

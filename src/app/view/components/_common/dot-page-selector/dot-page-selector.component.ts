@@ -108,7 +108,7 @@ export class DotPageSelectorComponent implements ControlValueAccessor {
      * @memberof DotPageSelectorComponent
      */
     search(param: any): void {
-        if (this.cleanInput(param).length) {
+        if ( this.fireHostSearch(param) && this.cleanInput(param).length) {
             this.dotPageSelectorService
                 .search(this.cleanQuery(param.query))
                 .pipe(take(1))
@@ -123,6 +123,8 @@ export class DotPageSelectorComponent implements ControlValueAccessor {
                         this.autoSelectUniqueResult();
                     }
                 });
+        } else {
+            this.results.data = [];
         }
     }
 
@@ -195,6 +197,10 @@ export class DotPageSelectorComponent implements ControlValueAccessor {
 
     private autoSelectUniqueResult(): void {
         this.onSelect(this.results.data[0]);
+    }
+
+    private fireHostSearch (param: any): boolean {
+       return param.query.startsWith('//') ? param.query.length >= 5 : true;
     }
 
     private cleanInput(event: any): string {
