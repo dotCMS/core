@@ -108,7 +108,7 @@ export class DotPageSelectorComponent implements ControlValueAccessor {
      * @memberof DotPageSelectorComponent
      */
     search(param: any): void {
-        if ( this.fireHostSearch(param) && this.cleanInput(param).length) {
+        if ( this.validSearch(param)) {
             this.dotPageSelectorService
                 .search(this.cleanQuery(param.query))
                 .pipe(take(1))
@@ -199,8 +199,8 @@ export class DotPageSelectorComponent implements ControlValueAccessor {
         this.onSelect(this.results.data[0]);
     }
 
-    private fireHostSearch (param: any): boolean {
-       return param.query.startsWith('//') ? param.query.length >= 5 : true;
+    private validSearch (param: any): boolean {
+       return this.cleanInput(param).length && (param.query.startsWith('//') ? param.query.length >= 5 : true);
     }
 
     private cleanInput(event: any): string {
