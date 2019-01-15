@@ -387,6 +387,7 @@ public class FieldAPIImpl implements FieldAPI {
                     )
                     .setSeverity(MessageSeverity.INFO)
                     .setType(MessageType.SIMPLE_MESSAGE)
+                    .setLife(6000)
                     .create(),
                 list(user.getUserId())
             );
