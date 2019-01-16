@@ -1,16 +1,18 @@
 package com.dotmarketing.portlets.rules.model;
 
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.repackage.com.google.common.collect.Lists;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.rules.exception.RuleEngineException;
 import com.dotmarketing.portlets.rules.util.LogicalCondition;
 import com.dotmarketing.portlets.rules.util.LogicalStatement;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
 public class ConditionGroup implements Serializable, Comparable<ConditionGroup> {
     private static final long serialVersionUID = 1L;
@@ -79,6 +81,12 @@ public class ConditionGroup implements Serializable, Comparable<ConditionGroup> 
         this.priority = priority;
     }
 
+    public List<Condition> getConditionsRaw() {
+
+        return conditions;
+    }
+
+    @CloseDBIfOpened
     public List<Condition> getConditions() {
         if(conditions == null) {
             try {
