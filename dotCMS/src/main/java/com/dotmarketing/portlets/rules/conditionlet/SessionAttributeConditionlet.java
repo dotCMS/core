@@ -54,11 +54,7 @@ public class SessionAttributeConditionlet extends Conditionlet<SessionAttributeC
         boolean evalSuccess;
 
         if(request.getSession().getAttribute(instance.sessionKey) == null){
-            if(instance.comparison.equals(IS_NOT)){
-                evalSuccess = true;
-            }else {
-                evalSuccess = false;
-            }
+            evalSuccess = instance.comparison.equals(IS_NOT);
         } else {
             String sessionActualValue = request.getSession().getAttribute(instance.sessionKey).toString();
 
