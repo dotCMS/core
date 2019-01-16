@@ -1,24 +1,22 @@
 package com.dotmarketing.portlets.rules.model;
 
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore;
 import com.dotcms.repackage.com.google.common.collect.Lists;
-import com.dotmarketing.business.FactoryLocator;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.PermissionSummary;
-import com.dotmarketing.business.Permissionable;
-import com.dotmarketing.business.RelatedPermissionableGroup;
+import com.dotmarketing.business.*;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.rules.exception.RuleEngineException;
 import com.dotmarketing.portlets.rules.util.LogicalCondition;
 import com.dotmarketing.portlets.rules.util.LogicalStatement;
 import com.dotmarketing.portlets.rules.util.RulePermissionableUtil;
 import com.dotmarketing.util.Logger;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
 /**
  * A Rule is composed of a list of conditions that get checked against when a 
@@ -172,6 +170,11 @@ public class Rule implements Permissionable, Serializable {
         this.modDate = modDate;
     }
 
+    public List<ConditionGroup> getGroupsRaw() {
+        return groups;
+    }
+
+    @CloseDBIfOpened
     public List<ConditionGroup> getGroups() {
         if(groups == null) {
             try {
@@ -190,6 +193,12 @@ public class Rule implements Permissionable, Serializable {
         this.groups = groups;
     }
 
+    public List<RuleAction> getRuleActionsRaw() {
+
+        return ruleActions;
+    }
+
+    @CloseDBIfOpened
     public List<RuleAction> getRuleActions() {
         if(ruleActions == null) {
             try {
@@ -224,6 +233,7 @@ public class Rule implements Permissionable, Serializable {
         return null;
     }
 
+    @CloseDBIfOpened
     @JsonIgnore
     public Permissionable getParentPermissionable() throws DotDataException {
         Permissionable pp;
