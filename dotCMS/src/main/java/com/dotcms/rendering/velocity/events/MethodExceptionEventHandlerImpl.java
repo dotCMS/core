@@ -7,6 +7,7 @@ import com.dotcms.rendering.velocity.viewtools.exception.DotToolException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
+import org.apache.velocity.Template;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.exception.ParseErrorException;
@@ -26,8 +27,14 @@ public class MethodExceptionEventHandlerImpl implements org.apache.velocity.app.
 
 	String errorTemplate = "/static/preview_mode/error_template.vtl";
 
-	public Object methodException(Class clazz, String message, Exception e) throws Exception {
+	public Object methodException(final Class clazz, final String message, final Exception e) throws Exception {
+
 		if(e instanceof DotToolException) {
+			throw e;
+		}
+
+		if (e instanceof PreviewEditParseErrorException) {
+			// this exception is already handled by System Messages.
 			throw e;
 		}
 
@@ -40,11 +47,9 @@ public class MethodExceptionEventHandlerImpl implements org.apache.velocity.app.
 		String x = e.toString();
 		if (e instanceof ParseErrorException) {
 			x = getParseErrorMessage((ParseErrorException) e);
-		}
-		else if(e instanceof org.apache.lucene.queryparser.classic.ParseException){
+		} else if(e instanceof org.apache.lucene.queryparser.classic.ParseException){
 			x = getLuceneParseErrorMessage((org.apache.lucene.queryparser.classic.ParseException) e);
-		}
-		else {
+		} else {
 			x = getErrorMessage( e);
 		}
 		
@@ -52,15 +57,17 @@ public class MethodExceptionEventHandlerImpl implements org.apache.velocity.app.
 	}
 	
 	
-	public String getErrorMessage(Exception e) {
-		java.io.StringWriter sw = new StringWriter();
-		VelocityEngine ve = VelocityUtil.getEngine();
-		VelocityContext context = new VelocityContext();
+	public String getErrorMessage(final Exception e) {
+
+		final StringWriter    sw      = new StringWriter();
+		final VelocityEngine  ve      = VelocityUtil.getEngine();
+		final VelocityContext context = new VelocityContext();
 
 		context.put("veloError", e);
 
 		context.put("prettyError", UtilMethods.htmlifyString(e.toString()));
-		org.apache.velocity.Template template;
+
+		final Template template;
 		try {
 			template = ve.getTemplate(errorTemplate);
 			context.put("error", this);
@@ -68,30 +75,33 @@ public class MethodExceptionEventHandlerImpl implements org.apache.velocity.app.
 		} catch (Exception ex) {
 			Logger.error(this.getClass(), "Unable to show velocityError", ex);
 		}
+
 		return sw.toString();
 	}
 		
-	private String getLuceneParseErrorMessage(org.apache.lucene.queryparser.classic.ParseException pee) {
+	private String getLuceneParseErrorMessage(final org.apache.lucene.queryparser.classic.ParseException pee) {
+
 		String msg = pee.toString();
 		msg = msg.replaceAll("org.apache.lucene.queryparser.classic.ParseException", "Lucene Parse Error\n");
-		java.io.StringWriter sw = new StringWriter();
-		VelocityEngine ve = VelocityUtil.getEngine();
-		VelocityContext context = new VelocityContext();
+		final StringWriter    sw      = new StringWriter();
+		final VelocityEngine  ve      = VelocityUtil.getEngine();
+		final VelocityContext context = new VelocityContext();
 
 		context.put("veloError", UtilMethods.htmlifyString(msg));
+		final Template template;
 
-		//context.put("prettyError", UtilMethods.htmlifyString(msg));
-		org.apache.velocity.Template template;
 		try {
 			template = ve.getTemplate(errorTemplate);
 			template.merge(context, sw);
 		} catch (Exception ex) {
 			Logger.error(this.getClass(), "Unable to show velocityError", ex);
 		}
+
 		return sw.toString();
 	}
 	
-	private String getParseErrorMessage(ParseErrorException pee) {
+	private String getParseErrorMessage(final ParseErrorException pee) {
+
 		String msg = pee.toString().replaceAll("at " + pee.getTemplateName(), "");
 		msg = msg.replaceAll("org.apache.velocity.exception.ParseErrorException:", "");
 								msg = msg.replaceAll("\\.\\.\\.", ",");
@@ -101,6 +111,7 @@ public class MethodExceptionEventHandlerImpl implements org.apache.velocity.app.
 		else{
 			msg = msg.replaceAll("\\[", "\n\\[");
 		}
+
 		msg = UtilMethods.replace(msg, "\"<EOF>\"", "end of file");
 		msg = UtilMethods.htmlifyString(msg);
 		
@@ -177,7 +188,7 @@ public class MethodExceptionEventHandlerImpl implements org.apache.velocity.app.
 		return sw.toString();
 	}
 
-	boolean isEditMode(Exception e) {
+	boolean isEditMode(final Exception e) {
 
 		boolean ret = false;
 
@@ -199,7 +210,4 @@ public class MethodExceptionEventHandlerImpl implements org.apache.velocity.app.
 
 		return ret;
 	}
-	
-
-
 }
