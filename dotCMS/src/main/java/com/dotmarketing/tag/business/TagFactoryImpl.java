@@ -75,7 +75,8 @@ public class TagFactoryImpl implements TagFactory {
         if ( tags == null ) {
             //Execute the search
             final DotConnect dc = new DotConnect();
-			dc.setSQL("SELECT * FROM tag WHERE tagname = '" + name.toLowerCase() + "'");
+			dc.setSQL("SELECT * FROM tag WHERE tagname = ?");
+            dc.addParam(name.toLowerCase());
             tags = convertForTags(dc.loadObjectResults());
 
             //And add the results to the cache
