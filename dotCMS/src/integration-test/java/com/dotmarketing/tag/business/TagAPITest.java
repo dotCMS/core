@@ -8,6 +8,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -94,12 +95,27 @@ public class TagAPITest extends IntegrationTestBase {
 	 */
 	@Test
 	public void getTagByName() throws Exception {
-		String tagName="china";
-		List<Tag> tags = tagAPI.getTagsByName(tagName);
-		assertTrue( tags.size() >= 1 );
-		for(Tag tag : tags){
-			assertTrue(tag.getTagName().equals(tagName));
-		}
+
+		String tagName="tagByName" + System.currentTimeMillis();
+		createAndGetTagByName(tagName);
+
+		tagName = "tagByName" + System.currentTimeMillis() + "-test1";
+		createAndGetTagByName(tagName);
+
+		tagName = "tagByName" + System.currentTimeMillis() + "'test2";
+		createAndGetTagByName(tagName);
+
+		tagName = "tagByName" + System.currentTimeMillis() + ".test3";
+		createAndGetTagByName(tagName);
+
+		tagName = "tagByName" + System.currentTimeMillis() + ".test4.";
+		createAndGetTagByName(tagName);
+
+		tagName = "tagByName" + System.currentTimeMillis() + "'test5'";
+		createAndGetTagByName(tagName);
+
+		tagName = "tagByName" + System.currentTimeMillis() + "\\test6";
+		createAndGetTagByName(tagName);
 	}
 
 	/**
@@ -208,18 +224,12 @@ public class TagAPITest extends IntegrationTestBase {
 	@Test
 	public void saveTag() throws Exception {
 		//save tag first implementation  saveTag ( String tagName, String userId, String hostId )
-		String tagName ="testapi4"+UtilMethods.dateToHTMLDate(new Date(),"MMddyyyyHHmmss"); 
-		tagAPI.saveTag ( tagName, testUser.getUserId(), defaultHostId );
-		Tag tag = tagAPI.getTagByNameAndHost(tagName, defaultHostId);
-		assertNotNull(tag);
-		assertTrue(tag.getTagName().equals(tagName));
+		String tagName ="testapi4"+UtilMethods.dateToHTMLDate(new Date(),"MMddyyyyHHmmss");
+		saveTag(tagName);
 
 		//save tag second implementation saveTag ( String tagName, String userId, String hostId, boolean persona )
-		String tagName2 ="testapi5"+UtilMethods.dateToHTMLDate(new Date(),"MMddyyyyHHmmss"); 
-		tagAPI.saveTag ( tagName2, testUser.getUserId(), defaultHostId, false );
-		Tag tag2 = tagAPI.getTagByNameAndHost(tagName2, defaultHostId);
-		assertNotNull(tag2);
-		assertTrue(tag2.getTagName().equals(tagName2) && tag2.isPersona()==false);
+		String tagName2 ="testapi5"+UtilMethods.dateToHTMLDate(new Date(),"MMddyyyyHHmmss");
+		saveTag(tagName2, false);
 	}
 
 	/**
@@ -911,4 +921,36 @@ public class TagAPITest extends IntegrationTestBase {
 		conAPI.archive(contentAsset,testUser,false);
 		conAPI.delete(contentAsset,testUser,false	);
 	}
+
+	private Tag saveTag (final String tagName) throws DotDataException {
+
+		tagAPI.saveTag ( tagName, testUser.getUserId(), defaultHostId );
+		Tag tag = tagAPI.getTagByNameAndHost(tagName, defaultHostId);
+		assertNotNull(tag);
+		assertEquals(tagName.toLowerCase(), tag.getTagName());
+
+		return tag;
+	}
+
+	private Tag saveTag (final String tagName, boolean isPersona) throws DotDataException {
+
+		tagAPI.saveTag ( tagName, testUser.getUserId(), defaultHostId, isPersona);
+		Tag tag = tagAPI.getTagByNameAndHost(tagName, defaultHostId);
+		assertNotNull(tag);
+		assertEquals(tagName, tag.getTagName());
+		assertFalse(tag.isPersona());
+
+		return tag;
+	}
+
+	private void createAndGetTagByName (final String tagName) throws DotDataException {
+
+		saveTag(tagName);
+		List<Tag> tags = tagAPI.getTagsByName(tagName);
+		assertTrue( tags.size() >= 1 );
+		for(Tag tag : tags){
+			assertEquals(tagName.toLowerCase(), tag.getTagName());
+		}
+	}
+
 }
