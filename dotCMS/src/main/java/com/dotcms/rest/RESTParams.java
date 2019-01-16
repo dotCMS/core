@@ -14,7 +14,8 @@ public enum RESTParams {
 	LANGUAGE ("language"),
     CALLBACK ("callback"),
 	INODE ("inode"),
-	RESPECT_FRONT_END_ROLES ("respectFrontendRoles");
+	RESPECT_FRONT_END_ROLES ("respectFrontendRoles"),
+	DEPTH ("depth");
 
 	private final String  value;
 
