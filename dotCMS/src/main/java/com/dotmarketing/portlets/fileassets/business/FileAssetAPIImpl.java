@@ -7,12 +7,15 @@ import com.dotcms.api.system.event.Visibility;
 import com.dotcms.api.system.event.verifier.ExcludeOwnerVerifierBean;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
-import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotcms.tika.TikaUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.business.*;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.IdentifierAPI;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -33,14 +36,17 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import com.liferay.util.StringPool;
-import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
-
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.zip.GZIPInputStream;
+import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 
 /**
  * This class is a bridge impl that will support the older
@@ -363,13 +369,13 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 			    if(fa.isLive()) {
 					isfileAssetContLive = true;
 			    }
-			    File oldFile = fileAssetCont.getBinary(BINARY_FIELD);
-				File newFile = new File(oldFile.getPath().substring(0,oldFile.getPath().indexOf(oldFile.getName()))+newName+"."+ext);
+			    //File oldFile = fileAssetCont.getBinary(BINARY_FIELD);
+				//File newFile = new File(oldFile.getPath().substring(0,oldFile.getPath().indexOf(oldFile.getName()))+newName+"."+ext);
 				try {
-					FileUtils.copyFile(oldFile, newFile);
+					//FileUtils.copyFile(oldFile, newFile);
 					fileAssetCont.setInode(null);
 					fileAssetCont.setFolder(folder.getInode());
-					fileAssetCont.setBinary(BINARY_FIELD, newFile);
+					//fileAssetCont.setBinary(BINARY_FIELD, newFile);
 					final String newFileName=newName+"."+ext;
 					fileAssetCont.setStringProperty(FileAssetAPI.TITLE_FIELD, newFileName);
 					fileAssetCont.setStringProperty(FileAssetAPI.FILE_NAME_FIELD, newFileName);
@@ -385,9 +391,9 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 							+ newName + " for asset " + id.getId(), e);
 					throw e;
 				} finally {
-					if (newFile != null) {
-						FileUtils.deleteQuietly(newFile);
-					}
+					//if (newFile != null) {
+					//	FileUtils.deleteQuietly(newFile);
+					//}
 				}
 				return true;
 			}

@@ -66,7 +66,6 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.InvalidLicenseException;
 import com.dotmarketing.factories.InodeFactory;
-import com.dotmarketing.factories.MultiTreeFactory;
 import com.dotmarketing.factories.PublishFactory;
 import com.dotmarketing.factories.TreeFactory;
 import com.dotmarketing.menubuilders.RefreshMenus;
@@ -2972,8 +2971,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
 
             workingContentlet = contentlet;
-            if(createNewVersion)
+            if(createNewVersion){
                 workingContentlet = findWorkingContentlet(contentlet);
+            }
             String workingContentletInode = (workingContentlet==null) ? "" : workingContentlet.getInode();
 
             boolean priority = contentlet.isLowIndexPriority();
@@ -3120,11 +3120,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     parent = APILocator.getHostAPI().find( contentlet.getHost(), sysuser, false );
                 }
                 Identifier ident;
-                final Contentlet contPar=contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET?contentletRaw:contentlet;
-                if(existingIdentifier!=null)
-                    ident = APILocator.getIdentifierAPI().createNew(contPar, parent, existingIdentifier);
-                else
-                    ident = APILocator.getIdentifierAPI().createNew(contPar, parent );
+                final Contentlet contPar = contentlet.getStructure().getStructureType()
+                        == Structure.STRUCTURE_TYPE_FILEASSET ? contentletRaw : contentlet;
+                if (existingIdentifier != null) {
+                    ident = APILocator.getIdentifierAPI()
+                            .createNew(contPar, parent, existingIdentifier);
+                } else {
+                    ident = APILocator.getIdentifierAPI().createNew(contPar, parent);
+                }
 
                 //Clean-up the contentlet object again..., we don' want to persist this URL in the db
                 removeURLFromContentlet( contentlet );
@@ -3154,12 +3157,23 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                     + " identifier: " + binaryIdentifier
                                     + " inode: " + binarynode);
                         } else {
-                            ident.setAssetName(contentletRaw.getBinary(FileAssetAPI.BINARY_FIELD).getName());
+                            //We no longer use the old BinaryField to recover the file name.
+                            //From now on we'll recover such value from the field "fileName" presented on the screen.
+                            //The physical file asset is just an internal piece that is mapped to the system asset-name.
+                            //The file per-se no longer can be renamed. We can only modify the asset-name that refers to it.
+                            final String assetName = String.class.cast(contentletRaw.getMap().get(FileAssetAPI.FILE_NAME_FIELD));
+                            if(UtilMethods.isSet(assetName)){
+                               ident.setAssetName(assetName);
+                            } else {
+                               //fallback
+                               ident.setAssetName(contentletRaw.getBinary(FileAssetAPI.BINARY_FIELD).getName());
+                            }
                         }
                     } catch (IOException e) {
                         Logger.error( this.getClass(), "Error handling Binary Field.", e );
                     }
                 } else if ( contentlet.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE ) {
+                    //For HTML Pages - The asset name maps to the page URL
                     ident.setAssetName( htmlPageURL );
                 }
                 if(UtilMethods.isSet(contentletRaw.getFolder()) && !contentletRaw.getFolder().equals(FolderAPI.SYSTEM_FOLDER)){
@@ -3273,8 +3287,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                         // if we have an incoming file
                         else if (incomingFile.exists() ){
-                            String oldFileName  = incomingFile.getName();
-                            String newFileName  = (UtilMethods.isSet(contentlet.getStringProperty("fileName")) && contentlet.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET) ? contentlet.getStringProperty("fileName"): oldFileName;
+                            //The physical file name is preserved across versions.
+                            //No need to update the name. We will only reference the file through the logical asset-name
+                            final String oldFileName  = incomingFile.getName();
 
                             File oldFile = null;
                             if(UtilMethods.isSet(oldInode)) {
@@ -3288,7 +3303,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                 }
                             }
 
-                            File newFile = new File(newDir.getAbsolutePath()  + File.separator + velocityVarNm + File.separator +  newFileName);
+                            //The file name must be preserved so it remains the same across versions.
+                            File newFile = new File(newDir.getAbsolutePath()  + File.separator + velocityVarNm + File.separator +  oldFileName);
                             binaryFieldFolder.mkdirs();
 
                             // we move files that have been newly uploaded or edited
@@ -3310,8 +3326,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                 fileListToDelete.add(incomingFile);
 
                                 // delete old content metadata if exists
-                                if(metadata!=null && metadata.exists())
+                                if(metadata!=null && metadata.exists()){
                                     metadata.delete();
+                                }
 
                             } else if (oldFile.exists()) {
                                 // otherwise, we copy the files as hardlinks
@@ -3892,6 +3909,18 @@ public class ESContentletAPIImpl implements ContentletAPI {
             throw new DotSecurityException("User: " + (user != null ? user.getUserId() : "Unknown")
                     + " cannot read Contentlet: " + (contentlet != null ? contentlet.getIdentifier() : "Unknown"));
         }
+
+        if (BaseContentType.FILEASSET.equals(contentlet.getContentType().baseType())) {
+            if(UtilMethods.isSet(contentlet.getIdentifier())){
+               try {
+                   final String assetName = APILocator.getIdentifierAPI().find(contentlet.getIdentifier()).getAssetName();
+                   contentlet.setStringProperty(Contentlet.DOT_NAME_KEY, assetName);
+               }catch (Exception e){
+                   Logger.warn(this.getClass(), "Unable to get assetName for contentlet with identifier: " + contentlet.getIdentifier(), e);
+               }
+            }
+        }
+
         String returnValue = (String) contentlet.getMap().get(Contentlet.DOT_NAME_KEY);
         if(UtilMethods.isSet(returnValue)){
             return returnValue;
