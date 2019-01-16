@@ -243,7 +243,7 @@ export class ContentTypesEditComponent implements OnInit, OnDestroy {
     saveFields(fieldsToSave: ContentTypeField[]): void {
         this.fieldService.saveFields(this.data.id, fieldsToSave).pipe(take(1)).subscribe(
             (fields: ContentTypeField[]) => {
-                if (this.updateOrNewField(fieldsToSave)) {
+                if (this.isAnyNewField(fieldsToSave)) {
                     this.fields = fields;
                 }
             },
@@ -281,8 +281,8 @@ export class ContentTypesEditComponent implements OnInit, OnDestroy {
         };
     }
 
-    private updateOrNewField(fieldsToSave: ContentTypeField[]): boolean {
-        return !fieldsToSave[0].id || fieldsToSave.length === 1;
+    private isAnyNewField(fieldsToSave: ContentTypeField[]): boolean {
+        return fieldsToSave.some(field => !field.id);
     }
 
     private createContentType(value: ContentType): void {

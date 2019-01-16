@@ -73,7 +73,7 @@ describe('FieldService', () => {
 
         it('should save field', () => {
             expect(this.mockData).toEqual(this.response);
-            expect(this.lastConnection.request.url).toContain('v1/contenttype/1/fields');
+            expect(this.lastConnection.request.url).toContain('v2/contenttype/1/fields');
             expect(2).toBe(this.lastConnection.request.method); // 2 is PUT method
         });
 
@@ -118,11 +118,11 @@ describe('FieldService', () => {
             );
         });
 
-        it('should delete fieldd', () => {
+        it('should delete field', () => {
             expect(['1', '2']).toEqual(this.response.deletedIds);
             expect(this.mockData).toEqual(this.response.fields);
             expect(3).toBe(this.lastConnection.request.method); // 3 is DELETE method
-            expect(this.lastConnection.request.url).toContain('v1/contenttype/1/fields');
+            expect(this.lastConnection.request.url).toContain('v2/contenttype/1/fields');
         });
 
         it('should set name and contentTypeId', () => {
