@@ -84,7 +84,15 @@ public class HostVariableFactoryImpl extends HostVariableFactory{
 			}
 			return hvarsforid;
 		}
-	
+
+	/**
+	 * Updates the user_id of the host_variable table.
+	 * This is called when an user is deleted.
+	 *
+	 * @param userToDelete UserId of the user that is going to be deleted
+	 * @param userToReplace UserId of the user that is going to be replace it
+	 * @throws DotDataException
+	 */
     @Override
     public void updateUserReferences(final String userToDelete, final String userToReplace) throws DotDataException {
 
