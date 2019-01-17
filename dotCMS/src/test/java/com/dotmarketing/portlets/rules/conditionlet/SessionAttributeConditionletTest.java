@@ -106,11 +106,11 @@ public class SessionAttributeConditionletTest extends UnitTestBase {
                      .shouldBeTrue()
         );
 
-        data.add(new TestCase("Comparison 'Is Not' should eval true for session attribute value == null and user value == 'any'.")
+        data.add(new TestCase("Comparison 'Is Not' should eval true for session attribute value == null and user value == null.")
                      .withComparison(Comparison.IS_NOT)
                      .withMockedActualValue("key", null)
-                     .withAttribute("key", "any")
-                     .shouldBeFalse()
+                     .withAttribute("key", null)
+                     .shouldBeTrue()
         );
 
         data.add(new TestCase("Comparison 'Is Not' should not be case sensitive - should eval false for session attribute value == 'One' and user value == 'one'.")
