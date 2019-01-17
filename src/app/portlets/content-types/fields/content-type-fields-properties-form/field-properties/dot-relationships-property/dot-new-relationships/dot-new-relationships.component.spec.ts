@@ -268,9 +268,9 @@ describe('DotNewRelationshipsComponent', () => {
                 fixtureHostComponent.componentInstance.velocityVar = `${contentTypeMock.name}.${contentTypeMock.variable}`;
             });
 
-            it('should not load any content type, and emit change event with the right variableValue', done => {
+            it('should load content type, and emit change event with the right variableValue', done => {
                 const contentTypeService = de.injector.get(DotContentTypeService);
-                spyOn(contentTypeService, 'getContentType');
+                spyOn(contentTypeService, 'getContentType').and.callThrough();
 
                 fixtureHostComponent.detectChanges();
 
@@ -284,7 +284,8 @@ describe('DotNewRelationshipsComponent', () => {
 
                 comp.triggerChanged();
 
-                expect(contentTypeService.getContentType).not.toHaveBeenCalled();
+                expect(contentTypeService.getContentType).toHaveBeenCalled();
+                expect(paginatorService.getWithOffset).not.toHaveBeenCalled();
             });
         });
     });
