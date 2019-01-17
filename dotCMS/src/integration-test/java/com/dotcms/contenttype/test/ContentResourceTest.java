@@ -7,7 +7,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -92,6 +91,9 @@ public class ContentResourceTest extends IntegrationTestBase {
 
     final static String REQUIRED_NUMERIC_FIELD_NAME_VALUE= "0";
     final static String NON_REQUIRED_IMAGE_VALUE= "/path/to/the/image/random.jpg";
+    private static final String IDENTIFIER = "identifier";
+    private static final String JSON_RESPONSE = "json";
+    private static final String XML_RESPONSE = "xml";
 
     private static FieldAPI fieldAPI;
     private static LanguageAPI languageAPI;
@@ -128,14 +130,14 @@ public class ContentResourceTest extends IntegrationTestBase {
     @DataProvider
     public static Object[] testCases(){
         return new TestCase[]{
-                new TestCase(null, "json"),
-                new TestCase(0, "json"),
-                new TestCase(1, "json"),
-                new TestCase(2, "json"),
-                new TestCase(null, "xml"),
-                new TestCase(0, "xml"),
-                new TestCase(1, "xml"),
-                new TestCase(2, "xml"),
+                new TestCase(null, JSON_RESPONSE),
+                new TestCase(0, JSON_RESPONSE),
+                new TestCase(1, JSON_RESPONSE),
+                new TestCase(2, JSON_RESPONSE),
+                new TestCase(null, XML_RESPONSE),
+                new TestCase(0, XML_RESPONSE),
+                new TestCase(1, XML_RESPONSE),
+                new TestCase(2, XML_RESPONSE),
                 new TestCase(null, null)
         };
     }
@@ -204,7 +206,7 @@ public class ContentResourceTest extends IntegrationTestBase {
             throws DotSecurityException, DotDataException {
         final String cardinality = String.valueOf(RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal());
 
-        Field newField = FieldBuilder.builder(RelationshipField.class).name(relationName)
+        final Field newField = FieldBuilder.builder(RelationshipField.class).name(relationName)
                 .contentTypeId(parentContentType.id()).values(cardinality)
                 .relationType(childContentType.id()).build();
 
@@ -213,7 +215,7 @@ public class ContentResourceTest extends IntegrationTestBase {
 
     @Test
     @UseDataProvider("testCases")
-    public void test_getContent_shouldReturnRelationships(TestCase testCase)
+    public void test_getContent_shouldReturnRelationships(final TestCase testCase)
             throws Exception {
 
         final long language = languageAPI.getDefaultLanguage().getId();
@@ -226,7 +228,7 @@ public class ContentResourceTest extends IntegrationTestBase {
 
             //creates content types
             parentContentType = createSampleContentType(false);
-            childContentType = createSampleContentType(false);;
+            childContentType = createSampleContentType(false);
             grandChildContentType = createSampleContentType(false);
 
             //creates relationship fields
@@ -276,7 +278,7 @@ public class ContentResourceTest extends IntegrationTestBase {
             assertEquals(Status.OK.getStatusCode(), endpointResponse.getStatus());
 
             //validates results
-            if (testCase.responseType == null || testCase.responseType.equals("json")) {
+            if (testCase.responseType == null || testCase.responseType.equals(JSON_RESPONSE)) {
                 validateJSON(contentlets, testCase, endpointResponse);
             }else{
                 validateXML(contentlets, testCase, endpointResponse);
@@ -316,7 +318,7 @@ public class ContentResourceTest extends IntegrationTestBase {
         final Contentlet parent = contentletMap.get("parent");
         final Contentlet child = contentletMap.get("child");
 
-        assertEquals(parent.getIdentifier(), contentlet.get("identifier"));
+        assertEquals(parent.getIdentifier(), contentlet.get(IDENTIFIER));
 
         if (testCase.depth == null) {
             assertEquals(child.getIdentifier(),
@@ -331,7 +333,7 @@ public class ContentResourceTest extends IntegrationTestBase {
                 case 1:
                     assertEquals(child.getIdentifier(), ((JSONObject) contentlet
                             .get(parent.getContentType().fields().get(0).variable()))
-                            .get("identifier"));
+                            .get(IDENTIFIER));
                     break;
 
                 case 2:
@@ -339,7 +341,7 @@ public class ContentResourceTest extends IntegrationTestBase {
                     //validates child
                     assertEquals(child.getIdentifier(), ((JSONObject) contentlet
                             .get(parent.getContentType().fields().get(0).variable()))
-                            .get("identifier"));
+                            .get(IDENTIFIER));
 
 
                     //validates grandchildren
@@ -373,9 +375,10 @@ public class ContentResourceTest extends IntegrationTestBase {
         final DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
         final DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
 
-        final InputSource is = new InputSource();
-        is.setCharacterStream(new StringReader(endpointResponse.getEntity().toString().replaceAll("\\n", "")));
-        final Document doc = dBuilder.parse(is);
+        final InputSource inputSource = new InputSource();
+        inputSource.setCharacterStream(
+                new StringReader(endpointResponse.getEntity().toString().replaceAll("\\n", "")));
+        final Document doc = dBuilder.parse(inputSource);
         doc.getDocumentElement().normalize();
 
         final Node contentlet = doc.getFirstChild().getFirstChild();
@@ -383,7 +386,8 @@ public class ContentResourceTest extends IntegrationTestBase {
         final Contentlet parent = contentletMap.get("parent");
         final Contentlet child = contentletMap.get("child");
 
-        assertEquals(parent.getIdentifier(), ((DeferredElementImpl) contentlet).getElementsByTagName("identifier").item(0).getTextContent());
+        assertEquals(parent.getIdentifier(), ((DeferredElementImpl) contentlet).getElementsByTagName(
+                IDENTIFIER).item(0).getTextContent());
 
         if (testCase.depth == null) {
             assertEquals(child.getIdentifier(), ((DeferredElementImpl) contentlet)
@@ -401,25 +405,25 @@ public class ContentResourceTest extends IntegrationTestBase {
 
                 case 1:
                     assertEquals(child.getIdentifier(),
-                            ((DeferredElementImpl) (((DeferredElementImpl) contentlet)
+                            ((DeferredElementImpl) ((DeferredElementImpl) contentlet)
                                     .getElementsByTagName(
-                                            parent.getContentType().fields().get(0).variable()))
-                                    .item(0)).getElementsByTagName("identifier").item(0)
+                                            parent.getContentType().fields().get(0).variable())
+                                    .item(0)).getElementsByTagName(IDENTIFIER).item(0)
                                     .getTextContent());
                     break;
 
                 case 2:
                     //validates child
                     assertEquals(child.getIdentifier(),
-                            ((DeferredElementImpl) (((DeferredElementImpl) contentlet)
+                            ((DeferredElementImpl) ((DeferredElementImpl) contentlet)
                                     .getElementsByTagName(
-                                            parent.getContentType().fields().get(0).variable()))
-                                    .item(0)).getElementsByTagName("identifier").item(0)
+                                            parent.getContentType().fields().get(0).variable())
+                                    .item(0)).getElementsByTagName(IDENTIFIER).item(0)
                                     .getTextContent());
 
                     //validates grandchildren
-                    final String[] items = (((DeferredElementImpl) contentlet).getElementsByTagName(
-                            parent.getContentType().fields().get(0).variable())).item(1)
+                    final String[] items = ((DeferredElementImpl) contentlet).getElementsByTagName(
+                            parent.getContentType().fields().get(0).variable()).item(1)
                             .getTextContent().split(", ");
 
                     assertEquals(2, items.length);
@@ -457,8 +461,8 @@ public class ContentResourceTest extends IntegrationTestBase {
             assertEquals(endpointResponse1.getHeaders().get("inode").size(), 1);
 
             final Object inode1 = endpointResponse1.getHeaders().get("inode").get(0);
-            assertNotNull(endpointResponse1.getHeaders().get("identifier"));
-            assertEquals(endpointResponse1.getHeaders().get("identifier").size(), 1);
+            assertNotNull(endpointResponse1.getHeaders().get(IDENTIFIER));
+            assertEquals(endpointResponse1.getHeaders().get(IDENTIFIER).size(), 1);
 
             //Lets null the image. All fields are required to be send.
             final String payLoadTemplate2 = "{\n"
@@ -477,8 +481,8 @@ public class ContentResourceTest extends IntegrationTestBase {
             assertNotNull(endpointResponse2.getHeaders().get("inode"));
             assertEquals(endpointResponse2.getHeaders().get("inode").size(), 1);
 
-            assertNotNull(endpointResponse2.getHeaders().get("identifier"));
-            assertEquals(endpointResponse2.getHeaders().get("identifier").size(), 1);
+            assertNotNull(endpointResponse2.getHeaders().get(IDENTIFIER));
+            assertEquals(endpointResponse2.getHeaders().get(IDENTIFIER).size(), 1);
 
             final Object inode2 = endpointResponse2.getHeaders().get("inode").get(0);
 
@@ -529,8 +533,8 @@ public class ContentResourceTest extends IntegrationTestBase {
             assertEquals(endpointResponse1.getHeaders().get("inode").size(), 1);
 
             final Object inode1 = endpointResponse1.getHeaders().get("inode").get(0);
-            assertNotNull(endpointResponse1.getHeaders().get("identifier"));
-            assertEquals(endpointResponse1.getHeaders().get("identifier").size(), 1);
+            assertNotNull(endpointResponse1.getHeaders().get(IDENTIFIER));
+            assertEquals(endpointResponse1.getHeaders().get(IDENTIFIER).size(), 1);
 
             //Lets null the image. But Skip sending numeric field
             final String payLoadTemplate2 = "{\n"
