@@ -56,4 +56,6 @@ public abstract  class HostVariableFactory {
 	
 	protected abstract List<HostVariable> getVariablesForHost (String hostId ) throws DotDataException ;
 
+	protected abstract void updateUserReferences(String userToDelete, String userToReplace) throws DotDataException ;
+
 }

@@ -411,6 +411,14 @@ public class UserAPIImpl implements UserAPI {
 
 		logDelete(DeletionStage.END, userToDelete, user, "Menulinks");
 
+	      //replace the user references in HostVariables
+        logDelete(DeletionStage.BEGINNING, userToDelete, user, "HostVariables");
+        APILocator.getHostVariableAPI().updateUserReferences(userToDelete.getUserId(), replacementUser.getUserId());
+        logDelete(DeletionStage.END, userToDelete, user, "HostVariables");
+		
+		
+		
+		
 		//replace user references in containers
 		logDelete(DeletionStage.BEGINNING, userToDelete, user, "Containers");
 
