@@ -69,7 +69,12 @@ public class ESContentResourcePortlet extends BaseRestPortlet {
 			for(Object x : esresult){
 				Contentlet c = (Contentlet) x;
 				try {
-					jsonCons.put(ContentResource.contentletToJSON(c, request, response, "false", user));
+
+					final JSONObject jo = ContentResource.contentletToJSON(c, request, response, "false", user);
+					jsonCons.put(jo);
+
+					//load relationships
+					ContentResource. addRelationshipsToJSON(request, response, "false", user, 0, c, jo);
 				} catch (Exception e) {
 					Logger.warn(this.getClass(), "unable JSON contentlet " + c.getIdentifier());
 					Logger.debug(this.getClass(), "unable to find contentlet", e);
