@@ -19,7 +19,7 @@ import { LoginServiceMock } from '../../../../test/login-service.mock';
 import { DotFieldHelperModule } from '@components/dot-field-helper/dot-field-helper.module';
 import { DotMessageService } from '@services/dot-messages-service';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
-import { Site} from 'dotcms-js';
+import { Site } from 'dotcms-js';
 
 export const mockDotPageSelectorResults = {
     type: 'page',
@@ -139,6 +139,7 @@ describe('DotPageSelectorComponent', () => {
     let hostFixture: ComponentFixture<FakeFormComponent>;
     const searchPageObj = { originalEvent: { target: { value: 'demo' } }, query: 'demo' };
     const searchHostObj = { originalEvent: { target: { value: '//host' } }, query: '//host' };
+    const invalidSearchHostObj = { originalEvent: { target: { value: '//ho' } }, query: '//ho' };
     const specialSearchObj = { originalEvent: { target: { value: 'd#emo$%' } }, query: 'd#emo$%' };
 
     beforeEach(
@@ -181,9 +182,7 @@ describe('DotPageSelectorComponent', () => {
             observableOf(mockDotSiteSelectorResults)
         );
         autocomplete.triggerEventHandler('completeMethod', searchHostObj);
-
         expect(dotPageSelectorService.search).toHaveBeenCalledWith(searchHostObj.query);
-
     });
 
     it('should set current host on selection', () => {
@@ -193,6 +192,15 @@ describe('DotPageSelectorComponent', () => {
         expect(dotPageSelectorService.setCurrentHost).toHaveBeenCalledWith(
             mockDotSiteSelectorResults.data[0].payload
         );
+    });
+
+    it('should not search for host if has less than 3 characters', () => {
+        component.results = mockDotSiteSelectorResults;
+        spyOn(dotPageSelectorService, 'search');
+        autocomplete.triggerEventHandler('completeMethod', invalidSearchHostObj);
+
+        expect(dotPageSelectorService.search).not.toHaveBeenCalled();
+        expect(component.results.data.length).toBe(0);
     });
 
     it('should remove special characters when searching for pages', () => {
