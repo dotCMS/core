@@ -577,7 +577,7 @@ public class ContentResource {
                         addRelationshipsToXML(request, response, render, user, depth, contentlet,
                                 getContentXML(contentlet, request, response, render, user))));
             } catch (Exception e) {
-                e.printStackTrace();
+                Logger.error(this, "Error generating content xml: " + e.getMessage(), e);
             }
         });
 
