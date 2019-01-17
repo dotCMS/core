@@ -17,6 +17,7 @@ import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
@@ -1104,5 +1105,55 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 
 		// Deleting content type.
 		delete(contentType);
+	}
+
+	private ContentType createContentType(final String name) throws DotSecurityException, DotDataException {
+		return contentTypeApi.save(ContentTypeBuilder.builder(SimpleContentType.class).folder(
+				FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST).name(name)
+				.owner(user.getUserId()).build());
+	}
+
+	/**
+	 * This test creates a 2 content types and a Relationship Field on the parent,
+	 * then deletes the child content type so the Relationship Field on the parent
+	 * must be deleted.
+	 *
+	 * @throws Exception
+	 */
+	@Test
+	public void testDelete_ContentTypeWithRelationshipAsChild() throws Exception{
+		ContentType parentContentType = null;
+		ContentType childContentType = null;
+		try {
+			//Create content types
+			parentContentType = createContentType("parentContentType" + System.currentTimeMillis());
+			childContentType = createContentType("childContentType" + System.currentTimeMillis());
+
+			//Create Relationship Field
+			final Field field = fieldApi.save(FieldBuilder.builder(RelationshipField.class).name("testRelationship")
+					.variable("testRelationship")
+					.contentTypeId(parentContentType.id())
+					.values(String.valueOf(WebKeys.Relationship.RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal()))
+					.relationType(childContentType.variable()).build(),user);
+
+			//Check that the parentContentType has the field
+			parentContentType = contentTypeApi.find(parentContentType.id());
+			assertEquals(1,parentContentType.fields().size());
+
+			//Delete childContentType
+			contentTypeApi.delete(childContentType);
+
+			//Check that the field is deleted on the parentContentType
+			parentContentType = contentTypeApi.find(parentContentType.id());
+			assertEquals(0,parentContentType.fields().size());
+
+		} finally{
+			if(parentContentType != null){
+				contentTypeApi.delete(parentContentType);
+			}
+			if(childContentType != null){
+				contentTypeApi.delete(childContentType);
+			}
+		}
 	}
 }
