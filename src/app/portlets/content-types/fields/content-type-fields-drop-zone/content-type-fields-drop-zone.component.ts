@@ -44,9 +44,6 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
     currentField: DotFieldVariableParams;
     dialogActions: DotDialogActions;
 
-    @ViewChild('dialog')
-    dotDialog: DotDialogComponent;
-
     @ViewChild('fieldPropertiesForm')
     propertiesForm: ContentTypeFieldsPropertiesFormComponent;
 
