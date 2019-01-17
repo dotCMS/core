@@ -41,6 +41,8 @@ $tab-name-height: 32px;
     text-transform: uppercase;
     z-index: 1;
     margin-right: $basic-padding * 3;
+    overflow: hidden;
+    white-space: nowrap;
 
     &:focus {
         outline-width: 0;

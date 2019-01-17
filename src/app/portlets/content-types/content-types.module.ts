@@ -69,12 +69,11 @@ import { PushPublishContentTypesDialogModule } from '@components/_common/push-pu
 import { SearchableDropDownModule } from '@components/_common/searchable-dropdown';
 import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
 import { DotContentTypeFieldsVariablesModule } from './fields/dot-content-type-fields-variables/dot-content-type-fields-variables.module';
-import {
-    DotRelationshipsModule
-} from './fields/content-type-fields-properties-form/field-properties/dot-relationships-property/dot-relationships.module';
+import { DotRelationshipsModule } from './fields/content-type-fields-properties-form/field-properties/dot-relationships-property/dot-relationships.module';
 import { DotApiLinkModule } from '@components/dot-api-link/dot-api-link.module';
 import { DotCopyButtonModule } from '@components/dot-copy-button/dot-copy-button.module';
 import { DotFieldHelperModule } from '@components/dot-field-helper/dot-field-helper.module';
+import { DotMaxlengthModule } from '@directives/dot-maxlength/dot-maxlength.module';
 
 @NgModule({
     declarations: [
@@ -150,7 +149,8 @@ import { DotFieldHelperModule } from '@components/dot-field-helper/dot-field-hel
         SiteSelectorFieldModule,
         SplitButtonModule,
         TabViewModule,
-        DotFieldHelperModule
+        DotFieldHelperModule,
+        DotMaxlengthModule
     ],
     providers: [
         ContentTypeEditResolver,
