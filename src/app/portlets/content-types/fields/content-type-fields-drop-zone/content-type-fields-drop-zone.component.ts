@@ -34,6 +34,8 @@ import { DotFieldVariableParams } from '../dot-content-type-fields-variables/mod
     templateUrl: './content-type-fields-drop-zone.component.html'
 })
 export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, OnDestroy {
+    readonly OVERVIEW_TAB_INDEX = 0;
+
     dialogActiveTab: number;
     displayDialog = false;
     fieldRows: FieldDivider[] = [];
@@ -55,6 +57,8 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
     saveFields = new EventEmitter<ContentTypeField[]>();
     @Output()
     removeFields = new EventEmitter<ContentTypeField[]>();
+
+    hideButtons = false;
 
     i18nMessages: {
         [key: string]: string;
@@ -90,13 +94,11 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
                             this.propertiesForm.saveFieldProperties();
                         },
                         label: this.i18nMessages['contenttypes.dropzone.action.save'],
-                        disabled: true,
-                        visible: true
+                        disabled: true
                     },
                     cancel: {
                         label: this.i18nMessages['contenttypes.dropzone.action.cancel'],
-                        action: () => {},
-                        visible: true
+                        action: () => {}
                     }
                 };
             });
@@ -301,36 +303,20 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
      * @memberof ContentTypeFieldsDropZoneComponent
      */
     setDialogOkButtonState(formChanged: boolean): void {
-        this.dotDialog.setActions({
+        this.dialogActions = {
+            ...this.dialogActions,
             accept: {
+                ...this.dialogActions.accept,
                 disabled: !formChanged
             }
-        });
+};
     }
 
     /**
      * Hide or show the 'save' and 'hide' buttons according to the field tab selected
      */
     handleTabChange(index: number): void {
-        if (index === 0) {
-            this.dotDialog.setActions({
-                accept: {
-                    visible: true
-                },
-                cancel: {
-                    visible: true
-                }
-            });
-        } else {
-            this.dotDialog.setActions({
-                accept: {
-                    visible: false
-                },
-                cancel: {
-                    visible: false
-                }
-            });
-        }
+        this.hideButtons = index !== this.OVERVIEW_TAB_INDEX;
     }
 
     private setDroppedField(droppedField: ContentTypeField): void {

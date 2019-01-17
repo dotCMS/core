@@ -26,6 +26,7 @@
 <dot-dialog #dialog
     [(visible)]="displayDialog"
     [actions]="dialogActions"
+    [hideButtons]="hideButtons"
     (hide)="removeFieldsWithoutId()"
     [header]="currentFieldType?.label">
     <p-tabView [activeIndex]="dialogActiveTab" (onChange)="handleTabChange($event.index)">

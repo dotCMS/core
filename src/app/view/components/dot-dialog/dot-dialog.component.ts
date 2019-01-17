@@ -50,6 +50,9 @@ export class DotDialogComponent implements OnChanges {
     @Input()
     height: string;
 
+    @Input()
+    hideButtons: boolean;
+
     @Output()
     hide: EventEmitter<any> = new EventEmitter();
 
@@ -135,18 +138,6 @@ export class DotDialogComponent implements OnChanges {
         event.target.click();
 
         this.isContentScrolled = event.target.scrollTop > 0;
-    }
-
-    setActions(newActions: any) {
-
-        for (const property in newActions) {
-            if (newActions[property]) {
-                this.actions[property] = {
-                    ...this.actions[property],
-                    ...newActions[property]
-                };
-            }
-        }
     }
 
     isActionVisible(actionName: string): boolean {
