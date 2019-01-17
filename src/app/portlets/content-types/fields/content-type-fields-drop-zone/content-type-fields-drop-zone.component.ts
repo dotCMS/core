@@ -15,7 +15,7 @@ import { ContentTypeFieldsPropertiesFormComponent } from '../content-type-fields
 import { DotMessageService } from '@services/dot-messages-service';
 import { FieldUtil } from '../util/field-util';
 import { FieldPropertyService } from '../service/field-properties.service';
-import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
+import { DotDialogActions, DotDialogComponent } from '@components/dot-dialog/dot-dialog.component';
 import { DotEventsService } from '@services/dot-events/dot-events.service';
 import { FieldDivider } from '@portlets/content-types/fields/shared/field-divider.interface';
 import { takeUntil, take } from 'rxjs/operators';
@@ -42,6 +42,8 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
     currentField: DotFieldVariableParams;
     dialogActions: DotDialogActions;
 
+    @ViewChild('dialog')
+    dotDialog: DotDialogComponent;
 
     @ViewChild('fieldPropertiesForm')
     propertiesForm: ContentTypeFieldsPropertiesFormComponent;
@@ -88,11 +90,13 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
                             this.propertiesForm.saveFieldProperties();
                         },
                         label: this.i18nMessages['contenttypes.dropzone.action.save'],
-                        disabled: true
+                        disabled: true,
+                        visible: true
                     },
                     cancel: {
                         label: this.i18nMessages['contenttypes.dropzone.action.cancel'],
-                        action: () => {}
+                        action: () => {},
+                        visible: true
                     }
                 };
             });
@@ -297,13 +301,36 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
      * @memberof ContentTypeFieldsDropZoneComponent
      */
     setDialogOkButtonState(formChanged: boolean): void {
-        this.dialogActions = {
-            ...this.dialogActions,
+        this.dotDialog.setActions({
             accept: {
-                ...this.dialogActions.accept,
                 disabled: !formChanged
             }
-        };
+        });
+    }
+
+    /**
+     * Hide or show the 'save' and 'hide' buttons according to the field tab selected
+     */
+    handleTabChange(index: number): void {
+        if (index === 0) {
+            this.dotDialog.setActions({
+                accept: {
+                    visible: true
+                },
+                cancel: {
+                    visible: true
+                }
+            });
+        } else {
+            this.dotDialog.setActions({
+                accept: {
+                    visible: false
+                },
+                cancel: {
+                    visible: false
+                }
+            });
+        }
     }
 
     private setDroppedField(droppedField: ContentTypeField): void {

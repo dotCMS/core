@@ -26,7 +26,8 @@
             secondary
             (click)="cancelAction()"
             [disabled]="actions.cancel.disabled"
-            [label]="actions.cancel.label">
+            [label]="actions.cancel.label"
+            [style.display]="isActionVisible('cancel') ? 'block' : 'none'">
         </button>
         <button
             *ngIf="actions.accept"
@@ -34,7 +35,8 @@
             pButton
             [disabled]="actions.accept.disabled"
             [label]="actions.accept.label"
-            (click)="acceptAction()">
+            (click)="acceptAction()"
+            [style.display]="isActionVisible('accept') ? 'block' : 'none'">
         </button>
     </footer>
 </div>

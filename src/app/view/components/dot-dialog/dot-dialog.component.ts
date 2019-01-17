@@ -137,6 +137,22 @@ export class DotDialogComponent implements OnChanges {
         this.isContentScrolled = event.target.scrollTop > 0;
     }
 
+    setActions(newActions: any) {
+
+        for (const property in newActions) {
+            if (newActions[property]) {
+                this.actions[property] = {
+                    ...this.actions[property],
+                    ...newActions[property]
+                };
+            }
+        }
+    }
+
+    isActionVisible(actionName: string): boolean {
+        return this.actions[actionName].visible !== undefined && this.actions[actionName].visible;
+    }
+
     private bindEvents(): void {
         this.subscription.push(
             fromEvent(document, 'keydown').subscribe(this.handleKeyboardEvents.bind(this))
@@ -188,6 +204,7 @@ interface DialogButton {
     action?: (dialog?: any) => void;
     disabled?: boolean;
     label: string;
+    visible?: boolean;
 }
 
 export interface DotDialogActions {

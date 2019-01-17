@@ -23,13 +23,13 @@
     <dot-add-rows (selectColums)="addRow($event)"></dot-add-rows>
 </div>
 
-<dot-dialog
+<dot-dialog #dialog
     [(visible)]="displayDialog"
     [actions]="dialogActions"
     (hide)="removeFieldsWithoutId()"
     [header]="currentFieldType?.label">
-    <p-tabView [activeIndex]="dialogActiveTab">
-        <p-tabPanel [header]="i18nMessages['contenttypes.dropzone.tab.overview']">
+    <p-tabView [activeIndex]="dialogActiveTab" (onChange)="handleTabChange($event.index)">
+        <p-tabPanel [header]="i18nMessages['contenttypes.dropzone.tab.overview']" >
             <dot-content-type-fields-properties-form
                 [formFieldData]="formData"
                 (saveField)="saveFieldsHandler($event)"
