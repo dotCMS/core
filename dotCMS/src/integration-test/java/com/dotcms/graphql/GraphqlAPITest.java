@@ -11,15 +11,15 @@ import org.junit.Test;
 
 public class GraphqlAPITest {
 
-    @BeforeClass
-    public static void prepare() throws Exception{
-        //Setting web app environment
-        IntegrationTestInitService.getInstance().init();
-    }
-
-    @Test
-    public void testGenerateSchema() throws DotDataException {
-        GraphqlAPI api = APILocator.getGraphqlAPI();
-        api.getSchema();
-    }
+//    @BeforeClass
+//    public static void prepare() throws Exception{
+//        //Setting web app environment
+//        IntegrationTestInitService.getInstance().init();
+//    }
+//
+//    @Test
+//    public void testGenerateSchema() throws DotDataException {
+//        GraphqlAPI api = APILocator.getGraphqlAPI();
+//        api.getSchema();
+//    }
 }

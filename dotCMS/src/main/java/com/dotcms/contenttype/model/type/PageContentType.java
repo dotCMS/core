@@ -27,6 +27,19 @@ public abstract class PageContentType extends ContentType implements Expireable{
 
 	private static final long serialVersionUID = 1L;
 
+	public static String PAGE_URL_FIELD_VAR = "url";
+	public static String PAGE_HOST_FOLDER_FIELD_VAR = "hostFolder";
+	public static String PAGE_TEMPLATE_FIELD_VAR = "template";
+	public static String PAGE_SHOW_ON_MENU_FIELD_VAR = "showOnMenu";
+	public static String PAGE_SORT_ORDER_FIELD_VAR = "sortOrder";
+	public static String PAGE_CACHE_TTL_FIELD_VAR = "cachettl";
+	public static String PAGE_FRIENDLY_NAME_FIELD_VAR = "friendlyname";
+	public static String PAGE_REDIRECT_URL_FIELD_VAR = "redirecturl";
+	public static String PAGE_HTTP_REQUIRED_FIELD_VAR = "httpsreq";
+	public static String PAGE_SEO_DESCRIPTION_FIELD_VAR = "seodescription";
+	public static String PAGE_SEO_KEYWORDS_FIELD_VAR = "seokeywords";
+	public static String PAGE_PAGE_METADATA_FIELD_VAR = "pagemetadata";
+
 	@Override
 	public  BaseContentType baseType() {
 		return  BaseContentType.HTMLPAGE;
@@ -56,7 +69,7 @@ public abstract class PageContentType extends ContentType implements Expireable{
 				ImmutableTextField.builder()
 				.name("Url")
 				.dataType(DataTypes.TEXT)
-				.variable("url")
+				.variable(PAGE_URL_FIELD_VAR)
 				.indexed(true)
 				.searchable(true)
 				.required(true)
@@ -69,7 +82,7 @@ public abstract class PageContentType extends ContentType implements Expireable{
 				ImmutableHostFolderField.builder()
 				.name("Site or Folder")
 				.dataType(DataTypes.SYSTEM)
-				.variable("hostFolder")
+				.variable(PAGE_HOST_FOLDER_FIELD_VAR)
 				.sortOrder(i++)
 				.required(true)
 				.fixed(true)
@@ -80,7 +93,7 @@ public abstract class PageContentType extends ContentType implements Expireable{
 				ImmutableCustomField.builder()
 				.name("Template")
 				.dataType(DataTypes.TEXT)
-				.variable("template")
+				.variable(PAGE_TEMPLATE_FIELD_VAR)
 				.indexed(true)
 				.required(true)
 				.fixed(true)
@@ -93,7 +106,7 @@ public abstract class PageContentType extends ContentType implements Expireable{
 				ImmutableCheckboxField.builder()
 				.name("Show on Menu")
 				.dataType(DataTypes.TEXT)
-				.variable("showOnMenu")
+				.variable(PAGE_SHOW_ON_MENU_FIELD_VAR)
 				.values("|true")
 				.defaultValue("false")
 				.fixed(true)
@@ -106,7 +119,7 @@ public abstract class PageContentType extends ContentType implements Expireable{
 				ImmutableTextField.builder()
 				.name("Sort Order")
 				.dataType(DataTypes.INTEGER)
-				.variable("sortOrder")
+				.variable(PAGE_SORT_ORDER_FIELD_VAR)
 				.required(true)
 				.fixed(true)
 				.searchable(true)
@@ -119,7 +132,7 @@ public abstract class PageContentType extends ContentType implements Expireable{
 				ImmutableCustomField.builder()
 				.name("Cache TTL")
 				.dataType(DataTypes.TEXT)
-				.variable("cachettl")
+				.variable(PAGE_CACHE_TTL_FIELD_VAR)
 				.indexed(true)
 				.fixed(true)
 				.required(true)
@@ -132,7 +145,7 @@ public abstract class PageContentType extends ContentType implements Expireable{
 				ImmutableTextField.builder()
 				.name("Friendly Name")
 				.dataType(DataTypes.TEXT)
-				.variable("friendlyname")
+				.variable(PAGE_FRIENDLY_NAME_FIELD_VAR)
 				.indexed(true)
 				.fixed(true)
 				.sortOrder(i++)
@@ -150,7 +163,7 @@ public abstract class PageContentType extends ContentType implements Expireable{
 		fields.add(
 				ImmutableCustomField.builder()
 				.name("Redirect URL")
-				.variable("redirecturl")
+				.variable(PAGE_REDIRECT_URL_FIELD_VAR)
 				.values("$velutil.mergeTemplate('/static/htmlpage_assets/redirect_custom_field.vtl')")
 				.dataType(DataTypes.TEXT)
 				.fixed(true)
@@ -167,7 +180,7 @@ public abstract class PageContentType extends ContentType implements Expireable{
 				ImmutableCheckboxField.builder()
 				.name("HTTPS Required")
 				.dataType(DataTypes.TEXT)
-				.variable("httpsreq")
+				.variable(PAGE_HTTP_REQUIRED_FIELD_VAR)
 				.fixed(true)
 				.values("|true")
 				.defaultValue("false")
@@ -179,7 +192,7 @@ public abstract class PageContentType extends ContentType implements Expireable{
 				ImmutableTextAreaField.builder()
 				.name("SEO Description")
 				.dataType(DataTypes.LONG_TEXT)
-				.variable("seodescription")
+				.variable(PAGE_SEO_DESCRIPTION_FIELD_VAR)
 				.indexed(true)
 				.fixed(true)
 				.sortOrder(i++)
@@ -190,7 +203,7 @@ public abstract class PageContentType extends ContentType implements Expireable{
 				ImmutableTextAreaField.builder()
 				.name("SEO Keywords")
 				.dataType(DataTypes.LONG_TEXT)
-				.variable("seokeywords")
+				.variable(PAGE_SEO_KEYWORDS_FIELD_VAR)
 				.indexed(true)
 				.fixed(true)
 				.sortOrder(i++)
@@ -201,7 +214,7 @@ public abstract class PageContentType extends ContentType implements Expireable{
 				ImmutableTextAreaField.builder()
 				.name("Page Metadata")
 				.dataType(DataTypes.LONG_TEXT)
-				.variable("pagemetadata")
+				.variable(PAGE_PAGE_METADATA_FIELD_VAR)
 				.fixed(true)
 				.sortOrder(i++)
 				.build()

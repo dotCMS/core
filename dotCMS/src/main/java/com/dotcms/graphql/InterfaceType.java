@@ -44,6 +44,18 @@ import static com.dotcms.contenttype.model.type.FileAssetContentType.FILEASSET_S
 import static com.dotcms.contenttype.model.type.FileAssetContentType.FILEASSET_SITE_OR_FOLDER_FIELD_VAR;
 import static com.dotcms.contenttype.model.type.FileAssetContentType.FILEASSET_SORT_ORDER_FIELD_VAR;
 import static com.dotcms.contenttype.model.type.FileAssetContentType.FILEASSET_TITLE_FIELD_VAR;
+import static com.dotcms.contenttype.model.type.PageContentType.PAGE_CACHE_TTL_FIELD_VAR;
+import static com.dotcms.contenttype.model.type.PageContentType.PAGE_FRIENDLY_NAME_FIELD_VAR;
+import static com.dotcms.contenttype.model.type.PageContentType.PAGE_HOST_FOLDER_FIELD_VAR;
+import static com.dotcms.contenttype.model.type.PageContentType.PAGE_HTTP_REQUIRED_FIELD_VAR;
+import static com.dotcms.contenttype.model.type.PageContentType.PAGE_PAGE_METADATA_FIELD_VAR;
+import static com.dotcms.contenttype.model.type.PageContentType.PAGE_REDIRECT_URL_FIELD_VAR;
+import static com.dotcms.contenttype.model.type.PageContentType.PAGE_SEO_DESCRIPTION_FIELD_VAR;
+import static com.dotcms.contenttype.model.type.PageContentType.PAGE_SEO_KEYWORDS_FIELD_VAR;
+import static com.dotcms.contenttype.model.type.PageContentType.PAGE_SHOW_ON_MENU_FIELD_VAR;
+import static com.dotcms.contenttype.model.type.PageContentType.PAGE_SORT_ORDER_FIELD_VAR;
+import static com.dotcms.contenttype.model.type.PageContentType.PAGE_TEMPLATE_FIELD_VAR;
+import static com.dotcms.contenttype.model.type.PageContentType.PAGE_URL_FIELD_VAR;
 import static graphql.Scalars.GraphQLBoolean;
 import static graphql.Scalars.GraphQLID;
 import static graphql.Scalars.GraphQLInt;
@@ -53,7 +65,7 @@ import static graphql.schema.GraphQLList.list;
 public enum InterfaceType {
     CONTENT,
     FILEASSET,
-    PAGE,
+    HTMLPAGE,
     PERSONA;
 
     private static Map<String, GraphQLInterfaceType> interfaceTypes = new HashMap<>();
@@ -87,8 +99,7 @@ public enum InterfaceType {
 
         interfaceTypes.put("CONTENT", TypeUtil.createInterfaceType("Content", contentFields, new ContentResolver()));
 
-        final Map<String, GraphQLOutputType> fileAssetFields = new HashMap<>();
-        fileAssetFields.putAll(contentFields);
+        final Map<String, GraphQLOutputType> fileAssetFields = new HashMap<>(contentFields);
         fileAssetFields.put(FILEASSET_FILE_NAME_FIELD_VAR, GraphQLString);
         fileAssetFields.put(FILEASSET_DESCRIPTION_FIELD_VAR, GraphQLString);
         fileAssetFields.put(FILEASSET_FILEASSET_FIELD_VAR, CustomFieldType.BINARY.getType());
@@ -100,6 +111,21 @@ public enum InterfaceType {
 
         interfaceTypes.put("FILEASSET", TypeUtil.createInterfaceType("Fileasset", fileAssetFields, new ContentResolver()));
 
+        final Map<String, GraphQLOutputType> pageAssetFields = new HashMap<>(contentFields);
+        pageAssetFields.put(PAGE_URL_FIELD_VAR, GraphQLString);
+        pageAssetFields.put(PAGE_HOST_FOLDER_FIELD_VAR, CustomFieldType.SITE_OR_FOLDER.getType());
+        pageAssetFields.put(PAGE_TEMPLATE_FIELD_VAR, GraphQLString);
+        pageAssetFields.put(PAGE_SHOW_ON_MENU_FIELD_VAR, GraphQLBoolean);
+        pageAssetFields.put(PAGE_SORT_ORDER_FIELD_VAR, GraphQLInt);
+        pageAssetFields.put(PAGE_CACHE_TTL_FIELD_VAR, GraphQLInt);
+        pageAssetFields.put(PAGE_FRIENDLY_NAME_FIELD_VAR, GraphQLString);
+        pageAssetFields.put(PAGE_REDIRECT_URL_FIELD_VAR, GraphQLString);
+        pageAssetFields.put(PAGE_HTTP_REQUIRED_FIELD_VAR, GraphQLBoolean);
+        pageAssetFields.put(PAGE_SEO_DESCRIPTION_FIELD_VAR, GraphQLString);
+        pageAssetFields.put(PAGE_SEO_KEYWORDS_FIELD_VAR, GraphQLString);
+        pageAssetFields.put(PAGE_PAGE_METADATA_FIELD_VAR, GraphQLString);
+
+        interfaceTypes.put("HTMLPAGE", TypeUtil.createInterfaceType("Htmlpage", pageAssetFields, new ContentResolver()));
     }
 
     public GraphQLInterfaceType getType() {
