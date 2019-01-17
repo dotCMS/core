@@ -15,7 +15,7 @@ import { ContentTypeFieldsPropertiesFormComponent } from '../content-type-fields
 import { DotMessageService } from '@services/dot-messages-service';
 import { FieldUtil } from '../util/field-util';
 import { FieldPropertyService } from '../service/field-properties.service';
-import { DotDialogActions, DotDialogComponent } from '@components/dot-dialog/dot-dialog.component';
+import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
 import { DotEventsService } from '@services/dot-events/dot-events.service';
 import { FieldDivider } from '@portlets/content-types/fields/shared/field-divider.interface';
 import { takeUntil, take } from 'rxjs/operators';
