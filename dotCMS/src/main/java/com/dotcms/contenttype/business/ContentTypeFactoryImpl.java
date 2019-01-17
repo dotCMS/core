@@ -545,7 +545,8 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
       FactoryLocator.getRelationshipFactory().delete(rel);
     relationships = FactoryLocator.getRelationshipFactory().byChild(type);
     for (Relationship rel : relationships) {
-      FactoryLocator.getRelationshipFactory().delete(rel);
+      final Field fieldToDelete = APILocator.getContentTypeFieldAPI().byContentTypeIdAndVar(rel.getParentStructureInode(),rel.getChildRelationName());
+      APILocator.getContentTypeFieldAPI().delete(fieldToDelete);
     }
 
   }
