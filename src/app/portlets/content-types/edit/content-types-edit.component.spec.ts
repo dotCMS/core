@@ -514,6 +514,37 @@ describe('ContentTypesEditComponent', () => {
             expect(comp.fields).toEqual(fieldsReturnByServer);
         });
 
+        it('should update fields on dropzone event when creating a new row and move a existing field', () => {
+            const newRow: ContentTypeField = {
+                name: 'field 1',
+                clazz: 'com.dotcms.contenttype.model.field.ImmutableRowField',
+                sortOrder: 1
+            };
+
+            const fieldsToSave = [currentFieldsInServer[1], newRow, currentFieldsInServer[0]];
+
+
+            const fieldsReturnByServer: ContentTypeField[] = fieldsToSave.map(field => {
+                const newfield = Object.assign({}, field);
+
+                if (!newfield.id) {
+                    newfield.id = new Date().getMilliseconds().toString();
+                }
+
+                return newfield;
+            });
+
+            const fieldService = fixture.debugElement.injector.get(FieldService);
+            spyOn(fieldService, 'saveFields').and.returnValue(observableOf(fieldsReturnByServer));
+
+            const contentTypeFieldsDropZone = de.query(By.css('dot-content-type-fields-drop-zone'));
+
+            // when: the saveFields event is tiggered in content-type-fields-drop-zone
+            contentTypeFieldsDropZone.componentInstance.saveFields.emit(fieldsToSave);
+            // ...and the comp.data.fields has to be set to the fields return by the service
+            expect(comp.fields).toEqual(fieldsReturnByServer);
+        });
+
         it('should handle 403 when user doesn\'t have permission to save feld', () => {
             const dropZone = de.query(By.css('dot-content-type-fields-drop-zone'));
             spyOn(dropZone.componentInstance, 'cancelLastDragAndDrop').and.callThrough();

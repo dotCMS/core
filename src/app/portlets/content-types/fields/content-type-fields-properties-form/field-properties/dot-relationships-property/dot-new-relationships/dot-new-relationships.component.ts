@@ -76,7 +76,7 @@ export class DotNewRelationshipsComponent implements OnInit, OnChanges {
      */
     triggerChanged(): void {
         this.change.next({
-            velocityVar: this.contentType ? this.contentType.variable : this.velocityVar,
+            velocityVar: this.velocityVar || (this.contentType ? this.contentType.variable :  undefined),
             cardinality: this.currentCardinalityIndex
         });
     }
@@ -100,12 +100,18 @@ export class DotNewRelationshipsComponent implements OnInit, OnChanges {
      * @memberof DotNewRelationshipsComponent
      */
     getContentTypeList(filter = '', offset = 0): void {
-        this.paginatorService.filter = filter;
-        this.contentTypeCurrentPage = this.paginatorService.getWithOffset(offset);
+        if (!this.editing) {
+            this.paginatorService.filter = filter;
+            this.contentTypeCurrentPage = this.paginatorService.getWithOffset(offset);
+        }
     }
 
     private loadContentType(velocityVar: string) {
-        if (velocityVar && !velocityVar.includes('.')) {
+        if (velocityVar) {
+            if (velocityVar.includes('.')) {
+                velocityVar = velocityVar.split('.')[0];
+            }
+
             this.contentTypeService.getContentType(velocityVar).subscribe((contentType) => {
                 this.contentType = contentType;
             });

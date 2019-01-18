@@ -154,7 +154,7 @@ export class DotPageSelectorService {
     }
 
     private getSites(param: string, specific?: boolean): Observable<DotPageSelectorResults> {
-        let query = '+contenttype:Host +host.hostName:';
+        let query = '+contenttype:Host -identifier:SYSTEM_HOST +host.hostName:';
         query += specific ? this.getSiteName(param) : `*${this.getSiteName(param)}*`;
 
         return this.coreWebService.requestView({

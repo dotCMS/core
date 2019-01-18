@@ -1,6 +1,20 @@
 @import "mixins";
 @import "variables";
 
+:host {
+    ::ng-deep {
+        dot-site-selector {
+
+            span.ui-button-text{
+                max-width: 300px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+        }
+    }
+}
+
 p-toolbar::ng-deep {
     z-index: 1004; // Menu and dropdown options in primeng use 1003.
 
