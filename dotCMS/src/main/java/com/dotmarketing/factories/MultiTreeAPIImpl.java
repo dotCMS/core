@@ -1,17 +1,6 @@
 package com.dotmarketing.factories;
 
 
-import java.sql.SQLException;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import org.apache.commons.lang.StringUtils;
-
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
@@ -46,6 +35,11 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Table;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import org.apache.commons.lang.StringUtils;
+
+import java.sql.SQLException;
+import java.util.*;
+import java.util.stream.Collectors;
 
 
 /**
@@ -514,14 +508,13 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
             throws DotDataException, DotSecurityException {
 
         
-        Optional<Table<String, String, Set<String>>> pageContentsOpt =  CacheLocator.getMultiTreeCache().getPageMultiTrees(page.getIdentifier(), liveMode);
+        final Optional<Table<String, String, Set<String>>> pageContentsOpt =
+                CacheLocator.getMultiTreeCache().getPageMultiTrees(page.getIdentifier(), liveMode);
         
         if(pageContentsOpt.isPresent()) {
             return pageContentsOpt.get();
         }
-        
-        
-        
+
         final Table<String, String, Set<String>> pageContents = HashBasedTable.create();
         final List<MultiTree> multiTrees = this.getMultiTrees(page.getIdentifier());
 
@@ -533,8 +526,10 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
             try {
 
-                container = (liveMode) ? containerAPI.getLiveContainerById(multiTree.getContainer(), systemUser, false)
+                //container = containerAPI.getWorkingContainerById(multiTree.getContainer(), systemUser, false);
+                container = liveMode? containerAPI.getLiveContainerById(multiTree.getContainer(), systemUser, false)
                         : containerAPI.getWorkingContainerById(multiTree.getContainer(), systemUser, false);
+
                 if (container == null && !liveMode) {
                     continue;
                 }
