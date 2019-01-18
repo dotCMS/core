@@ -679,7 +679,7 @@ describe('Load fields and drag and drop', () => {
         expect(comp.fieldRows[2] instanceof FieldRow).toBeTruthy();
     });
 
-    describe('Show fields dialog', () => {
+    describe('Edit Field Dialog', () => {
         beforeEach(async(() => {
             fixture.detectChanges();
 
@@ -699,8 +699,6 @@ describe('Load fields and drag and drop', () => {
             expect(comp.displayDialog).toBe(true);
             const dialog = de.query(By.css('dot-dialog'));
             expect(dialog).not.toBeNull();
-
-            console.log(de.query(By.css('p-tabView')));
         });
 
         it('should set hideButtons to true when change to variable tab', () => {
