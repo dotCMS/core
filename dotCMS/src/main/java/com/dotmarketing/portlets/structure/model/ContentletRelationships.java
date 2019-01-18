@@ -14,6 +14,7 @@ import java.util.List;
 
 import com.dotmarketing.comparators.ContentComparator;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.util.WebKeys;
 
 
 /**
@@ -172,6 +173,10 @@ public class ContentletRelationships
 		private List<Contentlet> records;
 		private boolean hasParent;
 
+		
+		
+		
+		
 		/**
 		 * @param relationship
 		 */
@@ -183,6 +188,18 @@ public class ContentletRelationships
 		}
 
 
+		public boolean onlyAllowOne() {
+		    return (this.hasParent)
+	            ? this.relationship.getCardinality() != WebKeys.Relationship.RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal() 
+	            : relationship.getCardinality() != WebKeys.Relationship.RELATIONSHIP_CARDINALITY.ONE_TO_ONE.ordinal();
+
+		}
+		
+		
+		
+		
+		
+		
 		/**
 		 * @return Returns the hasParent.
 		 */
