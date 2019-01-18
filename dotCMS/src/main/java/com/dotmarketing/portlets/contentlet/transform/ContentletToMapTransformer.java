@@ -3,6 +3,7 @@ package com.dotmarketing.portlets.contentlet.transform;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.rest.ContentHelper;
 import com.dotcms.util.CollectionsUtils;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
@@ -84,10 +85,11 @@ public class ContentletToMapTransformer {
         properties.put(Contentlet.CONTENT_TYPE_KEY , type != null ? type.variable() : NA );
         properties.put(Contentlet.TITTLE_KEY, contentlet.getTitle());
         properties.put(Contentlet.HAS_TITLE_IMAGE_KEY, contentlet.getTitleImage().isPresent() );
-        properties.put(Contentlet.BASE_TYPE_KEY, type.baseType().name());
+        properties.put(Contentlet.BASE_TYPE_KEY, type != null ? type.baseType().name() : NA);
         try {
-            properties.put(Contentlet.HOST_NAME, APILocator.getHostAPI().find(contentlet.getHost(), APILocator.systemUser()
-                , true).getHostname());
+            final Host host = APILocator.getHostAPI().find(contentlet.getHost(), APILocator.systemUser()
+                , true);
+            properties.put(Contentlet.HOST_NAME, host != null ? host.getHostname() : NA );
         } catch (DotDataException | DotSecurityException e) {
             Logger.warn(this, "Unable to set property: " + Contentlet.HOST_NAME, e);
         }
