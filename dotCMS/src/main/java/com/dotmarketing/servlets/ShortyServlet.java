@@ -22,6 +22,8 @@ import com.dotmarketing.portlets.contentlet.business.DotContentletStateException
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
+import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.WebKeys;
@@ -45,7 +47,7 @@ import java.util.regex.Pattern;
 
 /**
  * Resolves a shorty or long id, image or assets.
- *
+ * if the path has an jpeg or jpegp would be taken as a image and can resize
  */
 public class ShortyServlet extends HttpServlet {
 
@@ -55,12 +57,13 @@ public class ShortyServlet extends HttpServlet {
   private final VersionableAPI versionableAPI = APILocator.getVersionableAPI();
   private final ShortyIdAPI    shortyIdAPI    = APILocator.getShortyAPI();
   private final ContentletAPI  contentletAPI  = APILocator.getContentletAPI();
+  private final LanguageAPI    languageAPI    = APILocator.getLanguageAPI();
 
   private static final String  JPEG                        = "jpeg";
   private static final String  JPEGP                       = "jpegp";
   private static final String  FILE_ASSET_DEFAULT          = FileAssetAPI.BINARY_FIELD;
   public  static final String  SHORTY_SERVLET_FORWARD_PATH = "shorty.servlet.forward.path";
-  private static final Pattern weightPattern               = Pattern.compile("/\\d+[w]");
+  private static final Pattern widthPattern                = Pattern.compile("/\\d+[w]");
   private static final Pattern heightPattern               = Pattern.compile("/\\d+[h]");
 
   @CloseDBIfOpened
@@ -75,20 +78,20 @@ public class ShortyServlet extends HttpServlet {
   }
 
 
-  private int getWeight (final String uri, final int defaultWeight) {
+  private int getWidth(final String uri, final int defaultWidth) {
 
-    int weight = 0;
+    int width = 0;
 
     try {
-      final Matcher weightMatcher = weightPattern.matcher(uri);
-      weight = weightMatcher.find()?
-              Integer.parseInt(weightMatcher.group().substring(1).replace("w", StringPool.BLANK)):
-              defaultWeight;
+      final Matcher widthMatcher = widthPattern.matcher(uri);
+      width = widthMatcher.find()?
+              Integer.parseInt(widthMatcher.group().substring(1).replace("w", StringPool.BLANK)):
+              defaultWidth;
     } catch(Exception e){
       Logger.debug(this, e.getMessage());
     }
 
-    return weight;
+    return width;
   }
 
   private int getHeight (final String uri, final int defaultHeight) {
@@ -112,12 +115,12 @@ public class ShortyServlet extends HttpServlet {
 
 
     final PageMode mode = PageMode.get(request);
-    final String uri    = request.getRequestURI();
 
     if (!this.isValidRequest(request, response, mode)) {
       return;
     }
 
+    final String uri    = request.getRequestURI();
     final StringTokenizer tokens = new StringTokenizer(uri, StringPool.FORWARD_SLASH);
 
     if (tokens.countTokens() < 2) {
@@ -126,11 +129,11 @@ public class ShortyServlet extends HttpServlet {
     }
 
     tokens.nextToken();
-    final String identifier           = tokens.nextToken();
+    final String inodeOrIdentifier    = tokens.nextToken();
     final String fieldName            = tokens.hasMoreTokens() ? tokens.nextToken() : FILE_ASSET_DEFAULT;
     final String lowerUri             = uri.toLowerCase();
     final boolean live                = mode.showLive;
-    final Optional<ShortyId> shortOpt = this.shortyIdAPI.getShorty(identifier);
+    final Optional<ShortyId> shortOpt = this.shortyIdAPI.getShorty(inodeOrIdentifier);
 
     this.addHeaders(response, live);
     if (!shortOpt.isPresent()) {
@@ -149,11 +152,11 @@ public class ShortyServlet extends HttpServlet {
                          final Optional<ShortyId> shortOpt)
           throws DotDataException, DotSecurityException, ServletException, IOException {
 
-    final int      weight  = this.getWeight(lowerUri, 0);
+    final int      width   = this.getWidth(lowerUri, 0);
     final int      height  = this.getHeight(lowerUri, 0);
     final boolean  jpeg    = lowerUri.contains(JPEG);
     final boolean  jpegp   = jpeg && lowerUri.contains(JPEGP);
-    final boolean  isImage = jpeg || weight+height > 0;
+    final boolean  isImage = jpeg || width+height > 0;
     final ShortyId shorty  = shortOpt.get();
     final String   path    = isImage? "/contentAsset/image" : "/contentAsset/raw-data";
     final User systemUser  = APILocator.systemUser();
@@ -169,7 +172,7 @@ public class ShortyServlet extends HttpServlet {
       final StringBuilder pathBuilder = new StringBuilder(path)
               .append(this.inodePath(contentlet, fieldName, live)).append("/byInode/true");
 
-      this.addImagePath(weight, height, jpeg, jpegp, isImage, pathBuilder);
+      this.addImagePath(width, height, jpeg, jpegp, isImage, pathBuilder);
       this.doForward(request, response, pathBuilder.toString());
     } catch (DotContentletStateException e) {
 
@@ -178,10 +181,23 @@ public class ShortyServlet extends HttpServlet {
     }
   }
 
-  private int getLanguageId (final String languageIdParameter) {
+  private long getLanguageId (final String languageIdParameter) {
 
-      return ConversionUtils.toInt(languageIdParameter, -1);
+      return ConversionUtils.toLong(languageIdParameter, this::getDefaultLanguage);
   }
+
+  private long getDefaultLanguage () {
+
+      Language language = null;
+      try {
+          language = this.languageAPI.getDefaultLanguage();
+      } catch (Exception e) {
+          language = null;
+      }
+
+      return null != language?(int)language.getId():-1;
+  }
+
 
   private void doForward(final HttpServletRequest request,
                          final HttpServletResponse response,
@@ -223,7 +239,8 @@ public class ShortyServlet extends HttpServlet {
   }
 
   private boolean isValidRequest(final HttpServletRequest request,
-                                 final HttpServletResponse response, PageMode mode) throws DotDataException, DotSecurityException, PortalException, SystemException, IOException {
+                                 final HttpServletResponse response,
+                                 final PageMode mode) throws DotDataException, DotSecurityException, PortalException, SystemException, IOException {
 
     final Host host     = this.hostWebAPI.getCurrentHost(request);
     // Checking if host is active
@@ -246,8 +263,7 @@ public class ShortyServlet extends HttpServlet {
         final Optional<Field> fieldOpt = resolveField(contentlet, tryField);
 
         if (!fieldOpt.isPresent()) {
-            return new StringBuilder(StringPool.FORWARD_SLASH).append(contentlet.getInode())
-                    .append(StringPool.FORWARD_SLASH).append(FILE_ASSET_DEFAULT).toString();
+            return "/" + contentlet.getInode() + "/" + FILE_ASSET_DEFAULT;
         }
 
         final Field field = fieldOpt.get();
