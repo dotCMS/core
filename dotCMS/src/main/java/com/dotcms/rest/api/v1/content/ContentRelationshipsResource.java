@@ -32,6 +32,7 @@ import java.util.Map;
  * @since Oct 11, 2017
  */
 @Path("/v1/contentrelationships")
+@Deprecated
 public class ContentRelationshipsResource {
 
     private final WebResource webResource;

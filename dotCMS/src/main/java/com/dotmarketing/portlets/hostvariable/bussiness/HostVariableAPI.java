@@ -23,4 +23,12 @@ public interface HostVariableAPI {
 	HostVariable copy (HostVariable sourceVariable, Host destinationHost, User user, boolean respectFrontendRoles) 
 		throws DotDataException, DotSecurityException;
 
+	/**
+	 * Updates the host_variable table when a user is going to be deleted.
+	 * @param userToDelete UserId of the user that is going to be deleted
+	 * @param userToReplace UserId of the user that is going to be replace it
+	 * @throws DotDataException
+	 */
+    void updateUserReferences(String userToDelete, String userToReplace) throws DotDataException;
+
 }
