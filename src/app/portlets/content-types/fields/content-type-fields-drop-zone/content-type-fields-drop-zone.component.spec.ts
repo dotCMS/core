@@ -705,7 +705,7 @@ describe('Load fields and drag and drop', () => {
 
         it('should set hideButtons to true when change to variable tab', () => {
             const tabView = de.query(By.css('p-tabView'));
-            tabView.triggerEventHandler('change', {index: 1});
+            tabView.triggerEventHandler('onChange', {index: 1});
 
             fixture.detectChanges();
             expect(de.query(By.css('dot-dialog')).componentInstance.hideButtons).toEqual(true);

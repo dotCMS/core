@@ -29,7 +29,7 @@
     [hideButtons]="hideButtons"
     (hide)="removeFieldsWithoutId()"
     [header]="currentFieldType?.label">
-    <p-tabView [activeIndex]="dialogActiveTab" (change)="handleTabChange($event.index)">
+    <p-tabView [activeIndex]="dialogActiveTab" (onChange)="handleTabChange($event.index)">
         <p-tabPanel [header]="i18nMessages['contenttypes.dropzone.tab.overview']" >
             <dot-content-type-fields-properties-form
                 [formFieldData]="formData"
