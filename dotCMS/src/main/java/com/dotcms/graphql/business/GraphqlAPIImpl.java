@@ -43,6 +43,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 
 import java.io.File;
@@ -186,6 +187,8 @@ public class GraphqlAPIImpl implements GraphqlAPI {
 
     private void handleRelationshipField(ContentType contentType, Map<String, GraphQLObjectType> graphqlObjectTypes,
                                          GraphQLObjectType.Builder builder, Field field) {
+        // TODO: make return type an object or list based on cardinality using RelAPI method from Nolly
+
         final ContentType relatedContentType;
         try {
             relatedContentType = getRelatedContentTypeForField(field, APILocator.systemUser());
@@ -193,22 +196,29 @@ public class GraphqlAPIImpl implements GraphqlAPI {
             throw new DotRuntimeException("Unable to create schema type for Content Type: " + contentType.variable(), e);
         }
 
+        Relationship relationship;
+
+        try {
+            relationship = APILocator.getRelationshipAPI().getRelationshipFromField(field,
+                APILocator.systemUser());
+        } catch (DotDataException | DotSecurityException e) {
+            throw new DotRuntimeException(e);
+        }
+
         // If the type exists already let's use it
         if(UtilMethods.isSet(graphqlObjectTypes.get(relatedContentType.variable()))) {
+
+            final GraphQLOutputType outputType = relationship.getCardinality() == WebKeys.Relationship.RELATIONSHIP_CARDINALITY.ONE_TO_ONE.ordinal()
+                ? graphqlObjectTypes.get(relatedContentType.variable())
+                : list(graphqlObjectTypes.get(relatedContentType.variable()));
+
             builder.field(newFieldDefinition()
                 .name(field.variable())
-                .type(graphqlObjectTypes.get(relatedContentType.variable()))
+                .type(outputType)
                 .dataFetcher(new RelationshipFieldDataFetcher())
             );
         } else { // if type is not created yet, let's listen for when the needed type gets created, so we can add the relationship field to this graphql type
-            Relationship relationship;
 
-            try {
-                 relationship = APILocator.getRelationshipAPI().getRelationshipFromField(field,
-                    APILocator.systemUser());
-            } catch (DotDataException | DotSecurityException e) {
-               throw new DotRuntimeException(e);
-            }
 
             RelationshipFieldTypeCreatedListener relationshipFieldTypeCreatedListener =
                 new RelationshipFieldTypeCreatedListener(contentType.variable(), field.variable(),

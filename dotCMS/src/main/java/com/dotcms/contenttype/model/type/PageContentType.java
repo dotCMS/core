@@ -27,18 +27,18 @@ public abstract class PageContentType extends ContentType implements Expireable{
 
 	private static final long serialVersionUID = 1L;
 
-	public static String PAGE_URL_FIELD_VAR = "url";
-	public static String PAGE_HOST_FOLDER_FIELD_VAR = "hostFolder";
-	public static String PAGE_TEMPLATE_FIELD_VAR = "template";
-	public static String PAGE_SHOW_ON_MENU_FIELD_VAR = "showOnMenu";
-	public static String PAGE_SORT_ORDER_FIELD_VAR = "sortOrder";
-	public static String PAGE_CACHE_TTL_FIELD_VAR = "cachettl";
-	public static String PAGE_FRIENDLY_NAME_FIELD_VAR = "friendlyname";
-	public static String PAGE_REDIRECT_URL_FIELD_VAR = "redirecturl";
-	public static String PAGE_HTTP_REQUIRED_FIELD_VAR = "httpsreq";
-	public static String PAGE_SEO_DESCRIPTION_FIELD_VAR = "seodescription";
-	public static String PAGE_SEO_KEYWORDS_FIELD_VAR = "seokeywords";
-	public static String PAGE_PAGE_METADATA_FIELD_VAR = "pagemetadata";
+	public static final String PAGE_URL_FIELD_VAR = "url";
+	public static final String PAGE_HOST_FOLDER_FIELD_VAR = "hostFolder";
+	public static final String PAGE_TEMPLATE_FIELD_VAR = "template";
+	public static final String PAGE_SHOW_ON_MENU_FIELD_VAR = "showOnMenu";
+	public static final String PAGE_SORT_ORDER_FIELD_VAR = "sortOrder";
+	public static final String PAGE_CACHE_TTL_FIELD_VAR = "cachettl";
+	public static final String PAGE_FRIENDLY_NAME_FIELD_VAR = "friendlyname";
+	public static final String PAGE_REDIRECT_URL_FIELD_VAR = "redirecturl";
+	public static final String PAGE_HTTP_REQUIRED_FIELD_VAR = "httpsreq";
+	public static final String PAGE_SEO_DESCRIPTION_FIELD_VAR = "seodescription";
+	public static final String PAGE_SEO_KEYWORDS_FIELD_VAR = "seokeywords";
+	public static final String PAGE_PAGE_METADATA_FIELD_VAR = "pagemetadata";
 
 	@Override
 	public  BaseContentType baseType() {

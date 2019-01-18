@@ -56,6 +56,12 @@ import static com.dotcms.contenttype.model.type.PageContentType.PAGE_SHOW_ON_MEN
 import static com.dotcms.contenttype.model.type.PageContentType.PAGE_SORT_ORDER_FIELD_VAR;
 import static com.dotcms.contenttype.model.type.PageContentType.PAGE_TEMPLATE_FIELD_VAR;
 import static com.dotcms.contenttype.model.type.PageContentType.PAGE_URL_FIELD_VAR;
+import static com.dotcms.contenttype.model.type.PersonaContentType.PERSONA_DESCRIPTION_FIELD_VAR;
+import static com.dotcms.contenttype.model.type.PersonaContentType.PERSONA_HOST_FOLDER_FIELD_VAR;
+import static com.dotcms.contenttype.model.type.PersonaContentType.PERSONA_KEY_TAG_FIELD_VAR;
+import static com.dotcms.contenttype.model.type.PersonaContentType.PERSONA_NAME_FIELD_VAR;
+import static com.dotcms.contenttype.model.type.PersonaContentType.PERSONA_OTHER_TAGS_FIELD_VAR;
+import static com.dotcms.contenttype.model.type.PersonaContentType.PERSONA_PHOTO_FIELD_VAR;
 import static graphql.Scalars.GraphQLBoolean;
 import static graphql.Scalars.GraphQLID;
 import static graphql.Scalars.GraphQLInt;
@@ -126,6 +132,17 @@ public enum InterfaceType {
         pageAssetFields.put(PAGE_PAGE_METADATA_FIELD_VAR, GraphQLString);
 
         interfaceTypes.put("HTMLPAGE", TypeUtil.createInterfaceType("Htmlpage", pageAssetFields, new ContentResolver()));
+
+        final Map<String, GraphQLOutputType> personaFields = new HashMap<>(contentFields);
+        personaFields.put(PERSONA_HOST_FOLDER_FIELD_VAR, CustomFieldType.SITE_OR_FOLDER.getType());
+        personaFields.put(PERSONA_NAME_FIELD_VAR, GraphQLString);
+        personaFields.put(PERSONA_KEY_TAG_FIELD_VAR, GraphQLString);
+        personaFields.put(PERSONA_PHOTO_FIELD_VAR, CustomFieldType.BINARY.getType());
+        personaFields.put(PERSONA_OTHER_TAGS_FIELD_VAR, GraphQLString);
+        personaFields.put(PERSONA_DESCRIPTION_FIELD_VAR, GraphQLString);
+
+        interfaceTypes.put("PERSONA", TypeUtil.createInterfaceType("Persona", personaFields, new ContentResolver()));
+
     }
 
     public GraphQLInterfaceType getType() {
