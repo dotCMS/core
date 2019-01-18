@@ -27,7 +27,7 @@
             (click)="cancelAction()"
             [disabled]="actions.cancel.disabled"
             [label]="actions.cancel.label"
-            [style.display]="hideButtons? 'none' : 'block'">
+            [style.display]="hideButtons ? 'none' : 'block'">
         </button>
         <button
             *ngIf="actions.accept"
