@@ -297,8 +297,6 @@
 	    	    "from":0
 	    	}`;
 
-
-
          var url = "/api/es/search";
 
          var xhrArgs = {
@@ -318,17 +316,14 @@
                  };
 
                  for (let i=0; i<data.contentlets.length;++i) {
-
                      let entity = data.contentlets[i];
                      dataItems.items[i] = { label: entity.title, id: entity.identifier, name: entity.title, searchMe : entity.title + " " + entity.identifier + " " + entity.inode };
                  }
                  
-          
                  dojoRelationshipsStore = new dojo.data.ItemFileReadStore({
                      data: dataItems
                  });
                  
-
                  box.store=dojoRelationshipsStore;
                  box.set( 'store',dojoRelationshipsStore);
                  box.startup();

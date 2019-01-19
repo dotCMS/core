@@ -676,24 +676,15 @@
                 var result = "<input onchange='doSearch()' type=\"text\" displayedValue=\""+value+"\" constraints={datePattern:'MM/dd/yyyy'} dojoType=\"dijit.form.DateTextBox\" validate='return false;' invalidMessage=\"\"  id=\"" + selectedStruct+"."+ fieldContentlet + "Field\" name=\"" + selectedStruct+"."+ fieldContentlet + "\" >";
                 return result;
           }else if(type=="relationship"){
-
+	          var relationSearchField= selectedStruct+"."+ fieldContentlet;
+	          var relationType = field["fieldRelationType"];
               
-              var relationSearchField= selectedStruct+"."+ fieldContentlet;
-              
-              
-              var relationType = field["fieldRelationType"];
-              
-              
-              
-             var boxTmpl= `
-            	 ${relationSearchField}
+	          var boxTmpl= `
             	   <div id='${relationSearchField}Div'></div>
             	   <input type="hidden" id='${relationSearchField}Field' />
             	   <span class='hint-text'><%= LanguageUtil.get(pageContext, "Type-id-or-title-related-content") %></span>
             	   <script>
-            	   
-                    dijit.registry.remove("${relationSearchField}Id");
-            	   
+            	      dijit.registry.remove("${relationSearchField}Id");
 		              var relationshipSearch = new dijit.form.FilteringSelect({
 		                  id: "${relationSearchField}Id",
 		                  name: "${relationSearchField}Name",
@@ -724,11 +715,7 @@
 		              dojo.connect(dijit.byId("clearButton"), "onClick", null, function() {
 		            	  dijit.byId("${relationSearchField}Id").set("displayedValue","");
                       });
-
-		              
-		              
                 </script>
-              
               `;
               
 
