@@ -264,61 +264,80 @@
     var dojoStore = new dojo.data.ItemFileReadStore({
         data: dataItems
     });
-
-    function reloadRelationshipBox(box, relatedType, hiddenField){
-        var boxValue = box.get('value');
-
-        if (boxValue.trim()!=''){
-            if (relatedType.indexOf(".") != -1){
-                relatedType = relatedType.split('.')[0];
-            }
-
-            var xhrArgs = {
-                url: "/api/content/query/+contentType:" + relatedType + " +(inode:*" + boxValue + "* title:*" + boxValue + "* identifier:*" + boxValue + "*)",
-                handleAs : "json",
-                load: function(data) {
-
-                    let dataItems = {
-                        searchAttr: "name",
-                        items: []
-                    };
-
-                    for (let i=0; i<data.contentlets.length;++i) {
-
-                        let entity = data.contentlets[i];
-
-                        dataItems.items[i] = { name: entity.title, id: entity.identifier };
-                    }
-
-                    dojoSchemeStore = new dojo.data.ItemFileReadStore({
-                        data: dataItems
-                    });
-
-                    if (null != box) {
-
-                        box.set('store', dojoSchemeStore);
-                        box.toggleDropDown();
-                    }
-                }
-            }
-            dojo.xhrGet(xhrArgs);
-        }else{
-            dojoSchemeStore = new dojo.data.ItemFileReadStore({
-                data: []
-            });
-            box.set('store', dojoSchemeStore);
-            document.getElementById(hiddenField).value = '';
-            doSearch(null, "<%=orderBy%>");
+    
+    
+    var  dojoRelationshipsStore = new dojo.data.ItemFileReadStore({
+        data:  {
+            identifier  : "id",
+            label: "label", 
+            items: []
         }
+    });
+    
+    
+    function reloadRelationshipBox(box, relatedType){
+    	var search = box.attr("displayedValue");
 
-    }
-
-    function loadHiddenRelationshipField(box, hiddenField){
-        if (box.item){
-            document.getElementById(hiddenField).value = box.item.id;
-            doSearch(null, "<%=orderBy%>");
+        var boxValue = search == "" ? "*" : "*" +search + "*";
+        var limit=box.pageSize;
+        if (relatedType.indexOf(".") != -1){
+            relatedType = relatedType.split('.')[0];
         }
-    }
+        
+    	var tmpl = `
+    		{ "query" : 
+	    	    { 
+	    	        "query_string" : 
+	    	        {
+	    	            "query" : "+contentType:${relatedType}  +(inode:${boxValue} title:${boxValue} identifier:${boxValue})"
+	    	        } 
+	    	    },
+	    	    "sort" : {"moddate":"desc"},
+	    	    "size":${limit},
+	    	    "from":0
+	    	}`;
+
+
+
+         var url = "/api/es/search";
+
+         var xhrArgs = {
+             url: url,
+             postData: tmpl,
+             headers: {
+                 "Accept" : "application/json",
+                 "Content-Type" : "application/json"
+              },
+             handleAs : "json",
+             load: function(data) {
+     
+                 let dataItems = {
+                     identifier  : "id",
+                     label: "label", 
+                     items: []
+                 };
+
+                 for (let i=0; i<data.contentlets.length;++i) {
+
+                     let entity = data.contentlets[i];
+                     dataItems.items[i] = { label: entity.title, id: entity.identifier, name: entity.title, searchMe : entity.title + " " + entity.identifier + " " + entity.inode };
+                 }
+                 
+          
+                 dojoRelationshipsStore = new dojo.data.ItemFileReadStore({
+                     data: dataItems
+                 });
+                 
+
+                 box.store=dojoRelationshipsStore;
+                 box.set( 'store',dojoRelationshipsStore);
+                 box.startup();
+             }
+         }
+         dojo.xhrPost(xhrArgs);
+     }
+
+    
 
     // Workflow Schemes
     var dojoSchemeStore = null;
