@@ -17,6 +17,7 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.util.Config;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
@@ -266,4 +267,25 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
     return ImmutableList.of();
   }
 
+  @JsonIgnore
+  @Value.Lazy
+  public boolean languageFallback() {
+    return baseType() == BaseContentType.CONTENT
+            ? Config.getBooleanProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE",false)
+                : baseType() == BaseContentType.WIDGET
+                ? Config.getBooleanProperty("DEFAULT_WIDGET_TO_DEFAULT_LANGUAGE",false)
+                        : baseType() == BaseContentType.FILEASSET
+                                ? Config.getBooleanProperty("DEFAULT_FILE_TO_DEFAULT_LANGUAGE",false)
+                                        : baseType() == BaseContentType.FILEASSET
+                                        ? Config.getBooleanProperty("DEFAULT_FILE_TO_DEFAULT_LANGUAGE",false)
+                                                :false;
+                                            
+                                    
+      
+      
+      
+  }
+  
+  
+  
 }

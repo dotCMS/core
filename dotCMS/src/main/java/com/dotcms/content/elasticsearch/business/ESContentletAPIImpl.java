@@ -157,6 +157,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -336,6 +337,39 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     }
 
+    
+    @CloseDBIfOpened
+    @Override
+    public Optional<Contentlet> findContentletByIdentifierAndFallback(final String identifier, final boolean live,
+            final long incomingLangId, final User user, final boolean respectFrontendRoles) {
+        
+        final long defaultLangaugeId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+        final long tryLanguage = (incomingLangId <= 0) ? defaultLangaugeId : incomingLangId;
+
+        try {
+            ContentletVersionInfo clvi = APILocator.getVersionableAPI().getContentletVersionInfo(identifier, tryLanguage);
+            if (tryLanguage != defaultLangaugeId && (clvi == null || (live && clvi.getLiveInode() == null))) {
+                clvi = APILocator.getVersionableAPI().getContentletVersionInfo(identifier, defaultLangaugeId);
+            }
+            if (clvi == null) {
+                Optional.empty();
+            }
+
+            Contentlet con =  live ? find(clvi.getLiveInode(), user, respectFrontendRoles) : find(clvi.getWorkingInode(), user, respectFrontendRoles);
+            if (con == null  || (!con.getContentType().languageFallback() && tryLanguage != defaultLangaugeId)) {
+                return Optional.empty();
+            }
+            return Optional.of(con);
+
+        } catch (Exception e) {
+            throw new DotContentletStateException("Can't find contentlet: " + identifier + " lang:" + incomingLangId + " live:" + live, e);
+        }
+
+    }
+    
+    
+    
+    
     @CloseDBIfOpened
     @Override
     public Contentlet findContentletByIdentifierAnyLanguage(final String identifier) throws DotDataException, DotSecurityException {

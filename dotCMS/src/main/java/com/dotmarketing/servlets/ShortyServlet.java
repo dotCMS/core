@@ -1,11 +1,22 @@
 package com.dotmarketing.servlets;
 
+import java.io.IOException;
+import java.util.Optional;
+import java.util.StringTokenizer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import javax.servlet.RequestDispatcher;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FileField;
 import com.dotcms.contenttype.model.field.ImageField;
-import com.dotcms.util.ConversionUtils;
 import com.dotcms.uuid.shorty.ShortType;
 import com.dotcms.uuid.shorty.ShortyId;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
@@ -22,27 +33,14 @@ import com.dotmarketing.portlets.contentlet.business.DotContentletStateException
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
-import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
-import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-
-import javax.servlet.RequestDispatcher;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.util.Optional;
-import java.util.StringTokenizer;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 
 /**
@@ -57,7 +55,7 @@ public class ShortyServlet extends HttpServlet {
   private final VersionableAPI versionableAPI = APILocator.getVersionableAPI();
   private final ShortyIdAPI    shortyIdAPI    = APILocator.getShortyAPI();
   private final ContentletAPI  contentletAPI  = APILocator.getContentletAPI();
-  private final LanguageAPI    languageAPI    = APILocator.getLanguageAPI();
+
 
   private static final String  JPEG                        = "jpeg";
   private static final String  JPEGP                       = "jpegp";
@@ -160,17 +158,25 @@ public class ShortyServlet extends HttpServlet {
     final ShortyId shorty  = shortOpt.get();
     final String   path    = isImage? "/contentAsset/image" : "/contentAsset/raw-data";
     final User systemUser  = APILocator.systemUser();
+    final Language language =WebAPILocator.getLanguageWebAPI().getLanguage(request);
     try {
 
-      final Contentlet contentlet = shorty.type == ShortType.IDENTIFIER ?
-              this.contentletAPI.findContentletByIdentifier
-                      (shorty.longId, live,
-                              this.getLanguageId(request.getParameter(WebKeys.LANGUAGE_ID_PARAMETER)),
-                              systemUser, false) :
-              this.contentletAPI.find(shorty.longId, systemUser, false);
+        
+        
+        
+        final Optional<Contentlet> conOpt = (shorty.type == ShortType.IDENTIFIER)
+                    ? APILocator.getContentletAPI().findContentletByIdentifierAndFallback(shorty.longId, live, language.getId(), APILocator.systemUser(), false)
+                    : Optional.ofNullable(APILocator.getContentletAPI().find(shorty.longId, systemUser, false));
+                    
+        if(!conOpt.isPresent()) {
+            response.sendError(HttpServletResponse.SC_NOT_FOUND);
+            return;
+        }
+        
+        
 
       final StringBuilder pathBuilder = new StringBuilder(path)
-              .append(this.inodePath(contentlet, fieldName, live)).append("/byInode/true");
+              .append(this.inodePath(conOpt.get(), fieldName, live)).append("/byInode/true");
 
       this.addImagePath(width, height, jpeg, jpegp, isImage, pathBuilder);
       this.doForward(request, response, pathBuilder.toString());
@@ -181,22 +187,6 @@ public class ShortyServlet extends HttpServlet {
     }
   }
 
-  private long getLanguageId (final String languageIdParameter) {
-
-      return ConversionUtils.toLong(languageIdParameter, this::getDefaultLanguage);
-  }
-
-  private long getDefaultLanguage () {
-
-      Language language = null;
-      try {
-          language = this.languageAPI.getDefaultLanguage();
-      } catch (Exception e) {
-          language = null;
-      }
-
-      return null != language?(int)language.getId():-1;
-  }
 
 
   private void doForward(final HttpServletRequest request,
