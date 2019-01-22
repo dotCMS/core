@@ -676,14 +676,51 @@
                 var result = "<input onchange='doSearch()' type=\"text\" displayedValue=\""+value+"\" constraints={datePattern:'MM/dd/yyyy'} dojoType=\"dijit.form.DateTextBox\" validate='return false;' invalidMessage=\"\"  id=\"" + selectedStruct+"."+ fieldContentlet + "Field\" name=\"" + selectedStruct+"."+ fieldContentlet + "\" >";
                 return result;
           }else if(type=="relationship"){
-              dijit.registry.remove(selectedStruct+"."+ fieldContentlet +"Field");
-              var result = "<select id=\"" + selectedStruct+"."+ fieldContentlet + "Field\" onkeyup=\"reloadRelationshipBox(this, '" + field["fieldRelationType"] + "', '" + selectedStruct+"."+ fieldContentlet + "Field');return true;\" " +
-                  "onchange=\"loadHiddenRelationshipField(this,'" + selectedStruct+"."+ fieldContentlet + "Field')\" data-dojo-type=\"dijit/form/ComboBox\"" + selectedStruct+"."+ fieldContentlet + "Field\"" +
-                  "name=\"" + selectedStruct+"."+ fieldContentlet + "\">\n";
-              result += "</select>\n";
-              result += "<input type=\"hidden\" id=\"" + selectedStruct+"."+ fieldContentlet + "Field\" />";
-              result += "<span class='hint-text'><%= LanguageUtil.get(pageContext, "Type-id-or-title-related-content") %></span>";
-              return result;
+	          var relationSearchField= selectedStruct+"."+ fieldContentlet;
+	          var relationType = field["fieldRelationType"];
+              
+	          var boxTmpl= `
+            	   <div id='${relationSearchField}Div'></div>
+            	   <input type="hidden" id='${relationSearchField}Field' />
+            	   <span class='hint-text'><%= LanguageUtil.get(pageContext, "Type-id-or-title-related-content") %></span>
+            	   <script>
+            	      dijit.registry.remove("${relationSearchField}Id");
+		              var relationshipSearch = new dijit.form.FilteringSelect({
+		                  id: "${relationSearchField}Id",
+		                  name: "${relationSearchField}Name",
+		                  pageSize:30,
+		                  labelAttr: "label",
+		                  store:null,
+		                  searchAttr: "searchMe",
+		                  queryExpr: '*${0}*',
+		                  isValid : function(){
+		                	  return true;
+		                  },
+		                  autoComplete: false,
+	                      onKeyUp:function(event){
+	                    	  if (event.keyCode != 13 &&  event.keyCode!= 38 && event.keyCode!=40) {
+	                    		  reloadRelationshipBox(this, "${relationType}");
+	                    	  }
+                         },
+                         onChange : function(value){
+                        	 document.getElementById("${relationSearchField}Field").value=this.getValue();
+                        	 doSearch(null, "<%=orderBy%>");
+                         }
+                         
+	
+		              }, dojo.byId("${relationSearchField}Div"));
+
+		              reloadRelationshipBox(relationshipSearch,"${relationType}");
+		              
+		              dojo.connect(dijit.byId("clearButton"), "onClick", null, function() {
+		            	  dijit.byId("${relationSearchField}Id").set("displayedValue","");
+                      });
+                </script>
+              `;
+              
+
+              
+              return boxTmpl;
           }else{
                 dijit.registry.remove(selectedStruct+"."+ fieldContentlet + "Field");
                 if(dijit.byId(selectedStruct+"."+ fieldContentlet + "Field")){
@@ -1917,9 +1954,10 @@
                                               formField.value = "";
 
                                               var temp = dijit.byId(formField.id);
-                                              temp.attr('value','');
+    
                                               if(temp){
                                                 try{
+                                                    temp.attr('value','');
                                                    temp.setDisplayedValue('');
                                                  }catch(e){console.log(e);}
                                               }
