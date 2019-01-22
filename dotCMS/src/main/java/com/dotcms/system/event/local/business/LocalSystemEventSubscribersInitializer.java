@@ -38,12 +38,13 @@ public class LocalSystemEventSubscribersInitializer implements DotInitializer {
 
             final User user  = APILocator.systemUser();
             final List<Host> hosts = APILocator.getHostAPI().findAll(user, false);
+            final ApplicationContainerFolderListener listener = new ApplicationContainerFolderListener();
             for (final Host host : hosts) {
 
                 final Folder appContainerFolder = APILocator.getFolderAPI().findFolderByPath(Constants.CONTAINER_FOLDER_PATH,
                         host, user, false);
 
-                APILocator.getFolderAPI().subscribeFolderListener(appContainerFolder, new ApplicationContainerFolderListener(),
+                APILocator.getFolderAPI().subscribeFolderListener(appContainerFolder, listener,
                         childName -> null != childName && childName.endsWith(Constants.VELOCITY_FILE_EXTENSION));
             }
         } catch (DotDataException | DotSecurityException e) {

@@ -20,8 +20,6 @@ import com.dotmarketing.business.PermissionAPI.PermissionableType;
 import com.dotmarketing.business.query.GenericQueryFactory.Query;
 import com.dotmarketing.business.query.QueryUtil;
 import com.dotmarketing.business.query.ValidationException;
-import com.dotmarketing.common.db.DotConnect;
-import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -876,7 +874,7 @@ public class FolderAPIImpl implements FolderAPI  {
 	 */
 	public void subscribeFolderListener (final Folder folder, final FolderListener folderListener, final Predicate<String> childNameFilter) {
 
-		if (null != folder) {
+		if (null != folder && null != folder.getName()) {
 
 			Logger.info(this, () -> "Subscribing the folder listener: " + folderListener.getId() +
 					", to the folder: " + folder);
