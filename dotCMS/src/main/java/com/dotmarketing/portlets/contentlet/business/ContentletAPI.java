@@ -1750,7 +1750,7 @@ public interface ContentletAPI {
 	 * @return
 	 * @throws DotSecurityException
 	 */
-    Optional<Contentlet> findContentletByIdentifierAndFallback(String identifier, boolean live, long incomingLangId, User user,
+    Optional<Contentlet> findContentletByIdentifierOrFallback(String identifier, boolean live, long incomingLangId, User user,
             boolean respectFrontendRoles);
 
 }

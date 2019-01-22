@@ -340,7 +340,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     
     @CloseDBIfOpened
     @Override
-    public Optional<Contentlet> findContentletByIdentifierAndFallback(final String identifier, final boolean live,
+    public Optional<Contentlet> findContentletByIdentifierOrFallback(final String identifier, final boolean live,
             final long incomingLangId, final User user, final boolean respectFrontendRoles) {
         
         final long defaultLangaugeId = APILocator.getLanguageAPI().getDefaultLanguage().getId();

@@ -165,7 +165,7 @@ public class ShortyServlet extends HttpServlet {
         
         
         final Optional<Contentlet> conOpt = (shorty.type == ShortType.IDENTIFIER)
-                    ? APILocator.getContentletAPI().findContentletByIdentifierAndFallback(shorty.longId, live, language.getId(), APILocator.systemUser(), false)
+                    ? APILocator.getContentletAPI().findContentletByIdentifierOrFallback(shorty.longId, live, language.getId(), APILocator.systemUser(), false)
                     : Optional.ofNullable(APILocator.getContentletAPI().find(shorty.longId, systemUser, false));
                     
         if(!conOpt.isPresent()) {
