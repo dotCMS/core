@@ -169,7 +169,7 @@ let dotHttpErrorManagerService: DotHttpErrorManagerService;
 let testHotKeysMock: TestHotkeysMock;
 let dialog: DebugElement;
 
-fdescribe('ContentTypesEditComponent', () => {
+describe('ContentTypesEditComponent', () => {
     describe('create mode', () => {
         beforeEach(async(() => {
             testHotKeysMock = new TestHotkeysMock();
@@ -461,7 +461,7 @@ fdescribe('ContentTypesEditComponent', () => {
             expect(dotRouterService.gotoPortlet).not.toHaveBeenCalled();
         });
 
-        fit('should update fields attribute when a field is edit', () => {
+        it('should update fields attribute when a field is edit', () => {
             const fields: ContentTypeField[] = _.cloneDeep(currentFieldsInServer);
             fields[0].name = 'Updated field';
 
