@@ -32,7 +32,6 @@ import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.factories.MultiTreeFactory;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -44,6 +43,7 @@ import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
+import com.liferay.portal.auth.PrincipalThreadLocal;
 import com.liferay.portal.model.User;
 import org.apache.commons.io.IOUtils;
 import org.apache.velocity.exception.MethodInvocationException;
@@ -213,6 +213,9 @@ public class ContainerResource implements Serializable {
             });
 
         try {
+
+            req.getSession().setAttribute(com.liferay.portal.util.WebKeys.USER_ID, user.getUserId());
+            PrincipalThreadLocal.setName(user.getUserId());
 
             final Contentlet contentlet =
                     (contentShorty.type == ShortType.IDENTIFIER) ?
