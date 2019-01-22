@@ -203,7 +203,7 @@ public class PortletURLImpl implements PortletURL {
         ctxPath = (null ==ctxPath) ? "/c" : ctxPath;
         
         StringBuffer sb = new StringBuffer();
-        sb.append(PortalUtil.getPortalURL(_req, _secure));
+
         sb.append(ctxPath);
 		sb.append("/portal");
 		sb.append(PortalUtil.getAuthorizedPath(_req));

@@ -24,6 +24,8 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.hostvariable.bussiness.HostVariableAPI;
+import com.dotmarketing.portlets.hostvariable.model.HostVariable;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPIImpl;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
@@ -61,7 +63,7 @@ import java.util.List;
 import static org.junit.Assert.*;
 
 /**
- * 
+ *
  * @author Oswaldo Gallango
  *
  */
@@ -81,6 +83,7 @@ public class UserAPITest extends IntegrationTestBase {
 	protected static FolderAPI folderAPI;
 	protected static IdentifierAPI identifierAPI;
 	protected static WorkflowAPI workflowAPI;
+	protected static HostVariableAPI hostVariableAPI;
 
 	private static User systemUser;
 
@@ -104,6 +107,7 @@ public class UserAPITest extends IntegrationTestBase {
 		folderAPI = APILocator.getFolderAPI();
 		identifierAPI = APILocator.getIdentifierAPI();
 		workflowAPI = APILocator.getWorkflowAPI();
+		hostVariableAPI = APILocator.getHostVariableAPI();
 
 		//Setting the test user
 		systemUser = APILocator.getUserAPI().getSystemUser();
@@ -121,22 +125,22 @@ public class UserAPITest extends IntegrationTestBase {
 	 *
 	 * @throws DotDataException If the user to delete or the replacement user are not set
 	 * @throws DotSecurityException If the user requesting the delete doesn't have permission
-	 * @throws SystemException 
-	 * @throws PortalException 
-	 * @throws WebAssetException 
-	 * @throws IOException If the url is malformed or if there is an issue opening the connection stream 
+	 * @throws SystemException
+	 * @throws PortalException
+	 * @throws WebAssetException
+	 * @throws IOException If the url is malformed or if there is an issue opening the connection stream
 	 */
 	@Test
 	public void delete() throws Exception {
 
-		long langId =APILocator.getLanguageAPI().getDefaultLanguage().getId();
-		String id = String.valueOf( new Date().getTime());
+		final long langId =APILocator.getLanguageAPI().getDefaultLanguage().getId();
+		final String timeString = String.valueOf( new Date().getTime());
 
 		/**
 		 * Add host
 		 */
 		Host host = new Host();
-		host.setHostname("test"+id+".demo.dotcms.com");
+		host.setHostname("test"+timeString+".demo.dotcms.com");
 		host.setIndexPolicy(IndexPolicy.FORCE);
 		host=hostAPI.save(host, systemUser, false);
 
@@ -144,7 +148,7 @@ public class UserAPITest extends IntegrationTestBase {
 		 * Add role
 		 */
 		Role newRole = new Role();
-		String newRoleName = "role"+id;
+		String newRoleName = "role"+timeString;
 		newRole.setName(newRoleName);
 		newRole.setRoleKey(newRoleName);
 		newRole.setEditLayouts(true);
@@ -219,7 +223,7 @@ public class UserAPITest extends IntegrationTestBase {
 		/**
 		 * Add users with role
 		 */
-		String userToDeleteId = "user"+id;
+		String userToDeleteId = "user"+timeString;
 		User userToDelete = userAPI.createUser( userToDeleteId + "@test.com", userToDeleteId + "@test.com" );
 		userToDelete.setFirstName( userToDeleteId );
 		userToDelete.setLastName( "TestUser" );
@@ -229,7 +233,7 @@ public class UserAPITest extends IntegrationTestBase {
 
 		Role newUserUserRole = roleAPI.loadRoleByKey(userToDelete.getUserId());
 
-		String replacementUserName = "replacementuser"+id;
+		String replacementUserName = "replacementuser"+timeString;
 		User replacementUser = userAPI.createUser( replacementUserName + "@test.com", replacementUserName + "@test.com" );
 		replacementUser.setFirstName( replacementUserName );
 		replacementUser.setLastName( "TestUser" );
@@ -242,14 +246,14 @@ public class UserAPITest extends IntegrationTestBase {
 		/**
 		 * Add folder
 		 */
-		Folder testFolder = folderAPI.createFolders("/folderTest"+id, host, userToDelete, false);
+		Folder testFolder = folderAPI.createFolders("/folderTest"+timeString, host, userToDelete, false);
 		testFolder.setOwner(userToDelete.getUserId());
 		folderAPI.save(testFolder, userToDelete, false);
 
 		/**
 		 * Create workflow scheme
 		 */
-		String schemeName = "workflow-"+id;
+		String schemeName = "workflow-"+timeString;
 
 		WorkflowScheme newScheme = new WorkflowScheme();
 		newScheme.setName(schemeName);
@@ -343,10 +347,10 @@ public class UserAPITest extends IntegrationTestBase {
 		Structure st = new Structure();
 		st.setHost(host.getIdentifier());
 		st.setFolder(testFolder.getInode());
-		st.setName("structure"+id);
+		st.setName("structure"+timeString);
 		st.setStructureType(Structure.STRUCTURE_TYPE_CONTENT);
 		st.setOwner(userToDelete.getUserId());
-		st.setVelocityVarName("structure"+id);
+		st.setVelocityVarName("structure"+timeString);
 		StructureFactory.saveStructure(st);
 		CacheLocator.getContentTypeCache().add(st);
 
@@ -369,7 +373,7 @@ public class UserAPITest extends IntegrationTestBase {
 		 * Add container
 		 */
 		Container container = new Container();
-		String containerName="container"+id;
+		String containerName="container"+timeString;
 		container.setFriendlyName(containerName);
 		container.setTitle(containerName);
 		container.setOwner(userToDelete.getUserId());
@@ -390,7 +394,7 @@ public class UserAPITest extends IntegrationTestBase {
 		 * Add template
 		 */
 		String templateBody="<html><body> #parseContainer('"+container.getIdentifier()+"') </body></html>";
-		String templateTitle="template"+id;
+		String templateTitle="template"+timeString;
 
 		Template template=new Template();
 		template.setTitle(templateTitle);
@@ -403,7 +407,7 @@ public class UserAPITest extends IntegrationTestBase {
 		/**
 		 * Add page
 		 */
-		String page0Str ="page"+id;
+		String page0Str ="page"+timeString;
 
 		Contentlet contentAsset=new Contentlet();
 		contentAsset.setStructureInode(HTMLPageAssetAPIImpl.DEFAULT_HTMLPAGE_ASSET_STRUCTURE_INODE);
@@ -423,7 +427,7 @@ public class UserAPITest extends IntegrationTestBase {
 		/**
 		 * Add content
 		 */
-		String title ="content"+id;
+		String title ="content"+timeString;
 		Contentlet contentAsset2=new Contentlet();
 		contentAsset2.setStructureInode(st.getInode());
 		contentAsset2.setHost(host.getIdentifier());
@@ -459,12 +463,12 @@ public class UserAPITest extends IntegrationTestBase {
 		 * Relate content to page
 		 */
 		MultiTree m = new MultiTree(contentAsset.getIdentifier(), container.getIdentifier(), contentAsset2.getIdentifier());
-		APILocator.getMultiTreeAPI().saveMultiTree(m);
+		MultiTreeFactory.saveMultiTree(m);
 
 		/**
 		 * Add menu link
 		 */
-		String linkStr="link"+id;
+		String linkStr="link"+timeString;
 		Link link = new Link();
 		link.setTitle(linkStr);
 		link.setFriendlyName(linkStr);
@@ -487,6 +491,19 @@ public class UserAPITest extends IntegrationTestBase {
 		link.setUrl(myURL.toString());
 		WebAssetFactory.createAsset(link, userToDelete.getUserId(), testFolder);
 		versionableAPI.setLive(link);
+
+		/**
+		 * Add HostVariable
+		 */
+		final String hostVariableString = "hostVariable"+timeString;
+		HostVariable hostVariable = new HostVariable();
+		hostVariable.setHostId(host.getIdentifier());
+		hostVariable.setName(hostVariableString);
+		hostVariable.setKey(hostVariableString);
+		hostVariable.setValue(hostVariableString);
+		hostVariable.setLastModifierId(userToDelete.getUserId());
+		hostVariable.setLastModDate(new Date());
+		hostVariableAPI.save(hostVariable,userToDelete,false);
 
 		/**
 		 * validation of current user and references
@@ -524,6 +541,9 @@ public class UserAPITest extends IntegrationTestBase {
 		assertTrue(template.getModUser().equals(userToDelete.getUserId()));
 
 		assertTrue(testFolder.getOwner().equals(userToDelete.getUserId()));
+
+		hostVariable = hostVariableAPI.getVariablesForHost(host.getIdentifier(),userToDelete,false).get(0);
+		assertTrue(hostVariable.getLastModifierId().equals(userToDelete.getUserId()));
 
 		//Verify we have the proper user set in the HTMLPage
 		page = htmlPageAssetAPI.getPageByPath(testFolder.getPath() + page0Str, host, langId, true);
@@ -601,6 +621,9 @@ public class UserAPITest extends IntegrationTestBase {
 		CacheLocator.getFolderCache().removeFolder(testFolder, identifierAPI.find(testFolder.getIdentifier()));
 		testFolder = folderAPI.findFolderByPath(testFolder.getPath(), host, systemUser, false);
 		assertTrue(testFolder.getOwner().equals(replacementUser.getUserId()));
+
+		hostVariable = hostVariableAPI.getVariablesForHost(host.getIdentifier(),replacementUser,false).get(0);
+		assertTrue(hostVariable.getLastModifierId().equals(replacementUser.getUserId()));
 
 		APILocator.getContentTypeAPI(systemUser).delete(new StructureTransformer(st).from());
 		conAPI.archive(contentAsset,systemUser,false);

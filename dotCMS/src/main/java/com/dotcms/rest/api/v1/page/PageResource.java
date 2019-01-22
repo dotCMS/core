@@ -1,6 +1,8 @@
 package com.dotcms.rest.api.v1.page;
 
 
+
+import com.dotcms.content.elasticsearch.business.ESSearchResults;
 import com.dotcms.repackage.javax.ws.rs.*;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
@@ -19,6 +21,9 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionLevel;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
 import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetNotFoundException;
 import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetRenderedAPI;
 import com.dotmarketing.portlets.htmlpageasset.business.render.page.PageView;
@@ -32,6 +37,13 @@ import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.auth.PrincipalThreadLocal;
 import com.liferay.portal.model.User;
 
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -51,20 +63,31 @@ public class PageResource {
     private final PageResourceHelper pageResourceHelper;
     private final WebResource webResource;
     private final HTMLPageAssetRenderedAPI htmlPageAssetRenderedAPI;
+    private final ContentletAPI esapi;
 
     /**
      * Creates an instance of this REST end-point.
      */
     public PageResource() {
-        this(PageResourceHelper.getInstance(), new WebResource(), APILocator.getHTMLPageAssetRenderedAPI());
+        this(
+            PageResourceHelper.getInstance(),
+            new WebResource(),
+            APILocator.getHTMLPageAssetRenderedAPI(),
+            APILocator.getContentletAPI()
+        );
     }
 
     @VisibleForTesting
-    protected PageResource(final PageResourceHelper pageResourceHelper, final WebResource webResource,
-                           final HTMLPageAssetRenderedAPI htmlPageAssetRenderedAPI) {
+    PageResource(
+            final PageResourceHelper pageResourceHelper,
+            final WebResource webResource,
+            final HTMLPageAssetRenderedAPI htmlPageAssetRenderedAPI,
+            final ContentletAPI esapi) {
+
         this.pageResourceHelper = pageResourceHelper;
         this.webResource = webResource;
         this.htmlPageAssetRenderedAPI = htmlPageAssetRenderedAPI;
+        this.esapi = esapi;
     }
 
     /**
@@ -398,5 +421,126 @@ public class PageResource {
         }
 
         return res;
+    }
+
+    /**
+     * Return all the page that contains the path parameter
+     *
+     * @param request
+     * @param path path to filter, if it start with '//' then the path contains the site name
+     * @param liveQueryParam if it is true then return page only with live version, if it is false return both live and working version
+     * @param onlyLiveSites if it is true then filter page only from live sites
+     * @return
+     * @throws DotDataException throw if a DotDataException occur
+     * @throws DotSecurityException throw if the user don't have the right permissions
+     */
+    @NoCache
+    @GET
+    @Produces({"application/html", "application/javascript"})
+    @Path("search")
+    public Response searchPage(
+                @Context final HttpServletRequest request,
+                @QueryParam("path") final String path,
+                @QueryParam("live") final Boolean liveQueryParam,
+                @QueryParam("onlyLiveSites") final boolean onlyLiveSites)
+            throws DotDataException, DotSecurityException {
+
+        final InitDataObject initData = webResource.init(null, true, request,
+                true, null);
+        final User user = initData.getUser();
+
+        final boolean live = (liveQueryParam == null) ? PageMode.get(request).showLive : liveQueryParam;
+
+        final String esQuery = getPageByPathESQuery(path);
+
+        final ESSearchResults esresult = esapi.esSearch(esQuery, live, user, live);
+        final Set<Map<String, Object>> contentletMaps = applyFilters(onlyLiveSites, esresult)
+                .stream()
+                .map(contentlet -> {
+                    try {
+                        return ContentletUtil.getContentPrintableMap(user, contentlet);
+                    } catch (DotDataException | IOException e) {
+                        return null;
+                    }
+                })
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        return Response.ok(new ResponseEntityView(contentletMaps)).build();
+    }
+
+    private String getPageByPathESQuery(final String pathParam) {
+        String hostFilter = "";
+        String path;
+
+        if (pathParam.startsWith("//")) {
+            final String[] pathSplit = pathParam.split("/");
+            final String hostName = pathSplit[2];
+            hostFilter = String.format("+conhostName:%s", hostName);
+            path = String.join("/", Arrays.copyOfRange(pathSplit, 3, pathSplit.length));
+        } else {
+            path = pathParam;
+        }
+
+        path = path.replace("/", "\\\\/");
+
+        return String.format("{"
+            + "query: {"
+                + "query_string: {"
+                    + "query: \"+basetype:5 +path:*%s* %s languageid:1^10\""
+                + "}"
+            + "}"
+        + "}", path, hostFilter);
+    }
+
+    private Collection<Contentlet> applyFilters(
+            final boolean workingSite,
+            final ESSearchResults esresult) throws DotDataException {
+
+        final Collection<Contentlet> contentlets = this.removeMultiLangVersion(esresult);
+        return workingSite ? filterByWorkingSite(contentlets) : contentlets;
+    }
+
+    private Collection<Contentlet> filterByWorkingSite(final Collection<Contentlet> contentlets)
+            throws DotDataException {
+
+        final User systemUser = APILocator.getUserAPI().getSystemUser();
+
+        final Map<String, Host> hosts = contentlets.stream()
+                .map(Contentlet::getHost)
+                .distinct()
+                .map(hostId -> {
+                    try {
+                        return APILocator.getHostAPI().find(hostId, systemUser, false);
+                    } catch (DotDataException | DotSecurityException e) {
+                        return null;
+                    }
+                })
+                .filter(Objects::nonNull)
+                .collect(Collectors.toMap(Host::getIdentifier, host -> host));
+
+        return contentlets.stream()
+                .filter(contentlet -> {
+                    try {
+                        return hosts.get(contentlet.getHost()).isLive();
+                    } catch (DotDataException | DotSecurityException e) {
+                        return false;
+                    }
+                })
+                .collect(Collectors.toSet());
+    }
+
+    private Collection<Contentlet> removeMultiLangVersion(final Collection<Contentlet> contentlets) {
+        final Map<String, Contentlet> result = new HashMap<>();
+
+        for (final Contentlet contentlet : contentlets) {
+            final String contenletId = contentlet.getIdentifier();
+
+            if (!result.containsKey(contenletId)) {
+                result.put(contenletId, contentlet);
+            }
+        }
+
+        return result.values();
     }
 }

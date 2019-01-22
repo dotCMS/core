@@ -320,4 +320,8 @@ public class RelationshipAPIImpl implements RelationshipAPI {
         return APILocator.getContentTypeFieldAPI().save(field,APILocator.systemUser());
     }
 
+    public boolean isRelationshipField(final Relationship relationship){
+        return relationship.getRelationTypeValue().matches("[a-zA-z0-9]+\\.[a-zA-Z0-9]+");
+    }
+
 }

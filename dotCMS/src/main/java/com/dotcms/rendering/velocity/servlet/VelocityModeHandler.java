@@ -16,18 +16,16 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.liferay.portal.model.User;
-
 import org.apache.velocity.Template;
 import org.apache.velocity.exception.ParseErrorException;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Map;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
 public abstract class VelocityModeHandler {
 
@@ -43,11 +41,10 @@ public abstract class VelocityModeHandler {
             .put(PageMode.NAVIGATE_EDIT_MODE, VelocityNavigateEditMode::new)
             .build();
 
-    protected void handleParseException(final ParseErrorException e,
-                                        final String name,
-                                        final User user) {
+    protected void processException(final User user, final String name, final ParseErrorException e) {
 
         Logger.warn(this, "The resource " + name + " has a parse error, msg: " + e.getMessage());
+        Logger.warn(this, "ParseErrorException on the page: " + name + ", with the user: " + user.getNickName(), e);
     }
 
     @FunctionalInterface

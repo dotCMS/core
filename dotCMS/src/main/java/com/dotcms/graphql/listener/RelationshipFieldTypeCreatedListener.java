@@ -35,6 +35,8 @@ public class RelationshipFieldTypeCreatedListener implements EventSubscriber<Gra
     @Override
     public void notify(final GraphqlTypeCreatedEvent event) {
         if(event.getType().getName().equals(typeNameToListen)) {
+            // TODO: make return type an object or list based on cardinality using RelAPI method from Nolly
+
             final GraphQLObjectType relatedType = event.getType();
             final GraphQLObjectType typeToAddRelationshipField = graphqlObjectTypes.get(graphqlTypeName);
 

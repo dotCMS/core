@@ -1,5 +1,11 @@
 package com.dotcms.contenttype.business;
 
+import static com.dotcms.util.CollectionsUtils.list;
+
+import com.dotcms.api.system.event.message.MessageSeverity;
+import com.dotcms.api.system.event.message.MessageType;
+import com.dotcms.api.system.event.message.SystemMessageEventUtil;
+import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.business.DotMappingException;
@@ -52,6 +58,7 @@ import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotDataValidationException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.structure.model.Relationship;
@@ -60,6 +67,8 @@ import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
+import com.liferay.portal.language.LanguageException;
+import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import java.util.List;
 import java.util.Optional;
@@ -283,7 +292,7 @@ public class FieldAPIImpl implements FieldAPI {
             //verify if the relationship already exists
             if (UtilMethods.isSet(relationship) && UtilMethods.isSet(relationship.getInode())) {
 
-                updateRelationshipObject(field, type, relatedContentType, relationship, cardinality);
+                updateRelationshipObject(field, type, relatedContentType, relationship, cardinality, user);
 
             } else {
                 //otherwise, a new relationship will be created
@@ -314,7 +323,7 @@ public class FieldAPIImpl implements FieldAPI {
      * @throws DotDataException
      */
     private void updateRelationshipObject(final Field field, final ContentType type, final ContentType relatedContentType,
-            final Relationship relationship, final int cardinality)
+            final Relationship relationship, final int cardinality, final User user)
             throws DotDataException {
         final String relationName = field.variable();
         //check which side of the relationship is being updated (parent or child)
@@ -325,9 +334,11 @@ public class FieldAPIImpl implements FieldAPI {
 
 
             //only one side of the relationship can be required
-            if (relationship.getChildRelationName() != null) {
+            if (relationship.getChildRelationName() != null && field.required() && relationship.isChildRequired()) {
                 //setting as not required the other side of the relationship
                 relationship.setChildRequired(false);
+
+                sendRelationshipErrorMessage(relationship.getParentRelationName(), user);
                 final FieldBuilder builder = FieldBuilder.builder(byContentTypeAndVar(relatedContentType, relationship.getChildRelationName()));
                 if(field.required()){
                     builder.required(false);
@@ -342,9 +353,10 @@ public class FieldAPIImpl implements FieldAPI {
             relationship.setChildRequired(field.required());
 
             //only one side of the relationship can be required
-            if (field.required() && relationship.getParentRelationName() != null) {
+            if (field.required() && relationship.getParentRelationName() != null && relationship.isParentRequired()) {
                 //setting as not required the other side of the relationship
                 relationship.setParentRequired(false);
+                sendRelationshipErrorMessage(relationship.getChildRelationName(), user);
 
                 final FieldBuilder builder = FieldBuilder.builder(byContentTypeAndVar(relatedContentType, relationship.getParentRelationName()));
                 if(field.required()){
@@ -356,6 +368,32 @@ public class FieldAPIImpl implements FieldAPI {
             }
         }
         relationship.setCardinality(cardinality);
+    }
+
+    private void sendRelationshipErrorMessage(
+            final String relationName,
+            final User user
+    ) {
+
+        final SystemMessageEventUtil systemMessageEventUtil = SystemMessageEventUtil.getInstance();
+
+        try {
+            systemMessageEventUtil.pushMessage(
+                new SystemMessageBuilder()
+                    .setMessage(LanguageUtil.format(
+                            user.getLocale(),
+                            "contenttypes.field.properties.relationship.required.error",
+                            relationName)
+                    )
+                    .setSeverity(MessageSeverity.INFO)
+                    .setType(MessageType.SIMPLE_MESSAGE)
+                    .setLife(6000)
+                    .create(),
+                list(user.getUserId())
+            );
+        } catch (LanguageException e) {
+            throw new DotRuntimeException(e);
+        }
     }
 
     @WrapInTransaction
