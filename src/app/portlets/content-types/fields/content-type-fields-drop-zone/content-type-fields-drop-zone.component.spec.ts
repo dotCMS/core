@@ -498,24 +498,6 @@ describe('Load fields and drag and drop', () => {
         expect(fakeFields[8]).toBe(comp.formData);
     });
 
-    it('should display dialog if a drop event happen from source', () => {
-        fixture.detectChanges();
-
-        this.testFieldDragDropService._fieldDropFromSource.next({
-            item: fakeFields[7],
-            target: {
-                columnId: '8',
-                model: [fakeFields[7]]
-            }
-        });
-
-        fixture.detectChanges();
-
-        expect(comp.displayDialog).toBe(true);
-        const dialog = de.query(By.css('dot-dialog'));
-        expect(dialog).not.toBeNull();
-    });
-
     it('should save all the fields (moving the last line to the top)', () => {
         spyOn(comp.saveFields, 'emit');
 
@@ -695,5 +677,36 @@ describe('Load fields and drag and drop', () => {
         expect(comp.fieldRows[0] instanceof FieldRow).toBeTruthy();
         expect(comp.fieldRows[1] instanceof FieldTab).toBeTruthy();
         expect(comp.fieldRows[2] instanceof FieldRow).toBeTruthy();
+    });
+
+    describe('Edit Field Dialog', () => {
+        beforeEach(async(() => {
+            fixture.detectChanges();
+
+            this.testFieldDragDropService._fieldDropFromSource.next({
+                item: fakeFields[7],
+                target: {
+                    columnId: '8',
+                    model: [fakeFields[7]]
+                }
+            });
+
+            fixture.detectChanges();
+        }));
+
+        it('should display dialog if a drop event happen from source', () => {
+
+            expect(comp.displayDialog).toBe(true);
+            const dialog = de.query(By.css('dot-dialog'));
+            expect(dialog).not.toBeNull();
+        });
+
+        it('should set hideButtons to true when change to variable tab', () => {
+            const tabView = de.query(By.css('p-tabView'));
+            tabView.triggerEventHandler('onChange', {index: 1});
+
+            fixture.detectChanges();
+            expect(de.query(By.css('dot-dialog')).componentInstance.hideButtons).toEqual(true);
+        });
     });
 });

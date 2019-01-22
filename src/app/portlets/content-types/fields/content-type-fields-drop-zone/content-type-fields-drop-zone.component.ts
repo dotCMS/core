@@ -34,6 +34,8 @@ import { DotFieldVariableParams } from '../dot-content-type-fields-variables/mod
     templateUrl: './content-type-fields-drop-zone.component.html'
 })
 export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, OnDestroy {
+    readonly OVERVIEW_TAB_INDEX = 0;
+
     dialogActiveTab: number;
     displayDialog = false;
     fieldRows: FieldDivider[] = [];
@@ -41,7 +43,6 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
     currentFieldType: FieldType;
     currentField: DotFieldVariableParams;
     dialogActions: DotDialogActions;
-
 
     @ViewChild('fieldPropertiesForm')
     propertiesForm: ContentTypeFieldsPropertiesFormComponent;
@@ -53,6 +54,8 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
     saveFields = new EventEmitter<ContentTypeField[]>();
     @Output()
     removeFields = new EventEmitter<ContentTypeField[]>();
+
+    hideButtons = false;
 
     i18nMessages: {
         [key: string]: string;
@@ -303,7 +306,14 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
                 ...this.dialogActions.accept,
                 disabled: !formChanged
             }
-        };
+};
+    }
+
+    /**
+     * Hide or show the 'save' and 'hide' buttons according to the field tab selected
+     */
+    handleTabChange(index: number): void {
+        this.hideButtons = index !== this.OVERVIEW_TAB_INDEX;
     }
 
     private setDroppedField(droppedField: ContentTypeField): void {

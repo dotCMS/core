@@ -50,6 +50,9 @@ export class DotDialogComponent implements OnChanges {
     @Input()
     height: string;
 
+    @Input()
+    hideButtons: boolean;
+
     @Output()
     hide: EventEmitter<any> = new EventEmitter();
 
