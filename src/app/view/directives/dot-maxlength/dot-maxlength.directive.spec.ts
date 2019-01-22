@@ -4,7 +4,7 @@ import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testin
 import { By } from '@angular/platform-browser';
 
 @Component({
-    template: `<div contenteditable="true" dotMaxlength="10">12345678901</div>`
+    template: `<div contenteditable="true" dotMaxlength="10">123456789</div>`
 })
 class TestComponent {}
 
@@ -31,7 +31,7 @@ describe('DotMaxlengthDirective', () => {
 
     it('should trigger event handler on keypress', () => {
         spyOn(directiveInstance, 'eventHandler');
-        element.triggerEventHandler('keypress', 'Longer text example');
+        element.triggerEventHandler('keypress', { key: 'x' });
         expect(directiveInstance.eventHandler).toHaveBeenCalled();
     });
 
@@ -39,7 +39,8 @@ describe('DotMaxlengthDirective', () => {
         'should remove extra characters',
         fakeAsync(() => {
             fixture.detectChanges();
-            directiveInstance.eventHandler();
+            element.triggerEventHandler('keypress', { key: 'x' });
+            element.nativeElement.textContent = '12345678901';
             tick(5);
             expect(element.nativeElement.textContent).toBe('1234567890');
         })
