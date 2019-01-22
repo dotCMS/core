@@ -552,7 +552,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     //Deletes the parent relationship field if the child is deleted.
     relationships = FactoryLocator.getRelationshipFactory().byChild(type);
     for (final Relationship rel : relationships) {
-      if(APILocator.getRelationshipAPI().isRelationshipField(rel)) {
+      if(UtilMethods.isSet(rel.getChildRelationName()) && APILocator.getRelationshipAPI().isRelationshipField(rel)) {
         final Field fieldToDelete = APILocator.getContentTypeFieldAPI().byContentTypeIdAndVar(rel.getParentStructureInode(), rel.getChildRelationName());
         APILocator.getContentTypeFieldAPI().delete(fieldToDelete);
       }
