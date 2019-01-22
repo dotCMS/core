@@ -33,6 +33,7 @@ import { DotEditContentTypeCacheService } from '../fields/content-type-fields-pr
 import { DotApiLinkModule } from '@components/dot-api-link/dot-api-link.module';
 import { SiteServiceMock } from 'src/app/test/site-service.mock';
 import { DotCopyButtonModule } from '@components/dot-copy-button/dot-copy-button.module';
+import * as _ from 'lodash';
 
 @Component({
     selector: 'dot-content-type-fields-drop-zone',
@@ -460,17 +461,29 @@ describe('ContentTypesEditComponent', () => {
             expect(dotRouterService.gotoPortlet).not.toHaveBeenCalled();
         });
 
+        it('should update fields attribute when a field is edit', () => {
+            const fields: ContentTypeField[] = _.cloneDeep(currentFieldsInServer);
+            fields[0].name = 'Updated field';
+
+            const fieldService = fixture.debugElement.injector.get(FieldService);
+            spyOn(fieldService, 'saveFields').and.returnValue(observableOf(fields));
+
+            const contentTypeFieldsDropZone = de.query(By.css('dot-content-type-fields-drop-zone'));
+            contentTypeFieldsDropZone.componentInstance.saveFields.emit([fields[0]]);
+
+            expect(fieldService.saveFields).toHaveBeenCalledWith('1234567890', [fields[0]]);
+            expect(comp.fields).toEqual(fields);
+        });
+
         it('should save fields on dropzone event', () => {
             const newFieldsAdded: ContentTypeField[] = [
                 {
                     name: 'field 1',
-                    id: '1',
                     clazz: 'com.dotcms.contenttype.model.field.ImmutableRowField',
                     sortOrder: 1
                 },
                 {
                     name: 'field 2',
-                    id: '2',
                     clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField',
                     sortOrder: 2
                 }
