@@ -58,6 +58,7 @@ import java.util.Set;
 import graphql.scalars.ExtendedScalars;
 import graphql.schema.DataFetcher;
 import graphql.schema.GraphQLArgument;
+import graphql.schema.GraphQLDirective;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLSchema;
@@ -67,6 +68,7 @@ import graphql.schema.idl.SchemaPrinter;
 import static graphql.Scalars.GraphQLString;
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
 import static graphql.schema.GraphQLList.list;
+import static graphql.schema.GraphQLNonNull.nonNull;
 import static graphql.schema.GraphQLObjectType.newObject;
 
 public class GraphqlAPIImpl implements GraphqlAPI {
@@ -168,7 +170,9 @@ public class GraphqlAPIImpl implements GraphqlAPI {
                 } else {
                     builder.field(newFieldDefinition()
                         .name(field.variable())
-                        .type(getGraphqlTypeForFieldClass(field.type()))
+                        .type(field.required()
+                            ? nonNull(getGraphqlTypeForFieldClass(field.type()))
+                            : getGraphqlTypeForFieldClass(field.type()))
                         .dataFetcher(getGraphqlDataFetcherForFieldClass(field.type()))
                     );
                 }
@@ -214,7 +218,7 @@ public class GraphqlAPIImpl implements GraphqlAPI {
 
             builder.field(newFieldDefinition()
                 .name(field.variable())
-                .type(outputType)
+                .type(field.required()?nonNull(outputType):outputType)
                 .dataFetcher(new RelationshipFieldDataFetcher())
             );
         } else { // if type is not created yet, let's listen for when the needed type gets created, so we can add the relationship field to this graphql type
