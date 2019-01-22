@@ -1,9 +1,6 @@
 package com.dotcms.graphql;
 
-import com.dotcms.graphql.business.GraphqlAPI;
-import com.dotcms.graphql.business.GraphqlAPIImpl;
 import com.dotcms.util.IntegrationTestInitService;
-import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 
 import org.junit.BeforeClass;
@@ -22,4 +19,5 @@ public class GraphqlAPITest {
 //        GraphqlAPI api = APILocator.getGraphqlAPI();
 //        api.getSchema();
 //    }
+
 }
