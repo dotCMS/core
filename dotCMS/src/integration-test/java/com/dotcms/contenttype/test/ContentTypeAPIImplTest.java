@@ -1151,7 +1151,7 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 			//Check that the relationship exists
 			assertEquals(1,APILocator.getRelationshipAPI().byContentType(childContentType).size());
 
-			//Delete childContentType
+			//Delete parentContentType
 			contentTypeApi.delete(parentContentType);
 
 			//Check that the relationship is deleted
