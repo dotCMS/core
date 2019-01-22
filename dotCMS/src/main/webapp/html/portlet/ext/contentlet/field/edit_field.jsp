@@ -89,6 +89,7 @@
                         || field.getFieldContentlet().startsWith(Field.DataType.FLOAT.toString())
                 );
         %>
+        <%---  Renders the field it self --%>
         <input type="text" name="<%=field.getFieldContentlet()%>" id="<%=field.getVelocityVarName()%>"
                 <%=(isNumber) ? "dojoType='dijit.form.ValidationTextBox' data-dojo-props=\"regExp:'\\\\d*\\.?\\\\d*', invalidMessage:'Invalid data.'\" style='width:120px;'" : "dojoType='dijit.form.TextBox'" %>
                value="<%= UtilMethods.htmlifyString(textValue) %>" <%= isReadOnly?"readonly=\"readonly\"":"" %> />
@@ -459,7 +460,7 @@
         <%if(LicenseUtil.getLevel() <= LicenseLevel.STANDARD.level ){ %>
         <div id="thumbnailParent<%=field.getVelocityVarName()%>">
             <%
-                String src = String.format("/contentAsset/image/%s/%s/?filter=Thumbnail&thumbnail_w=%d&thumbnail_h=%d&language_id=%s", contentlet.getIdentifier(), field.getVelocityVarName(), showDim, showDim, contentlet.getLanguageId());
+                String src = String.format("/contentAsset/image/%s/%s/?filter=Thumbnail&thumbnail_w=%d&thumbnail_h=%d&language_id=%s&r=%d", contentlet.getIdentifier(), field.getVelocityVarName(), showDim, showDim, contentlet.getLanguageId(), System.currentTimeMillis());
 
             %>
             <img src="<%=src%>"
@@ -515,10 +516,11 @@
 
     }%>
 
-
+    <%-- File uploader --%>
     <div
             id="<%=field.getVelocityVarName()%>"
             name="<%=field.getFieldContentlet()%>"
+            fileNameVisible="false"
             <%= UtilMethods.isSet(fileName)?"fileName=\"" + fileName.replaceAll("\"", "\\\"") +"\"":"" %>
             fieldName="<%=field.getVelocityVarName()%>"
             dowloadRestricted="<%= UtilMethods.isSet(resourceLink) ? resourceLink.isDownloadRestricted() : false %>"
@@ -535,6 +537,19 @@
         function saveBinaryFileOnContent<%=field.getVelocityVarName()%>(fileName, dijitReference){
             saveBinaryFileOnContent('<%=field.getInode()%>','<%=field.getVelocityVarName()%>','<%=field.getFieldContentlet()%>', dijitReference.fileNameField.value);
         }
+
+        function doReplaceFileAssetName(newAssetName) {
+            let titleField = dijit.byId("title");
+            let fileNameField = dijit.byId("fileName");
+            titleField.setValue(newAssetName);
+            fileNameField.setValue(newAssetName);
+            dijit.byId('fileAsset-Dialog').hide();
+        }
+
+        function doNotReplaceFileAssetName() {
+            dijit.byId('fileAsset-Dialog').hide();
+        }
+
     </script>
 
 
@@ -553,7 +568,7 @@
               if(!resourceLink.isDownloadRestricted()){ %>
                <%= LanguageUtil.get(pageContext, "Resource-Link") %>:
                <div style="padding:10px;">
-                <a href="<%=resourceLink.getResourceLinkAsString() %>" target="_new"><%=resourceLink.getResourceLinkUriAsString() %></a>
+                <a id="resourceLink" href="<%=resourceLink.getResourceLinkAsString() %>" target="_new"><%=resourceLink.getResourceLinkUriAsString() %></a>
                </div>
              <% } else { %>
                 <br>

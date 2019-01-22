@@ -237,7 +237,7 @@ public class TaskLocatorUtil {
 		ret.add(Task05030UpdateSystemContentTypesHost.class);
 		ret.add(Task05035CreateIndexForQRTZ_EXCL_TRIGGERSTable.class);
 		ret.add(Task05040LanguageTableIdentityOff.class);
-
+		ret.add(Task05050FileAssetContentTypeReadOnlyFileName.class);
 		return ret;
 	}
 

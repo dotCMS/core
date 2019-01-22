@@ -283,24 +283,6 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 	}
 
 	@CloseDBIfOpened
-	@Override
-	public boolean fileNameExists(final Host host, final Folder folder, final String fileName) throws  DotDataException {
-
-		if(!UtilMethods.isSet(fileName) || folder == null || host == null ) {
-			return false;
-		}
-
-
-		final Identifier folderId  = this.identifierAPI.find(folder);
-		final String path          = folder.getInode().equals(FolderAPI.SYSTEM_FOLDER)?
-				new StringBuilder(StringPool.FORWARD_SLASH).append(fileName).toString():
-				new StringBuilder(folderId.getPath()).append(fileName).toString();
-		final Identifier fileAsset = this.identifierAPI.find(host, path);
-
-		return (fileAsset!=null && InodeUtils.isSet(fileAsset.getId())  && !fileAsset.getAssetType().equals(Contentlet.FOLDER_KEY));
-	} // fileNameExists.
-
-	@CloseDBIfOpened
 	public boolean fileNameExists(Host host, Folder folder, String fileName, String identifier, long languageId) throws  DotDataException{
 		if( !UtilMethods.isSet(fileName) ){
 			return true;
@@ -310,35 +292,45 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 			return false;
 		}
 
-		boolean exist = false;
-
-		Identifier folderId = APILocator.getIdentifierAPI().find(folder);
-		String path = folder.getInode().equals(FolderAPI.SYSTEM_FOLDER)?"/"+fileName:folderId.getPath()+fileName;
-		Identifier fileAsset = APILocator.getIdentifierAPI().find(host, path);
-
-		if(fileAsset!=null && InodeUtils.isSet(fileAsset.getId()) && !identifier.equals(fileAsset.getId()) && !fileAsset.getAssetType().equals("folder")){
-			// Let's not break old logic. ie calling fileNameExists method without languageId parameter.
-			if (languageId == -1){
-				exist = true;
-			} else { // New logic.
-				//We need to make sure that the contentlets for this identifier have the same language.
-				try {
-					contAPI.findContentletByIdentifier(fileAsset.getId(), false, languageId,
-						APILocator.getUserAPI().getSystemUser(), false);
-					exist = true;
-				} catch (DotSecurityException dse) {
-					// Something could failed, lets log and assume true to not break anything.
-					Logger.error(FileAssetAPIImpl.class,
-						"Error trying to find contentlet from identifier:" + fileAsset.getId(), dse);
-					exist = true;
-				} catch (DotContentletStateException dcse){
-					// DotContentletStateException is thrown when content is not found.
-					exist = false;
+		final Identifier folderId = APILocator.getIdentifierAPI().find(folder);
+		final String path = folder.getInode().equals(FolderAPI.SYSTEM_FOLDER) ? StringPool.FORWARD_SLASH + fileName : folderId.getPath() + fileName;
+		final Identifier fileAssetIdentifier = APILocator.getIdentifierAPI().find(host, path);
+		if(( null == fileAssetIdentifier || !InodeUtils.isSet(fileAssetIdentifier.getId()) || "folder".equals(fileAssetIdentifier.getAssetType()))){
+		   // if we're looking at a folder or the fileAssetIdentifier wasn't found. It doesn't exist for sure.
+		   return false;
+		}
+            //Beyond this point we know something matches the path for that host.
+			if(!UtilMethods.isSet(identifier)){
+			   //it's a brand new contentlet we're dealing with
+			   //At this point we know it DOES exist, and since we're dealing with a fresh contentlet that hasn't even been inserted yet (We don't need to worry about lang).
+			   return true;
+			} else {
+				// old logic. ie calling fileNameExists method without languageId parameter.
+				if (languageId == -1){
+				   return true;
+				}
+                // Now we have an identifier and a lang.
+				// if the file-asset identifier is different from the contentlet identifier we're looking at. Then it does exist already.
+				if (!identifier.equals(fileAssetIdentifier.getId())) {
+				   // the path's already associated with another contentlet. Get out of here.
+				   return true;
+				} else {
+				    // if we're looking at the same conentlet we need to verify if the file-Name's already associated with the language we got.
+					try {
+						return (null != contAPI.findContentletByIdentifier(fileAssetIdentifier.getId(), false, languageId, APILocator.getUserAPI().getSystemUser(), false));
+					} catch (DotSecurityException dse) {
+						// Something could have failed, lets log and assume true to not break anything.
+						Logger.error(FileAssetAPIImpl.class,
+								"Error trying to find contentlet from identifier:" + fileAssetIdentifier.getId(), dse);
+						return true;
+					} catch (DotContentletStateException dcse) {
+						// DotContentletStateException is thrown when content is not found.
+					}
 				}
 			}
-		}
-		return exist;
-    }
+
+		return false;
+	}
 
 	public String getRelativeAssetPath(FileAsset fa) {
 		String _inode = fa.getInode();
@@ -369,14 +361,10 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 			    if(fa.isLive()) {
 					isfileAssetContLive = true;
 			    }
-			    //File oldFile = fileAssetCont.getBinary(BINARY_FIELD);
-				//File newFile = new File(oldFile.getPath().substring(0,oldFile.getPath().indexOf(oldFile.getName()))+newName+"."+ext);
 				try {
-					//FileUtils.copyFile(oldFile, newFile);
 					fileAssetCont.setInode(null);
 					fileAssetCont.setFolder(folder.getInode());
-					//fileAssetCont.setBinary(BINARY_FIELD, newFile);
-					final String newFileName=newName+"."+ext;
+					final String newFileName = newName + "." + ext;
 					fileAssetCont.setStringProperty(FileAssetAPI.TITLE_FIELD, newFileName);
 					fileAssetCont.setStringProperty(FileAssetAPI.FILE_NAME_FIELD, newFileName);
 					fileAssetCont= APILocator.getContentletAPI().checkin(fileAssetCont, user, respectFrontendRoles);
@@ -390,10 +378,6 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 					Logger.error(this, "Unable to rename file asset to "
 							+ newName + " for asset " + id.getId(), e);
 					throw e;
-				} finally {
-					//if (newFile != null) {
-					//	FileUtils.deleteQuietly(newFile);
-					//}
 				}
 				return true;
 			}

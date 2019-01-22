@@ -157,6 +157,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -304,10 +305,26 @@ public class ESContentletAPIImpl implements ContentletAPI {
         try {
             return findContentletByIdentifier(contentletId.getId(), false, languageId, APILocator.systemUser(), false);
         } catch (DotContentletStateException dcs) {
-            Logger.debug(this, "No working contentlet found for language");
+            Logger.debug(this, "No working contentlet found for language: "+ languageId);
         }
         return null;
     }
+
+    @CloseDBIfOpened
+    @Override
+    public List<Contentlet> findContentletsForAllLanguages(final Identifier contentletId) {
+        final LanguageAPI languageAPI = APILocator.getLanguageAPI();
+        final List<Language> allLanguages = languageAPI.getLanguages();
+        return allLanguages.stream().map(language -> {
+            try {
+                return findContentletForLanguage(language.getId(), contentletId);
+            } catch (DotDataException | DotSecurityException e) {
+                Logger.debug(this, "No working contentlet found for language: "+ language.toString());
+                return null;
+            }
+        }).filter(Objects::nonNull).collect(Collectors.toList());
+    }
+
 
     @CloseDBIfOpened
     @Override
@@ -3120,15 +3137,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     parent = APILocator.getHostAPI().find( contentlet.getHost(), sysuser, false );
                 }
                 Identifier ident;
-                final Contentlet contPar = contentlet.getStructure().getStructureType()
-                        == Structure.STRUCTURE_TYPE_FILEASSET ? contentletRaw : contentlet;
-                if (existingIdentifier != null) {
+                final Contentlet contPar=contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET?contentletRaw:contentlet;
+                if(existingIdentifier!=null) {
                     ident = APILocator.getIdentifierAPI()
                             .createNew(contPar, parent, existingIdentifier);
-                } else {
+                }else {
                     ident = APILocator.getIdentifierAPI().createNew(contPar, parent);
                 }
-
                 //Clean-up the contentlet object again..., we don' want to persist this URL in the db
                 removeURLFromContentlet( contentlet );
 
@@ -3151,8 +3166,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 if(contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET){
                     try {
                         if(contentletRaw.getBinary(FileAssetAPI.BINARY_FIELD) == null){
-                            String binaryIdentifier = contentletRaw.getIdentifier() != null ? contentletRaw.getIdentifier() : "";
-                            String binarynode = contentletRaw.getInode() != null ? contentletRaw.getInode() : "";;
+                            String binaryIdentifier = contentletRaw.getIdentifier() != null ? contentletRaw.getIdentifier() : StringPool.BLANK;
+                            String binarynode = contentletRaw.getInode() != null ? contentletRaw.getInode() : StringPool.BLANK;
                             throw new FileAssetValidationException("Unable to validate field: " + FileAssetAPI.BINARY_FIELD
                                     + " identifier: " + binaryIdentifier
                                     + " inode: " + binarynode);
@@ -3534,6 +3549,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
             if(contentlet != null && contentlet.isKeyValue()){
                 //remove from cache
                 CacheLocator.getKeyValueCache().remove(contentlet);
+            }
+
+            //If the URI changed and we're looking at FileAsset we need to evict all other language instances
+            if(contentlet != null && contentlet.isFileAsset() && changedURI){
+               final List<Contentlet> allContentlet = findContentletsForAllLanguages(contIdent);
+               allContentlet.forEach(cont -> {
+                   CacheLocator.getContentletCache().remove(cont);
+               });
             }
 
             if(structureHasAHostField && changedURI) {
