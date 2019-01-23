@@ -8,7 +8,7 @@ import { By } from '@angular/platform-browser';
 })
 class TestComponent {}
 
-fdescribe('DotMaxlengthDirective', () => {
+describe('DotMaxlengthDirective', () => {
     let fixture: ComponentFixture<TestComponent>;
     let element: DebugElement;
 
@@ -36,7 +36,7 @@ fdescribe('DotMaxlengthDirective', () => {
     it(
         'should remove extra characters when length is more than max length',
         fakeAsync(() => {
-            const event = new Event('keypress');
+            const event = new Event('paste');
             fixture.detectChanges();
             element.nativeElement.dispatchEvent(event);
             element.nativeElement.textContent = '12345678901';
