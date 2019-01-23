@@ -500,6 +500,7 @@ public class JavascriptResource {
             final Map<String, Object> contextParams = CollectionsUtils.map(
                     "pathParam", pathParam,
                     "urlParams", initDataObject.getParamsMap(),
+                    "user", user,
                     "queryParams", uriInfo.getQueryParameters(),
                     "bodyMap", bodyMap,
                     "console", JavaScriptUtil.getConsole(),
