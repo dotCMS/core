@@ -290,6 +290,31 @@ public class ContentResourceTest extends IntegrationTestBase {
 
     }
 
+    @Test
+    public void test_getContentWithInvalidDepth_shouldReturnBadRequest() throws Exception {
+
+        final long language = languageAPI.getDefaultLanguage().getId();
+        ContentType parentContentType = null;
+
+        try {
+            //creates content types
+            parentContentType = createSampleContentType(false);
+
+            final ContentletDataGen parentDataGen = new ContentletDataGen(parentContentType.id());
+            final Contentlet parent = parentDataGen.languageId(language).nextPersisted();
+
+            //calls endpoint
+            final ContentResource contentResource = new ContentResource();
+            final HttpServletRequest request = createHttpRequest();
+            final HttpServletResponse response = mock(HttpServletResponse.class);
+            final Response endpointResponse = contentResource.getContent(request, response,
+                    "/id/" + parent.getIdentifier() + "/live/false/type/json/depth/bad_depth");
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), endpointResponse.getStatus());
+        }finally {
+            deleteContentTypes(CollectionsUtils.list(parentContentType));
+        }
+    }
+
     private void deleteContentTypes(final List<ContentType> contentTypes) throws DotSecurityException, DotDataException {
         contentTypes.forEach(contentType -> {
             if (contentType != null && contentType.id() != null){
