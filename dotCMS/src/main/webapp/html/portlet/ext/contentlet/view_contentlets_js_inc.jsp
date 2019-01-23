@@ -20,6 +20,7 @@
         dojo.require("dijit.form.FilteringSelect");
         dojo.require("dijit.form.MultiSelect");
         dojo.require("dotcms.dijit.form.HostFolderFilteringSelect");
+        dojo.require("dojo.aspect");
 
         var radiobuttonsIds = new Array();
         var checkboxesIds = new Array();
@@ -710,6 +711,15 @@
                          
 	
 		              }, dojo.byId("${relationSearchField}Div"));
+
+		              dojo.aspect.around(relationshipSearch, '_announceOption', function(origFunction) {
+                          return function(node) {
+                              this.searchAttr = 'label';
+                              var r = origFunction.call(this, node);
+                              this.searchAttr = 'searchMe';
+                              return r;
+                          }
+                      });
 
 		              reloadRelationshipBox(relationshipSearch,"${relationType}");
 		              
