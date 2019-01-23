@@ -1,4 +1,6 @@
-import { Directive, ElementRef, HostListener, Input } from '@angular/core';
+import { Directive, ElementRef, Input, OnDestroy, OnInit } from '@angular/core';
+import { fromEvent, merge, Subject } from 'rxjs';
+import { delay, filter, takeUntil, tap } from 'rxjs/operators';
 
 /**
  * Directive that set a max length behavior to elements with contenteditable="true"
@@ -7,40 +9,53 @@ import { Directive, ElementRef, HostListener, Input } from '@angular/core';
 @Directive({
     selector: '[dotMaxlength]'
 })
-export class DotMaxlengthDirective {
+export class DotMaxlengthDirective implements OnInit, OnDestroy {
     private _maxLength: number;
+    private events = ['paste', 'keypress'];
+    private destroy$: Subject<boolean> = new Subject<boolean>();
 
     constructor(private el: ElementRef) {}
+
+    ngOnInit() {
+        const eventStreams = this.events.map(ev => fromEvent(this.el.nativeElement, ev));
+        const allEvents$ = merge(...eventStreams);
+        allEvents$
+            .pipe(
+                takeUntil(this.destroy$),
+                tap((keyboardEvent: Event) => {
+                    if (!this.isValidAction(keyboardEvent)) {
+                        keyboardEvent.preventDefault();
+                    }
+                }),
+                delay(1),
+                filter(() => this.el.nativeElement.textContent.length > this._maxLength),
+                tap(() => this.reduceText())
+            )
+            .subscribe();
+    }
+
+    ngOnDestroy(): void {
+        this.destroy$.next(true);
+        this.destroy$.complete();
+    }
 
     @Input()
     set dotMaxlength(maxLength: number) {
         this._maxLength = maxLength || 255;
     }
 
-    /**
-     * Listener fo the paste & keypress event. Will reduce the string to max Length.
-     *
-     * @memberof DotMaxlengthDirective
-     */
-    @HostListener('paste', ['$event'])
-    @HostListener('keypress', ['$event'])
-    eventHandler(event: Event) {
-        if (
+    private isValidAction(keyboardEvent: Event): boolean {
+        return (
             this.el.nativeElement.textContent.length < this._maxLength ||
-            this.isAllowedKeyCode(event) ||
+            this.isAllowedKeyCode(keyboardEvent) ||
             !!window.getSelection().toString()
-        ) {
-            setTimeout(() => {
-                if (this.el.nativeElement.textContent.length > this._maxLength) {
-                    this.el.nativeElement.textContent = this.el.nativeElement.textContent.slice(
-                        0,
-                        this._maxLength
-                    );
-                }
-            }, 0);
-        } else {
-            event.preventDefault();
-        }
+        );
+    }
+    private reduceText(): void {
+        this.el.nativeElement.textContent = this.el.nativeElement.textContent.slice(
+            0,
+            this._maxLength
+        );
     }
 
     /**
