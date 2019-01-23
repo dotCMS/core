@@ -258,7 +258,7 @@ public class SimpleWebInterceptorDelegateImpl implements WebInterceptorDelegate 
 
             for (String filter : filters) {
 
-                if (match(uri.toLowerCase(), filter)) {  // if some of the filter match, is enough.
+                if (match(uri, filter)) {  // if some of the filter match, is enough.
 
                     isOk = true;
                     break;
@@ -281,7 +281,7 @@ public class SimpleWebInterceptorDelegateImpl implements WebInterceptorDelegate 
             uftUri = uri;
         }
 
-        return RegEX.contains(uftUri, filterPattern.trim());
+        return RegEX.containsCaseInsensitive(uftUri, filterPattern.trim());
     } // match.
 
     private void init(final WebInterceptor webInterceptor) {
