@@ -22,7 +22,7 @@ export class DotMaxlengthDirective implements OnInit, OnDestroy {
         allEvents$
             .pipe(
                 takeUntil(this.destroy$),
-                tap((keyboardEvent: Event) => {
+                tap((keyboardEvent: KeyboardEvent) => {
                     if (!this.isValidAction(keyboardEvent)) {
                         keyboardEvent.preventDefault();
                     }
@@ -44,10 +44,10 @@ export class DotMaxlengthDirective implements OnInit, OnDestroy {
         this._maxLength = maxLength || 255;
     }
 
-    private isValidAction(keyboardEvent: Event): boolean {
+    private isValidAction(event: KeyboardEvent): boolean {
         return (
             this.el.nativeElement.textContent.length < this._maxLength ||
-            this.isAllowedKeyCode(keyboardEvent) ||
+            this.isAllowedKeyCode(event) ||
             !!window.getSelection().toString()
         );
     }
@@ -58,27 +58,14 @@ export class DotMaxlengthDirective implements OnInit, OnDestroy {
         );
     }
 
-    /**
-     * Check if a keycode is allowed when max limit is reached
-     * 8 : Backspace
-     * 37: LeftKey
-     * 38: UpKey
-     * 39: RightKey
-     * 40: DownKey
-     * ctrlKey for control key
-     * metakey for command key on mac keyboard
-     * @param {any} eventKeycode
-     * @returns boolean
-     *
-     * @memberof DotMaxlengthDirective
-     */
-    isAllowedKeyCode(event) {
+    private isAllowedKeyCode(event: KeyboardEvent) {
+        console.log(event);
         return (
-            event.keyCode === 8 ||
-            event.keyCode === 38 ||
-            event.keyCode === 39 ||
-            event.keyCode === 37 ||
-            event.keyCode === 40 ||
+            event.key === 'Backspace' ||
+            event.key === 'ArrowLeft' ||
+            event.key === 'ArrowUp' ||
+            event.key === 'ArrowRight' ||
+            event.key === 'ArrowDown' ||
             event.ctrlKey ||
             event.metaKey
         );

@@ -21,25 +21,36 @@ describe('DotMaxlengthDirective', () => {
         element = fixture.debugElement.query(By.css('div'));
     });
 
+
     it(
-        'should allow new characters when max length is not reached',
+        'should keep same text after event if max length is not reached',
         fakeAsync(() => {
-            const event = new Event('keypress');
             fixture.detectChanges();
-            element.nativeElement.dispatchEvent(event);
-            element.nativeElement.textContent = element.nativeElement.textContent + 'o';
+            element.triggerEventHandler('keypress', null);
             tick(5);
-            expect(element.nativeElement.textContent).toBe('testo');
+            expect(element.nativeElement.textContent).toBe('test');
         })
     );
 
     it(
-        'should remove extra characters when length is more than max length',
+        'should remove extra characters when length is more than max length on keypress',
+        fakeAsync(() => {
+            const event = new Event('keypress');
+            fixture.detectChanges();
+            element.nativeElement.dispatchEvent(event);
+            element.nativeElement.textContent = '12345678901';
+            tick(5);
+            expect(element.nativeElement.textContent).toBe('1234567890');
+        })
+    );
+
+    it(
+        'should remove extra characters when length is more than max length on paste',
         fakeAsync(() => {
             const event = new Event('paste');
             fixture.detectChanges();
             element.nativeElement.dispatchEvent(event);
-            element.nativeElement.textContent = '12345678901';
+            element.nativeElement.textContent = '1234567890remove';
             tick(5);
             expect(element.nativeElement.textContent).toBe('1234567890');
         })
