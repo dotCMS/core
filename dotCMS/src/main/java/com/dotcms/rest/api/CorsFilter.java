@@ -3,16 +3,16 @@ package com.dotcms.rest.api;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
-import com.dotcms.repackage.EDU.oswego.cs.dl.util.concurrent.ConcurrentHashMap;
 import com.dotcms.repackage.javax.ws.rs.container.ContainerRequestContext;
 import com.dotcms.repackage.javax.ws.rs.container.ContainerResponseContext;
 import com.dotcms.repackage.javax.ws.rs.container.ContainerResponseFilter;
 import com.dotcms.repackage.javax.ws.rs.core.MultivaluedMap;
 import com.dotmarketing.util.Config;
+import com.google.common.collect.ImmutableList;
 
 
 /**
@@ -23,19 +23,15 @@ public class CorsFilter implements ContainerResponseFilter {
 
     final private static String CORS_PREFIX = "api.cors";
     final private static String CORS_DEFAULT = "default";
-    final private static Map<String, List<String[]>> headerMap = new ConcurrentHashMap();
+    final private static Map<String, List<String[]>> headerMap = new ConcurrentHashMap<>();
 
 
     @Override
     public void filter(ContainerRequestContext requestContext, ContainerResponseContext responseContext) throws IOException {
-        final MultivaluedMap<String, Object> headers = responseContext.getHeaders();
+        final MultivaluedMap<String, Object> responseHeaders = responseContext.getHeaders();
         final String resource = requestContext.getUriInfo().getMatchedResources().get(0).getClass().getSimpleName().toLowerCase();
-        final List<String[]> corsHeaders = getHeaders(resource);
-        for (final String[] corsHeader : corsHeaders) {
-            if (!headers.containsKey(corsHeader[0])) {
-                headers.add(corsHeader[0], corsHeader[1]);
-            }
-        }
+        getHeaders(resource).forEach(header-> responseHeaders.add(header[0], header[1]));
+        
     }
 
 
@@ -45,14 +41,14 @@ public class CorsFilter implements ContainerResponseFilter {
             synchronized (this.getClass()) {
                 corsHeaders = headerMap.get(mapping);
                 if (null == corsHeaders) {
-                    corsHeaders = new ArrayList<>();
-                    final Iterator<String> keys = Config.subset(CORS_PREFIX + "." + mapping);
-                    while (keys.hasNext()) {
-                        final String key = keys.next();
-                        final String value = Config.getStringProperty(CORS_PREFIX + "." + mapping + "." + key, "");
-                        final String headerName = fixHeaderCase(key.replace(CORS_PREFIX, ""));
-                        corsHeaders.add(new String[] {headerName, value});
-                    }
+                    final List<String[]> newHeaders = new ArrayList<>();
+                    Config.subset(CORS_PREFIX + "." + mapping).forEachRemaining(key -> {
+                        newHeaders.add(new String[] {
+                                fixHeaderCase(key.replace(CORS_PREFIX, "")), 
+                                Config.getStringProperty(CORS_PREFIX + "." + mapping + "." + key, null)
+                            });
+                    });
+                    corsHeaders = ImmutableList.copyOf(newHeaders);
                     headerMap.put(mapping, corsHeaders);
                 }
             }
