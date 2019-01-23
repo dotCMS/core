@@ -42,6 +42,7 @@ $tab-name-height: 32px;
     z-index: 1;
     margin-right: $basic-padding * 4;
     overflow: hidden;
+    word-wrap: break-word;
 
     &:focus {
         outline-width: 0;
