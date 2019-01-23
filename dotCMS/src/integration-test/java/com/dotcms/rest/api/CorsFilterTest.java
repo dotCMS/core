@@ -36,15 +36,19 @@ public class CorsFilterTest {
     @Test
     public void test_cors_filter_headers_returned_by_resource() {
         
-        final CorsFilter corsFilter = new CorsFilter();
+
         
         final String[] contentResourceKeyValue = new String[] {"api.cors.contentresource.access-control-allow-origin", "https://demo.dotcms.com"};
         final String[] defaultKeyValue1 = new String[] {"api.cors.default.access-control-allow-origin", "https://test2"};
         final String[] defaultKeyValue2 = new String[] {"api.cors.default.access-control-allow-methods", "GET,HEAD,POST,PUT,DELETE,OPTIONS"};
         
+
+        
         Config.setProperty(contentResourceKeyValue[0], contentResourceKeyValue[1]);
         Config.setProperty(defaultKeyValue1[0], defaultKeyValue1[1]);
         Config.setProperty(defaultKeyValue2[0], defaultKeyValue2[1]);
+        
+        final CorsFilter corsFilter = new CorsFilter();
         
         // Make sure we get specific headers
         List<String[]> results = corsFilter.getHeaders("contentresource");
