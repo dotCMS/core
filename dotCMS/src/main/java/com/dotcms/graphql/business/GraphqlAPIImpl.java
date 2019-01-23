@@ -43,6 +43,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 
 import java.io.File;
@@ -57,6 +58,7 @@ import java.util.Set;
 import graphql.scalars.ExtendedScalars;
 import graphql.schema.DataFetcher;
 import graphql.schema.GraphQLArgument;
+import graphql.schema.GraphQLDirective;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLSchema;
@@ -66,6 +68,7 @@ import graphql.schema.idl.SchemaPrinter;
 import static graphql.Scalars.GraphQLString;
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
 import static graphql.schema.GraphQLList.list;
+import static graphql.schema.GraphQLNonNull.nonNull;
 import static graphql.schema.GraphQLObjectType.newObject;
 
 public class GraphqlAPIImpl implements GraphqlAPI {
@@ -167,7 +170,9 @@ public class GraphqlAPIImpl implements GraphqlAPI {
                 } else {
                     builder.field(newFieldDefinition()
                         .name(field.variable())
-                        .type(getGraphqlTypeForFieldClass(field.type()))
+                        .type(field.required()
+                            ? nonNull(getGraphqlTypeForFieldClass(field.type()))
+                            : getGraphqlTypeForFieldClass(field.type()))
                         .dataFetcher(getGraphqlDataFetcherForFieldClass(field.type()))
                     );
                 }
@@ -186,6 +191,8 @@ public class GraphqlAPIImpl implements GraphqlAPI {
 
     private void handleRelationshipField(ContentType contentType, Map<String, GraphQLObjectType> graphqlObjectTypes,
                                          GraphQLObjectType.Builder builder, Field field) {
+        // TODO: make return type an object or list based on cardinality using RelAPI method from Nolly
+
         final ContentType relatedContentType;
         try {
             relatedContentType = getRelatedContentTypeForField(field, APILocator.systemUser());
@@ -193,22 +200,29 @@ public class GraphqlAPIImpl implements GraphqlAPI {
             throw new DotRuntimeException("Unable to create schema type for Content Type: " + contentType.variable(), e);
         }
 
+        Relationship relationship;
+
+        try {
+            relationship = APILocator.getRelationshipAPI().getRelationshipFromField(field,
+                APILocator.systemUser());
+        } catch (DotDataException | DotSecurityException e) {
+            throw new DotRuntimeException(e);
+        }
+
         // If the type exists already let's use it
         if(UtilMethods.isSet(graphqlObjectTypes.get(relatedContentType.variable()))) {
+
+            final GraphQLOutputType outputType = relationship.getCardinality() == WebKeys.Relationship.RELATIONSHIP_CARDINALITY.ONE_TO_ONE.ordinal()
+                ? graphqlObjectTypes.get(relatedContentType.variable())
+                : list(graphqlObjectTypes.get(relatedContentType.variable()));
+
             builder.field(newFieldDefinition()
                 .name(field.variable())
-                .type(graphqlObjectTypes.get(relatedContentType.variable()))
+                .type(field.required()?nonNull(outputType):outputType)
                 .dataFetcher(new RelationshipFieldDataFetcher())
             );
         } else { // if type is not created yet, let's listen for when the needed type gets created, so we can add the relationship field to this graphql type
-            Relationship relationship;
 
-            try {
-                 relationship = APILocator.getRelationshipAPI().getRelationshipFromField(field,
-                    APILocator.systemUser());
-            } catch (DotDataException | DotSecurityException e) {
-               throw new DotRuntimeException(e);
-            }
 
             RelationshipFieldTypeCreatedListener relationshipFieldTypeCreatedListener =
                 new RelationshipFieldTypeCreatedListener(contentType.variable(), field.variable(),

@@ -17,6 +17,7 @@ import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
@@ -39,8 +40,7 @@ import java.util.UUID;
 import static junit.framework.Assert.assertTrue;
 import static junit.framework.TestCase.assertEquals;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 @RunWith(DataProviderRunner.class)
 public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
@@ -1084,7 +1084,7 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 		ContentType contentType = ContentTypeBuilder.builder(BaseContentType.getContentTypeClass(base))
 				.description("ContentTypeWithPublishExpireFields " + time).folder(FolderAPI.SYSTEM_FOLDER)
 				.host(Host.SYSTEM_HOST).name("ContentTypeWithPublishExpireFields " + time)
-				.owner(APILocator.systemUser().toString()).variable("CTVariable").publishDateVar("publishDate")
+				.owner(APILocator.systemUser().toString()).variable("CTVariable711").publishDateVar("publishDate")
 				.expireDateVar("expireDate").build();
 		contentType = contentTypeApi.save(contentType);
 
@@ -1104,5 +1104,224 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 
 		// Deleting content type.
 		delete(contentType);
+	}
+
+	private ContentType createContentType(final String name) throws DotSecurityException, DotDataException {
+		return contentTypeApi.save(ContentTypeBuilder.builder(SimpleContentType.class).folder(
+				FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST).name(name)
+				.owner(user.getUserId()).build());
+	}
+
+	private Field createRelationshipField(final String fieldName, final String parentContentTypeID, final String childContentTypeVariable)
+			throws DotDataException, DotSecurityException {
+		final Field field = FieldBuilder.builder(RelationshipField.class)
+				.name(fieldName)
+				.contentTypeId(parentContentTypeID)
+				.values(String.valueOf(WebKeys.Relationship.RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal()))
+				.indexed(true)
+				.listed(false)
+				.relationType(childContentTypeVariable)
+				.build();
+
+		return APILocator.getContentTypeFieldAPI().save(field, APILocator.systemUser());
+	}
+	/**
+	 * This test creates a 2 content types and a Relationship Field on the parent,
+	 * then deletes the parent content type so the relationship
+	 * must be deleted.
+	 *
+	 * @throws Exception
+	 */
+	@Test
+	public void testDeleteContentTypeParent_deleteRelationship() throws Exception{
+		ContentType parentContentType = null;
+		ContentType childContentType = null;
+		try {
+			//Create content types
+			parentContentType = createContentType("parentContentType" + System.currentTimeMillis());
+			childContentType = createContentType("childContentType" + System.currentTimeMillis());
+
+			//Create Relationship Field
+			final Field field = createRelationshipField("testRelationship",parentContentType.id(),childContentType.variable());
+
+			//Check that the parentContentType has the field
+			parentContentType = contentTypeApi.find(parentContentType.id());
+			assertEquals(1,parentContentType.fields().size());
+
+			//Check that the relationship exists
+			assertEquals(1,APILocator.getRelationshipAPI().byContentType(childContentType).size());
+
+			//Delete parentContentType
+			contentTypeApi.delete(parentContentType);
+
+			//Check that the relationship is deleted
+			assertTrue("Relationship Still Exists",APILocator.getRelationshipAPI().byContentType(childContentType).isEmpty());
+
+		} finally{
+			if(parentContentType != null){
+				contentTypeApi.delete(parentContentType);
+			}
+			if(childContentType != null){
+				contentTypeApi.delete(childContentType);
+			}
+		}
+	}
+
+	/**
+	 * This test creates a 2 content types and a Relationship Field on the parent,
+	 * then deletes the child content type so the Relationship Field on the parent and the relationship
+	 * must be deleted.
+	 *
+	 * @throws Exception
+	 */
+	@Test
+	public void testDeleteContentTypeChild_deleteRelationshipFieldOnParent_deleteRelationship() throws Exception{
+		ContentType parentContentType = null;
+		ContentType childContentType = null;
+		try {
+			//Create content types
+			parentContentType = createContentType("parentContentType" + System.currentTimeMillis());
+			childContentType = createContentType("childContentType" + System.currentTimeMillis());
+
+			//Create Relationship Field
+			final Field field = createRelationshipField("testRelationship",parentContentType.id(),childContentType.variable());
+
+			//Check that the parentContentType has the field
+			parentContentType = contentTypeApi.find(parentContentType.id());
+			assertEquals(1,parentContentType.fields().size());
+
+			//Check that the relationship exists
+			assertEquals(1,APILocator.getRelationshipAPI().byContentType(childContentType).size());
+
+			//Delete childContentType
+			contentTypeApi.delete(childContentType);
+
+			//Check that the field is deleted on the parentContentType
+			parentContentType = contentTypeApi.find(parentContentType.id());
+			assertEquals(0,parentContentType.fields().size());
+
+			//Check that the relationship is deleted
+			assertTrue("Relationship Still Exists",APILocator.getRelationshipAPI().byContentType(parentContentType).isEmpty());
+
+		} finally{
+			if(parentContentType != null){
+				contentTypeApi.delete(parentContentType);
+			}
+			if(childContentType != null){
+				contentTypeApi.delete(childContentType);
+			}
+		}
+	}
+
+	/**
+	 * This test creates a 2 content types and a Relationship Field on both content types(relationship both ways),
+	 * then deletes the parent content type so the Relationship Field on the child and the relationship
+	 * must be deleted.
+	 *
+	 * @throws Exception
+	 */
+	@Test
+	public void testDeleteContentTypeParent_deleteRelationshipFieldOnChild_deleteRelationship_bothWays() throws Exception{
+		ContentType parentContentType = null;
+		ContentType childContentType = null;
+		try {
+			//Create content types
+			parentContentType = createContentType("parentContentType" + System.currentTimeMillis());
+			childContentType = createContentType("childContentType" + System.currentTimeMillis());
+
+			//Create Relationship Field on Parent
+			final Field parentRelationshipField = createRelationshipField("testRelationship",parentContentType.id(),childContentType.variable());
+
+			//Check that the parentContentType has the field
+			parentContentType = contentTypeApi.find(parentContentType.id());
+			assertEquals(1,parentContentType.fields().size());
+
+			//Check that the relationship exists
+			assertEquals(1,APILocator.getRelationshipAPI().byContentType(childContentType).size());
+
+			//Create Relationship Field on Child
+			createRelationshipField("testRelationship",childContentType.id(),parentContentType.variable()+"."+parentRelationshipField.variable());
+
+			//Check that the childContentType has the field
+			childContentType = contentTypeApi.find(childContentType.id());
+			assertEquals(1,childContentType.fields().size());
+
+			//Check that there is only one relationship regardless the 2 fields
+			assertEquals(1,APILocator.getRelationshipAPI().byContentType(childContentType).size());
+
+			//Delete parentContentType
+			contentTypeApi.delete(parentContentType);
+
+			//Check that the field is deleted on the childContentType
+			childContentType = contentTypeApi.find(childContentType.id());
+			assertEquals(0,childContentType.fields().size());
+
+			//Check that the relationship is deleted
+			assertTrue("Relationship Still Exists",APILocator.getRelationshipAPI().byContentType(childContentType).isEmpty());
+
+		} finally{
+			if(parentContentType != null){
+				contentTypeApi.delete(parentContentType);
+			}
+			if(childContentType != null){
+				contentTypeApi.delete(childContentType);
+			}
+		}
+	}
+
+	/**
+	 * This test creates a 2 content types and a Relationship Field on both content types(relationship both ways),
+	 * then deletes the child content type so the Relationship Field on the parent and the relationship
+	 * must be deleted.
+	 *
+	 * @throws Exception
+	 */
+	@Test
+	public void testDeleteContentTypeChild_deleteRelationshipFieldOnParent_deleteRelationship_bothWays() throws Exception{
+		ContentType parentContentType = null;
+		ContentType childContentType = null;
+		try {
+			//Create content types
+			parentContentType = createContentType("parentContentType" + System.currentTimeMillis());
+			childContentType = createContentType("childContentType" + System.currentTimeMillis());
+
+			//Create Relationship Field on Parent
+			final Field parentRelationshipField = createRelationshipField("testRelationship",parentContentType.id(),childContentType.variable());
+
+			//Check that the parentContentType has the field
+			parentContentType = contentTypeApi.find(parentContentType.id());
+			assertEquals(1,parentContentType.fields().size());
+
+			//Check that the relationship exists
+			assertEquals(1,APILocator.getRelationshipAPI().byContentType(childContentType).size());
+
+			//Create Relationship Field on Child
+			createRelationshipField("testRelationship",childContentType.id(),parentContentType.variable()+"."+parentRelationshipField.variable());
+
+			//Check that the childContentType has the field
+			childContentType = contentTypeApi.find(childContentType.id());
+			assertEquals(1,childContentType.fields().size());
+
+			//Check that there is only one relationship regardless the 2 fields
+			assertEquals(1,APILocator.getRelationshipAPI().byContentType(childContentType).size());
+
+			//Delete childContentType
+			contentTypeApi.delete(childContentType);
+
+			//Check that the field is deleted on the parentContentType
+			parentContentType = contentTypeApi.find(parentContentType.id());
+			assertEquals(0,parentContentType.fields().size());
+
+			//Check that the relationship is deleted
+			assertTrue("Relationship Still Exists",APILocator.getRelationshipAPI().byContentType(parentContentType).isEmpty());
+
+		} finally{
+			if(parentContentType != null){
+				contentTypeApi.delete(parentContentType);
+			}
+			if(childContentType != null){
+				contentTypeApi.delete(childContentType);
+			}
+		}
 	}
 }

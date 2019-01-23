@@ -27,6 +27,12 @@ public abstract class PersonaContentType extends ContentType implements Expireab
 
 
 	private static final long serialVersionUID = 1L;
+	public static final String PERSONA_HOST_FOLDER_FIELD_VAR = "hostFolder";
+	public static final String PERSONA_NAME_FIELD_VAR = "name";
+	public static final String PERSONA_KEY_TAG_FIELD_VAR = "keyTag";
+	public static final String PERSONA_PHOTO_FIELD_VAR = "photo";
+	public static final String PERSONA_OTHER_TAGS_FIELD_VAR = "tags";
+	public static final String PERSONA_DESCRIPTION_FIELD_VAR = "description";
 
 	@Override
 	public  BaseContentType baseType() {
@@ -46,7 +52,7 @@ public abstract class PersonaContentType extends ContentType implements Expireab
 		fields.add(
 			ImmutableHostFolderField.builder()
 				.name("Site/Folder")
-				.variable("hostFolder")
+				.variable(PERSONA_HOST_FOLDER_FIELD_VAR)
 				.dataType(DataTypes.SYSTEM)
 				.required(true)
 				.indexed(true)
@@ -59,7 +65,7 @@ public abstract class PersonaContentType extends ContentType implements Expireab
 		fields.add(
 			ImmutableTextField.builder()
 				.name("Name")
-				.variable("name")
+				.variable(PERSONA_NAME_FIELD_VAR)
 				.dataType(DataTypes.TEXT)
 				.required(true)
 				.indexed(true)
@@ -73,7 +79,7 @@ public abstract class PersonaContentType extends ContentType implements Expireab
 		fields.add(
 			ImmutableCustomField.builder()
 				.name("Key Tag")
-				.variable("keyTag")
+				.variable(PERSONA_KEY_TAG_FIELD_VAR)
 				.dataType(DataTypes.TEXT)
 				.required(true)
 				.indexed(true)
@@ -89,7 +95,7 @@ public abstract class PersonaContentType extends ContentType implements Expireab
 		fields.add(
 			ImmutableBinaryField.builder()
 				.name("Photo")
-				.variable("photo")
+				.variable(PERSONA_PHOTO_FIELD_VAR)
 				.sortOrder(4)
 				.fixed(true)
 				.build()
@@ -98,7 +104,7 @@ public abstract class PersonaContentType extends ContentType implements Expireab
 		fields.add(
 			ImmutableTagField.builder()
 				.name("Other Tags")
-				.variable("tags")
+				.variable(PERSONA_OTHER_TAGS_FIELD_VAR)
 				.dataType(DataTypes.SYSTEM)
 
 				.sortOrder(5)
@@ -111,7 +117,7 @@ public abstract class PersonaContentType extends ContentType implements Expireab
 		fields.add(
 			ImmutableTextAreaField.builder()
 				.name("Description")
-				.variable("description")
+				.variable(PERSONA_DESCRIPTION_FIELD_VAR)
 				.dataType(DataTypes.LONG_TEXT)
 				.sortOrder(6)
 				.fixed(true)

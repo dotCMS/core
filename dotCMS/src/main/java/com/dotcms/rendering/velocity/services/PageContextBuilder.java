@@ -1,25 +1,8 @@
 package com.dotcms.rendering.velocity.services;
 
 
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
-
-import java.io.IOException;
-import java.io.Serializable;
-import java.io.StringWriter;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import javax.servlet.http.HttpServletRequest;
-
-import org.apache.velocity.context.Context;
-
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.enterprise.LicenseUtil;
@@ -34,6 +17,8 @@ import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.factories.MultiTreeAPI;
+import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
@@ -49,12 +34,27 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Table;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import org.apache.velocity.context.Context;
+
+import javax.servlet.http.HttpServletRequest;
+import java.io.IOException;
+import java.io.Serializable;
+import java.io.StringWriter;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import static com.dotmarketing.business.PermissionAPI.*;
 
 public class PageContextBuilder implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
     private final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+    private final ContainerAPI  containerAPI  = APILocator.getContainerAPI();
+    private final MultiTreeAPI  multiTreeAPI  = APILocator.getMultiTreeAPI();
 
     final IHTMLPage htmlPage;
     final User user;
@@ -160,6 +160,20 @@ public class PageContextBuilder implements Serializable {
         return ctxMap;
     }
 
+    private Container getLiveContainerById (final String containerId) throws DotSecurityException, DotDataException {
+
+        Container container = null;
+        try {
+
+            container =
+                    this.containerAPI.getLiveContainerById(containerId, APILocator.systemUser(), false);
+        } catch (NotFoundInDbException e) {
+
+            container = null;
+        }
+
+        return container;
+    }
 
     private List<ContainerRaw> populateContainers() throws DotDataException, DotSecurityException {
         final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
@@ -169,16 +183,22 @@ public class PageContextBuilder implements Serializable {
                         false :
                         mode.showLive;
 
-        final Table<String, String, Set<String>> pageContents = APILocator.getMultiTreeAPI().getPageMultiTrees(htmlPage, live);
+        final Table<String, String, Set<String>> pageContents = this.multiTreeAPI.getPageMultiTrees(htmlPage, live);
         final List<ContainerRaw> raws = Lists.newArrayList();
 
 
         for (final String containerId : pageContents.rowKeySet()) {
-            final Container container =
-                    live && APILocator.getContainerAPI().getLiveContainerById(containerId, APILocator.systemUser(), false) != null
-                            ? APILocator.getContainerAPI().getLiveContainerById(containerId, APILocator.systemUser(), false)
-                            : APILocator.getContainerAPI().getWorkingContainerById(containerId, APILocator.systemUser(),false);
 
+            Container container = null;
+
+            if (live) {
+                container = this.getLiveContainerById(containerId);
+                if (null == container) {
+                    container = this.containerAPI.getWorkingContainerById(containerId, APILocator.systemUser(),false);
+                }
+            } else {
+                container = this.containerAPI.getWorkingContainerById(containerId, APILocator.systemUser(),false);
+            }
 
             if (container == null) {
                 continue;
