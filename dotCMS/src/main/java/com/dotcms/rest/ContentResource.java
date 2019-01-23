@@ -28,6 +28,7 @@ import com.dotcms.repackage.org.glassfish.jersey.media.multipart.BodyPart;
 import com.dotcms.repackage.org.glassfish.jersey.media.multipart.ContentDisposition;
 import com.dotcms.repackage.org.glassfish.jersey.media.multipart.FormDataMultiPart;
 import com.dotcms.rest.exception.ForbiddenException;
+import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.uuid.shorty.ShortyId;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
 import com.dotmarketing.business.APILocator;
@@ -445,7 +446,15 @@ public class ContentResource {
         final boolean live = (paramsMap.get(RESTParams.LIVE.getValue()) == null ||
                 !"false".equals(paramsMap.get(RESTParams.LIVE.getValue())));
 
-        final int depth = toInt(paramsMap.get(RESTParams.DEPTH.getValue()), () -> 0);
+        final String depthParam = paramsMap.get(RESTParams.DEPTH.getValue());
+        final int depth = depthParam != null ? toInt(depthParam, () -> -1) : 0;
+
+        if (depth < 0 || depth > 2){
+            final String errorMsg =
+                    "Error searching content " + id + ". Reason: Invalid depth: " + depthParam;
+            Logger.error(this, errorMsg);
+            return ExceptionMapperUtil.createResponse(null, errorMsg);
+        }
 
         /* Fetching the content using a query if passed or an id */
         List<Contentlet> contentlets = new ArrayList<>();
