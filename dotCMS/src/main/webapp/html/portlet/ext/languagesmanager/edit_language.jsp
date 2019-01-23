@@ -132,19 +132,19 @@ dojo.ready(function() {
 		</dl>
 	 
 	    <div class="buttonRow">
-	    	<button dojoType="dijit.form.Button" onClick="saveLanguage(document.getElementById('fm'))" iconClass="saveIcon">
-	           <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "save")) %>
-	        </button>
-	        
+		    <button dojoType="dijit.form.Button" onClick="cancelEdit()" class="dijitButtonFlat" >
+		        <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "cancel")) %>
+		    </button>
+
 			<%if (language.getId() != 0){%>
 		        <button dojoType="dijit.form.Button" onClick="deleteLanguage(document.getElementById('fm'))" class="dijitButtonDanger">
 		           <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "delete")) %>
 		        </button> 
 	        <%}%>
-	        
-	        <button dojoType="dijit.form.Button" onClick="cancelEdit()" class="dijitButtonFlat" >
-	            <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "cancel")) %>
-	        </button>
+
+		    <button dojoType="dijit.form.Button" onClick="saveLanguage(document.getElementById('fm'))" iconClass="saveIcon">
+		        <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "save")) %>
+		    </button>
 	    </div>
 	
 	    </html:form>

@@ -7,8 +7,10 @@ import com.dotcms.api.system.event.Visibility;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.concurrent.DotConcurrentFactory;
+import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.notifications.bean.NotificationType;
@@ -332,12 +334,19 @@ public class HostAPIImpl implements HostAPI {
     @Override
     @CloseDBIfOpened
     public List<Host> findAll(User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+        return this.findAll(user, 0, 0, null, respectFrontendRoles);
+    }
+
+    public List<Host> findAll(User user, int limit, int offset, String sortBy, boolean respectFrontendRoles)
+            throws DotDataException, DotSecurityException {
+
         try {
             StringBuilder queryBuffer = new StringBuilder();
             queryBuffer.append(String.format("%s:%s", CONTENT_TYPE_CONDITION, Host.HOST_VELOCITY_VAR_NAME ));
             queryBuffer.append(" +working:true");
-            
-            List<Contentlet> list = APILocator.getContentletAPI().search(queryBuffer.toString(), 0, 0, null, user, respectFrontendRoles);
+
+            List<Contentlet> list = APILocator.getContentletAPI().search(queryBuffer.toString(), limit, offset, sortBy,
+                    user, respectFrontendRoles);
             return convertToHostList(list);
         } catch (Exception e) {
             Logger.error(HostAPIImpl.class, e.getMessage(), e);
@@ -407,7 +416,7 @@ public class HostAPIImpl implements HostAPI {
         }
         Host savedHost =  new Host(contentletHost);
 
-        updateDefaultHost(host, user, respectFrontendRoles);
+        updateDefaultHost(savedHost, user, respectFrontendRoles);
         hostCache.clearAliasCache();
         return savedHost;
 
@@ -688,7 +697,19 @@ public class HostAPIImpl implements HostAPI {
                         c.setProperty(Contentlet.DONT_VALIDATE_ME, true);
                         contentAPI.delete(c, user, respectFrontendRoles);
                     }
-                    APILocator.getContentTypeAPI(user, respectFrontendRoles).delete(type);
+
+                    ContentTypeAPI contentTypeAPI = APILocator
+                            .getContentTypeAPI(user, respectFrontendRoles);
+                    //Validate if are allow to delete this content type
+                    if (!type.system() && !type.defaultType()) {
+                        contentTypeAPI.delete(type);
+                    } else {
+                        //If we can not delete it we need to change the host to SYSTEM_HOST
+                        ContentType clonedContentType = ContentTypeBuilder.builder(type)
+                                .host(findSystemHost(user, false).getIdentifier()).build();
+                        contentTypeAPI.save(clonedContentType);
+                    }
+
                 }
 
                 // wipe bad old containers

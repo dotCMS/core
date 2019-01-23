@@ -8,6 +8,8 @@
 <%@ page import="java.util.Iterator" %>
 <%@ page import="java.util.List" %>
 <%@ page import="com.dotmarketing.business.APILocator"%>
+<%@ page import="com.dotmarketing.beans.Source" %>
+<%@ page import="com.dotmarketing.beans.Identifier" %>
 
 
 <script type='text/javascript' src='/dwr/interface/ContainerAjax.js'></script>
@@ -294,7 +296,7 @@ function processDelete(inode, referer) {
 			<a class="beta" href="<portlet:renderURL windowState="<%= WindowState.MAXIMIZED.toString() %>">
 			<portlet:param name="struts_action" value="/ext/containers/view_containers" />
 			<portlet:param name="pageNumber" value="<%= String.valueOf(pageNumber) %>" />
-			<portlet:param name="orderby" value="<%=orderby.equals(\"modDate desc\")?\"modDate asc\":\"modDate desc\"%>" /></portlet:renderURL>">
+			<portlet:param name="orderby" value="<%=orderby.equals(\"mod_date desc\")?\"mod_date asc\":\"mod_date desc\"%>" /></portlet:renderURL>">
 			<%= LanguageUtil.get(pageContext, "Mod-Date") %></a>
 		</th>
 	</tr>
@@ -327,9 +329,22 @@ function processDelete(inode, referer) {
 			String write = (permissions.contains(String.valueOf(PermissionAPI.PERMISSION_WRITE)))?"1":"0";
 
 			Host host = APILocator.getHostAPI().findParentHost(container, APILocator.getUserAPI().getSystemUser(), false);
+			boolean isDBSource = container.getSource() == Source.DB;
+			String path        = "";
+			if (container.getSource() == Source.FILE) {
+
+				Identifier identifier = APILocator.getIdentifierAPI().find(container.getIdentifier());
+				if (null != identifier) {
+
+					path = identifier.getParentPath();
+				}
+			}
+
+
 		%>
 		<tr <%=str_style%> id="tr<%=k%>">
 
+			<% if (isDBSource) { %>
 			<td nowrap style="text-align:center;">
 
 				<% if (permissions.contains(PermissionAPI.PERMISSION_PUBLISH)) { %>
@@ -357,6 +372,22 @@ function processDelete(inode, referer) {
 					   ,'<%=container.hasLiveVersion() ? "1" : "0"%>'));
 				</script>
 			</td>
+			<% } else { %>
+			<td nowrap style="text-align:center;">
+
+				&nbsp;&nbsp;&nbsp;
+			</td>
+			<td nowrap>
+				<%=container.getTitle()%> | <%=path%>
+			</td>
+			<td nowrap >
+				<%= com.dotmarketing.util.UtilHTML.getStatusIcons(container) %>
+			</td>
+			<td><%=container.getFriendlyName()%></td>
+			<td nowrap >
+				<%=modDateFormat.format(container.getModDate())%>
+			</td>
+			<% } %>
 		</tr>
 
 	<%}%>

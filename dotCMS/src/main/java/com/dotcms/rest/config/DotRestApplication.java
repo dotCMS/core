@@ -1,6 +1,7 @@
 package com.dotcms.rest.config;
 
 import com.dotcms.contenttype.model.field.FieldTypeResource;
+import com.dotcms.repackage.javax.ws.rs.HEAD;
 import com.dotcms.repackage.org.glassfish.jersey.media.multipart.MultiPartFeature;
 import com.dotcms.rest.RulesEnginePortlet;
 import com.dotcms.rest.TagResource;
@@ -9,6 +10,7 @@ import com.dotcms.rest.api.v1.browsertree.BrowserTreeResource;
 import com.dotcms.rest.api.v1.categories.CategoriesResource;
 import com.dotcms.rest.api.v1.container.ContainerResource;
 import com.dotcms.rest.api.v1.content.ContentRelationshipsResource;
+import com.dotcms.rest.api.v1.content.ContentVersionResource;
 import com.dotcms.rest.api.v1.contenttype.ContentTypeResource;
 import com.dotcms.rest.api.v1.contenttype.FieldResource;
 import com.dotcms.rest.api.v1.contenttype.FieldVariableResource;
@@ -41,6 +43,7 @@ import com.dotcms.rest.personas.PersonasResourcePortlet;
 
 import java.util.HashSet;
 import java.util.Set;
+
 
 /**
  * This class provides the list of all the REST end-points in dotCMS. Every new
@@ -114,8 +117,8 @@ public class DotRestApplication extends com.dotcms.repackage.javax.ws.rs.core.Ap
 					REST_CLASSES.add(ConfigurationResource.class);
 					REST_CLASSES.add(AppContextInitResource.class);
 					REST_CLASSES.add(SiteResource.class);
-					REST_CLASSES.add(ContentTypeResource.class);
 					REST_CLASSES.add(FieldResource.class);
+					REST_CLASSES.add(com.dotcms.rest.api.v2.contenttype.FieldResource.class);
 					REST_CLASSES.add(FieldTypeResource.class);
 					REST_CLASSES.add(FieldVariableResource.class);
 					REST_CLASSES.add(ResetPasswordResource.class);
@@ -140,6 +143,7 @@ public class DotRestApplication extends com.dotcms.repackage.javax.ws.rs.core.Ap
 
 					REST_CLASSES.add(VTLResource.class);
 					REST_CLASSES.add(JavascriptResource.class);
+					REST_CLASSES.add(ContentVersionResource.class);
 				}
 			}
 		}

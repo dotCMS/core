@@ -1,5 +1,6 @@
 package com.dotcms.vanityurl.handler;
 
+import com.dotcms.http.CircuitBreakerUrl;
 import com.dotcms.vanityurl.model.CachedVanityUrl;
 import com.dotcms.vanityurl.model.VanityUrlResult;
 import com.dotmarketing.beans.Host;
@@ -8,9 +9,8 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import javax.servlet.http.HttpServletResponse;
 
 /**
  * This class implements the methods defined in the {@link VanityUrlHandler}
@@ -61,7 +61,7 @@ public class DefaultVanityUrlHandler implements VanityUrlHandler {
 
         if (UtilMethods.isSet(rewrite) && rewrite.contains("//")) {
             //if the forward is and external url
-            response.sendRedirect(rewrite);
+            new CircuitBreakerUrl(rewrite).doOut(response);
 
             return DEFAULT_RESULT;
         }

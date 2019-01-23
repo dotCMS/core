@@ -605,7 +605,7 @@ public final class WebKeys {
     {
         public static final String RELATIONSHIP_EDIT = "com.dotmarketing.relationships.edit_relationship";
         public static final String RELATIONSHIP_REQUIRED = "com.dotmarketing.relationships.required";
-    	public static enum RELATIONSHIP_CARDINALITY { ONE_TO_MANY , MANY_TO_MANY };
+    	public static enum RELATIONSHIP_CARDINALITY { ONE_TO_MANY , MANY_TO_MANY, ONE_TO_ONE };
     	public static final String RELATIONSHIPS = "RELATIONSHIPS";
     	public static final String STRUCTURES_LIST = "STRUCTURES_LIST";
     }

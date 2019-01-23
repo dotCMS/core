@@ -324,7 +324,7 @@ public class LinkCheckerAPITest extends IntegrationTestBase {
         mtree.setParent2(container.getIdentifier());
         mtree.setChild(con.getIdentifier());
         mtree.setTreeOrder(1);
-        MultiTreeFactory.saveMultiTree(mtree);
+        APILocator.getMultiTreeAPI().saveMultiTree(mtree);
 
         // that should be ok. It is in the same host where those pages are valid
         invalids = APILocator.getLinkCheckerAPI().findInvalidLinks(con);
@@ -351,7 +351,7 @@ public class LinkCheckerAPITest extends IntegrationTestBase {
         mtree.setParent2(container.getIdentifier());
         mtree.setChild(con.getIdentifier());
         mtree.setTreeOrder(1);
-        MultiTreeFactory.saveMultiTree(mtree);
+        APILocator.getMultiTreeAPI().saveMultiTree(mtree);
 
         // now all those links should be broken
         invalids = APILocator.getLinkCheckerAPI().findInvalidLinks(con);

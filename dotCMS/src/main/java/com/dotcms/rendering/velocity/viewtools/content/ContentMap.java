@@ -18,6 +18,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.structure.model.Field;
+import com.dotmarketing.portlets.structure.model.Field.FieldType;
 import com.dotmarketing.portlets.structure.model.KeyValueFieldUtil;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.tag.model.Tag;
@@ -36,6 +37,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.velocity.Template;
 import org.apache.velocity.app.VelocityEngine;
@@ -281,6 +283,11 @@ public class ContentMap {
 				retMap.put("keys", retMap.keySet());
 				retMap.put("map", keyValueMap);
 				return retMap;
+			} else if(f != null && f.getFieldType().equals(FieldType.RELATIONSHIP.toString())){
+				return perAPI.filterCollection((ArrayList) conAPI.getFieldValue(content, f),
+						PermissionAPI.PERMISSION_USE, true, user).stream()
+						.map(contentlet -> new ContentMap((Contentlet) contentlet, user,
+								EDIT_OR_PREVIEW_MODE, host, context)).collect(Collectors.toList());
 			}
 
 			//ret could have been set by title
@@ -437,7 +444,7 @@ public class ContentMap {
 	}
 	public boolean isWorking() throws Exception {
 	    return content.isWorking();
-	}
+	}	
 
 	public String toString() {
 		getContentletsTitle();

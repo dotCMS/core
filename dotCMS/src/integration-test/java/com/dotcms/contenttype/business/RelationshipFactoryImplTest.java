@@ -8,11 +8,13 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.test.ContentTypeBaseTest;
 
+import com.dotcms.datagen.ContentletDataGen;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import java.util.List;
@@ -83,6 +85,54 @@ public class RelationshipFactoryImplTest extends ContentTypeBaseTest{
             deleteRelationshipByInode(relationshipList.get(0).getInode());
             relationshipList = relationshipFactory.byContentType(childContentType.inode());
             assertEquals(0,relationshipList.size());
+        }finally {
+            contentTypeAPI.delete(parentContentType);
+            contentTypeAPI.delete(childContentType);
+        }
+    }
+
+    @Test
+    public void test_dbRelatedContentByChild() throws DotDataException, DotSecurityException {
+        try {
+            final Relationship relationship = saveRelationship();
+            final Contentlet parentContentlet = new ContentletDataGen(parentContentType.id()).nextPersisted();
+            final Contentlet childContentlet = new ContentletDataGen(childContentType.id()).nextPersisted();
+            relationshipFactory.addRelationship(parentContentlet.getIdentifier(),childContentlet.getIdentifier(),relationship.getRelationTypeValue());
+
+            final Contentlet contentlet = relationshipFactory.dbRelatedContentByChild(childContentlet.getIdentifier(),relationship.getRelationTypeValue(),false,"inode").get(0);
+
+            assertEquals(parentContentlet.getIdentifier(),contentlet.getIdentifier());
+            assertEquals(parentContentlet.getInode(),contentlet.getInode());
+            assertEquals(parentContentlet.getHost(),contentlet.getHost());
+            assertEquals(parentContentlet.getTitle(),contentlet.getTitle());
+
+            deleteRelationshipByInode(relationship.getInode());
+
+
+        }finally {
+            contentTypeAPI.delete(parentContentType);
+            contentTypeAPI.delete(childContentType);
+        }
+    }
+
+    @Test
+    public void test_dbRelatedContentByParent() throws DotDataException, DotSecurityException {
+        try {
+            final Relationship relationship = saveRelationship();
+            final Contentlet parentContentlet = new ContentletDataGen(parentContentType.id()).nextPersisted();
+            final Contentlet childContentlet = new ContentletDataGen(childContentType.id()).nextPersisted();
+            relationshipFactory.addRelationship(parentContentlet.getIdentifier(),childContentlet.getIdentifier(),relationship.getRelationTypeValue());
+
+            final Contentlet contentlet = relationshipFactory.dbRelatedContentByParent(parentContentlet.getIdentifier(),relationship.getRelationTypeValue(),false,"inode").get(0);
+
+            assertEquals(childContentlet.getIdentifier(),contentlet.getIdentifier());
+            assertEquals(childContentlet.getInode(),contentlet.getInode());
+            assertEquals(childContentlet.getHost(),contentlet.getHost());
+            assertEquals(childContentlet.getTitle(),contentlet.getTitle());
+
+            deleteRelationshipByInode(relationship.getInode());
+
+
         }finally {
             contentTypeAPI.delete(parentContentType);
             contentTypeAPI.delete(childContentType);

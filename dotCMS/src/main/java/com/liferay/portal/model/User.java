@@ -69,7 +69,7 @@ public class User extends UserModel implements Recipient {
 
 	@Override
 	public String toString() {
-		return this.getFullName() + " : " + this.getUserId();
+		return this.getFullName() + " [ID: " + this.getUserId() + "][email:" + this.getEmailAddress() + "]";
 	}
 
 	public User() {

@@ -9,6 +9,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.servlets.test.ServletTestRunner;
@@ -118,15 +119,15 @@ public class LessCompilerTest {
         host.setDefault(false);
         try{
         	HibernateUtil.startTransaction();
+        	host.setIndexPolicy(IndexPolicy.FORCE);
         	host=APILocator.getHostAPI().save(host, user, false);
         	HibernateUtil.closeAndCommitTransaction();
         }catch(Exception e){
         	HibernateUtil.rollbackTransaction();
         	Logger.error(LessCompilerTest.class, e.getMessage());
         }
+        host.setIndexPolicy(IndexPolicy.FORCE);
         APILocator.getHostAPI().publish(host, user, false);
-        APILocator.getContentletAPI().isInodeIndexed(host.getInode());
-        APILocator.getContentletAPI().isInodeIndexed(host.getInode(),true);
         try {
             Thread.sleep(3000);
         } catch (InterruptedException e) {
@@ -137,6 +138,7 @@ public class LessCompilerTest {
         if (!defaultHost.isLive()) {
             try {
                 HibernateUtil.startTransaction();
+                defaultHost.setIndexPolicy(IndexPolicy.FORCE);
                 APILocator.getHostAPI().publish(defaultHost, user, false);
                 HibernateUtil.closeAndCommitTransaction();
             } catch (Exception e) {
@@ -146,8 +148,6 @@ public class LessCompilerTest {
                 HibernateUtil.closeSessionSilently();
             }
 
-            APILocator.getContentletAPI().isInodeIndexed(defaultHost.getInode());
-            APILocator.getContentletAPI().isInodeIndexed(defaultHost.getInode(),true);
             try {
                 Thread.sleep(3000);
             } catch (InterruptedException e) {

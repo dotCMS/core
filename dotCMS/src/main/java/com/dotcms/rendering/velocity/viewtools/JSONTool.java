@@ -7,6 +7,7 @@ import java.util.Map;
 import org.apache.velocity.tools.view.ImportSupport;
 import org.apache.velocity.tools.view.tools.ViewTool;
 
+import com.dotcms.http.CircuitBreakerUrl;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.json.JSONArray;
@@ -20,7 +21,7 @@ public class JSONTool extends ImportSupport implements ViewTool {
 	
 	
 	public Object fetch(String url, Map<String, String> headers) {
-		return fetch(url, Config.getIntProperty("URL_CONNECTION_TIMEOUT", 15000), headers);
+		return fetch(url, Config.getIntProperty("URL_CONNECTION_TIMEOUT", 2000), headers);
 	}
 	
 	/**
@@ -29,7 +30,7 @@ public class JSONTool extends ImportSupport implements ViewTool {
 	 * @return
 	 */
 	public Object fetch(String url) {
-		return fetch(url, Config.getIntProperty("URL_CONNECTION_TIMEOUT", 15000), new HashMap<String, String>());
+		return fetch(url, Config.getIntProperty("URL_CONNECTION_TIMEOUT", 2000), new HashMap<String, String>());
 	}
 	
 	
@@ -101,7 +102,7 @@ public class JSONTool extends ImportSupport implements ViewTool {
 
 	public Object fetch(String url, int timeout, Map<String, String> headers) {
 		try {
-			String x = acquireString(url, timeout, headers);
+			String x = CircuitBreakerUrl.builder().setHeaders(headers).setUrl(url).setTimeout(timeout).build().doString();
 			return generate(x);
 		} catch (Exception e) {
             Logger.warn(this.getClass(), e.getMessage());

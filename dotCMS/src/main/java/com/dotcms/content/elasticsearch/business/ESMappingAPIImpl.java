@@ -1,10 +1,16 @@
 package com.dotcms.content.elasticsearch.business;
 
+import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
+
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.content.business.ContentMappingAPI;
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
 import com.dotcms.content.elasticsearch.util.ESClient;
+import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.CategoryField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.enterprise.LicenseUtil;
@@ -12,13 +18,17 @@ import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
 import com.dotcms.tika.TikaUtils;
 import com.dotcms.util.CollectionsUtils;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
-import com.dotmarketing.business.*;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -27,14 +37,34 @@ import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.business.FieldAPI;
-import com.dotmarketing.portlets.structure.model.*;
+import com.dotmarketing.portlets.structure.model.Field;
+import com.dotmarketing.portlets.structure.model.FieldVariable;
+import com.dotmarketing.portlets.structure.model.KeyValueFieldUtil;
+import com.dotmarketing.portlets.structure.model.Relationship;
+import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.dotmarketing.tag.model.Tag;
-import com.dotmarketing.util.*;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.InodeUtils;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.ThreadSafeSimpleDateFormat;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
+import java.io.File;
+import java.io.IOException;
+import java.io.StringWriter;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.time.FastDateFormat;
 import org.elasticsearch.ElasticsearchException;
@@ -42,16 +72,6 @@ import org.elasticsearch.action.ActionFuture;
 import org.elasticsearch.action.admin.cluster.state.ClusterStateRequest;
 import org.elasticsearch.action.admin.indices.mapping.put.PutMappingResponse;
 import org.elasticsearch.common.xcontent.XContentType;
-
-import java.io.File;
-import java.io.IOException;
-import java.io.StringWriter;
-import java.text.DecimalFormat;
-import java.text.DecimalFormatSymbols;
-import java.util.*;
-import java.util.Map.Entry;
-
-import static com.dotmarketing.business.PermissionAPI.*;
 
 
 public class ESMappingAPIImpl implements ContentMappingAPI {
@@ -88,7 +108,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 		final ActionFuture<PutMappingResponse> lis = new ESClient().getClient().admin().indices()
 				.preparePutMapping().setIndices(indexName).setType(type)
 				.setSource(mapping, XContentType.JSON).execute();
-		return lis.actionGet().isAcknowledged();
+		return lis.actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS).isAcknowledged();
 	}
 
 	/**
@@ -104,7 +124,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 		final ActionFuture<PutMappingResponse> lis = new ESClient().getClient().admin().indices()
 				.preparePutMapping().setIndices(indexName).setType(type)
 				.setSource(mapping, XContentType.JSON).execute();
-		return lis.actionGet().isAcknowledged();
+		return lis.actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS).isAcknowledged();
 	}
 
 	/**
@@ -118,7 +138,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 	public  String getMapping(String index, String type) throws ElasticsearchException, IOException{
 
 		return new ESClient().getClient().admin().cluster().state(new ClusterStateRequest())
-				.actionGet().getState().metaData().indices()
+				.actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS).getState().metaData().indices()
 				.get(index).mapping(type).source().string();
 
 	}
@@ -171,7 +191,8 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 			Structure st=CacheLocator.getContentTypeCache().getStructureByInode(contentlet.getStructureInode());
 
 			Folder conFolder=APILocator.getFolderAPI().findFolderByPath(ident.getParentPath(), ident.getHostId(), APILocator.getUserAPI().getSystemUser(), false);
-
+			Host conHost = APILocator.getHostAPI().find(ident.getHostId(), APILocator.getUserAPI().getSystemUser(), false);
+			
 			contentletMap.put(ESMappingConstants.TITLE, contentlet.getTitle());
 			contentletMap.put(ESMappingConstants.STRUCTURE_NAME, st.getVelocityVarName()); // marked for DEPRECATION
 			contentletMap.put(ESMappingConstants.CONTENT_TYPE, st.getVelocityVarName());
@@ -197,6 +218,10 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 			contentletMap.put(ESMappingConstants.LANGUAGE_ID + TEXT, Long.toString(contentlet.getLanguageId()));
 			contentletMap.put(ESMappingConstants.IDENTIFIER, ident.getId());
 			contentletMap.put(ESMappingConstants.CONTENTLET_HOST, ident.getHostId());
+	        contentletMap.put(ESMappingConstants.CONTENTLET_HOSTNAME, conHost.getHostname());
+			
+			
+			
 			contentletMap.put(ESMappingConstants.CONTENTLET_FOLER, conFolder!=null && InodeUtils.isSet(conFolder.getInode()) ? conFolder.getInode() : contentlet.getFolder());
 			contentletMap.put(ESMappingConstants.PARENT_PATH, ident.getParentPath());
 			contentletMap.put(ESMappingConstants.PATH, ident.getPath());
@@ -630,7 +655,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 				List<Contentlet> oldDocs;
 
 				StringBuilder q = new StringBuilder();
-				boolean isSameStructRelationship = rel.getParentStructureInode().equalsIgnoreCase(rel.getChildStructureInode());
+				boolean isSameStructRelationship = FactoryLocator.getRelationshipFactory().sameParentAndChild(rel);
 
 				if(isSameStructRelationship) {
 					q.append("+type:content +(").append(rel.getRelationTypeValue())
@@ -678,62 +703,116 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 		return dependenciesToReindex;
 	}
 
-	protected void loadRelationshipFields(Contentlet con, Map<String,Object> m) throws DotStateException, DotDataException {
+	protected void loadRelationshipFields(final Contentlet con, final Map<String, Object> m)
+			throws DotStateException, DotDataException {
+		String propName;
+		final Map<String, List> relationshipsRecords = new HashMap<>();
+		String orderKey;
+
 		DotConnect db = new DotConnect();
 		db.setSQL("select * from tree where parent = ? or child = ? order by tree_order asc");
 		db.addParam(con.getIdentifier());
 		db.addParam(con.getIdentifier());
 
-		for(Map<String, Object> relatedEntry : db.loadObjectResults()) {
+		for (Map<String, Object> relatedEntry : db.loadObjectResults()) {
 
 			String childId = relatedEntry.get(ESMappingConstants.CHILD).toString();
 			String parentId = relatedEntry.get(ESMappingConstants.PARENT).toString();
-			String relType=relatedEntry.get(ESMappingConstants.RELATION_TYPE).toString();
+			String relType = relatedEntry.get(ESMappingConstants.RELATION_TYPE).toString();
 			String order = relatedEntry.get(ESMappingConstants.TREE_ORDER).toString();
 
-			if("child".equals(relType)) {
+			if ("child".equals(relType)) {
 				continue;
 			}
 
 			Relationship rel = FactoryLocator.getRelationshipFactory().byTypeValue(relType);
 
-			if(rel!=null && InodeUtils.isSet(rel.getInode())) {
-				boolean isSameStructRelationship = rel.getParentStructureInode().equals(rel.getChildStructureInode());
+			if (rel != null && InodeUtils.isSet(rel.getInode())) {
 
-				String propName = isSameStructRelationship ?
-						(con.getIdentifier().equals(parentId)?rel.getRelationTypeValue() + ESMappingConstants.SUFFIX_CHILD:rel.getRelationTypeValue() + ESMappingConstants.SUFFIX_PARENT)
+				boolean isSameStructRelationship = FactoryLocator.getRelationshipFactory()
+						.sameParentAndChild(rel);
+
+				//Support for legacy relationships
+				propName = isSameStructRelationship ?
+						(con.getIdentifier().equals(parentId) ? rel.getRelationTypeValue()
+								+ ESMappingConstants.SUFFIX_CHILD
+								: rel.getRelationTypeValue() + ESMappingConstants.SUFFIX_PARENT)
 						: rel.getRelationTypeValue();
 
-				String orderKey = rel.getRelationTypeValue()+ESMappingConstants.SUFFIX_ORDER;
+				orderKey = rel.getRelationTypeValue() + ESMappingConstants.SUFFIX_ORDER;
 
-
-                if(relType.equals(rel.getRelationTypeValue())) {
-                    String me = con.getIdentifier();
-                    String related = me.equals(childId)? parentId : childId;
+				if (relType.equals(rel.getRelationTypeValue())) {
+					String me = con.getIdentifier();
+					String related = me.equals(childId) ? parentId : childId;
 
 					String previousPropNameValue = (String) m.get(propName);
-					int previousPropNameValueLength = previousPropNameValue!=null?previousPropNameValue.length():0;
+					int previousPropNameValueLength =
+							previousPropNameValue != null ? previousPropNameValue.length() : 0;
 
-					StringBuilder propNameValue = new StringBuilder(previousPropNameValueLength + UUID_LENGTH + 1);
+					StringBuilder propNameValue = new StringBuilder(
+							previousPropNameValueLength + UUID_LENGTH + 1);
 
 					// put a pointer to the related content
-					m.put(propName, propNameValue.append(previousPropNameValue != null ? previousPropNameValue : "")
-							.append(related).append(" ").toString() );
+					m.put(propName, propNameValue
+							.append(previousPropNameValue != null ? previousPropNameValue : "")
+							.append(related).append(" ").toString());
 
 					String previousOrderKeyValue = (String) m.get(orderKey);
-					int previousOrderKeyValueLength = previousOrderKeyValue!=null?previousOrderKeyValue.length():0;
-					int orderLength = order!=null?order.length():0;
+					int previousOrderKeyValueLength =
+							previousOrderKeyValue != null ? previousOrderKeyValue.length() : 0;
+					int orderLength = order != null ? order.length() : 0;
 
-					StringBuilder orderKeyValue = new StringBuilder(previousOrderKeyValueLength + UUID_LENGTH + 1 + orderLength + 1);
+					StringBuilder orderKeyValue = new StringBuilder(
+							previousOrderKeyValueLength + UUID_LENGTH + 1 + orderLength + 1);
 
 					// make a way to sort
-					m.put(orderKey, orderKeyValue.append(previousOrderKeyValue!=null ? previousOrderKeyValue : "")
+					m.put(orderKey, orderKeyValue
+							.append(previousOrderKeyValue != null ? previousOrderKeyValue : "")
 							.append(related).append("_").append(order).append(" ").toString());
+
+					addRelationshipRecords(con, me.equals(childId) ? rel.getParentRelationName()
+							: rel.getChildRelationName(), related, relationshipsRecords, m);
 				}
 			}
 		}
 
+		//Adding new relationships fields to the index map
+		m.putAll(relationshipsRecords);
+
 	}
 
+	/**
+	 * Groups all relationships records by relationship field
+	 */
+	private void addRelationshipRecords(final Contentlet contentlet, final String relationName,
+			final String related,
+			final Map<String, List> relationshipsRecords, final Map<String, Object> mapping) {
 
+		final ContentType contentType = contentlet.getContentType();
+		if (relationName != null) {
+			final String key = contentType.variable() + StringPool.PERIOD + relationName;
+
+			//this relationship has been already added
+			if (mapping.containsKey(key)) {
+				return;
+			}
+			if (!relationshipsRecords.containsKey(key)) {
+				try {
+					//Search for a relationship field
+					final com.dotcms.contenttype.model.field.Field field = APILocator
+							.getContentTypeFieldAPI()
+							.byContentTypeAndVar(contentType, relationName);
+					if (field != null) {
+						relationshipsRecords.put(key, new ArrayList());
+						relationshipsRecords.get(key).add(related);
+					}
+				} catch (NotFoundInDbException e) {
+					//Do nothing and continue searching for others relationships fields
+				} catch (DotDataException e) {
+					Logger.warn(this, "Error getting field for relation type " + key, e);
+				}
+
+			}
+		}
+	}
 }

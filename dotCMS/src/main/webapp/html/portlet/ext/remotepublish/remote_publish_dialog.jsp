@@ -129,14 +129,14 @@ final String inode = request.getParameter("inode");// DOTCMS-7085
             <div dojoType="dijit.ProgressBar" style="width:200px;text-align:center;" indeterminate="true" jsId="saveRemotePublishProgress" id="saveRemotePublishProgress"></div>
         </div>
 
-		<div class="buttonRow">
+		<div class="buttonRow-right">
+			<button dojoType="dijit.form.Button" class="dijitButtonFlat" type="button" id="remotePublishCancelButton" >
+				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "cancel")) %>
+			</button>
 			<button dojoType="dijit.form.Button" type="button" id="remotePublishSaveButton">
 				<%=  hasPushPublishActionlet ?
 						UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "publisher_dialog_push")) :
 						UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "publisher_dialog_save")) %>
-			</button>
-			<button dojoType="dijit.form.Button" class="dijitButtonFlat" type="button" id="remotePublishCancelButton" >
-				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "cancel")) %>
 			</button>
 		</div>
 
@@ -149,12 +149,12 @@ final String inode = request.getParameter("inode");// DOTCMS-7085
 			<div dojoType="dijit.ProgressBar" style="width:200px;text-align:center;" indeterminate="true" jsId="saveRemotePublishProgress" id="saveRemotePublishProgress"></div>
 		</div>
 
-		<div class="buttonRow">
-			<button dojoType="dijit.form.Button" type="button" id="remotePublishSaveButton">
-				<%=  UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "publisher_dialog_push"))%>
-			</button>
+		<div class="buttonRow-right">
 			<button dojoType="dijit.form.Button" class="dijitButtonFlat" type="button" id="remotePublishCancelButton" >
 				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "cancel")) %>
+			</button>
+			<button dojoType="dijit.form.Button" type="button" id="remotePublishSaveButton">
+				<%=  UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "publisher_dialog_push"))%>
 			</button>
 		</div>
 

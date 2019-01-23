@@ -17,6 +17,8 @@ import com.dotmarketing.util.UtilMethods;
 import java.util.*;
 
 /**
+ * Implementation class for the {@link TagFactory} interface.
+ *
  * @author Jonathan Gamba
  *         Date: 1/28/16
  */
@@ -39,6 +41,9 @@ public class TagFactoryImpl implements TagFactory {
     private TagCache tagCache;
     private TagInodeCache tagInodeCache;
 
+    /**
+     * Creates an instance of this class.
+     */
     public TagFactoryImpl () {
         tagCache = CacheLocator.getTagCache();
         tagInodeCache = CacheLocator.getTagInodeCache();
@@ -64,20 +69,18 @@ public class TagFactoryImpl implements TagFactory {
     }
 
     @Override
-    public List<Tag> getTagsByName ( String name ) throws DotDataException {
+    public List<Tag> getTagsByName (final String name) throws DotDataException {
 
         List<Tag> tags = tagCache.getByName(name);
         if ( tags == null ) {
-
-            name = escapeSingleQuote(name);
-
             //Execute the search
             final DotConnect dc = new DotConnect();
-			dc.setSQL("SELECT * FROM tag WHERE tagname = '" + name.toLowerCase() + "'");
+			dc.setSQL("SELECT * FROM tag WHERE tagname = ?");
+            dc.addParam(name.toLowerCase());
             tags = convertForTags(dc.loadObjectResults());
 
             //And add the results to the cache
-            for ( Tag tag : tags ) {
+            for (final Tag tag : tags) {
                 if ( tagCache.get(tag.getTagId()) == null ) {
                     tagCache.put(tag);
                 }
@@ -89,40 +92,34 @@ public class TagFactoryImpl implements TagFactory {
     }
 
     @Override
-    public List<Tag> getTagsByHost ( String hostId ) throws DotDataException {
+    public List<Tag> getTagsByHost (final String siteId) throws DotDataException {
 
-        List<Tag> tags = tagCache.getByHost(hostId);
+        List<Tag> tags = tagCache.getByHost(siteId);
         if ( tags == null ) {
-
-            hostId = escapeSingleQuote(hostId);
-
             //Execute the search
             final DotConnect dc = new DotConnect();
             dc.setSQL("SELECT * FROM tag WHERE host_id = ? " + TAG_ORDER_BY_DEFAULT);
-            dc.addParam(hostId);
+            dc.addParam(siteId);
 
             tags = convertForTags(dc.loadObjectResults());
 
             //And add the results to the cache
-            for ( Tag tag : tags ) {
+            for (final Tag tag : tags) {
                 if ( tagCache.get(tag.getTagId()) == null ) {
                     tagCache.put(tag);
                 }
             }
-            tagCache.putForHost(hostId, tags);
+            tagCache.putForHost(siteId, tags);
         }
 
         return tags;
     }
 
     @Override
-    public List<Tag> getSuggestedTags(String name, String hostId) throws DotDataException {
-
-        name = escapeSingleQuote(name);
-
+    public List<Tag> getSuggestedTags(final String name, final String siteId) throws DotDataException {
         //Execute the search
         final DotConnect dc = new DotConnect();
-        if ( UtilMethods.isSet(hostId) ) {
+        if ( UtilMethods.isSet(siteId) ) {
             dc.setSQL("SELECT * FROM tag WHERE tagname LIKE ? AND (host_id LIKE ? OR host_id LIKE ?) ORDER BY tagname, host_id");
         } else {
             dc.setSQL("SELECT * FROM tag WHERE tagname LIKE ? AND host_id LIKE ? ORDER BY tagname, host_id");
@@ -130,15 +127,15 @@ public class TagFactoryImpl implements TagFactory {
 
         dc.addParam("%" + name.toLowerCase() + "%");
         dc.addParam(Host.SYSTEM_HOST);
-        if ( UtilMethods.isSet(hostId) ) {
-            dc.addParam(hostId);
+        if ( UtilMethods.isSet(siteId) ) {
+            dc.addParam(siteId);
         }
 
         //Convert and return the list of found tags excluding tags with the same tag name
-        List<Tag> tags = convertForTagsFilteringDuplicated(dc.loadObjectResults());
+        final List<Tag> tags = convertForTagsFilteringDuplicated(dc.loadObjectResults());
 
         //And add the results to the cache
-        for ( Tag tag : tags ) {
+        for (final Tag tag : tags) {
             if ( tagCache.get(tag.getTagId()) == null ) {
                 tagCache.put(tag);
             }
@@ -148,20 +145,17 @@ public class TagFactoryImpl implements TagFactory {
     }
 
     @Override
-    public Tag getTagByNameAndHost ( String name, String hostId ) throws DotDataException {
+    public Tag getTagByNameAndHost (final String name, String siteId) throws DotDataException {
 
-        Tag tag = tagCache.get(name, hostId);
+        Tag tag = tagCache.get(name, siteId);
         if ( tag == null ) {
-
-            name = escapeSingleQuote(name);
-
             //Execute the search
             final DotConnect dc = new DotConnect();
             dc.setSQL("SELECT * FROM tag WHERE tagname = ? AND host_id = ?");
             dc.addParam(name.toLowerCase());
-            dc.addParam(hostId);
+            dc.addParam(siteId);
 
-            List<Map<String, Object>> sqlResults = dc.loadObjectResults();
+            final List<Map<String, Object>> sqlResults = dc.loadObjectResults();
             if ( sqlResults != null && !sqlResults.isEmpty() ) {
                 tag = convertForTag(sqlResults.get(0));
             }
@@ -318,7 +312,7 @@ public class TagFactoryImpl implements TagFactory {
                 return convertForTags(dc.loadObjectResults());
             }
         } catch ( Exception e ) {
-            Logger.warn(Tag.class, "getFilteredTags failed:" + e, e);
+            Logger.warn(Tag.class, "getFilteredTags failed: " + e, e);
         }
         return new java.util.ArrayList<>();
     }
@@ -654,16 +648,6 @@ public class TagFactoryImpl implements TagFactory {
         }
 
         return tags;
-    }
-
-    /**
-     * Escape a single quote
-     *
-     * @param tagName string with single quotes
-     * @return single quote string escaped
-     */
-    private String escapeSingleQuote ( String tagName ) {
-        return tagName.replace("'", "''");
     }
 
     /**

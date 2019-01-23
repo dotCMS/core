@@ -420,6 +420,9 @@ value='<%=(request.getParameter("wysiwyg")!=null)? request.getParameter("wysiwyg
 
 	<!-- Button Row -->
 	<div class="buttonRow" id="editLinkButtonRow">
+		<button dojoType="dijit.form.Button" onClick="cancelEdit()"  class="dijitButtonFlat" type="button">
+			<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "cancel")) %>
+		</button>
 		<%
 			if(!InodeUtils.isSet(link.getInode()) && folder!=null) {
 	         	canUserWriteToLink = perAPI.doesUserHavePermission(folder,PermissionAPI.PERMISSION_CAN_ADD_CHILDREN,user);
@@ -427,16 +430,15 @@ value='<%=(request.getParameter("wysiwyg")!=null)? request.getParameter("wysiwyg
 		%>
 		<% if (!InodeUtils.isSet(contentLink.getInode()) || contentLink.isLive() || contentLink.isWorking()) { %>
 		<% if (!UtilMethods.isSet(request.getParameter("browse"))) { %>
-	
-		<% if( canUserWriteToLink ) { %>
-			<button dojoType="dijit.form.Button" onClick="submitfm(document.getElementById('fm'),'')" type="button">
-				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "save")) %>
-			</button>
-		<% } %>
-	
+
 		<% if( canUserPublishLink ) { %>
 			<button dojoType="dijit.form.Button" onClick="submitfm(document.getElementById('fm'),'publish')" type="button">
 				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "save-and-publish")) %>
+			</button>
+		<% } %>
+		<% if( canUserWriteToLink ) { %>
+			<button dojoType="dijit.form.Button" onClick="submitfm(document.getElementById('fm'),'')" type="button">
+				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "save")) %>
 			</button>
 		<% } %>
 		<% } else { %>
@@ -455,17 +457,13 @@ value='<%=(request.getParameter("wysiwyg")!=null)? request.getParameter("wysiwyg
 				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "bring-back-this-version")) %>
 			</button>
 		<% } %>
-	
+
 		<% if (InodeUtils.isSet(contentLink.getInode()) && contentLink.isDeleted())  { %>
 			<button dojoType="dijit.form.Button" onClick="submitfmDelete()" class="dijitButtonDanger" iconClass="deleteIcon" type="button">
 				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Delete-Link")) %>
 			</button>
 		<% } %>
 
-		<button dojoType="dijit.form.Button" onClick="cancelEdit()"  class="dijitButtonFlat" type="button">
-			<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "cancel")) %>
-		</button>
-	
 	</div>
 	<!-- /Button Row -->
 </div>

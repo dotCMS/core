@@ -7,6 +7,8 @@ import com.dotcms.api.system.event.Visibility;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
+import com.dotcms.contenttype.model.event.ContentTypeDeletedEvent;
+import com.dotcms.contenttype.model.event.ContentTypeSavedEvent;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.FieldVariable;
@@ -16,9 +18,11 @@ import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.UrlMapable;
 import com.dotcms.exception.BaseRuntimeInternationalizationException;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
+import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.util.ContentTypeUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.*;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
@@ -41,11 +45,12 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
   private final User user;
   private final Boolean respectFrontendRoles;
   private final FieldAPI fieldAPI;
+  private final LocalSystemEventsAPI localSystemEventsAPI;
 
 
 
   public ContentTypeAPIImpl(User user, boolean respectFrontendRoles, ContentTypeFactory fac, FieldFactory ffac,
-      PermissionAPI perms, FieldAPI fAPI) {
+      PermissionAPI perms, FieldAPI fAPI, final LocalSystemEventsAPI localSystemEventsAPI) {
     super();
     this.contentTypeFactory = fac;
     this.fieldFactory = ffac;
@@ -53,13 +58,14 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     this.user = user;
     this.respectFrontendRoles = respectFrontendRoles;
     this.fieldAPI = fAPI;
+    this.localSystemEventsAPI = localSystemEventsAPI;
   }
 
 
 
   public ContentTypeAPIImpl(User user, boolean respectFrontendRoles) {
     this(user, respectFrontendRoles, FactoryLocator.getContentTypeFactory(), FactoryLocator.getFieldFactory(),
-        APILocator.getPermissionAPI(), APILocator.getContentTypeFieldAPI());
+        APILocator.getPermissionAPI(), APILocator.getContentTypeFieldAPI(), APILocator.getLocalSystemEventsAPI());
   }
 
 
@@ -77,12 +83,16 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     try {
       String actionUrl = ContentTypeUtil.getInstance().getActionUrl(type, user);
       ContentTypePayloadDataWrapper contentTypePayloadDataWrapper = new ContentTypePayloadDataWrapper(actionUrl, type);
-      APILocator.getSystemEventsAPI().push(SystemEventType.DELETE_BASE_CONTENT_TYPE, new Payload(
+      APILocator.getSystemEventsAPI().pushAsync(SystemEventType.DELETE_BASE_CONTENT_TYPE, new Payload(
           contentTypePayloadDataWrapper, Visibility.PERMISSION, String.valueOf(PermissionAPI.PERMISSION_READ)));
     } catch (DotStateException | DotDataException e) {
       Logger.error(ContentType.class, e.getMessage(), e);
       throw new BaseRuntimeInternationalizationException(e);
     }
+
+    HibernateUtil.addCommitListener(()-> {
+      localSystemEventsAPI.notify(new ContentTypeDeletedEvent(type.variable()));
+    });
 
   }
 
@@ -376,8 +386,10 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
       throws DotDataException, DotSecurityException {
     // Sets the host:
     try {
-      if (contentType.host() == null) {
+      if (contentType.host() == null || contentType.fixed()) {
+        final List<Field> existinFields = contentType.fields();
         contentType = ContentTypeBuilder.builder(contentType).host(Host.SYSTEM_HOST).build();
+        contentType.constructWithFields(existinFields);
       }
       if (!UUIDUtil.isUUID(contentType.host()) && !Host.SYSTEM_HOST.equalsIgnoreCase(contentType.host())) {
         HostAPI hapi = APILocator.getHostAPI();
@@ -393,7 +405,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     // check perms
     Permissionable parent = contentType.getParentPermissionable();
     if (!perms.doesUserHavePermissions(parent,
-        "PARENT:" + PermissionAPI.PERMISSION_CAN_ADD_CHILDREN + ", STRUCTURES:" + PermissionAPI.PERMISSION_PUBLISH,
+        "PARENT:" + PermissionAPI.PERMISSION_CAN_ADD_CHILDREN + ", STRUCTURES:" + PermissionAPI.PERMISSION_EDIT_PERMISSIONS,
         user)) {
       throw new DotSecurityException(
           "User-does-not-have-add-children-or-structure-permission-on-host-folder:" + parent);
@@ -519,7 +531,13 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
       }
     }
 
-    return find(contentTypeToSave.id());
+    final ContentType savedContentType = find(contentTypeToSave.id());
+
+    HibernateUtil.addCommitListener(()-> {
+      localSystemEventsAPI.notify(new ContentTypeSavedEvent(savedContentType));
+    });
+
+    return savedContentType;
   }
 
   private Field checkContentTypeFields(final ContentType contentType, final Field field) {

@@ -1,10 +1,19 @@
 package com.dotcms.rest;
 
+import static com.dotmarketing.util.NumberUtil.toInt;
+import static com.dotmarketing.util.NumberUtil.toLong;
+
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
-import com.dotcms.repackage.javax.ws.rs.*;
+import com.dotcms.repackage.javax.ws.rs.Consumes;
+import com.dotcms.repackage.javax.ws.rs.GET;
+import com.dotcms.repackage.javax.ws.rs.POST;
+import com.dotcms.repackage.javax.ws.rs.PUT;
+import com.dotcms.repackage.javax.ws.rs.Path;
+import com.dotcms.repackage.javax.ws.rs.PathParam;
+import com.dotcms.repackage.javax.ws.rs.Produces;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
@@ -29,7 +38,10 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.business.DotLockException;
-import com.dotmarketing.portlets.contentlet.model.*;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicyProvider;
 import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
@@ -38,8 +50,14 @@ import com.dotmarketing.portlets.structure.model.Field.FieldType;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.transform.ContentletRelationshipsTransformer;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
-import com.dotmarketing.util.*;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.InodeUtils;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.SecurityLogger;
+import com.dotmarketing.util.UUIDUtil;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.converters.Converter;
 import com.thoughtworks.xstream.converters.MarshallingContext;
@@ -47,23 +65,29 @@ import com.thoughtworks.xstream.converters.UnmarshallingContext;
 import com.thoughtworks.xstream.io.HierarchicalStreamReader;
 import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
 import com.thoughtworks.xstream.io.xml.DomDriver;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.Part;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
-import java.util.*;
+import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import static com.dotmarketing.util.NumberUtil.toInt;
-import static com.dotmarketing.util.NumberUtil.toLong;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.Part;
 
 @Path("/content")
 public class ContentResource {
@@ -409,6 +433,10 @@ public class ContentResource {
         final String limitStr = paramsMap.get(RESTParams.LIMIT.getValue());
         final String offsetStr = paramsMap.get(RESTParams.OFFSET.getValue());
         final String inode = paramsMap.get(RESTParams.INODE.getValue());
+        final String respectFrontEndRolesKey = RESTParams.RESPECT_FRONT_END_ROLES.getValue().toLowerCase();
+        final boolean respectFrontendRoles = UtilMethods.isSet(paramsMap.get(respectFrontEndRolesKey))
+                ? Boolean.valueOf(paramsMap.get(respectFrontEndRolesKey))
+                : true;
         final long language = toLong(paramsMap.get(RESTParams.LANGUAGE.getValue()),
                 () -> APILocator.getLanguageAPI().getDefaultLanguage().getId());
         /* Limit and Offset Parameters Handling, if not passed, using default */
@@ -416,6 +444,8 @@ public class ContentResource {
         final int offset = toInt(offsetStr, () -> 0);
         final boolean live = (paramsMap.get(RESTParams.LIVE.getValue()) == null ||
                 !"false".equals(paramsMap.get(RESTParams.LIVE.getValue())));
+
+        final int depth = toInt(paramsMap.get(RESTParams.DEPTH.getValue()), () -> 0);
 
         /* Fetching the content using a query if passed or an id */
         List<Contentlet> contentlets = new ArrayList<>();
@@ -434,13 +464,13 @@ public class ContentResource {
 
             if (idPassed = UtilMethods.isSet(id)) {
                 Optional.ofNullable(
-                        this.contentHelper.hydrateContentLet(APILocator.getContentletAPI()
-                                .findContentletByIdentifier(id, live, language, user, true)))
+                        this.contentHelper.hydrateContentlet(APILocator.getContentletAPI()
+                                .findContentletByIdentifier(id, live, language, user, respectFrontendRoles)))
                         .ifPresent(contentlets::add);
             } else if (inodePassed = UtilMethods.isSet(inode)) {
                 Optional.ofNullable(
-                        this.contentHelper.hydrateContentLet(APILocator.getContentletAPI()
-                                .find(inode, user, true)))
+                        this.contentHelper.hydrateContentlet(APILocator.getContentletAPI()
+                                .find(inode, user, respectFrontendRoles)))
                         .ifPresent(contentlets::add);
             } else if (queryPassed = UtilMethods.isSet(query)) {
                 String tmDate = (String) request.getSession().getAttribute("tm_date");
@@ -448,8 +478,6 @@ public class ContentResource {
                 contentlets = ContentUtils.pull(luceneQuery, offset, limit, orderBy, user, tmDate);
             }
 
-            status = (null == contentlets || contentlets.isEmpty()) ?
-                    Optional.of(Status.NOT_FOUND) : status;
         } catch (DotSecurityException e) {
 
             Logger.debug(this, "Permission error: " + e.getMessage(), e);
@@ -468,9 +496,9 @@ public class ContentResource {
         /* Converting the Contentlet list to XML or JSON */
         try {
             if ("xml".equals(type)) {
-                result = getXML(contentlets, request, response, render, user);
+                result = getXML(contentlets, request, response, render, user, depth);
             } else {
-                result = getJSON(contentlets, request, response, render, user);
+                result = getJSON(contentlets, request, response, render, user, depth);
             }
         } catch (Exception e) {
             Logger.warn(this, "Error converting result to XML/JSON");
@@ -518,43 +546,137 @@ public class ContentResource {
         return luceneQuery;
     }
 
-    private String getXML(final List<Contentlet> cons, HttpServletRequest request,
-            HttpServletResponse response, String render, User user)
+    /**
+     * Creates an xml (as string) from a list of contentlets
+     * @param cons
+     * @param request
+     * @param response
+     * @param render
+     * @param user
+     * @param depth
+     * @return
+     * @throws DotDataException
+     * @throws IOException
+     * @throws DotSecurityException
+     */
+    private String getXML(final List<Contentlet> cons, final HttpServletRequest request,
+            final HttpServletResponse response, final String render, final User user, final int depth)
             throws DotDataException, IOException, DotSecurityException {
-        XStream xstream = new XStream(new DomDriver());
+
+        final StringBuilder sb = new StringBuilder();
+        final XStream xstream = new XStream(new DomDriver());
         xstream.alias("content", Map.class);
         xstream.registerConverter(new MapEntryConverter());
-        StringBuilder sb = new StringBuilder();
         sb.append("<?xml version=\"1.0\" encoding='UTF-8'?>");
         sb.append("<contentlets>");
 
-        for (Contentlet c : cons) {
-            Map<String, Object> m = new HashMap<>();
-            final ContentType type = c.getContentType();
+        cons.forEach(contentlet -> {
+            try {
 
-            m.putAll(ContentletUtil.getContentPrintableMap(user, c));
-
-            if (BaseContentType.WIDGET.equals(type.baseType()) && Boolean.toString(true)
-                    .equalsIgnoreCase(render)) {
-                m.put("parsedCode", WidgetResource.parseWidget(request, response, c));
+                sb.append(xstream.toXML(
+                        addRelationshipsToXML(request, response, render, user, depth, contentlet,
+                                getContentXML(contentlet, request, response, render, user))));
+            } catch (Exception e) {
+                Logger.error(this, "Error generating content xml: " + e.getMessage(), e);
             }
-
-            if (BaseContentType.HTMLPAGE.equals(type.baseType())) {
-                m.put(HTMLPageAssetAPI.URL_FIELD, this.contentHelper.getUrl(c));
-            }
-
-            final Set<String> jsonFields = getJSONFields(type);
-            for (String key : m.keySet()) {
-                if (jsonFields.contains(key)) {
-                    m.put(key, c.getKeyValueProperty(key));
-                }
-            }
-
-            sb.append(xstream.toXML(m));
-        }
+        });
 
         sb.append("</contentlets>");
         return sb.toString();
+    }
+
+
+    private Map<String, Object> getContentXML(final Contentlet contentlet, final HttpServletRequest request,
+            final HttpServletResponse response, final String render, final User user)
+            throws DotDataException, IOException, DotSecurityException {
+
+        final Map<String, Object> m = new HashMap<>();
+        final ContentType type = contentlet.getContentType();
+
+        m.putAll(ContentletUtil.getContentPrintableMap(user, contentlet));
+
+        if (BaseContentType.WIDGET.equals(type.baseType()) && Boolean.toString(true)
+                .equalsIgnoreCase(render)) {
+            m.put("parsedCode", WidgetResource.parseWidget(request, response, contentlet));
+        }
+
+        if (BaseContentType.HTMLPAGE.equals(type.baseType())) {
+            m.put(HTMLPageAssetAPI.URL_FIELD, this.contentHelper.getUrl(contentlet));
+        }
+
+        final Set<String> jsonFields = getJSONFields(type);
+        for (String key : m.keySet()) {
+            if (jsonFields.contains(key)) {
+                m.put(key, contentlet.getKeyValueProperty(key));
+            }
+        }
+
+        return m;
+    }
+
+    /**
+     * Add relationships records to a contentlet xml
+     * @param request
+     * @param response
+     * @param render
+     * @param user
+     * @param depth
+     * @param contentlet
+     * @param objectMap
+     * @return
+     * @throws DotDataException
+     * @throws JSONException
+     * @throws IOException
+     * @throws DotSecurityException
+     */
+    private Map<String, Object> addRelationshipsToXML(final HttpServletRequest request, final HttpServletResponse response,
+            final String render, final User user, final int depth, final Contentlet contentlet, final Map<String, Object> objectMap)
+            throws DotDataException, JSONException, IOException, DotSecurityException {
+
+        List records;
+        //add relationships
+        final ContentletRelationships relationships = APILocator.getContentletAPI().getAllRelationships
+                (contentlet);
+        for (ContentletRelationships.ContentletRelationshipRecords rel : relationships
+                .getRelationshipsRecords()) {
+
+            records = (List) objectMap.get(rel.getRelationship().getTitle());
+            if (records == null) {
+                records = new ArrayList();
+            }
+
+            String relationType = rel.getRelationship().getRelationTypeValue();
+            final ContentType contentType = contentlet.getContentType();
+
+            if (isRelationshipField(relationType, contentType)) {
+                relationType = relationType.split("\\.")[1];
+            }
+
+            for (Contentlet relatedContent : rel.getRecords()) {
+                switch (depth){
+                    //returns a list of identifiers
+                    case 0:
+                        records.add(relatedContent.getIdentifier());
+                        break;
+
+                    //returns a list of related content objects
+                    case 1:
+                        records.add(getContentXML(relatedContent, request, response, render, user));
+                        break;
+
+                    //returns a list of related content objects for each of the related content
+                    case 2:
+                        records.add(addRelationshipsToXML(request, response, render, user, 0,
+                                relatedContent,
+                                getContentXML(relatedContent, request, response, render, user)));
+                        break;
+                }
+            }
+
+            objectMap.put(relationType, records.size() == 1 ? records.get(0)
+                    : records);
+        }
+        return objectMap;
     }
 
 
@@ -585,19 +707,30 @@ public class ContentResource {
         return json.toString();
     }
 
-    private String getJSON(List<Contentlet> cons, HttpServletRequest request,
-            HttpServletResponse response, String render, User user)
+    /**
+     * Creates a json object (as string) of a list of contentlets
+     * @param cons
+     * @param request
+     * @param response
+     * @param render
+     * @param user
+     * @param depth
+     * @return
+     * @throws IOException
+     * @throws DotDataException
+     */
+    private String getJSON(final List<Contentlet> cons, final HttpServletRequest request,
+            final HttpServletResponse response, final String render, final User user,  final int depth)
             throws IOException, DotDataException {
-        JSONObject json = new JSONObject();
-        JSONArray jsonCons = new JSONArray();
+        final JSONObject json = new JSONObject();
+        final JSONArray jsonCons = new JSONArray();
 
         for (Contentlet c : cons) {
             try {
-                JSONObject jo = contentletToJSON(c, request, response, render, user);
-                if (BaseContentType.HTMLPAGE.equals(c.getContentType().baseType())) {
-                    jo.put(HTMLPageAssetAPI.URL_FIELD, this.contentHelper.getUrl(c));
-                }
+                final JSONObject jo = contentletToJSON(c, request, response, render, user);
+
                 jsonCons.put(jo);
+                addRelationshipsToJSON(request, response, render, user, depth, c, jo);
             } catch (Exception e) {
                 Logger.warn(this.getClass(), "unable JSON contentlet " + c.getIdentifier());
                 Logger.debug(this.getClass(), "unable to find contentlet", e);
@@ -612,6 +745,100 @@ public class ContentResource {
         }
 
         return json.toString();
+    }
+
+    /**
+     * Add relationships records to the json contentlet
+     * @param request
+     * @param response
+     * @param render
+     * @param user
+     * @param depth
+     * @param contentlet
+     * @param jsonObject
+     * @return
+     * @throws DotDataException
+     * @throws JSONException
+     * @throws IOException
+     * @throws DotSecurityException
+     */
+    public static JSONObject addRelationshipsToJSON(final HttpServletRequest request, final HttpServletResponse response,
+            final String render, final User user, final int depth, final Contentlet contentlet, final JSONObject jsonObject)
+            throws DotDataException, JSONException, IOException, DotSecurityException {
+        //add relationships
+        final ContentletRelationships relationships = APILocator.getContentletAPI().getAllRelationships
+                (contentlet);
+        for (ContentletRelationships.ContentletRelationshipRecords rel : relationships
+                .getRelationshipsRecords()) {
+            JSONArray jsonArray = jsonObject
+                    .optJSONArray(rel.getRelationship()
+                            .getTitle());
+            if (jsonArray == null) {
+                jsonArray = new JSONArray();
+            }
+            for (Contentlet relatedContent : rel.getRecords()) {
+                switch (depth){
+                    //returns a list of identifiers
+                    case 0:
+                        jsonArray.put(relatedContent.getIdentifier());
+                        break;
+
+                    //returns a list of related content objects
+                    case 1:
+                        jsonArray.put(contentletToJSON(relatedContent, request, response, render, user));
+                        break;
+
+                    //returns a list of related content objects for each of the related content
+                    case 2:
+                        jsonArray.put(addRelationshipsToJSON(request, response, render, user, 0,
+                                relatedContent,
+                                contentletToJSON(relatedContent, request, response, render, user)));
+                        break;
+
+                }
+            }
+
+            final String relationType = rel.getRelationship().getRelationTypeValue();
+            final ContentType contentType = contentlet.getContentType();
+
+            if (isRelationshipField(relationType, contentType)) {
+                jsonObject.put(relationType.split("\\.")[1],
+                        getJSONArrayValue(jsonArray, depth));
+            } else {
+                jsonObject.put(relationType, getJSONArrayValue(jsonArray, depth));
+            }
+        }
+
+        return jsonObject;
+    }
+
+    /**
+     * Returns a jsonArray of related contentlets if depth = 2. If depth = 1 returns the related
+     * object, otherwise it will return a comma-separated list of identifiers
+     * @param jsonArray
+     * @param depth
+     * @return
+     * @throws JSONException
+     */
+    private static Object getJSONArrayValue(final JSONArray jsonArray, final int depth)
+            throws JSONException {
+        if (jsonArray.length() == 1) {
+            return jsonArray.get(0);
+        } else {
+            return depth == 0 ? jsonArray.join(", ") : jsonArray;
+        }
+    }
+
+    /**
+     * Verifies if a relationship is field or legacy
+     * @param relationType
+     * @param contentType
+     * @return
+     */
+    private static boolean isRelationshipField(final String relationType, final ContentType contentType) {
+        return relationType.contains(StringPool.PERIOD) && relationType.split("\\.")[0]
+                .equals(contentType.variable()) && contentType.fieldMap()
+                .containsKey(relationType.split("\\.")[1]);
     }
 
     public static Set<String> getJSONFields(ContentType type)
@@ -655,6 +882,10 @@ public class ContentResource {
             jo.put("parsedCode", WidgetResource.parseWidget(request, response, con));
         }
 
+        if (BaseContentType.HTMLPAGE.equals(type.baseType())) {
+            jo.put(HTMLPageAssetAPI.URL_FIELD, ContentHelper.getInstance().getUrl(con));
+        }
+
         return jo;
     }
 
@@ -664,15 +895,47 @@ public class ContentResource {
             return AbstractMap.class.isAssignableFrom(clazz);
         }
 
-        public void marshal(Object value, HierarchicalStreamWriter writer,
-                MarshallingContext context) {
+        public void marshal(final Object value, final HierarchicalStreamWriter writer,
+                final MarshallingContext context) {
             @SuppressWarnings("unchecked")
-            Map<String, Object> map = (Map<String, Object>) value;
+            final Map<String, Object> map = (Map<String, Object>) value;
             for (Entry<String, Object> entry : map.entrySet()) {
                 writer.startNode(entry.getKey().toString());
-                writer.setValue(entry.getValue() != null ? entry.getValue().toString() : "");
+                if (entry.getValue() instanceof List){
+                    final List itemsList = ((List)entry.getValue());
+                    if (!((List)entry.getValue()).isEmpty() && itemsList.get(0) instanceof Map){
+                        //list of more than one object
+                        marshalInternalNode(writer, context, itemsList);
+                    } else{
+                        //list of strings
+                        writer.setValue(
+                                itemsList.stream().collect(Collectors.joining(", ")).toString());
+                    }
+                } else if(entry.getValue() instanceof Map) {
+                    //one object saved as a map
+                    marshal(entry.getValue(), writer, context);
+                }else{
+                    //simple string
+                    writer.setValue(entry.getValue() != null ? entry.getValue().toString() : "");
+                }
                 writer.endNode();
             }
+        }
+
+        /**
+         * Build xml node for all elements in a list. Each element is saved a map
+         * @param writer
+         * @param context
+         * @param itemsList
+         */
+        private void marshalInternalNode(final HierarchicalStreamWriter writer,
+                final MarshallingContext context,
+                final List itemsList) {
+            itemsList.forEach(item -> {
+                writer.startNode("item");
+                marshal(item, writer, context);
+                writer.endNode();
+            });
         }
 
         public Object unmarshal(HierarchicalStreamReader reader, UnmarshallingContext context) {

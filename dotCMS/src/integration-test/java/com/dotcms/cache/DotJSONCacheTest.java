@@ -36,7 +36,7 @@ public class DotJSONCacheTest {
     public static Object[] addTestCases() {
         final DotJSON dotJSONZeroTTL = new DotJSON();
         final DotJSON dotJSONPositiveTTL = new DotJSON();
-        dotJSONPositiveTTL.put(DotJSON.CACHE_TTL_KEY, "1000");
+        dotJSONPositiveTTL.put(DotJSON.CACHE_TTL_KEY, "5");
 
         return new DotJSONCacheAddTestCase[] {
                 new Builder().cacheKey(null).shouldCache(false).build(),
@@ -47,16 +47,16 @@ public class DotJSONCacheTest {
 
     @DataProvider
     public static Object[] getTestCases() {
-        final DotJSON dotJSON1000TTL = new DotJSON();
-        dotJSON1000TTL.put(DotJSON.CACHE_TTL_KEY, "500");
+        final DotJSON dotJSON5TTL = new DotJSON();
+        dotJSON5TTL.put(DotJSON.CACHE_TTL_KEY, "5");
 
         return new DotJSONCacheGetTestCase[] {
-                new DotJSONCacheGetTestCase.Builder().dotJSONToAdd(dotJSON1000TTL).cacheKeyToAdd(VALID_KEY)
-                        .cacheKeyToGet(VALID_KEY).waitTime(0).dotJSONToExpect(dotJSON1000TTL).build(),
-                new DotJSONCacheGetTestCase.Builder().dotJSONToAdd(dotJSON1000TTL).cacheKeyToAdd(VALID_KEY)
+                new DotJSONCacheGetTestCase.Builder().dotJSONToAdd(dotJSON5TTL).cacheKeyToAdd(VALID_KEY)
+                        .cacheKeyToGet(VALID_KEY).waitTime(0).dotJSONToExpect(dotJSON5TTL).build(),
+                new DotJSONCacheGetTestCase.Builder().dotJSONToAdd(dotJSON5TTL).cacheKeyToAdd(VALID_KEY)
                 .cacheKeyToGet(VALID_KEY)
-                        .waitTime(700).dotJSONToExpect(null).build(),
-                new DotJSONCacheGetTestCase.Builder().dotJSONToAdd(dotJSON1000TTL).cacheKeyToAdd(VALID_KEY)
+                        .waitTime(7000).dotJSONToExpect(null).build(),
+                new DotJSONCacheGetTestCase.Builder().dotJSONToAdd(dotJSON5TTL).cacheKeyToAdd(VALID_KEY)
                         .cacheKeyToGet("INVALID-KEY").waitTime(0).dotJSONToExpect(null).build()
 
         };

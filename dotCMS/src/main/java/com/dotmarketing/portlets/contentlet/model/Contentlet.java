@@ -1,8 +1,16 @@
 package com.dotmarketing.portlets.contentlet.model;
 
+import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
+import com.dotcms.contenttype.exception.NotFoundInDbException;
+import com.dotcms.contenttype.model.field.BinaryField;
+import com.dotcms.contenttype.model.field.ImageField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotcms.repackage.com.google.common.collect.Maps;
+import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.ConversionUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -12,6 +20,7 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionSummary;
 import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.RelatedPermissionableGroup;
+import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.business.Ruleable;
 import com.dotmarketing.business.Treeable;
 import com.dotmarketing.business.UserAPI;
@@ -33,6 +42,7 @@ import com.dotmarketing.tag.model.TagInode;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.model.User;
 import java.io.File;
@@ -41,6 +51,7 @@ import java.io.InputStream;
 import java.io.Serializable;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -48,6 +59,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 import org.apache.commons.lang.builder.ToStringBuilder;
 
 /**
@@ -63,11 +75,14 @@ import org.apache.commons.lang.builder.ToStringBuilder;
 public class Contentlet implements Serializable, Permissionable, Categorizable, Versionable, Treeable, Ruleable  {
 
     private static final long serialVersionUID = 1L;
+    public static final String TITTLE_KEY = "title";
+    public static final String HAS_TITLE_IMAGE_KEY = "hasTitleImage";
     public static final String INODE_KEY = "inode";
     public static final String LANGUAGEID_KEY = "languageId";
     public static final String STRUCTURE_INODE_KEY = "stInode";
     public static final String STRUCTURE_NAME_KEY = "stName";
     public static final String CONTENT_TYPE_KEY = "contentType";
+    public static final String BASE_TYPE_KEY = "baseType";
     public static final String LAST_REVIEW_KEY = "lastReview";
     public static final String NEXT_REVIEW_KEY = "nextReview";
     public static final String REVIEW_INTERNAL_KEY = "reviewInternal";
@@ -82,13 +97,19 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
     public static final String IDENTIFIER_KEY = "identifier";
     public static final String SORT_ORDER_KEY = "sortOrder";
     public static final String HOST_KEY = "host";
+    public static final String HOST_NAME = "hostName";
     public static final String FOLDER_KEY = "folder";
 	public static final String NULL_PROPERTIES = "nullProperties";
 	public static final String WORKFLOW_ACTION_KEY = "wfActionId";
 	public static final String WORKFLOW_ASSIGN_KEY = "wfActionAssign";
 	public static final String WORKFLOW_COMMENTS_KEY = "wfActionComments";
 	public static final String WORKFLOW_BULK_KEY = "wfActionBulk";
+    public static final String DOT_NAME_KEY = "__DOTNAME__";
 
+    public static final String TITLE_IMAGE_KEY="titleImage";
+    
+    
+    
     public static final String DONT_VALIDATE_ME = "_dont_validate_me";
     public static final String DISABLE_WORKFLOW = "__disable_workflow__";
 
@@ -118,6 +139,38 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	private transient IndexPolicy indexPolicy = IndexPolicy.DEFER;
 	private transient IndexPolicy indexPolicyDependencies = IndexPolicy.DEFER;
 
+	private transient boolean needsReindex = false;
+
+	private transient Map<String, List<String>> relatedIds;
+
+	/**
+	 * Returns true if this contentlet needs reindex
+	 * @return true if needs reindex
+	 */
+	@JsonIgnore
+	@com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore
+	public boolean needsReindex() {
+		return needsReindex;
+	}
+
+	/**
+	 * Call this method when you want to mark the current contentlet as dirty, usually useful to determine if reindex or not in upon layers or next stages
+	 */
+	public void markAsDirty () {
+		this.needsReindex = true;
+	}
+
+	/**
+	 * When a content is reindex mark it as an indexed.
+	 */
+	public void markAsReindexed () {
+		this.needsReindex = false;
+	}
+
+	/**
+	 * Get the indexing policy for the contentlet @see {@link IndexPolicy}
+	 * @return IndexPolicy
+	 */
 	public IndexPolicy getIndexPolicy() {
 
 		return (null == this.indexPolicy)?
@@ -164,14 +217,6 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 		}
 	}
 
-
-
-
-
-	public void setContentType(ContentType contentType) {
-		this.contentType = contentType;
-	}
-
 	@Override
     public String getCategoryId() {
     	return getInode();
@@ -189,7 +234,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 
 	/**
 	 * Create a contentlet based on a map (makes a copy of it)
-	 * @param map
+	 * @param contentlet
 	 */
 	public Contentlet(final Contentlet contentlet) {
 		this(contentlet.getMap());
@@ -223,19 +268,19 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 
     		//Verifies if the content type has defined a title field
 			Optional<com.dotcms.contenttype.model.field.Field> fieldFound = this.getContentType().fields().stream().
-					filter(field -> field.variable().equals("title")).findAny();
+					filter(field -> field.variable().equals(TITTLE_KEY)).findAny();
 
 
 			if (fieldFound.isPresent()) {
-				return map.get("title")!=null?map.get("title").toString():null;
+				return map.get(TITTLE_KEY)!=null?map.get(TITTLE_KEY).toString():null;
 			}
 
 			String title = getContentletAPI().getName(this, getUserAPI().getSystemUser(), false);
-			map.put("title", title);
+			map.put(TITTLE_KEY, title);
 
     	    return title;
 		} catch (Exception e) {
-			Logger.error(this,"Unable to get title.");
+			Logger.debug(this,"Unable to get title for contentlet, id: " + getIdentifier(), e);
 			return  "";
 		}
 	}
@@ -325,20 +370,24 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
     public void setContentTypeId(String id) {
     	map.put(STRUCTURE_INODE_KEY, id);
     }
-
+    /**
+     * 
+     * @param type
+     */
+    public void setContentType(final ContentType type) {
+        map.put(STRUCTURE_INODE_KEY, type.id());
+    }
 	/**
 	 * @deprecated As of dotCMS 4.1.0. Please use the following approach:
-	 *             <pre>
-	 *             APILocator.getContentTypeAPI(user).find(content.getStructureInode());
+	 * <pre>
+	 *             {@link #getContentType()}
 	 *             </pre>
-	 * 
-	 * @return
 	 */
-    public Structure getStructure() {
-    	Structure structure = null;
-    	structure = CacheLocator.getContentTypeCache().getStructureByInode(getStructureInode());
-        return structure;
-    }
+	public Structure getStructure() {
+		final ContentType type = this.getContentType();
+		return null != type?
+				new StructureTransformer(getContentType()).asStructure():null;
+	}
 
     /**
      * 
@@ -494,7 +543,16 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	public void setStringProperty(String fieldVarName,String stringValue) throws DotRuntimeException {
 		map.put(fieldVarName, stringValue);
 	}
-
+	
+    /**
+     * 
+     * @param fieldVarName
+     * @param stringValue
+     * @throws DotRuntimeException
+     */
+    public void setStringProperty(com.dotcms.contenttype.model.field.Field field,String stringValue) throws DotRuntimeException {
+        map.put(field.variable(), stringValue);
+    }
 	/**
 	 * 
 	 * @param fieldVarName
@@ -504,7 +562,9 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	public void setLongProperty(String fieldVarName, long longValue) throws DotRuntimeException {
 		map.put(fieldVarName, longValue);
 	}
-
+    public void setLongProperty(com.dotcms.contenttype.model.field.Field field,long stringValue) throws DotRuntimeException {
+        map.put(field.variable(), stringValue);
+    }
 	/**
 	 * 
 	 * @param fieldVarName
@@ -528,6 +588,15 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	public void setBoolProperty(String fieldVarName, boolean boolValue) throws DotRuntimeException {
 		map.put(fieldVarName, boolValue);
 	}
+    /**
+     * 
+     * @param fieldVarName
+     * @param boolValue
+     * @throws DotRuntimeException
+     */
+    public void setBoolProperty(com.dotcms.contenttype.model.field.Field field, boolean boolValue) throws DotRuntimeException {
+        map.put(field.variable(), boolValue);
+    }
 
 	/**
 	 * 
@@ -552,6 +621,16 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	public void setDateProperty(String fieldVarName, Date dateValue) throws DotRuntimeException {
 		map.put(fieldVarName, dateValue);
 	}
+	
+    /**
+     * 
+     * @param field
+     * @param dateValue
+     * @throws DotRuntimeException
+     */
+    public void setDateProperty(com.dotcms.contenttype.model.field.Field field, Date dateValue) throws DotRuntimeException {
+        map.put(field.variable(), dateValue);
+    }
 
 	/**
 	 * 
@@ -576,6 +655,16 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	public void setFloatProperty(String fieldVarName, float floatValue) throws DotRuntimeException {
 		map.put(fieldVarName, floatValue);
 	}
+	
+    /**
+     * 
+     * @param fieldVarName
+     * @param floatValue
+     * @throws DotRuntimeException
+     */
+    public void setFloatProperty(com.dotcms.contenttype.model.field.Field field, float floatValue) throws DotRuntimeException {
+        map.put(field.variable(), floatValue);
+    }
 
 	/**
 	 * 
@@ -728,7 +817,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 
 	/**
 	 * Sets the sort_order.
-	 * @param sort_order The sort_order to set
+	 * @param sortOrder The sort_order to set
 	 */
 	public void setSortOrder(long sortOrder) {
 		map.put(SORT_ORDER_KEY, sortOrder);
@@ -757,6 +846,38 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 		return (String) map.get(HOST_KEY);
 	}
 
+	private final static String TITLE_IMAGE_NOT_FOUND = "TITLE_IMAGE_NOT_FOUND";
+
+    
+    public Optional<com.dotcms.contenttype.model.field.Field> getTitleImage() {
+        final ContentType type = getContentType();
+        if(type==null || type.fieldMap()==null || TITLE_IMAGE_NOT_FOUND.equals(map.get(TITLE_IMAGE_KEY))) {
+            return Optional.empty();
+        }
+        
+        if(map.get(TITLE_IMAGE_KEY) == null) {
+            String returnVal = TITLE_IMAGE_NOT_FOUND;
+            for(final com.dotcms.contenttype.model.field.Field f : type.fields()) {
+                try {
+                    if(f instanceof BinaryField && UtilMethods.isImage(this.getBinary(f.variable()).toString())){
+                        returnVal=f.variable();
+                        break;
+                    }
+                    else if( f instanceof ImageField && UtilMethods.isSet(get(f.variable()))) {
+                        returnVal=f.variable();
+                        break;
+                    }
+                } catch (Exception e) {
+                    Logger.debug(this.getClass(), e.getMessage(), e);
+                }
+            }
+            map.put(TITLE_IMAGE_KEY, returnVal);
+        }
+        return Optional.ofNullable(type.fieldMap().get(String.valueOf(map.get(TITLE_IMAGE_KEY))));
+    }
+	
+	
+	
 	/**
 	 * 
 	 * @param host
@@ -864,6 +985,16 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	public void setBinary(String velocityVarName, File newFile)throws IOException{
 		map.put(velocityVarName, newFile);
 	}
+	
+    /**
+     * 
+     * @param field
+     * @param newFile
+     * @throws IOException
+     */
+    public void setBinary(com.dotcms.contenttype.model.field.Field field, File newFile)throws IOException{
+        map.put(field.variable(), newFile);
+    }
 
 	/**
 	 * 
@@ -1216,7 +1347,10 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 			super();
 		}
 
-		public Object put(String key, Object value) {
+		public Object put(final String key, final Object value) {
+
+			Contentlet.this.markAsDirty();
+
 			 if(value==null) {
 				 Object oldValue = this.get(key);
 				 this.remove(key);
@@ -1235,27 +1369,36 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	public boolean hasLiveVersion() throws DotStateException, DotDataException {
 		return APILocator.getVersionableAPI().hasLiveVersion(this);
 	}
-	
+
 	/**
 	 * Get the contentlet Content Type
+	 *
 	 * @return the contentlet Content Type
-	 * @throws DotDataException
-	 * @throws DotSecurityException
 	 */
 	public ContentType getContentType() {
 
-		if (null == this.contentType) {
-			try {
-				this.contentType =
-						APILocator.getContentTypeAPI(APILocator.systemUser())
-								.find(getContentTypeId());
-			} catch (DotDataException | DotSecurityException e) {
+		try {
+			final ContentType foundContentType =
+					APILocator.getContentTypeAPI(APILocator.systemUser())
+							.find(getContentTypeId());
+
+			if (null != foundContentType) {
+				this.contentType = foundContentType;
+			}
+		} catch (DotDataException | DotSecurityException e) {
+			if (!ExceptionUtil.causedBy(e, NotFoundInDbException.class)) {
 				throw new DotStateException(e);
+			} else {
+				Logger.warn(this,
+						() -> String.format(
+								"Unable to find Content Type for Contentlet [%s], Content Type deleted? - [%s]",
+								this.getIdentifier(),
+								e.getMessage()));
 			}
 		}
 
 		return this.contentType;
-    }
+	}
 	
 	/**
 	 * Get if the contentlet is a Vanity URL
@@ -1306,5 +1449,56 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 
 	public boolean validateMe() {
 		return !UtilMethods.isSet(map.get(Contentlet.DONT_VALIDATE_ME));
+	}
+
+	/**
+	 * Returns a list of all contentlets related to this instance given a RelationshipField variable
+	 * @param variableName
+	 * @return
+	 */
+	public List<Contentlet> getRelated(final String variableName) {
+
+		if (!UtilMethods.isSet(this.relatedIds)){
+			relatedIds = Maps.newConcurrentMap();
+		}
+
+		final RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
+
+		if (this.relatedIds.containsKey(variableName)) {
+			return this.relatedIds.get(variableName).stream().map(identifier -> {
+				try {
+					return APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(identifier);
+				} catch (DotDataException | DotSecurityException e) {
+					Logger.warn(this, "No field found with this variable name " + variableName, e);
+					throw new DotStateException(e);
+				}
+			}).collect(Collectors.toList());
+		} else {
+			try {
+				final User user = APILocator.getUserAPI().getSystemUser();
+				com.dotcms.contenttype.model.field.Field field = APILocator.getContentTypeFieldAPI()
+						.byContentTypeIdAndVar(getContentTypeId(), variableName);
+
+				final List<Contentlet> relatedList = APILocator.getContentletAPI()
+						.getRelatedContent(this, relationshipAPI
+										.getRelationshipFromField(field, user),
+						user, false);
+
+				if (UtilMethods.isSet(relatedList)) {
+					this.relatedIds.put(variableName,
+							relatedList.stream().map(contentlet -> contentlet.getIdentifier())
+									.collect(
+											CollectionsUtils.toImmutableList()));
+
+				}else{
+					this.relatedIds.put(variableName, Collections.emptyList());
+				}
+
+				return relatedList;
+			} catch (DotDataException | DotSecurityException e) {
+				Logger.warn(this, "No field found with this variable name " + variableName, e);
+				throw new DotStateException(e);
+			}
+		}
 	}
 }

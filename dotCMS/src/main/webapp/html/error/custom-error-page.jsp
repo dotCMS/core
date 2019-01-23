@@ -1,3 +1,5 @@
+<%@page import="com.dotmarketing.util.PageMode"%>
+<%@page import="com.dotmarketing.util.Config"%>
 <%@page isErrorPage="true" %>
 <%@page import="com.dotcms.vanityurl.model.CachedVanityUrl"%>
 <%@page import="com.dotmarketing.beans.Host"%>
@@ -13,7 +15,17 @@
 <%@page import="com.liferay.portal.language.LanguageUtil"%>
 
 <%
-  out.clear();
+out.clear();
+if(PageMode.get(request).isAdmin && Config.getBooleanProperty("SIMPLE_ERROR_PAGES_FOR_BACKEND", true)){
+    out.append(String.valueOf(response.getStatus()));
+    return;
+}
+
+
+
+
+
+
   final int status = response.getStatus();
   final String title = LanguageUtil.get(pageContext, status + "-page-title");
   final String body = LanguageUtil.get(pageContext, status + "-body1");

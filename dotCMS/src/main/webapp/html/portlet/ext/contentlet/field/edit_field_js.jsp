@@ -1,3 +1,8 @@
+<%@page import="org.apache.velocity.context.Context"%>
+
+<%@page import="com.dotcms.contenttype.model.field.WysiwygField"%>
+<%@page import="com.dotmarketing.portlets.contentlet.model.Contentlet"%>
+
 <%@page import="com.dotmarketing.util.UtilMethods"%>
 <%@page import="com.dotmarketing.util.Config"%>
 <%@page import="com.dotcms.repackage.javax.portlet.WindowState"%>
@@ -327,10 +332,32 @@ var cmsfile=null;
 				!confirm('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.contentlet.switch.wysiwyg.view")) %>')) {
 				return;
 			}
+		    <%if(request.getAttribute("contentlet")!=null){%>
+			    <%final Context ctx = com.dotcms.rendering.velocity.util.VelocityUtil.getInstance().getWebContext(request, response);%>
+			    <%ctx.put("content", request.getAttribute("contentlet"));%>
+			    <%ctx.put("contentlet", request.getAttribute("contentlet"));%>
+				<%for(com.dotcms.contenttype.model.field.Field field : ((Contentlet)request.getAttribute("contentlet")).getContentType().fields()){%>
+				     <%if(field instanceof WysiwygField && field.fieldVariablesMap().containsKey("tinymceprops")){%>
+					     var <%=field.variable()%>tinyPropOverride={};
+					     try{
+					    	   <%ctx.put("field", field);%>
+					    	  <%=field.variable()%>tinyPropOverride =  <%= com.dotcms.rendering.velocity.util.VelocityUtil.getInstance().parseVelocity(field.fieldVariablesMap().get("tinymceprops").value(),ctx) %>;
+					     }
+					     catch(e){
+					    	 showDotCMSErrorMessage("Enable to initialize WYSIWYG " + e.message);
+					     }
+	
+					 <%}else{%>
+					         var <%=field.variable()%>tinyPropOverride =  tinyMCEProps;
+				     <%}%>
+				<%}%>
+			<%}%>
+			console.log(textAreaId + "tinyPropOverride", eval(textAreaId + "tinyPropOverride"));
+			
 
 			//Enabling the wysiwyg
 			try {
-                var wellTinyMCE = new tinymce.Editor(textAreaId, tinyMCEProps, tinymce.EditorManager);
+                var wellTinyMCE = new tinymce.Editor(textAreaId, eval(textAreaId + "tinyPropOverride"), tinymce.EditorManager);
 				wellTinyMCE.render();
                 wellTinyMCE.on('change', emmitFieldDataChange);
 			}

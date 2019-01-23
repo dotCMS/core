@@ -1,7 +1,8 @@
 package com.dotcms.contenttype.business;
 
-import java.util.Date;
+import com.dotcms.business.CloseDBIfOpened;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 import com.dotcms.contenttype.model.field.Field;
@@ -165,6 +166,17 @@ public interface FieldAPI {
 			Contentlet.SORT_ORDER_KEY,
 			Contentlet.HOST_KEY,
 			Contentlet.FOLDER_KEY);
+
+	/**
+	 * Returns a field based on the Content Type Id and the Field Relation Type
+	 * @param contentTypeId
+	 * @param fieldRelationType
+	 * @return
+	 * @throws DotDataException
+	 */
+	@CloseDBIfOpened
+	Optional<Field> byContentTypeAndFieldRelationType(final String contentTypeId,
+			final String fieldRelationType) throws DotDataException;
 
 	/**
 	 * Returns a field based on the Content Type Id and the Field Variable

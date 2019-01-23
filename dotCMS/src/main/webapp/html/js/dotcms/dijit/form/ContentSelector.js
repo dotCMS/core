@@ -58,7 +58,7 @@ var isNg = new URLSearchParams(document.location.search).get('ng');
 dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templated], {
 
 	templatePath: dojo.moduleUrl("dotcms", isNg ? "dijit/form/ContentSelectorNoDialog.jsp" : "dijit/form/ContentSelector.jsp"),
-	selectButtonTemplate: '<button id="{buttonInode}" class="dijitButtonFlat" dojoType="dijit.form.Button">Select</button>',
+	selectButtonTemplate: '<button id="{buttonInode}" dojoType="dijit.form.Button">Select</button>',
 	checkBoxTemplate: '<input value="{buttonInode}" class="contentCheckbox" dojoType="dijit.form.CheckBox"></input>',
 	widgetsInTemplate: true,
 	title: '',
@@ -132,6 +132,14 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 	},
 
 	_structureDetailsCallback: function (structure) {
+
+        if (structure.inode === 'catchall') {
+            this.search_general.style.display = "block";
+        } else {
+            this.generalSearch.set('value', '');
+            this.search_general.style.display = "none";
+        }
+
 		!isNg && this.dialog.set('title', structure["name"] ? structure["name"] : "");
 		this.structureVelVar = structure["velocityVarName"] ? structure["velocityVarName"] : "";
         this._structureChanged();
@@ -522,7 +530,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 
 	_doSearch: function (page, sortBy) {
 
-		var fieldsValues = new Array ();
+        var fieldsValues = new Array ();
 
 		fieldsValues[fieldsValues.length] = "languageId";
 
@@ -534,7 +542,15 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 		if(dijit.byId("langcombo+"+this.dialogCounter).get('displayedValue') != "")
 			fieldsValues[fieldsValues.length] = dijit.byId("langcombo+"+this.dialogCounter).get('value');
 		else
-			fieldsValues[fieldsValues.length] = "";
+            fieldsValues[fieldsValues.length] = "";
+            
+        var allField = this.generalSearch.value;
+
+        if (allField != undefined && allField.length>0 ) {
+
+                fieldsValues[fieldsValues.length] = "catchall";
+                fieldsValues[fieldsValues.length] = allField + "*";
+        }
 
 		for (var h = 0; h < this.currentStructureFields.length; h++) {
 
@@ -596,7 +612,10 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 				fieldsValues[fieldsValues.length] = "conFolder";
 				fieldsValues[fieldsValues.length] = folderValue;
 			}
-		}
+		} else {
+            fieldsValues[fieldsValues.length] = "conHost";
+            fieldsValues[fieldsValues.length] = "current";
+        }
 
 		if(this.radiobuttonsIds[this.dialogCounter]) {
 			for(var i=0;i < this.radiobuttonsIds[this.dialogCounter].length ;i++ ){
@@ -752,16 +771,12 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 
 		//Filling Headers
 		var row = table.insertRow(table.rows.length);
-		var cell = row.insertCell (row.cells.length);
-		cell.setAttribute("class","beta");
-		cell.setAttribute("className","beta");
-		cell.setAttribute("width","5%");
 
-		var cell = row.insertCell (row.cells.length);
+        var cell = row.insertCell (row.cells.length);
 		cell.setAttribute("class","beta");
 		cell.setAttribute("className","beta");
-		cell.setAttribute("style","min-width:120px;");
-		cell.innerHTML = "<b>"+this.availableLanguages[0]['title']+"</b>";
+		cell.setAttribute("style","text-align: center;");
+		cell.innerHTML = "<td><b>Type</b></td>";
 
 		for (var i = 0; i < headers.length; i++) {
 			var header = headers[i];
@@ -769,20 +784,80 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 			cell.innerHTML = this._getHeader (header);
 			cell.setAttribute("class","beta");
 			cell.setAttribute("className","beta");
-		}
+        }
+        
+		var cell = row.insertCell (row.cells.length);
+		cell.setAttribute("class","beta");
+		cell.setAttribute("className","beta");
+		cell.setAttribute("style","min-width:120px;");
+		cell.innerHTML = "<b>"+this.availableLanguages[0]['title']+"</b>";
+
+        var cell = row.insertCell (row.cells.length);
+		cell.setAttribute("class","beta");
+		cell.setAttribute("className","beta");
+		cell.setAttribute("width","5%");
+
+		
+		var style = document.createElement('style');
+		style.type = 'text/css';
+		style.innerHTML = `
+			.selectMeRowInIframe { cursor: pointer; } 
+			.selectMeRowInIframe:hover{background:#DFE8F6;}
+			.listingTitleImg {
+			  border: 1px solid #ddd; 
+			  border-radius: 4px;  
+			  padding: 3px; 
+			  width: 64px; 
+			  cursor: pointer;
+			  max-height:100px
+			  overflow:hide;
+			}
+			`;
+		document.getElementsByTagName('head')[0].appendChild(style);
+		
+		
 		//Filling data
 		for (var i = 0; i < data.length; i++) {
+            var cellData = data[i];
 			var row = table.insertRow(table.rows.length);
-			if (i % 2 == 1){
-				// row.setAttribute("bgcolor","#EEEEEE");
+			row.id="rowId" +i;
+			row.className="selectMeRowInIframe";
+
+			// Select button functionality
+			var selected =  function(scope,content) {
+				scope._onContentSelected(content);
+			};
+			if(this.multiple=='false') {
+				var asset = cellData
+				var selectRow = dojo.byId("rowId" +i);
+				if(selectRow.onclick==undefined){
+					selectRow.onclick = dojo.hitch(this, selected, this, asset);
+				}
 			}
-			var cellData = data[i];
-			var cell = row.insertCell (row.cells.length);
-			cell.setAttribute("id",i);
-			if(this.multiple=='true') {
-				cell.innerHTML = this._checkButton(cellData);
-			} else {
-				cell.innerHTML = this._selectButton(cellData);
+
+            var cell = row.insertCell (row.cells.length);
+            var iconName = this._getIconName(cellData['__type__']);
+            var hasTitleImage = (cellData.hasTitleImage ==='true');
+
+            cell.innerHTML = (hasTitleImage) 
+            	? '<img class="listingTitleImg" onError="contentSelector._replaceWithIcon(this.parentElement, \'' + iconName + '\')" src="/dA/' + cellData.inode + '/titleImage/256w" alt="' + cellData['__title__'].replace(/[^A-Za-z0-9_]/g, ' ') + '" >' 
+            	: '<span class="' + iconName +'" style="font-size:24px;width:auto;"></span>';
+
+            
+            cell.setAttribute("style","text-align: center;");
+
+			for (var j = 0; j < this.headers.length; j++) {
+                var header = this.headers[j];
+                var cell = row.insertCell (row.cells.length);
+                
+                if (header.fieldVelocityVarName === '__title__') {
+                    cell.style.width = '50%';
+                }
+
+				cell.setAttribute("onClick","javascript: toggleCheckbox("+i+")");
+				var value = cellData[header["fieldVelocityVarName"]];
+				if (value != null)
+					cell.innerHTML = value;
 			}
 
 			for(var l = 0; l < this.availableLanguages.length; l++){
@@ -793,25 +868,21 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 				}
 			}
 
-			for (var j = 0; j < this.headers.length; j++) {
-				var header = this.headers[j];
-				var cell = row.insertCell (row.cells.length);
-				cell.setAttribute("onClick","javascript: toggleCheckbox("+i+")");
-				var value = cellData[header["fieldVelocityVarName"]];
-				if (value != null)
-					cell.innerHTML = value;
+            var cell = row.insertCell (row.cells.length);
+			cell.setAttribute("id",i);
+			if(this.multiple=='true') {
+				cell.innerHTML = this._checkButton(cellData);
+			} else {
+				cell.innerHTML = this._selectButton(cellData);
 			}
-		}
+
+        }
 
 		//dojo.parser.parse("results_table_popup_menus");
 		dojo.parser.parse(this.results_table);
 
 
-		// Select button functionality
-		var selected =  function(scope,content) {
-			scope._onContentSelected(content);
 
-		};
 
 		if(this.multiple=='false') {
 			for (var i = 0; i < data.length; i++) {
@@ -825,7 +896,13 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 
 		// Header based sorting functionality
 		var headerClicked =  function(scope,header) {
-			scope._doSearch(1,this.structureVelVar+"."+header["fieldVelocityVarName"]);
+            if ("__title__" === header["fieldVelocityVarName"]) {
+                scope._doSearch(1,this.structureVelVar+".title");
+            } else if ("__type__" === header["fieldVelocityVarName"]) {
+                scope._doSearch(1,this.structureVelVar+".structurename");
+            } else {
+                scope._doSearch(1,this.structureVelVar+"."+header["fieldVelocityVarName"]);
+            }
 		};
 		for (var i = 0; i < headers.length; i++) {
 			var header = headers[i];
@@ -964,7 +1041,8 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 		dwr.util.removeAllRows(this.results_table);
 		this.nextDiv.style.display = "none";
 		this.previousDiv.style.display = "none";
-		this.relateDiv.style.display = "none";
+        this.relateDiv.style.display = "none";
+        this.generalSearch.set('value', '');
 
 		this._hideMatchingResults ();
 	},
@@ -975,5 +1053,15 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 
 	_nextPage: function (){
 		this._doSearch(this.currentPage+1);
+    },
+
+    _getIconName: function (iconCode) {
+        var startIndex = iconCode.indexOf('<span class') + 13;
+        var endIndex = iconCode.indexOf('</span>') - 2;
+		return iconCode.substring(startIndex, endIndex);
+    },
+
+	_replaceWithIcon: function (parentElement, iconName) {
+        parentElement.innerHTML = '<span class="' + iconName +'" style="font-size:24px;width:auto;"></span>'
     }
 });

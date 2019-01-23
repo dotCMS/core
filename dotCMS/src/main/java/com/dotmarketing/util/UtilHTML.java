@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
@@ -397,6 +398,31 @@ public class UtilHTML {
 
 		return strHTML.toString();
 	}
+	
+	public static String getIconClass(Contentlet contentlet) throws DotDataException {
+	    
+        ContentType type = contentlet.getContentType();
+
+        Identifier ident = APILocator.getIdentifierAPI().find(contentlet.getIdentifier());
+
+        return (type.baseType().ordinal() ==1)
+                ? "contentIcon"
+                        :  (type.baseType().ordinal() ==2)
+                        ? "gearIcon"
+                                :  (type.baseType().ordinal() ==3)
+                                ? "formIcon"
+                                    :  (type.baseType().ordinal() ==4)
+                                    ? "uknIcon " + UtilMethods.getFileExtension( ident.getURI()) + "Icon"
+                                        :  (type.baseType().ordinal() ==5)
+                                        ? "pageIcon"
+                                                : "personaIcon";
+	    
+	}
+	
+	
+	
+	
+	
 	
 	public static String getSelectCategories(Inode parent, int level, Identifier current, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 

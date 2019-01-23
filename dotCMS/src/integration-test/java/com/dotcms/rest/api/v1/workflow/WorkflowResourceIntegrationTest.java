@@ -87,9 +87,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
-import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -127,7 +125,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.lang.RandomStringUtils;
-import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -194,10 +191,10 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
 
     }
 
-    @AfterClass
+    //@AfterClass
     public static void cleanup() throws Exception {
 
-        doCleanUp(workflowResource, workflowAPI);
+        doCleanUp(workflowAPI);
 
     }
 
@@ -360,9 +357,9 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
                     final WorkflowScheme schemeToRemove = workflowAPI.findScheme(scheme.getId());
                     schemeToRemove.setArchived(true);
                     workflowAPI.saveScheme(schemeToRemove, APILocator.systemUser());
-                    workflowAPI.deleteScheme(schemeToRemove, APILocator.systemUser());
-                } catch (DotDataException | DotSecurityException | AlreadyExistException e) {
-                    e.printStackTrace();
+                    workflowAPI.deleteScheme(schemeToRemove, APILocator.systemUser()).get();
+                } catch (Exception e) {
+                    Logger.warn(getClass(), e.getMessage(), e);
                 }
             }
         }
@@ -646,7 +643,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
                 actionCommentable(false).
                 requiresCheckout(false).
                 actionNextAssign(adminRoleId).
-                whoCanUse(Arrays.asList("")).
+                whoCanUse(Collections.singletonList("")).
                 actionCondition("").
                 build();
 
@@ -981,9 +978,10 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
 
         // Assign contentType to Workflows
         workflowAPI.saveSchemeIdsForContentType(contentType,
-                Arrays.asList(
-                        systemWorkflow.getId(), documentWorkflow.getId()
-                )
+                Stream.of(
+                        systemWorkflow.getId(),
+                        documentWorkflow.getId()
+                ).collect(Collectors.toSet())
         );
 
         return contentType;
@@ -1617,7 +1615,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
             for(final Field field : contentType.fields()){
                 final Object value = generateValue(field);
                 if( null != value){
-                    contentletFormData.put(field.name(), value);
+                    contentletFormData.put(field.variable(), value);
                 }
             }
             builder1.contentletFormData(contentletFormData);
@@ -1634,14 +1632,14 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
             assertNotNull(brandNewContentlet);
 
             for(final Field field : contentType.fields()){
-                assertNotNull(brandNewContentlet.get(field.name()));
+                assertNotNull(brandNewContentlet.get(field.variable()));
             }
 
             final FireActionForm.Builder builder2 = new FireActionForm.Builder();
             final Map <String,Object>contentletFormData2 = new HashMap<>();
             contentletFormData2.put("stInode", contentType.inode());
             for(final Field field : contentType.fields()){
-                contentletFormData2.put(field.name(), null);
+                contentletFormData2.put(field.variable(), null);
             }
             builder2.contentletFormData(contentletFormData2);
             final FireActionForm fireActionForm2 = new FireActionForm(builder2);
@@ -1658,7 +1656,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
             assertNotNull(fetchedContentlet);
 
             for(final Field field : contentType.fields()){
-                assertNull(fetchedContentlet.get(field.name()));
+                assertNull(fetchedContentlet.get(field.variable()));
             }
 
         } finally {
@@ -1825,9 +1823,10 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
 
         // Assign contentType to Workflows
         workflowAPI.saveSchemeIdsForContentType(contentType,
-                Arrays.asList(
-                        systemWorkflow.getId(), documentWorkflow.getId()
-                )
+                Stream.of(
+                        systemWorkflow.getId(),
+                        documentWorkflow.getId()
+                ).collect(Collectors.toSet())
         );
 
         return contentType;
@@ -1861,9 +1860,10 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
 
         // Assign contentType to Workflows
         workflowAPI.saveSchemeIdsForContentType(contentType,
-                Arrays.asList(
-                        systemWorkflow.getId(), documentWorkflow.getId()
-                )
+                Stream.of(
+                        systemWorkflow.getId(),
+                        documentWorkflow.getId()
+                ).collect(Collectors.toSet())
         );
 
         return contentType;
@@ -1886,7 +1886,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
             final String fieldName = "_" + clazz.getCanonicalName();
             final Field field = FieldBuilder.builder(clazz)
                     .dataType(fieldTypesMetaDataMap.get(clazz))
-                    .name(fieldName).variable(fieldName)
+                    .name(fieldName)
                     .required(required)
                     .contentTypeId(contentType.id()
             ).build();
@@ -1896,9 +1896,10 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
 
         // Assign contentType to Workflows
         workflowAPI.saveSchemeIdsForContentType(contentType,
-                Arrays.asList(
-                        systemWorkflow.getId(), documentWorkflow.getId()
-                )
+                Stream.of(
+                        systemWorkflow.getId(),
+                        documentWorkflow.getId()
+                ).collect(Collectors.toSet())
         );
 
         return contentType;

@@ -7,15 +7,17 @@ import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.*;
 import com.dotcms.contenttype.model.type.*;
 import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.FolderDataGen;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.FactoryLocator;
-import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.*;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
@@ -38,8 +40,7 @@ import java.util.UUID;
 import static junit.framework.Assert.assertTrue;
 import static junit.framework.TestCase.assertEquals;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 @RunWith(DataProviderRunner.class)
 public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
@@ -52,7 +53,8 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 			ContentType contentType = contentTypeApi.find(type.id());
 			ContentType contentType2 = contentTypeApi.find(type.variable());
 			try {
-				assertThat("ContentType == ContentType2", contentType.equals(contentType2) && contentType.equals(type));
+				assertThat("Content Type By ID: " + contentType + " is not the same as Content Type By Variable: " + contentType2 + " or not the same as Type: " + type,
+						contentType.equals(contentType2) && contentType.equals(type));
 			} catch (Throwable t) {
 
 				throw t;
@@ -482,11 +484,12 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 
 		final PermissionAPI permAPI = Mockito.spy(APILocator.getPermissionAPI());
 		Mockito.doReturn(true).when(permAPI).doesUserHavePermissions(contentGenericType.getParentPermissionable(),
-				"PARENT:" + PermissionAPI.PERMISSION_CAN_ADD_CHILDREN + ", STRUCTURES:" + PermissionAPI.PERMISSION_PUBLISH,
+				"PARENT:" + PermissionAPI.PERMISSION_CAN_ADD_CHILDREN + ", STRUCTURES:" + PermissionAPI.PERMISSION_EDIT_PERMISSIONS,
 				limitedUserEditPermsPermOnCT);
 
 		contentTypeAPI = new ContentTypeAPIImpl(limitedUserEditPermsPermOnCT, false, FactoryLocator.getContentTypeFactory(),
-				FactoryLocator.getFieldFactory(), permAPI, APILocator.getContentTypeFieldAPI());
+				FactoryLocator.getFieldFactory(), permAPI, APILocator.getContentTypeFieldAPI(),
+				APILocator.getLocalSystemEventsAPI());
 
 		try {
 			List<Field> fields = APILocator.getContentTypeFieldAPI().byContentTypeId(contentGenericType.id());
@@ -541,7 +544,8 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 				limitedUserEditPermsPermOnCT);
 
 		final ContentTypeAPI contentTypeAPI = new ContentTypeAPIImpl(limitedUserEditPermsPermOnCT, false, FactoryLocator.getContentTypeFactory(),
-				FactoryLocator.getFieldFactory(), permAPI, APILocator.getContentTypeFieldAPI());
+				FactoryLocator.getFieldFactory(), permAPI, APILocator.getContentTypeFieldAPI(),
+				APILocator.getLocalSystemEventsAPI());
 
 		try {
 			contentTypeAPI.delete(newType);
@@ -643,6 +647,63 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 		assertTrue(testCase.shouldExecuteAction);
 	}
 
+	@DataProvider
+	public static Object[] testCasesSaveContentTypePermissions() {
+		return new Object[] {
+				new TestCaseUpdateContentTypePermissions(PermissionAPI.PERMISSION_EDIT_PERMISSIONS, true),
+				new TestCaseUpdateContentTypePermissions(PermissionAPI.PERMISSION_PUBLISH, false),
+				new TestCaseUpdateContentTypePermissions(PermissionAPI.PERMISSION_EDIT, false),
+				new TestCaseUpdateContentTypePermissions(PermissionAPI.PERMISSION_READ, false)
+		};
+	}
+
+	@Test
+	@UseDataProvider("testCasesSaveContentTypePermissions")
+	public void testSaveContentTypeLimitedUserPermissions(final TestCaseUpdateContentTypePermissions testCase)
+			throws DotDataException, DotSecurityException{
+	    //Create Folder
+		final Folder folder = new FolderDataGen().host(APILocator.systemHost()).nextPersisted();
+
+		//Create Content Type
+		long time = System.currentTimeMillis();
+
+		ContentType contentType = ContentTypeBuilder.builder(BaseContentType.getContentTypeClass(BaseContentType.CONTENT.ordinal()))
+				.description("ContentTypeSave " + time).name("ContentTypeSave " + time).folder(folder.getInode())
+				.owner(APILocator.systemUser().toString()).variable("CTVariable" + time).build();
+
+		//Get Limited User
+		final User limitedUserEditPermsPermOnCT = APILocator.getUserAPI().loadUserById("dotcms.org.2795",
+				APILocator.systemUser(), false);
+
+		final PermissionAPI permAPI = Mockito.spy(APILocator.getPermissionAPI());
+		Mockito.doReturn(true).when(permAPI).doesUserHavePermissions(contentType.getParentPermissionable(),
+				"PARENT:" + PermissionAPI.PERMISSION_CAN_ADD_CHILDREN + ", STRUCTURES:" + testCase.permissions,
+				limitedUserEditPermsPermOnCT);
+		//Give READ PERMISSIONS to the folder
+		Permission readPermissions = new Permission(folder.getPermissionId(),
+				APILocator.getRoleAPI().getUserRole(limitedUserEditPermsPermOnCT).getId(), PermissionAPI.PERMISSION_READ );
+		APILocator.getPermissionAPI().save( readPermissions, folder, user, false );
+
+		ContentTypeAPI contentTypeAPI = new ContentTypeAPIImpl(limitedUserEditPermsPermOnCT, false, FactoryLocator.getContentTypeFactory(),
+				FactoryLocator.getFieldFactory(), permAPI, APILocator.getContentTypeFieldAPI(),
+				APILocator.getLocalSystemEventsAPI());
+		//Try to Save Content Type
+		try{
+			contentType = contentTypeAPI.save(contentType);
+		}catch (DotSecurityException e){
+			assertFalse(e.getMessage(), testCase.shouldExecuteAction);
+			return;
+		}finally {
+			if(UtilMethods.isSet(contentType.id())) {
+				//Delete content Type
+				contentTypeApi.delete(contentType);
+			}
+			//Delete folder
+			APILocator.getFolderAPI().delete(folder,user,false);
+		}
+		assertTrue(testCase.shouldExecuteAction);
+	}
+
 	@Test(expected = NotFoundInDbException.class)
 	public void testDeleteContentType_GivenLimitedUserWithNoPermissionsUnderContentAndEnoughPermissionsToDeleteType_ShouldDeleteTypeRegardless()
 			throws DotDataException, DotSecurityException {
@@ -670,7 +731,8 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 		ContentletDataGen contentletDataGen = new ContentletDataGen(newTypeId);
 		contentletDataGen.nextPersisted();
 		final ContentTypeAPI contentTypeAPI = new ContentTypeAPIImpl(limitedUserEditPermsPermOnCT, false, FactoryLocator.getContentTypeFactory(),
-				FactoryLocator.getFieldFactory(), APILocator.getPermissionAPI(), APILocator.getContentTypeFieldAPI());
+				FactoryLocator.getFieldFactory(), APILocator.getPermissionAPI(), APILocator.getContentTypeFieldAPI(),
+				APILocator.getLocalSystemEventsAPI());
 
 		try {
 			contentTypeAPI.delete(newType);
@@ -1000,6 +1062,21 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 		int base = BaseContentType.PERSONA.ordinal();
         createContentTypeWithPublishExpireFields(base);
 	}
+
+	@Test
+	public void testSave_GivenFixedTrueAndHostDifferentThanSYSTEMHOST_HostShouldBeSYSTEMHOST()
+			throws DotDataException, DotSecurityException {
+
+		final ContentType languageVariableType = contentTypeApi.find("Languagevariable");
+		final List<Field> fields = languageVariableType.fields();
+		final ContentType languageVariableTypeWithAnotherHost =
+				ContentTypeBuilder.builder(languageVariableType).host("ANY-OTHER-HOST").build();
+		languageVariableTypeWithAnotherHost.constructWithFields(fields);
+
+		final ContentType savedLanguagaVariableType = contentTypeApi.save(languageVariableTypeWithAnotherHost);
+		assertEquals(savedLanguagaVariableType.host(), Host.SYSTEM_HOST);
+		assertEquals(fields, savedLanguagaVariableType.fields());
+	}
 	
 	private void createContentTypeWithPublishExpireFields(int base) throws Exception{
 		long time = System.currentTimeMillis();
@@ -1007,7 +1084,7 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 		ContentType contentType = ContentTypeBuilder.builder(BaseContentType.getContentTypeClass(base))
 				.description("ContentTypeWithPublishExpireFields " + time).folder(FolderAPI.SYSTEM_FOLDER)
 				.host(Host.SYSTEM_HOST).name("ContentTypeWithPublishExpireFields " + time)
-				.owner(APILocator.systemUser().toString()).variable("CTVariable").publishDateVar("publishDate")
+				.owner(APILocator.systemUser().toString()).variable("CTVariable711").publishDateVar("publishDate")
 				.expireDateVar("expireDate").build();
 		contentType = contentTypeApi.save(contentType);
 
@@ -1027,5 +1104,224 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 
 		// Deleting content type.
 		delete(contentType);
+	}
+
+	private ContentType createContentType(final String name) throws DotSecurityException, DotDataException {
+		return contentTypeApi.save(ContentTypeBuilder.builder(SimpleContentType.class).folder(
+				FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST).name(name)
+				.owner(user.getUserId()).build());
+	}
+
+	private Field createRelationshipField(final String fieldName, final String parentContentTypeID, final String childContentTypeVariable)
+			throws DotDataException, DotSecurityException {
+		final Field field = FieldBuilder.builder(RelationshipField.class)
+				.name(fieldName)
+				.contentTypeId(parentContentTypeID)
+				.values(String.valueOf(WebKeys.Relationship.RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal()))
+				.indexed(true)
+				.listed(false)
+				.relationType(childContentTypeVariable)
+				.build();
+
+		return APILocator.getContentTypeFieldAPI().save(field, APILocator.systemUser());
+	}
+	/**
+	 * This test creates a 2 content types and a Relationship Field on the parent,
+	 * then deletes the parent content type so the relationship
+	 * must be deleted.
+	 *
+	 * @throws Exception
+	 */
+	@Test
+	public void testDeleteContentTypeParent_deleteRelationship() throws Exception{
+		ContentType parentContentType = null;
+		ContentType childContentType = null;
+		try {
+			//Create content types
+			parentContentType = createContentType("parentContentType" + System.currentTimeMillis());
+			childContentType = createContentType("childContentType" + System.currentTimeMillis());
+
+			//Create Relationship Field
+			final Field field = createRelationshipField("testRelationship",parentContentType.id(),childContentType.variable());
+
+			//Check that the parentContentType has the field
+			parentContentType = contentTypeApi.find(parentContentType.id());
+			assertEquals(1,parentContentType.fields().size());
+
+			//Check that the relationship exists
+			assertEquals(1,APILocator.getRelationshipAPI().byContentType(childContentType).size());
+
+			//Delete parentContentType
+			contentTypeApi.delete(parentContentType);
+
+			//Check that the relationship is deleted
+			assertTrue("Relationship Still Exists",APILocator.getRelationshipAPI().byContentType(childContentType).isEmpty());
+
+		} finally{
+			if(parentContentType != null){
+				contentTypeApi.delete(parentContentType);
+			}
+			if(childContentType != null){
+				contentTypeApi.delete(childContentType);
+			}
+		}
+	}
+
+	/**
+	 * This test creates a 2 content types and a Relationship Field on the parent,
+	 * then deletes the child content type so the Relationship Field on the parent and the relationship
+	 * must be deleted.
+	 *
+	 * @throws Exception
+	 */
+	@Test
+	public void testDeleteContentTypeChild_deleteRelationshipFieldOnParent_deleteRelationship() throws Exception{
+		ContentType parentContentType = null;
+		ContentType childContentType = null;
+		try {
+			//Create content types
+			parentContentType = createContentType("parentContentType" + System.currentTimeMillis());
+			childContentType = createContentType("childContentType" + System.currentTimeMillis());
+
+			//Create Relationship Field
+			final Field field = createRelationshipField("testRelationship",parentContentType.id(),childContentType.variable());
+
+			//Check that the parentContentType has the field
+			parentContentType = contentTypeApi.find(parentContentType.id());
+			assertEquals(1,parentContentType.fields().size());
+
+			//Check that the relationship exists
+			assertEquals(1,APILocator.getRelationshipAPI().byContentType(childContentType).size());
+
+			//Delete childContentType
+			contentTypeApi.delete(childContentType);
+
+			//Check that the field is deleted on the parentContentType
+			parentContentType = contentTypeApi.find(parentContentType.id());
+			assertEquals(0,parentContentType.fields().size());
+
+			//Check that the relationship is deleted
+			assertTrue("Relationship Still Exists",APILocator.getRelationshipAPI().byContentType(parentContentType).isEmpty());
+
+		} finally{
+			if(parentContentType != null){
+				contentTypeApi.delete(parentContentType);
+			}
+			if(childContentType != null){
+				contentTypeApi.delete(childContentType);
+			}
+		}
+	}
+
+	/**
+	 * This test creates a 2 content types and a Relationship Field on both content types(relationship both ways),
+	 * then deletes the parent content type so the Relationship Field on the child and the relationship
+	 * must be deleted.
+	 *
+	 * @throws Exception
+	 */
+	@Test
+	public void testDeleteContentTypeParent_deleteRelationshipFieldOnChild_deleteRelationship_bothWays() throws Exception{
+		ContentType parentContentType = null;
+		ContentType childContentType = null;
+		try {
+			//Create content types
+			parentContentType = createContentType("parentContentType" + System.currentTimeMillis());
+			childContentType = createContentType("childContentType" + System.currentTimeMillis());
+
+			//Create Relationship Field on Parent
+			final Field parentRelationshipField = createRelationshipField("testRelationship",parentContentType.id(),childContentType.variable());
+
+			//Check that the parentContentType has the field
+			parentContentType = contentTypeApi.find(parentContentType.id());
+			assertEquals(1,parentContentType.fields().size());
+
+			//Check that the relationship exists
+			assertEquals(1,APILocator.getRelationshipAPI().byContentType(childContentType).size());
+
+			//Create Relationship Field on Child
+			createRelationshipField("testRelationship",childContentType.id(),parentContentType.variable()+"."+parentRelationshipField.variable());
+
+			//Check that the childContentType has the field
+			childContentType = contentTypeApi.find(childContentType.id());
+			assertEquals(1,childContentType.fields().size());
+
+			//Check that there is only one relationship regardless the 2 fields
+			assertEquals(1,APILocator.getRelationshipAPI().byContentType(childContentType).size());
+
+			//Delete parentContentType
+			contentTypeApi.delete(parentContentType);
+
+			//Check that the field is deleted on the childContentType
+			childContentType = contentTypeApi.find(childContentType.id());
+			assertEquals(0,childContentType.fields().size());
+
+			//Check that the relationship is deleted
+			assertTrue("Relationship Still Exists",APILocator.getRelationshipAPI().byContentType(childContentType).isEmpty());
+
+		} finally{
+			if(parentContentType != null){
+				contentTypeApi.delete(parentContentType);
+			}
+			if(childContentType != null){
+				contentTypeApi.delete(childContentType);
+			}
+		}
+	}
+
+	/**
+	 * This test creates a 2 content types and a Relationship Field on both content types(relationship both ways),
+	 * then deletes the child content type so the Relationship Field on the parent and the relationship
+	 * must be deleted.
+	 *
+	 * @throws Exception
+	 */
+	@Test
+	public void testDeleteContentTypeChild_deleteRelationshipFieldOnParent_deleteRelationship_bothWays() throws Exception{
+		ContentType parentContentType = null;
+		ContentType childContentType = null;
+		try {
+			//Create content types
+			parentContentType = createContentType("parentContentType" + System.currentTimeMillis());
+			childContentType = createContentType("childContentType" + System.currentTimeMillis());
+
+			//Create Relationship Field on Parent
+			final Field parentRelationshipField = createRelationshipField("testRelationship",parentContentType.id(),childContentType.variable());
+
+			//Check that the parentContentType has the field
+			parentContentType = contentTypeApi.find(parentContentType.id());
+			assertEquals(1,parentContentType.fields().size());
+
+			//Check that the relationship exists
+			assertEquals(1,APILocator.getRelationshipAPI().byContentType(childContentType).size());
+
+			//Create Relationship Field on Child
+			createRelationshipField("testRelationship",childContentType.id(),parentContentType.variable()+"."+parentRelationshipField.variable());
+
+			//Check that the childContentType has the field
+			childContentType = contentTypeApi.find(childContentType.id());
+			assertEquals(1,childContentType.fields().size());
+
+			//Check that there is only one relationship regardless the 2 fields
+			assertEquals(1,APILocator.getRelationshipAPI().byContentType(childContentType).size());
+
+			//Delete childContentType
+			contentTypeApi.delete(childContentType);
+
+			//Check that the field is deleted on the parentContentType
+			parentContentType = contentTypeApi.find(parentContentType.id());
+			assertEquals(0,parentContentType.fields().size());
+
+			//Check that the relationship is deleted
+			assertTrue("Relationship Still Exists",APILocator.getRelationshipAPI().byContentType(parentContentType).isEmpty());
+
+		} finally{
+			if(parentContentType != null){
+				contentTypeApi.delete(parentContentType);
+			}
+			if(childContentType != null){
+				contentTypeApi.delete(childContentType);
+			}
+		}
 	}
 }

@@ -161,7 +161,7 @@ public class VisitorsTagsActionletFTest {
 		}
 
 		MultiTree m = new MultiTree(pageContentlet.getIdentifier(), container.getIdentifier(), widgetContentlet.getIdentifier());
-		MultiTreeFactory.saveMultiTree(m);
+		APILocator.getMultiTreeAPI().saveMultiTree(m);
 
 		// login
 		CookieHandler.setDefault(new CookieManager());

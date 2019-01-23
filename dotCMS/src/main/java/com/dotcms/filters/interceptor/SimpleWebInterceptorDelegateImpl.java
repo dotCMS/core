@@ -2,6 +2,7 @@ package com.dotcms.filters.interceptor;
 
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.util.RegEX;
+import org.apache.commons.collections.iterators.ReverseListIterator;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -9,6 +10,7 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -20,9 +22,13 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class SimpleWebInterceptorDelegateImpl implements WebInterceptorDelegate {
 
-    private final AtomicBoolean alreadyStarted = new AtomicBoolean(false);
+    private final AtomicBoolean alreadyStarted      =
+            new AtomicBoolean(false);
     private final List<WebInterceptor> interceptors =
             new CopyOnWriteArrayList<>();
+    private OrderMode orderMode = OrderMode.FILO;
+    private final AtomicBoolean reverseOrderForPostInvoke =
+            new AtomicBoolean(false);
 
     @Override
     public void addBefore(final String webInterceptorName, final WebInterceptor webInterceptor) {
@@ -134,6 +140,11 @@ public class SimpleWebInterceptorDelegateImpl implements WebInterceptorDelegate 
         move(webInterceptorName, this.interceptors.size());
     }
 
+    public void orderMode(final OrderMode orderMode) {
+
+        this.orderMode = orderMode;
+    }
+
     /**
      * Call me on destroy
      */
@@ -161,25 +172,38 @@ public class SimpleWebInterceptorDelegateImpl implements WebInterceptorDelegate 
     } // init.
 
     @Override
-    public boolean intercept(final HttpServletRequest request,
+    public DelegateResult intercept(final HttpServletRequest request,
                              final HttpServletResponse response)
             throws IOException {
 
-        boolean shouldContinue = true;
-        Result result         = null;
+        Result  result                     = null;
+        boolean shouldContinue             = true;
+        HttpServletRequest  requestResult  = request;
+        HttpServletResponse responseResult = response;
+
 
         if (!this.interceptors.isEmpty()) {
 
-            for (WebInterceptor webInterceptor : this.interceptors) {
+            for (final WebInterceptor webInterceptor : this.interceptors) {
 
                 // if the filter applies just for some filter patterns.
                 if (webInterceptor.isActive() &&
                         this.anyMatchFilter(webInterceptor, request.getRequestURI())) {
 
-                    result          = webInterceptor.intercept(request, response);
-                    shouldContinue &= (Result.SKIP_NO_CHAIN != result);
+                    result          = webInterceptor.intercept(requestResult, responseResult);
+                    shouldContinue &= (Result.Type.SKIP_NO_CHAIN != result.getType());
 
-                    if (Result.NEXT != result) {
+                    if (null != result.getRequest()) {
+
+                        requestResult  = result.getRequest();
+                    }
+
+                    if (null != result.getResponse()) {
+
+                        responseResult  = result.getResponse();
+                    }
+
+                    if (Result.Type.NEXT != result.getType()) {
                         // if just one interceptor failed; we stopped the loop and do not continue the chain call
                         break;
                     }
@@ -187,8 +211,38 @@ public class SimpleWebInterceptorDelegateImpl implements WebInterceptorDelegate 
             }
         }
 
-        return shouldContinue;
+        return new DelegateResult(shouldContinue, requestResult, responseResult);
     } // intercept.
+
+    @Override
+    public void after(final HttpServletRequest request,
+                                    final HttpServletResponse response)
+            throws IOException {
+
+        final HttpServletRequest  requestResult  = request;
+        final HttpServletResponse responseResult = response;
+
+
+        if (!this.interceptors.isEmpty()) {
+
+            final ListIterator<WebInterceptor> iterator = this.orderMode == OrderMode.FILO?
+                    new ReverseListIterator(this.interceptors):this.interceptors.listIterator();
+
+            while(iterator.hasNext()) {
+
+                final WebInterceptor webInterceptor = iterator.next();
+                // if the filter applies just for some filter patterns.
+                if (webInterceptor.isActive() &&
+                        this.anyMatchFilter(webInterceptor, request.getRequestURI())) {
+
+                    if (!webInterceptor.afterIntercept(requestResult, responseResult)) {
+
+                        return;
+                    }
+                }
+            }
+        }
+    } // after.
 
     @VisibleForTesting
     public boolean anyMatchFilter(final WebInterceptor webInterceptor,
@@ -227,7 +281,7 @@ public class SimpleWebInterceptorDelegateImpl implements WebInterceptorDelegate 
             uftUri = uri;
         }
 
-        return RegEX.contains(uftUri, filterPattern);
+        return RegEX.contains(uftUri, filterPattern.trim());
     } // match.
 
     private void init(final WebInterceptor webInterceptor) {

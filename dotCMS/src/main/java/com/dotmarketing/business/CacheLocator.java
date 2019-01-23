@@ -24,6 +24,7 @@ import com.dotmarketing.cache.ContentTypeCache;
 import com.dotmarketing.cache.FolderCache;
 import com.dotmarketing.cache.FolderCacheImpl;
 import com.dotmarketing.cache.LegacyContentTypeCacheImpl;
+import com.dotmarketing.cache.MultiTreeCache;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.FlushCacheRunnable;
 import com.dotmarketing.db.HibernateUtil;
@@ -314,7 +315,10 @@ public class CacheLocator extends Locator<CacheIndex>{
     public static VanityUrlCache getVanityURLCache() {
 		return (VanityUrlCache) getInstance(CacheIndex.VanityURLCache);
 	}
-
+    
+    public static MultiTreeCache getMultiTreeCache() {
+        return (MultiTreeCache) getInstance(CacheIndex.MultiTreeCache);
+    }
     /**
      * 
      * @return
@@ -421,6 +425,7 @@ enum CacheIndex
 	ContentTypeCache2("New Content Type Cache"),
 	Velocity2("Velocity2"),
 	NavTool2("Navigation Tool2"),
+	MultiTreeCache("MultiTree Cache"),
 	KeyValueCache("Key/Value Cache");
 
 	Cachable create() {
@@ -465,6 +470,7 @@ enum CacheIndex
 	      	case ContentTypeCache2: return new ContentTypeCache2Impl();
 	      	case VanityURLCache : return new VanityUrlCacheImpl();
 	      	case KeyValueCache : return new KeyValueCacheImpl();
+	      	case MultiTreeCache : return new MultiTreeCache();
 		}
 		throw new AssertionError("Unknown Cache index: " + this);
 	}

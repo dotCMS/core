@@ -2,6 +2,13 @@ package com.dotmarketing.beans;
 
 import java.io.Serializable;
 
+import com.dotcms.contenttype.exception.NotFoundInDbException;
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.util.Logger;
+
 public class ContainerStructure implements Serializable{
 
 	private static final long serialVersionUID = 1L;
@@ -53,5 +60,17 @@ public class ContainerStructure implements Serializable{
 	public void setCode(String code) {
 		this.code = code;
 	}
+	
+	   public String getContentTypeVar() {
+	       try {
+	          return APILocator.getContentTypeAPI(APILocator.systemUser())
+               .find(getStructureId()).variable();
+	       }catch( Exception  nfdb) {
+	           Logger.debug(this.getClass(), nfdb.getMessage(), nfdb);
+	           return null;
+	       }
+	       
+	    }
+	
 
 }

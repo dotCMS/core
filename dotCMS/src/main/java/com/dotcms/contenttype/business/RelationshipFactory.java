@@ -1,4 +1,5 @@
 package com.dotcms.contenttype.business;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeIf;
 import com.dotmarketing.beans.Tree;
 import com.dotmarketing.exception.DotDataException;
@@ -6,6 +7,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.structure.model.Relationship;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface RelationshipFactory {
 
@@ -23,6 +25,10 @@ public interface RelationshipFactory {
 
     Relationship byTypeValue(final String typeValue);
 
+    Optional<Relationship> byParentChildRelationName(ContentType contentType, String relationName);
+
+    List<Relationship> dbAllByTypeValue(String typeValue);
+
     List<Relationship> byContentType(final String contentType);
 
     List<Relationship> byContentType(final ContentTypeIf contentType);
@@ -31,13 +37,15 @@ public interface RelationshipFactory {
 
     List<Relationship> byContentType(final String contentTypeInode, String orderBy);
 
-    List<Contentlet> dbRelatedContent(final Relationship relationship, final Contentlet contentlet) throws DotDataException;
+    List<Contentlet> dbRelatedContent(final Relationship relationship, final Contentlet contentlet)
+            throws DotDataException;
 
     List<Contentlet> dbRelatedContent(final Relationship relationship, final Contentlet contentlet,
-            final boolean hasParent) throws  DotDataException;
+            final boolean hasParent) throws DotDataException;
 
     List<Contentlet> dbRelatedContent(final Relationship relationship, final Contentlet contentlet,
-            final boolean hasParent, final boolean live, final String orderBy) throws  DotDataException;
+            final boolean hasParent, final boolean live, final String orderBy)
+            throws DotDataException;
 
     List<Tree> relatedContentTrees(final Relationship relationship, final Contentlet contentlet) throws  DotDataException;
 
@@ -71,4 +79,6 @@ public interface RelationshipFactory {
     void addRelationship(final String parent, final String child, final String relationType)throws DotDataException;
 
     List<Relationship> getOneSidedRelationships(final ContentTypeIf contentType, final int limit, final int offset) throws DotDataException;
+
+    long getOneSidedRelationshipsCount(final ContentType contentType) throws DotDataException;
 }

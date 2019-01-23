@@ -1,20 +1,20 @@
 package com.dotmarketing.portlets.containers.business;
 
 import com.dotcms.contenttype.model.type.ContentType;
-
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.liferay.portal.model.User;
 
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import com.liferay.portal.model.User;
 
 /**
  * Provides access to the information of {@link Container} objects in dotCMS.
@@ -29,6 +29,10 @@ import com.liferay.portal.model.User;
  *
  */
 public interface ContainerAPI {
+
+	String PRE_LOOP             = ContainerByFolderAssetsUtil.PRE_LOOP;
+	String POST_LOOP            = ContainerByFolderAssetsUtil.POST_LOOP;
+	String CONTAINER_META_INFO  = ContainerByFolderAssetsUtil.CONTAINER_META_INFO;
 
 	/**
 	 * Copies container to the specified host
@@ -46,7 +50,7 @@ public interface ContainerAPI {
 	/**
 	 * Returns the working container by the id
 	 *
-	 * @param id
+	 * @param identifier
 	 * @param user
 	 * @param respectFrontendRoles
 	 * @return Container
@@ -56,16 +60,63 @@ public interface ContainerAPI {
 	public Container getWorkingContainerById(String identifier, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
 	/**
+	 * Returns the Container based on the folder; this method is mostly used when the container is file asset based.
+	 *
+	 * @param folder
+	 * @param showLive true if wants the live, false if wants the working
+	 * @return Container
+	 * @throws DotSecurityException
+	 * @throws DotDataException
+	 */
+	Container getContainerByFolder(final Folder folder, final User user, final boolean showLive) throws DotSecurityException, DotDataException;
+
+	/**
+	 * Returns the Container based on the folder and host; this method is mostly used when the container is file asset based.
+	 * @param folder
+	 * @param host
+	 * @param user
+	 * @param showLive
+	 * @return
+	 * @throws DotSecurityException
+	 * @throws DotDataException
+	 */
+	Container getContainerByFolder(final Folder folder, final Host host, final User user, final boolean showLive) throws DotSecurityException, DotDataException;
+
+	/**
+	 * Returns the working container by path and host; this method is mostly used when the container is file asset based.
+	 * @param path
+	 * @param host
+	 * @param user
+	 * @param respectFrontEndPermissions
+	 * @return Container
+	 * @throws DotSecurityException
+	 * @throws DotDataException
+	 */
+	Container getWorkingContainerByFolderPath(final String path, final Host host, final User user, final boolean respectFrontEndPermissions) throws DotSecurityException, DotDataException;
+
+	/**
+	 * Returns the live container by path and host; this method is mostly used when the container is file asset based.
+	 * @param path
+	 * @param host
+	 * @param user
+	 * @param respectFrontEndPermissions
+	 * @return Container
+	 * @throws DotSecurityException
+	 * @throws DotDataException
+	 */
+	Container getLiveContainerByFolderPath(final String path, final Host host, final User user, final boolean respectFrontEndPermissions) throws DotSecurityException, DotDataException;
+
+	/**
 	 * Returns the live container by the id
 	 *
-	 * @param id
+	 * @param identifier
 	 * @param user
 	 * @param respectFrontendRoles
 	 * @return Container
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
-	public Container getLiveContainerById(String identifier, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+	Container getLiveContainerById(String identifier, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
 
 	/**
@@ -73,53 +124,50 @@ public interface ContainerAPI {
 	 * Retrieves a list of container-structure relationships by container
 	 *
 	 * @param container
-	 * @return
+	 * @return List of ContainerStructure
 	 * @throws DotSecurityException
 	 * @throws DotDataException
 	 * @throws DotStateException
 	 *
 	 */
-
-	public List<ContainerStructure> getContainerStructures(Container container) throws DotStateException, DotDataException, DotSecurityException;
+	List<ContainerStructure> getContainerStructures(Container container) throws DotStateException, DotDataException, DotSecurityException;
 
 	/**
 	 *
 	 * Retrieves the list of structures related to the given container
 	 *
 	 * @param container
-	 * @return
+	 * @return List of Structure
 	 * @throws DotSecurityException
 	 * @throws DotDataException
 	 * @throws DotStateException
 	 *
 	 */
-	public List<Structure> getStructuresInContainer(Container container) throws DotStateException, DotDataException, DotSecurityException;
+	List<Structure> getStructuresInContainer(Container container) throws DotStateException, DotDataException, DotSecurityException;
 
 	/**
 	 *
 	 * saves a list of container-structure relationships
 	 *
 	 * @param containerStructureList
-	 * @return
 	 * @throws DotSecurityException
 	 * @throws DotDataException
 	 * @throws DotStateException
 	 *
 	 */
-	public void saveContainerStructures(List<ContainerStructure> containerStructureList) throws DotStateException, DotDataException, DotSecurityException;
+	void saveContainerStructures(List<ContainerStructure> containerStructureList) throws DotStateException, DotDataException, DotSecurityException;
 
 	/**
 	 *
 	 * Deletes the container-structure relationships for the given container identifier. Inode does not matter.
 	 *
 	 * @param container
-	 * @return
 	 * @throws DotSecurityException
 	 * @throws DotDataException
 	 * @throws DotStateException
 	 *
 	 */
-	public void deleteContainerStructuresByContainer(Container container) throws DotStateException, DotDataException, DotSecurityException;
+	void deleteContainerStructuresByContainer(Container container) throws DotStateException, DotDataException, DotSecurityException;
 
 	/**
 	 *
@@ -134,33 +182,34 @@ public interface ContainerAPI {
 	 * @throws DotStateException
 	 *             A system error occurred.
 	 */
-	public void deleteContainerContentTypesByContainerInode(final Container container) throws DotStateException,
+	void deleteContainerContentTypesByContainerInode(final Container container) throws DotStateException,
 			DotDataException;
 
 	/**
 	 * Retrieves all the containers attached to the given host
-	 * @param parentPermissionable
+	 * @param parentHost
 	 * @author David H Torres
 	 * @return
 	 * @throws DotDataException
 	 *
 	 */
-	public List<Container> findContainersUnder(Host parentHost) throws DotDataException;
+	List<Container> findContainersUnder(Host parentHost) throws DotDataException;
 
 	/**
 	 * Retrieves the list of all containers in the system
-	 * @param parentPermissionable
+	 * @param user
+	 * @param respectFrontendRoles
 	 * @return
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
-	public List<Container> findAllContainers(User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+	List<Container> findAllContainers(User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
 	/**
 	 * Save container
 	 *
 	 * @param container
-	 * @param structure
+	 * @param containerStructureList
 	 * @param host
 	 * @param user
 	 * @param respectFrontendRoles
@@ -168,7 +217,7 @@ public interface ContainerAPI {
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
-	public Container save(Container container, List<ContainerStructure> containerStructureList, Host host, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+	Container save(Container container, List<ContainerStructure> containerStructureList, Host host, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
 	/**
 	 * Delete the specified container
@@ -180,13 +229,13 @@ public interface ContainerAPI {
 	 * @throws DotSecurityException
 	 * @throws Exception
 	 */
-	public boolean delete(Container container, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException;
+	boolean delete(Container container, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException;
 
 	/**
 	 * Retrieves the parent host of a container
 	 * @throws DotSecurityException
 	 */
-	public Host getParentHost(Container cont, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+	Host getParentHost(Container cont, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
 	/**
 	 * Retrieves a paginated list of containers the user can use
@@ -204,7 +253,7 @@ public interface ContainerAPI {
 	 * @throws DotSecurityException
 	 * @throws DotDataException
 	 */
-	public List<Container> findContainers(User user, boolean includeArchived, Map<String,Object> params, String hostId, String inode, String identifier, String parent, int offset, int limit, String orderBy) throws DotSecurityException, DotDataException;
+	List<Container> findContainers(User user, boolean includeArchived, Map<String,Object> params, String hostId, String inode, String identifier, String parent, int offset, int limit, String orderBy) throws DotSecurityException, DotDataException;
 
 	/**
 	 * Retrieves containers using the specified structure
@@ -245,13 +294,13 @@ public interface ContainerAPI {
 	 * @throws DotStateException There is a data inconsistency
 	 * @throws DotSecurityException 
 	 */
-	public void updateUserReferences(String userId, String replacementUserId)throws DotDataException, DotSecurityException;
+	void updateUserReferences(String userId, String replacementUserId)throws DotDataException, DotSecurityException;
 
     void deleteContainerStructureByContentType(ContentType type) throws DotDataException;
     
-	public Container find(String inode, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+	Container find(String inode, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
-	public List<Container> getContainersOnPage(IHTMLPage page) throws DotStateException, DotDataException, DotSecurityException;
+	List<Container> getContainersOnPage(IHTMLPage page) throws DotStateException, DotDataException, DotSecurityException;
 
     List<ContentType> getContentTypesInContainer(Container container)
             throws DotStateException, DotDataException, DotSecurityException;

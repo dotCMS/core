@@ -1,0 +1,31 @@
+#if($pathParam)
+   #set($employeeList = [$dotcontent.find($pathParam)])
+#else
+    #set($employeeList = $dotcontent.pull("+structureName:Employee +(conhost:$host.identifier conhost:SYSTEM_HOST)",0,"Employee.lastName"))
+#end
+
+#set($resultList = [])
+#foreach($employee in $employeeList)
+
+	#set($person = {})
+	$person.put("firstName", $employee.firstName)
+	$person.put("lastName", $employee.lastName)
+	$person.put("jobTitle", $employee.jobTitle)
+	$person.put("profilePicPath", $!{employee.photo.shortyUrl})
+	$person.put("seniorManagement", $employee.seniorManagement.selectValue)
+	$person.put("phone", $employee.phone)
+	$person.put("mobile", $employee.mobile)
+	$person.put("fax", $employee.fax)
+	$person.put("email", $employee.email)
+	$person.put("identifier", $employee.identifier)
+
+    #foreach($department in $dotcontent.pullRelated("Department-Employee","$!{employee.identifier}",true,1,"modDate"))
+        #set($departmentName = $department.departmentName)
+        $person.put("department", $departmentName)
+    #end
+
+  	$resultList.add($person);
+
+#end
+
+$dotJSON.put("employeeList", $resultList)

@@ -10148,6 +10148,11 @@ dd .buttonCaption {
   margin: 8px 0;
 }
 
+.buttonRow-right {
+  text-align: right;
+  margin: 8px 0;
+}
+
 .buttonRow .dijitButton,
 .buttonRow .fakeDojoButton {
   margin: 0 4px;
@@ -10182,7 +10187,6 @@ dd .buttonCaption {
 .portlet-sidebar-wrapper {
   background-color: #FAFAFA;
   border-right: solid 1px #ECEDEE;
-  min-height: 700px;
 }
 
 .portlet-wrapper {

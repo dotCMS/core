@@ -88,7 +88,16 @@ public class HostVariableAPIImpl implements HostVariableAPI {
 		new SiteLoader().invalidate(host);
 
 		
+		
 	}
+	@Override
+    @WrapInTransaction
+    public void updateUserReferences(final String userToDelete, final String userToReplace) throws DotDataException {
+
+	    hostVariableFactory.updateUserReferences(userToDelete, userToReplace);
+
+        
+    }
 
 	@WrapInTransaction
 	public HostVariable copy(HostVariable sourceVariable, Host destinationHost, User user, boolean respectFrontendRoles)

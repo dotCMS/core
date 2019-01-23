@@ -1,6 +1,7 @@
 package com.dotmarketing.util;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotmarketing.business.APILocator;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
@@ -30,7 +31,7 @@ import javax.servlet.http.HttpSession;
 public enum PageMode {
 
     LIVE(true, false), 
-    ADMIN_MODE(true, true), 
+    ADMIN_MODE(true, true, true),
     PREVIEW_MODE(false, true), 
     EDIT_MODE(false, true),
     NAVIGATE_EDIT_MODE(false, true);
@@ -42,9 +43,13 @@ public enum PageMode {
     public final boolean respectAnonPerms;
 
     PageMode(boolean live, boolean admin) {
+        this(live, admin, !admin);
+    }
+
+    PageMode(final boolean live, final boolean admin, final boolean respectAnonPerms) {
         this.showLive = live;
         this.isAdmin = admin;
-        this.respectAnonPerms=!admin;
+        this.respectAnonPerms = respectAnonPerms;
     }
 
 

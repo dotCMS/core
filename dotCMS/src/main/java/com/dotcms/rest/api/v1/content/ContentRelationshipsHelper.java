@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v1.content;
 
+import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
 import com.dotcms.rest.RESTParams;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -12,14 +13,12 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
-import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
 import com.liferay.portal.model.User;
-
-import javax.servlet.http.HttpServletRequest;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import javax.servlet.http.HttpServletRequest;
 
 /**
  * Provides the utility methods that interact with content relationships in dotCMS. These methods
@@ -36,6 +35,7 @@ public class ContentRelationshipsHelper implements Serializable {
 
     private final LanguageAPI languageAPI = APILocator.getLanguageAPI();
     private final ContentletAPI contentletAPI = APILocator.getContentletAPI();
+
 
     private static final boolean RESPECT_FE_ROLES = Boolean.TRUE;
 

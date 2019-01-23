@@ -16,24 +16,30 @@ import com.dotmarketing.util.UtilMethods;
 
 import java.util.*;
 
+/**
+ * Implementation class for the {@link TagAPI} interface.
+ *
+ * @author root
+ * @since Mar 22, 2012
+ */
 public class TagAPIImpl implements TagAPI {
 
     private final TagFactory tagFactory = FactoryLocator.getTagFactory();
 
     @CloseDBIfOpened
     @Override
-    public java.util.List<Tag> getAllTags () throws DotDataException {
+    public List<Tag> getAllTags () throws DotDataException {
         return tagFactory.getAllTags();
     }
 
     @CloseDBIfOpened
     @Override
-    public java.util.List<Tag> getTagsByName ( String name ) throws DotDataException {
+    public List<Tag> getTagsByName ( String name ) throws DotDataException {
         return tagFactory.getTagsByName(name);
     }
 
     @Override
-    public java.util.List<Tag> getTagsForUserByUserId ( String userId ) throws DotDataException, DotSecurityException {
+    public List<Tag> getTagsForUserByUserId ( String userId ) throws DotDataException, DotSecurityException {
 
         //First lets seach for the user
         UserProxy user = APILocator.getUserProxyAPI().getUserProxy(userId, APILocator.getUserAPI().getSystemUser(), false);
@@ -44,13 +50,13 @@ public class TagAPIImpl implements TagAPI {
 
     @CloseDBIfOpened
     @Override
-    public java.util.List<Tag> getTagsForUserByUserInode ( String userInode ) throws DotDataException {
+    public List<Tag> getTagsForUserByUserInode ( String userInode ) throws DotDataException {
         return tagFactory.getTagsForUserByUserInode(userInode);
     }
 
     @CloseDBIfOpened
     @Override
-    public java.util.List<Tag> getFilteredTags ( String tagName, String hostFilter, boolean globalTagsFilter, String sort, int start, int count ) {
+    public List<Tag> getFilteredTags ( String tagName, String hostFilter, boolean globalTagsFilter, String sort, int start, int count ) {
         return tagFactory.getFilteredTags(tagName, hostFilter, globalTagsFilter, true, sort, start, count);
     }
 
@@ -70,7 +76,7 @@ public class TagAPIImpl implements TagAPI {
     }
 
     @Override
-    public Tag getTagAndCreate(String name, String userId, String hostId, boolean persona, boolean searchInSystemHost) throws DotDataException, DotSecurityException {
+    public Tag getTagAndCreate(final String name, final String userId, final String siteId, final boolean persona, final boolean searchInSystemHost) throws DotDataException, DotSecurityException {
 
         boolean localTransaction = false;
 
@@ -97,18 +103,18 @@ public class TagAPIImpl implements TagAPI {
                 Tag hostTag = null;
                 Tag globalTag = null;
 
-                List<Tag> existingTags = tagFactory.getTagsByName(name);
+                final List<Tag> existingTags = tagFactory.getTagsByName(name);
                 if ( existingTags != null ) {
-                    for ( Tag foundTag : existingTags ) {
+                    for (final Tag foundTag : existingTags) {
 
-                        String currentTagHostId = foundTag.getHostId();
+                        final String currentTagHostId = foundTag.getHostId();
 
                         //Only use tags living in the given and system host
-                        if ( currentTagHostId.equals(Host.SYSTEM_HOST) || currentTagHostId.equals(hostId) ) {
+                        if ( currentTagHostId.equals(Host.SYSTEM_HOST) || currentTagHostId.equals(siteId) ) {
 
                             if ( currentTagHostId.equals(Host.SYSTEM_HOST) ) {
                                 globalTag = foundTag;
-                            } else if ( currentTagHostId.equals(hostId) ) {
+                            } else if ( currentTagHostId.equals(siteId) ) {
                                 hostTag = foundTag;
                             }
 
@@ -129,13 +135,13 @@ public class TagAPIImpl implements TagAPI {
 
                 }
             } else {
-                existingTag = tagFactory.getTagByNameAndHost(name, hostId);
+                existingTag = tagFactory.getTagByNameAndHost(name, siteId);
             }
 
             // if doesn't exists then the tag is created
             if ( existingTag == null || !UtilMethods.isSet(existingTag.getTagId()) ) {
                 // creating tag
-                return saveTag(name, userId, hostId, persona);
+                return saveTag(name, userId, siteId, persona);
             } else {
 
                 String existHostId;
@@ -146,7 +152,7 @@ public class TagAPIImpl implements TagAPI {
                 //check if tag exists with same tag name but for a different host
                 boolean tagExists = false;
 
-                Host host = APILocator.getHostAPI().find(hostId, APILocator.getUserAPI().getSystemUser(), true);
+                final Host host = APILocator.getHostAPI().find(siteId, APILocator.getUserAPI().getSystemUser(), true);
                 if ( host.getMap().get("tagStorage") == null ) {
                     existHostId = host.getMap().get("identifier").toString();
                 } else {
@@ -165,13 +171,13 @@ public class TagAPIImpl implements TagAPI {
                 if ( !globalTagExists ) {
                     //if global doesn't exist, then save the tag and after it checks if it was stored as a global tag
                     if ( !tagExists ) {
-                        newTag = saveTag(name, userId, hostId, persona);
+                        newTag = saveTag(name, userId, siteId, persona);
                     }
 
                     if ( newTag.getHostId().equals(Host.SYSTEM_HOST) ) {
                         //move references of non-global tags to new global tag and delete duplicate non global tags
-                        List<TagInode> tagInodes = getTagInodesByTagId(existingTag.getTagId());
-                        for ( TagInode tagInode : tagInodes ) {
+                        final List<TagInode> tagInodes = getTagInodesByTagId(existingTag.getTagId());
+                        for (final TagInode tagInode : tagInodes) {
                             tagFactory.updateTagInode(tagInode, newTag.getTagId());
                         }
                         deleteTag(existingTag);
@@ -186,7 +192,9 @@ public class TagAPIImpl implements TagAPI {
 
             return newTag;
 
-        } catch ( Exception e ) {
+        } catch (final Exception e) {
+            Logger.error(this, String.format("An error occurred when getting and creating Tag with name '%s' under " +
+                    "Site ID '%s': %s", name, siteId, e.getMessage()));
             if ( localTransaction ) {
                 HibernateUtil.rollbackTransaction();
             }
@@ -217,7 +225,7 @@ public class TagAPIImpl implements TagAPI {
     }
 
     @Override
-    public Tag saveTag ( String tagName, String userId, String hostId, boolean persona ) throws DotDataException {
+    public Tag saveTag (final String tagName, final String userId, String siteId, final boolean persona ) throws DotDataException {
 
         boolean localTransaction = false;
 
@@ -237,29 +245,29 @@ public class TagAPIImpl implements TagAPI {
             tag.setPersona(persona);
             tag.setModDate(new Date());
 
-            Host host = null;
+            Host site = null;
 
-            if ( UtilMethods.isSet(hostId) && !hostId.equals(Host.SYSTEM_HOST) ) {
+            if ( UtilMethods.isSet(siteId) && !siteId.equals(Host.SYSTEM_HOST) ) {
                 try {
-                    if ( !UtilMethods.isSet(hostId) ) {
-                        host = APILocator.getHostAPI().findDefaultHost(APILocator.getUserAPI().getSystemUser(), true);
+                    if ( !UtilMethods.isSet(siteId) ) {
+                        site = APILocator.getHostAPI().findDefaultHost(APILocator.getUserAPI().getSystemUser(), true);
                     } else {
-                        host = APILocator.getHostAPI().find(hostId, APILocator.getUserAPI().getSystemUser(), true);
+                        site = APILocator.getHostAPI().find(siteId, APILocator.getUserAPI().getSystemUser(), true);
                     }
-                } catch ( Exception e ) {
-                    Logger.error(this, "Unable to load host.");
+                } catch (final Exception e) {
+                    Logger.error(this, String.format("Unable to load Site ID '%s'", siteId));
                 }
 
-                if ( host.getMap().get("tagStorage") == null ) {
-                    hostId = host.getMap().get("identifier").toString();
+                if ( site.getMap().get("tagStorage") == null ) {
+                    siteId = site.getMap().get("identifier").toString();
                 } else {
-                    hostId = host.getMap().get("tagStorage").toString();
+                    siteId = site.getMap().get("tagStorage").toString();
                 }
 
             } else {
-                hostId = Host.SYSTEM_HOST;
+                siteId = Host.SYSTEM_HOST;
             }
-            tag.setHostId(hostId);
+            tag.setHostId(siteId);
             
             Tag foundTagInStorage = tagFactory.getTagByNameAndHost(tag.getTagName(),tag.getHostId());
             
@@ -273,12 +281,15 @@ public class TagAPIImpl implements TagAPI {
             }
 
             return foundTagInStorage;
-        } catch ( Exception e ) {
+        } catch (final Exception e) {
+            final String errorMsg = String.format("An error occurred when saving Tag with name '%s' under Site ID " +
+                    "'%s'", tagName, siteId);
+            Logger.error(this, errorMsg, e);
             if ( localTransaction ) {
                 HibernateUtil.rollbackTransaction();
             }
 
-            throw new GenericTagException( e );
+            throw new GenericTagException(errorMsg, e);
         } finally {
             if ( localTransaction ) {
                 HibernateUtil.closeSessionSilently();
@@ -294,7 +305,7 @@ public class TagAPIImpl implements TagAPI {
 
     @Override
     @Deprecated
-    public List addContentleTag(String tagName, String userId, String inode, String fieldVarName) throws DotDataException, DotSecurityException {
+    public List addContentleTag(final String tagName, final String userId, final String inode, final String fieldVarName) throws DotDataException, DotSecurityException {
 
         boolean localTransaction = false;
 
@@ -303,16 +314,16 @@ public class TagAPIImpl implements TagAPI {
             //Check for a transaction and start one if required
             localTransaction = HibernateUtil.startLocalTransactionIfNeeded();
 
-            StringTokenizer tagNameToken = new StringTokenizer(tagName, ",");
+            final StringTokenizer tagNameToken = new StringTokenizer(tagName, ",");
             if ( tagNameToken.hasMoreTokens() ) {
                 for (; tagNameToken.hasMoreTokens(); ) {
-                    String tagTokenized = tagNameToken.nextToken().trim();
-                    Tag createdTag = getTagAndCreate(tagTokenized, userId, "");
+                    final String tagTokenized = tagNameToken.nextToken().trim();
+                    final Tag createdTag = getTagAndCreate(tagTokenized, userId, "");
                     addContentletTagInode(createdTag, inode, fieldVarName);
                 }
             }
 
-            List<TagInode> tagInodes = getTagInodesByInode(inode);
+            final List<TagInode> tagInodes = getTagInodesByInode(inode);
 
             //Everything ok..., committing the transaction
             if ( localTransaction ) {
@@ -320,7 +331,10 @@ public class TagAPIImpl implements TagAPI {
             }
 
             return tagInodes;
-        } catch ( Exception e ) {
+        } catch (final Exception e) {
+            final String errorMsg = String.format("An error occurred when adding delimited Tags '%s' to Contentlet Inode '%s'" +
+                    " to field '%s'", tagName, inode, fieldVarName);
+            Logger.error(this, errorMsg, e);
             if ( localTransaction ) {
                 HibernateUtil.rollbackTransaction();
             }
@@ -447,7 +461,7 @@ public class TagAPIImpl implements TagAPI {
     }
 
     @Override
-    public TagInode addContentletTagInode(Tag tag, String inode, String fieldVarName) throws DotDataException {
+    public TagInode addContentletTagInode(final Tag tag, final String inode, final String fieldVarName) throws DotDataException {
 
         boolean localTransaction = false;
 
@@ -478,7 +492,10 @@ public class TagAPIImpl implements TagAPI {
 
             return existingTagInode;
 
-        } catch (Exception e) {
+        } catch (final Exception e) {
+            final String errorMsg = String.format("An error occurred when adding Tag ID '%s' to Contentlet Inode '%s'" +
+                    " to field '%s'", tag.getTagId(), inode, fieldVarName);
+            Logger.error(this, errorMsg, e);
             if ( localTransaction ) {
                 HibernateUtil.rollbackTransaction();
             }
@@ -521,7 +538,7 @@ public class TagAPIImpl implements TagAPI {
     }
 
     @Override
-    public void removeTagRelationAndTagWhenPossible ( String tagId, String inode, String fieldVarName ) throws DotDataException {
+    public void removeTagRelationAndTagWhenPossible (final String tagId, final String inode, final String fieldVarName ) throws DotDataException {
 
         boolean localTransaction = false;
 
@@ -532,16 +549,16 @@ public class TagAPIImpl implements TagAPI {
 
             Boolean existRelationship = false;
             //Get the tag inode we want to remove
-            TagInode tagInodeToRemove = tagFactory.getTagInode(tagId, inode, fieldVarName);
+            final TagInode tagInodeToRemove = tagFactory.getTagInode(tagId, inode, fieldVarName);
             if ( UtilMethods.isSet(tagInodeToRemove) && UtilMethods.isSet(tagInodeToRemove.getTagId()) ) {
                 existRelationship = true;
             }
 
             //Get the tag we want to remove
-            Tag tagToRemove = tagFactory.getTagByTagId(tagId);
+            final Tag tagToRemove = tagFactory.getTagByTagId(tagId);
 
             //First lets search for the relationships of this tag
-            List<TagInode> tagInodes = APILocator.getTagAPI().getTagInodesByTagId(tagId);
+            final List<TagInode> tagInodes = APILocator.getTagAPI().getTagInodesByTagId(tagId);
 
             if ( tagInodes != null && !tagInodes.isEmpty() ) {
 
@@ -573,7 +590,10 @@ public class TagAPIImpl implements TagAPI {
                 HibernateUtil.closeAndCommitTransaction();
             }
 
-        } catch ( Exception e ) {
+        } catch (final Exception e) {
+            final String errorMsg = String.format("An error occurred when removing Tag Relation and possibly Tag " +
+                    "itself with ID '%s' to Contentlet Inode '%s' to field '%s'", tagId, inode, fieldVarName);
+            Logger.error(this, errorMsg, e);
             if ( localTransaction ) {
                 HibernateUtil.rollbackTransaction();
             }
@@ -650,22 +670,22 @@ public class TagAPIImpl implements TagAPI {
     @CloseDBIfOpened
     @Override
     @SuppressWarnings ( "unchecked" )
-    public List<Tag> getSuggestedTag(String name, String selectedHostId) throws DotDataException {
+    public List<Tag> getSuggestedTag(String name, String selectedSiteId) throws DotDataException {
 
         name = escapeSingleQuote(name);
 
         //if there's a host field on form, retrieve it
-        Host hostOnForm;
-        if ( UtilMethods.isSet(selectedHostId) ) {
+        Host siteOnForm;
+        if ( UtilMethods.isSet(selectedSiteId) ) {
             try {
-                hostOnForm = APILocator.getHostAPI().find(selectedHostId, APILocator.getUserAPI().getSystemUser(), true);
-                selectedHostId = hostOnForm.getMap().get("tagStorage").toString();
+                siteOnForm = APILocator.getHostAPI().find(selectedSiteId, APILocator.getUserAPI().getSystemUser(), true);
+                selectedSiteId = siteOnForm.getMap().get("tagStorage").toString();
             } catch (Exception e) {
-                Logger.error(this, "Unable to load current host.");
+                Logger.error(this, String.format("Unable to load current Site ID '%s'", selectedSiteId));
             }
         }
 
-        return tagFactory.getSuggestedTags(name, selectedHostId);
+        return tagFactory.getSuggestedTags(name, selectedSiteId);
     }
 
     /**
@@ -678,7 +698,7 @@ public class TagAPIImpl implements TagAPI {
     }
 
     @Override
-    public void updateTagReferences(String hostIdentifier, String oldTagStorageId, String newTagStorageId) throws DotDataException, DotSecurityException {
+    public void updateTagReferences(final String siteId, final String oldTagStorageId, final String newTagStorageId) throws DotDataException, DotSecurityException {
 
         boolean localTransaction = false;
 
@@ -691,18 +711,18 @@ public class TagAPIImpl implements TagAPI {
 
                 //copy or update tags if the tag storage id has changed when editing the host
                 //or if the previous tag storage was global
-                List<Tag> list = tagFactory.getTagsByHost(oldTagStorageId);
+                final List<Tag> list = tagFactory.getTagsByHost(oldTagStorageId);
 
-                List<Tag> hostTagList = tagFactory.getTagsByHost(hostIdentifier);
+                final List<Tag> siteTagList = tagFactory.getTagsByHost(siteId);
 
-                for ( Tag tag : list ) {
-                    if ( (hostIdentifier.equals(newTagStorageId) && hostTagList.size() == 0) && !newTagStorageId.equals(Host.SYSTEM_HOST) ) {
+                for (final Tag tag : list) {
+                    if ( (siteId.equals(newTagStorageId) && siteTagList.size() == 0) && !newTagStorageId.equals(Host.SYSTEM_HOST) ) {
                         //copy old tag to host with new tag storage
-                        saveTag(tag.getTagName(), "", hostIdentifier);
+                        saveTag(tag.getTagName(), "", siteId);
                     } else if ( newTagStorageId.equals(Host.SYSTEM_HOST) ) {
                         //update old tag to global tags
                         getTagAndCreate(tag.getTagName(), Host.SYSTEM_HOST);
-                    } else if ( hostIdentifier.equals(newTagStorageId) && hostTagList.size() > 0 || hostIdentifier.equals(oldTagStorageId) ) {
+                    } else if ( siteId.equals(newTagStorageId) && siteTagList.size() > 0 || siteId.equals(oldTagStorageId) ) {
                         // update old tag with new tag storage
                         updateTag(tag.getTagId(), tag.getTagName(), true, newTagStorageId);
                     }
@@ -713,7 +733,10 @@ public class TagAPIImpl implements TagAPI {
                     HibernateUtil.closeAndCommitTransaction();
                 }
             }
-        } catch ( Exception e ) {
+        } catch (final Exception e) {
+            final String errorMsg = String.format("An error occurred when updating Tag references on Site ID '%s' " +
+                    "from old storage '%s' to new storage '%s'", siteId, oldTagStorageId, newTagStorageId);
+            Logger.error(this, errorMsg, e);
             if ( localTransaction ) {
                 HibernateUtil.rollbackTransaction();
             }
@@ -738,7 +761,7 @@ public class TagAPIImpl implements TagAPI {
     }
 
     @Override
-    public List<Tag> getTagsInText ( String text, String userId, String hostId ) throws DotSecurityException, DotDataException {
+    public List<Tag> getTagsInText (final String text, final String userId, final String siteId) throws DotSecurityException, DotDataException {
 
         boolean localTransaction = false;
 
@@ -747,18 +770,18 @@ public class TagAPIImpl implements TagAPI {
             //Check for a transaction and start one if required
             localTransaction = HibernateUtil.startLocalTransactionIfNeeded();
 
-            List<Tag> tags = new ArrayList<>();
+            final List<Tag> tags = new ArrayList<>();
 
             //Split the given list of tasks
-            String[] tagNames = text.split("[,\\n\\t\\r]");
-            for ( String tagname : tagNames ) {
+            final String[] tagNames = text.split("[,\\n\\t\\r]");
+            for (String tagname : tagNames) {
                 tagname = tagname.trim();
                 if ( tagname.length() > 0 ) {
                     /*
                     Search for this given tag and create it if does not exist, the search in order to define
                     if the tag exist will include the system host
                      */
-                    tags.add(getTagAndCreate(tagname, userId, hostId, false, true));
+                    tags.add(getTagAndCreate(tagname, userId, siteId, false, true));
                 }
             }
 
@@ -768,7 +791,10 @@ public class TagAPIImpl implements TagAPI {
             }
 
             return tags;
-        } catch (Exception e) {
+        } catch (final Exception e) {
+            final String errorMsg = String.format("An error occurred when getting Tags from text '%s' in Site ID " +
+                    "'%s'", text, siteId);
+            Logger.error(this, errorMsg, e);
             if ( localTransaction ) {
                 HibernateUtil.rollbackTransaction();
             }

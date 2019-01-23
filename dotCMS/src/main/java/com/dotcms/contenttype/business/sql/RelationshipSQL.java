@@ -30,9 +30,16 @@ public abstract class RelationshipSQL {
 	public static final String FIND_BY_CHILD_INODE = SELECT_ALL_FIELDS + " where child_structure_inode = ?";
 	
 	public static final String FIND_BY_PARENT_OR_CHILD_INODE = SELECT_ALL_FIELDS
-			+ " where parent_structure_inode = ? or child_structure_inode = ?";
+			+ " where (parent_structure_inode = ? or child_structure_inode = ?)";
+
+	public static final String FIND_BY_PARENT_CHILD_AND_RELATION_NAME =
+			FIND_BY_PARENT_OR_CHILD_INODE
+					+ " and (parent_relation_name=? or child_relation_name=?)";
+
 
 	public static final String FIND_BY_TYPE_VALUE = SELECT_ALL_FIELDS + " where lower(relation_type_value) = ?";
+
+	public static final String FIND_BY_TYPE_VALUE_LIKE = SELECT_ALL_FIELDS + " where lower(relation_type_value) like (?)";
 
 	public static final String INSERT_INODE = "insert into inode (inode, idate, owner, type) values (?,?,?,'relationship')";
 
@@ -55,6 +62,11 @@ public abstract class RelationshipSQL {
 			+ " where parent = ? and relation_type = ?";
 
 	public static final String SELECT_ONE_SIDE_RELATIONSHIP = "select * from relationship where ((child_structure_inode = ?"
-			+ " and child_relation_name is null) or (parent_structure_inode = ?"
-			+ " and parent_relation_name is null)) order by parent_relation_name";
+			+ " and parent_relation_name is null) or (parent_structure_inode = ?"
+			+ " and child_relation_name is null)) order by parent_relation_name";
+
+
+	public static final String SELECT_ONE_SIDE_RELATIONSHIP_COUNT = "select count(*) as relationship_count from relationship where ((child_structure_inode = ?"
+			+ " and parent_relation_name is null) or (parent_structure_inode = ?"
+			+ " and child_relation_name is null))";
 }

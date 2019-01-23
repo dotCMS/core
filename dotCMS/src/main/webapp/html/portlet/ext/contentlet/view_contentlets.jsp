@@ -264,6 +264,75 @@
     var dojoStore = new dojo.data.ItemFileReadStore({
         data: dataItems
     });
+    
+    
+    var  dojoRelationshipsStore = new dojo.data.ItemFileReadStore({
+        data:  {
+            identifier  : "id",
+            label: "label", 
+            items: []
+        }
+    });
+    
+    
+    function reloadRelationshipBox(box, relatedType){
+    	var search = box.attr("displayedValue");
+
+        var boxValue = search == "" ? "*" : "*" +search + "*";
+        var limit=box.pageSize;
+        if (relatedType.indexOf(".") != -1){
+            relatedType = relatedType.split('.')[0];
+        }
+        
+    	var tmpl = `
+    		{ "query" : 
+	    	    { 
+	    	        "query_string" : 
+	    	        {
+	    	            "query" : "+contentType:${relatedType}  +(inode:${boxValue} title:${boxValue} identifier:${boxValue})"
+	    	        } 
+	    	    },
+	    	    "sort" : {"moddate":"desc"},
+	    	    "size":${limit},
+	    	    "from":0
+	    	}`;
+
+         var url = "/api/es/search";
+
+         var xhrArgs = {
+             url: url,
+             postData: tmpl,
+             headers: {
+                 "Accept" : "application/json",
+                 "Content-Type" : "application/json"
+              },
+             handleAs : "json",
+             load: function(data) {
+     
+                 let dataItems = {
+                     identifier  : "id",
+                     label: "label", 
+                     items: []
+                 };
+
+                 for (let i=0; i<data.contentlets.length;++i) {
+                     let entity = data.contentlets[i];
+                     dataItems.items[i] = { label: entity.title, id: entity.identifier, searchMe : entity.title + " " + entity.identifier + " " + entity.inode };
+                 }
+                 
+                 dojoRelationshipsStore = new dojo.data.ItemFileReadStore({
+                     data: dataItems
+                 });
+                 
+                 box.store=dojoRelationshipsStore;
+                 box.set( 'store',dojoRelationshipsStore);
+                 box.startup();
+             }
+         }
+         dojo.xhrPost(xhrArgs);
+     }
+
+    
 
     // Workflow Schemes
     var dojoSchemeStore = null;

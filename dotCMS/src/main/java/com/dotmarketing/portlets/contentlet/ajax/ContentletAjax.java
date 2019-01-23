@@ -162,60 +162,27 @@ public class ContentletAjax {
 			}catch(Exception e){
 				Logger.debug(this, e.getMessage());
 			}
-			if(contentlet == null || !UtilMethods.isSet(contentlet.getInode()))
+			if(contentlet == null || !UtilMethods.isSet(contentlet.getInode())) {
 				return null;
-
-			Structure targetStructure = contentlet.getStructure();
-			List<Field> targetFields = FieldsCache.getFieldsByStructureInode(targetStructure.getInode());
-
-			String identifier = String.valueOf(contentlet.getIdentifier());
-
-			boolean hasListedFields = false;
-
-			for (Field f : targetFields) {
-
-				if (f.isIndexed() || f.isListed()) {
-					hasListedFields = true;
-					String fieldName = f.getFieldName();
-					Object fieldValueObj = "";
-					try{
-						fieldValueObj = conAPI.getFieldValue(contentlet, f);
-					}catch (Exception e) {
-						Logger.error(ContentletAjax.class, "Unable to get value for field", e);
-					}
-					String fieldValue = "";
-					if (fieldValueObj instanceof java.util.Date) {
-						if (fieldValueObj != null)
-							fieldValue = modDateFormat.format(fieldValueObj);
-					} else if (fieldValueObj instanceof java.sql.Timestamp) {
-						if (fieldValueObj != null) {
-							java.util.Date fieldDate = new java.util.Date(((java.sql.Timestamp) fieldValueObj).getTime());
-							fieldValue = modDateFormat.format(fieldDate);
-						}
-					} else {
-						if (fieldValueObj != null)
-							fieldValue = fieldValueObj.toString();
-					}
-					result.put(fieldName, fieldValue);
-				}
-			}
-			if( !hasListedFields ) {
-				result.put("identifier", identifier);
 			}
 
+            result.put("iconClass", UtilHTML.getIconClass(contentlet));
+			result.put("identifier", contentlet.getIdentifier());
+			result.put("statusIcons", UtilHTML.getStatusIcons(contentlet));
+			result.put("hasTitleImage", String.valueOf(contentlet.getTitleImage().isPresent()));
+			result.put("title", String.valueOf(contentlet.getTitle()));
 			result.put("inode", String.valueOf(contentlet.getInode()));
 			result.put("working", String.valueOf(contentlet.isWorking()));
 			result.put("live", String.valueOf(contentlet.isLive()));
 			result.put("deleted", String.valueOf(contentlet.isArchived()));
 			result.put("locked", String.valueOf(contentlet.isLocked()));
-			result.put("id", identifier); // Duplicates value for identifier key in map so that UI does not get broken
+			result.put("id", contentlet.getIdentifier());// Duplicates value for identifier key in map so that UI does not get broken
 			Language language = langAPI.getLanguage(contentlet.getLanguageId());
 			String languageCode = langAPI.getLanguageCodeAndCountry(contentlet.getLanguageId(),null);
 			String languageName =  language.getLanguage();
 			result.put("langCode", languageCode);
 			result.put("langName", languageName);
 			result.put("langId", language.getId()+"");
-			result.put("hasListedFields", Boolean.toString(hasListedFields) );
 			result.put("siblings", getContentSiblingsData(inode));
 
 		} catch (DotDataException e) {
@@ -556,6 +523,7 @@ public class ContentletAjax {
 		Map<String, String> fieldsSearch = new HashMap<String, String>();
 		List<Object> headers = new ArrayList<Object>();
 		Map<String, Field> fieldsMapping = new HashMap<String, Field>();
+		final String[] structureInodes = structureInode.split(CONTENT_TYPES_INODE_SEPARATOR);
 		Structure st = null;
 		if(!Structure.STRUCTURE_TYPE_ALL.equals(structureInode) && !hasContentTypesInodeSeparator(structureInode)){
 		    st = CacheLocator.getContentTypeCache().getStructureByInode(structureInode);
@@ -563,8 +531,6 @@ public class ContentletAjax {
 		    luceneQuery.append("+contentType:" + st.getVelocityVarName() + " ");
 		} else if (!Structure.STRUCTURE_TYPE_ALL.equals(structureInode) && hasContentTypesInodeSeparator(structureInode)) {
 			luceneQuery.append("+contentType:(");
-
-			String[] structureInodes = structureInode.split(CONTENT_TYPES_INODE_SEPARATOR);
 
 			for (int i = 0; i < structureInodes.length; i++) {
 				st = CacheLocator.getContentTypeCache().getStructureByInode(structureInodes[i]);
@@ -602,9 +568,11 @@ public class ContentletAjax {
 		}
 		// Stores (database name,type description) pairs to catch certain field types.
 		List<Field> targetFields = new ArrayList<Field>();
-		if(st!=null){
+
+		if(st!=null  && structureInodes.length == 1){
 		    targetFields = FieldsCache.getFieldsByStructureInode(st.getInode());
 		}
+
 		Map<String,String> fieldContentletNames = new HashMap<String,String>();
 		Map<String,Field> decimalFields = new HashMap<String,Field>();//DOTCMS-5478
 		for( Field f : targetFields ) {
@@ -653,6 +621,10 @@ public class ContentletAjax {
 					allLanguages = false;
 				}
 				if(fieldName.equalsIgnoreCase("conhost")){
+					fieldValue = fieldValue.equalsIgnoreCase("current") ?
+							(String) sess.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID)
+							: fieldValue;
+
 					if(!filterSystemHost  && !fieldValue.equals(Host.SYSTEM_HOST)){
 						try {
 							luceneQuery.append("+(conhost:" + fieldValue + " conhost:" + APILocator.getHostAPI().findSystemHost(APILocator.getUserAPI().getSystemUser(), true).getIdentifier() + ") ");
@@ -842,7 +814,11 @@ public class ContentletAjax {
 			orderBy = "wfCurrentStepName desc";
 		}else{
             if(orderBy.charAt(0)=='.'){
-                orderBy = st.getVelocityVarName() + orderBy;
+				if (structureInodes.length > 1) {
+					orderBy = orderBy.substring(1);
+				} else {
+					orderBy = st.getVelocityVarName() + orderBy;
+				}
             }
         }
 
@@ -1000,23 +976,13 @@ public class ContentletAjax {
 				final Contentlet contentlet = con;
 				searchResult.put("__title__", conAPI.getName(contentlet, currentUser, false));
 
-				String spanClass = (type.baseType().ordinal() ==1)
-						? "contentIcon"
-								:  (type.baseType().ordinal() ==2)
-								? "gearIcon"
-										:  (type.baseType().ordinal() ==3)
-										? "formIcon"
-											:  (type.baseType().ordinal() ==4)
-											? "uknIcon " + UtilMethods.getFileExtension( ident.getURI()) + "Icon"
-												:  (type.baseType().ordinal() ==5)
-												? "pageIcon"
-														: "personaIcon";
+				String spanClass = UtilHTML.getIconClass(contentlet);
 
 				String typeStringToShow = type.name();
 				searchResult.put("__type__", "<div class='typeCCol'><span class='" + spanClass +"'></span>&nbsp;" + typeStringToShow +"</div>");
 
 				String fieldValue = UtilMethods.dateToHTMLDate(con.getModDate()) + " " + UtilMethods.dateToHTMLTime(con.getModDate());
-
+				searchResult.put("hasTitleImage", String.valueOf(con.getTitleImage().isPresent()));
 				searchResult.put("modDate", fieldValue);
 				String user = "";
 				User contentEditor = null;
@@ -1879,19 +1845,27 @@ public class ContentletAjax {
 						.getNotValidRelationship();
 				final Set<String> auxKeys = notValidRelationships.keySet();
 				for (final String key : auxKeys) {
-					String errorMessage = "";
+					StringBuilder errorMessage = new StringBuilder();
 					if (key.equals(
 							DotContentletValidationException.VALIDATION_FAILED_REQUIRED_REL)) {
-						errorMessage = "<b>Required Relationship</b>";
+						errorMessage.append("<b>").append(LanguageUtil
+								.get(user, "message.contentlet.relationship.required"))
+								.append("</b>");
 					} else if (key
 							.equals(DotContentletValidationException.VALIDATION_FAILED_INVALID_REL_CONTENT)) {
-						errorMessage = "<b>Invalid Relationship-Contentlet</b>";
+						errorMessage.append("<b>").append(LanguageUtil
+								.get(user, "message.contentlet.relationship.invalid"))
+								.append("</b>");
 					} else if (key
 							.equals(DotContentletValidationException.VALIDATION_FAILED_BAD_REL)) {
-						errorMessage = "<b>Bad Relationship</b>";
+						errorMessage.append("<b>").append(LanguageUtil
+								.get(user, "message.contentlet.relationship.bad"))
+								.append("</b>");
 					} else if (key
 							.equals(DotContentletValidationException.VALIDATION_FAILED_BAD_CARDINALITY)) {
-						errorMessage = "<b>One to Many Relation Violated</b>";
+						errorMessage.append("<b>").append(LanguageUtil
+								.get(user, "message.contentlet.relationship.cardinality.bad"))
+								.append("</b>");
 					}
 
 					sb.append(errorMessage).append(":<br>");

@@ -831,6 +831,10 @@ public class CategoryAPIImpl implements CategoryAPI {
 			throws DotDataException, DotSecurityException {
 		final List<Category> categories = new ArrayList<>();
 
+		if(!UtilMethods.isSet(contentlet.getContentType())) {
+			return categories;
+		}
+
 		final List<com.dotmarketing.portlets.structure.model.Field> fields = new LegacyFieldTransformer(
 				APILocator.getContentTypeAPI(APILocator.systemUser()).
 						find(contentlet.getContentType().inode()).fields()).asOldFieldList();

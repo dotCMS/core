@@ -1,5 +1,7 @@
 package com.dotcms.util;
 
+import org.apache.log4j.Level;
+
 import java.lang.annotation.*;
 
 /**
@@ -11,4 +13,5 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
 public @interface LogTime {
+    String loggingLevel() default "DEBUG";
 } // E:O:F:LogTime

@@ -32,6 +32,8 @@ import net.jodah.failsafe.Failsafe;
 
 import javax.servlet.http.HttpServletRequest;
 
+import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
+
 
 class MonitorHelper {
     private static final long   DEFAULT_LOCAL_FS_TIMEOUT    = 1000;
@@ -132,7 +134,7 @@ class MonitorHelper {
                                 .setQuery(QueryBuilders.termQuery("_type", "content"))
                                 .setSize(0)
                                 .execute()
-                                .actionGet()
+                                .actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS)
                                 .getHits()
                                 .getTotalHits() > 0;
                     }finally{

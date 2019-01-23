@@ -71,9 +71,8 @@
 
 <%
 	}
+ 	List<ContentletRelationships.ContentletRelationshipRecords> relationshipRecords = (List<ContentletRelationships.ContentletRelationshipRecords>)request.getAttribute("relationshipRecords");
 
-	List<ContentletRelationships.ContentletRelationshipRecords> relationshipRecords =
-		(List<ContentletRelationships.ContentletRelationshipRecords>) request.getAttribute("relationshipRecords");
 	if (relationshipRecords.size() > 0) {
 
 		List<ContentletRelationships.ContentletRelationshipRecords> sortList = new ArrayList<ContentletRelationships.ContentletRelationshipRecords>();
@@ -619,6 +618,7 @@
 						if (<%= relationJsName %>_Contents[i]['inode'] != null)
 							hiddenField.value = hiddenField.value + <%= relationJsName %>_Contents[i]['inode'] + ",";
 					}
+
 				}
 
 				//Add new content
@@ -961,7 +961,7 @@
 
 			</script>
 
-			<div id="<%= relationJsName %>Dialog" dojoType="dotcms.dijit.form.ContentSelector" 
+			<div jsId="contentSelector" id="<%= relationJsName %>Dialog" dojoType="dotcms.dijit.form.ContentSelector" 
 			     structureInode="<%= targetStructure.getInode() %>" 
 			     relationJsName="<%= relationJsName %>" 
 			     multiple="true" 

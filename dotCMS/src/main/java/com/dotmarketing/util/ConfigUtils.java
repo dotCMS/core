@@ -48,6 +48,10 @@ public class ConfigUtils {
 				+ File.separator + "dynamic";
 	}
 
+	public static String getGraphqlPath() {
+		return getDynamicContentPath() + File.separator + "graphql";
+	}
+
 	public static String getACheckerPath() {
 		return com.liferay.util.FileUtil.getRealPath("/WEB-INF/achecker_sql");
 	}

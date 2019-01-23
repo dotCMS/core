@@ -4,6 +4,8 @@ import com.dotcms.api.system.event.SystemEventsAPI;
 import com.dotcms.api.system.event.SystemEventsFactory;
 import com.dotcms.cluster.business.ClusterAPI;
 import com.dotcms.cluster.business.ClusterAPIImpl;
+import com.dotcms.graphql.business.GraphqlAPI;
+import com.dotcms.graphql.business.GraphqlAPIImpl;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPIFactory;
 import com.dotcms.api.tree.TreeableAPI;
@@ -778,6 +780,15 @@ public class APILocator extends Locator<APIIndex>{
 		return new FieldAPIImpl();
 	}
 
+	/**
+	 * Creates a single instance of the {@link com.dotcms.graphql.business.GraphqlAPI} class.
+	 *
+	 * @return The {@link com.dotcms.graphql.business.GraphqlAPI} class.
+	 */
+	public static GraphqlAPI getGraphqlAPI() {
+		return (GraphqlAPI) getInstance(APIIndex.GRAPHQL_API);
+	}
+
     /**
      * Returns the dotCMS System User object.
      * 
@@ -1030,7 +1041,8 @@ enum APIIndex
 	MULTI_TREE_API,
 	HTMLPAGE_ASSET_RENDERED_API,
 	CLUSTER_API,
-	THEME_API;
+	THEME_API,
+	GRAPHQL_API;
 
 
 	Object create() {
@@ -1103,6 +1115,7 @@ enum APIIndex
 			case HTMLPAGE_ASSET_RENDERED_API: return new HTMLPageAssetRenderedAPIImpl();
 			case CLUSTER_API: return new ClusterAPIImpl();
 			case THEME_API: return new ThemeAPIImpl();
+			case GRAPHQL_API: return  new GraphqlAPIImpl();
 		}
 		throw new AssertionError("Unknown API index: " + this);
 	}

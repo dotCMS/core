@@ -140,9 +140,25 @@ if(request.getParameter(WebKeys.IN_FRAME)!=null){
 						canUserWriteToFile = perAPI.doesUserHavePermission(folder,PermissionAPI.PERMISSION_CAN_ADD_CHILDREN,user);
                      %>
 
-					<div class="buttonRow">
+					<div class="buttonRow-right">
 						<select dojoType="dijit.form.FilteringSelect" name="wfActionId" id="wfActionId" store="actionStore" value="" >
 				        </select>
+						<button dojoType="dijit.form.Button" class="dijitButtonFlat" type="button">
+							<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "cancel")) %>
+							<script type="dojo/method" event="onClick" args="evt">
+								try{
+									 if(dijit.byId('addFileDialog')){
+									 dijit.byId('addFileDialog').hide();
+									} else {
+									 if(parent.closeAddFileDialog) {
+										 parent.closeAddFileDialog();
+									 }
+									}
+								}catch(e){
+									console.error(e);
+								}
+							</script>
+						</button>
                         <button dojoType="dijit.form.Button" onClick="doUpload('')" id="saveButton">
 					        <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Execute")) %>
 					        <script type="dojo/method" event="onClick" args="evt">
@@ -157,22 +173,6 @@ if(request.getParameter(WebKeys.IN_FRAME)!=null){
                             <% } %>
 					        </script>
              	        </button>
-                        <button dojoType="dijit.form.Button" class="dijitButtonFlat" type="button">
-                	        <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "cancel")) %>
-                	        <script type="dojo/method" event="onClick" args="evt">
-                                try{
-                                    if(dijit.byId('addFileDialog')){
-                                        dijit.byId('addFileDialog').hide();
-                                    } else {
-                                        if(parent.closeAddFileDialog) {
-                                            parent.closeAddFileDialog();
-                                        }
-                                    }
-                                }catch(e){
-                                    console.error(e);
-                                }
-                	        </script>
-                        </button>
 			        </div>
 	         </html:form>
          </div>

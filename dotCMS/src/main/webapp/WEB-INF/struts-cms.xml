@@ -23,11 +23,6 @@
 </form-beans>
     <!--  Action Mapping Definitions  -->
     <action-mappings>
-    
-       <action path="/comments"  type="com.dotmarketing.cms.comment.action.CommentsAction" name="commentsForm" scope="request" validate="false"	parameter="dispatch" >
-       </action>
-       
-       
 		<action path="/submitContent"  type="com.dotmarketing.cms.content.submit.action.SubmitContentAction" scope="request" validate="false" parameter="dispatch" >
 		</action>
 		

@@ -198,6 +198,8 @@ public class WorkflowProcessor {
 		if (null == action) {
 			try {
 				action = getWorkflowAPI().findActionRespectingPermissions(workflowActionId, contentlet, this.user);
+			} catch (DotSecurityException e) {
+				throw new DotWorkflowException(e.getMessage(), e);
 			} catch (Exception ex) {
 				throw new DotWorkflowException(
 						LanguageUtil.get(this.user, "message.workflow.error.invalid.action")

@@ -582,19 +582,6 @@
 		<property column="pref_value" name="value" length="123456789" type="string" />
 	</class>
 
-	<class name="com.dotmarketing.portlets.languagesmanager.model.Language" table="language">
-		<id name="id" column="id" type="long" unsaved-value="0">
-			<!-- generator class="sequence">
-				<param name="sequence">language_seq</param>
-			</generator -->
-			<generator class="native"/>
-		</id>
-		<property name="languageCode" column="language_code" length="5" type="string" />
-		<property name="countryCode" column="country_code" length="255" type="string" />
-		<property name="language" column="language" length="255" type="string" />
-		<property name="country" column="country" length="255" type="string" />
-	</class>
-
 	<class name="com.dotmarketing.beans.Clickstream" table="clickstream">
 		<id name="clickstreamId" column="clickstream_id" type="long" unsaved-value="0">
 			<!-- generator class="sequence">
