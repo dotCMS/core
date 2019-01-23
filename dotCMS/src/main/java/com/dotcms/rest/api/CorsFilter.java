@@ -63,9 +63,9 @@ public class CorsFilter implements ContainerResponseFilter {
 
     private final String fixHeaderCase(final String propertyName) {
 
-        StringWriter sw = new StringWriter();
+        final StringWriter sw = new StringWriter();
         boolean upperCaseNextChar = true;
-        for (char c : propertyName.toCharArray()) {
+        for (final char c : propertyName.toCharArray()) {
             if (c == '-') {
                 sw.append(c);
                 upperCaseNextChar = true;
