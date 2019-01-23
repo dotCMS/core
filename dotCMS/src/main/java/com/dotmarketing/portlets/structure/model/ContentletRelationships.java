@@ -7,6 +7,7 @@ import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.util.WebKeys;
 import com.liferay.util.StringPool;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -242,6 +243,19 @@ public class ContentletRelationships
 
 			if (fieldContentletName != null)
 				Collections.sort(records, new ContentComparator(fieldContentletName));
+		}
+
+		/**
+		 * Checks if a relationship side only allows a single entry
+		 * @return
+		 */
+		public boolean doesAllowOnlyOne() {
+			return (this.hasParent)
+					? this.relationship.getCardinality()
+					!= WebKeys.Relationship.RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal()
+					: relationship.getCardinality()
+							== WebKeys.Relationship.RELATIONSHIP_CARDINALITY.ONE_TO_ONE.ordinal();
+
 		}
 
 		public boolean equals(Object obj) {
