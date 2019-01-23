@@ -35,7 +35,7 @@ public class CorsFilter implements ContainerResponseFilter {
     }
 
 
-    private List<String[]> getHeaders(final String mapping) {
+    protected List<String[]> getHeaders(final String mapping) {
         List<String[]> corsHeaders = headerMap.get(mapping);
         if (null == corsHeaders) {
             synchronized (this.getClass()) {
@@ -61,12 +61,15 @@ public class CorsFilter implements ContainerResponseFilter {
     }
 
 
-    private final String fixHeaderCase(final String propertyName) {
+    protected final String fixHeaderCase(final String propertyName) {
 
         final StringWriter sw = new StringWriter();
         boolean upperCaseNextChar = true;
         for (final char c : propertyName.toCharArray()) {
-            if (c == '-') {
+            if(c==' ') {
+                upperCaseNextChar = true;
+            }
+            else if (c == '-') {
                 sw.append(c);
                 upperCaseNextChar = true;
             } else {
