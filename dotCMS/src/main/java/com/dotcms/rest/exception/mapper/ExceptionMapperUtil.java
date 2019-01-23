@@ -244,6 +244,6 @@ public final class ExceptionMapperUtil {
             return ACCESS_CONTROL_HEADER_PERMISSION_VIOLATION;
         }
 
-        return ACCESS_CONTROL_HEADER_OK;
+        return null;
     }
 }

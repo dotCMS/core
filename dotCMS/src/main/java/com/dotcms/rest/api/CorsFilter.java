@@ -5,44 +5,38 @@ import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
+import com.dotcms.repackage.EDU.oswego.cs.dl.util.concurrent.ConcurrentHashMap;
 import com.dotcms.repackage.javax.ws.rs.container.ContainerRequestContext;
 import com.dotcms.repackage.javax.ws.rs.container.ContainerResponseContext;
 import com.dotcms.repackage.javax.ws.rs.container.ContainerResponseFilter;
 import com.dotcms.repackage.javax.ws.rs.core.MultivaluedMap;
 import com.dotmarketing.util.Config;
-import com.google.common.collect.ImmutableList;
+
 
 /**
  * @author Geoff M. Granum
  */
 public class CorsFilter implements ContainerResponseFilter {
 
-    final List<String[]> corsHeaders;
-    
-    final static String CORS_PREFIX="api.cors.headers"; 
-    
-    public CorsFilter() {
-        List<String[]> _headers = new ArrayList<>();
-        Iterator<String> keys = Config.subset(CORS_PREFIX);
-        while(keys.hasNext()){
-            final String key = keys.next();
-            String value = Config.getStringProperty(CORS_PREFIX + "." + key, "");
-            final String headerName = fixCase(key.replace(CORS_PREFIX, ""));
-            _headers.add(new String[]{headerName, value});
-        }
-        this.corsHeaders=ImmutableList.copyOf(_headers);
-        
 
-    }
+    
+    final private static String CORS_PREFIX="api.cors"; 
+    
+    final private static String CORS_DEFAULT="default"; 
+    final private static Map<String, List<String[]>> headerMap = new ConcurrentHashMap();
     
     
+
     
     
     @Override
     public void filter(ContainerRequestContext requestContext, ContainerResponseContext responseContext) throws IOException {
         MultivaluedMap<String, Object> headers = responseContext.getHeaders();
 
+        String resource = requestContext.getUriInfo().getMatchedResources().get(0).getClass().getSimpleName().toLowerCase();
+        List<String[]> corsHeaders = getHeaders(resource);
         for(String[] corsHeader: corsHeaders) {
             if(!headers.containsKey(corsHeader[0])) {
                 headers.add(corsHeader[0], corsHeader[1]);
@@ -50,6 +44,36 @@ public class CorsFilter implements ContainerResponseFilter {
         }
 
     }
+    
+    
+    private List<String[]> getHeaders(final String mapping) {
+        List<String[]> corsHeaders = headerMap.get(mapping);
+        if(null==corsHeaders) {
+            synchronized (this.getClass()) {
+                corsHeaders = headerMap.get(mapping);
+                if(null==corsHeaders) {
+                    corsHeaders = new ArrayList<>();
+                    Iterator<String> keys = Config.subset(CORS_PREFIX + "." + mapping);
+                    while(keys.hasNext()){
+                        final String key = keys.next();
+                        String value = Config.getStringProperty(CORS_PREFIX + "." + mapping + "." + key, "");
+                        final String headerName = fixCase(key.replace(CORS_PREFIX, ""));
+                        corsHeaders.add(new String[]{headerName, value});
+                    }
+                    headerMap.put(mapping, corsHeaders);
+                }
+            }
+        }
+        if(corsHeaders.isEmpty() && !CORS_DEFAULT.equals(mapping)) {
+            return getHeaders(CORS_DEFAULT);
+        }
+        return corsHeaders;
+            
+    }
+        
+
+    
+    
     
     
     private final String fixCase(final String propertyName) {
@@ -66,9 +90,7 @@ public class CorsFilter implements ContainerResponseFilter {
             }
         }
         return sw.toString();
-        
-        
-        
+
     }
     
     
