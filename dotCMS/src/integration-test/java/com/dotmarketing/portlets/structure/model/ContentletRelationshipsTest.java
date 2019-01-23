@@ -276,10 +276,10 @@ public class ContentletRelationshipsTest extends IntegrationTestBase {
                 assertTrue(parentSelfRecords.doesAllowOnlyOne());
                 assertTrue(childSelfRecords.doesAllowOnlyOne());
             } else if (cardinalityTestCase.cardinality == ONE_TO_MANY.ordinal()) {
-                assertTrue(parentRecords.doesAllowOnlyOne());
-                assertFalse(childRecords.doesAllowOnlyOne());
-                assertTrue(parentSelfRecords.doesAllowOnlyOne());
-                assertFalse(childSelfRecords.doesAllowOnlyOne());
+                assertFalse(parentRecords.doesAllowOnlyOne());
+                assertTrue(childRecords.doesAllowOnlyOne());
+                assertFalse(parentSelfRecords.doesAllowOnlyOne());
+                assertTrue(childSelfRecords.doesAllowOnlyOne());
             } else {
                 assertFalse(parentRecords.doesAllowOnlyOne());
                 assertFalse(childRecords.doesAllowOnlyOne());

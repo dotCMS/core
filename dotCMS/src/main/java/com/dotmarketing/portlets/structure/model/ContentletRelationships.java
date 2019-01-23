@@ -250,7 +250,7 @@ public class ContentletRelationships
 		 * @return
 		 */
 		public boolean doesAllowOnlyOne() {
-			return (this.hasParent)
+			return (!this.hasParent)
 					? this.relationship.getCardinality()
 					!= WebKeys.Relationship.RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal()
 					: relationship.getCardinality()
