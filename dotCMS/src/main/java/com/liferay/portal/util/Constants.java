@@ -83,10 +83,6 @@ public interface Constants {
 
 	public static final String COMMON_NULL = "/common/null.jsp";
 
-	public static final String COMMON_REFERER = "/common/referer_js.jsp";
-
-	public static final String COMMON_REFERER_JSP = "/common/referer_jsp.jsp";
-
 	public static final String PORTAL_ERROR = "/portal/error";
 
 	// Content types

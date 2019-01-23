@@ -9,8 +9,7 @@ import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.usermanager.factories.UserManagerListBuilderFactory;
-import com.dotmarketing.portlets.usermanager.struts.UserManagerListSearchForm;
+
 import com.dotmarketing.tag.business.GenericTagException;
 import com.dotmarketing.tag.business.InvalidTagNameLengthException;
 import com.dotmarketing.tag.business.TagAPI;
@@ -144,40 +143,7 @@ public class TagAjax {
 	}
 
 
-	/**
-	 * Tags the users in selected in the User Manager, validates the existence of a tag(s), creates it if it doesn't exists
-	 * and then tags the object
-	 * @param tagName tag(s) to create
-	 * @param userId owner of the tag
-	 * @return a list of all tags assigned to an object
-	 */
-	public static void addTagFullCommand(String tagName, String userId) throws DotDataException, DotSecurityException {
-		try
-		{
-			HttpSession session = WebContextFactory.get().getSession();
 
-			//Get all the user of the filter
-			UserManagerListSearchForm searchFormFullCommand = (UserManagerListSearchForm) session.getAttribute(WebKeys.USERMANAGERLISTPARAMETERS);
-			searchFormFullCommand.setStartRow(0);
-			searchFormFullCommand.setMaxRow(0);
-			List matches = UserManagerListBuilderFactory.doSearch(searchFormFullCommand);
-
-			//Get the Iterator and the userIds
-			Iterator it = matches.iterator();
-			for (int i = 0; it.hasNext(); i++)
-			{
-				String userTagId = (String) ((Map) it.next()).get("userid");
-				String inode = com.dotmarketing.business.APILocator.getUserProxyAPI().getUserProxy(userTagId,APILocator.getUserAPI().getSystemUser(), false).getInode();
-				APILocator.getTagAPI().addUserTag(tagName, userId, inode);
-			}
-		}
-		catch(Exception ex)
-		{
-			//Logging the error because DWR tends to swallow the exceptions
-			Logger.error(TagAjax.class, "Error adding tags", ex);
-			throw ex;
-		}
-	}
 
 	/**
 	 * Gets all the tag created by an user
@@ -315,33 +281,7 @@ public class TagAjax {
 		}
 	}
 
-	public static void deleteTagFullCommand(String tagName) throws DotDataException, DotSecurityException {
-		try
-		{
-			HttpSession session = WebContextFactory.get().getSession();
 
-			//Get all the user of the filter
-			UserManagerListSearchForm searchFormFullCommand = (UserManagerListSearchForm) session.getAttribute(WebKeys.USERMANAGERLISTPARAMETERS);
-			searchFormFullCommand.setStartRow(0);
-			searchFormFullCommand.setMaxRow(0);
-			List matches = UserManagerListBuilderFactory.doSearch(searchFormFullCommand);
-
-			//Get the Iterator and the userIds
-			Iterator it = matches.iterator();
-			for (int i = 0; it.hasNext(); i++)
-			{
-				String userTagId = (String) ((Map) it.next()).get("userid");
-				String inode = com.dotmarketing.business.APILocator.getUserProxyAPI().getUserProxy(userTagId,APILocator.getUserAPI().getSystemUser(), false).getInode();
-				APILocator.getTagAPI().deleteTagInode(tagName, inode, null);
-			}
-		}
-		catch(Exception ex)
-		{
-			//Logging the error because DWR tends to swallow the exceptions
-			Logger.error(TagAjax.class, "Error deleting tags", ex);
-			throw ex;
-		}
-	}
 
 	/**
 	 * Gets a suggested tag(s), by name and host

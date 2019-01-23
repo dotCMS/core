@@ -18,7 +18,6 @@ import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.webforms.model.WebForm;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.FormSpamFilter;
 import com.dotmarketing.util.InodeUtils;
@@ -313,7 +312,7 @@ public class EmailFactory {
 	 * @throws 	DotRuntimeException when spam is detected or any other mayor error occurs
 	 * 	 		CreditCardDeniedException when the credit card gets denied
 	 */
-	public static WebForm sendParameterizedEmail(Map<String,Object> parameters, Set<String> spamValidation, 
+	public static void sendParameterizedEmail(Map<String,Object> parameters, Set<String> spamValidation, 
 			Host host, User user) throws  DotRuntimeException
 			{
 
@@ -384,7 +383,6 @@ public class EmailFactory {
 		String formType = getMapValue("formType", parameters) != null?
 				(String)getMapValue("formType", parameters):(String)getMapValue("formName", parameters);
 
-				WebForm formBean = saveFormBean(parameters, host, formType, ignoreString, filesLinks);
 
 
 				// Setting up the email
@@ -547,17 +545,10 @@ public class EmailFactory {
 						m.sendMessage();
 					}
 				} else {
-					if(formBean != null){
-						try {
-							HibernateUtil.delete(formBean);
-						} catch (DotHibernateException e) {							
-							Logger.error(EmailFactory.class, e.getMessage(), e);
-						}
-					}
+
 					throw new DotRuntimeException("Unable to send the email");
 				}
 
-				return formBean;
 
 			}
 
@@ -708,117 +699,7 @@ public class EmailFactory {
 		return returnMap;
 			}
 
-	private static WebForm saveFormBean (Map<String, Object> parameters, Host host, String formType, String ignoreString, StringBuffer filesLinks) {
-
-		//Fields predefined for the form reports
-		String predefinedFields = ":prefix:title:firstName:middleInitial:middleName:lastName:fullName:organization:address:address1:address2:city:state:zip:country:phone:email:";
-
-		//Return variable
-		WebForm formBean = new WebForm();
-		formBean.setFormType(formType);
-
-		// Copy the common fields set in the form
-		try {
-			for (Entry<String, Object> param : parameters.entrySet()) {
-				BeanUtils.setProperty(formBean, param.getKey(), getMapValue(param.getKey(), parameters));
-			}
-		} catch (Exception e1) {
-			Logger.error(EmailFactory.class, "sendForm: Error ocurred trying to copy the form bean parameters", e1);
-		}
-
-		try {
-			HibernateUtil.save(formBean);
-		} catch (DotHibernateException e) {
-			Logger.error(EmailFactory.class, e.getMessage(), e);
-		}		
-		String formId = formBean.getWebFormId();
-
-		// Loop over the request Map or the ordered Map to set the custom
-		// fields and also saving the submitted files
-		StringBuffer customFields = new StringBuffer();
-
-		Set<Entry<String, Object>> paramSet = parameters.entrySet();
-
-		for (Entry<String, Object> param : paramSet) {
-
-			String key = (String) param.getKey();
-
-
-			String value = null;
-
-			Object paramValue = getMapValue(key, parameters);
-			if (paramValue instanceof File) {
-
-				File f = (File) param.getValue();
-				String submittedFileName = f.getName();
-				String fileName = key + "." + UtilMethods.getFileExtension(submittedFileName);
-				if(getMapValue(fileName.substring(4, key.length()) + "FName", parameters) != null) {
-					fileName = getMapValue(fileName.substring(4, key.length()) + "FName", parameters) + 
-						"." + UtilMethods.getFileExtension(submittedFileName);
-				}
-
-				//Saving the file
-				try {
-					if(f.exists()) {
-						String filesFolder = getMapValue("formFolder", parameters) instanceof String?(String)getMapValue("formFolder", parameters):null;
-						
-						String fileLink = saveFormFile(formId, formType, fileName, f, host, filesFolder);
-						filesLinks.append(filesLinks.toString().equals("")? "http://" + host.getHostname() + fileLink : ",http://" + host.getHostname() + fileLink);
-					}
-				} catch (Exception e) {
-					Logger.error(EmailFactory.class, "sendForm: couldn't saved the submitted file into the cms = " + fileName, e);					
-					try {
-						HibernateUtil.delete(formBean);
-					} catch (DotHibernateException e1) {
-						Logger.error(EmailFactory.class, e1.getMessage(), e1);						
-					}
-					throw new DotRuntimeException("sendForm: couldn't saved the submitted file into the cms = " + fileName, e);
-				}
-
-			} else if (paramValue instanceof String)
-				value = (String)paramValue;
-
-			List<String> cFields = new ArrayList<String>();
-			if (predefinedFields.indexOf(":" + key + ":") < 0
-					&& ignoreString.indexOf(":" + key + ":") < 0
-					&& UtilMethods.isSet(value)) {
-				value = value.replaceAll("\\|", " ").replaceAll("=", " ");
-				if(key.equals("ccNumber"))
-					value = UtilMethods.obfuscateCreditCard(value);
-
-				String capKey = UtilMethods.capitalize(key);
-				int aux = 2;
-				String capKeyAux = capKey;
-				while (cFields.contains(capKeyAux)) {
-					capKeyAux = capKey + aux;
-					++aux;
-				}
-				cFields.add(capKeyAux);
-				String cField = capKeyAux + "=" + value;
-				customFields.append(cField + "|");
-			}
-		}
-
-		customFields.append("Files=" + filesLinks);
-
-		//Setting the custom fields and saving them
-		formBean.setCustomFields(customFields.toString());
-		formBean.setSubmitDate(new Date());
-
-		if(UtilMethods.isSet(formType)){
-			try {
-				HibernateUtil.saveOrUpdate(formBean);
-			} catch (DotHibernateException e) {
-				throw new DotRuntimeException("Webform Save Failed");
-			}
-		}
-		else{
-			Logger.debug(EmailFactory.class, "The web form doesn't have the required formType field, the form data will not be saved in the database.");
-		}
-
-
-		return formBean;
-	}
+	
 
 	
 
