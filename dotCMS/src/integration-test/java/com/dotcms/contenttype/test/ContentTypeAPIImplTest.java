@@ -46,6 +46,91 @@ import static org.junit.Assert.fail;
 public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 
 	@Test
+	public void test_languageFallback_baseTypes_FileAssetContentType_expected_true () {
+
+		final ImmutableFileAssetContentType.Builder builder = ImmutableFileAssetContentType.builder();
+		builder.name("Test");
+		final FileAssetContentType fileAssetContentType = builder.build();
+
+		Assert.assertTrue(fileAssetContentType.languageFallback());
+	}
+
+	@Test
+	public void test_languageFallback_baseTypes_FormContentType_expected_false () {
+
+		final ImmutableFormContentType.Builder builder = ImmutableFormContentType.builder();
+		builder.name("Test");
+		final FormContentType formContentType = builder.build();
+
+		Assert.assertFalse(formContentType.languageFallback());
+	}
+
+	@Test
+	public void test_languageFallback_baseTypes_PageContentType_expected_false () {
+
+		final ImmutablePageContentType.Builder builder = ImmutablePageContentType.builder();
+		builder.name("Test");
+		final PageContentType pageContentType = builder.build();
+
+		Assert.assertFalse(pageContentType.languageFallback());
+	}
+
+	@Test
+	public void test_languageFallback_baseTypes_PersonaContentType_expected_false () {
+
+		final ImmutablePersonaContentType.Builder builder = ImmutablePersonaContentType.builder();
+		builder.name("Test");
+		final PersonaContentType personaContentType = builder.build();
+
+		Assert.assertFalse(personaContentType.languageFallback());
+	}
+
+	@Test
+	public void test_languageFallback_baseTypes_SimpleContentType_expected_false () {
+
+		final ImmutableSimpleContentType.Builder builder = ImmutableSimpleContentType.builder();
+		builder.name("Test");
+		final SimpleContentType simpleContentType = builder.build();
+
+		Assert.assertFalse(simpleContentType.languageFallback());
+	}
+
+	@Test
+	public void test_languageFallback_baseTypes_WidgetContentType_expected_true () {
+
+		final ImmutableWidgetContentType.Builder builder = ImmutableWidgetContentType.builder();
+		builder.name("Test");
+		final WidgetContentType widgetContentType = builder.build();
+
+		Assert.assertTrue(widgetContentType.languageFallback());
+	}
+
+	@Test
+	public void test_languageFallback_baseTypes_VanityUrlContentType_expected_false () {
+
+		final ImmutableVanityUrlContentType.Builder builder = ImmutableVanityUrlContentType.builder();
+		builder.name("Test");
+		final VanityUrlContentType vanityUrlContentType = builder.build();
+
+		Assert.assertFalse(vanityUrlContentType.languageFallback());
+	}
+
+	@Test
+	public void test_languageFallback_baseTypes_KeyValueContentType_expected_false () {
+
+		final ImmutableKeyValueContentType.Builder builder = ImmutableKeyValueContentType.builder();
+		builder.name("Test");
+		final KeyValueContentType keyValueContentType = builder.build();
+
+		Assert.assertFalse(keyValueContentType.languageFallback());
+	}
+
+
+
+
+
+
+	@Test
 	public void testFindMethodEquals() throws Exception {
 
 		List<ContentType> types = contentTypeApi.findAll();

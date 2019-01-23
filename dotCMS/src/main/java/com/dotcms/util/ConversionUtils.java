@@ -119,22 +119,22 @@ public class ConversionUtils implements Serializable {
 	 */
 	public static long toLong (final Object input, final Long defaultLong) {
 
-		long l = defaultLong;
+		long resultLong = defaultLong;
 
 		try {
 			if (UtilMethods.isSet(input)) {
 				if (input instanceof CharSequence) {
-					l = Long.parseLong(input.toString());
+					resultLong = Long.parseLong(input.toString());
 				} else if (input instanceof Number) {
-					l = Number.class.cast(input).longValue();
+					resultLong = Number.class.cast(input).longValue();
 				}
 			}
 		} catch (NumberFormatException e) {
 
-			l = defaultLong;
+			resultLong = defaultLong;
 		}
 
-		return l;
+		return resultLong;
 	}
 
 	/**

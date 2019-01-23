@@ -1,17 +1,5 @@
 package com.dotmarketing.servlets;
 
-import java.io.IOException;
-import java.util.Optional;
-import java.util.StringTokenizer;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import javax.servlet.RequestDispatcher;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.Field;
@@ -28,7 +16,6 @@ import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
@@ -42,6 +29,17 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 
+import javax.servlet.RequestDispatcher;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.Optional;
+import java.util.StringTokenizer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 
 /**
  * Resolves a shorty or long id, image or assets.
@@ -54,7 +52,6 @@ public class ShortyServlet extends HttpServlet {
   private final HostWebAPI     hostWebAPI     = WebAPILocator.getHostWebAPI();
   private final VersionableAPI versionableAPI = APILocator.getVersionableAPI();
   private final ShortyIdAPI    shortyIdAPI    = APILocator.getShortyAPI();
-  private final ContentletAPI  contentletAPI  = APILocator.getContentletAPI();
 
 
   private static final String  JPEG                        = "jpeg";
