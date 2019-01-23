@@ -4,9 +4,15 @@ import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testin
 import { By } from '@angular/platform-browser';
 
 @Component({
-    template: `<div contenteditable="true" dotMaxlength="10">test</div>`
+    template: `<div contenteditable="true" dotMaxlength="10"></div>`
 })
 class TestComponent {}
+
+function dispatchEvent(element: DebugElement, type: string, textValue: string): void {
+    const event = new Event(type);
+    element.nativeElement.dispatchEvent(event);
+    element.nativeElement.textContent = textValue;
+}
 
 describe('DotMaxlengthDirective', () => {
     let fixture: ComponentFixture<TestComponent>;
@@ -19,15 +25,14 @@ describe('DotMaxlengthDirective', () => {
 
         fixture = TestBed.createComponent(TestComponent);
         element = fixture.debugElement.query(By.css('div'));
+        fixture.detectChanges();
     });
-
 
     it(
         'should keep same text after event if max length is not reached',
         fakeAsync(() => {
-            fixture.detectChanges();
-            element.triggerEventHandler('keypress', null);
-            tick(5);
+            dispatchEvent(element, 'keypress', 'test');
+            tick(2);
             expect(element.nativeElement.textContent).toBe('test');
         })
     );
@@ -35,11 +40,8 @@ describe('DotMaxlengthDirective', () => {
     it(
         'should remove extra characters when length is more than max length on keypress',
         fakeAsync(() => {
-            const event = new Event('keypress');
-            fixture.detectChanges();
-            element.nativeElement.dispatchEvent(event);
-            element.nativeElement.textContent = '1234567890remove';
-            tick(5);
+            dispatchEvent(element, 'keypress', '1234567890remove');
+            tick(2);
             expect(element.nativeElement.textContent).toBe('1234567890');
         })
     );
@@ -47,11 +49,8 @@ describe('DotMaxlengthDirective', () => {
     it(
         'should remove extra characters when length is more than max length on paste',
         fakeAsync(() => {
-            const event = new Event('paste');
-            fixture.detectChanges();
-            element.nativeElement.dispatchEvent(event);
-            element.nativeElement.textContent = '1234567890remove';
-            tick(5);
+            dispatchEvent(element, 'paste', '1234567890remove');
+            tick(2);
             expect(element.nativeElement.textContent).toBe('1234567890');
         })
     );
@@ -62,9 +61,8 @@ describe('DotMaxlengthDirective', () => {
             const event = new Event('keypress');
             spyOn(event, 'preventDefault');
             element.nativeElement.textContent = '12345678901';
-            fixture.detectChanges();
             element.nativeElement.dispatchEvent(event);
-            tick(5);
+            tick(2);
             expect(event.preventDefault).toHaveBeenCalled();
         })
     );

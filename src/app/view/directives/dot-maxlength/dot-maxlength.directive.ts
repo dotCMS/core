@@ -13,6 +13,7 @@ export class DotMaxlengthDirective implements OnInit, OnDestroy {
     private _maxLength: number;
     private events = ['paste', 'keypress'];
     private destroy$: Subject<boolean> = new Subject<boolean>();
+    private allowedEvents = ['Backspace', 'ArrowLeft', 'ArrowUp', 'ArrowRight', 'ArrowDown'];
 
     constructor(private el: ElementRef) {}
 
@@ -28,10 +29,11 @@ export class DotMaxlengthDirective implements OnInit, OnDestroy {
                     }
                 }),
                 delay(1),
-                filter(() => this.el.nativeElement.textContent.length > this._maxLength),
-                tap(() => this.reduceText())
+                filter(() => this.el.nativeElement.textContent.length > this._maxLength)
             )
-            .subscribe();
+            .subscribe(() => {
+                this.reduceText();
+            });
     }
 
     ngOnDestroy(): void {
@@ -59,15 +61,6 @@ export class DotMaxlengthDirective implements OnInit, OnDestroy {
     }
 
     private isAllowedKeyCode(event: KeyboardEvent) {
-        console.log(event);
-        return (
-            event.key === 'Backspace' ||
-            event.key === 'ArrowLeft' ||
-            event.key === 'ArrowUp' ||
-            event.key === 'ArrowRight' ||
-            event.key === 'ArrowDown' ||
-            event.ctrlKey ||
-            event.metaKey
-        );
+        return this.allowedEvents.includes(event.key) || event.ctrlKey || event.metaKey;
     }
 }
