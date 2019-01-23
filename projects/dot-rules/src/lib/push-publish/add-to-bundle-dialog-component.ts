@@ -28,7 +28,7 @@ import { IBundle } from '../services/bundle-service';
       </cw-input-dropdown>
       <p-footer>
           <button type="button" pButton secondary (click)="cancel.emit()" label="Cancel" class="ui-button-secondary" ></button>
-          <button type="button" pButton (click)="addToBundle.emit(selectedBundle)" label="Add" focus [disabled]="!selectedBundle"></button>
+          <button type="button" pButton (click)="addToBundle.emit(selectedBundle)" label="Add" [disabled]="!selectedBundle"></button>
       </p-footer>
     </p-dialog>`
 })
@@ -44,7 +44,6 @@ export class AddToBundleDialogComponent implements OnChanges {
     public selectedBundle: IBundle = null;
 
     ngOnChanges(change): void {
-        debugger;
         if (change.bundleStores && change.bundleStores.currentValue) {
             this.selectedBundle = change.bundleStores.currentValue[0];
         }
