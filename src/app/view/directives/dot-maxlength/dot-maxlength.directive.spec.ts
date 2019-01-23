@@ -38,7 +38,7 @@ describe('DotMaxlengthDirective', () => {
             const event = new Event('keypress');
             fixture.detectChanges();
             element.nativeElement.dispatchEvent(event);
-            element.nativeElement.textContent = '12345678901';
+            element.nativeElement.textContent = '1234567890remove';
             tick(5);
             expect(element.nativeElement.textContent).toBe('1234567890');
         })
