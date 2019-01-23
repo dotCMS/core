@@ -77,20 +77,20 @@
         function updateUnCheckedList(inode,checkId){
 
 	        if(document.getElementById("fullCommand").value == "true"){
-	
+
 	            if(!document.getElementById(checkId).checked){
-	
+
 	                    unCheckedInodes = document.getElementById('allUncheckedContentsInodes').value;
-	
+
 	                    if(unCheckedInodes == "")
 	                            unCheckedInodes = inode;
 	                    else
 	                            unCheckedInodes = unCheckedInodes + ","+ inode;
-	
+
 	            }else{
 	                    unCheckedInodes = unCheckedInodes.replace(inode,"-");
 	            }
-	
+
 	            document.getElementById('allUncheckedContentsInodes').value = unCheckedInodes;
 	        }
         }
@@ -678,13 +678,14 @@
           }else if(type=="relationship"){
 	          var relationSearchField= selectedStruct+"."+ fieldContentlet;
 	          var relationType = field["fieldRelationType"];
-              
+
 	          var boxTmpl= `
             	   <div id='${relationSearchField}Div'></div>
             	   <input type="hidden" id='${relationSearchField}Field' />
             	   <span class='hint-text'><%= LanguageUtil.get(pageContext, "Type-id-or-title-related-content") %></span>
             	   <script>
             	      dijit.registry.remove("${relationSearchField}Id");
+            	      dijit.registry.remove("${relationSearchField}Id_popup");
 		              var relationshipSearch = new dijit.form.FilteringSelect({
 		                  id: "${relationSearchField}Id",
 		                  name: "${relationSearchField}Name",
@@ -717,9 +718,9 @@
                       });
                 </script>
               `;
-              
 
-              
+
+
               return boxTmpl;
           }else{
                 dijit.registry.remove(selectedStruct+"."+ fieldContentlet + "Field");
@@ -998,11 +999,11 @@
             newForm.style = "display: none";
         	newForm.method="POST";
         	newForm.target="AjaxActionJackson";
-         	var oldFormElements = document.getElementById("search_form").elements; 
+         	var oldFormElements = document.getElementById("search_form").elements;
 			for (i=0; i < oldFormElements.length; i++){
 			    newForm.appendChild(oldFormElements[i].cloneNode(true));
 		  	}
-		  	
+
 		  	//var newForm = document.getElementById("search_form").cloneNode(true);
         	newForm.name="form" + formNum;
         	newForm.id="form" + formNum;
@@ -1063,7 +1064,7 @@
 		            async = true;
 		    else
 		            async = false;
-		
+
 		    var form = document.getElementById("search_form");
 		    var structureInode = dijit.byId('structure_inode').value;
 		    document.getElementById("structureInode").value = structureInode;
@@ -1075,7 +1076,7 @@
 		            { callback:fillFields, async: async });
 		    StructureAjax.getStructureCategories (structureInode,
 		            { callback:fillCategories, async: async });
-		
+
 		    dwr.util.removeAllRows("results_table");
 		    hideMatchingResults ();
 		    document.getElementById("nextDiv").style.display = "none";
@@ -1084,9 +1085,9 @@
 			counter_checkbox = 0;
 		    var div = document.getElementById("matchingResultsBottomDiv")
 		    div.innerHTML = "";
-		
-		
-		
+
+
+
 		    initAdvancedSearch();
         }
 
@@ -1275,15 +1276,15 @@
               obj = dojo.byId("step_id");
            return obj.value;
         }
-        
-        
-        const debounce = (callback, time = 250, interval) => 
+
+
+        const debounce = (callback, time = 250, interval) =>
         (...args) => {
           clearTimeout(interval, interval = setTimeout(() => callback(...args), time));
-         
+
         }
         const debouncedSearch = debounce(doSearch1, 250);
-        
+
         var currentPage;
         function doSearch (page, sortBy) {
             if (page) {
@@ -1954,7 +1955,7 @@
                                               formField.value = "";
 
                                               var temp = dijit.byId(formField.id);
-    
+
                                               if(temp){
                                                 try{
                                                     temp.attr('value','');
@@ -2278,7 +2279,7 @@
         var cbArray = document.getElementsByName("publishInode");
         var showArchive =  (dijit.byId("showingSelect").getValue() == "archived");
         if(typeof event !== 'undefined' && event.shiftKey && event.target.checked){
-        
+
             var hasChecked=false;
             for(i = 0;i< cbArray.length ;i++){
                 if (cbArray[i].checked) {
@@ -2289,10 +2290,10 @@
                 if(cbArray[i].id==event.target.id){
                     break;
                 }
-                
+
             }
         }
-        
+
 
         for(i = 0;i< cbArray.length ;i++){
             if (cbArray[i].checked) {
@@ -2469,13 +2470,13 @@
 	function _unpublishAsset (inode) {
 		BrowserAjax.unPublishAsset(inode, function (data) { _unpublishAssetCallback(data) } );
 	}
-	
+
 	function _unpublishAssetCallback (response) {
-	
+
 		if (!response) {
 			showDotCMSErrorMessage('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Unpublish-failed-check-you-have-the-required-permissions")) %>');
 		} else {
-		
+
 			refreshFakeJax();
 		}
 	}
@@ -2484,9 +2485,9 @@
 	function _publishAsset (inode) {
 		BrowserAjax.publishAsset(inode, function (data) { _publishAssetCallback(data) } );
 	}
-	
+
 	function _publishAssetCallback (response) {
-	
+
 		if (!response) {
 			showDotCMSErrorMessage('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "publish-failed-check-you-have-the-required-permissions")) %>');
 		} else {
@@ -2494,11 +2495,11 @@
 
 		}
 	}
-	
+
 	function _archiveAsset (inode) {
 		BrowserAjax.archiveAsset(inode, function (data) { _archiveAssetCallback(data) } );
 	}
-	
+
 	function _archiveAssetCallback (response) {
 		if (!response) {
 			showDotCMSErrorMessage('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Failed-to-archive-check-you-have-the-required-permissions")) %>');
@@ -2506,7 +2507,7 @@
 			refreshFakeJax();
 		}
 	}
-	
+
 	function _unArchiveAsset (objId, referer) {
 		BrowserAjax.unArchiveAsset(objId, _unarchiveAssetCallback);
 	}
@@ -2516,10 +2517,10 @@
 			showDotCMSErrorMessage('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Failed-to-un-archive-check-you-have-the-required-permissions")) %>');
 		} else {
 			refreshFakeJax();
-	
+
 		}
 	}
-	
+
 	function _copyContentlet (inode) {
 
 		var loc = '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" /><portlet:param name="cmd" value="copy" /></portlet:actionURL>&inode=' + inode ;
@@ -2532,14 +2533,14 @@
 			showDotCMSErrorMessage('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Failed-to-un-archive-check-you-have-the-required-permissions")) %>');
 		} else {
 			refreshFakeJax();
-	
+
 		}
 	}
-	
+
 	function _unlockAsset (inode) {
 		BrowserAjax.unlockAsset(inode, function (data) { _unlockAssetCallback(data) } );
 	}
-	
+
 	function _unlockAssetCallback (response) {
 		if (!response) {
 			showDotCMSErrorMessage('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Failed-to-unlock-check-you-have-the-required-permissions")) %>');
@@ -2547,12 +2548,12 @@
 			refreshFakeJax();
 		}
 	}
-	
+
 
 	function refreshFakeJax(){
-	
+
 		doSearch();
-		
+
 		setTimeout(function(){ doSearch() }, 1000);
 
 	}
