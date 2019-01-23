@@ -117,28 +117,34 @@ public class ContentResourceTest extends IntegrationTestBase {
     }
 
     public static class TestCase {
-
-        Integer depth;
+        String depth;
         String responseType;
+        int statusCode;
 
-        public TestCase(final Integer depth, final String responseType) {
-            this.depth = depth;
+        public TestCase(final String depth, final String responseType, final int statusCode) {
+            this.depth        = depth;
             this.responseType = responseType;
+            this.statusCode   = statusCode;
         }
     }
 
     @DataProvider
     public static Object[] testCases(){
         return new TestCase[]{
-                new TestCase(null, JSON_RESPONSE),
-                new TestCase(0, JSON_RESPONSE),
-                new TestCase(1, JSON_RESPONSE),
-                new TestCase(2, JSON_RESPONSE),
-                new TestCase(null, XML_RESPONSE),
-                new TestCase(0, XML_RESPONSE),
-                new TestCase(1, XML_RESPONSE),
-                new TestCase(2, XML_RESPONSE),
-                new TestCase(null, null)
+                new TestCase(null, JSON_RESPONSE, Status.OK.getStatusCode()),
+                new TestCase("0", JSON_RESPONSE, Status.OK.getStatusCode()),
+                new TestCase("1", JSON_RESPONSE, Status.OK.getStatusCode()),
+                new TestCase("2", JSON_RESPONSE, Status.OK.getStatusCode()),
+                new TestCase(null, XML_RESPONSE, Status.OK.getStatusCode()),
+                new TestCase("0", XML_RESPONSE, Status.OK.getStatusCode()),
+                new TestCase("1", XML_RESPONSE, Status.OK.getStatusCode()),
+                new TestCase("2", XML_RESPONSE, Status.OK.getStatusCode()),
+                new TestCase(null, null, Status.OK.getStatusCode()),
+                //Bad depth cases
+                new TestCase("5", JSON_RESPONSE, Status.BAD_REQUEST.getStatusCode()),
+                new TestCase("5", XML_RESPONSE, Status.BAD_REQUEST.getStatusCode()),
+                new TestCase("no_depth", JSON_RESPONSE, Status.BAD_REQUEST.getStatusCode()),
+                new TestCase("no_depth", XML_RESPONSE, Status.BAD_REQUEST.getStatusCode()),
         };
     }
 
@@ -275,44 +281,23 @@ public class ContentResourceTest extends IntegrationTestBase {
                     "/id/" + parent.getIdentifier() + "/live/false/type/" + testCase.responseType
                             + "/depth/"
                             + testCase.depth);
-            assertEquals(Status.OK.getStatusCode(), endpointResponse.getStatus());
 
-            //validates results
-            if (testCase.responseType == null || testCase.responseType.equals(JSON_RESPONSE)) {
-                validateJSON(contentlets, testCase, endpointResponse);
-            }else{
-                validateXML(contentlets, testCase, endpointResponse);
+            assertEquals(testCase.statusCode, endpointResponse.getStatus());
+
+            if (testCase.statusCode != Status.BAD_REQUEST.getStatusCode()){
+                //validates results
+                if (testCase.responseType == null || testCase.responseType.equals(JSON_RESPONSE)) {
+                    validateJSON(contentlets, testCase, endpointResponse);
+                }else{
+                    validateXML(contentlets, testCase, endpointResponse);
+                }
             }
+
         }finally{
             deleteContentTypes(CollectionsUtils
                     .list(parentContentType, childContentType, grandChildContentType));
         }
 
-    }
-
-    @Test
-    public void test_getContentWithInvalidDepth_shouldReturnBadRequest() throws Exception {
-
-        final long language = languageAPI.getDefaultLanguage().getId();
-        ContentType parentContentType = null;
-
-        try {
-            //creates content types
-            parentContentType = createSampleContentType(false);
-
-            final ContentletDataGen parentDataGen = new ContentletDataGen(parentContentType.id());
-            final Contentlet parent = parentDataGen.languageId(language).nextPersisted();
-
-            //calls endpoint
-            final ContentResource contentResource = new ContentResource();
-            final HttpServletRequest request = createHttpRequest();
-            final HttpServletResponse response = mock(HttpServletResponse.class);
-            final Response endpointResponse = contentResource.getContent(request, response,
-                    "/id/" + parent.getIdentifier() + "/live/false/type/json/depth/bad_depth");
-            assertEquals(Status.BAD_REQUEST.getStatusCode(), endpointResponse.getStatus());
-        }finally {
-            deleteContentTypes(CollectionsUtils.list(parentContentType));
-        }
     }
 
     private void deleteContentTypes(final List<ContentType> contentTypes) throws DotSecurityException, DotDataException {
@@ -349,7 +334,7 @@ public class ContentResourceTest extends IntegrationTestBase {
             assertEquals(child.getIdentifier(),
                     contentlet.get(parent.getContentType().fields().get(0).variable()));
         } else {
-            switch (testCase.depth) {
+            switch (Integer.parseInt(testCase.depth)) {
                 case 0:
                     assertEquals(child.getIdentifier(),
                             contentlet.get(parent.getContentType().fields().get(0).variable()));
@@ -421,7 +406,7 @@ public class ContentResourceTest extends IntegrationTestBase {
             return;
         }
 
-        switch (testCase.depth){
+        switch (Integer.parseInt(testCase.depth)){
                 case 0:
                     assertEquals(child.getIdentifier(), ((DeferredElementImpl) contentlet)
                             .getElementsByTagName(parent.getContentType().fields().get(0).variable())

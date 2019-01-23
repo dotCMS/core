@@ -449,7 +449,7 @@ public class ContentResource {
         final String depthParam = paramsMap.get(RESTParams.DEPTH.getValue());
         final int depth = depthParam != null ? toInt(depthParam, () -> -1) : 0;
 
-        if (depth == -1){
+        if (depth < 0 || depth > 2){
             final String errorMsg =
                     "Error searching content " + id + ". Reason: Invalid depth: " + depthParam;
             Logger.error(this, errorMsg);
