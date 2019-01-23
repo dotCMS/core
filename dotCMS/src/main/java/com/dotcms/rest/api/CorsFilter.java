@@ -21,80 +21,67 @@ import com.dotmarketing.util.Config;
 public class CorsFilter implements ContainerResponseFilter {
 
 
-    
-    final private static String CORS_PREFIX="api.cors"; 
-    
-    final private static String CORS_DEFAULT="default"; 
+    final private static String CORS_PREFIX = "api.cors";
+    final private static String CORS_DEFAULT = "default";
     final private static Map<String, List<String[]>> headerMap = new ConcurrentHashMap();
-    
-    
 
-    
-    
+
     @Override
     public void filter(ContainerRequestContext requestContext, ContainerResponseContext responseContext) throws IOException {
-        MultivaluedMap<String, Object> headers = responseContext.getHeaders();
-
-        String resource = requestContext.getUriInfo().getMatchedResources().get(0).getClass().getSimpleName().toLowerCase();
-        List<String[]> corsHeaders = getHeaders(resource);
-        for(String[] corsHeader: corsHeaders) {
-            if(!headers.containsKey(corsHeader[0])) {
+        final MultivaluedMap<String, Object> headers = responseContext.getHeaders();
+        final String resource = requestContext.getUriInfo().getMatchedResources().get(0).getClass().getSimpleName().toLowerCase();
+        final List<String[]> corsHeaders = getHeaders(resource);
+        for (final String[] corsHeader : corsHeaders) {
+            if (!headers.containsKey(corsHeader[0])) {
                 headers.add(corsHeader[0], corsHeader[1]);
             }
         }
-
     }
-    
-    
+
+
     private List<String[]> getHeaders(final String mapping) {
         List<String[]> corsHeaders = headerMap.get(mapping);
-        if(null==corsHeaders) {
+        if (null == corsHeaders) {
             synchronized (this.getClass()) {
                 corsHeaders = headerMap.get(mapping);
-                if(null==corsHeaders) {
+                if (null == corsHeaders) {
                     corsHeaders = new ArrayList<>();
-                    Iterator<String> keys = Config.subset(CORS_PREFIX + "." + mapping);
-                    while(keys.hasNext()){
+                    final Iterator<String> keys = Config.subset(CORS_PREFIX + "." + mapping);
+                    while (keys.hasNext()) {
                         final String key = keys.next();
-                        String value = Config.getStringProperty(CORS_PREFIX + "." + mapping + "." + key, "");
-                        final String headerName = fixCase(key.replace(CORS_PREFIX, ""));
-                        corsHeaders.add(new String[]{headerName, value});
+                        final String value = Config.getStringProperty(CORS_PREFIX + "." + mapping + "." + key, "");
+                        final String headerName = fixHeaderCase(key.replace(CORS_PREFIX, ""));
+                        corsHeaders.add(new String[] {headerName, value});
                     }
                     headerMap.put(mapping, corsHeaders);
                 }
             }
         }
-        if(corsHeaders.isEmpty() && !CORS_DEFAULT.equals(mapping)) {
+        if (corsHeaders.isEmpty() && !CORS_DEFAULT.equals(mapping)) {
             return getHeaders(CORS_DEFAULT);
         }
         return corsHeaders;
-            
-    }
-        
 
-    
-    
-    
-    
-    private final String fixCase(final String propertyName) {
-        
+    }
+
+
+    private final String fixHeaderCase(final String propertyName) {
+
         StringWriter sw = new StringWriter();
         boolean upperCaseNextChar = true;
-        for(char c : propertyName.toCharArray()) {
-            if(c=='-') {
+        for (char c : propertyName.toCharArray()) {
+            if (c == '-') {
                 sw.append(c);
-                upperCaseNextChar=true;
-            }else {
-                sw.append(upperCaseNextChar ? Character.toUpperCase(c) :  Character.toLowerCase(c));
-                upperCaseNextChar=false;
+                upperCaseNextChar = true;
+            } else {
+                sw.append(upperCaseNextChar ? Character.toUpperCase(c) : Character.toLowerCase(c));
+                upperCaseNextChar = false;
             }
         }
         return sw.toString();
 
     }
-    
-    
-    
-    
+
+
 }
- 
+
