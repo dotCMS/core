@@ -976,69 +976,14 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 				}
 			}
 
-			if (validReferences.size() > 0) {
-				ContentChangeNotificationThread notificationThread =
-					this.new ContentChangeNotificationThread(contentlet, validReferences, contentURL, hostAPI.getCurrentHost(req).getHostname());
-				notificationThread.start();
-			}
+
 
 		}catch(Exception ex){
 			throw ex;
 		}
 	}
 
-	//	Contentlet change notifications thread
-	private class ContentChangeNotificationThread extends Thread {
 
-		private String serverName;
-		private String contentletEditURL;
-		private Contentlet contentlet;
-		private List<Map<String, Object>> references;
-
-		public ContentChangeNotificationThread (Contentlet cont, List<Map<String, Object>> references, String contentletEditURL, String serverName) {
-			super ("ContentChangeNotificationThread");
-				this.contentletEditURL = contentletEditURL;
-				this.references = references;
-				this.serverName = serverName;
-				contentlet = cont;
-			}
-
-			@Override
-		public void run() {
-			try {
-				User systemUser = APILocator.getUserAPI().getSystemUser();
-				String editorName = UtilMethods.getUserFullName(contentlet.getModUser());
-
-				for (Map<String, Object> reference : references) {
-					IHTMLPage page = (IHTMLPage)reference.get("page");
-					Host host = APILocator.getHTMLPageAssetAPI().getParentHost(page);
-					Company company = PublicCompanyFactory.getDefaultCompany();
-					User pageUser = (User)reference.get("owner");
-
-					HashMap<String, Object> parameters = new HashMap<String, Object>();
-					parameters.put("from", company.getEmailAddress());
-					parameters.put("to", pageUser.getEmailAddress());
-					parameters.put("subject", "dotCMS Notification");
-					parameters.put("emailTemplate", Config.getStringProperty("CONTENT_CHANGE_NOTIFICATION_EMAIL_TEMPLATE"));
-					parameters.put("contentletEditedURL", "http://" + serverName + contentletEditURL);
-					parameters.put("contentletTitle", "Content");
-					parameters.put("pageURL", "http://" + serverName + UtilMethods.encodeURIComponent(page.getURI()));
-					parameters.put("pageTitle", page.getTitle());
-					parameters.put("editorName", editorName);
-
-					EmailFactory.sendParameterizedEmail(parameters, null, host, null);
-					}
-				} catch (Exception e) {
-					Logger.error(this, "Error ocurring trying to send the content change notifications.", e);
-				} finally {
-					try {
-						HibernateUtil.closeSession();
-					} catch (DotHibernateException e) {
-						Logger.error(this,e.getMessage());
-					}
-				}
-			}
-	}
 
 	/**
 	 * Returns the relationships associated to the current contentlet
