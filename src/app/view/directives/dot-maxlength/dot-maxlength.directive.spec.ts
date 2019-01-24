@@ -4,14 +4,19 @@ import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testin
 import { By } from '@angular/platform-browser';
 
 @Component({
-    template: `<div contenteditable="true" dotMaxlength="10">12345678901</div>`
+    template: `<div contenteditable="true" dotMaxlength="10"></div>`
 })
 class TestComponent {}
+
+function dispatchEvent(element: DebugElement, type: string, textValue: string): void {
+    const event = new Event(type);
+    element.nativeElement.dispatchEvent(event);
+    element.nativeElement.textContent = textValue;
+}
 
 describe('DotMaxlengthDirective', () => {
     let fixture: ComponentFixture<TestComponent>;
     let element: DebugElement;
-    let directiveInstance: DotMaxlengthDirective;
 
     beforeEach(() => {
         TestBed.configureTestingModule({
@@ -20,28 +25,45 @@ describe('DotMaxlengthDirective', () => {
 
         fixture = TestBed.createComponent(TestComponent);
         element = fixture.debugElement.query(By.css('div'));
-        directiveInstance = element.injector.get(DotMaxlengthDirective);
-    });
-
-    it('should trigger event handler on paste', () => {
-        spyOn(directiveInstance, 'eventHandler');
-        element.triggerEventHandler('paste', 'Longer text example');
-        expect(directiveInstance.eventHandler).toHaveBeenCalled();
-    });
-
-    it('should trigger event handler on keypress', () => {
-        spyOn(directiveInstance, 'eventHandler');
-        element.triggerEventHandler('keypress', 'Longer text example');
-        expect(directiveInstance.eventHandler).toHaveBeenCalled();
+        fixture.detectChanges();
     });
 
     it(
-        'should remove extra characters',
+        'should keep same text after event if max length is not reached',
         fakeAsync(() => {
-            fixture.detectChanges();
-            directiveInstance.eventHandler();
-            tick(5);
+            dispatchEvent(element, 'keypress', 'test');
+            tick(2);
+            expect(element.nativeElement.textContent).toBe('test');
+        })
+    );
+
+    it(
+        'should remove extra characters when length is more than max length on keypress',
+        fakeAsync(() => {
+            dispatchEvent(element, 'keypress', '1234567890remove');
+            tick(2);
             expect(element.nativeElement.textContent).toBe('1234567890');
+        })
+    );
+
+    it(
+        'should remove extra characters when length is more than max length on paste',
+        fakeAsync(() => {
+            dispatchEvent(element, 'paste', '1234567890remove');
+            tick(2);
+            expect(element.nativeElement.textContent).toBe('1234567890');
+        })
+    );
+
+    it(
+        'should prevent default when max length is reached',
+        fakeAsync(() => {
+            const event = new Event('keypress');
+            spyOn(event, 'preventDefault');
+            element.nativeElement.textContent = '12345678901';
+            element.nativeElement.dispatchEvent(event);
+            tick(2);
+            expect(event.preventDefault).toHaveBeenCalled();
         })
     );
 });
