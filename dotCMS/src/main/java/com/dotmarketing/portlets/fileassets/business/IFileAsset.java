@@ -24,6 +24,8 @@ public interface IFileAsset extends Permissionable {
 
 	public void setInode(String inode);
 
+	public String getIdentifier();
+
 	public boolean isLive() throws DotStateException, DotDataException, DotSecurityException;
 
 	public boolean isLocked() throws DotStateException, DotDataException, DotSecurityException;
