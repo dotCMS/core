@@ -1,6 +1,14 @@
 package com.dotmarketing.business;
 
 
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import com.dotmarketing.cms.factories.PublicAddressFactory;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.common.db.DotConnect;
@@ -25,13 +33,6 @@ import com.liferay.portal.ejb.UserLocalManagerUtil;
 import com.liferay.portal.model.Address;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 /**
  * @author Jason Tesser
@@ -72,7 +73,7 @@ public class UserFactoryLiferayImpl extends UserFactory {
 		User defaultUser = APILocator.getUserAPI().getDefaultUser();
 	
 		if(!UtilMethods.isSet(userId)){
-	        userId = UUIDUtil.uuid();
+	        userId = "user-" + UUIDUtil.uuid();
 		}
 
 
