@@ -721,4 +721,6 @@ public final class WebKeys {
 
     public static final String PAGE_MODE_PARAMETER= "mode";
 
+    public static final String LANGUAGE_ID_PARAMETER= "language_id";
+
 }
