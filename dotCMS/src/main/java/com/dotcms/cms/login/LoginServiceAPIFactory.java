@@ -305,8 +305,6 @@ public class LoginServiceAPIFactory implements Serializable {
 
             ses.setAttribute(WebKeys.USER_ID, userId);
 
-            //DOTCMS-6392
-            PreviewFactory.setVelocityURLS(req);
 
             //set the host to the domain of the URL if possible if not use the default host
             //http://jira.dotmarketing.net/browse/DOTCMS-4475
