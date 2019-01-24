@@ -287,19 +287,19 @@ public class RelationshipAPIImpl implements RelationshipAPI {
     
     
     protected String suggestNewFieldName(ContentType con, Relationship relationship) {
-        String name = UtilMethods.capitalize(con.variable());
+        final String name = UtilMethods.capitalize(con.variable());
         
         if(name.toLowerCase().endsWith("s")) {
             return name;
         }
         
-        boolean child = relationship.getChildStructureInode().equals(con.id());
+        final boolean isChild = relationship.getChildStructureInode().equals(con.id());
         
-        String s = (child)
+        final String s = (isChild)
                     ? (relationship.getCardinality()  == WebKeys.Relationship.RELATIONSHIP_CARDINALITY.ONE_TO_ONE.ordinal() )
                             ?  "" : "s"
                                 :  (relationship.getCardinality()  == WebKeys.Relationship.RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal() )
-                                        ? "s" :"";
+                                        ? "s" : "";
        return name + s;
     }
     
