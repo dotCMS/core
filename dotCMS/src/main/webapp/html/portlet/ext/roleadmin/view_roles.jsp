@@ -41,7 +41,7 @@
 		</dl>
 
 		<div class="buttonRow-right">
-		    <button dojoType="dijit.form.Button" type="button" iconClass="cancelIcon" onClick="cancelAddNewRole()">
+		    <button dojoType="dijit.form.Button" type="button" iconClass="cancelIcon" class="dijitButtonFlat" onClick="cancelAddNewRole()">
 		        <%= LanguageUtil.get(pageContext, "Cancel") %>
 		    </button>
 		    <button dojoType="dijit.form.Button" type="button" iconClass="saveIcon" onClick="saveRole()">
