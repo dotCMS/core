@@ -76,8 +76,7 @@ public class MonitorResource {
             // Access is forbidden because IP is not in any range in ACL list
             builder = Response.status(FORBIDDEN).entity(StringPool.BLANK).type(MediaType.APPLICATION_JSON);
         }
-        builder.header("Access-Control-Expose-Headers", "Authorization");
-        builder.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
+
         return builder.build();
     }
 }
