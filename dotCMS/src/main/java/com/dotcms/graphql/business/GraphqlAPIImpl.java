@@ -30,8 +30,6 @@ import com.dotcms.graphql.datafetcher.MultiValueFieldDataFetcher;
 import com.dotcms.graphql.datafetcher.RelationshipFieldDataFetcher;
 import com.dotcms.graphql.datafetcher.SiteOrFolderFieldDataFetcher;
 import com.dotcms.graphql.datafetcher.TagsFieldDataFetcher;
-import com.dotcms.graphql.event.GraphqlTypeCreatedEvent;
-import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.util.LogTime;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
