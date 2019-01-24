@@ -31,7 +31,6 @@ import com.dotcms.graphql.datafetcher.RelationshipFieldDataFetcher;
 import com.dotcms.graphql.datafetcher.SiteOrFolderFieldDataFetcher;
 import com.dotcms.graphql.datafetcher.TagsFieldDataFetcher;
 import com.dotcms.graphql.event.GraphqlTypeCreatedEvent;
-import com.dotcms.graphql.listener.RelationshipFieldTypeCreatedListener;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.util.LogTime;
 import com.dotmarketing.business.APILocator;
@@ -42,7 +41,6 @@ import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 
@@ -58,11 +56,11 @@ import java.util.Set;
 import graphql.scalars.ExtendedScalars;
 import graphql.schema.DataFetcher;
 import graphql.schema.GraphQLArgument;
-import graphql.schema.GraphQLDirective;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLType;
+import graphql.schema.GraphQLTypeReference;
 import graphql.schema.idl.SchemaPrinter;
 
 import static graphql.Scalars.GraphQLString;
@@ -76,8 +74,6 @@ public class GraphqlAPIImpl implements GraphqlAPI {
     private Map<Class<? extends Field>, GraphQLOutputType> fieldClassGraphqlTypeMap = new HashMap<>();
 
     private Map<Class<? extends Field>, DataFetcher> fieldClassGraphqlDataFetcher = new HashMap<>();
-
-    private final LocalSystemEventsAPI localSystemEventsAPI = APILocator.getLocalSystemEventsAPI();
 
     private volatile GraphQLSchema schema;
 
@@ -166,7 +162,7 @@ public class GraphqlAPIImpl implements GraphqlAPI {
         fields.forEach((field)->{
             if(!(field instanceof RowField) && !(field instanceof ColumnField)) {
                 if (field instanceof RelationshipField) {
-                    handleRelationshipField(contentType, graphqlObjectTypes, builder, field);
+                    handleRelationshipField(contentType, builder, field);
                 } else {
                     builder.field(newFieldDefinition()
                         .name(field.variable())
@@ -184,13 +180,10 @@ public class GraphqlAPIImpl implements GraphqlAPI {
 
         graphqlObjectTypes.put(graphQLType.getName(), graphQLType);
 
-        localSystemEventsAPI.notify(new GraphqlTypeCreatedEvent(graphQLType));
-
         return graphQLType;
     }
 
-    private void handleRelationshipField(ContentType contentType, Map<String, GraphQLObjectType> graphqlObjectTypes,
-                                         GraphQLObjectType.Builder builder, Field field) {
+    private void handleRelationshipField(ContentType contentType, GraphQLObjectType.Builder builder, Field field) {
         // TODO: make return type an object or list based on cardinality using RelAPI method from Nolly
 
         final ContentType relatedContentType;
@@ -209,28 +202,17 @@ public class GraphqlAPIImpl implements GraphqlAPI {
             throw new DotRuntimeException(e);
         }
 
-        // If the type exists already let's use it
-        if(UtilMethods.isSet(graphqlObjectTypes.get(relatedContentType.variable()))) {
+        final GraphQLTypeReference typeReference = GraphQLTypeReference.typeRef(relatedContentType.variable());
 
-            final GraphQLOutputType outputType = relationship.getCardinality() == WebKeys.Relationship.RELATIONSHIP_CARDINALITY.ONE_TO_ONE.ordinal()
-                ? graphqlObjectTypes.get(relatedContentType.variable())
-                : list(graphqlObjectTypes.get(relatedContentType.variable()));
+        final GraphQLOutputType outputType = relationship.getCardinality() == WebKeys.Relationship.RELATIONSHIP_CARDINALITY.ONE_TO_ONE.ordinal()
+            ? typeReference
+            : list(typeReference);
 
-            builder.field(newFieldDefinition()
-                .name(field.variable())
-                .type(field.required()?nonNull(outputType):outputType)
-                .dataFetcher(new RelationshipFieldDataFetcher())
-            );
-        } else { // if type is not created yet, let's listen for when the needed type gets created, so we can add the relationship field to this graphql type
-
-
-            RelationshipFieldTypeCreatedListener relationshipFieldTypeCreatedListener =
-                new RelationshipFieldTypeCreatedListener(contentType.variable(), field.variable(),
-                    relatedContentType.variable(), graphqlObjectTypes, relationship.getCardinality());
-
-            localSystemEventsAPI.subscribe(GraphqlTypeCreatedEvent.class, relationshipFieldTypeCreatedListener);
-
-        }
+        builder.field(newFieldDefinition()
+            .name(field.variable())
+            .type(field.required()?nonNull(outputType):outputType)
+            .dataFetcher(new RelationshipFieldDataFetcher())
+        );
     }
 
     private GraphQLOutputType getGraphqlTypeForFieldClass(final Class<Field> fieldClass) {
