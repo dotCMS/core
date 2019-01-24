@@ -311,6 +311,8 @@ public class ContentletAPITest extends ContentletBaseTest {
     /**
      * Testing {@link ContentletAPI#findContentletByIdentifierOrFallback(String, boolean, long, User, boolean)}
      *
+     * English version, no Spanish, fallback true, request Spanish -> Return english
+     *
      * @throws com.dotmarketing.exception.DotDataException
      *
      * @throws com.dotmarketing.exception.DotSecurityException
@@ -319,7 +321,7 @@ public class ContentletAPITest extends ContentletBaseTest {
      * @see Contentlet
      */
     @Test()
-    public void test_findContentletByIdentifierOrFallback_existing_DotContentletStateException_expected_false () throws DotDataException, DotSecurityException {
+    public void test_findContentletByIdentifierOrFallback_existing_English_version_no_Spanish_fallback_false_expecting_false () throws DotDataException, DotSecurityException {
 
 
         //Getting our test contentlet
@@ -333,6 +335,393 @@ public class ContentletAPITest extends ContentletBaseTest {
 
         assertFalse(optionalContentlet.isPresent());
     }
+
+    /**
+     * Testing {@link ContentletAPI#findContentletByIdentifierOrFallback(String, boolean, long, User, boolean)}
+     *
+     * English version, with Spanish, fallback true, request Spanish -> Return Spanish
+     *
+     * @throws com.dotmarketing.exception.DotDataException
+     *
+     * @throws com.dotmarketing.exception.DotSecurityException
+     *
+     * @see ContentletAPI
+     * @see Contentlet
+     */
+    @Test()
+    public void test_findContentletByIdentifierOrFallback_existing_EnglishSpanish_fallback_true_expecting_Spanish_true () throws DotDataException, DotSecurityException {
+
+
+        //Getting our test contentlet
+        final Contentlet contentletWidget =
+                APILocator.getContentletAPI()
+                        .findContentletByIdentifier("a9f30020-54ef-494e-92ed-645e757171c2", false, 2, user, false);
+
+        assertNotNull(contentletWidget);
+        final Optional<Contentlet> optionalContentlet =
+                APILocator.getContentletAPI().findContentletByIdentifierOrFallback(contentletWidget.getIdentifier(), false, 2, user, false);
+
+        assertTrue(optionalContentlet.isPresent());
+        assertEquals(contentletWidget.getInode(), optionalContentlet.get().getInode());
+    }
+
+    /**
+     * Testing {@link ContentletAPI#findContentletByIdentifierOrFallback(String, boolean, long, User, boolean)}
+     *
+     * English version, no Spanish, fallback false, request Spanish -> 404
+     *
+     * @throws com.dotmarketing.exception.DotDataException
+     *
+     * @throws com.dotmarketing.exception.DotSecurityException
+     *
+     * @see ContentletAPI
+     * @see Contentlet
+     */
+    @Test()
+    public void test_findContentletByIdentifierOrFallback_existing_English_No_Spanish_fallback_false_expecting_False () throws DotDataException, DotSecurityException {
+
+
+        //Getting our test contentlet
+        final Contentlet newsContentlet =
+                APILocator.getContentletAPI()
+                        .findContentletByIdentifier("90b6e398-50ba-40ee-bd9a-9445286a165f", false, 1, user, false);
+
+        assertNotNull(newsContentlet);
+        final Optional<Contentlet> optionalContentlet =
+                APILocator.getContentletAPI().findContentletByIdentifierOrFallback(newsContentlet.getIdentifier(), false, 2, user, false);
+
+        assertFalse(optionalContentlet.isPresent());
+    }
+
+    /**
+     * Testing {@link ContentletAPI#findContentletByIdentifierOrFallback(String, boolean, long, User, boolean)}
+     *
+     * English version, with Spanish, fallback false, request Spanish -> Return Spanish
+     *
+     * @throws com.dotmarketing.exception.DotDataException
+     *
+     * @throws com.dotmarketing.exception.DotSecurityException
+     *
+     * @see ContentletAPI
+     * @see Contentlet
+     */
+    @Test()
+    public void test_findContentletByIdentifierOrFallback_existing_EnglishSpanish_fallback_false_expecting_Spanish_true () throws DotDataException, DotSecurityException {
+
+
+        Contentlet spanishNewsContentlet = null;
+        try {
+            //Getting our test contentlet
+            final Contentlet newsContentlet =
+                    APILocator.getContentletAPI()
+                            .findContentletByIdentifier("db6f8100-134b-48fb-bef8-d1e8efa125ec", false, 1, user, false);
+
+            assertNotNull(newsContentlet);
+            final Contentlet checkoutContentlet =
+                    APILocator.getContentletAPI()
+                            .checkout(newsContentlet.getInode(), user, false);
+
+            assertNotNull(checkoutContentlet);
+            checkoutContentlet.setIdentifier(newsContentlet.getIdentifier());
+            checkoutContentlet.setLanguageId(2); // spanish
+            checkoutContentlet.setIndexPolicy(IndexPolicy.FORCE);
+
+            spanishNewsContentlet =
+                    APILocator.getContentletAPI()
+                            .checkin(checkoutContentlet, user, false);
+
+
+            final Optional<Contentlet> optionalContentlet =
+                    APILocator.getContentletAPI().findContentletByIdentifierOrFallback(newsContentlet.getIdentifier(), false, 2, user, false);
+
+            assertTrue(optionalContentlet.isPresent());
+            assertEquals(spanishNewsContentlet.getInode(), optionalContentlet.get().getInode());
+        } finally {
+
+            try {
+                if (null != spanishNewsContentlet) {
+                    final Contentlet contentlet =
+                            APILocator.getContentletAPI().find(spanishNewsContentlet.getInode(), user, false);
+
+                    if (null != contentlet) {
+
+                        APILocator.getContentletAPI().deleteVersion(contentlet, user, false);
+                    }
+                }
+            } catch (Exception e) {
+                Logger.error(this, e.getMessage(), e);
+            }
+        }
+    }
+
+    /**
+     * Testing {@link ContentletAPI#findContentletByIdentifierOrFallback(String, boolean, long, User, boolean)}
+     *
+     * No English version, with Spanish, fallback true, request Spanish -> Return Spanish
+     *
+     * @throws com.dotmarketing.exception.DotDataException
+     *
+     * @throws com.dotmarketing.exception.DotSecurityException
+     *
+     * @see ContentletAPI
+     * @see Contentlet
+     */
+    @Test()
+    public void test_findContentletByIdentifierOrFallback_existing_NonEnglish_WithSpanish_fallback_true_expecting_Spanish_true () throws DotDataException, DotSecurityException, IOException {
+
+
+        Contentlet spanishNewFileAssetContentlet = null;
+        try {
+            //Getting our test contentlet
+            final Contentlet fileAssetContentletEng =
+                    APILocator.getContentletAPI()
+                            .findContentletByIdentifier("06869b9f-25ec-4b5c-b1fb-65e152a44000", false, 1, user, false);
+
+            assertNotNull(fileAssetContentletEng);
+            spanishNewFileAssetContentlet = new Contentlet(); // no eng version
+            APILocator.getContentletAPI().copyProperties(spanishNewFileAssetContentlet, fileAssetContentletEng.getMap());
+            spanishNewFileAssetContentlet.setHost(fileAssetContentletEng.getHost());
+            spanishNewFileAssetContentlet.setContentType(fileAssetContentletEng.getContentType());
+            spanishNewFileAssetContentlet.setIdentifier(null);
+            spanishNewFileAssetContentlet.setInode(null);
+            spanishNewFileAssetContentlet.setIndexPolicy(IndexPolicy.FORCE);
+            spanishNewFileAssetContentlet.setLanguageId(2); // spanish
+            spanishNewFileAssetContentlet.setProperty("title", "Spanish Test");
+
+            final File file = fileAssetContentletEng.getBinary(FileAssetAPI.BINARY_FIELD);
+            final File copy = new File(org.apache.commons.io.FileUtils.getTempDirectory(), UUIDGenerator.generateUuid());
+            org.apache.commons.io.FileUtils.copyFile(file, copy);
+            spanishNewFileAssetContentlet.setBinary(FileAssetAPI.BINARY_FIELD, copy);
+
+            spanishNewFileAssetContentlet =
+                    APILocator.getContentletAPI()
+                            .checkin(spanishNewFileAssetContentlet, user, false);
+
+
+            final Optional<Contentlet> optionalContentlet =
+                    APILocator.getContentletAPI().findContentletByIdentifierOrFallback(spanishNewFileAssetContentlet.getIdentifier(), false, 2, user, false);
+
+            assertTrue(optionalContentlet.isPresent());
+            assertEquals(spanishNewFileAssetContentlet.getInode(), optionalContentlet.get().getInode());
+        } finally {
+
+            try {
+                if (null != spanishNewFileAssetContentlet) {
+                    final Contentlet contentlet =
+                            APILocator.getContentletAPI().find(spanishNewFileAssetContentlet.getInode(), user, false);
+
+                    if (null != contentlet) {
+
+                        APILocator.getContentletAPI().delete(contentlet, user, false);
+                    }
+                }
+            } catch (Exception e) {
+                Logger.error(this, e.getMessage(), e);
+            }
+        }
+    }
+
+    /**
+     * Testing {@link ContentletAPI#findContentletByIdentifierOrFallback(String, boolean, long, User, boolean)}
+     *
+     * No English version, with Spanish, fallback false, request Spanish -> Return Spanish
+     *
+     * @throws com.dotmarketing.exception.DotDataException
+     *
+     * @throws com.dotmarketing.exception.DotSecurityException
+     *
+     * @see ContentletAPI
+     * @see Contentlet
+     */
+    @Test()
+    public void test_findContentletByIdentifierOrFallback_existing_NonEnglish_WithSpanish_fallback_false_expecting_Spanish_true () throws DotDataException, DotSecurityException, IOException {
+
+
+        Contentlet spanishNewNewsContentlet = null;
+        try {
+            //Getting our test contentlet
+            final Contentlet newsContentletEng =
+                    APILocator.getContentletAPI()
+                            .findContentletByIdentifier("c1857ef4-fdbd-4e08-a4f4-bd2ff68ea60b", false, 1, user, false);
+
+            assertNotNull(newsContentletEng);
+            spanishNewNewsContentlet = new Contentlet(); // no eng version
+            APILocator.getContentletAPI().copyProperties(spanishNewNewsContentlet, newsContentletEng.getMap());
+            spanishNewNewsContentlet.setHost(newsContentletEng.getHost());
+            spanishNewNewsContentlet.setContentType(newsContentletEng.getContentType());
+            spanishNewNewsContentlet.setIdentifier(null);
+            spanishNewNewsContentlet.setInode(null);
+            spanishNewNewsContentlet.setIndexPolicy(IndexPolicy.FORCE);
+            spanishNewNewsContentlet.setLanguageId(2); // spanish
+            spanishNewNewsContentlet.setProperty("title", "Spanish Test");
+            spanishNewNewsContentlet.setProperty("urlTitle", "/news/spanish_test");
+            spanishNewNewsContentlet.setProperty("byline",   newsContentletEng.getStringProperty("byline"));
+            spanishNewNewsContentlet.setProperty("sysPublishDate",   newsContentletEng.getMap().get("sysPublishDate"));
+            spanishNewNewsContentlet.setProperty("story",   newsContentletEng.getMap().get("story"));
+
+            spanishNewNewsContentlet =
+                    APILocator.getContentletAPI()
+                            .checkin(spanishNewNewsContentlet, user, false);
+
+
+            final Optional<Contentlet> optionalContentlet =
+                    APILocator.getContentletAPI().findContentletByIdentifierOrFallback(spanishNewNewsContentlet.getIdentifier(), false, 2, user, false);
+
+            assertTrue(optionalContentlet.isPresent());
+            assertEquals(spanishNewNewsContentlet.getInode(), optionalContentlet.get().getInode());
+        } finally {
+
+            try {
+                if (null != spanishNewNewsContentlet) {
+                    final Contentlet contentlet =
+                            APILocator.getContentletAPI().find(spanishNewNewsContentlet.getInode(), user, false);
+
+                    if (null != contentlet) {
+
+                        APILocator.getContentletAPI().delete(contentlet, user, false);
+                    }
+                }
+            } catch (Exception e) {
+                Logger.error(this, e.getMessage(), e);
+            }
+        }
+    }
+
+    /**
+     * Testing {@link ContentletAPI#findContentletByIdentifierOrFallback(String, boolean, long, User, boolean)}
+     *
+     * English version LIVE, with Spanish WORKING, fallback true, request Spanish WORKING -> Return Spanish WORKING
+     *
+     * @throws com.dotmarketing.exception.DotDataException
+     *
+     * @throws com.dotmarketing.exception.DotSecurityException
+     *
+     * @see ContentletAPI
+     * @see Contentlet
+     */
+    @Test()
+    public void test_findContentletByIdentifierOrFallback_existing_EnglishLive_WithSpanishWorking_fallback_true_expecting_SpanishWorking_true () throws DotDataException, DotSecurityException, IOException {
+
+
+        Contentlet spanishFileAssetContentletWorking = null;
+        try {
+            //Getting our test contentlet
+            final Contentlet fileAssetContentletEngLive =
+                    APILocator.getContentletAPI()
+                            .findContentletByIdentifier("e8f77c15-24d2-4f4e-b6f0-87ecbdfbec51", true, 1, user, false);
+
+            assertNotNull(fileAssetContentletEngLive);
+            spanishFileAssetContentletWorking = new Contentlet(); // no eng version
+            APILocator.getContentletAPI().copyProperties(spanishFileAssetContentletWorking, fileAssetContentletEngLive.getMap());
+            spanishFileAssetContentletWorking.setHost(fileAssetContentletEngLive.getHost());
+            spanishFileAssetContentletWorking.setContentType(fileAssetContentletEngLive.getContentType());
+            spanishFileAssetContentletWorking.setIdentifier(fileAssetContentletEngLive.getIdentifier());
+            spanishFileAssetContentletWorking.setInode(null);
+            spanishFileAssetContentletWorking.setIndexPolicy(IndexPolicy.FORCE);
+            spanishFileAssetContentletWorking.setLanguageId(2); // spanish
+            spanishFileAssetContentletWorking.setProperty("title", "Spanish Main.scss");
+
+            final File file = fileAssetContentletEngLive.getBinary(FileAssetAPI.BINARY_FIELD);
+            final File copy = new File(org.apache.commons.io.FileUtils.getTempDirectory(), UUIDGenerator.generateUuid());
+            org.apache.commons.io.FileUtils.copyFile(file, copy);
+            spanishFileAssetContentletWorking.setBinary(FileAssetAPI.BINARY_FIELD, copy);
+
+            spanishFileAssetContentletWorking =
+                    APILocator.getContentletAPI()
+                            .checkin(spanishFileAssetContentletWorking, user, false);
+
+
+            final Optional<Contentlet> optionalContentlet =
+                    APILocator.getContentletAPI().findContentletByIdentifierOrFallback(fileAssetContentletEngLive.getIdentifier(), false, 2, user, false);
+
+            assertTrue(optionalContentlet.isPresent());
+            assertEquals(spanishFileAssetContentletWorking.getInode(), optionalContentlet.get().getInode());
+        } finally {
+
+            try {
+                if (null != spanishFileAssetContentletWorking) {
+                    final Contentlet contentlet =
+                            APILocator.getContentletAPI().find(spanishFileAssetContentletWorking.getInode(), user, false);
+
+                    if (null != contentlet) {
+
+                        APILocator.getContentletAPI().delete(contentlet, user, false);
+                    }
+                }
+            } catch (Exception e) {
+                Logger.error(this, e.getMessage(), e);
+            }
+        }
+    }
+
+    /**
+     * Testing {@link ContentletAPI#findContentletByIdentifierOrFallback(String, boolean, long, User, boolean)}
+     *
+     * English version LIVE, with Spanish WORKING, fallback true, request Spanish LIVE -> Return English
+     *
+     * @throws com.dotmarketing.exception.DotDataException
+     *
+     * @throws com.dotmarketing.exception.DotSecurityException
+     *
+     * @see ContentletAPI
+     * @see Contentlet
+     */
+    @Test()
+    public void test_findContentletByIdentifierOrFallback_existing_EnglishLive_WithSpanishWorking_fallback_true_expecting_English_true () throws DotDataException, DotSecurityException, IOException {
+
+
+        Contentlet spanishFileAssetContentletWorking = null;
+        try {
+            //Getting our test contentlet
+            final Contentlet fileAssetContentletEngLive =
+                    APILocator.getContentletAPI()
+                            .findContentletByIdentifier("e8f77c15-24d2-4f4e-b6f0-87ecbdfbec51", true, 1, user, false);
+
+            assertNotNull(fileAssetContentletEngLive);
+            spanishFileAssetContentletWorking = new Contentlet(); // no eng version
+            APILocator.getContentletAPI().copyProperties(spanishFileAssetContentletWorking, fileAssetContentletEngLive.getMap());
+            spanishFileAssetContentletWorking.setIdentifier(fileAssetContentletEngLive.getIdentifier());
+            spanishFileAssetContentletWorking.setHost(fileAssetContentletEngLive.getHost());
+            spanishFileAssetContentletWorking.setContentType(fileAssetContentletEngLive.getContentType());
+            spanishFileAssetContentletWorking.setInode(null);
+            spanishFileAssetContentletWorking.setIndexPolicy(IndexPolicy.FORCE);
+            spanishFileAssetContentletWorking.setLanguageId(2); // spanish
+            spanishFileAssetContentletWorking.setProperty("title", "Spanish Main.scss");
+
+            final File file = fileAssetContentletEngLive.getBinary(FileAssetAPI.BINARY_FIELD);
+            final File copy = new File(org.apache.commons.io.FileUtils.getTempDirectory(), UUIDGenerator.generateUuid());
+            org.apache.commons.io.FileUtils.copyFile(file, copy);
+            spanishFileAssetContentletWorking.setBinary(FileAssetAPI.BINARY_FIELD, copy);
+
+            spanishFileAssetContentletWorking =
+                    APILocator.getContentletAPI()
+                            .checkin(spanishFileAssetContentletWorking, user, false);
+
+
+            final Optional<Contentlet> optionalContentlet =
+                    APILocator.getContentletAPI().findContentletByIdentifierOrFallback(fileAssetContentletEngLive.getIdentifier(), true, 2, user, false);
+
+            assertTrue(optionalContentlet.isPresent());
+            assertNotEquals(spanishFileAssetContentletWorking.getInode(), optionalContentlet.get().getInode());
+            assertEquals(fileAssetContentletEngLive.getInode(), optionalContentlet.get().getInode());
+        } finally {
+
+            try {
+                if (null != spanishFileAssetContentletWorking) {
+                    final Contentlet contentlet =
+                            APILocator.getContentletAPI().find(spanishFileAssetContentletWorking.getInode(), user, false);
+
+                    if (null != contentlet) {
+
+                        APILocator.getContentletAPI().delete(contentlet, user, false);
+                    }
+                }
+            } catch (Exception e) {
+                Logger.error(this, e.getMessage(), e);
+            }
+        }
+    }
+
 
     /**
      * Testing {@link ContentletAPI#findContentletForLanguage(long, com.dotmarketing.beans.Identifier)}
