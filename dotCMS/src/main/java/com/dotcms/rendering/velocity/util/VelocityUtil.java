@@ -199,6 +199,7 @@ public class VelocityUtil {
 		 * if we have a toolbox manager, get a toolbox from it See
 		 * /WEB-INF/toolbox.xml
 		 */
+		
 		context.setToolbox(getToolboxManager().getToolboxContext(context));
 
         HttpSession session = request.getSession(false);

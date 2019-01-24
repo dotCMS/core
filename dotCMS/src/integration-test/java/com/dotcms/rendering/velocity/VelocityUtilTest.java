@@ -3,14 +3,23 @@ package com.dotcms.rendering.velocity;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHttpRequest;
 import com.dotcms.mock.request.MockSessionRequest;
+import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.util.Config;
+import com.liferay.portal.util.WebKeys;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
+import com.dotcms.rendering.velocity.viewtools.VelocityRequestWrapper;
+import com.dotcms.rendering.velocity.viewtools.VelocitySessionWrapper;
+import com.dotcms.repackage.javax.validation.constraints.AssertTrue;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
+import org.apache.velocity.context.Context;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
@@ -18,6 +27,7 @@ import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
 
 /**
@@ -101,5 +111,49 @@ public class VelocityUtilTest {
         Assert.assertNotNull(pageCacheKey);
 
     }
+    
+    
+    @Test
+    public void test_unable_to_modify_userid_in_velocity_session() throws Exception{
+    
+        final HttpServletRequest request = new MockSessionRequest(
+                new MockAttributeRequest(
+                        new MockHttpRequest("localhost", "/").request()
+                ).request())
+                .request();
+    
+        final HttpServletResponse response = new MockHttpResponse().response();
+
+        
+        Context context = VelocityUtil.getWebContext(request, response);
+        HttpServletRequest velRequest = (HttpServletRequest) context.get("request");
+        HttpSession velSession = velRequest.getSession();
+        
+        
+        Assert.assertTrue(velRequest instanceof VelocityRequestWrapper);
+        Assert.assertTrue(velSession instanceof VelocitySessionWrapper);
+        
+        final String TEST_KEY="TEST_KEY";
+        final String TEST_VALUE="TEST_VALUE";
+        
+        
+        // Test setting normal value
+        velSession.setAttribute(TEST_KEY, TEST_VALUE);
+        assertTrue(TEST_VALUE.equals(velSession.getAttribute(TEST_KEY).toString()));
+        
+        // Test that it made it to the underlying session
+        assertTrue(TEST_VALUE.equals(request.getSession().getAttribute(TEST_KEY).toString()));
+        
+        // Test setting USER_ID 
+        velSession.setAttribute(WebKeys.USER_ID, TEST_VALUE);
+        
+        // Test that it fails to set
+        
+        assertTrue(velSession.getAttribute(WebKeys.USER_ID) ==null);
+        
+        // Test that it fails to set the underlying session
+        assertTrue(request.getSession().getAttribute(WebKeys.USER_ID) ==null);
+    }
+    
 
 }
