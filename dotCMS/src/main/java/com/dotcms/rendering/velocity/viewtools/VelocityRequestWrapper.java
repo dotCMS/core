@@ -21,6 +21,7 @@ import javax.servlet.http.*;
 
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableSet;
+import com.liferay.portal.util.WebKeys;
 import com.liferay.util.Xss;
 
 public class VelocityRequestWrapper extends javax.servlet.http.HttpServletRequestWrapper  {
@@ -28,7 +29,7 @@ public class VelocityRequestWrapper extends javax.servlet.http.HttpServletReques
 	private HttpServletRequest _request;
     private String customUserAgentHeader;
 	private String dotCMSUri;
-    final protected static Set<String> SET_VALUE_BLACKLIST = ImmutableSet.of("USER_ID");
+    final protected static Set<String> SET_VALUE_BLACKLIST = ImmutableSet.of(WebKeys.USER_ID, WebKeys.USER);
 	public VelocityRequestWrapper(HttpServletRequest req) {
         super(req);
 		this._request = req;
