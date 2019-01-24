@@ -80,48 +80,15 @@ public class HostAPIImpl implements HostAPI {
 
         Host host;
         try{
-            host  = hostCache.getDefaultHost();
-            if(host != null){
-                if(APILocator.getPermissionAPI().doesUserHavePermission(host, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)){
-                    return host;
-                }
-            }
-        }
-        catch(Exception e){
-            Logger.debug(HostAPIImpl.class, e.getMessage());
-        }
+            host  = (hostCache.getDefaultHost()!=null) ? hostCache.getDefaultHost() : getOrCreateDefaultHost();
 
-        try {
-            List<Contentlet> list = null;
-            try{
-                StringBuilder queryBuffer = new StringBuilder();
-                queryBuffer.append(String.format("%s:%s", CONTENT_TYPE_CONDITION, Host.HOST_VELOCITY_VAR_NAME));
-                queryBuffer.append(" +working:true");
-                queryBuffer.append(String.format(" +%s.isdefault:true", Host.HOST_VELOCITY_VAR_NAME));
-                list = APILocator.getContentletAPI().search(queryBuffer.toString(), 0, 0, null, APILocator.systemUser(), respectFrontendRoles);
-            }
-            catch(Exception e){
-                Logger.warn(this, "Content Index is fouled up, need to try db: " + e.getMessage());
-            }
-            if(list == null || list.size() ==0) {
-                return createDefaultHost();
-            } else if (list.size() >1){
-                Logger.fatal(this, "More of one host is marked as default!!");
-            }
-            host = new Host(list.get(0));
-            if(APILocator.getPermissionAPI().doesUserHavePermission(host, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)){
-                hostCache.add(host);
-                return host;
-            }
-            throw new DotSecurityException("User : " + user.getUserId()+ " does not have permission to a host");
+            APILocator.getPermissionAPI().checkPermission(host, PermissionLevel.READ, user);
+            return host;
         } catch (Exception e) {
-
-            if(user!=null && !user.equals(APILocator.getUserAPI().getDefaultUser())){
-                Logger.error(HostAPIImpl.class, e.getMessage(), e);
-            }
 
             throw new DotRuntimeException(e.getMessage(), e);
         }
+        
 
     }
 
@@ -850,7 +817,7 @@ public class HostAPIImpl implements HostAPI {
 
 
     @WrapInTransaction
-    private synchronized Host createDefaultHost() throws DotDataException,
+    private synchronized Host getOrCreateDefaultHost() throws DotDataException,
     DotSecurityException {
         
         List<Field> fields = hostType().fields();
@@ -870,8 +837,10 @@ public class HostAPIImpl implements HostAPI {
 
         Host defaultHost = new Host();
 
-        if(!UtilMethods.isSet(inode)){
-
+        if(UtilMethods.isSet(inode)){
+            defaultHost = new Host(APILocator.getContentletAPI().find(inode, APILocator.systemUser(), false));
+            hostCache.add(defaultHost);
+        } else {
             defaultHost.setDefault(true);
             defaultHost.setHostname("noDefault-"  + System.currentTimeMillis());
 
@@ -882,13 +851,12 @@ public class HostAPIImpl implements HostAPI {
             }
             defaultHost.setBoolProperty(Contentlet.DONT_VALIDATE_ME, true);
             defaultHost = save(defaultHost, APILocator.systemUser(), false);
-        } else {
-             defaultHost = new Host(APILocator.getContentletAPI().find(inode, APILocator.systemUser(), false));
+         
+
+            sendNotification();
         }
 
-        hostCache.remove(defaultHost);
 
-        sendNotification();
 
         return defaultHost;
 

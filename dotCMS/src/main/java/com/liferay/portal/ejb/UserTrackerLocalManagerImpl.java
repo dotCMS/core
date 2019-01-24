@@ -26,7 +26,7 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 
-import com.dotcms.repackage.com.liferay.counter.ejb.CounterManagerUtil;
+import com.dotmarketing.util.UUIDUtil;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.UserTracker;
@@ -54,8 +54,7 @@ public class UserTrackerLocalManagerImpl implements UserTrackerLocalManager {
 		if (GetterUtil.get(PropsUtil.get(
 				PropsUtil.LOG_USER_PATHS), false)) {
 
-			String userTrackerId = Long.toString(CounterManagerUtil.increment(
-				UserTracker.class.getName()));
+			String userTrackerId =UUIDUtil.uuid();
 
 			UserTracker userTracker = UserTrackerUtil.create(userTrackerId);
 
@@ -73,8 +72,7 @@ public class UserTrackerLocalManagerImpl implements UserTrackerLocalManager {
 			while (itr.hasNext()) {
 				UserTrackerPath userTrackerPath = (UserTrackerPath)itr.next();
 
-				String pathId = Long.toString(CounterManagerUtil.increment(
-					UserTrackerPath.class.getName()));
+				String pathId = UUIDUtil.uuid();
 
 				userTrackerPath.setUserTrackerPathId(pathId);
 				userTrackerPath.setUserTrackerId(userTrackerId);

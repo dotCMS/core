@@ -1,6 +1,6 @@
 package com.dotmarketing.business;
 
-import com.dotcms.repackage.com.liferay.counter.ejb.CounterManagerUtil;
+
 import com.dotmarketing.cms.factories.PublicAddressFactory;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.common.db.DotConnect;
@@ -13,6 +13,7 @@ import com.dotmarketing.exception.UserFirstNameException;
 import com.dotmarketing.exception.UserLastNameException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.DuplicateUserEmailAddressException;
 import com.liferay.portal.DuplicateUserIdException;
@@ -67,45 +68,21 @@ public class UserFactoryLiferayImpl extends UserFactory {
 	public User createUser(String userId, String email) throws DotDataException, DuplicateUserException {
         Company comp = com.dotmarketing.cms.factories.PublicCompanyFactory.getDefaultCompany();
 		String companyId = comp.getCompanyId();
-		boolean autoID = false;
-		User defaultUser = null;
-		try {
-			if(!UtilMethods.isSet(userId)){
-				autoID = true;
 
-				boolean more;
-				do {
-					userId = companyId + "." +
-					Long.toString(CounterManagerUtil.increment(User.class.getName() + "." + companyId));
-					try {
-						User user = UserLocalManagerUtil.getUserById(companyId, userId);
-						if(!user.isNew())
-							more=true;
-						else
-							more=false;
+		User defaultUser = APILocator.getUserAPI().getDefaultUser();
+	
+		if(!UtilMethods.isSet(userId)){
+	        userId = UUIDUtil.uuid();
+		}
 
-					} catch (PortalException e) {
-						more=false;
-					}
-
-				}while(more);
-			}else{
-				CounterManagerUtil.increment(User.class.getName() + "." + companyId);
-			}
-
-			defaultUser = APILocator.getUserAPI().getDefaultUser();
-
-		} catch (Exception e) {
-			throw new DotDataException("Error creating new user", e);
-		}		
 
 		if(!UtilMethods.isSet(email)){
-			email = userId + "@fakedotcms.org";
+			email = userId + "@fakedotcms.com";
 		}
 		
 		User user;
 		try {
-			user = UserLocalManagerUtil.addUser(companyId, autoID, userId, true, null, null, false, userId, null, userId, null, true, null, email, defaultUser.getLocale());
+			user = UserLocalManagerUtil.addUser(companyId, false, userId, true, null, null, false, userId, null, userId, null, true, null, email, defaultUser.getLocale());
 		}catch (DuplicateUserEmailAddressException e) {
 			Logger.info(this, "User already exists with this email");
 			throw new DuplicateUserException(e.getMessage(), e);

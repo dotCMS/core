@@ -25,7 +25,7 @@ package com.liferay.portlet.admin.ejb;
 import java.util.List;
 import java.util.Map;
 
-import com.dotcms.repackage.com.liferay.counter.ejb.CounterManagerUtil;
+import com.dotmarketing.util.UUIDUtil;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.auth.PrincipalException;
@@ -83,8 +83,7 @@ public class AdminConfigManagerImpl
 		JournalConfig journalConfig = null;
 
 		if (configs.size() == 0) {
-			String configId = Long.toString(CounterManagerUtil.increment(
-				AdminConfig.class.getName()));
+			String configId = UUIDUtil.uuid();
 
 			Company company = CompanyManagerUtil.getCompany(companyId);
 
@@ -127,8 +126,7 @@ public class AdminConfigManagerImpl
 		ShoppingConfig shoppingConfig = null;
 
 		if (configs.size() == 0) {
-			String configId = Long.toString(CounterManagerUtil.increment(
-				AdminConfig.class.getName()));
+			String configId = UUIDUtil.uuid();
 
 			Company company = CompanyManagerUtil.getCompany(companyId);
 
@@ -205,8 +203,7 @@ public class AdminConfigManagerImpl
 		UserConfig userConfig = null;
 
 		if (configs.size() == 0) {
-			String configId = Long.toString(CounterManagerUtil.increment(
-				AdminConfig.class.getName()));
+			String configId = UUIDUtil.uuid();
 
 			Company company = CompanyManagerUtil.getCompany(companyId);
 
