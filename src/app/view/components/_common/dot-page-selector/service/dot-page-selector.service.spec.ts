@@ -7,20 +7,24 @@ import {
     mockDotSiteSelectorResults
 } from '../dot-page-selector.component.spec';
 
+const MAX_RESULTS_SIZE = 20;
+
 const hostQuery = {
     query: {
         query_string: {
-            query: `+contenttype:Host +host.hostName:*demo.dotcms.com*`
+            query: `+contenttype:Host -identifier:SYSTEM_HOST +host.hostName:*demo.dotcms.com*`
         }
-    }
+    },
+    size: MAX_RESULTS_SIZE
 };
 
 const hostSpecificQuery = {
     query: {
         query_string: {
-            query: `+contenttype:Host +host.hostName:demo.dotcms.com`
+            query: `+contenttype:Host -identifier:SYSTEM_HOST +host.hostName:demo.dotcms.com`
         }
-    }
+    },
+    size: MAX_RESULTS_SIZE
 };
 
 describe('Service: DotPageSelector', () => {
@@ -80,7 +84,9 @@ describe('Service: DotPageSelector', () => {
         );
         expect(result).toEqual(mockDotPageSelectorResults);
         expect(this.dotPageSelectorService.currentHost).toEqual(null);
-        expect(this.lastConnection.request.url).toContain(`v1/page/search?path=about-us&onlyLiveSites=true&live=false`);
+        expect(this.lastConnection.request.url).toContain(
+            `v1/page/search?path=about-us&onlyLiveSites=true&live=false`
+        );
         expect(this.lastConnection.request.method).toEqual(0);
     });
 
@@ -137,7 +143,9 @@ describe('Service: DotPageSelector', () => {
         );
         expect(connections[0].request._body).toEqual(hostSpecificQuery);
         expect(connections[0].request.url).toEqual('es/search');
-        expect(connections[1].request.url).toEqual('v1/page/search?path=//demo.dotcms.com/about-us&onlyLiveSites=true&live=false');
+        expect(connections[1].request.url).toEqual(
+            'v1/page/search?path=//demo.dotcms.com/about-us&onlyLiveSites=true&live=false'
+        );
     });
 
     it('should return empty results on Full Search if host is invalid', () => {
@@ -169,9 +177,10 @@ describe('Service: DotPageSelector', () => {
         const query = {
             query: {
                 query_string: {
-                    query: `+contenttype:Host +host.hostName:*INVALID*`
+                    query: `+contenttype:Host -identifier:SYSTEM_HOST +host.hostName:*INVALID*`
                 }
-            }
+            },
+            size: MAX_RESULTS_SIZE
         };
         this.dotPageSelectorService.search('//INVALID').subscribe(res => {
             result = res;
@@ -217,7 +226,9 @@ describe('Service: DotPageSelector', () => {
             query: 'invalidPage',
             type: 'page'
         });
-        expect(this.lastConnection.request.url).toContain('v1/page/search?path=invalidPage&onlyLiveSites=true&live=false');
+        expect(this.lastConnection.request.url).toContain(
+            'v1/page/search?path=invalidPage&onlyLiveSites=true&live=false'
+        );
         expect(this.lastConnection.request.method).toEqual(0);
     });
 });
