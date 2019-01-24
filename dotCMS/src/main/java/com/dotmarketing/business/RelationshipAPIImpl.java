@@ -36,6 +36,11 @@ public class RelationshipAPIImpl implements RelationshipAPI {
 
     private final RelationshipFactory relationshipFactory;
     
+    public RelationshipAPIImpl(RelationshipFactory relationshipFactory) {
+        this.relationshipFactory = relationshipFactory;
+    }
+    
+    
     public RelationshipAPIImpl() {
         this.relationshipFactory = FactoryLocator.getRelationshipFactory();
     }
@@ -276,19 +281,44 @@ public class RelationshipAPIImpl implements RelationshipAPI {
                 fieldRelationType.contains(StringPool.PERIOD) ? fieldRelationType
                         :contentTypeVar + StringPool.PERIOD + field
                                 .variable());
-
-
     }
 
+    
+    
+    
+    protected String suggestNewFieldName(ContentType con, Relationship relationship) {
+        String name = UtilMethods.capitalize(con.variable());
+        
+        if(name.toLowerCase().endsWith("s")) {
+            return name;
+        }
+        
+        boolean child = relationship.getChildStructureInode().equals(con.id());
+        
+        String s = (child)
+                    ? (relationship.getCardinality()  == WebKeys.Relationship.RELATIONSHIP_CARDINALITY.ONE_TO_ONE.ordinal() )
+                            ?  "" : "s"
+                                :  (relationship.getCardinality()  == WebKeys.Relationship.RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal() )
+                                        ? "s" :"";
+       return name + s;
+    }
+    
+    
+    
+    
     @WrapInTransaction
     public void convertRelationshipToRelationshipField(final Relationship oldRelationship) throws DotDataException, DotSecurityException{
         //Transform Structures to Content Types
         final ContentType parentContentType = new StructureTransformer(oldRelationship.getParentStructure()).from();
         final ContentType childContentType = new StructureTransformer(oldRelationship.getChildStructure()).from();
         //Create Relationship Fields
-        final com.dotcms.contenttype.model.field.Field parentRelationshipField = createRelationshipField(oldRelationship.getChildRelationName(),parentContentType.id(),
+        
+        String parentFieldName = suggestNewFieldName(parentContentType, oldRelationship);
+        String childFieldName = suggestNewFieldName(childContentType, oldRelationship);
+        
+        final com.dotcms.contenttype.model.field.Field parentRelationshipField = createRelationshipField(childFieldName,parentContentType.id(),
                 oldRelationship.getCardinality(),oldRelationship.isChildRequired(),childContentType.variable());
-        createRelationshipField(oldRelationship.getParentRelationName(), childContentType.id(),
+        createRelationshipField(parentFieldName, childContentType.id(),
                 oldRelationship.getCardinality(), oldRelationship.isParentRequired(), parentContentType.variable()+"."+parentRelationshipField.variable());
         //Get the new Relationship
         final Relationship newRelationship = byTypeValue(parentContentType.variable()+"."+parentRelationshipField.variable());
