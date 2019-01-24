@@ -12,7 +12,7 @@ import com.google.common.collect.ImmutableSet;
 
 public class VelocitySessionWrapper implements HttpSession {
 
-    final private static Set<String> SET_VALUE_BLACKLIST = ImmutableSet.of("USER_ID");
+
     final private HttpSession session;
 
     public VelocitySessionWrapper(HttpSession session) {
@@ -100,7 +100,7 @@ public class VelocitySessionWrapper implements HttpSession {
 
     @Override
     public void setAttribute(final String arg0, final Object arg1) {
-        if (!SET_VALUE_BLACKLIST.contains(arg0)) {
+        if (!VelocityRequestWrapper.SET_VALUE_BLACKLIST.contains(arg0)) {
             session.setAttribute(arg0, arg1);
         }
 

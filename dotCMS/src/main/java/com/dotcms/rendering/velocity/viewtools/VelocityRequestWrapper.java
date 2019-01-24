@@ -7,6 +7,7 @@ import java.util.Collection;
 import java.util.Enumeration;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 import javax.servlet.AsyncContext;
 import javax.servlet.DispatcherType;
@@ -19,6 +20,7 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.*;
 
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.collect.ImmutableSet;
 import com.liferay.util.Xss;
 
 public class VelocityRequestWrapper extends javax.servlet.http.HttpServletRequestWrapper  {
@@ -26,7 +28,7 @@ public class VelocityRequestWrapper extends javax.servlet.http.HttpServletReques
 	private HttpServletRequest _request;
     private String customUserAgentHeader;
 	private String dotCMSUri;
-
+    final protected static Set<String> SET_VALUE_BLACKLIST = ImmutableSet.of("USER_ID");
 	public VelocityRequestWrapper(HttpServletRequest req) {
         super(req);
 		this._request = req;
@@ -41,7 +43,7 @@ public class VelocityRequestWrapper extends javax.servlet.http.HttpServletReques
 	}
 
 	public String getContextPath() {
-		return _request.getContextPath();
+		return null;
 	}
 
 	public Cookie[] getCookies() {
@@ -221,7 +223,7 @@ public class VelocityRequestWrapper extends javax.servlet.http.HttpServletReques
 	}
 
 	public String getRealPath(String arg0) {
-		return _request.getRealPath(arg0);
+		return arg0;
 	}
 
 	public String getRemoteAddr() {
@@ -237,18 +239,7 @@ public class VelocityRequestWrapper extends javax.servlet.http.HttpServletReques
 	}
 
 	public RequestDispatcher getRequestDispatcher(String uri) {
-		final RequestDispatcher rd = _request.getRequestDispatcher(uri);
-		return new RequestDispatcher() {
-			public void forward(ServletRequest servletRequest, ServletResponse servletResponse)
-					throws ServletException, IOException {
-				rd.forward(_request, servletResponse);
-			}
-
-			public void include(ServletRequest servletRequest, ServletResponse servletResponse)
-					throws ServletException, IOException {
-				rd.include(_request, servletResponse);
-			}
-		};
+		return _request.getRequestDispatcher(uri);
 	}
 
 	public String getScheme() {
@@ -272,7 +263,9 @@ public class VelocityRequestWrapper extends javax.servlet.http.HttpServletReques
 	}
 
 	public void setAttribute(String arg0, Object arg1) {
-		_request.setAttribute(arg0, arg1);
+	    if(!SET_VALUE_BLACKLIST.contains(arg0)) {
+	        _request.setAttribute(arg0, arg1);
+	    }
 	}
 
 	public void setCharacterEncoding(String arg0) throws UnsupportedEncodingException {
@@ -323,11 +316,11 @@ public class VelocityRequestWrapper extends javax.servlet.http.HttpServletReques
     }
 
     public void login(String arg0, String arg1) throws ServletException {
-        _request.login(arg0, arg1);
+        // do nothing
     }
 
     public void logout() throws ServletException {
-        _request.logout();
+        // do nothing
     }
 
     public String getCustomUserAgentHeader () {
