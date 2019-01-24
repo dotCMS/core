@@ -21,13 +21,13 @@ import javax.servlet.http.*;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.Xss;
 
-public class RequestWrapper extends javax.servlet.http.HttpServletRequestWrapper  {
+public class VelocityRequestWrapper extends javax.servlet.http.HttpServletRequestWrapper  {
 
 	private HttpServletRequest _request;
     private String customUserAgentHeader;
 	private String dotCMSUri;
 
-	public RequestWrapper(HttpServletRequest req) {
+	public VelocityRequestWrapper(HttpServletRequest req) {
         super(req);
 		this._request = req;
 	}
@@ -116,11 +116,12 @@ public class RequestWrapper extends javax.servlet.http.HttpServletRequestWrapper
 	}
 
 	public HttpSession getSession() {
-		return _request.getSession();
+		return new VelocitySessionWrapper(_request.getSession());
 	}
 
 	public HttpSession getSession(boolean arg0) {
-		return _request.getSession(arg0);
+	    HttpSession session = _request.getSession(arg0);
+		return session!=null ? getSession() : null;
 	}
 
 	public Principal getUserPrincipal() {

@@ -3,7 +3,7 @@ package com.dotcms.rendering.velocity.util;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 
-import com.dotcms.rendering.velocity.viewtools.RequestWrapper;
+import com.dotcms.rendering.velocity.viewtools.VelocityRequestWrapper;
 import com.dotcms.rendering.velocity.viewtools.content.ContentMap;
 import com.dotcms.rendering.velocity.viewtools.content.ContentTool;
 import com.dotcms.rest.api.v1.container.ContainerResource;
@@ -184,9 +184,9 @@ public class VelocityUtil {
 		//get the context from the request if possible
         ChainedContext context;
         if ( request.getAttribute( com.dotcms.rendering.velocity.Constants.VELOCITY_CONTEXT ) != null && request.getAttribute( com.dotcms.rendering.velocity.Constants.VELOCITY_CONTEXT ) instanceof ChainedContext ) {
-            return (ChainedContext) request.getAttribute( "velocityContext" );
+            return (ChainedContext) request.getAttribute( com.dotcms.rendering.velocity.Constants.VELOCITY_CONTEXT  );
         } else {
-            RequestWrapper rw = new RequestWrapper( request );
+            VelocityRequestWrapper rw = new VelocityRequestWrapper( request );
             if ( request.getAttribute( "User-Agent" ) != null && request.getAttribute( "User-Agent" ).equals( Constants.USER_AGENT_DOTCMS_BROWSER ) ) {
                 rw.setCustomUserAgentHeader( Constants.USER_AGENT_DOTCMS_BROWSER );
             }
