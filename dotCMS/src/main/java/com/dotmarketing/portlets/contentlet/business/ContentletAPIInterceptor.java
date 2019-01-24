@@ -2473,5 +2473,24 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		return num;
 	}
 
+    @Override
+    public Optional<Contentlet> findContentletByIdentifierOrFallback(String identifier, boolean live, long incomingLangId, User user,
+            boolean respectFrontendRoles) {
+        for (ContentletAPIPreHook pre : preHooks) {
+            boolean preResult = pre.findContentletByIdentifierOrFallback(identifier, live, incomingLangId, user, respectFrontendRoles);
+            if (!preResult) {
+                Logger.error(this, "The following prehook failed " + pre.getClass().getName());
+                throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+            }
+        }
+        Optional<Contentlet> savedContentlet =
+                conAPI.findContentletByIdentifierOrFallback(identifier, live, incomingLangId, user, respectFrontendRoles);
+        for (ContentletAPIPostHook post : postHooks) {
+            post.findContentletByIdentifierOrFallback(identifier, live, incomingLangId, user, respectFrontendRoles);
+        }
+
+        return savedContentlet;
+    }
+
 
 }

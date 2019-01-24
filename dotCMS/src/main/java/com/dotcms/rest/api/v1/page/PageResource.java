@@ -34,19 +34,13 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.WebKeys;
 import com.google.common.annotations.VisibleForTesting;
-import com.liferay.portal.auth.PrincipalThreadLocal;
 import com.liferay.portal.model.User;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Provides different methods to access information about HTML Pages in dotCMS. For example,
@@ -190,9 +184,6 @@ public class PageResource {
             if (deviceInode != null) {
                 request.getSession().setAttribute(WebKeys.CURRENT_DEVICE, deviceInode);
             }
-
-            request.getSession().setAttribute(com.liferay.portal.util.WebKeys.USER_ID, user.getUserId());
-            PrincipalThreadLocal.setName(user.getUserId());
 
             final PageView pageRendered = this.htmlPageAssetRenderedAPI.getPageRendered(request, response, user, uri, mode);
             final Response.ResponseBuilder responseBuilder = Response.ok(new ResponseEntityView(pageRendered));

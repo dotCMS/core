@@ -1,5 +1,8 @@
 package com.dotmarketing.portlets.structure.model;
 
+import static com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY.MANY_TO_MANY;
+import static com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY.ONE_TO_MANY;
+import static com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY.ONE_TO_ONE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -25,7 +28,9 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
+import com.dotmarketing.portlets.structure.model.ContentletRelationships.ContentletRelationshipRecords;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
@@ -71,6 +76,15 @@ public class ContentletRelationshipsTest extends IntegrationTestBase {
         }
     }
 
+    public static class CardinalityTestCase {
+
+        int cardinality;
+
+        public CardinalityTestCase(final int cardinality) {
+            this.cardinality = cardinality;
+        }
+    }
+
     @DataProvider
     public static Object[] testCases() {
         return new TestCase[]{
@@ -81,6 +95,15 @@ public class ContentletRelationshipsTest extends IntegrationTestBase {
         };
     }
 
+    @DataProvider
+    public static Object[] cardinalityTestCases() {
+        return new CardinalityTestCase[]{
+                new CardinalityTestCase(ONE_TO_ONE.ordinal()),
+                new CardinalityTestCase(ONE_TO_MANY.ordinal()),
+                new CardinalityTestCase(MANY_TO_MANY.ordinal())
+        };
+    }
+
     @Test
     @UseDataProvider("testCases")
     public void testGetRelationshipRecords(TestCase testCase)
@@ -88,7 +111,7 @@ public class ContentletRelationshipsTest extends IntegrationTestBase {
 
         final long time = System.currentTimeMillis();
 
-        final String cardinality = String.valueOf(RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal());
+        final String cardinality = String.valueOf(MANY_TO_MANY.ordinal());
 
         ContentType childContentType = null;
         ContentType parentContentType = null;
@@ -133,7 +156,7 @@ public class ContentletRelationshipsTest extends IntegrationTestBase {
                     new StructureTransformer(parentContentType).asStructure(),
                     new StructureTransformer(childContentType).asStructure(),
                     parentContentType.variable(), childContentType.variable(),
-                    RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal(), false, false);
+                    MANY_TO_MANY.ordinal(), false, false);
 
             relationshipAPI.save(legacyRelationship);
 
@@ -189,5 +212,91 @@ public class ContentletRelationshipsTest extends IntegrationTestBase {
                 contentTypeAPI.delete(childContentType);
             }
         }
+    }
+
+    @Test
+    @UseDataProvider("cardinalityTestCases")
+    public void testDoesAllowOnlyOne(final CardinalityTestCase cardinalityTestCase) throws DotDataException, DotSecurityException {
+
+        final long time = System.currentTimeMillis();
+        ContentType childContentType = null;
+        ContentType parentContentType = null;
+
+        try {
+
+            //creates content types
+            parentContentType = contentTypeAPI.save(
+                    ContentTypeBuilder.builder(SimpleContentType.class).folder(
+                            FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST)
+                            .name("parentContentType" + time)
+                            .owner(user.getUserId()).build());
+
+            childContentType = contentTypeAPI.save(
+                    ContentTypeBuilder.builder(SimpleContentType.class).folder(
+                            FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST)
+                            .name("childContentType" + time)
+                            .owner(user.getUserId()).build());
+
+            Field relationshipField = FieldBuilder.builder(RelationshipField.class)
+                    .name("relationshipField").variable("relationshipField")
+                    .contentTypeId(parentContentType.id())
+                    .values(String.valueOf(cardinalityTestCase.cardinality))
+                    .relationType(childContentType.variable()).build();
+
+            Field selfRelationshipField = FieldBuilder.builder(RelationshipField.class)
+                    .name("relationshipField").variable("relationshipField")
+                    .contentTypeId(parentContentType.id())
+                    .values(String.valueOf(cardinalityTestCase.cardinality))
+                    .relationType(parentContentType.variable()).build();
+
+            relationshipField = fieldAPI.save(relationshipField, user);
+
+            ContentletRelationships contentletRelationships = new ContentletRelationships(null);
+            //creates Relationship object from parent to child
+            Relationship relationship = new Relationship(parentContentType, childContentType,
+                    relationshipField);
+
+            ContentletRelationshipRecords parentRecords = contentletRelationships.new ContentletRelationshipRecords(
+                    relationship, true);
+            ContentletRelationshipRecords childRecords = contentletRelationships.new ContentletRelationshipRecords(
+                    relationship, false);
+
+            //Test self-related
+            Relationship selfRelationship = new Relationship(parentContentType, parentContentType,
+                    selfRelationshipField);
+
+            ContentletRelationshipRecords parentSelfRecords = contentletRelationships.new ContentletRelationshipRecords(
+                    selfRelationship, true);
+            ContentletRelationshipRecords childSelfRecords = contentletRelationships.new ContentletRelationshipRecords(
+                    selfRelationship, false);
+
+            if (cardinalityTestCase.cardinality == ONE_TO_ONE.ordinal()) {
+                assertTrue(parentRecords.doesAllowOnlyOne());
+                assertTrue(childRecords.doesAllowOnlyOne());
+                assertTrue(parentSelfRecords.doesAllowOnlyOne());
+                assertTrue(childSelfRecords.doesAllowOnlyOne());
+            } else if (cardinalityTestCase.cardinality == ONE_TO_MANY.ordinal()) {
+                assertFalse(parentRecords.doesAllowOnlyOne());
+                assertTrue(childRecords.doesAllowOnlyOne());
+                assertFalse(parentSelfRecords.doesAllowOnlyOne());
+                assertTrue(childSelfRecords.doesAllowOnlyOne());
+            } else {
+                assertFalse(parentRecords.doesAllowOnlyOne());
+                assertFalse(childRecords.doesAllowOnlyOne());
+                assertFalse(parentSelfRecords.doesAllowOnlyOne());
+                assertFalse(childSelfRecords.doesAllowOnlyOne());
+            }
+
+        } finally {
+            if (UtilMethods.isSet(parentContentType) && UtilMethods.isSet(parentContentType.id())) {
+                contentTypeAPI.delete(parentContentType);
+            }
+
+            if (UtilMethods.isSet(childContentType) && UtilMethods.isSet(childContentType.id())) {
+                contentTypeAPI.delete(childContentType);
+            }
+        }
+
+
     }
 }

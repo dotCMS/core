@@ -1,18 +1,12 @@
 package com.dotmarketing.util;
 
 import com.dotmarketing.exception.DotRuntimeException;
+import org.apache.oro.text.regex.*;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.apache.oro.text.regex.MalformedPatternException;
-import org.apache.oro.text.regex.MatchResult;
-import org.apache.oro.text.regex.Pattern;
-import org.apache.oro.text.regex.PatternMatcherInput;
-import org.apache.oro.text.regex.Perl5Compiler;
-import org.apache.oro.text.regex.Perl5Matcher;
-import org.apache.oro.text.regex.Perl5Substitution;
-import org.apache.oro.text.regex.Util;
 
 public class RegEX {
 
@@ -31,7 +25,8 @@ public class RegEX {
 	private static RegEX instance;
 	private Perl5Compiler compiler;
 	
-	private Map<String, org.apache.oro.text.regex.Pattern> patterns = new HashMap<String, org.apache.oro.text.regex.Pattern>();
+	private Map<String, org.apache.oro.text.regex.Pattern> patterns = new HashMap<>();
+	private Map<String, org.apache.oro.text.regex.Pattern> patternsCaseInsensitive = new HashMap<>();
 	
 	private RegEX() {
 		compiler = new Perl5Compiler();
@@ -49,7 +44,9 @@ public class RegEX {
 		}
 		return instance;
 	}
-	
+
+
+
 	private Pattern getPattern(String regEx) throws MalformedPatternException{
 		Pattern p = patterns.get(regEx);
 		if(!UtilMethods.isSet(p)){
@@ -60,7 +57,36 @@ public class RegEX {
 		}
 		return p;
 	}
-	
+
+	private Pattern getPatternCaseInsensitive(final String regEx) throws MalformedPatternException {
+
+		Pattern pattern = patternsCaseInsensitive.get(regEx);
+		if(!UtilMethods.isSet(pattern)){
+			synchronized (patternsCaseInsensitive) {
+				pattern = compiler.compile(regEx,
+						Perl5Compiler.CASE_INSENSITIVE_MASK | Perl5Compiler.READ_ONLY_MASK);
+				patternsCaseInsensitive.put(regEx, pattern);
+			}
+		}
+		return pattern;
+	}
+
+	public static boolean containsCaseInsensitive(final String text, final String regEx) {
+		final RegEX regEXInstance  = getInstance();
+		final Perl5Matcher matcher = regEXInstance.localP5Matcher.get();
+		Pattern pattern;
+
+		try {
+
+			pattern = regEXInstance.getPatternCaseInsensitive(regEx);
+		} catch (MalformedPatternException e) {
+			Logger.error(RegEX.class, "Unable to compile pattern for regex", e);
+			throw new DotRuntimeException("Unable to compile pattern for regex",e);
+		}
+
+		return matcher.contains(text, pattern);
+	}
+
 	/**
 	 * Will return true/false depending on if the text contains/matches the regEx
 	 * @param text

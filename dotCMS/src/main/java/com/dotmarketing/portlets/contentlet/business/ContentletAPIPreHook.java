@@ -1784,5 +1784,9 @@ public interface ContentletAPIPreHook {
 	 */
 	public default void updateModDate(final Set<String> inodes) throws DotDataException {}
 
+    public default boolean findContentletByIdentifierOrFallback(String identifier, boolean live, long incomingLangId, User user,   boolean respectFrontendRoles) {
+        return true;
+    }
+
 
 }

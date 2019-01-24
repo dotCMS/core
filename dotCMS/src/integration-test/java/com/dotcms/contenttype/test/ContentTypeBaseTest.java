@@ -1,19 +1,10 @@
 package com.dotcms.contenttype.test;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
-import com.dotcms.contenttype.business.ContentTypeAPI;
-import com.dotcms.contenttype.business.ContentTypeAPIImpl;
-import com.dotcms.contenttype.business.ContentTypeFactory;
-import com.dotcms.contenttype.business.ContentTypeFactoryImpl;
-import com.dotcms.contenttype.business.FieldAPIImpl;
-import com.dotcms.contenttype.business.FieldFactoryImpl;
+import com.dotcms.contenttype.business.*;
 import com.dotcms.contenttype.model.field.Field;
-import com.dotcms.contenttype.model.type.BaseContentType;
-import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.contenttype.model.type.ContentTypeBuilder;
+import com.dotcms.contenttype.model.type.*;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHttpRequest;
 import com.dotcms.mock.request.MockSessionRequest;
@@ -23,12 +14,17 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.liferay.portal.model.User;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import javax.servlet.http.HttpServletRequest;
-import org.junit.BeforeClass;
+
+import static org.hamcrest.MatcherAssert.assertThat;
 
 public class ContentTypeBaseTest extends IntegrationTestBase {
 
@@ -178,5 +174,6 @@ public class ContentTypeBaseTest extends IntegrationTestBase {
 	    sortedList.sort(Comparator.comparing(Field::variable));
 		return Collections.unmodifiableList(sortedList);
 	}
+
 
 }

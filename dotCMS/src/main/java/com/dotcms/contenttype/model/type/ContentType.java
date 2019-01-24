@@ -3,37 +3,30 @@ package com.dotcms.contenttype.model.type;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.repackage.com.google.common.base.Preconditions;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
+import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.PermissionableProxy;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.PermissionSummary;
-import com.dotmarketing.business.Permissionable;
-import com.dotmarketing.business.RelatedPermissionableGroup;
-import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.business.*;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.util.Config;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import com.google.common.collect.ImmutableMap;
-import java.io.Serializable;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.DateUtils;
 import org.elasticsearch.common.Nullable;
 import org.immutables.value.Value;
 import org.immutables.value.Value.Default;
+
+import java.io.Serializable;
+import java.util.*;
 
 @JsonTypeInfo(
         use = Id.CLASS,
@@ -264,6 +257,20 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
   @Default
   public List<Field> requiredFields() {
     return ImmutableList.of();
+  }
+
+  private final static Map<BaseContentType, Boolean> languageFallbackMap =
+          CollectionsUtils.imap(
+                  BaseContentType.CONTENT,   Config.getBooleanProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE",false),
+                  BaseContentType.WIDGET,    Config.getBooleanProperty("DEFAULT_WIDGET_TO_DEFAULT_LANGUAGE", false),
+                  BaseContentType.FILEASSET, Config.getBooleanProperty("DEFAULT_FILE_TO_DEFAULT_LANGUAGE",false)
+                  );
+
+  @JsonIgnore
+  @Value.Lazy
+  public boolean languageFallback() {
+
+      return languageFallbackMap.getOrDefault(baseType(), false);
   }
 
 }
