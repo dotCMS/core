@@ -44,6 +44,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.Serializable;
+import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Locale;
 import java.util.Map;
@@ -333,6 +335,29 @@ public class LoginServiceAPIFactory implements Serializable {
 
             ses.removeAttribute("_failedLoginName");
 
+            
+            
+
+            
+            if(Config.getBooleanProperty("PREVENT_SESSION_FIXATION_ON_LOGIN", true)) {
+                final Map<String, Object> sessionMap  = new HashMap<String, Object>();
+                final HttpSession oldSession = req.getSession();
+                final Enumeration<String> keys = oldSession.getAttributeNames();
+                while(keys.hasMoreElements()) {
+                    String key = keys.nextElement();
+                    Object value = oldSession.getAttribute(key);
+                    sessionMap.put(key, value);
+                }
+                oldSession.invalidate();
+                final HttpSession newSession = req.getSession();
+                for(String key : sessionMap.keySet()) {
+                    newSession.setAttribute(key, sessionMap.get(key));
+                }
+            }
+            
+
+
+            
             //JWT we crT always b/c in the future we want to use it not only for the remember me, but also for restful authentication.
             this.doRememberMe(req, res, user, rememberMe);
 
