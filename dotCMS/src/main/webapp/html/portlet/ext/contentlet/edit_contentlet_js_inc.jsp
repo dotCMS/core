@@ -568,14 +568,14 @@
                 load: function (data) {
 					if(data.entity && data.entity.resourceLink){
                        var resourceLinkData = data.entity.resourceLink;
-                       resourceLink.text = resourceLinkData.text;
+                       resourceLink.text = shortenString(resourceLinkData.text, 70);
                        resourceLink.href = resourceLinkData.href;
 					} else {
                         showDotCMSSystemMessage('Failed to update resource link', true);
 					}
                 },
                 error: function (error) {
-                    showDotCMSSystemMessage(error.responseText, true);
+                    console.error(error.responseText);
                 }
             }
             dojo.xhrGet(xhrArgs);

@@ -4278,6 +4278,36 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return text;
     }
 
+    /**
+     * This method takes the incoming contentlet and determines if the new fileName we're receiving
+     * is the same already stored on the identifier.fileAsset
+     * This So we enforce validation only of new incoming files
+     * @param contetletIn
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     * @throws IOException
+     */
+    private boolean hasNewIncomingFile(final Contentlet contetletIn) throws DotContentletStateException{
+        try {
+            final String identifierStr = contetletIn.getIdentifier();
+            if(!UtilMethods.isSet(identifierStr)){
+                // if no identifier is set, we're dealing with a brand new contentlet then we enforce validation
+                return true;
+            }
+
+            final Identifier identifier = APILocator.getIdentifierAPI().find(identifierStr);
+            final File incomingFile = contetletIn.getBinary(FileAssetAPI.BINARY_FIELD);
+            String incomingFileName = (null != incomingFile ? incomingFile.getName() : StringPool.BLANK );
+            if(UtilMethods.isSet(contetletIn.getStringProperty(FileAssetAPI.FILE_NAME_FIELD))){
+                incomingFileName = contetletIn.getStringProperty(FileAssetAPI.FILE_NAME_FIELD);
+            }
+            return (!incomingFileName.equals(identifier.getAssetName()));
+        } catch (Exception e) {
+            throw new DotContentletStateException("Exception trying to determine if there's a new incoming file.",e);
+        }
+    }
+
     @CloseDBIfOpened
     @Override
     public void validateContentlet(Contentlet contentlet,List<Category> cats)throws DotContentletValidationException {
@@ -4290,42 +4320,49 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     + "] is not associated to any Content Type.");
         }
         Structure st = CacheLocator.getContentTypeCache().getStructureByInode(contentlet.getStructureInode());
-        if(Structure.STRUCTURE_TYPE_FILEASSET==st.getStructureType()){
+        if(Structure.STRUCTURE_TYPE_FILEASSET == st.getStructureType()){
             if(contentlet.getHost()!=null && contentlet.getHost().equals(Host.SYSTEM_HOST) && (!UtilMethods.isSet(contentlet.getFolder()) || contentlet.getFolder().equals(FolderAPI.SYSTEM_FOLDER))){
                 DotContentletValidationException cve = new FileAssetValidationException("message.contentlet.fileasset.invalid.hostfolder");
                 cve.addBadTypeField(st.getFieldVar(FileAssetAPI.HOST_FOLDER_FIELD));
                 throw cve;
             }
-            boolean fileNameExists = false;
-            try {
-                Host host = APILocator.getHostAPI().find(contentlet.getHost(), APILocator.getUserAPI().getSystemUser(), false);
-                Folder folder = null;
-                if(UtilMethods.isSet(contentlet.getFolder()))
-                    folder=APILocator.getFolderAPI().find(contentlet.getFolder(), APILocator.getUserAPI().getSystemUser(), false);
-                else
-                    folder=APILocator.getFolderAPI().findSystemFolder();
-                String fileName = contentlet.getBinary(FileAssetAPI.BINARY_FIELD)!=null?contentlet.getBinary(FileAssetAPI.BINARY_FIELD).getName():"";
-                if(UtilMethods.isSet(contentlet.getStringProperty("fileName")))
-                    fileName = contentlet.getStringProperty("fileName");
-                if(UtilMethods.isSet(fileName)){
-                    fileNameExists = APILocator.getFileAssetAPI().fileNameExists(host,folder,fileName,contentlet.getIdentifier(), contentlet.getLanguageId());
-                    if(!APILocator.getFolderAPI().matchFilter(folder, fileName)) {
-                        DotContentletValidationException cve = new FileAssetValidationException("message.file_asset.error.filename.filters");
-                        cve.addBadTypeField(st.getFieldVar(FileAssetAPI.HOST_FOLDER_FIELD));
-                        throw cve;
-                    }
-                }
 
-            } catch (Exception e) {
-                if(e instanceof FileAssetValidationException)
-                    throw (FileAssetValidationException)e ;
-                throw new FileAssetValidationException("Unable to validate field: " + FileAssetAPI.BINARY_FIELD + " " +
-                        "in contentlet [" + (contentlet != null ? contentlet.getIdentifier() : "Unknown/New") + "]", e);
-            }
-            if(fileNameExists){
-                DotContentletValidationException cve = new FileAssetValidationException("message.contentlet.fileasset.filename.already.exists");
-                cve.addBadTypeField(st.getFieldVar(FileAssetAPI.HOST_FOLDER_FIELD));
-                throw cve;
+            //We enforce validation only if the file name isn't the same we already got
+            if(hasNewIncomingFile(contentlet)){
+                boolean fileNameExists = false;
+                try {
+                    final Host host = APILocator.getHostAPI ().find(contentlet.getHost(), APILocator.getUserAPI().getSystemUser(), false);
+                    final Folder folder;
+                    if(UtilMethods.isSet(contentlet.getFolder())) {
+                        folder = APILocator.getFolderAPI().find(contentlet.getFolder(), APILocator.getUserAPI().getSystemUser(), false);
+                    }else{
+                        folder = APILocator.getFolderAPI().findSystemFolder();
+                    }
+
+                    String fileName = contentlet.getBinary(FileAssetAPI.BINARY_FIELD) != null ? contentlet.getBinary(FileAssetAPI.BINARY_FIELD).getName() : StringPool.BLANK;
+                    if(UtilMethods.isSet(contentlet.getStringProperty("fileName"))){
+                        fileName = contentlet.getStringProperty("fileName");
+                    }
+                    if(UtilMethods.isSet(fileName)){
+                        fileNameExists = APILocator.getFileAssetAPI().fileNameExists(host, folder, fileName, contentlet.getIdentifier(), contentlet.getLanguageId());
+                        if(!APILocator.getFolderAPI().matchFilter(folder, fileName)) {
+                            DotContentletValidationException cve = new FileAssetValidationException("message.file_asset.error.filename.filters");
+                            cve.addBadTypeField(st.getFieldVar(FileAssetAPI.HOST_FOLDER_FIELD));
+                            throw cve;
+                        }
+                    }
+
+                } catch (Exception e) {
+                    if(e instanceof FileAssetValidationException)
+                        throw (FileAssetValidationException)e ;
+                    throw new FileAssetValidationException("Unable to validate field: " + FileAssetAPI.BINARY_FIELD + " " +
+                            "in contentlet [" + (contentlet != null ? contentlet.getIdentifier() : "Unknown/New") + "]", e);
+                }
+                if(fileNameExists){
+                    DotContentletValidationException cve = new FileAssetValidationException("message.contentlet.fileasset.filename.already.exists");
+                    cve.addBadTypeField(st.getFieldVar(FileAssetAPI.HOST_FOLDER_FIELD));
+                    throw cve;
+                }
             }
         }
 

@@ -271,8 +271,7 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
             cancelChangeContentShowOnMenu ();
     }
 
-    function contentNameDIVClicked(e)
-    {
+    function contentNameDIVClicked(e) {
         var inode = getInodeFromID(Event.element(e).id);
         showDebugMessage('contentDIVClicked: inode = ' + inode +
             ', selectedContent = ' + selectedContent);
@@ -779,8 +778,7 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
 
     //AJAX callback to load the left hand side of the browser
     function selectFolderContentCallBack (content) {
-
-
+        debugger;
         var subFoldersCount = 0;
 
         //Loading the contents table at the rigth hand side
@@ -831,7 +829,7 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
                 new Insertion.Bottom(table, html);
 
                 //Attaching events
-                Event.observe(asset.inode + '-DIV', 'mouseup', contentNameDIVClicked);
+                Event.observe(asset.inode + '-DIV', 'click', contentNameDIVClicked);
                 Event.observe(asset.inode + '-ShowOnMenuSPAN', 'click', contentShowOnMenuClicked);
                 Event.observe(asset.inode + '-TR', 'mouseup', contentTRMouseUp);
                 Event.observe(asset.inode + '-TR', 'dblclick', contentTRDoubleClicked);
@@ -875,8 +873,8 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
                 var assetFullName = name;
 
                 //processing asset description and name to avoid long words that break the column width
-                name = shortenLongWords(name, 30)
-                name = shortenString(name, 30)
+
+                name = shortenString(name, 30);
                 var title = shortenString(asset.title, 30);
                 var modUserName = shortenString(asset.modUserName, 20);
                 //Show Language Icon for Contents (Pages, Files)
@@ -2430,33 +2428,6 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
 
     function hasAddChildrenPermissions (permissions) {
         return permissions.contains("<%= PermissionAPI.PERMISSION_CAN_ADD_CHILDREN %>");
-    }
-
-    function shortenLongWords (input, size) {
-        //processing asset description to avoid long words that break the column width
-        var output = input;
-        if(input != null){
-            var splitted = output.split(' ');
-            for (var k = 0; k < splitted.length; k++) {
-                if (splitted[k].length > size)
-                    output = output.replace(splitted[k], splitted[k].substring(0, (size - 3)) + '...');
-            }
-        }else{
-            output = '';
-        }
-        return output;
-    }
-
-    function shortenString (input, size) {
-        //processing asset description to avoid long words that break the column width
-        var output = input;
-        if (output==null) {
-            output = '';
-        }
-        if (output.length > size) {
-            output = output.substring(0, (size - 3)) + '...';
-        }
-        return output;
     }
 
     function showMessage (msg) {

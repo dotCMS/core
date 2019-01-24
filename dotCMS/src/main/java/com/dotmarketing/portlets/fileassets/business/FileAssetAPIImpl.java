@@ -283,7 +283,7 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 	}
 
 	@CloseDBIfOpened
-	public boolean fileNameExists(Host host, Folder folder, String fileName, String identifier, long languageId) throws  DotDataException{
+	public boolean fileNameExists(final Host host, final Folder folder, final String fileName, final String identifier, final long languageId) throws  DotDataException{
 		if( !UtilMethods.isSet(fileName) ){
 			return true;
 		}
@@ -299,7 +299,7 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 		   // if we're looking at a folder or the fileAssetIdentifier wasn't found. It doesn't exist for sure.
 		   return false;
 		}
-            //Beyond this point we know something matches the path for that host.
+            //Beyond this point we know something matches that path for that host.
 			if(!UtilMethods.isSet(identifier)){
 			   //it's a brand new contentlet we're dealing with
 			   //At this point we know it DOES exist, and since we're dealing with a fresh contentlet that hasn't even been inserted yet (We don't need to worry about lang).
