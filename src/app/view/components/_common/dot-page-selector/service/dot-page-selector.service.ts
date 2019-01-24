@@ -143,13 +143,14 @@ export class DotPageSelectorService {
             );
     }
 
-    private getRequestBodyQuery(query: string): { [key: string]: {} } {
+    private getRequestBodyQuery(query: string, size?: number): { [key: string]: {} } {
         return {
             query: {
                 query_string: {
                     query: query
                 }
-            }
+            },
+            size: size
         };
     }
 
@@ -158,7 +159,7 @@ export class DotPageSelectorService {
         query += specific ? this.getSiteName(param) : `*${this.getSiteName(param)}*`;
 
         return this.coreWebService.requestView({
-                body: this.getRequestBodyQuery(query),
+                body: this.getRequestBodyQuery(query, 20),
                 method: RequestMethod.Post,
                 url: 'es/search'
             })

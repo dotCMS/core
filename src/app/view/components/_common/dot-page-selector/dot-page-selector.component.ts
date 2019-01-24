@@ -200,7 +200,7 @@ export class DotPageSelectorComponent implements ControlValueAccessor {
     }
 
     private validSearch (param: any): boolean {
-       return this.cleanInput(param).length && (param.query.startsWith('//') ? param.query.length >= 5 : true);
+       return this.cleanInput(param).length && (!param.query.startsWith('//') ? param.query.length >= 3 : true);
     }
 
     private cleanInput(event: any): string {
