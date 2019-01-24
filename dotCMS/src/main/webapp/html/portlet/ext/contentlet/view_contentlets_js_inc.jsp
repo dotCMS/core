@@ -1752,7 +1752,7 @@
 
                         var cell = row.insertCell (row.cells.length);
                         cell.style.whiteSpace="nowrap";
-debugger;
+
                         cell.innerHTML = statusDataCell(cellData, i);
                         for (var j = 0; j < headers.length; j++) {
                                 var header = headers[j];
