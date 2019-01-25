@@ -14,11 +14,12 @@ import graphql.servlet.GraphQLServletListener;
 public class DotGraphQLServletListener implements GraphQLServletListener {
 
     @Override
-    public RequestCallback onRequest(HttpServletRequest request, HttpServletResponse response) {
+    public RequestCallback onRequest(final HttpServletRequest request, final HttpServletResponse response) {
 
         return new RequestCallback() {
             @Override
-            public void onError(HttpServletRequest request, HttpServletResponse servletResponse, Throwable throwable) {
+            public void onError(final HttpServletRequest request, final HttpServletResponse servletResponse,
+                                final Throwable throwable) {
                 Logger.error(throwable.getClass(), throwable.getMessage(), throwable);
                 final Response response = ResponseUtil.mapExceptionResponse(throwable);
                 try {

@@ -9,10 +9,10 @@ import graphql.servlet.GraphQLContext;
 
 public class DotGraphQLContext extends GraphQLContext {
 
-    private User user;
+    private final User user;
 
     public DotGraphQLContext(final HttpServletRequest httpServletRequest,
-                             final HttpServletResponse httpServletResponse, User user) {
+                             final HttpServletResponse httpServletResponse, final User user) {
         super(httpServletRequest, httpServletResponse);
         this.user = user;
     }

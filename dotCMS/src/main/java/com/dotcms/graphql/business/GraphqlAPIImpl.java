@@ -181,7 +181,8 @@ public class GraphqlAPIImpl implements GraphqlAPI {
         return graphQLType;
     }
 
-    private void handleRelationshipField(ContentType contentType, GraphQLObjectType.Builder builder, Field field) {
+    private void handleRelationshipField(final ContentType contentType, GraphQLObjectType.Builder builder,
+                                         final Field field) {
         // TODO: make return type an object or list based on cardinality using RelAPI method from Nolly
 
         final ContentType relatedContentType;

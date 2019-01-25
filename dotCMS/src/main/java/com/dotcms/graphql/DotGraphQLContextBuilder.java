@@ -28,7 +28,7 @@ public class DotGraphQLContextBuilder implements GraphQLContextBuilder {
     }
 
     @Override
-    public GraphQLContext build(Session session, HandshakeRequest handshakeRequest) {
+    public GraphQLContext build(final Session session, final HandshakeRequest handshakeRequest) {
         return null;
     }
 
