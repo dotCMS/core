@@ -11,16 +11,18 @@ dot-searchable-dropdown {
         text-transform: none;
         width: auto;
 
-        &:hover,
-        &:active,
-        &:focus {
-            @extend #field-hover-state;
-            @extend #inputtext-normal-border;
-            border: 0;
+        &:not([disabled]){
+            &:hover,
+            &:active,
+            &:focus {
+                @extend #field-hover-state;
+                @extend #inputtext-normal-border;
+                border: 0;
 
-            .ui-button-text,
-            [class^="ui-button-icon"] {
-                color: $body-font-color;
+                .ui-button-text,
+                [class^="ui-button-icon"] {
+                    color: $body-font-color;
+                }
             }
         }
 
