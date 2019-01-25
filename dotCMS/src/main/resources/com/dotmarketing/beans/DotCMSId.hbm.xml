@@ -680,55 +680,8 @@
 		<property column="timestampper" name="timestamp" type="java.util.Date" />
 	</class>
 
-	<class name="com.dotmarketing.portlets.webforms.model.WebForm" table="web_form">
-		<id name="webFormId" column="web_form_id" type="string" length="36" unsaved-value="any">
-			<!-- generator class="sequence">
-				<param name="sequence">web_form_seq</param>
-			</generator
-			<generator class="native"/> -->
-			<generator class="com.dotmarketing.util.UUIDGenerator" />
-		</id>
-		<property name="formType" type="string">
-			<column name="form_type" length="255" index="idx_user_webform_1" />
-		</property>
-		<property column="submit_date" name="submitDate" type="java.util.Date" />
-		<property column="prefix" name="prefix" type="string" />
-		<property column="first_name" name="firstName" type="string" />
-		<property column="middle_initial" name="middleInitial" type="string" />
-		<property column="middle_name" name="middleName" type="string" />
-		<property column="full_name" name="fullName" type="string" />
-		<property column="organization" name="organization" type="string" />
-		<property column="title" name="title" type="string" />
-		<property column="last_name" name="lastName" type="string" />
-		<property column="address" name="address" type="string" />
-		<property column="address1" name="address1" type="string" />
-		<property column="address2" name="address2" type="string" />
-		<property column="city" name="city" type="string" />
-		<property column="state" name="state" type="string" />
-		<property column="zip" name="zip" type="string" />
-		<property column="country" name="country" type="string" />
-		<property column="phone" name="phone" type="string" />
-		<property column="email" name="email" type="string" />
-		<property column="custom_fields" name="customFields" type="string" length="123456789" />
-		<property column="user_inode" length="36" name="userInode" type="string" />
-		<property column="categories" length="255" name="categories" type="string" />
-	</class>
 
-	<class name="com.dotmarketing.beans.Rating" table="content_rating">
-	  <id name="id" column="id" type="long" unsaved-value="0">
-			<!-- generator class="sequence">
-				<param name="sequence">content_rating_sequence</param>
-			</generator -->
-			<generator class="native"/>
-	  </id>
-	  	<property column="rating" name="rating" type="float" />
-	  	<property column="user_id" name="userId" length="255" type="string" />
-	  	<property column="session_id" name="sessionId" length="255" type="string" />
-	  	<property column="identifier" name="identifier" length="36" type="string" />
-	  	<property column="rating_date" name="ratingDate" type="java.util.Date" />
-	  	<property column="user_ip" name="userIP" length="255" type="string" />
-	  	<property column="long_live_cookie_id" name="longLiveCookiesId" length="255" type="string" />
-	</class>
+
 
 	<class name="com.dotmarketing.tag.model.Tag" table="tag">
 		<id name="tagId" column="tag_id" length="100" type="string">

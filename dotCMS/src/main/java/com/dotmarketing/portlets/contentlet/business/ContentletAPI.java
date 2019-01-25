@@ -28,6 +28,7 @@ import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -1737,5 +1738,19 @@ public interface ContentletAPI {
 	 * @throws DotDataException
 	 */
 	int updateModDate(final Set<String> inodes, final User user) throws DotDataException;
+
+	/**
+	 * This will find the live/working version of a piece of content for the language passed in.  If the content is not found in the language passed in
+	 * then the method will try to "fallback" and return the content in the default language based on the properties set in the dotmarketing-config.properties
+	 * @param identifier
+	 * @param live
+	 * @param incomingLangId
+	 * @param user
+	 * @param respectFrontendRoles
+	 * @return
+	 * @throws DotSecurityException
+	 */
+    Optional<Contentlet> findContentletByIdentifierOrFallback(String identifier, boolean live, long incomingLangId, User user,
+            boolean respectFrontendRoles);
 
 }

@@ -40,14 +40,7 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.beans.Tree;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.FactoryLocator;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.RelationshipAPI;
-import com.dotmarketing.business.Role;
-import com.dotmarketing.business.Treeable;
+import com.dotmarketing.business.*;
 import com.dotmarketing.business.query.GenericQueryFactory.Query;
 import com.dotmarketing.business.query.QueryUtil;
 import com.dotmarketing.business.query.ValidationException;
@@ -157,6 +150,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -185,15 +179,15 @@ public class ESContentletAPIImpl implements ContentletAPI {
     private static final String NEVER_EXPIRE                              = "NeverExpire";
     private static final String CHECKIN_IN_PROGRESS                      = "__checkin_in_progress__";
 
-    private final ESContentletIndexAPI indexAPI;
-    private final ESContentFactoryImpl contentFactory;
-    private final PermissionAPI        permissionAPI;
-    private final CategoryAPI          categoryAPI;
-    private final RelationshipAPI      relationshipAPI;
-    private final FieldAPI             fieldAPI;
-    private final LanguageAPI          languageAPI;
+    private final ESContentletIndexAPI  indexAPI;
+    private final ESContentFactoryImpl  contentFactory;
+    private final PermissionAPI         permissionAPI;
+    private final CategoryAPI           categoryAPI;
+    private final RelationshipAPI       relationshipAPI;
+    private final FieldAPI              fieldAPI;
+    private final LanguageAPI           languageAPI;
     private final DistributedJournalAPI<String> distributedJournalAPI;
-    private final TagAPI               tagAPI;
+    private final TagAPI                tagAPI;
     private final IdentifierStripedLock lockManager;
 
     private static final int MAX_LIMIT = 10000;
@@ -336,6 +330,48 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     }
 
+    
+    @CloseDBIfOpened
+    @Override
+    public Optional<Contentlet> findContentletByIdentifierOrFallback(final String identifier, final boolean live,
+            final long incomingLangId, final User user, final boolean respectFrontendRoles) {
+        
+        final long defaultLanguageId = this.languageAPI.getDefaultLanguage().getId();
+        final long tryLanguage       = incomingLangId <= 0? defaultLanguageId : incomingLangId;
+
+        try {
+
+            ContentletVersionInfo contentletVersionInfo =
+                    APILocator.getVersionableAPI().getContentletVersionInfo(identifier, tryLanguage);
+
+            if (tryLanguage != defaultLanguageId && (contentletVersionInfo == null || (live && contentletVersionInfo.getLiveInode() == null))) {
+                contentletVersionInfo = APILocator.getVersionableAPI().getContentletVersionInfo(identifier, defaultLanguageId);
+            }
+
+            if (contentletVersionInfo == null) {
+
+                Optional.empty();
+            }
+
+            final Contentlet contentlet =  live?
+                    this.find(contentletVersionInfo.getLiveInode(), user, respectFrontendRoles) :
+                    this.find(contentletVersionInfo.getWorkingInode(), user, respectFrontendRoles);
+
+            if (contentlet == null  || (!contentlet.getContentType().languageFallback() && tryLanguage != defaultLanguageId)) {
+
+                return Optional.empty();
+            }
+
+            return Optional.of(contentlet);
+        } catch (Exception e) {
+
+            throw new DotContentletStateException("Can't find contentlet: " + identifier + " lang:" + incomingLangId + " live:" + live, e);
+        }
+    }
+    
+    
+    
+    
     @CloseDBIfOpened
     @Override
     public Contentlet findContentletByIdentifierAnyLanguage(final String identifier) throws DotDataException, DotSecurityException {

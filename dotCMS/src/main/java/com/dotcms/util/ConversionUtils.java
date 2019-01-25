@@ -6,6 +6,7 @@ import com.dotmarketing.util.UtilMethods;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 
 /**
  * Utility class for conversion operations.
@@ -108,14 +109,46 @@ public class ConversionUtils implements Serializable {
 	}
 
 	/**
-	 * 
+	 * Converts the specified input value into an {@code long}. The input value
+	 * can be a String or an instance of {@link Number}.
 	 * @param input
+	 *         - The value to convert.
 	 * @param defaultLong
-	 * @return
+	 *        - The default value in case the input cannot be converted.
+	 * @return long value
 	 */
 	public static long toLong (final Object input, final Long defaultLong) {
 
-		long l = defaultLong;
+		long resultLong = defaultLong;
+
+		try {
+			if (UtilMethods.isSet(input)) {
+				if (input instanceof CharSequence) {
+					resultLong = Long.parseLong(input.toString());
+				} else if (input instanceof Number) {
+					resultLong = Number.class.cast(input).longValue();
+				}
+			}
+		} catch (NumberFormatException e) {
+
+			resultLong = defaultLong;
+		}
+
+		return resultLong;
+	}
+
+	/**
+	 * Converts the specified input value into an {@code long}. The input value
+	 * can be a String or an instance of {@link Number}.
+	 * @param input
+	 *         - The value to convert.
+	 * @param defaultLong
+	 *        - Supplier with the default value in case the input cannot be converted.
+	 * @return long value
+	 */
+	public static long toLong (final Object input, final Supplier<Long> defaultLong) {
+
+		long l = 0;
 
 		try {
 			if (UtilMethods.isSet(input)) {
@@ -123,11 +156,13 @@ public class ConversionUtils implements Serializable {
 					l = Long.parseLong(input.toString());
 				} else if (input instanceof Number) {
 					l = Number.class.cast(input).longValue();
+				} else {
+					l = defaultLong.get();
 				}
 			}
 		} catch (NumberFormatException e) {
 
-			l = defaultLong;
+			l = defaultLong.get();
 		}
 
 		return l;
@@ -174,6 +209,30 @@ public class ConversionUtils implements Serializable {
 			}
 		} catch (NumberFormatException e) {
 			return defaultInt;
+		}
+	}
+
+	/**
+	 * Converts the specified input value into an {@code int}. The input value
+	 * can be a String or an instance of {@link Number}.
+	 *
+	 * @param input
+	 *            - The value to convert.
+	 * @param defaultInt
+	 *            - Supplier with the default value in case the input cannot be converted.
+	 * @return The input as {@code int}, or the default value.
+	 */
+	public static int toInt(final Object input, final Supplier<Integer> defaultInt) {
+		try {
+			if (input instanceof CharSequence) {
+				return Integer.parseInt(CharSequence.class.cast(input).toString());
+			} else if (input instanceof Number) {
+				return Number.class.cast(input).intValue();
+			} else {
+				return defaultInt.get();
+			}
+		} catch (NumberFormatException e) {
+			return defaultInt.get();
 		}
 	}
 

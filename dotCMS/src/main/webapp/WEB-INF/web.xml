@@ -531,7 +531,10 @@
 		<servlet-name>JSONTagsServlet</servlet-name>
 		<url-pattern>/JSONTags/*</url-pattern>
 	</servlet-mapping>
-	
+	<servlet-mapping>
+		<servlet-name>DotGraphQLHttpServlet</servlet-name>
+		<url-pattern>/api/v1/graphql</url-pattern>
+	</servlet-mapping>
 	<servlet-mapping>
 		<servlet-name>RESTAPI</servlet-name>
 		<url-pattern>/api/*</url-pattern>
@@ -545,10 +548,6 @@
 	<servlet-mapping>
 		<servlet-name>PreviewDesignTemplateServlet</servlet-name>
 		<url-pattern>/servlets/template/design/preview</url-pattern>
-	</servlet-mapping>
-	<servlet-mapping>
-		<servlet-name>DotGraphQLHttpServlet</servlet-name>
-		<url-pattern>/graphql</url-pattern>
 	</servlet-mapping>
 	<!--END DOTMARKETING SERVLET-MAPPING-->
 	
