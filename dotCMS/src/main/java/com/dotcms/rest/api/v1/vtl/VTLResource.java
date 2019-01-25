@@ -341,26 +341,12 @@ public class VTLResource {
     @Path("/dynamic/{pathParam:.*}")
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
-    @Consumes({MediaType.APPLICATION_JSON})
+    @Consumes({MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN})
     public Response dynamicGet(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
                                @Context UriInfo uriInfo, @PathParam("pathParam") final String pathParam,
-                               final String bodyMapStr) {
-        Map<String, String> bodyMap = new HashMap<>();
-        
+                               final String bodyMapString) {
 
-        
-        String escapedJsoValues = escapeJsonValues(bodyMapStr, '\n');
-        
-        try {
-            bodyMap = new ObjectMapper().readValue(escapedJsoValues, HashMap.class);
-            if(bodyMap.containsKey("velocity")){
-                bodyMap.put("velocity", unescapeValue(bodyMap.get("velocity"), "\n"));
-            }
-            
-        } catch (Exception e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
+        final Map<String, String> bodyMap = parseBodyMap(bodyMapString);
 
         return processRequest(request, response, uriInfo, null, pathParam, HTTPMethod.GET, bodyMap);
     }
@@ -369,13 +355,11 @@ public class VTLResource {
     @Path("/dynamic")
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
-    @Consumes({MediaType.APPLICATION_JSON})
+    @Consumes({MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN})
     public Response dynamicGet(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
                                @Context UriInfo uriInfo,
-                               String bodyMapStr) {
+                               final String bodyMapStr) {
 
-
-        
         return dynamicGet(request, response, uriInfo, null,bodyMapStr);
     }
 
@@ -387,10 +371,12 @@ public class VTLResource {
     @Path("/dynamic/{pathParam:.*}")
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
-    @Consumes({MediaType.APPLICATION_JSON})
+    @Consumes({MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN})
     public Response dynamicPost(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
                                 @Context UriInfo uriInfo, @PathParam("pathParam") final String pathParam,
-                                final Map<String, String> bodyMap) {
+                                final String bodyMapString) {
+
+        final Map<String, String> bodyMap = parseBodyMap(bodyMapString);
 
         return processRequest(request, response, uriInfo, null, pathParam, HTTPMethod.POST, bodyMap);
     }
@@ -399,12 +385,12 @@ public class VTLResource {
     @Path("/dynamic")
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
-    @Consumes({MediaType.APPLICATION_JSON})
+    @Consumes({MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN})
     public Response dynamicPost(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
                                 @Context UriInfo uriInfo,
-                                final Map<String, String> bodyMap) {
+                                final String bodyMapString) {
 
-        return processRequest(request, response, uriInfo, null, null, HTTPMethod.POST, bodyMap);
+        return dynamicPost(request, response, uriInfo, null, bodyMapString);
     }
 
     /**
@@ -415,10 +401,12 @@ public class VTLResource {
     @Path("/dynamic/{pathParam:.*}")
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
-    @Consumes({MediaType.APPLICATION_JSON})
+    @Consumes({MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN})
     public Response dynamicPut(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
                                @Context UriInfo uriInfo, @PathParam("pathParam") final String pathParam,
-                               final Map<String, String> bodyMap) {
+                               final String bodyMapString) {
+
+        final Map<String, String> bodyMap = parseBodyMap(bodyMapString);
 
         return processRequest(request, response, uriInfo, null, pathParam, HTTPMethod.PUT, bodyMap);
     }
@@ -427,12 +415,12 @@ public class VTLResource {
     @Path("/dynamic")
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
-    @Consumes({MediaType.APPLICATION_JSON})
+    @Consumes({MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN})
     public Response dynamicPut(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
                                @Context final UriInfo uriInfo,
-                               final Map<String, String> bodyMap) {
+                               final String bodyMapString) {
 
-        return processRequest(request, response, uriInfo, null, null, HTTPMethod.PUT, bodyMap);
+        return dynamicPut(request, response, uriInfo, null, bodyMapString);
     }
 
     /**
@@ -443,10 +431,12 @@ public class VTLResource {
     @Path("/dynamic/{pathParam:.*}")
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
-    @Consumes({MediaType.APPLICATION_JSON})
+    @Consumes({MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN})
     public Response dynamicPatch(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
                                  @Context UriInfo uriInfo, @PathParam("pathParam") final String pathParam,
-                                 final Map<String, String> bodyMap) {
+                                 final String bodyMapString) {
+
+        final Map<String, String> bodyMap = parseBodyMap(bodyMapString);
 
         return processRequest(request, response, uriInfo, null, pathParam, HTTPMethod.PATCH, bodyMap);
     }
@@ -460,10 +450,12 @@ public class VTLResource {
     @Path("/dynamic/{pathParam:.*}")
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
-    @Consumes({MediaType.APPLICATION_JSON})
+    @Consumes({MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN})
     public Response dynamicDelete(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
                                   final @Context UriInfo uriInfo, @PathParam("pathParam") final String pathParam,
-                                  final Map<String, String> bodyMap) {
+                                  final String bodyMapString) {
+
+        final Map<String, String> bodyMap = parseBodyMap(bodyMapString);
 
         return processRequest(request, response, uriInfo, null, pathParam, HTTPMethod.DELETE, bodyMap);
     }
@@ -685,9 +677,37 @@ public class VTLResource {
         }
     }
 
-    final String ESCAPE_ME_VALUE= " THIS_ESCAPES_LINE_BREAKS ";
+    private Map<String, String> parseBodyMap(final String bodyMapString) {
+        Map<String, String> bodyMap = new HashMap<>();
+
+        // 1) try parsing as is
+        try {
+            bodyMap = new ObjectMapper().readValue(bodyMapString, HashMap.class);
+
+            if(bodyMap.containsKey("velocity")){
+                bodyMap.put("velocity", unescapeValue(bodyMap.get("velocity"), "\n"));
+            }
+        } catch (IOException e) {
+            // 2) let's try escaping then parsing
+            String escapedJsonValues = escapeJsonValues(bodyMapString, '\n');
+
+            try {
+                bodyMap = new ObjectMapper().readValue(bodyMapString, HashMap.class);
+
+                if(bodyMap.containsKey("velocity")){
+                    bodyMap.put("velocity", unescapeValue(bodyMap.get("velocity"), "\n"));
+                }
+            } catch (IOException e1) {
+                bodyMap.put("velocity", escapedJsonValues);
+            }
+        }
+
+        return bodyMap;
+    }
+
+    private final String ESCAPE_ME_VALUE= " THIS_ESCAPES_LINE_BREAKS ";
     
-    private final String escapeJsonValues(final String jsonStr, final char escapeFrom) {
+    private String escapeJsonValues(final String jsonStr, final char escapeFrom) {
         
         StringWriter sw = new StringWriter();
         char[] charArr = jsonStr.toCharArray();
@@ -702,20 +722,12 @@ public class VTLResource {
             }else {
                 sw.append(c);
             }
-            
         }
         return sw.toString();
-
     }
     
-    private final String unescapeValue(String escapedValue, final String escapeFrom) {
-        
+    private String unescapeValue(String escapedValue, final String escapeFrom) {
         return escapedValue.replace(ESCAPE_ME_VALUE, escapeFrom);
-
     }
-    
-    
-    
-    
-    
+
 }
