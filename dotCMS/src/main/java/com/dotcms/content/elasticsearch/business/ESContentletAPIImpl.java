@@ -354,13 +354,17 @@ public class ESContentletAPIImpl implements ContentletAPI {
         
         final long defaultLanguageId = this.languageAPI.getDefaultLanguage().getId();
         final long tryLanguage       = incomingLangId <= 0? defaultLanguageId : incomingLangId;
+        boolean    fallback          = false;
 
         try {
 
+            // try the user language
             ContentletVersionInfo contentletVersionInfo =
                     APILocator.getVersionableAPI().getContentletVersionInfo(identifier, tryLanguage);
 
+            // try the fallback if does not exists
             if (tryLanguage != defaultLanguageId && (contentletVersionInfo == null || (live && contentletVersionInfo.getLiveInode() == null))) {
+                fallback              = true;  // using the fallback
                 contentletVersionInfo = APILocator.getVersionableAPI().getContentletVersionInfo(identifier, defaultLanguageId);
             }
 
@@ -373,7 +377,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     this.find(contentletVersionInfo.getLiveInode(), user, respectFrontendRoles) :
                     this.find(contentletVersionInfo.getWorkingInode(), user, respectFrontendRoles);
 
-            if (contentlet == null  || (!contentlet.getContentType().languageFallback() && tryLanguage != defaultLanguageId)) {
+            if (null == contentlet) {
+
+                Optional.empty();
+            }
+
+            // if we are using the fallback, and it is not allowed, return empty
+            if (fallback && tryLanguage != defaultLanguageId && !contentlet.getContentType().languageFallback()) {
 
                 return Optional.empty();
             }
@@ -1173,8 +1183,17 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     }
                 }
                 return categoryList;
-            }else if(theField.getFieldType().equals(FieldType.RELATIONSHIP.toString())) {
-                return contentlet.getRelated(theField.getVelocityVarName());
+            } else if (theField.getFieldType().equals(FieldType.RELATIONSHIP.toString())) {
+                ContentletRelationships contentletRelationships = new ContentletRelationships(
+                        contentlet);
+                Relationship relationship = relationshipAPI
+                        .getRelationshipFromField(theField, user);
+                ContentletRelationshipRecords records = contentletRelationships.new ContentletRelationshipRecords(
+                        relationship,
+                        relationshipAPI.isParent(relationship, contentlet.getContentType()));
+                records.setRecords(contentlet.getRelated(theField.getVelocityVarName()));
+                contentletRelationships.setRelationshipsRecords(CollectionsUtils.list(records));
+                return contentletRelationships;
             }else{
                 return contentlet.get(theField.getVelocityVarName());
             }

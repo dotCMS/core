@@ -12,11 +12,15 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.cache.FieldsCache;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
+import com.dotmarketing.portlets.structure.model.ContentletRelationships;
+import com.dotmarketing.portlets.structure.model.ContentletRelationships.ContentletRelationshipRecords;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Field.FieldType;
 import com.dotmarketing.portlets.structure.model.KeyValueFieldUtil;
@@ -284,10 +288,7 @@ public class ContentMap {
 				retMap.put("map", keyValueMap);
 				return retMap;
 			} else if(f != null && f.getFieldType().equals(FieldType.RELATIONSHIP.toString())){
-				return perAPI.filterCollection((ArrayList) conAPI.getFieldValue(content, f),
-						PermissionAPI.PERMISSION_USE, true, user).stream()
-						.map(contentlet -> new ContentMap((Contentlet) contentlet, user,
-								EDIT_OR_PREVIEW_MODE, host, context)).collect(Collectors.toList());
+				return getRelationshipInfo(f);
 			}
 
 			//ret could have been set by title
@@ -295,7 +296,7 @@ public class ContentMap {
 				ret = conAPI.getFieldValue(content, f);
 			}
 
-			//handle Velicty Code
+			//handle Velocity Code
 			if(parseVelocity && ret != null && (f == null || f.getFieldType().equals(Field.FieldType.TEXT.toString()) || f.getFieldType().equals(Field.FieldType.TEXT_AREA.toString()) || f.getFieldType().equals(Field.FieldType.CUSTOM_FIELD.toString()) || f.getFieldType().equals(Field.FieldType.WYSIWYG.toString())) && (ret.toString().contains("#") || ret.toString().contains("$"))){
 				VelocityEngine ve = VelocityUtil.getEngine();
 				Template template = null;
@@ -313,7 +314,34 @@ public class ContentMap {
 		}
 	}
 
-    /**
+	/***
+	 * Given a relationship field, returns a ContentMap object if this side of the relationship
+	 * allows only one (see {@link ContentletRelationshipRecords#doesAllowOnlyOne()}),
+	 * according to the relationship cardinality. Otherwise, a list of ContentMap
+	 * objects is returned
+	 * @param field
+	 * @return
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	private Object getRelationshipInfo(Field field)
+			throws DotDataException, DotSecurityException {
+		ContentletRelationships relationships = (ContentletRelationships)conAPI.getFieldValue(content, field);
+		ContentletRelationshipRecords records = relationships.getRelationshipsRecords().get(0);
+		if (records.doesAllowOnlyOne()){
+			return new ContentMap(records.getRecords().get(0),user,
+					EDIT_OR_PREVIEW_MODE, host, context);
+		} else{
+			return perAPI.filterCollection(records.getRecords(),
+					PermissionAPI.PERMISSION_USE, true, user).stream()
+					.map(contentlet -> new ContentMap((Contentlet) contentlet, user,
+							EDIT_OR_PREVIEW_MODE, host, context)).collect(Collectors.toList());
+		}
+
+
+	}
+
+	/**
     * Returns the returns the identifier based URI for the
     * first doc/file on a piece of content
     * EXAMPLE : $mycontent.shorty

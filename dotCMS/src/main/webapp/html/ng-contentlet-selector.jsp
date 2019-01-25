@@ -176,6 +176,12 @@
     </script>
 </head>
 <body>
-<div jsId="contentSelector" containerStructures='<%=containerStructures%>' onContentSelected="contentSelected" dojoType="dotcms.dijit.form.ContentSelector"></div>
+<div jsId="contentSelector"
+     containerStructures='<%=containerStructures%>'
+     onContentSelected="contentSelected"
+     selectButtonLabel='<%= LanguageUtil.get(pageContext, "content.search.select") %>'
+     dojoType="dotcms.dijit.form.ContentSelector">
+
+</div>
 </body>
 </html>

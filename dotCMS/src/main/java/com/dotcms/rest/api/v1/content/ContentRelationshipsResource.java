@@ -92,9 +92,7 @@ public class ContentRelationshipsResource {
             final String relatedContents = this.contentRelationshipsHelper.contentsAsJson(cons);
             final Response.ResponseBuilder builder = Response.ok(relatedContents, MediaType
                     .APPLICATION_JSON);
-            builder.header("Access-Control-Expose-Headers", "Authorization");
-            builder.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, " +
-                    "Content-Type, " + "Accept, Authorization");
+
             res = builder.build();
         } catch (JSONException e) {
             final String errorMsg = "An error occurred when generating the JSON response (" + e

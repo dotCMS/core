@@ -58,7 +58,7 @@ var isNg = new URLSearchParams(document.location.search).get('ng');
 dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templated], {
 
 	templatePath: dojo.moduleUrl("dotcms", isNg ? "dijit/form/ContentSelectorNoDialog.jsp" : "dijit/form/ContentSelector.jsp"),
-	selectButtonTemplate: '<button id="{buttonInode}" dojoType="dijit.form.Button">Select</button>',
+    selectButtonTemplate: '<button id="{buttonInode}" dojoType="dijit.form.Button">{selectButtonLabel}</button>',
 	checkBoxTemplate: '<input value="{buttonInode}" class="contentCheckbox" dojoType="dijit.form.CheckBox"></input>',
 	widgetsInTemplate: true,
 	title: '',
@@ -90,6 +90,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 	containerStructures: new Array(),
 	availableLanguages: new Array(),
 	numberOfResults:20,
+    selectButtonLabel:'Select',
 
 	postCreate: function () {
         var structuresParam = this.containerStructures.toString();
@@ -509,13 +510,17 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 		this.matchingResultsDiv.style.visibility = "hidden";
 	},
 
-	_doRelateContent: function () {
-		var checkedNodes = dojo.query('input:checked');
+	_doRelateContent: function (content) {
 		var inodes = new Array();
 
-		dojo.forEach(checkedNodes,function(node, i) {
-			inodes[i] = node.value;
-		});
+        if (!content.inode) {
+            var checkedNodes = dojo.query('input:checked');
+            dojo.forEach(checkedNodes,function(node, i) {
+                inodes[i] = node.value;
+            });
+        } else {
+            inodes[0] = content.inode;
+        }
 
 		setTimeout("ContentletAjax.getContentletsData ('" + inodes + "', "+this.relationJsName+"_addRelationshipCallback)", 50);
 
@@ -943,7 +948,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 	_selectButton: function (data) {
 			var inode = data["inode"];
 			var buttonInode = this.searchCounter+inode;
-			var button = dojo.replace(this.selectButtonTemplate,{buttonInode:buttonInode});
+			var button = dojo.replace(this.selectButtonTemplate,{buttonInode:buttonInode,selectButtonLabel:this.selectButtonLabel});
 			return button;
 		},
 

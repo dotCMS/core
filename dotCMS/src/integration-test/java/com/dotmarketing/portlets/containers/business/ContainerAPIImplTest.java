@@ -54,6 +54,8 @@ public class ContainerAPIImplTest extends IntegrationTestBase  {
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
         OSGIUtil.getInstance().initializeFramework(Config.CONTEXT);
+        final Host defaultHost  = APILocator.getHostAPI().findDefaultHost( APILocator.systemUser(), false );
+        checkApplicationContainerFolder(defaultHost);
     }
 
     @Test
@@ -140,7 +142,6 @@ public class ContainerAPIImplTest extends IntegrationTestBase  {
     public void test_get_container_by_folder_found() throws DotDataException, DotSecurityException {
 
         final Host defaultHost  = APILocator.getHostAPI().findDefaultHost( APILocator.systemUser(), false );
-        this.checkApplicationContainerFolder(defaultHost);
         final ContainerAPI containerAPI = APILocator.getContainerAPI();
         final FolderAPI folderAPI       = APILocator.getFolderAPI();
         final Folder    folder          = folderAPI.findFolderByPath
@@ -171,7 +172,6 @@ public class ContainerAPIImplTest extends IntegrationTestBase  {
     public void test_find_container_not_found() throws DotDataException, DotSecurityException {
 
         final Host defaultHost  = APILocator.getHostAPI().findDefaultHost( APILocator.systemUser(), false );
-        this.checkApplicationContainerFolder(defaultHost);
         final ContainerAPI containerAPI = APILocator.getContainerAPI();
         final FolderAPI folderAPI       = APILocator.getFolderAPI();
         final Folder    folder          = folderAPI.findFolderByPath
@@ -185,7 +185,6 @@ public class ContainerAPIImplTest extends IntegrationTestBase  {
     public void test_find_all_containers_success() throws DotDataException, DotSecurityException {
 
         final Host defaultHost  = APILocator.getHostAPI().findDefaultHost( APILocator.systemUser(), false );
-        this.checkApplicationContainerFolder(defaultHost);
         final ContainerAPI containerAPI = APILocator.getContainerAPI();
         final List<Container> containers = containerAPI.findAllContainers(APILocator.systemUser(), false);
 
@@ -198,8 +197,6 @@ public class ContainerAPIImplTest extends IntegrationTestBase  {
     public void test_get_live_not_found() throws DotDataException, DotSecurityException {
 
         final Host defaultHost  = APILocator.getHostAPI().findDefaultHost( APILocator.systemUser(), false );
-        this.checkApplicationContainerFolder(defaultHost);
-
         Contentlet contentlet = null;
 
         try {
@@ -220,7 +217,11 @@ public class ContainerAPIImplTest extends IntegrationTestBase  {
             containerAPI.getLiveContainerById(container.getIdentifier(), APILocator.systemUser(), false);
         } finally {
 
-            this.publish(contentlet);
+            try {
+                this.publish(contentlet);
+            } catch (Exception e) {
+                // quiet
+            }
         }
     }
 
@@ -228,8 +229,6 @@ public class ContainerAPIImplTest extends IntegrationTestBase  {
     public void test_get_working_found() throws DotDataException, DotSecurityException {
 
         final Host defaultHost  = APILocator.getHostAPI().findDefaultHost( APILocator.systemUser(), false );
-        this.checkApplicationContainerFolder(defaultHost);
-
         final ContainerAPI containerAPI = APILocator.getContainerAPI();
         final FolderAPI folderAPI       = APILocator.getFolderAPI();
         final Folder    folder          = folderAPI.findFolderByPath
@@ -279,17 +278,9 @@ public class ContainerAPIImplTest extends IntegrationTestBase  {
                         .build());
     }
 
-    @Test
-    public void test_find_live_found() throws DotDataException, DotSecurityException {
-
-        final Host defaultHost  = APILocator.getHostAPI().findDefaultHost( APILocator.systemUser(), false );
-        this.checkApplicationContainerFolder(defaultHost);
-        // todo: check containers
-
-    }
 
     @WrapInTransaction
-    private  void checkApplicationContainerFolder (final Host defaultHost) {
+    private static synchronized void checkApplicationContainerFolder (final Host defaultHost) {
 
         final FolderAPI folderAPI = APILocator.getFolderAPI();
         try {
@@ -298,22 +289,22 @@ public class ContainerAPIImplTest extends IntegrationTestBase  {
 
             if (null == folder || !UtilMethods.isSet(folder.getIdentifier())) {
 
-                this.creatApplicationContainerFolder(defaultHost);
-                this.createFileAssetContainerForTesting(defaultHost);
+                creatApplicationContainerFolder(defaultHost);
+                createFileAssetContainerForTesting(defaultHost);
             }
 
-            if (!this.existsFileAssetContainerForTesting(defaultHost)) {
+            if (!existsFileAssetContainerForTesting(defaultHost)) {
 
-                this.createFileAssetContainerForTesting(defaultHost);
+                createFileAssetContainerForTesting(defaultHost);
             }
         } catch (DotDataException | DotSecurityException e) {
 
-            this.creatApplicationContainerFolder(defaultHost);
-            this.createFileAssetContainerForTesting(defaultHost);
+            creatApplicationContainerFolder(defaultHost);
+            createFileAssetContainerForTesting(defaultHost);
         }
     }
 
-    private boolean existsFileAssetContainerForTesting(final Host defaultHost) {
+    private static boolean existsFileAssetContainerForTesting(final Host defaultHost) {
 
         final FolderAPI    folderAPI    = APILocator.getFolderAPI();
         final FileAssetAPI fileAssetAPI = APILocator.getFileAssetAPI();
@@ -340,7 +331,7 @@ public class ContainerAPIImplTest extends IntegrationTestBase  {
         return exists;
     }
 
-    private void creatApplicationContainerFolder(final Host defaultHost) {
+    private static void creatApplicationContainerFolder(final Host defaultHost) {
 
         final FolderAPI folderAPI = APILocator.getFolderAPI();
 
@@ -352,15 +343,15 @@ public class ContainerAPIImplTest extends IntegrationTestBase  {
         }
     }
 
-    private void createFileAssetContainerForTesting(final Host defaultHost) {
+    private static void createFileAssetContainerForTesting(final Host defaultHost) {
 
-        final Folder testContainerFolder = this.createTestContainerFolder(defaultHost);
+        final Folder testContainerFolder = createTestContainerFolder(defaultHost);
 
         try {
-            final Contentlet container = this.createContainerVTL(testContainerFolder, defaultHost);
-            final Contentlet document  = this.createDocumentVTL (testContainerFolder, defaultHost);
-            final Contentlet news      = this.createNewsVTL     (testContainerFolder, defaultHost);
-            final Contentlet products  = this.createProductsVTL (testContainerFolder, defaultHost);
+            final Contentlet container = createContainerVTL(testContainerFolder, defaultHost);
+            final Contentlet document  = createDocumentVTL (testContainerFolder, defaultHost);
+            final Contentlet news      = createNewsVTL     (testContainerFolder, defaultHost);
+            final Contentlet products  = createProductsVTL (testContainerFolder, defaultHost);
 
             assertNotNull(container);
             assertNotNull(document);
@@ -371,7 +362,7 @@ public class ContainerAPIImplTest extends IntegrationTestBase  {
         }
     }
 
-    private Folder createTestContainerFolder(final Host defaultHost) {
+    private static Folder createTestContainerFolder(final Host defaultHost) {
 
         final FolderAPI folderAPI        = APILocator.getFolderAPI();
         try {
@@ -382,7 +373,7 @@ public class ContainerAPIImplTest extends IntegrationTestBase  {
         return null;
     }
 
-    private Contentlet createContainerVTL(final Folder testContainerFolder, final Host defaultHost) throws DotSecurityException, DotDataException {
+    private static Contentlet createContainerVTL(final Folder testContainerFolder, final Host defaultHost) throws DotSecurityException, DotDataException {
 
         try {
 
@@ -398,10 +389,12 @@ public class ContainerAPIImplTest extends IntegrationTestBase  {
             fileAsset.setTitle(title);
             fileAsset.setFriendlyName(title);
             fileAsset.setFolder(testContainerFolder.getInode());
-            fileAsset.setBinary(FileAssetAPI.BINARY_FIELD, this.createTempFile(title,"$dotJSON.put(\"title\", \"Test Container\")\n" +
+            fileAsset.setBinary(FileAssetAPI.BINARY_FIELD, createTempFile(title,"$dotJSON.put(\"title\", \"Test Container\")\n" +
                                                     "$dotJSON.put(\"max_contentlets\", 25)\n" +
                                                     "$dotJSON.put(\"notes\", \"Medium Column:Blog,Events,Generic,Location,Media,News,Documents,Products\")\n"));
             fileAsset.setBoolProperty(Contentlet.IS_TEST_MODE, true);
+            fileAsset.setIndexPolicy(IndexPolicy.FORCE);
+            fileAsset.setIndexPolicyDependencies(IndexPolicy.FORCE);
 
             return workflowAPI.fireContentWorkflow(fileAsset,
                     new ContentletDependencies.Builder()
@@ -417,7 +410,7 @@ public class ContainerAPIImplTest extends IntegrationTestBase  {
         return null;
     }
 
-    private Contentlet createProductsVTL(final Folder testContainerFolder, final Host defaultHost) throws DotSecurityException, DotDataException {
+    private static Contentlet createProductsVTL(final Folder testContainerFolder, final Host defaultHost) throws DotSecurityException, DotDataException {
 
         try {
 
@@ -433,7 +426,7 @@ public class ContainerAPIImplTest extends IntegrationTestBase  {
             fileAsset.setTitle(title);
             fileAsset.setFriendlyName(title);
             fileAsset.setFolder(testContainerFolder.getInode());
-            fileAsset.setBinary(FileAssetAPI.BINARY_FIELD, this.createTempFile(title,"<script>\n" +
+            fileAsset.setBinary(FileAssetAPI.BINARY_FIELD, createTempFile(title,"<script>\n" +
                     "    $(document).ready(function() {\n" +
                     "\n" +
                     "        jQuery.getJSON(\"https://query.yahooapis.com/v1/public/yql?q=select%20*%20from%20yahoo.finance.quotes%20where%20symbol%20in%20(%22$!{tickerSymbol}%22)&format=json&env=store%3A%2F%2Fdatatables.org%2Falltableswithkeys&callback=?\",\n" +
@@ -494,7 +487,7 @@ public class ContainerAPIImplTest extends IntegrationTestBase  {
     }
 
 
-    private Contentlet createNewsVTL(final Folder testContainerFolder, final Host defaultHost) throws DotSecurityException, DotDataException {
+    private static Contentlet createNewsVTL(final Folder testContainerFolder, final Host defaultHost) throws DotSecurityException, DotDataException {
 
         try {
 
@@ -510,7 +503,7 @@ public class ContainerAPIImplTest extends IntegrationTestBase  {
             fileAsset.setTitle(title);
             fileAsset.setFriendlyName(title);
             fileAsset.setFolder(testContainerFolder.getInode());
-            fileAsset.setBinary(FileAssetAPI.BINARY_FIELD, this.createTempFile(title,"<div class=\"media\">\n" +
+            fileAsset.setBinary(FileAssetAPI.BINARY_FIELD, createTempFile(title,"<div class=\"media\">\n" +
                     "    <div class=\"media-body\">\n" +
                     "        <span class=\"label label-default pull-right\">News</span>\n" +
                     "    \t<div class=\"media-heading\"><a href=\"/news/$urlTitle\">$title</a></div>\n" +
@@ -536,7 +529,7 @@ public class ContainerAPIImplTest extends IntegrationTestBase  {
         return null;
     }
 
-    private Contentlet createDocumentVTL(final Folder testContainerFolder, final Host defaultHost) throws DotSecurityException, DotDataException {
+    private static Contentlet createDocumentVTL(final Folder testContainerFolder, final Host defaultHost) throws DotSecurityException, DotDataException {
 
         try {
 
@@ -551,7 +544,7 @@ public class ContainerAPIImplTest extends IntegrationTestBase  {
             fileAsset.setTitle(title);
             fileAsset.setFriendlyName(title);
             fileAsset.setFolder(testContainerFolder.getInode());
-            fileAsset.setBinary(FileAssetAPI.BINARY_FIELD, this.createTempFile(title,"<div class=\"media\">\n" +
+            fileAsset.setBinary(FileAssetAPI.BINARY_FIELD, createTempFile(title,"<div class=\"media\">\n" +
                     "    <span class=\"label label-default pull-right\">Document</span>\n" +
                     "\n" +
                     "    <div class=\"media-heading\">\n" +
@@ -580,7 +573,7 @@ public class ContainerAPIImplTest extends IntegrationTestBase  {
         return null;
     }
 
-    private File createTempFile(final String fileName, final String body) throws IOException {
+    private static File createTempFile(final String fileName, final String body) throws IOException {
 
         final String tempFolder = System.getProperty("java.io.tmpdir");
         File file = null;

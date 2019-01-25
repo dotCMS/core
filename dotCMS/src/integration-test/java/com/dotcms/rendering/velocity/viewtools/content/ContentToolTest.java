@@ -1,5 +1,11 @@
 package com.dotcms.rendering.velocity.viewtools.content;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.FieldAPI;
@@ -27,26 +33,22 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.liferay.portal.model.User;
-
 import com.liferay.util.StringPool;
+import com.tngtech.java.junit.dataprovider.DataProvider;
+import com.tngtech.java.junit.dataprovider.DataProviderRunner;
+import com.tngtech.java.junit.dataprovider.UseDataProvider;
+import java.util.Date;
+import java.util.List;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
-import java.util.Date;
-import java.util.List;
-
-import javax.servlet.http.HttpServletRequest;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
+@RunWith(DataProviderRunner.class)
 public class ContentToolTest extends IntegrationTestBase {
 
     private static ContentletAPI contentletAPI;
@@ -78,6 +80,31 @@ public class ContentToolTest extends IntegrationTestBase {
         defaultHost     = hostAPI.findDefaultHost(user, false);
         defaultLanguage = languageAPI.getDefaultLanguage();
 	}
+
+    public static class TestCase {
+        int cardinality;
+        Class parentExpectedType;
+        Class childExpectedType;
+
+        public TestCase(final int cardinality, final Class parentExpectedType,
+                final Class childExpectedType) {
+            this.cardinality = cardinality;
+            this.parentExpectedType = parentExpectedType;
+            this.childExpectedType = childExpectedType;
+        }
+    }
+
+    @DataProvider
+    public static Object[] testCases(){
+        return new TestCase[]{
+                new TestCase(RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal(), List.class,
+                        List.class),
+                new TestCase(RELATIONSHIP_CARDINALITY.ONE_TO_MANY.ordinal(), ContentMap.class,
+                        List.class),
+                new TestCase(RELATIONSHIP_CARDINALITY.ONE_TO_ONE.ordinal(), ContentMap.class,
+                        ContentMap.class)
+        };
+    }
 
     @Test
     public void testPullMultiLanguage() throws Exception { // https://github.com/dotCMS/core/issues/11172
@@ -296,7 +323,8 @@ public class ContentToolTest extends IntegrationTestBase {
     }
 
     @Test
-    public void testPullRelatedContent_whenRelationshipFieldExists_shouldReturnContentMapList()
+    @UseDataProvider("testCases")
+    public void testPullRelatedContent_whenRelationshipFieldExists(final TestCase testCase)
             throws DotSecurityException, DotDataException {
 
         ContentType parentContentType = null;
@@ -311,48 +339,48 @@ public class ContentToolTest extends IntegrationTestBase {
             //creates child content type
             childContentType = createAndSaveSimpleContentType("childContentType" + time);
 
-            Field field = createField(childContentType.variable(), parentContentType.id(),
-                    childContentType.variable(),
-                    String.valueOf(RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal()));
+            Field parentField = createField(childContentType.variable(), parentContentType.id(),
+                    childContentType.variable(), String.valueOf(testCase.cardinality));
 
             //One side of the relationship is set parentContentType --> childContentType
-            field = fieldAPI.save(field, user);
+            parentField = fieldAPI.save(parentField, user);
 
             final String fullFieldVar =
-                    parentContentType.variable() + StringPool.PERIOD + field.variable();
+                    parentContentType.variable() + StringPool.PERIOD + parentField.variable();
+
+            Field childField = createField(parentContentType.variable(), childContentType.id(),
+                    fullFieldVar, String.valueOf(testCase.cardinality));
+
+            //The other side of the relationship is set childContentType --> parentContentType
+            childField = fieldAPI.save(childField, user);
 
             final Relationship relationship = relationshipAPI.byTypeValue(fullFieldVar);
 
             //creates a new parent contentlet
             ContentletDataGen contentletDataGen = new ContentletDataGen(parentContentType.id());
-            final Contentlet parentContenlet = contentletDataGen.languageId(defaultLanguage.getId())
+            Contentlet parentContentlet = contentletDataGen.languageId(defaultLanguage.getId())
                     .nextPersisted();
 
             //creates a new child contentlet
             contentletDataGen = new ContentletDataGen(childContentType.id());
-            final Contentlet childContenlet = contentletDataGen.languageId(defaultLanguage.getId())
+            Contentlet childContentlet = contentletDataGen.languageId(defaultLanguage.getId())
                     .nextPersisted();
 
             //relates parent contentlet with the child contentlet
-            contentletAPI.relateContent(parentContenlet, relationship,
-                    CollectionsUtils.list(childContenlet), user, false);
+            contentletAPI.relateContent(parentContentlet, relationship,
+                    CollectionsUtils.list(childContentlet), user, false);
 
-            final ContentTool contentTool = getContentTool(defaultLanguage.getId());
+            //refresh relationships in the ES index
+            contentletAPI.reindex(parentContentlet);
+            contentletAPI.reindex(childContentlet);
 
-            //pull parent contentlet
-            final List<ContentMap> result = contentTool
-                    .pull("+identifier:" + parentContenlet.getIdentifier() + " +working:true", 1,
-                            null);
-            assertNotNull(result);
-            assertEquals(1, result.size());
+            //pull and validate child
+            validateRelationshipSide(testCase.childExpectedType, parentField, parentContentlet,
+                    childContentlet);
 
-            //lazy load related contentlet
-            final List relatedContent = (List) result.get(0).get(field.variable());
-            assertNotNull(relatedContent);
-            assertEquals(1, relatedContent.size());
-            assertTrue(relatedContent.get(0) instanceof ContentMap);
-            assertEquals(childContenlet.getIdentifier(),
-                    ((ContentMap) relatedContent.get(0)).get("identifier"));
+            //pull and validate parent
+            validateRelationshipSide(testCase.parentExpectedType, childField, childContentlet,
+                    parentContentlet);
 
         } finally {
 
@@ -364,6 +392,30 @@ public class ContentToolTest extends IntegrationTestBase {
             if (childContentType != null && childContentType.id() != null) {
                 contentTypeAPI.delete(childContentType);
             }
+        }
+    }
+
+    private void validateRelationshipSide(final Class expectedType, final Field field,
+            final Contentlet leftSideContentlet, final Contentlet rightSideContentlet) {
+        final ContentTool contentTool = getContentTool(defaultLanguage.getId());
+
+
+        final List<ContentMap> result = contentTool
+                .pull("+identifier:" + leftSideContentlet.getIdentifier() + " +working:true", 1,
+                        null);
+        assertNotNull(result);
+        assertEquals(1, result.size());
+
+        //lazy load related contentlet
+        final Object relatedContent = result.get(0).get(field.variable());
+        assertNotNull(relatedContent);
+        assertTrue(expectedType.isInstance(relatedContent));
+
+        if (expectedType.equals(List.class)){
+            final List relatedContentList = (List)relatedContent;
+            assertEquals(1, relatedContentList.size());
+            assertEquals(rightSideContentlet.getIdentifier(),
+                    ((ContentMap) relatedContentList.get(0)).get("identifier"));
         }
     }
 
