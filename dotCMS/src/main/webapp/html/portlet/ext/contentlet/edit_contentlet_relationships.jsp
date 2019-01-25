@@ -970,7 +970,8 @@
 			     counter_radio="<%= counter %>" 
 			     searchCounter="<%= searchCounter %>" 
 			     contentletLanguageId="<%=contentlet.getLanguageId() %>"
-			     dialogCounter="<%= dialogCounter %>">
+			     dialogCounter="<%= dialogCounter %>"
+				 selectButtonLabel='<%= LanguageUtil.get(pageContext, "content.search.select") %>'>
 			 </div>
 <%
             counter=counter+100;
