@@ -72,7 +72,7 @@
 	}
 
 
-	boolean thereCanBeOnlyOne = false;
+	boolean thereCanBeOnlyOne = records.doesAllowOnlyOne();
 
 	Structure targetStructure = null;
 	String relationType= relationship.getRelationTypeValue();
@@ -84,12 +84,12 @@
 	if (records.isHasParent()) {
 		targetStructure = relationship.getChildStructure();
 		relationName = relationship.getChildRelationName();
-		thereCanBeOnlyOne = (relationship.getCardinality() == 2 );
+
 	
 	} else {
 		targetStructure = relationship.getParentStructure();
 		relationName = relationship.getParentRelationName();
-		thereCanBeOnlyOne = (relationship.getCardinality() != 2);
+
 	}
 	
 %>
