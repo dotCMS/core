@@ -1986,7 +1986,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 
 				writer.print("\r\n");
 				for(Contentlet content :  contentletsList2 ){
-					ContentletRelationships relationships = this.conAPI.getAllRelationships(content);
+
 					List<Category> catList = (List<Category>) catAPI.getParents(content, user, false);
 					writer.print(content.getIdentifier());
 					Language lang =APILocator.getLanguageAPI().getLanguage(content.getLanguageId());
@@ -2037,9 +2037,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 							        }
 							    }
 							} else if (field.getFieldType().equals(FieldType.RELATIONSHIP.toString())) {
-								String fieldRelationType = field.getFieldRelationType();
-								text = loadRelationships(relationships
-										.getRelationshipsRecordsByField(field));
+								text = loadRelationships(((ContentletRelationships)value).getRelationshipsRecords());
 							} else{
 								if (value instanceof Date || value instanceof Timestamp) {
 									if(field.getFieldType().equals(Field.FieldType.DATE.toString())) {

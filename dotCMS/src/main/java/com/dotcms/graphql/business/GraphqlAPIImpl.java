@@ -35,6 +35,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
@@ -201,9 +202,15 @@ public class GraphqlAPIImpl implements GraphqlAPI {
             throw new DotRuntimeException(e);
         }
 
+        final ContentletRelationships contentletRelationships = new ContentletRelationships(null);
+        final ContentletRelationships.ContentletRelationshipRecords
+            records = contentletRelationships.new ContentletRelationshipRecords(
+            relationship,
+            APILocator.getRelationshipAPI().isParent(relationship, contentType));
+
         final GraphQLTypeReference typeReference = GraphQLTypeReference.typeRef(relatedContentType.variable());
 
-        final GraphQLOutputType outputType = relationship.getCardinality() == WebKeys.Relationship.RELATIONSHIP_CARDINALITY.ONE_TO_ONE.ordinal()
+        final GraphQLOutputType outputType = records.doesAllowOnlyOne()
             ? typeReference
             : list(typeReference);
 

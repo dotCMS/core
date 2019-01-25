@@ -1157,8 +1157,17 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     }
                 }
                 return categoryList;
-            }else if(theField.getFieldType().equals(FieldType.RELATIONSHIP.toString())) {
-                return contentlet.getRelated(theField.getVelocityVarName());
+            } else if (theField.getFieldType().equals(FieldType.RELATIONSHIP.toString())) {
+                ContentletRelationships contentletRelationships = new ContentletRelationships(
+                        contentlet);
+                Relationship relationship = relationshipAPI
+                        .getRelationshipFromField(theField, user);
+                ContentletRelationshipRecords records = contentletRelationships.new ContentletRelationshipRecords(
+                        relationship,
+                        relationshipAPI.isParent(relationship, contentlet.getContentType()));
+                records.setRecords(contentlet.getRelated(theField.getVelocityVarName()));
+                contentletRelationships.setRelationshipsRecords(CollectionsUtils.list(records));
+                return contentletRelationships;
             }else{
                 return contentlet.get(theField.getVelocityVarName());
             }
