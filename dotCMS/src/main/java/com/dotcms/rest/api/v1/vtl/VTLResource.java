@@ -61,6 +61,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 
+
 @Path("/vtl")
 public class VTLResource {
 
@@ -692,13 +693,13 @@ public class VTLResource {
             String escapedJsonValues = escapeJsonValues(bodyMapString, '\n');
 
             try {
-                bodyMap = new ObjectMapper().readValue(bodyMapString, HashMap.class);
+                bodyMap = new ObjectMapper().readValue(escapedJsonValues, HashMap.class);
 
                 if(bodyMap.containsKey("velocity")){
                     bodyMap.put("velocity", unescapeValue(bodyMap.get("velocity"), "\n"));
                 }
             } catch (IOException e1) {
-                bodyMap.put("velocity", escapedJsonValues);
+                bodyMap.put("velocity", bodyMapString);
             }
         }
 
