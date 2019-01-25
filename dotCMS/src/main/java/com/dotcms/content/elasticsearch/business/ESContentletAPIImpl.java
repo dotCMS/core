@@ -299,21 +299,21 @@ public class ESContentletAPIImpl implements ContentletAPI {
         try {
             return findContentletByIdentifier(contentletId.getId(), false, languageId, APILocator.systemUser(), false);
         } catch (DotContentletStateException dcs) {
-            Logger.debug(this, "No working contentlet found for language: "+ languageId);
+            Logger.debug(this, ()->String.format("No working contentlet found for language: %d and identifier: %s ", languageId, null != contentletId ? contentletId.getId() : "Unkown"));
         }
         return null;
     }
 
     @CloseDBIfOpened
     @Override
-    public List<Contentlet> findContentletsForAllLanguages(final Identifier contentletId) {
+    public List<Contentlet> findContentletsForAllLanguages(final Identifier identifier) {
         final LanguageAPI languageAPI = APILocator.getLanguageAPI();
         final List<Language> allLanguages = languageAPI.getLanguages();
         return allLanguages.stream().map(language -> {
             try {
-                return findContentletForLanguage(language.getId(), contentletId);
+                return findContentletForLanguage(language.getId(), identifier);
             } catch (DotDataException | DotSecurityException e) {
-                Logger.debug(this, "No working contentlet found for language: "+ language.toString());
+                Logger.debug(this, ()->String.format("No working contentlet found for language: %s and identifier: %s ", language.toString(), null != identifier ? identifier.getId() : "Unkown"));
                 return null;
             }
         }).filter(Objects::nonNull).collect(CollectionsUtils.toImmutableList());
