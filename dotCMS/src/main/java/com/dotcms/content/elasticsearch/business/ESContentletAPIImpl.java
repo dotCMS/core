@@ -338,13 +338,17 @@ public class ESContentletAPIImpl implements ContentletAPI {
         
         final long defaultLanguageId = this.languageAPI.getDefaultLanguage().getId();
         final long tryLanguage       = incomingLangId <= 0? defaultLanguageId : incomingLangId;
+        boolean    fallback          = false;
 
         try {
 
+            // try the user language
             ContentletVersionInfo contentletVersionInfo =
                     APILocator.getVersionableAPI().getContentletVersionInfo(identifier, tryLanguage);
 
+            // try the fallback if does not exists
             if (tryLanguage != defaultLanguageId && (contentletVersionInfo == null || (live && contentletVersionInfo.getLiveInode() == null))) {
+                fallback              = true;  // using the fallback
                 contentletVersionInfo = APILocator.getVersionableAPI().getContentletVersionInfo(identifier, defaultLanguageId);
             }
 
@@ -357,7 +361,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     this.find(contentletVersionInfo.getLiveInode(), user, respectFrontendRoles) :
                     this.find(contentletVersionInfo.getWorkingInode(), user, respectFrontendRoles);
 
-            if (contentlet == null  || (!contentlet.getContentType().languageFallback() && tryLanguage != defaultLanguageId)) {
+            if (null == contentlet) {
+
+                Optional.empty();
+            }
+
+            // if we are using the fallback, and it is not allowed, return empty
+            if (fallback && tryLanguage != defaultLanguageId && !contentlet.getContentType().languageFallback()) {
 
                 return Optional.empty();
             }
