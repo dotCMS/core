@@ -75,6 +75,7 @@ public class Task05050FileAssetContentTypeReadOnlyFileName implements StartupTas
 
             }finally{
                 conn.setAutoCommit(false);
+                conn.close();
             }
 
         }catch (Exception e){

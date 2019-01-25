@@ -316,7 +316,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 Logger.debug(this, "No working contentlet found for language: "+ language.toString());
                 return null;
             }
-        }).filter(Objects::nonNull).collect(Collectors.toList());
+        }).filter(Objects::nonNull).collect(CollectionsUtils.toImmutableList());
     }
 
 
@@ -3172,33 +3172,31 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 } else {
                     parent = APILocator.getHostAPI().find( contentlet.getHost(), sysuser, false );
                 }
-                Identifier ident;
+
                 final Contentlet contPar=contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET?contentletRaw:contentlet;
-                if(existingIdentifier!=null) {
-                    ident = APILocator.getIdentifierAPI()
-                            .createNew(contPar, parent, existingIdentifier);
-                }else {
-                    ident = APILocator.getIdentifierAPI().createNew(contPar, parent);
-                }
+                final Identifier identifier = existingIdentifier != null ?
+                        APILocator.getIdentifierAPI().createNew(contPar, parent, existingIdentifier) :
+                        APILocator.getIdentifierAPI().createNew(contPar, parent);
+
                 //Clean-up the contentlet object again..., we don' want to persist this URL in the db
                 removeURLFromContentlet( contentlet );
 
-                contentlet.setIdentifier(ident.getId() );
+                contentlet.setIdentifier(identifier.getId() );
                 contentlet = contentFactory.save(contentlet);
                 contentlet.setIndexPolicy(indexPolicy);
                 contentlet.setIndexPolicyDependencies(indexPolicyDependencies);
             } else {
 
-                Identifier ident = APILocator.getIdentifierAPI().find(contentlet);
+                Identifier identifier = APILocator.getIdentifierAPI().find(contentlet);
 
-                String oldURI=ident.getURI();
+                String oldURI = identifier.getURI();
 
                 // make sure the identifier is removed from cache
                 // because changes here may affect URI then IdentifierCache
                 // can't remove it
                 CacheLocator.getIdentifierCache().removeFromCacheByVersionable(contentlet);
 
-                ident.setHostId(contentlet.getHost());
+                identifier.setHostId(contentlet.getHost());
                 if(contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET){
                     try {
                         if(contentletRaw.getBinary(FileAssetAPI.BINARY_FIELD) == null){
@@ -3213,31 +3211,29 @@ public class ESContentletAPIImpl implements ContentletAPI {
                             //The physical file asset is just an internal piece that is mapped to the system asset-name.
                             //The file per-se no longer can be renamed. We can only modify the asset-name that refers to it.
                             final String assetName = String.class.cast(contentletRaw.getMap().get(FileAssetAPI.FILE_NAME_FIELD));
-                            if(UtilMethods.isSet(assetName)){
-                               ident.setAssetName(assetName);
-                            } else {
-                               //fallback
-                               ident.setAssetName(contentletRaw.getBinary(FileAssetAPI.BINARY_FIELD).getName());
-                            }
+                            identifier.setAssetName(UtilMethods.isSet(assetName) ?
+                              assetName :
+                              contentletRaw.getBinary(FileAssetAPI.BINARY_FIELD).getName()
+                            );
                         }
                     } catch (IOException e) {
                         Logger.error( this.getClass(), "Error handling Binary Field.", e );
                     }
                 } else if ( contentlet.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE ) {
                     //For HTML Pages - The asset name maps to the page URL
-                    ident.setAssetName( htmlPageURL );
+                    identifier.setAssetName( htmlPageURL );
                 }
                 if(UtilMethods.isSet(contentletRaw.getFolder()) && !contentletRaw.getFolder().equals(FolderAPI.SYSTEM_FOLDER)){
                     Folder folder = APILocator.getFolderAPI().find(contentletRaw.getFolder(), sysuser, false);
                     Identifier folderIdent = APILocator.getIdentifierAPI().find(folder);
-                    ident.setParentPath(folderIdent.getPath());
+                    identifier.setParentPath(folderIdent.getPath());
                 }
                 else {
-                    ident.setParentPath("/");
+                    identifier.setParentPath("/");
                 }
-                ident=APILocator.getIdentifierAPI().save(ident);
+                identifier = APILocator.getIdentifierAPI().save(identifier);
 
-                changedURI = ! oldURI.equals(ident.getURI());
+                changedURI = ! oldURI.equals(identifier.getURI());
             }
 
             APILocator.getVersionableAPI().setWorking(contentlet);
@@ -3589,9 +3585,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             //If the URI changed and we're looking at FileAsset we need to evict all other language instances
             if(contentlet != null && contentlet.isFileAsset() && changedURI){
-               final List<Contentlet> allContentlet = findContentletsForAllLanguages(contIdent);
-               allContentlet.forEach(cont -> {
-                   CacheLocator.getContentletCache().remove(cont);
+               HibernateUtil.addCommitListener(()-> {
+                   final List<Contentlet> allContentlet = findContentletsForAllLanguages(contIdent);
+                    allContentlet.forEach(cont -> {
+                       CacheLocator.getContentletCache().remove(cont);
+                   });
                });
             }
 
@@ -3964,20 +3962,18 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         if(!permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)){
             Logger.error(this.getClass(),"User: " + (user != null ? user.getUserId() : "Unknown")
-                    + " cannot read Contentlet: " + (contentlet != null ? contentlet.getIdentifier() : "Unknown"));
+                    + " cannot read Contentlet: " + contentlet.getIdentifier());
             throw new DotSecurityException("User: " + (user != null ? user.getUserId() : "Unknown")
-                    + " cannot read Contentlet: " + (contentlet != null ? contentlet.getIdentifier() : "Unknown"));
+                    + " cannot read Contentlet: " + contentlet.getIdentifier());
         }
 
-        if (BaseContentType.FILEASSET.equals(contentlet.getContentType().baseType())) {
-            if(UtilMethods.isSet(contentlet.getIdentifier())){
-               try {
-                   final String assetName = APILocator.getIdentifierAPI().find(contentlet.getIdentifier()).getAssetName();
-                   contentlet.setStringProperty(Contentlet.DOT_NAME_KEY, assetName);
-               }catch (Exception e){
-                   Logger.warn(this.getClass(), "Unable to get assetName for contentlet with identifier: " + contentlet.getIdentifier(), e);
-               }
-            }
+        if (UtilMethods.isSet(contentlet.getIdentifier()) && contentlet.isFileAsset()) {
+           try {
+               final String assetName = APILocator.getIdentifierAPI().find(contentlet.getIdentifier()).getAssetName();
+               contentlet.setStringProperty(Contentlet.DOT_NAME_KEY, assetName);
+           }catch (Exception e){
+               Logger.warn(this.getClass(), "Unable to get assetName for contentlet with identifier: " + contentlet.getIdentifier(), e);
+           }
         }
 
         String returnValue = (String) contentlet.getMap().get(Contentlet.DOT_NAME_KEY);
@@ -4318,27 +4314,27 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * This method takes the incoming contentlet and determines if the new fileName we're receiving
      * is the same already stored on the identifier.fileAsset
      * This So we enforce validation only of new incoming files
-     * @param contetletIn
+     * @param contentletIn
      * @return
      * @throws DotDataException
      * @throws DotSecurityException
      * @throws IOException
      */
-    private boolean hasNewIncomingFile(final Contentlet contetletIn) throws DotContentletStateException{
+    private boolean hasNewIncomingFile(final Contentlet contentletIn) throws DotContentletStateException{
         try {
-            final String identifierStr = contetletIn.getIdentifier();
+            final String identifierStr = contentletIn.getIdentifier();
             if(!UtilMethods.isSet(identifierStr)){
                 // if no identifier is set, we're dealing with a brand new contentlet then we enforce validation
                 return true;
             }
 
             final Identifier identifier = APILocator.getIdentifierAPI().find(identifierStr);
-            final File incomingFile = contetletIn.getBinary(FileAssetAPI.BINARY_FIELD);
-            String incomingFileName = (null != incomingFile ? incomingFile.getName() : StringPool.BLANK );
-            if(UtilMethods.isSet(contetletIn.getStringProperty(FileAssetAPI.FILE_NAME_FIELD))){
-                incomingFileName = contetletIn.getStringProperty(FileAssetAPI.FILE_NAME_FIELD);
+            final File incomingFile = contentletIn.getBinary(FileAssetAPI.BINARY_FIELD);
+            String incomingFileName = null != incomingFile ? incomingFile.getName() : StringPool.BLANK;
+            if(UtilMethods.isSet(contentletIn.getStringProperty(FileAssetAPI.FILE_NAME_FIELD))){
+                incomingFileName = contentletIn.getStringProperty(FileAssetAPI.FILE_NAME_FIELD);
             }
-            return (!incomingFileName.equals(identifier.getAssetName()));
+            return !incomingFileName.equals(identifier.getAssetName());
         } catch (Exception e) {
             throw new DotContentletStateException("Exception trying to determine if there's a new incoming file.",e);
         }
@@ -4363,17 +4359,15 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 throw cve;
             }
 
-            //We enforce validation only if the file name isn't the same we already got
+            //Enforce validation only if the file name isn't the same we've already got
             if(hasNewIncomingFile(contentlet)){
                 boolean fileNameExists = false;
                 try {
                     final Host host = APILocator.getHostAPI ().find(contentlet.getHost(), APILocator.getUserAPI().getSystemUser(), false);
-                    final Folder folder;
-                    if(UtilMethods.isSet(contentlet.getFolder())) {
-                        folder = APILocator.getFolderAPI().find(contentlet.getFolder(), APILocator.getUserAPI().getSystemUser(), false);
-                    }else{
-                        folder = APILocator.getFolderAPI().findSystemFolder();
-                    }
+
+                    final Folder folder = UtilMethods.isSet(contentlet.getFolder())?
+                            APILocator.getFolderAPI().find(contentlet.getFolder(), APILocator.getUserAPI().getSystemUser(), false):
+                            APILocator.getFolderAPI().findSystemFolder();
 
                     String fileName = contentlet.getBinary(FileAssetAPI.BINARY_FIELD) != null ? contentlet.getBinary(FileAssetAPI.BINARY_FIELD).getName() : StringPool.BLANK;
                     if(UtilMethods.isSet(contentlet.getStringProperty("fileName"))){

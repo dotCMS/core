@@ -35,7 +35,7 @@ public class AssetsResource {
     private final ContentletAPI contentletAPI;
 
     @VisibleForTesting
-    public AssetsResource(ContentletAPI contentletAPI, WebResource webResource) {
+    public AssetsResource(final ContentletAPI contentletAPI, final WebResource webResource) {
         this.contentletAPI = contentletAPI;
         this.webResource = webResource;
     }
@@ -44,20 +44,29 @@ public class AssetsResource {
         this(APILocator.getContentletAPI(), new WebResource());
     }
 
+    /**
+     * Given an inode this will build get you a Resource Link
+     * The inode is expected to be File Asset other wise you'll get exception
+     * @param request http request
+     * @param inode file asset inode
+     * @return
+     * @throws DotDataException
+     * @throws DotStateException
+     * @throws DotSecurityException
+     */
     @GET
     @JSONP
     @NoCache
     @Path("/resourcelink")
     @Produces(MediaType.APPLICATION_JSON + ";charset=UTF-8")
     public Response findResourceLink(@Context final HttpServletRequest request,
-            @QueryParam("inode") final String inode)
-            throws DotDataException, DotStateException, DotSecurityException {
+            @QueryParam("inode") final String inode) throws DotStateException {
         try {
+            if (!UtilMethods.isSet(inode)) {
+                throw new IllegalArgumentException("Missing required inode param");
+            }
             final InitDataObject auth = webResource.init(true, request, true);
             final User user = auth.getUser();
-            if (!UtilMethods.isSet(inode)) {
-                throw new IllegalArgumentException("Missing required inode");
-            }
             final Contentlet contentlet = contentletAPI.find(inode, user, false);
             final ResourceLink link = new ResourceLinkBuilder().build(request, user, contentlet);
             if(link.isDownloadRestricted()){

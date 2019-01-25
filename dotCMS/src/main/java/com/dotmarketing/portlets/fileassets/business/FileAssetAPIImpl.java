@@ -295,7 +295,7 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 		final Identifier folderId = APILocator.getIdentifierAPI().find(folder);
 		final String path = folder.getInode().equals(FolderAPI.SYSTEM_FOLDER) ? StringPool.FORWARD_SLASH + fileName : folderId.getPath() + fileName;
 		final Identifier fileAssetIdentifier = APILocator.getIdentifierAPI().find(host, path);
-		if(( null == fileAssetIdentifier || !InodeUtils.isSet(fileAssetIdentifier.getId()) || "folder".equals(fileAssetIdentifier.getAssetType()))){
+		if( null == fileAssetIdentifier || !InodeUtils.isSet(fileAssetIdentifier.getId()) || "folder".equals(fileAssetIdentifier.getAssetType())){
 		   // if we're looking at a folder or the fileAssetIdentifier wasn't found. It doesn't exist for sure.
 		   return false;
 		}
