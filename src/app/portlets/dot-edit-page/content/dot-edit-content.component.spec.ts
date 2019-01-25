@@ -1100,6 +1100,14 @@ describe('DotEditContentComponent', () => {
     });
 
     describe('Auto save', () => {
+        const model: DotPageContainer[] = [
+            {
+                identifier: '1',
+                uuid: '2',
+                contentletsId: ['3', '4']
+            }
+        ];
+
         it(
             'should call the save endpoint after a model change happens',
             fakeAsync(() => {
@@ -1117,14 +1125,6 @@ describe('DotEditContentComponent', () => {
                     }
                 });
 
-                const model: DotPageContainer[] = [
-                    {
-                        identifier: '1',
-                        uuid: '2',
-                        contentletsId: ['3', '4']
-                    }
-                ];
-
                 const newModel: DotPageContainer[] = [
                     {
                         identifier: '2',
@@ -1139,12 +1139,48 @@ describe('DotEditContentComponent', () => {
                 spyOn(dotEditPageService, 'save').and.returnValue(observableOf(true));
                 spyOn(dotEditContentHtmlService, 'getContentModel').and.returnValue({});
                 spyOn(dotEditContentHtmlService, 'setContaintersSameHeight');
+                spyOn(component, 'reload');
 
                 waitForDetectChanges(fixture);
                 dotEditContentHtmlService.pageModel$.next(model);
                 dotEditContentHtmlService.pageModel$.next(newModel);
+                expect(component.reload).not.toHaveBeenCalled();
                 expect(dotEditPageService.save).toHaveBeenCalledTimes(2);
                 expect(dotEditContentHtmlService.setContaintersSameHeight).toHaveBeenCalledTimes(2);
+            })
+        );
+
+        it(
+            'should call the save endpoint and reload the iframe after a model change happens and page is remote rendered',
+            fakeAsync(() => {
+                route.parent.parent.data = observableOf({
+                    content: {
+                        ...mockDotRenderedPage,
+                        page: {
+                            ...mockDotRenderedPage.page,
+                            canLock: true,
+                            remoteRendered: true
+                        },
+                        state: {
+                            locked: true,
+                            mode: PageMode.EDIT
+                        }
+                    }
+                });
+
+                let dotEditPageService: DotEditPageService;
+                dotEditPageService = de.injector.get(DotEditPageService);
+
+                spyOn(dotEditPageService, 'save').and.returnValue(observableOf(true));
+                spyOn(dotEditContentHtmlService, 'getContentModel').and.returnValue({});
+                spyOn(dotEditContentHtmlService, 'setContaintersSameHeight');
+                spyOn(component, 'reload');
+
+                waitForDetectChanges(fixture);
+                dotEditContentHtmlService.pageModel$.next(model);
+                expect(dotEditPageService.save).toHaveBeenCalledTimes(1);
+                expect(component.reload).toHaveBeenCalledTimes(1);
+                expect(dotEditContentHtmlService.setContaintersSameHeight).toHaveBeenCalledTimes(1);
             })
         );
 
@@ -1165,14 +1201,6 @@ describe('DotEditContentComponent', () => {
                         }
                     }
                 });
-
-                const model: DotPageContainer[] = [
-                    {
-                        identifier: '1',
-                        uuid: '2',
-                        contentletsId: ['3', '4']
-                    }
-                ];
 
                 spyOn(dotEditContentHtmlService, 'setContaintersSameHeight');
 
