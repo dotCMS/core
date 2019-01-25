@@ -77,11 +77,10 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
     ) {
         if (!this.customEventsHandler) {
             this.customEventsHandler = {
-                'remote-render-edit': ({pathname}) => {
+                'remote-render-edit': ({ pathname }) => {
                     this.dotRouterService.goToEditPage(pathname.slice(1));
                 },
                 'load-edit-mode-page': (pageRendered: DotRenderedPage) => {
-                    console.log('HERE', pageRendered);
                     const dotRenderedPageState = new DotRenderedPageState(
                         this.pageState.user,
                         pageRendered
@@ -193,17 +192,15 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
      * @memberof DotEditContentComponent
      */
     changeViewAsHandler(viewAsConfig: DotEditPageViewAs): void {
-            this.dotPageStateService.reload(
-                {
-                    url: this.route.snapshot.queryParams.url,
-                    mode: this.pageState.state.mode,
-                    viewAs: {
-                        persona_id: viewAsConfig.persona ? viewAsConfig.persona.identifier : null,
-                        language_id: viewAsConfig.language.id,
-                        device_inode: viewAsConfig.device ? viewAsConfig.device.inode : null
-                    }
-                }
-            );
+        this.dotPageStateService.reload({
+            url: this.route.snapshot.queryParams.url,
+            mode: this.pageState.state.mode,
+            viewAs: {
+                persona_id: viewAsConfig.persona ? viewAsConfig.persona.identifier : null,
+                language_id: viewAsConfig.language.id,
+                device_inode: viewAsConfig.device ? viewAsConfig.device.inode : null
+            }
+        });
     }
 
     /**
@@ -277,6 +274,9 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
                 this.dotGlobalMessageService.display(
                     this.dotMessageService.get('dot.common.message.saved')
                 );
+                if (this.pageState.page.remoteRendered) {
+                    this.reload();
+                }
             });
     }
 
@@ -440,7 +440,10 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
 
     private setInitalData(): void {
         this.route.parent.parent.data
-            .pipe(pluck('content'), takeUntil(this.destroy$))
+            .pipe(
+                pluck('content'),
+                takeUntil(this.destroy$)
+            )
             .subscribe((pageState: DotRenderedPageState) => {
                 this.setPageState(pageState);
             });
@@ -475,7 +478,10 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
 
     private subscribePageModelChange(): void {
         this.dotEditContentHtmlService.pageModel$
-            .pipe(filter((model: any) => model.length), takeUntil(this.destroy$))
+            .pipe(
+                filter((model: any) => model.length),
+                takeUntil(this.destroy$)
+            )
             .subscribe((model: DotPageContainer[]) => {
                 this.ngZone.run(() => {
                     this.saveContent(model);
