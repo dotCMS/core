@@ -208,12 +208,11 @@ public class ContentResourceTest extends IntegrationTestBase {
      * @throws DotDataException
      */
     private Field createRelationshipField(final String relationName,
-            final ContentType parentContentType, final ContentType childContentType)
-            throws DotSecurityException, DotDataException {
-        final String cardinality = String.valueOf(RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal());
+            final ContentType parentContentType, final ContentType childContentType,
+            final int cardinality) throws DotSecurityException, DotDataException {
 
         final Field newField = FieldBuilder.builder(RelationshipField.class).name(relationName)
-                .contentTypeId(parentContentType.id()).values(cardinality)
+                .contentTypeId(parentContentType.id()).values(String.valueOf(cardinality))
                 .relationType(childContentType.id()).build();
 
         return fieldAPI.save(newField, user);
@@ -239,9 +238,9 @@ public class ContentResourceTest extends IntegrationTestBase {
 
             //creates relationship fields
             final Field parentField = createRelationshipField("myChild", parentContentType,
-                    childContentType);
+                    childContentType, RELATIONSHIP_CARDINALITY.ONE_TO_ONE.ordinal());
             final Field childField = createRelationshipField("myChild", childContentType,
-                    grandChildContentType);
+                    grandChildContentType, RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal());
 
             //gets relationships
             final Relationship childRelationship = relationshipAPI

@@ -682,7 +682,7 @@ public class ContentResource {
                 }
             }
 
-            objectMap.put(relationType, records.size() == 1 ? records.get(0)
+            objectMap.put(relationType, rel.doesAllowOnlyOne() ? records.get(0)
                     : records);
         }
         return objectMap;
@@ -812,9 +812,10 @@ public class ContentResource {
 
             if (isRelationshipField(relationType, contentType)) {
                 jsonObject.put(relationType.split("\\.")[1],
-                        getJSONArrayValue(jsonArray, depth));
+                        getJSONArrayValue(jsonArray, depth, rel.doesAllowOnlyOne()));
             } else {
-                jsonObject.put(relationType, getJSONArrayValue(jsonArray, depth));
+                jsonObject.put(relationType,
+                        getJSONArrayValue(jsonArray, depth, rel.doesAllowOnlyOne()));
             }
         }
 
@@ -829,9 +830,10 @@ public class ContentResource {
      * @return
      * @throws JSONException
      */
-    private static Object getJSONArrayValue(final JSONArray jsonArray, final int depth)
+    private static Object getJSONArrayValue(final JSONArray jsonArray, final int depth,
+            final boolean allowOnlyOne)
             throws JSONException {
-        if (jsonArray.length() == 1) {
+        if (allowOnlyOne) {
             return jsonArray.get(0);
         } else {
             return depth == 0 ? jsonArray.join(", ") : jsonArray;
