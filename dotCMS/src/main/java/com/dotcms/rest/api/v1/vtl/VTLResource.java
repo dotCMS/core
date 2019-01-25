@@ -1,6 +1,24 @@
 package com.dotcms.rest.api.v1.vtl;
 
-import com.google.common.annotations.VisibleForTesting;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.Reader;
+import java.io.StringWriter;
+import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
+
+import org.apache.velocity.exception.MethodInvocationException;
 
 import com.dotcms.api.vtl.model.DotJSON;
 import com.dotcms.cache.DotJSONCache;
@@ -39,25 +57,9 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
-
-import org.apache.velocity.exception.MethodInvocationException;
-
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.Reader;
-import java.io.StringWriter;
-import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 
 @Path("/vtl")
 public class VTLResource {
@@ -342,7 +344,23 @@ public class VTLResource {
     @Consumes({MediaType.APPLICATION_JSON})
     public Response dynamicGet(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
                                @Context UriInfo uriInfo, @PathParam("pathParam") final String pathParam,
-                               final Map<String, String> bodyMap) {
+                               final String bodyMapStr) {
+        Map<String, String> bodyMap = new HashMap<>();
+        
+
+        
+        String escapedJsoValues = escapeJsonValues(bodyMapStr, '\n');
+        
+        try {
+            bodyMap = new ObjectMapper().readValue(escapedJsoValues, HashMap.class);
+            if(bodyMap.containsKey("velocity")){
+                bodyMap.put("velocity", unescapeValue(bodyMap.get("velocity"), "\n"));
+            }
+            
+        } catch (Exception e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
 
         return processRequest(request, response, uriInfo, null, pathParam, HTTPMethod.GET, bodyMap);
     }
@@ -354,9 +372,11 @@ public class VTLResource {
     @Consumes({MediaType.APPLICATION_JSON})
     public Response dynamicGet(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
                                @Context UriInfo uriInfo,
-                               final Map<String, String> bodyMap) {
+                               String bodyMapStr) {
 
-        return processRequest(request, response, uriInfo, null, null, HTTPMethod.GET, bodyMap);
+
+        
+        return dynamicGet(request, response, uriInfo, null,bodyMapStr);
     }
 
     /**
@@ -665,4 +685,37 @@ public class VTLResource {
         }
     }
 
+    final String ESCAPE_ME_VALUE= " THIS_ESCAPES_LINE_BREAKS ";
+    
+    private final String escapeJsonValues(final String jsonStr, final char escapeFrom) {
+        
+        StringWriter sw = new StringWriter();
+        char[] charArr = jsonStr.toCharArray();
+        boolean inQuotes=false;
+        for(int i=0;i <charArr.length;i++) {
+            char c = charArr[i];
+            if(c=='"' && charArr[i-1] != '\\') {
+                inQuotes=!inQuotes;
+            }
+            if(inQuotes && c==escapeFrom) {
+                sw.append(ESCAPE_ME_VALUE);
+            }else {
+                sw.append(c);
+            }
+            
+        }
+        return sw.toString();
+
+    }
+    
+    private final String unescapeValue(String escapedValue, final String escapeFrom) {
+        
+        return escapedValue.replace(ESCAPE_ME_VALUE, escapeFrom);
+
+    }
+    
+    
+    
+    
+    
 }
