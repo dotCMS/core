@@ -37,6 +37,7 @@ export interface DotPageAsset {
 
 const HOST_FULL_REGEX = /^\/\/[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b\//;
 const PAGE_BASE_TYPE_QUERY = '+basetype:5';
+const MAX_RESULTS_SIZE = 20;
 
 @Injectable()
 export class DotPageSelectorService {
@@ -119,7 +120,8 @@ export class DotPageSelectorService {
     }
 
     private getPages(path: string): Observable<DotPageSelectorResults> {
-        return this.coreWebService.requestView({
+        return this.coreWebService
+            .requestView({
                 method: RequestMethod.Get,
                 url: `v1/page/search?path=${path}&onlyLiveSites=true&live=false`
             })
@@ -143,22 +145,26 @@ export class DotPageSelectorService {
             );
     }
 
-    private getRequestBodyQuery(query: string): { [key: string]: {} } {
-        return {
+    private getRequestBodyQuery(query: string, size?: number): { [key: string]: {} } {
+        let obj = {
             query: {
                 query_string: {
                     query: query
                 }
             }
         };
+        if (size) {
+            obj = Object.assign(obj, { size: size });
+        }
+        return obj;
     }
 
     private getSites(param: string, specific?: boolean): Observable<DotPageSelectorResults> {
         let query = '+contenttype:Host -identifier:SYSTEM_HOST +host.hostName:';
         query += specific ? this.getSiteName(param) : `*${this.getSiteName(param)}*`;
-
-        return this.coreWebService.requestView({
-                body: this.getRequestBodyQuery(query),
+        return this.coreWebService
+            .requestView({
+                body: param ? this.getRequestBodyQuery(query) : this.getRequestBodyQuery(query, MAX_RESULTS_SIZE),
                 method: RequestMethod.Post,
                 url: 'es/search'
             })

@@ -138,8 +138,8 @@ let dotPageSelectorService: DotPageSelectorService;
 describe('DotPageSelectorComponent', () => {
     let hostFixture: ComponentFixture<FakeFormComponent>;
     const searchPageObj = { originalEvent: { target: { value: 'demo' } }, query: 'demo' };
-    const searchHostObj = { originalEvent: { target: { value: '//host' } }, query: '//host' };
-    const invalidSearchHostObj = { originalEvent: { target: { value: '//ho' } }, query: '//ho' };
+    const invalidSearchPageObj = { originalEvent: { target: { value: 'de' } }, query: 'de' };
+    const searchHostObj = { originalEvent: { target: { value: '//' } }, query: '//' };
     const specialSearchObj = { originalEvent: { target: { value: 'd#emo$%' } }, query: 'd#emo$%' };
 
     beforeEach(
@@ -177,6 +177,15 @@ describe('DotPageSelectorComponent', () => {
         expect(dotPageSelectorService.search).toHaveBeenCalledWith(searchPageObj.query);
     });
 
+    it('should not search for pages if has less than 3 characters', () => {
+        component.results = Object.assign({}, mockDotSiteSelectorResults);
+        spyOn(dotPageSelectorService, 'search');
+        autocomplete.triggerEventHandler('completeMethod', invalidSearchPageObj);
+
+        expect(dotPageSelectorService.search).not.toHaveBeenCalled();
+        expect(component.results.data.length).toBe(0);
+    });
+
     it('should search for host', () => {
         spyOn(dotPageSelectorService, 'search').and.returnValue(
             observableOf(mockDotSiteSelectorResults)
@@ -192,15 +201,6 @@ describe('DotPageSelectorComponent', () => {
         expect(dotPageSelectorService.setCurrentHost).toHaveBeenCalledWith(
             mockDotSiteSelectorResults.data[0].payload
         );
-    });
-
-    it('should not search for host if has less than 3 characters', () => {
-        component.results = mockDotSiteSelectorResults;
-        spyOn(dotPageSelectorService, 'search');
-        autocomplete.triggerEventHandler('completeMethod', invalidSearchHostObj);
-
-        expect(dotPageSelectorService.search).not.toHaveBeenCalled();
-        expect(component.results.data.length).toBe(0);
     });
 
     it('should remove special characters when searching for pages', () => {

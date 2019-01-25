@@ -4,13 +4,25 @@ import { ConnectionBackend, ResponseOptions, Response } from '@angular/http';
 import { MockBackend } from '@angular/http/testing';
 import {
     mockDotPageSelectorResults,
-    mockDotSiteSelectorResults
+    mockDotSiteSelectorResults,
+    mockEmptyDotSiteSelectorResults
 } from '../dot-page-selector.component.spec';
+
+const MAX_RESULTS_SIZE = 20;
+
+const emptyHostQuery = {
+    query: {
+        query_string: {
+            query: `+contenttype:Host -identifier:SYSTEM_HOST +host.hostName:**`
+        }
+    },
+    size: MAX_RESULTS_SIZE
+};
 
 const hostQuery = {
     query: {
         query_string: {
-            query: `+contenttype:Host +host.hostName:*demo.dotcms.com*`
+            query: `+contenttype:Host -identifier:SYSTEM_HOST +host.hostName:*demo.dotcms.com*`
         }
     }
 };
@@ -18,10 +30,13 @@ const hostQuery = {
 const hostSpecificQuery = {
     query: {
         query_string: {
-            query: `+contenttype:Host +host.hostName:demo.dotcms.com`
+            query: `+contenttype:Host -identifier:SYSTEM_HOST +host.hostName:demo.dotcms.com`
         }
     }
 };
+
+export const mockEmptyHostDotSiteSelectorResults = Object.assign({}, mockDotSiteSelectorResults);
+mockEmptyHostDotSiteSelectorResults.query = '';
 
 describe('Service: DotPageSelector', () => {
     beforeEach(() => {
@@ -80,7 +95,9 @@ describe('Service: DotPageSelector', () => {
         );
         expect(result).toEqual(mockDotPageSelectorResults);
         expect(this.dotPageSelectorService.currentHost).toEqual(null);
-        expect(this.lastConnection.request.url).toContain(`v1/page/search?path=about-us&onlyLiveSites=true&live=false`);
+        expect(this.lastConnection.request.url).toContain(
+            `v1/page/search?path=about-us&onlyLiveSites=true&live=false`
+        );
         expect(this.lastConnection.request.method).toEqual(0);
     });
 
@@ -105,6 +122,26 @@ describe('Service: DotPageSelector', () => {
         expect(this.lastConnection.request._body).toEqual(hostQuery);
     });
 
+    it('should make a host search but limit to MAX_RESULTS_SIZE if string is empty', () => {
+        let result;
+        this.dotPageSelectorService.search('//').subscribe(res => {
+            result = res;
+        });
+
+        this.lastConnection.mockRespond(
+            new Response(
+                new ResponseOptions({
+                    body: {
+                        contentlets: [mockDotSiteSelectorResults.data[0].payload]
+                    }
+                })
+            )
+        );
+        expect(result).toEqual(mockEmptyHostDotSiteSelectorResults);
+        expect(this.lastConnection.request.url).toContain('es/search');
+        expect(this.lastConnection.request.method).toEqual(1);
+        expect(this.lastConnection.request._body).toEqual(emptyHostQuery);
+    });
     it('should make host and page search (Full Search)', () => {
         const connections = [];
         this.backend.connections.subscribe((connection: any) => connections.push(connection));
@@ -137,7 +174,9 @@ describe('Service: DotPageSelector', () => {
         );
         expect(connections[0].request._body).toEqual(hostSpecificQuery);
         expect(connections[0].request.url).toEqual('es/search');
-        expect(connections[1].request.url).toEqual('v1/page/search?path=//demo.dotcms.com/about-us&onlyLiveSites=true&live=false');
+        expect(connections[1].request.url).toEqual(
+            'v1/page/search?path=//demo.dotcms.com/about-us&onlyLiveSites=true&live=false'
+        );
     });
 
     it('should return empty results on Full Search if host is invalid', () => {
@@ -166,17 +205,9 @@ describe('Service: DotPageSelector', () => {
 
     it('should return empty results when host is invalid', () => {
         let result;
-        const query = {
-            query: {
-                query_string: {
-                    query: `+contenttype:Host +host.hostName:*INVALID*`
-                }
-            }
-        };
-        this.dotPageSelectorService.search('//INVALID').subscribe(res => {
+        this.dotPageSelectorService.search('//demo.dotcms.com').subscribe(res => {
             result = res;
         });
-
         this.lastConnection.mockRespond(
             new Response(
                 new ResponseOptions({
@@ -188,12 +219,12 @@ describe('Service: DotPageSelector', () => {
         );
         expect(result).toEqual({
             data: [],
-            query: 'INVALID',
+            query: 'demo.dotcms.com',
             type: 'site'
         });
         expect(this.lastConnection.request.url).toContain('es/search');
         expect(this.lastConnection.request.method).toEqual(1);
-        expect(this.lastConnection.request._body).toEqual(query);
+        expect(this.lastConnection.request._body).toEqual(hostQuery);
     });
 
     it('should return empty results when page is invalid', () => {
@@ -217,7 +248,9 @@ describe('Service: DotPageSelector', () => {
             query: 'invalidPage',
             type: 'page'
         });
-        expect(this.lastConnection.request.url).toContain('v1/page/search?path=invalidPage&onlyLiveSites=true&live=false');
+        expect(this.lastConnection.request.url).toContain(
+            'v1/page/search?path=invalidPage&onlyLiveSites=true&live=false'
+        );
         expect(this.lastConnection.request.method).toEqual(0);
     });
 });
