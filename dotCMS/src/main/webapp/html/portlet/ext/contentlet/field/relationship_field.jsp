@@ -681,9 +681,14 @@
 	        dojo.byId("<%= relationJsName %>relateMenu").appendChild(button.domNode);
 	    }
 
-		
+        function callback<%= relationJsName %>(contentlet) {
+            contentSelector._doRelateContent(contentlet);
+        }
+
         dojo.addOnLoad(
          function(){
+             var doRelateContainer = document.getElementById('doRelateContainer');
+             doRelateContainer.style.display = '<%= relationship.getCardinality() == 2 ? "none" : "block"%>';
          	// Load initial relationships
              ContentletAjax.getContentletsData ('<%=String.join(",", listOfRelatedInodes)%>', <%= relationJsName %>_addRelationshipCallback);
          }
@@ -692,11 +697,12 @@
 	</script>
 	
 
-	<div id="<%= relationJsName %>Dialog" dojoType="dotcms.dijit.form.ContentSelector" 
+	<div jsId="contentSelector" id="<%= relationJsName %>Dialog" dojoType="dotcms.dijit.form.ContentSelector"
 	     structureInode="<%= targetStructure.getInode() %>" 
-	     relationJsName="<%= relationJsName %>" 
-	     multiple="true" 
-	     onContentSelected="callback<%= relationJsName %>" 
+	     relationJsName="<%= relationJsName %>"
+		 multiple="<%= relationship.getCardinality() != 2%>"
+		 onContentSelected="callback<%= relationJsName %>"
+		 selectButtonLabel='<%= LanguageUtil.get(pageContext, "Relate")%>'
 	     title="<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "search")) %>" 
 	     counter_radio="<%= System.currentTimeMillis() %>" 
 	     searchCounter="<%= System.currentTimeMillis() %>" 
