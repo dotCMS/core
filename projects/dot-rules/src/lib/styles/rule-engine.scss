@@ -55,7 +55,7 @@ $finder-s-input: '.ui.input input';
 .rules__engine-container{
     background-color: $gray-bg;
     display: flex;
-    height: 100%;
+    min-height: 100%;
     padding: $basic-padding * 3;
 
     cw-rule-engine {
