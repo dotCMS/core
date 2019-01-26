@@ -176,7 +176,7 @@
 	 <tool>
 		<key>config</key>
 		<scope>application</scope>
-		<class>com.dotmarketing.util.Config</class>
+		<class>com.dotcms.rendering.velocity.viewtools.ConfigTool</class>
 	 </tool>
 	<tool>
 		<key>tags</key>
