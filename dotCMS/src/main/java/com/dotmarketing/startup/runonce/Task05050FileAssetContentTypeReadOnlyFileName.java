@@ -86,9 +86,9 @@ public class Task05050FileAssetContentTypeReadOnlyFileName implements StartupTas
     }
 
 
-    private String inStatement(List<Map<String,Object>> inodes){
+    private String inStatement(final List<Map<String,Object>> inodes){
         final StringBuilder stringBuilder =  new StringBuilder();
-        Iterator<Map<String,Object>> iterator =inodes.iterator();
+        final Iterator<Map<String,Object>> iterator =inodes.iterator();
         while (iterator.hasNext()){
             final Map<String,Object> entry = iterator.next();
             stringBuilder.append("'").append(entry.get("field_inode").toString()).append("'");
