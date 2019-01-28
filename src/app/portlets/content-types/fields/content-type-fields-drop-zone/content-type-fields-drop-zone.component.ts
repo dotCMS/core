@@ -336,7 +336,7 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
 
     private moveFields(): void {
         const fields = this.getFields().filter((field, index) => {
-            const currentSortOrder = index + 1;
+            const currentSortOrder = index;
 
             if (field.sortOrder !== currentSortOrder) {
                 field.sortOrder = currentSortOrder;
@@ -352,7 +352,7 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
     private getFieldsToSave(fieldToSave: ContentTypeField): ContentTypeField[] {
         return this.formData.id
             ? [this.getUpdatedField(fieldToSave)]
-            : this.getNewFields(fieldToSave);
+            : this.getUpdatedFields(fieldToSave);
     }
 
     private getUpdatedField(fieldToSave: ContentTypeField): ContentTypeField {
@@ -371,21 +371,25 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
         return result;
     }
 
-    private getNewFields(fieldToSave: ContentTypeField): ContentTypeField[] {
+    private getUpdatedFields(newField: ContentTypeField): ContentTypeField[] {
         const fields = this.getFields();
         const result: ContentTypeField[] = [];
 
         fields.forEach((field, index) => {
-            if (FieldUtil.isNewField(field)) {
-                field.sortOrder = index + 1;
-                const fieldToPush = FieldUtil.isRowOrColumn(field)
-                    ? field
-                    : Object.assign(field, fieldToSave);
+            if (field.sortOrder !== index) {
+                field.sortOrder = index;
+                const fieldToPush = this.isNewOrLayoutFiled(field)
+                    ? Object.assign(field, newField)
+                    : field;
                 result.push(fieldToPush);
             }
         });
 
         return result;
+    }
+
+    private isNewOrLayoutFiled(field: ContentTypeField): boolean {
+        return FieldUtil.isNewField(field) && !FieldUtil.isRowOrColumn(field);
     }
 
     private toggleDialog(): void {

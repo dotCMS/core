@@ -95,6 +95,7 @@ class TestFieldDragDropService {
 
 function becomeNewField(field) {
     delete field.id;
+    delete field.sortOrder;
 }
 
 describe('ContentTypeFieldsDropZoneComponent', () => {
@@ -380,63 +381,63 @@ describe('Load fields and drag and drop', () => {
                 name: 'field 1',
                 id: '1',
                 clazz: 'com.dotcms.contenttype.model.field.ImmutableRowField',
-                sortOrder: 1,
+                sortOrder: 0,
                 contentTypeId: '1b'
             },
             {
                 name: 'field 2',
                 id: '2',
                 clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField',
-                sortOrder: 2,
+                sortOrder: 1,
                 contentTypeId: '2b'
             },
             {
                 clazz: 'text',
                 id: '3',
                 name: 'field 3',
-                sortOrder: 3,
+                sortOrder: 2,
                 contentTypeId: '3b'
             },
             {
                 clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField',
                 id: '4',
                 name: 'field 4',
-                sortOrder: 4,
+                sortOrder: 3,
                 contentTypeId: '4b'
             },
             {
                 clazz: 'text',
                 id: '5',
                 name: 'field 5',
-                sortOrder: 5,
+                sortOrder: 4,
                 contentTypeId: '5b'
             },
             {
                 clazz: 'com.dotcms.contenttype.model.field.ImmutableTabDividerField',
                 id: '6',
                 name: 'field 6',
-                sortOrder: 6,
+                sortOrder: 5,
                 contentTypeId: '6b'
             },
             {
                 clazz: 'com.dotcms.contenttype.model.field.ImmutableRowField',
                 id: '7',
                 name: 'field 7',
-                sortOrder: 7,
+                sortOrder: 6,
                 contentTypeId: '7b'
             },
             {
                 clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField',
                 id: '8',
                 name: 'field 8',
-                sortOrder: 8,
+                sortOrder: 7,
                 contentTypeId: '8b'
             },
             {
                 clazz: 'text',
                 id: '9',
                 name: 'field 9',
-                sortOrder: 9,
+                sortOrder: 8,
                 contentTypeId: '9b'
             }
         ];
@@ -509,7 +510,7 @@ describe('Load fields and drag and drop', () => {
 
         const expected = [fakeFields[5], fakeFields[0], fakeFields[1], fakeFields[2], fakeFields[3], fakeFields[4]].map(
             (fakeField, index) => {
-                fakeField.sortOrder = index + 1;
+                fakeField.sortOrder = index;
                 return fakeField;
             }
         );
@@ -525,7 +526,7 @@ describe('Load fields and drag and drop', () => {
 
         fixture.detectChanges();
 
-        let expectedIndex = 5;
+        let expectedIndex = 4;
 
         const expected = [fakeFields[8], fakeFields[4], fakeFields[5], fakeFields[6], fakeFields[7]].map(
             (fakeField) => {
@@ -547,6 +548,7 @@ describe('Load fields and drag and drop', () => {
         becomeNewField(fakeFields[8]);
 
         fakeFields[7].id = 'ng-1';
+
         fixture.detectChanges();
 
         spyOn(comp.propertiesForm, 'destroy');
@@ -563,7 +565,12 @@ describe('Load fields and drag and drop', () => {
         comp.saveFields.subscribe((fields) => (saveFields = fields));
         comp.saveFieldsHandler(fakeFields[8]);
 
-        expect([fakeFields[6], fakeFields[7], fakeFields[8]]).toEqual(saveFields);
+        const expected = [fakeFields[6], fakeFields[7], fakeFields[8]];
+        expected[0].sortOrder = 6;
+        expected[1].sortOrder = 7;
+        expected[2].sortOrder = 8;
+
+        expect(expected).toEqual(saveFields);
         expect(comp.propertiesForm.destroy).toHaveBeenCalled();
     });
 
