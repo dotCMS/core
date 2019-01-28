@@ -25,7 +25,7 @@ public class Relationship extends Inode
 	private int cardinality;
 	private boolean parentRequired;
     private boolean childRequired;
-    private boolean fixed;
+    private boolean fixed=false;
 	
     
     
@@ -202,11 +202,11 @@ public class Relationship extends Inode
     }
     
 	public boolean isFixed() {
-		return fixed;
+		return false;
 	}
 
 	public void setFixed(boolean fixed) {
-		this.fixed = fixed;
+	    
 	}
 
 	
