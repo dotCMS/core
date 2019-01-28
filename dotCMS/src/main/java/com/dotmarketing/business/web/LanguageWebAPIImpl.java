@@ -1,10 +1,5 @@
 package com.dotmarketing.business.web;
 
-import java.util.Locale;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
-
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
@@ -17,6 +12,10 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.struts.MultiMessageResources;
 import com.liferay.portal.struts.MultiMessageResourcesFactory;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+import java.util.Locale;
 
 /**
  * Implement LanguageWebAPI methods to manage language cache and language struts
@@ -121,7 +120,7 @@ public class LanguageWebAPIImpl implements LanguageWebAPI {
     public Language getLanguage(HttpServletRequest httpRequest) {
         final Language current = currentLanguage(httpRequest);
         final Language future = futureLanguage(httpRequest,current);
-        Locale locale = new Locale(future.getLanguageCode(), future.getCountryCode());
+        final Locale locale = null != future.getCountryCode()? new Locale(future.getLanguageCode(), future.getCountryCode()): new Locale(future.getLanguageCode());
         HttpSession sessionOpt = httpRequest.getSession(false);
         httpRequest.setAttribute(HTMLPAGE_CURRENT_LANGUAGE, String.valueOf(future.getId()));
 

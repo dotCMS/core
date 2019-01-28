@@ -112,10 +112,12 @@ public class HTMLPageAssetRenderedBuilder {
         request.setAttribute(RenderParams.RENDER_PARAMS_ATTRIBUTE, params);
         final User systemUser = APILocator.getUserAPI().getSystemUser();
         if (!rendered) {
-            final Collection<? extends ContainerRaw> containers =  new PageContextBuilder(htmlPageAssetInfo.getPage(), systemUser, mode).getContainersRaw();
+            final Collection<? extends ContainerRaw> containers =  new PageContextBuilder(htmlPageAssetInfo.getPage(), systemUser, mode, language.getId()).getContainersRaw();
+            
+            
             return new PageView(site, template, containers, htmlPageAssetInfo, layout);
         } else {
-            final PageContextBuilder pageContextBuilder =  new PageContextBuilder(htmlPageAssetInfo.getPage(), systemUser, mode);
+            final PageContextBuilder pageContextBuilder =  new PageContextBuilder(htmlPageAssetInfo.getPage(), systemUser, mode, language.getId());
             final Context velocityContext  = pageContextBuilder.addAll(VelocityUtil.getWebContext(request, response));
             final Collection<? extends ContainerRaw> containers = new ContainerRenderedBuilder(pageContextBuilder.getContainersRaw(), velocityContext, mode).build();
             final boolean canCreateTemplates = layoutAPI.doesUserHaveAccessToPortlet("templates", user);
