@@ -1,6 +1,7 @@
 package com.dotcms.rest.elasticsearch;
 
 import static com.dotcms.util.CollectionsUtils.map;
+import static com.dotmarketing.util.NumberUtil.toInt;
 
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
 import com.dotcms.enterprise.LicenseUtil;
@@ -40,16 +41,26 @@ public class ESContentResourcePortlet extends BaseRestPortlet {
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
 	@Path("search")
-	public Response search(@Context HttpServletRequest request, @Context HttpServletResponse response, String esQueryStr) throws DotDataException, DotSecurityException{
+	public Response search(@Context HttpServletRequest request,
+			@Context HttpServletResponse response, String esQueryStr,
+			@QueryParam("depth") final String depthParam)
+			throws DotDataException, DotSecurityException {
 
-		InitDataObject initData = webResource.init(null, true, request, false, null);
-		HttpSession session = request.getSession();
-		User user = initData.getUser();
-		ResourceResponse responseResource = new ResourceResponse(initData.getParamsMap());
-
-
+		final InitDataObject initData = webResource.init(null, true, request, false, null);
+		final User user = initData.getUser();
+		final ResourceResponse responseResource = new ResourceResponse(initData.getParamsMap());
 
 		PageMode mode = PageMode.get(request);
+
+		final int depth = depthParam != null ? toInt(depthParam, () -> -1) : 0;
+
+		if (depth < 0 || depth > 2){
+			final String errorMsg =
+					"Error executing search. Reason: Invalid depth: " + depthParam;
+			Logger.error(this, errorMsg);
+			return ExceptionMapperUtil.createResponse(null, errorMsg);
+		}
+
 
 		JSONObject esQuery;
 
@@ -75,7 +86,7 @@ public class ESContentResourcePortlet extends BaseRestPortlet {
 					jsonCons.put(jsonObject);
 
 					//load relationships
-					ContentResource.addRelationshipsToJSON(request, response, "false", user, 0, c,
+					ContentResource.addRelationshipsToJSON(request, response, "false", user, depth, c,
 							jsonObject);
 				} catch (Exception e) {
 					Logger.warn(this.getClass(), "unable JSON contentlet " + c.getIdentifier());
@@ -121,8 +132,11 @@ public class ESContentResourcePortlet extends BaseRestPortlet {
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes({MediaType.APPLICATION_JSON})
 	@Path("search")
-	public Response searchPost(@Context HttpServletRequest request, @Context HttpServletResponse response, String esQuery) throws DotDataException, DotSecurityException{
-		return search(request, response, esQuery);
+	public Response searchPost(@Context HttpServletRequest request,
+			@Context HttpServletResponse response, String esQuery,
+			@QueryParam("depth") final String depthParam)
+			throws DotDataException, DotSecurityException {
+		return search(request, response, esQuery, depthParam);
 	}
 	
 	@GET

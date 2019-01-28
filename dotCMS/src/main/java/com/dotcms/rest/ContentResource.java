@@ -812,10 +812,10 @@ public class ContentResource {
 
             if (isRelationshipField(relationType, contentType)) {
                 jsonObject.put(relationType.split("\\.")[1],
-                        getJSONArrayValue(jsonArray, depth, rel.doesAllowOnlyOne()));
+                        getJSONArrayValue(jsonArray, rel.doesAllowOnlyOne()));
             } else {
                 jsonObject.put(relationType,
-                        getJSONArrayValue(jsonArray, depth, rel.doesAllowOnlyOne()));
+                        getJSONArrayValue(jsonArray, rel.doesAllowOnlyOne()));
             }
         }
 
@@ -826,17 +826,15 @@ public class ContentResource {
      * Returns a jsonArray of related contentlets if depth = 2. If depth = 1 returns the related
      * object, otherwise it will return a comma-separated list of identifiers
      * @param jsonArray
-     * @param depth
      * @return
      * @throws JSONException
      */
-    private static Object getJSONArrayValue(final JSONArray jsonArray, final int depth,
-            final boolean allowOnlyOne)
+    private static Object getJSONArrayValue(final JSONArray jsonArray, final boolean allowOnlyOne)
             throws JSONException {
         if (allowOnlyOne) {
             return jsonArray.get(0);
         } else {
-            return depth == 0 ? jsonArray.join(", ") : jsonArray;
+            return jsonArray;
         }
     }
 

@@ -7,6 +7,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -354,15 +355,20 @@ public class ContentResourceTest extends IntegrationTestBase {
 
 
                     //validates grandchildren
-                    final String[] items = ((JSONObject) contentlet
+                    final JSONArray jsonArray = (JSONArray)((JSONObject) contentlet
                             .get(parent.getContentType().fields().get(0).variable()))
-                            .get(child.getContentType().fields().get(0).variable()).toString().split(", ");
+                            .get(child.getContentType().fields().get(0).variable());
 
-                    assertEquals(2, items.length);
+                    assertEquals(2, jsonArray.length());
 
-                    Arrays.stream(items).allMatch(grandChildIdentifier -> grandChildIdentifier
+                    assertTrue(jsonArray.get(0)
                             .equals(contentletMap.get("grandChild1").getIdentifier())
-                            || grandChildIdentifier
+                            || jsonArray.get(0)
+                            .equals(contentletMap.get("grandChild2").getIdentifier()));
+
+                    assertTrue(jsonArray.get(1)
+                            .equals(contentletMap.get("grandChild1").getIdentifier())
+                            || jsonArray.get(1)
                             .equals(contentletMap.get("grandChild2").getIdentifier()));
 
                     break;
