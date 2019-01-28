@@ -91,6 +91,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 	availableLanguages: new Array(),
 	numberOfResults:20,
     selectButtonLabel:'Select',
+    useRelateContentOnSelect: false,
 
 	postCreate: function () {
         var structuresParam = this.containerStructures.toString();
@@ -830,8 +831,12 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 
 			// Select button functionality
 			var selected =  function(scope,content) {
-				scope._onContentSelected(content);
-			};
+                if (this.useRelateContentOnSelect){
+                    scope._doRelateContent(content);
+                } else {
+                    scope._onContentSelected(content);
+                }
+			};selectedData
 			if(this.multiple=='false') {
 				var asset = cellData
 				var selectRow = dojo.byId("rowId" +i);
