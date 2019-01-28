@@ -337,7 +337,6 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
     private moveFields(): void {
         const fields = this.getFields().filter((field, index) => {
             const currentSortOrder = index;
-            console.log('moveFields', currentSortOrder);
 
             if (field.sortOrder !== currentSortOrder) {
                 field.sortOrder = currentSortOrder;
@@ -386,7 +385,6 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
             }
         });
 
-        console.log('result', result);
         return result;
     }
 

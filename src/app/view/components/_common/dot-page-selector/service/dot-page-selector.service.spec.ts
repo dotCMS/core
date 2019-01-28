@@ -4,8 +4,7 @@ import { ConnectionBackend, ResponseOptions, Response } from '@angular/http';
 import { MockBackend } from '@angular/http/testing';
 import {
     mockDotPageSelectorResults,
-    mockDotSiteSelectorResults,
-    mockEmptyDotSiteSelectorResults
+    mockDotSiteSelectorResults
 } from '../dot-page-selector.component.spec';
 
 const MAX_RESULTS_SIZE = 20;
