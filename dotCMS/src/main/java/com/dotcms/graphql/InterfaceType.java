@@ -11,6 +11,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import graphql.scalars.ExtendedScalars;
 import graphql.schema.GraphQLInterfaceType;
 import graphql.schema.GraphQLOutputType;
 
@@ -86,7 +87,7 @@ import static graphql.Scalars.GraphQLString;
 import static graphql.schema.GraphQLList.list;
 
 public enum InterfaceType {
-    CONTENT,
+    CONTENTLET,
     FILEASSET,
     HTMLPAGE,
     PERSONA,
@@ -111,20 +112,20 @@ public enum InterfaceType {
         contentFields.put(LANGUAGE_ID, GraphQLBoolean);
         contentFields.put(IDENTIFIER, GraphQLID);
         contentFields.put(INODE, GraphQLID);
-        contentFields.put(CONTENTLET_HOST, GraphQLID);
-        contentFields.put(CONTENTLET_FOLER, GraphQLID);
+        contentFields.put(CONTENTLET_HOST, CustomFieldType.SITE_OR_FOLDER.getType());
+        contentFields.put(CONTENTLET_FOLER, CustomFieldType.SITE_OR_FOLDER.getType());
         contentFields.put(PARENT_PATH, GraphQLString);
         contentFields.put(PATH, GraphQLString);
         contentFields.put(WORKFLOW_CREATED_BY, GraphQLString);
         contentFields.put(WORKFLOW_ASSIGN, GraphQLString);
         contentFields.put(WORKFLOW_STEP, GraphQLString);
-        contentFields.put(WORKFLOW_MOD_DATE, GraphQLString);
-        contentFields.put(PUBLISH_DATE, GraphQLString);
-        contentFields.put(EXPIRE_DATE, GraphQLString);
+        contentFields.put(WORKFLOW_MOD_DATE, ExtendedScalars.DateTime);
+        contentFields.put(PUBLISH_DATE, ExtendedScalars.DateTime);
+        contentFields.put(EXPIRE_DATE, ExtendedScalars.DateTime);
         contentFields.put(URL_MAP, GraphQLString);
-        contentFields.put(CATEGORIES, GraphQLString);
+        contentFields.put(CATEGORIES, CustomFieldType.CATEGORY.getType());
 
-        interfaceTypes.put("CONTENT", createInterfaceType("Content", contentFields, new ContentResolver()));
+        interfaceTypes.put("CONTENTLET", createInterfaceType("Contentlet", contentFields, new ContentResolver()));
 
         final Map<String, GraphQLOutputType> fileAssetFields = new HashMap<>(contentFields);
         fileAssetFields.put(FILEASSET_FILE_NAME_FIELD_VAR, GraphQLString);

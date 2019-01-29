@@ -150,7 +150,7 @@ public class GraphqlAPIImpl implements GraphqlAPI {
         final GraphQLObjectType.Builder builder = GraphQLObjectType.newObject().name(contentType.variable());
 
         // add CONTENT interface fields
-        builder.fields(InterfaceType.CONTENT.getType().getFieldDefinitions());
+        builder.fields(InterfaceType.CONTENTLET.getType().getFieldDefinitions());
 
         if(InterfaceType.getInterfaceForBaseType(contentType.baseType())!=null) {
             builder.withInterface(InterfaceType.getInterfaceForBaseType(contentType.baseType()));
@@ -174,7 +174,7 @@ public class GraphqlAPIImpl implements GraphqlAPI {
             }
         });
 
-        builder.withInterface(InterfaceType.CONTENT.getType());
+        builder.withInterface(InterfaceType.CONTENTLET.getType());
         final GraphQLObjectType graphQLType = builder.build();
 
         graphqlObjectTypes.put(graphQLType.getName(), graphQLType);
@@ -253,7 +253,7 @@ public class GraphqlAPIImpl implements GraphqlAPI {
                     .name("query")
                     .type(GraphQLString)
                     .build())
-                .type(list(InterfaceType.CONTENT.getType()))
+                .type(list(InterfaceType.CONTENTLET.getType()))
                 .dataFetcher(new ContentletDataFetcher()))
             .build();
 
