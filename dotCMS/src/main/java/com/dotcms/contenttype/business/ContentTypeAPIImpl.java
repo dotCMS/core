@@ -345,29 +345,36 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
   @CloseDBIfOpened
   @Override
   public List<ContentType> search(String condition, String orderBy, int limit, int offset) throws DotDataException {
-    try {
-      return perms.filterCollection(this.contentTypeFactory.search(condition, orderBy, limit, offset), PermissionAPI.PERMISSION_READ,
-          respectFrontendRoles, user);
-
-    } catch (DotSecurityException e) {
-      throw new DotStateException(e);
-    }
-
+      return this.search( condition, BaseContentType.ANY, orderBy,  limit,  offset);
   }
 
-  @CloseDBIfOpened
-  @Override
-  public List<ContentType> search(String condition, BaseContentType base, String orderBy, int limit, int offset)
-      throws DotDataException {
+    @CloseDBIfOpened
+    @Override
+    public List<ContentType> search(String condition, BaseContentType base, final String orderBy, final int limit, final int offset)
+            throws DotDataException {
 
-    try {
-      return perms.filterCollection(this.contentTypeFactory.search(condition, base, orderBy, limit, offset),
-          PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
-    } catch (DotSecurityException e) {
-      throw new DotStateException(e);
+        final List<ContentType> returnTypes = new ArrayList<>();
+        int rollingOffset = offset;
+        try {
+            while (returnTypes.size() < limit) {
+                final List<ContentType> rawContentTypes = this.contentTypeFactory.search(condition, base, orderBy, limit, rollingOffset);
+                if (rawContentTypes.isEmpty()) {
+                    break;
+                }
+                returnTypes.addAll(perms.filterCollection(rawContentTypes, PermissionAPI.PERMISSION_READ, respectFrontendRoles, user));
+                if(returnTypes.size() >= limit || rawContentTypes.size()<limit) {
+                    break;
+                }
+                rollingOffset += limit;
+            }
+
+
+            return returnTypes.subList(0, Math.min(limit, returnTypes.size()));
+        } catch (DotSecurityException e) {
+            throw new DotStateException(e);
+        }
+
     }
-
-  }
 
   @CloseDBIfOpened
   @Override

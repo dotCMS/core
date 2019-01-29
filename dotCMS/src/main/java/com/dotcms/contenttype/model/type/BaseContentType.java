@@ -81,6 +81,16 @@ public enum BaseContentType {
 		}
 		return ANY;
 	}
+	
+    public static BaseContentType getBaseContentType (final String name) {
+        BaseContentType[] types = BaseContentType.values();
+        for (BaseContentType type : types) {
+            if (type.name().equalsIgnoreCase(name)){
+                return type;
+            }
+        }
+        return ANY;
+    }
 
 	/**
 	 * Returns the appropriate immutable Content Type based on its integer
