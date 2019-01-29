@@ -17,7 +17,7 @@ public class GraphqlAPITest {
 
 
 
-    @Test
+//    @Test
     public void testGenerateSchema() throws DotDataException {
         GraphqlAPI api = APILocator.getGraphqlAPI();
         api.getSchema();
