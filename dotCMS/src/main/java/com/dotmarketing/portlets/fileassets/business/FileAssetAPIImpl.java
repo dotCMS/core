@@ -283,6 +283,24 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 	}
 
 	@CloseDBIfOpened
+	@Override
+	public boolean fileNameExists(final Host host, final Folder folder, final String fileName) throws  DotDataException {
+
+		if(!UtilMethods.isSet(fileName) || folder == null || host == null ) {
+			return false;
+		}
+
+
+		final Identifier folderId  = this.identifierAPI.find(folder);
+		final String path          = folder.getInode().equals(FolderAPI.SYSTEM_FOLDER)?
+				new StringBuilder(StringPool.FORWARD_SLASH).append(fileName).toString():
+				new StringBuilder(folderId.getPath()).append(fileName).toString();
+		final Identifier fileAsset = this.identifierAPI.find(host, path);
+
+		return (fileAsset!=null && InodeUtils.isSet(fileAsset.getId())  && !fileAsset.getAssetType().equals(Contentlet.FOLDER_KEY));
+	} // fileNameExists.
+
+	@CloseDBIfOpened
 	public boolean fileNameExists(final Host host, final Folder folder, final String fileName, final String identifier, final long languageId) throws  DotDataException{
 		if( !UtilMethods.isSet(fileName) ){
 			return true;
