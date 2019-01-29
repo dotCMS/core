@@ -8,7 +8,6 @@ import com.dotcms.contenttype.model.field.IFieldVar;
 import com.dotcms.contenttype.model.field.ImmutableFieldVariable;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.util.UtilMethods;
 
 
 public class FieldVariableTransformer {
