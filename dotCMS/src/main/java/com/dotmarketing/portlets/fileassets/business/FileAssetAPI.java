@@ -121,6 +121,7 @@ public interface FileAssetAPI {
 	 * @return
      * @throws DotDataException
      */
+    @Deprecated
     boolean fileNameExists(Host host, Folder folder, String fileName, String identifier, long languageId) throws  DotDataException;
 
 	/**
