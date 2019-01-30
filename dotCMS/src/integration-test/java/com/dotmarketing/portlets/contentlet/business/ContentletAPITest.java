@@ -1702,9 +1702,9 @@ public class ContentletAPITest extends ContentletBaseTest {
 
             //Check that the content is related and the order of the related content (child1 - child2 - child3)
             assertNotNull(cRelationships);
-            assertEquals(contentletChild1,cRelationships.getRelationshipsRecords().get(0).getRecords().get(0));
-            assertEquals(contentletChild2,cRelationships.getRelationshipsRecords().get(0).getRecords().get(1));
-            assertEquals(contentletChild3,cRelationships.getRelationshipsRecords().get(0).getRecords().get(2));
+            assertEquals(contentletChild1,cRelationships.getRelationshipsRecords().get(1).getRecords().get(0));
+            assertEquals(contentletChild2,cRelationships.getRelationshipsRecords().get(1).getRecords().get(1));
+            assertEquals(contentletChild3,cRelationships.getRelationshipsRecords().get(1).getRecords().get(2));
 
             //Reorder Relationships
             relationshipListMap.put(relationship,CollectionsUtils.list(contentletChild3,contentletChild1,contentletChild2));
@@ -1716,12 +1716,12 @@ public class ContentletAPITest extends ContentletBaseTest {
 
             //Check that the content is related and the order of the related content (child3 - child1 - child2)
             assertNotNull(cRelationships);
-            assertEquals(contentletChild3,cRelationships.getRelationshipsRecords().get(0).getRecords().get(0));
-            assertEquals(contentletChild1,cRelationships.getRelationshipsRecords().get(0).getRecords().get(1));
-            assertEquals(contentletChild2,cRelationships.getRelationshipsRecords().get(0).getRecords().get(2));
+            assertEquals(contentletChild3,cRelationships.getRelationshipsRecords().get(1).getRecords().get(0));
+            assertEquals(contentletChild1,cRelationships.getRelationshipsRecords().get(1).getRecords().get(1));
+            assertEquals(contentletChild2,cRelationships.getRelationshipsRecords().get(1).getRecords().get(2));
         }finally {
             if(parentContentType != null){
-                //contentTypeAPI.delete(parentContentType);
+                contentTypeAPI.delete(parentContentType);
             }
         }
     }
