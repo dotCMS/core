@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.contentlet.transform;
 
+import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.rest.ContentHelper;
 import com.dotcms.util.CollectionsUtils;
@@ -10,6 +11,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Logger;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableSet;
@@ -149,6 +151,14 @@ public class ContentletToMapTransformer {
         try {
             final User modUser = userAPI.loadUserById(contentlet.getModUser());
             contentlet.getMap().put("modUserName", null != modUser ? modUser.getFullName() : NA );
+            contentlet.getMap().put(Contentlet.WORKING_KEY, contentlet.isWorking());
+            contentlet.getMap().put(Contentlet.LIVE_KEY, contentlet.isLive());
+            contentlet.getMap().put(Contentlet.ARCHIVED_KEY, contentlet.isArchived());
+            contentlet.getMap().put(Contentlet.LOCKED_KEY, contentlet.isLocked());
+
+            final String urlMap = APILocator.getContentletAPI().getUrlMapForContentlet(contentlet, APILocator.getUserAPI().getSystemUser(), true);
+            contentlet.getMap().put(ESMappingConstants.URL_MAP, urlMap);
+
         } catch (Exception e) {
             Logger.error(getClass(),"Error calculating modUser", e);
         }
