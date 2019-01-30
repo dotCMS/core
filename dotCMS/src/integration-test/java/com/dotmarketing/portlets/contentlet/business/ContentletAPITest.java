@@ -1600,6 +1600,147 @@ public class ContentletAPITest extends ContentletBaseTest {
     }
 
     /**
+     * This test is for ordering purposes.
+     * When you get the related content of a content, the ordering should be the same as it was stored.
+     */
+    @Test
+    public void test_getAllRelationships_checkOrdering() throws DotSecurityException, DotDataException{
+        ContentType parentContentType = null;
+        ContentType childContentType = null;
+        try{
+            parentContentType = createContentType("parentContentType",BaseContentType.CONTENT);
+            childContentType = createContentType("childContentType",BaseContentType.CONTENT);
+
+            //Create Relationship Field and Text Fields
+            createRelationshipField("testRelationship",parentContentType.id(),childContentType.variable());
+            final String textFieldString = "title";
+            createTextField(textFieldString,parentContentType.id());
+            createTextField(textFieldString,childContentType.id());
+
+            //Create Contentlets
+            Contentlet contentletParent = new ContentletDataGen(parentContentType.id()).setProperty(textFieldString,"parent Contentlet").next();
+            final Contentlet contentletChild1 = new ContentletDataGen(childContentType.id()).setProperty(textFieldString,"child Contentlet").nextPersisted();
+            final Contentlet contentletChild2 = new ContentletDataGen(childContentType.id()).setProperty(textFieldString,"child Contentlet 2").nextPersisted();
+            final Contentlet contentletChild3 = new ContentletDataGen(childContentType.id()).setProperty(textFieldString,"child Contentlet 3").nextPersisted();
+
+            //Find Relationship
+            final Relationship relationship = relationshipAPI.byParent(parentContentType).get(0);
+
+            //Relate contentlets
+            Map<Relationship, List<Contentlet>> relationshipListMap = Maps.newHashMap();
+            relationshipListMap.put(relationship,CollectionsUtils.list(contentletChild1,contentletChild2,contentletChild3));
+
+            //Checkin of the parent to save Relationships
+            contentletParent = contentletAPI.checkin(contentletParent,relationshipListMap,user,false);
+
+            //Get All Relationships of the parent contentlet
+            ContentletRelationships cRelationships = contentletAPI.getAllRelationships(contentletParent);
+
+            //Check that the content is related and the order of the related content (child1 - child2 - child3)
+            assertNotNull(cRelationships);
+            assertEquals(contentletChild1,cRelationships.getRelationshipsRecords().get(0).getRecords().get(0));
+            assertEquals(contentletChild2,cRelationships.getRelationshipsRecords().get(0).getRecords().get(1));
+            assertEquals(contentletChild3,cRelationships.getRelationshipsRecords().get(0).getRecords().get(2));
+
+            //Reorder Relationships
+            relationshipListMap.put(relationship,CollectionsUtils.list(contentletChild3,contentletChild1,contentletChild2));
+            contentletParent.setInode("");
+            contentletParent = contentletAPI.checkin(contentletParent,relationshipListMap,user,false);
+
+            //Get All Relationships of the parent contentlet
+            cRelationships = contentletAPI.getAllRelationships(contentletParent);
+
+            //Check that the content is related and the order of the related content (child3 - child1 - child2)
+            assertNotNull(cRelationships);
+            assertEquals(contentletChild3,cRelationships.getRelationshipsRecords().get(0).getRecords().get(0));
+            assertEquals(contentletChild1,cRelationships.getRelationshipsRecords().get(0).getRecords().get(1));
+            assertEquals(contentletChild2,cRelationships.getRelationshipsRecords().get(0).getRecords().get(2));
+        }finally {
+            if(parentContentType != null){
+                contentTypeAPI.delete(parentContentType);
+            }
+            if(childContentType != null){
+                contentTypeAPI.delete(childContentType);
+            }
+        }
+    }
+
+    /**
+     * This test is for ordering purposes.
+     * When you get the related content of a content, the ordering should be the same as it was stored.
+     * For selfRelated Content Types.
+     */
+    @Test
+    public void test_getAllRelationships_checkOrdering_selfRelatedContentType() throws DotSecurityException, DotDataException{
+        ContentType parentContentType = null;
+        try{
+            parentContentType = createContentType("parentContentType",BaseContentType.CONTENT);
+
+            //Create Relationship Field and Text Fields
+            createRelationshipField("testRelationship",parentContentType.id(),parentContentType.variable());
+            final String textFieldString = "title";
+            createTextField(textFieldString,parentContentType.id());
+
+            //Create Contentlets
+            Contentlet contentletParent = new ContentletDataGen(parentContentType.id()).setProperty(textFieldString,"parent Contentlet").next();
+            final Contentlet contentletChild1 = new ContentletDataGen(parentContentType.id()).setProperty(textFieldString,"child Contentlet").nextPersisted();
+            final Contentlet contentletChild2 = new ContentletDataGen(parentContentType.id()).setProperty(textFieldString,"child Contentlet 2").nextPersisted();
+            final Contentlet contentletChild3 = new ContentletDataGen(parentContentType.id()).setProperty(textFieldString,"child Contentlet 3").nextPersisted();
+
+            //Find Relationship
+            final Relationship relationship = relationshipAPI.byParent(parentContentType).get(0);
+
+            //Relate contentlets
+            Map<Relationship, List<Contentlet>> relationshipListMap = Maps.newHashMap();
+            relationshipListMap.put(relationship,CollectionsUtils.list(contentletChild1,contentletChild2,contentletChild3));
+
+            //Checkin of the parent to save Relationships
+            contentletParent = contentletAPI.checkin(contentletParent,relationshipListMap,user,false);
+
+            //Get All Relationships of the parent contentlet
+            ContentletRelationships cRelationships = contentletAPI.getAllRelationships(contentletParent);
+
+            //Check that the content is related and the order of the related content (child1 - child2 - child3)
+            assertNotNull(cRelationships);
+            assertEquals(contentletChild1,cRelationships.getRelationshipsRecords().get(1).getRecords().get(0));
+            assertEquals(contentletChild2,cRelationships.getRelationshipsRecords().get(1).getRecords().get(1));
+            assertEquals(contentletChild3,cRelationships.getRelationshipsRecords().get(1).getRecords().get(2));
+
+            //Reorder Relationships
+            relationshipListMap.put(relationship,CollectionsUtils.list(contentletChild3,contentletChild1,contentletChild2));
+            contentletParent.setInode("");
+            contentletParent = contentletAPI.checkin(contentletParent,relationshipListMap,user,false);
+
+            //Get All Relationships of the parent contentlet
+            cRelationships = contentletAPI.getAllRelationships(contentletParent);
+
+            //Check that the content is related and the order of the related content (child3 - child1 - child2)
+            assertNotNull(cRelationships);
+            assertEquals(contentletChild3,cRelationships.getRelationshipsRecords().get(1).getRecords().get(0));
+            assertEquals(contentletChild1,cRelationships.getRelationshipsRecords().get(1).getRecords().get(1));
+            assertEquals(contentletChild2,cRelationships.getRelationshipsRecords().get(1).getRecords().get(2));
+        }finally {
+            if(parentContentType != null){
+                contentTypeAPI.delete(parentContentType);
+            }
+        }
+    }
+
+    private com.dotcms.contenttype.model.field.Field createRelationshipField(final String fieldName, final String parentContentTypeID, final String childContentTypeVariable)
+            throws DotDataException, DotSecurityException {
+        final com.dotcms.contenttype.model.field.Field field = FieldBuilder.builder(RelationshipField.class)
+                .name(fieldName)
+                .contentTypeId(parentContentTypeID)
+                .values(String.valueOf(WebKeys.Relationship.RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal()))
+                .indexed(true)
+                .listed(false)
+                .relationType(childContentTypeVariable)
+                .build();
+
+        return APILocator.getContentTypeFieldAPI().save(field, APILocator.systemUser());
+    }
+
+    /**
      * Testing {@link ContentletAPI#getAllRelationships(com.dotmarketing.portlets.contentlet.model.Contentlet)}
      *
      * @throws DotSecurityException
