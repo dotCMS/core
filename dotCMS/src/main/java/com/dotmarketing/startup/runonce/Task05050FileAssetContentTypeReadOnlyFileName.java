@@ -91,7 +91,7 @@ public class Task05050FileAssetContentTypeReadOnlyFileName implements StartupTas
         final Iterator<Map<String,Object>> iterator =inodes.iterator();
         while (iterator.hasNext()){
             final Map<String,Object> entry = iterator.next();
-            stringBuilder.append("'").append(entry.get("field_inode").toString()).append("'");
+            stringBuilder.append('\'').append(entry.get("field_inode").toString()).append('\'');
             if(iterator.hasNext()){
                stringBuilder.append(",");
             }

@@ -29,18 +29,18 @@ import com.liferay.portal.model.User;
 import javax.servlet.http.HttpServletRequest;
 
 @Path("/v1/content/asset")
-public class AssetsResource {
+public class FileAssetsResource {
 
     private final WebResource webResource;
     private final ContentletAPI contentletAPI;
 
     @VisibleForTesting
-    public AssetsResource(final ContentletAPI contentletAPI, final WebResource webResource) {
+    public FileAssetsResource(final ContentletAPI contentletAPI, final WebResource webResource) {
         this.contentletAPI = contentletAPI;
         this.webResource = webResource;
     }
 
-    public AssetsResource() {
+    public FileAssetsResource() {
         this(APILocator.getContentletAPI(), new WebResource());
     }
 

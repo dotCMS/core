@@ -73,12 +73,6 @@ public interface ContentletAPI {
 	 */
 	public Contentlet findContentletForLanguage(long languageId, Identifier contentletId) throws DotDataException, DotSecurityException;
 
-	/**
-	 * Returns all working contentlets for a given identifier, regardless of languange
-	 * @param contentletId
-	 * @return
-	 */
-	public List<Contentlet> findContentletsForAllLanguages(final Identifier contentletId);
 
 	/**
 	 * Returns all Contentlets for a specific structure

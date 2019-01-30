@@ -40,7 +40,14 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.beans.Tree;
-import com.dotmarketing.business.*;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.RelationshipAPI;
+import com.dotmarketing.business.Role;
+import com.dotmarketing.business.Treeable;
 import com.dotmarketing.business.query.GenericQueryFactory.Query;
 import com.dotmarketing.business.query.QueryUtil;
 import com.dotmarketing.business.query.ValidationException;
@@ -149,9 +156,8 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Map.Entry;
-import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -304,20 +310,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return null;
     }
 
-    @CloseDBIfOpened
-    @Override
-    public List<Contentlet> findContentletsForAllLanguages(final Identifier identifier) {
-        final LanguageAPI languageAPI = APILocator.getLanguageAPI();
-        final List<Language> allLanguages = languageAPI.getLanguages();
-        return allLanguages.stream().map(language -> {
-            try {
-                return findContentletForLanguage(language.getId(), identifier);
-            } catch (DotDataException | DotSecurityException e) {
-                Logger.debug(this, ()->String.format("No working contentlet found for language: %s and identifier: %s ", language.toString(), null != identifier ? identifier.getId() : "Unkown"));
-                return null;
-            }
-        }).filter(Objects::nonNull).collect(CollectionsUtils.toImmutableList());
-    }
 
 
     @CloseDBIfOpened
@@ -3603,13 +3595,20 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
 
             //If the URI changed and we're looking at FileAsset we need to evict all other language instances
-            if(contentlet != null && contentlet.isFileAsset() && changedURI){
-               HibernateUtil.addCommitListener(()-> {
-                   final List<Contentlet> allContentlet = findContentletsForAllLanguages(contIdent);
-                    allContentlet.forEach(cont -> {
-                       CacheLocator.getContentletCache().remove(cont);
-                   });
-               });
+            if (contentlet != null && contentlet.isFileAsset() && changedURI) {
+                final Contentlet contentletRef = contentlet;
+                HibernateUtil.addCommitListener(() -> {
+                    try {
+                        final List<Contentlet> allContentlet = getAllLanguages(contentletRef, false,
+                                APILocator.getUserAPI().getSystemUser(), false);
+                        allContentlet.forEach(cont -> {
+                            CacheLocator.getIdentifierCache().removeFromCacheByIdentifier(cont.getIdentifier());
+                        });
+
+                    } catch (DotDataException | DotSecurityException e) {
+                        Logger.error(ESContentletAPIImpl.class,"Error retrieving all lang contentlets",e);
+                    }
+                });
             }
 
             if(structureHasAHostField && changedURI) {
@@ -4340,6 +4339,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * @throws IOException
      */
     private boolean hasNewIncomingFile(final Contentlet contentletIn) throws DotContentletStateException{
+        if(!contentletIn.isFileAsset()){
+           throw new IllegalArgumentException("Contentlet isn't a subtype of FileAsset");
+        }
         try {
             final String identifierStr = contentletIn.getIdentifier();
             if(!UtilMethods.isSet(identifierStr)){

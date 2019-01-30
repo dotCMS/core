@@ -568,7 +568,7 @@
                 load: function (data) {
 					if(data.entity && data.entity.resourceLink){
                        var resourceLinkData = data.entity.resourceLink;
-                       resourceLink.text = shortenString(resourceLinkData.text, 70);
+                       resourceLink.text = shortenString(resourceLinkData.text, 100);
                        resourceLink.href = resourceLinkData.href;
 					} else {
                         showDotCMSSystemMessage('Failed to update resource link', true);

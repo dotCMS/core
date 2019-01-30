@@ -584,7 +584,7 @@
         var resourceLink = dojo.byId('resourceLink');
         if(resourceLink){
             var name = resourceLink.text;
-            name = shortenString(name, 70);
+            name = shortenString(name, 100);
             resourceLink.text = name;
         }
         

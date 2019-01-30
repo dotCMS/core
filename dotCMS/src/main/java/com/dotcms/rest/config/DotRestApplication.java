@@ -4,7 +4,7 @@ import com.dotcms.contenttype.model.field.FieldTypeResource;
 import com.dotcms.repackage.org.glassfish.jersey.media.multipart.MultiPartFeature;
 import com.dotcms.rest.RulesEnginePortlet;
 import com.dotcms.rest.TagResource;
-import com.dotcms.rest.api.v1.asset.AssetsResource;
+import com.dotcms.rest.api.v1.asset.FileAssetsResource;
 import com.dotcms.rest.api.v1.authentication.AuthenticationResource;
 import com.dotcms.rest.api.v1.authentication.CreateJsonWebTokenResource;
 import com.dotcms.rest.api.v1.authentication.ForgotPasswordResource;
@@ -145,7 +145,7 @@ public class DotRestApplication extends com.dotcms.repackage.javax.ws.rs.core.Ap
 
 					REST_CLASSES.add(VTLResource.class);
 					REST_CLASSES.add(ContentVersionResource.class);
-					REST_CLASSES.add(AssetsResource.class);
+					REST_CLASSES.add(FileAssetsResource.class);
 				}
 			}
 		}

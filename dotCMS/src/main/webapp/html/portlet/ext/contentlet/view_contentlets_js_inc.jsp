@@ -261,7 +261,7 @@
 
         function titleCell (data,text, x) {
 
-                text = shortenString(text, 30);
+                text = shortenString(text, 100);
 
                 var inode = data["inode"];
                 var checkId = "checkbox" + x;
