@@ -100,7 +100,7 @@
 		function initAdvancedSearch(){
 			var x = dojo.cookie("ShAdDi");
 			if(x !=null && x != undefined && x != 0){
-				resizeAdvancedSearch();
+				setTimeout(resizeAdvancedSearch, 500);
 			}
 		}
 
@@ -722,9 +722,17 @@
                       });
 
 		              reloadRelationshipBox(relationshipSearch,"${relationType}");
-		              
-		              dojo.connect(dijit.byId("clearButton"), "onClick", null, function() {
-		            	  dijit.byId("${relationSearchField}Id").set("displayedValue","");
+
+                      dojo.connect(dijit.byId("searchButton"), "onClick", null, function() {
+                            if (relationshipSearch.get('value')==""){
+                                relationshipSearch.set("displayedValue","");
+                                reloadRelationshipBox(relationshipSearch,"${relationType}");
+                            }
+                      });
+
+                      dojo.connect(dijit.byId("clearButton"), "onClick", null, function() {
+                            dijit.byId("${relationSearchField}Id").set("displayedValue","");
+                            reloadRelationshipBox(relationshipSearch,"${relationType}");
                       });
                 </script>
               `;
