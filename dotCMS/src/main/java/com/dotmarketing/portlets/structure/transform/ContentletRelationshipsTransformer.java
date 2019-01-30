@@ -70,11 +70,7 @@ public class ContentletRelationshipsTransformer implements DBTransformer<Content
             // if the parentRelationName is set there is no way to know if we are adding parents or children
             // so we assume we are adding children
             if (hasParent && hasChildren) {
-                if(!UtilMethods.isSet(relationship.getParentRelationName())){
-                    hasParent = true;
-                } else {
-                    hasParent = false;
-                }
+                hasParent = !UtilMethods.isSet(relationship.getParentRelationName());
             }
             
             final ContentletRelationships.ContentletRelationshipRecords
