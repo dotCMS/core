@@ -3598,16 +3598,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             if (contentlet != null && contentlet.isFileAsset() && changedURI) {
                 final Contentlet contentletRef = contentlet;
                 HibernateUtil.addCommitListener(() -> {
-                    try {
-                        final List<Contentlet> allContentlet = getAllLanguages(contentletRef, false,
-                                APILocator.getUserAPI().getSystemUser(), false);
-                        allContentlet.forEach(cont -> {
-                            CacheLocator.getIdentifierCache().removeFromCacheByIdentifier(cont.getIdentifier());
-                        });
-
-                    } catch (DotDataException | DotSecurityException e) {
-                        Logger.error(ESContentletAPIImpl.class,"Error retrieving all lang contentlets",e);
-                    }
+                    CacheLocator.getIdentifierCache().removeFromCacheByIdentifier(contentletRef.getIdentifier());
                 });
             }
 
