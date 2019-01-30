@@ -479,7 +479,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
     private subscribePageModelChange(): void {
         this.dotEditContentHtmlService.pageModel$
             .pipe(
-                filter((event: any) => event.model.length),
+                filter((event: PageModelChangeEvent) => !!event.model.length),
                 takeUntil(this.destroy$)
             )
             .subscribe((event: PageModelChangeEvent) => {
