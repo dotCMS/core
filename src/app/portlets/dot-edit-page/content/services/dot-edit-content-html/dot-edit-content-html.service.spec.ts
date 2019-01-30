@@ -21,6 +21,7 @@ import { DotLicenseService } from '@services/dot-license/dot-license.service';
 import { Injectable } from '@angular/core';
 import { DotRenderedPageState } from '@portlets/dot-edit-page/shared/models/dot-rendered-page-state.model';
 import { mockUser } from '../../../../../test/login-service.mock';
+import { PageModelChangeEventType } from './models';
 
 @Injectable()
 class MockDotLicenseService {
@@ -274,7 +275,7 @@ describe('DotEditContentHtmlService', () => {
 
         expect(this.dotEditContentHtmlService.renderAddedContentlet).toHaveBeenCalledWith({
             identifier: '123'
-        });
+        }, PageModelChangeEventType.ADD_CONTENT);
     });
 
     it('should render relocated contentlet', () => {
@@ -366,7 +367,7 @@ describe('DotEditContentHtmlService', () => {
 
         this.dotEditContentHtmlService.pageModel$.subscribe((model) => (currentModel = model));
 
-        this.dotEditContentHtmlService.renderAddedContentlet(contentlet);
+        this.dotEditContentHtmlService.renderAddedContentlet(contentlet, PageModelChangeEventType.ADD_CONTENT);
 
         expect(this.dotEditContentHtmlService.currentAction === DotContentletAction.EDIT).toBe(
             true,
@@ -386,7 +387,10 @@ describe('DotEditContentHtmlService', () => {
             'currentContainer must be the same after add content'
         );
 
-        expect(currentModel).toEqual(modelExpected, 'should tigger model change event');
+        expect(currentModel).toEqual({
+            model: modelExpected,
+            type: PageModelChangeEventType.ADD_CONTENT
+        }, 'should tigger model change event');
     });
 
     it('should remove contentlet', () => {
