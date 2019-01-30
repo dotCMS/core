@@ -267,12 +267,10 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
         this.dotGlobalMessageService.loading(
             this.dotMessageService.get('dot.common.message.saving')
         );
-            console.log('before');
         this.dotEditPageService
             .save(this.pageState.page.identifier, event.model)
             .pipe(take(1))
             .subscribe(() => {
-                console.log('in');
                 this.dotGlobalMessageService.display(
                     this.dotMessageService.get('dot.common.message.saved')
                 );
@@ -485,7 +483,6 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
                 takeUntil(this.destroy$)
             )
             .subscribe((event: PageModelChangeEvent) => {
-                console.log('AAAAA 2222', event);
                 this.ngZone.run(() => {
                     this.saveContent(event);
                     if (this.shouldSetContainersHeight()) {
