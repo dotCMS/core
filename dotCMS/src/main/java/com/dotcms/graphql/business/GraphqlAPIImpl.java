@@ -102,8 +102,6 @@ public class GraphqlAPIImpl implements GraphqlAPI {
         this.fieldClassGraphqlDataFetcher.put(MultiSelectField.class, new MultiValueFieldDataFetcher());
         this.fieldClassGraphqlDataFetcher.put(TagField.class, new TagsFieldDataFetcher());
         this.fieldClassGraphqlDataFetcher.put(HostFolderField.class, new SiteOrFolderFieldDataFetcher());
-        this.fieldClassGraphqlDataFetcher.put(HostFolderField.class, new SiteOrFolderFieldDataFetcher());
-
     }
 
     @Override

@@ -100,7 +100,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
     public static final String HOST_NAME = "hostName";
     public static final String FOLDER_KEY = "folder";
 	public static final String NULL_PROPERTIES = "nullProperties";
-	public static final String WORKFLOW_ACTION_KEY = "wfAgctionId";
+	public static final String WORKFLOW_ACTION_KEY = "wfActionId";
 	public static final String WORKFLOW_ASSIGN_KEY = "wfActionAssign";
 	public static final String WORKFLOW_COMMENTS_KEY = "wfActionComments";
 	public static final String WORKFLOW_BULK_KEY = "wfActionBulk";
