@@ -3,8 +3,8 @@ package com.dotcms.rest.api.v1.asset;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.ws.rs.GET;
 import com.dotcms.repackage.javax.ws.rs.Path;
+import com.dotcms.repackage.javax.ws.rs.PathParam;
 import com.dotcms.repackage.javax.ws.rs.Produces;
-import com.dotcms.repackage.javax.ws.rs.QueryParam;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
@@ -28,7 +28,7 @@ import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 import javax.servlet.http.HttpServletRequest;
 
-@Path("/v1/content/asset")
+@Path("/v1/content/fileasset")
 public class FileAssetsResource {
 
     private final WebResource webResource;
@@ -57,10 +57,10 @@ public class FileAssetsResource {
     @GET
     @JSONP
     @NoCache
-    @Path("/resourcelink")
+    @Path("/{inode}/resourcelink")
     @Produces(MediaType.APPLICATION_JSON + ";charset=UTF-8")
     public Response findResourceLink(@Context final HttpServletRequest request,
-            @QueryParam("inode") final String inode) throws DotStateException {
+            @PathParam("inode") final String inode) throws DotStateException {
         try {
             if (!UtilMethods.isSet(inode)) {
                 throw new IllegalArgumentException("Missing required inode param");
