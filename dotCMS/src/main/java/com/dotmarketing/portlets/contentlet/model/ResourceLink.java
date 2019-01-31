@@ -110,7 +110,10 @@ public class ResourceLink {
                 final StringBuilder resourceLink = new StringBuilder();
                 final StringBuilder resourceLinkUri = new StringBuilder();
 
-                final Host host = getHost((String)request.getAttribute(HOST_REQUEST_ATTRIBUTE) , user);
+                Host host = getHost((String)request.getAttribute(HOST_REQUEST_ATTRIBUTE) , user);
+                if(null == host){
+                   host = getHost(contentlet.getHost(), user);
+                }
 
                 if(request.isSecure()){
                     resourceLink.append(HTTPS_PREFIX);

@@ -7,12 +7,15 @@ import com.dotcms.api.system.event.Visibility;
 import com.dotcms.api.system.event.verifier.ExcludeOwnerVerifierBean;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
-import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotcms.tika.TikaUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.business.*;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.IdentifierAPI;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -33,14 +36,17 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import com.liferay.util.StringPool;
-import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
-
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.zip.GZIPInputStream;
+import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 
 /**
  * This class is a bridge impl that will support the older
@@ -272,8 +278,37 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 		return new TikaUtils().getMetaDataMap(contentlet.getInode(), binFile);
 	}
 
-	public boolean fileNameExists(Host host, Folder folder, String fileName, String identifier) throws  DotDataException{
-		return this.fileNameExists(host, folder, fileName, identifier, -1);
+	@CloseDBIfOpened
+	public boolean fileNameExists(final Host host, final Folder folder, final String fileName, final String identifier)
+			throws DotDataException {
+		if (!UtilMethods.isSet(fileName)) {
+			return true;
+		}
+
+		if (folder == null || host == null) {
+			return false;
+		}
+
+		final Identifier folderId = APILocator.getIdentifierAPI().find(folder);
+		final String path =
+				folder.getInode().equals(FolderAPI.SYSTEM_FOLDER) ? StringPool.FORWARD_SLASH
+						+ fileName : folderId.getPath() + fileName;
+		final Identifier fileAssetIdentifier = APILocator.getIdentifierAPI().find(host, path);
+		if (null == fileAssetIdentifier || !InodeUtils.isSet(fileAssetIdentifier.getId())
+				|| "folder".equals(fileAssetIdentifier.getAssetType())) {
+			// if we're looking at a folder or the fileAssetIdentifier wasn't found. It doesn't exist for sure.
+			return false;
+		}
+		//Beyond this point we know something matches that path for that host.
+		if (!UtilMethods.isSet(identifier)) {
+			//it's a brand new contentlet we're dealing with
+			//At this point we know it DOES exist, and since we're dealing with a fresh contentlet that hasn't even been inserted yet (We don't need to worry about lang).
+			return true;
+		} else {
+			// Now we have an identifier and a lang.
+			// if the file-asset identifier is different from the contentlet identifier we're looking at. Then it does exist already.
+			return !identifier.equals(fileAssetIdentifier.getId());
+		}
 	}
 
 	@CloseDBIfOpened
@@ -363,14 +398,10 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 			    if(fa.isLive()) {
 					isfileAssetContLive = true;
 			    }
-			    File oldFile = fileAssetCont.getBinary(BINARY_FIELD);
-				File newFile = new File(oldFile.getPath().substring(0,oldFile.getPath().indexOf(oldFile.getName()))+newName+"."+ext);
 				try {
-					FileUtils.copyFile(oldFile, newFile);
 					fileAssetCont.setInode(null);
 					fileAssetCont.setFolder(folder.getInode());
-					fileAssetCont.setBinary(BINARY_FIELD, newFile);
-					final String newFileName=newName+"."+ext;
+					final String newFileName = newName + "." + ext;
 					fileAssetCont.setStringProperty(FileAssetAPI.TITLE_FIELD, newFileName);
 					fileAssetCont.setStringProperty(FileAssetAPI.FILE_NAME_FIELD, newFileName);
 					fileAssetCont= APILocator.getContentletAPI().checkin(fileAssetCont, user, respectFrontendRoles);
@@ -384,10 +415,6 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 					Logger.error(this, "Unable to rename file asset to "
 							+ newName + " for asset " + id.getId(), e);
 					throw e;
-				} finally {
-					if (newFile != null) {
-						FileUtils.deleteQuietly(newFile);
-					}
 				}
 				return true;
 			}
