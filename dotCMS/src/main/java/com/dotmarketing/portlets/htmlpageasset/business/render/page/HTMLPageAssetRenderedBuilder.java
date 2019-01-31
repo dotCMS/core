@@ -121,11 +121,9 @@ public class HTMLPageAssetRenderedBuilder {
             final Collection<? extends ContainerRaw> containers =  pageContextBuilder.getContainersRaw();
             return new PageView(site, template, containers, htmlPageAssetInfo, layout, canCreateTemplates, canEditTemplate, this.getViewAsStatus(mode));
         } else {
-            final Context velocityContext  = pageContextBuilder.addAll(VelocityUtil.getWebContext(request, response));
+            final Context velocityContext  = pageContextBuilder.addAll(VelocityUtil.getInstance().getContext(request, response));
             final Collection<? extends ContainerRaw> containers = new ContainerRenderedBuilder(pageContextBuilder.getContainersRaw(), velocityContext, mode).build();
             final String pageHTML = this.getPageHTML();
-
-
             return new HTMLPageAssetRendered(site, template, containers, htmlPageAssetInfo, layout, pageHTML,
                     canCreateTemplates, canEditTemplate, this.getViewAsStatus(mode)
             );

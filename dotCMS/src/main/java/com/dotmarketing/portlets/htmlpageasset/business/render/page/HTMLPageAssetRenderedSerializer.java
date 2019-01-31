@@ -9,14 +9,11 @@ public class HTMLPageAssetRenderedSerializer extends PageViewSerializer {
 
     @Override
     protected Map<String, Object> getObjectMap(PageView pageView) {
-        final HTMLPageAssetRendered htmlPageAssetRendered = (HTMLPageAssetRendered) pageView;
-
         final Map<String, Object> objectMap = super.getObjectMap(pageView);
+        final HTMLPageAssetRendered htmlPageAssetRendered = (HTMLPageAssetRendered) pageView;
 
         final Map<String, Object> pageMap = (Map<String, Object>) objectMap.get("page");
         pageMap.put("rendered", htmlPageAssetRendered.getHtml());
-
-
 
 
         return pageMap;
