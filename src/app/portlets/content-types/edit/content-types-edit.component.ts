@@ -54,6 +54,8 @@ export class ContentTypesEditComponent implements OnInit, OnDestroy {
         header: ''
     };
 
+    loadingFields = false;
+
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
     constructor(
@@ -241,16 +243,19 @@ export class ContentTypesEditComponent implements OnInit, OnDestroy {
      * @memberof ContentTypesEditComponent
      */
     saveFields(fieldsToSave: ContentTypeField[]): void {
+        this.loadingFields = true;
         this.fieldService.saveFields(this.data.id, fieldsToSave).pipe(take(1)).subscribe(
             (fields: ContentTypeField[]) => {
 
                 if (this.isAnyNewField(fieldsToSave) || this.isUpdatingField(fieldsToSave)) {
                     this.fields = fields;
                 }
+                this.loadingFields = false;
             },
             (err: ResponseView) => {
                 this.dotHttpErrorManagerService.handle(err).pipe(take(1)).subscribe(() => {
                     this.fieldsDropZone.cancelLastDragAndDrop();
+                    this.loadingFields = false;
                 });
             }
         );

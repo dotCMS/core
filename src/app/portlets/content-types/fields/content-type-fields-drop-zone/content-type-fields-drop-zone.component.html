@@ -1,7 +1,8 @@
 <div
     [dragulaModel]="fieldRows"
     class="content-type-fields-drop-zone__container"
-    dragula="fields-row-bag">
+    dragula="fields-row-bag"
+    [attr.disabled]="_loading">
 
     <ng-template ngFor let-row [ngForOf]="fieldRows">
         <dot-content-type-fields-row
@@ -22,6 +23,8 @@
     </ng-template>
     <dot-add-rows (selectColums)="addRow($event)"></dot-add-rows>
 </div>
+
+<dot-loading-indicator fullscreen="true"></dot-loading-indicator>
 
 <dot-dialog
     [(visible)]="displayDialog"
