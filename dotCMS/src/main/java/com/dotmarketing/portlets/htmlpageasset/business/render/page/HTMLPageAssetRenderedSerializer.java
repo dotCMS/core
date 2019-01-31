@@ -16,7 +16,7 @@ public class HTMLPageAssetRenderedSerializer extends PageViewSerializer {
         pageMap.put("rendered", htmlPageAssetRendered.getHtml());
 
 
-        return pageMap;
+        return objectMap;
     }
 
 }
