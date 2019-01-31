@@ -23,6 +23,7 @@ import com.dotcms.contenttype.model.field.DateTimeField;
 import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.ImmutableBinaryField;
 import com.dotcms.contenttype.model.field.ImmutableTextField;
+import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -1777,7 +1778,8 @@ public class ContentletAPITest extends ContentletBaseTest {
 
     private com.dotcms.contenttype.model.field.Field createRelationshipField(final String fieldName, final String parentContentTypeID, final String childContentTypeVariable)
             throws DotDataException, DotSecurityException {
-        final com.dotcms.contenttype.model.field.Field field = FieldBuilder.builder(RelationshipField.class)
+        final com.dotcms.contenttype.model.field.Field field = FieldBuilder.builder(
+                RelationshipField.class)
                 .name(fieldName)
                 .contentTypeId(parentContentTypeID)
                 .values(String.valueOf(WebKeys.Relationship.RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal()))
