@@ -27,6 +27,7 @@ import { GOOGLE_FONTS } from '../html/iframe-edit-mode.js';
 import { MODEL_VAR_NAME } from '../html/iframe-edit-mode.js';
 import { ContentType } from '../../../../content-types/shared/content-type.model';
 import { DotRenderedPageState } from '../../../shared/models/dot-rendered-page-state.model';
+import { PageModelChangeEvent, PageModelChangeEventType } from './models';
 
 export enum DotContentletAction {
     EDIT,
@@ -34,6 +35,7 @@ export enum DotContentletAction {
 }
 
 interface RenderAddedItemParams {
+    event: PageModelChangeEventType;
     item: DotPageContent | ContentType;
     checkExistFunc: (item: DotPageContent | ContentType, containerEL: HTMLElement) => boolean;
     getContent: (
@@ -49,7 +51,7 @@ export class DotEditContentHtmlService {
     currentContentlet: DotPageContent;
     iframe: ElementRef;
     iframeActions$: Subject<any> = new Subject();
-    pageModel$: Subject<DotPageContainer[]> = new Subject();
+    pageModel$: Subject<PageModelChangeEvent> = new Subject();
     mutationConfig = { attributes: false, childList: true, characterData: false };
 
     private currentAction: DotContentletAction;
@@ -142,7 +144,10 @@ export class DotEditContentHtmlService {
         ].join('');
         const contenletEl = doc.querySelector(selector);
         contenletEl.remove();
-        this.pageModel$.next(this.getContentModel());
+        this.pageModel$.next({
+            model: this.getContentModel(),
+            type: PageModelChangeEventType.REMOVE_CONTENT
+        });
     }
 
     /**
@@ -186,8 +191,9 @@ export class DotEditContentHtmlService {
      * @param * contentlet
      * @memberof DotEditContentHtmlService
      */
-    renderAddedContentlet(contentlet: DotPageContent): void {
+    renderAddedContentlet(contentlet: DotPageContent, eventType: PageModelChangeEventType): void {
         this.renderAddedItem({
+            event: eventType,
             item: contentlet,
             checkExistFunc: this.isContentExistInContainer.bind(this),
             getContent: this.dotContainerContentletService.getContentletToContainer.bind(
@@ -330,7 +336,10 @@ export class DotEditContentHtmlService {
 
                     this.renderHTMLToContentlet(contentletEl, contentletHtml);
                     // Update the model with the recently added contentlet
-                    this.pageModel$.next(this.getContentModel());
+                    this.pageModel$.next({
+                        model: this.getContentModel(),
+                        type: params.event
+                    });
                     this.currentAction = DotContentletAction.EDIT;
                 });
         }
@@ -593,7 +602,7 @@ export class DotEditContentHtmlService {
             // When an user create or edit a contentlet from the jsp
             save: (contentletEvent: any) => {
                 if (this.currentAction === DotContentletAction.ADD) {
-                    this.renderAddedContentlet(contentletEvent.data);
+                    this.renderAddedContentlet(contentletEvent.data, PageModelChangeEventType.ADD_CONTENT);
                 } else {
                     if (this.updateContentletInode) {
                         this.currentContentlet.inode = contentletEvent.data.inode;
@@ -603,7 +612,7 @@ export class DotEditContentHtmlService {
             },
             // When a user select a content from the search jsp
             select: (contentletEvent: any) => {
-                this.renderAddedContentlet(contentletEvent.data);
+                this.renderAddedContentlet(contentletEvent.data, PageModelChangeEventType.EDIT_CONTENT);
                 this.iframeActions$.next({
                     name: 'select'
                 });
