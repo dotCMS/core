@@ -562,7 +562,7 @@
         var resourceLink = dojo.byId('resourceLink');
 		if(resourceLink){
             var xhrArgs = {
-                url: "/api/v1/content/fileasset/"+currentContentletInode+"/resourcelink",
+                url: "/api/v1/content/fileassets/"+currentContentletInode+"/resourcelink",
                 handleAs: "json",
                 preventCache: true,
                 load: function (data) {

@@ -1,4 +1,4 @@
-package com.dotcms.rest.api.v1.asset;
+package com.dotcms.rest.api.v1.fileasset;
 
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.ws.rs.GET;
@@ -28,7 +28,7 @@ import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 import javax.servlet.http.HttpServletRequest;
 
-@Path("/v1/content/fileasset")
+@Path("/v1/content/fileassets")
 public class FileAssetsResource {
 
     private final WebResource webResource;
