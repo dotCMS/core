@@ -167,7 +167,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
   public int count(String condition, BaseContentType base) throws DotDataException {
     try {
       return perms.filterCollection(this.contentTypeFactory.search(condition, base, "mod_date", -1, 0), PermissionAPI.PERMISSION_READ,
-          true, user).size();
+          respectFrontendRoles, user).size();
     } catch (DotSecurityException e) {
       throw new DotStateException(e);
     }
