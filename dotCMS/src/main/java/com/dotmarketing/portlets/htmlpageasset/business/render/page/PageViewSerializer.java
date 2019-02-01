@@ -44,12 +44,12 @@ public class PageViewSerializer extends JsonSerializer<PageView> {
                 ))
         );
         final Map<Object, Object> templateMap = this.asMap(template);
-        templateMap.put("canEdit", pageView.isCanEditTemplate());
+        templateMap.put("canEdit", pageView.canEditTemplate());
         pageViewMap.put("template", templateMap);
         
         pageViewMap.put("site", pageView.getSite());
         pageViewMap.put("viewAs", pageView.getViewAs());
-        pageViewMap.put("canCreateTemplate", pageView.isCanCreateTemplate());
+        pageViewMap.put("canCreateTemplate", pageView.canCreateTemplate());
 ;
         if (pageView.getLayout() != null) {
             pageViewMap.put("layout", pageView.getLayout());

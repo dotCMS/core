@@ -86,6 +86,7 @@ public class PageResource {
 
     /**
      * Returns the metadata in JSON format of the objects that make up an HTML Page in the system.
+     * 
      * <pre>
      * Format:
      * http://localhost:8080/api/v1/page/json/{page-url}
@@ -94,39 +95,64 @@ public class PageResource {
      * http://localhost:8080/api/v1/page/json/about-us/locations/index
      * </pre>
      *
-     * @param request  The {@link HttpServletRequest} object.
+     * @param request The {@link HttpServletRequest} object.
      * @param response The {@link HttpServletResponse} object.
-     * @param uri      The path to the HTML Page whose information will be retrieved.
-     * @param live     If it is false look for live and working page version, otherwise just look for live version,
-     *                 true is the default value
+     * @param uri The path to the HTML Page whose information will be retrieved.
+     * @param live If it is false look for live and working page version, otherwise just look for live
+     *        version, true is the default value
      * @return All the objects on an associated HTML Page.
      */
     @NoCache
     @GET
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Path("/json/{uri: .*}")
-    public Response loadJson(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
-                             @PathParam("uri") final String uri,
-                             @QueryParam("live") @DefaultValue("true")  final boolean live)
-            throws DotDataException, DotSecurityException {
+    public Response loadJson(@Context final HttpServletRequest request, 
+            @Context final HttpServletResponse response,
+            @PathParam("uri") final String uri,
+            @QueryParam(WebKeys.PAGE_MODE_PARAMETER) final String modeParam,
+            @QueryParam(WebKeys.CMS_PERSONA_PARAMETER) final String personaId,
+            @QueryParam("language_id") final String languageId,
+            @QueryParam("device_inode") final String deviceInode) throws DotSecurityException, DotDataException {
+
+        Logger.debug(this, String.format("Rendering page: uri -> %s mode-> %s language -> persona -> %s device_inode -> %s live -> %b", uri,
+                modeParam, languageId, personaId, deviceInode));
 
         // Force authentication
         final InitDataObject auth = webResource.init(false, request, true);
         final User user = auth.getUser();
-        Response res = null;
+        Response res;
+
+        final PageMode mode = modeParam != null ? PageMode.get(modeParam) : this.htmlPageAssetRenderedAPI.getDefaultEditPageMode(user, request, uri);
+        PageMode.setPageMode(request, mode);
+
         try {
-            final PageView pageView = this.htmlPageAssetRenderedAPI.getPageMetadata(request, response, user, uri, PageMode.get(request));
-            final Response.ResponseBuilder responseBuilder = Response.ok(new ResponseEntityView(pageView));
+
+            if (deviceInode != null) {
+                request.getSession().setAttribute(WebKeys.CURRENT_DEVICE, deviceInode);
+            }
+
+            final PageView pageRendered = this.htmlPageAssetRenderedAPI.getPageMetadata(request, response, user, uri, mode);
+            final Response.ResponseBuilder responseBuilder = Response.ok(new ResponseEntityView(pageRendered));
+
+
+            final Host host = APILocator.getHostAPI().find(pageRendered.getPageInfo().getPage().getHost(), user,
+                    PageMode.get(request.getSession()).respectAnonPerms);
+            request.setAttribute(WebKeys.CURRENT_HOST, host);
+            request.getSession().setAttribute(WebKeys.CURRENT_HOST, host);
 
             res = responseBuilder.build();
         } catch (HTMLPageAssetNotFoundException e) {
-            final String messageFormat =
-                    "HTMLPageAssetNotFoundException on PageResource.loadJson, parameters: request -> %s, uri -> %s live -> %s: ";
-            final String errorMsg = String.format(messageFormat, request, uri, live);
+            final String errorMsg = String.format("HTMLPageAssetNotFoundException on PageResource.render, parameters:  %s, %s %s: ",
+                    request, uri, modeParam);
             Logger.error(this, errorMsg, e);
             res = ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
-        }
+        } catch (Exception e) {
 
+            final String errorMsg = String.format("HTMLPageAssetNotFoundException on PageResource.render, parameters:  %s, %s %s: ",
+                    request, uri, modeParam);
+            Logger.error(this, errorMsg, e);
+            res = ResponseUtil.mapExceptionResponse(e);
+        }
         return res;
     }
 
@@ -150,8 +176,6 @@ public class PageResource {
      * @param personaId persona identifier if it is null take the current persona to render
      * @param languageId language identifier if it is null take the current language to render
      * @param deviceInode device identifier if it is null take the current device to render
-     * @param live If it is false look for live and working page version, otherwise just look for live version,
-     *                 true is the default value
      * @return
      */
     @NoCache
@@ -164,20 +188,19 @@ public class PageResource {
                                    @QueryParam(WebKeys.PAGE_MODE_PARAMETER) final String modeParam,
                                    @QueryParam(WebKeys.CMS_PERSONA_PARAMETER) final String personaId,
                                    @QueryParam("language_id") final String languageId,
-                                   @QueryParam("device_inode") final String deviceInode,
-                                   @QueryParam("live") @DefaultValue("false") final Boolean live) throws DotSecurityException, DotDataException {
+                                   @QueryParam("device_inode") final String deviceInode) throws DotSecurityException, DotDataException {
 
         Logger.debug(this, String.format(
                 "Rendering page: uri -> %s mode-> %s language -> persona -> %s device_inode -> %s live -> %b",
-                uri, modeParam, languageId, personaId, deviceInode, live));
+                uri, modeParam, languageId, personaId, deviceInode));
 
         // Force authentication
         final InitDataObject auth = webResource.init(false, request, true);
         final User user = auth.getUser();
         Response res;
 
-        final PageMode mode = modeParam != null ? PageMode.get(modeParam) : (live ? PageMode.LIVE : null);
-
+        final PageMode mode = modeParam != null ? PageMode.get(modeParam) : this.htmlPageAssetRenderedAPI.getDefaultEditPageMode(user, request,uri);
+        PageMode.setPageMode(request, mode);
         try {
 
             if (deviceInode != null) {

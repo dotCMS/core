@@ -126,12 +126,12 @@ public class PageView implements Serializable {
         return viewAs;
     }
     
-    public boolean isCanCreateTemplate() {
+    public boolean canCreateTemplate() {
         return canCreateTemplate;
     }
 
 
-    public boolean isCanEditTemplate() {
+    public boolean canEditTemplate() {
         return canEditTemplate;
     }
 }
