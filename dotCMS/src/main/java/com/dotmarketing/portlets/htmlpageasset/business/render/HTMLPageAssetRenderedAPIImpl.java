@@ -92,11 +92,11 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
                                     final User user, final String pageUri, final PageMode mode)
             throws DotDataException, DotSecurityException {
 
-        final PageMode pageMode = mode != null ? mode : this.getDefaultEditPageMode(user, request, pageUri);
-        PageMode.setPageMode(request, pageMode);
 
-        final Host host = resolveSite(request, user, pageMode);
-        final HTMLPageAsset page = getHtmlPageAsset(user, pageUri, pageMode, host);
+        PageMode.setPageMode(request, mode);
+
+        final Host host = resolveSite(request, user, mode);
+        final HTMLPageAsset page = getHtmlPageAsset(user, pageUri, mode, host);
 
         return new HTMLPageAssetRenderedBuilder()
                 .setHtmlPageAsset(page)
@@ -104,7 +104,7 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
                 .setRequest(request)
                 .setResponse(response)
                 .setSite(host)
-                .build(true, pageMode);
+                .build(true, mode);
     }
 
     public PageMode getDefaultEditPageMode(final User user, final HttpServletRequest request, final String pageUri) {
