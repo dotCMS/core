@@ -368,8 +368,8 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
                 rollingOffset += limit;
             }
 
-
-            return returnTypes.subList(0, Math.min(limit, returnTypes.size()));
+            final int maxAmount = (limit<0)?returnTypes.size():Math.min(limit, returnTypes.size());
+            return returnTypes.subList(0, maxAmount);
         } catch (DotSecurityException e) {
             throw new DotStateException(e);
         }
