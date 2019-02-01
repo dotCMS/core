@@ -362,7 +362,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             if (contentletVersionInfo == null) {
 
-                Optional.empty();
+                return Optional.empty();
             }
 
             final Contentlet contentlet =  live?
@@ -371,7 +371,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             if (null == contentlet) {
 
-                Optional.empty();
+                return Optional.empty();
             }
 
             // if we are using the fallback, and it is not allowed, return empty
