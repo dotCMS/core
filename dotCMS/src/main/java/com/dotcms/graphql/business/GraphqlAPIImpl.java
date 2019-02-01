@@ -40,7 +40,6 @@ import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 
 import java.io.File;

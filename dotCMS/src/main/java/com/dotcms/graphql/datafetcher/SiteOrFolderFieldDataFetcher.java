@@ -16,7 +16,7 @@ public class SiteOrFolderFieldDataFetcher implements DataFetcher<Map<String, Obj
     public Map<String, Object> get(final DataFetchingEnvironment environment) throws Exception {
         final User user = ((DotGraphQLContext) environment.getContext()).getUser();
         final Contentlet contentlet = environment.getSource();
-        Map<String, Object> siteOrFolderMap = (Map<String, Object>) new FolderToMapTransformer(contentlet, user)
+        final Map<String, Object> siteOrFolderMap = (Map<String, Object>) new FolderToMapTransformer(contentlet, user)
             .asMap().get("folderMap");
 
         final Host host = APILocator.getHostAPI().find(contentlet.getHost(), user, true);

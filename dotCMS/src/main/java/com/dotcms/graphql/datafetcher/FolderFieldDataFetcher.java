@@ -15,7 +15,7 @@ public class FolderFieldDataFetcher implements DataFetcher<Map<String, Object>> 
     public Map<String, Object> get(final DataFetchingEnvironment environment) throws Exception {
         final User user = ((DotGraphQLContext) environment.getContext()).getUser();
         final Contentlet contentlet = environment.getSource();
-        Map<String, Object> folderMap = (Map<String, Object>) new FolderToMapTransformer(contentlet, user)
+        final Map<String, Object> folderMap = (Map<String, Object>) new FolderToMapTransformer(contentlet, user)
             .asMap().get("folderMap");
 
         return folderMap;

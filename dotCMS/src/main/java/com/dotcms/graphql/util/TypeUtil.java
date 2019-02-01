@@ -3,7 +3,6 @@ package com.dotcms.graphql.util;
 import com.dotcms.graphql.datafetcher.FieldDataFetcher;
 
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import graphql.schema.DataFetcher;
 import graphql.schema.GraphQLInterfaceType;
@@ -57,7 +56,7 @@ public class TypeUtil {
             this.dataFetcher = new FieldDataFetcher();
         }
 
-        public TypeFetcher(GraphQLOutputType type, DataFetcher dataFetcher) {
+        public TypeFetcher(final GraphQLOutputType type, final DataFetcher dataFetcher) {
             this.type = type;
             this.dataFetcher = dataFetcher;
         }

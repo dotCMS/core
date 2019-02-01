@@ -21,8 +21,6 @@ import graphql.schema.DataFetchingEnvironment;
 public class TitleImageFieldDataFetcher implements DataFetcher<Map<String, Object>> {
     @Override
     public Map<String, Object> get(final DataFetchingEnvironment environment) throws Exception {
-        final User user = ((DotGraphQLContext) environment.getContext()).getUser();
-
         final Contentlet contentlet = environment.getSource();
 
         final Optional<Field> imageField = contentlet.getTitleImage();
@@ -35,6 +33,8 @@ public class TitleImageFieldDataFetcher implements DataFetcher<Map<String, Objec
 
         if (imageField.get() instanceof ImageField || imageField.get() instanceof FileField) {
             final String imageContentletId = contentlet.getStringProperty(imageField.get().variable());
+
+            final User user = ((DotGraphQLContext) environment.getContext()).getUser();
             final Contentlet imageContentlet = APILocator.getContentletAPI().findContentletByIdentifier(imageContentletId, contentlet.isLive(),
                 contentlet.getLanguageId(), user, true);
             final File imageFile = imageContentlet.getBinary("fileAsset");

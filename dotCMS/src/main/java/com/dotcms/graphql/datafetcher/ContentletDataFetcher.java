@@ -4,7 +4,6 @@ import com.dotcms.graphql.DotGraphQLContext;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.transform.ContentletToMapTransformer;
-import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
 import java.util.List;

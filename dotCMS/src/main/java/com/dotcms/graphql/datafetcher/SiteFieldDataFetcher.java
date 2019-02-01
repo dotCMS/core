@@ -17,7 +17,7 @@ public class SiteFieldDataFetcher implements DataFetcher<Map<String, Object>> {
     public Map<String, Object> get(final DataFetchingEnvironment environment) throws Exception {
         final User user = ((DotGraphQLContext) environment.getContext()).getUser();
         final Contentlet contentlet = environment.getSource();
-        Map<String, Object> siteMap = new HashMap<>();
+        final Map<String, Object> siteMap = new HashMap<>();
 
         final Host host = APILocator.getHostAPI().find(contentlet.getHost(), user, true);
 
