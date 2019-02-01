@@ -396,7 +396,7 @@ public class IdentifierFactoryTest {
             Assert.assertFalse(newContentlet.getVersionId().isEmpty());
             Assert.assertEquals(Identifier.ASSET_TYPE_CONTENTLET, identifier.getAssetType());
             Assert.assertEquals(
-                    newContentlet.getBinary(FileAssetAPI.BINARY_FIELD).getName().toLowerCase(),
+                    newContentlet.getStringProperty(FileAssetAPI.FILE_NAME_FIELD).toLowerCase(),
                     identifier.getAssetName());
         } finally {
             //Deletes the created identifier

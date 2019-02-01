@@ -7,6 +7,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.util.UtilMethods;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -64,10 +65,12 @@ public class ContentletRelationshipsTransformer implements DBTransformer<Content
             final boolean hasChildren       = FactoryLocator.getRelationshipFactory().isChild(relationship, structure);
             boolean hasParent               = FactoryLocator.getRelationshipFactory().isParent(relationship, structure);
 
-            // self-join (same CT for parent and child) relationships return true to both, so since we can't
-            // determine if it's parent or child we always assume child (e.g. Coming from the Content REST API)
+            // self-join (same CT for parent and child) relationships return true to both, so if the
+            // parentRelationName is not set the relationship is one-sided so we add children
+            // if the parentRelationName is set there is no way to know if we are adding parents or children
+            // so we assume we are adding children
             if (hasParent && hasChildren) {
-                hasParent = false;
+                hasParent = !UtilMethods.isSet(relationship.getParentRelationName());
             }
             
             final ContentletRelationships.ContentletRelationshipRecords

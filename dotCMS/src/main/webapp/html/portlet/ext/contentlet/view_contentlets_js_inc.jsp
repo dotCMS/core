@@ -100,7 +100,7 @@
 		function initAdvancedSearch(){
 			var x = dojo.cookie("ShAdDi");
 			if(x !=null && x != undefined && x != 0){
-				resizeAdvancedSearch();
+				setTimeout(resizeAdvancedSearch, 500);
 			}
 		}
 
@@ -260,6 +260,9 @@
 
 
         function titleCell (data,text, x) {
+
+                text = shortenString(text, 100);
+
                 var inode = data["inode"];
                 var checkId = "checkbox" + x;
                 var live = data["live"] == "true"?true:false;
@@ -722,9 +725,17 @@
                       });
 
 		              reloadRelationshipBox(relationshipSearch,"${relationType}");
-		              
-		              dojo.connect(dijit.byId("clearButton"), "onClick", null, function() {
-		            	  dijit.byId("${relationSearchField}Id").set("displayedValue","");
+
+                      dojo.connect(dijit.byId("searchButton"), "onClick", null, function() {
+                            if (relationshipSearch.get('value')==""){
+                                relationshipSearch.set("displayedValue","");
+                                reloadRelationshipBox(relationshipSearch,"${relationType}");
+                            }
+                      });
+
+                      dojo.connect(dijit.byId("clearButton"), "onClick", null, function() {
+                            dijit.byId("${relationSearchField}Id").set("displayedValue","");
+                            reloadRelationshipBox(relationshipSearch,"${relationType}");
                       });
                 </script>
               `;

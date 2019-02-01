@@ -121,6 +121,7 @@ public interface FileAssetAPI {
 	 * @return
      * @throws DotDataException
      */
+    @Deprecated
     boolean fileNameExists(Host host, Folder folder, String fileName, String identifier, long languageId) throws  DotDataException;
 
 	/**
@@ -193,11 +194,12 @@ public interface FileAssetAPI {
 	public List<FileAsset> findFileAssetsByFolder(Folder parentFolder, String sortBy, boolean live, boolean working, User user, boolean respectFrontendRoles) throws DotDataException,DotSecurityException;
 
 	/**
-	 *
-	 * @param fileAssetCont
-	 * @param newName
-	 * @param user
-	 * @param respectFrontendRoles
+	 * Updates the system asset-Name
+	 * We no longer can rename the physical file itself. Only the asset-name we use to refer to the physical chunk of bytes.
+	 * @param fileAssetCont The Contentlet with the current FileAsset
+	 * @param newName The New Asset Name
+	 * @param user Current user executing the rename operation.
+	 * @param respectFrontendRoles system flag
 	 * @return
 	 * @throws DotStateException
 	 * @throws DotDataException

@@ -28,6 +28,6 @@
 		</div>
 	</div>
 	<input type="hidden" id="maxSizeFileLimit" value="" />
-	<div dojoType="dijit.Dialog" dojoAttachPoint="fileInfoDialog" style="width: 500px;" class="noDijitDialogTitleBar"></div>
+	<div id="${id}-Dialog" dojoType="dijit.Dialog" dojoAttachPoint="fileInfoDialog" style="width: 500px;" class="noDijitDialogTitleBar"></div>
 </div>
 

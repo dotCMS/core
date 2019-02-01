@@ -711,7 +711,7 @@ function stripCarriageReturn(s) {
 
 /**
  * Our current version of  commons-beanutils (1.9.3) does not understand array-like property names such as 'uploadedFiles[]'
- * The Dojo Uploader component automatically transforms the name on the input type='file' and adding the squre brackets and making it plural.
+ * The Dojo Uploader component automatically transforms the name on the input type='file'  adding the square brackets and making it plural.
  * so something like:
  * <input name="uploadedFile" multiple="true" type="file" id="uploader" dojoType="dojox.form.Uploader" >
  * Will end-up as a field on the http request named "uploadFiles[]".
@@ -780,6 +780,33 @@ function submitAjaxForm(options) {
             }
         }
     };
+}
+
+function shortenLongWords (input, size) {
+    //processing asset description to avoid long words that break the column width
+    var output = input;
+    if(input != null){
+        var splitted = output.split(' ');
+        for (var k = 0; k < splitted.length; k++) {
+            if (splitted[k].length > size)
+                output = output.replace(splitted[k], splitted[k].substring(0, (size - 3)) + '...');
+        }
+    }else{
+        output = '';
+    }
+    return output;
+}
+
+function shortenString (input, size) {
+    //processing asset description to avoid long words that break the column width
+    var output = input;
+    if (output == null) {
+        output = '';
+    }
+    if (output.length > size) {
+        output = output.substring(0, (size - 3)) + '...';
+    }
+    return output;
 }
 
 // String functions

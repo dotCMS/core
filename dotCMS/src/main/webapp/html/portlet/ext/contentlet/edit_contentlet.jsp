@@ -579,7 +579,14 @@
         });
         setTimeout(function() {
             document.dispatchEvent(customEvent);
-        }, 2000)
+        }, 2000);
+
+        var resourceLink = dojo.byId('resourceLink');
+        if(resourceLink){
+            var name = resourceLink.text;
+            name = shortenString(name, 100);
+            resourceLink.text = name;
+        }
         
 	});
 

@@ -406,10 +406,8 @@ public class BrowserAPI {
 			fileMap.put("permissions", permissions);
 			fileMap.put("mimeType", APILocator.getFileAssetAPI()
 					.getMimeType(fileAsset.getFileName()));
-			fileMap.put("name",
-				UtilMethods.isSet(fileAsset.getFileName()) ? fileAsset.getFileName() : ident.getAssetName());
-			fileMap.put("fileName",
-				UtilMethods.isSet(fileAsset.getFileName()) ? fileAsset.getFileName() : ident.getAssetName());
+			fileMap.put("name", ident.getAssetName());
+			fileMap.put("fileName", ident.getAssetName());
 			fileMap.put("title", fileAsset.getFriendlyName());
 			fileMap.put("description", fileAsset instanceof Contentlet ?
 			                           ((Contentlet)fileAsset).getStringProperty(FileAssetAPI.DESCRIPTION)
