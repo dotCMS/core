@@ -31,15 +31,15 @@ public class TypeUtil {
     }
 
     public static GraphQLInterfaceType createInterfaceType(final String typeName,
-                                                           final Map<String, GraphQLOutputType> typeFields,
+                                                           final Map<String, TypeFetcher> fieldsTypesAndFetchers,
                                                            final TypeResolver typeResolver) {
         final GraphQLInterfaceType.Builder builder = GraphQLInterfaceType.newInterface().name(typeName);
 
-        typeFields.keySet().forEach((key)->{
+        fieldsTypesAndFetchers.keySet().forEach((key)->{
             builder.field(newFieldDefinition()
                 .name(key)
-                .type(typeFields.get(key))
-                .dataFetcher(new FieldDataFetcher())
+                .type(fieldsTypesAndFetchers.get(key).getType())
+                .dataFetcher(fieldsTypesAndFetchers.get(key).getDataFetcher())
             );
         });
 
@@ -47,5 +47,26 @@ public class TypeUtil {
         return builder.build();
     }
 
+    public static class TypeFetcher {
+        private final GraphQLOutputType type;
+        private final DataFetcher dataFetcher;
 
+        public TypeFetcher(GraphQLOutputType type) {
+            this.type = type;
+            this.dataFetcher = new FieldDataFetcher();
+        }
+
+        public TypeFetcher(final GraphQLOutputType type, final DataFetcher dataFetcher) {
+            this.type = type;
+            this.dataFetcher = dataFetcher;
+        }
+
+        public GraphQLOutputType getType() {
+            return type;
+        }
+
+        public DataFetcher getDataFetcher() {
+            return dataFetcher;
+        }
+    }
 }

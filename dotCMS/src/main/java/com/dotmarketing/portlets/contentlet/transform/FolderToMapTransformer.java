@@ -29,13 +29,13 @@ public class FolderToMapTransformer implements FieldsToMapTransformer {
         try {
             
             final Folder  folder= APILocator.getFolderAPI().find(con.getFolder(), user, true);
-            map.put("id", folder.getIdentifier());
-            map.put("fileMask", folder.getFilesMasks());
-            map.put("sortOrder", folder.getSortOrder());
-            map.put("name", folder.getName());
-            map.put("path", folder.getPath());
-            map.put("title", folder.getTitle());
-            map.put("defaultFileType", folder.getDefaultFileType());
+            map.put("folderId", folder.getIdentifier());
+            map.put("folderFileMask", folder.getFilesMasks());
+            map.put("folderSortOrder", folder.getSortOrder());
+            map.put("folderName", folder.getName());
+            map.put("folderPath", folder.getPath());
+            map.put("folderTitle", folder.getTitle());
+            map.put("folderDefaultFileType", folder.getDefaultFileType());
         } catch (DotSecurityException | DotDataException e) {
             throw new DotStateException(String.format("Unable to get the Identifier for given contentlet with id= %s", con.getIdentifier()), e);
 
