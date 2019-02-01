@@ -370,7 +370,6 @@
 	<servlet>
 		<servlet-name>DotGraphQLHttpServlet</servlet-name>
 		<servlet-class>com.dotcms.graphql.DotGraphQLHttpServlet</servlet-class>
-		<load-on-startup>1</load-on-startup>
 	</servlet>
     
 	<!--END DOTMARKETING SERVLETS-->

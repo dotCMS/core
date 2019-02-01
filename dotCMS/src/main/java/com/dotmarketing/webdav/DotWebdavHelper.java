@@ -1,12 +1,28 @@
 package com.dotmarketing.webdav;
 
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
+
 import com.dotcms.rendering.velocity.services.DotResourceCache;
-import com.dotcms.repackage.com.bradmcevoy.http.*;
+import com.dotcms.repackage.com.bradmcevoy.http.CollectionResource;
+import com.dotcms.repackage.com.bradmcevoy.http.HttpManager;
+import com.dotcms.repackage.com.bradmcevoy.http.LockInfo;
+import com.dotcms.repackage.com.bradmcevoy.http.LockResult;
+import com.dotcms.repackage.com.bradmcevoy.http.LockTimeout;
+import com.dotcms.repackage.com.bradmcevoy.http.LockToken;
+import com.dotcms.repackage.com.bradmcevoy.http.Resource;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.beans.WebAsset;
-import com.dotmarketing.business.*;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.IdentifierAPI;
+import com.dotmarketing.business.NoSuchUserException;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Permissionable;
+import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.business.Versionable;
 import com.dotmarketing.cache.FolderCache;
 import com.dotmarketing.cms.login.factories.LoginFactory;
 import com.dotmarketing.exception.DotDataException;
@@ -23,19 +39,17 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.util.*;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.InodeUtils;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UUIDGenerator;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.auth.AuthException;
 import com.liferay.portal.auth.Authenticator;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.PropsUtil;
 import com.liferay.util.FileUtil;
-import org.apache.commons.lang.StringUtils;
-import org.apache.oro.text.regex.MalformedPatternException;
-import org.apache.oro.text.regex.Perl5Compiler;
-import org.apache.oro.text.regex.Perl5Matcher;
-import org.apache.velocity.runtime.resource.ResourceManager;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -45,11 +59,19 @@ import java.nio.channels.WritableByteChannel;
 import java.nio.file.Files;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.*;
+import java.util.ArrayList;
 import java.util.Calendar;
-
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Hashtable;
+import java.util.List;
+import java.util.Map;
+import java.util.Timer;
+import org.apache.commons.lang.StringUtils;
+import org.apache.oro.text.regex.MalformedPatternException;
+import org.apache.oro.text.regex.Perl5Compiler;
+import org.apache.oro.text.regex.Perl5Matcher;
+import org.apache.velocity.runtime.resource.ResourceManager;
 
 public class DotWebdavHelper {
 
@@ -311,6 +333,16 @@ public class DotWebdavHelper {
 
 		return f;
 	}
+
+    public String getAssetName(final IFileAsset fileAsset){
+        try{
+           final Identifier identifier = APILocator.getIdentifierAPI().find(fileAsset.getIdentifier());
+           return identifier.getAssetName();
+        }catch (Exception e){
+           Logger.error( DotWebdavHelper.class," Failed to obtain file-asset name ", e);
+        }
+        return fileAsset.getFileName();
+    }
 
 	public Folder loadFolder(String url,User user) throws IOException{
 		url = stripMapping(url);

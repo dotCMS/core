@@ -66,9 +66,9 @@ dojo.require("dotcms.dijit.tree.HostFolderTreeReadStoreModel")
 dojo.declare("dotcms.dijit.FileBrowserDialog", [dijit._Widget, dijit._Templated], {
 
 	templatePath: dojo.moduleUrl("dotcms", "dijit/FileBrowserDialog.jsp"),
-	detailsRowTemplate: '<td id="file-{id}"><a class="selectableFile"><img src="{icon}">{title}</a></td><td>{description}</td><td>{modUser}</td><td>{modDate}</td>',
-	listRowTemplate: '<td id="file-{id}"><a class="selectableFile"><img src="{icon}">{title}</a></td>',
-	thumbRowTemplate: '<td id="file-{id}"><a class="selectableFile"><img width="100" height="100" src="{thumbnail}"><br/>{title}</a></td>',
+	detailsRowTemplate: '<td id="file-{id}"><a class="selectableFile"><img src="{icon}">{name}</a></td><td>{description}</td><td>{modUser}</td><td>{modDate}</td>',
+	listRowTemplate: '<td id="file-{id}"><a class="selectableFile"><img src="{icon}">{name}</a></td>',
+	thumbRowTemplate: '<td id="file-{id}"><a class="selectableFile"><img width="100" height="100" src="{thumbnail}"><br/>{name}</a></td>',
 	widgetsInTemplate: true,
 	style: "width: 1000px; height: 500px;",
 	currentView: 'details',
@@ -280,7 +280,6 @@ dojo.declare("dotcms.dijit.FileBrowserDialog", [dijit._Widget, dijit._Templated]
 		var tableHTML = '';
 		for (var i = 0; i < assets.length; i++){
 			var asset = assets[i];
-
 			this._normalizeAssetData(asset);
 
 			var rowHTML = dojo.replace(template, { id: asset.identifier, name: asset.name, description: asset.friendlyName,
@@ -390,12 +389,18 @@ dojo.declare("dotcms.dijit.FileBrowserDialog", [dijit._Widget, dijit._Templated]
 
 	_normalizeAssetData: function(asset) {
 
-   		var name = asset.title;
+        var name = asset.title;
+
+        name = shortenString(name, 30);
+
    		var assetIcon = '/icon?i=' + asset.extension;
    		var assetThumbnail = '/icon?i=' + asset.extension;
 
    		if (asset.type == 'file_asset') {
    			name = asset.fileName;
+
+            name = shortenString(name, 30);
+
             assetIcon = '/html/images/icons/' + asset.extension + '.png';
 
    			if(asset.mimeType != null && asset.mimeType.indexOf('image/') == 0 ){
@@ -541,4 +546,4 @@ dojo.declare("dotcms.dijit.FileBrowserDialog", [dijit._Widget, dijit._Templated]
 		this.addFileDialog.hide();
 	}
 
-})
+});

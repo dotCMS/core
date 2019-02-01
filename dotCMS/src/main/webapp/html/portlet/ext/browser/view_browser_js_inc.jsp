@@ -2432,33 +2432,6 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
         return permissions.contains("<%= PermissionAPI.PERMISSION_CAN_ADD_CHILDREN %>");
     }
 
-    function shortenLongWords (input, size) {
-        //processing asset description to avoid long words that break the column width
-        var output = input;
-        if(input != null){
-            var splitted = output.split(' ');
-            for (var k = 0; k < splitted.length; k++) {
-                if (splitted[k].length > size)
-                    output = output.replace(splitted[k], splitted[k].substring(0, (size - 3)) + '...');
-            }
-        }else{
-            output = '';
-        }
-        return output;
-    }
-
-    function shortenString (input, size) {
-        //processing asset description to avoid long words that break the column width
-        var output = input;
-        if (output==null) {
-            output = '';
-        }
-        if (output.length > size) {
-            output = output.substring(0, (size - 3)) + '...';
-        }
-        return output;
-    }
-
     function showMessage (msg) {
         if($('dotCMSMessages') != null)
             Element.hide('dotCMSMessages');

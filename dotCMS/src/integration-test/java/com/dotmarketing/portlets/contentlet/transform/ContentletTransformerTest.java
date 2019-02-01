@@ -38,6 +38,7 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
     public void Transformer_Simple_Test() throws DotDataException {
 
         final List<Contentlet> list = APILocator.getContentletAPI().findAllContent(0,20);
+        assertFalse("I was expecting at least 20 contentlets returned from the index",list.isEmpty());
         final List<Map<String, Object>> transformedList = new ContentletToMapTransformer(list).toMaps();
 
         assertEquals(list.size(), transformedList.size());

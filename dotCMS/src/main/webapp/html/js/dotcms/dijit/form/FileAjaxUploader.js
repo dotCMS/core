@@ -55,6 +55,7 @@ dojo.declare("dotcms.dijit.form.FileAjaxUploader", [dijit._Widget, dijit._Templa
 	fileName: '',
 	fileNameExpression: '',
     dowloadRestricted: false,
+    fileNameVisible: true,
 	uploading: false,
 	uploadCompleted:false,
 	identifier:'0',
@@ -62,20 +63,9 @@ dojo.declare("dotcms.dijit.form.FileAjaxUploader", [dijit._Widget, dijit._Templa
 	fieldName:'fileAsset',
 	lang:'0',
 	invalidFileSelectedMessage: 'You have selected a non allowed file',
+	replaceAssetNameWarning: 'Do you want to replace the existing asset-name "{oldAssetName}" with "{newAssetName}" ?',
 	inodeShorty:'',
 	idShorty:'',
-	fileInfoTemplate: '<div>\
-		<table class="listingTable">\
-			<tr class="alternate_1">\
-	    		<td nowrap><b>File Name</b></td>\
-				<td>{fileName}</td>\
-			</tr>\
-			<tr class="alternate_2">\
-	    		<td><b>File Link</b></td>\
-				<td><a target="_blank" href="{path}">{path}</a></td>\
-			</tr>\
-		</table>\
-	</div>',
 
 	postMixInProperties: function (elem) {
 		if((this.name == null) || (this.name == ''))
@@ -85,7 +75,11 @@ dojo.declare("dotcms.dijit.form.FileAjaxUploader", [dijit._Widget, dijit._Templa
 
 	postCreate: function () {
 		if(this.fileName != '') {
-			dojo.style(this.fileNameDisplayField, { display: '' });
+			if(this.fileNameVisible){
+               dojo.style(this.fileNameDisplayField, { display: '' });
+            } else {
+               dojo.style(this.fileNameDisplayField, { display: 'none' });
+            }
 			dojo.style(this.fileUploadForm, { display: 'none' });
 			dojo.style(this.fileUploadStatus, { display: 'none' });
 			dojo.style(this.fileUploadRemoveButton, { display: '' });
@@ -98,6 +92,69 @@ dojo.declare("dotcms.dijit.form.FileAjaxUploader", [dijit._Widget, dijit._Templa
 			this.fileNameDisplayField.innerHTML = this.fileName;
 		}
 	},
+
+    _fileInfoTemplate: function () {
+        return this.fileNameVisible ? '<div>\
+		<table class="listingTable">\
+			<tr class="alternate_1">\
+	    		<td nowrap><b>File Name</b></td>\
+				<td>{fileName}</td>\
+			</tr>\
+			<tr class="alternate_2">\
+	    		<td><b>File Link</b></td>\
+				<td><a target="_blank" href="{path}">{path}</a></td>\
+			</tr>\
+		</table>\
+	</div>' :
+            '<div>\
+                    <table class="listingTable">\
+                        <tr class="alternate_2">\
+                            <td nowrap><b>File Link</b></td>\
+                            <td><a target="_blank" href="{path}">{path}</a></td>\
+                        </tr>\
+                    </table>\
+            </div>'
+            ;
+    },
+
+
+    _showFileAssetUpdateConfirmation: function (oldAssetName, newAssetName) {
+        let dialogTemplate =
+            '<div>\
+              <table>\
+                <tr>\
+                    <td colspan="2" align="center">{message}</td>\
+                    </tr>\
+                    <tr>\
+                    <td>&nbsp;</td>\
+                    </tr>\
+                    <tr>\
+                    <td colspan="2" align="center">\
+                    <button dojoType="dijit.form.Button" onClick="doReplaceFileAssetName(\'{newAssetName}\');" type="button">Yes</button>\
+                     &nbsp; &nbsp;\
+                    <button dojoType="dijit.form.Button" onClick="doNotReplaceFileAssetName();" type="button">No</button>\
+                    </td>\
+                </tr>\
+              </table>\
+            </div>';
+
+        let warningInfo = {};
+        warningInfo['newAssetName'] = newAssetName;
+        warningInfo['oldAssetName'] = oldAssetName;
+        let message = dojo.replace(this.replaceAssetNameWarning, warningInfo);
+
+        let fileInfo = {};
+        fileInfo['newAssetName'] = newAssetName;
+        fileInfo['oldAssetName'] = oldAssetName;
+        fileInfo['message'] = message;
+
+        let html = dojo.replace(dialogTemplate, fileInfo);
+        this.fileInfoDialog.title = 'Replace Asset Name';
+        let domObj = dojo._toDom( html );
+        this.fileInfoDialog.setContent(domObj);
+        this.fileInfoDialog.show();
+    },
+
 
 	_doFileUpload: function () {
 
@@ -118,31 +175,33 @@ dojo.declare("dotcms.dijit.form.FileAjaxUploader", [dijit._Widget, dijit._Templa
 			}
 		}
 
-
-
-
-
 		if(this._isFileAsset()){
 			//automatically set the file asset name
 			if(this.fileInputField && this.fileInputField.value){
-				var test = this.fileInputField.value;
+				let newAssetName = this.fileInputField.value;
 
-				while(test.indexOf("/") > -1){
-					test = test.replace("/","|");
+				while(newAssetName.indexOf("/") > -1){
+					newAssetName = newAssetName.replace("/","|");
 				}
-				while(test.indexOf("\\") > -1){
-					test = test.replace("\\","|");
+				while(newAssetName.indexOf("\\") > -1){
+					newAssetName = newAssetName.replace("\\","|");
 				}
 
-				test = test.split("|")[test.split("|").length-1];
-				var fileNameField = dijit.byId("fileName");
+				newAssetName = newAssetName.split("|")[newAssetName.split("|").length-1];
+				let fileNameField = dijit.byId("fileName");
 
-					fileNameField.setValue(test);
+                let oldAssetName = fileNameField.getValue();
 
-				fileNameField = dijit.byId("title");
-				if(fileNameField &&  !fileNameField.getValue()){
-					fileNameField.setValue(test);
-				}
+                if(oldAssetName == '' || oldAssetName == newAssetName ){
+                    fileNameField.setValue(newAssetName);
+                    let titleField = dijit.byId("title");
+                    if(titleField &&  !titleField.getValue()){
+                        titleField.setValue(newAssetName);
+                    }
+                } else {
+                     this._showFileAssetUpdateConfirmation(oldAssetName, newAssetName);
+                }
+
 			}
 		}
 		if(this.fileInputField.value != ""){
@@ -167,7 +226,8 @@ dojo.declare("dotcms.dijit.form.FileAjaxUploader", [dijit._Widget, dijit._Templa
 
 	_remove: function () {
 		this.fileNameDisplayField.innerHTML = this.fileInputField.value = '';
-		this.fileNameField.value = '---removed---'
+		this.fileNameField.value = '---removed---';
+
 		dojo.style(this.fileNameDisplayField, { display: 'none' });
 		dojo.style(this.fileUploadForm, { display: '' });
 		dojo.style(this.fileUploadRemoveButton, { display: 'none' });
@@ -191,7 +251,7 @@ dojo.declare("dotcms.dijit.form.FileAjaxUploader", [dijit._Widget, dijit._Templa
 		fileInfo['path'] += "/" + this.fileName +'?language_id='+this.lang;
 
 
-		var html = dojo.replace(this.fileInfoTemplate, fileInfo);
+		var html = dojo.replace(this._fileInfoTemplate(), fileInfo);
 		
 		this.fileInfoDialog.title = this.fileName;
 		var domObj = dojo._toDom(html);
@@ -245,7 +305,9 @@ dojo.declare("dotcms.dijit.form.FileAjaxUploader", [dijit._Widget, dijit._Templa
 
 	},
 	_fileUploadStart: function () {
-		if(!this.uploading || !this.uploadCompleted) return;
+		if(!this.uploading || !this.uploadCompleted){
+            return;
+		}
 	},
 
 	_fileUploadError: function () {
@@ -261,7 +323,9 @@ dojo.declare("dotcms.dijit.form.FileAjaxUploader", [dijit._Widget, dijit._Templa
 	},
 
 	_fileUploadFinished: function () {
-		dojo.style(this.fileNameDisplayField, { display: '' });
+		if(this.fileNameVisible){
+		   dojo.style(this.fileNameDisplayField, { display: '' });
+		}
 		dojo.style(this.fileUploadForm, { display: 'none' });
 		dojo.style(this.fileUploadStatus, { display: 'none' });
 		dojo.style(this.fileUploadRemoveButton, { display: '' });	
@@ -269,6 +333,7 @@ dojo.declare("dotcms.dijit.form.FileAjaxUploader", [dijit._Widget, dijit._Templa
 			var maxSize = document.getElementById("maxSizeFileLimit");
 			maxSize.value=data;			
 		});
+
 		this.onUploadFinish(this.fileName, this);
 
 	},
@@ -285,4 +350,4 @@ dojo.declare("dotcms.dijit.form.FileAjaxUploader", [dijit._Widget, dijit._Templa
 	uninitialize : function (event) {
 	}
 
-})
+});

@@ -267,4 +267,4 @@ dojo.declare("dotcms.dijit.form.FileSelector", [dijit._Widget, dijit._Templated]
 		this.fileInfoDialog.show();
 	}
 
-})
+});

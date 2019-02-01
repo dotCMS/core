@@ -260,6 +260,9 @@
 
 
         function titleCell (data,text, x) {
+
+                text = shortenString(text, 100);
+
                 var inode = data["inode"];
                 var checkId = "checkbox" + x;
                 var live = data["live"] == "true"?true:false;

@@ -1,17 +1,41 @@
 package com.dotmarketing.portlets.contentlet.business;
 
+import static com.dotcms.util.CollectionsUtils.map;
+import static java.io.File.separator;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import com.dotcms.api.system.event.ContentletSystemEventUtil;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
-import com.dotcms.contenttype.model.field.*;
+import com.dotcms.contenttype.model.field.DataTypes;
+import com.dotcms.contenttype.model.field.DateTimeField;
+import com.dotcms.contenttype.model.field.FieldBuilder;
+import com.dotcms.contenttype.model.field.ImmutableBinaryField;
+import com.dotcms.contenttype.model.field.ImmutableTextField;
+import com.dotcms.contenttype.model.field.RelationshipField;
+import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
-import com.dotcms.datagen.*;
+import com.dotcms.datagen.ContainerDataGen;
+import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.FileAssetDataGen;
+import com.dotcms.datagen.FolderDataGen;
+import com.dotcms.datagen.HTMLPageDataGen;
+import com.dotcms.datagen.StructureDataGen;
+import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.mock.request.MockInternalRequest;
 import com.dotcms.mock.response.BaseResponse;
 import com.dotcms.rendering.velocity.services.VelocityResourceKey;
@@ -19,8 +43,17 @@ import com.dotcms.rendering.velocity.services.VelocityType;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.util.CollectionsUtils;
-import com.dotmarketing.beans.*;
-import com.dotmarketing.business.*;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
+import com.dotmarketing.beans.MultiTree;
+import com.dotmarketing.beans.Permission;
+import com.dotmarketing.beans.Tree;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.DotCacheException;
+import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.db.LocalTransaction;
@@ -52,12 +85,46 @@ import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.tag.model.Tag;
-import com.dotmarketing.util.*;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.DateUtil;
+import com.dotmarketing.util.InodeUtils;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
+import com.dotmarketing.util.UUIDGenerator;
+import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.io.Files;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.StringReader;
+import java.io.StringWriter;
+import java.nio.charset.Charset;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Future;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.context.InternalContextAdapterImpl;
@@ -65,25 +132,6 @@ import org.apache.velocity.runtime.parser.node.SimpleNode;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Ignore;
 import org.junit.Test;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.*;
-import java.nio.charset.Charset;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.*;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Future;
-import java.util.concurrent.ThreadLocalRandom;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import static com.dotcms.util.CollectionsUtils.map;
-import static java.io.File.separator;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.*;
 
 /**
  * Created by Jonathan Gamba.
@@ -1111,7 +1159,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         }
         
         file = contentletAPI.findContentletByIdentifier(ident, false, defLang, user, false);
-        
+
         // the issue https://github.com/dotCMS/dotCMS/issues/5007 is caused by an order issue
         // when we call copy it saves all the versions in the new location. but it should
         // do it in older-to-newer order. because the last save will be the asset_name in the
@@ -1123,7 +1171,8 @@ public class ContentletAPITest extends ContentletBaseTest {
 
         assertEquals("hello20_copy.txt",copyIdent.getAssetName());
         assertEquals("hello20_copy.txt",copy.getStringProperty(FileAssetAPI.FILE_NAME_FIELD));
-        assertEquals("hello20_copy.txt",copy.getBinary(FileAssetAPI.BINARY_FIELD).getName());
+        //FileAssetAPI.renameFile no longer renames the binary - so skipping assert
+        //assertEquals("hello20_copy.txt",copy.getBinary(FileAssetAPI.BINARY_FIELD).getName());
         assertEquals("this is the content of the file", FileUtils.readFileToString(copy.getBinary(FileAssetAPI.BINARY_FIELD)));
 
         Contentlet copy2 = contentletAPI.copyContentlet(file, host2, user, false);
@@ -1131,7 +1180,8 @@ public class ContentletAPITest extends ContentletBaseTest {
 
         assertEquals("hello20.txt",copyIdent2.getAssetName());
         assertEquals("hello20.txt",copy2.getStringProperty(FileAssetAPI.FILE_NAME_FIELD));
-        assertEquals("hello20.txt",copy2.getBinary(FileAssetAPI.BINARY_FIELD).getName());
+        //FileAssetAPI.renameFile no longer renames the binary - so skipping assert
+        //assertEquals("hello20.txt",copy2.getBinary(FileAssetAPI.BINARY_FIELD).getName());
         assertEquals("this is the content of the file", FileUtils.readFileToString(copy2.getBinary(FileAssetAPI.BINARY_FIELD)));
 
         contentletAPI.archive(file,user,false);
@@ -1728,7 +1778,8 @@ public class ContentletAPITest extends ContentletBaseTest {
 
     private com.dotcms.contenttype.model.field.Field createRelationshipField(final String fieldName, final String parentContentTypeID, final String childContentTypeVariable)
             throws DotDataException, DotSecurityException {
-        final com.dotcms.contenttype.model.field.Field field = FieldBuilder.builder(RelationshipField.class)
+        final com.dotcms.contenttype.model.field.Field field = FieldBuilder.builder(
+                RelationshipField.class)
                 .name(fieldName)
                 .contentTypeId(parentContentTypeID)
                 .values(String.valueOf(WebKeys.Relationship.RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal()))
