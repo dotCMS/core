@@ -52,6 +52,7 @@ import { DotEditPageInfoModule } from '../components/dot-edit-page-info/dot-edit
 import { DotEditPageInfoComponent } from '../components/dot-edit-page-info/dot-edit-page-info.component';
 import { DotUiColorsService } from '@services/dot-ui-colors/dot-ui-colors.service';
 import * as _ from 'lodash';
+import { PageModelChangeEventType } from './services/dot-edit-content-html/models';
 
 export const mockDotPageState: DotPageState = {
     mode: PageMode.PREVIEW,
@@ -1142,8 +1143,14 @@ describe('DotEditContentComponent', () => {
                 spyOn(component, 'reload');
 
                 waitForDetectChanges(fixture);
-                dotEditContentHtmlService.pageModel$.next(model);
-                dotEditContentHtmlService.pageModel$.next(newModel);
+                dotEditContentHtmlService.pageModel$.next({
+                    model: model,
+                    type: PageModelChangeEventType.ADD_CONTENT
+                });
+                dotEditContentHtmlService.pageModel$.next({
+                    model: newModel,
+                    type: PageModelChangeEventType.ADD_CONTENT
+                });
                 expect(component.reload).not.toHaveBeenCalled();
                 expect(dotEditPageService.save).toHaveBeenCalledTimes(2);
                 expect(dotEditContentHtmlService.setContaintersSameHeight).toHaveBeenCalledTimes(2);
@@ -1177,9 +1184,49 @@ describe('DotEditContentComponent', () => {
                 spyOn(component, 'reload');
 
                 waitForDetectChanges(fixture);
-                dotEditContentHtmlService.pageModel$.next(model);
+                dotEditContentHtmlService.pageModel$.next({
+                    model: model,
+                    type: PageModelChangeEventType.ADD_CONTENT
+                });
                 expect(dotEditPageService.save).toHaveBeenCalledTimes(1);
                 expect(component.reload).toHaveBeenCalledTimes(1);
+                expect(dotEditContentHtmlService.setContaintersSameHeight).toHaveBeenCalledTimes(1);
+            })
+        );
+
+        it(
+            'should not call the save endpoint and reload the iframe after content D&D happen and page is remote rendered',
+            fakeAsync(() => {
+                route.parent.parent.data = observableOf({
+                    content: {
+                        ...mockDotRenderedPage,
+                        page: {
+                            ...mockDotRenderedPage.page,
+                            canLock: true,
+                            remoteRendered: true
+                        },
+                        state: {
+                            locked: true,
+                            mode: PageMode.EDIT
+                        }
+                    }
+                });
+
+                let dotEditPageService: DotEditPageService;
+                dotEditPageService = de.injector.get(DotEditPageService);
+
+                spyOn(dotEditPageService, 'save').and.returnValue(observableOf(true));
+                spyOn(dotEditContentHtmlService, 'getContentModel').and.returnValue({});
+                spyOn(dotEditContentHtmlService, 'setContaintersSameHeight');
+                spyOn(component, 'reload');
+
+                waitForDetectChanges(fixture);
+                dotEditContentHtmlService.pageModel$.next({
+                    model: model,
+                    type: PageModelChangeEventType.MOVE_CONTENT
+                });
+                expect(dotEditPageService.save).toHaveBeenCalledTimes(1);
+                expect(component.reload).not.toHaveBeenCalledTimes(1);
                 expect(dotEditContentHtmlService.setContaintersSameHeight).toHaveBeenCalledTimes(1);
             })
         );
@@ -1205,7 +1252,10 @@ describe('DotEditContentComponent', () => {
                 spyOn(dotEditContentHtmlService, 'setContaintersSameHeight');
 
                 waitForDetectChanges(fixture);
-                dotEditContentHtmlService.pageModel$.next(model);
+                dotEditContentHtmlService.pageModel$.next({
+                    model: model,
+                    type: PageModelChangeEventType.ADD_CONTENT
+                });
                 expect(dotEditContentHtmlService.setContaintersSameHeight).not.toHaveBeenCalled();
             })
         );
