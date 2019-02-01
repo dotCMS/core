@@ -30,21 +30,10 @@
       <form-bean name="StructureForm" type="com.dotmarketing.portlets.structure.struts.StructureForm"></form-bean>
       <form-bean name="RelationshipForm" type="com.dotmarketing.portlets.structure.struts.RelationshipForm"></form-bean>
       <form-bean name="DotFieldForm" type="com.dotmarketing.portlets.structure.struts.FieldForm"></form-bean>
-      <form-bean name="OrganizationForm" type="com.dotmarketing.portlets.organization.struts.OrganizationForm"></form-bean>
-      <!-- User Manager -->
-      <form-bean name="UserManagerListSearchForm" type="com.dotmarketing.portlets.usermanager.struts.UserManagerListSearchForm"></form-bean>
-      <form-bean name="UserManagerForm" type="com.dotmarketing.portlets.usermanager.struts.UserManagerForm"></form-bean>
-      <form-bean name="UserProxyForm" type="com.dotmarketing.portlets.usermanager.struts.UserManagerForm"></form-bean>
 
-
-		 <form-bean name="SchedulerForm" type="com.dotmarketing.portlets.scheduler.struts.SchedulerForm"></form-bean>
-      <form-bean name="ReportForm" type="com.dotmarketing.portlets.report.struts.ReportForm"></form-bean>
 
       <!-- Events Calendar -->
       <form-bean name="CalendarEventForm" type="com.dotmarketing.portlets.calendar.struts.EventForm"></form-bean>
-
-      <!-- Product -->
-      <form-bean name="ProductForm" type="com.dotmarketing.portlets.merchant.product.struts.ProductForm"></form-bean>
 
       <!-- Escalation -->
       <form-bean name="EscalationForm" type="com.dotcms.escalation.form.EscalationForm"></form-bean>
@@ -233,6 +222,12 @@
 
 
 
+      <!-- Vanity URL Link Management -->      
+      <action path="/ext/virtuallinks/view_virtuallinks" type="com.dotcms.vanityurl.action.ViewVanityURLAction">
+         <forward name="portlet.ext.virtuallinks.view_virtuallinks" path="portlet.ext.virtuallinks.view_virtuallinks" />
+         <forward name="portlet.ext.virtuallinks.view" path="portlet.ext.virtuallinks.view" />
+      </action>
+      <!-- Vanity Link  Management -->
 
 
 
