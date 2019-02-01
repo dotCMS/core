@@ -836,7 +836,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
                 } else {
                     scope._onContentSelected(content);
                 }
-			};selectedData
+			};
 			if(this.multiple=='false') {
 				var asset = cellData
 				var selectRow = dojo.byId("rowId" +i);
