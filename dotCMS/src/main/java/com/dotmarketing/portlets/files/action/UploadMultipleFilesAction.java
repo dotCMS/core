@@ -1,5 +1,7 @@
 package com.dotmarketing.portlets.files.action;
 
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
+
 import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
@@ -37,19 +39,16 @@ import com.liferay.util.ParamUtil;
 import com.liferay.util.StringPool;
 import com.liferay.util.servlet.SessionMessages;
 import com.liferay.util.servlet.UploadPortletRequest;
-import org.apache.struts.action.ActionForm;
-import org.apache.struts.action.ActionMapping;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
-
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+import org.apache.struts.action.ActionForm;
+import org.apache.struts.action.ActionMapping;
 
 /**
  * @author Maria
@@ -263,7 +262,7 @@ public class UploadMultipleFilesAction extends DotPortletAction {
                     if ( uploadedFile != null ) {
 
                         //checks if another identifier with the same name exists in the same folder
-                        if (APILocator.getFileAssetAPI().fileNameExists(host, folder, fileName, "", contentlet.getLanguageId())) {
+                        if (APILocator.getFileAssetAPI().fileNameExists(host, folder, fileName, "")) {
                             throw new DuplicateFileException(fileName);
                         }
 

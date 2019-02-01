@@ -55,7 +55,7 @@ public class BinaryToMapTransformer implements FieldsToMapTransformer {
 
 
     @NotNull
-    private Map<String, Object> transform(final Field field, final Contentlet con) {
+    public Map<String, Object> transform(final Field field, final Contentlet con) {
         File file;
         try {
             file = con.getBinary(field.variable());
@@ -63,6 +63,10 @@ public class BinaryToMapTransformer implements FieldsToMapTransformer {
             throw new DotStateException(e);
         }
 
+        return transform(file, con, field);
+    }
+
+    public Map<String, Object> transform(final File file, final Contentlet con, final Field field) {
         final Map<String, Object> map = new HashMap<>();
 
         map.put("versionPath", "/dA/" + APILocator.getShortyAPI().shortify(con.getInode()) + "/" + field.variable() + "/" + file.getName());

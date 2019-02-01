@@ -558,6 +558,29 @@
 			}
         }
 
+		//if we're looking at a File Asset and there's a resource link element on screen after save it  needs to be updated
+        var resourceLink = dojo.byId('resourceLink');
+		if(resourceLink){
+            var xhrArgs = {
+                url: "/api/v1/content/fileassets/"+currentContentletInode+"/resourcelink",
+                handleAs: "json",
+                preventCache: true,
+                load: function (data) {
+					if(data.entity && data.entity.resourceLink){
+                       var resourceLinkData = data.entity.resourceLink;
+                       resourceLink.text = shortenString(resourceLinkData.text, 100);
+                       resourceLink.href = resourceLinkData.href;
+					} else {
+                        showDotCMSSystemMessage('Failed to update resource link', true);
+					}
+                },
+                error: function (error) {
+                    console.error(error.responseText);
+                }
+            }
+            dojo.xhrGet(xhrArgs);
+        }
+
         dijit.byId('savingContentDialog').hide();
         resetHasChanged();
 

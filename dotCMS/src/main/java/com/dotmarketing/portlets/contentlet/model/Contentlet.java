@@ -1,6 +1,5 @@
 package com.dotmarketing.portlets.contentlet.model;
 
-import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.ImageField;
@@ -67,7 +66,7 @@ import org.apache.commons.lang.builder.ToStringBuilder;
  * in dotCMS will be represented as a Contentlet in the near future given the
  * flexibility they allow and the consistency goal that will be achieved in
  * terms of code, push publishing, versioning, and so on.
- * 
+ *
  * @author Jason Tesser
  * @author David Tores
  *
@@ -107,9 +106,9 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
     public static final String DOT_NAME_KEY = "__DOTNAME__";
 
     public static final String TITLE_IMAGE_KEY="titleImage";
-    
-    
-    
+
+
+
     public static final String DONT_VALIDATE_ME = "_dont_validate_me";
     public static final String DISABLE_WORKFLOW = "__disable_workflow__";
 
@@ -312,7 +311,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	}
 
     /**
-     * 
+     *
      * @param inode
      */
     public void setInode(String inode) {
@@ -320,7 +319,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
     }
 
     /**
-     * 
+     *
      * @return
      */
     public long getLanguageId() {
@@ -328,7 +327,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
     }
 
     /**
-     * 
+     *
      * @param languageId
      */
     public void setLanguageId(long languageId) {
@@ -336,7 +335,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
     }
 
     /**
-     * 
+     *
      * @return
      */
     public String getContentTypeId() {
@@ -344,7 +343,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
     }
 
     /**
-     * @deprecated as of 4.1 
+     * @deprecated as of 4.1
      * use instead:
      * {@link #getContentTypeId()}
      */
@@ -363,7 +362,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 
 	/**
 	 * Assigns a specific Content Type to this Contentlet object.
-	 * 
+	 *
 	 * @param id
 	 *            - The Content Type ID.
 	 */
@@ -371,7 +370,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
     	map.put(STRUCTURE_INODE_KEY, id);
     }
     /**
-     * 
+     *
      * @param type
      */
     public void setContentType(final ContentType type) {
@@ -390,7 +389,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	}
 
     /**
-     * 
+     *
      * @return
      */
     public boolean hasAssetNameExtension() {
@@ -402,7 +401,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
     }
 
     /**
-     * 
+     *
      * @return
      */
     public Date getLastReview() {
@@ -410,7 +409,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
     }
 
     /**
-     * 
+     *
      * @param lastReview
      */
     public void setLastReview(Date lastReview) {
@@ -418,7 +417,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
     }
 
     /**
-     * 
+     *
      * @return
      */
     public Date getNextReview() {
@@ -426,7 +425,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
     }
 
     /**
-     * 
+     *
      * @param nextReview
      */
     public void setNextReview(Date nextReview) {
@@ -434,7 +433,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
     }
 
     /**
-     * 
+     *
      * @return
      */
     public String getReviewInterval() {
@@ -442,7 +441,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
     }
 
     /**
-     * 
+     *
      * @param reviewInterval
      */
     public void setReviewInterval(String reviewInterval) {
@@ -450,14 +449,14 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
     }
 
     /**
-     * 
+     *
      */
     public String toString() {
         return ToStringBuilder.reflectionToString(this);
     }
 
     /**
-     * 
+     *
      * @param contentlet
      * @return
      * @throws DotRuntimeException
@@ -493,7 +492,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	}
 
     /**
-     * 
+     *
      * @return
      */
     public static long getSerialVersionUID() {
@@ -501,7 +500,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
     }
 
     /**
-     * 
+     *
      * @return
      */
 	public List<String> getDisabledWysiwyg() {
@@ -509,7 +508,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	}
 
 	/**
-	 * 
+	 *
 	 * @param disabledFields
 	 */
 	public void setDisabledWysiwyg(List<String> disabledFields) {
@@ -517,7 +516,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	}
 
 	/**
-	 * 
+	 *
 	 * @param fieldVarName
 	 * @return
 	 * @throws DotRuntimeException
@@ -535,7 +534,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	}
 
 	/**
-	 * 
+	 *
 	 * @param fieldVarName
 	 * @param stringValue
 	 * @throws DotRuntimeException
@@ -543,9 +542,9 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	public void setStringProperty(String fieldVarName,String stringValue) throws DotRuntimeException {
 		map.put(fieldVarName, stringValue);
 	}
-	
+
     /**
-     * 
+     *
      * @param fieldVarName
      * @param stringValue
      * @throws DotRuntimeException
@@ -554,7 +553,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
         map.put(field.variable(), stringValue);
     }
 	/**
-	 * 
+	 *
 	 * @param fieldVarName
 	 * @param longValue
 	 * @throws DotRuntimeException
@@ -566,7 +565,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
         map.put(field.variable(), stringValue);
     }
 	/**
-	 * 
+	 *
 	 * @param fieldVarName
 	 * @return
 	 * @throws DotRuntimeException
@@ -580,7 +579,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	}
 
 	/**
-	 * 
+	 *
 	 * @param fieldVarName
 	 * @param boolValue
 	 * @throws DotRuntimeException
@@ -589,7 +588,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 		map.put(fieldVarName, boolValue);
 	}
     /**
-     * 
+     *
      * @param fieldVarName
      * @param boolValue
      * @throws DotRuntimeException
@@ -599,7 +598,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
     }
 
 	/**
-	 * 
+	 *
 	 * @param fieldVarName
 	 * @return
 	 * @throws DotRuntimeException
@@ -613,7 +612,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	}
 
 	/**
-	 * 
+	 *
 	 * @param fieldVarName
 	 * @param dateValue
 	 * @throws DotRuntimeException
@@ -621,9 +620,9 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	public void setDateProperty(String fieldVarName, Date dateValue) throws DotRuntimeException {
 		map.put(fieldVarName, dateValue);
 	}
-	
+
     /**
-     * 
+     *
      * @param field
      * @param dateValue
      * @throws DotRuntimeException
@@ -633,7 +632,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
     }
 
 	/**
-	 * 
+	 *
 	 * @param fieldVarName
 	 * @return
 	 * @throws DotRuntimeException
@@ -647,7 +646,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	}
 
 	/**
-	 * 
+	 *
 	 * @param fieldVarName
 	 * @param floatValue
 	 * @throws DotRuntimeException
@@ -655,9 +654,9 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	public void setFloatProperty(String fieldVarName, float floatValue) throws DotRuntimeException {
 		map.put(fieldVarName, floatValue);
 	}
-	
+
     /**
-     * 
+     *
      * @param fieldVarName
      * @param floatValue
      * @throws DotRuntimeException
@@ -667,7 +666,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
     }
 
 	/**
-	 * 
+	 *
 	 * @param fieldVarName
 	 * @return
 	 * @throws DotRuntimeException
@@ -681,7 +680,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	}
 
 	/**
-	 * 
+	 *
 	 * @param fieldVarName
 	 * @param objValue
 	 * @throws DotRuntimeException
@@ -824,7 +823,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	}
 
 	/**
-	 * 
+	 *
 	 * @return
 	 */
 	public long getSortOrder(){
@@ -832,14 +831,14 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	}
 
 	/**
-	 * 
+	 *
 	 */
 	public String getPermissionId() {
 		return getIdentifier();
 	}
 
 	/**
-	 * 
+	 *
 	 * @return
 	 */
 	public String getHost() {
@@ -848,13 +847,13 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 
 	private final static String TITLE_IMAGE_NOT_FOUND = "TITLE_IMAGE_NOT_FOUND";
 
-    
+
     public Optional<com.dotcms.contenttype.model.field.Field> getTitleImage() {
         final ContentType type = getContentType();
         if(type==null || type.fieldMap()==null || TITLE_IMAGE_NOT_FOUND.equals(map.get(TITLE_IMAGE_KEY))) {
             return Optional.empty();
         }
-        
+
         if(map.get(TITLE_IMAGE_KEY) == null) {
             String returnVal = TITLE_IMAGE_NOT_FOUND;
             for(final com.dotcms.contenttype.model.field.Field f : type.fields()) {
@@ -875,11 +874,11 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
         }
         return Optional.ofNullable(type.fieldMap().get(String.valueOf(map.get(TITLE_IMAGE_KEY))));
     }
-	
-	
-	
+
+
+
 	/**
-	 * 
+	 *
 	 * @param host
 	 */
 	public void setHost(String host) {
@@ -918,7 +917,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	}
 
 	/**
-	 * 
+	 *
 	 */
 	public List<RelatedPermissionableGroup> permissionDependencies(
 			int requiredPermission) {
@@ -926,7 +925,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	}
 
 	/**
-	 * 
+	 *
 	 */
 	public Permissionable getParentPermissionable() throws DotDataException {
 
@@ -970,14 +969,14 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	}
 
 	/**
-	 * 
+	 *
 	 */
 	public String getPermissionType() {
 		return Contentlet.class.getCanonicalName();
 	}
 
 	/**
-	 * 
+	 *
 	 * @param velocityVarName
 	 * @param newFile
 	 * @throws IOException
@@ -985,9 +984,9 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	public void setBinary(String velocityVarName, File newFile)throws IOException{
 		map.put(velocityVarName, newFile);
 	}
-	
+
     /**
-     * 
+     *
      * @param field
      * @param newFile
      * @throws IOException
@@ -997,7 +996,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
     }
 
 	/**
-	 * 
+	 *
 	 * @param velocityVarName
 	 * @return
 	 * @throws IOException
@@ -1010,7 +1009,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
             if ( map.get( INODE_KEY ) != null && InodeUtils.isSet( (String) map.get( INODE_KEY ) ) ) {
                 String inode = (String) map.get(INODE_KEY);
 	        	try{
-	        	
+
 	        		java.io.File binaryFilefolder = new java.io.File(APILocator.getFileAssetAPI().getRealAssetsRootPath()
 	                    + java.io.File.separator
 	                    + inode.charAt(0)
@@ -1033,13 +1032,13 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	            }
 			}
 		}
-		
+
 		return f;
-		
+
 	}
 
 	/**
-	 * 
+	 *
 	 * @param velocityVarName
 	 * @return
 	 * @throws IOException
@@ -1050,7 +1049,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	}
 
 	/**
-	 * 
+	 *
 	 * @param velocityVarName
 	 * @return
 	 */
@@ -1059,7 +1058,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	}
 
 	/**
-	 * 
+	 *
 	 */
 	public boolean isParentPermissionable() {
 		Structure hostStructure = CacheLocator.getContentTypeCache().getStructureByVelocityVarName("Host");
@@ -1070,7 +1069,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	}
 
 	/**
-	 * 
+	 *
 	 * @param inode
 	 * @param structureInode
 	 * @return
@@ -1102,7 +1101,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
     }
 
     /**
-     * 
+     *
      * @param structureInode
      * @param fieldVelVarName
      * @param value
@@ -1152,7 +1151,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	}
 
 	/**
-	 * 
+	 *
 	 */
 	public String getType(){
 
@@ -1160,7 +1159,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	}
 
 	/**
-	 * 
+	 *
 	 * @return
 	 */
     public Boolean isHTMLPage() {
@@ -1168,7 +1167,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
     }
 
     /**
-     * 
+     *
      * @return
      */
 	public boolean isFileAsset() {
@@ -1176,11 +1175,11 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	}
 
 	/**
-	 * 
+	 *
 	 * @return
 	 */
     public boolean isHost() {
-        Structure hostStructure = 
+        Structure hostStructure =
                 CacheLocator.getContentTypeCache().getStructureByVelocityVarName("Host");
 
         return getStructure().getInode().equals(hostStructure.getInode());
@@ -1205,7 +1204,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	}
 
     /**
-     * 
+     *
      * @return
      */
     public boolean isSystemHost() {
@@ -1236,7 +1235,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	}
 
     /**
-     * 
+     *
      * @throws DotDataException
      */
 	public void setTags() throws DotDataException {
@@ -1361,7 +1360,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	}
 
 	/**
-	 * 
+	 *
 	 * @return
 	 * @throws DotStateException
 	 * @throws DotDataException
@@ -1399,7 +1398,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 
 		return this.contentType;
 	}
-	
+
 	/**
 	 * Get if the contentlet is a Vanity URL
 	 * @return true if the contentlet Content Type is a Vanity URL
@@ -1412,7 +1411,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 
     /**
      * Determines whether this object belongs to a Key/Value Content Type or not.
-     * 
+     *
      * @return If the object is an instance of Key/Value, returns {@code true}. Otherwise, returns
      *         {@code false}.
      * @throws DotDataException An error occurred when retrieving information from the data source.
