@@ -5,6 +5,7 @@ import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.CategoryField;
 import com.dotcms.contenttype.model.field.CheckboxField;
 import com.dotcms.contenttype.model.field.ColumnField;
+import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.DateField;
 import com.dotcms.contenttype.model.field.DateTimeField;
 import com.dotcms.contenttype.model.field.Field;
@@ -16,6 +17,7 @@ import com.dotcms.contenttype.model.field.MultiSelectField;
 import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.field.RowField;
 import com.dotcms.contenttype.model.field.TagField;
+import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.field.TimeField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.graphql.CustomFieldType;
@@ -61,6 +63,7 @@ import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLTypeReference;
 import graphql.schema.idl.SchemaPrinter;
 
+import static graphql.Scalars.GraphQLFloat;
 import static graphql.Scalars.GraphQLInt;
 import static graphql.Scalars.GraphQLString;
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
@@ -143,7 +146,7 @@ public class GraphqlAPIImpl implements GraphqlAPI {
         }
     }
 
-    private GraphQLObjectType createSchemaType(ContentType contentType,
+    private void createSchemaType(ContentType contentType,
                                               final Map<String, GraphQLObjectType> graphqlObjectTypes) {
 
         final GraphQLObjectType.Builder builder = GraphQLObjectType.newObject().name(contentType.variable());
@@ -165,8 +168,8 @@ public class GraphqlAPIImpl implements GraphqlAPI {
                     builder.field(newFieldDefinition()
                         .name(field.variable())
                         .type(field.required()
-                            ? nonNull(getGraphqlTypeForFieldClass(field.type()))
-                            : getGraphqlTypeForFieldClass(field.type()))
+                            ? nonNull(getGraphqlTypeForFieldClass(field.type(), field))
+                            : getGraphqlTypeForFieldClass(field.type(), field))
                         .dataFetcher(getGraphqlDataFetcherForFieldClass(field.type()))
                     );
                 }
@@ -177,8 +180,6 @@ public class GraphqlAPIImpl implements GraphqlAPI {
         final GraphQLObjectType graphQLType = builder.build();
 
         graphqlObjectTypes.put(graphQLType.getName(), graphQLType);
-
-        return graphQLType;
     }
 
     private void handleRelationshipField(final ContentType contentType, GraphQLObjectType.Builder builder,
@@ -219,10 +220,12 @@ public class GraphqlAPIImpl implements GraphqlAPI {
         );
     }
 
-    private GraphQLOutputType getGraphqlTypeForFieldClass(final Class<Field> fieldClass) {
+    private GraphQLOutputType getGraphqlTypeForFieldClass(final Class<Field> fieldClass, final Field field) {
         return fieldClassGraphqlTypeMap.get(fieldClass)!= null
             ? fieldClassGraphqlTypeMap.get(fieldClass)
-            : GraphQLString;
+            : fieldClass.equals(TextField.class) && field.dataType().equals(DataTypes.INTEGER) ? GraphQLInt
+                : fieldClass.equals(TextField.class) && field.dataType().equals(DataTypes.FLOAT) ? GraphQLFloat
+                    : GraphQLString;
     }
 
     private DataFetcher getGraphqlDataFetcherForFieldClass(final Class<Field> fieldClass) {
