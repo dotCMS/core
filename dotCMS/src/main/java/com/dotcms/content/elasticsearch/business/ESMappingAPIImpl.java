@@ -271,8 +271,14 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 				final String lcasek=entry.getKey().toLowerCase();
 				Object lcasev = entry.getValue();
 
-				if (UtilMethods.isSet(lcasev) && lcasev instanceof String){
-					lcasev = ((String) lcasev).toLowerCase();
+				if (UtilMethods.isSet(lcasev) && (lcasev instanceof String || (
+						//filters relationships
+						lcasev instanceof List && !lcasek.endsWith(ESMappingConstants.TAGS) && !lcasek
+								.endsWith(ESMappingConstants.SUFFIX_ORDER)))) {
+
+					if (lcasev instanceof String){
+						lcasev = ((String) lcasev).toLowerCase();
+					}
 
 					if (!lcasek.endsWith(TEXT)){
 						//for example: when lcasev=moddate, moddate_dotraw must be created from its moddate_text if exists
@@ -291,8 +297,6 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 					sw.append(lcasev.toString()).append(' ');
 				}
 			}
-
-
 
 			if(contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET) {
 				// see if we have content metadata
@@ -745,30 +749,18 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 					String me = con.getIdentifier();
 					String related = me.equals(childId) ? parentId : childId;
 
-					String previousPropNameValue = (String) m.get(propName);
-					int previousPropNameValueLength =
-							previousPropNameValue != null ? previousPropNameValue.length() : 0;
+					// saving related content as a list (using relationship name)
+					if (!m.containsKey(propName)){
+						m.put(propName, new ArrayList<>());
+					}
 
-					StringBuilder propNameValue = new StringBuilder(
-							previousPropNameValueLength + UUID_LENGTH + 1);
+					((List)m.get(propName)).add(related);
 
-					// put a pointer to the related content
-					m.put(propName, propNameValue
-							.append(previousPropNameValue != null ? previousPropNameValue : "")
-							.append(related).append(" ").toString());
-
-					String previousOrderKeyValue = (String) m.get(orderKey);
-					int previousOrderKeyValueLength =
-							previousOrderKeyValue != null ? previousOrderKeyValue.length() : 0;
-					int orderLength = order != null ? order.length() : 0;
-
-					StringBuilder orderKeyValue = new StringBuilder(
-							previousOrderKeyValueLength + UUID_LENGTH + 1 + orderLength + 1);
-
-					// make a way to sort
-					m.put(orderKey, orderKeyValue
-							.append(previousOrderKeyValue != null ? previousOrderKeyValue : "")
-							.append(related).append("_").append(order).append(" ").toString());
+					//adding sort elements as a list
+					if (!m.containsKey(orderKey)){
+						m.put(orderKey, new ArrayList<>());
+					}
+					((List)m.get(orderKey)).add(related + "_" + order);
 
 					addRelationshipRecords(con, me.equals(childId) ? rel.getParentRelationName()
 							: rel.getChildRelationName(), related, relationshipsRecords, m);
@@ -812,6 +804,8 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 					Logger.warn(this, "Error getting field for relation type " + key, e);
 				}
 
+			} else{
+				relationshipsRecords.get(key).add(related);
 			}
 		}
 	}
