@@ -233,6 +233,12 @@
 
 
 
+      <!-- Vanity URL Link Management -->      
+      <action path="/ext/virtuallinks/view_virtuallinks" type="com.dotcms.vanityurl.action.ViewVanityURLAction">
+         <forward name="portlet.ext.virtuallinks.view_virtuallinks" path="portlet.ext.virtuallinks.view_virtuallinks" />
+         <forward name="portlet.ext.virtuallinks.view" path="portlet.ext.virtuallinks.view" />
+      </action>
+      <!-- Vanity Link  Management -->
 
 
 

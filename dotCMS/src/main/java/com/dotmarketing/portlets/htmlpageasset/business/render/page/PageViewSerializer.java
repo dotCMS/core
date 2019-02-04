@@ -1,21 +1,20 @@
 package com.dotmarketing.portlets.htmlpageasset.business.render.page;
 
+import java.io.CharArrayReader;
+import java.io.IOException;
+import java.util.Map;
+import java.util.Objects;
+import java.util.TreeMap;
+import java.util.stream.Collectors;
+
 import com.dotcms.repackage.com.fasterxml.jackson.core.JsonGenerator;
 import com.dotcms.repackage.com.fasterxml.jackson.core.JsonProcessingException;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.JsonSerializer;
-import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
+import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectWriter;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.SerializerProvider;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.templates.model.Template;
-import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectWriter;
 import com.google.common.collect.ImmutableMap;
-
-import java.io.CharArrayReader;
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
-import java.util.stream.Collectors;
 
 /**
  * JsonSerializer of {@link PageView}
@@ -35,7 +34,7 @@ public class PageViewSerializer extends JsonSerializer<PageView> {
     protected Map<String, Object> getObjectMap(final PageView pageView) {
         final Template template = pageView.getTemplate();
 
-        final Map pageViewMap = new HashMap<String, Object>();
+        final Map<String, Object> pageViewMap = new TreeMap<>();
         pageViewMap.put("page", this.asMap(pageView.getPageInfo()));
         pageViewMap.put("containers", pageView.getContainers()
                 .stream()
@@ -44,9 +43,14 @@ public class PageViewSerializer extends JsonSerializer<PageView> {
                         containerRendered -> containerRendered
                 ))
         );
-        pageViewMap.put("template", this.asMap(template));
+        final Map<Object, Object> templateMap = this.asMap(template);
+        templateMap.put("canEdit", pageView.canEditTemplate());
+        pageViewMap.put("template", templateMap);
+        
         pageViewMap.put("site", pageView.getSite());
-
+        pageViewMap.put("viewAs", pageView.getViewAs());
+        pageViewMap.put("canCreateTemplate", pageView.canCreateTemplate());
+;
         if (pageView.getLayout() != null) {
             pageViewMap.put("layout", pageView.getLayout());
         }

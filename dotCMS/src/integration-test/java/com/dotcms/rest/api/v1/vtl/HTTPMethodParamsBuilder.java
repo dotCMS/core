@@ -15,6 +15,7 @@ public class HTTPMethodParamsBuilder {
     private String pathParam;
     private Map<String, String> bodyMap;
     private WebResource webResource;
+    private String bodyMapString;
 
     public HTTPMethodParamsBuilder setRequest(final HttpServletRequest request) {
         this.request = request;
@@ -51,8 +52,13 @@ public class HTTPMethodParamsBuilder {
         return this;
     }
 
+    HTTPMethodParamsBuilder setBodyMapString(final String bodyMapString) {
+        this.bodyMapString = bodyMapString;
+        return this;
+    }
+
     public VTLResourceIntegrationTest.HTTPMethodParams build() {
         return new VTLResourceIntegrationTest.HTTPMethodParams(request, servletResponse, uriInfo,
-                folderName, pathParam, bodyMap, webResource);
+                folderName, pathParam, bodyMap, webResource, bodyMapString);
     }
 }

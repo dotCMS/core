@@ -43,6 +43,7 @@ import java.io.StringWriter;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -225,8 +226,9 @@ public class PageContextBuilder implements Serializable {
                 final Set<String> conIdSet = pageContents.get(containerId, uniqueId);
                 final List<Contentlet> contentlets = conIdSet.stream().map(id -> {
                     try {
-                        final Contentlet contentlet = APILocator.getContentletAPI().findContentletForLanguage(this.languageId, APILocator.getIdentifierAPI().find(id));
-                        return (contentlet!=null) ? contentlet : APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(id);
+                        final Optional<Contentlet> contentlet = APILocator.getContentletAPI().findContentletByIdentifierOrFallback(id, mode.showLive, languageId, user, mode.respectAnonPerms);
+                        return (contentlet.isPresent()) 
+                                ? contentlet.get() : APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(id);
                     } catch (Exception e) {
                         throw new DotStateException(e);
                     }

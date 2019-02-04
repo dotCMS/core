@@ -123,7 +123,7 @@ public class VTLResourceIntegrationTest {
                         .setPathParameter(KNOWN_EMPLOYEE_ID)
                         .setExpectedJSON(FileUtil.read(new File(ConfigTestHelper.getUrlToTestResource(ONE_EMPLOYEE_JSON_RESPONSE).toURI())))
                         .setExpectedOutput(null)
-                        .setBodyMap(dynamicGetBodyMap)
+                        .setBodyMapString(new ObjectMapper().writeValueAsString(dynamicGetBodyMap))
                         .setResourceMethod(ResourceMethod.DYNAMIC_GET)
                         .build(),
                 new VTLResourceTestCase.Builder().setVtlFile(new File(ConfigTestHelper.getUrlToTestResource(VALID_GET_VTL_DOTJSON_OUTPUT).toURI()))
@@ -133,7 +133,7 @@ public class VTLResourceIntegrationTest {
                         .setExpectedJSON(null)
                         .setExpectedOutput(null)
                         .setExpectedException(Response.Status.FORBIDDEN.getStatusCode())
-                        .setBodyMap(dynamicGetBodyMap)
+                        .setBodyMapString(new ObjectMapper().writeValueAsString(dynamicGetBodyMap))
                         .setUser(ANONYMOUS_USER_ID)
                         .setResourceMethod(ResourceMethod.DYNAMIC_GET)
                         .build(),
@@ -180,6 +180,7 @@ public class VTLResourceIntegrationTest {
                 .setUriInfo(uriInfo)
                 .setPathParam(testCase.getPathParameter())
                 .setBodyMap(testCase.getBodyMap())
+                .setBodyMapString(testCase.getBodyMapString())
                 .setFolderName(testCase.getFolderName())
                 .setWebResource(webResource)
                 .build();
@@ -263,6 +264,7 @@ public class VTLResourceIntegrationTest {
         private final String pathParam;
         private final Map<String, String> bodyMap;
         private final WebResource webResource;
+        private final String bodyMapString;
 
         public HttpServletRequest getRequest() {
             return request;
@@ -292,9 +294,13 @@ public class VTLResourceIntegrationTest {
             return webResource;
         }
 
+        public String getBodyMapString() {
+            return bodyMapString;
+        }
+
         HTTPMethodParams(final HttpServletRequest request, final HttpServletResponse servletResponse, final UriInfo uriInfo,
                          final String folderName, final String pathParam, final Map<String, String> bodyMap,
-                         final WebResource webResource) {
+                         final WebResource webResource, final String bodyMapString) {
             this.request = request;
             this.servletResponse = servletResponse;
             this.uriInfo = uriInfo;
@@ -302,6 +308,7 @@ public class VTLResourceIntegrationTest {
             this.pathParam = pathParam;
             this.bodyMap = bodyMap;
             this.webResource = webResource;
+            this.bodyMapString = bodyMapString;
         }
     }
 }
