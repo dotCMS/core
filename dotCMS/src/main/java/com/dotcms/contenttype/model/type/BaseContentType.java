@@ -1,5 +1,6 @@
 package com.dotcms.contenttype.model.type;
 
+import com.dotmarketing.util.Logger;
 import com.fasterxml.jackson.annotation.JsonValue;
 
 /**
@@ -89,7 +90,9 @@ public enum BaseContentType {
                 return type;
             }
         }
-        return ANY;
+        final String errorMsg = "BaseContentType " + name + " does not Exists";
+		Logger.error(BaseContentType.class, errorMsg);
+        throw new IllegalArgumentException(errorMsg);
     }
 
 	/**

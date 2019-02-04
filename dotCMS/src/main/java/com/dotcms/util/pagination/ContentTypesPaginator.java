@@ -53,8 +53,6 @@ public class ContentTypesPaginator implements PaginatorOrdered<Map<String, Objec
             final OrderDirection direction, final Map<String, Object> extraParams) {
 
         String typeName =  extraParams.containsKey(TYPE_PARAMETER_NAME) ? extraParams.get(TYPE_PARAMETER_NAME).toString().replaceAll("\\[","").replaceAll("\\]", "") : "ANY";
-        final BaseContentType type = BaseContentType.getBaseContentType(typeName);
-                
          
         String orderByString = (orderBy==null)? "mod_date desc" : orderBy;
         
@@ -62,8 +60,9 @@ public class ContentTypesPaginator implements PaginatorOrdered<Map<String, Objec
                 ? orderBy
                 : orderBy + " " + (UtilMethods.isSet(direction) ? direction.toString().toLowerCase(): OrderDirection.ASC.name());
         try {
-            final List<ContentType> contentTypes = (type != null) ? this.contentTypeAPI.search(filter,type,  orderByString , limit, offset) : this.contentTypeAPI.search(filter,  orderByString , limit, offset);
+            final BaseContentType type = BaseContentType.getBaseContentType(typeName);
 
+            final List<ContentType> contentTypes = (type != null) ? this.contentTypeAPI.search(filter,type,  orderByString , limit, offset) : this.contentTypeAPI.search(filter,  orderByString , limit, offset);
 
             final List<Map<String, Object>> contentTypesTransform = transformContentTypesToMap(contentTypes);
 
