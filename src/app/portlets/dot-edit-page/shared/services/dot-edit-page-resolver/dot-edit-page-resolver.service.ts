@@ -1,9 +1,9 @@
-import {  Observable, of } from 'rxjs';
+import { throwError as observableThrowError, Observable, of } from 'rxjs';
 import { Injectable } from '@angular/core';
 import { Resolve, ActivatedRouteSnapshot } from '@angular/router';
+import { Response, Headers } from '@angular/http';
 
-
-import { ResponseView,  } from 'dotcms-js';
+import { ResponseView, HttpCode } from 'dotcms-js';
 
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { DotRenderedPageState } from '../../models/dot-rendered-page-state.model';
@@ -32,8 +32,6 @@ export class DotEditPageResolver implements Resolve<DotRenderedPageState> {
     ) {}
 
     resolve(route: ActivatedRouteSnapshot): Observable<DotRenderedPageState> {
-        console.log('BETO');
-        debugger;
         const data = this.dotEditPageDataService.getAndClean();
         if (data) {
             return of(data);
@@ -46,59 +44,55 @@ export class DotEditPageResolver implements Resolve<DotRenderedPageState> {
                 .pipe(
                     take(1),
                     switchMap((dotRenderedPageState: DotRenderedPageState) => {
-                        debugger;
-                        //const currentSection = route.children[0].url[0].path;
-                        // const isLayout = currentSection === 'layout';
-                        return of(dotRenderedPageState);
-                        // if (isLayout) {
-                        //     debugger;
-                        //     return this.checkUserCanGoToLayout(dotRenderedPageState);
-                        // } else {
-                        //     debugger;
-                        //     return of(dotRenderedPageState);
-                        // }
+                        const currentSection = route.children[0].url[0].path;
+                        const isLayout = currentSection === 'layout';
+
+                        if (isLayout) {
+                            return this.checkUserCanGoToLayout(dotRenderedPageState);
+                        } else {
+                            return of(dotRenderedPageState);
+                        }
                     }),
                     catchError((err: ResponseView) => {
-                        debugger;
                         return this.errorHandler(err).pipe(map(() => null));
                     })
                 );
         }
     }
 
-    // private checkUserCanGoToLayout(
-    //     dotRenderedPageState: DotRenderedPageState
-    // ): Observable<DotRenderedPageState> {
-    //     if (!dotRenderedPageState.page.canEdit) {
-    //         return observableThrowError(
-    //             new ResponseView(
-    //                 new Response({
-    //                     body: {},
-    //                     status: HttpCode.FORBIDDEN,
-    //                     headers: null,
-    //                     url: '',
-    //                     merge: null
-    //                 })
-    //             )
-    //         );
-    //     } else if (!dotRenderedPageState.layout) {
-    //         return observableThrowError(
-    //             new ResponseView(
-    //                 new Response({
-    //                     body: {},
-    //                     status: HttpCode.FORBIDDEN,
-    //                     headers: new Headers({
-    //                         'error-key': 'dotcms.api.error.license.required'
-    //                     }),
-    //                     url: '',
-    //                     merge: null
-    //                 })
-    //             )
-    //         );
-    //     } else {
-    //         return of(dotRenderedPageState);
-    //     }
-    // }
+    private checkUserCanGoToLayout(
+        dotRenderedPageState: DotRenderedPageState
+    ): Observable<DotRenderedPageState> {
+        if (!dotRenderedPageState.page.canEdit) {
+            return observableThrowError(
+                new ResponseView(
+                    new Response({
+                        body: {},
+                        status: HttpCode.FORBIDDEN,
+                        headers: null,
+                        url: '',
+                        merge: null
+                    })
+                )
+            );
+        } else if (!dotRenderedPageState.layout) {
+            return observableThrowError(
+                new ResponseView(
+                    new Response({
+                        body: {},
+                        status: HttpCode.FORBIDDEN,
+                        headers: new Headers({
+                            'error-key': 'dotcms.api.error.license.required'
+                        }),
+                        url: '',
+                        merge: null
+                    })
+                )
+            );
+        } else {
+            return of(dotRenderedPageState);
+        }
+    }
 
     private errorHandler(err: ResponseView): Observable<any> {
         return this.dotHttpErrorManagerService.handle(err).pipe(

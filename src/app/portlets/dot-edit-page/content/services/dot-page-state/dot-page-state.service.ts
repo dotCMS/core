@@ -87,7 +87,6 @@ export class DotPageStateService {
      * @memberof DotPageStateService
      */
     get(options: DotRenderPageOptions | string): Observable<DotRenderedPageState> {
-        debugger;
         if (typeof options === 'string') {
             options = {
                 url: options

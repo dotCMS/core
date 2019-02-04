@@ -395,13 +395,10 @@ export class RuleService {
 
   public requestRules(siteId: string): void {
     if (siteId) {
-        console.log('----RULES --- requestRules(): siteId');
-      this.sendLoadRulesRequest(siteId);
+        this.sendLoadRulesRequest(siteId);
     } else if (this.siteService.currentSite) {
-        console.log('----RULES --- requestRules(): this.siteService.currentSite');
-      this.sendLoadRulesRequest(this.siteService.currentSite.identifier);
+        this.sendLoadRulesRequest(this.siteService.currentSite.identifier);
     } else {
-        console.log('----RULES --- requestRules(): getCurrentSite()');
         this.siteService.getCurrentSite().subscribe( site => {
             this.sendLoadRulesRequest(site.identifier);
         });
@@ -495,9 +492,7 @@ export class RuleService {
       })
       .subscribe(
         ruleMap => {
-
           this._rules = RuleService.fromServerRulesTransformFn(ruleMap);
-          console.log('----RULES --- this._rules$.next(this.rules)');
           this._rules$.next(this.rules);
 
           return RuleService.fromServerRulesTransformFn(ruleMap);

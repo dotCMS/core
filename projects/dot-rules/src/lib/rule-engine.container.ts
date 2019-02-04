@@ -1,6 +1,5 @@
 
-import {from as observableFrom,  Observable } from 'rxjs';
-
+import {from as observableFrom, Observable } from 'rxjs';
 import { reduce, mergeMap, take } from 'rxjs/operators';
 // tslint:disable-next-line:max-file-line-count
 import { Component, EventEmitter, ViewEncapsulation } from '@angular/core';
@@ -142,7 +141,6 @@ export class RuleEngineContainer {
     private loggerService: LoggerService
   ) {
     this.rules$.subscribe(rules => {
-        console.log('----RULES --- constructor: this.rules$.subscribe');
       this.rules = rules;
     });
 
@@ -630,25 +628,16 @@ export class RuleEngineContainer {
 
     let siteId = '';
     this.route.queryParams.subscribe(params => {
-
       siteId = params['realmId'];
     });
 
-    setTimeout(() => {
-        // console.log('----RULES --- setTimeOut');
-
-    }, 0);
-
-      this._ruleService.requestRules(siteId);
-
+    this._ruleService.requestRules(siteId);
     this._ruleService.loadRules().pipe(take(1)).subscribe((rules: RuleModel[]) => {
-        console.log('----RULES --- this._ruleService.loadRules().subscribe');
       this.loadRules(rules);
     });
   }
 
   private loadRules(rules: RuleModel[]): void {
-      console.log('----RULES --- loadRules()');
     rules.sort((a, b) => {
       return b.priority - a.priority;
     });
