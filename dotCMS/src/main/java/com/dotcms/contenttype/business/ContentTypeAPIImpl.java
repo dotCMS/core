@@ -356,7 +356,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
         final List<ContentType> returnTypes = new ArrayList<>();
         int rollingOffset = offset;
         try {
-            while (returnTypes.size() < limit) {
+            while ((limit<0)||(returnTypes.size() < limit)) {
                 final List<ContentType> rawContentTypes = this.contentTypeFactory.search(condition, base, orderBy, limit, rollingOffset);
                 if (rawContentTypes.isEmpty()) {
                     break;
