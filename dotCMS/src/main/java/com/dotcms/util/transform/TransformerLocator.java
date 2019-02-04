@@ -12,6 +12,8 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.transform.ContentletTransformer;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.folders.transform.TemplateTransformer;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.portlets.languagesmanager.transform.LanguageTransformer;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.links.transform.LinkTransformer;
 import com.dotmarketing.portlets.templates.model.Template;
@@ -50,6 +52,7 @@ public class TransformerLocator {
         transformerMapping.put (Identifier.class, TransformerLocator::createIdentifierTransformer);
         transformerMapping.put (Tree.class, TransformerLocator::createTreeTransformer);
         transformerMapping.put (Contentlet.class, TransformerLocator::createContentletTransformer);
+        transformerMapping.put (Language.class, TransformerLocator::createLanguageTransformer);
     }
 
     public static DBTransformer createDBTransformer(List<Map<String, Object>> list, Class clazz) {
@@ -150,6 +153,17 @@ public class TransformerLocator {
             List<Map<String, Object>> initList) {
 
         return new IdentifierTransformer(initList);
+    }
+
+    /**
+     * Creates a DBTransformer for Language objects
+     *
+     * @param initList List of DB results to be transformed
+     */
+    public static LanguageTransformer createLanguageTransformer(
+            List<Map<String, Object>> initList) {
+
+        return new LanguageTransformer(initList);
     }
 
     /**

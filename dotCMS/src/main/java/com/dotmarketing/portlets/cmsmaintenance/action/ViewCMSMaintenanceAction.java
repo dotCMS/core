@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.cmsmaintenance.action;
 
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
 import com.dotcms.contenttype.util.ContentTypeImportExportUtil;
@@ -36,6 +37,7 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotReindexStateException;
 import com.dotmarketing.portlets.dashboard.model.DashboardSummary404;
 import com.dotmarketing.portlets.dashboard.model.DashboardUserPreferences;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.rules.util.RulesImportExportUtil;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.FieldVariable;
@@ -556,9 +558,8 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 	 * @author Will
 	 * @throws DotDataException
 	 */
+	@CloseDBIfOpened
 	private void createXMLFiles() throws ServletException, IOException, DotDataException, DotSecurityException {
-
-//		deleteTempFiles();
 
 		Logger.info(this, "Starting createXMLFiles()");
 
@@ -567,9 +568,9 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 
 			/* get a list of all our tables */
 			Map map = new HashMap();
-			//Including Identifier.class because it is not mapped with Hibernate anymore
+			//Including Identifier.class and Language.class because it is not mapped with Hibernate anymore
 			map.put(Identifier.class, null);
-
+			map.put(Language.class, null);
 			map.putAll(HibernateUtil.getSession().getSessionFactory().getAllClassMetadata());
 
 			Iterator it = map.entrySet().iterator();
@@ -650,6 +651,11 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 						dc = new DotConnect();
 						dc.setSQL("select * from identifier order by parent_path, id")
 								.setStartRow(i).setMaxRows(step);
+					}
+					else if (Language.class.equals(clazz)) {
+						dc = new DotConnect();
+						dc.setSQL("SELECT * FROM language order by id")
+								.setStartRow(i).setMaxRows(step);
 					} else {
 						_dh.setQuery("from " + clazz.getName() + " order by 1");
 					}
@@ -657,7 +663,10 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 					if(Identifier.class.equals(clazz)){
 						_list = TransformerLocator
 								.createIdentifierTransformer(dc.loadObjectResults()).asList();
-					}else{
+					} else if (Language.class.equals(clazz)) {
+						_list = TransformerLocator
+								.createLanguageTransformer(dc.loadObjectResults()).asList();
+					} else {
 						_list = _dh.list();
 					}
 
