@@ -7,6 +7,6 @@ public class DynamicGetMethod implements MethodToTest {
     public Response execute(final VTLResourceIntegrationTest.HTTPMethodParams params) {
         final VTLResource resource = new VTLResource(params.getWebResource());
         return resource.dynamicGet(params.getRequest(), params.getServletResponse(), params.getUriInfo(),
-                params.getPathParam(), params.getBodyMap());
+                params.getPathParam(), params.getBodyMapString());
     }
 }

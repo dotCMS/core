@@ -36,7 +36,9 @@ public class PageView implements Serializable {
     private final Collection<? extends ContainerRaw> containers;
     private final HTMLPageAssetInfo htmlPageAssetInfo;
     private final TemplateLayout layout;
-
+    private final ViewAsPageStatus viewAs;
+    private final boolean canCreateTemplate;
+    private final boolean canEditTemplate;
     /**
      * Creates an instance of this class.
      *
@@ -51,13 +53,19 @@ public class PageView implements Serializable {
              final Template template,
              final Collection<? extends ContainerRaw> containers,
              final HTMLPageAssetInfo page,
-             final TemplateLayout layout) {
+             final TemplateLayout layout,
+             final boolean canCreateTemplate,
+             final boolean canEditTemplate,
+             final ViewAsPageStatus viewAs) {
 
         this.site = site;
         this.template = template;
         this.containers = containers;
         this.htmlPageAssetInfo = page;
         this.layout = layout;
+        this.viewAs = viewAs;
+        this.canCreateTemplate = canCreateTemplate;
+        this.canEditTemplate = canEditTemplate;
     }
 
     /**
@@ -109,5 +117,21 @@ public class PageView implements Serializable {
     public String toString() {
         return "PageView{" + "site=" + site + ", template=" + template + ", containers=" +
                 containers + ", page=" + htmlPageAssetInfo.getPage() + ", layout=" + layout + '}';
+    }
+    /**
+     * returns ViewAs Information
+     * @return
+     */
+    public ViewAsPageStatus getViewAs() {
+        return viewAs;
+    }
+    
+    public boolean canCreateTemplate() {
+        return canCreateTemplate;
+    }
+
+
+    public boolean canEditTemplate() {
+        return canEditTemplate;
     }
 }

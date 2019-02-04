@@ -1,11 +1,13 @@
 package com.dotcms.graphql.datafetcher;
 
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.util.UtilMethods;
 
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 public class MultiValueFieldDataFetcher implements DataFetcher<List<String>> {
@@ -14,6 +16,6 @@ public class MultiValueFieldDataFetcher implements DataFetcher<List<String>> {
         final Contentlet contentlet = environment.getSource();
         final String var = environment.getField().getName();
         final String values = (String) contentlet.get(var);
-        return Arrays.asList(values.split("\\s*,\\s*"));
+        return UtilMethods.isSet(values)?Arrays.asList(values.split("\\s*,\\s*")): Collections.emptyList();
     }
 }

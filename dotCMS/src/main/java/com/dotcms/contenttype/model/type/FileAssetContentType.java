@@ -67,6 +67,7 @@ public abstract class FileAssetContentType extends ContentType implements UrlMap
 				.sortOrder(fields.size())
 				.fixed(true)
 				.required(true)
+				.readOnly(false)
 				.build()
 			);
 		

@@ -681,9 +681,6 @@
 	        dojo.byId("<%= relationJsName %>relateMenu").appendChild(button.domNode);
 	    }
 
-        function callback<%= relationJsName %>(contentlet) {
-            contentSelector._doRelateContent(contentlet);
-        }
 
         dojo.addOnLoad(
          function(){
@@ -701,7 +698,7 @@
 	     structureInode="<%= targetStructure.getInode() %>" 
 	     relationJsName="<%= relationJsName %>"
 		 multiple="<%= relationship.getCardinality() != 2%>"
-		 onContentSelected="callback<%= relationJsName %>"
+         useRelateContentOnSelect="true"
 		 selectButtonLabel='<%= LanguageUtil.get(pageContext, "Relate")%>'
 	     title="<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "search")) %>" 
 	     counter_radio="<%= System.currentTimeMillis() %>" 

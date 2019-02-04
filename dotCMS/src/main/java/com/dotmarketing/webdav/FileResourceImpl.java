@@ -37,7 +37,7 @@ public class FileResourceImpl implements FileResource, LockableResource {
 
 	private static final FileAssetAPI fileAssetAPI = APILocator.getFileAssetAPI();
 	private DotWebdavHelper dotDavHelper;
-	private IFileAsset file = new FileAsset();
+	private IFileAsset file;
 	String path;
 	private boolean isAutoPub = false;
 	private PermissionAPI perAPI;
@@ -131,7 +131,7 @@ public class FileResourceImpl implements FileResource, LockableResource {
 	}
 
 	public String getName() {
-		return UtilMethods.escapeHTMLSpecialChars(file.getFileName());
+		return UtilMethods.escapeHTMLSpecialChars(dotDavHelper.getAssetName(file));
 	}
 
 	public String getRealm() {

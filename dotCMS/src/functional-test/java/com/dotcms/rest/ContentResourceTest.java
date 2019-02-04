@@ -201,8 +201,8 @@ public class ContentResourceTest {
         assertNotNull(contentlets);
         assertEquals("嗨", contentlets.getJSONObject(0).get("title"));
 
-        contentletAPI.archive(cont,user,false);
-        contentletAPI.delete(cont,user,false);
+        //Cleaning up the created contentlet
+        contentletAPI.destroy(cont, user, false);
     }
     @Test
     @Ignore

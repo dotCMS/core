@@ -18,6 +18,7 @@ public class VTLResourceTestCase {
     private final String userId;
     private final Map<String, String> bodyMap;
     private final ResourceMethod resourceMethod;
+    private final String bodyMapString;
 
     File getVtlFile() {
         return vtlFile;
@@ -59,10 +60,14 @@ public class VTLResourceTestCase {
         return bodyMap;
     }
 
+    public String getBodyMapString() {
+        return bodyMapString;
+    }
+
     private VTLResourceTestCase(final File vtlFile, final String folderName, final MultivaluedMap<String, String> queryParameters,
                                 final String pathParameter, final String expectedJSON, final String expectedOutput,
                                 final int expectedException, final String user, final Map<String, String> bodyMap,
-                                final ResourceMethod resourceMethod) {
+                                final ResourceMethod resourceMethod, final String bodyMapString) {
         this.vtlFile = vtlFile;
         this.folderName = folderName;
         this.queryParameters = queryParameters;
@@ -73,6 +78,7 @@ public class VTLResourceTestCase {
         this.userId = user;
         this.bodyMap = bodyMap;
         this.resourceMethod = resourceMethod;
+        this.bodyMapString = bodyMapString;
     }
 
     public static class Builder {
@@ -86,6 +92,7 @@ public class VTLResourceTestCase {
         private String user = "system";
         private Map<String, String> bodyMap = null;
         private ResourceMethod resourceMethod = ResourceMethod.GET;
+        private String bodyMapString;
 
         Builder setVtlFile(final File vtlFile) {
             this.vtlFile = vtlFile;
@@ -137,9 +144,14 @@ public class VTLResourceTestCase {
             return this;
         }
 
+        Builder setBodyMapString(final String bodyMapString) {
+            this.bodyMapString = bodyMapString;
+            return this;
+        }
+
         VTLResourceTestCase build() {
             return new VTLResourceTestCase(vtlFile, folderName, queryParameters, pathParameter,expectedJSON,
-                    expectedOutput, expectedException, user, bodyMap, resourceMethod);
+                    expectedOutput, expectedException, user, bodyMap, resourceMethod, bodyMapString);
         }
     }
 }

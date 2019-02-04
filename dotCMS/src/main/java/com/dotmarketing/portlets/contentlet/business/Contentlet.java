@@ -1,16 +1,20 @@
 package com.dotmarketing.portlets.contentlet.business;
 
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.model.type.FileAssetContentType;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.business.FieldAPI;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import java.io.File;
 import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
@@ -1654,7 +1658,8 @@ public class Contentlet extends WebAsset implements Serializable {
 	public Map<String, Object> getMap() throws DotRuntimeException {
 		Map<String, Object> myMap = new HashMap<String, Object>();
 		try{
-		List<Field> fields = new LegacyFieldTransformer(APILocator.getContentTypeAPI(APILocator.systemUser()).find(structureInode).fields()).asOldFieldList();
+        final ContentType contentType = APILocator.getContentTypeAPI(APILocator.systemUser()).find(structureInode);
+		List<Field> fields = new LegacyFieldTransformer(contentType.fields()).asOldFieldList();
 		for (Field f : fields) {
 			if(!APILocator.getFieldAPI().valueSettable(f)){
 				continue;
@@ -1681,29 +1686,38 @@ public class Contentlet extends WebAsset implements Serializable {
 				value = f.getValues();
 			}else{
 				try {
-					// http://jira.dotmarketing.net/browse/DOTCMS-3463
-					/*** THIS LOGIC IS DUPED IN THE CONTENTLETAPI.  IF YOU CHANGE HERE, CHANGE THERE **/
-					if(Field.FieldType.BINARY.toString().equals(f.getFieldType())){
-						java.io.File binaryFile = null ;
-						java.io.File binaryFilefolder = new java.io.File(APILocator.getFileAssetAPI().getRealAssetsRootPath()
-								+ java.io.File.separator
-								+ getInode().charAt(0)
-								+ java.io.File.separator
-								+ getInode().charAt(1)
-								+ java.io.File.separator
-								+ getInode()
-								+ java.io.File.separator
-								+ f.getVelocityVarName());
-						if(binaryFilefolder.exists()){
-							java.io.File[] files = binaryFilefolder.listFiles(new BinaryFileFilter());
-							if(files.length > 0){
-								binaryFile = files[0];
-							}
-						}
-						value = binaryFile;
-					} else {
-						value = PropertyUtils.getProperty(this, f.getFieldContentlet());
-					}
+
+                   if (UtilMethods.isSet(getIdentifier())
+                       && contentType instanceof FileAssetContentType
+                       && FileAssetAPI.FILE_NAME_FIELD.equals(f.getVelocityVarName())) {
+                        value = APILocator.getIdentifierAPI().find(this).getAssetName();
+                    } else {
+                        // http://jira.dotmarketing.net/browse/DOTCMS-3463
+                        /*** THIS LOGIC IS DUPED IN THE CONTENTLETAPI.  IF YOU CHANGE HERE, CHANGE THERE **/
+                        if (Field.FieldType.BINARY.toString().equals(f.getFieldType())) {
+                            java.io.File binaryFile = null;
+                            java.io.File binaryFilefolder = new java.io.File(
+                                    APILocator.getFileAssetAPI().getRealAssetsRootPath()
+                                            + java.io.File.separator
+                                            + getInode().charAt(0)
+                                            + java.io.File.separator
+                                            + getInode().charAt(1)
+                                            + java.io.File.separator
+                                            + getInode()
+                                            + java.io.File.separator
+                                            + f.getVelocityVarName());
+                            if (binaryFilefolder.exists()) {
+                                java.io.File[] files = binaryFilefolder
+                                        .listFiles(new BinaryFileFilter());
+                                if (files.length > 0) {
+                                    binaryFile = files[0];
+                                }
+                            }
+                            value = binaryFile;
+                        } else {
+                            value = PropertyUtils.getProperty(this, f.getFieldContentlet());
+                        }
+                    }
 				} catch (Exception e) {
 					Logger.error(this, "Unable to obtain contentlet property value for: " + f.getFieldContentlet(), e);
 					throw new DotRuntimeException("Unable to obtain contentlet property value for: " + f.getFieldContentlet(), e);

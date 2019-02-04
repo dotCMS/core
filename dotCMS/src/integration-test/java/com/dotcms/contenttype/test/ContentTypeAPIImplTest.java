@@ -133,17 +133,17 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 	@Test
 	public void testFindMethodEquals() throws Exception {
 
-		List<ContentType> types = contentTypeApi.findAll();
-		for (ContentType type : types) {
-			ContentType contentType = contentTypeApi.find(type.id());
-			ContentType contentType2 = contentTypeApi.find(type.variable());
-			try {
-				assertThat("Content Type By ID: " + contentType + " is not the same as Content Type By Variable: " + contentType2 + " or not the same as Type: " + type,
-						contentType.equals(contentType2) && contentType.equals(type));
-			} catch (Throwable t) {
+		final List<ContentType> types = contentTypeApi.findAll();//DB
+		for (final ContentType type : types) {
+			final ContentType contentType = contentTypeApi.find(type.id());//cache
+			final ContentType contentType2 = contentTypeApi.find(type.variable());//cache
 
-				throw t;
-			}
+			assertEquals(type.id(),contentType.id(),contentType2.id());
+			assertEquals(type.name(),contentType.name(),contentType2.name());
+			assertEquals(type.variable(),contentType.variable(),contentType2.variable());
+			assertEquals(type.host(),contentType.host(),contentType2.host());
+			assertEquals(type.folder(),contentType.folder(),contentType2.folder());
+			assertEquals(type.fields().toString(),contentType.fields().toString(),contentType2.fields().toString());
 		}
 	}
 
@@ -305,26 +305,37 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 
 	@Test
 	public void testDefaultType() throws DotDataException, DotSecurityException {
+		//Get the current DefaultContentType
+		final ContentType defaultContentType = contentTypeApi.findDefault();
 
-		ContentType defaultContentType = contentTypeApi.findDefault();
-		long time = System.currentTimeMillis();
-		ContentType initialDefaultType = contentTypeApi.save(ContentTypeBuilder.builder(BaseContentType.CONTENT.immutableClass())
-				.description("description" + time).folder(FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST)
-				.name("ContentTypeDefault1" + time).owner("owner").variable("velocityVarNameDefault1" + time).build());
-		contentTypeApi.setAsDefault(initialDefaultType);
-		assertThat("we have a default content type", initialDefaultType != null && contentTypeApi.findDefault().defaultType());
+		ContentType newDefaultContentType = null;
+		try{
+			//Create a new ContentType
+			newDefaultContentType = createContentType("newDefaultContentType");
 
-		ContentType newDefaultType = contentTypeApi.save(ContentTypeBuilder.builder(BaseContentType.CONTENT.immutableClass())
-				.description("description" + time).folder(FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST)
-				.name("ContentTypeDefault2" + time).owner("owner").variable("velocityVarNameDefault2" + time).build());
-		contentTypeApi.setAsDefault(newDefaultType);
-		assertThat("there is a new default content type", newDefaultType.inode().equals(contentTypeApi.findDefault().inode()));
+			//Set as Default ContentType
+			contentTypeApi.setAsDefault(newDefaultContentType);
 
-		assertThat("existing content type is not default anymore", initialDefaultType != null && !contentTypeApi.find(initialDefaultType.inode()).defaultType());
+			//Check that the default ContentType ID is the same as the new contentType
+			assertEquals(newDefaultContentType.id(),contentTypeApi.findDefault().id());
 
-		contentTypeApi.setAsDefault(defaultContentType);
-		contentTypeApi.delete(initialDefaultType);
-		contentTypeApi.delete(newDefaultType);
+			//Check that the defaultType attribute in the new ContentType is set to true
+			assertTrue(contentTypeApi.find(newDefaultContentType.id()).defaultType());
+		}finally {
+			//Set the DefaultContentType as it was originally
+			contentTypeApi.setAsDefault(defaultContentType);
+
+			//Check that the default ContentType ID is the same as the original defaultContentType
+			assertEquals(defaultContentType.id(),contentTypeApi.findDefault().id());
+
+			//Check that the defaultType attribute in the defaultContentType is set to true
+			assertTrue(contentTypeApi.find(defaultContentType.id()).defaultType());
+
+			//Delete the contentType created
+			if(newDefaultContentType != null){
+				contentTypeApi.delete(newDefaultContentType);
+			}
+		}
 	}
 
 	@Test

@@ -1,6 +1,5 @@
 package com.dotmarketing.business;
 
-import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.util.transform.TransformerLocator;
 import com.dotmarketing.beans.Host;
@@ -26,6 +25,7 @@ import com.dotmarketing.util.Parameter;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.sql.Connection;
@@ -352,11 +352,16 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
                 Contentlet cont = (Contentlet) versionable;
                 if (cont.getStructure().getStructureType() == BaseContentType.FILEASSET.getType()) {
                     // special case when it is a file asset as contentlet
-                    try {
-                        uri = cont.getBinary( FileAssetAPI.BINARY_FIELD ) != null ? cont.getBinary( FileAssetAPI.BINARY_FIELD ).getName() : "";
-                    } catch ( IOException e ) {
-                        throw new DotDataException( e.getMessage(), e );
-                    }
+					uri = String.class.cast(cont.getMap().get(FileAssetAPI.FILE_NAME_FIELD));
+					if (!UtilMethods.isSet(uri)) {
+						try {
+						    // fallback
+							uri = cont.getBinary(FileAssetAPI.BINARY_FIELD) != null ? cont
+									.getBinary(FileAssetAPI.BINARY_FIELD).getName() : StringPool.BLANK;
+						} catch (IOException e) {
+							throw new DotDataException(e.getMessage(), e);
+						}
+					}
                 } else if (cont.getStructure().getStructureType() == BaseContentType.HTMLPAGE.getType()) {
                     uri = cont.getStringProperty(HTMLPageAssetAPI.URL_FIELD) ;
                 }

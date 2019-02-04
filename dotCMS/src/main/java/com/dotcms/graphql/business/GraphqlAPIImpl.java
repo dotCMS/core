@@ -40,7 +40,6 @@ import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 
 import java.io.File;
@@ -62,6 +61,7 @@ import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLTypeReference;
 import graphql.schema.idl.SchemaPrinter;
 
+import static graphql.Scalars.GraphQLInt;
 import static graphql.Scalars.GraphQLString;
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
 import static graphql.schema.GraphQLList.list;
@@ -101,7 +101,6 @@ public class GraphqlAPIImpl implements GraphqlAPI {
         this.fieldClassGraphqlDataFetcher.put(MultiSelectField.class, new MultiValueFieldDataFetcher());
         this.fieldClassGraphqlDataFetcher.put(TagField.class, new TagsFieldDataFetcher());
         this.fieldClassGraphqlDataFetcher.put(HostFolderField.class, new SiteOrFolderFieldDataFetcher());
-
     }
 
     @Override
@@ -150,7 +149,7 @@ public class GraphqlAPIImpl implements GraphqlAPI {
         final GraphQLObjectType.Builder builder = GraphQLObjectType.newObject().name(contentType.variable());
 
         // add CONTENT interface fields
-        builder.fields(InterfaceType.CONTENT.getType().getFieldDefinitions());
+        builder.fields(InterfaceType.CONTENTLET.getType().getFieldDefinitions());
 
         if(InterfaceType.getInterfaceForBaseType(contentType.baseType())!=null) {
             builder.withInterface(InterfaceType.getInterfaceForBaseType(contentType.baseType()));
@@ -174,7 +173,7 @@ public class GraphqlAPIImpl implements GraphqlAPI {
             }
         });
 
-        builder.withInterface(InterfaceType.CONTENT.getType());
+        builder.withInterface(InterfaceType.CONTENTLET.getType());
         final GraphQLObjectType graphQLType = builder.build();
 
         graphqlObjectTypes.put(graphQLType.getName(), graphQLType);
@@ -184,7 +183,6 @@ public class GraphqlAPIImpl implements GraphqlAPI {
 
     private void handleRelationshipField(final ContentType contentType, GraphQLObjectType.Builder builder,
                                          final Field field) {
-        // TODO: make return type an object or list based on cardinality using RelAPI method from Nolly
 
         final ContentType relatedContentType;
         try {
@@ -253,7 +251,19 @@ public class GraphqlAPIImpl implements GraphqlAPI {
                     .name("query")
                     .type(GraphQLString)
                     .build())
-                .type(list(InterfaceType.CONTENT.getType()))
+                .argument(GraphQLArgument.newArgument()
+                    .name("limit")
+                    .type(GraphQLInt)
+                    .build())
+                .argument(GraphQLArgument.newArgument()
+                    .name("offset")
+                    .type(GraphQLInt)
+                    .build())
+                .argument(GraphQLArgument.newArgument()
+                    .name("sortBy")
+                    .type(GraphQLString)
+                    .build())
+                .type(list(InterfaceType.CONTENTLET.getType()))
                 .dataFetcher(new ContentletDataFetcher()))
             .build();
 

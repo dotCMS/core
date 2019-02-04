@@ -13,6 +13,7 @@ import com.dotcms.repackage.javax.ws.rs.container.ContainerResponseContext;
 import com.dotcms.repackage.javax.ws.rs.container.ContainerResponseFilter;
 import com.dotcms.repackage.javax.ws.rs.core.MultivaluedMap;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
@@ -47,7 +48,12 @@ public class CorsFilter implements ContainerResponseFilter {
     @Override
     public void filter(ContainerRequestContext requestContext, ContainerResponseContext responseContext) throws IOException {
         final MultivaluedMap<String, Object> headers = responseContext.getHeaders();
-        final String resource = requestContext.getUriInfo().getMatchedResources().get(0).getClass().getSimpleName().toLowerCase();
+        String resource = "unknown";
+        try{
+            resource = requestContext.getUriInfo().getMatchedResources().get(0).getClass().getSimpleName().toLowerCase();
+        }catch(Exception e) {
+            Logger.debug(this.getClass(), () -> e.getMessage());
+        }
         getHeaders(resource)
             .stream()
             .forEach(entry-> {
