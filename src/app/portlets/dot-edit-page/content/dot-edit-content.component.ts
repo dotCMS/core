@@ -439,6 +439,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
     }
 
     private setInitalData(): void {
+        debugger;
         this.route.parent.parent.data
             .pipe(
                 pluck('content'),

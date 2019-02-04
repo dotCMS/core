@@ -72,7 +72,6 @@ export class DotRenderHTMLService {
             ...options.mode ? { mode: this.getPageModeString(options.mode) } : {},
             ...(options.viewAs ? this.getOptionalViewAsParams(options.viewAs) : {})
         };
-
         return this.coreWebService
             .requestView({
                 method: RequestMethod.Get,

@@ -1,7 +1,7 @@
 
-import {from as observableFrom,  Observable, forkJoin } from 'rxjs';
+import {from as observableFrom,  Observable } from 'rxjs';
 
-import {reduce, mergeMap, switchMap, map} from 'rxjs/operators';
+import { reduce, mergeMap, take } from 'rxjs/operators';
 // tslint:disable-next-line:max-file-line-count
 import { Component, EventEmitter, ViewEncapsulation } from '@angular/core';
 import {
@@ -142,10 +142,11 @@ export class RuleEngineContainer {
     private loggerService: LoggerService
   ) {
     this.rules$.subscribe(rules => {
+        console.log('----RULES --- constructor: this.rules$.subscribe');
       this.rules = rules;
     });
 
-    this.bundleService.loadPublishEnvironments().subscribe(environments => (this.environments = environments));
+    this.bundleService.loadPublishEnvironments().pipe(take(1)).subscribe(environments => (this.environments = environments));
     this.initRules();
 
     this._ruleService._errors$.subscribe(res => {
@@ -629,19 +630,25 @@ export class RuleEngineContainer {
 
     let siteId = '';
     this.route.queryParams.subscribe(params => {
+
       siteId = params['realmId'];
     });
 
     setTimeout(() => {
-      this._ruleService.requestRules(siteId);
+        // console.log('----RULES --- setTimeOut');
+
     }, 0);
 
-    this._ruleService.loadRules().subscribe((rules: RuleModel[]) => {
+      this._ruleService.requestRules(siteId);
+
+    this._ruleService.loadRules().pipe(take(1)).subscribe((rules: RuleModel[]) => {
+        console.log('----RULES --- this._ruleService.loadRules().subscribe');
       this.loadRules(rules);
     });
   }
 
   private loadRules(rules: RuleModel[]): void {
+      console.log('----RULES --- loadRules()');
     rules.sort((a, b) => {
       return b.priority - a.priority;
     });
