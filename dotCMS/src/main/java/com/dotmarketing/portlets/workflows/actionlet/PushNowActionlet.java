@@ -1,10 +1,5 @@
 package com.dotmarketing.portlets.workflows.actionlet;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-
 import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publisher.business.PublisherAPI;
@@ -20,6 +15,12 @@ import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+
+@Actionlet(pushPublish = true)
 public class PushNowActionlet extends WorkFlowActionlet {
 
     private static final long serialVersionUID = 1L;
