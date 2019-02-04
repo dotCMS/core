@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.cmsmaintenance.action;
 
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
 import com.dotcms.contenttype.util.ContentTypeImportExportUtil;
@@ -557,9 +558,8 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 	 * @author Will
 	 * @throws DotDataException
 	 */
+	@CloseDBIfOpened
 	private void createXMLFiles() throws ServletException, IOException, DotDataException, DotSecurityException {
-
-//		deleteTempFiles();
 
 		Logger.info(this, "Starting createXMLFiles()");
 
