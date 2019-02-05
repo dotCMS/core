@@ -1,41 +1,17 @@
 package com.dotmarketing.portlets.contentlet.business;
 
-import static com.dotcms.util.CollectionsUtils.map;
-import static java.io.File.separator;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
 import com.dotcms.api.system.event.ContentletSystemEventUtil;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
-import com.dotcms.contenttype.model.field.DataTypes;
-import com.dotcms.contenttype.model.field.DateTimeField;
-import com.dotcms.contenttype.model.field.FieldBuilder;
-import com.dotcms.contenttype.model.field.ImmutableBinaryField;
-import com.dotcms.contenttype.model.field.ImmutableTextField;
-import com.dotcms.contenttype.model.field.RelationshipField;
-import com.dotcms.contenttype.model.field.TextField;
+import com.dotcms.contenttype.model.field.*;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
-import com.dotcms.datagen.ContainerDataGen;
-import com.dotcms.datagen.ContentletDataGen;
-import com.dotcms.datagen.FileAssetDataGen;
-import com.dotcms.datagen.FolderDataGen;
-import com.dotcms.datagen.HTMLPageDataGen;
-import com.dotcms.datagen.StructureDataGen;
-import com.dotcms.datagen.TemplateDataGen;
+import com.dotcms.datagen.*;
 import com.dotcms.mock.request.MockInternalRequest;
 import com.dotcms.mock.response.BaseResponse;
 import com.dotcms.rendering.velocity.services.VelocityResourceKey;
@@ -43,17 +19,8 @@ import com.dotcms.rendering.velocity.services.VelocityType;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.util.CollectionsUtils;
-import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.beans.MultiTree;
-import com.dotmarketing.beans.Permission;
-import com.dotmarketing.beans.Tree;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.DotCacheException;
-import com.dotmarketing.business.FactoryLocator;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.RelationshipAPI;
+import com.dotmarketing.beans.*;
+import com.dotmarketing.business.*;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.db.LocalTransaction;
@@ -85,46 +52,12 @@ import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.tag.model.Tag;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.DateUtil;
-import com.dotmarketing.util.InodeUtils;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.PageMode;
-import com.dotmarketing.util.UUIDGenerator;
-import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.WebKeys;
+import com.dotmarketing.util.*;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.io.Files;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.StringReader;
-import java.io.StringWriter;
-import java.nio.charset.Charset;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Future;
-import java.util.concurrent.ThreadLocalRandom;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.context.InternalContextAdapterImpl;
@@ -132,6 +65,25 @@ import org.apache.velocity.runtime.parser.node.SimpleNode;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Ignore;
 import org.junit.Test;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.*;
+import java.nio.charset.Charset;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.*;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Future;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static com.dotcms.util.CollectionsUtils.map;
+import static java.io.File.separator;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.*;
 
 /**
  * Created by Jonathan Gamba.
@@ -770,6 +722,69 @@ public class ContentletAPITest extends ContentletBaseTest {
         }
     }
 
+    /**
+     * Testing {@link ContentletAPI#findContentletByIdentifierOrFallback(String, boolean, long, User, boolean)}
+     *
+     * Only Spanish WORKING, fallback false, request English Working -> Return Empty
+     *
+     * @throws com.dotmarketing.exception.DotDataException
+     *
+     * @throws com.dotmarketing.exception.DotSecurityException
+     *
+     * @see ContentletAPI
+     * @see Contentlet
+     */
+    @Test()
+    public void test_findContentletByIdentifierOrFallback_existing_OnlySpanishWorking_fallback_true_expecting_English_true () throws DotDataException, DotSecurityException, IOException {
+
+        Contentlet spanishNewNewsContentlet = null;
+        try {
+            //Getting our test contentlet
+            final Contentlet newsContentletEng =
+                    APILocator.getContentletAPI()
+                            .findContentletByIdentifier("c1857ef4-fdbd-4e08-a4f4-bd2ff68ea60b", false, 1, user, false);
+
+            assertNotNull(newsContentletEng);
+            spanishNewNewsContentlet = new Contentlet(); // no eng version
+            APILocator.getContentletAPI().copyProperties(spanishNewNewsContentlet, newsContentletEng.getMap());
+            spanishNewNewsContentlet.setHost(newsContentletEng.getHost());
+            spanishNewNewsContentlet.setContentType(newsContentletEng.getContentType());
+            spanishNewNewsContentlet.setIdentifier(null);
+            spanishNewNewsContentlet.setInode(null);
+            spanishNewNewsContentlet.setIndexPolicy(IndexPolicy.FORCE);
+            spanishNewNewsContentlet.setLanguageId(2); // spanish
+            spanishNewNewsContentlet.setProperty("title", "Spanish Test2");
+            spanishNewNewsContentlet.setProperty("urlTitle", "/news/spanish_test2");
+            spanishNewNewsContentlet.setProperty("byline",   newsContentletEng.getStringProperty("byline"));
+            spanishNewNewsContentlet.setProperty("sysPublishDate",   newsContentletEng.getMap().get("sysPublishDate"));
+            spanishNewNewsContentlet.setProperty("story",   newsContentletEng.getMap().get("story"));
+
+            spanishNewNewsContentlet =
+                    APILocator.getContentletAPI()
+                            .checkin(spanishNewNewsContentlet, user, false);
+
+
+            final Optional<Contentlet> optionalContentlet =
+                    APILocator.getContentletAPI().findContentletByIdentifierOrFallback(spanishNewNewsContentlet.getIdentifier(), false, 1, user, false);
+
+            assertFalse(optionalContentlet.isPresent());
+        } finally {
+
+            try {
+                if (null != spanishNewNewsContentlet) {
+                    final Contentlet contentlet =
+                            APILocator.getContentletAPI().find(spanishNewNewsContentlet.getInode(), user, false);
+
+                    if (null != contentlet) {
+
+                        APILocator.getContentletAPI().delete(contentlet, user, false);
+                    }
+                }
+            } catch (Exception e) {
+                Logger.error(this, e.getMessage(), e);
+            }
+        }
+    }
 
     /**
      * Testing {@link ContentletAPI#findContentletForLanguage(long, com.dotmarketing.beans.Identifier)}
