@@ -1,18 +1,5 @@
 package com.dotcms.rest.api.v1.user;
 
-import static com.dotcms.util.CollectionsUtils.getMapValue;
-import static com.dotcms.util.CollectionsUtils.list;
-import static com.dotcms.util.CollectionsUtils.map;
-
-import java.io.Serializable;
-import java.util.Collections;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
-
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.ws.rs.*;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
@@ -37,6 +24,17 @@ import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
 import com.liferay.portal.util.WebKeys;
 import com.liferay.util.LocaleUtil;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import java.io.Serializable;
+import java.util.Collections;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+
+import static com.dotcms.util.CollectionsUtils.*;
 
 /**
  * This end-point provides access to information associated to dotCMS users.
@@ -286,11 +284,11 @@ public class UserResource implements Serializable {
 	@JSONP
 	@NoCache
 	@Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
-	public final Response loginAs(@Context final HttpServletRequest request, final LoginAsForm loginAsForm) throws Exception {
+	public final Response loginAs(@Context final HttpServletRequest request, @Context final HttpServletResponse httpResponse, final LoginAsForm loginAsForm) throws Exception {
 		final String loginAsUserId = loginAsForm.getUserId();
 		final String loginAsUserPwd = loginAsForm.getPassword();
 
-		InitDataObject initData = webResource.init(loginAsUserId, loginAsUserPwd,true, request,
+		final InitDataObject initData = webResource.init(loginAsUserId, loginAsUserPwd, request, httpResponse,
 				true, null);
 		final String serverName = request.getServerName();
 		final User currentUser = initData.getUser();
