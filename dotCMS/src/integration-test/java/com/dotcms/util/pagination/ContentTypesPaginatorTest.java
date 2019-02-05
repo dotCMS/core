@@ -73,37 +73,6 @@ public class ContentTypesPaginatorTest {
                         || contentType.get("name").toString().toLowerCase()
                         .contains(BaseContentType.PERSONA.name().toLowerCase())));
     }
-
-    @Test
-    public void test_getItems_WhenFilterStartsWithBaseType_ReturnsAllChildrenContentTypes() {
-        final Map<String, Object> extraParams = map(ContentTypesPaginator.TYPE_PARAMETER_NAME, list("File"));
-        final ContentTypesPaginator paginator = new ContentTypesPaginator();
-        final PaginatedArrayList<Map<String, Object>> result = paginator
-                .getItems(user, null, -1, 0, "name", OrderDirection.ASC, extraParams);
-
-        assertTrue(UtilMethods.isSet(result));
-
-        assertTrue(result.stream().allMatch(contentType -> contentType.get("baseType").toString()
-                .equals(BaseContentType.FILEASSET.name())));
-    }
-
-    @Test
-    public void test_getItems_WhenMultiBaseTypeFilter_ReturnsAllChildrenContentTypes() {
-        final Map<String, Object> extraParams = map(ContentTypesPaginator.TYPE_PARAMETER_NAME, list(BaseContentType.FILEASSET.toString(),
-                BaseContentType.PERSONA.toString()));
-        final ContentTypesPaginator paginator = new ContentTypesPaginator();
-        final PaginatedArrayList<Map<String, Object>> result = paginator
-                .getItems(user, null, -1, 0, "name", OrderDirection.ASC, extraParams);
-
-        assertTrue(UtilMethods.isSet(result));
-
-        //assertEquals("", result.stream().map(contentType -> contentType.get("baseType")).collect(Collectors.toList()));
-
-        assertTrue(result.stream().allMatch(contentType ->
-                contentType.get("baseType").toString().equals(BaseContentType.FILEASSET.name()) ||
-                        contentType.get("baseType").toString().equals(BaseContentType.PERSONA.name())));
-    }
-
     @Test
     public void test_getItems_WhenFilterContainsContentTypeName_ReturnsTheContentTypeThatMatches()
             throws DotSecurityException, DotDataException {
