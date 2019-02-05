@@ -52,9 +52,9 @@ public class ESContentResourcePortlet extends BaseRestPortlet {
 
 		PageMode mode = PageMode.get(request);
 
-		final int depth = depthParam != null ? toInt(depthParam, () -> -1) : 0;
+		final int depth = toInt(depthParam, () -> -1);
 
-		if (depth < 0 || depth > 2){
+		if ((depth < 0 || depth > 3) && depthParam != null){
 			final String errorMsg =
 					"Error executing search. Reason: Invalid depth: " + depthParam;
 			Logger.error(this, errorMsg);
@@ -86,8 +86,11 @@ public class ESContentResourcePortlet extends BaseRestPortlet {
 					jsonCons.put(jsonObject);
 
 					//load relationships
-					ContentResource.addRelationshipsToJSON(request, response, "false", user, depth, c,
-							jsonObject);
+					if (depth!= -1){
+						ContentResource.addRelationshipsToJSON(request, response, "false", user, depth, c,
+								jsonObject, null);
+					}
+
 				} catch (Exception e) {
 					Logger.warn(this.getClass(), "unable JSON contentlet " + c.getIdentifier());
 					Logger.debug(this.getClass(), "unable to find contentlet", e);

@@ -30,6 +30,14 @@ import java.util.Map;
  * @author Jose Castro
  * @version 4.2
  * @since Oct 11, 2017
+ * @deprecated This endpoint should be used only when legacy relationships need to be returned.
+ * Otherwise use {@link com.dotcms.rest.ContentResource#getContent(HttpServletRequest, HttpServletResponse, String)},
+ * which returns all relationships fields in a contentlet when the `depth` param is sent. Possible values for depth:
+ *      0 --> The contentlet object will contain the identifiers of the related contentlets
+ *      1 --> The contentlet object will contain the related contentlets
+ *      2 --> The contentlet object will contain the related contentlets, which in turn will contain the identifiers of their related contentlets
+ *      3 --> The contentlet object will contain the related contentlets, which in turn will contain a list of their related contentlets
+ *
  */
 @Path("/v1/contentrelationships")
 @Deprecated
