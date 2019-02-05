@@ -3,7 +3,7 @@
            (input)="dataTable.filterGlobal($event.target.value, 'contains')"
            placeholder="{{ i18nMessages['global-search'] }}"
            [(ngModel)]="filter"
-           (keydown.arrowdown)="focusfirstrow()"
+           (keydown.arrowdown)="focusFirstRow()"
     />
     <ng-content></ng-content>
 </dot-action-header>

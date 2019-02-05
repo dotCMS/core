@@ -162,7 +162,7 @@ export class ListingDataTableComponent implements OnChanges, OnInit {
                 : 'left';
     }
 
-    focusfirstrow(): void {
+    focusFirstRow(): void {
         const rows = this.dataTable.tableViewChild.nativeElement.rows;
         if ( rows.length > 1 ) {
             rows[1].focus();

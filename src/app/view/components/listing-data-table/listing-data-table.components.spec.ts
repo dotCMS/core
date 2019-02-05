@@ -358,4 +358,18 @@ describe('ListingDataTableComponent', () => {
         expect(comp.dataTable.first).toBe(1);
         expect(comp.items.length).toBe(7);
     });
+
+    it('should focus first row on arrowDown in Global Search Input', () => {
+        spyOn(comp, 'focusFirstRow').and.callThrough();
+        spyOn(this.paginatorService, 'get').and.returnValue(observableOf(this.items));
+        comp.columns = this.columns;
+        comp.loadFirstPage();
+        fixture.detectChanges();
+        comp.globalSearch.nativeElement.dispatchEvent(new KeyboardEvent('keydown', { key: 'arrowDown' }));
+
+        expect(comp.focusFirstRow).toHaveBeenCalledTimes(1);
+        expect(comp.dataTable.tableViewChild.nativeElement.rows[1]).toBe(document.activeElement);
+
+    });
+
 });
