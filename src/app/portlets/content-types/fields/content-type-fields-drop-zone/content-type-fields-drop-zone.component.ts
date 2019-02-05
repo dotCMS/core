@@ -71,7 +71,7 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
         private fieldDragDropService: FieldDragDropService,
         private fieldPropertyService: FieldPropertyService,
         private dotEventsService: DotEventsService,
-        private dotLoadingIndicatorService: DotLoadingIndicatorService,
+        private dotLoadingIndicatorService: DotLoadingIndicatorService
     ) {}
 
     ngOnInit(): void {
@@ -165,13 +165,13 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
 
     @Input()
     set loading(loading: boolean) {
-      this._loading = loading;
+        this._loading = loading;
 
-      if (loading) {
-        this.dotLoadingIndicatorService.show();
-      } else {
-        this.dotLoadingIndicatorService.hide();
-      }
+        if (loading) {
+            this.dotLoadingIndicatorService.show();
+        } else {
+            this.dotLoadingIndicatorService.hide();
+        }
     }
 
     get loading(): boolean {
@@ -325,7 +325,7 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
                 ...this.dialogActions.accept,
                 disabled: !formChanged
             }
-};
+        };
     }
 
     /**

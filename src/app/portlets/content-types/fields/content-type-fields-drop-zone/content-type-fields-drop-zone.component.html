@@ -3,7 +3,7 @@
         [dragulaModel]="fieldRows"
         class="content-type-fields-drop-zone__container"
         dragula="fields-row-bag"
-        [attr.disabled]="_loading"
+        [attr.disabled]="loading"
     >
         <ng-template ngFor let-row [ngForOf]="fieldRows">
             <dot-content-type-fields-row

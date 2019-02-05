@@ -747,7 +747,6 @@ describe('Load fields and drag and drop', () => {
             fixture.detectChanges();
 
             const dotLoadingIndicator = de.query(By.css('dot-loading-indicator'));
-            console.log('dotLoadingIndicator', dotLoadingIndicator);
             expect(dotLoadingIndicator).not.toBeNull();
             expect(dotLoadingIndicator.componentInstance.fullscreen).toBe(true);
         });
