@@ -1,9 +1,5 @@
 package com.dotmarketing.portlets.workflows.actionlet;
 
-import java.io.Serializable;
-import java.util.List;
-import java.util.Map;
-
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
@@ -13,6 +9,10 @@ import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
+
+import java.io.Serializable;
+import java.util.List;
+import java.util.Map;
 
 public abstract class WorkFlowActionlet implements Serializable {
 
@@ -120,5 +120,12 @@ public abstract class WorkFlowActionlet implements Serializable {
 		return false;
 	}
 
+	/**
+	 * Get the name of the action class
+	 * @return String
+	 */
+	public String getActionClass() {
+		return this.getClass().getCanonicalName();
+	}
 
 }
