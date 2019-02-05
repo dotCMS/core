@@ -369,7 +369,6 @@ describe('ListingDataTableComponent', () => {
 
         expect(comp.focusFirstRow).toHaveBeenCalledTimes(1);
         expect(comp.dataTable.tableViewChild.nativeElement.rows[1]).toBe(document.activeElement);
-
     });
 
 });
