@@ -25,32 +25,20 @@ import { DotDataTableAction } from '@models/data-table/dot-data-table-action';
     templateUrl: 'listing-data-table.component.html'
 })
 export class ListingDataTableComponent implements OnChanges, OnInit {
-    @Input()
-    columns: DataTableColumn[];
-    @Input()
-    url: string;
-    @Input()
-    actionHeaderOptions: ActionHeaderOptions;
-    @Input()
-    buttonActions: ButtonAction[] = [];
-    @Input()
-    sortOrder: string;
-    @Input()
-    sortField: string;
-    @Input()
-    multipleSelection = false;
-    @Input()
-    paginationPerPage: number;
-    @Input()
-    actions: DotDataTableAction[];
+    @Input() columns: DataTableColumn[];
+    @Input() url: string;
+    @Input() actionHeaderOptions: ActionHeaderOptions;
+    @Input() buttonActions: ButtonAction[] = [];
+    @Input() sortOrder: string;
+    @Input() sortField: string;
+    @Input() multipleSelection = false;
+    @Input() paginationPerPage: number;
+    @Input() actions: DotDataTableAction[];
 
-    @Output()
-    rowWasClicked: EventEmitter<any> = new EventEmitter();
+    @Output() rowWasClicked: EventEmitter<any> = new EventEmitter();
 
-    @ViewChild('gf')
-    globalSearch: ElementRef;
-    @ViewChild('dataTable')
-    dataTable: Table;
+    @ViewChild('gf') globalSearch: ElementRef;
+    @ViewChild('dataTable') dataTable: Table;
 
     readonly DATE_FORMAT = 'date';
 
@@ -79,7 +67,7 @@ export class ListingDataTableComponent implements OnChanges, OnInit {
 
         if (changes.columns && changes.columns.currentValue) {
             this.dateColumns = changes.columns.currentValue.filter(
-                (column) => column.format === this.DATE_FORMAT
+                column => column.format === this.DATE_FORMAT
             );
             this.loadData(0);
         }
@@ -91,7 +79,7 @@ export class ListingDataTableComponent implements OnChanges, OnInit {
     ngOnInit(): void {
         this.globalSearch.nativeElement.focus();
 
-        this.dotMessageService.getMessages(['global-search']).subscribe((res) => {
+        this.dotMessageService.getMessages(['global-search']).subscribe(res => {
             this.i18nMessages = res;
         });
     }
@@ -119,7 +107,7 @@ export class ListingDataTableComponent implements OnChanges, OnInit {
             this.paginatorService.sortOrder =
                 sortOrder === 1 ? OrderDirection.ASC : OrderDirection.DESC;
 
-            this.paginatorService.getWithOffset(offset).subscribe((items) => this.setItems(items));
+            this.paginatorService.getWithOffset(offset).subscribe(items => this.setItems(items));
         }
     }
 
@@ -130,7 +118,7 @@ export class ListingDataTableComponent implements OnChanges, OnInit {
      */
     loadFirstPage(): void {
         this.loading = true;
-        this.paginatorService.get().subscribe((items) => {
+        this.paginatorService.get().subscribe(items => {
             this.setItems(items);
             this.dataTable.first = 1;
         });
@@ -143,7 +131,7 @@ export class ListingDataTableComponent implements OnChanges, OnInit {
     loadCurrentPage(): void {
         this.loading = true;
         if (this.columns) {
-            this.paginatorService.getCurrentPage().subscribe((items) => this.setItems(items));
+            this.paginatorService.getCurrentPage().subscribe(items => this.setItems(items));
         }
     }
 
@@ -158,21 +146,25 @@ export class ListingDataTableComponent implements OnChanges, OnInit {
         return col.textAlign
             ? col.textAlign
             : this.items && this.items[0] && typeof this.items[0][col.fieldName] === 'number'
-                ? 'right'
-                : 'left';
+              ? 'right'
+              : 'left';
     }
 
+    /**
+     * Focus the fist row of the table is there are results.
+     * @memberof ListingDataTableComponent
+     */
     focusFirstRow(): void {
-        const rows = this.dataTable.tableViewChild.nativeElement.rows;
-        if ( rows.length > 1 ) {
+        const rows: HTMLTableRowElement[] = this.dataTable.tableViewChild.nativeElement.rows;
+        if (rows.length > 1) {
             rows[1].focus();
         }
     }
 
     private formatData(items: any[]): any[] {
-        return items.map((item) => {
+        return items.map(item => {
             this.dateColumns.forEach(
-                (col) =>
+                col =>
                     (item[col.fieldName] = this.formatDateService.getRelative(item[col.fieldName]))
             );
             return item;
