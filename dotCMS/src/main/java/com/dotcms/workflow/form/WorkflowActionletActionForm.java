@@ -49,17 +49,17 @@ public class WorkflowActionletActionForm extends Validated {
         private Map<String, String> parameters;
 
 
-        public Builder actionletClass(String actionletClass) {
+        public Builder actionletClass(final String actionletClass) {
             this.actionletClass = actionletClass;
             return this;
         }
 
-        public Builder parameters(Map<String, String> parameters) {
+        public Builder parameters(final Map<String, String> parameters) {
             this.parameters = parameters;
             return this;
         }
 
-        public Builder order(int order) {
+        public Builder order(final int order) {
             if (order > 0) {
                 this.order = order;
             }

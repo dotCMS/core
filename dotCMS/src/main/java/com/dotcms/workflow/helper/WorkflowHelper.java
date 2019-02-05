@@ -1358,14 +1358,14 @@ public class WorkflowHelper {
 
         final String actionId       = workflowActionletActionBean.getActionId();
         final String actionletClass = workflowActionletActionBean.getActionletClass();
-        final int    order          = workflowActionletActionBean.getOrder();
-        final Map<String, String> userActionClassParametersMap =
-                                      workflowActionletActionBean.getParameters();
 
         if (!UtilMethods.isSet(actionId) || !UtilMethods.isSet(actionletClass)) {
             throw new IllegalArgumentException("Missing required parameter actionId or actionletClass.");
         }
 
+        final int    order          = workflowActionletActionBean.getOrder();
+        final Map<String, String> userActionClassParametersMap =
+                workflowActionletActionBean.getParameters();
         final WorkflowActionClass workflowActionClass = new WorkflowActionClass();
 
         if (order > 0) {

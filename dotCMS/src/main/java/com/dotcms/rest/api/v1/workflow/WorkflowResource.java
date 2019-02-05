@@ -174,7 +174,7 @@ public class WorkflowResource {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response findActionlets(@Context final HttpServletRequest request) {
 
-        final InitDataObject initDataObject = this.webResource.init
+        this.webResource.init
                 (null, true, request, true, null);
         try {
 

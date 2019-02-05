@@ -56,6 +56,7 @@ public class WorkflowActionletActionBean extends Validated {
     }
 
     public static final class Builder {
+
         @JsonProperty()
         private int           order = 0;
         @JsonProperty(required = true)
@@ -66,22 +67,22 @@ public class WorkflowActionletActionBean extends Validated {
         private Map<String, String> parameters;
 
 
-        public Builder actionId(String actionId) {
+        public Builder actionId(final String actionId) {
             this.actionId = actionId;
             return this;
         }
 
-        public Builder actionletClass(String actionletClass) {
+        public Builder actionletClass(final String actionletClass) {
             this.actionletClass = actionletClass;
             return this;
         }
 
-        public Builder order(int order) {
+        public Builder order(final int order) {
             this.order = order;
             return this;
         }
 
-        public Builder parameters(Map<String, String> parameters) {
+        public Builder parameters(final Map<String, String> parameters) {
             this.parameters = parameters;
             return this;
         }
