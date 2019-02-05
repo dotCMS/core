@@ -44,7 +44,7 @@ public class ContentTypesPaginator implements PaginatorOrdered<Map<String, Objec
      * @param condition
      * @return
      */
-    private long getTotalRecords(String condition, BaseContentType type) {
+    private long getTotalRecords(final String condition, final BaseContentType type) {
         return Sneaky.sneak(() ->this.contentTypeAPI.count(condition, type));
     }
 
@@ -52,11 +52,11 @@ public class ContentTypesPaginator implements PaginatorOrdered<Map<String, Objec
     public PaginatedArrayList<Map<String, Object>> getItems(final User user, final String filter, final int limit, final int offset, final String orderBy,
             final OrderDirection direction, final Map<String, Object> extraParams) {
 
-        String typeName =  UtilMethods.isSet(extraParams) && extraParams.containsKey(TYPE_PARAMETER_NAME) ? extraParams.get(TYPE_PARAMETER_NAME).toString().replaceAll("\\[","").replaceAll("\\]", "") : "ANY";
+        final String typeName =  UtilMethods.isSet(extraParams) && extraParams.containsKey(TYPE_PARAMETER_NAME) ? extraParams.get(TYPE_PARAMETER_NAME).toString().replaceAll("\\[","").replaceAll("\\]", "") : "ANY";
          
         String orderByString = UtilMethods.isSet(orderBy) ? orderBy : "mod_date desc";
         
-        orderByString =  (orderByString.trim().toLowerCase().endsWith(" asc") || orderByString.trim().toLowerCase().endsWith(" desc"))
+        orderByString =  orderByString.trim().toLowerCase().endsWith(" asc") || orderByString.trim().toLowerCase().endsWith(" desc")
                 ? orderByString
                 : orderByString + " " + (UtilMethods.isSet(direction) ? direction.toString().toLowerCase(): OrderDirection.ASC.name());
         try {
