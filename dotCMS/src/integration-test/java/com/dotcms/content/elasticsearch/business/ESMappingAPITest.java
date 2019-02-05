@@ -269,11 +269,11 @@ public class ESMappingAPITest {
                     .get(0);
 
             //creates child contentlet
-            ContentletDataGen childDataGen = new ContentletDataGen(childContentType.id());
+            final ContentletDataGen childDataGen = new ContentletDataGen(childContentType.id());
             final Contentlet childContentlet = childDataGen.languageId(language.getId()).nextPersisted();
 
             //creates parent contentlet
-            ContentletDataGen parentDataGen = new ContentletDataGen(parentContentType.id());
+            final ContentletDataGen parentDataGen = new ContentletDataGen(parentContentType.id());
             final Contentlet parentContentlet1 = contentletAPI
                     .checkin(parentDataGen.languageId(language.getId()).next(),
                             CollectionsUtils
@@ -322,7 +322,7 @@ public class ESMappingAPITest {
     private void validateRelationshipIndex(final Map<String, Object> esMap, final String keyName,
             final List<String> identifiers) {
 
-        final List results = ((List) esMap.get(keyName));
+        final List results = List.class.cast(esMap.get(keyName));
         assertEquals(identifiers.size(), results.size());
 
         assertFalse(Collections.disjoint(results, identifiers));
