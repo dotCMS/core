@@ -105,9 +105,9 @@ public class ESMappingAPITest {
 
             assertNotNull(esMap);
             assertEquals(commentsContentlet.getIdentifier(),
-                    ((List)esMap.get("News-Comments")).get(0));
+                    List.class.cast(esMap.get("News-Comments")).get(0));
             assertEquals(commentsContentlet.getIdentifier() + "_1",
-                    ((List)esMap.get("News-Comments" + ESMappingConstants.SUFFIX_ORDER)).get(0));
+                    List.class.cast(esMap.get("News-Comments" + ESMappingConstants.SUFFIX_ORDER)).get(0));
 
         } finally {
             if (newsContentlet != null && newsContentlet.getIdentifier() != null) {

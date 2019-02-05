@@ -268,33 +268,34 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 
 			final StringWriter sw = new StringWriter();
 			for(final Entry<String,Object> entry : contentletMap.entrySet()){
-				final String lcasek=entry.getKey().toLowerCase();
-				Object lcasev = entry.getValue();
+				final String lowerCaseKey = entry.getKey().toLowerCase();
+				Object lowerCaseValue = entry.getValue();
 
-				if (UtilMethods.isSet(lcasev) && (lcasev instanceof String || (
+				if (UtilMethods.isSet(lowerCaseValue) && (lowerCaseValue instanceof String || (
 						//filters relationships
-						lcasev instanceof List && !lcasek.endsWith(ESMappingConstants.TAGS) && !lcasek
+						lowerCaseValue instanceof List && !lowerCaseKey
+								.endsWith(ESMappingConstants.TAGS) && !lowerCaseKey
 								.endsWith(ESMappingConstants.SUFFIX_ORDER)))) {
 
-					if (lcasev instanceof String){
-						lcasev = ((String) lcasev).toLowerCase();
+					if (lowerCaseValue instanceof String){
+						lowerCaseValue = ((String) lowerCaseValue).toLowerCase();
 					}
 
-					if (!lcasek.endsWith(TEXT)){
-						//for example: when lcasev=moddate, moddate_dotraw must be created from its moddate_text if exists
+					if (!lowerCaseKey.endsWith(TEXT)){
+						//for example: when lowerCaseValue=moddate, moddate_dotraw must be created from its moddate_text if exists
 						//when the moddate_text is evaluated.
 						if (!contentletMap.containsKey(entry.getKey() + TEXT)){
-							mlowered.put(lcasek + "_dotraw", lcasev);
+							mlowered.put(lowerCaseKey + "_dotraw", lowerCaseValue);
 						}
 					}else{
-						mlowered.put(lcasek.replace(TEXT, "_dotraw"), lcasev);
+						mlowered.put(lowerCaseKey.replace(TEXT, "_dotraw"), lowerCaseValue);
 					}
 				}
 
-				mlowered.put(lcasek, lcasev);
+				mlowered.put(lowerCaseKey, lowerCaseValue);
 
-				if(lcasev!=null) {
-					sw.append(lcasev.toString()).append(' ');
+				if(lowerCaseValue!=null) {
+					sw.append(lowerCaseValue.toString()).append(' ');
 				}
 			}
 
@@ -707,7 +708,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 		return dependenciesToReindex;
 	}
 
-	protected void loadRelationshipFields(final Contentlet con, final Map<String, Object> m)
+	protected void loadRelationshipFields(final Contentlet con, final Map<String, Object> esMap)
 			throws DotStateException, DotDataException {
 		String propName;
 		final Map<String, List> relationshipsRecords = new HashMap<>();
@@ -749,27 +750,20 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 					String me = con.getIdentifier();
 					String related = me.equals(childId) ? parentId : childId;
 
-					// saving related content as a list (using relationship name)
-					if (!m.containsKey(propName)){
-						m.put(propName, new ArrayList<>());
-					}
-
-					((List)m.get(propName)).add(related);
+					List.class.cast(esMap.computeIfAbsent(propName, k -> new ArrayList<>())).add(related);
 
 					//adding sort elements as a list
-					if (!m.containsKey(orderKey)){
-						m.put(orderKey, new ArrayList<>());
-					}
-					((List)m.get(orderKey)).add(related + "_" + order);
+					List.class.cast(esMap.computeIfAbsent(orderKey, k -> new ArrayList<>()))
+							.add(related + "_" + order);
 
 					addRelationshipRecords(con, me.equals(childId) ? rel.getParentRelationName()
-							: rel.getChildRelationName(), related, relationshipsRecords, m);
+							: rel.getChildRelationName(), related, relationshipsRecords, esMap);
 				}
 			}
 		}
 
 		//Adding new relationships fields to the index map
-		m.putAll(relationshipsRecords);
+		esMap.putAll(relationshipsRecords);
 
 	}
 
