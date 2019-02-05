@@ -32,6 +32,7 @@
         #fieldsDropZone
         *ngIf="data.id"
         [fields]="fields"
+        [loading]="loadingFields"
         (saveFields)="saveFields($event)"
         (removeFields)="removeFields($event)"
     >

@@ -21,6 +21,7 @@ import { FieldDivider } from '@portlets/content-types/fields/shared/field-divide
 import { takeUntil, take } from 'rxjs/operators';
 import { Subject } from 'rxjs';
 import { DotFieldVariableParams } from '../dot-content-type-fields-variables/models/dot-field-variable-params.interface';
+import { DotLoadingIndicatorService } from '@components/_common/iframe/dot-loading-indicator/dot-loading-indicator.service';
 
 /**
  * Display all the Field Types
@@ -50,6 +51,7 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
     @ViewChild('fieldPropertiesForm')
     @Input()
     fields: ContentTypeField[];
+
     @Output()
     saveFields = new EventEmitter<ContentTypeField[]>();
     @Output()
@@ -61,13 +63,15 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
         [key: string]: string;
     } = {};
 
+    private _loading: boolean;
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
     constructor(
         public dotMessageService: DotMessageService,
         private fieldDragDropService: FieldDragDropService,
         private fieldPropertyService: FieldPropertyService,
-        private dotEventsService: DotEventsService
+        private dotEventsService: DotEventsService,
+        private dotLoadingIndicatorService: DotLoadingIndicatorService,
     ) {}
 
     ngOnInit(): void {
@@ -157,6 +161,21 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
                 throw new Error('Fields attribute must be a Array');
             }
         }
+    }
+
+    @Input()
+    set loading(loading: boolean) {
+      this._loading = loading;
+
+      if (loading) {
+        this.dotLoadingIndicatorService.show();
+      } else {
+        this.dotLoadingIndicatorService.hide();
+      }
+    }
+
+    get loading(): boolean {
+        return this._loading;
     }
 
     ngOnDestroy(): void {

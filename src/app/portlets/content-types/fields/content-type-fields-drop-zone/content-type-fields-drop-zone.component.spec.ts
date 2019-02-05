@@ -33,6 +33,7 @@ import * as _ from 'lodash';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { TableModule } from 'primeng/table';
 import { DotContentTypeFieldsVariablesModule } from '../dot-content-type-fields-variables/dot-content-type-fields-variables.module';
+import { DotLoadingIndicatorService } from '@components/_common/iframe/dot-loading-indicator/dot-loading-indicator.service';
 
 @Component({
     selector: 'dot-content-type-fields-row',
@@ -74,6 +75,14 @@ class TestDotContentTypeFieldsTabComponent {
     removeTab: EventEmitter<FieldDivider> = new EventEmitter();
 }
 
+@Component({
+    selector: 'dot-loading-indicator ',
+    template: ''
+})
+class TestDotLoadingIndicatorComponent {
+    @Input()
+    fullscreen: boolean;
+}
 @Injectable()
 class TestFieldDragDropService {
     _fieldDropFromSource: Subject<any> = new Subject();
@@ -93,12 +102,22 @@ class TestFieldDragDropService {
     }
 }
 
+@Injectable()
+class TestDotLoadingIndicatorService {
+    show(): void {
+    }
+
+    hide(): void {
+    }
+}
+
 function becomeNewField(field) {
     delete field.id;
     delete field.sortOrder;
 }
 
 describe('ContentTypeFieldsDropZoneComponent', () => {
+    const dotLoadingIndicatorServiceMock = new TestDotLoadingIndicatorService();
     let comp: ContentTypeFieldsDropZoneComponent;
     let fixture: ComponentFixture<ContentTypeFieldsDropZoneComponent>;
     let de: DebugElement;
@@ -120,7 +139,8 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
                 ContentTypeFieldsDropZoneComponent,
                 TestContentTypeFieldsPropertiesFormComponent,
                 TestContentTypeFieldsRowComponent,
-                TestDotContentTypeFieldsTabComponent
+                TestDotContentTypeFieldsTabComponent,
+                TestDotLoadingIndicatorComponent
             ],
             imports: [
                 RouterTestingModule.withRoutes([
@@ -146,6 +166,7 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
                 { provide: HotkeysService, useClass: TestHotkeysMock },
                 { provide: FieldDragDropService, useValue: this.testFieldDragDropService },
                 { provide: DotMessageService, useValue: messageServiceMock },
+                { provide: DotLoadingIndicatorService, useValue: dotLoadingIndicatorServiceMock },
                 SocketFactory,
                 LoginService,
                 FormatDateService,
@@ -265,10 +286,11 @@ let fakeFields: ContentTypeField[];
 @Component({
     selector: 'dot-test-host-component',
     template:
-        '<dot-content-type-fields-drop-zone [fields]="fields"></dot-content-type-fields-drop-zone>'
+        '<dot-content-type-fields-drop-zone [fields]="fields" [loading]="loading"></dot-content-type-fields-drop-zone>'
 })
 class TestHostComponent {
     fields: ContentTypeField[];
+    loading: boolean;
 
     constructor() {}
 }
@@ -290,6 +312,7 @@ const removeSortOrder = (fieldRows: FieldRow[]) => {
 };
 
 describe('Load fields and drag and drop', () => {
+    const dotLoadingIndicatorServiceMock: TestDotLoadingIndicatorService = new TestDotLoadingIndicatorService();
     let hostComp: TestHostComponent;
     let hostDe: DebugElement;
     let comp: ContentTypeFieldsDropZoneComponent;
@@ -335,7 +358,8 @@ describe('Load fields and drag and drop', () => {
                 TestContentTypeFieldsRowComponent,
                 TestContentTypeFieldsPropertiesFormComponent,
                 TestDotContentTypeFieldsTabComponent,
-                TestHostComponent
+                TestHostComponent,
+                TestDotLoadingIndicatorComponent
             ],
             imports: [
                 RouterTestingModule.withRoutes([
@@ -366,7 +390,8 @@ describe('Load fields and drag and drop', () => {
                 { provide: DotMessageService, useValue: messageServiceMock },
                 { provide: FieldDragDropService, useValue: this.testFieldDragDropService },
                 { provide: HotkeysService, useClass: TestHotkeysMock },
-                { provide: Router, useValue: mockRouter }
+                { provide: Router, useValue: mockRouter },
+                { provide: DotLoadingIndicatorService, useValue: dotLoadingIndicatorServiceMock },
             ]
         });
 
@@ -714,6 +739,33 @@ describe('Load fields and drag and drop', () => {
 
             fixture.detectChanges();
             expect(de.query(By.css('dot-dialog')).componentInstance.hideButtons).toEqual(true);
+        });
+    });
+
+    describe('DotLoadingIndicator', () => {
+        it('should have dot-loading-indicator', () => {
+            fixture.detectChanges();
+
+            const dotLoadingIndicator = de.query(By.css('dot-loading-indicator'));
+            console.log('dotLoadingIndicator', dotLoadingIndicator);
+            expect(dotLoadingIndicator).not.toBeNull();
+            expect(dotLoadingIndicator.componentInstance.fullscreen).toBe(true);
+        });
+
+        it('Should show dot-loading-indicator when loading is set to true', () => {
+            hostComp.loading = true;
+            spyOn(dotLoadingIndicatorServiceMock, 'show');
+            fixture.detectChanges();
+
+            expect(dotLoadingIndicatorServiceMock.show).toHaveBeenCalled();
+        });
+
+        it('Should hide dot-loading-indicator when loading is set to true', () => {
+            hostComp.loading = false;
+            spyOn(dotLoadingIndicatorServiceMock, 'hide');
+            fixture.detectChanges();
+
+            expect(dotLoadingIndicatorServiceMock.hide).toHaveBeenCalled();
         });
     });
 });
