@@ -44,6 +44,7 @@ public class WorkflowActionletActionBean extends Validated {
 
     public WorkflowActionletActionBean(final Builder builder) {
 
+        super();
         this.actionId           = builder.actionId;
         this.actionletClass     = builder.actionletClass;
         this.order              = builder.order;

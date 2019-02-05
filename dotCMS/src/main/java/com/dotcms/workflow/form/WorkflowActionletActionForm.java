@@ -31,6 +31,7 @@ public class WorkflowActionletActionForm extends Validated {
 
     public WorkflowActionletActionForm(final Builder builder) {
 
+        super();
         this.actionletClass = builder.actionletClass;
         this.order          = builder.order;
         this.parameters     = builder.parameters;
@@ -40,7 +41,7 @@ public class WorkflowActionletActionForm extends Validated {
     public static final class Builder {
 
         @JsonProperty()
-        private int order = 0;
+        private int order;
 
         @JsonProperty(required = true)
         private String        actionletClass;

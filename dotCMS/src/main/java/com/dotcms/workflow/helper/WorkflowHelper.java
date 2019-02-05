@@ -1364,8 +1364,6 @@ public class WorkflowHelper {
         }
 
         final int    order          = workflowActionletActionBean.getOrder();
-        final Map<String, String> userActionClassParametersMap =
-                workflowActionletActionBean.getParameters();
         final WorkflowActionClass workflowActionClass = new WorkflowActionClass();
 
         if (order > 0) {
@@ -1387,6 +1385,9 @@ public class WorkflowHelper {
 
             throw new DoesNotExistException("The actionlet: " + actionletClass + ", does not exists");
         }
+
+        final Map<String, String> userActionClassParametersMap =
+                workflowActionletActionBean.getParameters();
 
         workflowActionClass.setClazz(actionletClass);
         workflowActionClass.setName(actionlet.getName());
