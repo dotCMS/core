@@ -51,8 +51,7 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
     @ViewChild('fieldPropertiesForm')
     @Input()
     fields: ContentTypeField[];
-    @Input()
-    _loading: boolean;
+
     @Output()
     saveFields = new EventEmitter<ContentTypeField[]>();
     @Output()
@@ -64,6 +63,7 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
         [key: string]: string;
     } = {};
 
+    private _loading: boolean;
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
     constructor(
