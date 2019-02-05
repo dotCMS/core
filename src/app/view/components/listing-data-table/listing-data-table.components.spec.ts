@@ -23,7 +23,7 @@ import { DotIconModule } from '../_common/dot-icon/dot-icon.module';
 import { DotIconButtonModule } from '../_common/dot-icon-button/dot-icon-button.module';
 
 
-fdescribe('ListingDataTableComponent', () => {
+describe('ListingDataTableComponent', () => {
     let comp: ListingDataTableComponent;
     let fixture: ComponentFixture<ListingDataTableComponent>;
     let de: DebugElement;
