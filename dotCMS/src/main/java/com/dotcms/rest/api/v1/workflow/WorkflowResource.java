@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v1.workflow;
 
+import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
 import com.dotcms.repackage.javax.ws.rs.*;
@@ -31,8 +32,10 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicyProvider;
+import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
+import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil;
@@ -57,6 +60,19 @@ import static com.dotcms.rest.ResponseEntityView.OK;
 import static com.dotcms.util.CollectionsUtils.map;
 import static com.dotcms.util.DotLambdas.not;
 
+/**
+ * Encapsulates all the interaction with Workflows, can:
+ * - create schemes, action into schemes, steps into schemes
+ * - associated actions to steps.
+ * - get schemes, steps, actions and relation information.
+ * - get available actions for a content
+ * - fire an action for a single content or bulk (action for a several contents)
+ * - etc.
+ *
+ * You can find more information on the dotCMS/src/curl-test/documentation/Workflow Resource.json
+ * It is a complete collection of examples about how to interact with the WorkflowResource
+ * @author jsanca
+ */
 @SuppressWarnings("serial")
 @Path("/v1/workflow")
 public class WorkflowResource {
@@ -145,6 +161,66 @@ public class WorkflowResource {
             return ResponseUtil.mapExceptionResponse(e);
         }
     } // findSchemes.
+
+    /**
+     * Returns all actionlets classes
+     * @param request  HttpServletRequest
+     * @return Response
+     */
+    @GET
+    @Path("/actionlets")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response findActionlets(@Context final HttpServletRequest request) {
+
+        this.webResource.init
+                (null, true, request, true, null);
+        try {
+
+            Logger.debug(this,
+                    ()->"Getting the workflow actionlets");
+
+            final List<WorkFlowActionlet> actionlets = this.workflowAPI.findActionlets();
+            return Response.ok(new ResponseEntityView(actionlets)).build(); // 200
+        } catch (Exception e) {
+            Logger.error(this.getClass(),"Exception on findActionlets exception message: " + e.getMessage(), e);
+            return ResponseUtil.mapExceptionResponse(e);
+        }
+    } // findActionlets.
+
+    /**
+     * Returns all actionlets associated to a workflow action. 401 if the user does not have permission.
+     * @param request  HttpServletRequest
+     * @param actionId String action id to get the actionlet associated to it, is this is null return
+     *                      all the WorkflowActionClass
+     * @return Response
+     */
+    @GET
+    @Path("/actions/{actionId}/actionlets")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response findActionletsByAction(@Context final HttpServletRequest request,
+                                      @PathParam("actionId") final String  actionId) {
+
+        final InitDataObject initDataObject = this.webResource.init
+                (null, true, request, true, null);
+        try {
+
+            Logger.debug(this,
+                    ()->"Getting the workflow actionlets for the action: " + actionId);
+
+            final WorkflowAction action = this.workflowAPI.findAction(actionId, initDataObject.getUser());
+            DotPreconditions.notNull(action, ()->"Action: " + actionId + ", does not exists", NotFoundInDbException.class);
+
+            final List<WorkflowActionClass> actionClasses = this.workflowAPI.findActionClasses(action);
+            return Response.ok(new ResponseEntityView(actionClasses)).build(); // 200
+        } catch (Exception e) {
+            Logger.error(this.getClass(),"Exception on findActionletsByAction exception message: " + e.getMessage(), e);
+            return ResponseUtil.mapExceptionResponse(e);
+        }
+    } // findActionletsByAction.
 
     /**
      * Returns all schemes for the content type and include schemes non-archive . 401 if the user does not have permission.
@@ -558,12 +634,50 @@ public class WorkflowResource {
             return Response.ok(new ResponseEntityView(OK)).build(); // 200
         } catch (final Exception e) {
             Logger.error(this.getClass(),
-                    "Exception on updateAction, stepId: "+stepId+", saveActionToStep: " + workflowActionStepForm +
+                    "Exception on saveActionToStep, stepId: "+stepId+", saveActionToStep: " + workflowActionStepForm +
                             ", exception message: " + e.getMessage(), e);
             return ResponseUtil.mapExceptionResponse(e);
         }
+    } // saveActionToStep
 
-    } // saveAction
+    /**
+     * Saves an actionlet into an action,
+     * if the Parameters (key/value) are not null nor empty, overrides them.
+     * @param request HttpServletRequest
+     * @param workflowActionletActionForm WorkflowActionletActionForm
+     * @return Response
+     */
+    @POST
+    @Path("/actions/{actionId}/actionlets")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response saveActionletToAction(@Context final HttpServletRequest request,
+                                              @PathParam("actionId")   final String actionId,
+                                              final WorkflowActionletActionForm workflowActionletActionForm) {
+
+        final InitDataObject initDataObject = this.webResource.init
+                (null, true, request, true, null);
+        try {
+
+            DotPreconditions.notNull(workflowActionletActionForm,"Expected Request body was empty.");
+            Logger.debug(this, "Saving a workflow actionlet " + workflowActionletActionForm.getActionletClass()
+                    + " in to a action : " + actionId);
+            this.workflowHelper.saveActionletToAction(new WorkflowActionletActionBean.Builder().actionId(actionId)
+                    .actionletClass(workflowActionletActionForm.getActionletClass())
+                    .order(workflowActionletActionForm.getOrder())
+                    .parameters(workflowActionletActionForm.getParameters()).build()
+                    , initDataObject.getUser());
+            return Response.ok(new ResponseEntityView(OK)).build(); // 200
+        } catch (final Exception e) {
+            Logger.error(this.getClass(),
+                    "Exception on saveActionletToAction, actionId: "+actionId+", saveActionletToAction: " + workflowActionletActionForm +
+                            ", exception message: " + e.getMessage(), e);
+            return ResponseUtil.mapExceptionResponse(e);
+        }
+    } // saveActionletToAction
+
+
 
     /**
      * Deletes a step
@@ -650,6 +764,48 @@ public class WorkflowResource {
         } catch (Exception e) {
             Logger.error(this.getClass(),
                     "Exception on deleteAction, action: " + actionId +
+                            ", exception message: " + e.getMessage(), e);
+            return ResponseUtil.mapExceptionResponse(e);
+        }
+
+    } // deleteAction
+
+    /**
+     * Deletes an actionlet associated
+     * @param request                   HttpServletRequest
+     * @param actionletId                  String
+     * @return Response
+     */
+    @DELETE
+    @Path("/actionlets/{actionletId}")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response deleteActionlet(@Context final HttpServletRequest request,
+                                       @PathParam("actionletId") final String actionletId) {
+
+        final InitDataObject initDataObject = this.webResource.init
+                (null, true, request, true, null);
+
+        try {
+
+            Logger.debug(this, "Deleting the actionletId: " + actionletId);
+
+            DotPreconditions.notNull(actionletId,
+                    ()-> "Not is not allowed for the parameter actionletId on the method deleteActionlet.",
+                    IllegalArgumentException.class);
+
+            final WorkflowActionClass actionClass = this.workflowAPI.findActionClass(actionletId);
+
+            DotPreconditions.notNull(actionClass,
+                    ()-> "The Actionlet: " + actionletId + ", does not exists",
+                    DoesNotExistException.class);
+
+            this.workflowAPI.deleteActionClass(actionClass, initDataObject.getUser());
+            return Response.ok(new ResponseEntityView(OK)).build(); // 200
+        } catch (Exception e) {
+            Logger.error(this.getClass(),
+                    "Exception on deleteActionlet, actionletId: " + actionletId +
                             ", exception message: " + e.getMessage(), e);
             return ResponseUtil.mapExceptionResponse(e);
         }

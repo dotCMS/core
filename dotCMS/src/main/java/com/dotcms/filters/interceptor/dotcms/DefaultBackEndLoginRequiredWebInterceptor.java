@@ -38,7 +38,7 @@ public class DefaultBackEndLoginRequiredWebInterceptor implements WebInterceptor
     private static final String DEFAULT_REQUIRED_URLS = "\\A/html/,\\A/c/,\\A/servlets/," +
             "\\A/dottaillogservlet,\\A/categoriesservlet/,\\A/dwr/,\\A/dotajaxdirector," +
             "\\A/dotscheduledjobs,\\A/dotadmin/#/c/,\\A/jsontags/,\\A/edit/," +
-            "\\A/dotadmin/c/";
+            "\\A/dotadmin/c/,\\A/servlet/";
 
     private UserWebAPI userWebAPI;
 

@@ -382,7 +382,16 @@
          <forward name="portlet.ext.userfilter.edit_userfilter" path="portlet.ext.userfilter.edit_userfilter"></forward>
       </action>
 
-
+      <!-- Schedulers Management -->
+      <action path="/ext/scheduler/view_schedulers" type="com.dotmarketing.portlets.scheduler.action.ViewSchedulersAction">
+         <forward name="portlet.ext.scheduler.view_schedulers" path="portlet.ext.scheduler.view_schedulers" />
+         <forward name="portlet.ext.scheduler.view" path="portlet.ext.scheduler.view" />
+      </action>
+      <action path="/ext/scheduler/edit_scheduler" type="com.dotmarketing.portlets.scheduler.action.EditSchedulerAction" name="SchedulerForm" scope="request" input="portlet.ext.scheduler.edit_scheduler" validate="false">
+         <forward name="portlet.ext.scheduler.edit_scheduler" path="portlet.ext.scheduler.edit_scheduler"></forward>
+      </action>
+      <!-- Schedulers Management -->
+      
       <!-- Events Calendar Manager -->
       <action path="/ext/calendar/view_calendar" type="com.dotmarketing.portlets.calendar.action.ViewCalendarAction">
          <forward name="portlet.ext.calendar.view" path="portlet.ext.calendar.view" />
