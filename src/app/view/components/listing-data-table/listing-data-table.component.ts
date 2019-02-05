@@ -17,7 +17,6 @@ import { FormatDateService } from '@services/format-date-service';
 import { DotMessageService } from '@services/dot-messages-service';
 import { PaginatorService, OrderDirection } from '@services/paginator';
 import { DotDataTableAction } from '@models/data-table/dot-data-table-action';
-import {delay} from 'rxjs/operators';
 
 @Component({
     providers: [PaginatorService],
@@ -120,7 +119,7 @@ export class ListingDataTableComponent implements OnChanges, OnInit {
             this.paginatorService.sortOrder =
                 sortOrder === 1 ? OrderDirection.ASC : OrderDirection.DESC;
 
-            this.paginatorService.getWithOffset(offset).pipe(delay(5000)).subscribe((items) => this.setItems(items));
+            this.paginatorService.getWithOffset(offset).subscribe((items) => this.setItems(items));
         }
     }
 
