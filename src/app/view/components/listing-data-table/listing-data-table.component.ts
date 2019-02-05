@@ -17,6 +17,7 @@ import { FormatDateService } from '@services/format-date-service';
 import { DotMessageService } from '@services/dot-messages-service';
 import { PaginatorService, OrderDirection } from '@services/paginator';
 import { DotDataTableAction } from '@models/data-table/dot-data-table-action';
+import {delay} from 'rxjs/operators';
 
 @Component({
     providers: [PaginatorService],
@@ -119,7 +120,7 @@ export class ListingDataTableComponent implements OnChanges, OnInit {
             this.paginatorService.sortOrder =
                 sortOrder === 1 ? OrderDirection.ASC : OrderDirection.DESC;
 
-            this.paginatorService.getWithOffset(offset).subscribe((items) => this.setItems(items));
+            this.paginatorService.getWithOffset(offset).pipe(delay(5000)).subscribe((items) => this.setItems(items));
         }
     }
 
@@ -160,6 +161,13 @@ export class ListingDataTableComponent implements OnChanges, OnInit {
             : this.items && this.items[0] && typeof this.items[0][col.fieldName] === 'number'
                 ? 'right'
                 : 'left';
+    }
+
+    focusfirstrow(): void {
+        const rows = this.dataTable.tableViewChild.nativeElement.rows;
+        if ( rows.length > 1 ) {
+            rows[1].focus();
+        }
     }
 
     private formatData(items: any[]): any[] {
