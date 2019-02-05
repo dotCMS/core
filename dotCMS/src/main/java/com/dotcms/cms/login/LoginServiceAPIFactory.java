@@ -350,34 +350,7 @@ public class LoginServiceAPIFactory implements Serializable {
         @Override
         public HttpSession preventSessionFixation(final HttpServletRequest request) {
 
-            HttpSession session = request.getSession(false);
-
-            if(Config.getBooleanProperty("PREVENT_SESSION_FIXATION_ON_LOGIN", true)) {
-
-                Logger.debug(this, ()-> "Preventing the session fixation");
-
-                final Map<String, Object> sessionMap  = new HashMap<>();
-                final HttpSession oldSession          = request.getSession();
-                final Enumeration<String> keys        = oldSession.getAttributeNames();
-
-                while(keys.hasMoreElements()) {
-
-                    final String key   = keys.nextElement();
-                    final Object value = oldSession.getAttribute(key);
-                    sessionMap.put(key, value);
-                }
-
-                oldSession.invalidate();
-
-                final HttpSession newSession = request.getSession();
-                for(final Map.Entry<String, Object> entry : sessionMap.entrySet()) {
-                    newSession.setAttribute(entry.getKey(), entry.getValue());
-                }
-
-                session = newSession;
-            }
-
-            return session;
+           return PreventSessionFixationUtil.getInstance().preventSessionFixation(request, false);
         } // preventSessionFixation.
 
         /**

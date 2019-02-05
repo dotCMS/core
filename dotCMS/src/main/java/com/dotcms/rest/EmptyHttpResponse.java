@@ -1,24 +1,17 @@
 package com.dotcms.rest;
 
 import javax.servlet.ServletOutputStream;
-import javax.servlet.ServletResponse;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpServletResponseWrapper;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Locale;
 
-public class EmptyHttpResponse extends HttpServletResponseWrapper {
+public class EmptyHttpResponse implements HttpServletResponse {
 
     public EmptyHttpResponse() {
-        super(null);
-    }
-
-    private EmptyHttpResponse(HttpServletResponse response) {
-        super(response);
     }
 
     @Override
@@ -126,15 +119,6 @@ public class EmptyHttpResponse extends HttpServletResponseWrapper {
         return Collections.emptyList();
     }
 
-    @Override
-    public ServletResponse getResponse() {
-        return null;
-    }
-
-    @Override
-    public void setResponse(ServletResponse response) {
-        // nothing
-    }
 
     @Override
     public void setCharacterEncoding(String charset) {
@@ -198,7 +182,7 @@ public class EmptyHttpResponse extends HttpServletResponseWrapper {
 
     @Override
     public void reset() {
-        super.reset();
+
     }
 
     @Override
@@ -216,13 +200,5 @@ public class EmptyHttpResponse extends HttpServletResponseWrapper {
         return null;
     }
 
-    @Override
-    public boolean isWrapperFor(ServletResponse wrapped) {
-        return false;
-    }
 
-    @Override
-    public boolean isWrapperFor(Class<?> wrappedType) {
-        return false;
-    }
 }

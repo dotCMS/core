@@ -73,6 +73,8 @@ public interface LoginServiceAPI extends Serializable {
     /**
      * When an user is being logged in, the previous session must be invalidated and created a new one.
      * The default behavior does this, however it is able to turn off by using PREVENT_SESSION_FIXATION_ON_LOGIN on the dotmarketing config.
+     * Note: if does not exists a current session the preventSessionFixation won't do anything and will return a null session, so that you can make the decision
+     * to create a new one or no. If exists will invalidate it and create a new one.
      * @param request HttpServletRequest
      * @return HttpSession return the new session in case it is created, otherwise returns the same one
      */
