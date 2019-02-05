@@ -52,13 +52,13 @@ public class ContentTypesPaginator implements PaginatorOrdered<Map<String, Objec
     public PaginatedArrayList<Map<String, Object>> getItems(final User user, final String filter, final int limit, final int offset, final String orderBy,
             final OrderDirection direction, final Map<String, Object> extraParams) {
 
-        String typeName =  extraParams.containsKey(TYPE_PARAMETER_NAME) ? extraParams.get(TYPE_PARAMETER_NAME).toString().replaceAll("\\[","").replaceAll("\\]", "") : "ANY";
+        String typeName =  UtilMethods.isSet(extraParams) && extraParams.containsKey(TYPE_PARAMETER_NAME) ? extraParams.get(TYPE_PARAMETER_NAME).toString().replaceAll("\\[","").replaceAll("\\]", "") : "ANY";
          
-        String orderByString = (orderBy==null)? "mod_date desc" : orderBy;
+        String orderByString = UtilMethods.isSet(orderBy) ? orderBy : "mod_date desc";
         
-        orderByString =  (orderBy.trim().toLowerCase().endsWith(" asc") || orderBy.trim().toLowerCase().endsWith(" desc")) 
-                ? orderBy
-                : orderBy + " " + (UtilMethods.isSet(direction) ? direction.toString().toLowerCase(): OrderDirection.ASC.name());
+        orderByString =  (orderByString.trim().toLowerCase().endsWith(" asc") || orderByString.trim().toLowerCase().endsWith(" desc"))
+                ? orderByString
+                : orderByString + " " + (UtilMethods.isSet(direction) ? direction.toString().toLowerCase(): OrderDirection.ASC.name());
         try {
             final BaseContentType type = BaseContentType.getBaseContentType(typeName);
 
