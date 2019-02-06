@@ -41,6 +41,7 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.rules.util.RulesImportExportUtil;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.FieldVariable;
+import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil;
 import com.dotmarketing.tag.model.Tag;
@@ -571,6 +572,7 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 			//Including Identifier.class and Language.class because it is not mapped with Hibernate anymore
 			map.put(Identifier.class, null);
 			map.put(Language.class, null);
+			map.put(Relationship.class, null);
 			map.putAll(HibernateUtil.getSession().getSessionFactory().getAllClassMetadata());
 
 			Iterator it = map.entrySet().iterator();
@@ -656,7 +658,13 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 						dc = new DotConnect();
 						dc.setSQL("SELECT * FROM language order by id")
 								.setStartRow(i).setMaxRows(step);
-					} else {
+					}
+					else if (Relationship.class.equals(clazz)) {
+						dc = new DotConnect();
+						dc.setSQL("SELECT * FROM relationship order by inode")
+								.setStartRow(i).setMaxRows(step);
+					}
+					else {
 						_dh.setQuery("from " + clazz.getName() + " order by 1");
 					}
 
@@ -666,6 +674,9 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 					} else if (Language.class.equals(clazz)) {
 						_list = TransformerLocator
 								.createLanguageTransformer(dc.loadObjectResults()).asList();
+					} else if (Relationship.class.equals(clazz)) {
+						_list = TransformerLocator
+								.createRelationshipTransformer(dc.loadObjectResults()).asList();
 					} else {
 						_list = _dh.list();
 					}
