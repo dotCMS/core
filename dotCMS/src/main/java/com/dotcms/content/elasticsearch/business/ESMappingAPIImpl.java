@@ -268,31 +268,36 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 
 			final StringWriter sw = new StringWriter();
 			for(final Entry<String,Object> entry : contentletMap.entrySet()){
-				final String lcasek=entry.getKey().toLowerCase();
-				Object lcasev = entry.getValue();
+				final String lowerCaseKey = entry.getKey().toLowerCase();
+				Object lowerCaseValue = entry.getValue();
 
-				if (UtilMethods.isSet(lcasev) && lcasev instanceof String){
-					lcasev = ((String) lcasev).toLowerCase();
+				if (UtilMethods.isSet(lowerCaseValue) && (lowerCaseValue instanceof String || (
+						//filters relationships
+						lowerCaseValue instanceof List && !lowerCaseKey
+								.endsWith(ESMappingConstants.TAGS) && !lowerCaseKey
+								.endsWith(ESMappingConstants.SUFFIX_ORDER)))) {
 
-					if (!lcasek.endsWith(TEXT)){
-						//for example: when lcasev=moddate, moddate_dotraw must be created from its moddate_text if exists
+					if (lowerCaseValue instanceof String){
+						lowerCaseValue = ((String) lowerCaseValue).toLowerCase();
+					}
+
+					if (!lowerCaseKey.endsWith(TEXT)){
+						//for example: when lowerCaseValue=moddate, moddate_dotraw must be created from its moddate_text if exists
 						//when the moddate_text is evaluated.
 						if (!contentletMap.containsKey(entry.getKey() + TEXT)){
-							mlowered.put(lcasek + "_dotraw", lcasev);
+							mlowered.put(lowerCaseKey + "_dotraw", lowerCaseValue);
 						}
 					}else{
-						mlowered.put(lcasek.replace(TEXT, "_dotraw"), lcasev);
+						mlowered.put(lowerCaseKey.replace(TEXT, "_dotraw"), lowerCaseValue);
 					}
 				}
 
-				mlowered.put(lcasek, lcasev);
+				mlowered.put(lowerCaseKey, lowerCaseValue);
 
-				if(lcasev!=null) {
-					sw.append(lcasev.toString()).append(' ');
+				if(lowerCaseValue!=null) {
+					sw.append(lowerCaseValue.toString()).append(' ');
 				}
 			}
-
-
 
 			if(contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET) {
 				// see if we have content metadata
@@ -703,7 +708,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 		return dependenciesToReindex;
 	}
 
-	protected void loadRelationshipFields(final Contentlet con, final Map<String, Object> m)
+	protected void loadRelationshipFields(final Contentlet con, final Map<String, Object> esMap)
 			throws DotStateException, DotDataException {
 		String propName;
 		final Map<String, List> relationshipsRecords = new HashMap<>();
@@ -745,39 +750,20 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 					String me = con.getIdentifier();
 					String related = me.equals(childId) ? parentId : childId;
 
-					String previousPropNameValue = (String) m.get(propName);
-					int previousPropNameValueLength =
-							previousPropNameValue != null ? previousPropNameValue.length() : 0;
+					List.class.cast(esMap.computeIfAbsent(propName, k -> new ArrayList<>())).add(related);
 
-					StringBuilder propNameValue = new StringBuilder(
-							previousPropNameValueLength + UUID_LENGTH + 1);
-
-					// put a pointer to the related content
-					m.put(propName, propNameValue
-							.append(previousPropNameValue != null ? previousPropNameValue : "")
-							.append(related).append(" ").toString());
-
-					String previousOrderKeyValue = (String) m.get(orderKey);
-					int previousOrderKeyValueLength =
-							previousOrderKeyValue != null ? previousOrderKeyValue.length() : 0;
-					int orderLength = order != null ? order.length() : 0;
-
-					StringBuilder orderKeyValue = new StringBuilder(
-							previousOrderKeyValueLength + UUID_LENGTH + 1 + orderLength + 1);
-
-					// make a way to sort
-					m.put(orderKey, orderKeyValue
-							.append(previousOrderKeyValue != null ? previousOrderKeyValue : "")
-							.append(related).append("_").append(order).append(" ").toString());
+					//adding sort elements as a list
+					List.class.cast(esMap.computeIfAbsent(orderKey, k -> new ArrayList<>()))
+							.add(related + "_" + order);
 
 					addRelationshipRecords(con, me.equals(childId) ? rel.getParentRelationName()
-							: rel.getChildRelationName(), related, relationshipsRecords, m);
+							: rel.getChildRelationName(), related, relationshipsRecords, esMap);
 				}
 			}
 		}
 
 		//Adding new relationships fields to the index map
-		m.putAll(relationshipsRecords);
+		esMap.putAll(relationshipsRecords);
 
 	}
 
@@ -812,6 +798,8 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 					Logger.warn(this, "Error getting field for relation type " + key, e);
 				}
 
+			} else{
+				relationshipsRecords.get(key).add(related);
 			}
 		}
 	}
