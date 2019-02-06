@@ -365,7 +365,11 @@ public class ContentTypeResource implements Serializable {
 							.put(ContentTypesPaginator.TYPE_PARAMETER_NAME, Arrays.asList(types.split(",")))
 							.build();
 
-			response = this.paginationUtil.getPage(request, user, filter, page, perPage, orderBy,
+			
+			final PaginationUtil paginationUtil = new PaginationUtil(new ContentTypesPaginator(APILocator.getContentTypeAPI(user)));
+			
+			
+			response = paginationUtil.getPage(request, user, filter, page, perPage, orderBy,
 					OrderDirection.valueOf(direction), extraParams);
 		} catch (IllegalArgumentException e) {
 			throw new DotDataException(e.getMessage());

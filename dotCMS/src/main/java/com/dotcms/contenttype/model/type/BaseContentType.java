@@ -1,5 +1,6 @@
 package com.dotcms.contenttype.model.type;
 
+import com.dotmarketing.util.Logger;
 import com.fasterxml.jackson.annotation.JsonValue;
 
 /**
@@ -81,6 +82,18 @@ public enum BaseContentType {
 		}
 		return ANY;
 	}
+	
+    public static BaseContentType getBaseContentType (final String name) {
+        BaseContentType[] types = BaseContentType.values();
+        for (BaseContentType type : types) {
+            if (type.name().equalsIgnoreCase(name)){
+                return type;
+            }
+        }
+        final String errorMsg = "BaseContentType " + name + " does not Exist";
+		Logger.error(BaseContentType.class, errorMsg);
+        throw new IllegalArgumentException(errorMsg);
+    }
 
 	/**
 	 * Returns the appropriate immutable Content Type based on its integer

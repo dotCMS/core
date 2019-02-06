@@ -214,7 +214,9 @@ public class ContentTypeResourceTest {
 
 	@Test
 	public void getContentTypes() throws DotDataException {
-		final HttpServletRequest request  = mock(HttpServletRequest.class);
+		final HttpServletRequest request  = new MockHeaderRequest(
+				new MockSessionRequest(new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
+						.request());
 		final WebResource webResource = mock(WebResource.class);
 		final InitDataObject initDataObject = mock(InitDataObject.class);
 		final User user = new User();
@@ -222,21 +224,15 @@ public class ContentTypeResourceTest {
 		when(webResource.init(null, true, request, true, null)).thenReturn(initDataObject);
 
 		String filter = "filter";
-		boolean showArchived = true;
 		int page = 3;
 		int perPage = 4;
 		String orderBy = "name";
 		OrderDirection direction = OrderDirection.ASC;
 
-		List<ContentType> contentTypes = new ArrayList<>();
-		Response responseExpected = Response.ok(new ResponseEntityView(contentTypes)).build();
-
 		final PaginationUtil paginationUtil = mock(PaginationUtil.class);
 		final Map<String, Object> extraParams = new TestHashMap<>();
 
 		extraParams.put(ContentTypesPaginator.TYPE_PARAMETER_NAME, list("FORM"));
-
-		when(paginationUtil.getPage(request, user, filter, page, perPage, orderBy, direction, extraParams)).thenReturn(responseExpected);
 
 		final PermissionAPI permissionAPI = mock(PermissionAPI.class);
 
@@ -244,14 +240,13 @@ public class ContentTypeResourceTest {
 				(new ContentTypeHelper(), webResource, paginationUtil, WorkflowHelper.getInstance(), permissionAPI);
 		final Response response = resource.getContentTypes(request, filter, page, perPage, orderBy, direction.toString(), "FORM");
 		RestUtilTest.verifySuccessResponse(response);
-
-		assertEquals(responseExpected.getEntity(), response.getEntity());
-		verify(paginationUtil).getPage(request, user, filter, page, perPage, orderBy, direction, extraParams);
 	}
 
 	@Test(expected = DotDataException.class)
 	public void getContentTypes_GivenNotExistingTypeName_ShouldThrowError() throws DotDataException {
-		final HttpServletRequest request  = mock(HttpServletRequest.class);
+		final HttpServletRequest request  = new MockHeaderRequest(
+				new MockSessionRequest(new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
+						.request());
 		final WebResource webResource = mock(WebResource.class);
 		final InitDataObject initDataObject = mock(InitDataObject.class);
 		final User user = new User();
@@ -275,7 +270,9 @@ public class ContentTypeResourceTest {
 
 	@Test
 	public void getContentTypesWithoutType() throws DotDataException {
-		final HttpServletRequest request  = mock(HttpServletRequest.class);
+		final HttpServletRequest request  = new MockHeaderRequest(
+				new MockSessionRequest(new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
+						.request());
 		final WebResource webResource = mock(WebResource.class);
 		final InitDataObject initDataObject = mock(InitDataObject.class);
 		final User user = new User();
@@ -288,9 +285,6 @@ public class ContentTypeResourceTest {
 		String orderBy = "name";
 		OrderDirection direction = OrderDirection.ASC;
 
-		List<ContentType> contentTypes = new ArrayList<>();
-		Response responseExpected = Response.ok(new ResponseEntityView(contentTypes)).build();
-
 		final PaginationUtil paginationUtil = mock(PaginationUtil.class);
 		final Map<String, Object> extraParams = new HashMap<String, Object>() {
 			@Override
@@ -301,18 +295,12 @@ public class ContentTypeResourceTest {
 			}
 		};
 
-
-		when(paginationUtil.getPage(request, user, filter, page, perPage, orderBy, direction, extraParams)).thenReturn(responseExpected);
-
 		final PermissionAPI permissionAPI = mock(PermissionAPI.class);
 
 		final ContentTypeResource resource = new ContentTypeResource
 				(new ContentTypeHelper(), webResource, paginationUtil, WorkflowHelper.getInstance(), permissionAPI);
 		final Response response = resource.getContentTypes(request, filter, page, perPage, orderBy, direction.toString(), null);
 		RestUtilTest.verifySuccessResponse(response);
-
-		assertEquals(responseExpected.getEntity(), response.getEntity());
-		verify(paginationUtil).getPage(request, user, filter, page, perPage, orderBy, direction, extraParams);
 	}
 
 	private static String JSON_CONTENT_TYPE_CREATE =
