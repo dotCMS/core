@@ -41,8 +41,8 @@ public class ESContentResourcePortlet extends BaseRestPortlet {
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
 	@Path("search")
-	public Response search(@Context HttpServletRequest request,
-			@Context HttpServletResponse response, String esQueryStr,
+	public Response search(@Context final HttpServletRequest request,
+			@Context final HttpServletResponse response, final String esQueryStr,
 			@QueryParam("depth") final String depthParam)
 			throws DotDataException, DotSecurityException {
 
@@ -135,8 +135,8 @@ public class ESContentResourcePortlet extends BaseRestPortlet {
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes({MediaType.APPLICATION_JSON})
 	@Path("search")
-	public Response searchPost(@Context HttpServletRequest request,
-			@Context HttpServletResponse response, String esQuery,
+	public Response searchPost(@Context final HttpServletRequest request,
+			@Context final HttpServletResponse response, final String esQuery,
 			@QueryParam("depth") final String depthParam)
 			throws DotDataException, DotSecurityException {
 		return search(request, response, esQuery, depthParam);
