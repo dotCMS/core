@@ -428,6 +428,7 @@ public class ContentResource {
      *         1 --> The contentlet object will contain the related contentlets
      *         2 --> The contentlet object will contain the related contentlets, which in turn will contain the identifiers of their related contentlets
      *         3 --> The contentlet object will contain the related contentlets, which in turn will contain a list of their related contentlets
+     *         null --> Relationships will not be sent in the response
      */
     @GET
     @Path("/{params:.*}")

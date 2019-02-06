@@ -38,6 +38,21 @@ public class ESContentResourcePortlet extends BaseRestPortlet {
 	ContentletAPI esapi = APILocator.getContentletAPI();
     private final WebResource webResource = new WebResource();
 
+	/**
+	 *
+	 * @param request
+	 * @param response
+	 * @param esQueryStr
+	 * @param depthParam  When this param is set to:
+	 *         0 --> The contentlet object will contain the identifiers of the related contentlets
+	 *         1 --> The contentlet object will contain the related contentlets
+	 *         2 --> The contentlet object will contain the related contentlets, which in turn will contain the identifiers of their related contentlets
+	 *         3 --> The contentlet object will contain the related contentlets, which in turn will contain a list of their related contentlets
+	 *         null --> Relationships will not be sent in the response
+	 * @return
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
 	@Path("search")
