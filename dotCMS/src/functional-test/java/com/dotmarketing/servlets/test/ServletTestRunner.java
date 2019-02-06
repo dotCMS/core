@@ -38,10 +38,10 @@ public class ServletTestRunner extends HttpServlet {
     
 
     /**
-     * Servlet that will respond to an url pattern "/servlet/test".<br>
+     * Servlet that will respond to an url pattern "/dotTest".<br>
      * This call will accept a "class" parameter, we can send in this parameter the class of the junit o suite class to execute. If no class is
      * sent the servlet will execute all the tests it has in the {@link com.AllTestsSuite} class.<br><br>
-     * <b>Examples: http://localhost:8080/servlet/test, http://localhost:8080/servlet/test?class=com.dotmarketing.portlets.structure.factories.FieldFactoryTest</b>
+     * <b>Examples: http://localhost:8080/dotTest, http://localhost:8080/dotTest?class=com.dotmarketing.portlets.structure.factories.FieldFactoryTest</b>
      *
      * @param request
      * @param response
@@ -81,10 +81,10 @@ public class ServletTestRunner extends HttpServlet {
     }
 
     /**
-     * Servlet that will respond to an url pattern "/servlet/test".<br>
+     * Servlet that will respond to an url pattern "/dotTest".<br>
      * This call will accept a "class" parameter, we can send in this parameter the class of the junit o suite class to execute. If no class is
      * sent the servlet will execute all the tests it has in the {@link com.AllTestsSuite} class.<br><br>
-     * <b>Examples: http://localhost:8080/servlet/test, http://localhost:8080/servlet/test?class=com.dotmarketing.portlets.structure.factories.FieldFactoryTest</b>
+     * <b>Examples: http://localhost:8080/dotTest, http://localhost:8080/dotTest?class=com.dotmarketing.portlets.structure.factories.FieldFactoryTest</b>
      *
      * @param request
      * @param response

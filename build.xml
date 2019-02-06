@@ -546,7 +546,7 @@
         </copy>
     </target>
 
-    <target name="uncomment-test-servlet" description="By default we need ServletTestRunner to be commented in web.xml so deployments doesn't have /servlet/test as a public endpoint.">
+    <target name="uncomment-test-servlet" description="By default we need ServletTestRunner to be commented in web.xml so deployments doesn't have /dotTest as a public endpoint.">
 
         <!--Comment-->
         <replaceregexp flags="s" match="&lt;!-- TEST FRAMEWORK SERVLETS --&gt;"

@@ -388,7 +388,7 @@
        
        <servlet-mapping>
          <servlet-name>ServletTestRunner</servlet-name>
-         <url-pattern>/servlet/test</url-pattern>
+         <url-pattern>/dotTest</url-pattern>
       </servlet-mapping>
 	END OF TEST FRAMEWORK SERVLETS -->
 	

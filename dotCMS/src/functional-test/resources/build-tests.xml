@@ -35,7 +35,7 @@
     <!-- Hit the tests servlet to run all the unit tests of the application -->
     <target name="test-all-junits">
         <condition property="get.ok">
-            <http url="http://localhost:8080/servlet/test" errorsbeginat="400"/>
+            <http url="http://localhost:8080/dotTest" errorsbeginat="400"/>
         </condition>
         <fail unless="get.ok" message="One or more tests failed!!!" />
         <echo message="dotCMS successfully tested"/>
