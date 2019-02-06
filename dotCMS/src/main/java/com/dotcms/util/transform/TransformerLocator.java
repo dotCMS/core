@@ -1,5 +1,7 @@
 package com.dotcms.util.transform;
 
+import com.dotcms.contenttype.transform.relationship.DbRelationshipTransformer;
+import com.dotcms.contenttype.transform.relationship.RelationshipTransformer;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.beans.Tree;
@@ -16,6 +18,7 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.languagesmanager.transform.LanguageTransformer;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.links.transform.LinkTransformer;
+import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.templates.transform.FolderTransformer;
 
@@ -53,6 +56,7 @@ public class TransformerLocator {
         transformerMapping.put (Tree.class, TransformerLocator::createTreeTransformer);
         transformerMapping.put (Contentlet.class, TransformerLocator::createContentletTransformer);
         transformerMapping.put (Language.class, TransformerLocator::createLanguageTransformer);
+        transformerMapping.put (Relationship.class, TransformerLocator::createRelationshipTransformer);
     }
 
     public static DBTransformer createDBTransformer(List<Map<String, Object>> list, Class clazz) {
@@ -175,5 +179,16 @@ public class TransformerLocator {
         List<Map<String, Object>> initList) {
 
         return new TreeTransformer(initList);
+    }
+
+    /**
+     * Creates a DBTransformer for Relationship objects
+     *
+     * @param initList List of DB results to be transformed
+     */
+    public static RelationshipTransformer createRelationshipTransformer(
+            List<Map<String, Object>> initList) {
+
+        return new DbRelationshipTransformer(initList);
     }
 }

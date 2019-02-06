@@ -26,7 +26,7 @@ public class DbRelationshipTransformer implements RelationshipTransformer{
 		for(Map<String,Object> map : results){
 			newList.add(fromMap(map));
 		}
-		return ImmutableList.copyOf(newList);
+		return newList;
 	}
 
 	@Override
