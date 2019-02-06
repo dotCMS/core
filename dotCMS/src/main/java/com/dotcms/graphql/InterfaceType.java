@@ -101,7 +101,7 @@ public enum InterfaceType {
         contentFields.put(WORKING, new TypeFetcher(GraphQLBoolean));
         contentFields.put(ARCHIVED_KEY, new TypeFetcher(GraphQLBoolean));
         contentFields.put(LOCKED_KEY, new TypeFetcher(GraphQLBoolean));
-        contentFields.put("language", new TypeFetcher(CustomFieldType.LANGUAGE.getType(), new LanguageDataFetcher()));
+        contentFields.put("conLanguage", new TypeFetcher(CustomFieldType.LANGUAGE.getType(), new LanguageDataFetcher()));
         contentFields.put(IDENTIFIER, new TypeFetcher(GraphQLID));
         contentFields.put(INODE, new TypeFetcher(GraphQLID));
         contentFields.put(HOST_KEY, new TypeFetcher(CustomFieldType.SITE.getType(), new SiteFieldDataFetcher()));
@@ -117,20 +117,20 @@ public enum InterfaceType {
         fileAssetFields.put(FILEASSET_DESCRIPTION_FIELD_VAR, new TypeFetcher(GraphQLString));
         fileAssetFields.put(FILEASSET_FILEASSET_FIELD_VAR, new TypeFetcher(CustomFieldType.BINARY.getType()));
         fileAssetFields.put(FILEASSET_METADATA_FIELD_VAR, new TypeFetcher(list(CustomFieldType.KEY_VALUE.getType())));
-        fileAssetFields.put(FILEASSET_SHOW_ON_MENU_FIELD_VAR, new TypeFetcher(GraphQLBoolean));
+        fileAssetFields.put(FILEASSET_SHOW_ON_MENU_FIELD_VAR, new TypeFetcher(list(GraphQLString)));
         fileAssetFields.put(FILEASSET_SORT_ORDER_FIELD_VAR, new TypeFetcher(GraphQLInt));
 
         interfaceTypes.put("FILEASSET", createInterfaceType("Fileasset", fileAssetFields, new ContentResolver()));
 
         final Map<String, TypeFetcher> pageAssetFields = new HashMap<>(contentFields);
-        pageAssetFields.put(PAGE_URL_FIELD_VAR, new TypeFetcher(ExtendedScalars.Url));
+        pageAssetFields.put(PAGE_URL_FIELD_VAR, new TypeFetcher(GraphQLString));
         pageAssetFields.put(PAGE_TEMPLATE_FIELD_VAR, new TypeFetcher(GraphQLString));
-        pageAssetFields.put(PAGE_SHOW_ON_MENU_FIELD_VAR, new TypeFetcher(GraphQLBoolean));
+        pageAssetFields.put(PAGE_SHOW_ON_MENU_FIELD_VAR, new TypeFetcher(list(GraphQLString)));
         pageAssetFields.put(PAGE_SORT_ORDER_FIELD_VAR, new TypeFetcher(GraphQLInt));
-        pageAssetFields.put(PAGE_CACHE_TTL_FIELD_VAR, new TypeFetcher(GraphQLInt));
+        pageAssetFields.put(PAGE_CACHE_TTL_FIELD_VAR, new TypeFetcher(GraphQLString));
         pageAssetFields.put(PAGE_FRIENDLY_NAME_FIELD_VAR, new TypeFetcher(GraphQLString));
-        pageAssetFields.put(PAGE_REDIRECT_URL_FIELD_VAR, new TypeFetcher(ExtendedScalars.Url));
-        pageAssetFields.put(PAGE_HTTP_REQUIRED_FIELD_VAR, new TypeFetcher(GraphQLBoolean));
+        pageAssetFields.put(PAGE_REDIRECT_URL_FIELD_VAR, new TypeFetcher(GraphQLString));
+        pageAssetFields.put(PAGE_HTTP_REQUIRED_FIELD_VAR, new TypeFetcher(list(GraphQLString)));
         pageAssetFields.put(PAGE_SEO_DESCRIPTION_FIELD_VAR, new TypeFetcher(GraphQLString));
         pageAssetFields.put(PAGE_SEO_KEYWORDS_FIELD_VAR, new TypeFetcher(GraphQLString));
         pageAssetFields.put(PAGE_PAGE_METADATA_FIELD_VAR, new TypeFetcher(GraphQLString));
@@ -141,7 +141,7 @@ public enum InterfaceType {
         personaFields.put(PERSONA_NAME_FIELD_VAR, new TypeFetcher(GraphQLString));
         personaFields.put(PERSONA_KEY_TAG_FIELD_VAR, new TypeFetcher(GraphQLString));
         personaFields.put(PERSONA_PHOTO_FIELD_VAR, new TypeFetcher(CustomFieldType.BINARY.getType()));
-        personaFields.put(PERSONA_OTHER_TAGS_FIELD_VAR, new TypeFetcher(GraphQLString));
+        personaFields.put(PERSONA_OTHER_TAGS_FIELD_VAR, new TypeFetcher(list(GraphQLString)));
         personaFields.put(PERSONA_DESCRIPTION_FIELD_VAR, new TypeFetcher(GraphQLString));
 
         interfaceTypes.put("PERSONA", createInterfaceType("Persona", personaFields, new ContentResolver()));
@@ -155,8 +155,8 @@ public enum InterfaceType {
         interfaceTypes.put("WIDGET", createInterfaceType("Widget", widgetFields, new ContentResolver()));
 
         final Map<String, TypeFetcher> vanityUrlFields = new HashMap<>(contentFields);
-        vanityUrlFields.put(URI_FIELD_VAR, new TypeFetcher(ExtendedScalars.Url));
-        vanityUrlFields.put(FORWARD_TO_FIELD_VAR, new TypeFetcher(ExtendedScalars.Url));
+        vanityUrlFields.put(URI_FIELD_VAR, new TypeFetcher(GraphQLString));
+        vanityUrlFields.put(FORWARD_TO_FIELD_VAR, new TypeFetcher(GraphQLString));
         vanityUrlFields.put(ACTION_FIELD_VAR, new TypeFetcher(GraphQLString));
         vanityUrlFields.put(ORDER_FIELD_VAR, new TypeFetcher(GraphQLInt));
 
