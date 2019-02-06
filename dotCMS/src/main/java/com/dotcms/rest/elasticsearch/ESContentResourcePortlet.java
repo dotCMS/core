@@ -1,6 +1,7 @@
 package com.dotcms.rest.elasticsearch;
 
 import static com.dotcms.util.CollectionsUtils.map;
+import static com.dotmarketing.util.NumberUtil.toInt;
 
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
 import com.dotcms.enterprise.LicenseUtil;
@@ -37,19 +38,44 @@ public class ESContentResourcePortlet extends BaseRestPortlet {
 	ContentletAPI esapi = APILocator.getContentletAPI();
     private final WebResource webResource = new WebResource();
 
+	/**
+	 *
+	 * @param request
+	 * @param response
+	 * @param esQueryStr
+	 * @param depthParam  When this param is set to:
+	 *         0 --> The contentlet object will contain the identifiers of the related contentlets
+	 *         1 --> The contentlet object will contain the related contentlets
+	 *         2 --> The contentlet object will contain the related contentlets, which in turn will contain the identifiers of their related contentlets
+	 *         3 --> The contentlet object will contain the related contentlets, which in turn will contain a list of their related contentlets
+	 *         null --> Relationships will not be sent in the response
+	 * @return
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
 	@Path("search")
-	public Response search(@Context HttpServletRequest request, @Context HttpServletResponse response, String esQueryStr) throws DotDataException, DotSecurityException{
+	public Response search(@Context final HttpServletRequest request,
+			@Context final HttpServletResponse response, final String esQueryStr,
+			@QueryParam("depth") final String depthParam)
+			throws DotDataException, DotSecurityException {
 
-		InitDataObject initData = webResource.init(null, true, request, false, null);
-		HttpSession session = request.getSession();
-		User user = initData.getUser();
-		ResourceResponse responseResource = new ResourceResponse(initData.getParamsMap());
-
-
+		final InitDataObject initData = webResource.init(null, true, request, false, null);
+		final User user = initData.getUser();
+		final ResourceResponse responseResource = new ResourceResponse(initData.getParamsMap());
 
 		PageMode mode = PageMode.get(request);
+
+		final int depth = toInt(depthParam, () -> -1);
+
+		if ((depth < 0 || depth > 3) && depthParam != null){
+			final String errorMsg =
+					"Error executing search. Reason: Invalid depth: " + depthParam;
+			Logger.error(this, errorMsg);
+			return ExceptionMapperUtil.createResponse(null, errorMsg);
+		}
+
 
 		JSONObject esQuery;
 
@@ -75,8 +101,11 @@ public class ESContentResourcePortlet extends BaseRestPortlet {
 					jsonCons.put(jsonObject);
 
 					//load relationships
-					ContentResource.addRelationshipsToJSON(request, response, "false", user, 0, c,
-							jsonObject);
+					if (depth!= -1){
+						ContentResource.addRelationshipsToJSON(request, response, "false", user, depth, c,
+								jsonObject, null);
+					}
+
 				} catch (Exception e) {
 					Logger.warn(this.getClass(), "unable JSON contentlet " + c.getIdentifier());
 					Logger.debug(this.getClass(), "unable to find contentlet", e);
@@ -121,8 +150,11 @@ public class ESContentResourcePortlet extends BaseRestPortlet {
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes({MediaType.APPLICATION_JSON})
 	@Path("search")
-	public Response searchPost(@Context HttpServletRequest request, @Context HttpServletResponse response, String esQuery) throws DotDataException, DotSecurityException{
-		return search(request, response, esQuery);
+	public Response searchPost(@Context final HttpServletRequest request,
+			@Context final HttpServletResponse response, final String esQuery,
+			@QueryParam("depth") final String depthParam)
+			throws DotDataException, DotSecurityException {
+		return search(request, response, esQuery, depthParam);
 	}
 	
 	@GET

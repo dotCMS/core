@@ -7,6 +7,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -52,6 +53,7 @@ import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.google.common.collect.Sets;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
@@ -64,6 +66,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -79,7 +82,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.w3c.dom.Document;
-import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
@@ -135,10 +138,12 @@ public class ContentResourceTest extends IntegrationTestBase {
                 new TestCase("0", JSON_RESPONSE, Status.OK.getStatusCode()),
                 new TestCase("1", JSON_RESPONSE, Status.OK.getStatusCode()),
                 new TestCase("2", JSON_RESPONSE, Status.OK.getStatusCode()),
+                new TestCase("3", JSON_RESPONSE, Status.OK.getStatusCode()),
                 new TestCase(null, XML_RESPONSE, Status.OK.getStatusCode()),
                 new TestCase("0", XML_RESPONSE, Status.OK.getStatusCode()),
                 new TestCase("1", XML_RESPONSE, Status.OK.getStatusCode()),
                 new TestCase("2", XML_RESPONSE, Status.OK.getStatusCode()),
+                new TestCase("3", XML_RESPONSE, Status.OK.getStatusCode()),
                 new TestCase(null, null, Status.OK.getStatusCode()),
                 //Bad depth cases
                 new TestCase("5", JSON_RESPONSE, Status.BAD_REQUEST.getStatusCode()),
@@ -202,18 +207,18 @@ public class ContentResourceTest extends IntegrationTestBase {
      * Creates relationship fields
      * @param relationName
      * @param parentContentType
-     * @param childContentType
+     * @param childContentTypeVar
      * @return
      * @throws DotSecurityException
      * @throws DotDataException
      */
     private Field createRelationshipField(final String relationName,
-            final ContentType parentContentType, final ContentType childContentType,
+            final ContentType parentContentType, final String childContentTypeVar,
             final int cardinality) throws DotSecurityException, DotDataException {
 
         final Field newField = FieldBuilder.builder(RelationshipField.class).name(relationName)
                 .contentTypeId(parentContentType.id()).values(String.valueOf(cardinality))
-                .relationType(childContentType.id()).build();
+                .relationType(childContentTypeVar).build();
 
         return fieldAPI.save(newField, user);
     }
@@ -237,10 +242,24 @@ public class ContentResourceTest extends IntegrationTestBase {
             grandChildContentType = createSampleContentType(false);
 
             //creates relationship fields
-            final Field parentField = createRelationshipField("myChild", parentContentType,
-                    childContentType, RELATIONSHIP_CARDINALITY.ONE_TO_ONE.ordinal());
-            final Field childField = createRelationshipField("myChild", childContentType,
-                    grandChildContentType, RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal());
+            final Field parentField = createRelationshipField("children", parentContentType,
+                    childContentType.variable(), RELATIONSHIP_CARDINALITY.ONE_TO_ONE.ordinal());
+
+            final Field childField = createRelationshipField("grandChildren", childContentType,
+                    grandChildContentType.variable(),
+                    RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal());
+
+            //creates the other side of the parent relationship
+            createRelationshipField("parent",
+                    childContentType,
+                    parentContentType.variable() + StringPool.PERIOD + parentField.variable(),
+                    RELATIONSHIP_CARDINALITY.ONE_TO_ONE.ordinal());
+
+            //creates the other side of the child relationship
+            createRelationshipField("parents",
+                    grandChildContentType,
+                    childContentType.variable() + StringPool.PERIOD + childField.variable(),
+                    RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal());
 
             //gets relationships
             final Relationship childRelationship = relationshipAPI
@@ -327,46 +346,57 @@ public class ContentResourceTest extends IntegrationTestBase {
         final Contentlet parent = contentletMap.get("parent");
         final Contentlet child = contentletMap.get("child");
 
+        final String childVariable = parent.getContentType().fields().get(0).variable();
+
         assertEquals(parent.getIdentifier(), contentlet.get(IDENTIFIER));
 
         if (testCase.depth == null) {
-            assertEquals(child.getIdentifier(),
-                    contentlet.get(parent.getContentType().fields().get(0).variable()));
+            assertFalse(contentlet.has(childVariable));
         } else {
-            switch (Integer.parseInt(testCase.depth)) {
-                case 0:
-                    assertEquals(child.getIdentifier(),
-                            contentlet.get(parent.getContentType().fields().get(0).variable()));
-                    break;
-
-                case 1:
-                    assertEquals(child.getIdentifier(), ((JSONObject) contentlet
-                            .get(parent.getContentType().fields().get(0).variable()))
-                            .get(IDENTIFIER));
-                    break;
-
-                case 2:
-
-                    //validates child
-                    assertEquals(child.getIdentifier(), ((JSONObject) contentlet
-                            .get(parent.getContentType().fields().get(0).variable()))
-                            .get(IDENTIFIER));
-
-
-                    //validates grandchildren
-                    final String[] items = ((JSONObject) contentlet
-                            .get(parent.getContentType().fields().get(0).variable()))
-                            .get(child.getContentType().fields().get(0).variable()).toString().split(", ");
-
-                    assertEquals(2, items.length);
-
-                    Arrays.stream(items).allMatch(grandChildIdentifier -> grandChildIdentifier
-                            .equals(contentletMap.get("grandChild1").getIdentifier())
-                            || grandChildIdentifier
-                            .equals(contentletMap.get("grandChild2").getIdentifier()));
-
-                    break;
+            final int depth = Integer.parseInt(testCase.depth);
+            if (depth == 0){
+                assertEquals(child.getIdentifier(), contentlet.get(childVariable));
+            } else{
+                validateChildrenJSON(contentletMap, contentlet, parent, child, depth);
             }
+        }
+    }
+
+    private void validateChildrenJSON(final Map<String, Contentlet> contentletMap,
+            final JSONObject contentlet, final Contentlet parent, final Contentlet child,
+            final int depth) throws JSONException {
+
+        //validates child
+        assertEquals(child.getIdentifier(), ((JSONObject) contentlet
+                .get(parent.getContentType().fields().get(0).variable()))
+                .get(IDENTIFIER));
+
+        if (depth > 1) {
+            //validates grandchildren
+            final JSONArray jsonArray = (JSONArray) ((JSONObject) contentlet
+                    .get(parent.getContentType().fields().get(0).variable()))
+                    .get(child.getContentType().fields().get(0).variable());
+
+            assertEquals(2, jsonArray.length());
+
+            assertTrue(CollectionsUtils.list(jsonArray.get(0), jsonArray.get(1)).stream().map(
+                    elem -> {
+                        try {
+                            return depth == 2 ? elem : JSONObject.class.cast(elem).get(IDENTIFIER);
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                            return Optional.empty();
+                        }
+                    })
+                    .allMatch(grandChild -> grandChild
+                            .equals(contentletMap.get("grandChild1").getIdentifier())
+                            || grandChild
+                            .equals(contentletMap.get("grandChild2").getIdentifier())));
+
+            //parent relationship was not added back again
+            assertFalse(((JSONObject) contentlet
+                    .get(parent.getContentType().fields().get(0).variable()))
+                    .has(child.getContentType().fields().get(1).variable()));
         }
     }
 
@@ -390,59 +420,63 @@ public class ContentResourceTest extends IntegrationTestBase {
         final Document doc = dBuilder.parse(inputSource);
         doc.getDocumentElement().normalize();
 
-        final Node contentlet = doc.getFirstChild().getFirstChild();
+        final DeferredElementImpl contentlet = (DeferredElementImpl) doc.getFirstChild().getFirstChild();
 
         final Contentlet parent = contentletMap.get("parent");
         final Contentlet child = contentletMap.get("child");
 
-        assertEquals(parent.getIdentifier(), ((DeferredElementImpl) contentlet).getElementsByTagName(
+        assertEquals(parent.getIdentifier(), contentlet.getElementsByTagName(
                 IDENTIFIER).item(0).getTextContent());
 
         if (testCase.depth == null) {
-            assertEquals(child.getIdentifier(), ((DeferredElementImpl) contentlet)
-                    .getElementsByTagName(parent.getContentType().fields().get(0).variable())
-                    .item(0).getTextContent());
+            assertEquals(0, contentlet
+                    .getElementsByTagName(parent.getContentType().fields().get(0).variable()).getLength());
             return;
         }
 
-        switch (Integer.parseInt(testCase.depth)){
-                case 0:
-                    assertEquals(child.getIdentifier(), ((DeferredElementImpl) contentlet)
-                            .getElementsByTagName(parent.getContentType().fields().get(0).variable())
-                            .item(0).getTextContent());
-                    break;
+        final int depth = Integer.parseInt(testCase.depth);
+        if (depth == 0) {
+            assertEquals(child.getIdentifier(), contentlet
+                    .getElementsByTagName(parent.getContentType().fields().get(0).variable())
+                    .item(0).getTextContent());
+        } else{
+            validateChildrenXML(contentletMap, contentlet, parent, child, depth);
+        }
+    }
 
-                case 1:
-                    assertEquals(child.getIdentifier(),
-                            ((DeferredElementImpl) ((DeferredElementImpl) contentlet)
-                                    .getElementsByTagName(
-                                            parent.getContentType().fields().get(0).variable())
-                                    .item(0)).getElementsByTagName(IDENTIFIER).item(0)
-                                    .getTextContent());
-                    break;
+    private void validateChildrenXML(final Map<String, Contentlet> contentletMap,
+            final DeferredElementImpl contentlet, final Contentlet parent,
+            final Contentlet child, final int depth) {
 
-                case 2:
-                    //validates child
-                    assertEquals(child.getIdentifier(),
-                            ((DeferredElementImpl) ((DeferredElementImpl) contentlet)
-                                    .getElementsByTagName(
-                                            parent.getContentType().fields().get(0).variable())
-                                    .item(0)).getElementsByTagName(IDENTIFIER).item(0)
-                                    .getTextContent());
+        assertEquals(child.getIdentifier(),
+                ((DeferredElementImpl) contentlet
+                        .getElementsByTagName(
+                                parent.getContentType().fields().get(0).variable())
+                        .item(0)).getElementsByTagName(IDENTIFIER).item(0)
+                        .getTextContent());
 
-                    //validates grandchildren
-                    final String[] items = ((DeferredElementImpl) contentlet).getElementsByTagName(
-                            parent.getContentType().fields().get(0).variable()).item(1)
-                            .getTextContent().split(", ");
+        if (depth > 1) {
+            //validates grandchildren
+            final NodeList items = ((DeferredElementImpl) (contentlet)
+                    .getElementsByTagName(child.getContentType().fields().get(0).variable())
+                    .item(0)).getElementsByTagName("item");
 
-                    assertEquals(2, items.length);
+            assertEquals(2, items.getLength());
 
-                    Arrays.stream(items).allMatch(grandChildIdentifier -> grandChildIdentifier
+            CollectionsUtils.list(items.item(0), items.item(1)).stream()
+                    .map(elem -> depth == 2 ? elem: DeferredElementImpl.class.cast(elem)
+                            .getElementsByTagName(IDENTIFIER).item(0).getTextContent())
+                    .allMatch(grandChild -> grandChild
                             .equals(contentletMap.get("grandChild1").getIdentifier())
-                            || grandChildIdentifier
+                            || grandChild
                             .equals(contentletMap.get("grandChild2").getIdentifier()));
 
-                    break;
+            //parent relationship was not added back again
+            assertEquals(0,
+                    ((DeferredElementImpl) contentlet
+                            .getElementsByTagName(
+                                    parent.getContentType().fields().get(0).variable())
+                            .item(0)).getElementsByTagName(child.getContentType().fields().get(1).variable()).getLength());
         }
     }
 
