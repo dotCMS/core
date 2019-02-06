@@ -90,7 +90,7 @@ public enum BaseContentType {
                 return type;
             }
         }
-        final String errorMsg = "BaseContentType " + name + " does not Exists";
+        final String errorMsg = "BaseContentType " + name + " does not Exist";
 		Logger.error(BaseContentType.class, errorMsg);
         throw new IllegalArgumentException(errorMsg);
     }
