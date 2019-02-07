@@ -49,7 +49,7 @@ public class URLMapAPI {
     }
 
     public URLMapAPI() {
-        final String mastRegEx = this.loadURLMapPatterns();
+        this.loadURLMapPatterns();
 
     }
 
@@ -201,11 +201,11 @@ public class URLMapAPI {
 
 
     public Optional<URLMapInfo> getUrlMapInfo(final String previewPage, final long languageId, final String uri, final Host host,
-            final User user, final String mastRegEx, final String url, final PageMode pageMode) {
+            final User user, final String url, final PageMode pageMode) {
 
         StringBuilder query;
         final URLMapAPI urlMapAPI = new URLMapAPI();
-        if (RegEX.contains(url, mastRegEx)) {
+        if (RegEX.contains(url, loadURLMapPatterns())) {
 
             final boolean adminMode =pageMode.isAdmin;
             final boolean editMode = pageMode == PageMode.EDIT_MODE;
