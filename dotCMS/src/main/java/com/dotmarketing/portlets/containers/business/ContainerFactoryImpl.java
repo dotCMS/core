@@ -654,10 +654,7 @@ public class ContainerFactoryImpl implements ContainerFactory {
 					" +path:*/" + contentTypeVarNameFileName + ".vtl",
 					" +working:true +deleted:false").toString();
 
-			containers =
-					this.permissionAPI.filterCollection(
-							this.contentletAPI.search(query,-1, 0, null , user, false),
-							PermissionAPI.PERMISSION_READ, false, user);
+			containers = this.contentletAPI.search(query,-1, 0, null , user, false);
 
 			for(final Contentlet container : containers) {
 
