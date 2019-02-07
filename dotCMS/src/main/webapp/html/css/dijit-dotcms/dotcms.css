@@ -3423,7 +3423,7 @@ html, body {
 
 .dijitDropDownButton {
   background-color: var(--color-main);
-  border: solid 1px transparent;
+  border: solid 1px #b3b1b8;
   color: #fff;
   font-size: 12px;
   font-weight: 500;
@@ -3545,7 +3545,7 @@ html, body {
 
 .dijitComboButton {
   background-color: var(--color-main);
-  border: solid 1px transparent;
+  border: solid 1px #b3b1b8;
   color: #fff;
   font-size: 12px;
   font-weight: 500;
@@ -3690,7 +3690,7 @@ html, body {
 
 .dijitToggleButton {
   background-color: var(--color-main);
-  border: solid 1px transparent;
+  border: solid 1px #b3b1b8;
   color: #fff;
   font-size: 12px;
   font-weight: 500;
