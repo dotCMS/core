@@ -52,13 +52,10 @@ public class IncludeLoader implements DotLoader {
     }
 
     private Set<String> buildAllowedExtensions() {
-        String[] allowedExtensions = Config.getStringArrayProperty("VELOCITY_INCLUDE_ALLOWED_EXTENSIONS");
-        if (allowedExtensions == null) {
-            allowedExtensions = new String[] {"txt", "css", "js", "html", "htm", "json"};
-        }
+        String allowedExtensions = Config.getStringProperty("VELOCITY_INCLUDE_ALLOWED_EXTENSIONS", "txt,css,js,html,htm,json");
+        allowedExtensions = allowedExtensions.replace(" ", "");
 
-
-        return ImmutableSet.copyOf(allowedExtensions);
+        return ImmutableSet.copyOf(allowedExtensions.split(","));
     }
 
 
@@ -68,10 +65,13 @@ public class IncludeLoader implements DotLoader {
             throw new ResourceNotFoundException("cannot find resource:" + filePath);
         }
         String canonicalPath = fileToServe.getCanonicalPath();
-        if (canonicalPath.contains(allowedPaths[0]) || canonicalPath.contains(allowedPaths[1])) {
-            if (allowedExtensions.contains(UtilMethods.getFileExtension(canonicalPath).toLowerCase())) {
-                return fileToServe;
-            }
+
+        String fileExtension = UtilMethods.getFileExtension(canonicalPath).toLowerCase();
+
+        if ((canonicalPath.contains(allowedPaths[0]) || canonicalPath.contains(allowedPaths[1]))
+                && allowedExtensions.contains(fileExtension)) {
+            return fileToServe;
+
         }
         Logger.warn(this, "POSSIBLE HACK ATTACK DotResourceLoader: " + canonicalPath);
         throw new ResourceNotFoundException("cannot find resource:" + canonicalPath);
