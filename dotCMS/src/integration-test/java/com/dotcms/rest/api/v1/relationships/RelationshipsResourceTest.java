@@ -1,8 +1,5 @@
 package com.dotcms.rest.api.v1.relationships;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -14,6 +11,7 @@ import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.javax.ws.rs.core.Response.Status;
 import com.dotcms.repackage.org.glassfish.jersey.internal.util.Base64;
+import com.dotcms.rest.EmptyHttpResponse;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
@@ -24,12 +22,16 @@ import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+import javax.servlet.http.HttpServletRequest;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import javax.servlet.http.HttpServletRequest;
-import org.junit.BeforeClass;
-import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author nollymar
@@ -69,7 +71,7 @@ public class RelationshipsResourceTest {
             relationshipAPI.create(relationship);
 
             final Response response = relationshipsResource
-                    .getOneSidedRelationships(contentType.id(), -1, 100, getHttpRequest());
+                    .getOneSidedRelationships(contentType.id(), -1, 100, getHttpRequest(),  new EmptyHttpResponse());
 
             //Validate response
             assertEquals(Status.OK.getStatusCode(), response.getStatus());
@@ -93,7 +95,7 @@ public class RelationshipsResourceTest {
         final RelationshipsResource relationshipsResource = new RelationshipsResource();
 
         final Response response = relationshipsResource
-                .getOneSidedRelationships(null, -1, 100, getHttpRequest());
+                .getOneSidedRelationships(null, -1, 100, getHttpRequest(),  new EmptyHttpResponse());
 
         //Validate response
         assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
@@ -105,7 +107,7 @@ public class RelationshipsResourceTest {
         final RelationshipsResource relationshipsResource = new RelationshipsResource();
 
         final Response response = relationshipsResource
-                .getOneSidedRelationships(null, -1, 0, getHttpRequest());
+                .getOneSidedRelationships(null, -1, 0, getHttpRequest(),  new EmptyHttpResponse());
 
         //Validate response
         assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());

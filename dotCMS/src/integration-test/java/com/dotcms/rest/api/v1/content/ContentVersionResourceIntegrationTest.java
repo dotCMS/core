@@ -1,16 +1,8 @@
 package com.dotcms.rest.api.v1.content;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.javax.ws.rs.core.Response.Status;
+import com.dotcms.rest.EmptyHttpResponse;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
@@ -23,14 +15,22 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.workflows.business.BaseWorkflowIntegrationTest;
 import com.liferay.portal.model.User;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import javax.servlet.http.HttpServletRequest;
-import org.junit.BeforeClass;
-import org.junit.Test;
+
+import static org.junit.Assert.*;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyBoolean;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class ContentVersionResourceIntegrationTest extends BaseWorkflowIntegrationTest {
 
@@ -54,7 +54,7 @@ public class ContentVersionResourceIntegrationTest extends BaseWorkflowIntegrati
         final InitDataObject dataObject = mock(InitDataObject.class);
         when(dataObject.getUser()).thenReturn(user);
         when(webResource
-                .init(anyBoolean(), any(HttpServletRequest.class), anyBoolean())).thenReturn(dataObject);
+                .init(any(HttpServletRequest.class), any(HttpServletResponse.class), anyBoolean())).thenReturn(dataObject);
 
         versionResource = new ContentVersionResource(APILocator.getContentletAPI(),
                 APILocator.getLanguageAPI(), webResource);
@@ -66,7 +66,7 @@ public class ContentVersionResourceIntegrationTest extends BaseWorkflowIntegrati
     public void test_Find_All_Expect_OK() throws DotDataException, DotSecurityException {
         final String identifier = "f4a02846-7ca4-4e08-bf07-a61366bbacbb";
         final HttpServletRequest request = mock(HttpServletRequest.class);
-        final Response response = versionResource.findVersions(request, null, identifier, "0",2);
+        final Response response = versionResource.findVersions(request,  new EmptyHttpResponse(), null, identifier, "0",2);
 
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
 
@@ -88,7 +88,7 @@ public class ContentVersionResourceIntegrationTest extends BaseWorkflowIntegrati
     @Test
     public void test_Find_All_Expect_404() throws DotDataException, DotSecurityException {
         final HttpServletRequest request = mock(HttpServletRequest.class);
-        final Response response = versionResource.findVersions(request, null,"nonsense", "", 2);
+        final Response response = versionResource.findVersions(request,  new EmptyHttpResponse(), null,"nonsense", "", 2);
         assertEquals(Status.NOT_FOUND.getStatusCode(), response.getStatus());
     }
 
@@ -98,7 +98,7 @@ public class ContentVersionResourceIntegrationTest extends BaseWorkflowIntegrati
         final String identifier = "a9f30020-54ef-494e-92ed-645e757171c2";
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final Response response = versionResource
-                .findVersions(request, null, identifier, "1",2);
+                .findVersions(request,  new EmptyHttpResponse(), null, identifier, "1",2);
 
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
 
@@ -139,7 +139,7 @@ public class ContentVersionResourceIntegrationTest extends BaseWorkflowIntegrati
     @Test
     public void test_Find_All_By_Lang_Expect_404()  throws DotDataException, DotSecurityException{
         final HttpServletRequest request = mock(HttpServletRequest.class);
-        final Response response = versionResource.findVersions(request, null,"nonsense", "1",2);
+        final Response response = versionResource.findVersions(request,  new EmptyHttpResponse(), null,"nonsense", "1",2);
         assertEquals(Status.NOT_FOUND.getStatusCode(), response.getStatus());
     }
 
@@ -147,7 +147,7 @@ public class ContentVersionResourceIntegrationTest extends BaseWorkflowIntegrati
     @Test
     public void test_Bad_Request_404()  throws DotDataException, DotSecurityException{
         final HttpServletRequest request = mock(HttpServletRequest.class);
-        final Response response = versionResource.findVersions(request, null,null, "1",2);
+        final Response response = versionResource.findVersions(request,  new EmptyHttpResponse(), null,null, "1",2);
         assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
     }
 
@@ -156,7 +156,7 @@ public class ContentVersionResourceIntegrationTest extends BaseWorkflowIntegrati
     @Test
     public void test_find_multiple_inodes() throws DotDataException, DotSecurityException {
         final HttpServletRequest request = mock(HttpServletRequest.class);
-        final Response response = versionResource.findVersions(request, "4e5acb67-3743-40f5-a207-8b8e6b63fa7b,a8fc0128-e25e-435b-95f1-364687e9665e", null, null, 10);
+        final Response response = versionResource.findVersions(request,  new EmptyHttpResponse(), "4e5acb67-3743-40f5-a207-8b8e6b63fa7b,a8fc0128-e25e-435b-95f1-364687e9665e", null, null, 10);
         assertEquals(Status.OK.getStatusCode(), response.getStatus());
     }
 

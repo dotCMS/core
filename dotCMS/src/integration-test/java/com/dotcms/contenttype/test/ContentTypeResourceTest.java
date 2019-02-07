@@ -1,26 +1,6 @@
 package com.dotcms.contenttype.test;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-
 import com.dotcms.business.WrapInTransaction;
-import com.dotmarketing.util.UtilMethods;
-import com.tngtech.java.junit.dataprovider.DataProvider;
-import com.tngtech.java.junit.dataprovider.DataProviderRunner;
-import com.tngtech.java.junit.dataprovider.UseDataProvider;
-import java.io.File;
-import java.io.InputStream;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
-
-import javax.servlet.http.HttpServletRequest;
-
-import com.dotcms.rest.api.v1.contenttype.ContentTypeForm;
-import com.dotcms.util.ConfigTestHelper;
-import org.apache.commons.io.IOUtils;
-import org.junit.Test;
-
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.JsonContentTypeTransformer;
@@ -30,9 +10,28 @@ import com.dotcms.mock.request.MockHttpRequest;
 import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.glassfish.jersey.internal.util.Base64;
+import com.dotcms.rest.EmptyHttpResponse;
+import com.dotcms.rest.api.v1.contenttype.ContentTypeForm;
 import com.dotcms.rest.api.v1.contenttype.ContentTypeResource;
+import com.dotcms.util.ConfigTestHelper;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
+import com.tngtech.java.junit.dataprovider.DataProvider;
+import com.tngtech.java.junit.dataprovider.DataProviderRunner;
+import com.tngtech.java.junit.dataprovider.UseDataProvider;
+import org.apache.commons.io.IOUtils;
+import org.junit.Test;
 import org.junit.runner.RunWith;
+
+import javax.servlet.http.HttpServletRequest;
+import java.io.File;
+import java.io.InputStream;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.hamcrest.MatcherAssert.assertThat;
 
 @RunWith(DataProviderRunner.class)
 public class ContentTypeResourceTest extends ContentTypeBaseTest {
@@ -74,7 +73,7 @@ public class ContentTypeResourceTest extends ContentTypeBaseTest {
 		final ContentTypeForm.ContentTypeFormDeserialize contentTypeFormDeserialize = new ContentTypeForm.ContentTypeFormDeserialize();
 		ContentTypeForm contentTypeForm = contentTypeFormDeserialize.buildForm(json);
 		try{
-			Response response = resource.createType(getHttpRequest(), contentTypeForm);
+			Response response = resource.createType(getHttpRequest(),  new EmptyHttpResponse(), contentTypeForm);
 
 			int x = response.getStatus();
 			assertThat("result:200 with json " + jsonFile + "got :" + x, x == 200);

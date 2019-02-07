@@ -1,16 +1,8 @@
 package com.dotcms.rest.api.v1.page;
 
-import static com.dotcms.util.CollectionsUtils.list;
-import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
-import com.dotcms.rest.InitDataObject;
-import com.dotcms.rest.ResponseEntityView;
-import com.dotcms.rest.RestUtilTest;
-import com.dotcms.rest.WebResource;
+import com.dotcms.rest.*;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -20,14 +12,23 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetRenderedAPI;
 import com.dotmarketing.util.json.JSONException;
 import com.liferay.portal.model.User;
-import java.util.Collection;
-import java.util.List;
-import javax.servlet.http.HttpServletRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.util.Collection;
+import java.util.List;
 import java.util.Map;
+
+import static com.dotcms.util.CollectionsUtils.list;
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Matchers.*;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * {@link PageResource} test
@@ -55,7 +56,7 @@ public class PageResourceTest {
         final HTMLPageAssetRenderedAPI htmlPageAssetRenderedAPI = mock(HTMLPageAssetRenderedAPI.class);
         esapi = mock(ContentletAPI.class);
 
-        when(webResource.init(null, true, request, true, null)).thenReturn(initDataObject);
+        when(webResource.init(anyString(), any(HttpServletRequest.class), any(HttpServletResponse.class), anyBoolean(), anyString())).thenReturn(initDataObject);
         when(initDataObject.getUser()).thenReturn(user);
 
         pageResource = new PageResource(pageResourceHelper, webResource, htmlPageAssetRenderedAPI, esapi);
@@ -91,7 +92,7 @@ public class PageResourceTest {
 
         when(esapi.esSearch(query, false, user, false)).thenReturn(results);
 
-        final Response response = pageResource.searchPage(request, path, false, true);
+        final Response response = pageResource.searchPage(request,  new EmptyHttpResponse(), path, false, true);
         RestUtilTest.verifySuccessResponse(response);
 
         final Collection contentLetsResponse = (Collection) ((ResponseEntityView) response.getEntity()).getEntity();
@@ -132,7 +133,7 @@ public class PageResourceTest {
 
         when(esapi.esSearch(query, false, user, false)).thenReturn(results);
 
-        final Response response = pageResource.searchPage(request, path, false, true);
+        final Response response = pageResource.searchPage(request,  new EmptyHttpResponse(), path, false, true);
         RestUtilTest.verifySuccessResponse(response);
 
         final Collection contentLetsResponse = (Collection) ((ResponseEntityView) response.getEntity()).getEntity();

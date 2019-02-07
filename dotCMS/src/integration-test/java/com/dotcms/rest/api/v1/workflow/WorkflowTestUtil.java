@@ -1,14 +1,9 @@
 package com.dotcms.rest.api.v1.workflow;
 
 
-import static com.dotmarketing.business.Role.ADMINISTRATOR;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.mock;
-
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
+import com.dotcms.rest.EmptyHttpResponse;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.workflow.form.WorkflowActionForm;
 import com.dotcms.workflow.form.WorkflowSchemeForm;
@@ -27,18 +22,15 @@ import com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil;
 import com.dotmarketing.portlets.workflows.util.WorkflowSchemeImportExportObject;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
-import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.lang.RandomStringUtils;
+
+import javax.servlet.http.HttpServletRequest;
+import java.util.*;
+import java.util.stream.Collectors;
+
+import static com.dotmarketing.business.Role.ADMINISTRATOR;
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.mock;
 
 public abstract class WorkflowTestUtil {
 
@@ -102,7 +94,7 @@ public abstract class WorkflowTestUtil {
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final WorkflowSchemeForm form = new WorkflowSchemeForm.Builder()
                 .schemeName(randomSchemaName).schemeDescription("").schemeArchived(false).build();
-        final Response saveResponse = workflowResource.saveScheme(request, form);
+        final Response saveResponse = workflowResource.saveScheme(request,  new EmptyHttpResponse(), form);
         assertEquals(Response.Status.OK.getStatusCode(), saveResponse.getStatus());
         final ResponseEntityView savedEv = ResponseEntityView.class.cast(saveResponse.getEntity());
         return WorkflowScheme.class.cast(savedEv.getEntity());
@@ -114,7 +106,7 @@ public abstract class WorkflowTestUtil {
     @SuppressWarnings("unchecked")
     static List<WorkflowScheme> findSchemes(final WorkflowResource workflowResource) {
         final HttpServletRequest request = mock(HttpServletRequest.class);
-        final Response findResponse = workflowResource.findSchemes(request, null, true);
+        final Response findResponse = workflowResource.findSchemes(request,  new EmptyHttpResponse(), null, true);
         assertEquals(Response.Status.OK.getStatusCode(), findResponse.getStatus());
         final ResponseEntityView listEv = ResponseEntityView.class.cast(findResponse.getEntity());
         return List.class.cast(listEv.getEntity());
@@ -133,7 +125,7 @@ public abstract class WorkflowTestUtil {
                     .stepName(randomStepName).schemeId(savedScheme.getId()).enableEscalation(false)
                     .escalationTime("0").escalationAction("").stepResolved(false).build();
             final Response addStepResponse = workflowResource
-                    .addStep(addStepRequest, workflowStepAddForm);
+                    .addStep(addStepRequest,  new EmptyHttpResponse(), workflowStepAddForm);
             assertEquals(Response.Status.OK.getStatusCode(), addStepResponse.getStatus());
             final ResponseEntityView savedStepEntityView = ResponseEntityView.class
                     .cast(addStepResponse.getEntity());
@@ -175,7 +167,7 @@ public abstract class WorkflowTestUtil {
                             whoCanUse(Arrays.asList("")).
                             actionCondition("").
                             build();
-            final Response saveActionResponse = workflowResource.saveAction(saveActionRequest, form);
+            final Response saveActionResponse = workflowResource.saveAction(saveActionRequest,  new EmptyHttpResponse(), form);
             assertEquals(Response.Status.OK.getStatusCode(), saveActionResponse.getStatus());
             final ResponseEntityView savedActionEv = ResponseEntityView.class
                     .cast(saveActionResponse.getEntity());
@@ -199,7 +191,7 @@ public abstract class WorkflowTestUtil {
             final WorkflowScheme savedScheme) {
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final Response findResponse = workflowResource
-                .findStepsByScheme(request, savedScheme.getId());
+                .findStepsByScheme(request,  new EmptyHttpResponse(), savedScheme.getId());
         assertEquals(Response.Status.OK.getStatusCode(), findResponse.getStatus());
         final ResponseEntityView findResponseEv = ResponseEntityView.class
                 .cast(findResponse.getEntity());

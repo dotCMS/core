@@ -1,16 +1,5 @@
 package com.dotcms.rest.api.v2.contenttype;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-
-import java.io.IOException;
-import java.util.List;
-import java.util.Map;
-
-import javax.servlet.http.HttpServletRequest;
-
 import com.dotcms.contenttype.model.field.*;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
@@ -21,7 +10,10 @@ import com.dotcms.mock.request.MockHttpRequest;
 import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.glassfish.jersey.internal.util.Base64;
+import com.dotcms.rest.EmptyHttpResponse;
+import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.rest.WebResource;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -29,10 +21,20 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.UUIDUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liferay.portal.model.User;
-
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.List;
+import java.util.Map;
+
+import static org.junit.Assert.*;
+import static org.mockito.Matchers.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class FieldResourceTest {
 
@@ -58,7 +60,15 @@ public class FieldResourceTest {
 
     @Test
     public void testCreateRelationshipFieldWithoutContentTypeId_Return400() throws Exception {
-        final FieldResource resource = new FieldResource();
+
+        final WebResource webResourceThatReturnsAdminUser = mock(WebResource.class);
+        final InitDataObject dataObject1 = mock(InitDataObject.class);
+        when(dataObject1.getUser()).thenReturn(APILocator.systemUser());
+        when(webResourceThatReturnsAdminUser
+                .init(anyString(), any(HttpServletRequest.class),any(HttpServletResponse.class), anyBoolean(),
+                        anyString())).thenReturn(dataObject1);
+
+        final FieldResource resource = new FieldResource(webResourceThatReturnsAdminUser, APILocator.getContentTypeFieldAPI());
 
         final ContentType contentType = getContentType();
 
@@ -71,7 +81,7 @@ public class FieldResourceTest {
                 "   \"relationType\": \"Youtube\""+
                 "	}";
 
-        final Response response = resource.createContentTypeField(null,jsonField,getHttpRequest());
+        final Response response = resource.createContentTypeField(null,jsonField,getHttpRequest(),  new EmptyHttpResponse());
 
         assertNotNull(response);
         assertEquals(400, response.getStatus());
@@ -80,7 +90,14 @@ public class FieldResourceTest {
 
     @Test
     public void testCreateRelationshipFieldWithoutRelationType_Return400() throws Exception {
-        final FieldResource resource = new FieldResource();
+        final WebResource webResourceThatReturnsAdminUser = mock(WebResource.class);
+        final InitDataObject dataObject1 = mock(InitDataObject.class);
+        when(dataObject1.getUser()).thenReturn(APILocator.systemUser());
+        when(webResourceThatReturnsAdminUser
+                .init(anyString(), any(HttpServletRequest.class),any(HttpServletResponse.class), anyBoolean(),
+                        anyString())).thenReturn(dataObject1);
+
+        final FieldResource resource = new FieldResource(webResourceThatReturnsAdminUser, APILocator.getContentTypeFieldAPI());
 
         final ContentType contentType = getContentType();
 
@@ -94,7 +111,7 @@ public class FieldResourceTest {
                 "	}";
 
         final Response response = resource.createContentTypeField(
-                contentType.id(), jsonField.replace("CONTENT_TYPE_ID", contentType.id()), getHttpRequest());
+                contentType.id(), jsonField.replace("CONTENT_TYPE_ID", contentType.id()), getHttpRequest(),  new EmptyHttpResponse());
 
         assertNotNull(response);
         assertEquals(400, response.getStatus());
@@ -103,7 +120,14 @@ public class FieldResourceTest {
 
     @Test
     public void testCreateRelationshipFieldWithDash_Return400() throws Exception {
-        final FieldResource resource = new FieldResource();
+        final WebResource webResourceThatReturnsAdminUser = mock(WebResource.class);
+        final InitDataObject dataObject1 = mock(InitDataObject.class);
+        when(dataObject1.getUser()).thenReturn(APILocator.systemUser());
+        when(webResourceThatReturnsAdminUser
+                .init(anyString(), any(HttpServletRequest.class),any(HttpServletResponse.class), anyBoolean(),
+                        anyString())).thenReturn(dataObject1);
+
+        final FieldResource resource = new FieldResource(webResourceThatReturnsAdminUser, APILocator.getContentTypeFieldAPI());
 
         final ContentType contentType = getContentType();
 
@@ -118,7 +142,7 @@ public class FieldResourceTest {
                 "	}";
 
         final Response response = resource.createContentTypeField(
-                contentType.id(), jsonField.replace("CONTENT_TYPE_ID", contentType.id()), getHttpRequest());
+                contentType.id(), jsonField.replace("CONTENT_TYPE_ID", contentType.id()), getHttpRequest(),  new EmptyHttpResponse());
 
         assertNotNull(response);
         assertEquals(400, response.getStatus());
@@ -127,7 +151,14 @@ public class FieldResourceTest {
 
     @Test
     public void testUpdateFieldVariable_Return400() throws Exception {
-        final FieldResource resource = new FieldResource();
+        final WebResource webResourceThatReturnsAdminUser = mock(WebResource.class);
+        final InitDataObject dataObject1 = mock(InitDataObject.class);
+        when(dataObject1.getUser()).thenReturn(APILocator.systemUser());
+        when(webResourceThatReturnsAdminUser
+                .init(anyString(), any(HttpServletRequest.class),any(HttpServletResponse.class), anyBoolean(),
+                        anyString())).thenReturn(dataObject1);
+
+        final FieldResource resource = new FieldResource(webResourceThatReturnsAdminUser, APILocator.getContentTypeFieldAPI());
 
         final ContentType contentType = getContentType();
 
@@ -142,7 +173,7 @@ public class FieldResourceTest {
                 "	}";
 
         Response response = resource.createContentTypeField(
-                contentType.id(), jsonField.replace("CONTENT_TYPE_ID", contentType.id()), getHttpRequest());
+                contentType.id(), jsonField.replace("CONTENT_TYPE_ID", contentType.id()), getHttpRequest(),  new EmptyHttpResponse());
 
         assertNotNull(response);
         assertEquals(200, response.getStatus());
@@ -163,7 +194,7 @@ public class FieldResourceTest {
         response = resource.updateContentTypeFieldById(
                 (String) fieldMap.get("id"),
                 jsonFieldUpdate.replace("CONTENT_TYPE_ID", contentType.id()).replace("CONTENT_TYPE_FIELD_ID", (String) fieldMap.get("id")),
-                getHttpRequest());
+                getHttpRequest(),  new EmptyHttpResponse());
 
         assertNotNull(response);
         assertEquals(400, response.getStatus());
@@ -173,11 +204,18 @@ public class FieldResourceTest {
 
     @Test
     public void testFieldsList() throws Exception {
-        final FieldResource resource = new FieldResource();
+        final WebResource webResourceThatReturnsAdminUser = mock(WebResource.class);
+        final InitDataObject dataObject1 = mock(InitDataObject.class);
+        when(dataObject1.getUser()).thenReturn(APILocator.systemUser());
+        when(webResourceThatReturnsAdminUser
+                .init(anyString(), any(HttpServletRequest.class),any(HttpServletResponse.class), anyBoolean(),
+                        anyString())).thenReturn(dataObject1);
+
+        final FieldResource resource = new FieldResource(webResourceThatReturnsAdminUser, APILocator.getContentTypeFieldAPI());
 
         ContentType contentType = getContentType();
        //Test using ContentType Id
-        Response response = resource.getContentTypeFields(contentType.id(), getHttpRequest());
+        Response response = resource.getContentTypeFields(contentType.id(), getHttpRequest(),  new EmptyHttpResponse());
 
         assertResponse_OK(response);
 
@@ -193,7 +231,7 @@ public class FieldResourceTest {
             assertTrue(field.getClass().getSimpleName().startsWith("Immutable"));
         }
         //Now test using variable name
-        response = resource.getContentTypeFields(contentType.variable(), getHttpRequest());
+        response = resource.getContentTypeFields(contentType.variable(), getHttpRequest(),  new EmptyHttpResponse());
         assertResponse_OK(response);
 
         fields = (List) ((ResponseEntityView) response.getEntity()).getEntity();
@@ -2368,7 +2406,14 @@ public class FieldResourceTest {
 
         public void run() throws Exception {
 
-            final FieldResource resource = new FieldResource();
+            final WebResource webResourceThatReturnsAdminUser = mock(WebResource.class);
+            final InitDataObject dataObject1 = mock(InitDataObject.class);
+            when(dataObject1.getUser()).thenReturn(APILocator.systemUser());
+            when(webResourceThatReturnsAdminUser
+                    .init(anyString(), any(HttpServletRequest.class),any(HttpServletResponse.class), anyBoolean(),
+                            anyString())).thenReturn(dataObject1);
+
+            final FieldResource resource = new FieldResource(webResourceThatReturnsAdminUser, APILocator.getContentTypeFieldAPI());
 
             final ContentType contentType = getContentType();
 
@@ -2378,7 +2423,7 @@ public class FieldResourceTest {
             // Test Field Creation
             assertResponse_OK(
                     response = resource.createContentTypeField(
-                            contentType.id(), getJsonFieldCreate().replace("CONTENT_TYPE_ID", contentType.id()), getHttpRequest()
+                            contentType.id(), getJsonFieldCreate().replace("CONTENT_TYPE_ID", contentType.id()), getHttpRequest(),  new EmptyHttpResponse()
                     )
             );
 
@@ -2393,7 +2438,7 @@ public class FieldResourceTest {
 
                 // Test Field Retrieval by Id
                 assertResponse_OK(
-                        response = resource.getContentTypeFieldById((String) fieldMap.get("id"), getHttpRequest())
+                        response = resource.getContentTypeFieldById((String) fieldMap.get("id"), getHttpRequest(),  new EmptyHttpResponse())
                 );
 
                 assertNotNull(
@@ -2409,7 +2454,7 @@ public class FieldResourceTest {
                         response = resource.updateContentTypeFieldById(
                                 (String) fieldMap.get("id"),
                                 getJsonFieldUpdate().replace("CONTENT_TYPE_ID", contentType.id()).replace("CONTENT_TYPE_FIELD_ID", (String) fieldMap.get("id")),
-                                getHttpRequest()
+                                getHttpRequest(),  new EmptyHttpResponse()
                         )
                 );
 
@@ -2423,7 +2468,7 @@ public class FieldResourceTest {
 
                 // Test Field Retrieval by Var
                 assertResponse_OK(
-                        response = resource.getContentTypeFieldByVar(contentType.id(), (String) fieldMap.get("variable"), getHttpRequest())
+                        response = resource.getContentTypeFieldByVar(contentType.id(), (String) fieldMap.get("variable"), getHttpRequest(),  new EmptyHttpResponse())
                 );
 
                 assertNotNull(
@@ -2438,11 +2483,11 @@ public class FieldResourceTest {
 
                 // Test Field Deletion
                 assertResponse_OK(
-                        response = resource.deleteContentTypeFieldById((String) fieldMap.get("id"), getHttpRequest())
+                        response = resource.deleteContentTypeFieldById((String) fieldMap.get("id"), getHttpRequest(),  new EmptyHttpResponse())
                 );
 
                 assertResponse_NOT_FOUND(
-                        response = resource.getContentTypeFieldById((String) fieldMap.get("id"), getHttpRequest())
+                        response = resource.getContentTypeFieldById((String) fieldMap.get("id"), getHttpRequest(),  new EmptyHttpResponse())
                 );
             }
         }

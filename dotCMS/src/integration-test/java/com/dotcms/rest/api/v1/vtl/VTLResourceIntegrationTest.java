@@ -7,6 +7,7 @@ import com.dotcms.repackage.javax.ws.rs.core.MultivaluedHashMap;
 import com.dotcms.repackage.javax.ws.rs.core.MultivaluedMap;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.javax.ws.rs.core.UriInfo;
+import com.dotcms.rest.EmptyHttpResponse;
 import com.dotcms.rest.WebResource;
 import com.dotcms.util.ConfigTestHelper;
 import com.dotcms.util.IntegrationTestInitService;
@@ -164,19 +165,18 @@ public class VTLResourceIntegrationTest {
             throws IOException, DotSecurityException, DotDataException {
         createVTLFile(testCase.getVtlFile(), vtlFolder);
 
-        final HttpServletRequest request = getMockedRequest();
-
-        final HttpServletResponse servletResponse = mock(HttpServletResponse.class);
+        final HttpServletRequest  request  = getMockedRequest();
+        final HttpServletResponse response = getMockedResponse();
 
         final UriInfo uriInfo = mock(UriInfo.class);
         when(uriInfo.getQueryParameters()).thenReturn(testCase.getQueryParameters());
 
-        final WebResource webResource = getSpiedWebResource(testCase, request);
+        final WebResource webResource = getSpiedWebResource(testCase, request, response);
 
 
         final HTTPMethodParams params = new HTTPMethodParamsBuilder()
                 .setRequest(request)
-                .setServletResponse(servletResponse)
+                .setServletResponse(response)
                 .setUriInfo(uriInfo)
                 .setPathParam(testCase.getPathParameter())
                 .setBodyMap(testCase.getBodyMap())
@@ -219,12 +219,12 @@ public class VTLResourceIntegrationTest {
         return  output;
     }
 
-    private WebResource getSpiedWebResource(final VTLResourceTestCase testCase, final HttpServletRequest request) throws DotDataException, DotSecurityException {
+    private WebResource getSpiedWebResource(final VTLResourceTestCase testCase, final HttpServletRequest request, final HttpServletResponse response) throws DotDataException, DotSecurityException {
         final User requestingUser = APILocator.getUserAPI().loadUserById(testCase.getUserId(),
                 APILocator.systemUser(), false);
 
         final WebResource webResource = spy(WebResource.class);
-        doReturn(requestingUser).when(webResource).getCurrentUser(request,
+        doReturn(requestingUser).when(webResource).getCurrentUser(request, response,
                 WebResource.buildParamsMap(testCase.getPathParameter()), false);
         return webResource;
     }
@@ -235,6 +235,12 @@ public class VTLResourceIntegrationTest {
         when(request.getSession(false)).thenReturn(mock(HttpSession.class));
         when(request.getSession()).thenReturn(mock(HttpSession.class));
         return request;
+    }
+
+    private static final EmptyHttpResponse EMPTY_HTTP_RESPONSE = new EmptyHttpResponse();
+    @NotNull
+    private HttpServletResponse getMockedResponse() {
+        return EMPTY_HTTP_RESPONSE;
     }
 
     private void createVTLFile(final File vtlFile, final Folder vtlFolder) throws IOException, DotSecurityException, DotDataException {
