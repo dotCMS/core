@@ -40,10 +40,6 @@ public class DotResourceLoader extends ResourceLoader {
 
             try {
                 switch (key.type) {
-                    case NOT_VELOCITY: {
-                        CacheLocator.getVeloctyResourceCache().addMiss(key.path);
-                        throw new ResourceNotFoundException("Cannot find velocity file : " + key.path);
-                    }
                     case CONTAINER: {
                         return new ContainerLoader().writeObject(key);
                     }
@@ -75,12 +71,12 @@ public class DotResourceLoader extends ResourceLoader {
                         return VTLLoader.instance().writeObject(key);
                     }
                     default: {
-                        CacheLocator.getVeloctyResourceCache().addMiss(key.path);
-                        throw new ResourceNotFoundException("Cannot find velocity file : " + key.path);
+                        return IncludeLoader.instance().writeObject(key);
                     }
                 }
 
             } catch (Exception e) {
+                CacheLocator.getVeloctyResourceCache().addMiss(key.path);
                 throw new ResourceNotFoundException("Cannot parse velocity file : " + key.path, e);
             }
         }
