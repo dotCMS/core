@@ -18,7 +18,6 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.factories.MultiTreeFactory;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
@@ -141,7 +140,7 @@ public class FolderFactoryImpl extends FolderFactory {
 	protected List<Folder> findSubFolders(final Host host, Boolean showOnMenu)
 			throws DotHibernateException {
 
-		return getSubFolders(showOnMenu, "/", host.getIdentifier(), null);
+ 		return getSubFolders(showOnMenu, "/", host.getIdentifier(), null);
 	}
 
 	private List<Folder> getSubFolders(Boolean showOnMenu, String path, final String hostId, String order) {

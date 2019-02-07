@@ -33,14 +33,14 @@ import static com.dotmarketing.util.StringUtils.builder;
 
 public class ContainerFactoryImpl implements ContainerFactory {
 
-	static IdentifierCache identifierCache    = CacheLocator.getIdentifierCache();
-	static ContainerCache  containerCache     = CacheLocator.getContainerCache();
-	private final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
-	private final FolderAPI     folderAPI     = APILocator.getFolderAPI();
-    private final FileAssetAPI  fileAssetAPI  = APILocator.getFileAssetAPI();
-    private final HostAPI       hostAPI       = APILocator.getHostAPI();
-	private final IdentifierAPI identifierAPI = APILocator.getIdentifierAPI();
-	private final ContentletAPI contentletAPI = APILocator.getContentletAPI();
+	static IdentifierCache identifierCache      = CacheLocator.getIdentifierCache();
+	static ContainerCache  containerCache       = CacheLocator.getContainerCache();
+	private final PermissionAPI  permissionAPI  = APILocator.getPermissionAPI();
+	private final FolderAPI      folderAPI      = APILocator.getFolderAPI();
+    private final FileAssetAPI   fileAssetAPI   = APILocator.getFileAssetAPI();
+    private final HostAPI        hostAPI        = APILocator.getHostAPI();
+	private final IdentifierAPI  identifierAPI  = APILocator.getIdentifierAPI();
+	private final ContentletAPI  contentletAPI  = APILocator.getContentletAPI();
 
 
 	public void save(final Container container) throws DotDataException {
@@ -581,9 +581,101 @@ public class ContainerFactoryImpl implements ContainerFactory {
 	@Override
 	public List<Container> findContainersForStructure(final String structureIdentifier,
 			final boolean workingOrLiveOnly) throws DotDataException {
-		HibernateUtil dh = new HibernateUtil(Container.class);
 
-		StringBuilder query = new StringBuilder();
+		final List<Container> containers = new ArrayList<>();
+
+		containers.addAll(this.findFolderAssetContainersForContentType(structureIdentifier));
+		containers.addAll(this.findDataBaseContainersForContentType   (structureIdentifier, workingOrLiveOnly));
+
+		return containers;
+	}
+
+	private List<Container> findFolderAssetContainersForContentType(final String contentTypeIdentifier) throws DotDataException {
+
+		final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
+		// get the content type, if exists look for all content type by varname case insensitive
+		// for each varname try to get the container as a folder
+
+		try {
+
+			final ContentType contentType = contentTypeAPI.find(contentTypeIdentifier);
+			if (null != contentType) {
+
+				final  List<Folder> containerFolders = findContainersAssetsByContentType(contentType.variable());
+				if (containerFolders.size() > 0) {
+
+					final List<Container> fileAssetContainers = new ArrayList<>();
+
+					for (final Folder folder: containerFolders) {
+
+						final Host host           = this.hostAPI.find(folder.getHostId(), APILocator.systemUser(), false);
+						try {
+							final Container container = this.getContainerByFolder(host, folder, APILocator.systemUser(), false);
+
+							if (null != container) {
+
+								fileAssetContainers.add(container);
+							}
+						} catch (NotFoundInDbException e) {
+
+							Logger.debug(this, ()-> "Getting the container folder: " + folder.getPath()
+									+ ", throws NotFoundInDbException: " + e.getMessage());
+						}
+					}
+
+					return fileAssetContainers;
+				}
+			}
+		} catch (DotSecurityException e) {
+			throw new DotDataException(e);
+		}
+
+		return Collections.emptyList();
+	}
+
+
+
+	/**
+	 * Finds all container that have the contentTypeVarNameFileName as a vtl in their folders (reference to the content type for the file asset containers)
+	 * Will include working content type but not archived
+	 * @param contentTypeVarNameFileName {@link String}
+	 * @return List of Folder
+	 */
+	private List<Folder> findContainersAssetsByContentType(final String contentTypeVarNameFileName) {
+
+		List<Contentlet>           containers = null;
+		final List<Folder>         folders    = new ArrayList<>();
+		final User 				   user       = APILocator.systemUser();
+
+		try{
+
+			final String query = builder("+structureType:", Structure.STRUCTURE_TYPE_FILEASSET,
+					" +path:", Constants.CONTAINER_FOLDER_PATH, "/*",
+					" +path:*/" + contentTypeVarNameFileName + ".vtl",
+					" +working:true +deleted:false").toString();
+
+			containers =
+					this.permissionAPI.filterCollection(
+							this.contentletAPI.search(query,-1, 0, null , user, false),
+							PermissionAPI.PERMISSION_READ, false, user);
+
+			for(final Contentlet container : containers) {
+
+				folders.add(this.folderAPI.find(container.getFolder(), user, false));
+			}
+		} catch (Exception e) {
+			Logger.error(this.getClass(), e.getMessage(), e);
+			throw new DotRuntimeException(e.getMessage(), e);
+		}
+
+		return folders;
+	}
+
+	private List<Container> findDataBaseContainersForContentType(final String contentTypeIdentifier,
+													  final boolean workingOrLiveOnly) throws DotDataException {
+
+		final HibernateUtil hibernateUtil  = new HibernateUtil(Container.class);
+		final StringBuilder query 		   = new StringBuilder();
 
 		query.append("FROM c IN CLASS ");
 		query.append(Container.class);
@@ -597,9 +689,9 @@ public class ContainerFactoryImpl implements ContainerFactory {
 			query.append(" (cs.containerInode = vi.workingInode OR cs.containerInode = vi.liveInode ) ) ");
 		}
 		query.append(") ");
-		dh.setQuery(query.toString());
-		dh.setParam(structureIdentifier);
-		return dh.list();
+		hibernateUtil.setQuery(query.toString());
+		hibernateUtil.setParam(contentTypeIdentifier);
+		return hibernateUtil.list();
 	}
 
 	/**
