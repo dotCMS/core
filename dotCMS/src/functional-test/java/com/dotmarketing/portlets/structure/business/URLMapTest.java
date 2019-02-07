@@ -66,7 +66,7 @@ public class URLMapTest {
 			HibernateUtil.startTransaction();
 
 			// CONTAINER
-			container = APILocator.getContainerAPI().getLiveContainerById("c607b0be-8a8f-4200-ac5d-0e1bb8012f01", user, false);
+			container = APILocator.getContainerAPI().getLiveContainerById("a050073a-a31e-4aab-9307-86bfb248096a", user, false);
 
 			Structure simpleWidgetSt = CacheLocator.getContentTypeCache().getStructureByVelocityVarName("SimpleWidget");
 
