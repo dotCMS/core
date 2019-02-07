@@ -85,9 +85,6 @@ public class GraphqlAPIImpl implements GraphqlAPI {
         this.fieldClassGraphqlTypeMap.put(CategoryField.class, list(CustomFieldType.CATEGORY.getType()));
         this.fieldClassGraphqlTypeMap.put(ImageField.class, InterfaceType.FILEASSET.getType());
         this.fieldClassGraphqlTypeMap.put(FileField.class, InterfaceType.FILEASSET.getType());
-        this.fieldClassGraphqlTypeMap.put(DateTimeField.class, ExtendedScalars.DateTime);
-        this.fieldClassGraphqlTypeMap.put(DateField.class, ExtendedScalars.Date);
-        this.fieldClassGraphqlTypeMap.put(TimeField.class, ExtendedScalars.Time);
         this.fieldClassGraphqlTypeMap.put(KeyValueField.class, list(CustomFieldType.KEY_VALUE.getType()));
         this.fieldClassGraphqlTypeMap.put(CheckboxField.class, list(GraphQLString));
         this.fieldClassGraphqlTypeMap.put(MultiSelectField.class, list(GraphQLString));
