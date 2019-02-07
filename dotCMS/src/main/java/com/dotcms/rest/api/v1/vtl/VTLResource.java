@@ -1,38 +1,11 @@
 package com.dotcms.rest.api.v1.vtl;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.Reader;
-import java.io.StringWriter;
-import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-
-
-import org.apache.velocity.exception.MethodInvocationException;
-
 import com.dotcms.api.vtl.model.DotJSON;
 import com.dotcms.cache.DotJSONCache;
 import com.dotcms.cache.DotJSONCacheFactory;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.rendering.velocity.viewtools.exception.DotToolException;
-import com.dotcms.repackage.javax.ws.rs.Consumes;
-import com.dotcms.repackage.javax.ws.rs.DELETE;
-import com.dotcms.repackage.javax.ws.rs.GET;
-import com.dotcms.repackage.javax.ws.rs.POST;
-import com.dotcms.repackage.javax.ws.rs.PUT;
-import com.dotcms.repackage.javax.ws.rs.Path;
-import com.dotcms.repackage.javax.ws.rs.PathParam;
-import com.dotcms.repackage.javax.ws.rs.Produces;
+import com.dotcms.repackage.javax.ws.rs.*;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
@@ -60,6 +33,14 @@ import com.dotmarketing.util.WebKeys;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
+import org.apache.velocity.exception.MethodInvocationException;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import java.io.*;
+import java.nio.file.Files;
+import java.util.*;
 
 
 @Path("/vtl")
@@ -485,7 +466,7 @@ public class VTLResource {
                                     final Map<String, String> bodyMap,
                                     final File...binaries) {
         final InitDataObject initDataObject = this.webResource.init
-                (null, false, request, false, null);
+                (null, request, response, false, null);
 
         final User user = initDataObject.getUser();
         setUserInSession(request.getSession(false), user);

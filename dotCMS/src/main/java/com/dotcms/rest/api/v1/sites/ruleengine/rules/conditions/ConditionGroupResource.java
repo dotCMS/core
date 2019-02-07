@@ -1,14 +1,8 @@
 package com.dotcms.rest.api.v1.sites.ruleengine.rules.conditions;
 
+import com.dotcms.enterprise.rules.RulesAPI;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.repackage.javax.ws.rs.Consumes;
-import com.dotcms.repackage.javax.ws.rs.DELETE;
-import com.dotcms.repackage.javax.ws.rs.GET;
-import com.dotcms.repackage.javax.ws.rs.POST;
-import com.dotcms.repackage.javax.ws.rs.PUT;
-import com.dotcms.repackage.javax.ws.rs.Path;
-import com.dotcms.repackage.javax.ws.rs.PathParam;
-import com.dotcms.repackage.javax.ws.rs.Produces;
+import com.dotcms.repackage.javax.ws.rs.*;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
@@ -24,16 +18,13 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.exception.InvalidLicenseException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
-import com.dotcms.enterprise.rules.RulesAPI;
 import com.dotmarketing.portlets.rules.model.ConditionGroup;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.liferay.portal.model.User;
 
-import static com.dotcms.util.DotPreconditions.checkNotEmpty;
-import static com.dotcms.util.DotPreconditions.checkNotNull;
-
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -41,7 +32,8 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import javax.servlet.http.HttpServletRequest;
+import static com.dotcms.util.DotPreconditions.checkNotEmpty;
+import static com.dotcms.util.DotPreconditions.checkNotNull;
 
 @Path("/v1/sites/{siteId}/ruleengine")
 public class ConditionGroupResource  {
@@ -71,12 +63,14 @@ public class ConditionGroupResource  {
     @NoCache
     @Path("/rules/{ruleId}/conditionGroups")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response list(@Context HttpServletRequest request, @PathParam("siteId") String siteId, @PathParam("ruleId") String ruleId)
+    public Response list(@Context HttpServletRequest request,
+                         @Context final HttpServletResponse response,
+                         @PathParam("siteId") String siteId, @PathParam("ruleId") String ruleId)
             throws JSONException {
 
         siteId = checkNotEmpty(siteId, BadRequestException.class, "Site Id is required.");
         ruleId = checkNotEmpty(ruleId, BadRequestException.class, "Rule Id is required.");
-        User user = getUser(request);
+        User user = getUser(request, response);
         getHost(siteId, user);
         Rule rule = getRule(ruleId, user);
         List<RestConditionGroup> restConditionGroups = getGroupsInternal(user, rule);
@@ -91,12 +85,13 @@ public class ConditionGroupResource  {
     @Path("/rules/{ruleId}/conditionGroups/{groupId}")
     @Produces(MediaType.APPLICATION_JSON)
     public RestConditionGroup self(@Context HttpServletRequest request,
+                                   @Context final HttpServletResponse response,
                                       @PathParam("siteId") String siteId,
                                       @PathParam("ruleId") String ruleId,
                                       @PathParam("groupId") String groupId) throws JSONException {
         siteId = checkNotEmpty(siteId, BadRequestException.class, "Site Id is required.");
         ruleId = checkNotEmpty(ruleId, BadRequestException.class, "Rule Id is required.");
-        User user = getUser(request);
+        User user = getUser(request, response);
         getHost(siteId, user);
         getRule(ruleId, user);
         groupId = checkNotEmpty(groupId, BadRequestException.class, "Condition Group Id is required.");
@@ -114,12 +109,13 @@ public class ConditionGroupResource  {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     public Response add(@Context HttpServletRequest request,
+                        @Context final HttpServletResponse response,
                                        @PathParam("siteId") String siteId,
                                        @PathParam("ruleId") String ruleId,
                                        RestConditionGroup conditionGroup) throws JSONException {
         siteId = checkNotEmpty(siteId, BadRequestException.class, "Site id is required.");
         ruleId = checkNotEmpty(ruleId, BadRequestException.class, "Rule id is required.");
-        User user = getUser(request);
+        User user = getUser(request, response);
         getHost(siteId, user);
         getRule(ruleId, user);
 
@@ -143,14 +139,15 @@ public class ConditionGroupResource  {
     @Path("/rules/{ruleId}/conditionGroups/{groupId}")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    public RestConditionGroup update(@Context HttpServletRequest request,
+    public RestConditionGroup update(@Context final HttpServletRequest request,
+                                     @Context final HttpServletResponse response,
                                                 @PathParam("siteId") String siteId,
                                                 @PathParam("ruleId") String ruleId,
                                                 @PathParam("groupId") String groupId,
                                                 RestConditionGroup conditionGroup) throws JSONException {
         siteId = checkNotEmpty(siteId, BadRequestException.class, "Site Id is required.");
         ruleId = checkNotEmpty(ruleId, BadRequestException.class, "Rule Id is required.");
-        User user = getUser(request);
+        User user = getUser(request, response);
         Host host = getHost(siteId, user); // forces check that host exists. This should be handled by rulesAPI?
         Rule rule = getRule(ruleId, user);
 
@@ -169,10 +166,11 @@ public class ConditionGroupResource  {
     @DELETE
     @Path("/rules/{ruleId}/conditionGroups/{conditionGroupId}")
     public Response remove(@Context HttpServletRequest request,
+                           @Context final HttpServletResponse response,
                                          @PathParam("siteId") String siteId,
                                          @PathParam("ruleId") String ruleId,
                                          @PathParam("conditionGroupId") String groupId) throws JSONException {
-        User user = getUser(request);
+        User user = getUser(request, response);
 
         try {
             getHost(siteId, user);
@@ -190,8 +188,8 @@ public class ConditionGroupResource  {
     }
 
     @VisibleForTesting
-    User getUser(@Context HttpServletRequest request) {
-        return webResource.init(true, request, true).getUser();
+    User getUser(final HttpServletRequest request, final HttpServletResponse response) {
+        return webResource.init(request, response, true).getUser();
     }
 
     @VisibleForTesting

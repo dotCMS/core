@@ -29,6 +29,7 @@ import com.liferay.portal.model.User;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
 /**
@@ -52,7 +53,7 @@ public class WorkflowResource {
 	@Path("/fire/{params:.*}")
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes(MediaType.APPLICATION_JSON)
-	public Response fireWorkflow(@Context HttpServletRequest request,
+	public Response fireWorkflow(@Context HttpServletRequest request, @Context final HttpServletResponse response,
 			String json) throws JsonProcessingException, IOException, DotDataException {
 		ObjectMapper mapper = new ObjectMapper();
 		JsonNode jsonParams = mapper.readTree(json);
@@ -71,7 +72,7 @@ public class WorkflowResource {
                 whereToSend = null,
                 forcePush = null;
 
-        InitDataObject initData = webResource.init(null, true, request, false, null);
+        InitDataObject initData = webResource.init(null, request, response, false, null);
 
 		if (jsonParams.has(RESTParams.CALLBACK.getValue())) {
 			callback = jsonParams.get(RESTParams.CALLBACK.getValue()).asText();

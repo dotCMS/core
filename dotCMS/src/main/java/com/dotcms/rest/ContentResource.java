@@ -1,19 +1,10 @@
 package com.dotcms.rest;
 
-import static com.dotmarketing.util.NumberUtil.toInt;
-import static com.dotmarketing.util.NumberUtil.toLong;
-
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
-import com.dotcms.repackage.javax.ws.rs.Consumes;
-import com.dotcms.repackage.javax.ws.rs.GET;
-import com.dotcms.repackage.javax.ws.rs.POST;
-import com.dotcms.repackage.javax.ws.rs.PUT;
-import com.dotcms.repackage.javax.ws.rs.Path;
-import com.dotcms.repackage.javax.ws.rs.PathParam;
-import com.dotcms.repackage.javax.ws.rs.Produces;
+import com.dotcms.repackage.javax.ws.rs.*;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
@@ -51,12 +42,7 @@ import com.dotmarketing.portlets.structure.model.Field.FieldType;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.transform.ContentletRelationshipsTransformer;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.InodeUtils;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.SecurityLogger;
-import com.dotmarketing.util.UUIDUtil;
-import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.*;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import com.thoughtworks.xstream.XStream;
@@ -66,29 +52,23 @@ import com.thoughtworks.xstream.converters.UnmarshallingContext;
 import com.thoughtworks.xstream.io.HierarchicalStreamReader;
 import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
 import com.thoughtworks.xstream.io.xml.DomDriver;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.Part;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
-import java.util.AbstractMap;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.Part;
+
+import static com.dotmarketing.util.NumberUtil.toInt;
+import static com.dotmarketing.util.NumberUtil.toLong;
 
 @Path("/content")
 public class ContentResource {
@@ -122,6 +102,7 @@ public class ContentResource {
     @Path("/indexsearch/{query}/sortby/{sortby}/limit/{limit}/offset/{offset}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response indexSearch(@Context HttpServletRequest request,
+            @Context final HttpServletResponse response,
             @PathParam("query") String query,
             @PathParam("sortby") String sortBy, @PathParam("limit") int limit,
             @PathParam("offset") int offset,
@@ -129,7 +110,7 @@ public class ContentResource {
             @PathParam("callback") String callback)
             throws DotDataException, JSONException {
 
-        InitDataObject initData = webResource.init(null, true, request, false, null);
+        InitDataObject initData = webResource.init(null, request, response, false, null);
 
         Map<String, String> paramsMap = new HashMap<String, String>();
         paramsMap.put("type", type);
@@ -168,11 +149,12 @@ public class ContentResource {
     @Path("/indexcount/{query}")
     @Produces(MediaType.TEXT_PLAIN)
     public Response indexCount(@Context HttpServletRequest request,
+            @Context final HttpServletResponse response,
             @PathParam("query") String query,
             @PathParam("type") String type,
             @PathParam("callback") String callback) throws DotDataException {
 
-        InitDataObject initData = webResource.init(null, true, request, false, null);
+        InitDataObject initData = webResource.init(null, request, response, false, null);
 
         Map<String, String> paramsMap = new HashMap<String, String>();
         paramsMap.put("type", type);
@@ -197,7 +179,7 @@ public class ContentResource {
             @Context HttpServletResponse response, @PathParam("params") String params)
             throws DotDataException, JSONException {
 
-        InitDataObject initData = webResource.init(params, true, request, false, null);
+        InitDataObject initData = webResource.init(params, request, response, false, null);
         Map<String, String> paramsMap = initData.getParamsMap();
         String callback = paramsMap.get(RESTParams.CALLBACK.getValue());
         String language = paramsMap.get(RESTParams.LANGUAGE.getValue());
@@ -264,11 +246,11 @@ public class ContentResource {
     @PUT
     @Path("/canLock/{params:.*}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response canLockContent(@Context HttpServletRequest request,
+    public Response canLockContent(@Context HttpServletRequest request, @Context final HttpServletResponse response,
             @PathParam("params") String params)
             throws DotDataException, JSONException {
 
-        InitDataObject initData = webResource.init(params, true, request, false, null);
+        InitDataObject initData = webResource.init(params, request, response, false, null);
         Map<String, String> paramsMap = initData.getParamsMap();
         String callback = paramsMap.get(RESTParams.CALLBACK.getValue());
         String language = paramsMap.get(RESTParams.LANGUAGE.getValue());
@@ -354,7 +336,7 @@ public class ContentResource {
             @Context HttpServletResponse response, @PathParam("params") String params)
             throws DotDataException, JSONException {
 
-        InitDataObject initData = webResource.init(params, true, request, false, null);
+        InitDataObject initData = webResource.init(params, request, response, false, null);
 
         Map<String, String> paramsMap = initData.getParamsMap();
         String callback = paramsMap.get(RESTParams.CALLBACK.getValue());
@@ -419,11 +401,11 @@ public class ContentResource {
     @GET
     @Path("/{params:.*}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getContent(@Context HttpServletRequest request,
-            @Context HttpServletResponse response, @PathParam("params") String params) {
+    public Response getContent(@Context HttpServletRequest request, @Context final HttpServletResponse response,
+            @PathParam("params") String params) {
 
         final InitDataObject initData = this.webResource.init
-                (params, true, request, false, null);
+                (params, request, response, false, null);
         //Creating an utility response object
         final ResourceResponse responseResource = new ResourceResponse(initData.getParamsMap());
         final Map<String, String> paramsMap = initData.getParamsMap();
@@ -990,7 +972,7 @@ public class ContentResource {
             FormDataMultiPart multipart, String params, String method)
             throws URISyntaxException, DotDataException {
 
-        InitDataObject init = webResource.init(params, true, request, false, null);
+        InitDataObject init = webResource.init(params, request, response, false, null);
         Contentlet contentlet = new Contentlet();
         setRequestMetadata(contentlet, request);
 
@@ -1156,7 +1138,7 @@ public class ContentResource {
     private Response singlePUTandPOST(HttpServletRequest request, HttpServletResponse response,
             String params, String method)
             throws URISyntaxException {
-        InitDataObject init = webResource.init(params, true, request, false, null);
+        InitDataObject init = webResource.init(params, request, response,false, null);
 
         Contentlet contentlet = new Contentlet();
         setRequestMetadata(contentlet, request);

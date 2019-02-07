@@ -1,12 +1,5 @@
 package com.dotcms.rest.api.v1.contenttype;
 
-import com.dotcms.rest.exception.ForbiddenException;
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.List;
-
-import javax.servlet.http.HttpServletRequest;
-
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
@@ -22,6 +15,7 @@ import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
@@ -29,6 +23,12 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 
 import static com.dotcms.util.CollectionsUtils.imap;
 
@@ -211,16 +211,16 @@ public class FieldResource implements Serializable {
 	@NoCache
 	@Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
 	public Response getContentTypeFieldByVar(@PathParam("typeId") final String typeId,
-			@PathParam("fieldVar") final String fieldVar, @Context final HttpServletRequest req)
+											 @PathParam("fieldVar") final String fieldVar, @Context final HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse)
 			throws DotDataException, DotSecurityException {
 
-		final InitDataObject initData = this.webResource.init(null, false, req, false, null);
-		final FieldAPI fapi = APILocator.getContentTypeFieldAPI();
+		this.webResource.init(null, httpServletRequest, httpServletResponse, false, null);
+		final FieldAPI typeFieldAPI = APILocator.getContentTypeFieldAPI();
 
 		Response response = null;
 		try {
 
-			Field field = fapi.byContentTypeIdAndVar(typeId, fieldVar);
+			Field field = typeFieldAPI.byContentTypeIdAndVar(typeId, fieldVar);
 
 			response = Response.ok(new ResponseEntityView(new JsonFieldTransformer(field).mapObject())).build();
 

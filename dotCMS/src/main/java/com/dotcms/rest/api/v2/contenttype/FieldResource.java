@@ -1,8 +1,6 @@
 package com.dotcms.rest.api.v2.contenttype;
 
 
-import static com.dotcms.util.CollectionsUtils.imap;
-
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
@@ -10,14 +8,7 @@ import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.field.JsonFieldTransformer;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.repackage.javax.ws.rs.Consumes;
-import com.dotcms.repackage.javax.ws.rs.DELETE;
-import com.dotcms.repackage.javax.ws.rs.GET;
-import com.dotcms.repackage.javax.ws.rs.POST;
-import com.dotcms.repackage.javax.ws.rs.PUT;
-import com.dotcms.repackage.javax.ws.rs.Path;
-import com.dotcms.repackage.javax.ws.rs.PathParam;
-import com.dotcms.repackage.javax.ws.rs.Produces;
+import com.dotcms.repackage.javax.ws.rs.*;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
@@ -35,10 +26,14 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
-import javax.servlet.http.HttpServletRequest;
+
+import static com.dotcms.util.CollectionsUtils.imap;
 
 
 @Path("/v2/contenttype/{typeIdOrVarName}/fields")
@@ -51,7 +46,7 @@ public class FieldResource implements Serializable {
     }
 
     @VisibleForTesting
-    private FieldResource(final WebResource webresource, final FieldAPI fieldAPI) {
+    protected FieldResource(final WebResource webresource, final FieldAPI fieldAPI) {
         this.fieldAPI = fieldAPI;
         this.webResource = webresource;
     }
@@ -65,9 +60,9 @@ public class FieldResource implements Serializable {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
     public Response updateFields(@PathParam("typeIdOrVarName") final String typeIdOrVarName, final String fieldsJson,
-            @Context final HttpServletRequest req) throws DotDataException, DotSecurityException {
+                                 @Context final HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse) throws DotDataException, DotSecurityException {
 
-        final InitDataObject initData = this.webResource.init(null, false, req, false, null);
+        final InitDataObject initData = this.webResource.init(null, httpServletRequest, httpServletResponse, false, null);
         final User user = initData.getUser();
 
         Response response = null;
@@ -94,9 +89,9 @@ public class FieldResource implements Serializable {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
     public Response createContentTypeField(@PathParam("typeIdOrVarName") final String typeIdOrVarName, final String fieldJson,
-            @Context final HttpServletRequest req) throws DotDataException, DotSecurityException {
+            @Context final HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse) throws DotDataException, DotSecurityException {
 
-        final InitDataObject initData = this.webResource.init(null, false, req, false, null);
+        final InitDataObject initData = this.webResource.init(null, httpServletRequest, httpServletResponse, false, null);
         final User user = initData.getUser();
 
         Response response = null;
@@ -126,9 +121,9 @@ public class FieldResource implements Serializable {
     @NoCache
     @Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
     public final Response getContentTypeFields(@PathParam("typeIdOrVarName") final String typeIdOrVarName,
-            @Context final HttpServletRequest req) {
+            @Context final HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse) {
 
-        final InitDataObject initData = this.webResource.init(null, true, req, true, null);
+        final InitDataObject initData = this.webResource.init(null, httpServletRequest, httpServletResponse, true, null);
         final User user = initData.getUser();
         final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user, true);
 
@@ -157,10 +152,10 @@ public class FieldResource implements Serializable {
     @NoCache
     @Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
     public Response getContentTypeFieldById(
-            @PathParam("fieldId") final String fieldId, @Context final HttpServletRequest req)
+            @PathParam("fieldId") final String fieldId, @Context final HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse)
             throws DotDataException, DotSecurityException {
 
-        this.webResource.init(null, false, req, false, null);
+        this.webResource.init(null, httpServletRequest, httpServletResponse, false, null);
 
         Response response = null;
         try {
@@ -183,10 +178,10 @@ public class FieldResource implements Serializable {
     @NoCache
     @Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
     public Response getContentTypeFieldByVar(@PathParam("typeIdOrVarName") final String typeIdOrVarName,
-            @PathParam("fieldVar") final String fieldVar, @Context final HttpServletRequest req)
+            @PathParam("fieldVar") final String fieldVar, @Context final HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse)
             throws DotDataException, DotSecurityException {
 
-        final InitDataObject initData = this.webResource.init(null, false, req, false, null);
+        final InitDataObject initData = this.webResource.init(null, httpServletRequest, httpServletResponse, false, null);
         final User user = initData.getUser();
         Response response = null;
         try {
@@ -213,9 +208,9 @@ public class FieldResource implements Serializable {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
     public Response updateContentTypeFieldById(@PathParam("fieldId") final String fieldId,
-            final String fieldJson, @Context final HttpServletRequest req) throws DotDataException, DotSecurityException {
+            final String fieldJson, @Context final HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse) throws DotDataException, DotSecurityException {
 
-        final InitDataObject initData = this.webResource.init(null, false, req, false, null);
+        final InitDataObject initData = this.webResource.init(null, httpServletRequest, httpServletResponse, false, null);
         final User user = initData.getUser();
 
         Response response = null;
@@ -256,9 +251,9 @@ public class FieldResource implements Serializable {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
     public Response updateContentTypeFieldByVar(@PathParam("typeIdOrVarName") final String typeIdOrVarName, @PathParam("fieldVar") final String fieldVar,
-            final String fieldJson, @Context final HttpServletRequest req) throws DotDataException, DotSecurityException {
+            final String fieldJson, @Context final HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse) throws DotDataException, DotSecurityException {
 
-        final InitDataObject initData = this.webResource.init(null, false, req, false, null);
+        final InitDataObject initData = this.webResource.init(null, httpServletRequest, httpServletResponse, false, null);
         final User user = initData.getUser();
 
         Response response = null;
@@ -298,10 +293,11 @@ public class FieldResource implements Serializable {
     @JSONP
     @NoCache
     @Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
-    public Response deleteFields(@PathParam("typeIdOrVarName") final String typeIdOrVarName, final String[] fieldsID, @Context final HttpServletRequest req)
+    public Response deleteFields(@PathParam("typeIdOrVarName") final String typeIdOrVarName, final String[] fieldsID,
+                                 @Context final HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse)
             throws DotDataException, DotSecurityException {
 
-        final InitDataObject initData = this.webResource.init(null, false, req, false, null);
+        final InitDataObject initData = this.webResource.init(null, httpServletRequest, httpServletResponse, false, null);
         final User user = initData.getUser();
 
         Response response = null;
@@ -337,10 +333,12 @@ public class FieldResource implements Serializable {
     @NoCache
     @Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
     public Response deleteContentTypeFieldById(
-            @PathParam("fieldId") final String fieldId, @Context final HttpServletRequest req)
+            @PathParam("fieldId") final String fieldId,
+            @Context final HttpServletRequest httpServletRequest,
+            @Context final HttpServletResponse httpServletResponse)
             throws DotDataException, DotSecurityException {
 
-        final InitDataObject initData = this.webResource.init(null, false, req, false, null);
+        final InitDataObject initData = this.webResource.init(null, httpServletRequest, httpServletResponse, false, null);
         final User user = initData.getUser();
 
         Response response = null;
@@ -365,10 +363,12 @@ public class FieldResource implements Serializable {
     @NoCache
     @Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
     public Response deleteContentTypeFieldByVar(@PathParam("typeIdOrVarName") final String typeIdOrVarName,
-            @PathParam("fieldVar") final String fieldVar, @Context final HttpServletRequest req)
+            @PathParam("fieldVar") final String fieldVar,
+            @Context final HttpServletRequest httpServletRequest,
+            @Context final HttpServletResponse httpServletResponse)
             throws DotDataException, DotSecurityException {
 
-        final InitDataObject initData = this.webResource.init(null, false, req, false, null);
+        final InitDataObject initData = this.webResource.init(null, httpServletRequest, httpServletResponse, false, null);
         final User user = initData.getUser();
 
         Response response = null;

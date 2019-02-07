@@ -9,11 +9,7 @@ import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotcms.enterprise.cluster.action.NodeStatusServerAction;
 import com.dotcms.enterprise.cluster.action.ServerAction;
 import com.dotcms.enterprise.cluster.action.model.ServerActionBean;
-import com.dotcms.repackage.javax.ws.rs.GET;
-import com.dotcms.repackage.javax.ws.rs.POST;
-import com.dotcms.repackage.javax.ws.rs.Path;
-import com.dotcms.repackage.javax.ws.rs.PathParam;
-import com.dotcms.repackage.javax.ws.rs.Produces;
+import com.dotcms.repackage.javax.ws.rs.*;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotmarketing.business.APILocator;
@@ -28,11 +24,13 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import javax.servlet.http.HttpServletRequest;
 
 
 @Path("/cluster")
@@ -53,10 +51,10 @@ public class ClusterResource {
     @GET
     @Path ("/getNodesStatus/{params:.*}")
     @Produces ("application/json")
-    public Response getNodesInfo ( @Context HttpServletRequest request, @PathParam ("params") String params )
+    public Response getNodesInfo (@Context HttpServletRequest request, @Context final HttpServletResponse response, @PathParam ("params") String params )
 			throws DotDataException, JSONException {
 
-        InitDataObject initData = webResource.init( params, true, request, false, PortletID.CONFIGURATION.toString());
+        InitDataObject initData = webResource.init( params, request, response, false, PortletID.CONFIGURATION.toString());
         ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
         
         ServerAPI serverAPI = APILocator.getServerAPI();
@@ -200,10 +198,10 @@ public class ClusterResource {
     @GET
     @Path ("/getNodeStatus/{params:.*}")
     @Produces ("application/json")
-    public Response getNodeInfo ( @Context HttpServletRequest request, @PathParam ("params") String params )
+    public Response getNodeInfo ( @Context HttpServletRequest request, @Context final HttpServletResponse response, @PathParam ("params") String params )
 			throws DotDataException, JSONException {
 
-        InitDataObject initData = webResource.init( params, true, request, false, PortletID.CONFIGURATION.toString() );
+        InitDataObject initData = webResource.init( params, request, response, false, PortletID.CONFIGURATION.toString() );
 
         Map<String, String> paramsMap = initData.getParamsMap();
 		String remoteServerID = paramsMap.get("id");
@@ -313,10 +311,10 @@ public class ClusterResource {
     @GET
     @Path ("/getESConfigProperties/{params:.*}")
     @Produces ("application/json")
-    public Response getESConfigProperties ( @Context HttpServletRequest request, @PathParam ("params") String params )
+    public Response getESConfigProperties ( @Context HttpServletRequest request, @Context final HttpServletResponse response, @PathParam ("params") String params )
 			throws DotDataException, JSONException {
 
-        InitDataObject initData = webResource.init( params, true, request, false, PortletID.CONFIGURATION.toString() );
+        InitDataObject initData = webResource.init( params, request, response, false, PortletID.CONFIGURATION.toString() );
         ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
 
         JSONObject jsonNode = new JSONObject();
@@ -338,8 +336,10 @@ public class ClusterResource {
     @GET
     @Path("/licenseRepoStatus")
     @Produces("application/json")
-    public Response getLicenseRepoStatus(@Context HttpServletRequest request, @PathParam ("params") String params) throws DotDataException, JSONException {
-        webResource.init(params, true, request, true, null);
+    public Response getLicenseRepoStatus(@Context HttpServletRequest request,
+										 @Context final HttpServletResponse response,
+										 @PathParam ("params") String params) throws DotDataException, JSONException {
+        webResource.init(params, request, response,true, null);
 
         JSONObject json=new JSONObject();
         json.put("total", LicenseUtil.getLicenseRepoTotal());
@@ -355,8 +355,8 @@ public class ClusterResource {
      */
     @POST
     @Path("/remove/{params:.*}")
-    public Response removeFromCluster(@Context HttpServletRequest request, @PathParam("params") String params) {
-        InitDataObject initData = webResource.init(params, true, request, true, PortletID.CONFIGURATION.toString());
+    public Response removeFromCluster(@Context HttpServletRequest request, @Context final HttpServletResponse response, @PathParam("params") String params) {
+        InitDataObject initData = webResource.init(params, request, response, true, PortletID.CONFIGURATION.toString());
         String serverId = initData.getParamsMap().get("serverid");
         try {
         	HibernateUtil.startTransaction();

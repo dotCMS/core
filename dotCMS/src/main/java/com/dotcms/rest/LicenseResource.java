@@ -8,14 +8,7 @@ import com.dotcms.enterprise.license.DotLicenseRepoEntry;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.repackage.com.ibm.icu.text.SimpleDateFormat;
-import com.dotcms.repackage.javax.ws.rs.Consumes;
-import com.dotcms.repackage.javax.ws.rs.DELETE;
-import com.dotcms.repackage.javax.ws.rs.GET;
-import com.dotcms.repackage.javax.ws.rs.POST;
-import com.dotcms.repackage.javax.ws.rs.Path;
-import com.dotcms.repackage.javax.ws.rs.PathParam;
-import com.dotcms.repackage.javax.ws.rs.Produces;
-import com.dotcms.repackage.javax.ws.rs.QueryParam;
+import com.dotcms.repackage.javax.ws.rs.*;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
@@ -30,21 +23,16 @@ import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotHibernateException;
-import com.dotmarketing.util.AdminLogger;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.DateUtil;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.PortletID;
-import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.*;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import java.io.InputStream;
 import java.util.Calendar;
 import java.util.Map;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
 
 
 @Path("/license")
@@ -57,8 +45,8 @@ public class LicenseResource {
     @GET
     @Path("/all/{params:.*}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getAll(@Context HttpServletRequest request, @PathParam("params") String params) {
-        webResource.init(params, true, request, true, PortletID.CONFIGURATION.toString());
+    public Response getAll(@Context HttpServletRequest request, @Context final HttpServletResponse response, @PathParam("params") String params) {
+        webResource.init(params, request, response, true, PortletID.CONFIGURATION.toString());
         try {
             JSONArray array=new JSONArray();
 
@@ -115,10 +103,10 @@ public class LicenseResource {
     @POST
     @Path("/upload/{params:.*}")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
-    public Response putZipFile(@Context HttpServletRequest request, @PathParam("params") String params,
+    public Response putZipFile(@Context HttpServletRequest request, @Context final HttpServletResponse response, @PathParam("params") String params,
             @FormDataParam("file") InputStream inputFile, @FormDataParam("file") FormDataContentDisposition inputFileDetail,
             @FormDataParam("return") String ret) {
-        InitDataObject initData = webResource.init(params, true, request, true, PortletID.CONFIGURATION.toString());
+        InitDataObject initData = webResource.init(params, request, response, true, PortletID.CONFIGURATION.toString());
         try {
            
             if(inputFile!=null) {
@@ -144,8 +132,8 @@ public class LicenseResource {
     @NoCache
     @DELETE
     @Path("/delete/{params:.*}")
-    public Response delete(@Context HttpServletRequest request, @PathParam("params") String params) {
-        InitDataObject initData = webResource.init(params, true, request, true, PortletID.CONFIGURATION.toString());
+    public Response delete(@Context HttpServletRequest request, @Context final HttpServletResponse response, @PathParam("params") String params) {
+        InitDataObject initData = webResource.init(params, request, response, true, PortletID.CONFIGURATION.toString());
         String id=initData.getParamsMap().get("id");
         try {
             if(UtilMethods.isSet(id)) {
@@ -174,8 +162,8 @@ public class LicenseResource {
     @NoCache
     @POST
     @Path("/pick/{params:.*}")
-    public Response pickLicense(@Context HttpServletRequest request, @PathParam("params") String params) {
-        InitDataObject initData = webResource.init(params, true, request, true, PortletID.CONFIGURATION.toString());
+    public Response pickLicense(@Context HttpServletRequest request, @Context final HttpServletResponse response, @PathParam("params") String params) {
+        InitDataObject initData = webResource.init(params, request, response, true, PortletID.CONFIGURATION.toString());
         String serial = initData.getParamsMap().get("serial");
         
         final long currentLevel = LicenseUtil.getLevel();
@@ -216,8 +204,8 @@ public class LicenseResource {
     @NoCache
     @POST
     @Path("/free/{params:.*}")
-    public Response freeLicense(@Context HttpServletRequest request, @PathParam("params") String params) {
-        InitDataObject initData = webResource.init(params, true, request, true, PortletID.CONFIGURATION.toString());
+    public Response freeLicense(@Context HttpServletRequest request, @Context final HttpServletResponse response, @PathParam("params") String params) {
+        InitDataObject initData = webResource.init(params, request, response, true, PortletID.CONFIGURATION.toString());
         
         String localServerId = APILocator.getServerAPI().readServerId();
         String remoteServerId = initData.getParamsMap().get(SERVER_ID);
@@ -308,9 +296,9 @@ public class LicenseResource {
     @Path("/requestCode/{params:.*}")
     @Consumes (MediaType.APPLICATION_FORM_URLENCODED)
     public Response requestLicense(
-    	@Context HttpServletRequest request, @PathParam ("params") String params
+    	@Context HttpServletRequest request, @Context final HttpServletResponse response, @PathParam ("params") String params
     ) {
-        InitDataObject initData = webResource.init(params, true, request, true, PortletID.CONFIGURATION.toString());
+        InitDataObject initData = webResource.init(params, request, response, true, PortletID.CONFIGURATION.toString());
 
         Map<String, String> paramsMap = initData.getParamsMap();
 
@@ -370,10 +358,10 @@ public class LicenseResource {
     @Path("/applyLicense")
     @Consumes (MediaType.APPLICATION_FORM_URLENCODED)
     public Response applyLicense(
-    	@Context HttpServletRequest request, @PathParam("params") String params,
+    	@Context HttpServletRequest request, @Context final HttpServletResponse response, @PathParam("params") String params,
     	@QueryParam("licenseText") String licenseText
     ) {
-        InitDataObject initData = webResource.init(params, true, request, true, PortletID.CONFIGURATION.toString());
+        InitDataObject initData = webResource.init(params, request, response, true, PortletID.CONFIGURATION.toString());
 
         //Validate the parameters
         StringBuilder responseMessage = new StringBuilder();
@@ -413,11 +401,11 @@ public class LicenseResource {
     @POST
     @Path("/resetLicense/{params:.*}")
     @Consumes (MediaType.APPLICATION_FORM_URLENCODED)
-    public Response resetLicense(@Context HttpServletRequest request, @PathParam("params") String params) {
+    public Response resetLicense(@Context HttpServletRequest request, @Context final HttpServletResponse response, @PathParam("params") String params) {
 
-        InitDataObject initData = webResource.init(params, true, request, true, PortletID.CONFIGURATION.toString());
+        webResource.init(params, request, response, true, PortletID.CONFIGURATION.toString());
         try {
-        	freeLicense(request, params);
+        	freeLicense(request, response, params);
         	
         	
         	

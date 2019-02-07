@@ -44,6 +44,7 @@ import org.elasticsearch.action.admin.indices.stats.IndicesStatsResponse;
 import org.elasticsearch.client.Client;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -88,10 +89,14 @@ public class ESIndexResource {
 		this.indiciesAPI = indiciesAPI;
 	}
 
-    protected InitDataObject auth(String params,HttpServletRequest request) throws DotSecurityException, DotDataException {
-        InitDataObject init= webResource.init(params, true, request, true, null);
-        if(!this.layoutAPI.doesUserHaveAccessToPortlet("maintenance", init.getUser()))
+    protected InitDataObject auth(final String params,
+                                  final HttpServletRequest httpServletRequest,
+                                  final HttpServletResponse httpServletResponse) throws DotSecurityException, DotDataException {
+
+        final InitDataObject init = webResource.init(params, httpServletRequest, httpServletResponse, true, null);
+        if(!this.layoutAPI.doesUserHaveAccessToPortlet("maintenance", init.getUser())) {
             throw new DotSecurityException("unauthorized");
+        }
         return init;
     }
 
@@ -195,16 +200,16 @@ public class ESIndexResource {
      * @param inputFileDetail input file details
      * @param params optional parameters
      * @return response status
-     * @deprecated  As of 2016-10-12, replaced by {@link #restoreSnapshotIndex(HttpServletRequest, AsyncResponse,
+     * @deprecated  As of 2016-10-12, replaced by {@link #restoreSnapshotIndex(HttpServletRequest, HttpServletResponse, AsyncResponse,
      * InputStream, FormDataContentDisposition, String)}
      */
     @PUT
     @Path("/restore/{params:.*}")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
-    public Response restoreIndex(@Context HttpServletRequest request, @PathParam("params") String params,
-            @FormDataParam("file") InputStream inputFile, @FormDataParam("file") FormDataContentDisposition inputFileDetail) {
+    public Response restoreIndex(@Context HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse, @PathParam("params") String params,
+                                 @FormDataParam("file") InputStream inputFile, @FormDataParam("file") FormDataContentDisposition inputFileDetail) {
         try {
-            InitDataObject init=auth(params,request);
+            InitDataObject init=auth(params,httpServletRequest, httpServletResponse);
 
             String index=init.getParamsMap().get("index");
             String alias=init.getParamsMap().get("alias");
@@ -216,10 +221,10 @@ public class ESIndexResource {
             restoreIndex(file,alias,index,clear);
 
         } catch (DotSecurityException sec) {
-            SecurityLogger.logInfo(this.getClass(), "Access denied on restoreIndex from "+request.getRemoteAddr());
+            SecurityLogger.logInfo(this.getClass(), "Access denied on restoreIndex from "+httpServletRequest.getRemoteAddr());
             return Response.status(Status.UNAUTHORIZED).build();
         } catch (Exception de) {
-            Logger.error(this, "Error on restore index. URI: "+request.getRequestURI(),de);
+            Logger.error(this, "Error on restore index. URI: "+httpServletRequest.getRequestURI(),de);
             return Response.serverError().build();
         }
 
@@ -228,18 +233,18 @@ public class ESIndexResource {
 
     /**
      * Download index as backup
-     * @param request
+     * @param httpServletRequest
      * @param params
      * @return zip file
-     * @deprecated  As of 2016-10-12, replaced by {@link #snapshotIndex(HttpServletRequest, String)}
+     * @deprecated  As of 2016-10-12, replaced by {@link #snapshotIndex(HttpServletRequest, HttpServletResponse, String)}
      */
     @GET
     @Path("/download/{params:.*}")
     @Produces("application/zip")
-    public Response downloadIndex(@Context HttpServletRequest request, @PathParam("params") String params) {
+    public Response downloadIndex(@Context HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse, @PathParam("params") String params) {
 
         try {
-            InitDataObject init=auth(params,request);
+            InitDataObject init=auth(params,httpServletRequest,httpServletResponse);
             String indexName = this.indexHelper.getIndexNameOrAlias(init.getParamsMap(),"index","alias",this.indexAPI);
             if(!UtilMethods.isSet(indexName)) return Response.status(Status.BAD_REQUEST).build();
 
@@ -250,33 +255,33 @@ public class ESIndexResource {
                     .header("Content-Type", "application/zip").build();
 
         } catch (DotSecurityException sec) {
-            SecurityLogger.logInfo(this.getClass(), "Access denied on downloadIndex from "+request.getRemoteAddr());
+            SecurityLogger.logInfo(this.getClass(), "Access denied on downloadIndex from "+httpServletRequest.getRemoteAddr());
             return Response.status(Status.UNAUTHORIZED).build();
         } catch (Exception de) {
-            Logger.error(this, "Error on downloadIndex. URI: "+request.getRequestURI(),de);
+            Logger.error(this, "Error on downloadIndex. URI: "+httpServletRequest.getRequestURI(),de);
             return Response.serverError().build();
         }
     }
 
     /**
      * Creates a compressed (zip) index snapshot file
-     * @param request request
+     * @param httpServletRequest request
      * @param params optional parameters, such as "alias"
      * @return
      */
     @GET
     @Path("/snapshot/{params:.*}")
     @Produces({"application/zip", MediaType.APPLICATION_JSON})
-    public Response snapshotIndex(@Context HttpServletRequest request, @PathParam("params") String params) {
+    public Response snapshotIndex(@Context HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse, @PathParam("params") String params) {
 
     	try {
         	checkArgument(params != null);
-            InitDataObject initDataObject = auth(params,request);
+            InitDataObject initDataObject = auth(params,httpServletRequest, httpServletResponse);
             final User user = initDataObject.getUser();
             String indexName = this.indexHelper.getIndexNameOrAlias(initDataObject.getParamsMap(),this.indexAPI);
 
             if(!UtilMethods.isSet(indexName)){
-            	return this.responseUtil.getErrorResponse(request, Response.Status.BAD_REQUEST, user.getLocale(), null, "snapshot.wrong.arguments");
+            	return this.responseUtil.getErrorResponse(httpServletRequest, Response.Status.BAD_REQUEST, user.getLocale(), null, "snapshot.wrong.arguments");
             }
 
             if("live".equalsIgnoreCase(indexName) || "working".equalsIgnoreCase(indexName)){
@@ -320,7 +325,8 @@ public class ESIndexResource {
     @Path("/restoresnapshot/{params:.*}")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public Response restoreSnapshotIndex(@Context final HttpServletRequest request,
+    public Response restoreSnapshotIndex(@Context final HttpServletRequest httpServletRequest,
+                                         @Context final HttpServletResponse httpServletResponse,
                                          @Suspended final AsyncResponse asyncResponse,
                                          @FormDataParam("file") final InputStream inputFile,
                                          @FormDataParam("file") final FormDataContentDisposition inputFileDetail,
@@ -328,7 +334,7 @@ public class ESIndexResource {
 
         try {
         	checkArgument(inputFile != null);
-        	InitDataObject initDataObject = auth(params,request);
+        	InitDataObject initDataObject = auth(params,httpServletRequest, httpServletResponse);
         	final User user = initDataObject.getUser();
 
         	ResponseUtil.handleAsyncResponse(
@@ -355,7 +361,7 @@ public class ESIndexResource {
                     },
                     asyncResponse);
 
-            return this.responseUtil.getErrorResponse(request, Response.Status.SERVICE_UNAVAILABLE, user.getLocale(), null, "snapshot.upload.failed");
+            return this.responseUtil.getErrorResponse(httpServletRequest, Response.Status.SERVICE_UNAVAILABLE, user.getLocale(), null, "snapshot.upload.failed");
         } catch (Exception e) {
 
             Logger.error(this.getClass(),"Exception trying to restore index snapshot: " + e.getMessage(), e);
@@ -365,14 +371,14 @@ public class ESIndexResource {
 
 
     /**
-     * @deprecated  As of 2016-10-12, replaced by {@link #snapshotIndex(request, inputFile, inputFileDetail ,params)} and {@link #snapshotIndex(request, inputFile, inputFileDetail ,params)}
+     * @deprecated  As of 2016-10-12, replaced by {@link #snapshotIndex(HttpServletRequest,HttpServletResponse ,String)}
      */
     @PUT
     @Path("/create/{params:.*}")
     @Produces("text/plain")
-    public Response createIndex(@Context HttpServletRequest request, @PathParam("params") String params) {
+    public Response createIndex(@Context HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse, @PathParam("params") String params) {
         try {
-            InitDataObject init=auth(params,request);
+            InitDataObject init=auth(params,httpServletRequest, httpServletResponse);
 
             int shards=Integer.parseInt(init.getParamsMap().get("shards"));
             boolean live = init.getParamsMap().containsKey("live") ? Boolean.parseBoolean(init.getParamsMap().get("live")) : false;
@@ -382,19 +388,19 @@ public class ESIndexResource {
 
             return Response.ok(indexName).build();
         } catch (DotSecurityException sec) {
-            SecurityLogger.logInfo(this.getClass(), "Access denied on createIndex from "+request.getRemoteAddr());
+            SecurityLogger.logInfo(this.getClass(), "Access denied on createIndex from "+httpServletRequest.getRemoteAddr());
             return Response.status(Status.UNAUTHORIZED).build();
         } catch (Exception de) {
-            Logger.error(this, "Error on createIndex. URI: "+request.getRequestURI(),de);
+            Logger.error(this, "Error on createIndex. URI: "+httpServletRequest.getRequestURI(),de);
             return Response.serverError().build();
         }
     }
 
     @PUT
     @Path("/clear/{params:.*}")
-    public Response clearIndex(@Context HttpServletRequest request, @PathParam("params") String params) {
+    public Response clearIndex(@Context HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse, @PathParam("params") String params) {
         try {
-            InitDataObject init=auth(params,request);
+            InitDataObject init=auth(params,httpServletRequest,httpServletResponse);
             String indexName = this.indexHelper.getIndexNameOrAlias(init.getParamsMap(),"index","alias",this.indexAPI);
             if(UtilMethods.isSet(indexName)) {
                 APILocator.getESIndexAPI().clearIndex(indexName);
@@ -408,9 +414,9 @@ public class ESIndexResource {
 
     @DELETE
     @Path("/{params:.*}")
-    public Response deleteIndex(@Context HttpServletRequest request, @PathParam("params") String params) {
+    public Response deleteIndex(@Context HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse, @PathParam("params") String params) {
         try {
-            InitDataObject init=auth(params,request);
+            InitDataObject init=auth(params,httpServletRequest, httpServletResponse);
             String indexName = this.indexHelper.getIndexNameOrAlias(init.getParamsMap(),"index","alias",this.indexAPI);
             if(UtilMethods.isSet(indexName)) {
                 APILocator.getESIndexAPI().delete(indexName);
@@ -424,9 +430,9 @@ public class ESIndexResource {
 
     @PUT
     @Path("/activate/{params:.*}")
-    public Response activateIndex(@Context HttpServletRequest request, @PathParam("params") String params) {
+    public Response activateIndex(@Context HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse, @PathParam("params") String params) {
         try {
-            InitDataObject init=auth(params,request);
+            InitDataObject init=auth(params,httpServletRequest, httpServletResponse);
             String indexName = this.indexHelper.getIndexNameOrAlias(init.getParamsMap(),"index","alias",this.indexAPI);
 
             activateIndex(indexName);
@@ -440,9 +446,9 @@ public class ESIndexResource {
 
     @PUT
     @Path("/deactivate/{params:.*}")
-    public Response deactivateIndex(@Context HttpServletRequest request, @PathParam("params") String params) {
+    public Response deactivateIndex(@Context HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse, @PathParam("params") String params) {
         try {
-            InitDataObject init=auth(params,request);
+            InitDataObject init=auth(params,httpServletRequest,httpServletResponse);
             String indexName = this.indexHelper.getIndexNameOrAlias(init.getParamsMap(),"index","alias",this.indexAPI);
 
             deactivateIndex(indexName);
@@ -456,9 +462,9 @@ public class ESIndexResource {
 
     @PUT
     @Path("/updatereplica/{params:.*}")
-    public Response updateReplica(@Context HttpServletRequest request, @PathParam("params") String params) {
+    public Response updateReplica(@Context HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse,@PathParam("params") String params) {
         try {
-            InitDataObject init=auth(params,request);
+            InitDataObject init=auth(params,httpServletRequest, httpServletResponse);
             String indexName = this.indexHelper.getIndexNameOrAlias(init.getParamsMap(),"index","alias",this.indexAPI);
             int replicas = Integer.parseInt(init.getParamsMap().get("replicas"));
             APILocator.getESIndexAPI().updateReplicas(indexName, replicas);
@@ -475,9 +481,9 @@ public class ESIndexResource {
 
     @PUT
     @Path("/close/{params:.*}")
-    public Response closeIndex(@Context HttpServletRequest request, @PathParam("params") String params) {
+    public Response closeIndex(@Context HttpServletRequest httpServletRequest,@Context final HttpServletResponse httpServletResponse, @PathParam("params") String params) {
         try {
-            InitDataObject init=auth(params,request);
+            InitDataObject init=auth(params,httpServletRequest,httpServletResponse);
             String indexName = this.indexHelper.getIndexNameOrAlias(init.getParamsMap(),"index","alias",this.indexAPI);
             APILocator.getESIndexAPI().closeIndex(indexName);
 
@@ -490,9 +496,9 @@ public class ESIndexResource {
 
     @PUT
     @Path("/open/{params:.*}")
-    public Response openIndex(@Context HttpServletRequest request, @PathParam("params") String params) {
+    public Response openIndex(@Context HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse, @PathParam("params") String params) {
         try {
-            InitDataObject init=auth(params,request);
+            InitDataObject init=auth(params,httpServletRequest, httpServletResponse);
             String indexName = this.indexHelper.getIndexNameOrAlias(init.getParamsMap(),"index","alias",this.indexAPI);
             APILocator.getESIndexAPI().openIndex(indexName);
 
@@ -506,9 +512,9 @@ public class ESIndexResource {
     @GET
     @Path("/active/{params:.*}")
     @Produces("text/plain")
-    public Response getActive(@Context HttpServletRequest request, @PathParam("params") String params) {
+    public Response getActive(@Context HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse, @PathParam("params") String params) {
         try {
-            InitDataObject init=auth(params,request);
+            InitDataObject init=auth(params,httpServletRequest,httpServletResponse);
 
             //Creating an utility response object
             ResourceResponse responseResource = new ResourceResponse( init.getParamsMap() );
@@ -523,9 +529,9 @@ public class ESIndexResource {
     @GET
     @Path("/docscount/{params:.*}")
     @Produces("text/plain")
-    public Response getDocumentCount(@Context HttpServletRequest request, @PathParam("params") String params) {
+    public Response getDocumentCount(@Context HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse, @PathParam("params") String params) {
         try {
-            InitDataObject init=auth(params,request);
+            InitDataObject init=auth(params,httpServletRequest, httpServletResponse);
 
             //Creating an utility response object
             ResourceResponse responseResource = new ResourceResponse( init.getParamsMap() );
@@ -541,9 +547,9 @@ public class ESIndexResource {
     @GET
     @Path("/indexlist/{params:.*}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response indexList(@Context HttpServletRequest request, @PathParam("params") String params) {
+    public Response indexList(@Context HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse, @PathParam("params") String params) {
         try {
-            InitDataObject init = auth(params,request);
+            InitDataObject init = auth(params,httpServletRequest, httpServletResponse);
 
             //Creating an utility response object
             ResourceResponse responseResource = new ResourceResponse( init.getParamsMap() );

@@ -1,6 +1,5 @@
 package com.dotcms.rest.api.v1.languages;
 
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.com.google.common.collect.Maps;
 import com.dotcms.repackage.javax.ws.rs.GET;
 import com.dotcms.repackage.javax.ws.rs.POST;
@@ -23,6 +22,7 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.liferay.util.LocaleUtil;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.util.List;
 import java.util.Map;
@@ -58,9 +58,9 @@ public class LanguagesResource {
     /**
      * @deprecated use {@link LanguagesResource#getMessages(HttpServletRequest, I18NForm)} instead
      */
-    public Map<String, RestLanguage> list(@Context HttpServletRequest request) {
+    public Map<String, RestLanguage> list(@Context HttpServletRequest request, @Context final HttpServletResponse response) {
 
-        webResource.init(true, request, true);
+        webResource.init(request, response, true);
         List<Language> languages = languageAPI.getLanguages();
         Map<String, RestLanguage> hash = Maps.newHashMapWithExpectedSize(languages.size());
         for (Language language : languages) {

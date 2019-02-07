@@ -14,8 +14,6 @@ import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.util.I18NUtil;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.LayoutAPI;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -23,13 +21,13 @@ import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import com.liferay.util.LocaleUtil;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
-
-import javax.servlet.http.HttpServletRequest;
 
 import static com.dotcms.util.CollectionsUtils.map;
 
@@ -40,25 +38,21 @@ import static com.dotcms.util.CollectionsUtils.map;
 public class FolderResource implements Serializable {
     private final WebResource webResource;
     private final FolderHelper folderHelper;
-    private final LayoutAPI layoutAPI;
     private final I18NUtil i18NUtil;
 
     public FolderResource() {
         this(new WebResource(),
                 FolderHelper.getInstance(),
-                APILocator.getLayoutAPI(),
                 I18NUtil.INSTANCE);
     }
 
     @VisibleForTesting
     public FolderResource(final WebResource webResource,
                           final FolderHelper folderHelper,
-                          final LayoutAPI layoutAPI,
                           final I18NUtil i18NUtil) {
 
         this.webResource = webResource;
         this.folderHelper = folderHelper;
-        this.layoutAPI = layoutAPI;
         this.i18NUtil = i18NUtil;
     }
 
@@ -68,16 +62,17 @@ public class FolderResource implements Serializable {
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final Response createFolders(@Context final HttpServletRequest req,
+    public final Response createFolders(@Context final HttpServletRequest httpServletRequest,
+                                        @Context final HttpServletResponse httpServletResponse,
                                         final List<String> paths,
                                         @PathParam("siteName") final String siteName) {
         Response response = null;
-        final InitDataObject initData = this.webResource.init(null, true, req, true, null);
+        final InitDataObject initData = this.webResource.init(null, httpServletRequest, httpServletResponse, true, null);
         final User user = initData.getUser();
         final List<Map<String, Object>> folderResults;
 
         try {
-            Locale locale = LocaleUtil.getLocale(user, req);
+            Locale locale = LocaleUtil.getLocale(user, httpServletRequest);
             FolderHelper.FolderResults results = folderHelper.createFolders(paths, siteName, user);
             folderResults = results.folders
                     .stream()
@@ -113,11 +108,12 @@ public class FolderResource implements Serializable {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final Response loadFolderByURI(@Context final HttpServletRequest req,
+    public final Response loadFolderByURI(@Context final HttpServletRequest httpServletRequest,
+                                          @Context final HttpServletResponse httpServletResponse,
                                           @PathParam("siteName") final String siteName,
                                           @PathParam("uri") final String uri){
         Response response = null;
-        final InitDataObject initData = this.webResource.init(null, true, req, true, null);
+        final InitDataObject initData = this.webResource.init(null, httpServletRequest, httpServletResponse, true, null);
         final User user = initData.getUser();
         try{
             Folder folder = folderHelper.loadFolderByURI(siteName,user,uri);

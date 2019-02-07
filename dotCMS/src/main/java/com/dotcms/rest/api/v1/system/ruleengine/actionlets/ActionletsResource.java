@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v1.system.ruleengine.actionlets;
 
+import com.dotcms.enterprise.rules.RulesAPI;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.ws.rs.GET;
 import com.dotcms.repackage.javax.ws.rs.Path;
@@ -13,15 +14,15 @@ import com.dotcms.rest.exception.ForbiddenException;
 import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.exception.InvalidLicenseException;
 import com.dotmarketing.portlets.rules.actionlet.RuleActionlet;
-import com.dotcms.enterprise.rules.RulesAPI;
 import com.liferay.portal.model.User;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import javax.servlet.http.HttpServletRequest;
 
 @Path("/v1/system/ruleengine")
 public class ActionletsResource {
@@ -52,8 +53,8 @@ public class ActionletsResource {
     @GET
     @Path("/actionlets")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response list(@Context HttpServletRequest request) {
-        User user = getUser(request);
+    public Response list(@Context HttpServletRequest request, final @Context HttpServletResponse response) {
+        getUser(request,response);
         return Response.ok(getActionletsInternal()).build();
     }
 
@@ -69,7 +70,7 @@ public class ActionletsResource {
     }
 
     @VisibleForTesting
-    User getUser(@Context HttpServletRequest request) {
-        return webResource.init(true, request, true).getUser();
+    User getUser(@Context HttpServletRequest request, final @Context HttpServletResponse response) {
+        return webResource.init(request, response,true).getUser();
     }
 }

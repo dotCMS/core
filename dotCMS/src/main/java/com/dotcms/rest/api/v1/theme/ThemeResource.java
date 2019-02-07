@@ -1,35 +1,36 @@
 package com.dotcms.rest.api.v1.theme;
 
+import com.dotcms.repackage.javax.ws.rs.*;
+import com.dotcms.repackage.javax.ws.rs.core.Context;
+import com.dotcms.repackage.javax.ws.rs.core.MediaType;
+import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.javax.ws.rs.core.Response.Status;
+import com.dotcms.repackage.org.glassfish.jersey.server.JSONP;
+import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.rest.WebResource;
+import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.util.JsonProcessingRuntimeException;
 import com.dotcms.util.PaginationUtil;
 import com.dotcms.util.pagination.OrderDirection;
 import com.dotcms.util.pagination.PaginationException;
 import com.dotcms.util.pagination.ThemePaginator;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.ThemeAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
-import com.dotcms.repackage.javax.ws.rs.*;
-import com.dotcms.repackage.javax.ws.rs.core.Context;
-import com.dotcms.repackage.javax.ws.rs.core.MediaType;
-import com.dotcms.repackage.javax.ws.rs.core.Response;
-import com.dotcms.repackage.org.glassfish.jersey.server.JSONP;
-import com.dotcms.rest.InitDataObject;
-import com.dotcms.rest.WebResource;
-import com.dotcms.rest.annotation.NoCache;
-import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.portlets.contentlet.business.HostAPI;
-import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -84,6 +85,7 @@ public class ThemeResource {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response findThemes(@Context final HttpServletRequest request,
+                                     final @Context HttpServletResponse response,
                                      @QueryParam("hostId") final String hostId,
                                      @QueryParam(PaginationUtil.PAGE) final int page,
                                      @QueryParam(PaginationUtil.PER_PAGE) @DefaultValue("-1") final int perPage,
@@ -94,7 +96,7 @@ public class ThemeResource {
         Logger.debug(this,
                 "Getting the themes for the hostId: " + hostId);
 
-        final InitDataObject initData = this.webResource.init(null, true, request, true, null);
+        final InitDataObject initData = this.webResource.init(null, request, response, true, null);
         final User user = initData.getUser();
         Host host = null;
 
@@ -146,11 +148,12 @@ public class ThemeResource {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response findThemeById(@Context final HttpServletRequest request,
+            final @Context HttpServletResponse response,
             @PathParam("id") final String themeId) throws DotDataException, DotSecurityException {
 
         Logger.debug(this, "Getting the theme by identifier: " + themeId);
 
-        final InitDataObject initData = this.webResource.init(null, true, request, true, null);
+        final InitDataObject initData = this.webResource.init(null, request, response, true, null);
         final User user = initData.getUser();
 
         final Folder folder = folderAPI.find(themeId, user, false);

@@ -118,7 +118,7 @@ public class PageResource {
                 modeParam, languageId, personaId, deviceInode));
 
         // Force authentication
-        final InitDataObject auth = webResource.init(false, request, true);
+        final InitDataObject auth = webResource.init(request, response, true);
         final User user = auth.getUser();
         Response res;
 
@@ -195,7 +195,7 @@ public class PageResource {
                 uri, modeParam, languageId, personaId, deviceInode));
 
         // Force authentication
-        final InitDataObject auth = webResource.init(false, request, true);
+        final InitDataObject auth = webResource.init(request, response, true);
         final User user = auth.getUser();
         Response res;
 
@@ -259,7 +259,7 @@ public class PageResource {
             throw new BadRequestException("Layout is required");
         }
 
-        final InitDataObject auth = webResource.init(false, request, true);
+        final InitDataObject auth = webResource.init(request, response, true);
         final User user = auth.getUser();
 
         Response res = null;
@@ -301,9 +301,9 @@ public class PageResource {
     @POST
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Path("/layout")
-    public Response saveLayout(@Context final HttpServletRequest request, final PageForm form) throws DotDataException {
+    public Response saveLayout(@Context final HttpServletRequest request, @Context final HttpServletResponse response, final PageForm form) throws DotDataException {
 
-        final InitDataObject auth = webResource.init(false, request, true);
+        final InitDataObject auth = webResource.init(request, response, true);
         final User user = auth.getUser();
 
         Response res = null;
@@ -348,7 +348,7 @@ public class PageResource {
      * - container_1_id, container_2_id,..., container_n_id: Each container's identifier
      * - contentlet_1_id, contentlet_2_id,...,contentlet_n_id: each contentlet identifier
      *
-     * @param req
+     * @param request
      * @param pageId
      * @param pageContainerForm
      * @return
@@ -359,7 +359,9 @@ public class PageResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @Path("{pageId}/content")
-    public final Response addContent(@Context final HttpServletRequest req, @PathParam("pageId") final String pageId,
+    public final Response addContent(@Context final HttpServletRequest request,
+                                     @Context final HttpServletResponse response,
+                                     @PathParam("pageId") final String pageId,
                                      final PageContainerForm pageContainerForm)
             throws DotSecurityException, DotDataException {
 
@@ -370,12 +372,12 @@ public class PageResource {
             throw new BadRequestException("Layout is required");
         }
 
-        final InitDataObject initData = webResource.init(true, req, true);
+        final InitDataObject initData = webResource.init(request, response,true);
 
         try {
             final User user = initData.getUser();
 
-            final IHTMLPage page = pageResourceHelper.getPage(user, pageId, req);
+            final IHTMLPage page = pageResourceHelper.getPage(user, pageId, request);
 
             APILocator.getPermissionAPI().checkPermission(page, PermissionLevel.EDIT, user);
             pageResourceHelper.saveContent(pageId, pageContainerForm.getContainerEntries());
@@ -410,7 +412,7 @@ public class PageResource {
         Logger.debug(this, String.format("Rendering page: uri -> %s mode-> %s", uri, modeStr));
 
         // Force authentication
-        final InitDataObject auth = webResource.init(false, request, true);
+        final InitDataObject auth = webResource.init(request,  response,true);
         final User user = auth.getUser();
         Response res = null;
 
@@ -450,12 +452,13 @@ public class PageResource {
     @Path("search")
     public Response searchPage(
                 @Context final HttpServletRequest request,
+                @Context final HttpServletResponse response,
                 @QueryParam("path") final String path,
                 @QueryParam("live") final Boolean liveQueryParam,
                 @QueryParam("onlyLiveSites") final boolean onlyLiveSites)
             throws DotDataException, DotSecurityException {
 
-        final InitDataObject initData = webResource.init(null, true, request,
+        final InitDataObject initData = webResource.init(null,  request, response,
                 true, null);
         final User user = initData.getUser();
 

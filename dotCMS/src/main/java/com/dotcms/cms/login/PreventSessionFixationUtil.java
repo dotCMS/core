@@ -31,6 +31,8 @@ public class PreventSessionFixationUtil {
      * Gets the current session (if exists) invalidate it and them created a new one with a
      * copy of the previous session attributes.
      * @param request {@link HttpServletRequest}
+     * @param createSessionIfDoesNotExists {@link Boolean} if false and the session on the request.getSession(false) returns null (no session created) returns a null session,
+     *                                                    if true will create a new session if does not exists
      * @return HttpSession
      */
     public HttpSession preventSessionFixation(final HttpServletRequest request, final boolean createSessionIfDoesNotExists) {
@@ -42,7 +44,7 @@ public class PreventSessionFixationUtil {
             Logger.debug(this, ()-> "Preventing the session fixation");
 
             final Map<String, Object> sessionMap  = new HashMap<>();
-            final HttpSession oldSession          = request.getSession(false);
+            final HttpSession oldSession          = session;
 
             if (null != oldSession) {
 

@@ -2,7 +2,10 @@ package com.dotcms.rest.api.v1.categories;
 
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.repackage.javax.ws.rs.*;
+import com.dotcms.repackage.javax.ws.rs.GET;
+import com.dotcms.repackage.javax.ws.rs.Path;
+import com.dotcms.repackage.javax.ws.rs.Produces;
+import com.dotcms.repackage.javax.ws.rs.QueryParam;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
@@ -19,6 +22,7 @@ import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 /**
  * This resource provides all the different end-points associated to information
@@ -44,18 +48,19 @@ public class CategoriesResource {
     @JSONP
     @NoCache
     @Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
-    public final Response getCategories(@Context final HttpServletRequest request,
+    public final Response getCategories(@Context final HttpServletRequest httpRequest,
+                                      @Context final HttpServletResponse  httpResponse,
                                       @QueryParam(PaginationUtil.FILTER)   final String filter,
                                       @QueryParam(PaginationUtil.PAGE) final int page,
                                       @QueryParam(PaginationUtil.PER_PAGE) final int perPage) {
 
-        final InitDataObject initData = webResource.init(null, true, request, true, null);
+        final InitDataObject initData = webResource.init(null, httpRequest, httpResponse, true, null);
 
         Response response = null;
         final User user = initData.getUser();
 
         try {
-            response = this.paginationUtil.getPage( request, user, filter, page, perPage );
+            response = this.paginationUtil.getPage( httpRequest, user, filter, page, perPage );
         } catch (Exception e) {
             Logger.error(this, e.getMessage(), e);
             if (ExceptionUtil.causedBy(e, DotSecurityException.class)) {

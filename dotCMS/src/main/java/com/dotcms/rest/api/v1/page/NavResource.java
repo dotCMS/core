@@ -4,11 +4,7 @@ package com.dotcms.rest.api.v1.page;
 import com.dotcms.rendering.velocity.viewtools.navigation.NavResult;
 import com.dotcms.rendering.velocity.viewtools.navigation.NavTool;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.repackage.javax.ws.rs.GET;
-import com.dotcms.repackage.javax.ws.rs.Path;
-import com.dotcms.repackage.javax.ws.rs.PathParam;
-import com.dotcms.repackage.javax.ws.rs.Produces;
-import com.dotcms.repackage.javax.ws.rs.QueryParam;
+import com.dotcms.repackage.javax.ws.rs.*;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
@@ -17,38 +13,25 @@ import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
-import com.dotcms.rest.exception.BadRequestException;
-import com.dotcms.rest.exception.ForbiddenException;
-import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
-
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionLevel;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DoesNotExistException;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
+import com.liferay.portal.model.User;
+import org.apache.velocity.tools.view.context.ChainedContext;
+import org.apache.velocity.tools.view.context.ViewContext;
 
-import com.liferay.util.Validator;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import org.apache.velocity.tools.view.context.ChainedContext;
-import org.apache.velocity.tools.view.context.ViewContext;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.liferay.portal.model.User;
 
 @Path("/v1/nav")
 public class NavResource {
@@ -96,7 +79,7 @@ public class NavResource {
     public final Response loadJson(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
             @PathParam("uri") final String uri, @QueryParam("depth") final String depth, @QueryParam("languageId") final String languageId) {
 
-        final InitDataObject auth = webResource.init(false, request, true);
+        final InitDataObject auth = webResource.init(request, response, true);
         final User user = auth.getUser();
 
         try {
