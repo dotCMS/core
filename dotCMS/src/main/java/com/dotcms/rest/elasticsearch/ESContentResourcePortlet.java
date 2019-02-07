@@ -58,14 +58,14 @@ public class ESContentResourcePortlet extends BaseRestPortlet {
 	@Path("search")
 	public Response search(@Context final HttpServletRequest request,
 			@Context final HttpServletResponse response, final String esQueryStr,
-			@QueryParam("depth") final String depthParam)
+			@QueryParam("depth") final String depthParam, @QueryParam("live") final Boolean liveParam)
 			throws DotDataException, DotSecurityException {
 
 		final InitDataObject initData = webResource.init(null, true, request, false, null);
 		final User user = initData.getUser();
 		final ResourceResponse responseResource = new ResourceResponse(initData.getParamsMap());
 
-		PageMode mode = PageMode.get(request);
+		final PageMode mode = PageMode.get(request);
 
 		final int depth = toInt(depthParam, () -> -1);
 
@@ -87,10 +87,15 @@ public class ESContentResourcePortlet extends BaseRestPortlet {
 		}
 
 		try {
-			ESSearchResults esresult = esapi.esSearch(esQuery.toString(), mode.showLive, user, mode.showLive);
+
+			final boolean isAnonymous = APILocator.getUserAPI().getAnonymousUser().equals(user);
+			final boolean live = (liveParam == null) ? mode.showLive : liveParam;
+			final ESSearchResults esresult = esapi
+					.esSearch(esQuery.toString(), isAnonymous ? mode.showLive : live, user,
+							mode.respectAnonPerms);
 			
-			JSONObject json = new JSONObject();
-			JSONArray jsonCons = new JSONArray();
+			final JSONObject json = new JSONObject();
+			final JSONArray jsonCons = new JSONArray();
 
 			for(Object x : esresult){
 				final Contentlet c = (Contentlet) x;
@@ -152,9 +157,9 @@ public class ESContentResourcePortlet extends BaseRestPortlet {
 	@Path("search")
 	public Response searchPost(@Context final HttpServletRequest request,
 			@Context final HttpServletResponse response, final String esQuery,
-			@QueryParam("depth") final String depthParam)
+			@QueryParam("depth") final String depthParam, @QueryParam("live") final Boolean liveParam)
 			throws DotDataException, DotSecurityException {
-		return search(request, response, esQuery, depthParam);
+		return search(request, response, esQuery, depthParam, liveParam);
 	}
 	
 	@GET
