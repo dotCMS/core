@@ -67,7 +67,7 @@ import java.util.List;
 public class URLMapFilter implements Filter {
 
     public static final String PREVIEW_PAGE = "previewPage";
-
+    private List<PatternCache> patternsCache = new ArrayList<>();
     private ContentletAPI      contentletAPI;
     private UserWebAPI         wuserAPI;
     private HostWebAPI         whostAPI;
@@ -98,13 +98,13 @@ public class URLMapFilter implements Filter {
         String uri                         = this.cmsUrlUtil.getURIFromRequest(request);
         final Host host                    = getHost(request, uri);
         final User user                    = getUser(request);
-        final URLMapAPI urlMapAPI          = new URLMapAPI();
+
         // http://jira.dotmarketing.net/browse/DOTCMS-6079
         if (uri.endsWith(StringPool.FORWARD_SLASH)) {
             uri = uri.substring(0, uri.length() - 1);
         }
 
-        final String mastRegEx   = urlMapAPI.loadURLMapPatterns();
+        final String mastRegEx   = loadURLMapPatterns();
         final boolean trailSlash = uri.endsWith(StringPool.FORWARD_SLASH);
         final boolean isDotPage  = this.cmsUrlUtil.isPageAsset(uri, host, languageId);
         final String url         = !trailSlash && !isDotPage? uri + StringPool.FORWARD_SLASH : uri;
@@ -141,7 +141,7 @@ public class URLMapFilter implements Filter {
                                   final String url) {
 
         StringBuilder query;
-        final URLMapAPI urlMapAPI          = new URLMapAPI();
+
         if (RegEX.contains(url, mastRegEx)) {
 
             final boolean adminMode     = PageMode.get(request).isAdmin;
@@ -149,7 +149,7 @@ public class URLMapFilter implements Filter {
             Structure         structure = null;
             List<ContentletSearch> contentletSearches = null;
 
-            for (final URLMapAPI.PatternCache patternCache : urlMapAPI.getPatternsCache()) {
+            for (final PatternCache patternCache : this.patternsCache) {
 
                 final List<RegExMatch> matches = RegEX.findForUrlMap(url, patternCache.getRegEx());
                 if (matches != null && matches.size() > 0) {
@@ -328,8 +328,41 @@ public class URLMapFilter implements Filter {
         }
     }
 
+    private Field findHostField(final List<Field> fields) {
 
+        for (final Field field : fields) {
+            if (field.getFieldType()
+                    .equals(Field.FieldType.HOST_OR_FOLDER.toString())) {
 
+                return field;
+            }
+        }
+
+        return null;
+    }
+
+    @NotNull
+    private String loadURLMapPatterns() throws ServletException {
+
+        String mastRegEx = null;
+        try {
+            mastRegEx = CacheLocator.getContentTypeCache().getURLMasterPattern();
+        } catch (DotCacheException e2) {
+            Logger.error(URLMapFilter.class, e2.getMessage(), e2);
+        }
+
+        if (mastRegEx == null || patternsCache.isEmpty()) {
+            synchronized (ContentTypeCache.MASTER_STRUCTURE) {
+                try {
+                    mastRegEx = buildCacheObjects();
+                } catch (DotDataException e) {
+                    Logger.error(URLMapFilter.class, e.getMessage(), e);
+                    throw new ServletException("Unable to build URLMap patterns", e);
+                }
+            }
+        }
+        return mastRegEx;
+    }
 
     @Nullable
     private User getUser(final HttpServletRequest request) {
@@ -369,5 +402,126 @@ public class URLMapFilter implements Filter {
         this.urlFallthrough = Config.getBooleanProperty("URLMAP_FALLTHROUGH", true);
     }
 
+    /**
+     * Builds the list of URL maps and sorts them by the number of slashes in
+     * the URL (highest to lowest). This method is called only when a new URL
+     * map is added, and is marked as <code>synchronized</code> to avoid data
+     * inconsistency.
+     *
+     * @return A <code>String</code> containing a Regex, which contains all the URL maps in the
+     * system.
+     * @throws DotDataException An error occurred when retrieving information from the database.
+     */
+    private synchronized String buildCacheObjects() throws DotDataException {
+        List<SimpleStructureURLMap> urlMaps = StructureFactory.findStructureURLMapPatterns();
+        StringBuilder masterRegEx = new StringBuilder();
+        boolean first = true;
+        patternsCache.clear();
+        for (SimpleStructureURLMap urlMap : urlMaps) {
+            PatternCache pc = new PatternCache();
+            String regEx = StructureUtil.generateRegExForURLMap(urlMap.getURLMapPattern());
+            // if we have an empty string, move on
+            if (!UtilMethods.isSet(regEx) || regEx.trim().length() < 3) {
+                continue;
 
+            }
+            pc.setRegEx(regEx);
+            pc.setStructureInode(urlMap.getInode());
+            pc.setURLpattern(urlMap.getURLMapPattern());
+            List<RegExMatch> fieldMathed = RegEX.find(urlMap.getURLMapPattern(), "{([^{}]+)}");
+            List<String> fields = new ArrayList<String>();
+            for (RegExMatch regExMatch : fieldMathed) {
+                fields.add(regExMatch.getGroups().get(0).getMatch());
+            }
+            pc.setFieldMatches(fields);
+            patternsCache.add(pc);
+            if (!first) {
+                masterRegEx.append("|");
+            }
+            masterRegEx.append(regEx);
+            first = false;
+        }
+
+        Collections.sort(this.patternsCache, new Comparator<URLMapFilter.PatternCache>() {
+            public int compare(URLMapFilter.PatternCache patternCache1, URLMapFilter.PatternCache patternCache2) {
+                String regex1 = patternCache1.getRegEx();
+                String regex2 = patternCache2.getRegEx();
+
+                if (!regex1.endsWith(StringPool.FORWARD_SLASH)) {
+                    regex1 += StringPool.FORWARD_SLASH;
+                }
+
+                if (!regex2.endsWith(StringPool.FORWARD_SLASH)) {
+                    regex2 += StringPool.FORWARD_SLASH;
+                }
+
+                final int regExLength1 = getSlashCount(regex1);
+                final int regExLength2 = getSlashCount(regex2);
+
+                if (regExLength1 < regExLength2) {
+                    return 1;
+                } else if (regExLength1 > regExLength2) {
+                    return -1;
+                } else {
+                    return 0;
+                }
+            }
+        });
+
+        CacheLocator.getContentTypeCache().addURLMasterPattern(masterRegEx.toString());
+        return masterRegEx.toString();
+    }
+
+    private class PatternCache {
+
+        private String regEx;
+        private String structureInode;
+        private String URLpattern;
+        private List<String> fieldMatches;
+
+        public void setRegEx(String regEx) {
+            this.regEx = regEx;
+        }
+
+        public String getRegEx() {
+            return regEx;
+        }
+
+        public void setStructureInode(String structureInode) {
+            this.structureInode = structureInode;
+        }
+
+        public String getStructureInode() {
+            return structureInode;
+        }
+
+        public void setURLpattern(String uRLpattern) {
+            URLpattern = uRLpattern;
+        }
+
+        @SuppressWarnings("unused")
+        public String getURLpattern() {
+            return URLpattern;
+        }
+
+        public void setFieldMatches(List<String> fieldMatches) {
+            this.fieldMatches = fieldMatches;
+        }
+
+        public List<String> getFieldMatches() {
+            return fieldMatches;
+        }
+    }
+
+    private int getSlashCount(String string) {
+        int ret = 0;
+        if (UtilMethods.isSet(string)) {
+            for (int i = 0; i < string.length(); i++) {
+                if (string.charAt(i) == '/') {
+                    ret += 1;
+                }
+            }
+        }
+        return ret;
+    }
 }
