@@ -274,7 +274,7 @@ public class ContentletAPITest extends ContentletBaseTest {
      * @see ContentletAPI
      * @see Contentlet
      */
-    @Test(expected = DotContentletStateException.class)
+    @Test
     public void test_findContentletByIdentifierOrFallback_non_existing_DotContentletStateException_expected () throws DotDataException, DotSecurityException {
 
 
