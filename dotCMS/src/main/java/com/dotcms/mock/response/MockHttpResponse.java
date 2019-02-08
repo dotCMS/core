@@ -15,7 +15,9 @@ public class MockHttpResponse extends HttpServletResponseWrapper implements Mock
         super(response);
         base = response;
     }
-
+    public MockHttpResponse() {
+       this(new BaseResponse().response());
+    }
 
     @Override
     public HttpServletResponse response() {

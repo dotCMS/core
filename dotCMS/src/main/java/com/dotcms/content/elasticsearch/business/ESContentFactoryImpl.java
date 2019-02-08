@@ -55,6 +55,7 @@ import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.unit.TimeValue;
+import org.elasticsearch.index.IndexNotFoundException;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.QueryStringQueryBuilder;
@@ -1514,6 +1515,14 @@ public class ESContentFactoryImpl extends ContentletFactory {
 					throw e;
 				}
 			}
+            
+            
+        } catch (IndexNotFoundException infe) {
+            Logger.error(this.getClass(), "----------------------------------------------");
+            Logger.error(this.getClass(), "Elasticsearch Index Not Found : " + indexToHit);
+            Logger.error(this.getClass(), "----------------------------------------------");
+            return new SearchHits(new SearchHit[] {}, 0, 0);
+                    
         } catch (Exception e) {
             Logger.debug(this, e.getMessage(), e); 
             throw new RuntimeException(e);

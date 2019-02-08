@@ -5,7 +5,7 @@ import static com.dotmarketing.filters.TimeMachineFilter.TM_DATE_VAR;
 import com.dotcms.business.CloseDB;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
-import com.dotcms.rendering.velocity.viewtools.RequestWrapper;
+import com.dotcms.rendering.velocity.viewtools.VelocityRequestWrapper;
 
 import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectWriter;
@@ -46,7 +46,7 @@ public class VelocityServlet extends HttpServlet {
     @Override
     @CloseDB
     protected final void service(HttpServletRequest req, HttpServletResponse response) throws ServletException, IOException {
-        RequestWrapper request = new RequestWrapper(req);
+        VelocityRequestWrapper request = new VelocityRequestWrapper(req);
         final String uri = URLDecoder.decode((request.getAttribute(Constants.CMS_FILTER_URI_OVERRIDE) != null)
                 ? (String) request.getAttribute(Constants.CMS_FILTER_URI_OVERRIDE)
                 : request.getRequestURI(), "UTF-8");

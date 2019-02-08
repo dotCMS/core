@@ -7,6 +7,7 @@ import java.util.Collection;
 import java.util.Enumeration;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 import javax.servlet.AsyncContext;
 import javax.servlet.DispatcherType;
@@ -18,16 +19,19 @@ import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.*;
 
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.collect.ImmutableSet;
+import com.liferay.portal.util.WebKeys;
 import com.liferay.util.Xss;
 
-public class RequestWrapper extends javax.servlet.http.HttpServletRequestWrapper  {
+public class VelocityRequestWrapper extends javax.servlet.http.HttpServletRequestWrapper  {
 
 	private HttpServletRequest _request;
     private String customUserAgentHeader;
 	private String dotCMSUri;
-
-	public RequestWrapper(HttpServletRequest req) {
+    final protected static Set<String> SET_VALUE_BLACKLIST = Config.getBooleanProperty("VELOCITY_PREVENT_SETTING_USER_ID", true) ? ImmutableSet.of(WebKeys.USER_ID, WebKeys.USER) : ImmutableSet.of();
+	public VelocityRequestWrapper(HttpServletRequest req) {
         super(req);
 		this._request = req;
 	}
@@ -41,7 +45,7 @@ public class RequestWrapper extends javax.servlet.http.HttpServletRequestWrapper
 	}
 
 	public String getContextPath() {
-		return _request.getContextPath();
+		return null;
 	}
 
 	public Cookie[] getCookies() {
@@ -116,11 +120,12 @@ public class RequestWrapper extends javax.servlet.http.HttpServletRequestWrapper
 	}
 
 	public HttpSession getSession() {
-		return _request.getSession();
+		return new VelocitySessionWrapper(_request.getSession());
 	}
 
 	public HttpSession getSession(boolean arg0) {
-		return _request.getSession(arg0);
+	    HttpSession session = _request.getSession(arg0);
+		return session!=null ? getSession() : null;
 	}
 
 	public Principal getUserPrincipal() {
@@ -220,7 +225,7 @@ public class RequestWrapper extends javax.servlet.http.HttpServletRequestWrapper
 	}
 
 	public String getRealPath(String arg0) {
-		return _request.getRealPath(arg0);
+		return arg0;
 	}
 
 	public String getRemoteAddr() {
@@ -236,18 +241,7 @@ public class RequestWrapper extends javax.servlet.http.HttpServletRequestWrapper
 	}
 
 	public RequestDispatcher getRequestDispatcher(String uri) {
-		final RequestDispatcher rd = _request.getRequestDispatcher(uri);
-		return new RequestDispatcher() {
-			public void forward(ServletRequest servletRequest, ServletResponse servletResponse)
-					throws ServletException, IOException {
-				rd.forward(_request, servletResponse);
-			}
-
-			public void include(ServletRequest servletRequest, ServletResponse servletResponse)
-					throws ServletException, IOException {
-				rd.include(_request, servletResponse);
-			}
-		};
+		return _request.getRequestDispatcher(uri);
 	}
 
 	public String getScheme() {
@@ -271,7 +265,9 @@ public class RequestWrapper extends javax.servlet.http.HttpServletRequestWrapper
 	}
 
 	public void setAttribute(String arg0, Object arg1) {
-		_request.setAttribute(arg0, arg1);
+	    if(!SET_VALUE_BLACKLIST.contains(arg0)) {
+	        _request.setAttribute(arg0, arg1);
+	    }
 	}
 
 	public void setCharacterEncoding(String arg0) throws UnsupportedEncodingException {
@@ -322,11 +318,11 @@ public class RequestWrapper extends javax.servlet.http.HttpServletRequestWrapper
     }
 
     public void login(String arg0, String arg1) throws ServletException {
-        _request.login(arg0, arg1);
+        // do nothing
     }
 
     public void logout() throws ServletException {
-        _request.logout();
+        // do nothing
     }
 
     public String getCustomUserAgentHeader () {

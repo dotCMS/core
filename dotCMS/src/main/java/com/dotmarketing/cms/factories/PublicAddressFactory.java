@@ -7,7 +7,7 @@ import java.util.List;
 
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Logger;
-import com.dotcms.repackage.com.liferay.counter.ejb.CounterManagerUtil;
+import com.dotmarketing.util.UUIDUtil;
 import com.liferay.portal.NoSuchAddressException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.ejb.AddressUtil;
@@ -60,14 +60,8 @@ public class PublicAddressFactory extends AddressUtil {
 	}
 	*/
 	public static Address getInstance(){
-	    String addressId = null;
-	    try{
-	        addressId = 	Long.toString(CounterManagerUtil.increment(	Address.class.getName() ));
-	    
-	    }
-	    catch(SystemException e){
-	        throw new DotRuntimeException("Can't get a counter");
-	    }
+	    String addressId = 	UUIDUtil.uuid();
+
 	    return new Address(addressId);
 	}
 	
