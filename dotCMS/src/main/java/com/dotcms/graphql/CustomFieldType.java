@@ -12,6 +12,7 @@ import graphql.schema.GraphQLOutputType;
 import static graphql.Scalars.GraphQLBoolean;
 import static graphql.Scalars.GraphQLID;
 import static graphql.Scalars.GraphQLInt;
+import static graphql.Scalars.GraphQLLong;
 import static graphql.Scalars.GraphQLString;
 
 public enum CustomFieldType {
@@ -31,9 +32,9 @@ public enum CustomFieldType {
         binaryTypeFields.put("versionPath", GraphQLString);
         binaryTypeFields.put("idPath", GraphQLString);
         binaryTypeFields.put("name", GraphQLString);
-        binaryTypeFields.put("size", GraphQLString);
+        binaryTypeFields.put("size", GraphQLLong);
         binaryTypeFields.put("mime", GraphQLString);
-        binaryTypeFields.put("isImage", GraphQLString);
+        binaryTypeFields.put("isImage", GraphQLBoolean);
         customFieldTypes.put("BINARY", TypeUtil.createObjectType("Binary", binaryTypeFields,
             new MapFieldPropertiesDataFetcher()));
 
@@ -59,7 +60,7 @@ public enum CustomFieldType {
         final Map<String, GraphQLOutputType> folderTypeFields = new HashMap<>();
         folderTypeFields.put("folderId", GraphQLString);
         folderTypeFields.put("folderFileMask", GraphQLString);
-        folderTypeFields.put("folderSortOrder", GraphQLString);
+        folderTypeFields.put("folderSortOrder", GraphQLInt);
         folderTypeFields.put("folderName", GraphQLString);
         folderTypeFields.put("folderPath", GraphQLString);
         folderTypeFields.put("folderTitle", GraphQLString);
