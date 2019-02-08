@@ -1,6 +1,8 @@
 @import "variables";
 
 .ui-table {
+    min-height: 100%;
+
     .ui-table-thead tr th,
     .ui-table-tbody tr td {
         border-width: 0px;
@@ -67,7 +69,7 @@
             opacity: 0.5;
         }
     }
-    
+
     .ui-widget-content .ui-state-highlight {
         background: $table-highlight-row-bgcolor;
         color: $table-row-color;

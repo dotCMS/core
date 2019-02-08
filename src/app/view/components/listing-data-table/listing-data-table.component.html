@@ -9,19 +9,19 @@
 </dot-action-header>
 
 <p-table #dataTable
-        [columns]="columns" 
-        [value]="items"
-        [paginator]="true"
-        [pageLinks]="paginatorService.maxLinksPage"
-        [lazy]="true"
-        [totalRecords]="paginatorService.totalRecords"
         (onLazyLoad)="loadDataPaginationEvent($event)"
         (onRowSelect)="handleRowClick($event)"
-        [sortOrder]="sortOrder && sortOrder.toLowerCase() === 'desc' ? -1 : 1"
+        [columns]="columns"
+        [lazy]="true"
+        [loading]="loading" loadingIcon="fa fa-circle-o-notch fa-spin"
+        [pageLinks]="paginatorService.maxLinksPage"
+        [paginator]="true"
         [rows]="40"
-        selectionMode="single"
+        [sortOrder]="sortOrder && sortOrder.toLowerCase() === 'desc' ? -1 : 1"
+        [totalRecords]="paginatorService.totalRecords"
+        [value]="items"
         dataKey="id"
-        [loading]="loading" loadingIcon="fa fa-circle-o-notch fa-spin">
+        selectionMode="single">
 
     <ng-template pTemplate="header" let-columns>
         <tr>
