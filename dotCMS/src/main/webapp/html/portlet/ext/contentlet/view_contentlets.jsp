@@ -278,7 +278,8 @@
     function reloadRelationshipBox(box, relatedType){
     	var search = box.attr("displayedValue");
 
-        var boxValue = search == "" ? "*" : "*" +search + "*";
+        //whitespaces are escaped
+        var boxValue = search == "" ? "*" : "*" +search.replace(/\s/g, "\\\\\\\\ ") + "*";
         var limit=box.pageSize;
         if (relatedType.indexOf(".") != -1){
             relatedType = relatedType.split('.')[0];

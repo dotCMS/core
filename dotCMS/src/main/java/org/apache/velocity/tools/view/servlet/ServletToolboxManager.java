@@ -175,13 +175,20 @@ public class ServletToolboxManager extends XMLToolboxManager
                 // get the bits
                 is = servletContext.getResourceAsStream(toolboxFile);
 
+                // if not under WEB-INF/toolbox.xml, try the classpath
+                if(is==null) {
+                    is= ServletToolboxManager.class.getClassLoader().getResourceAsStream("toolbox.xml");
+                }
                 if (is != null)
                 {
                     LOG.info("Using config file '" + toolboxFile +"'");
 
                     toolboxManager = new ServletToolboxManager(servletContext);
                     toolboxManager.load(is);
+                    
 
+                    
+                    
                     // remember it
                     managersMap.put(pathname, toolboxManager);
 

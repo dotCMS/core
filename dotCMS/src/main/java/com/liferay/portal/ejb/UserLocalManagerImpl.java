@@ -31,10 +31,10 @@ import javax.mail.internet.InternetAddress;
 
 import com.dotcms.enterprise.PasswordFactoryProxy;
 import com.dotcms.enterprise.de.qaware.heimdall.PasswordException;
-import com.dotcms.repackage.com.liferay.counter.ejb.CounterManagerUtil;
 import com.dotcms.repackage.com.liferay.mail.ejb.MailManagerUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.RegEX;
+import com.dotmarketing.util.UUIDUtil;
 import com.liferay.portal.DuplicateUserEmailAddressException;
 import com.liferay.portal.DuplicateUserIdException;
 import com.liferay.portal.NoSuchUserException;
@@ -107,10 +107,7 @@ public class UserLocalManagerImpl implements UserLocalManager {
 		Company company = CompanyUtil.findByPrimaryKey(companyId);
 
 		if (autoUserId && (userId == null || userId.isEmpty())) {
-			userId =
-				companyId + "." +
-				Long.toString(CounterManagerUtil.increment(
-					User.class.getName() + "." + companyId));
+			userId = "user-" + UUIDUtil.uuid();
 		}
 
 		User user = UserUtil.create(userId);
