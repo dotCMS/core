@@ -6869,6 +6869,15 @@ select[multiple]:hover {
   border: solid 1px transparent;
 }
 
+.dijitButtonFlat.dijitButtonDisabled {
+  background-color: #dedee1;
+  border: solid 1px transparent;
+  color: #b3b1b8;
+  font-size: 12px;
+  font-weight: 500;
+  box-shadow: 0;
+}
+
 .dijitButtonDanger {
   border: 0;
   background-color: #CB3927;

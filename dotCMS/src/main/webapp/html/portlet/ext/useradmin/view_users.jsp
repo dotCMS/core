@@ -247,7 +247,7 @@
 						</div>
 
 						<div class="view-user__add-contact">
-							<button dojoType="dijit.form.Button" id="addAddressIcon" onclick="addAddress()" type="button">
+							<button dojoType="dijit.form.Button" id="addAddressIcon" onclick="addAddress()" class="dijitButtonFlat" type="button">
 								<%= LanguageUtil.get(pageContext, "Addresses-Phones") %>
 							</button>
 						</div>

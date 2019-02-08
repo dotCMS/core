@@ -67,7 +67,7 @@
 	<div class="clear"></div>
 	
 	<div class="permissions__button-row" id="permissionsActions">
-		<button dojoType="dijit.form.Button" type="button" class="applyChangesButton" id="applyChangesButton" onClick="applyPermissionChanges('${id}')">
+		<button dojoType="dijit.form.Button" type="button" class="applyChangesButton dijitButtonFlat" id="applyChangesButton" onClick="applyPermissionChanges('${id}')">
 			<%= LanguageUtil.get(pageContext, "Apply-Changes") %>
 		</button>
 		
