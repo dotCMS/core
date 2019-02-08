@@ -4443,8 +4443,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     Identifier folderId = APILocator.getIdentifierAPI().find(folder);
                     String path = folder.getInode().equals(FolderAPI.SYSTEM_FOLDER)?"/"+url:folderId.getPath()+url;
                     Identifier htmlpage = APILocator.getIdentifierAPI().find(host, path);
-                    if(htmlpage!=null && InodeUtils.isSet(htmlpage.getId()) && !htmlpage.getId().equals(contentlet.getIdentifier()) && htmlpage.getAssetType().equals("htmlpage") ){
-                        DotContentletValidationException cve = new FileAssetValidationException("Page URL in contentlet [" + (contentlet != null ? contentlet.getIdentifier() : "Unknown/New") + "] already exists: " + url);
+                    if(htmlpage!=null && InodeUtils.isSet(htmlpage.getId()) && !htmlpage.getId().equals(contentlet.getIdentifier()) ){
+                        DotContentletValidationException cve = new FileAssetValidationException("Page URL: " + path + " already exists with content id: "  + htmlpage.getId());
                         cve.addBadTypeField(st.getFieldVar(HTMLPageAssetAPI.URL_FIELD));
                         throw cve;
                     }
