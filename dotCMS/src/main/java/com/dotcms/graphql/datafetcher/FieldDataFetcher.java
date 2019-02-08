@@ -40,7 +40,7 @@ public class FieldDataFetcher implements DataFetcher<Object> {
                 fieldValue = Integer.parseInt(field.values());
             } else if(field instanceof TextField && field.dataType().equals(DataTypes.FLOAT)) {
                 fieldValue = Float.parseFloat(field.values());
-            } else if(field.required()) {
+            } else {
                 fieldValue = field.defaultValue();
             }
         } else if(field instanceof DateField) {
