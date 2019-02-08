@@ -45,7 +45,7 @@ public class FieldDataFetcher implements DataFetcher<Object> {
             }
         } else if(field instanceof DateField) {
             return ((Timestamp)fieldValue).toLocalDateTime().toLocalDate();
-        } if(field instanceof TimeField) {
+        } else if(field instanceof TimeField) {
             return ((Timestamp) fieldValue).toLocalDateTime().toLocalTime();
         } else if(field instanceof DateTimeField) {
             return  ((Timestamp) fieldValue).toLocalDateTime();
