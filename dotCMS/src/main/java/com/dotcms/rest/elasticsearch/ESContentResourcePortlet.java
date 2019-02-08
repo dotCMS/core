@@ -58,7 +58,8 @@ public class ESContentResourcePortlet extends BaseRestPortlet {
 	@Path("search")
 	public Response search(@Context final HttpServletRequest request,
 			@Context final HttpServletResponse response, final String esQueryStr,
-			@QueryParam("depth") final String depthParam, @QueryParam("live") final Boolean liveParam)
+			@QueryParam("depth") final String depthParam,
+			@QueryParam("live") final boolean liveParam)
 			throws DotDataException, DotSecurityException {
 
 		final InitDataObject initData = webResource.init(null, true, request, false, null);
@@ -89,9 +90,8 @@ public class ESContentResourcePortlet extends BaseRestPortlet {
 		try {
 
 			final boolean isAnonymous = APILocator.getUserAPI().getAnonymousUser().equals(user);
-			final boolean live = (liveParam == null) ? mode.showLive : liveParam;
 			final ESSearchResults esresult = esapi
-					.esSearch(esQuery.toString(), isAnonymous ? mode.showLive : live, user,
+					.esSearch(esQuery.toString(), isAnonymous ? mode.showLive : liveParam, user,
 							mode.respectAnonPerms);
 			
 			final JSONObject json = new JSONObject();
@@ -157,7 +157,7 @@ public class ESContentResourcePortlet extends BaseRestPortlet {
 	@Path("search")
 	public Response searchPost(@Context final HttpServletRequest request,
 			@Context final HttpServletResponse response, final String esQuery,
-			@QueryParam("depth") final String depthParam, @QueryParam("live") final Boolean liveParam)
+			@QueryParam("depth") final String depthParam, @QueryParam("live") final boolean liveParam)
 			throws DotDataException, DotSecurityException {
 		return search(request, response, esQuery, depthParam, liveParam);
 	}

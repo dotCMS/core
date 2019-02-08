@@ -68,10 +68,10 @@ public class ESContentResourcePortletTest extends IntegrationTestBase {
     public static class TestCase {
         String depth;
         Boolean live;
-        Boolean anonymous;
+        boolean anonymous;
         int statusCode;
 
-        public TestCase(final String depth, final Boolean live, final Boolean anonymous, final int statusCode) {
+        public TestCase(final String depth, final Boolean live, final boolean anonymous, final int statusCode) {
             this.depth      = depth;
             this.live       = live;
             this.anonymous  = anonymous;
@@ -82,15 +82,13 @@ public class ESContentResourcePortletTest extends IntegrationTestBase {
     @DataProvider
     public static Object[] testCases(){
         return new TestCase[]{
-                new TestCase(null, null, false, Status.OK.getStatusCode()),
-                new TestCase("0", null, false, Status.OK.getStatusCode()),
-                new TestCase("0", null, true, Status.OK.getStatusCode()),
+                new TestCase(null, false, false, Status.OK.getStatusCode()),
                 new TestCase("0", false, true, Status.OK.getStatusCode()),
                 new TestCase("0", false, false, Status.OK.getStatusCode()),
                 new TestCase("0", true, true, Status.OK.getStatusCode()),
                 new TestCase("0", true, false, Status.OK.getStatusCode()),
-                new TestCase("6", null, false, Status.BAD_REQUEST.getStatusCode()),
-                new TestCase("test", null, false, Status.BAD_REQUEST.getStatusCode())
+                new TestCase("6", false, false, Status.BAD_REQUEST.getStatusCode()),
+                new TestCase("test", false, false, Status.BAD_REQUEST.getStatusCode())
         };
     }
 
@@ -146,7 +144,7 @@ public class ESContentResourcePortletTest extends IntegrationTestBase {
                 final JSONArray contentlets = json.getJSONArray("contentlets");
                 final JSONObject contentletResult = (JSONObject) contentlets.get(0);
 
-                if (testCase.anonymous || testCase.live == null || testCase.live == true) {
+                if (testCase.anonymous || testCase.live) {
                     assertEquals(1, contentlets.length());
                     assertEquals(liveContentlet.getIdentifier(),
                             contentletResult.get("identifier"));
@@ -177,14 +175,14 @@ public class ESContentResourcePortletTest extends IntegrationTestBase {
         }
     }
 
-    private HttpServletRequest createHttpRequest(boolean anonymous) throws Exception{
-        MockHeaderRequest request = new MockHeaderRequest((new MockSessionRequest(
+    private HttpServletRequest createHttpRequest(final boolean anonymous) throws Exception{
+        final MockHeaderRequest request = new MockHeaderRequest(new MockSessionRequest(
                 new MockAttributeRequest(new MockHttpRequest("localhost", "/").request())
-                        .request())).request());
+                        .request()).request());
 
         if (!anonymous){
             request.setHeader("Authorization",
-                    "Basic " + new String(Base64.encode(("admin@dotcms.com:admin").getBytes())));
+                    "Basic " + new String(Base64.encode("admin@dotcms.com:admin".getBytes())));
         }
 
         when(request.getContentType()).thenReturn(MediaType.APPLICATION_JSON);

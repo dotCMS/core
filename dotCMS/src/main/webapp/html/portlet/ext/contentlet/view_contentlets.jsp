@@ -298,7 +298,7 @@
 	    	    "from":0
 	    	}`;
 
-         var url = "/api/es/search?live=false";
+         var url = "/api/es/search";
 
          var xhrArgs = {
              url: url,
