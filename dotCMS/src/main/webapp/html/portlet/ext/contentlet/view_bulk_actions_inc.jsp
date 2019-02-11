@@ -51,7 +51,7 @@
             = '<tr class="workflowActionsOption"> '
             + '   <td style="">&nbsp;&nbsp;'+action.workflowAction.name+'</td> '
             + '     <td style="width:140px;text-align: right"> '
-            + '     <button dojoType="dijit.form.Button" class="dijitButton wfAction" '
+            + '     <button dojoType="dijit.form.Button" class="dijitButton dijitButtonFlat wfAction" '
             + '             data-acction-id="'+action.workflowAction.id+'" '
             + '             data-action-commentable="'+action.workflowAction.commentable+'" '
             + '             data-action-assignable="'+action.workflowAction.assignable+'" '

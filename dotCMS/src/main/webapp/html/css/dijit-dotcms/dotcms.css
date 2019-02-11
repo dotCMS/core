@@ -6879,13 +6879,21 @@ select[multiple]:hover {
 }
 
 .dijitButtonDanger {
-  border: 0;
+  border: 1px solid #CB3927;
+  background-color: transparent;
+  color: #CB3927;
+}
+
+.dijitButtonDanger.dijitButtonHover, .dijitButtonDanger.dijitButtonFocused {
   background-color: #CB3927;
+  border: 1px solid #CB3927;
   color: #fff;
 }
 
-.dijitButtonDanger.dijitButtonHover {
-  background-color: #a02d1f;
+.dijitButtonDanger.dijitButtonActive {
+  border: solid 1px transparent;
+  background-color: #e06d5e;
+  color: #fff;
 }
 
 .dijitButtonAction {
