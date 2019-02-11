@@ -1,0 +1,12 @@
+@import "variables";
+
+.form__field-variable {
+    font-size: $label-font-size;
+    color: $label-color;
+    margin-top: $basic-padding;
+    display: flex;
+
+    dot-copy-button {
+        margin-left: $basic-padding / 2;
+    }
+}

@@ -9,7 +9,7 @@ import {
     ViewChild,
     OnDestroy
 } from '@angular/core';
-import { FieldDragDropService, DropFieldData, FieldVariableParams } from '../service';
+import { FieldDragDropService, DropFieldData } from '../service';
 import { FieldRow, FieldTab, ContentTypeField, FieldType, FieldColumn } from '../shared';
 import { ContentTypeFieldsPropertiesFormComponent } from '../content-type-fields-properties-form';
 import { DotMessageService } from '@services/dot-messages-service';
@@ -20,6 +20,8 @@ import { DotEventsService } from '@services/dot-events/dot-events.service';
 import { FieldDivider } from '@portlets/content-types/fields/shared/field-divider.interface';
 import { takeUntil, take } from 'rxjs/operators';
 import { Subject } from 'rxjs';
+import { DotFieldVariableParams } from '../dot-content-type-fields-variables/models/dot-field-variable-params.interface';
+import { DotLoadingIndicatorService } from '@components/_common/iframe/dot-loading-indicator/dot-loading-indicator.service';
 
 /**
  * Display all the Field Types
@@ -33,14 +35,15 @@ import { Subject } from 'rxjs';
     templateUrl: './content-type-fields-drop-zone.component.html'
 })
 export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, OnDestroy {
+    readonly OVERVIEW_TAB_INDEX = 0;
+
     dialogActiveTab: number;
     displayDialog = false;
     fieldRows: FieldDivider[] = [];
     formData: ContentTypeField;
     currentFieldType: FieldType;
-    currentField: FieldVariableParams;
+    currentField: DotFieldVariableParams;
     dialogActions: DotDialogActions;
-
 
     @ViewChild('fieldPropertiesForm')
     propertiesForm: ContentTypeFieldsPropertiesFormComponent;
@@ -48,22 +51,27 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
     @ViewChild('fieldPropertiesForm')
     @Input()
     fields: ContentTypeField[];
+
     @Output()
     saveFields = new EventEmitter<ContentTypeField[]>();
     @Output()
     removeFields = new EventEmitter<ContentTypeField[]>();
 
+    hideButtons = false;
+
     i18nMessages: {
         [key: string]: string;
     } = {};
 
+    private _loading: boolean;
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
     constructor(
         public dotMessageService: DotMessageService,
         private fieldDragDropService: FieldDragDropService,
         private fieldPropertyService: FieldPropertyService,
-        private dotEventsService: DotEventsService
+        private dotEventsService: DotEventsService,
+        private dotLoadingIndicatorService: DotLoadingIndicatorService
     ) {}
 
     ngOnInit(): void {
@@ -81,13 +89,13 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
             .pipe(take(1))
             .subscribe((messages: { [key: string]: string }) => {
                 this.i18nMessages = messages;
-
                 this.dialogActions = {
                     accept: {
                         action: () => {
                             this.propertiesForm.saveFieldProperties();
                         },
-                        label: this.i18nMessages['contenttypes.dropzone.action.save']
+                        label: this.i18nMessages['contenttypes.dropzone.action.save'],
+                        disabled: true
                     },
                     cancel: {
                         label: this.i18nMessages['contenttypes.dropzone.action.cancel'],
@@ -153,6 +161,21 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
                 throw new Error('Fields attribute must be a Array');
             }
         }
+    }
+
+    @Input()
+    set loading(loading: boolean) {
+        this._loading = loading;
+
+        if (loading) {
+            this.dotLoadingIndicatorService.show();
+        } else {
+            this.dotLoadingIndicatorService.hide();
+        }
+    }
+
+    get loading(): boolean {
+        return this._loading;
     }
 
     ngOnDestroy(): void {
@@ -228,6 +251,7 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
         this.formData = null;
         this.dialogActiveTab = null;
         this.propertiesForm.destroy();
+        this.setDialogOkButtonState(false);
     }
 
     /**
@@ -279,6 +303,38 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
         return row instanceof FieldTab;
     }
 
+    /**
+     * Cancel the last drag and drop operation
+     *
+     * @memberof ContentTypeFieldsDropZoneComponent
+     */
+    cancelLastDragAndDrop(): void {
+        this.fieldRows = this.getRowFields(this.fields);
+    }
+
+    /**
+     * Set the state for the ok action for the dialog
+     *
+     * @param {boolean} $event
+     * @memberof ContentTypeFieldsDropZoneComponent
+     */
+    setDialogOkButtonState(formChanged: boolean): void {
+        this.dialogActions = {
+            ...this.dialogActions,
+            accept: {
+                ...this.dialogActions.accept,
+                disabled: !formChanged
+            }
+        };
+    }
+
+    /**
+     * Hide or show the 'save' and 'hide' buttons according to the field tab selected
+     */
+    handleTabChange(index: number): void {
+        this.hideButtons = index !== this.OVERVIEW_TAB_INDEX;
+    }
+
     private setDroppedField(droppedField: ContentTypeField): void {
         this.formData = droppedField;
 
@@ -299,7 +355,7 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
 
     private moveFields(): void {
         const fields = this.getFields().filter((field, index) => {
-            const currentSortOrder = index + 1;
+            const currentSortOrder = index;
 
             if (field.sortOrder !== currentSortOrder) {
                 field.sortOrder = currentSortOrder;
@@ -315,7 +371,7 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
     private getFieldsToSave(fieldToSave: ContentTypeField): ContentTypeField[] {
         return this.formData.id
             ? [this.getUpdatedField(fieldToSave)]
-            : this.getNewFields(fieldToSave);
+            : this.getUpdatedFields(fieldToSave);
     }
 
     private getUpdatedField(fieldToSave: ContentTypeField): ContentTypeField {
@@ -334,21 +390,25 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
         return result;
     }
 
-    private getNewFields(fieldToSave: ContentTypeField): ContentTypeField[] {
+    private getUpdatedFields(newField: ContentTypeField): ContentTypeField[] {
         const fields = this.getFields();
         const result: ContentTypeField[] = [];
 
         fields.forEach((field, index) => {
-            if (FieldUtil.isNewField(field)) {
-                field.sortOrder = index + 1;
-                const fieldToPush = FieldUtil.isRowOrColumn(field)
-                    ? field
-                    : Object.assign(field, fieldToSave);
+            if (field.sortOrder !== index) {
+                field.sortOrder = index;
+                const fieldToPush = this.isNewOrLayoutFiled(field)
+                    ? Object.assign(field, newField)
+                    : field;
                 result.push(fieldToPush);
             }
         });
 
         return result;
+    }
+
+    private isNewOrLayoutFiled(field: ContentTypeField): boolean {
+        return FieldUtil.isNewField(field) && !FieldUtil.isRowOrColumn(field);
     }
 
     private toggleDialog(): void {

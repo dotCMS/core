@@ -29,6 +29,7 @@ import { DotEditPageDataService } from '../shared/services/dot-edit-page-resolve
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotUiColorsService } from '@services/dot-ui-colors/dot-ui-colors.service';
 import { ContentType } from '../../content-types/shared/content-type.model';
+import { PageModelChangeEvent, PageModelChangeEventType } from './services/dot-edit-content-html/models';
 
 /**
  * Edit content page component, render the html of a page and bind all events to make it ediable.
@@ -77,6 +78,9 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
     ) {
         if (!this.customEventsHandler) {
             this.customEventsHandler = {
+                'remote-render-edit': ({ pathname }) => {
+                    this.dotRouterService.goToEditPage(pathname.slice(1));
+                },
                 'load-edit-mode-page': (pageRendered: DotRenderedPage) => {
                     const dotRenderedPageState = new DotRenderedPageState(
                         this.pageState.user,
@@ -189,17 +193,15 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
      * @memberof DotEditContentComponent
      */
     changeViewAsHandler(viewAsConfig: DotEditPageViewAs): void {
-            this.dotPageStateService.reload(
-                {
-                    url: this.route.snapshot.queryParams.url,
-                    mode: this.pageState.state.mode,
-                    viewAs: {
-                        persona_id: viewAsConfig.persona ? viewAsConfig.persona.identifier : null,
-                        language_id: viewAsConfig.language.id,
-                        device_inode: viewAsConfig.device ? viewAsConfig.device.inode : null
-                    }
-                }
-            );
+        this.dotPageStateService.reload({
+            url: this.route.snapshot.queryParams.url,
+            mode: this.pageState.state.mode,
+            viewAs: {
+                persona_id: viewAsConfig.persona ? viewAsConfig.persona.identifier : null,
+                language_id: viewAsConfig.language.id,
+                device_inode: viewAsConfig.device ? viewAsConfig.device.inode : null
+            }
+        });
     }
 
     /**
@@ -261,18 +263,20 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
         return (this.showWhatsChanged && mode === PageMode.EDIT) || mode === PageMode.LIVE;
     }
 
-    private saveContent(model: DotPageContainer[]): void {
+    private saveContent(event: PageModelChangeEvent): void {
         this.dotGlobalMessageService.loading(
             this.dotMessageService.get('dot.common.message.saving')
         );
-
         this.dotEditPageService
-            .save(this.pageState.page.identifier, model)
+            .save(this.pageState.page.identifier, event.model)
             .pipe(take(1))
             .subscribe(() => {
                 this.dotGlobalMessageService.display(
                     this.dotMessageService.get('dot.common.message.saved')
                 );
+                if (event.type !== PageModelChangeEventType.MOVE_CONTENT && this.pageState.page.remoteRendered) {
+                    this.reload();
+                }
             });
     }
 
@@ -436,7 +440,10 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
 
     private setInitalData(): void {
         this.route.parent.parent.data
-            .pipe(pluck('content'), takeUntil(this.destroy$))
+            .pipe(
+                pluck('content'),
+                takeUntil(this.destroy$)
+            )
             .subscribe((pageState: DotRenderedPageState) => {
                 this.setPageState(pageState);
             });
@@ -471,10 +478,13 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
 
     private subscribePageModelChange(): void {
         this.dotEditContentHtmlService.pageModel$
-            .pipe(filter((model: any) => model.length), takeUntil(this.destroy$))
-            .subscribe((model: DotPageContainer[]) => {
+            .pipe(
+                filter((event: PageModelChangeEvent) => !!event.model.length),
+                takeUntil(this.destroy$)
+            )
+            .subscribe((event: PageModelChangeEvent) => {
                 this.ngZone.run(() => {
-                    this.saveContent(model);
+                    this.saveContent(event);
                     if (this.shouldSetContainersHeight()) {
                         this.dotEditContentHtmlService.setContaintersSameHeight(
                             this.pageState.layout

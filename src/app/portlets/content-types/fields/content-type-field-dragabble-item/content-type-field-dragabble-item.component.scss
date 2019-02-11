@@ -19,6 +19,16 @@
     }
 }
 
+dot-icon-button-tooltip /deep/ .material-icons,
+dot-icon {
+    color: $gray;
+}
+
+dot-icon {
+    margin-right: $basic-padding;
+}
+
+
 .field__properties,
 .field__icon {
     display: flex;
@@ -28,11 +38,19 @@
     justify-content: center;
     flex-direction: column;
     flex-grow: 1;
+    overflow: hidden;
 }
 
 .field__name {
-    color: black;
-    line-height: $basic-padding * 3;
+    margin-right: $basic-padding / 2;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.field__name-inner {
+    align-items: center;
+    display: flex;
+    overflow: hidden;
 }
 
 .field__name-wrapper {
@@ -45,6 +63,8 @@
     color: gray;
     font-size: $font-size-small;
     line-height: $font-size-small;
+    overflow: hidden;
+    display: flex;
 }
 
 .field__attribute {
@@ -54,11 +74,10 @@
 }
 
 .field__actions {
+    flex-shrink: 0;
+    margin-left: $basic-padding;
+
     & > * {
         margin: 0 $basic-padding / 4;
     }
-}
-
-dot-icon {
-    margin-right: $basic-padding;
 }

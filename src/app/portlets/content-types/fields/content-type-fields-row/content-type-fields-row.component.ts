@@ -4,6 +4,7 @@ import { ContentTypeField, FieldRow } from '../shared';
 import { DotMessageService } from '@services/dot-messages-service';
 import { DotAlertConfirmService } from '@services/dot-alert-confirm';
 import { FieldColumn } from '..';
+import { take } from 'rxjs/operators';
 
 /**
  * Display all the Field Types
@@ -45,6 +46,7 @@ export class ContentTypeFieldsRowComponent implements OnInit {
                 'contenttypes.content.row',
                 'contenttypes.action.cancel'
             ])
+            .pipe(take(1))
             .subscribe((res) => {
                 this.i18nMessages = res;
                 document

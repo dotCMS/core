@@ -9,7 +9,7 @@ import { DebugElement, Component, Input, Output, EventEmitter } from '@angular/c
 import { ContentTypeField } from '../fields';
 import { FieldService } from '../fields/service';
 import { Location } from '@angular/common';
-import { LoginService } from 'dotcms-js';
+import { LoginService, SiteService } from 'dotcms-js';
 import { LoginServiceMock } from '../../../test/login-service.mock';
 import { RouterTestingModule } from '@angular/router/testing';
 import { async } from '@angular/core/testing';
@@ -30,6 +30,10 @@ import { ContentType } from '@portlets/content-types/shared/content-type.model';
 import { MenuItem } from 'primeng/primeng';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotEditContentTypeCacheService } from '../fields/content-type-fields-properties-form/field-properties/dot-relationships-property/services/dot-edit-content-type-cache.service';
+import { DotApiLinkModule } from '@components/dot-api-link/dot-api-link.module';
+import { SiteServiceMock } from 'src/app/test/site-service.mock';
+import { DotCopyButtonModule } from '@components/dot-copy-button/dot-copy-button.module';
+import * as _ from 'lodash';
 
 @Component({
     selector: 'dot-content-type-fields-drop-zone',
@@ -38,10 +42,15 @@ import { DotEditContentTypeCacheService } from '../fields/content-type-fields-pr
 class TestContentTypeFieldsDropZoneComponent {
     @Input()
     fields: ContentTypeField[];
+    @Input()
+    loading: boolean;
     @Output()
     saveFields = new EventEmitter<ContentTypeField[]>();
     @Output()
     removeFields = new EventEmitter<ContentTypeField[]>();
+
+    cancelLastDragAndDrop(): void {
+    }
 }
 
 @Component({
@@ -117,12 +126,18 @@ const getConfig = (route) => {
             BrowserAnimationsModule,
             DotIconModule,
             DotIconButtonModule,
-            DotDialogModule
+            DotDialogModule,
+            DotApiLinkModule,
+            DotCopyButtonModule
         ],
         providers: [
             {
                 provide: LoginService,
                 useClass: LoginServiceMock
+            },
+            {
+                provide: SiteService,
+                useClass: SiteServiceMock
             },
             {
                 provide: DotMessageService,
@@ -335,7 +350,8 @@ describe('ContentTypesEditComponent', () => {
         host: 'host',
         name: 'name',
         owner: 'owner',
-        system: false
+        system: false,
+        variable: 'helloVariable'
     };
 
     const configEditMode = getConfig({
@@ -372,6 +388,18 @@ describe('ContentTypesEditComponent', () => {
             dialog = de.query(By.css('dot-dialog'));
         };
 
+        it('should have api link component', () => {
+            expect(de.query(By.css('dot-api-link')).componentInstance.link).toBe(
+                '/api/v1/contenttype/id/1234567890'
+            );
+        });
+
+        it('should have copy variable button', () => {
+            expect(de.query(By.css('dot-copy-button')).componentInstance.copy).toBe(
+                'helloVariable'
+            );
+        });
+
         it('should set data, fields and cache', () => {
             expect(comp.data).toBe(fakeContentType);
             expect(comp.fields).toBe(fakeContentType.fields);
@@ -394,7 +422,7 @@ describe('ContentTypesEditComponent', () => {
             const editButton: DebugElement = fixture.debugElement.query(
                 By.css('#form-edit-button')
             );
-            expect(editButton.nativeElement.outerText).toBe('Edit');
+            expect(editButton.nativeElement.textContent).toBe('Edit');
             expect(editButton.nativeElement.disabled).toBe(false);
             expect(editButton).toBeTruthy();
         });
@@ -435,17 +463,29 @@ describe('ContentTypesEditComponent', () => {
             expect(dotRouterService.gotoPortlet).not.toHaveBeenCalled();
         });
 
+        it('should update fields attribute when a field is edit', () => {
+            const fields: ContentTypeField[] = _.cloneDeep(currentFieldsInServer);
+            fields[0].name = 'Updated field';
+
+            const fieldService = fixture.debugElement.injector.get(FieldService);
+            spyOn(fieldService, 'saveFields').and.returnValue(observableOf(fields));
+
+            const contentTypeFieldsDropZone = de.query(By.css('dot-content-type-fields-drop-zone'));
+            contentTypeFieldsDropZone.componentInstance.saveFields.emit([fields[0]]);
+
+            expect(fieldService.saveFields).toHaveBeenCalledWith('1234567890', [fields[0]]);
+            expect(comp.fields).toEqual(fields);
+        });
+
         it('should save fields on dropzone event', () => {
             const newFieldsAdded: ContentTypeField[] = [
                 {
                     name: 'field 1',
-                    id: '1',
                     clazz: 'com.dotcms.contenttype.model.field.ImmutableRowField',
                     sortOrder: 1
                 },
                 {
                     name: 'field 2',
-                    id: '2',
                     clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField',
                     sortOrder: 2
                 }
@@ -464,6 +504,40 @@ describe('ContentTypesEditComponent', () => {
 
             // then: the saveFields method has to be called in FileService ...
             expect(fieldService.saveFields).toHaveBeenCalledWith('1234567890', newFieldsAdded);
+        });
+
+        it('should show loading when saving fields on dropzone', () => {
+            const newFieldsAdded: ContentTypeField[] = [
+                {
+                    name: 'field 1',
+                    clazz: 'com.dotcms.contenttype.model.field.ImmutableRowField',
+                    sortOrder: 1
+                },
+                {
+                    name: 'field 2',
+                    clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField',
+                    sortOrder: 2
+                }
+            ];
+
+            const fieldsReturnByServer: ContentTypeField[] = newFieldsAdded.concat(
+                currentFieldsInServer
+            );
+            const fieldService = fixture.debugElement.injector.get(FieldService);
+
+            const contentTypeFieldsDropZone = de.query(By.css('dot-content-type-fields-drop-zone'));
+
+            spyOn(fieldService, 'saveFields').and.callFake(() => {
+                fixture.detectChanges();
+                expect(contentTypeFieldsDropZone.componentInstance.loading).toBe(true);
+                return observableOf(fieldsReturnByServer);
+            });
+
+            // when: the saveFields event is tiggered in content-type-fields-drop-zone
+            contentTypeFieldsDropZone.componentInstance.saveFields.emit(newFieldsAdded);
+
+            fixture.detectChanges();
+            expect(contentTypeFieldsDropZone.componentInstance.loading).toBe(false);
         });
 
         it('should update fields on dropzone event when creating a new one or update', () => {
@@ -489,7 +563,41 @@ describe('ContentTypesEditComponent', () => {
             expect(comp.fields).toEqual(fieldsReturnByServer);
         });
 
+        it('should update fields on dropzone event when creating a new row and move a existing field', () => {
+            const newRow: ContentTypeField = {
+                name: 'field 1',
+                clazz: 'com.dotcms.contenttype.model.field.ImmutableRowField',
+                sortOrder: 1
+            };
+
+            const fieldsToSave = [currentFieldsInServer[1], newRow, currentFieldsInServer[0]];
+
+
+            const fieldsReturnByServer: ContentTypeField[] = fieldsToSave.map(field => {
+                const newfield = Object.assign({}, field);
+
+                if (!newfield.id) {
+                    newfield.id = new Date().getMilliseconds().toString();
+                }
+
+                return newfield;
+            });
+
+            const fieldService = fixture.debugElement.injector.get(FieldService);
+            spyOn(fieldService, 'saveFields').and.returnValue(observableOf(fieldsReturnByServer));
+
+            const contentTypeFieldsDropZone = de.query(By.css('dot-content-type-fields-drop-zone'));
+
+            // when: the saveFields event is tiggered in content-type-fields-drop-zone
+            contentTypeFieldsDropZone.componentInstance.saveFields.emit(fieldsToSave);
+            // ...and the comp.data.fields has to be set to the fields return by the service
+            expect(comp.fields).toEqual(fieldsReturnByServer);
+        });
+
         it('should handle 403 when user doesn\'t have permission to save feld', () => {
+            const dropZone = de.query(By.css('dot-content-type-fields-drop-zone'));
+            spyOn(dropZone.componentInstance, 'cancelLastDragAndDrop').and.callThrough();
+
             const newFieldsAdded: ContentTypeField[] = [
                 {
                     name: 'field 1',
@@ -516,6 +624,7 @@ describe('ContentTypesEditComponent', () => {
             contentTypeFieldsDropZone.componentInstance.saveFields.emit(newFieldsAdded);
 
             expect(dotHttpErrorManagerService.handle).toHaveBeenCalledTimes(1);
+            expect(dropZone.componentInstance.cancelLastDragAndDrop).toHaveBeenCalledTimes(1);
         });
 
         it('should remove fields on dropzone event', () => {

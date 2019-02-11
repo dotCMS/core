@@ -1,29 +1,49 @@
 <span dotMdInputtext [label]="label" *ngIf="floatingLabel; else placeholded">
     <p-autoComplete
         appendTo="body"
-        (completeMethod)="search($event.query)"
+        (completeMethod)="search($event)"
+        (keydown.enter)="onKeyEnter($event)"
+        (keydown.tab)="$event.preventDefault()"
         (onClear)="onClear($event)"
         (onSelect)="onSelect($event)"
         [inputStyle]="{'width': '100%', 'padding': '0'}"
-        [minLength]="3"
-        [ngModel]="val"
+        [minLength]="2"
         [style]="style"
-        [suggestions]="results"
-        field="path">
+        field="label"
+        [ngModel]="val"
+        [suggestions]="results.data">
+            <ng-template let-item pTemplate="item" >
+                <div class='dot-page-selector__item'>
+                    <span *ngIf="results.type === 'site'">{{ item.label }}</span>
+                    <span class="dot-page-selector__item-url" *ngIf="results.type === 'page'" style=" ">{{ item.payload.path }}</span>
+                    <span class="dot-page-selector__item-host" *ngIf="results.type === 'page'" >{{ item.payload.hostName }}</span>
+                </div>
+            </ng-template>
     </p-autoComplete>
 </span>
+<div *ngIf="message" class="ui-messages-error" [textContent]="message"></div>
 
 <ng-template #placeholded>
     <p-autoComplete
-        (completeMethod)="search($event.query)"
+        appendTo="body"
+        (completeMethod)="search($event)"
+        (keydown.enter)="onKeyEnter($event)"
+        (keydown.tab)="$event.preventDefault()"
         (onClear)="onClear($event)"
         (onSelect)="onSelect($event)"
         [inputStyle]="{'width': '100%', 'padding': '0'}"
         [minLength]="3"
-        [ngModel]="val"
-        [placeholder]="label"
         [style]="style"
-        [suggestions]="results"
-        field="path">
+        field="label"
+        [ngModel]="val"
+        [suggestions]="results.data">
+        <ng-template let-item pTemplate="item" >
+            <div class='dot-page-selector__item'>
+                <span *ngIf="results.type === 'site'">{{ item.label }}</span>
+                <span class="dot-page-selector__item-url" *ngIf="results.type === 'page'" style=" ">{{ item.payload.path }}</span>
+                <span class="dot-page-selector__item-host" *ngIf="results.type === 'page'" >{{ item.payload.hostName }}</span>
+            </div>
+        </ng-template>
     </p-autoComplete>
 </ng-template>
+<dot-field-helper [message]="dotMessageService.get('page.selector.hint')"></dot-field-helper>

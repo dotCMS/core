@@ -1,4 +1,5 @@
 import { ButtonModule, TooltipModule } from 'primeng/primeng';
+import { SplitButtonModule } from 'primeng/splitbutton';
 import { HotkeysService } from 'angular2-hotkeys';
 import { ContentTypeFieldsAddRowComponent } from './content-type-fields-add-row.component';
 import { CommonModule } from '@angular/common';
@@ -8,7 +9,7 @@ import { DotIconButtonModule } from '@components/_common/dot-icon-button/dot-ico
 @NgModule({
     declarations: [ContentTypeFieldsAddRowComponent],
     exports: [ContentTypeFieldsAddRowComponent],
-    imports: [CommonModule, ButtonModule, TooltipModule, DotIconButtonModule],
+    imports: [CommonModule, ButtonModule, TooltipModule, DotIconButtonModule, SplitButtonModule],
     providers: [HotkeysService]
 })
 export class ContentTypeFieldsAddRowModule {}

@@ -61,27 +61,15 @@ $toolbar-height: 48px;
         margin-right: $basic-padding * 2;
 
         .ui-inputswitch-slider:after {
-            -webkit-font-feature-settings: "liga";
-            -webkit-font-smoothing: antialiased;
+            @include md-icon;
             color: $brand-primary;
             content: "lock_open";
-            direction: ltr;
-            display: inline-block;
-            display: inline-block;
-            font-family: "Material Icons";
             font-size: 13px;
-            font-style: normal;
-            font-weight: normal;
             left: 4px;
-            letter-spacing: normal;
-            line-height: 1;
             position: absolute;
-            transition: transform 100ms ease-in;
             text-rendering: auto;
-            text-transform: none;
             top: 5px;
-            white-space: nowrap;
-            word-wrap: normal;
+            transition: transform $basic-speed ease-in;
         }
 
         .ui-inputswitch-checked .ui-inputswitch-slider:after {

@@ -4,7 +4,7 @@ import {IPublishEnvironment} from '../services/bundle-service';
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'cw-push-publish-dialog-component',
-  template: `<p-dialog width="700" header="Push Publish" [visible]="!hidden" [modal]="true" [dismissableMask]="true" [closable]="false" appendTo="body" [draggable]="false" >
+  template: `<p-dialog width="700" header="Push Publish" [visible]="!hidden" [modal]="true" [dismissableMask]="true" [closable]="false"  [focusOnShow]="false" appendTo="body" [draggable]="false" >
       <p-message  *ngIf="errorMessage" style="margin-bottom: 16px; display: block;" severity="error" [text]="errorMessage"></p-message>
       <cw-input-dropdown
         flex
@@ -17,8 +17,8 @@ import {IPublishEnvironment} from '../services/bundle-service';
         ></cw-input-option>
       </cw-input-dropdown>
       <p-footer>
-        <button type="button" pButton (click)="doPushPublish.emit(selectedEnvironmentId)" label="Push" [disabled]="!selectedEnvironmentId"></button>
-        <button type="button" pButton (click)="cancel.emit()" label="Cancel" class="ui-button-secondary"></button>
+          <button type="button" pButton secondary (click)="cancel.emit()" label="Cancel" class="ui-button-secondary"></button>
+          <button type="button" pButton (click)="doPushPublish.emit(selectedEnvironmentId)" label="Push" [disabled]="!selectedEnvironmentId"></button>
       </p-footer>
     </p-dialog>`
 })

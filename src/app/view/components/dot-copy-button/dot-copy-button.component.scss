@@ -1,0 +1,23 @@
+@import "variables";
+
+:host {
+    position: relative;
+    display: inline-flex;
+    justify-content: center;
+    font-weight: normal;
+    overflow: hidden;
+}
+
+.label {
+    cursor: pointer;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
+}
+
+.label:hover,
+dot-icon-button:hover {
+    & + .tooltip {
+        opacity: 1;
+    }
+}

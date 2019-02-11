@@ -1,7 +1,15 @@
 import { ContentType } from '@portlets/content-types/shared/content-type.model';
 import { DotNewRelationshipsComponent } from './dot-new-relationships.component';
 import { ComponentFixture, async } from '@angular/core/testing';
-import { DebugElement, Component, Input, Output, EventEmitter, Injectable, forwardRef } from '@angular/core';
+import {
+    DebugElement,
+    Component,
+    Input,
+    Output,
+    EventEmitter,
+    Injectable,
+    forwardRef
+} from '@angular/core';
 import { PaginatorService } from '@services/paginator';
 import { MockDotMessageService } from 'src/app/test/dot-message-service.mock';
 import { DOTTestBed } from 'src/app/test/dot-test-bed';
@@ -37,7 +45,7 @@ const contentTypeMock: ContentType = {
     id: '1',
     variable: 'banner',
     owner: 'user',
-    system: true,
+    system: true
 };
 
 @Component({
@@ -62,56 +70,39 @@ class HostTestComponent {
             provide: NG_VALUE_ACCESSOR,
             useExisting: forwardRef(() => MockSearchableDropdownComponent)
         }
-    ],
+    ]
 })
 class MockSearchableDropdownComponent implements ControlValueAccessor {
-    @Input()
-    data: string[];
-    @Input()
-    labelPropertyName: string | string[];
-    @Input()
-    pageLinkSize = 3;
-    @Input()
-    rows: number;
-    @Input()
-    totalRecords: number;
-    @Input()
-    placeholder = '';
+    @Input() data: string[];
+    @Input() labelPropertyName: string | string[];
+    @Input() pageLinkSize = 3;
+    @Input() rows: number;
+    @Input() totalRecords: number;
+    @Input() placeholder = '';
 
-    @Output()
-    change: EventEmitter<any> = new EventEmitter();
-    @Output()
-    filterChange: EventEmitter<string> = new EventEmitter();
-    @Output()
-    pageChange: EventEmitter<PaginationEvent> = new EventEmitter();
+    @Output() change: EventEmitter<any> = new EventEmitter();
+    @Output() filterChange: EventEmitter<string> = new EventEmitter();
+    @Output() pageChange: EventEmitter<PaginationEvent> = new EventEmitter();
 
-    writeValue(obj: any): void {
-        console.log('obj', obj);
-    }
-    registerOnChange(fn: any): void {
-        console.log('fn', fn);
-    }
-    registerOnTouched(fn: any): void {
-        console.log('fn', fn);
-    }
-    setDisabledState?(isDisabled: boolean): void {
-        console.log('isDisabled', isDisabled);
-    }
+    writeValue(): void {}
+
+    registerOnChange(): void {}
+
+    registerOnTouched(): void {}
+
+    setDisabledState?(): void {}
 }
 
 @Component({
     selector: 'dot-cardinality-selector',
-    template: '',
+    template: ''
 })
 class MockCardinalitySelectorComponent {
-    @Input()
-    value: number;
+    @Input() value: number;
 
-    @Input()
-    disabled: boolean;
+    @Input() disabled: boolean;
 
-    @Output()
-    change: EventEmitter<DotRelationshipCardinality> = new EventEmitter();
+    @Output() change: EventEmitter<DotRelationshipCardinality> = new EventEmitter();
 }
 
 @Injectable()
@@ -150,33 +141,38 @@ describe('DotNewRelationshipsComponent', () => {
 
     const messageServiceMock = new MockDotMessageService({
         'contenttypes.field.properties.relationship.new.label': 'new',
-        'contenttypes.field.properties.relationship.new.content_type.placeholder': 'Select Content Type',
+        'contenttypes.field.properties.relationship.new.content_type.placeholder':
+            'Select Content Type',
+        'contenttypes.field.properties.relationships.contentType.label': 'Content Type',
+        'contenttypes.field.properties.relationships.label': 'Relationship'
     });
 
-    beforeEach(async(() => {
-        DOTTestBed.configureTestingModule({
-            declarations: [
-                HostTestComponent,
-                DotNewRelationshipsComponent,
-                MockSearchableDropdownComponent,
-                MockCardinalitySelectorComponent
-            ],
-            imports: [],
-            providers: [
-                { provide: DotMessageService, useValue: messageServiceMock },
-                { provide: PaginatorService, useClass: MockPaginatorService },
-                { provide: DotRelationshipService, useClass: MockRelationshipService },
-                { provide: DotContentTypeService, useClass: MockDotContentTypeService },
-            ]
-        });
+    beforeEach(
+        async(() => {
+            DOTTestBed.configureTestingModule({
+                declarations: [
+                    HostTestComponent,
+                    DotNewRelationshipsComponent,
+                    MockSearchableDropdownComponent,
+                    MockCardinalitySelectorComponent
+                ],
+                imports: [],
+                providers: [
+                    { provide: DotMessageService, useValue: messageServiceMock },
+                    { provide: PaginatorService, useClass: MockPaginatorService },
+                    { provide: DotRelationshipService, useClass: MockRelationshipService },
+                    { provide: DotContentTypeService, useClass: MockDotContentTypeService }
+                ]
+            });
 
-        fixtureHostComponent = DOTTestBed.createComponent(HostTestComponent);
-        de = fixtureHostComponent.debugElement.query(By.css('dot-new-relationships'));
-        comp = de.componentInstance;
+            fixtureHostComponent = DOTTestBed.createComponent(HostTestComponent);
+            de = fixtureHostComponent.debugElement.query(By.css('dot-new-relationships'));
+            comp = de.componentInstance;
 
-        paginatorService = de.injector.get(PaginatorService);
-        spyOn(paginatorService, 'getWithOffset').and.returnValue(of([contentTypeMock]));
-    }));
+            paginatorService = de.injector.get(PaginatorService);
+            spyOn(paginatorService, 'getWithOffset').and.returnValue(of([contentTypeMock]));
+        })
+    );
 
     describe('Content Types', () => {
         beforeEach(() => {
@@ -191,12 +187,18 @@ describe('DotNewRelationshipsComponent', () => {
         it('should has a dot-searchable-dropdown and it should has the right attributes values', () => {
             fixtureHostComponent.detectChanges();
 
-            const  dotSearchableDropdown = de.query(By.css('dot-searchable-dropdown'));
+            const dotSearchableDropdown = de.query(By.css('dot-searchable-dropdown'));
 
             expect(dotSearchableDropdown).not.toBeUndefined();
-            expect(dotSearchableDropdown.componentInstance.pageLinkSize).toBe(paginatorService.maxLinksPage);
-            expect(dotSearchableDropdown.componentInstance.rows).toBe(paginatorService.paginationPerPage);
-            expect(dotSearchableDropdown.componentInstance.totalRecords).toBe(paginatorService.totalRecords);
+            expect(dotSearchableDropdown.componentInstance.pageLinkSize).toBe(
+                paginatorService.maxLinksPage
+            );
+            expect(dotSearchableDropdown.componentInstance.rows).toBe(
+                paginatorService.paginationPerPage
+            );
+            expect(dotSearchableDropdown.componentInstance.totalRecords).toBe(
+                paginatorService.totalRecords
+            );
             expect(dotSearchableDropdown.componentInstance.labelPropertyName).toBe('name');
             expect(dotSearchableDropdown.componentInstance.placeholder).toBe('Select Content Type');
         });
@@ -236,27 +238,59 @@ describe('DotNewRelationshipsComponent', () => {
             expect(dotSearchableDropdown.componentInstance.data).toEqual([contentTypeMock]);
         });
 
-
-        it('should tigger change event when content type changed', (done) => {
+        it('should tigger change event when content type changed', done => {
             fixtureHostComponent.detectChanges();
 
             comp.change.subscribe((relationshipSelect: any) => {
-                expect(relationshipSelect).toEqual(
-                    {
-                        velocityVar: 'banner',
-                        cardinality: undefined
-                    }
-                );
+                expect(relationshipSelect).toEqual({
+                    velocityVar: 'banner',
+                    cardinality: undefined
+                });
                 done();
             });
 
             const dotSearchableDropdown = de.query(By.css('dot-searchable-dropdown'));
             dotSearchableDropdown.componentInstance.change.emit(contentTypeMock);
         });
+
+        it('should set the correct labels', () => {
+            fixtureHostComponent.detectChanges();
+            const labels = de.queryAll(By.css('label'));
+            const contentTypeLabel = labels[0].nativeElement.textContent;
+            const relationshipsLabel = labels[1].nativeElement.textContent;
+
+            expect(contentTypeLabel).toEqual('Content Type*');
+            expect(relationshipsLabel).toEqual('Relationship');
+        });
+
+        describe('inverse relationships', () => {
+            beforeEach(() => {
+                fixtureHostComponent.componentInstance.velocityVar = `${contentTypeMock.name}.${contentTypeMock.variable}`;
+            });
+
+            it('should load content type, and emit change event with the right variableValue', done => {
+                const contentTypeService = de.injector.get(DotContentTypeService);
+                spyOn(contentTypeService, 'getContentType').and.callThrough();
+
+                fixtureHostComponent.detectChanges();
+
+                comp.change.subscribe((relationshipSelect: any) => {
+                    expect(relationshipSelect).toEqual({
+                        velocityVar: `${contentTypeMock.name}.${contentTypeMock.variable}`,
+                        cardinality: undefined
+                    });
+                    done();
+                });
+
+                comp.triggerChanged();
+
+                expect(contentTypeService.getContentType).toHaveBeenCalled();
+                expect(paginatorService.getWithOffset).not.toHaveBeenCalled();
+            });
+        });
     });
 
     describe('Cardinalitys Selector', () => {
-
         beforeEach(() => {
             fixtureHostComponent.componentInstance.cardinalityIndex = 2;
 
@@ -270,14 +304,12 @@ describe('DotNewRelationshipsComponent', () => {
             expect(dotCardinalitySelector.componentInstance.value).toEqual(comp.cardinality);
         });
 
-        it('should tigger change event when cardinality changed', (done) => {
+        it('should tigger change event when cardinality changed', done => {
             comp.change.subscribe((relationshipSelect: any) => {
-                expect(relationshipSelect).toEqual(
-                    {
-                        velocityVar: undefined,
-                        cardinality: 0
-                    }
-                );
+                expect(relationshipSelect).toEqual({
+                    velocityVar: undefined,
+                    cardinality: 0
+                });
                 done();
             });
 

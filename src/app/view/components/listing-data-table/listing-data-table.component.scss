@@ -5,17 +5,24 @@
     flex-direction: column;
     height: 100%;
 
+    p-table {
+        flex-grow: 1;
+    }
+
     ::ng-deep {
-        .ui-datatable {
+        .ui-datatable,
+        .ui-table {
             display: flex;
             flex-direction: column;
         }
 
-        .ui-datatable-tablewrapper {
+        .ui-datatable-tablewrapper,
+        .ui-table-wrapper {
             flex-grow: 1;
             background: $white;
 
-            table tbody.ui-datatable-data tr {
+            table tbody.ui-datatable-data tr,
+            table tbody.ui-table-tbody tr {
                 td {
                     cursor: pointer;
 
@@ -26,7 +33,8 @@
             }
         }
 
-        .ui-datatable-data {
+        .ui-datatable-data,
+        .ui-table-tbody {
             & > tr > .listing-datatable__action-column {
                 padding-bottom: 0;
                 padding-top: 0;

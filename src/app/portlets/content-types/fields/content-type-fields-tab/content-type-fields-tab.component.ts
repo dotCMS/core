@@ -3,6 +3,7 @@ import { FieldTab, ContentTypeField } from '../shared';
 import { DotMessageService } from '@services/dot-messages-service';
 import { FieldDivider } from '@portlets/content-types/fields/shared/field-divider.interface';
 import { DotAlertConfirmService } from '@services/dot-alert-confirm/dot-alert-confirm.service';
+import { take } from 'rxjs/operators';
 
 /**
  * Display Tab Field
@@ -41,6 +42,7 @@ export class ContentTypeFieldsTabComponent implements OnInit {
                 'contenttypes.content.field',
                 'contenttypes.action.cancel'
             ])
+            .pipe(take(1))
             .subscribe((res) => {
                 this.i18nMessages = res;
             });
@@ -51,11 +53,14 @@ export class ContentTypeFieldsTabComponent implements OnInit {
      * Trigger the editTab event to change tab label
      * @memberof ContentTypeFieldsTabComponent
      */
-    changeLabel(): void {
-        if (this.label && this.label !== this.fieldTab.getFieldDivider().name) {
+    changeLabel($event: any): void {
+        $event.stopPropagation();
+        $event.preventDefault();
+        const label = $event.target.textContent;
+        if (label && label !== this.fieldTab.getFieldDivider().name) {
             this.editTab.emit({
                 ...this.fieldTab.getFieldDivider(),
-                name: this.label
+                name: label
             });
         } else {
             this.label = this.fieldTab.getFieldDivider().name;

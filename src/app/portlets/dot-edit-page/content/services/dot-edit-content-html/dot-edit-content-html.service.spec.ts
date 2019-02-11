@@ -21,6 +21,7 @@ import { DotLicenseService } from '@services/dot-license/dot-license.service';
 import { Injectable } from '@angular/core';
 import { DotRenderedPageState } from '@portlets/dot-edit-page/shared/models/dot-rendered-page-state.model';
 import { mockUser } from '../../../../../test/login-service.mock';
+import { PageModelChangeEventType } from './models';
 
 @Injectable()
 class MockDotLicenseService {
@@ -274,22 +275,64 @@ describe('DotEditContentHtmlService', () => {
 
         expect(this.dotEditContentHtmlService.renderAddedContentlet).toHaveBeenCalledWith({
             identifier: '123'
-        });
+        }, PageModelChangeEventType.ADD_CONTENT);
     });
 
     it('should render relocated contentlet', () => {
-        spyOn(this.dotEditContentHtmlService, 'renderRelocatedContentlet');
+        const dotContainerContentletService = this.injector.get(DotContainerContentletService);
+        spyOn(dotContainerContentletService, 'getContentletToContainer').and.callThrough();
+        spyOn(this.dotEditContentHtmlService, 'renderRelocatedContentlet').and.callThrough();
+
+        const dataObj = {
+            container: {
+                identifier: '123',
+                uuid: '456'
+            },
+            contentlet: {
+                identifier: '456',
+                inode: '456'
+            }
+        };
 
         this.dotEditContentHtmlService.contentletEvents$.next({
             name: 'relocate',
-            data: {
-                identifier: '456'
-            }
+            data: dataObj
         });
 
-        expect(this.dotEditContentHtmlService.renderRelocatedContentlet).toHaveBeenCalledWith({
-            identifier: '456'
+        expect(this.dotEditContentHtmlService.renderRelocatedContentlet).toHaveBeenCalledWith(dataObj);
+        expect(dotContainerContentletService.getContentletToContainer).toHaveBeenCalledWith(dataObj.container, dataObj.contentlet);
+    });
+
+    it('should not render relocated contentlet', () => {
+        spyOn(this.dotEditContentHtmlService, 'renderRelocatedContentlet').and.callThrough();
+
+        const dataObj = {
+            container: {
+                identifier: '123',
+                uuid: '456'
+            },
+            contentlet: {
+                identifier: '456',
+                inode: '456'
+            }
+        };
+
+        const pageState: DotRenderedPageState = new DotRenderedPageState(mockUser, {
+            ...mockDotRenderedPage,
+            page: {
+                ...mockDotPage,
+                rendered: fakeHTML,
+                remoteRendered: true
+            }
         });
+        this.dotEditContentHtmlService.initEditMode(pageState, { nativeElement: fakeIframeEl });
+
+        this.dotEditContentHtmlService.contentletEvents$.next({
+            name: 'relocate',
+            data: dataObj
+        });
+
+        expect(this.dotEditContentHtmlService.renderRelocatedContentlet).not.toHaveBeenCalled();
     });
 
     it('should render added contentlet', () => {
@@ -324,7 +367,7 @@ describe('DotEditContentHtmlService', () => {
 
         this.dotEditContentHtmlService.pageModel$.subscribe((model) => (currentModel = model));
 
-        this.dotEditContentHtmlService.renderAddedContentlet(contentlet);
+        this.dotEditContentHtmlService.renderAddedContentlet(contentlet, PageModelChangeEventType.ADD_CONTENT);
 
         expect(this.dotEditContentHtmlService.currentAction === DotContentletAction.EDIT).toBe(
             true,
@@ -344,7 +387,10 @@ describe('DotEditContentHtmlService', () => {
             'currentContainer must be the same after add content'
         );
 
-        expect(currentModel).toEqual(modelExpected, 'should tigger model change event');
+        expect(currentModel).toEqual({
+            model: modelExpected,
+            type: PageModelChangeEventType.ADD_CONTENT
+        }, 'should tigger model change event');
     });
 
     it('should remove contentlet', () => {

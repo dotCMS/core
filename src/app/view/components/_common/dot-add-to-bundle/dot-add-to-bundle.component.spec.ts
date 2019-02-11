@@ -6,7 +6,7 @@ import { DOTTestBed } from '../../../../test/dot-test-bed';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { DotMessageService } from '@services/dot-messages-service';
-import { FieldValidationMessageModule } from '../field-validation-message/file-validation-message.module';
+import { DotFieldValidationMessageModule } from '../dot-field-validation-message/dot-file-validation-message.module';
 import { DotAddToBundleComponent } from './dot-add-to-bundle.component';
 import { AddToBundleService } from '@services/add-to-bundle/add-to-bundle.service';
 
@@ -49,7 +49,7 @@ xdescribe('DotAddToBundleComponent', () => {
 
         DOTTestBed.configureTestingModule({
             declarations: [DotAddToBundleComponent, TestHostComponent],
-            imports: [BrowserAnimationsModule, FieldValidationMessageModule],
+            imports: [BrowserAnimationsModule, DotFieldValidationMessageModule],
             providers: [
                 { provide: AddToBundleService, useValue: addToBundleServiceMock },
                 { provide: DotMessageService, useValue: messageServiceMock }

@@ -1,11 +1,11 @@
 import { Injectable } from '@angular/core';
 import { CoreWebService } from './core-web.service';
-import { Observable, Subject, of } from 'rxjs';
+import { Observable, Subject, of, merge } from 'rxjs';
 import { RequestMethod } from '@angular/http';
-import { pluck, map } from 'rxjs/operators';
+import { pluck, map, take } from 'rxjs/operators';
 import { LoginService, Auth } from './login.service';
-import { DotcmsEventsService } from './dotcms-events.service';
 import { LoggerService } from './logger.service';
+import { DotcmsEventsService } from './dotcms-events.service';
 
 /**
  * Provide methods and data to hable the sites.
@@ -140,7 +140,7 @@ export class SiteService {
             })
             .pipe(
                 pluck('contentlets'),
-                map((sites) => sites[0])
+                map((sites: Site[]) => sites[0])
             );
     }
 
@@ -161,35 +161,38 @@ export class SiteService {
     }
 
     /**
-     * Request the current site
+     * Get the current site
      * @returns Observable<Site>
      * @memberof SiteService
      */
     getCurrentSite(): Observable<Site> {
-        if (this.selectedSite) {
-            return of(this.selectedSite);
-        } else {
-            return this.coreWebService
+        return merge(
+            this.selectedSite ? of(this.selectedSite) : this.requestCurrentSite(),
+            this.switchSite$
+        );
+    }
+
+    private requestCurrentSite(): Observable<Site> {
+        return this.coreWebService
             .requestView({
                 method: RequestMethod.Get,
                 url: this.urls.currentSiteUrl
             })
             .pipe(pluck('entity'));
-        }
     }
 
     private setCurrentSite(site: Site): void {
         if (this.selectedSite) {
-            this._switchSite$.next(Object.assign({}, site));
+            this._switchSite$.next({...site});
         }
 
         this.selectedSite = site;
     }
 
     private loadCurrentSite(): void {
-        this.getCurrentSite().subscribe((currentSite) => {
-                this.setCurrentSite(<Site>currentSite);
-            });
+        this.getCurrentSite().pipe(take(1)).subscribe((currentSite: Site) => {
+            this.setCurrentSite(currentSite);
+        });
     }
 }
 

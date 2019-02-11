@@ -4,13 +4,15 @@ import { LoggerService } from './logger.service';
 import { Subject } from 'rxjs';
 import { Protocol } from './util/protocol';
 import { SocketFactory } from './socket-factory.service';
+import { DotEventData, DotEventTypeWrapper } from './models';
 
 @Injectable()
 export class DotcmsEventsService {
     private socket: Protocol;
     private subjects: Subject<any>[] = [];
 
-    constructor(private socketFactory: SocketFactory, private loggerService: LoggerService) {}
+    constructor(private socketFactory: SocketFactory, private loggerService: LoggerService) {
+    }
 
     /**
      * Close the socket
@@ -63,7 +65,7 @@ export class DotcmsEventsService {
      *                          messages in the Notification section.
      * @returns any The system events that a client will receive.
      */
-    subscribeTo(clientEventType: string): Observable<any> {
+    subscribeTo(clientEventType: string): Observable<DotEventData> {
         if (!this.subjects[clientEventType]) {
             this.subjects[clientEventType] = new Subject();
         }
@@ -71,8 +73,8 @@ export class DotcmsEventsService {
         return this.subjects[clientEventType].asObservable();
     }
 
-    subscribeToEvents(clientEventTypes: string[]): Observable<EventTypeWrapper> {
-        const subject: Subject<EventTypeWrapper> = new Subject<EventTypeWrapper>();
+    subscribeToEvents(clientEventTypes: string[]): Observable<DotEventTypeWrapper> {
+        const subject: Subject<DotEventTypeWrapper> = new Subject<DotEventTypeWrapper>();
 
         clientEventTypes.forEach((eventType) =>
             this.subscribeTo(eventType).subscribe((data) =>
@@ -85,9 +87,4 @@ export class DotcmsEventsService {
 
         return subject.asObservable();
     }
-}
-
-export interface EventTypeWrapper {
-    data: any;
-    eventType: string;
 }

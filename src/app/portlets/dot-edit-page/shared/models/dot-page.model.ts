@@ -66,6 +66,7 @@ export interface DotPage {
     lockedByName?: string;
     lockedOn?: Date;
     pageURI: string;
+    remoteRendered?: boolean;
     shortyLive: string;
     shortyWorking: string;
     workingInode: string;

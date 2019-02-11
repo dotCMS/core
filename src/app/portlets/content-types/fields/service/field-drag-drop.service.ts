@@ -187,9 +187,14 @@ export class FieldDragDropService {
         handle: HTMLElement,
         _sibling: HTMLElement
     ): boolean {
+        const noDrag = !handle.classList.contains('no-drag');
         const isDragButton =
             handle.parentElement.classList.contains('row-header__drag') ||
             handle.classList.contains('row-header__drag');
+        return noDrag && this.shouldDrag(source, isDragButton);
+    }
+
+    private shouldDrag(source: HTMLElement, isDragButton: boolean): boolean {
         return this.isDraggingFromSource(source) || isDragButton;
     }
 

@@ -29,7 +29,8 @@ const dispatchKeydownEvent = (key: string) => {
             [contentStyle]="{'padding': '0'}"
             [header]="header"
             [(visible)]="show"
-            [closeable]="closeable">
+            [closeable]="closeable"
+            [hideButtons]="hideButtons">
             <b>Dialog content</b>
         </dot-dialog>
     `
@@ -39,6 +40,7 @@ class TestHostComponent {
     show = false;
     closeable = false;
     actions: DotDialogActions;
+    hideButtons =  false;
 }
 
 @Component({
@@ -264,7 +266,7 @@ describe('DotDialogComponent', () => {
                         });
                     });
 
-                    it('should trigger accept action on Enter', () => {
+                    it('should trigger accept action on Enter and unbind events', () => {
                         hostComponent.actions = {
                             ...hostComponent.actions,
                             accept: {
@@ -277,6 +279,10 @@ describe('DotDialogComponent', () => {
 
                         hostFixture.whenStable().then(() => {
                             expect(component.visible).toBe(true);
+
+                            dispatchKeydownEvent('Enter');
+
+                            hostFixture.detectChanges();
 
                             dispatchKeydownEvent('Enter');
 
@@ -319,6 +325,14 @@ describe('DotDialogComponent', () => {
                         });
                     });
                 });
+            });
+
+            it('should not show buttons when hideButtons is true', () => {
+                hostComponent.hideButtons = true;
+                hostFixture.detectChanges();
+
+                expect(hostDe.query(By.css('.dialog__button-cancel')).styles.display).toBe('none');
+                expect(hostDe.query(By.css('.dialog__button-accept')).styles.display).toBe('none');
             });
         });
     });

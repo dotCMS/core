@@ -1,0 +1,34 @@
+@import "variables";
+
+:host {
+    font-size: 0.75rem;
+    display: inline-flex;
+}
+
+a {
+    align-items: center;
+    border-radius: 2px;
+    border: solid 1px $brand-secondary;
+    color: $brand-secondary;
+    display: inline-flex;
+    line-height: 1em;
+    padding: $basic-padding / 4 6px $basic-padding / 4 $basic-padding / 2;
+    text-decoration: none;
+    text-transform: uppercase;
+    transition: background-color $basic-speed ease, color $basic-speed ease;
+
+    &:hover {
+        background-color: $brand-secondary;
+        color: $white;
+
+        dot-icon {
+            color: $white;
+        }
+    }
+}
+
+dot-icon {
+    color: $brand-secondary;
+    margin-right: $basic-padding / 2;
+    transition: color $basic-speed ease;
+}

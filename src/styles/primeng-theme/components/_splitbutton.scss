@@ -33,6 +33,11 @@ p-splitbutton {
 
             &.ui-button-icon-only {
                 border-radius: $border-radius;
+                margin-left: $basic-padding;
+
+                span.pi-caret-down {
+                    color: $white;
+                }
             }
         }
 

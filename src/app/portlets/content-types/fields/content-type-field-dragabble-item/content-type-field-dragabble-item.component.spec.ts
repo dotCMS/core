@@ -1,14 +1,15 @@
-import { async, ComponentFixture, fakeAsync, tick } from '@angular/core/testing';
+import { async, ComponentFixture } from '@angular/core/testing';
 import { DOTTestBed } from '../../../../test/dot-test-bed';
 import { DebugElement } from '@angular/core';
 import { ContentTypesFieldDragabbleItemComponent } from './content-type-field-dragabble-item.component';
 import { By } from '@angular/platform-browser';
 import { ContentTypeField } from '../';
-import { IconButtonTooltipModule } from '@components/_common/icon-button-tooltip/icon-button-tooltip.module';
+import { DotIconButtonTooltipModule } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.module';
 import { MockDotMessageService } from '../../../../test/dot-message-service.mock';
 import { DotMessageService } from '@services/dot-messages-service';
 import { FieldService } from '../service';
 import { DotIconModule } from '@components/_common/dot-icon/dot-icon.module';
+import { DotCopyButtonModule } from '@components/dot-copy-button/dot-copy-button.module';
 
 describe('ContentTypesFieldDragabbleItemComponent', () => {
     let comp: ContentTypesFieldDragabbleItemComponent;
@@ -26,7 +27,7 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
     beforeEach(async(() => {
         DOTTestBed.configureTestingModule({
             declarations: [ContentTypesFieldDragabbleItemComponent],
-            imports: [IconButtonTooltipModule, DotIconModule],
+            imports: [DotIconButtonTooltipModule, DotIconModule, DotCopyButtonModule],
             providers: [{ provide: DotMessageService, useValue: messageServiceMock }, FieldService]
         });
 
@@ -52,9 +53,28 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
 
         const container = de.query(By.css('.field__name'));
         expect(container).not.toBeNull();
-        expect(container.nativeElement.textContent.trim()).toEqual(
-            `${field.name} (${field.variable})`
-        );
+        expect(container.nativeElement.textContent.trim().replace('  ', ' ')).toEqual('Field name');
+    });
+
+    it('should have copy variable button', () => {
+        const field = {
+            fieldType: 'fieldType',
+            fixed: true,
+            indexed: true,
+            listed: true,
+            name: 'Field name',
+            required: true,
+            variable: 'test',
+            velocityVarName: 'velocityName'
+        };
+
+        comp.field = field;
+
+        fixture.detectChanges();
+
+        const copyButton: DebugElement = de.query(By.css('dot-copy-button'));
+        expect(copyButton.componentInstance.copy).toBe('test');
+        expect(copyButton.componentInstance.label).toBe('test');
     });
 
     it('should have field attributes label', () => {
@@ -80,86 +100,77 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
         );
     });
 
-    it(
-        'should has a remove button',
-        fakeAsync(() => {
-            const field = {
-                fieldType: 'fieldType',
-                fixed: false,
-                indexed: true,
-                name: 'Field name',
-                required: true,
-                velocityVarName: 'velocityName'
-            };
+    it('should has a remove button', () => {
+        const field = {
+            fieldType: 'fieldType',
+            fixed: false,
+            indexed: true,
+            name: 'Field name',
+            required: true,
+            velocityVarName: 'velocityName'
+        };
 
-            comp.field = field;
+        comp.field = field;
 
-            fixture.detectChanges();
+        fixture.detectChanges();
 
-            const button = de.query(By.css('.field__actions-delete'));
-            expect(button).not.toBeNull();
-            expect(button.attributes['icon']).toEqual('delete');
+        const button = de.query(By.css('.field__actions-delete'));
+        expect(button).not.toBeNull();
+        expect(button.attributes['icon']).toEqual('delete');
 
-            let resp: ContentTypeField;
-            comp.remove.subscribe((fieldItem) => (resp = fieldItem));
-            button.nativeElement.click();
+        let resp: ContentTypeField;
+        comp.remove.subscribe((fieldItem) => (resp = fieldItem));
+        button.triggerEventHandler('click', {
+            stopPropagation: () => {}
+        });
 
-            tick();
+        expect(resp).toEqual(field);
+    });
 
-            expect(resp).toEqual(field);
-        })
-    );
+    it('should not has a remove button (Fixed Field)', () => {
+        const field = {
+            fieldType: 'fieldType',
+            fixed: true,
+            indexed: true,
+            name: 'Field name',
+            required: true,
+            velocityVarName: 'velocityName'
+        };
 
-    it(
-        'should not has a remove button (Fixed Field)',
-        fakeAsync(() => {
-            const field = {
-                fieldType: 'fieldType',
-                fixed: true,
-                indexed: true,
-                name: 'Field name',
-                required: true,
-                velocityVarName: 'velocityName'
-            };
+        comp.field = field;
 
-            comp.field = field;
+        fixture.detectChanges();
 
-            fixture.detectChanges();
+        const button = de.query(By.css('.field__actions-delete'));
+        expect(button).toBeNull();
+    });
 
-            const button = de.query(By.css('.field__actions-delete'));
-            expect(button).toBeNull();
-        })
-    );
+    it('should have a edit button', () => {
+        const mockField = {
+            fieldType: 'fieldType',
+            fixed: true,
+            indexed: true,
+            name: 'Field name',
+            required: true,
+            velocityVarName: 'velocityName'
+        };
 
-    it(
-        'should has a edit button',
-        fakeAsync(() => {
-            const mockField = {
-                fieldType: 'fieldType',
-                fixed: true,
-                indexed: true,
-                name: 'Field name',
-                required: true,
-                velocityVarName: 'velocityName'
-            };
+        comp.field = mockField;
 
-            comp.field = mockField;
+        fixture.detectChanges();
 
-            fixture.detectChanges();
+        const button = de.query(By.css('.field__actions-edit'));
+        expect(button).not.toBeNull();
+        expect(button.attributes['icon']).toEqual('edit');
 
-            const button = de.query(By.css('.field__actions-edit'));
-            expect(button).not.toBeNull();
-            expect(button.attributes['icon']).toEqual('edit');
+        let resp: ContentTypeField;
+        comp.edit.subscribe((field) => (resp = field));
+        button.triggerEventHandler('click', {
+            stopPropagation: () => {}
+        });
 
-            let resp: ContentTypeField;
-            comp.edit.subscribe((field) => (resp = field));
-            button.nativeElement.click();
-
-            tick();
-
-            expect(resp).toEqual(mockField);
-        })
-    );
+        expect(resp).toEqual(mockField);
+    });
 
     it('should edit field on host click', () => {
         const mockField = {
@@ -178,7 +189,9 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
         let resp: ContentTypeField;
         comp.edit.subscribe((field) => (resp = field));
 
-        de.nativeElement.click();
+        de.triggerEventHandler('click', {
+            stopPropagation: () => {}
+        });
 
         expect(resp).toEqual(mockField);
     });

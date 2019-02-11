@@ -1,17 +1,19 @@
 @import "variables";
 @import "mixins";
 
+dot-api-link {
+    margin-left: $basic-padding;
+}
+
 :host {
     align-items: center;
     display: flex;
 }
 
-.page-info {
-    &__title {
-        margin: 0 $basic-padding / 2 0 0;
-        align-self: center;
-        color: $body-font-color;
-        font-size: $font-size-xx-large;
-        font-weight: normal;
-    }
+h2 {
+    margin: 0 $basic-padding / 2 0 0;
+    align-self: center;
+    color: $body-font-color;
+    font-size: $font-size-xx-large;
+    font-weight: normal;
 }

@@ -10,14 +10,13 @@
             top: 0;
             font-size: $font-size-small;
             font-weight: 500;
+            outline: none;
 
             a {
-                border-bottom: $tabview-item-border;
                 transition: background-color $basic-speed ease-in;
 
                 &:hover {
                     background-color: $tabview-item-hover-bgcolor;
-                    border-bottom: 0;
                 }
             }
         }

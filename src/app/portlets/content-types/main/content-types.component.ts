@@ -1,6 +1,6 @@
 import { forkJoin as observableForkJoin } from 'rxjs';
 
-import { map } from 'rxjs/operators';
+import { map, take } from 'rxjs/operators';
 import { ListingDataTableComponent } from '@components/listing-data-table/listing-data-table.component';
 import { DotAlertConfirmService } from '@services/dot-alert-confirm/dot-alert-confirm.service';
 import { CrudService } from '@services/crud';
@@ -87,7 +87,10 @@ export class ContentTypesPortletComponent implements OnInit {
             this.dotLicenseService.isEnterprise(),
             this.pushPublishService
                 .getEnvironments()
-                .pipe(map((environments: DotEnvironment[]) => !!environments.length))
+                .pipe(
+                    map((environments: DotEnvironment[]) => !!environments.length),
+                    take(1)
+                )
         ).subscribe((res) => {
             const baseTypes: StructureTypeView[] = res[1];
             const rowActionsMap = {
@@ -246,11 +249,11 @@ export class ContentTypesPortletComponent implements OnInit {
     }
 
     private removeContentType(item): void {
-        this.crudService.delete(`v1/contenttype/id`, item.id).subscribe(
+        this.crudService.delete(`v1/contenttype/id`, item.id).pipe(take(1)).subscribe(
             () => {
                 this.listing.loadCurrentPage();
             },
-            (error) => this.httpErrorManagerService.handle(error).subscribe()
+            (error) => this.httpErrorManagerService.handle(error).pipe(take(1)).subscribe()
         );
     }
 

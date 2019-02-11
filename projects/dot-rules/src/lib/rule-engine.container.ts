@@ -1,7 +1,6 @@
 
-import {from as observableFrom,  Observable, forkJoin } from 'rxjs';
-
-import {reduce, mergeMap, switchMap, map} from 'rxjs/operators';
+import {from as observableFrom, Observable } from 'rxjs';
+import { reduce, mergeMap, take } from 'rxjs/operators';
 // tslint:disable-next-line:max-file-line-count
 import { Component, EventEmitter, ViewEncapsulation } from '@angular/core';
 import {
@@ -145,7 +144,7 @@ export class RuleEngineContainer {
       this.rules = rules;
     });
 
-    this.bundleService.loadPublishEnvironments().subscribe(environments => (this.environments = environments));
+    this.bundleService.loadPublishEnvironments().pipe(take(1)).subscribe(environments => (this.environments = environments));
     this.initRules();
 
     this._ruleService._errors$.subscribe(res => {
@@ -632,11 +631,8 @@ export class RuleEngineContainer {
       siteId = params['realmId'];
     });
 
-    setTimeout(() => {
-      this._ruleService.requestRules(siteId);
-    }, 0);
-
-    this._ruleService.loadRules().subscribe((rules: RuleModel[]) => {
+    this._ruleService.requestRules(siteId);
+    this._ruleService.loadRules().pipe(take(1)).subscribe((rules: RuleModel[]) => {
       this.loadRules(rules);
     });
   }

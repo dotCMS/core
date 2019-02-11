@@ -2,6 +2,7 @@ import { Component, Input, OnChanges, OnInit } from '@angular/core';
 import { DotMessageService } from '@services/dot-messages-service';
 import { DotMenuService } from '@services/dot-menu.service';
 import { FieldDragDropService } from '../fields/service';
+import { take } from 'rxjs/internal/operators/take';
 
 @Component({
     selector: 'dot-content-type-layout',
@@ -37,6 +38,7 @@ export class ContentTypesLayoutComponent implements OnChanges, OnInit {
                 'contenttypes.tab.publisher.push.history.header',
                 'contenttypes.tab.relationship.header'
             ])
+            .pipe(take(1))
             .subscribe((res) => {
                 this.i18nMessages = res;
             });
@@ -44,7 +46,7 @@ export class ContentTypesLayoutComponent implements OnChanges, OnInit {
 
     ngOnChanges(changes): void {
         if (changes.contentTypeId.currentValue) {
-            this.dotMenuService.getDotMenuId('content-types-angular').subscribe((id) => {
+            this.dotMenuService.getDotMenuId('content-types-angular').pipe(take(1)).subscribe((id) => {
                 // tslint:disable-next-line:max-line-length
                 this.relationshipURL = `c/portal/layout?p_l_id=${id}&p_p_id=content-types&_content_types_struts_action=%2Fext%2Fstructure%2Fview_relationships&_content_types_structure_id=${
                     changes.contentTypeId.currentValue
@@ -59,4 +61,5 @@ export class ContentTypesLayoutComponent implements OnChanges, OnInit {
             }&popup=true`;
         }
     }
+
 }

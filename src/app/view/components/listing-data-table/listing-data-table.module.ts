@@ -8,6 +8,7 @@ import { ListingDataTableComponent } from './listing-data-table.component';
 import { DotMessageService } from '@services/dot-messages-service';
 import { NgModule } from '@angular/core';
 import { DataTableModule, InputTextModule } from 'primeng/primeng';
+import { TableModule } from 'primeng/table';
 import { ActionMenuButtonModule } from '../_common/action-menu-button/action-menu-button.module';
 import { DotIconModule } from '../_common/dot-icon/dot-icon.module';
 
@@ -18,6 +19,7 @@ import { DotIconModule } from '../_common/dot-icon/dot-icon.module';
         ActionHeaderModule,
         CommonModule,
         DataTableModule,
+        TableModule,
         FormsModule,
         InputTextModule,
         ActionMenuButtonModule,

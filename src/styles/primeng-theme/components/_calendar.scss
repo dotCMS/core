@@ -61,7 +61,7 @@ p-calendar {
 // Validation
 p-calendar {
     &.ng-dirty.ng-invalid,
-    &.ng-invalid.ng-touched {
+    &.ng-invalid.ng-dirty {
         .ui-inputtext {
             @extend #inputtext-error-border;
         }

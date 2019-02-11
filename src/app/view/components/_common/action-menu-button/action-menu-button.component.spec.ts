@@ -1,5 +1,5 @@
 import { ContentType } from '../../../../portlets/content-types/shared/content-type.model';
-import { IconButtonTooltipModule } from '../icon-button-tooltip/icon-button-tooltip.module';
+import { DotIconButtonTooltipModule } from '../dot-icon-button-tooltip/dot-icon-button-tooltip.module';
 import { ActionMenuButtonComponent } from './action-menu-button.component';
 import { ComponentFixture } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
@@ -16,7 +16,7 @@ describe('ActionMenuButtonComponent', () => {
     beforeEach(() => {
         DOTTestBed.configureTestingModule({
             declarations: [ActionMenuButtonComponent],
-            imports: [IconButtonTooltipModule, DotMenuModule]
+            imports: [DotIconButtonTooltipModule, DotMenuModule]
         });
 
         fixture = DOTTestBed.createComponent(ActionMenuButtonComponent);

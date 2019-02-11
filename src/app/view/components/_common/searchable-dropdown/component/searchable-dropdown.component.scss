@@ -6,21 +6,23 @@ dot-searchable-dropdown {
         background: none;
         border: 0;
         border-radius: 0;
-        padding-right: $basic-padding;
+        padding-right: $basic-padding * 2;
         text-align: left;
         text-transform: none;
         width: auto;
 
-        &:hover,
-        &:active,
-        &:focus {
-            @extend #field-hover-state;
-            @extend #inputtext-normal-border;
-            border: 0;
+        &:not([disabled]){
+            &:hover,
+            &:active,
+            &:focus {
+                @extend #field-hover-state;
+                @extend #inputtext-normal-border;
+                border: 0;
 
-            .ui-button-text,
-            [class^="ui-button-icon"] {
-                color: $body-font-color;
+                .ui-button-text,
+                [class^="ui-button-icon"] {
+                    color: $body-font-color;
+                }
             }
         }
 
@@ -50,6 +52,9 @@ dot-searchable-dropdown {
             display: block;
             padding: $basic-padding / 2;
             transition: background-color $basic-speed ease-in;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
 
             &.selected {
                 font-weight: bold;

@@ -16,7 +16,7 @@ import { DotActionButtonModule } from '@components/_common/dot-action-button/dot
 import { FormsModule, FormGroup } from '@angular/forms';
 import { Component, Input, EventEmitter, Output } from '@angular/core';
 import { TemplateContainersCacheService } from '../../template-containers-cache.service';
-import { FieldValidationMessageModule } from '@components/_common/field-validation-message/file-validation-message.module';
+import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { mockDotRenderedPage, mockDotTemplate } from '../../../../test/dot-rendered-page.mock';
 import { mockUser } from '../../../../test/login-service.mock';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
@@ -98,7 +98,7 @@ const testConfigObject = {
         DotActionButtonModule,
         DotEditLayoutGridModule,
         DotEditPageInfoModule,
-        FieldValidationMessageModule,
+        DotFieldValidationMessageModule,
         FormsModule,
         RouterTestingModule,
         TooltipModule

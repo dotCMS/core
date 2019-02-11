@@ -1,3 +1,5 @@
+@import "variables";
+
 :host {
     ::ng-deep {
         .ui-autocomplete-panel {
@@ -8,4 +10,33 @@
             white-space: nowrap;
         }
     }
+
+    dot-field-helper {
+        position: absolute;
+        right: 0;
+        top: $basic-padding * 3;
+        z-index: 1;
+    }
 }
+
+.dot-page-selector__item {
+    display: flex;
+    max-width: 380px;
+
+    span {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        text-align: left;
+    }
+
+    &-host, &-url {
+        flex-basis: 50%;
+    }
+
+    &-host {
+        padding-left: $basic-padding / 2;
+    }
+}
+
+

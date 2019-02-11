@@ -35,7 +35,7 @@ import { LoggerService } from 'dotcms-js';
                 [value]="modelValue" 
                 [options]="options | async" 
                 [placeholder]="placeholder" 
-                (onChange)="fireMultiSelectChanges($event)"> 
+                (onChange)="fireChange($event)"> 
     </dot-autocomplete-tags>`
 })
 export class Dropdown implements ControlValueAccessor {
@@ -102,11 +102,6 @@ export class Dropdown implements ControlValueAccessor {
       this.onChange(value);
       this.fireTouch(value);
     }
-  }
-
-  fireMultiSelectChanges(event: any): void {
-    this.fireChange(event);
-    this.fireTouch(event);
   }
 
   fireTouch($event): void {
