@@ -40,12 +40,12 @@ public class FieldDataFetcher implements DataFetcher<Object> {
                 fieldValue = Integer.parseInt(field.values());
             } else if(field instanceof TextField && field.dataType().equals(DataTypes.FLOAT)) {
                 fieldValue = Float.parseFloat(field.values());
-            } else if(field.required()) {
+            } else {
                 fieldValue = field.defaultValue();
             }
         } else if(field instanceof DateField) {
             return ((Timestamp)fieldValue).toLocalDateTime().toLocalDate();
-        } if(field instanceof TimeField) {
+        } else if(field instanceof TimeField) {
             return ((Timestamp) fieldValue).toLocalDateTime().toLocalTime();
         } else if(field instanceof DateTimeField) {
             return  ((Timestamp) fieldValue).toLocalDateTime();
