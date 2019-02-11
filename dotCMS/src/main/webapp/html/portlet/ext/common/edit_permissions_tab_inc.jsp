@@ -40,7 +40,7 @@
 		<div class="permissions__bar-user-role-actions">
 			<span id="resetPermissionActions">
 				<span id="permissionIndividuallyButtonWrapper" style="display:none;">
-					<button dojoType="dijit.form.Button" onclick="permissionsIndividually()" type="button"><%= LanguageUtil.get(pageContext, "want-to-permission-individually") %></button>
+					<button dojoType="dijit.form.Button" class="dijitButtonFlat" onclick="permissionsIndividually()" type="button"><%= LanguageUtil.get(pageContext, "want-to-permission-individually") %></button>
 				</span>
 				<div id="resetInheritanceMess" style="display: none;"></div>
 			</span>

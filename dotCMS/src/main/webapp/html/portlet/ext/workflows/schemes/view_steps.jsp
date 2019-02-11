@@ -218,7 +218,7 @@
 	
 		<div style="float:right">
 			<!-- ADD STEP -->
-			<button dojoType="dijit.form.Button"
+			<button dojoType="dijit.form.Button" class="dijitButtonFlat"
 					onClick="schemeAdmin.exportScheme('<%=scheme.getId()%>');return false;" iconClass="addIcon">
 				<%=LanguageUtil.get(pageContext, "Export-Workflow-Scheme")%>
 			</button>

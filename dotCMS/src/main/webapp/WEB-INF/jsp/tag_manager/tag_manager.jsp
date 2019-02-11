@@ -599,11 +599,11 @@ td {font-size: 100%;}
             <button dojoType="dijit.form.Button" type="button" onClick="cancelAddNewTag()" id="cancelAddOrEdit" class="dijitButtonFlat">
                 <%= LanguageUtil.get(pageContext, "Cancel") %>
             </button>
-            <button dojoType="dijit.form.Button" type="button" onClick="saveTag()" id="saveButton">
-                <%= LanguageUtil.get(pageContext, "Save") %>
-            </button>
             <button dojoType="dijit.form.Button" type="button" onClick="deleteTag()" id="deleteButton" class="dijitButtonDanger">
                 <%= LanguageUtil.get(pageContext, "Delete") %>
+            </button>
+            <button dojoType="dijit.form.Button" type="button" onClick="saveTag()" id="saveButton">
+                <%= LanguageUtil.get(pageContext, "Save") %>
             </button>
         </div>
     </form>
@@ -628,7 +628,7 @@ td {font-size: 100%;}
         </div>
         <br>
         <div class="buttonRow">
-            <button dojoType="dijit.form.Button" type="button" iconClass="cancelIcon" onClick="cancelImportTags()" id="cancelImport">
+            <button dojoType="dijit.form.Button" type="button" iconClass="cancelIcon" class="dijitButtonFlat" onClick="cancelImportTags()" id="cancelImport">
                 <%= LanguageUtil.get(pageContext, "Cancel") %>
             </button>
             <button dojoType="dijit.form.Button" type="button" iconClass="uploadIcon" onClick="importTags()" id="importButton">

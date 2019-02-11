@@ -59,7 +59,7 @@
 			
 		</div>
     	<div class="portlet-toolbar__actions-secondary">
-    		<button  dojoType="dijit.form.Button" onClick="showBundleUpload();" iconClass="uploadIcon">
+    		<button  dojoType="dijit.form.Button" class="dijitButtonFlat" onClick="showBundleUpload();" iconClass="uploadIcon">
 				<%= LanguageUtil.get(pageContext, "publisher_upload") %>
 			</button>
 			<button dojoType="dijit.form.Button" onClick="loadUnpushedBundles();" class="dijitButtonFlat">
