@@ -1359,7 +1359,17 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         String q = getRelatedContentESQuery(contentlet, rel);
 
-        return searchIndex(q, -1, 0, rel.getRelationTypeValue() + "-" + contentlet.getIdentifier() + "-order", user, respectFrontendRoles);
+        try{
+            return searchIndex(q, -1, 0,
+                    rel.getRelationTypeValue() + "-" + contentlet.getIdentifier() + "-order", user,
+                    respectFrontendRoles);
+        } catch (Exception e){
+            if (e.getCause() instanceof SearchPhaseExecutionException){
+                Logger.warn(this, "Unable to look up related content",e);
+                return Collections.emptyList();
+            }
+            throw new DotDataException("Unable to look up related content",e);
+        }
     }
 
     private List<Contentlet> getRelatedContentFromIndex(Contentlet contentlet,Relationship rel, User user, boolean respectFrontendRoles)throws DotDataException, DotSecurityException {
@@ -1391,6 +1401,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 }catch(Exception ex){
                     throw new DotDataException("Unable to look up related content",ex);
                 }
+            } else if (e.getCause() instanceof SearchPhaseExecutionException){
+                Logger.warn(this, "Unable to look up related content",e);
+                return Collections.emptyList();
             }
             throw new DotDataException("Unable to look up related content",e);
         }
@@ -1452,6 +1465,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 }catch(Exception ex){
                     throw new DotDataException("Unable to look up related content",ex);
                 }
+            } else if (e.getCause() instanceof SearchPhaseExecutionException){
+                Logger.warn(this, "Unable to look up related content",e);
+                return Collections.emptyList();
             }
             throw new DotDataException("Unable to look up related content",e);
         }
@@ -1465,11 +1481,18 @@ public class ESContentletAPIImpl implements ContentletAPI {
         String q = getRelatedContentESQuery(contentlet, rel, pullByParent);
         String sortBy = rel.getRelationTypeValue() + "-" + contentlet.getIdentifier() + "-order";
 
-        List<ContentletSearch> contentletSearchList =
-                searchIndex(q, -1, 0, sortBy, user, respectFrontendRoles);
-        return contentletSearchList.stream().map(ESContentletAPIImpl::transformContentletSearchToContent)
-                .collect(CollectionsUtils.toImmutableList());
-
+        try {
+            List<ContentletSearch> contentletSearchList =
+                    searchIndex(q, -1, 0, sortBy, user, respectFrontendRoles);
+            return contentletSearchList.stream().map(ESContentletAPIImpl::transformContentletSearchToContent)
+                    .collect(CollectionsUtils.toImmutableList());
+        } catch (Exception e){
+            if (e.getCause() instanceof SearchPhaseExecutionException){
+                Logger.warn(this, "Unable to look up related content",e);
+                return Collections.emptyList();
+            }
+            throw new DotDataException("Unable to look up related content",e);
+        }
     }
 
     @Override
