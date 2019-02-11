@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.htmlpageasset.business.render.page;
 
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import java.util.Collection;
 import java.util.Optional;
 
@@ -47,7 +48,7 @@ import com.liferay.portal.model.User;
  * Builder of {@link HTMLPageAssetRendered}
  */
 public class HTMLPageAssetRenderedBuilder {
-    private HTMLPageAsset htmlPageAsset;
+    private IHTMLPage htmlPageAsset;
     private User user;
     private HttpServletRequest request;
     private HttpServletResponse response;
@@ -70,7 +71,7 @@ public class HTMLPageAssetRenderedBuilder {
         versionableAPI = APILocator.getVersionableAPI();
     }
 
-    public HTMLPageAssetRenderedBuilder setHtmlPageAsset(HTMLPageAsset htmlPageAsset) {
+    public HTMLPageAssetRenderedBuilder setHtmlPageAsset(IHTMLPage htmlPageAsset) {
         this.htmlPageAsset = htmlPageAsset;
         return this;
     }
@@ -156,7 +157,7 @@ public class HTMLPageAssetRenderedBuilder {
 
     private HTMLPageAssetInfo getHTMLPageAssetInfo(final ContentletVersionInfo info) throws DotDataException {
         HTMLPageAssetInfo htmlPageAssetInfo = new HTMLPageAssetInfo()
-            .setPage(this.htmlPageAsset)
+            .setPage((HTMLPageAsset) this.htmlPageAsset)
             .setWorkingInode(info.getWorkingInode())
             .setShortyWorking(APILocator.getShortyAPI().shortify(info.getWorkingInode()))
             .setCanEdit(this.permissionAPI.doesUserHavePermission(htmlPageAsset, PermissionLevel.EDIT.getType(), user, false))
@@ -186,7 +187,7 @@ public class HTMLPageAssetRenderedBuilder {
 
     private boolean canLock()  {
         try {
-            APILocator.getContentletAPI().canLock(htmlPageAsset, user);
+            APILocator.getContentletAPI().canLock((HTMLPageAsset) htmlPageAsset, user);
             return true;
         } catch (DotLockException e) {
             return false;

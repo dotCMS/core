@@ -5,6 +5,7 @@ import com.dotcms.repackage.com.fasterxml.jackson.databind.JsonSerializer;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.SerializerProvider;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.google.common.collect.ImmutableMap;
 

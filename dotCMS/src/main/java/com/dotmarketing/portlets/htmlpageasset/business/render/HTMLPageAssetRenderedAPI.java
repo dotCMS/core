@@ -37,19 +37,14 @@ public interface HTMLPageAssetRenderedAPI {
      * @throws DotDataException     An error occurred when accessing the data source.
      * @throws IOException
      */
-    public PageView getPageMetadata(final HttpServletRequest request, final HttpServletResponse response,
-                                    final User user, final String uri, final PageMode mode)
+    public PageView getPageMetadata(final PageRenderedContext context)
             throws DotSecurityException, DotDataException;
 
     /***
      * Returns the rendered version of an HTML Page, i.e., the HTML code that will be rendered in
      * the browser.
      *
-     * @param request The {@link HttpServletRequest} object.
-     * @param response The {@link HttpServletResponse} object.
-     * @param user The {@link User} performing this action.
-     * @param pageUri The path to the HTML Page whose information will be retrieved.
-     * @param pageMode
+     * @param context The {@link PageRenderedContext} object.
      * @return The {@link HTMLPageAssetRendered} object containing the metadata of the different objects that
      * make up an HTML Page.
      * @throws DotSecurityException The user does not have the specified permissions to perform
@@ -57,32 +52,11 @@ public interface HTMLPageAssetRenderedAPI {
      * @throws DotDataException     An error occurred when accessing the data source.
      * @throws IOException
      */
-    public PageView getPageRendered(final HttpServletRequest request, final HttpServletResponse response,
-                                    final User user, final String pageUri, final PageMode pageMode)
+    public PageView getPageRendered(final PageRenderedContext context)
             throws DotDataException, DotSecurityException;
 
-    /**
-     * Returns the rendered version of an HTML Page, i.e., the HTML code that will be rendered in
-     * the browser.
-     *
-     * @param request The {@link HttpServletRequest} object.
-     * @param response The {@link HttpServletResponse} object.
-     * @param user The {@link User} performing this action.
-     * @param page the HTML Page whose information will be retrieved.
-     * @param pageMode
-     * @return The {@link HTMLPageAssetRendered} object containing the metadata of the different objects that
-     * make up an HTML Page.
-     * @throws DotSecurityException The user does not have the specified permissions to perform
-     *                              this action.
-     * @throws DotDataException     An error occurred when accessing the data source.
-     * @throws IOException
-     */
-    public PageView getPageRendered(final HttpServletRequest request, final HttpServletResponse response,
-                                    final User user, final HTMLPageAsset page, PageMode pageMode)
-            throws DotDataException, DotSecurityException;
 
-    public String getPageHtml(final HttpServletRequest request, final HttpServletResponse response, final User user,
-                              final String uri, final PageMode mode) throws DotSecurityException, DotDataException;
+    public String getPageHtml(final PageRenderedContext context) throws DotSecurityException, DotDataException;
 
     /**
      * Return the page's default mode for edit page portlet, if user have the page's lock then return
@@ -93,5 +67,10 @@ public interface HTMLPageAssetRenderedAPI {
      * @param pageUri
      * @return
      */
-     PageMode getDefaultEditPageMode(final User user, final HttpServletRequest request, final String pageUri);
+     PageMode getDefaultEditPageMode(
+             final User user,
+             final HttpServletRequest request,
+             final String pageUri,
+             final HttpServletResponse response
+     );
 }

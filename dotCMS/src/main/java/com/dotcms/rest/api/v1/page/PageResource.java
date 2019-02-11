@@ -3,6 +3,7 @@ package com.dotcms.rest.api.v1.page;
 
 
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
+import com.dotcms.rendering.velocity.services.PageContextBuilder;
 import com.dotcms.repackage.javax.ws.rs.*;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
@@ -26,6 +27,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
 import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetNotFoundException;
 import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetRenderedAPI;
+import com.dotmarketing.portlets.htmlpageasset.business.render.PageRenderedContextBuilder;
 import com.dotmarketing.portlets.htmlpageasset.business.render.page.PageView;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
@@ -122,7 +124,8 @@ public class PageResource {
         final User user = auth.getUser();
         Response res;
 
-        final PageMode mode = modeParam != null ? PageMode.get(modeParam) : this.htmlPageAssetRenderedAPI.getDefaultEditPageMode(user, request, uri);
+        final PageMode mode = modeParam != null ? PageMode.get(modeParam) :
+                this.htmlPageAssetRenderedAPI.getDefaultEditPageMode(user, request, uri, response);
         PageMode.setPageMode(request, mode);
 
         try {
@@ -131,7 +134,15 @@ public class PageResource {
                 request.getSession().setAttribute(WebKeys.CURRENT_DEVICE, deviceInode);
             }
 
-            final PageView pageRendered = this.htmlPageAssetRenderedAPI.getPageMetadata(request, response, user, uri, mode);
+            final PageView pageRendered = this.htmlPageAssetRenderedAPI.getPageMetadata(
+                    new PageRenderedContextBuilder()
+                            .setRequest(request)
+                            .setResponse(response)
+                            .setUser(user)
+                            .setPageUri(uri)
+                            .setPageMode(mode)
+                            .build()
+            );
             final Response.ResponseBuilder responseBuilder = Response.ok(new ResponseEntityView(pageRendered));
 
 
@@ -199,15 +210,27 @@ public class PageResource {
         final User user = auth.getUser();
         Response res;
 
-        final PageMode mode = modeParam != null ? PageMode.get(modeParam) : this.htmlPageAssetRenderedAPI.getDefaultEditPageMode(user, request,uri);
-        PageMode.setPageMode(request, mode);
         try {
+
+            final PageMode mode = modeParam != null
+                    ? PageMode.get(modeParam)
+                    : this.htmlPageAssetRenderedAPI.getDefaultEditPageMode(user, request,uri, response);
+
+            PageMode.setPageMode(request, mode);
 
             if (deviceInode != null) {
                 request.getSession().setAttribute(WebKeys.CURRENT_DEVICE, deviceInode);
             }
 
-            final PageView pageRendered = this.htmlPageAssetRenderedAPI.getPageRendered(request, response, user, uri, mode);
+            final PageView pageRendered = this.htmlPageAssetRenderedAPI.getPageRendered(
+                    new PageRenderedContextBuilder()
+                            .setRequest(request)
+                            .setResponse(response)
+                            .setUser(user)
+                            .setPageUri(uri)
+                            .setPageMode(mode)
+                            .build()
+            );
             final Response.ResponseBuilder responseBuilder = Response.ok(new ResponseEntityView(pageRendered));
 
 
@@ -268,8 +291,15 @@ public class PageResource {
             HTMLPageAsset page = (HTMLPageAsset) this.pageResourceHelper.getPage(user, pageId, request);
             page = this.pageResourceHelper.saveTemplate(user, page, form);
 
-            final PageView renderedPage = this.htmlPageAssetRenderedAPI.getPageRendered(request, response, user,
-                    page, PageMode.PREVIEW_MODE);
+            final PageView renderedPage = this.htmlPageAssetRenderedAPI.getPageRendered(
+                    new PageRenderedContextBuilder()
+                            .setRequest(request)
+                            .setResponse(response)
+                            .setUser(user)
+                            .setPage(page)
+                            .setPageMode(PageMode.PREVIEW_MODE)
+                            .build()
+                    );
 
             res = Response.ok(new ResponseEntityView(renderedPage)).build();
 
@@ -418,7 +448,15 @@ public class PageResource {
         PageMode.setPageMode(request, mode);
         try {
 
-            final String html = this.htmlPageAssetRenderedAPI.getPageHtml(request, response, user, uri, mode);
+            final String html = this.htmlPageAssetRenderedAPI.getPageHtml(
+                    new PageRenderedContextBuilder()
+                            .setRequest(request)
+                            .setResponse(response)
+                            .setUser(user)
+                            .setPageUri(uri)
+                            .setPageMode(mode)
+                            .build()
+            );
             final Response.ResponseBuilder responseBuilder = Response.ok(html);
 
             res = responseBuilder.build();
