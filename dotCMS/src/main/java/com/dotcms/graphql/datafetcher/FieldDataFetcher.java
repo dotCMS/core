@@ -17,6 +17,7 @@ import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.Date;
 
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
@@ -24,6 +25,8 @@ import graphql.schema.DataFetchingEnvironment;
 public class FieldDataFetcher implements DataFetcher<Object> {
     @Override
     public Object get(final DataFetchingEnvironment environment) throws Exception {
+        final User user = ((DotGraphQLContext) environment.getContext()).getUser();
+
         final Contentlet contentlet = environment.getSource();
         final String var = environment.getField().getName();
 
@@ -44,11 +47,14 @@ public class FieldDataFetcher implements DataFetcher<Object> {
                 fieldValue = field.defaultValue();
             }
         } else if(field instanceof DateField) {
-            return ((Timestamp)fieldValue).toLocalDateTime().toLocalDate();
+            final Date date = contentlet.getDateProperty(var);
+            return date.toInstant().atZone(user.getTimeZone().toZoneId()).toLocalDate();
         } else if(field instanceof TimeField) {
-            return ((Timestamp) fieldValue).toLocalDateTime().toLocalTime();
+            final Date date = contentlet.getDateProperty(var);
+            return date.toInstant().atZone(user.getTimeZone().toZoneId()).toLocalTime();
         } else if(field instanceof DateTimeField) {
-            return  ((Timestamp) fieldValue).toLocalDateTime();
+            final Date date = contentlet.getDateProperty(var);
+            return date.toInstant().atZone(user.getTimeZone().toZoneId());
         }
 
         return fieldValue;
