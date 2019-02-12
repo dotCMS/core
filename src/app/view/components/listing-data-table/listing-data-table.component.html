@@ -16,7 +16,7 @@
         [loading]="loading" loadingIcon="fa fa-circle-o-notch fa-spin"
         [pageLinks]="paginatorService.maxLinksPage"
         [paginator]="true"
-        [rows]="40"
+        [rows]="paginationPerPage"
         [sortOrder]="sortOrder && sortOrder.toLowerCase() === 'desc' ? -1 : 1"
         [totalRecords]="paginatorService.totalRecords"
         [value]="items"

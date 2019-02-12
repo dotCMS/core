@@ -32,7 +32,7 @@ export class ListingDataTableComponent implements OnChanges, OnInit {
     @Input() sortOrder: string;
     @Input() sortField: string;
     @Input() multipleSelection = false;
-    @Input() paginationPerPage: number;
+    @Input() paginationPerPage = 40;
     @Input() actions: DotDataTableAction[];
 
     @Output() rowWasClicked: EventEmitter<any> = new EventEmitter();

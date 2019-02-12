@@ -370,4 +370,14 @@ describe('ListingDataTableComponent', () => {
         expect(comp.dataTable.tableViewChild.nativeElement.rows[1]).toBe(document.activeElement);
     });
 
+    it('should set the pagination size in the Table', () => {
+        spyOn(this.paginatorService, 'get').and.returnValue(observableOf(this.items));
+        comp.paginationPerPage = 5;
+        comp.columns = this.columns;
+        comp.loadFirstPage();
+        fixture.detectChanges();
+
+        expect(comp.dataTable.rows).toBe(5);
+    });
+
 });
