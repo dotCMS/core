@@ -84,7 +84,7 @@ public class ContainerByFolderAssetsUtil {
                 containerMetaInfo = Optional.of(this.toString(fileAsset)); continue;
             }
 
-            if (this.isMode(fileAsset, showLive)) {
+            if (this.isValidContentType(showLive, fileAsset)) {
                 containerStructures.add(fileAsset);
             }
         }
@@ -100,6 +100,14 @@ public class ContainerByFolderAssetsUtil {
                 preLoop, postLoop, containerMetaInfo.get());
 
         return container;
+    }
+
+    private boolean isValidContentType(final boolean showLive, final FileAsset fileAsset)  {
+        try {
+            return !fileAsset.isArchived() && this.isMode(fileAsset, showLive);
+        } catch (DotDataException | DotSecurityException e) {
+            return false;
+        }
     }
 
     private void setContainerData(final Folder containerFolder,
