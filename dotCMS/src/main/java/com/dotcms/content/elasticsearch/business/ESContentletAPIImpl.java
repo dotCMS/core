@@ -1359,7 +1359,19 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         String q = getRelatedContentESQuery(contentlet, rel);
 
-        return searchIndex(q, -1, 0, rel.getRelationTypeValue() + "-" + contentlet.getIdentifier() + "-order", user, respectFrontendRoles);
+        try{
+            return searchIndex(q, -1, 0,
+                    rel.getRelationTypeValue() + "-" + contentlet.getIdentifier() + "-order", user,
+                    respectFrontendRoles);
+        } catch (Exception e){
+            final String errorMessage = "Unable to look up related content for contentlet with identifier "
+                    + contentlet.getIdentifier();
+            if (e.getCause() instanceof SearchPhaseExecutionException){
+                Logger.warn(this, errorMessage + ". An empty list will be returned", e);
+                return Collections.emptyList();
+            }
+            throw new DotDataException(errorMessage, e);
+        }
     }
 
     private List<Contentlet> getRelatedContentFromIndex(Contentlet contentlet,Relationship rel, User user, boolean respectFrontendRoles)throws DotDataException, DotSecurityException {
@@ -1384,15 +1396,20 @@ public class ESContentletAPIImpl implements ContentletAPI {
         try{
             return permissionAPI.filterCollection(searchByIdentifier(q, -1, 0, rel.getRelationTypeValue() + "-" + contentlet.getIdentifier() + "-order" , user, respectFrontendRoles, PermissionAPI.PERMISSION_READ, true), PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
         }catch (Exception e) {
+            final String errorMessage = "Unable to look up related content for contentlet with identifier "
+                    + contentlet.getIdentifier();
             if(e.getMessage() != null && e.getMessage().contains("[query_fetch]")){
                 try{
                     APILocator.getContentletIndexAPI().addContentToIndex(contentlet,false,false);
                     return permissionAPI.filterCollection(searchByIdentifier(q, 1, 0, rel.getRelationTypeValue() + "" + contentlet.getIdentifier() + "-order" , user, respectFrontendRoles, PermissionAPI.PERMISSION_READ, true), PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
                 }catch(Exception ex){
-                    throw new DotDataException("Unable to look up related content",ex);
+                    throw new DotDataException(errorMessage, ex);
                 }
+            } else if (e.getCause() instanceof SearchPhaseExecutionException){
+                Logger.warn(this, errorMessage + ". An empty list will be returned", e);
+                return Collections.emptyList();
             }
-            throw new DotDataException("Unable to look up related content",e);
+            throw new DotDataException(errorMessage, e);
         }
     }
 
@@ -1445,15 +1462,20 @@ public class ESContentletAPIImpl implements ContentletAPI {
         try{
             return permissionAPI.filterCollection(searchByIdentifier(q, -1, 0, rel.getRelationTypeValue() + "-" + contentlet.getIdentifier() + "-order" , user, respectFrontendRoles, PermissionAPI.PERMISSION_READ, true), PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
         }catch (Exception e) {
+            final String errorMessage = "Unable to look up related content for contentlet with identifier "
+                    + contentlet.getIdentifier();
             if(e instanceof SearchPhaseExecutionException){
                 try{
                     APILocator.getContentletIndexAPI().addContentToIndex(contentlet,false,true);
                     return permissionAPI.filterCollection(searchByIdentifier(q, -1, 0, rel.getRelationTypeValue() + "-" + contentlet.getIdentifier() + "-order" , user, respectFrontendRoles, PermissionAPI.PERMISSION_READ, true), PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
                 }catch(Exception ex){
-                    throw new DotDataException("Unable to look up related content",ex);
+                    throw new DotDataException(errorMessage, ex);
                 }
+            } else if (e.getCause() instanceof SearchPhaseExecutionException){
+                Logger.warn(this, errorMessage + ". An empty list will be returned", e);
+                return Collections.emptyList();
             }
-            throw new DotDataException("Unable to look up related content",e);
+            throw new DotDataException(errorMessage, e);
         }
 
     }
@@ -1465,11 +1487,20 @@ public class ESContentletAPIImpl implements ContentletAPI {
         String q = getRelatedContentESQuery(contentlet, rel, pullByParent);
         String sortBy = rel.getRelationTypeValue() + "-" + contentlet.getIdentifier() + "-order";
 
-        List<ContentletSearch> contentletSearchList =
-                searchIndex(q, -1, 0, sortBy, user, respectFrontendRoles);
-        return contentletSearchList.stream().map(ESContentletAPIImpl::transformContentletSearchToContent)
-                .collect(CollectionsUtils.toImmutableList());
-
+        try {
+            List<ContentletSearch> contentletSearchList =
+                    searchIndex(q, -1, 0, sortBy, user, respectFrontendRoles);
+            return contentletSearchList.stream().map(ESContentletAPIImpl::transformContentletSearchToContent)
+                    .collect(CollectionsUtils.toImmutableList());
+        } catch (Exception e){
+            final String errorMessage = "Unable to look up related content for contentlet with identifier "
+                    + contentlet.getIdentifier();
+            if (e.getCause() instanceof SearchPhaseExecutionException){
+                Logger.warn(this, errorMessage + ". An empty list will be returned", e);
+                return Collections.emptyList();
+            }
+            throw new DotDataException(errorMessage, e);
+        }
     }
 
     @Override

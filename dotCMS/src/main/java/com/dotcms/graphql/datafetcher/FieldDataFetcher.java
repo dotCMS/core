@@ -17,6 +17,7 @@ import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.Date;
 
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
@@ -43,12 +44,6 @@ public class FieldDataFetcher implements DataFetcher<Object> {
             } else {
                 fieldValue = field.defaultValue();
             }
-        } else if(field instanceof DateField) {
-            return ((Timestamp)fieldValue).toLocalDateTime().toLocalDate();
-        } else if(field instanceof TimeField) {
-            return ((Timestamp) fieldValue).toLocalDateTime().toLocalTime();
-        } else if(field instanceof DateTimeField) {
-            return  ((Timestamp) fieldValue).toLocalDateTime();
         }
 
         return fieldValue;
