@@ -49,7 +49,7 @@ import java.util.stream.Collectors;
 
 import static com.dotmarketing.business.PermissionAPI.*;
 
-public class PageContextBuilder implements Serializable {
+public class PageContextAPI implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
@@ -67,7 +67,7 @@ public class PageContextBuilder implements Serializable {
     final List<ContainerRaw> containersRaw;
     final long languageId;
 
-    public PageContextBuilder(final IHTMLPage htmlPage, final User user, final PageMode mode, final long languageId)
+    public PageContextAPI(final IHTMLPage htmlPage, final User user, final PageMode mode, final long languageId)
             throws DotSecurityException, DotDataException {
         this.pageFoundTags = Lists.newArrayList();
         this.htmlPage = htmlPage;
@@ -80,7 +80,7 @@ public class PageContextBuilder implements Serializable {
 
     }
 
-    public PageContextBuilder(final IHTMLPage htmlPage, final User user, final PageMode mode)
+    public PageContextAPI(final IHTMLPage htmlPage, final User user, final PageMode mode)
             throws DotSecurityException, DotDataException {
         this(htmlPage,user, mode, htmlPage.getLanguageId());
     }

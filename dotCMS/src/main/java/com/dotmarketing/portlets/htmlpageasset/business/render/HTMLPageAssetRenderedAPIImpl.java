@@ -1,9 +1,7 @@
 package com.dotmarketing.portlets.htmlpageasset.business.render;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
-import com.dotcms.cms.login.LoginServiceAPI;
 
-import com.dotcms.rendering.velocity.services.PageContextBuilder;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.*;
@@ -70,46 +68,52 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
     }
 
     /**
-     * @param context    The {@link PageRenderedContext} object.
+     * @param context    The {@link PageContext} object.
      * @return The rendered page, i.e., the HTML source code that will be rendered by the browser.
      * @throws DotSecurityException The user does not have the specified permissions to perform
      *                              this action.
      * @throws DotDataException     An error occurred when accessing the data source.
      */
     @Override
-    public PageView getPageMetadata(final PageRenderedContext context)
-            throws DotSecurityException, DotDataException {
+    public PageView getPageMetadata(
+            final PageContext context,
+            final HttpServletRequest request,
+            final HttpServletResponse response)
+                throws DotSecurityException, DotDataException {
 
-        final Host host = resolveSite(context);
-        final IHTMLPage page = getHtmlPageAsset(context, host);
+        final Host host = resolveSite(context, request);
+        final IHTMLPage page = getHtmlPageAsset(context, host, request);
 
         return new HTMLPageAssetRenderedBuilder()
                 .setHtmlPageAsset(page)
                 .setUser(context.getUser())
-                .setRequest(context.getRequest())
-                .setResponse(context.getResponse())
+                .setRequest(request)
+                .setResponse(response)
                 .setSite(host)
                 .build(false, context.getPageMode());
     }
 
     @Override
-    public PageView getPageRendered(final PageRenderedContext context)
-            throws DotDataException, DotSecurityException {
+    public PageView getPageRendered(
+            final PageContext context,
+            final HttpServletRequest request,
+            final HttpServletResponse response)
+                throws DotDataException, DotSecurityException {
 
         final PageMode mode = context.getPageMode();
 
-        PageMode.setPageMode(context.getRequest(), mode);
+        PageMode.setPageMode(request, mode);
 
-        final Host host = resolveSite(context);
+        final Host host = resolveSite(context, request);
         final HTMLPageAsset page = context.getPage() != null
                 ? context.getPage()
-                : (HTMLPageAsset) getHtmlPageAsset(context, host);
+                : (HTMLPageAsset) getHtmlPageAsset(context, host, request);
 
         return new HTMLPageAssetRenderedBuilder()
                 .setHtmlPageAsset(page)
                 .setUser(context.getUser())
-                .setRequest(context.getRequest())
-                .setResponse(context.getResponse())
+                .setRequest(request)
+                .setResponse(response)
                 .setSite(host)
                 .build(true, mode);
     }
@@ -122,16 +126,21 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
         try {
             final User systemUser = userAPI.getSystemUser();
 
-            final Host host = this.resolveSite(request, systemUser, PageMode.PREVIEW_MODE);
+            final Host host = this.resolveSite(
+                    new PageContextBuilder()
+                            .setUser(systemUser)
+                            .setPageMode(PageMode.PREVIEW_MODE)
+                            .build(),
+                    request);
+
             final IHTMLPage htmlPageAsset = this.getHtmlPageAsset(
-                    new PageRenderedContextBuilder()
+                    new PageContextBuilder()
                         .setPageMode(PageMode.PREVIEW_MODE)
                         .setPageUri(pageUri)
                         .setUser(user)
-                        .setRequest(request)
-                        .setResponse(response)
                         .build(),
-                    host
+                    host,
+                    request
             );
 
             final ContentletVersionInfo info = this.versionableAPI.
@@ -144,48 +153,42 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
         }
     }
 
-    private Host resolveSite(
+    public String getPageHtml(
+            final PageContext context,
             final HttpServletRequest request,
-            final User systemUser,
-            final PageMode mode)
-            throws DotSecurityException, DotDataException {
+            final HttpServletResponse response)
+                throws DotSecurityException, DotDataException {
 
-        return resolveSite(
-                new PageRenderedContextBuilder()
-                        .setRequest(request)
-                        .setUser(systemUser)
-                        .setPageMode(mode)
-                        .build()
-        );
-    }
-
-    public String getPageHtml(final PageRenderedContext context)
-            throws DotSecurityException, DotDataException {
-
-        final Host host = resolveSite(context);
-        final IHTMLPage page = getHtmlPageAsset(context, host);
+        final Host host = resolveSite(context, request);
+        final IHTMLPage page = getHtmlPageAsset(context, host, request);
 
         return new HTMLPageAssetRenderedBuilder()
                 .setHtmlPageAsset(page)
                 .setUser(context.getUser())
-                .setRequest(context.getRequest())
-                .setResponse(context.getResponse())
+                .setRequest(request)
+                .setResponse(response)
                 .setSite(host)
                 .getPageHTML();
     }
 
-    private PageMode getNotLockDefaultPageMode(final IHTMLPage htmlPageAsset, final User user) throws DotDataException {
+    private PageMode getNotLockDefaultPageMode(
+            final IHTMLPage htmlPageAsset,
+            final User user
+    ) throws DotDataException {
         return this.permissionAPI.doesUserHavePermission(htmlPageAsset, PermissionLevel.READ.getType(), user, false)
                 ? PageMode.PREVIEW_MODE : PageMode.ADMIN_MODE;
     }
 
-    private IHTMLPage getHtmlPageAsset(final PageRenderedContext context, final Host host)
-            throws DotDataException, DotSecurityException {
+    private IHTMLPage getHtmlPageAsset(
+            final PageContext context,
+            final Host host,
+            final HttpServletRequest request)
+                throws DotDataException, DotSecurityException {
 
         final IHTMLPage htmlPageAsset = findPageByContext(host, context);
 
         if (htmlPageAsset == null){
-            return getPageByUri(context.getPageMode(), host, findByURLMap(context, host));
+            return getPageByUri(context.getPageMode(), host, findByURLMap(context, host, request));
         } else  {
             final boolean doesUserHavePermission = this.permissionAPI.doesUserHavePermission(
                     htmlPageAsset,
@@ -204,7 +207,7 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
         return htmlPageAsset;
     }
 
-    private IHTMLPage findPageByContext(final Host host, final PageRenderedContext context)
+    private IHTMLPage findPageByContext(final Host host, final PageContext context)
             throws DotDataException, DotSecurityException {
 
         final User user = context.getUser();
@@ -217,10 +220,13 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
                 getPageByUri(mode, host, pageUri);
     }
 
-    private String findByURLMap(final PageRenderedContext context, final Host host)
-            throws DotSecurityException, DotDataException {
+    private String findByURLMap(
+            final PageContext context,
+            final Host host,
+            final HttpServletRequest request)
+                throws DotSecurityException, DotDataException {
 
-        final Language language = this.getCurrentLanguage(context.getRequest());
+        final Language language = this.getCurrentLanguage(request);
 
         final URLMapInfo urlMapInfo = this.urlMapAPIImpl.processURLMap(
                 new UrlMapContextBuilder()
@@ -236,7 +242,6 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
             throw new HTMLPageAssetNotFoundException(context.getPageUri());
         }
 
-        final HttpServletRequest request = context.getRequest();
         request.setAttribute(WebKeys.WIKI_CONTENTLET, urlMapInfo.getContentlet().getIdentifier());
         request.setAttribute(WebKeys.WIKI_CONTENTLET_INODE, urlMapInfo.getContentlet().getInode());
         request.setAttribute(WebKeys.WIKI_CONTENTLET_URL, context.getPageUri());
@@ -272,10 +277,9 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
                 WebAPILocator.getLanguageWebAPI().getLanguage(request) : defaultLanguage;
     }
 
-    private Host resolveSite(final PageRenderedContext context)
+    private Host resolveSite(final PageContext context, final HttpServletRequest request)
             throws DotDataException, DotSecurityException {
 
-        final HttpServletRequest request = context.getRequest();
         final User user = context.getUser();
         final PageMode mode = context.getPageMode();
         

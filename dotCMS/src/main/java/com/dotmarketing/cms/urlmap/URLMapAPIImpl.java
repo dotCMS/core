@@ -162,9 +162,9 @@ public class URLMapAPIImpl {
             if (value.endsWith("/")) {
                 value = value.substring(0, value.length() - 1);
             }
-            query.append("+").append(structure.getVelocityVarName()).append(".")
-                    .append(fieldMatches.get(counter)).append(":")
-                    .append(QueryParser.escape(value)).append(" ");
+            query.append('+').append(structure.getVelocityVarName()).append('.')
+                    .append(fieldMatches.get(counter)).append(':')
+                    .append(QueryParser.escape(value)).append(' ');
             counter++;
         }
 
@@ -181,8 +181,10 @@ public class URLMapAPIImpl {
         Contentlet contentlet = null;
 
         final String query = this.buildContentQuery(matches, structure, hostField, context);
-        List<ContentletSearch> contentletSearches = this.contentletAPI.searchIndex(query, 2, 0,
-                hostField.isRequired()? "conhost, modDate" : "modDate", this.wuserAPI.getSystemUser(), true);
+        final List<ContentletSearch> contentletSearches =
+                this.contentletAPI.searchIndex(query, 2, 0,
+                        hostField.isRequired() ? "conhost, modDate" : "modDate",
+                        this.wuserAPI.getSystemUser(), true);
 
         if (!contentletSearches.isEmpty()) {
             int idx = 0;
@@ -215,7 +217,7 @@ public class URLMapAPIImpl {
         final StringBuilder query = new StringBuilder();
 
         query.append("+structureName:").append(structure.getVelocityVarName())
-                .append(" +deleted:false ");
+             .append(" +deleted:false ");
 
         if (context.getMode().isAdmin || context.getMode() == PageMode.EDIT_MODE) {
             query.append("+working:true ");
@@ -227,8 +229,8 @@ public class URLMapAPIImpl {
             query.append(this.getHostFilter(context.getHost()));
         }
 
-        query.append(this.buildFields(structure, matches));
-        query.append(" +languageId:").append(context.getLanguageId()).append(" ");
+        query.append(this.buildFields(structure, matches))
+             .append(" +languageId:").append(context.getLanguageId()).append(" ");
 
         return query.toString();
     }
@@ -262,22 +264,22 @@ public class URLMapAPIImpl {
         final StringBuilder masterRegEx = new StringBuilder();
 
         for (final SimpleStructureURLMap urlMap : urlMaps) {
-            final PatternCache pc = new PatternCache();
+            final PatternCache patternCache = new PatternCache();
             final String regEx = StructureUtil.generateRegExForURLMap(urlMap.getURLMapPattern());
 
             if (!UtilMethods.isSet(regEx) || regEx.trim().length() < 3) {
                 continue;
             }
 
-            pc.setRegEx(regEx);
-            pc.setStructureInode(urlMap.getInode());
-            pc.setURLpattern(urlMap.getURLMapPattern());
-            pc.setFieldMatches(getFieldMathed(urlMap));
+            patternCache.setRegEx(regEx);
+            patternCache.setStructureInode(urlMap.getInode());
+            patternCache.setURLpattern(urlMap.getURLMapPattern());
+            patternCache.setFieldMatches(getFieldMathed(urlMap));
 
-            patternsCache.add(pc);
+            patternsCache.add(patternCache);
 
             if (masterRegEx.length() > 0) {
-                masterRegEx.append("|");
+                masterRegEx.append('|');
             }
             masterRegEx.append(regEx);
         }
@@ -287,7 +289,7 @@ public class URLMapAPIImpl {
     }
 
     @NotNull
-    private List<String> getFieldMathed(SimpleStructureURLMap urlMap) {
+    private List<String> getFieldMathed(final SimpleStructureURLMap urlMap) {
         final List<RegExMatch> fieldMathed = RegEX.find(urlMap.getURLMapPattern(), "{([^{}]+)}");
         final List<String> fields = new ArrayList<String>();
         for (final RegExMatch regExMatch : fieldMathed) {

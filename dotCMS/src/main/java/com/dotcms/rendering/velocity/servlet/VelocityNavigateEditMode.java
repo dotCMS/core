@@ -8,8 +8,7 @@ import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetRenderedAPI;
-import com.dotmarketing.portlets.htmlpageasset.business.render.PageRenderedContext;
-import com.dotmarketing.portlets.htmlpageasset.business.render.PageRenderedContextBuilder;
+import com.dotmarketing.portlets.htmlpageasset.business.render.PageContextBuilder;
 import com.dotmarketing.portlets.htmlpageasset.business.render.page.PageView;
 import com.dotmarketing.util.PageMode;
 import com.liferay.portal.model.User;
@@ -71,13 +70,13 @@ public class VelocityNavigateEditMode  extends VelocityModeHandler {
         final PageMode mode = this.getMode();
 
         final PageView htmlPageAssetRendered = htmlPageAssetRenderedAPI.getPageRendered(
-                new PageRenderedContextBuilder()
-                    .setRequest(request)
-                    .setResponse(response)
+                new PageContextBuilder()
                     .setUser(user)
                     .setPageUri(uri)
                     .setPageMode(mode)
-                    .build()
+                    .build(),
+                request,
+                response
         );
         final ObjectWriter objectWriter = new ObjectMapper().writer().withDefaultPrettyPrinter();
         final String renderedPageString = objectWriter.writeValueAsString(htmlPageAssetRendered)

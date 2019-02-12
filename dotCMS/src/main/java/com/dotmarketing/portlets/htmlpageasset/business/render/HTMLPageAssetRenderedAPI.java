@@ -1,12 +1,9 @@
 package com.dotmarketing.portlets.htmlpageasset.business.render;
 
-import com.dotmarketing.beans.Host;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.htmlpageasset.business.render.page.HTMLPageAssetRendered;
-import com.dotmarketing.portlets.htmlpageasset.business.render.page.HTMLPageAssetRenderedBuilder;
 import com.dotmarketing.portlets.htmlpageasset.business.render.page.PageView;
-import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.util.PageMode;
 import com.liferay.portal.model.User;
 
@@ -37,14 +34,17 @@ public interface HTMLPageAssetRenderedAPI {
      * @throws DotDataException     An error occurred when accessing the data source.
      * @throws IOException
      */
-    public PageView getPageMetadata(final PageRenderedContext context)
-            throws DotSecurityException, DotDataException;
+     PageView getPageMetadata(
+            final PageContext context,
+            final HttpServletRequest request,
+            final HttpServletResponse response)
+                throws DotSecurityException, DotDataException;
 
     /***
      * Returns the rendered version of an HTML Page, i.e., the HTML code that will be rendered in
      * the browser.
      *
-     * @param context The {@link PageRenderedContext} object.
+     * @param context The {@link PageContext} object.
      * @return The {@link HTMLPageAssetRendered} object containing the metadata of the different objects that
      * make up an HTML Page.
      * @throws DotSecurityException The user does not have the specified permissions to perform
@@ -52,11 +52,17 @@ public interface HTMLPageAssetRenderedAPI {
      * @throws DotDataException     An error occurred when accessing the data source.
      * @throws IOException
      */
-    public PageView getPageRendered(final PageRenderedContext context)
-            throws DotDataException, DotSecurityException;
+    PageView getPageRendered(
+            final PageContext context,
+            final HttpServletRequest request,
+            final HttpServletResponse response)
+                throws DotDataException, DotSecurityException;
 
 
-    public String getPageHtml(final PageRenderedContext context) throws DotSecurityException, DotDataException;
+    String getPageHtml(
+            final PageContext context,
+            final HttpServletRequest request,
+            final HttpServletResponse response) throws DotSecurityException, DotDataException;
 
     /**
      * Return the page's default mode for edit page portlet, if user have the page's lock then return

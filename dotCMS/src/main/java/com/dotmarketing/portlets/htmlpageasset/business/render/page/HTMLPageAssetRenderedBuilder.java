@@ -12,7 +12,7 @@ import org.apache.velocity.context.Context;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.rendering.velocity.directive.RenderParams;
-import com.dotcms.rendering.velocity.services.PageContextBuilder;
+import com.dotcms.rendering.velocity.services.PageContextAPI;
 import com.dotcms.rendering.velocity.servlet.VelocityModeHandler;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
 import com.dotcms.visitor.domain.Visitor;
@@ -31,7 +31,6 @@ import com.dotmarketing.portlets.contentlet.business.DotLockException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRaw;
-import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRendered;
 import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRenderedBuilder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
@@ -59,8 +58,6 @@ public class HTMLPageAssetRenderedBuilder {
     private final ContentletAPI contentletAPI;
     private final LayoutAPI layoutAPI;
     private final VersionableAPI versionableAPI;
-
-
 
     public HTMLPageAssetRenderedBuilder() {
         permissionAPI = APILocator.getPermissionAPI();
@@ -114,16 +111,18 @@ public class HTMLPageAssetRenderedBuilder {
         final User systemUser = APILocator.getUserAPI().getSystemUser();
         final boolean canEditTemplate = this.permissionAPI.doesUserHavePermission(template, PermissionLevel.EDIT.getType(), user);
         final boolean canCreateTemplates = layoutAPI.doesUserHaveAccessToPortlet("templates", user);
-        final PageContextBuilder pageContextBuilder = new PageContextBuilder(htmlPageAssetInfo.getPage(), systemUser, mode, language.getId());
+        final PageContextAPI pageContextAPI = new PageContextAPI(htmlPageAssetInfo.getPage(), systemUser, mode, language.getId());
         
 
 
         if (!rendered) {
-            final Collection<? extends ContainerRaw> containers =  pageContextBuilder.getContainersRaw();
+            final Collection<? extends ContainerRaw> containers =  pageContextAPI.getContainersRaw();
             return new PageView(site, template, containers, htmlPageAssetInfo, layout, canCreateTemplates, canEditTemplate, this.getViewAsStatus(mode));
         } else {
-            final Context velocityContext  = pageContextBuilder.addAll(VelocityUtil.getInstance().getContext(request, response));
-            final Collection<? extends ContainerRaw> containers = new ContainerRenderedBuilder(pageContextBuilder.getContainersRaw(), velocityContext, mode).build();
+            final Context velocityContext  = pageContextAPI
+                    .addAll(VelocityUtil.getInstance().getContext(request, response));
+            final Collection<? extends ContainerRaw> containers = new ContainerRenderedBuilder(
+                    pageContextAPI.getContainersRaw(), velocityContext, mode).build();
             final String pageHTML = this.getPageHTML();
             return new HTMLPageAssetRendered(site, template, containers, htmlPageAssetInfo, layout, pageHTML,
                     canCreateTemplates, canEditTemplate, this.getViewAsStatus(mode)

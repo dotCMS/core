@@ -3,7 +3,6 @@ package com.dotcms.rest.api.v1.page;
 
 
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
-import com.dotcms.rendering.velocity.services.PageContextBuilder;
 import com.dotcms.repackage.javax.ws.rs.*;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
@@ -27,7 +26,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
 import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetNotFoundException;
 import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetRenderedAPI;
-import com.dotmarketing.portlets.htmlpageasset.business.render.PageRenderedContextBuilder;
+import com.dotmarketing.portlets.htmlpageasset.business.render.PageContextBuilder;
 import com.dotmarketing.portlets.htmlpageasset.business.render.page.PageView;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
@@ -135,13 +134,13 @@ public class PageResource {
             }
 
             final PageView pageRendered = this.htmlPageAssetRenderedAPI.getPageMetadata(
-                    new PageRenderedContextBuilder()
-                            .setRequest(request)
-                            .setResponse(response)
+                    new PageContextBuilder()
                             .setUser(user)
                             .setPageUri(uri)
                             .setPageMode(mode)
-                            .build()
+                            .build(),
+                    request,
+                    response
             );
             final Response.ResponseBuilder responseBuilder = Response.ok(new ResponseEntityView(pageRendered));
 
@@ -223,13 +222,13 @@ public class PageResource {
             }
 
             final PageView pageRendered = this.htmlPageAssetRenderedAPI.getPageRendered(
-                    new PageRenderedContextBuilder()
-                            .setRequest(request)
-                            .setResponse(response)
+                    new PageContextBuilder()
                             .setUser(user)
                             .setPageUri(uri)
                             .setPageMode(mode)
-                            .build()
+                            .build(),
+                    request,
+                    response
             );
             final Response.ResponseBuilder responseBuilder = Response.ok(new ResponseEntityView(pageRendered));
 
@@ -292,14 +291,14 @@ public class PageResource {
             page = this.pageResourceHelper.saveTemplate(user, page, form);
 
             final PageView renderedPage = this.htmlPageAssetRenderedAPI.getPageRendered(
-                    new PageRenderedContextBuilder()
-                            .setRequest(request)
-                            .setResponse(response)
+                    new PageContextBuilder()
                             .setUser(user)
                             .setPage(page)
                             .setPageMode(PageMode.PREVIEW_MODE)
-                            .build()
-                    );
+                            .build(),
+                    request,
+                    response
+            );
 
             res = Response.ok(new ResponseEntityView(renderedPage)).build();
 
@@ -449,13 +448,13 @@ public class PageResource {
         try {
 
             final String html = this.htmlPageAssetRenderedAPI.getPageHtml(
-                    new PageRenderedContextBuilder()
-                            .setRequest(request)
-                            .setResponse(response)
+                    new PageContextBuilder()
                             .setUser(user)
                             .setPageUri(uri)
                             .setPageMode(mode)
-                            .build()
+                            .build(),
+                    request,
+                    response
             );
             final Response.ResponseBuilder responseBuilder = Response.ok(html);
 

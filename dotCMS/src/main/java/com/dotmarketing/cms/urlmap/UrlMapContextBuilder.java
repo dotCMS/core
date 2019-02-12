@@ -11,27 +11,27 @@ public class UrlMapContextBuilder {
     private Host host;
     private User user;
 
-    public UrlMapContextBuilder setMode(PageMode mode) {
+    public UrlMapContextBuilder setMode(final PageMode mode) {
         this.mode = mode;
         return this;
     }
 
-    public UrlMapContextBuilder setLanguageId(long languageId) {
+    public UrlMapContextBuilder setLanguageId(final long languageId) {
         this.languageId = languageId;
         return this;
     }
 
-    public UrlMapContextBuilder setUri(String uri) {
+    public UrlMapContextBuilder setUri(final String uri) {
         this.uri = uri;
         return this;
     }
 
-    public UrlMapContextBuilder setHost(Host host) {
+    public UrlMapContextBuilder setHost(final Host host) {
         this.host = host;
         return this;
     }
 
-    public UrlMapContextBuilder setUser(User user) {
+    public UrlMapContextBuilder setUser(final User user) {
         this.user = user;
         return this;
     }

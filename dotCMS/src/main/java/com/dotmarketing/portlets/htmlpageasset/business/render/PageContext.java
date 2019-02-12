@@ -6,20 +6,19 @@ import com.liferay.portal.model.User;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-public class PageRenderedContext {
+public class PageContext {
 
-    private final HttpServletRequest request;
-    private final HttpServletResponse response;
     private final User user;
     private final String pageUri;
     private final PageMode pageMode;
     private final HTMLPageAsset page;
 
-    public PageRenderedContext(final HttpServletRequest request,
-            final HttpServletResponse response, final User user, final String pageUri,
-            final PageMode pageMode, final HTMLPageAsset page) {
-        this.request = request;
-        this.response = response;
+    public PageContext(
+            final User user,
+            final String pageUri,
+            final PageMode pageMode,
+            final HTMLPageAsset page) {
+
         this.user = user;
         this.pageUri = pageUri;
         this.pageMode = pageMode;
@@ -29,14 +28,6 @@ public class PageRenderedContext {
 
     public HTMLPageAsset getPage() {
         return page;
-    }
-
-    public HttpServletRequest getRequest() {
-        return request;
-    }
-
-    public HttpServletResponse getResponse() {
-        return response;
     }
 
     public User getUser() {

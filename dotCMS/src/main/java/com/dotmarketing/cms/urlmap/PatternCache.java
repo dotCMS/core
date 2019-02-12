@@ -12,7 +12,7 @@ class PatternCache implements Comparable<PatternCache> {
     private String URLpattern;
     private List<String> fieldMatches;
 
-    public void setRegEx(String regEx) {
+    public void setRegEx(final String regEx) {
         this.regEx = regEx;
     }
 
@@ -20,7 +20,7 @@ class PatternCache implements Comparable<PatternCache> {
         return regEx;
     }
 
-    public void setStructureInode(String structureInode) {
+    public void setStructureInode(final String structureInode) {
         this.structureInode = structureInode;
     }
 
@@ -37,7 +37,7 @@ class PatternCache implements Comparable<PatternCache> {
         return URLpattern;
     }
 
-    public void setFieldMatches(List<String> fieldMatches) {
+    public void setFieldMatches(final List<String> fieldMatches) {
         this.fieldMatches = fieldMatches;
     }
 
@@ -48,18 +48,21 @@ class PatternCache implements Comparable<PatternCache> {
 
     @Override
     public int compareTo(@NotNull final PatternCache anotherPatternCache) {
-        String regex1 = this.getRegEx();
-        String regex2 = anotherPatternCache.getRegEx();
+        final String regex1 = this.getRegEx();
+        final String regex2 = anotherPatternCache.getRegEx();
+
+        final StringBuffer regex1Buffer = new StringBuffer(regex1);
+        final StringBuffer regex2Buffer = new StringBuffer(regex2);
 
         if (!regex1.endsWith(StringPool.FORWARD_SLASH)) {
-            regex1 += StringPool.FORWARD_SLASH;
+            regex1Buffer.append(StringPool.FORWARD_SLASH);
         }
 
         if (!regex2.endsWith(StringPool.FORWARD_SLASH)) {
-            regex2 += StringPool.FORWARD_SLASH;
+            regex2Buffer.append(StringPool.FORWARD_SLASH);
         }
 
-        return getSlashCount(regex1) - getSlashCount(regex2);
+        return getSlashCount(regex1Buffer.toString()) - getSlashCount(regex2Buffer.toString());
     }
 
     private int getSlashCount(final String string) {
