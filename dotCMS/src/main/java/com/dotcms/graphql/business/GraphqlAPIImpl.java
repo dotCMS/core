@@ -180,7 +180,7 @@ public class GraphqlAPIImpl implements GraphqlAPI {
     }
 
     private void handleRelationshipField(final ContentType contentType, GraphQLObjectType.Builder builder,
-                                         final Field field, final Map<String, GraphQLObjectType> graphqlObjectType) {
+                                         final Field field, final Map<String, GraphQLObjectType> typesMap) {
 
         final ContentType relatedContentType;
         try {
@@ -204,13 +204,13 @@ public class GraphqlAPIImpl implements GraphqlAPI {
             relationship,
             APILocator.getRelationshipAPI().isParent(relationship, contentType));
 
-        GraphQLOutputType outputType = graphqlObjectType.get(relatedContentType.variable()) != null
-            ? graphqlObjectType.get(relatedContentType.variable())
+        GraphQLOutputType outputType = typesMap.get(relatedContentType.variable()) != null
+            ? typesMap.get(relatedContentType.variable())
             : GraphQLTypeReference.typeRef(relatedContentType.variable());
 
-//        outputType = records.doesAllowOnlyOne()
-//            ? outputType
-//            : list(outputType);
+        outputType = records.doesAllowOnlyOne()
+            ? outputType
+            : list(outputType);
 
         builder.field(newFieldDefinition()
             .name(field.variable())
