@@ -6,6 +6,7 @@ import com.dotcms.graphql.util.TypeUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.transform.ContentletToMapTransformer;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
@@ -20,7 +21,7 @@ public class ContentletDataFetcher implements DataFetcher<List<Contentlet>> {
         final User user = ((DotGraphQLContext) environment.getContext()).getUser();
         String query = environment.getArgument("query");
         final Integer limit = environment.getArgument("limit")!=null ? environment.getArgument("limit") : 100;
-        final Integer offset = environment.getArgument("offset")!=null ? environment.getArgument("offset") : -1;
+        final Integer offset = environment.getArgument("offset")!=null ? environment.getArgument("offset") : 0;
         final String sortBy = environment.getArgument("sortBy");
 
         final String queriedFieldName = environment.getField().getName();
@@ -45,7 +46,7 @@ public class ContentletDataFetcher implements DataFetcher<List<Contentlet>> {
         try {
             isBaseType = UtilMethods.isSet(BaseContentType.getBaseContentType(queriedFieldName.toUpperCase()));
         } catch (IllegalArgumentException e) {
-            // not a base type;
+            Logger.debug(this, "Not a BaseContentType: " + queriedFieldName, e);
         }
 
         return isBaseType;
