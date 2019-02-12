@@ -47,6 +47,8 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
                 .loadResults();
 	}
 
+
+
     @Override
     public Relationship byInode(final String inode){
 		Relationship rel = null;
@@ -121,13 +123,39 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
         return new DbRelationshipTransformer(results).asList();
     }
 
+    
+    
     @Override
-    public  Relationship byTypeValue(final String typeValue){
+    public Relationship byTypeValue(final String typeValue) {
+
+        Relationship rel = null;
+        try {
+            rel = cache.getRelationshipByName(typeValue);
+            if(rel != null)
+                return rel;
+        } catch (DotCacheException e) {
+            Logger.debug(this.getClass(), "Unable to access the cache to obtain the relationship", e);
+        }
+
+        rel=dbByTypeValue(typeValue);
+
+        if(rel!= null && InodeUtils.isSet(rel.getInode())) {
+            cache.putRelationshipByInode(rel);
+        }
+
+        return rel;
+    }
+    
+    
+    
+    @Override
+    public  Relationship dbByTypeValue(final String typeValue){
         if(typeValue==null) {
             return null;
         }
         Relationship relationship = null;
 
+        
         List<Map<String, Object>> results = new ArrayList<Map<String, Object>>();
         try {
             final DotConnect dc = new DotConnect();
