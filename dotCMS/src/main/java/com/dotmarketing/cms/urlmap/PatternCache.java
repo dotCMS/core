@@ -12,33 +12,26 @@ class PatternCache implements Comparable<PatternCache> {
     private String URLpattern;
     private List<String> fieldMatches;
 
-    public void setRegEx(final String regEx) {
+
+    public PatternCache(String regEx, String structureInode, String URLpattern,
+            List<String> fieldMatches) {
         this.regEx = regEx;
+        this.structureInode = structureInode;
+        this.URLpattern = URLpattern;
+        this.fieldMatches = fieldMatches;
     }
 
     public String getRegEx() {
         return regEx;
     }
 
-    public void setStructureInode(final String structureInode) {
-        this.structureInode = structureInode;
-    }
-
     public String getStructureInode() {
         return structureInode;
-    }
-
-    public void setURLpattern(String uRLpattern) {
-        URLpattern = uRLpattern;
     }
 
     @SuppressWarnings("unused")
     public String getURLpattern() {
         return URLpattern;
-    }
-
-    public void setFieldMatches(final List<String> fieldMatches) {
-        this.fieldMatches = fieldMatches;
     }
 
     public List<String> getFieldMatches() {

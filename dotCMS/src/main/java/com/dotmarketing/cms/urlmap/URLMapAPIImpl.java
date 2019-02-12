@@ -33,13 +33,14 @@ import com.liferay.util.StringPool;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.TreeSet;
 import org.apache.lucene.queryparser.classic.QueryParser;
 import org.jetbrains.annotations.NotNull;
 
-public class URLMapAPIImpl {
+public class URLMapAPIImpl implements URLMapAPI {
 
-    private Collection<PatternCache> patternsCache;
+    private volatile Collection<PatternCache> patternsCache;
 
     private final UserWebAPI wuserAPI = WebAPILocator.getUserWebAPI();
     private final HostWebAPI whostAPI = WebAPILocator.getHostWebAPI();
@@ -47,7 +48,7 @@ public class URLMapAPIImpl {
     private final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
     private final IdentifierAPI identifierAPI = APILocator.getIdentifierAPI();
 
-    public URLMapInfo processURLMap(final UrlMapContext context)
+    public Optional<URLMapInfo> processURLMap(final UrlMapContext context)
             throws DotSecurityException, DotDataException {
 
         if (this.shouldLoadPatterns()) {
@@ -65,14 +66,14 @@ public class URLMapAPIImpl {
             final Contentlet contentlet = this.getContentlet(matches, structure, hostField, context);
 
             if (contentlet == null) {
-                return null;
+                return Optional.empty();
             }
 
             final Identifier pageUriIdentifier = this.getDetailtPageUri(structure);
 
-            return new URLMapInfo(contentlet, pageUriIdentifier);
+            return Optional.of(new URLMapInfo(contentlet, pageUriIdentifier));
         } else {
-            return null;
+            return Optional.empty();
         }
     }
 
@@ -124,17 +125,10 @@ public class URLMapAPIImpl {
     }
 
     private Field findHostField(final Structure structure) {
-        final List<Field> fields = FieldsCache.getFieldsByStructureInode(structure.getInode());
-
-        for (final Field field : fields) {
-            if (field.getFieldType()
-                    .equals(Field.FieldType.HOST_OR_FOLDER.toString())) {
-
-                return field;
-            }
-        }
-
-        return null;
+        return FieldsCache.getFieldsByStructureInode(structure.getInode()).stream()
+                .filter(field -> field.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString()))
+                .findFirst()
+                .orElse(null);
     }
 
     private String getHostFilter(final Host host) {
@@ -264,19 +258,16 @@ public class URLMapAPIImpl {
         final StringBuilder masterRegEx = new StringBuilder();
 
         for (final SimpleStructureURLMap urlMap : urlMaps) {
-            final PatternCache patternCache = new PatternCache();
             final String regEx = StructureUtil.generateRegExForURLMap(urlMap.getURLMapPattern());
 
             if (!UtilMethods.isSet(regEx) || regEx.trim().length() < 3) {
                 continue;
             }
 
-            patternCache.setRegEx(regEx);
-            patternCache.setStructureInode(urlMap.getInode());
-            patternCache.setURLpattern(urlMap.getURLMapPattern());
-            patternCache.setFieldMatches(getFieldMathed(urlMap));
-
-            patternsCache.add(patternCache);
+            patternsCache.add(new PatternCache(
+                    regEx, urlMap.getInode(),
+                    urlMap.getURLMapPattern(), getFieldMathed(urlMap)
+            ));
 
             if (masterRegEx.length() > 0) {
                 masterRegEx.append('|');

@@ -28,6 +28,7 @@ import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 
+import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -228,7 +229,7 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
 
         final Language language = this.getCurrentLanguage(request);
 
-        final URLMapInfo urlMapInfo = this.urlMapAPIImpl.processURLMap(
+        final Optional<URLMapInfo> urlMapInfoOptional = this.urlMapAPIImpl.processURLMap(
                 new UrlMapContextBuilder()
                         .setHost(host)
                         .setLanguageId(language.getId())
@@ -238,17 +239,19 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
                         .build()
         );
 
-        if (urlMapInfo == null) {
+        urlMapInfoOptional.ifPresent(urlMapInfo -> {
+            request.setAttribute(WebKeys.WIKI_CONTENTLET, urlMapInfo.getContentlet().getIdentifier());
+            request.setAttribute(WebKeys.WIKI_CONTENTLET_INODE, urlMapInfo.getContentlet().getInode());
+            request.setAttribute(WebKeys.WIKI_CONTENTLET_URL, context.getPageUri());
+            request.setAttribute(WebKeys.CLICKSTREAM_IDENTIFIER_OVERRIDE, urlMapInfo.getContentlet().getIdentifier());
+            request.setAttribute(Constants.CMS_FILTER_URI_OVERRIDE, urlMapInfo.getIdentifier().getURI());
+        });
+
+        if (!urlMapInfoOptional.isPresent()) {
             throw new HTMLPageAssetNotFoundException(context.getPageUri());
         }
 
-        request.setAttribute(WebKeys.WIKI_CONTENTLET, urlMapInfo.getContentlet().getIdentifier());
-        request.setAttribute(WebKeys.WIKI_CONTENTLET_INODE, urlMapInfo.getContentlet().getInode());
-        request.setAttribute(WebKeys.WIKI_CONTENTLET_URL, context.getPageUri());
-        request.setAttribute(WebKeys.CLICKSTREAM_IDENTIFIER_OVERRIDE, urlMapInfo.getContentlet().getIdentifier());
-        request.setAttribute(Constants.CMS_FILTER_URI_OVERRIDE, urlMapInfo.getIdentifier().getURI());
-
-        return urlMapInfo.getIdentifier().getURI();
+        return urlMapInfoOptional.get().getIdentifier().getURI();
     }
 
     private IHTMLPage getPageByUri(final PageMode mode, final Host host, final String pageUri)

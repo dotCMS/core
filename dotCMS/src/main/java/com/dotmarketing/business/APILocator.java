@@ -914,7 +914,7 @@ public class APILocator extends Locator<APIIndex>{
 	 * @return The {@link ThemeAPI} class.
 	 */
 	public static URLMapAPIImpl getURLMapAPI() {
-		return (URLMapAPIImpl) getInstance(APIIndex.URL_Map_API);
+		return (URLMapAPIImpl) getInstance(APIIndex.URLMap_API);
 	}
 
 	/**
@@ -1053,7 +1053,7 @@ enum APIIndex
 	CLUSTER_API,
 	THEME_API,
 	GRAPHQL_API,
-	URL_Map_API;
+	URLMap_API;
 
 
 	Object create() {
@@ -1127,7 +1127,7 @@ enum APIIndex
 			case CLUSTER_API: return new ClusterAPIImpl();
 			case THEME_API: return new ThemeAPIImpl();
 			case GRAPHQL_API: return  new GraphqlAPIImpl();
-			case URL_Map_API: return new URLMapAPIImpl();
+			case URLMap_API: return new URLMapAPIImpl();
 		}
 		throw new AssertionError("Unknown API index: " + this);
 	}
