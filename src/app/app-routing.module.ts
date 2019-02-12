@@ -48,7 +48,7 @@ const PORTLETS_ANGULAR = [
     {
         // canActivate: [MenuGuardService],
         // canActivateChild: [MenuGuardService],
-        path: 'new-site-browser',
+        path: 'dot-browser',
         loadChildren: '@portlets/dot-site-browser/dot-site-browser.module#DotSiteBrowserModule'
     },
     {
