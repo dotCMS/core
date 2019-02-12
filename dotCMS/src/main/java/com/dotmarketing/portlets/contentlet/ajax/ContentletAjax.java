@@ -166,7 +166,9 @@ public class ContentletAjax {
 				return null;
 			}
 
-            result.put("iconClass", UtilHTML.getIconClass(contentlet));
+			getListedFields(result, contentlet);
+
+			result.put("iconClass", UtilHTML.getIconClass(contentlet));
 			result.put("identifier", contentlet.getIdentifier());
 			result.put("statusIcons", UtilHTML.getStatusIcons(contentlet));
 			result.put("hasTitleImage", String.valueOf(contentlet.getTitleImage().isPresent()));
@@ -196,6 +198,34 @@ public class ContentletAjax {
 		}
 
 		return result;
+	}
+
+
+	/**
+	 * Puts into the map all listed fields defined for the contentlet
+	 * @param result
+	 * @param contentlet
+	 */
+	private void getListedFields(final Map<String, Object> result, final Contentlet contentlet) {
+		for (com.dotcms.contenttype.model.field.Field field : contentlet.getContentType()
+                .fields()) {
+            if (field.listed() || field.indexed()) {
+                final Object fieldValueObj = contentlet.get(field.variable());
+                String fieldValue = null;
+                if (fieldValueObj != null) {
+                    if (fieldValueObj instanceof Date) {
+                        fieldValue = modDateFormat.format(fieldValueObj);
+                    } else if (fieldValueObj instanceof java.sql.Timestamp) {
+                        Date fieldDate = new Date(
+                                ((java.sql.Timestamp) fieldValueObj).getTime());
+                        fieldValue = modDateFormat.format(fieldDate);
+                    } else {
+                        fieldValue = fieldValueObj.toString();
+                    }
+                }
+                result.put(field.variable(), fieldValue);
+            }
+        }
 	}
 
 	private List<Map<String, String>> getContentSiblingsData(String inode) {//GIT-1057
