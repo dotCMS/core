@@ -173,7 +173,7 @@ public class ContentletRelationshipsTest extends IntegrationTestBase {
             final List<ContentletRelationships.ContentletRelationshipRecords> legacyRelationshipRecords = contentletRelationships
                     .getLegacyRelationshipsRecords();
             assertNotNull(legacyRelationshipRecords);
-            assertEquals(testCase.bothSided ? 1 : 2, legacyRelationshipRecords.size());
+            assertEquals(1, legacyRelationshipRecords.size());
 
             assertTrue(legacyRelationshipRecords.stream().allMatch(
                     record -> record.getRelationship().equals(legacyRelationship) ? record
