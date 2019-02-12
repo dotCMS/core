@@ -79,6 +79,36 @@ public class OptionalBoolean {
     }
 
     /**
+     * If true calls the supplier
+     * @param consumer
+     * @param t
+     * @return OptionalBoolean to continue the chain
+     */
+    public <T> OptionalBoolean ifTrue(final Consumer<T> consumer, final Optional<T> t) {
+
+        if  (value != null && value) {
+            consumer.accept(t.get());
+        }
+
+        return this;
+    }
+
+    /**
+     * If true calls the supplier
+     * @param consumer
+     * @param t
+     * @return OptionalBoolean to continue the chain
+     */
+    public <T> OptionalBoolean ifTrue(final Consumer<T> consumer, final T t) {
+
+        if  (value != null && value) {
+            consumer.accept(t);
+        }
+
+        return this;
+    }
+
+    /**
      * If false call the supplier
      * @param other
      * @return OptionalBoolean to continue the chain
