@@ -25,8 +25,6 @@ import graphql.schema.DataFetchingEnvironment;
 public class FieldDataFetcher implements DataFetcher<Object> {
     @Override
     public Object get(final DataFetchingEnvironment environment) throws Exception {
-        final User user = ((DotGraphQLContext) environment.getContext()).getUser();
-
         final Contentlet contentlet = environment.getSource();
         final String var = environment.getField().getName();
 
@@ -46,15 +44,6 @@ public class FieldDataFetcher implements DataFetcher<Object> {
             } else {
                 fieldValue = field.defaultValue();
             }
-        } else if(field instanceof DateField) {
-            final Date date = contentlet.getDateProperty(var);
-            return date.toInstant().atZone(user.getTimeZone().toZoneId()).toLocalDate();
-        } else if(field instanceof TimeField) {
-            final Date date = contentlet.getDateProperty(var);
-            return date.toInstant().atZone(user.getTimeZone().toZoneId()).toLocalTime();
-        } else if(field instanceof DateTimeField) {
-            final Date date = contentlet.getDateProperty(var);
-            return date.toInstant().atZone(user.getTimeZone().toZoneId());
         }
 
         return fieldValue;
