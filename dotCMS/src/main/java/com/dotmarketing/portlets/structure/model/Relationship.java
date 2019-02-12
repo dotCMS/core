@@ -205,6 +205,15 @@ public class Relationship extends Inode
 		return false;
 	}
 
+	/**
+	 * Returns true if the relationship is the new kind of relationship (Relationship Field)
+	 * @return
+	 */
+	public boolean isRelationshipField() {
+		return this.relationTypeValue != null && this.relationTypeValue
+				.matches("[a-zA-z0-9]+\\.[a-zA-Z0-9]+");
+	}
+
 	public void setFixed(boolean fixed) {
 	    
 	}

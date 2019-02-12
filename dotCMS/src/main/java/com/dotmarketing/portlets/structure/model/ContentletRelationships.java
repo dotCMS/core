@@ -133,17 +133,9 @@ public class ContentletRelationships
 	 */
 	public List<ContentletRelationshipRecords> getLegacyRelationshipsRecords() {
 
-		final ContentType contentType = contentlet.getContentType();
-
-		//Obtain field relationships
-		final List<ContentletRelationshipRecords> fieldRelationships = contentType.fields().stream()
-				.filter(field -> field instanceof RelationshipField)
-				.map(field -> getRelationshipsRecordsByField(field).get(0))
-				.collect(CollectionsUtils.toImmutableList());
-
 		//Filter legacy relationship records, which do not have a relationship field
 		return relationshipsRecords.stream()
-				.filter(record -> !fieldRelationships.contains(record))
+				.filter(record -> !record.getRelationship().isRelationshipField())
 				.collect(CollectionsUtils.toImmutableList());
 	}
 
