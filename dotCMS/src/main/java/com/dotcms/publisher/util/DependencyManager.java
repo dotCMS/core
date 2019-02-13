@@ -930,10 +930,6 @@ public class DependencyManager {
 			   final Folder folder = APILocator.getFolderAPI().findFolderByPath(fileAsset.getPath(), fileAsset.getHost(),user, false);
 			   if(UtilMethods.isSet(folder)) {
 				  collectedFolders.add(folder);
-				  final Folder parent = APILocator.getFolderAPI().findParentFolder(folder, user, false);
-				  if(UtilMethods.isSet(parent)) {
-					 collectedFolders.add(parent);
-				  }
 			   }
 		   } catch (DotSecurityException | DotDataException e) {
 			   Logger.error(this, "Error collecting folders for FileAssetContainer " + fileAsset.getFileName() ,e);
