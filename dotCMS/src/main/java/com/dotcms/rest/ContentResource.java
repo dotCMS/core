@@ -33,6 +33,7 @@ import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.uuid.shorty.ShortyId;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.db.HibernateUtil;
@@ -665,6 +666,7 @@ public class ContentResource {
             throws DotDataException, JSONException, IOException, DotSecurityException {
 
         final RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
+        final PermissionAPI permissionAPI     = APILocator.getPermissionAPI();
 
         //filter relationships fields
         final List<com.dotcms.contenttype.model.field.Field> fields = contentlet.getContentType()
@@ -689,37 +691,42 @@ public class ContentResource {
                 continue;
             }
             addedRelationships.add(relationship);
-            ContentletRelationships.ContentletRelationshipRecords relationshipRecords = contentletRelationships.new ContentletRelationshipRecords(
+            final ContentletRelationships.ContentletRelationshipRecords relationshipRecords = contentletRelationships.new ContentletRelationshipRecords(
                     relationship,
                     relationshipAPI.isParent(relationship, contentlet.getContentType()));
 
             for (Contentlet relatedContent : contentlet.getRelated(field.variable())) {
-                switch (depth) {
-                    //returns a list of identifiers
-                    case 0:
-                        records.add(relatedContent.getIdentifier());
-                        break;
+                if (permissionAPI
+                        .doesUserHavePermission(relatedContent, PermissionAPI.PERMISSION_READ, user,
+                                true)) {
+                    switch (depth) {
+                        //returns a list of identifiers
+                        case 0:
+                            records.add(relatedContent.getIdentifier());
+                            break;
 
-                    //returns a list of related content objects
-                    case 1:
-                        records.add(getContentXML(relatedContent, request, response, render, user));
-                        break;
+                        //returns a list of related content objects
+                        case 1:
+                            records.add(
+                                    getContentXML(relatedContent, request, response, render, user));
+                            break;
 
-                    //returns a list of related content identifiers for each of the related content
-                    case 2:
-                        records.add(addRelationshipsToXML(request, response, render, user, 0,
-                                relatedContent,
-                                getContentXML(relatedContent, request, response, render, user),
-                                new HashSet<>(addedRelationships)));
-                        break;
+                        //returns a list of related content identifiers for each of the related content
+                        case 2:
+                            records.add(addRelationshipsToXML(request, response, render, user, 0,
+                                    relatedContent,
+                                    getContentXML(relatedContent, request, response, render, user),
+                                    new HashSet<>(addedRelationships)));
+                            break;
 
-                    //returns a list of hydrated related content for each of the related content
-                    case 3:
-                        records.add(addRelationshipsToXML(request, response, render, user, 1,
-                                relatedContent,
-                                getContentXML(relatedContent, request, response, render, user),
-                                new HashSet<>(addedRelationships)));
-                        break;
+                        //returns a list of hydrated related content for each of the related content
+                        case 3:
+                            records.add(addRelationshipsToXML(request, response, render, user, 1,
+                                    relatedContent,
+                                    getContentXML(relatedContent, request, response, render, user),
+                                    new HashSet<>(addedRelationships)));
+                            break;
+                    }
                 }
             }
 
@@ -824,6 +831,7 @@ public class ContentResource {
             throws DotDataException, JSONException, IOException, DotSecurityException {
 
         final RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
+        final PermissionAPI permissionAPI     = APILocator.getPermissionAPI();
 
         //filter relationships fields
         final List<com.dotcms.contenttype.model.field.Field> fields = contentlet.getContentType().fields()
@@ -845,40 +853,47 @@ public class ContentResource {
             }
             addedRelationships.add(relationship);
 
-            final JSONArray jsonArray = new JSONArray();
-
-            ContentletRelationships.ContentletRelationshipRecords records = contentletRelationships.new ContentletRelationshipRecords(
+            final ContentletRelationships.ContentletRelationshipRecords records = contentletRelationships.new ContentletRelationshipRecords(
                     relationship,
                     relationshipAPI.isParent(relationship, contentlet.getContentType()));
 
+            final JSONArray jsonArray = new JSONArray();
+
             for (Contentlet relatedContent : contentlet.getRelated(field.variable())) {
-                switch (depth) {
-                    //returns a list of identifiers
-                    case 0:
-                        jsonArray.put(relatedContent.getIdentifier());
-                        break;
+                if (permissionAPI
+                        .doesUserHavePermission(relatedContent, PermissionAPI.PERMISSION_READ, user,
+                                true)) {
+                    switch (depth) {
+                        //returns a list of identifiers
+                        case 0:
+                            jsonArray.put(relatedContent.getIdentifier());
+                            break;
 
-                    //returns a list of related content objects
-                    case 1:
-                        jsonArray.put(contentletToJSON(relatedContent, request, response, render,
-                                user));
-                        break;
+                        //returns a list of related content objects
+                        case 1:
+                            jsonArray
+                                    .put(contentletToJSON(relatedContent, request, response, render,
+                                            user));
+                            break;
 
-                    //returns a list of related content identifiers for each of the related content
-                    case 2:
-                        jsonArray.put(addRelationshipsToJSON(request, response, render, user, 0,
-                                relatedContent,
-                                contentletToJSON(relatedContent, request, response, render, user),
-                                new HashSet<>(addedRelationships)));
-                        break;
+                        //returns a list of related content identifiers for each of the related content
+                        case 2:
+                            jsonArray.put(addRelationshipsToJSON(request, response, render, user, 0,
+                                    relatedContent,
+                                    contentletToJSON(relatedContent, request, response, render,
+                                            user),
+                                    new HashSet<>(addedRelationships)));
+                            break;
 
-                    //returns a list of hydrated related content for each of the related content
-                    case 3:
-                        jsonArray.put(addRelationshipsToJSON(request, response, render, user, 1,
-                                relatedContent,
-                                contentletToJSON(relatedContent, request, response, render, user),
-                                new HashSet<>(addedRelationships)));
-                        break;
+                        //returns a list of hydrated related content for each of the related content
+                        case 3:
+                            jsonArray.put(addRelationshipsToJSON(request, response, render, user, 1,
+                                    relatedContent,
+                                    contentletToJSON(relatedContent, request, response, render,
+                                            user),
+                                    new HashSet<>(addedRelationships)));
+                            break;
+                    }
                 }
             }
 
