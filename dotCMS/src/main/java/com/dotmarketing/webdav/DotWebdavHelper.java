@@ -50,6 +50,8 @@ import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.PropsUtil;
 import com.liferay.util.FileUtil;
+import com.rainerhahnekamp.sneakythrow.Sneaky;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -683,16 +685,7 @@ public class DotWebdavHelper {
 		String fileName = getFileName(path);
 		fileName = deleteSpecialCharacter(fileName);
 
-		Host host;
-		try {
-			host = hostAPI.findByName(hostName, user, false);
-		} catch (DotDataException e) {
-			Logger.error(DotWebdavHelper.class, e.getMessage(), e);
-			throw new IOException(e.getMessage(),e);
-		} catch (DotSecurityException e) {
-			Logger.error(DotWebdavHelper.class, e.getMessage(), e);
-			throw new IOException(e.getMessage(),e);
-		}
+		Host host=Sneaky.sneak(() ->  hostAPI.findByName(hostName, user, false));
 
 		Folder folder = new Folder();
 		try {

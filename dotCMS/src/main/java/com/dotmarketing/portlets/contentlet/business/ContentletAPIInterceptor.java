@@ -2476,5 +2476,24 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
         return savedContentlet;
     }
 
+    @Override
+    public Optional<Contentlet>  findContentletByIdentifierDB(String identifier, boolean live, long languageId, User user,
+            boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException {
+        for (ContentletAPIPreHook pre : preHooks) {
+            boolean preResult = pre.findContentletByIdentifierDB(identifier, live, languageId, user, respectFrontendRoles);
+            if (!preResult) {
+                Logger.error(this, "The following prehook failed " + pre.getClass().getName());
+                throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+            }
+        }
+        Optional<Contentlet> savedContentlet =
+                conAPI.findContentletByIdentifierDB(identifier, live, languageId, user, respectFrontendRoles);
+        for (ContentletAPIPostHook post : postHooks) {
+            post.findContentletByIdentifierDB(identifier, live, languageId, user, respectFrontendRoles);
+        }
+
+        return savedContentlet;
+    }
+
 
 }

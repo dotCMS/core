@@ -338,6 +338,32 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     }
 
+    @Override
+    @CloseDBIfOpened
+    public Optional<Contentlet> findContentletByIdentifierDB(String identifier, boolean live, long languageId, User user,
+            boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException {
+        if (languageId <= 0) {
+            languageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+        }
+
+        try {
+            ContentletVersionInfo clvi = APILocator.getVersionableAPI().findContentletVersionInfoDb(identifier, languageId);
+            if (clvi == null) {
+                throw new DotContentletStateException("No contenlet found for given identifier");
+            }
+
+            Optional<Contentlet> conOpt = contentFactory.findInDb((live) ? clvi.getLiveInode() : clvi.getWorkingInode());
+
+            if (conOpt.isPresent()
+                    && permissionAPI.doesUserHavePermission(conOpt.get(), PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)) {
+                return conOpt;
+            }
+            return Optional.empty();
+        } catch (Exception e) {
+            throw new DotContentletStateException("Can't find contentlet: " + identifier + " lang:" + languageId + " live:" + live, e);
+        }
+
+    }
     
     @CloseDBIfOpened
     @Override

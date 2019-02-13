@@ -412,8 +412,7 @@ public class VersionableAPIImpl implements VersionableAPI {
         if ( identifier.getAssetType().equals( "contentlet" ) ) {
 
             final Contentlet contentlet = (Contentlet) versionable;
-            final ContentletVersionInfo info = versionableFactory
-                    .getContentletVersionInfo( contentlet.getIdentifier(), contentlet.getLanguageId() );
+            final ContentletVersionInfo info = versionableFactory.findContentletVersionInfoInDB( contentlet.getIdentifier(), contentlet.getLanguageId() );
 
             if ( info == null || !UtilMethods.isSet( info.getIdentifier() ) ) {
                 throw new DotStateException( "No version info. Call setWorking first" );
@@ -582,13 +581,18 @@ public class VersionableAPIImpl implements VersionableAPI {
 	public  VersionInfo getVersionInfo(final String identifier) throws DotDataException, DotStateException{
 		return versionableFactory.getVersionInfo(identifier);
 	}
-
+    @Override
 	@CloseDBIfOpened
 	public ContentletVersionInfo getContentletVersionInfo(final String identifier,
                                                           final long lang) throws DotDataException, DotStateException {
 	    return versionableFactory.getContentletVersionInfo(identifier, lang);
 	}
-	
+	@Override
+    @CloseDBIfOpened
+    public ContentletVersionInfo findContentletVersionInfoDb(final String identifier,
+                                                          final long lang) throws DotDataException, DotStateException {
+        return versionableFactory.findContentletVersionInfoInDB(identifier, lang);
+    }
 	@Override
 	@CloseDBIfOpened
 	public List<ContentletVersionInfo> findContentletVersionInfos(final String identifier) throws DotDataException, DotStateException {

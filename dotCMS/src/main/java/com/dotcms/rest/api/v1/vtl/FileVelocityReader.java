@@ -43,8 +43,8 @@ public class FileVelocityReader implements VelocityReader {
         final String vtlFilePath = VTL_PATH + StringPool.SLASH + params.getFolderName() + StringPool.SLASH
                 + params.getHttpMethod().fileName() + FILE_EXTENSION;
         final Identifier identifier = APILocator.getIdentifierAPI().find(site, vtlFilePath);
-        final Contentlet getFileContent = APILocator.getContentletAPI().findContentletByIdentifier(identifier.getId(), true,
-                currentLanguage.getId(), params.getUser(), true);
+        final Contentlet getFileContent = APILocator.getContentletAPI().findContentletByIdentifierDB(identifier.getId(), true,
+                currentLanguage.getId(), params.getUser(), true).get();
         final FileAsset getFileAsset = APILocator.getFileAssetAPI().fromContentlet(getFileContent);
 
         return new InputStreamReader(getFileAsset.getInputStream());

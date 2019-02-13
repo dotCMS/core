@@ -727,6 +727,26 @@ public class ESContentFactoryImpl extends ContentletFactory {
         }
 	}
 
+	
+    @Override
+    public Optional<Contentlet> findInDb(final String inode) {
+
+
+        try {
+            com.dotmarketing.portlets.contentlet.business.Contentlet fatty = (com.dotmarketing.portlets.contentlet.business.Contentlet) HibernateUtil
+                    .load(com.dotmarketing.portlets.contentlet.business.Contentlet.class, inode);
+            return Optional.ofNullable(convertFatContentletToContentlet(fatty));
+        } catch (DotDataException | DotSecurityException e) {
+            if (!(e.getCause() instanceof ObjectNotFoundException)) {
+                throw new DotRuntimeException(e);
+            }
+        }
+
+        return Optional.empty();
+
+    }
+	
+	
 	@Override
 	protected Contentlet find(String inode) throws ElasticsearchException, DotStateException, DotDataException, DotSecurityException {
 		Contentlet con = contentletCache.get(inode);
@@ -736,20 +756,15 @@ public class ESContentFactoryImpl extends ContentletFactory {
 			}
 			return con;
 		}
-		com.dotmarketing.portlets.contentlet.business.Contentlet fatty = null;
-        try{
-            fatty = (com.dotmarketing.portlets.contentlet.business.Contentlet)HibernateUtil.load(com.dotmarketing.portlets.contentlet.business.Contentlet.class, inode);
-        } catch (DotHibernateException e) {
-            if(!(e.getCause() instanceof ObjectNotFoundException))
-                throw e;
-        }
-        if(fatty == null){
-        	contentletCache.add(inode, cache404Content);
-            return null;
+		Optional<Contentlet> dbContentlet = this.findInDb(inode);
+        
+        if(dbContentlet.isPresent() ){
+            con = dbContentlet.get();
+            contentletCache.add(con.getInode(), con);
+            return con;   
         }else{
-            Contentlet c = convertFatContentletToContentlet(fatty);
-            contentletCache.add(c.getInode(), c);
-            return c;
+            //contentletCache.add(inode, cache404Content);
+            return null;
         }
 	}
 
@@ -912,43 +927,11 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	protected List<Contentlet> findContentlets(List<String> inodes) throws DotDataException, DotStateException, DotSecurityException {
 
 	    ArrayList<Contentlet> result = new ArrayList<Contentlet>();
-        ArrayList<String> inodesNotFound = new ArrayList<String>();
+
         for (String i : inodes) {
-            Contentlet c = contentletCache.get(i);
-            if(c != null && InodeUtils.isSet(c.getInode())){
-                result.add(c);
-            } else {
-                inodesNotFound.add(i);
-            }
-        }
-        if(inodesNotFound.isEmpty()){
-            return result;
+            result.add(find(i));
         }
 
-
-
-        final String contentletBase = "select {contentlet.*} from contentlet join inode contentlet_1_ "
-                + "on contentlet_1_.inode = contentlet.inode and contentlet_1_.type = 'contentlet' where  contentlet.inode in ('";
-
-        for(int init=0; init < inodesNotFound.size(); init+=200) {
-            int end = Math.min(init + 200, inodesNotFound.size());
-
-            HibernateUtil hu = new HibernateUtil(com.dotmarketing.portlets.contentlet.business.Contentlet.class);
-            final StringBuilder hql = new StringBuilder()
-                    .append(contentletBase)
-                    .append(StringUtils.join(inodesNotFound.subList(init, end), "','"))
-                    .append("') order by contentlet.mod_date DESC");
-
-            hu.setSQLQuery(hql.toString());
-
-            List<com.dotmarketing.portlets.contentlet.business.Contentlet> fatties =  hu.list();
-            for (com.dotmarketing.portlets.contentlet.business.Contentlet fatty : fatties) {
-                Contentlet con = convertFatContentletToContentlet(fatty);
-                result.add(con);
-                contentletCache.add(con.getInode(), con);
-            }
-            HibernateUtil.getSession().clear();
-        }
 
         return result;
 	}
