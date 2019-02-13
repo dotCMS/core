@@ -19,6 +19,7 @@ import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 
@@ -415,5 +416,15 @@ public abstract class ContentletFactory {
 	 * @throws DotDataException
 	 */
 	public abstract int updateModDate(final Set<String> inodes, User user) throws DotDataException;
+
+	/**
+	 * returns Contentlet  Object if found
+	 * @param inode
+	 * @return
+	 */
+    public Optional<Contentlet> findInDb(String inode) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
 }

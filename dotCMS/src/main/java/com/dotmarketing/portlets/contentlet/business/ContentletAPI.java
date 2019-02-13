@@ -1753,4 +1753,7 @@ public interface ContentletAPI {
     Optional<Contentlet> findContentletByIdentifierOrFallback(String identifier, boolean live, long incomingLangId, User user,
             boolean respectFrontendRoles);
 
+    Optional<Contentlet>  findContentletByIdentifierDB(String identifier, boolean live, long languageId, User user, boolean respectFrontendRoles)
+            throws DotDataException, DotSecurityException, DotContentletStateException;
+
 }

@@ -1780,5 +1780,9 @@ public interface ContentletAPIPreHook {
         return true;
     }
 
+    public default boolean findContentletByIdentifierDB(String identifier, boolean live, long languageId, User user, boolean respectFrontendRoles) {
+        return true;
+    }
+
 
 }
