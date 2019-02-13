@@ -15,7 +15,7 @@
                                 <div class="inline-form">
                                     <label for="filterTextBox"><%= LanguageUtil.get(pageContext, "Filter")%>:</label>
                                     <input dojoType="dijit.form.TextBox" dojoAttachEvent="onKeyUp: _filter" trim="true" dojoAttachPoint="filterTextBox" />
-                                    <button dojoType="dijit.form.Button" dojoAttachEvent="onClick: _clearFilter" type="button" class="dijitButtonFlat"><%= LanguageUtil.get(pageContext, "Clear")%></button>
+                                    <button dojoType="dijit.form.Button" class="dijitButtonFlat" dojoAttachEvent="onClick: _clearFilter" type="button" class="dijitButtonFlat"><%= LanguageUtil.get(pageContext, "Clear")%></button>
 
                                     <span style="display: none;" dojoAttachPoint="uploadFileButton">
 										<button dojoType="dijit.form.Button" dojoAttachEvent="onClick: _addNewFile" type="button"><%= LanguageUtil.get(pageContext, "Upload-New-File")%></button>

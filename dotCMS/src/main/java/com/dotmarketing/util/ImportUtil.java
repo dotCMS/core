@@ -1777,7 +1777,11 @@ public class ImportUtil {
                 field.getFieldType().equals( Field.FieldType.LINE_DIVIDER.toString() ) ||
                 field.getFieldType().equals( Field.FieldType.TAB_DIVIDER.toString() ) ||
                 field.getFieldType().equals( Field.FieldType.BINARY.toString() ) ||
-                field.getFieldType().equals( Field.FieldType.PERMISSIONS_TAB.toString() ));
+                field.getFieldType().equals( Field.FieldType.PERMISSIONS_TAB.toString()) ||
+                field.getFieldType().equals(Field.FieldType.COLUMN.toString())      ||  
+                field.getFieldType().equals(Field.FieldType.ROW.toString())    
+                        
+                );
     }
 
     /**

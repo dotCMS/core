@@ -14,6 +14,23 @@ import static org.junit.Assert.*;
  */
 public class CollectionsUtilsTest extends UnitTestBase {
 
+    @Test
+    public void groupByKeyTest()  {
+
+        final List<String> list = Arrays.asList("hello","hello","hi","yeah","hi","hello");
+
+        assertNotNull(list);
+
+        final Map<String, List<String>> groupByKeyMap = groupByKey(list, v -> v);
+
+        assertNotNull(groupByKeyMap);
+        assertEquals(3, groupByKeyMap.size());
+        assertEquals(3, groupByKeyMap.get("hello").size());
+        assertEquals(2, groupByKeyMap.get("hi").size());
+        assertEquals(1, groupByKeyMap.get("yeah").size());
+
+    }
+
 
     @Test
     public void partitionsTest()  {

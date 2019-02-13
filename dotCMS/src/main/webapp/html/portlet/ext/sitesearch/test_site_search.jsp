@@ -127,7 +127,7 @@ dojo.connect(dijit.byId("testQuery"), 'onkeypress', function (evt) {
 				
 				<input type="text"  dojoType="dijit.form.TextBox" style="width:300px;" name="testQuery" value="<%=UtilMethods.webifyString(testQuery) %>" id="testQuery">
 				
-				<button dojoType="dijit.form.Button"
+				<button dojoType="dijit.form.Button" class="dijitButtonFlat"
 					id="testIndexButton" onClick="doTestSearch();"
 					iconClass="saveIcon"><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Search")) %>
 				</button>

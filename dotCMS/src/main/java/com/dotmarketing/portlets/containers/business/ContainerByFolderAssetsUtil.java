@@ -5,6 +5,8 @@ import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotcms.util.ConversionUtils;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
@@ -26,6 +28,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+/**
+ * This util is in charge of handling the creation of the FileAsset containers based on the folder and their contains.
+ */
 public class ContainerByFolderAssetsUtil {
 
     private static final int DEFAULT_MAX_CONTENTLETS = 10;
@@ -70,12 +75,12 @@ public class ContainerByFolderAssetsUtil {
 
             if (this.isPreLoop(fileAsset, showLive)) {
 
-                preLoop = Optional.of(this.toString(fileAsset)); continue;
+                preLoop = Optional.of(this.wrapIntoDotParseDirective(fileAsset)); continue;
             }
 
             if (this.isPostLoop(fileAsset, showLive)) {
 
-                postLoop = Optional.of(this.toString(fileAsset)); continue;
+                postLoop = Optional.of(this.wrapIntoDotParseDirective(fileAsset)); continue;
             }
 
             if (this.isContainerMetaInfo(fileAsset, showLive)) {
@@ -102,11 +107,29 @@ public class ContainerByFolderAssetsUtil {
         return container;
     }
 
-    private boolean isValidContentType(final boolean showLive, final FileAsset fileAsset)  {
+    private boolean isValidContentType(final boolean showLive, final FileAsset fileAsset) {
         try {
             return !fileAsset.isArchived() && this.isMode(fileAsset, showLive);
         } catch (DotDataException | DotSecurityException e) {
             return false;
+        }
+    }
+
+    /**
+     * Wraps the file asset into the dotParse directive, this is helpful in order to fetch lazy on runtime the fileasset and also, to add multi lang capabilities
+     * @param fileAsset {@link FileAsset}
+     * @return String
+     */
+    public String wrapIntoDotParseDirective (final FileAsset fileAsset) {
+
+        try {
+
+            final Host host = APILocator.getHostAPI().find(fileAsset.getHost(), APILocator.systemUser(), false);
+
+            return "#dotParse(\"//" + host.getHostname()  + fileAsset.getPath() + fileAsset.getFileName() + "\")";
+
+        } catch (DotSecurityException | DotDataException  e) {
+            return StringPool.BLANK;
         }
     }
 

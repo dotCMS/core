@@ -531,7 +531,7 @@ bottom="/html/common/box_bottom.jsp">
 				</dl>
 				<div class="buttonRow">
 					<button dojoType="dijit.form.Button" iconClass="searchIcon" name="filterButton" type="submit" onclick="doFilter()"> <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Search")) %></button>
-					<button dojoType="dijit.form.Button" name="resetButton" iconClass="resetIcon" class="dijitButtonFlat" onclick="resetFilters()"><%=LanguageUtil.get(pageContext, "reset")%></button>
+					<button dojoType="dijit.form.Button" name="resetButton" iconClass="resetIcon" class="dijitButtonFlat" style="margin-top:10px" onclick="resetFilters()"><%=LanguageUtil.get(pageContext, "reset")%></button>
 				</div>
 			</div>
 		</div>

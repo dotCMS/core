@@ -8,7 +8,7 @@
 		<div id="rolePermissionsHostSelectorWrapper" class="permission__host-selector inline-form">
 			<label id="addHostFolderTitle" for="rolePermissionsHostSelector"><%= LanguageUtil.get(pageContext, "add-host-folder") %></label>
 			<div id="rolePermissionsHostSelector" dojoType="dotcms.dijit.form.HostFolderFilteringSelect"></div>
-			<button dojoType="dijit.form.Button" class="hostSelectorButton" onclick="addHostFolder()" type="button"><%= LanguageUtil.get(pageContext, "add") %></button>
+			<button dojoType="dijit.form.Button" class="hostSelectorButton dijitButtonFlat" onclick="addHostFolder()" type="button"><%= LanguageUtil.get(pageContext, "add") %></button>
 		</div>
 	</div>
 
