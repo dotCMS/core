@@ -148,7 +148,6 @@ export class DotEditLayoutDesignerComponent implements OnInit {
             this.dotMessageService.get('dot.common.message.saving')
         );
         const dotLayout: DotLayout = this.form.value;
-        debugger;
         this.pageViewService.save(this.pageState.page.identifier, dotLayout).subscribe(
             (updatedPage: DotRenderedPage) => {
                 this.dotGlobalMessageService.display(
