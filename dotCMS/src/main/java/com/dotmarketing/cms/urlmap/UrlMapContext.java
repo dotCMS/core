@@ -5,6 +5,12 @@ import com.dotmarketing.util.PageMode;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 
+/**
+ * Context to resolve a Page with the {@link com.dotcms.contenttype.model.type.ContentType}'s
+ * URL mapper
+ *
+ * @see URLMapAPI#processURLMap(UrlMapContext)
+ */
 public class UrlMapContext {
     private final PageMode mode;
     private final long languageId;
@@ -12,7 +18,11 @@ public class UrlMapContext {
     private final Host host;
     private final User user;
 
-    UrlMapContext(final PageMode mode, final long languageId, final String uri, final Host host,
+    UrlMapContext(
+            final PageMode mode,
+            final long languageId,
+            final String uri,
+            final Host host,
             final User user) {
 
         this.mode = mode;

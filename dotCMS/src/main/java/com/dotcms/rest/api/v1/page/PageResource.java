@@ -99,8 +99,10 @@ public class PageResource {
      * @param request The {@link HttpServletRequest} object.
      * @param response The {@link HttpServletResponse} object.
      * @param uri The path to the HTML Page whose information will be retrieved.
-     * @param live If it is false look for live and working page version, otherwise just look for live
-     *        version, true is the default value
+     * @param modeParam {@link PageMode}
+     * @param personaId {@link com.dotmarketing.portlets.personas.model.Persona}'s identifier to render the page
+     * @param languageId {@link com.dotmarketing.portlets.languagesmanager.model.Language}'s Id to render the page
+     * @param deviceInode {@link org.apache.batik.svggen.font.table.Device}'s inode to render the page
      * @return All the objects on an associated HTML Page.
      */
     @NoCache
@@ -182,10 +184,10 @@ public class PageResource {
      * @param request The {@link HttpServletRequest} object.
      * @param response The {@link HttpServletResponse} object.
      * @param uri The path to the HTML Page whose information will be retrieved.
-     * @param mode {@link PageMode} to render the page
-     * @param personaId persona identifier if it is null take the current persona to render
-     * @param languageId language identifier if it is null take the current language to render
-     * @param deviceInode device identifier if it is null take the current device to render
+     * @param modeParam {@link PageMode}
+     * @param personaId {@link com.dotmarketing.portlets.personas.model.Persona}'s identifier to render the page
+     * @param languageId {@link com.dotmarketing.portlets.languagesmanager.model.Language}'s Id to render the page
+     * @param deviceInode {@link org.apache.batik.svggen.font.table.Device}'s inode to render the page
      * @return
      */
     @NoCache

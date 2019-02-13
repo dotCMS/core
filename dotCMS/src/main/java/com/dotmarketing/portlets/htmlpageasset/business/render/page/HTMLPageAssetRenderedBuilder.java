@@ -12,7 +12,7 @@ import org.apache.velocity.context.Context;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.rendering.velocity.directive.RenderParams;
-import com.dotcms.rendering.velocity.services.PageContexUtil;
+import com.dotcms.rendering.velocity.services.PageRenderUtil;
 import com.dotcms.rendering.velocity.servlet.VelocityModeHandler;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
 import com.dotcms.visitor.domain.Visitor;
@@ -111,18 +111,18 @@ public class HTMLPageAssetRenderedBuilder {
         final User systemUser = APILocator.getUserAPI().getSystemUser();
         final boolean canEditTemplate = this.permissionAPI.doesUserHavePermission(template, PermissionLevel.EDIT.getType(), user);
         final boolean canCreateTemplates = layoutAPI.doesUserHaveAccessToPortlet("templates", user);
-        final PageContexUtil pageContexUtil = new PageContexUtil(htmlPageAssetInfo.getPage(), systemUser, mode, language.getId());
+        final PageRenderUtil pageRenderUtil = new PageRenderUtil(htmlPageAssetInfo.getPage(), systemUser, mode, language.getId());
         
 
 
         if (!rendered) {
-            final Collection<? extends ContainerRaw> containers =  pageContexUtil.getContainersRaw();
+            final Collection<? extends ContainerRaw> containers =  pageRenderUtil.getContainersRaw();
             return new PageView(site, template, containers, htmlPageAssetInfo, layout, canCreateTemplates, canEditTemplate, this.getViewAsStatus(mode));
         } else {
-            final Context velocityContext  = pageContexUtil
+            final Context velocityContext  = pageRenderUtil
                     .addAll(VelocityUtil.getInstance().getContext(request, response));
             final Collection<? extends ContainerRaw> containers = new ContainerRenderedBuilder(
-                    pageContexUtil.getContainersRaw(), velocityContext, mode).build();
+                    pageRenderUtil.getContainersRaw(), velocityContext, mode).build();
             final String pageHTML = this.getPageHTML();
             return new HTMLPageAssetRendered(site, template, containers, htmlPageAssetInfo, layout, pageHTML,
                     canCreateTemplates, canEditTemplate, this.getViewAsStatus(mode)

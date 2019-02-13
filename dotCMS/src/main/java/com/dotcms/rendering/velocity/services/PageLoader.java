@@ -112,7 +112,7 @@ public class PageLoader implements DotLoader {
          * in the page velocity template
          */
         if (mode == PageMode.LIVE) {
-          final PageContexUtil pce = new PageContexUtil(htmlPage, sys, mode);
+          final PageRenderUtil pce = new PageRenderUtil(htmlPage, sys, mode);
           sb.append(pce.getWidgetPreExecute());
           sb.append(pce.asString());
         }

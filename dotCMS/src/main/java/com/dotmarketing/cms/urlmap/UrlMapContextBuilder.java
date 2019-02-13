@@ -4,6 +4,9 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.util.PageMode;
 import com.liferay.portal.model.User;
 
+/**
+ * Builder for {@link UrlMapContext}
+ */
 public class UrlMapContextBuilder {
     private PageMode mode;
     private long languageId;

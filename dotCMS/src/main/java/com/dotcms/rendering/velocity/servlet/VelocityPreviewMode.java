@@ -1,7 +1,7 @@
 package com.dotcms.rendering.velocity.servlet;
 
 import com.dotcms.rendering.velocity.events.PreviewEditParseErrorException;
-import com.dotcms.rendering.velocity.services.PageContexUtil;
+import com.dotcms.rendering.velocity.services.PageRenderUtil;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.rendering.velocity.viewtools.content.ContentMap;
 import com.dotmarketing.beans.Host;
@@ -70,7 +70,7 @@ public class VelocityPreviewMode extends VelocityModeHandler {
         context.put("dotPageContent", new ContentMap(((Contentlet) htmlPage), user, mode, host, context));
 
 
-        new PageContexUtil(htmlPage, user, PageMode.PREVIEW_MODE).addAll(context);
+        new PageRenderUtil(htmlPage, user, PageMode.PREVIEW_MODE).addAll(context);
         context.put("dotPageContent", new ContentMap(((Contentlet) htmlPage), user, mode, host, context));
 
         request.setAttribute("velocityContext", context);

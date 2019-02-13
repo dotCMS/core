@@ -38,9 +38,12 @@ import java.util.TreeSet;
 import org.apache.lucene.queryparser.classic.QueryParser;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * {@link URLMapAPI} implementation
+ */
 public class URLMapAPIImpl implements URLMapAPI {
 
-    private volatile Collection<PatternCache> patternsCache;
+    private volatile Collection<ContentTypeURLPattern> patternsCache;
 
     private final UserWebAPI wuserAPI = WebAPILocator.getUserWebAPI();
     private final HostWebAPI whostAPI = WebAPILocator.getHostWebAPI();
@@ -113,11 +116,11 @@ public class URLMapAPIImpl implements URLMapAPI {
     private Matches findPatternChange(final String uri) {
         final String url = !uri.endsWith(StringPool.FORWARD_SLASH) ? uri + StringPool.FORWARD_SLASH : uri;
 
-        for (final PatternCache patternCache: this.patternsCache) {
+        for (final ContentTypeURLPattern contentTypeURLPattern : this.patternsCache) {
 
-            final List<RegExMatch> matches = RegEX.findForUrlMap(url, patternCache.getRegEx());
+            final List<RegExMatch> matches = RegEX.findForUrlMap(url, contentTypeURLPattern.getRegEx());
             if (matches != null && matches.size() > 0) {
-                return new Matches(patternCache, matches);
+                return new Matches(contentTypeURLPattern, matches);
             }
         }
 
@@ -264,7 +267,7 @@ public class URLMapAPIImpl implements URLMapAPI {
                 continue;
             }
 
-            patternsCache.add(new PatternCache(
+            patternsCache.add(new ContentTypeURLPattern(
                     regEx, urlMap.getInode(),
                     urlMap.getURLMapPattern(), getFieldMathed(urlMap)
             ));
@@ -290,15 +293,15 @@ public class URLMapAPIImpl implements URLMapAPI {
     }
 
     private class Matches {
-        final PatternCache patternChange;
+        final ContentTypeURLPattern patternChange;
         final List<RegExMatch> matches;
 
-        public Matches(PatternCache patternChange, List<RegExMatch> matches) {
+        public Matches(ContentTypeURLPattern patternChange, List<RegExMatch> matches) {
             this.patternChange = patternChange;
             this.matches = matches;
         }
 
-        public PatternCache getPatternChange() {
+        public ContentTypeURLPattern getPatternChange() {
             return patternChange;
         }
 

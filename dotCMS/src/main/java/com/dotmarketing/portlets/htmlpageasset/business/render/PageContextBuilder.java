@@ -6,6 +6,9 @@ import com.liferay.portal.model.User;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+/**
+ * Builder for {@link PageContext}
+ */
 public class PageContextBuilder {
     private User user;
     private String pageUri;

@@ -6,6 +6,9 @@ import com.liferay.portal.model.User;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+/**
+ * Context for render a {@link HTMLPageAsset}
+ */
 public class PageContext {
 
     private final User user;

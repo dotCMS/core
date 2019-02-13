@@ -5,7 +5,10 @@ import com.liferay.util.StringPool;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
 
-class PatternCache implements Comparable<PatternCache> {
+/**
+ * Represent a {@link com.dotcms.contenttype.model.type.ContentType}'s URL Pattern
+ */
+class ContentTypeURLPattern implements Comparable<ContentTypeURLPattern> {
 
     private String regEx;
     private String structureInode;
@@ -13,8 +16,11 @@ class PatternCache implements Comparable<PatternCache> {
     private List<String> fieldMatches;
 
 
-    public PatternCache(String regEx, String structureInode, String URLpattern,
-            List<String> fieldMatches) {
+    public ContentTypeURLPattern(
+            final String regEx,
+            final String structureInode,
+            final String URLpattern,
+            final List<String> fieldMatches) {
         this.regEx = regEx;
         this.structureInode = structureInode;
         this.URLpattern = URLpattern;
@@ -40,9 +46,9 @@ class PatternCache implements Comparable<PatternCache> {
 
 
     @Override
-    public int compareTo(@NotNull final PatternCache anotherPatternCache) {
+    public int compareTo(@NotNull final ContentTypeURLPattern anotherContentTypeURLPattern) {
         final String regex1 = this.getRegEx();
-        final String regex2 = anotherPatternCache.getRegEx();
+        final String regex2 = anotherContentTypeURLPattern.getRegEx();
 
         final StringBuffer regex1Buffer = new StringBuffer(regex1);
         final StringBuffer regex2Buffer = new StringBuffer(regex2);
