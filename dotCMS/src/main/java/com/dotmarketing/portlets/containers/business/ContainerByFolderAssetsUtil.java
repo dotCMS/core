@@ -28,6 +28,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+/**
+ * This util is in charge of handling the creation of the FileAsset containers based on the folder and their contains.
+ */
 public class ContainerByFolderAssetsUtil {
 
     private static final int DEFAULT_MAX_CONTENTLETS = 10;
@@ -86,7 +89,7 @@ public class ContainerByFolderAssetsUtil {
                 containerMetaInfo = Optional.of(this.toString(fileAsset)); continue;
             }
 
-            if (this.isMode(fileAsset, showLive)) {
+            if (this.isValidContentType(showLive, fileAsset)) {
                 containerStructures.add(fileAsset);
             }
         }
@@ -102,6 +105,14 @@ public class ContainerByFolderAssetsUtil {
                 preLoop, postLoop, containerMetaInfo.get());
 
         return container;
+    }
+
+    private boolean isValidContentType(final boolean showLive, final FileAsset fileAsset) {
+        try {
+            return !fileAsset.isArchived() && this.isMode(fileAsset, showLive);
+        } catch (DotDataException | DotSecurityException e) {
+            return false;
+        }
     }
 
     /**
