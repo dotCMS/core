@@ -5,6 +5,8 @@ import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotcms.util.ConversionUtils;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
@@ -70,12 +72,12 @@ public class ContainerByFolderAssetsUtil {
 
             if (this.isPreLoop(fileAsset, showLive)) {
 
-                preLoop = Optional.of(this.toString(fileAsset)); continue;
+                preLoop = Optional.of(this.wrapIntoDotParseDirective(fileAsset)); continue;
             }
 
             if (this.isPostLoop(fileAsset, showLive)) {
 
-                postLoop = Optional.of(this.toString(fileAsset)); continue;
+                postLoop = Optional.of(this.wrapIntoDotParseDirective(fileAsset)); continue;
             }
 
             if (this.isContainerMetaInfo(fileAsset, showLive)) {
@@ -100,6 +102,24 @@ public class ContainerByFolderAssetsUtil {
                 preLoop, postLoop, containerMetaInfo.get());
 
         return container;
+    }
+
+    /**
+     * Wraps the file asset into the dotParse directive, this is helpful in order to fetch lazy on runtime the fileasset and also, to add multi lang capabilities
+     * @param fileAsset {@link FileAsset}
+     * @return String
+     */
+    public String wrapIntoDotParseDirective (final FileAsset fileAsset) {
+
+        try {
+
+            final Host host = APILocator.getHostAPI().find(fileAsset.getHost(), APILocator.systemUser(), false);
+
+            return "#dotParse(\"//" + host.getHostname()  + fileAsset.getPath() + fileAsset.getFileName() + "\")";
+
+        } catch (DotSecurityException | DotDataException  e) {
+            return StringPool.BLANK;
+        }
     }
 
     private void setContainerData(final Folder containerFolder,

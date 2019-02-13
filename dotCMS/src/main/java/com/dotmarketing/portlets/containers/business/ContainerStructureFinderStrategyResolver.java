@@ -3,7 +3,6 @@ package com.dotmarketing.portlets.containers.business;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotmarketing.beans.ContainerStructure;
-import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
@@ -243,15 +242,7 @@ public class ContainerStructureFinderStrategyResolver {
 
         private String wrapIntoDotParseDirective (final FileAsset fileAsset) {
 
-            try {
-
-                final Host host = APILocator.getHostAPI().find(fileAsset.getHost(), APILocator.systemUser(), false);
-
-                return "#dotParse(\"//" + host.getHostname()  + fileAsset.getPath() + fileAsset.getFileName() + "\")";
-
-            } catch (DotSecurityException | DotDataException  e) {
-                return StringPool.BLANK;
-            }
+            return ContainerByFolderAssetsUtil.getInstance().wrapIntoDotParseDirective(fileAsset);
         }
 
         private String toString (final FileAsset fileAsset) {
