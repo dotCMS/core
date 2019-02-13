@@ -1,12 +1,4 @@
-import {
-    Directive,
-    OnInit,
-    HostListener,
-    NgZone,
-    Output,
-    EventEmitter,
-    ElementRef
-} from '@angular/core';
+import { Directive, HostListener, NgZone, Output, EventEmitter, ElementRef } from '@angular/core';
 import { DotUploadFile } from '../models/dot-upload-file.model';
 import { FileSystemEntry, FileSystemDirectoryEntry } from '../models/file-system.model';
 
@@ -15,24 +7,22 @@ const OVER_CLASS = 'over';
 @Directive({
     selector: '[dotDotDndFilesFolders]'
 })
-export class DotDndFilesFoldersDirective implements OnInit {
+export class DotDndFilesFoldersDirective {
     files: DotUploadFile[] = [];
 
     @Output() itemDropped: EventEmitter<DotUploadFile[]> = new EventEmitter();
 
     constructor(private zone: NgZone, private el: ElementRef) {}
 
-    ngOnInit() {}
-
     @HostListener('dragover', ['$event'])
-    onDragOver(evt) {
+    onDragOver(evt: DragEvent) {
         evt.preventDefault();
         evt.stopPropagation();
         this.addOverClass();
     }
 
     @HostListener('dragleave', ['$event'])
-    onDragLeave(evt) {
+    onDragLeave(evt: DragEvent) {
         evt.preventDefault();
         evt.stopPropagation();
         this.removeOverClass();
