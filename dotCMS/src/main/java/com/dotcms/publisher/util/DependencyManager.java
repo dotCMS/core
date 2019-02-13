@@ -46,7 +46,6 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import java.util.ArrayList;
@@ -856,13 +855,9 @@ public class DependencyManager {
 
 			}
 
-
             // Process FileAssetContainer
-		    final Set<FileAssetContainer> fileAssetContainers = new ImmutableSet.Builder<FileAssetContainer>().
-		          addAll(collectFileAssetContainer(workingContainerById)).
-		          addAll(collectFileAssetContainer(liveContainerById)).build();
-
-			 final List<Folder> folders = fileAssetContainers.stream().map(this::collectFileAssetContainerDependencies).flatMap(Collection::stream)
+			 final List<Folder> folders = collectFileAssetContainer().stream()
+			        .map(this::collectFileAssetContainerDependencies).flatMap(Collection::stream)
 					.collect(Collectors.toList());
 
              setFolderListDependencies(folders);
@@ -889,30 +884,16 @@ public class DependencyManager {
 	};
 
 	/**
-	 * Function that wraps calling getLiveContainerById
-	 */
-	private Function<String, Container> liveContainerById = id -> {
-		try {
-			return APILocator.getContainerAPI().getLiveContainerById(id, user, false);
-		} catch (DotDataException | DotSecurityException e) {
-			Logger.error(this, e.getMessage(),e);
-		}
-		return null;
-	};
-
-	/**
 	 * Aux Predicate to simplify filtering FileAssetContainer
 	 */
 	private Predicate<Container> fileAssetContainer = container -> container instanceof FileAssetContainer;
 
 	/**
 	 * Utility method that takes a Container source function as param and returns FileAssetContainer
-	 * @param containerFunction
 	 * @return
 	 */
-	private Set<FileAssetContainer> collectFileAssetContainer(
-			Function<String, Container> containerFunction) {
-		return fileAssetContainersSet.stream().map(containerFunction).filter(Objects::nonNull)
+	private Set<FileAssetContainer> collectFileAssetContainer() {
+		return fileAssetContainersSet.stream().map(workingContainerById).filter(Objects::nonNull)
 				.filter(fileAssetContainer).map(FileAssetContainer.class::cast)
 				.collect(Collectors.toSet());
 	}
