@@ -906,7 +906,7 @@ public class DependencyManager {
 	private Predicate<Container> fileAssetContainer = container -> container instanceof FileAssetContainer;
 
 	/**
-	 *
+	 * Utility method that takes a Container source function as param and returns FileAssetContainer
 	 * @param containerFunction
 	 * @return
 	 */
