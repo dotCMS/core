@@ -128,7 +128,7 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
     @Override
     public Relationship byTypeValue(final String typeValue) {
 
-        Relationship rel = null;
+        Relationship rel;
         try {
             rel = cache.getRelationshipByName(typeValue);
             if(rel != null)
@@ -156,7 +156,7 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
         Relationship relationship = null;
 
         
-        List<Map<String, Object>> results = new ArrayList<Map<String, Object>>();
+        List<Map<String, Object>> results;
         try {
             final DotConnect dc = new DotConnect();
             dc.setSQL(sql.FIND_BY_TYPE_VALUE);
