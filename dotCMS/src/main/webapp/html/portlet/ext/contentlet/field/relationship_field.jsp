@@ -465,6 +465,7 @@
 		    
 			// displays the publish/unpublish/archive status of the content only.
 			var statusTD = document.createElement("td");
+			statusTD.style.whiteSpace="nowrap";
 			statusTD.innerHTML = item.statusIcons;
 			row.appendChild(statusTD);
 
