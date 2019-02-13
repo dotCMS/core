@@ -213,11 +213,11 @@ function processDelete(inode, referer) {
 		
 		<input type="text" name="query" dojoType="dijit.form.TextBox" style="width:175px;" value="<%= com.dotmarketing.util.UtilMethods.isSet(query) ? query : "" %>">
 	    
-	    <button dojoType="dijit.form.Button" type="submit" onClick="submitfm()" iconClass="searchIcon">
+	    <button dojoType="dijit.form.Button" type="submit" onClick="submitfm()" class="dijitButtonFlat" iconClass="searchIcon">
 	        <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Search")) %>
 	    </button>
 	    
-		<button dojoType="dijit.form.Button" onClick="resetSearch()" iconClass="resetIcon">
+		<button dojoType="dijit.form.Button" onClick="resetSearch()" class="dijitButtonFlat" iconClass="resetIcon">
 	          <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Reset")) %>
 	    </button>
 	    

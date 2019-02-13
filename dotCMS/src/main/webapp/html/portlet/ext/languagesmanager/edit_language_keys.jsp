@@ -509,10 +509,10 @@
 			<button dojoType="dijit.form.Button" onClick="cancelEdit('fm');return false;" iconClass="cancelIcon" class="dijitButtonFlat">
 				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Cancel-Changes")) %>
 			</button>
-		    <button dojoType="dijit.form.Button" onClick="addNewProperty();return false;" iconClass="plusIcon">
+		    <button dojoType="dijit.form.Button" onClick="addNewProperty();return false;" iconClass="plusIcon" class="dijitButtonFlat">>
 		       <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-New-Property")) %>
 		    </button>
-			<button dojoType="dijit.form.Button" onClick="discardChanges('fm');return false;" iconClass="cancelIcon">
+			<button dojoType="dijit.form.Button" onClick="discardChanges('fm');return false;" iconClass="cancelIcon" class="dijitButtonFlat">>
 				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Reset-Changes")) %>
 			</button>
 		    <button dojoType="dijit.form.Button"  onClick="doSubmit('fm');return false;" iconClass="saveIcon">

@@ -18,7 +18,7 @@
 		</div>
 		<div class="permissions__bar-user-role-actions">
 			<span id="permissionIndividuallyButtonWrapper" style="display:none;">
-				<button dojoType="dijit.form.Button" onclick="permissionsIndividually()" type="button"><%= LanguageUtil.get(pageContext, "want-to-permission-individually") %></button>
+				<button dojoType="dijit.form.Button" onclick="permissionsIndividually()" class="dijitButtonFlat" type="button"><%= LanguageUtil.get(pageContext, "want-to-permission-individually") %></button>
 			</span>
 			<div id="resetInheritanceMess" style="display: none;"></div>
 		</div>
@@ -29,13 +29,13 @@
 			<div class="inline-form">
 				<span class="rolesIcon"></span>
 				<select id="permissionsRoleSelector" dojoType="dotcms.dijit.form.RolesFilteringSelect" excludeRoles="<%= APILocator.getRoleAPI().loadCMSAdminRole().getId()%>"></select>
-				<button dojoType="dijit.form.Button" onclick="addRoleToPermissions();return false;"><%= LanguageUtil.get(pageContext, "Add-Role") %></button>
+				<button dojoType="dijit.form.Button" class="dijitButtonFlat" onclick="addRoleToPermissions();return false;"><%= LanguageUtil.get(pageContext, "Add-Role") %></button>
 			</div>
 			<div class="inline-form">
 				<span class="userIcon"></span>
 				<div dojoType="dotcms.dojo.data.UsersReadStore" jsId="usersStore" includeRoles="false" style="margin: 0"></div>
 				<select id="permissionsUserSelector" name="permissionsUserSelector" dojoType="dijit.form.FilteringSelect" store="usersStore" searchDelay="300" pageSize="30" labelAttr="name" invalidMessage="<%= LanguageUtil.get(pageContext, "Invalid-option-selected") %>"></select>
-				<button dojoType="dijit.form.Button" onclick="addUserToPermissions();return false;"><%= LanguageUtil.get(pageContext, "Add-User") %></button>
+				<button dojoType="dijit.form.Button" class="dijitButtonFlat" onclick="addUserToPermissions();return false;"><%= LanguageUtil.get(pageContext, "Add-User") %></button>
 			</div>
 		</div>
 		<div class="permissions__bar-user-role-actions">
@@ -67,7 +67,7 @@
 	<div class="clear"></div>
 	
 	<div class="permissions__button-row" id="permissionsActions">
-		<button dojoType="dijit.form.Button" type="button" class="applyChangesButton" id="applyChangesButton" onClick="applyPermissionChanges('${id}')">
+		<button dojoType="dijit.form.Button" type="button" class="applyChangesButton dijitButtonFlat" id="applyChangesButton" onClick="applyPermissionChanges('${id}')">
 			<%= LanguageUtil.get(pageContext, "Apply-Changes") %>
 		</button>
 		
@@ -95,8 +95,8 @@
      <div dojoType="dijit.Dialog" id="applyPermissionsChangesDialog" title='<%=LanguageUtil.get(pageContext, "Permissions-Confirmation") %>' style="display: none">
      	 <%=LanguageUtil.get(pageContext, "permissions-changes-confirmation") %>
 		 <div class="buttonRow">
+	<button dojoType="dijit.form.Button" onClick="dijit.byId('applyPermissionsChangesDialog').hide();" class="dijitButtonFlat" type="button"><%= LanguageUtil.get(pageContext, "No") %></button>
      		<button dojoType="dijit.form.Button" onClick="dijit.byId('applyPermissionsChangesDialog').hide(); applyPermissionChanges('${id}'); " type="button"><%= LanguageUtil.get(pageContext, "Yes") %></button>
-			<button dojoType="dijit.form.Button" onClick="dijit.byId('applyPermissionsChangesDialog').hide();" type="button"><%= LanguageUtil.get(pageContext, "No") %></button>	 
      	 </div>				
      </div>
 <!-- END Confirm Save permissions  change dialog -->
