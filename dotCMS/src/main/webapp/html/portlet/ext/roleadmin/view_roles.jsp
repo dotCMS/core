@@ -74,7 +74,7 @@
 			<dt><label for="portletList"><%= LanguageUtil.get(pageContext, "Tools") %>:</label></dt>
 			<dd>
 				<select id="portletList"></select>
-				<button dojoType="dijit.form.Button" onclick="addPortletToLayoutList()" type="button"><%= LanguageUtil.get(pageContext, "add") %></button>
+				<button dojoType="dijit.form.Button" class="dijitButtonFlat" onclick="addPortletToLayoutList()" type="button"><%= LanguageUtil.get(pageContext, "add") %></button>
 			</dd>
 		</dl>
 
@@ -188,7 +188,7 @@
 								<label for><%= LanguageUtil.get(pageContext, "grant") %>:</label>
 								<span dojoType="dotcms.dojo.data.UsersReadStore" jsId="grantUsersStore" includeRoles="false"></span>
 								<select id="grantUserSelect" dojoType="dijit.form.FilteringSelect" store="grantUsersStore" searchDelay="300" pageSize="30" labelAttr="name" invalidMessage="<%= LanguageUtil.get(pageContext, "Invalid-option-selected") %>"></select>
-								<button dojoType="dijit.form.Button" onclick="grantUser()" type="button" iconClass="plusIcon"><%= LanguageUtil.get(pageContext, "grant") %></button>
+								<button dojoType="dijit.form.Button" onclick="grantUser()" type="button" class="dijitButtonFlat" iconClass="plusIcon"><%= LanguageUtil.get(pageContext, "grant") %></button>
 							</div>
 						</div>
 
@@ -224,7 +224,7 @@
 
 						<div class="view-roles__heading">
 							<h3 class="nameText" id="displayRoleName3"></h3>
-							<button dojoType="dijit.form.Button" onclick="createNewLayout()" type="button" iconClass="plusIcon">
+							<button dojoType="dijit.form.Button" onclick="createNewLayout()" type="button" iconClass="plusIcon" class="dijitButtonFlat">
 								<%= LanguageUtil.get(pageContext, "create-custom-tab") %>
 							</button>
 						</div>

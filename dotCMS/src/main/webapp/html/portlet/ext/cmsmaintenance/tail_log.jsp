@@ -226,14 +226,14 @@
                     <%=com.liferay.portal.language.LanguageUtil.get(pageContext, "Follow") %>
                 </label>
             </div>
-            <button dojoType="dijit.form.Button" onClick="doPopup()" value="popup" name="popup">
+            <button dojoType="dijit.form.Button" onClick="doPopup()" value="popup" name="popup" class="dijitButtonFlat">
                 <%= com.liferay.portal.language.LanguageUtil.get(pageContext,"popup") %>
             </button>
         </div>
     </div>
     <div class="portlet-toolbar__actions-secondary">
         <div id="popMeUp">
-            <button dojoType="dijit.form.Button" onClick="doManageLogs()"  value="popup" name="popup" >
+            <button dojoType="dijit.form.Button" onClick="doManageLogs()"  value="popup" name="popup" class="dijitButtonFlat">
                 <%= com.liferay.portal.language.LanguageUtil.get(pageContext,"LOG_Manager") %>
             </button>
         </div>
@@ -257,8 +257,8 @@
         </table>
     </div>
     <div class="buttonRow">
-        <button dojoType="dijit.form.Button" name="filterButton" onClick="enableDisableLogs()"><%= com.liferay.portal.language.LanguageUtil.get(pageContext, "LOG_button") %></button>
-        <button dojoType="dijit.form.Button" name="refreshButton" onClick="getCurrentLogs ()">Refresh</button>
+        <button dojoType="dijit.form.Button" name="filterButton" onClick="enableDisableLogs()" class="dijitButtonFlat"><%= com.liferay.portal.language.LanguageUtil.get(pageContext, "LOG_button") %></button>
+        <button dojoType="dijit.form.Button" name="refreshButton" onClick="getCurrentLogs ()" class="dijitButtonFlat">Refresh</button>
     </div>
 </div>
 

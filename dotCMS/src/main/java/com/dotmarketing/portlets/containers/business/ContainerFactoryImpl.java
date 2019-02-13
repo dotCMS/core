@@ -4,6 +4,7 @@ import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
+import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.transform.TransformerLocator;
 import com.dotmarketing.beans.*;
 import com.dotmarketing.beans.Inode.Type;
@@ -29,6 +30,7 @@ import com.liferay.portal.model.User;
 
 import java.util.*;
 
+import static com.dotcms.util.FunctionUtils.ifOrElse;
 import static com.dotmarketing.util.StringUtils.builder;
 
 public class ContainerFactoryImpl implements ContainerFactory {
@@ -388,7 +390,9 @@ public class ContainerFactoryImpl implements ContainerFactory {
 	/**
 	 * Finds the container.vtl on a specific host
 	 * returns even working versions but not archived
-	 * the search is based on the ES Index
+	 * the search is based on the ES Index.
+	 * If exists multiple language version, will consider only the versions based on the default language, so if only exists a container.vtl with a non-default language it will be skipped.
+	 *
 	 * @param host {@link Host}
 	 * @param user {@link User}
 	 * @return List of Folder
@@ -398,7 +402,7 @@ public class ContainerFactoryImpl implements ContainerFactory {
 		List<Contentlet>           containers = null;
 		final List<Folder>         folders    = new ArrayList<>();
 
-		try{
+		try {
 
 			final StringBuilder queryBuilder = builder("+structureType:", Structure.STRUCTURE_TYPE_FILEASSET,
 					" +path:", Constants.CONTAINER_FOLDER_PATH, "/*",
@@ -413,9 +417,12 @@ public class ContainerFactoryImpl implements ContainerFactory {
             final String query = queryBuilder.toString();
 
             containers =
-					this.permissionAPI.filterCollection(
+					this.filterContainersAssetsByLanguage (this.permissionAPI.filterCollection(
 							this.contentletAPI.search(query,-1, 0, null , user, false),
-							PermissionAPI.PERMISSION_READ, false, user);
+							PermissionAPI.PERMISSION_READ, false, user),
+							APILocator.getLanguageAPI().getDefaultLanguage().getId());
+
+
 
 			for(final Contentlet container : containers) {
 
@@ -427,6 +434,28 @@ public class ContainerFactoryImpl implements ContainerFactory {
 		}
 
 		return folders;
+	}
+
+	private List<Contentlet> filterContainersAssetsByLanguage(final List<Contentlet> contentContainers, final long defaultLanguageId) {
+
+		final List<Contentlet> uniqueContentContainers   				 = new ArrayList<>();
+		final Map<String, List<Contentlet>> contentletsGroupByIdentifier = CollectionsUtils.groupByKey(contentContainers, Contentlet::getIdentifier);
+
+		for (final Map.Entry<String, List<Contentlet>> entry : contentletsGroupByIdentifier.entrySet()) {
+
+			if (entry.getValue().size() <= 1) {
+
+				uniqueContentContainers.addAll(entry.getValue());
+			} else {
+
+				ifOrElse(entry.getValue().stream()
+								.filter(contentlet -> contentlet.getLanguageId() == defaultLanguageId).findFirst(), // if present the one with the default lang take it
+						uniqueContentContainers::add,
+						()->uniqueContentContainers.add(entry.getValue().get(0))); // otherwise take any one, such as the first one
+			}
+		}
+
+		return uniqueContentContainers;
 	}
 
 	/**

@@ -138,11 +138,4 @@ public interface RelationshipAPI {
    * @throws DotSecurityException
    */
   void convertRelationshipToRelationshipField(final Relationship oldRelationship) throws DotDataException, DotSecurityException;
-
-  /**
-   * Returns true if the relationship is the new kind of relationship (Relationship Field)
-   * @param relationship
-   * @return
-   */
-  boolean isRelationshipField(final Relationship relationship);
 }
