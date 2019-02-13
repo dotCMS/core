@@ -278,6 +278,10 @@ public class GraphqlAPIImpl implements GraphqlAPI {
 
         // each content type as query'able collection field
         graphQLTypes.forEach((type)-> {
+            if(type.getName().equals(InterfaceType.CONTENTLET.getType().getName())) {
+                return;
+            }
+
             typesFieldsDefinitions.add(newFieldDefinition()
                 .name(TypeUtil.collectionizedName(type.getName()))
                 .argument(GraphQLArgument.newArgument()
