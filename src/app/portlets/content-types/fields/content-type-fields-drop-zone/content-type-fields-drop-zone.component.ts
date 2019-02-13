@@ -152,7 +152,7 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
     }
 
     ngOnChanges(changes: SimpleChanges): void {
-        if (changes.fields.currentValue) {
+        if (changes.fields && changes.fields.currentValue) {
             const fields = changes.fields.currentValue;
 
             if (Array.isArray(fields)) {

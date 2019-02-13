@@ -524,6 +524,14 @@ describe('Load fields and drag and drop', () => {
         expect(fakeFields[8]).toBe(comp.formData);
     });
 
+    it('should do drag and drop without throwing error', () => {
+        fixture.detectChanges();
+        hostComp.loading = false;
+        fixture.detectChanges();
+        expect(hostComp.loading).toBe(false);
+    });
+
+
     it('should save all the fields (moving the last line to the top)', () => {
         spyOn(comp.saveFields, 'emit');
 
