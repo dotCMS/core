@@ -47,9 +47,8 @@ dot-sub-nav {
         }
 
         &-label {
-            position: absolute;
-            left: 56px;
-            white-space: nowrap;
+            word-break: break-word;
+            margin-left: $basic-padding * 2;
         }
     }
 
