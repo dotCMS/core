@@ -94,6 +94,18 @@ public interface ContainerAPI {
 	 */
 	Container getWorkingContainerByFolderPath(final String path, final Host host, final User user, final boolean respectFrontEndPermissions) throws DotSecurityException, DotDataException;
 
+	/***
+	 * Similar to the {@link #getWorkingContainerByFolderPath(String, Host, User, boolean)} but the host will be figured out from the path, it is particular useful when you
+	 * have the  full path such as //demo.dotcms.com/application/containers/large-column/
+	 * @param fullContainerPathWithHost String for instance //demo.dotcms.com/application/containers/large-column/
+	 * @param user
+	 * @param respectFrontEndPermissions
+	 * @return Container
+	 * @throws DotSecurityException
+	 * @throws DotDataException
+	 */
+	Container getWorkingContainerByFolderPath(final String fullContainerPathWithHost, final User user, final boolean respectFrontEndPermissions) throws DotSecurityException, DotDataException;
+
 	/**
 	 * Returns the live container by path and host; this method is mostly used when the container is file asset based.
 	 * @param path

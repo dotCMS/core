@@ -9,8 +9,8 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.containers.business.ContainerByFolderAssetsUtil;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
 import org.apache.velocity.context.Context;
@@ -134,7 +134,7 @@ public class TemplatePathStrategyResolver {
 
         private boolean isPath (final String templatePath) {
 
-            return UtilMethods.isSet(templatePath) && templatePath.contains(FORWARD_SLASH);
+            return ContainerByFolderAssetsUtil.getInstance().isFolderAssetContainerId(templatePath);
         }
 
         private String getPath(final RenderParams params, final String path, final String uid) {
@@ -213,19 +213,7 @@ public class TemplatePathStrategyResolver {
 
         private boolean isIdentifier (final String identifier) {
 
-            boolean isIdentifier = false;
-            isIdentifier |= UUIDUtil.isUUID(identifier);
-
-            if (!isIdentifier) {
-                try {
-                    APILocator.getShortyAPI().validShorty(identifier);
-                    isIdentifier = true;
-                } catch (Exception e) {
-                    isIdentifier = false;
-                }
-            }
-
-            return isIdentifier;
+           return ContainerByFolderAssetsUtil.getInstance().isDataBaseContainerId(identifier);
         }
     } // IdentifierTemplatePathStrategyImpl.
 } // E:O:F:TemplatePathStrategyResolver.

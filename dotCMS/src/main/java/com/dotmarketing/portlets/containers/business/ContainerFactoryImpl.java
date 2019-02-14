@@ -176,7 +176,7 @@ public class ContainerFactoryImpl implements ContainerFactory {
 					Constants.CONTAINER_META_INFO_FILE_NAME);
 		}
 
-        return ContainerByFolderAssetsUtil.getInstance().fromAssets (folder, this.findContainerAssets(folder, user, showLive), showLive);
+        return ContainerByFolderAssetsUtil.getInstance().fromAssets (host, folder, this.findContainerAssets(folder, user, showLive), showLive);
     }
 
     /*

@@ -5,18 +5,8 @@ import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
-
-import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.beans.MultiTree;
-import com.dotmarketing.beans.VersionInfo;
-import com.dotmarketing.beans.WebAsset;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.BaseWebAssetAPI;
-import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.FactoryLocator;
-import com.dotmarketing.business.IdentifierAPI;
-import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.beans.*;
+import com.dotmarketing.business.*;
 import com.dotmarketing.business.PermissionAPI.PermissionableType;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.db.HibernateUtil;
@@ -24,8 +14,8 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.InvalidLicenseException;
-import com.dotmarketing.factories.MultiTreeFactory;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
+import com.dotmarketing.portlets.containers.business.ContainerByFolderAssetsUtil;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI.TemplateContainersReMap.ContainerRemapTuple;
@@ -36,17 +26,10 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
-
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
-
 import com.liferay.portal.model.User;
+
+import java.util.*;
+import java.util.stream.Collectors;
 
 
 
@@ -272,7 +255,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 
     @CloseDBIfOpened
     @Override
-    public List<Container> getContainersInTemplate(Template template, User user, boolean respectFrontendRoles)
+    public List<Container> getContainersInTemplate(final Template template, final User user, final boolean respectFrontendRoles)
             throws DotDataException, DotSecurityException {
 
 
@@ -282,8 +265,14 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
             if (layout != null) {
 				final List<String> containersId = this.getContainersId(layout);
 
-				for (final String cont : containersId) {
-					final Container container = APILocator.getContainerAPI().getWorkingContainerById(cont, user, false);
+				for (final String containerIdOrPath : containersId) {
+
+					final Container container =
+							Source.FILE == ContainerByFolderAssetsUtil.getInstance()
+									.getContainerSourceFromContainerIdOrPath(containerIdOrPath)?
+									containerAPI.getWorkingContainerByFolderPath(containerIdOrPath, user, false):
+									containerAPI.getWorkingContainerById(containerIdOrPath, user, false);
+
 
 					if (container == null) {
 						continue;
@@ -294,19 +283,20 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 			}
         }
         // this is a light weight search for pages that use this template
-        List<ContentletSearch> pages= APILocator.getContentletAPIImpl().searchIndex("+catchall:" + template.getIdentifier() + " +baseType:"
+        List<ContentletSearch> pages =
+				APILocator.getContentletAPIImpl().searchIndex("+catchall:" + template.getIdentifier() + " +baseType:"
                 + BaseContentType.HTMLPAGE.getType(), 100, 0, null, user,respectFrontendRoles);
 
-        for (ContentletSearch page : pages) {
-            Set<String> containerId =
+        for (final ContentletSearch page : pages) {
+            final Set<String> containerIdSet =
                     APILocator.getMultiTreeAPI().getMultiTrees(page.getIdentifier())
                     .stream()
                     .map(MultiTree::getContainer)
                     .collect(Collectors.toSet());
 
 
-            for (String cont : containerId) {
-                Container container = APILocator.getContainerAPI().getWorkingContainerById(cont, user, false);
+            for (final String containerId : containerIdSet) {
+                final Container container = APILocator.getContainerAPI().getWorkingContainerById(containerId, user, false);
                 if(container==null) {
                     continue;
                 }

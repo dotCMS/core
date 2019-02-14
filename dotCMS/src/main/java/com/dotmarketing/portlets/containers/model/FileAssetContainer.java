@@ -32,6 +32,8 @@ public class FileAssetContainer extends Container {
 
     private long languageId;
 
+    private String path;
+
     public FileAssetContainer() {
 
         this.source = Source.FILE;
@@ -86,6 +88,14 @@ public class FileAssetContainer extends Container {
     @Override
     public boolean hasLiveVersion() throws DotStateException, DotDataException {
         return APILocator.getVersionableAPI().hasLiveVersion(toContentlet());
+    }
+
+    public String getPath() {
+        return path;
+    }
+
+    public void setPath(String path) {
+        this.path = path;
     }
 
     private Versionable toContentlet() {

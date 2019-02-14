@@ -28,6 +28,8 @@ import com.dotmarketing.util.Constants;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
+import io.vavr.Tuple;
+import io.vavr.Tuple2;
 
 import java.util.*;
 
@@ -45,6 +47,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 	protected ContainerFactory containerFactory;
 	protected HostAPI          hostAPI;
 	protected FolderAPI        folderAPI;
+	private static final String HOST_INDICATOR     = "//";
 
 	/**
 	 * Constructor
@@ -271,6 +274,27 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 
 		final Host host = this.hostAPI.find(hostId, user, respectFrontEndPermissions);
 		return this.getWorkingContainerByFolderPath(path, host, user, respectFrontEndPermissions);
+	}
+
+	@CloseDBIfOpened
+	@Override
+	public Container getWorkingContainerByFolderPath(final String fullContainerPathWithHost, final User user, final boolean respectFrontEndPermissions) throws DotSecurityException, DotDataException {
+
+		final Tuple2<String, Host> pathAndHostTuple = this.getContainerPathHost(fullContainerPathWithHost, user);
+		return this.getWorkingContainerByFolderPath(pathAndHostTuple._1, pathAndHostTuple._2, user, respectFrontEndPermissions);
+	}
+
+	private Tuple2<String, Host> getContainerPathHost(final String containerIdOrPath, final User user) throws DotSecurityException, DotDataException {
+
+		final HostAPI hostAPI        = APILocator.getHostAPI();
+		final int hostIndicatorIndex = containerIdOrPath.indexOf(HOST_INDICATOR);
+		final int applicationContainerFolderStartsIndex =
+				containerIdOrPath.indexOf(Constants.CONTAINER_FOLDER_PATH);
+		final String hostName = containerIdOrPath.substring(hostIndicatorIndex+2, applicationContainerFolderStartsIndex);
+		final String path     = containerIdOrPath.substring(applicationContainerFolderStartsIndex);
+		final Host host 	  = hostAPI.findByName(hostName, user, false);
+
+		return Tuple.of(path, null == host? hostAPI.findDefaultHost(user, false): host);
 	}
 
     @CloseDBIfOpened
