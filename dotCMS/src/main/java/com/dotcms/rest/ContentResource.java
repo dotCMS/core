@@ -584,8 +584,7 @@ public class ContentResource {
      * @throws DotSecurityException
      */
     private String getXML(final List<Contentlet> cons, final HttpServletRequest request,
-            final HttpServletResponse response, final String render, final User user, final int depth)
-            throws DotDataException, IOException, DotSecurityException {
+            final HttpServletResponse response, final String render, final User user, final int depth){
 
         final StringBuilder sb = new StringBuilder();
         final XStream xstream = new XStream(new DomDriver());
@@ -663,8 +662,9 @@ public class ContentResource {
             final HttpServletResponse response,
             final String render, final User user, final int depth, final Contentlet contentlet,
             final Map<String, Object> objectMap, Set<Relationship> addedRelationships)
-            throws DotDataException, JSONException, IOException, DotSecurityException {
+            throws DotDataException, IOException, DotSecurityException {
 
+        Relationship relationship;
         final RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
         final PermissionAPI permissionAPI     = APILocator.getPermissionAPI();
 
@@ -683,7 +683,12 @@ public class ContentResource {
 
         for (com.dotcms.contenttype.model.field.Field field : fields) {
 
-            final Relationship relationship = relationshipAPI.getRelationshipFromField(field, user);
+            try{
+                relationship = relationshipAPI.getRelationshipFromField(field, user);
+            }catch(DotDataException | DotSecurityException e){
+                Logger.warn("Error getting relationship for field " + field, e.getMessage(), e);
+                continue;
+            }
 
             final List records = new ArrayList();
 
@@ -738,7 +743,7 @@ public class ContentResource {
     }
 
 
-    private String getXMLContentIds(Contentlet con) throws DotDataException, IOException {
+    private String getXMLContentIds(Contentlet con) {
         XStream xstream = new XStream(new DomDriver());
         xstream.alias("content", Map.class);
         xstream.registerConverter(new MapEntryConverter());
@@ -753,7 +758,7 @@ public class ContentResource {
         return sb.toString();
     }
 
-    private String getJSONContentIds(Contentlet con) throws IOException {
+    private String getJSONContentIds(Contentlet con){
         JSONObject json = new JSONObject();
         try {
             json.put("inode", con.getInode());
@@ -778,8 +783,7 @@ public class ContentResource {
      * @throws DotDataException
      */
     private String getJSON(final List<Contentlet> cons, final HttpServletRequest request,
-            final HttpServletResponse response, final String render, final User user,  final int depth)
-            throws IOException, DotDataException {
+            final HttpServletResponse response, final String render, final User user,  final int depth){
         final JSONObject json = new JSONObject();
         final JSONArray jsonCons = new JSONArray();
 
@@ -793,7 +797,7 @@ public class ContentResource {
                     addRelationshipsToJSON(request, response, render, user, depth, c, jo, null);
                 }
             } catch (Exception e) {
-                Logger.warn(this.getClass(), "unable JSON contentlet " + c.getIdentifier());
+                Logger.warn(this.getClass(), "unable to get JSON contentlet " + c.getIdentifier());
                 Logger.debug(this.getClass(), "unable to find contentlet", e);
             }
         }
@@ -830,6 +834,8 @@ public class ContentResource {
             final JSONObject jsonObject, Set<Relationship> addedRelationships)
             throws DotDataException, JSONException, IOException, DotSecurityException {
 
+        Relationship relationship;
+
         final RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
         final PermissionAPI permissionAPI     = APILocator.getPermissionAPI();
 
@@ -846,7 +852,12 @@ public class ContentResource {
 
         for (com.dotcms.contenttype.model.field.Field field:fields) {
 
-            final Relationship relationship = relationshipAPI.getRelationshipFromField(field, user);
+            try {
+                relationship = relationshipAPI.getRelationshipFromField(field, user);
+            }catch(DotDataException | DotSecurityException e){
+                Logger.warn("Error getting relationship for field " + field, e.getMessage(), e);
+                continue;
+            }
 
             if (addedRelationships.contains(relationship)){
                 continue;
