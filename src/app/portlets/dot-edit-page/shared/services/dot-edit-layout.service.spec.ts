@@ -7,7 +7,7 @@ import { DotContainerColumnBox } from '../models/dot-container-column-box.model'
 import { DotLayoutBody } from '@portlets/dot-edit-page/shared/models/dot-layout-body.model';
 import { DotLayoutGridBox } from '@portlets/dot-edit-page/shared/models/dot-layout-grid-box.model';
 
-fdescribe('DotEditLayoutService', () => {
+describe('DotEditLayoutService', () => {
     const containers = {
         '5363c6c6-5ba0-4946-b7af-cf875188ac2e': {
             container: {
