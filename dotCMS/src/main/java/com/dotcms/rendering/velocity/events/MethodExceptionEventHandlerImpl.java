@@ -1,12 +1,20 @@
 package com.dotcms.rendering.velocity.events;
 
+import com.dotcms.api.system.event.message.MessageSeverity;
+import com.dotcms.api.system.event.message.MessageType;
+import com.dotcms.api.system.event.message.SystemMessageEventUtil;
+import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.rendering.velocity.services.DotResourceLoader;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.rendering.velocity.viewtools.exception.DotToolException;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.auth.PrincipalThreadLocal;
+import com.liferay.util.Html;
 import org.apache.velocity.Template;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.VelocityEngine;
@@ -17,14 +25,12 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.StringWriter;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 
 public class MethodExceptionEventHandlerImpl implements org.apache.velocity.app.event.MethodExceptionEventHandler {
 
+	private static final String NEW_LINE = Html.br() + Html.space(2);
 	String errorTemplate = "/static/preview_mode/error_template.vtl";
 
 	public Object methodException(final Class clazz, final String message, final Exception e) throws Exception {
@@ -35,6 +41,12 @@ public class MethodExceptionEventHandlerImpl implements org.apache.velocity.app.
 
 		if (e instanceof PreviewEditParseErrorException) {
 			// this exception is already handled by System Messages.
+			throw e;
+		}
+
+		if (e instanceof DotStateException) {
+			// this exception is already handled by System Messages.
+			this.notifyStateException(DotStateException.class.cast(e));
 			throw e;
 		}
 
@@ -55,8 +67,29 @@ public class MethodExceptionEventHandlerImpl implements org.apache.velocity.app.
 		
 		return x;
 	}
-	
-	
+
+	private void notifyStateException(final DotStateException e) {
+
+		final String userId = PrincipalThreadLocal.getName();
+		if (UtilMethods.isSet(userId)) {
+
+			final SystemMessageBuilder systemMessageBuilder = new SystemMessageBuilder();
+			final StringBuilder        message 			    = new StringBuilder();
+
+			message.append(Html.h3("Velocity Error")).append(NEW_LINE)
+					.append(Html.pre(getErrorMessage(e)));
+
+			systemMessageBuilder.setMessage(message.toString())
+					.setLife(DateUtil.FIVE_SECOND_MILLIS)
+					.setType(MessageType.SIMPLE_MESSAGE)
+					.setSeverity(MessageSeverity.ERROR);
+
+			SystemMessageEventUtil.getInstance().
+					pushMessage(systemMessageBuilder.create(), Arrays.asList(userId));
+		}
+	}
+
+
 	public String getErrorMessage(final Exception e) {
 
 		final StringWriter    sw      = new StringWriter();
