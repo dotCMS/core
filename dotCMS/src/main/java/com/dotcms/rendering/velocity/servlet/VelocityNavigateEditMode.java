@@ -87,6 +87,6 @@ public class VelocityNavigateEditMode  extends VelocityModeHandler {
     private PageMode getMode() {
         final PageMode currentMode = PageMode.get(request);
         return currentMode.showLive ? currentMode :
-                APILocator.getHTMLPageAssetRenderedAPI().getDefaultEditPageMode(user, request, uri, response);
+                APILocator.getHTMLPageAssetRenderedAPI().getDefaultEditPageMode(user, request, uri);
     }
 }

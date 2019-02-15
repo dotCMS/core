@@ -199,10 +199,21 @@ public class URLMapAPIImpl implements URLMapAPI {
             contentlet = this.contentletAPI
                     .find(contentletSearch.getInode(), this.wuserAPI.getSystemUser(), true);
 
-            this.permissionAPI.checkPermission(contentlet, PermissionLevel.READ, context.getUser());
+            checkContentPermission(context, contentlet);
         }
 
         return contentlet;
+    }
+
+    private void checkContentPermission(final UrlMapContext context, final Contentlet contentlet)
+            throws DotDataException, DotSecurityException {
+
+        final boolean havePermission = this.permissionAPI.doesUserHavePermission(
+                contentlet, PermissionLevel.READ.getType(), context.getUser(), context.getMode().respectAnonPerms);
+
+        if (!havePermission) {
+            throw new DotSecurityException(String.format("User dont have permission in content: %s", contentlet.getName()));
+        }
     }
 
     private String buildContentQuery(
@@ -227,7 +238,7 @@ public class URLMapAPIImpl implements URLMapAPI {
         }
 
         query.append(this.buildFields(structure, matches))
-             .append(" +languageId:").append(context.getLanguageId()).append(" ");
+             .append(" +languageId:").append(context.getLanguageId());
 
         return query.toString();
     }

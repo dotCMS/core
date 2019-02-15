@@ -4,6 +4,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.util.PageMode;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import java.util.Objects;
 
 /**
  * Context to resolve a Page with the {@link com.dotcms.contenttype.model.type.ContentType}'s
@@ -50,5 +51,26 @@ public class UrlMapContext {
 
     public User getUser() {
         return user;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        UrlMapContext that = (UrlMapContext) o;
+        return languageId == that.languageId &&
+                mode == that.mode &&
+                Objects.equals(uri, that.uri) &&
+                Objects.equals(host, that.host) &&
+                Objects.equals(user, that.user);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(mode, languageId, uri, host, user);
     }
 }

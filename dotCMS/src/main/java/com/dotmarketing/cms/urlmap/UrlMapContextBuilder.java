@@ -14,6 +14,12 @@ public class UrlMapContextBuilder {
     private Host host;
     private User user;
 
+    private UrlMapContextBuilder(){}
+
+    public static UrlMapContextBuilder builder(){
+        return new UrlMapContextBuilder();
+    }
+
     public UrlMapContextBuilder setMode(final PageMode mode) {
         this.mode = mode;
         return this;

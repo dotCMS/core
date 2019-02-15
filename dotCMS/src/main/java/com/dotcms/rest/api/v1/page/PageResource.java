@@ -126,7 +126,7 @@ public class PageResource {
         Response res;
 
         final PageMode mode = modeParam != null ? PageMode.get(modeParam) :
-                this.htmlPageAssetRenderedAPI.getDefaultEditPageMode(user, request, uri, response);
+                this.htmlPageAssetRenderedAPI.getDefaultEditPageMode(user, request, uri);
         PageMode.setPageMode(request, mode);
 
         try {
@@ -215,7 +215,7 @@ public class PageResource {
 
             final PageMode mode = modeParam != null
                     ? PageMode.get(modeParam)
-                    : this.htmlPageAssetRenderedAPI.getDefaultEditPageMode(user, request,uri, response);
+                    : this.htmlPageAssetRenderedAPI.getDefaultEditPageMode(user, request,uri);
 
             PageMode.setPageMode(request, mode);
 
@@ -232,15 +232,13 @@ public class PageResource {
                     request,
                     response
             );
-            final Response.ResponseBuilder responseBuilder = Response.ok(new ResponseEntityView(pageRendered));
-
 
             final Host host = APILocator.getHostAPI().find(pageRendered.getPageInfo().getPage().getHost(), user,
                     PageMode.get(request.getSession()).respectAnonPerms);
             request.setAttribute(WebKeys.CURRENT_HOST, host);
             request.getSession().setAttribute(WebKeys.CURRENT_HOST, host);
 
-            res = responseBuilder.build();
+            res = Response.ok(new ResponseEntityView(pageRendered)).build();
         } catch (HTMLPageAssetNotFoundException e) {
             final String errorMsg = String.format("HTMLPageAssetNotFoundException on PageResource.render, parameters:  %s, %s %s: ",
                     request, uri, modeParam);

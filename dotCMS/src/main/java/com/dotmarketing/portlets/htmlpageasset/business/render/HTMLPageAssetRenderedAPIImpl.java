@@ -6,6 +6,7 @@ import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.*;
 import com.dotmarketing.business.web.HostWebAPI;
+import com.dotmarketing.business.web.LanguageWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cms.urlmap.URLMapAPIImpl;
 import com.dotmarketing.cms.urlmap.URLMapInfo;
@@ -45,18 +46,34 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
     private final UserAPI userAPI;
     private final VersionableAPI versionableAPI;
     private final URLMapAPIImpl urlMapAPIImpl;
+    private final LanguageWebAPI languageWebAPI;
 
     public HTMLPageAssetRenderedAPIImpl(){
-        this(APILocator.getPermissionAPI(), APILocator.getUserAPI(), WebAPILocator.getHostWebAPI(),
-                APILocator.getLanguageAPI(), APILocator.getHTMLPageAssetAPI(), APILocator.getVersionableAPI(),
-                APILocator.getHostAPI(), APILocator.getURLMapAPI());
+        this(
+            APILocator.getPermissionAPI(),
+            APILocator.getUserAPI(),
+            WebAPILocator.getHostWebAPI(),
+            APILocator.getLanguageAPI(),
+            APILocator.getHTMLPageAssetAPI(),
+            APILocator.getVersionableAPI(),
+            APILocator.getHostAPI(),
+            APILocator.getURLMapAPI(),
+            WebAPILocator.getLanguageWebAPI()
+        );
     }
 
     @VisibleForTesting
-    public HTMLPageAssetRenderedAPIImpl(final PermissionAPI permissionAPI, final UserAPI userAPI,
-                                        final HostWebAPI hostWebAPI, final LanguageAPI languageAPI,
-                                        final HTMLPageAssetAPI htmlPageAssetAPI, final VersionableAPI versionableAPI,
-                                        final HostAPI hostAPI, final URLMapAPIImpl urlMapAPIImpl){
+    public HTMLPageAssetRenderedAPIImpl(
+            final PermissionAPI permissionAPI,
+            final UserAPI userAPI,
+            final HostWebAPI hostWebAPI,
+            final LanguageAPI languageAPI,
+            final HTMLPageAssetAPI htmlPageAssetAPI,
+            final VersionableAPI versionableAPI,
+            final HostAPI hostAPI,
+            final URLMapAPIImpl urlMapAPIImpl,
+            final LanguageWebAPI languageWebAPI
+    ){
 
         this.permissionAPI = permissionAPI;
         this.userAPI = userAPI;
@@ -66,6 +83,7 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
         this.versionableAPI = versionableAPI;
         this.hostAPI = hostAPI;
         this.urlMapAPIImpl = urlMapAPIImpl;
+        this.languageWebAPI = languageWebAPI;
     }
 
     /**
@@ -122,8 +140,7 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
     public PageMode getDefaultEditPageMode(
             final User user,
             final HttpServletRequest request,
-            final String pageUri,
-            final HttpServletResponse response) {
+            final String pageUri) {
         try {
             final User systemUser = userAPI.getSystemUser();
 
@@ -230,13 +247,13 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
         final Language language = this.getCurrentLanguage(request);
 
         final Optional<URLMapInfo> urlMapInfoOptional = this.urlMapAPIImpl.processURLMap(
-                new UrlMapContextBuilder()
-                        .setHost(host)
-                        .setLanguageId(language.getId())
-                        .setMode(context.getPageMode())
-                        .setUri(context.getPageUri())
-                        .setUser(context.getUser())
-                        .build()
+                UrlMapContextBuilder.builder()
+                    .setHost(host)
+                    .setLanguageId(language.getId())
+                    .setMode(context.getPageMode())
+                    .setUri(context.getPageUri())
+                    .setUser(context.getUser())
+                    .build()
         );
 
         urlMapInfoOptional.ifPresent(urlMapInfo -> {
@@ -276,8 +293,7 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
 
     private Language getCurrentLanguage(final HttpServletRequest request) {
         final Language defaultLanguage = this.languageAPI.getDefaultLanguage();
-        return request != null ?
-                WebAPILocator.getLanguageWebAPI().getLanguage(request) : defaultLanguage;
+        return request != null ? this.languageWebAPI.getLanguage(request) : defaultLanguage;
     }
 
     private Host resolveSite(final PageContext context, final HttpServletRequest request)

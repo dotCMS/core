@@ -76,7 +76,6 @@ public interface HTMLPageAssetRenderedAPI {
      PageMode getDefaultEditPageMode(
              final User user,
              final HttpServletRequest request,
-             final String pageUri,
-             final HttpServletResponse response
+             final String pageUri
      );
 }
