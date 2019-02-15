@@ -6488,7 +6488,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
         }
         if (!UtilMethods.isSet(contentlet.getHost())) {
-            contentlet.setHost(APILocator.systemHost());
+            contentlet.setHost(APILocator.systemHost().getIdentifier());
         }
         if (!UtilMethods.isSet(contentlet.getFolder())) {
             contentlet.setFolder(FolderAPI.SYSTEM_FOLDER);

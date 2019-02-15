@@ -884,16 +884,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	public void setHost(String host) {
 		map.put(HOST_KEY, host);
 	}
-	
-    /**
-    *
-    * @param host
-    */
-   public void setHost(Host host) {
-       if(host!=null) {
-           map.put(HOST_KEY, host.getIdentifier());
-       }
-   }
+
 	/**
 	 * Returns the inode of the folder where this contentlet lives under, if persisted, or if not persisted, where
 	 * it will live under when saved/updated
