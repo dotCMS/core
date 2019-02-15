@@ -68,27 +68,27 @@ public class HTMLPageAssetRenderedBuilder {
         versionableAPI = APILocator.getVersionableAPI();
     }
 
-    public HTMLPageAssetRenderedBuilder setHtmlPageAsset(IHTMLPage htmlPageAsset) {
+    public HTMLPageAssetRenderedBuilder setHtmlPageAsset(final IHTMLPage htmlPageAsset) {
         this.htmlPageAsset = htmlPageAsset;
         return this;
     }
 
-    public HTMLPageAssetRenderedBuilder setUser(User user) {
+    public HTMLPageAssetRenderedBuilder setUser(final User user) {
         this.user = user;
         return this;
     }
 
-    public HTMLPageAssetRenderedBuilder setRequest(HttpServletRequest request) {
+    public HTMLPageAssetRenderedBuilder setRequest(final HttpServletRequest request) {
         this.request = request;
         return this;
     }
 
-    public HTMLPageAssetRenderedBuilder setResponse(HttpServletResponse response) {
+    public HTMLPageAssetRenderedBuilder setResponse(final HttpServletResponse response) {
         this.response = response;
         return this;
     }
 
-    public HTMLPageAssetRenderedBuilder setSite(Host site) {
+    public HTMLPageAssetRenderedBuilder setSite(final Host site) {
         this.site = site;
         return this;
     }

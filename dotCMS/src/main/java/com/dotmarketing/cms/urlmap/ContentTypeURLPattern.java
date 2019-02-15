@@ -10,11 +10,10 @@ import org.jetbrains.annotations.NotNull;
  */
 class ContentTypeURLPattern implements Comparable<ContentTypeURLPattern> {
 
-    private String regEx;
-    private String structureInode;
-    private String URLpattern;
-    private List<String> fieldMatches;
-
+    private final String regEx;
+    private final String structureInode;
+    private final String URLpattern;
+    private final List<String> fieldMatches;
 
     public ContentTypeURLPattern(
             final String regEx,

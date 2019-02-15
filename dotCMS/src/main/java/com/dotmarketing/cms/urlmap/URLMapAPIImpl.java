@@ -119,7 +119,7 @@ public class URLMapAPIImpl implements URLMapAPI {
         for (final ContentTypeURLPattern contentTypeURLPattern : this.patternsCache) {
 
             final List<RegExMatch> matches = RegEX.findForUrlMap(url, contentTypeURLPattern.getRegEx());
-            if (matches != null && matches.size() > 0) {
+            if (matches != null && !matches.isEmpty()) {
                 return new Matches(contentTypeURLPattern, matches);
             }
         }
@@ -138,7 +138,7 @@ public class URLMapAPIImpl implements URLMapAPI {
         try {
             final Host systemHost = this.whostAPI.findSystemHost(this.wuserAPI.getSystemUser(), true);
             return String.format("+(conhost: %s conhost: %s)", host.getIdentifier(), systemHost.getIdentifier());
-        } catch (Exception e) {
+        } catch (DotDataException | DotSecurityException e) {
             Logger.error(URLMapFilter.class, e.getMessage()
                     + " : Unable to build host in query : ", e);
             return "";
@@ -307,7 +307,7 @@ public class URLMapAPIImpl implements URLMapAPI {
         final ContentTypeURLPattern patternChange;
         final List<RegExMatch> matches;
 
-        public Matches(ContentTypeURLPattern patternChange, List<RegExMatch> matches) {
+        public Matches(final ContentTypeURLPattern patternChange, final List<RegExMatch> matches) {
             this.patternChange = patternChange;
             this.matches = matches;
         }

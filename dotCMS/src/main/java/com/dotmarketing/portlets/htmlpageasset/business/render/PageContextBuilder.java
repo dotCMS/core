@@ -3,8 +3,7 @@ package com.dotmarketing.portlets.htmlpageasset.business.render;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.util.PageMode;
 import com.liferay.portal.model.User;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+
 
 /**
  * Builder for {@link PageContext}
