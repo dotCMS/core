@@ -116,8 +116,7 @@ public class GraphqlAPIImpl implements GraphqlAPI {
         }
 
         printSchema();
-//        return innerSchema;
-        return generateSchema();
+        return innerSchema;
     }
 
     @Override
@@ -309,8 +308,6 @@ public class GraphqlAPIImpl implements GraphqlAPI {
         rootTypeBuilder = rootTypeBuilder.fields(typesFieldsDefinitions);
 
         return new GraphQLSchema.Builder().query(rootTypeBuilder.build()).additionalTypes(graphQLTypes).build();
-
-//        return new GraphQLSchema(rootTypeBuilder.build(), null, graphQLTypes);
     }
 
     private ContentType getRelatedContentTypeForField(final Field field, final User user) throws DotSecurityException, DotDataException {
