@@ -308,8 +308,8 @@ public class ContentMap {
 			}
 			return ret;
 		} catch (Exception e) {
-			Logger.error(ContentMap.class,"Unable to retrive Field or Content: " + e.getMessage());
-			Logger.debug(ContentMap.class,"Unable to retrive Field or Content: " + e.getMessage(),e);
+			Logger.warn(ContentMap.class,"Unable to retrive Field or Content: " + fieldVariableName + " "+ e.getMessage());
+			Logger.debug(ContentMap.class,"Unable to retrive Field or Content: " + fieldVariableName + " "+ e.getMessage(),e);
 			return null;
 		}
 	}
@@ -328,7 +328,10 @@ public class ContentMap {
 			throws DotDataException, DotSecurityException {
 		ContentletRelationships relationships = (ContentletRelationships)conAPI.getFieldValue(content, field);
 		ContentletRelationshipRecords records = relationships.getRelationshipsRecords().get(0);
-		if (records.doesAllowOnlyOne()){
+		if(records.getRecords().isEmpty()) {
+		    return null;
+		}
+		else if (records.doesAllowOnlyOne()){
 			return new ContentMap(records.getRecords().get(0),user,
 					EDIT_OR_PREVIEW_MODE, host, context);
 		} else{

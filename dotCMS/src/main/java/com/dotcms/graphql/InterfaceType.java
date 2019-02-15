@@ -79,6 +79,7 @@ import static graphql.schema.GraphQLList.list;
 
 public enum InterfaceType {
     CONTENTLET,
+    CONTENT,
     FILEASSET,
     HTMLPAGE,
     PERSONA,
@@ -111,6 +112,9 @@ public enum InterfaceType {
         contentFields.put(MOD_USER_KEY, new TypeFetcher(CustomFieldType.USER.getType(), new UserDataFetcher()));
 
         interfaceTypes.put("CONTENTLET", createInterfaceType("Contentlet", contentFields, new ContentResolver()));
+
+
+        interfaceTypes.put("CONTENT", createInterfaceType("Content", contentFields, new ContentResolver()));
 
         final Map<String, TypeFetcher> fileAssetFields = new HashMap<>(contentFields);
         fileAssetFields.put(FILEASSET_FILE_NAME_FIELD_VAR, new TypeFetcher(GraphQLString));

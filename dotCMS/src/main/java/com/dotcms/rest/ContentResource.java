@@ -33,6 +33,7 @@ import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.uuid.shorty.ShortyId;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.db.HibernateUtil;
@@ -583,8 +584,7 @@ public class ContentResource {
      * @throws DotSecurityException
      */
     private String getXML(final List<Contentlet> cons, final HttpServletRequest request,
-            final HttpServletResponse response, final String render, final User user, final int depth)
-            throws DotDataException, IOException, DotSecurityException {
+            final HttpServletResponse response, final String render, final User user, final int depth){
 
         final StringBuilder sb = new StringBuilder();
         final XStream xstream = new XStream(new DomDriver());
@@ -662,9 +662,11 @@ public class ContentResource {
             final HttpServletResponse response,
             final String render, final User user, final int depth, final Contentlet contentlet,
             final Map<String, Object> objectMap, Set<Relationship> addedRelationships)
-            throws DotDataException, JSONException, IOException, DotSecurityException {
+            throws DotDataException, IOException, DotSecurityException {
 
+        Relationship relationship;
         final RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
+        final PermissionAPI permissionAPI     = APILocator.getPermissionAPI();
 
         //filter relationships fields
         final List<com.dotcms.contenttype.model.field.Field> fields = contentlet.getContentType()
@@ -681,7 +683,12 @@ public class ContentResource {
 
         for (com.dotcms.contenttype.model.field.Field field : fields) {
 
-            final Relationship relationship = relationshipAPI.getRelationshipFromField(field, user);
+            try{
+                relationship = relationshipAPI.getRelationshipFromField(field, user);
+            }catch(DotDataException | DotSecurityException e){
+                Logger.warn("Error getting relationship for field " + field, e.getMessage(), e);
+                continue;
+            }
 
             final List records = new ArrayList();
 
@@ -689,37 +696,42 @@ public class ContentResource {
                 continue;
             }
             addedRelationships.add(relationship);
-            ContentletRelationships.ContentletRelationshipRecords relationshipRecords = contentletRelationships.new ContentletRelationshipRecords(
+            final ContentletRelationships.ContentletRelationshipRecords relationshipRecords = contentletRelationships.new ContentletRelationshipRecords(
                     relationship,
                     relationshipAPI.isParent(relationship, contentlet.getContentType()));
 
             for (Contentlet relatedContent : contentlet.getRelated(field.variable())) {
-                switch (depth) {
-                    //returns a list of identifiers
-                    case 0:
-                        records.add(relatedContent.getIdentifier());
-                        break;
+                if (permissionAPI
+                        .doesUserHavePermission(relatedContent, PermissionAPI.PERMISSION_READ, user,
+                                true)) {
+                    switch (depth) {
+                        //returns a list of identifiers
+                        case 0:
+                            records.add(relatedContent.getIdentifier());
+                            break;
 
-                    //returns a list of related content objects
-                    case 1:
-                        records.add(getContentXML(relatedContent, request, response, render, user));
-                        break;
+                        //returns a list of related content objects
+                        case 1:
+                            records.add(
+                                    getContentXML(relatedContent, request, response, render, user));
+                            break;
 
-                    //returns a list of related content identifiers for each of the related content
-                    case 2:
-                        records.add(addRelationshipsToXML(request, response, render, user, 0,
-                                relatedContent,
-                                getContentXML(relatedContent, request, response, render, user),
-                                new HashSet<>(addedRelationships)));
-                        break;
+                        //returns a list of related content identifiers for each of the related content
+                        case 2:
+                            records.add(addRelationshipsToXML(request, response, render, user, 0,
+                                    relatedContent,
+                                    getContentXML(relatedContent, request, response, render, user),
+                                    new HashSet<>(addedRelationships)));
+                            break;
 
-                    //returns a list of hydrated related content for each of the related content
-                    case 3:
-                        records.add(addRelationshipsToXML(request, response, render, user, 1,
-                                relatedContent,
-                                getContentXML(relatedContent, request, response, render, user),
-                                new HashSet<>(addedRelationships)));
-                        break;
+                        //returns a list of hydrated related content for each of the related content
+                        case 3:
+                            records.add(addRelationshipsToXML(request, response, render, user, 1,
+                                    relatedContent,
+                                    getContentXML(relatedContent, request, response, render, user),
+                                    new HashSet<>(addedRelationships)));
+                            break;
+                    }
                 }
             }
 
@@ -731,7 +743,7 @@ public class ContentResource {
     }
 
 
-    private String getXMLContentIds(Contentlet con) throws DotDataException, IOException {
+    private String getXMLContentIds(Contentlet con) {
         XStream xstream = new XStream(new DomDriver());
         xstream.alias("content", Map.class);
         xstream.registerConverter(new MapEntryConverter());
@@ -746,7 +758,7 @@ public class ContentResource {
         return sb.toString();
     }
 
-    private String getJSONContentIds(Contentlet con) throws IOException {
+    private String getJSONContentIds(Contentlet con){
         JSONObject json = new JSONObject();
         try {
             json.put("inode", con.getInode());
@@ -771,8 +783,7 @@ public class ContentResource {
      * @throws DotDataException
      */
     private String getJSON(final List<Contentlet> cons, final HttpServletRequest request,
-            final HttpServletResponse response, final String render, final User user,  final int depth)
-            throws IOException, DotDataException {
+            final HttpServletResponse response, final String render, final User user,  final int depth){
         final JSONObject json = new JSONObject();
         final JSONArray jsonCons = new JSONArray();
 
@@ -786,7 +797,7 @@ public class ContentResource {
                     addRelationshipsToJSON(request, response, render, user, depth, c, jo, null);
                 }
             } catch (Exception e) {
-                Logger.warn(this.getClass(), "unable JSON contentlet " + c.getIdentifier());
+                Logger.warn(this.getClass(), "unable to get JSON contentlet " + c.getIdentifier());
                 Logger.debug(this.getClass(), "unable to find contentlet", e);
             }
         }
@@ -823,7 +834,10 @@ public class ContentResource {
             final JSONObject jsonObject, Set<Relationship> addedRelationships)
             throws DotDataException, JSONException, IOException, DotSecurityException {
 
+        Relationship relationship;
+
         final RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
+        final PermissionAPI permissionAPI     = APILocator.getPermissionAPI();
 
         //filter relationships fields
         final List<com.dotcms.contenttype.model.field.Field> fields = contentlet.getContentType().fields()
@@ -838,47 +852,59 @@ public class ContentResource {
 
         for (com.dotcms.contenttype.model.field.Field field:fields) {
 
-            final Relationship relationship = relationshipAPI.getRelationshipFromField(field, user);
+            try {
+                relationship = relationshipAPI.getRelationshipFromField(field, user);
+            }catch(DotDataException | DotSecurityException e){
+                Logger.warn("Error getting relationship for field " + field, e.getMessage(), e);
+                continue;
+            }
 
             if (addedRelationships.contains(relationship)){
                 continue;
             }
             addedRelationships.add(relationship);
 
-            final JSONArray jsonArray = new JSONArray();
-
-            ContentletRelationships.ContentletRelationshipRecords records = contentletRelationships.new ContentletRelationshipRecords(
+            final ContentletRelationships.ContentletRelationshipRecords records = contentletRelationships.new ContentletRelationshipRecords(
                     relationship,
                     relationshipAPI.isParent(relationship, contentlet.getContentType()));
 
+            final JSONArray jsonArray = new JSONArray();
+
             for (Contentlet relatedContent : contentlet.getRelated(field.variable())) {
-                switch (depth) {
-                    //returns a list of identifiers
-                    case 0:
-                        jsonArray.put(relatedContent.getIdentifier());
-                        break;
+                if (permissionAPI
+                        .doesUserHavePermission(relatedContent, PermissionAPI.PERMISSION_READ, user,
+                                true)) {
+                    switch (depth) {
+                        //returns a list of identifiers
+                        case 0:
+                            jsonArray.put(relatedContent.getIdentifier());
+                            break;
 
-                    //returns a list of related content objects
-                    case 1:
-                        jsonArray.put(contentletToJSON(relatedContent, request, response, render,
-                                user));
-                        break;
+                        //returns a list of related content objects
+                        case 1:
+                            jsonArray
+                                    .put(contentletToJSON(relatedContent, request, response, render,
+                                            user));
+                            break;
 
-                    //returns a list of related content identifiers for each of the related content
-                    case 2:
-                        jsonArray.put(addRelationshipsToJSON(request, response, render, user, 0,
-                                relatedContent,
-                                contentletToJSON(relatedContent, request, response, render, user),
-                                new HashSet<>(addedRelationships)));
-                        break;
+                        //returns a list of related content identifiers for each of the related content
+                        case 2:
+                            jsonArray.put(addRelationshipsToJSON(request, response, render, user, 0,
+                                    relatedContent,
+                                    contentletToJSON(relatedContent, request, response, render,
+                                            user),
+                                    new HashSet<>(addedRelationships)));
+                            break;
 
-                    //returns a list of hydrated related content for each of the related content
-                    case 3:
-                        jsonArray.put(addRelationshipsToJSON(request, response, render, user, 1,
-                                relatedContent,
-                                contentletToJSON(relatedContent, request, response, render, user),
-                                new HashSet<>(addedRelationships)));
-                        break;
+                        //returns a list of hydrated related content for each of the related content
+                        case 3:
+                            jsonArray.put(addRelationshipsToJSON(request, response, render, user, 1,
+                                    relatedContent,
+                                    contentletToJSON(relatedContent, request, response, render,
+                                            user),
+                                    new HashSet<>(addedRelationships)));
+                            break;
+                    }
                 }
             }
 
