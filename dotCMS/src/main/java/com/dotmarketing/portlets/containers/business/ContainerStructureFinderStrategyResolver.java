@@ -235,7 +235,7 @@ public class ContainerStructureFinderStrategyResolver {
 
         private String getVelocityVarName(final FileAsset asset) {
 
-            final String name = asset.getName();
+            final String name = getName(asset);
 
             return StringUtils.remove(name, FILE_EXTENSION);
         }
@@ -272,4 +272,15 @@ public class ContainerStructureFinderStrategyResolver {
             return Optional.of(contentType);
         }
     } // PathContainerStructureFinderStrategyImpl
+
+
+    private String getName(final FileAsset fileAsset){
+            try {
+                return APILocator.getContentletAPI().getName(fileAsset, APILocator.systemUser(), false);
+            } catch (DotSecurityException | DotDataException e) {
+                Logger.error(this, "Error determining contentlet name: ", e);
+            }
+            return fileAsset.getFileName();
+    }
+
 } // E:O:F:ContainerStructureFinderStrategyResolver.
