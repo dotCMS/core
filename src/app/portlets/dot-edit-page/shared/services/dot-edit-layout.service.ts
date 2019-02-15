@@ -28,16 +28,9 @@ export class DotEditLayoutService {
         const grid: DotLayoutGridBox[] = [];
 
         dotLayoutBody.rows.forEach((row, rowIndex) => {
-            row.columns.forEach((column) => {
+            row.columns.forEach(column => {
                 grid.push({
-                    containers: column.containers.map((dotPageContainer: DotPageContainer) => {
-                        return {
-                            container: this.templateContainersCacheService.get(
-                                dotPageContainer.identifier
-                            ),
-                            uuid: dotPageContainer.uuid
-                        };
-                    }),
+                    containers: this.getDotContainerColumnBoxFromDotPageContainer(column.containers),
                     config: Object.assign({}, DOT_LAYOUT_GRID_NEW_ROW_TEMPLATE, {
                         sizex: column.width,
                         col: column.leftOffset,
@@ -84,12 +77,20 @@ export class DotEditLayoutService {
      * @returns DotContainerColumnBox[]
      */
     getDotLayoutSidebar(containers: DotPageContainer[]): DotContainerColumnBox[] {
-        return containers.map((dotPageContainer: DotPageContainer) => {
-            return {
-                container: this.templateContainersCacheService.get(dotPageContainer.identifier),
-                uuid: dotPageContainer.uuid ? dotPageContainer.uuid : ''
-            };
-        });
+        return this.getDotContainerColumnBoxFromDotPageContainer(containers);
+    }
+
+    private getDotContainerColumnBoxFromDotPageContainer(containers: DotPageContainer[]): DotContainerColumnBox[] {
+        return containers
+            .filter(dotPageContainer =>
+                this.templateContainersCacheService.get(dotPageContainer.identifier)
+            )
+            .map((dotPageContainer: DotPageContainer) => {
+                return {
+                    container: this.templateContainersCacheService.get(dotPageContainer.identifier),
+                    uuid: dotPageContainer.uuid ? dotPageContainer.uuid : ''
+                };
+            });
     }
 
     private getLayoutRowFromLayoutGridBoxes(gridBoxes: DotLayoutGridBox[]): DotLayoutRow {
@@ -99,13 +100,15 @@ export class DotEditLayoutService {
                     <DotLayoutColumn>{
                         leftOffset: layoutGridBox.config.col,
                         width: layoutGridBox.config.sizex,
-                        containers: layoutGridBox.containers.map(
-                            (dotContainersColumnBox: DotContainerColumnBox) =>
-                                <DotPageContainer>{
-                                    identifier: dotContainersColumnBox.container.identifier,
-                                    uuid: dotContainersColumnBox.uuid
-                                }
-                        )
+                        containers: layoutGridBox.containers
+                            .filter(dotContainersColumnBox => dotContainersColumnBox.container)
+                            .map(
+                                (dotContainersColumnBox: DotContainerColumnBox) =>
+                                    <DotPageContainer>{
+                                        identifier: dotContainersColumnBox.container.identifier,
+                                        uuid: dotContainersColumnBox.uuid
+                                    }
+                            )
                     }
             )
         };
