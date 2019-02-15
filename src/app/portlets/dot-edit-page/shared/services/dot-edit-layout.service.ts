@@ -30,18 +30,7 @@ export class DotEditLayoutService {
         dotLayoutBody.rows.forEach((row, rowIndex) => {
             row.columns.forEach(column => {
                 grid.push({
-                    containers: column.containers
-                        .filter(dotPageContainer =>
-                            this.templateContainersCacheService.get(dotPageContainer.identifier)
-                        )
-                        .map((dotPageContainer: DotPageContainer) => {
-                            return {
-                                container: this.templateContainersCacheService.get(
-                                    dotPageContainer.identifier
-                                ),
-                                uuid: dotPageContainer.uuid
-                            };
-                        }),
+                    containers: this.getDotContainerColumnBoxFromDotPageContainer(column.containers),
                     config: Object.assign({}, DOT_LAYOUT_GRID_NEW_ROW_TEMPLATE, {
                         sizex: column.width,
                         col: column.leftOffset,
@@ -88,6 +77,10 @@ export class DotEditLayoutService {
      * @returns DotContainerColumnBox[]
      */
     getDotLayoutSidebar(containers: DotPageContainer[]): DotContainerColumnBox[] {
+        return this.getDotContainerColumnBoxFromDotPageContainer(containers);
+    }
+
+    private getDotContainerColumnBoxFromDotPageContainer(containers: DotPageContainer[]): DotContainerColumnBox[] {
         return containers
             .filter(dotPageContainer =>
                 this.templateContainersCacheService.get(dotPageContainer.identifier)
