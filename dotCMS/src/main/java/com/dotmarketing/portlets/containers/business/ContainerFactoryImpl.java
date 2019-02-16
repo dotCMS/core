@@ -76,7 +76,7 @@ public class ContainerFactoryImpl implements ContainerFactory {
 
 		try {
 
-			containers.addAll(this.findHostContainers(parentPermissionable, APILocator.systemUser()));
+			containers.addAll(this.findHostContainers(parentPermissionable, APILocator.systemUser(), false));
 		} catch (DotSecurityException e) {
 			throw new DotDataException(e);
 		}
@@ -87,13 +87,14 @@ public class ContainerFactoryImpl implements ContainerFactory {
 		return containers;
 	}
 
+	@Override
 	@SuppressWarnings("unchecked")
-	public List<Container> findAllContainers() throws DotDataException {
+	public List<Container> findAllContainers(final Host currentHost) throws DotDataException {
 
 		final List<Container> containers = new ArrayList<>();
 
 		try {
-			containers.addAll(this.findAllHostFolderAssetContainers());
+			containers.addAll(this.findAllHostFolderAssetContainers(currentHost));
 		} catch (DotSecurityException e) {
 			throw new DotDataException(e);
 		}
@@ -154,19 +155,19 @@ public class ContainerFactoryImpl implements ContainerFactory {
 	public Container getLiveContainerByFolderPath(final String path, final Host host, final User user,
 												  final boolean respectFrontEndPermissions) throws DotSecurityException, DotDataException {
 
-		return this.getContainerByFolder(host, this.folderAPI.findFolderByPath(path, host, user, respectFrontEndPermissions), user,true);
+		return this.getContainerByFolder(host, this.folderAPI.findFolderByPath(path, host, user, respectFrontEndPermissions), user,true, false);
 	}
 
     @Override
     public Container getWorkingContainerByFolderPath(final String path, final Host host, final User user,
                                                      final boolean respectFrontEndPermissions) throws DotSecurityException, DotDataException {
 
-        return this.getContainerByFolder(host, this.folderAPI.findFolderByPath(path, host, user, respectFrontEndPermissions), user,false);
+        return this.getContainerByFolder(host, this.folderAPI.findFolderByPath(path, host, user, respectFrontEndPermissions), user,false, false);
     }
 
 
     @Override
-    public Container getContainerByFolder(final Host host, final Folder folder, final User user, final boolean showLive) throws DotSecurityException, DotDataException {
+	public Container getContainerByFolder(final Host host, final Folder folder, final User user, final boolean showLive, final boolean includeHostOnPath) throws DotSecurityException, DotDataException {
 
         if (!this.isValidContainerPath (folder) ||
 				!hasContainerAsset(host, folder)) {
@@ -176,7 +177,7 @@ public class ContainerFactoryImpl implements ContainerFactory {
 					Constants.CONTAINER_META_INFO_FILE_NAME);
 		}
 
-        return ContainerByFolderAssetsUtil.getInstance().fromAssets (host, folder, this.findContainerAssets(folder, user, showLive), showLive);
+        return ContainerByFolderAssetsUtil.getInstance().fromAssets (host, folder, this.findContainerAssets(folder, user, showLive), showLive, includeHostOnPath);
     }
 
     /*
@@ -323,7 +324,7 @@ public class ContainerFactoryImpl implements ContainerFactory {
 
 			final Host host     			 = this.hostAPI.find(hostId, user, false);
 			final List<Folder> subFolders    = this.findContainersAssetsByHost(host, user);
-			final List<Container> containers = this.getFolderContainers(host, user, subFolders);
+			final List<Container> containers = this.getFolderContainers(host, user, subFolders, false);
 
 			if (UtilMethods.isSet(orderByParam)) {
 				switch (orderByParam.toLowerCase()) {
@@ -359,7 +360,7 @@ public class ContainerFactoryImpl implements ContainerFactory {
 	 * @throws DotSecurityException
 	 * @throws DotDataException
 	 */
-	private Collection<Container> findAllHostFolderAssetContainers() throws DotSecurityException, DotDataException {
+	private Collection<Container> findAllHostFolderAssetContainers(final Host currentHost) throws DotSecurityException, DotDataException {
 
 		final User       user  = APILocator.systemUser();
 		final List<Host> hosts = this.hostAPI.findAll(user, false);
@@ -367,7 +368,7 @@ public class ContainerFactoryImpl implements ContainerFactory {
 
 		for (final Host host : hosts) {
 
-			containers.addAll(this.findHostContainers(host, user));
+			containers.addAll(this.findHostContainers(host, user, !currentHost.getIdentifier().equals(host.getIdentifier())));
 		}
 
 		return containers.build();
@@ -377,14 +378,15 @@ public class ContainerFactoryImpl implements ContainerFactory {
 	 * Find host container, check the permissions based on an user
 	 * @param host {@link Host}
 	 * @param user {@link User}
+	 * @param includeHostOnPath {@link String} if the host is the same of the requested, this should be false, otherwise true in order to qualified the whole  path with the hostname to on the container path
 	 * @return List
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
-	private List<Container> findHostContainers(final Host host, final User user) throws DotDataException, DotSecurityException {
+	private List<Container> findHostContainers(final Host host, final User user, final boolean includeHostOnPath) throws DotDataException, DotSecurityException {
 
 		final List<Folder> subFolders = this.findContainersAssetsByHost(host, user);
-		return this.getFolderContainers(host, user, subFolders);
+		return this.getFolderContainers(host, user, subFolders, includeHostOnPath);
 	}
 
 	/**
@@ -463,17 +465,20 @@ public class ContainerFactoryImpl implements ContainerFactory {
 	 * @param host {@link Host}
 	 * @param user {@link User}
 	 * @param subFolders {@link List}
+	 * @param includeHostOnPath {@link Boolean} true if you want to  include the host on the container path
 	 * @return List of Containers
 	 * @throws DotDataException
 	 */
-	private List<Container> getFolderContainers(final Host host, final User user, final List<Folder> subFolders) throws DotDataException {
+	private List<Container> getFolderContainers(final Host host, final User user,
+												final List<Folder> subFolders, final boolean includeHostOnPath) throws DotDataException {
 
 		final List<Container> containers = new ArrayList<>();
 		for (final Folder subFolder : subFolders) {
 
 			try {
 			    final User      userFinal = null != user? user: APILocator.systemUser();
-				final Container container = this.getContainerByFolder(null != host?host:APILocator.getHostAPI().find(subFolder.getHostId(), user, false), subFolder, userFinal, false);
+				final Container container = this.getContainerByFolder(null != host? host:APILocator.getHostAPI().find(subFolder.getHostId(), user, false),
+						subFolder, userFinal, false, includeHostOnPath);
 				containers.add(container);
 			} catch (DotSecurityException e) {
 
@@ -639,7 +644,7 @@ public class ContainerFactoryImpl implements ContainerFactory {
 
 						final Host host           = this.hostAPI.find(folder.getHostId(), APILocator.systemUser(), false);
 						try {
-							final Container container = this.getContainerByFolder(host, folder, APILocator.systemUser(), false);
+							final Container container = this.getContainerByFolder(host, folder, APILocator.systemUser(), false, false);
 
 							if (null != container) {
 

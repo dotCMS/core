@@ -57,22 +57,24 @@ public class ContainerAjax {
 		final HttpServletRequest request   = WebContextFactory.get().getHttpServletRequest();
 		final User user 				   = userWebAPI.getLoggedInUser(request);
 		final boolean respectFrontendRoles = userWebAPI.isLoggedToFrontend(request);
+		final String baseHostId             = (String) request.getSession().getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);
 
 		List<Container> fullListContainers = new ArrayList<>();
 
 		try {
 			if(UtilMethods.isSet(query.get("hostId"))) {
-				Host host = hostAPI.find(query.get("hostId"), user, respectFrontendRoles);
+				final Host host = hostAPI.find(query.get("hostId"), user, respectFrontendRoles);
 				fullListContainers = containerAPI.findContainersUnder(host);
 			} else {
-				fullListContainers = containerAPI.findAllContainers(user, respectFrontendRoles);
+				final Host host = hostAPI.find(baseHostId, user, respectFrontendRoles);
+				fullListContainers = containerAPI.findAllContainers(host, user, respectFrontendRoles);
 			}
 		}catch (DotDataException e) {
 			Logger.error(this, e.getMessage(), e);
 			throw new DotDataException(e.getMessage(), e);
 		}
 
-		final String baseHostId = (String) request.getSession().getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);
+
 		Collections.sort(fullListContainers, new ContainerComparator(baseHostId));
 		final Map<String, Object> results    = new HashMap<>();
 		final List<Map<String, Object>> list = new LinkedList<> ();

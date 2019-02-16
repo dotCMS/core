@@ -32,6 +32,7 @@ import io.vavr.Tuple;
 import io.vavr.Tuple2;
 
 import java.util.*;
+import java.util.function.Supplier;
 
 /**
  * Implementation class of the {@link ContainerAPI}.
@@ -278,21 +279,25 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 
 	@CloseDBIfOpened
 	@Override
-	public Container getWorkingContainerByFolderPath(final String fullContainerPathWithHost, final User user, final boolean respectFrontEndPermissions) throws DotSecurityException, DotDataException {
+	public Container getWorkingContainerByFolderPath(final String fullContainerPathWithHost, final User user,
+                                                     final boolean respectFrontEndPermissions, final Supplier<Host> resourceHost) throws DotSecurityException, DotDataException {
 
-		final Tuple2<String, Host> pathAndHostTuple = this.getContainerPathHost(fullContainerPathWithHost, user);
+		final Tuple2<String, Host> pathAndHostTuple = this.getContainerPathHost(fullContainerPathWithHost, user, resourceHost);
 		return this.getWorkingContainerByFolderPath(pathAndHostTuple._1, pathAndHostTuple._2, user, respectFrontEndPermissions);
 	}
 
-	private Tuple2<String, Host> getContainerPathHost(final String containerIdOrPath, final User user) throws DotSecurityException, DotDataException {
+	private Tuple2<String, Host> getContainerPathHost(final String containerIdOrPath, final User user,
+                                                      final Supplier<Host> resourceHost) throws DotSecurityException, DotDataException {
 
 		final HostAPI hostAPI        = APILocator.getHostAPI();
 		final int hostIndicatorIndex = containerIdOrPath.indexOf(HOST_INDICATOR);
 		final int applicationContainerFolderStartsIndex =
 				containerIdOrPath.indexOf(Constants.CONTAINER_FOLDER_PATH);
-		final String hostName = containerIdOrPath.substring(hostIndicatorIndex+2, applicationContainerFolderStartsIndex);
-		final String path     = containerIdOrPath.substring(applicationContainerFolderStartsIndex);
-		final Host host 	  = hostAPI.findByName(hostName, user, false);
+		final boolean hasHost = hostIndicatorIndex != -1;
+		final String hostName = hasHost?
+                containerIdOrPath.substring(hostIndicatorIndex+2, applicationContainerFolderStartsIndex):null;
+		final String path     = hasHost?containerIdOrPath.substring(applicationContainerFolderStartsIndex):containerIdOrPath;
+		final Host host 	  = hasHost?hostAPI.findByName(hostName, user, false):resourceHost.get();
 
 		return Tuple.of(path, null == host? hostAPI.findDefaultHost(user, false): host);
 	}
@@ -317,7 +322,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 	@Override
 	public Container getContainerByFolder(final Folder folder, final Host host, final User user, final boolean showLive) throws DotSecurityException, DotDataException {
 
-		return this.containerFactory.getContainerByFolder(host, folder, user, showLive);
+		return this.containerFactory.getContainerByFolder(host, folder, user, showLive, false);
 	}
 
     /**
@@ -358,6 +363,15 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 
 		return this.containerFactory.getLiveContainerByFolderPath(path, host, user, respectFrontEndPermissions);
 	}
+
+    @CloseDBIfOpened
+    @Override
+    public Container getLiveContainerByFolderPath(final String fullContainerPathWithHost, final User user,
+                                                  final boolean respectFrontEndPermissions, final Supplier<Host> resourceHost) throws DotSecurityException, DotDataException {
+
+        final Tuple2<String, Host> pathAndHostTuple = this.getContainerPathHost(fullContainerPathWithHost, user, resourceHost);
+        return this.getLiveContainerByFolderPath(pathAndHostTuple._1, pathAndHostTuple._2, user, respectFrontEndPermissions);
+    }
 
     /**
      * Get the lie version of the container
@@ -651,11 +665,19 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 	@CloseDBIfOpened
 	@Override
 	public List<Container> findAllContainers(final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+
+		return this.findAllContainers(APILocator.getHostAPI().findDefaultHost(user, respectFrontendRoles), user, respectFrontendRoles);
+	}
+
+
+	@CloseDBIfOpened
+	@Override
+	public List<Container> findAllContainers(final Host currentHost, final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 		final RoleAPI roleAPI = APILocator.getRoleAPI();
 		return user != null
 				&& roleAPI.doesUserHaveRole(user, roleAPI.loadCMSAdminRole())?
-			this.containerFactory.findAllContainers():
-			this.containerFactory.findContainers(user, false, null, null, null,null, null, 0, -1, "title ASC");
+				this.containerFactory.findAllContainers(currentHost):
+				this.containerFactory.findContainers(user, false, null, null, null,null, null, 0, -1, "title ASC");
 	}
 
 	@CloseDBIfOpened

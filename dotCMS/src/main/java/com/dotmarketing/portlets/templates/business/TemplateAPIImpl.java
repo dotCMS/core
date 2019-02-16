@@ -15,7 +15,8 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.InvalidLicenseException;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
-import com.dotmarketing.portlets.containers.business.ContainerByFolderAssetsUtil;
+import com.dotmarketing.portlets.containers.business.ContainerFinderByIdOrPathStrategy;
+import com.dotmarketing.portlets.containers.business.WorkingContainerFinderByIdOrPathStrategyResolver;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI.TemplateContainersReMap.ContainerRemapTuple;
@@ -27,8 +28,10 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
+import com.rainerhahnekamp.sneakythrow.Sneaky;
 
 import java.util.*;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 
@@ -267,12 +270,14 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 
 				for (final String containerIdOrPath : containersId) {
 
-					final Container container =
-							Source.FILE == ContainerByFolderAssetsUtil.getInstance()
-									.getContainerSourceFromContainerIdOrPath(containerIdOrPath)?
-									containerAPI.getWorkingContainerByFolderPath(containerIdOrPath, user, false):
-									containerAPI.getWorkingContainerById(containerIdOrPath, user, false);
+					final WorkingContainerFinderByIdOrPathStrategyResolver strategyResolver =
+							WorkingContainerFinderByIdOrPathStrategyResolver.getInstance();
+					final Optional<ContainerFinderByIdOrPathStrategy> strategy              = strategyResolver.get(containerIdOrPath);
+					final Supplier<Host> resourceHostSupplier								= Sneaky.sneaked(()->getTemplateHost(template));
 
+					final Container container = strategy.isPresent()?
+							strategy.get().apply(containerIdOrPath, user, false, resourceHostSupplier):
+							strategyResolver.getDefaultStrategy().apply(containerIdOrPath, user, false, resourceHostSupplier);
 
 					if (container == null) {
 						continue;

@@ -107,7 +107,8 @@ public class ContainerByFolderAssetsUtil {
     }
 
     public Container fromAssets(final Host host, final Folder containerFolder,
-                                final List<FileAsset> assets, final boolean showLive) throws DotDataException {
+                                final List<FileAsset> assets, final boolean showLive,
+                                final boolean includeHostOnPath) throws DotDataException {
 
         final ImmutableList.Builder<FileAsset> containerStructures =
                 new ImmutableList.Builder<>();
@@ -150,7 +151,7 @@ public class ContainerByFolderAssetsUtil {
         }
 
         this.setContainerData(host, containerFolder, metaInfoFileAsset, containerStructures.build(), container,
-                preLoop, postLoop, containerMetaInfo.get());
+                preLoop, postLoop, containerMetaInfo.get(), includeHostOnPath);
 
         return container;
     }
@@ -188,7 +189,8 @@ public class ContainerByFolderAssetsUtil {
                                   final FileAssetContainer container,
                                   final Optional<String> preLoop,
                                   final Optional<String> postLoop,
-                                  final String containerMetaInfo) {
+                                  final String containerMetaInfo,
+                                  final boolean includeHostOnPath) {
 
         container.setIdentifier (metaInfoFileAsset.getIdentifier());
         container.setInode      (metaInfoFileAsset.getInode());
@@ -202,7 +204,7 @@ public class ContainerByFolderAssetsUtil {
         container.setMaxContentlets(DEFAULT_MAX_CONTENTLETS);
         container.setLanguage(metaInfoFileAsset.getLanguageId());
         container.setFriendlyName((String)metaInfoFileAsset.getMap().getOrDefault(DESCRIPTION, container.getTitle()));
-        container.setPath(this.buildPath(host, containerFolder));
+        container.setPath(this.buildPath(host, containerFolder, includeHostOnPath));
 
         preLoop.ifPresent (value -> container.setPreLoop (value));
         postLoop.ifPresent(value -> container.setPostLoop(value));
@@ -211,9 +213,11 @@ public class ContainerByFolderAssetsUtil {
         container.setContainerStructuresAssets(containerStructures);
     }
 
-    private String buildPath(final Host host, final Folder containerFolder) {
+    private String buildPath(final Host host, final Folder containerFolder, final boolean includeHostOnPath) {
 
-        return builder(HOST_INDICATOR, host.getHostname(), containerFolder.getPath()).toString();
+        return includeHostOnPath?
+                builder(HOST_INDICATOR, host.getHostname(), containerFolder.getPath()).toString():
+                containerFolder.getPath();
     }
 
     private boolean isContainerMetaInfo(final FileAsset fileAsset, final boolean showLive) {
