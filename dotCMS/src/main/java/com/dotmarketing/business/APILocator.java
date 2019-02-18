@@ -9,6 +9,7 @@ import com.dotcms.graphql.business.GraphqlAPIImpl;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPIFactory;
 import com.dotcms.api.tree.TreeableAPI;
+import com.dotcms.auth.providers.jwt.factories.JWTokenAPI;
 import com.dotcms.cluster.business.ServerAPI;
 import com.dotcms.cluster.business.ServerAPIImpl;
 import com.dotcms.cms.login.LoginServiceAPI;
@@ -906,6 +907,15 @@ public class APILocator extends Locator<APIIndex>{
 	public static ThemeAPI getThemeAPI() {
 		return (ThemeAPI) getInstance(APIIndex.THEME_API);
 	}
+	
+    /**
+     * Creates a single instance of the {@link JWTTokenAPI} class.
+     *
+     * @return The {@link JWTTokenAPI} class.
+     */
+    public static JWTokenAPI getJWTTokenAPI() {
+        return (JWTokenAPI) getInstance(APIIndex.JWT_TOKEN_ISSUE_API);
+    }
 
 	/**
 	 * Generates a unique instance of the specified dotCMS API.
@@ -1042,6 +1052,7 @@ enum APIIndex
 	HTMLPAGE_ASSET_RENDERED_API,
 	CLUSTER_API,
 	THEME_API,
+	JWT_TOKEN_ISSUE_API,
 	GRAPHQL_API;
 
 
@@ -1116,6 +1127,8 @@ enum APIIndex
 			case CLUSTER_API: return new ClusterAPIImpl();
 			case THEME_API: return new ThemeAPIImpl();
 			case GRAPHQL_API: return  new GraphqlAPIImpl();
+	        case JWT_TOKEN_ISSUE_API: return new JWTokenAPI();
+	        
 		}
 		throw new AssertionError("Unknown API index: " + this);
 	}
