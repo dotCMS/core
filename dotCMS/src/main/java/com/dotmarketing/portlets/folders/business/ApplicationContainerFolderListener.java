@@ -1,5 +1,8 @@
 package com.dotmarketing.portlets.folders.business;
 
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
+import static com.dotmarketing.util.StringUtils.builder;
+
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.business.ContentTypeAPI;
@@ -18,6 +21,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.MultiTreeAPI;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.containers.model.FileAssetContainer;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -26,12 +30,8 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-
 import java.util.List;
 import java.util.Optional;
-
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
-import static com.dotmarketing.util.StringUtils.builder;
 
 /**
  * Folder listener for the application/container folder
@@ -267,7 +267,7 @@ public class ApplicationContainerFolderListener implements FolderListener {
 
     private void invalidateContainerCache(final Container container, final Folder containerFolder) {
 
-        final Container fileBasedContainer = new Container();
+        final Container fileBasedContainer = new FileAssetContainer();
 
         fileBasedContainer.setIdentifier(containerFolder.getPath());
         new ContainerLoader().invalidate(fileBasedContainer);

@@ -9,6 +9,7 @@ import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.containers.model.FileAssetContainer;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
@@ -18,6 +19,7 @@ import java.io.StringWriter;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
+import org.apache.velocity.runtime.resource.ResourceManager;
 
 /**
  * @author will
@@ -50,15 +52,30 @@ public class ContainerLoader implements DotLoader {
 
 
     @Override
-    public void invalidate(Object obj, PageMode mode) {
+    public void invalidate(final Object obj, final PageMode mode) {
         final Container container = (Container) obj;
+        if (container instanceof FileAssetContainer) {
+            invalidate(FileAssetContainer.class.cast(container), mode);
+        } else {
+            final VelocityResourceKey key =
+                    new VelocityResourceKey(container, mode);
+            final DotResourceCache veloctyResourceCache =
+                    CacheLocator.getVeloctyResourceCache();
+            veloctyResourceCache.remove(key);
+        }
+    }
 
-        final VelocityResourceKey key =
-                new VelocityResourceKey(container, mode);
-        final DotResourceCache    veloctyResourceCache =
-                CacheLocator.getVeloctyResourceCache();
-
-        veloctyResourceCache.remove(key);
+    private void invalidate(final FileAssetContainer fileAssetContainer, final PageMode mode) {
+        final VelocityResourceKey key = new VelocityResourceKey(fileAssetContainer,
+                fileAssetContainer.getIdentifier(), mode);
+        final DotResourceCache velocityResourceCache = CacheLocator.getVeloctyResourceCache();
+        // Here's an example of how the key actually looks like when stored in the the velocity 2 cache.
+        // `1/LIVE/a050073a-a31e-4aab-9307-86bfb248096a/1550262106697.container`
+        // However when calling  DotResourceLoader.getResourceStream(path..
+        // it looks like this: `/LIVE/a050073a-a31e-4aab-9307-86bfb248096a/1550262106697.container` no leading `1`
+        // That leading character `1` comes from ResourceManagerImpl.getResource(.. it's the resource type defined in ResourceManager.RESOURCE_TEMPLATE
+        velocityResourceCache
+                .remove(String.format("%d%s", ResourceManager.RESOURCE_TEMPLATE, key.toString()));
     }
 
     private InputStream buildVelocity(Container container, String uuid, PageMode mode, String filePath) throws DotDataException, DotSecurityException {
