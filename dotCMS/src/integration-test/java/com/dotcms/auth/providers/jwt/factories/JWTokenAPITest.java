@@ -11,7 +11,7 @@ import java.util.Date;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import com.dotcms.auth.providers.jwt.beans.JWTokenIssue;
+import com.dotcms.auth.providers.jwt.beans.JWTokenIssued;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -54,12 +54,12 @@ public class JWTokenAPITest {
      * ready to be persisted in the DB
      * @return
      */
-    JWTokenIssue getLoadedToken() {
+    JWTokenIssued getLoadedToken() {
         
         final Date expireDate = futureDate(Duration.ofDays(30));
         final Date issueDate = new Date();
         final Date revokedDate = futureDate(Duration.ofDays(2));
-        return JWTokenIssue.builder()
+        return JWTokenIssued.builder()
                 .withAllowFromNetwork("withAllowFromNetwork")
                 .withClusterId("withClusterId")
                 .withExpires(expireDate)
@@ -79,21 +79,21 @@ public class JWTokenAPITest {
     @Test
     public void test_JWT_Issue_Cache() {
 
-        JWTokenIssue testToken = JWTokenIssue.builder().withUserId("userId").withExpires(futureDate(Duration.ofDays(30))).build();
+        JWTokenIssued testToken = JWTokenIssued.builder().withUserId("userId").withExpires(futureDate(Duration.ofDays(30))).build();
         
         // save token in db
-        JWTokenIssue issued = jwTokenAPI.persistJWTokenIssue(testToken, APILocator.systemUser());
+        JWTokenIssued issued = jwTokenAPI.persistJWTokenIssued(testToken, APILocator.systemUser());
 
         // not in cache
         assert(!cache.getToken(issued.id).isPresent());
         
         // loads cache, returns from db
-        JWTokenIssue issuedFromDb = jwTokenAPI.findJWTokenIssue(issued.id).get();
+        JWTokenIssued issuedFromDb = jwTokenAPI.findJWTokenIssued(issued.id).get();
         
         // in cache
         assert(cache.getToken(issued.id).isPresent());
         
-        JWTokenIssue issuedFromCache = cache.getToken(issued.id).get();
+        JWTokenIssued issuedFromCache = cache.getToken(issued.id).get();
         
         // this is the same in memory object as was returned from db
         assert(issuedFromCache == issuedFromDb);
@@ -116,13 +116,13 @@ public class JWTokenAPITest {
     @Test
     public void test_JWT_Issue_Persistance_Works() {
 
-        JWTokenIssue fatToken = getLoadedToken();
+        JWTokenIssued fatToken = getLoadedToken();
         
         
-        JWTokenIssue issued = jwTokenAPI.persistJWTokenIssue(fatToken,APILocator.systemUser());
+        JWTokenIssued issued = jwTokenAPI.persistJWTokenIssued(fatToken,APILocator.systemUser());
 
 
-        JWTokenIssue issuedFromDb = jwTokenAPI.findJWTokenIssue(issued.id).get();
+        JWTokenIssued issuedFromDb = jwTokenAPI.findJWTokenIssued(issued.id).get();
         
         
         
@@ -135,11 +135,11 @@ public class JWTokenAPITest {
     
     @Test
     public void test_JWT_Issue_Builder() {
-        JWTokenIssue fatToken = getLoadedToken();
+        JWTokenIssued fatToken = getLoadedToken();
 
-        JWTokenIssue issued = jwTokenAPI.persistJWTokenIssue(fatToken,APILocator.systemUser());
+        JWTokenIssued issued = jwTokenAPI.persistJWTokenIssued(fatToken,APILocator.systemUser());
 
-        JWTokenIssue testToken=JWTokenIssue.from(fatToken).withId(issued.id).build();
+        JWTokenIssued testToken=JWTokenIssued.from(fatToken).withId(issued.id).build();
         
         // testing equals method
         assertEquals(issued, testToken);
@@ -151,23 +151,23 @@ public class JWTokenAPITest {
     public void test_JWT_Issue_isValid() {
 
         
-        JWTokenIssue fatToken = JWTokenIssue.from(getLoadedToken()).withRevoked(new Date()).build();
+        JWTokenIssued fatToken = JWTokenIssued.from(getLoadedToken()).withRevoked(new Date()).build();
         // no id, not valid
         assert(!fatToken.isValid());
-        fatToken = JWTokenIssue.from(getLoadedToken()).withRevoked(null).build();
-        fatToken = jwTokenAPI.persistJWTokenIssue(fatToken,APILocator.systemUser());
+        fatToken = JWTokenIssued.from(getLoadedToken()).withRevoked(null).build();
+        fatToken = jwTokenAPI.persistJWTokenIssued(fatToken,APILocator.systemUser());
         
         // now has id, valid
         assert(fatToken.isValid());
         
-        JWTokenIssue issuedFromDb = jwTokenAPI.findJWTokenIssue(fatToken.id).get();
+        JWTokenIssued issuedFromDb = jwTokenAPI.findJWTokenIssued(fatToken.id).get();
         assert(issuedFromDb.isValid());
         
         //revoking
         jwTokenAPI.revokeToken(fatToken);
         
         //should be invalid
-        issuedFromDb = jwTokenAPI.findJWTokenIssue(fatToken.id).get();
+        issuedFromDb = jwTokenAPI.findJWTokenIssued(fatToken.id).get();
         assert(!issuedFromDb.isValid());
         
 
@@ -183,7 +183,7 @@ public class JWTokenAPITest {
         cal.add(Calendar.MONTH, 1);
         cal.set(Calendar.MILLISECOND, 0);
         final Date expireDate = cal.getTime();
-        JWTokenIssue issue = jwTokenAPI.persistJWTokenIssue(USER_ID, expireDate, REQUESTING_USER_ID, REQUESTING_IP);
+        JWTokenIssued issue = jwTokenAPI.persistJWTokenIssued(USER_ID, expireDate, REQUESTING_USER_ID, REQUESTING_IP);
 
 
         assertEquals(REQUESTING_IP, issue.requestingIp);

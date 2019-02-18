@@ -21,8 +21,8 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
  * @since Jun 14, 2016
  */
 
-@JsonDeserialize(builder = JWTokenIssue.Builder.class)
-public class JWTokenIssue implements Serializable {
+@JsonDeserialize(builder = JWTokenIssued.Builder.class)
+public class JWTokenIssued implements Serializable {
 
     /**
      * 
@@ -42,7 +42,7 @@ public class JWTokenIssue implements Serializable {
 
 
     @Generated("SparkTools")
-    private JWTokenIssue(Builder builder) {
+    private JWTokenIssued(Builder builder) {
         this.id = builder.id;
         this.userId = builder.userId;
         this.requestingUserId = builder.requestingUserId;
@@ -129,7 +129,7 @@ public class JWTokenIssue implements Serializable {
             return false;
         if (getClass() != obj.getClass())
             return false;
-        JWTokenIssue other = (JWTokenIssue) obj;
+        JWTokenIssued other = (JWTokenIssued) obj;
         if (allowFromNetwork == null) {
             if (other.allowFromNetwork != null)
                 return false;
@@ -188,7 +188,7 @@ public class JWTokenIssue implements Serializable {
 
 
         /**
-         * Creates builder to build {@link JWTokenIssue}.
+         * Creates builder to build {@link JWTokenIssued}.
          * @return created builder
          */
         @Generated("SparkTools")
@@ -198,18 +198,18 @@ public class JWTokenIssue implements Serializable {
 
 
         /**
-         * Creates a builder to build {@link JWTokenIssue} and initialize it with the given object.
+         * Creates a builder to build {@link JWTokenIssued} and initialize it with the given object.
          * @param jWTokenIssue to initialize the builder with
          * @return created builder
          */
         @Generated("SparkTools")
-        public static Builder from(JWTokenIssue jWTokenIssue) {
+        public static Builder from(JWTokenIssued jWTokenIssue) {
             return new Builder(jWTokenIssue);
         }
 
 
         /**
-         * Builder to build {@link JWTokenIssue}.
+         * Builder to build {@link JWTokenIssued}.
          */
         @Generated("SparkTools")
         public static final class Builder {
@@ -226,7 +226,7 @@ public class JWTokenIssue implements Serializable {
             private String clusterId;
             private Builder() {}
 
-            private Builder(JWTokenIssue jWTokenIssue) {
+            private Builder(JWTokenIssued jWTokenIssue) {
                 this.id = jWTokenIssue.id;
                 this.userId = jWTokenIssue.userId;
                 this.requestingUserId = jWTokenIssue.requestingUserId;
@@ -296,14 +296,14 @@ public class JWTokenIssue implements Serializable {
                 return this;
             }
 
-            public JWTokenIssue build() {
+            public JWTokenIssued build() {
 
                 if (userId == null ||  expires == null) {
                     throw new DotStateException("JWTokenIsse is not valid - needs an userId, a requestingUser and an expires date");
                 }
 
 
-                return new JWTokenIssue(this);
+                return new JWTokenIssued(this);
             }
         }
 

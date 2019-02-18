@@ -5,14 +5,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import com.dotcms.auth.providers.jwt.beans.JWTokenIssue;
+import com.dotcms.auth.providers.jwt.beans.JWTokenIssued;
 import com.dotcms.util.transform.DBTransformer;
 
 
-public class JWTokenDBTransformer implements DBTransformer<JWTokenIssue>{
+public class JWTokenDBTransformer implements DBTransformer<JWTokenIssued>{
 
     
-    private final List<JWTokenIssue> tokenList;
+    private final List<JWTokenIssued> tokenList;
     public JWTokenDBTransformer(final List<Map<String, Object>> dbMapList) {
         tokenList = dbMapList
                 .stream()
@@ -22,7 +22,7 @@ public class JWTokenDBTransformer implements DBTransformer<JWTokenIssue>{
 
     
     @Override
-    public List<JWTokenIssue> asList() {
+    public List<JWTokenIssued> asList() {
 
         return tokenList;
     }
@@ -43,9 +43,9 @@ public class JWTokenDBTransformer implements DBTransformer<JWTokenIssue>{
                 + "create index idx_jwt_token_issue_user ON jwt_token_issue (token_userid);";
      *
      */
-    private JWTokenIssue fromMap(Map<String, Object> dbMap) {
+    private JWTokenIssued fromMap(Map<String, Object> dbMap) {
         
-        return JWTokenIssue
+        return JWTokenIssued
                 .builder()
                 .withId((String) dbMap.get("token_id"))
                 .withUserId((String) dbMap.get("token_userid"))

@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import com.dotcms.auth.providers.jwt.beans.JWTokenIssue;
+import com.dotcms.auth.providers.jwt.beans.JWTokenIssued;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -47,16 +47,16 @@ public class JWTokenAPI {
     }
 
 
-    private final static JWTokenIssue TOKEN_404 =
-            JWTokenIssue.builder().withId(TOKEN_404_STR).withExpires(new Date()).withUserId(TOKEN_404_STR).build();
+    private final static JWTokenIssued TOKEN_404 =
+            JWTokenIssued.builder().withId(TOKEN_404_STR).withExpires(new Date()).withUserId(TOKEN_404_STR).build();
 
 
-    public Optional<JWTokenIssue> findJWTokenIssue(final String tokenId) {
+    public Optional<JWTokenIssued> findJWTokenIssued(final String tokenId) {
 
-        final Optional<JWTokenIssue> optToken = cache.getToken(tokenId);
+        final Optional<JWTokenIssued> optToken = cache.getToken(tokenId);
         if (!optToken.isPresent()) {
-            JWTokenIssue token = this.findJWTokenIssueDB(tokenId).orElse(TOKEN_404);
-            cache.putJWTokenIssue(tokenId, token);
+            JWTokenIssued token = this.findJWTokenIssuedB(tokenId).orElse(TOKEN_404);
+            cache.putJWTokenIssued(tokenId, token);
             return Optional.ofNullable((TOKEN_404.equals(token) ? null : token));
         }
 
@@ -67,7 +67,7 @@ public class JWTokenAPI {
 
 
     @CloseDBIfOpened
-    protected Optional<JWTokenIssue> findJWTokenIssueDB(final String tokenId) {
+    protected Optional<JWTokenIssued> findJWTokenIssuedB(final String tokenId) {
 
         try {
 
@@ -85,7 +85,7 @@ public class JWTokenAPI {
 
     }
     
-    public boolean revokeToken(JWTokenIssue token) {
+    public boolean revokeToken(JWTokenIssued token) {
         return this.revokeToken(token.id);
     }
 
@@ -105,47 +105,47 @@ public class JWTokenAPI {
     }
 
 
-    public JWTokenIssue persistJWTokenIssue(final String userId, final Date expireDate, final String requestingUserId,
+    public JWTokenIssued persistJWTokenIssued(final String userId, final Date expireDate, final String requestingUserId,
             final String requestingIpAddress) {
 
         User user = Try.of(()->APILocator.getUserAPI().loadUserById(requestingUserId)).getOrElseThrow(() -> new DotRuntimeException("Uable to load user" + requestingUserId));
 
-        final JWTokenIssue tokenIssue = JWTokenIssue.builder().withUserId(userId).withExpires(expireDate)
+        final JWTokenIssued tokenIssued = JWTokenIssued.builder().withUserId(userId).withExpires(expireDate)
                 .withRequestingUserId(requestingUserId).withRequestingIp(requestingIpAddress).build();
         
         
         
         
-        return persistJWTokenIssue(tokenIssue, user);
+        return persistJWTokenIssued(tokenIssued, user);
 
 
     }
 
-    public JWTokenIssue persistJWTokenIssue(final JWTokenIssue tokenIssue, final User user) {
+    public JWTokenIssued persistJWTokenIssued(final JWTokenIssued tokenIssued, final User user) {
 
 
-        return insertJWTokenIssueDB(tokenIssue);
+        return insertJWTokenIssuedDB(tokenIssued);
 
 
     }
 
 
     @CloseDBIfOpened
-    private JWTokenIssue insertJWTokenIssueDB(final JWTokenIssue token) {
+    private JWTokenIssued insertJWTokenIssuedDB(final JWTokenIssued token) {
 
 
         if (token.userId == null) {
-            throw new DotStateException("JWTokenIssue requires a userId");
+            throw new DotStateException("JWtokenIssued requires a userId");
         }
         if (token.expires == null || token.expires.before(new Date())) {
-            throw new DotStateException("JWTokenIssue requires an expiration in the future");
+            throw new DotStateException("JWtokenIssued requires an expiration in the future");
         }
         if (token.id != null) {
-            throw new DotStateException("JWTokenIssue token IDs are generated when the JWTokenIssue is created");
+            throw new DotStateException("JWtokenIssued token IDs are generated when the JWtokenIssued is created");
         }
 
-        final JWTokenIssue newToken =
-                JWTokenIssue.from(token).withId(UUID.randomUUID().toString()).withModDate(new Date()).withIssueDate(new Date()).build();
+        final JWTokenIssued newToken =
+                JWTokenIssued.from(token).withId(UUID.randomUUID().toString()).withModDate(new Date()).withIssueDate(new Date()).build();
 
 
         try {
@@ -163,7 +163,7 @@ public class JWTokenAPI {
 
     
     @CloseDBIfOpened
-    protected List<JWTokenIssue> findJWTokensByUserIdDB(final String userId, final boolean showRevoked) {
+    protected List<JWTokenIssued> findJWTokensIssuedByUserIdDB(final String userId, final boolean showRevoked) {
 
         final String SQL = (showRevoked) ? SELECT_BY_TOKEN_USER_ID_SQL_ALL : SELECT_BY_TOKEN_USER_ID_SQL_ACTIVE;
 
