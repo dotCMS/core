@@ -9,8 +9,10 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Relationship;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
+import java.util.Collections;
 import java.util.List;
 
 import graphql.schema.DataFetcher;
@@ -41,9 +43,15 @@ public class RelationshipFieldDataFetcher implements DataFetcher<Object> {
             relationship,
             APILocator.getRelationshipAPI().isParent(relationship, contentlet.getContentType()));
 
-        return records.doesAllowOnlyOne()
-            ? contentlet.getRelated(fieldVar).get(0)
-            : contentlet.getRelated(fieldVar);
+        Object objectToReturn = records.doesAllowOnlyOne() ? null : Collections.emptyList();
+
+        if(UtilMethods.isSet(contentlet.getRelated(fieldVar))) {
+            objectToReturn = records.doesAllowOnlyOne()
+                ? contentlet.getRelated(fieldVar).get(0)
+                : contentlet.getRelated(fieldVar);
+        }
+
+        return objectToReturn;
 
     }
 }
