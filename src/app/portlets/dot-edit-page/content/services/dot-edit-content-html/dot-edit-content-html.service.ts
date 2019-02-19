@@ -487,7 +487,10 @@ export class DotEditContentHtmlService {
         return script;
     }
 
-    private getScriptTags(scriptTags, contentlet: HTMLElement): HTMLScriptElement[] {
+    private getScriptTags(
+        scriptTags: HTMLScriptElement[],
+        contentlet: HTMLElement
+    ): HTMLScriptElement[] {
         Array.from(contentlet.children).forEach((node: HTMLElement) => {
             if (node.tagName === 'SCRIPT') {
                 const script = this.createScriptTag(<HTMLScriptElement>node);
@@ -550,12 +553,15 @@ export class DotEditContentHtmlService {
     }
 
     private createNewContentletFromString(contentletHTML: string): HTMLDivElement {
-        const doc = this.getEditPageDocument();
+        const newContentlet = this.getNewContentlet(contentletHTML);
+        const { identifier, inode, type, baseType } = newContentlet.dataset;
 
-        const div = doc.createElement('div');
-        div.innerHTML = contentletHTML;
-
-        return this.createNewContentlet(div.children[0].dataset);
+        return this.createNewContentlet({
+            identifier,
+            inode,
+            type,
+            baseType
+        });
     }
 
     private createNewContentlet(dotPageContent: DotPageContent): HTMLDivElement {
