@@ -195,8 +195,8 @@ public class ContainerFinderStrategyResolver {
         private String getHostName (final String path) {
 
             final int startsHost = path.indexOf(HOST_INDICATOR);
-            final int endsHost   = path.indexOf(StringPool.FORWARD_SLASH, startsHost);
-            return path.substring(startsHost, endsHost);
+            final int endsHost   = path.indexOf(StringPool.FORWARD_SLASH, startsHost+HOST_INDICATOR.length());
+            return path.substring(startsHost+HOST_INDICATOR.length(), endsHost);
         }
     } // PathContainerFinderStrategyImpl.
 }

@@ -283,7 +283,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
                                                      final boolean respectFrontEndPermissions, final Supplier<Host> resourceHost) throws DotSecurityException, DotDataException {
 
 		final Tuple2<String, Host> pathAndHostTuple = this.getContainerPathHost(fullContainerPathWithHost, user, resourceHost);
-		return this.getWorkingContainerByFolderPath(pathAndHostTuple._1, pathAndHostTuple._2, user, respectFrontEndPermissions);
+			return this.getWorkingContainerByFolderPath(pathAndHostTuple._1, pathAndHostTuple._2, user, respectFrontEndPermissions);
 	}
 
 	private Tuple2<String, Host> getContainerPathHost(final String containerIdOrPath, final User user,

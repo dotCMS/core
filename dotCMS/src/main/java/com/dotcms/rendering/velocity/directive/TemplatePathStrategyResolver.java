@@ -151,8 +151,7 @@ public class TemplatePathStrategyResolver {
                             this.getHost(host).getHostname(), path.startsWith(FORWARD_SLASH)? StringPool.BLANK:FORWARD_SLASH,
                             path, FORWARD_SLASH, uid, PERIOD, VelocityType.CONTAINER.fileExtension).toString():
 
-                        builder(FORWARD_SLASH, params.mode.name(), FORWARD_SLASH, HOST_INDICATOR,
-                            path.startsWith(FORWARD_SLASH)? StringPool.BLANK:FORWARD_SLASH,
+                        builder(FORWARD_SLASH, params.mode.name(), FORWARD_SLASH,
                             path, FORWARD_SLASH, uid, PERIOD, VelocityType.CONTAINER.fileExtension).toString();
             } catch (Exception e) {
 
