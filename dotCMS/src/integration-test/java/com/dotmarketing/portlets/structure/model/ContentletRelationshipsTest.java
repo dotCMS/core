@@ -30,8 +30,6 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships.ContentletRelationshipRecords;
 import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.WebKeys;
-import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import com.tngtech.java.junit.dataprovider.DataProvider;
@@ -71,10 +69,15 @@ public class ContentletRelationshipsTest extends IntegrationTestBase {
 
         boolean bothSided;
         boolean withLegacy;
+        int totalRelationshipRecords;
+        int expectedLegacyRelationships;
 
-        public TestCase(final boolean bothSided, final boolean withLegacy) {
+        public TestCase(final boolean bothSided, final boolean withLegacy, final int totalRelationshipRecords, final int expectedLegacyRelationships) {
             this.bothSided  = bothSided;
             this.withLegacy = withLegacy;
+
+            this.totalRelationshipRecords    = totalRelationshipRecords;
+            this.expectedLegacyRelationships = expectedLegacyRelationships;
         }
     }
 
@@ -91,11 +94,11 @@ public class ContentletRelationshipsTest extends IntegrationTestBase {
     public static Object[] testCases() {
         return new TestCase[]{
                 //invalid indexed
-                new TestCase(false, true),
-                new TestCase(false, false),
+                new TestCase(false, true, 4, 2),
+                new TestCase(false, false, 3, 0),
                 //invalid listed
-                new TestCase(true, true),
-                new TestCase(true, false)
+                new TestCase(true, true, 3, 1),
+                new TestCase(true, false, 2, 0)
         };
     }
 
@@ -156,7 +159,7 @@ public class ContentletRelationshipsTest extends IntegrationTestBase {
                     .getRelationshipFromField(secondField, user);
 
             //add legacy contentlet relationship records
-            Relationship legacyRelationship = new Relationship(
+            final Relationship legacyRelationship = new Relationship(
                         new StructureTransformer(parentContentType).asStructure(),
                         new StructureTransformer(childContentType).asStructure(),
                         parentContentType.variable(), childContentType.variable(),
@@ -171,23 +174,13 @@ public class ContentletRelationshipsTest extends IntegrationTestBase {
             final ContentletRelationships contentletRelationships = contentletAPI
                     .getAllRelationships(contentlet);
 
-            if (testCase.withLegacy) {
-                assertEquals(testCase.bothSided ? 3 : 4,
-                        contentletRelationships.getRelationshipsRecords().size());
-            }else{
-                assertEquals(testCase.bothSided ? 2 : 3,
-                        contentletRelationships.getRelationshipsRecords().size());
-            }
+            assertEquals(testCase.totalRelationshipRecords, contentletRelationships.getRelationshipsRecords().size());
 
             final List<ContentletRelationships.ContentletRelationshipRecords> legacyRelationshipRecords = contentletRelationships
                     .getLegacyRelationshipsRecords();
             assertNotNull(legacyRelationshipRecords);
 
-            if (testCase.withLegacy) {
-                assertEquals(testCase.bothSided ? 1 : 2, legacyRelationshipRecords.size());
-            }else{
-                assertEquals(0, legacyRelationshipRecords.size());
-            }
+            assertEquals(testCase.expectedLegacyRelationships, legacyRelationshipRecords.size());
 
             if (testCase.withLegacy) {
                 assertTrue(legacyRelationshipRecords.stream().allMatch(
