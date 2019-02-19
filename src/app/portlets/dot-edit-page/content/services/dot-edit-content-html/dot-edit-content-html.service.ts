@@ -28,6 +28,12 @@ import { MODEL_VAR_NAME } from '../html/iframe-edit-mode.js';
 import { ContentType } from '../../../../content-types/shared/content-type.model';
 import { DotRenderedPageState } from '../../../shared/models/dot-rendered-page-state.model';
 import { PageModelChangeEvent, PageModelChangeEventType } from './models';
+import {
+    DotContentletEventRelocate,
+    DotContentletEventSave,
+    DotContentletEventSelect,
+    DotRelocatePayload
+} from './models/dot-contentlets-events.model';
 
 export enum DotContentletAction {
     EDIT,
@@ -36,17 +42,19 @@ export enum DotContentletAction {
 
 interface RenderAddedItemParams {
     event: PageModelChangeEventType;
-    item: DotPageContent | ContentType;
-    checkExistFunc: (item: DotPageContent | ContentType, containerEL: HTMLElement) => boolean;
+    item: DotPageContent | ContentType | DotRelocatePayload;
+    checkExistFunc: (item: DotPageContent | ContentType | DotRelocatePayload, containerEL: HTMLElement) => boolean;
     getContent: (
         container: DotPageContainer,
-        form: DotPageContent | ContentType
+        form: DotPageContent | ContentType | DotRelocatePayload
     ) => Observable<string>;
 }
 
 @Injectable()
 export class DotEditContentHtmlService {
-    contentletEvents$: Subject<any> = new Subject();
+    contentletEvents$: Subject<
+        DotContentletEventRelocate | DotContentletEventSelect | DotContentletEventSave
+    > = new Subject();
     currentContainer: DotPageContainer;
     currentContentlet: DotPageContent;
     iframe: ElementRef;
@@ -70,9 +78,16 @@ export class DotEditContentHtmlService {
         private dotDialogService: DotAlertConfirmService,
         private dotMessageService: DotMessageService
     ) {
-        this.contentletEvents$.subscribe((contentletEvent: any) => {
-            this.handlerContentletEvents(contentletEvent.name)(contentletEvent);
-        });
+        this.contentletEvents$.subscribe(
+            (
+                contentletEvent:
+                    | DotContentletEventRelocate
+                    | DotContentletEventSelect
+                    | DotContentletEventSave
+            ) => {
+                this.handlerContentletEvents(contentletEvent.name)(contentletEvent);
+            }
+        );
 
         this.dotMessageService
             .getMessages([
@@ -193,7 +208,7 @@ export class DotEditContentHtmlService {
      * @param * contentlet
      * @memberof DotEditContentHtmlService
      */
-    renderAddedContentlet(contentlet: DotPageContent, eventType: PageModelChangeEventType): void {
+    renderAddedContentlet(contentlet: DotPageContent | DotRelocatePayload, eventType: PageModelChangeEventType): void {
         this.renderAddedItem({
             event: eventType,
             item: contentlet,
@@ -606,7 +621,9 @@ export class DotEditContentHtmlService {
     private handlerContentletEvents(event: string): (contentletEvent: any) => void {
         const contentletEventsMap = {
             // When an user create or edit a contentlet from the jsp
-            save: (contentletEvent: any) => {
+            save: (
+                contentletEvent: DotContentletEventSave
+            ) => {
                 if (this.currentAction === DotContentletAction.ADD) {
                     this.renderAddedContentlet(
                         contentletEvent.data,
@@ -620,7 +637,7 @@ export class DotEditContentHtmlService {
                 }
             },
             // When a user select a content from the search jsp
-            select: (contentletEvent: any) => {
+            select: (contentletEvent: DotContentletEventSelect) => {
                 this.renderAddedContentlet(
                     contentletEvent.data,
                     PageModelChangeEventType.EDIT_CONTENT
@@ -630,7 +647,7 @@ export class DotEditContentHtmlService {
                 });
             },
             // When a user drag and drop a contentlet in the iframe
-            relocate: (contentletEvent: any) => {
+            relocate: (contentletEvent: DotContentletEventRelocate) => {
                 if (!this.remoteRendered) {
                     this.renderRelocatedContentlet(contentletEvent.data);
                 }
@@ -730,7 +747,7 @@ export class DotEditContentHtmlService {
         this.addVtlEditMenu(contentletEl);
     }
 
-    private renderRelocatedContentlet(relocateInfo: any): void {
+    private renderRelocatedContentlet(relocateInfo: DotRelocatePayload): void {
         const doc = this.getEditPageDocument();
         const contenletEl: HTMLDivElement = doc.querySelector(
             `div[data-dot-object="contentlet"][data-dot-inode="${relocateInfo.contentlet.inode}"]`
@@ -740,8 +757,10 @@ export class DotEditContentHtmlService {
 
         const container: HTMLElement = <HTMLElement>contenletEl.parentNode;
 
-        relocateInfo.container =
-            relocateInfo.container || container.dataset.dotIdentifier;
+        relocateInfo.container = relocateInfo.container || {
+            identifier: container.dataset.dotIdentifier,
+            uuid: container.dataset.dotUuid
+        };
 
         this.dotContainerContentletService
             .getContentletToContainer(relocateInfo.container, relocateInfo.contentlet)
