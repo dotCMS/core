@@ -1004,9 +1004,6 @@
             <%if(keyValueMap!=null && !keyValueMap.isEmpty()){
                 int k = 0;
                 for(String key : keyValueMap.keySet()){
-                    if(key.equals("content")){
-                        continue;
-                    }
                     String str_style = "";
                     if ((k%2)==0) {
                         str_style = "class=\"dojoDndItem alternate_1\"";
