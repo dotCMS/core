@@ -242,7 +242,7 @@ public class ContainerStructureFinderStrategyResolver {
 
         private String wrapIntoDotParseDirective (final FileAsset fileAsset) {
 
-            return ContainerByFolderAssetsUtil.getInstance().wrapIntoDotParseDirective(fileAsset);
+            return FileAssetContainerUtil.getInstance().wrapIntoDotParseDirective(fileAsset);
         }
 
         private String toString (final FileAsset fileAsset) {

@@ -4,19 +4,14 @@
 package com.dotcms.rendering.velocity.services;
 
 import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
-
 import com.dotmarketing.business.Cachable;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
-import com.dotmarketing.business.DotCacheException;
-import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.util.Logger;
-
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-
 import org.apache.velocity.runtime.RuntimeConstants;
 import org.apache.velocity.runtime.RuntimeServices;
 import org.apache.velocity.runtime.resource.Resource;
@@ -128,10 +123,12 @@ public class DotResourceCache implements ResourceCache, Cachable {
             }
             map.put(key.path, resource);
             cache.put(key.cacheKey, map, primaryGroup);
+            Logger.debug(this,()->String.format("Velocity-cache put key (path) : '%s'",key.path));
         }else {
         
             // Add the key to the cache
             cache.put(key.cacheKey, resource, primaryGroup);
+            Logger.debug(this,()->String.format("Velocity-cache put key (cacheKey) : '%s'",key.cacheKey));
         }
         return resource;
 
