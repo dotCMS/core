@@ -50,7 +50,7 @@ import java.util.stream.Collectors;
 import static com.dotmarketing.business.PermissionAPI.*;
 
 /**
- * Util class for render a Page
+ * Util class for rendering a Page
  */
 public class PageRenderUtil implements Serializable {
 
