@@ -104,7 +104,7 @@ export class DotEditContentToolbarHtmlService {
         const contentletToolbar = document.createElement('div');
         contentletToolbar.classList.add('dotedit-contentlet__toolbar');
 
-        const vtls = Array.from(contentlet.querySelectorAll('div[data-dot-object="vtl-file"]'));
+        const vtls: HTMLElement[] = Array.from(contentlet.querySelectorAll('div[data-dot-object="vtl-file"]'));
 
         if (vtls.length) {
             contentletToolbar.innerHTML += this.getEditVtlButtons(vtls);
@@ -157,7 +157,7 @@ export class DotEditContentToolbarHtmlService {
         `;
     }
 
-    getEditVtlButtons(vtls: any[]): string {
+    getEditVtlButtons(vtls: HTMLElement[]): string {
         return this.getDotEditPopupMenuHtml({
             button: {
                 label: this.dotMessageService.get('editpage.content.container.action.edit.vtl'),

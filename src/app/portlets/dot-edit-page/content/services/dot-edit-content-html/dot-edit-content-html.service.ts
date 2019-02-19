@@ -103,7 +103,7 @@ export class DotEditContentHtmlService {
 
             iframeElement.addEventListener('load', () => {
                 iframeElement.contentWindow[MODEL_VAR_NAME] = this.pageModel$;
-                iframeElement.contentWindow.contentletEvents = this.contentletEvents$;
+                iframeElement.contentWindow['contentletEvents'] = this.contentletEvents$;
 
                 this.bindGlobalEvents();
 
@@ -311,7 +311,7 @@ export class DotEditContentHtmlService {
      * @memberof DotEditContentHtmlService
      */
     getContentModel(): DotPageContainer[] {
-        return this.getEditPageIframe().contentWindow.getDotNgModel();
+        return this.getEditPageIframe().contentWindow['getDotNgModel']();
     }
 
     private renderAddedItem(params: RenderAddedItemParams): void {
@@ -590,7 +590,7 @@ export class DotEditContentHtmlService {
         return dotEditContentletEl;
     }
 
-    private getEditPageIframe(): any {
+    private getEditPageIframe(): HTMLIFrameElement {
         return this.iframe.nativeElement;
     }
 
@@ -699,7 +699,7 @@ export class DotEditContentHtmlService {
     private addVtlEditMenu(contentletEl: HTMLElement): void {
         const contentletToolbarEl = contentletEl.querySelector('.dotedit-contentlet__toolbar');
 
-        const vtls = Array.from(contentletEl.querySelectorAll('div[data-dot-object="vtl-file"]'));
+        const vtls: HTMLElement[] = Array.from(contentletEl.querySelectorAll('div[data-dot-object="vtl-file"]'));
 
         if (vtls.length) {
             contentletToolbarEl.innerHTML = `
