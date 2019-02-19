@@ -92,10 +92,10 @@ export class DotEditContentHtmlService {
      *
      * @param string editPageHTML
      * @param ElementRef iframeEl
-     * @returns Promise<any>
+     * @returns Promise<boolean>
      * @memberof DotEditContentHtmlService
      */
-    renderPage(pageState: DotRenderedPageState, iframeEl: ElementRef): Promise<any> {
+    renderPage(pageState: DotRenderedPageState, iframeEl: ElementRef): Promise<boolean> {
         this.remoteRendered = pageState.page.remoteRendered;
         return new Promise((resolve, _reject) => {
             this.iframe = iframeEl;
@@ -158,14 +158,16 @@ export class DotEditContentHtmlService {
      */
     renderEditedContentlet(contentlet: DotPageContent): void {
         const doc = this.getEditPageDocument();
-        const currentContentlets = doc.querySelectorAll(
-            `div[data-dot-object="contentlet"][data-dot-identifier="${contentlet.identifier}"]`
+        const currentContentlets: HTMLDivElement[] = Array.from(
+            doc.querySelectorAll(
+                `div[data-dot-object="contentlet"][data-dot-identifier="${contentlet.identifier}"]`
+            )
         );
 
-        currentContentlets.forEach((currentContentlet) => {
+        currentContentlets.forEach((currentContentlet: HTMLDivElement) => {
             contentlet.type = currentContentlet.dataset.dotType;
 
-            const containerEl = currentContentlet.parentNode;
+            const containerEl = <HTMLDivElement>currentContentlet.parentNode;
 
             const container: DotPageContainer = {
                 identifier: containerEl.dataset.dotIdentifier,
@@ -210,7 +212,7 @@ export class DotEditContentHtmlService {
      */
     renderAddedForm(form: ContentType): Observable<DotPageContainer[]> {
         const doc = this.getEditPageDocument();
-        const containerEl = doc.querySelector(
+        const containerEl: HTMLDivElement = doc.querySelector(
             [
                 'div[data-dot-object="container"]',
                 `[data-dot-identifier="${this.currentContainer.identifier}"]`,
@@ -316,7 +318,7 @@ export class DotEditContentHtmlService {
 
     private renderAddedItem(params: RenderAddedItemParams): void {
         const doc = this.getEditPageDocument();
-        const containerEl = doc.querySelector(
+        const containerEl: HTMLDivElement = doc.querySelector(
             `div[data-dot-object="container"][data-dot-identifier="${
                 this.currentContainer.identifier
             }"][data-dot-uuid="${this.currentContainer.uuid}"]`
@@ -412,7 +414,7 @@ export class DotEditContentHtmlService {
 
     private getContainerDomElements(
         containersLayoutIds: Array<Array<DotPageContainer>>
-    ): Array<Array<HTMLElement>> {
+    ): HTMLElement[][] {
         const doc = this.getEditPageDocument();
 
         return containersLayoutIds.map((containerRow: Array<DotPageContainer>, index: number) => {
@@ -423,7 +425,7 @@ export class DotEditContentHtmlService {
                     `[data-dot-identifier="${container.identifier}"]`,
                     `[data-dot-uuid="${container.uuid}"]`
                 ].join('');
-                const containerElement = doc.querySelector(querySelector);
+                const containerElement: HTMLDivElement = doc.querySelector(querySelector);
                 containerElement.style.height = 'auto';
                 this.rowsMaxHeight[index] =
                     containerElement.offsetHeight > this.rowsMaxHeight[index]
@@ -458,9 +460,9 @@ export class DotEditContentHtmlService {
         );
     }
 
-    private isFormExistInContainer(form: ContentType, containerEL: HTMLElement): boolean {
+    private isFormExistInContainer(form: ContentType, containerEL: HTMLDivElement): boolean {
         const contentsSelector = `div[data-dot-object="contentlet"]`;
-        const currentContentlets: HTMLElement[] = <HTMLElement[]>(
+        const currentContentlets: HTMLDivElement[] = <HTMLDivElement[]>(
             Array.from(containerEL.querySelectorAll(contentsSelector).values())
         );
         return currentContentlets.some(
@@ -510,7 +512,7 @@ export class DotEditContentHtmlService {
         const div = doc.createElement('div');
         div.innerHTML = html;
 
-        return div.children[0];
+        return <HTMLDivElement>div.children[0];
     }
 
     private appendNewContentlets(contentletEl: HTMLDivElement, html: string): void {
@@ -594,7 +596,7 @@ export class DotEditContentHtmlService {
         return this.iframe.nativeElement;
     }
 
-    private getEditPageDocument(): any {
+    private getEditPageDocument(): Document {
         return (
             this.getEditPageIframe().contentDocument ||
             this.getEditPageIframe().contentWindow.document
@@ -699,7 +701,9 @@ export class DotEditContentHtmlService {
     private addVtlEditMenu(contentletEl: HTMLElement): void {
         const contentletToolbarEl = contentletEl.querySelector('.dotedit-contentlet__toolbar');
 
-        const vtls: HTMLElement[] = Array.from(contentletEl.querySelectorAll('div[data-dot-object="vtl-file"]'));
+        const vtls: HTMLElement[] = Array.from(
+            contentletEl.querySelectorAll('div[data-dot-object="vtl-file"]')
+        );
 
         if (vtls.length) {
             contentletToolbarEl.innerHTML = `
@@ -728,14 +732,16 @@ export class DotEditContentHtmlService {
 
     private renderRelocatedContentlet(relocateInfo: any): void {
         const doc = this.getEditPageDocument();
-        const contenletEl = doc.querySelector(
+        const contenletEl: HTMLDivElement = doc.querySelector(
             `div[data-dot-object="contentlet"][data-dot-inode="${relocateInfo.contentlet.inode}"]`
         );
 
         this.addLoadingIndicator(contenletEl);
 
+        const container: HTMLElement = <HTMLElement>contenletEl.parentNode;
+
         relocateInfo.container =
-            relocateInfo.container || contenletEl.parentNode.dataset.dotIdentifier;
+            relocateInfo.container || container.dataset.dotIdentifier;
 
         this.dotContainerContentletService
             .getContentletToContainer(relocateInfo.container, relocateInfo.contentlet)
