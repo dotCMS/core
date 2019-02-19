@@ -588,7 +588,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
                 Container container = null;
                 try {
-                    container = (liveMode) ? this.getLiveContainerById(containerUUID.getIdentifier(), APILocator.systemUser(), template):
+                    container = liveMode ? this.getLiveContainerById(containerUUID.getIdentifier(), APILocator.systemUser(), template):
                             this.getWorkingContainerById(containerUUID.getIdentifier(), APILocator.systemUser(), template);
 
                     if (container == null && !liveMode) {
