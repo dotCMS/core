@@ -86,6 +86,26 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
         this.languageWebAPI = languageWebAPI;
     }
 
+    @Override
+    public PageView getPageMetadata(
+            final HttpServletRequest request,
+            final HttpServletResponse response,
+            final User user,
+            final String uri,
+            final PageMode mode)
+                throws DotSecurityException, DotDataException {
+
+        return this.getPageMetadata(
+                PageContextBuilder.builder()
+                        .setUser(user)
+                        .setPageUri(uri)
+                        .setPageMode(mode)
+                        .build(),
+                request,
+                response
+        );
+    }
+
     /**
      * @param context    The {@link PageContext} object.
      * @return The rendered page, i.e., the HTML source code that will be rendered by the browser.
@@ -114,6 +134,25 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
 
     @Override
     public PageView getPageRendered(
+            final HttpServletRequest request,
+            final HttpServletResponse response,
+            final User user,
+            final String pageUri,
+            final PageMode pageMode) throws DotDataException, DotSecurityException {
+
+        return this.getPageRendered(
+                PageContextBuilder.builder()
+                        .setUser(user)
+                        .setPageUri(pageUri)
+                        .setPageMode(pageMode)
+                        .build(),
+                request,
+                response
+        );
+    }
+
+    @Override
+    public PageView getPageRendered(
             final PageContext context,
             final HttpServletRequest request,
             final HttpServletResponse response)
@@ -135,6 +174,25 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
                 .setResponse(response)
                 .setSite(host)
                 .build(true, mode);
+    }
+
+    @Override
+    public String getPageHtml(
+            final HttpServletRequest request,
+            final HttpServletResponse response,
+            final User user,
+            final String uri,
+            final PageMode mode) throws DotSecurityException, DotDataException {
+
+        return this.getPageHtml(
+                PageContextBuilder.builder()
+                        .setUser(user)
+                        .setPageUri(uri)
+                        .setPageMode(mode)
+                        .build(),
+                request,
+                response
+        );
     }
 
     public PageMode getDefaultEditPageMode(
