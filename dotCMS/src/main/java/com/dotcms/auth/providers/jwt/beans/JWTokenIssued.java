@@ -1,13 +1,13 @@
 package com.dotcms.auth.providers.jwt.beans;
 
 import java.io.Serializable;
-import java.net.InetAddress;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
 
 import javax.annotation.Generated;
 import javax.annotation.Nonnull;
 
+import com.dotcms.auth.providers.jwt.factories.JWTokenIssuedAPI;
 import com.dotcms.repackage.org.apache.commons.net.util.SubnetUtils;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.util.Logger;
@@ -70,8 +70,7 @@ public class JWTokenIssued implements Serializable {
         if(this.expires!=null && this.expires.before(new Date())){
             return false;
         }
-        if(this.id==null || 
-                this.userId==null){
+        if(this.id==null ||  this.userId==null){
             return false;
         }
         
@@ -80,7 +79,7 @@ public class JWTokenIssued implements Serializable {
         }
 
 
-        if(ipAddress==null || this.allowFromNetwork==null || this.allowFromNetwork.startsWith("0.0.0.0")) {
+        if(this.allowFromNetwork==null || this.allowFromNetwork.startsWith("0.0.0.0")) {
           return true;
         }
         try {
@@ -91,6 +90,7 @@ public class JWTokenIssued implements Serializable {
         }
         catch(Exception e) {
             Logger.warn(this.getClass(), "unable to validate ip address :" + ipAddress + " was part of network " + this.allowFromNetwork );
+            Logger.warn(this.getClass(), e.getMessage() );
             return false;
         }
         return true;
@@ -297,11 +297,16 @@ public class JWTokenIssued implements Serializable {
             }
 
             public JWTokenIssued build() {
-
-                if (userId == null ||  expires == null) {
+                if(JWTokenIssuedAPI.TOKEN_404_STR.equals(id)) {
+                    return new JWTokenIssued(this);
+                }
+                
+                if (this.userId == null ||  this.expires == null || expires.before(new Date())) {
                     throw new DotStateException("JWTokenIsse is not valid - needs an userId, a requestingUser and an expires date");
                 }
 
+                
+                
 
                 return new JWTokenIssued(this);
             }

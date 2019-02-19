@@ -12,20 +12,20 @@ public class Task05060CreateTokensIssuedTable extends AbstractJDBCStartupTask {
 	}
 
 	
-	final static String BASE_SCRIPT = "create table jwt_token_issue("
+	final static String BASE_SCRIPT = "create table jwt_token_issued("
 	        + "token_id varchar(255) NOT NULL, "
 	        + "token_userid varchar(255) NOT NULL, "
 	        + "issue_date TIMESTAMP NOT NULL, "
 	        + "expire_date TIMESTAMP NOT NULL, "
 	        + "requested_by_userid  varchar(255) NOT NULL, "
 	        + "requested_by_ip  varchar(255) NOT NULL, "
-	        + "revoke_date  TIMESTAMP, "
+	        + "revoke_date TIMESTAMP NULL DEFAULT NULL, "
 	        + "allowed_from  varchar(255) , "
 	        + "cluster_id  varchar(255) , "
 	        + "meta_data  text , "
 	        + "mod_date  TIMESTAMP NOT NULL, "
 	        + "PRIMARY KEY (token_id));\n"
-	        + "create index idx_jwt_token_issue_user ON jwt_token_issue (token_userid);";
+	        + "create index idx_jwt_tokend_issue_user ON jwt_token_issued (token_userid);";
 	
 	
 	

@@ -9,7 +9,7 @@ import com.dotcms.graphql.business.GraphqlAPIImpl;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPIFactory;
 import com.dotcms.api.tree.TreeableAPI;
-import com.dotcms.auth.providers.jwt.factories.JWTokenAPI;
+import com.dotcms.auth.providers.jwt.factories.JWTokenIssuedAPI;
 import com.dotcms.cluster.business.ServerAPI;
 import com.dotcms.cluster.business.ServerAPIImpl;
 import com.dotcms.cms.login.LoginServiceAPI;
@@ -913,8 +913,8 @@ public class APILocator extends Locator<APIIndex>{
      *
      * @return The {@link JWTTokenAPI} class.
      */
-    public static JWTokenAPI getJWTTokenAPI() {
-        return (JWTokenAPI) getInstance(APIIndex.JWT_TOKEN_ISSUE_API);
+    public static JWTokenIssuedAPI getJWTokenIssuedAPI() {
+        return (JWTokenIssuedAPI) getInstance(APIIndex.JWT_TOKEN_ISSUE_API);
     }
 
 	/**
@@ -1127,7 +1127,7 @@ enum APIIndex
 			case CLUSTER_API: return new ClusterAPIImpl();
 			case THEME_API: return new ThemeAPIImpl();
 			case GRAPHQL_API: return  new GraphqlAPIImpl();
-	        case JWT_TOKEN_ISSUE_API: return new JWTokenAPI();
+	        case JWT_TOKEN_ISSUE_API: return new JWTokenIssuedAPI();
 	        
 		}
 		throw new AssertionError("Unknown API index: " + this);

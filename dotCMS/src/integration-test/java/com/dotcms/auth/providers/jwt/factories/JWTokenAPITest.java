@@ -15,18 +15,21 @@ import com.dotcms.auth.providers.jwt.beans.JWTokenIssued;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.startup.runonce.Task05060CreateTokensIssuedTable;
 
 
 public class JWTokenAPITest {
 
-    static JWTokenAPI jwTokenAPI;
+    static JWTokenIssuedAPI jwTokenAPI;
 
     static JWTokenCache cache;
 
 
     static final String USER_ID = "userId1";
-    static final String REQUESTING_USER_ID = "requestingUser";
-    static final String REQUESTING_IP = "192.0156.2.6";
+    static String REQUESTING_USER_ID;
+    static final String REQUESTING_IP = "192.156.2.6";
 
 
     @BeforeClass
@@ -34,15 +37,21 @@ public class JWTokenAPITest {
         
         
         IntegrationTestInitService.getInstance().init();
-        jwTokenAPI = APILocator.getJWTTokenAPI();
+        jwTokenAPI = APILocator.getJWTokenIssuedAPI();
         cache = CacheLocator.getJWTokenCache();
+        REQUESTING_USER_ID = APILocator.systemUser().getUserId();
+        
+        //new DotConnect().setSQL("drop table jwt_token_issued").loadResult();
+        //System.out.println(new Task05060CreateTokensIssuedTable().getMySQLScript());
+        //new DotConnect().setSQL(new Task05060CreateTokensIssuedTable().getMySQLScript()).loadResult();
+        
     }
 
     
     Date futureDate(Duration d) {
         Instant myDate = Instant.now().plus(d);
 
-        return Date.from(myDate.truncatedTo(ChronoUnit.SECONDS));
+        return Date.from(myDate);
 
         
     }
@@ -60,7 +69,6 @@ public class JWTokenAPITest {
         final Date issueDate = new Date();
         final Date revokedDate = futureDate(Duration.ofDays(2));
         return JWTokenIssued.builder()
-                .withAllowFromNetwork("withAllowFromNetwork")
                 .withClusterId("withClusterId")
                 .withExpires(expireDate)
                 .withIssueDate(issueDate)
@@ -74,12 +82,21 @@ public class JWTokenAPITest {
         
     }
     
+    JWTokenIssued getSkinnyToken() {
+        return JWTokenIssued
+            .builder()
+            .withExpires(futureDate(Duration.ofDays(10)))
+            .withUserId("testUser")
+            .withRequestingUserId(APILocator.systemUser().getUserId())
+            .withRequestingIp("127.0.0.1")
+            .build();
+    }
     
     
     @Test
     public void test_JWT_Issue_Cache() {
 
-        JWTokenIssued testToken = JWTokenIssued.builder().withUserId("userId").withExpires(futureDate(Duration.ofDays(30))).build();
+        JWTokenIssued testToken = getSkinnyToken();
         
         // save token in db
         JWTokenIssued issued = jwTokenAPI.persistJWTokenIssued(testToken, APILocator.systemUser());
@@ -114,27 +131,39 @@ public class JWTokenAPITest {
     
     
     @Test
-    public void test_JWT_Issue_Persistance_Works() {
+    public void test_JWT_Issued_Persistance_Works() {
 
+        
         JWTokenIssued fatToken = getLoadedToken();
+        JWTokenIssued skinnyToken = getSkinnyToken();
+        
+        skinnyToken = jwTokenAPI.persistJWTokenIssued(skinnyToken,APILocator.systemUser());
+
+        JWTokenIssued issuedFromDb = jwTokenAPI.findJWTokenIssued(skinnyToken.id).get();
+
+        assertEquals(skinnyToken, issuedFromDb);
         
         
-        JWTokenIssued issued = jwTokenAPI.persistJWTokenIssued(fatToken,APILocator.systemUser());
+        
+        
+        
+        
+        fatToken = jwTokenAPI.persistJWTokenIssued(fatToken,APILocator.systemUser());
 
 
-        JWTokenIssued issuedFromDb = jwTokenAPI.findJWTokenIssued(issued.id).get();
+        issuedFromDb = jwTokenAPI.findJWTokenIssued(fatToken.id).get();
         
         
         
         
         // testing equals method
-        assertEquals(issued, issuedFromDb);
+        assertEquals(fatToken, issuedFromDb);
 
     }
     
     
     @Test
-    public void test_JWT_Issue_Builder() {
+    public void test_JWT_Issued_Builder() {
         JWTokenIssued fatToken = getLoadedToken();
 
         JWTokenIssued issued = jwTokenAPI.persistJWTokenIssued(fatToken,APILocator.systemUser());
@@ -147,9 +176,32 @@ public class JWTokenAPITest {
     }
     
     
+    @Test(expected=DotStateException.class)
+    public void test_JWT_subnets() {
+        JWTokenIssued fatToken = JWTokenIssued.from(getLoadedToken()).withAllowFromNetwork("123").build();
+        assert(!fatToken.isValid());
+        JWTokenIssued issued = jwTokenAPI.persistJWTokenIssued(fatToken,APILocator.systemUser());
+    }
+    
+
+    public void test_JWT_allow_all() {
+        JWTokenIssued fatToken = JWTokenIssued.from(getLoadedToken()).withAllowFromNetwork("0.0.0.0/0").build();
+        assert(!fatToken.isValid());
+        JWTokenIssued issued = jwTokenAPI.persistJWTokenIssued(fatToken,APILocator.systemUser());
+    }
+    
     @Test
     public void test_JWT_Issue_isValid() {
 
+        
+        JWTokenIssued skinnyToken = getSkinnyToken();
+        assert(!skinnyToken.isValid());
+        skinnyToken = jwTokenAPI.persistJWTokenIssued(skinnyToken,APILocator.systemUser());
+        assert(skinnyToken.isValid());
+        skinnyToken = jwTokenAPI.findJWTokenIssued(skinnyToken.id).get();
+        assert(skinnyToken.isValid());
+        
+        
         
         JWTokenIssued fatToken = JWTokenIssued.from(getLoadedToken()).withRevoked(new Date()).build();
         // no id, not valid
@@ -171,10 +223,26 @@ public class JWTokenAPITest {
         assert(!issuedFromDb.isValid());
         
 
-
     }
     
     
+    @Test
+    public void test_JWT_Issue_isValid_from_ip() {
+
+        
+        JWTokenIssued skinnyToken = JWTokenIssued.from(getSkinnyToken()).withAllowFromNetwork("192.168.211.0/24").build();
+        
+        assert(!skinnyToken.isValid());
+        
+        skinnyToken = jwTokenAPI.persistJWTokenIssued(skinnyToken,APILocator.systemUser());
+        
+        assert(!skinnyToken.isValid());
+
+        
+        assert(skinnyToken.isValid("192.168.211.54"));
+        
+
+    }
     
     
     @Test
