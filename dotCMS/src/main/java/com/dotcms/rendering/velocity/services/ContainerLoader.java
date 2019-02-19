@@ -22,6 +22,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.apache.velocity.runtime.resource.ResourceManager;
 
 /**
@@ -86,9 +87,8 @@ public class ContainerLoader implements DotLoader {
 
         final Set<FileAsset> fileAssetSet = FileAssetContainerUtil.getInstance().findContainerAssets(containerFolder);
         if(UtilMethods.isSet(fileAssetName) && null != fileAssetSet ){
-           final Optional<FileAsset> fileAssetOptional = fileAssetSet.stream().filter(fileAsset ->  fileAssetName.equals(fileAsset.getFileName())).findFirst();
-           if(fileAssetOptional.isPresent()){
-               final FileAsset fileAsset = fileAssetOptional.get();
+           final Set<FileAsset> matchingFiles = fileAssetSet.stream().filter(fileAsset ->  fileAssetName.equals(fileAsset.getFileName())).collect(Collectors.toSet());
+           for(final FileAsset fileAsset:matchingFiles){
                final String fileAssetPath = fileAsset.getFileAsset().getPath();
                //e.g. /Users/fabrizzio/code/servers/server1/assets/5/8/58c39dc2-16a8-4268-b5d2-e609afb158a7/fileAsset/blog.vtl
                Logger.debug(this,()->String.format("Invalidating asset-path key '%s'",fileAssetPath));
