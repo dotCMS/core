@@ -145,14 +145,14 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
             final User systemUser = userAPI.getSystemUser();
 
             final Host host = this.resolveSite(
-                    new PageContextBuilder()
+                    PageContextBuilder.builder()
                             .setUser(systemUser)
                             .setPageMode(PageMode.PREVIEW_MODE)
                             .build(),
                     request);
 
             final IHTMLPage htmlPageAsset = this.getHtmlPageAsset(
-                    new PageContextBuilder()
+                    PageContextBuilder.builder()
                         .setPageMode(PageMode.PREVIEW_MODE)
                         .setPageUri(pageUri)
                         .setUser(user)

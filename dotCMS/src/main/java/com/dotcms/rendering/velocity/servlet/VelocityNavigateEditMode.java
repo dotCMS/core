@@ -70,7 +70,7 @@ public class VelocityNavigateEditMode  extends VelocityModeHandler {
         final PageMode mode = this.getMode();
 
         final PageView htmlPageAssetRendered = htmlPageAssetRenderedAPI.getPageRendered(
-                new PageContextBuilder()
+                PageContextBuilder.builder()
                     .setUser(user)
                     .setPageUri(uri)
                     .setPageMode(mode)

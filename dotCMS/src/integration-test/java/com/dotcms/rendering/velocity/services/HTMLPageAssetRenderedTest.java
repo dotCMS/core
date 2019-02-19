@@ -32,6 +32,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetNotFoundException;
+import com.dotmarketing.portlets.htmlpageasset.business.render.PageContextBuilder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Config;
@@ -251,16 +252,28 @@ public class HTMLPageAssetRenderedTest {
         mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
         HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
         final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
-        //String html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(mockRequest, mockResponse, systemUser, pageEnglishVersion.getURI(), PageMode.PREVIEW_MODE);
-        //Assert.assertTrue("ENG = "+html , html.contains("content2content1"));
+        String html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
+                PageContextBuilder.builder()
+                    .setUser(systemUser)
+                    .setPageUri(pageEnglishVersion.getURI())
+                    .setPageMode(PageMode.PREVIEW_MODE)
+                    .build(),
+                mockRequest, mockResponse);
+        Assert.assertTrue("ENG = "+html , html.contains("content2content1"));
 
         mockRequest = new MockSessionRequest(
                 new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
                 .request();
         mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "2");
         HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
-        //html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(mockRequest, mockResponse, systemUser, pageEnglishVersion.getURI(), PageMode.PREVIEW_MODE);
-        //Assert.assertTrue("ESP = "+html , html.contains("content3content2Spa"));
+        html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
+                PageContextBuilder.builder()
+                        .setUser(systemUser)
+                        .setPageUri(pageEnglishVersion.getURI())
+                        .setPageMode(PageMode.PREVIEW_MODE)
+                        .build(),
+                mockRequest, mockResponse);
+        Assert.assertTrue("ESP = "+html , html.contains("content3content2Spa"));
     }
 
     /**
@@ -306,16 +319,28 @@ public class HTMLPageAssetRenderedTest {
         mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
         HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
         final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
-        //String html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(mockRequest, mockResponse, systemUser, pageEnglishVersion.getURI(), PageMode.PREVIEW_MODE);
-        //Assert.assertTrue("ENG = "+html , html.contains("content2content1"));
+        String html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
+                PageContextBuilder.builder()
+                        .setUser(systemUser)
+                        .setPageUri(pageEnglishVersion.getURI())
+                        .setPageMode(PageMode.PREVIEW_MODE)
+                        .build(),
+                mockRequest, mockResponse);
+        Assert.assertTrue("ENG = "+html , html.contains("content2content1"));
 
         mockRequest = new MockSessionRequest(
                 new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
                 .request();
         mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "2");
         HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
-        //html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(mockRequest, mockResponse, systemUser, pageEnglishVersion.getURI(), PageMode.PREVIEW_MODE);
-        //Assert.assertTrue("ESP = "+html , html.contains("content3content2Spa"));
+        html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
+                PageContextBuilder.builder()
+                        .setUser(systemUser)
+                        .setPageUri(pageEnglishVersion.getURI())
+                        .setPageMode(PageMode.PREVIEW_MODE)
+                        .build(),
+                mockRequest, mockResponse);
+        Assert.assertTrue("ESP = "+html , html.contains("content3content2Spa"));
 
     }
 
@@ -351,15 +376,27 @@ public class HTMLPageAssetRenderedTest {
         mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "2");
         HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
         final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
-        //String html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(mockRequest, mockResponse, systemUser, pageSpanishVersion.getURI(), PageMode.PREVIEW_MODE);
-        //Assert.assertTrue("ESP = "+html , html.contains("content3content2Spa"));
+        String html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
+                PageContextBuilder.builder()
+                        .setUser(systemUser)
+                        .setPageUri(pageSpanishVersion.getURI())
+                        .setPageMode(PageMode.PREVIEW_MODE)
+                        .build(),
+                mockRequest, mockResponse);
+        Assert.assertTrue("ESP = "+html , html.contains("content3content2Spa"));
 
         mockRequest = new MockSessionRequest(
                 new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
                 .request();
         mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
         HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
-        //html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(mockRequest, mockResponse, systemUser, pageSpanishVersion.getURI(), PageMode.PREVIEW_MODE);
+        html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
+                PageContextBuilder.builder()
+                        .setUser(systemUser)
+                        .setPageUri(pageSpanishVersion.getURI())
+                        .setPageMode(PageMode.PREVIEW_MODE)
+                        .build(),
+                mockRequest, mockResponse);
     }
 
     /**
@@ -393,15 +430,27 @@ public class HTMLPageAssetRenderedTest {
         mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
         HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
         final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
-        //String html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(mockRequest, mockResponse, systemUser, pageEnglishVersion.getURI(), PageMode.PREVIEW_MODE);
-        //Assert.assertTrue("ENG = "+html , html.contains("content2content1"));
+        String html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
+                PageContextBuilder.builder()
+                        .setUser(systemUser)
+                        .setPageUri(pageEnglishVersion.getURI())
+                        .setPageMode(PageMode.PREVIEW_MODE)
+                        .build(),
+                mockRequest, mockResponse);
+        Assert.assertTrue("ENG = "+html , html.contains("content2content1"));
 
         mockRequest = new MockSessionRequest(
                 new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
                 .request();
         mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "2");
         HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
-        //html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(mockRequest, mockResponse, systemUser, pageEnglishVersion.getURI(), PageMode.PREVIEW_MODE);
+        html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
+                PageContextBuilder.builder()
+                        .setUser(systemUser)
+                        .setPageUri(pageEnglishVersion.getURI())
+                        .setPageMode(PageMode.PREVIEW_MODE)
+                        .build(),
+                mockRequest, mockResponse);
     }
 
     /**
@@ -446,16 +495,28 @@ public class HTMLPageAssetRenderedTest {
         mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
         HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
         final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
-        //String html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(mockRequest, mockResponse, systemUser, pageEnglishVersion.getURI(), PageMode.PREVIEW_MODE);
-        //Assert.assertTrue("ENG = "+html , html.contains("content2content1"));
+        String html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
+                PageContextBuilder.builder()
+                        .setUser(systemUser)
+                        .setPageUri(pageEnglishVersion.getURI())
+                        .setPageMode(PageMode.PREVIEW_MODE)
+                        .build(),
+                mockRequest, mockResponse);
+        Assert.assertTrue("ENG = "+html , html.contains("content2content1"));
 
         mockRequest = new MockSessionRequest(
                 new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
                 .request();
         mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "2");
         HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
-        //html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(mockRequest, mockResponse, systemUser, pageEnglishVersion.getURI(), PageMode.PREVIEW_MODE);
-        //Assert.assertTrue("ESP = "+html , html.contains("content3content2Spa"));
+        html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
+                PageContextBuilder.builder()
+                        .setUser(systemUser)
+                        .setPageUri(pageEnglishVersion.getURI())
+                        .setPageMode(PageMode.PREVIEW_MODE)
+                        .build(),
+                mockRequest, mockResponse);
+        Assert.assertTrue("ESP = "+html , html.contains("content3content2Spa"));
     }
 
     /**
@@ -502,16 +563,28 @@ public class HTMLPageAssetRenderedTest {
         mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
         HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
         final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
-        //String html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(mockRequest, mockResponse, systemUser, pageEnglishVersion.getURI(), PageMode.PREVIEW_MODE);
-        //Assert.assertTrue("ENG = "+html , html.contains("content2content1"));
+        String html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
+                PageContextBuilder.builder()
+                        .setUser(systemUser)
+                        .setPageUri(pageEnglishVersion.getURI())
+                        .setPageMode(PageMode.PREVIEW_MODE)
+                        .build(),
+                mockRequest, mockResponse);
+        Assert.assertTrue("ENG = "+html , html.contains("content2content1"));
 
         mockRequest = new MockSessionRequest(
                 new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
                 .request();
         mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "2");
         HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
-        //html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(mockRequest, mockResponse, systemUser, pageEnglishVersion.getURI(), PageMode.PREVIEW_MODE);
-        //Assert.assertTrue("ESP = "+html , html.contains("content3content2Spacontent1"));
+        html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
+                PageContextBuilder.builder()
+                        .setUser(systemUser)
+                        .setPageUri(pageEnglishVersion.getURI())
+                        .setPageMode(PageMode.PREVIEW_MODE)
+                        .build(),
+                mockRequest, mockResponse);
+        Assert.assertTrue("ESP = "+html , html.contains("content3content2Spacontent1"));
     }
 
     /**
@@ -545,15 +618,27 @@ public class HTMLPageAssetRenderedTest {
         mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
         HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
         final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
-        //String html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(mockRequest, mockResponse, systemUser, pageEnglishVersion.getURI(), PageMode.PREVIEW_MODE);
-        //Assert.assertTrue("ENG = "+html , html.contains("content2content1"));
+        String html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
+                PageContextBuilder.builder()
+                        .setUser(systemUser)
+                        .setPageUri(pageEnglishVersion.getURI())
+                        .setPageMode(PageMode.PREVIEW_MODE)
+                        .build(),
+                mockRequest, mockResponse);
+        Assert.assertTrue("ENG = "+html , html.contains("content2content1"));
 
         mockRequest = new MockSessionRequest(
                 new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
                 .request();
         mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "2");
-        //HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
-        //html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(mockRequest, mockResponse, systemUser, pageEnglishVersion.getURI(), PageMode.PREVIEW_MODE);
+        HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
+        html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
+                PageContextBuilder.builder()
+                        .setUser(systemUser)
+                        .setPageUri(pageEnglishVersion.getURI())
+                        .setPageMode(PageMode.PREVIEW_MODE)
+                        .build(),
+                mockRequest, mockResponse);
     }
 
     /**
@@ -610,10 +695,15 @@ public class HTMLPageAssetRenderedTest {
             mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
             HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
             final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
-            /*String html = APILocator.getHTMLPageAssetRenderedAPI()
-                    .getPageHtml(mockRequest, mockResponse, systemUser, pageEnglishVersion.getURI(),
-                            PageMode.PREVIEW_MODE);
-            Assert.assertTrue(html, html.contains("original code"));*/
+            String html = APILocator.getHTMLPageAssetRenderedAPI()
+                    .getPageHtml(
+                            PageContextBuilder.builder()
+                                    .setUser(systemUser)
+                                    .setPageUri(pageEnglishVersion.getURI())
+                                    .setPageMode(PageMode.PREVIEW_MODE)
+                                    .build(),
+                            mockRequest, mockResponse);
+            Assert.assertTrue(html, html.contains("original code"));
 
             fields = contentType.fields();
             codeField = (ImmutableConstantField) fields.stream()
@@ -629,10 +719,15 @@ public class HTMLPageAssetRenderedTest {
                     .request();
             mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
             HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
-            /*html = APILocator.getHTMLPageAssetRenderedAPI()
-                    .getPageHtml(mockRequest, mockResponse, systemUser, pageEnglishVersion.getURI(),
-                            PageMode.PREVIEW_MODE);
-            Assert.assertTrue(html, html.contains("this has been changed"));*/
+            html = APILocator.getHTMLPageAssetRenderedAPI()
+                    .getPageHtml(
+                            PageContextBuilder.builder()
+                                    .setUser(systemUser)
+                                    .setPageUri(pageEnglishVersion.getURI())
+                                    .setPageMode(PageMode.PREVIEW_MODE)
+                                    .build(),
+                            mockRequest, mockResponse);
+            Assert.assertTrue(html, html.contains("this has been changed"));
         }finally {
             APILocator.getContentTypeAPI(systemUser).delete(contentType);
         }
@@ -672,10 +767,15 @@ public class HTMLPageAssetRenderedTest {
             mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
             HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
             final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
-            /*String html = APILocator.getHTMLPageAssetRenderedAPI()
-                    .getPageHtml(mockRequest, mockResponse, systemUser, pageEnglishVersion.getURI(),
-                            PageMode.LIVE);
-            Assert.assertTrue(html, html.contains("content2content1"));*/
+            String html = APILocator.getHTMLPageAssetRenderedAPI()
+                    .getPageHtml(
+                            PageContextBuilder.builder()
+                                    .setUser(systemUser)
+                                    .setPageUri(pageEnglishVersion.getURI())
+                                    .setPageMode(PageMode.LIVE)
+                                    .build(),
+                            mockRequest, mockResponse);
+            Assert.assertTrue(html, html.contains("content2content1"));
 
             WebAssetFactory.unLockAsset(container);
             WebAssetFactory.archiveAsset(container, systemUser);
@@ -687,10 +787,15 @@ public class HTMLPageAssetRenderedTest {
                     .request();
             mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
             HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
-            /*html = APILocator.getHTMLPageAssetRenderedAPI()
-                    .getPageHtml(mockRequest, mockResponse, systemUser, pageEnglishVersion.getURI(),
-                            PageMode.LIVE);
-            Assert.assertTrue(html, html.isEmpty());*/
+            html = APILocator.getHTMLPageAssetRenderedAPI()
+                    .getPageHtml(
+                            PageContextBuilder.builder()
+                                    .setUser(systemUser)
+                                    .setPageUri(pageEnglishVersion.getURI())
+                                    .setPageMode(PageMode.LIVE)
+                                    .build(),
+                            mockRequest, mockResponse);
+            Assert.assertTrue(html, html.isEmpty());
 
             WebAssetFactory.unArchiveAsset(container);
             WebAssetFactory.publishAsset(container, systemUser);
@@ -702,10 +807,15 @@ public class HTMLPageAssetRenderedTest {
                     .request();
             mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
             HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
-            /*html = APILocator.getHTMLPageAssetRenderedAPI()
-                    .getPageHtml(mockRequest, mockResponse, systemUser, pageEnglishVersion.getURI(),
-                            PageMode.LIVE);
-            Assert.assertTrue(html, html.contains("content2content1"));*/
+            html = APILocator.getHTMLPageAssetRenderedAPI()
+                    .getPageHtml(
+                            PageContextBuilder.builder()
+                                    .setUser(systemUser)
+                                    .setPageUri(pageEnglishVersion.getURI())
+                                    .setPageMode(PageMode.LIVE)
+                                    .build(),
+                            mockRequest, mockResponse);
+            Assert.assertTrue(html, html.contains("content2content1"));
         }finally {
             WebAssetFactory.unArchiveAsset(container);
             WebAssetFactory.publishAsset(container, systemUser);

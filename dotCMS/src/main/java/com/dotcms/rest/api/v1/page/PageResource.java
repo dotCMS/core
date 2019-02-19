@@ -136,7 +136,7 @@ public class PageResource {
             }
 
             final PageView pageRendered = this.htmlPageAssetRenderedAPI.getPageMetadata(
-                    new PageContextBuilder()
+                      PageContextBuilder.builder()
                             .setUser(user)
                             .setPageUri(uri)
                             .setPageMode(mode)
@@ -224,7 +224,7 @@ public class PageResource {
             }
 
             final PageView pageRendered = this.htmlPageAssetRenderedAPI.getPageRendered(
-                    new PageContextBuilder()
+                    PageContextBuilder.builder()
                             .setUser(user)
                             .setPageUri(uri)
                             .setPageMode(mode)
@@ -291,7 +291,7 @@ public class PageResource {
             page = this.pageResourceHelper.saveTemplate(user, page, form);
 
             final PageView renderedPage = this.htmlPageAssetRenderedAPI.getPageRendered(
-                    new PageContextBuilder()
+                    PageContextBuilder.builder()
                             .setUser(user)
                             .setPage(page)
                             .setPageMode(PageMode.PREVIEW_MODE)
@@ -448,7 +448,7 @@ public class PageResource {
         try {
 
             final String html = this.htmlPageAssetRenderedAPI.getPageHtml(
-                    new PageContextBuilder()
+                    PageContextBuilder.builder()
                             .setUser(user)
                             .setPageUri(uri)
                             .setPageMode(mode)

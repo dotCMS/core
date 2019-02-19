@@ -14,6 +14,12 @@ public class PageContextBuilder {
     private PageMode pageMode;
     private HTMLPageAsset page;
 
+    private PageContextBuilder() {}
+
+    public static PageContextBuilder builder() {
+        return new PageContextBuilder();
+    }
+
     public PageContextBuilder setUser(final User user) {
         this.user = user;
         return this;
