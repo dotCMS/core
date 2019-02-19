@@ -90,31 +90,29 @@ export class DotEditContentToolbarHtmlService {
             ])
             .subscribe(() => {
                 const contentletQuery = `div[data-dot-object="contentlet"][data-dot-has-page-lang-version="true"]`;
-                const contentlets = Array.from(doc.querySelectorAll(contentletQuery));
+                const contentlets: HTMLDivElement[] = Array.from(
+                    doc.querySelectorAll(contentletQuery)
+                );
 
-                contentlets.forEach((contentlet: HTMLElement) => {
-                    const contentletToolbar = document.createElement('div');
-                    contentletToolbar.classList.add('dotedit-contentlet__toolbar');
-
-                    const vtls = Array.from(
-                        contentlet.querySelectorAll('div[data-dot-object="vtl-file"]')
-                    );
-
-                    if (vtls.length) {
-                        contentletToolbar.innerHTML += this.getEditVtlButtons(vtls);
-                    }
-
-                    contentletToolbar.innerHTML += this.getContentButton(contentlet.dataset);
-
-                    const contentletContent = document.createElement('div');
-                    contentletContent.classList.add('dotedit-contentlet__content');
-                    contentletContent.innerHTML = contentlet.innerHTML;
-                    contentlet.innerHTML = '';
-
-                    contentlet.insertAdjacentElement('afterbegin', contentletContent);
-                    contentlet.insertAdjacentElement('afterbegin', contentletToolbar);
+                contentlets.forEach((contentlet: HTMLDivElement) => {
+                    this.addToolbarToContentlet(contentlet);
                 });
             });
+    }
+
+    addToolbarToContentlet(contentlet: HTMLDivElement) {
+        const contentletToolbar = document.createElement('div');
+        contentletToolbar.classList.add('dotedit-contentlet__toolbar');
+
+        const vtls = Array.from(contentlet.querySelectorAll('div[data-dot-object="vtl-file"]'));
+
+        if (vtls.length) {
+            contentletToolbar.innerHTML += this.getEditVtlButtons(vtls);
+        }
+
+        contentletToolbar.innerHTML += this.getContentButton(contentlet.dataset);
+
+        contentlet.insertAdjacentElement('afterbegin', contentletToolbar);
     }
 
     getContentButton(contentletDataset: { [key: string]: any }): string {

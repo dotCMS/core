@@ -176,11 +176,11 @@ export class DotEditContentHtmlService {
                 .getContentletToContainer(container, contentlet)
                 .pipe(take(1))
                 .subscribe((contentletHtml: string) => {
-                    const contentletEl: HTMLElement = this.createNewContentletFromString(
+                    const contentletEl: HTMLDivElement = this.createNewContentletFromString(
                         contentletHtml
                     );
-                    this.renderHTMLToContentlet(contentletEl, contentletHtml);
                     containerEl.replaceChild(contentletEl, currentContentlet);
+                    this.renderHTMLToContentlet(contentletEl, contentletHtml);
                 });
         });
     }
@@ -317,7 +317,6 @@ export class DotEditContentHtmlService {
     private renderAddedItem(params: RenderAddedItemParams): void {
         const doc = this.getEditPageDocument();
         const containerEl = doc.querySelector(
-            // tslint:disable-next-line:max-line-length
             `div[data-dot-object="container"][data-dot-identifier="${
                 this.currentContainer.identifier
             }"][data-dot-uuid="${this.currentContainer.uuid}"]`
@@ -329,7 +328,7 @@ export class DotEditContentHtmlService {
             params
                 .getContent(this.currentContainer, params.item)
                 .subscribe((contentletHtml: string) => {
-                    const contentletEl: HTMLElement = this.createNewContentletFromString(
+                    const contentletEl: HTMLDivElement = this.createNewContentletFromString(
                         contentletHtml
                     );
                     containerEl.insertAdjacentElement('beforeend', contentletEl);
@@ -475,7 +474,7 @@ export class DotEditContentHtmlService {
         this.dotEditContentToolbarHtmlService.addContentletMarkup(doc);
     }
 
-    private createScriptTag(node: any): HTMLScriptElement {
+    private createScriptTag(node: HTMLScriptElement): HTMLScriptElement {
         const doc = this.getEditPageDocument();
         const script = doc.createElement('script');
         script.type = 'text/javascript';
@@ -488,11 +487,12 @@ export class DotEditContentHtmlService {
         return script;
     }
 
-    private getScriptTags(scriptTags, contentDivWrapper: HTMLElement): HTMLScriptElement[] {
-        Array.from(contentDivWrapper.children).forEach((node: any) => {
+    private getScriptTags(scriptTags, contentlet: HTMLElement): HTMLScriptElement[] {
+        Array.from(contentlet.children).forEach((node: HTMLElement) => {
             if (node.tagName === 'SCRIPT') {
-                const script = this.createScriptTag(node);
+                const script = this.createScriptTag(<HTMLScriptElement>node);
                 scriptTags.push(script);
+                node.parentElement.removeChild(node);
             } else if (node.children.length) {
                 this.getScriptTags(scriptTags, node);
             }
@@ -501,30 +501,30 @@ export class DotEditContentHtmlService {
         return scriptTags;
     }
 
-    private appendNewContentlets(contentletEl: any, html: string): void {
-        const contentletContentEl = contentletEl.querySelector('.dotedit-contentlet__content');
-        contentletContentEl.innerHTML = ''; // Removing the loading indicator
-        let scriptTags: HTMLScriptElement[] = [];
+    private getNewContentlet(html: string): HTMLDivElement {
         const doc = this.getEditPageDocument();
-
         // Add innerHTML to a plain so we can get the HTML nodes later
         const div = doc.createElement('div');
         div.innerHTML = html;
 
-        const contentDivWrapper = div.children[0];
+        return div.children[0];
+    }
 
-        scriptTags = this.getScriptTags(scriptTags, contentDivWrapper);
+    private appendNewContentlets(contentletEl: HTMLDivElement, html: string): void {
+        this.removeLoadingIndicator(contentletEl);
+
+        const newContentlet = this.getNewContentlet(html);
+
+        this.dotEditContentToolbarHtmlService.addToolbarToContentlet(newContentlet);
+
+        let scriptTags: HTMLScriptElement[] = [];
+        scriptTags = this.getScriptTags(scriptTags, newContentlet);
 
         scriptTags.forEach((script: HTMLScriptElement) => {
-            contentletContentEl.appendChild(script);
+            newContentlet.appendChild(script);
         });
 
-        // TODO: need to come up with a more efficient way to do this
-        Array.from(contentDivWrapper.childNodes).forEach((node: any) => {
-            if (node.tagName !== 'SCRIPT') {
-                contentletContentEl.appendChild(node);
-            }
-        });
+        contentletEl.parentNode.replaceChild(newContentlet, contentletEl);
     }
 
     private buttonClickHandler(target: HTMLElement, type: string) {
@@ -549,7 +549,7 @@ export class DotEditContentHtmlService {
         });
     }
 
-    private createNewContentletFromString(contentletHTML: string): HTMLElement {
+    private createNewContentletFromString(contentletHTML: string): HTMLDivElement {
         const doc = this.getEditPageDocument();
 
         const div = doc.createElement('div');
@@ -558,10 +558,10 @@ export class DotEditContentHtmlService {
         return this.createNewContentlet(div.children[0].dataset);
     }
 
-    private createNewContentlet(dotPageContent: DotPageContent): HTMLElement {
+    private createNewContentlet(dotPageContent: DotPageContent): HTMLDivElement {
         const doc = this.getEditPageDocument();
 
-        const dotEditContentletEl: HTMLElement = doc.createElement('div');
+        const dotEditContentletEl: HTMLDivElement = doc.createElement('div');
         Object.assign(dotEditContentletEl.dataset, dotPageContent);
 
         /*
@@ -576,10 +576,8 @@ export class DotEditContentHtmlService {
             <div class="dotedit-contentlet__toolbar">
                 ${contenToolbarButtons}
             </div>
-            <div class="dotedit-contentlet__content">
-                <div class="loader__overlay">
-                    <div class="loader"></div>
-                </div>
+            <div class="loader__overlay">
+                <div class="loader"></div>
             </div>
         `;
 
@@ -602,7 +600,10 @@ export class DotEditContentHtmlService {
             // When an user create or edit a contentlet from the jsp
             save: (contentletEvent: any) => {
                 if (this.currentAction === DotContentletAction.ADD) {
-                    this.renderAddedContentlet(contentletEvent.data, PageModelChangeEventType.ADD_CONTENT);
+                    this.renderAddedContentlet(
+                        contentletEvent.data,
+                        PageModelChangeEventType.ADD_CONTENT
+                    );
                 } else {
                     if (this.updateContentletInode) {
                         this.currentContentlet.inode = contentletEvent.data.inode;
@@ -612,7 +613,10 @@ export class DotEditContentHtmlService {
             },
             // When a user select a content from the search jsp
             select: (contentletEvent: any) => {
-                this.renderAddedContentlet(contentletEvent.data, PageModelChangeEventType.EDIT_CONTENT);
+                this.renderAddedContentlet(
+                    contentletEvent.data,
+                    PageModelChangeEventType.EDIT_CONTENT
+                );
                 this.iframeActions$.next({
                     name: 'select'
                 });
@@ -687,12 +691,9 @@ export class DotEditContentHtmlService {
     }
 
     private addVtlEditMenu(contentletEl: HTMLElement): void {
-        const contentletContentEl = contentletEl.querySelector('.dotedit-contentlet__content');
         const contentletToolbarEl = contentletEl.querySelector('.dotedit-contentlet__toolbar');
 
-        const vtls = Array.from(
-            contentletContentEl.querySelectorAll('div[data-dot-object="vtl-file"]')
-        );
+        const vtls = Array.from(contentletEl.querySelectorAll('div[data-dot-object="vtl-file"]'));
 
         if (vtls.length) {
             contentletToolbarEl.innerHTML = `
@@ -713,7 +714,7 @@ export class DotEditContentHtmlService {
         });
     }
 
-    private renderHTMLToContentlet(contentletEl: HTMLElement, contentletHtml: string): void {
+    private renderHTMLToContentlet(contentletEl: HTMLDivElement, contentletHtml: string): void {
         this.appendNewContentlets(contentletEl, contentletHtml);
 
         this.addVtlEditMenu(contentletEl);
@@ -724,9 +725,9 @@ export class DotEditContentHtmlService {
         const contenletEl = doc.querySelector(
             `div[data-dot-object="contentlet"][data-dot-inode="${relocateInfo.contentlet.inode}"]`
         );
-        const contentletContentEl = contenletEl.querySelector('.dotedit-contentlet__content');
-        contentletContentEl.innerHTML +=
-            '<div class="loader__overlay"><div class="loader"></div></div>';
+
+        this.addLoadingIndicator(contenletEl);
+
         relocateInfo.container =
             relocateInfo.container || contenletEl.parentNode.dataset.dotIdentifier;
 
@@ -735,5 +736,24 @@ export class DotEditContentHtmlService {
             .subscribe((contentletHtml: string) => {
                 this.appendNewContentlets(contenletEl, contentletHtml);
             });
+    }
+
+    private addLoadingIndicator(contentlet: HTMLDivElement): void {
+        contentlet.insertAdjacentElement('afterbegin', this.getLoadingIndicator());
+    }
+
+    private getLoadingIndicator(): HTMLDivElement {
+        const div = document.createElement('div');
+        div.innerHTML = `
+            <div class="loader__overlay">
+                <div class="loader"></div>
+            </div>
+        `;
+
+        return div;
+    }
+
+    private removeLoadingIndicator(contentlet: HTMLDivElement): void {
+        contentlet.querySelector('.loader__overlay').remove();
     }
 }

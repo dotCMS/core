@@ -476,7 +476,7 @@ describe('DotEditContentHtmlService', () => {
         const dotEditContentToolbarHtmlService = this.injector.get(DotContainerContentletService);
         spyOn(dotEditContentToolbarHtmlService, 'getContentletToContainer').and.returnValue(
             observableOf(`
-        <div>
+        <div data-dot-object="contentlet" data-dot-identifier="456">
             <script>
                 console.log('First');
             </script>
