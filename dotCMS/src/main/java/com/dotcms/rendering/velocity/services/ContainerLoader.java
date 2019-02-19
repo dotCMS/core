@@ -90,10 +90,13 @@ public class ContainerLoader implements DotLoader {
            if(fileAssetOptional.isPresent()){
                final FileAsset fileAsset = fileAssetOptional.get();
                final String fileAssetPath = fileAsset.getFileAsset().getPath();
+               //e.g. /Users/fabrizzio/code/servers/server1/assets/5/8/58c39dc2-16a8-4268-b5d2-e609afb158a7/fileAsset/blog.vtl
+               Logger.debug(this,()->String.format("Invalidating asset-path key '%s'",fileAssetPath));
+               velocityResourceCache.remove(fileAssetPath);
                //e.g. 1/Users/fabrizzio/code/servers/server1/assets/5/8/58c39dc2-16a8-4268-b5d2-e609afb158a7/fileAsset/blog.vtl
-               final String filePathKey = String.format(cacheKeyMask, ResourceManager.RESOURCE_TEMPLATE, fileAssetPath);
-               Logger.debug(this,()->String.format("Invalidating asset path key '%s'",fileAssetPath));
-               velocityResourceCache.remove(filePathKey);
+               final String fileAssetPathKey = String.format(cacheKeyMask, ResourceManager.RESOURCE_TEMPLATE, fileAssetPath);
+               Logger.debug(this,()->String.format("Invalidating asset-path with resource key '%s'",fileAssetPathKey));
+               velocityResourceCache.remove(fileAssetPathKey);
            }
         }
     }

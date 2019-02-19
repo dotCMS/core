@@ -254,8 +254,6 @@ public class FileAssetContainerUtil {
         return ImmutableSet.<FileAsset>builder().addAll(APILocator.getFileAssetAPI()
                 .findFileAssetsByFolder(containerFolder, null, false, APILocator.systemUser(),
                         false))
-                .addAll(APILocator.getFileAssetAPI()
-                        .findFileAssetsByFolder(containerFolder, null, true,
-                                APILocator.systemUser(), false)).build();
+                                .build();
     }
 }
