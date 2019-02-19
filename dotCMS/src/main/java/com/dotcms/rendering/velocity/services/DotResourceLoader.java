@@ -1,11 +1,9 @@
 package com.dotcms.rendering.velocity.services;
 
 
-import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import java.io.InputStream;
 import org.apache.commons.collections.ExtendedProperties;

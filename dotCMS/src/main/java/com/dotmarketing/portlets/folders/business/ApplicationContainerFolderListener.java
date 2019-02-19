@@ -50,34 +50,34 @@ public class ApplicationContainerFolderListener implements FolderListener {
 
         if (null != folderEvent && null != folderEvent.getChild()) {
 
-            final String childName       = folderEvent.getChildName();
+            final String fileAssetName       = folderEvent.getChildName();
             final Folder containerFolder = folderEvent.getParent();
             final Object child           = folderEvent.getChild();
 
-            if (this.isValidChild(folderEvent, childName, containerFolder)) {
+            if (this.isValidChild(folderEvent, fileAssetName, containerFolder)) {
 
                 try {
 
                     // otherwise we have to fetch the object it self.
-                    final Container container = ContainerAPI.CONTAINER_META_INFO.contains(childName)?
+                    final Container container = ContainerAPI.CONTAINER_META_INFO.contains(fileAssetName)?
                             this.createFakeContainer(child):
                             this.containerAPI.getContainerByFolder(containerFolder, folderEvent.getUser(), false);
 
                     if (null != container && UtilMethods.isSet(container.getIdentifier())) {
 
-                        if (Constants.CONTAINER_META_INFO_FILE_NAME.equals(childName)) {
+                        if (Constants.CONTAINER_META_INFO_FILE_NAME.equals(fileAssetName)) {
                             this.invalidatedRelatedPages (container);
                             CacheLocator.getIdentifierCache().removeFromCacheByVersionable(container);
                         }
 
-                        this.invalidateContainerCache(container, containerFolder);
+                        this.invalidateContainerCache(container, containerFolder, fileAssetName);
 
-                        Logger.debug(this, () -> "The child: " + childName + " on the folder: " +
+                        Logger.debug(this, () -> "The child: " + fileAssetName + " on the folder: " +
                                 containerFolder + ", has been removed, so the container was invalidated");
                     }
                 } catch (DotSecurityException | DotDataException e) {
 
-                    Logger.debug(this, "The child: " + childName + " on the folder: " +
+                    Logger.debug(this, "The child: " + fileAssetName + " on the folder: " +
                             containerFolder + ", has been removed, BUT the container could not be invalidated", e);
                 }
             }
@@ -90,40 +90,39 @@ public class ApplicationContainerFolderListener implements FolderListener {
 
         if (null != folderEvent && null != folderEvent.getChild()) {
 
-            final String  childName                 = folderEvent.getChildName();
+            final String  fileAssetName             = folderEvent.getChildName();
             final Folder  containerFolder           = folderEvent.getParent();
             final Object  child                     = folderEvent.getChild();
-            final Optional<ContentType> contentType = getContentType(folderEvent, childName);
+            final Optional<ContentType> contentType = getContentType(folderEvent, fileAssetName);
             final boolean isContentType             = contentType.isPresent();
 
-            if (isContentType || this.isSpecialAsset (childName)) {
+            if (isContentType || this.isSpecialAsset (fileAssetName)) {
                 try {
 
-                    final Container container = ContainerAPI.CONTAINER_META_INFO.contains(childName)?
+                    final Container container = ContainerAPI.CONTAINER_META_INFO.contains(fileAssetName)?
                             this.createFakeContainer(child):
                             this.containerAPI.getContainerByFolder(containerFolder, folderEvent.getUser(), false);
 
                     if (null != container && UtilMethods.isSet(container.getIdentifier())) {
 
                         // removing the whole container folder, so remove the relationship
-                        if (Constants.CONTAINER_META_INFO_FILE_NAME.equals(childName)) {
+                        if (Constants.CONTAINER_META_INFO_FILE_NAME.equals(fileAssetName)) {
                             this.invalidatedRelatedPages (container);
                             this.removeContainerFromTemplate(container, folderEvent.getUser());
                         }
 
                         if (isContentType) {
-
                             this.removeContentTypeMultitreesAssociated (contentType.get(), container);
                         }
 
-                        this.invalidateContainerCache(container, containerFolder);
+                        this.invalidateContainerCache(container, containerFolder ,fileAssetName);
 
-                        Logger.debug(this, () -> "The child: " + childName + " on the folder: " +
+                        Logger.debug(this, () -> "The child: " + fileAssetName + " on the folder: " +
                                 containerFolder + ", has been removed, so the container was invalidated");
                     }
                 } catch (DotSecurityException | DotDataException e) {
 
-                    Logger.debug(this, "The child: " + childName + " on the folder: " +
+                    Logger.debug(this, "The child: " + fileAssetName + " on the folder: " +
                             containerFolder + ", has been removed, BUT the container could not be invalidated", e);
                 }
             }
@@ -265,18 +264,15 @@ public class ApplicationContainerFolderListener implements FolderListener {
         }*/
     }
 
-    private void invalidateContainerCache(final Container container, final Folder containerFolder) {
+    private void invalidateContainerCache(final Container container, final Folder containerFolder, final String fileAssetName) throws DotDataException, DotSecurityException {
 
-        final Container fileBasedContainer = new FileAssetContainer();
-
-        fileBasedContainer.setIdentifier(containerFolder.getPath());
-        new ContainerLoader().invalidate(fileBasedContainer);
-        CacheLocator.getContainerCache().remove(fileBasedContainer);
-
-        new ContainerLoader().invalidate(container);
-        CacheLocator.getContainerCache().remove(container);
-
-        CacheLocator.getContentTypeCache().removeContainerStructures
-                (container.getIdentifier(), container.getInode());
+        final ContainerLoader containerLoader = new ContainerLoader();
+        if(container instanceof FileAssetContainer){
+            containerLoader.invalidate(FileAssetContainer.class.cast(container), containerFolder, fileAssetName);
+        } else {
+            containerLoader.invalidate(container);
+            CacheLocator.getContainerCache().remove(container);
+        }
+        CacheLocator.getContentTypeCache().removeContainerStructures(container.getIdentifier(), container.getInode());
     }
 }

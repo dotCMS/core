@@ -8,17 +8,20 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.containers.model.FileAssetContainer;
+import com.dotmarketing.portlets.fileassets.business.FileAsset;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
-
 import java.io.InputStream;
 import java.io.StringWriter;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import org.apache.velocity.runtime.resource.ResourceManager;
 
 /**
@@ -52,30 +55,47 @@ public class ContainerLoader implements DotLoader {
 
 
     @Override
-    public void invalidate(final Object obj, final PageMode mode) {
+    public void invalidate(Object obj, PageMode mode) {
         final Container container = (Container) obj;
-        if (container instanceof FileAssetContainer) {
-            invalidate(FileAssetContainer.class.cast(container), mode);
-        } else {
-            final VelocityResourceKey key =
-                    new VelocityResourceKey(container, mode);
-            final DotResourceCache veloctyResourceCache =
-                    CacheLocator.getVeloctyResourceCache();
-            veloctyResourceCache.remove(key);
-        }
+
+        final VelocityResourceKey key =
+                new VelocityResourceKey(container, mode);
+        final DotResourceCache    veloctyResourceCache =
+                CacheLocator.getVeloctyResourceCache();
+
+        veloctyResourceCache.remove(key);
     }
 
-    private void invalidate(final FileAssetContainer fileAssetContainer, final PageMode mode) {
-        final VelocityResourceKey key = new VelocityResourceKey(fileAssetContainer,
-                fileAssetContainer.getIdentifier(), mode);
+    public void invalidate(final FileAssetContainer fileAssetContainer, final Folder containerFolder, final String fileAssetName) throws DotDataException, DotSecurityException{
+        final String cacheKeyMask = "%d%s";
         final DotResourceCache velocityResourceCache = CacheLocator.getVeloctyResourceCache();
+        for(final PageMode mode:PageMode.values()){
+        final VelocityResourceKey key = new VelocityResourceKey(fileAssetContainer, fileAssetContainer.getIdentifier(), mode);
+
         // Here's an example of how the key actually looks like when stored in the the velocity 2 cache.
         // `1/LIVE/a050073a-a31e-4aab-9307-86bfb248096a/1550262106697.container`
         // However when calling  DotResourceLoader.getResourceStream(path..
         // it looks like this: `/LIVE/a050073a-a31e-4aab-9307-86bfb248096a/1550262106697.container` no leading `1`
         // That leading character `1` comes from ResourceManagerImpl.getResource(.. it's the resource type defined in ResourceManager.RESOURCE_TEMPLATE
-        velocityResourceCache
-                .remove(String.format("%d%s", ResourceManager.RESOURCE_TEMPLATE, key.toString()));
+            final String identifierKey = String.format(cacheKeyMask, ResourceManager.RESOURCE_TEMPLATE, key.path);
+            Logger.debug(this,()->String.format("Invalidating asset key: '%s'",identifierKey));
+            velocityResourceCache.remove(identifierKey);
+        }
+        // Sometimes the in-cache key is the file site/path or path it self.
+        // it's pretty difficult at this point knowing exactly what was used to put this thing in cache. So here we go trying a few options
+
+        final Set<FileAsset> fileAssetSet = FileAssetContainerUtil.getInstance().findContainerAssets(containerFolder);
+        if(UtilMethods.isSet(fileAssetName) && null != fileAssetSet ){
+           final Optional<FileAsset> fileAssetOptional = fileAssetSet.stream().filter(fileAsset ->  fileAssetName.equals(fileAsset.getFileName())).findFirst();
+           if(fileAssetOptional.isPresent()){
+               final FileAsset fileAsset = fileAssetOptional.get();
+               final String fileAssetPath = fileAsset.getFileAsset().getPath();
+               //e.g. 1/Users/fabrizzio/code/servers/server1/assets/5/8/58c39dc2-16a8-4268-b5d2-e609afb158a7/fileAsset/blog.vtl
+               final String filePathKey = String.format(cacheKeyMask, ResourceManager.RESOURCE_TEMPLATE, fileAssetPath);
+               Logger.debug(this,()->String.format("Invalidating asset path key '%s'",fileAssetPath));
+               velocityResourceCache.remove(filePathKey);
+           }
+        }
     }
 
     private InputStream buildVelocity(Container container, String uuid, PageMode mode, String filePath) throws DotDataException, DotSecurityException {

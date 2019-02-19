@@ -30,9 +30,9 @@ import java.util.Map;
  */
 public interface ContainerAPI {
 
-	String PRE_LOOP             = ContainerByFolderAssetsUtil.PRE_LOOP;
-	String POST_LOOP            = ContainerByFolderAssetsUtil.POST_LOOP;
-	String CONTAINER_META_INFO  = ContainerByFolderAssetsUtil.CONTAINER_META_INFO;
+	String PRE_LOOP             = FileAssetContainerUtil.PRE_LOOP;
+	String POST_LOOP            = FileAssetContainerUtil.POST_LOOP;
+	String CONTAINER_META_INFO  = FileAssetContainerUtil.CONTAINER_META_INFO;
 
 	/**
 	 * Copies container to the specified host

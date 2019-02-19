@@ -16,7 +16,9 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Constants;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.collect.ImmutableSet;
 import com.liferay.util.StringPool;
+import java.util.Set;
 import org.apache.commons.io.IOUtils;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.context.Context;
@@ -31,7 +33,7 @@ import java.util.Optional;
 /**
  * This util is in charge of handling the creation of the FileAsset containers based on the folder and their contains.
  */
-public class ContainerByFolderAssetsUtil {
+public class FileAssetContainerUtil {
 
     private static final int DEFAULT_MAX_CONTENTLETS = 10;
     private static final String TITLE                = "title";
@@ -48,18 +50,18 @@ public class ContainerByFolderAssetsUtil {
 
 
     private static class SingletonHolder {
-        private static final ContainerByFolderAssetsUtil INSTANCE = new ContainerByFolderAssetsUtil();
+        private static final FileAssetContainerUtil INSTANCE = new FileAssetContainerUtil();
     }
     /**
      * Get the instance.
      * @return ContainerByFolderAssetsUtil
      */
-    public static ContainerByFolderAssetsUtil getInstance() {
+    public static FileAssetContainerUtil getInstance() {
 
-        return ContainerByFolderAssetsUtil.SingletonHolder.INSTANCE;
+        return FileAssetContainerUtil.SingletonHolder.INSTANCE;
     } // getInstance.
 
-    public Container fromAssets(final Folder containerFolder, final List<FileAsset> assets, final boolean showLive) throws DotDataException {
+    Container fromAssets(final Folder containerFolder, final List<FileAsset> assets, final boolean showLive) throws DotDataException {
 
         final ImmutableList.Builder<FileAsset> containerStructures =
                 new ImmutableList.Builder<>();
@@ -245,5 +247,15 @@ public class ContainerByFolderAssetsUtil {
         } catch (IOException e) {
             return StringPool.BLANK;
         }
+    }
+
+    public Set<FileAsset> findContainerAssets(final Folder containerFolder)
+            throws DotDataException, DotSecurityException {
+        return ImmutableSet.<FileAsset>builder().addAll(APILocator.getFileAssetAPI()
+                .findFileAssetsByFolder(containerFolder, null, false, APILocator.systemUser(),
+                        false))
+                .addAll(APILocator.getFileAssetAPI()
+                        .findFileAssetsByFolder(containerFolder, null, true,
+                                APILocator.systemUser(), false)).build();
     }
 }
