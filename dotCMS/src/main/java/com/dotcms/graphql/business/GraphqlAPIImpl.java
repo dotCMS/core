@@ -258,7 +258,7 @@ public class GraphqlAPIImpl implements GraphqlAPI {
                 .name("search")
                 .argument(GraphQLArgument.newArgument()
                     .name("query")
-                    .type(GraphQLString)
+                    .type(nonNull(GraphQLString))
                     .build())
                 .argument(GraphQLArgument.newArgument()
                     .name("limit")

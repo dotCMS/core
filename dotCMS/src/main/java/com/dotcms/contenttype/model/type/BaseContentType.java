@@ -91,7 +91,7 @@ public enum BaseContentType {
             }
         }
         final String errorMsg = "BaseContentType " + name + " does not Exist";
-		Logger.error(BaseContentType.class, errorMsg);
+		Logger.info(BaseContentType.class, errorMsg);
         throw new IllegalArgumentException(errorMsg);
     }
 

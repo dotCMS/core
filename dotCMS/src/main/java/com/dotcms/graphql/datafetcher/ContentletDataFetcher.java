@@ -19,7 +19,11 @@ public class ContentletDataFetcher implements DataFetcher<List<Contentlet>> {
     @Override
     public List<Contentlet> get(final DataFetchingEnvironment environment) throws Exception {
         final User user = ((DotGraphQLContext) environment.getContext()).getUser();
-        String query = environment.getArgument("query");
+
+        String query = UtilMethods.isSet((String) environment.getArgument("query"))
+            ? environment.getArgument("query")
+            : "";
+
         final Integer limit = environment.getArgument("limit")!=null ? environment.getArgument("limit") : 100;
         final Integer offset = environment.getArgument("offset")!=null ? environment.getArgument("offset") : 0;
         final String sortBy = environment.getArgument("sortBy");
