@@ -531,7 +531,6 @@ export class DotEditContentHtmlService {
     }
 
     private appendNewContentlets(contentletEl: HTMLElement, html: string): void {
-        console.log('appendNewContentlets');
         this.removeLoadingIndicator(contentletEl);
 
         const newContentlet = this.getNewContentlet(html);
@@ -749,7 +748,6 @@ export class DotEditContentHtmlService {
     }
 
     private renderRelocatedContentlet(relocateInfo: DotRelocatePayload): void {
-        console.log('renderRelocatedContentlet');
         const doc = this.getEditPageDocument();
         const contenletEl: HTMLElement = doc.querySelector(
             `div[data-dot-object="contentlet"][data-dot-inode="${relocateInfo.contentlet.inode}"]`
@@ -767,7 +765,6 @@ export class DotEditContentHtmlService {
         this.dotContainerContentletService
             .getContentletToContainer(relocateInfo.container, relocateInfo.contentlet)
             .subscribe((contentletHtml: string) => {
-                console.log('contentletHtml', contentletHtml);
                 this.appendNewContentlets(contenletEl, contentletHtml);
             });
     }
