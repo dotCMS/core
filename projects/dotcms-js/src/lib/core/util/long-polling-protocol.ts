@@ -1,36 +1,44 @@
-import { Protocol, QueryParams, Url } from './protocol';
+import { Protocol } from './protocol';
 import { LoggerService } from '../logger.service';
 import { CoreWebService } from '../core-web.service';
 import { RequestMethod } from '@angular/http';
 import { pluck } from 'rxjs/operators';
 
-export type QueryFuncBuilder = (data: any) => QueryParams;
-
 export class LongPollingProtocol extends Protocol {
     private isClosed = false;
 
     constructor(
-        private url: Url,
+        private url: string,
         loggerService: LoggerService,
-        private coreWebService: CoreWebService,
-        private queryBuilder?: QueryFuncBuilder
+        private coreWebService: CoreWebService
     ) {
         super(loggerService);
-
-        if (!queryBuilder) {
-            this.queryBuilder = (_data) => null;
-        }
     }
 
-    start(queryParameters?: QueryParams): void {
-        this.isClosed = false;
+    connect(): void {
+        this.connectLongPooling();
+    }
 
+    close(): void {
+        this.loggerService.info('destroying long polling');
+        this.isClosed = true;
+        this._close.next();
+    }
+
+    private getLastCallback(data): number {
+        return data.length > 0 ? data[data.length - 1].creationDate + 1 : undefined;
+    }
+
+    private connectLongPooling(lastCallBack?: number): void {
+        this.isClosed = false;
+        console.log('connectLongPooling');
         this.loggerService.info('Starting long polling connection');
 
         this.coreWebService
             .requestView({
                 method: RequestMethod.Get,
-                url: this.url.getUrlWith(queryParameters)
+                url: this.url,
+                params: lastCallBack ? {lastCallBack: lastCallBack} : {}
             })
             .pipe(pluck('entity'))
             .subscribe(
@@ -46,21 +54,14 @@ export class LongPollingProtocol extends Protocol {
                     }
 
                     if (!this.isClosed) {
-                        const query: QueryParams = this.queryBuilder(data);
-                        this.start(query);
+                        this.connectLongPooling(this.getLastCallback(data));
                     }
                 },
-                () => {
+                (e) => {
+                    console.log('ERROR LONG POLLING');
                     this.loggerService.info('A error occur connecting through long polling');
-                    if (!this.isClosed) {
-                        this.start();
-                    }
+                    this._error.next(e);
                 }
             );
-    }
-
-    destroy(): void {
-        this.loggerService.info('destroying long polling');
-        this.isClosed = true;
     }
 }
