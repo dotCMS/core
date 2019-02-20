@@ -1,20 +1,21 @@
 package com.dotmarketing.portlets.htmlpageasset.business.render.page;
 
+import com.dotcms.repackage.com.fasterxml.jackson.core.JsonGenerator;
+import com.dotcms.repackage.com.fasterxml.jackson.core.JsonProcessingException;
+import com.dotcms.repackage.com.fasterxml.jackson.databind.JsonSerializer;
+import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectWriter;
+import com.dotcms.repackage.com.fasterxml.jackson.databind.SerializerProvider;
+import com.dotcms.util.CollectionsUtils;
+import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.portlets.templates.model.Template;
+import com.google.common.collect.ImmutableMap;
+
 import java.io.CharArrayReader;
 import java.io.IOException;
 import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
-
-import com.dotcms.repackage.com.fasterxml.jackson.core.JsonGenerator;
-import com.dotcms.repackage.com.fasterxml.jackson.core.JsonProcessingException;
-import com.dotcms.repackage.com.fasterxml.jackson.databind.JsonSerializer;
-import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectWriter;
-import com.dotcms.repackage.com.fasterxml.jackson.databind.SerializerProvider;
-import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.portlets.templates.model.Template;
-import com.google.common.collect.ImmutableMap;
 
 /**
  * JsonSerializer of {@link PageView}
@@ -40,7 +41,8 @@ public class PageViewSerializer extends JsonSerializer<PageView> {
                 .stream()
                 .collect(Collectors.toMap(
                         containerRendered -> containerRendered.getContainer().getIdentifier(),
-                        containerRendered -> containerRendered
+                        containerRendered -> containerRendered,
+                        CollectionsUtils.Merge.current()
                 ))
         );
         final Map<Object, Object> templateMap = this.asMap(template);

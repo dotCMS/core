@@ -42,10 +42,11 @@ public interface ContainerFactory {
 
     /**
      * Retrieves all registered containers in the system
-     * @return
+	 * @param currentHost {@link Host} the host is needed since the file asset container on the same host should not include the host in the path, the rest will required it
+     * @return List of Container
      * @throws DotDataException 
      */
-    List<Container> findAllContainers() throws DotDataException;
+    List<Container> findAllContainers(final Host currentHost) throws DotDataException;
 	
 	/**
 	 * Retrieves a paginated list of containers the user can use
@@ -75,11 +76,12 @@ public interface ContainerFactory {
 	 * @param folder {@link Folder}
 	 * @param user   {@link User}
 	 * @param showLive {@link Boolean}
+	 * @param includeHostOnPath {@link Boolean} true if wants to include the host on the container path
 	 * @return Container
 	 * @throws DotSecurityException
 	 * @throws DotDataException
 	 */
-	Container getContainerByFolder(final Host host, final Folder folder, final User user, final boolean showLive) throws DotSecurityException, DotDataException;
+	Container getContainerByFolder(final Host host, final Folder folder, final User user, final boolean showLive, final boolean includeHostOnPath) throws DotSecurityException, DotDataException;
 
 	/**
 	 * Get working container by folder path

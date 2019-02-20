@@ -6,6 +6,7 @@ import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotcms.util.ConversionUtils;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Source;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -15,10 +16,10 @@ import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Constants;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.util.StringPool;
-import java.util.Set;
 import org.apache.commons.io.IOUtils;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.context.Context;
@@ -29,6 +30,10 @@ import java.io.StringWriter;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+
+import static com.dotmarketing.util.StringUtils.builder;
+import static com.liferay.util.StringPool.FORWARD_SLASH;
 
 /**
  * This util is in charge of handling the creation of the FileAsset containers based on the folder and their contains.
@@ -40,6 +45,7 @@ public class FileAssetContainerUtil {
     private static final String DESCRIPTION          = "description";
     private static final String MAX_CONTENTLETS      = "max_contentlets";
     private static final String NOTES                = "notes";
+    private static final String HOST_INDICATOR       = "//";
 
     private static String [] DEFAULT_META_DATA_NAMES_ARRAY
             = new String[] { TITLE, DESCRIPTION, MAX_CONTENTLETS, NOTES};
@@ -47,6 +53,7 @@ public class FileAssetContainerUtil {
     static final String PRE_LOOP             = "preloop.vtl";
     static final String POST_LOOP            = "postloop.vtl";
     static final String CONTAINER_META_INFO  = "container.vtl";
+
 
 
     private static class SingletonHolder {
@@ -61,7 +68,61 @@ public class FileAssetContainerUtil {
         return FileAssetContainerUtil.SingletonHolder.INSTANCE;
     } // getInstance.
 
-    Container fromAssets(final Folder containerFolder, final List<FileAsset> assets, final boolean showLive) throws DotDataException {
+    /**
+     * Determines if the container id is a path or uudi, if not any match will return UNKNOWN.
+     * @param containerIdOrPath String path or uddi
+     * @return Source (File if it is a fs container, DB if it is a db container, otherwise UNKNOWN)
+     */
+    public Source getContainerSourceFromContainerIdOrPath(final String containerIdOrPath) {
+
+        Source source = Source.UNKNOWN;
+
+        if (this.isFolderAssetContainerId(containerIdOrPath)) {
+            source = Source.FILE;
+        } else if (this.isDataBaseContainerId(containerIdOrPath)) {
+            source = Source.DB;
+        }
+
+        return source;
+    }
+
+    public boolean isDataBaseContainerId(final String containerIdentifier) {
+
+        boolean isIdentifier = false;
+        isIdentifier |= UUIDUtil.isUUID(containerIdentifier);
+
+        if (!isIdentifier) {
+            try {
+                APILocator.getShortyAPI().validShorty(containerIdentifier);
+                isIdentifier = true;
+            } catch (Exception e) {
+                isIdentifier = false;
+            }
+        }
+
+        return isIdentifier;
+    }
+
+    public boolean isFolderAssetContainerId(final String containerPath) {
+
+        return UtilMethods.isSet(containerPath) && containerPath.contains(FORWARD_SLASH);
+    }
+
+    /**
+     * Based on a host, folder and collection of asset, creates a fs container by convention.
+     * @param host {@link Host} the host of the container
+     * @param containerFolder {@link Folder} this folder represents the container
+     * @param assets {@link List} of {@link FileAsset} has all meta info such as container.vtl, preloop.vtl, postloop.vtl and all content types.
+     * @param showLive {@link Boolean} true if only want published assets
+     * @param includeHostOnPath {@link Boolean} true if want to include the host on the {@link Container}.path,
+     *                                         this is usually needed when a resource of host A, wants to use a container from host B, the path inside the {@link FileAssetContainer}
+     *                                         must include the host, otherwise will be relative
+     * @return Container
+     * @throws DotDataException
+     */
+    public Container fromAssets(final Host host, final Folder containerFolder,
+                                final List<FileAsset> assets, final boolean showLive,
+                                final boolean includeHostOnPath) throws DotDataException {
 
         final ImmutableList.Builder<FileAsset> containerStructures =
                 new ImmutableList.Builder<>();
@@ -103,8 +164,8 @@ public class FileAssetContainerUtil {
                     Constants.CONTAINER_META_INFO_FILE_NAME);
         }
 
-        this.setContainerData(containerFolder, metaInfoFileAsset, containerStructures.build(), container,
-                preLoop, postLoop, containerMetaInfo.get());
+        this.setContainerData(host, containerFolder, metaInfoFileAsset, containerStructures.build(), container,
+                preLoop, postLoop, containerMetaInfo.get(), includeHostOnPath);
 
         return container;
     }
@@ -135,13 +196,15 @@ public class FileAssetContainerUtil {
         }
     }
 
-    private void setContainerData(final Folder containerFolder,
+    private void setContainerData(final Host host,
+                                  final Folder containerFolder,
                                   final FileAsset metaInfoFileAsset,
                                   final List<FileAsset> containerStructures,
                                   final FileAssetContainer container,
                                   final Optional<String> preLoop,
                                   final Optional<String> postLoop,
-                                  final String containerMetaInfo) {
+                                  final String containerMetaInfo,
+                                  final boolean includeHostOnPath) {
 
         container.setIdentifier (metaInfoFileAsset.getIdentifier());
         container.setInode      (metaInfoFileAsset.getInode());
@@ -155,12 +218,20 @@ public class FileAssetContainerUtil {
         container.setMaxContentlets(DEFAULT_MAX_CONTENTLETS);
         container.setLanguage(metaInfoFileAsset.getLanguageId());
         container.setFriendlyName((String)metaInfoFileAsset.getMap().getOrDefault(DESCRIPTION, container.getTitle()));
+        container.setPath(this.buildPath(host, containerFolder, includeHostOnPath));
 
         preLoop.ifPresent (value -> container.setPreLoop (value));
         postLoop.ifPresent(value -> container.setPostLoop(value));
         this.setMetaInfo (containerMetaInfo, container);
 
         container.setContainerStructuresAssets(containerStructures);
+    }
+
+    private String buildPath(final Host host, final Folder containerFolder, final boolean includeHostOnPath) {
+
+        return includeHostOnPath?
+                builder(HOST_INDICATOR, host.getHostname(), containerFolder.getPath()).toString():
+                containerFolder.getPath();
     }
 
     private boolean isContainerMetaInfo(final FileAsset fileAsset, final boolean showLive) {
