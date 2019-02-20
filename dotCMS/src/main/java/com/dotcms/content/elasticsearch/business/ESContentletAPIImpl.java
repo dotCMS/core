@@ -4130,7 +4130,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     contentlet.setFolder((String)value);
                 }else if(conVariable.equals(Contentlet.NULL_PROPERTIES)){
                     contentlet.setProperty(conVariable, value);
-                }else if(NEVER_EXPIRE.equals(conVariable)){
+                }else if(NEVER_EXPIRE.equals(conVariable) || conVariable.equals(Contentlet.CONTENT_TYPE_KEY)){
                     contentlet.setProperty(conVariable, value);
                 } else if(velFieldmap.get(conVariable) != null){
                     Field field = velFieldmap.get(conVariable);
