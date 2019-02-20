@@ -108,7 +108,7 @@ public class WorkingContainerFinderByIdOrPathStrategyResolver {
 
         @Override
         public boolean test(final String containerIdOrPath) {
-            return ContainerByFolderAssetsUtil.getInstance().getContainerSourceFromContainerIdOrPath(containerIdOrPath) == Source.DB;
+            return FileAssetContainerUtil.getInstance().getContainerSourceFromContainerIdOrPath(containerIdOrPath) == Source.DB;
         }
 
         @Override
@@ -127,7 +127,7 @@ public class WorkingContainerFinderByIdOrPathStrategyResolver {
 
         @Override
         public boolean test(final String containerIdOrPath) {
-            return ContainerByFolderAssetsUtil.getInstance().getContainerSourceFromContainerIdOrPath(containerIdOrPath) == Source.FILE;
+            return FileAssetContainerUtil.getInstance().getContainerSourceFromContainerIdOrPath(containerIdOrPath) == Source.FILE;
         }
 
         @Override

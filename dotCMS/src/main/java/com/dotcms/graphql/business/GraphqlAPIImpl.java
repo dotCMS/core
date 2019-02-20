@@ -208,6 +208,7 @@ public class GraphqlAPIImpl implements GraphqlAPI {
             ? typesMap.get(relatedContentType.variable())
             : GraphQLTypeReference.typeRef(relatedContentType.variable());
 
+
         outputType = records.doesAllowOnlyOne()
             ? outputType
             : list(outputType);
@@ -257,7 +258,7 @@ public class GraphqlAPIImpl implements GraphqlAPI {
                 .name("search")
                 .argument(GraphQLArgument.newArgument()
                     .name("query")
-                    .type(GraphQLString)
+                    .type(nonNull(GraphQLString))
                     .build())
                 .argument(GraphQLArgument.newArgument()
                     .name("limit")
@@ -306,7 +307,7 @@ public class GraphqlAPIImpl implements GraphqlAPI {
 
         rootTypeBuilder = rootTypeBuilder.fields(typesFieldsDefinitions);
 
-        return new GraphQLSchema(rootTypeBuilder.build(), null, graphQLTypes);
+        return new GraphQLSchema.Builder().query(rootTypeBuilder.build()).additionalTypes(graphQLTypes).build();
     }
 
     private ContentType getRelatedContentTypeForField(final Field field, final User user) throws DotSecurityException, DotDataException {

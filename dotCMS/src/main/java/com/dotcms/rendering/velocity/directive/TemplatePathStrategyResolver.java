@@ -9,7 +9,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.containers.business.ContainerByFolderAssetsUtil;
+import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
@@ -134,7 +134,7 @@ public class TemplatePathStrategyResolver {
 
         private boolean isPath (final String templatePath) {
 
-            return ContainerByFolderAssetsUtil.getInstance().isFolderAssetContainerId(templatePath);
+            return FileAssetContainerUtil.getInstance().isFolderAssetContainerId(templatePath);
         }
 
         private String getPath(final RenderParams params, final String path, final String uid) {
@@ -212,7 +212,7 @@ public class TemplatePathStrategyResolver {
 
         private boolean isIdentifier (final String identifier) {
 
-           return ContainerByFolderAssetsUtil.getInstance().isDataBaseContainerId(identifier);
+           return FileAssetContainerUtil.getInstance().isDataBaseContainerId(identifier);
         }
     } // IdentifierTemplatePathStrategyImpl.
 } // E:O:F:TemplatePathStrategyResolver.

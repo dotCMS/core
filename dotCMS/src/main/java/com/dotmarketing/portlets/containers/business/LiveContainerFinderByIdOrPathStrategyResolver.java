@@ -9,6 +9,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.containers.model.FileAssetContainer;
 import com.liferay.portal.model.User;
 
 import java.util.List;
@@ -108,7 +109,7 @@ public class LiveContainerFinderByIdOrPathStrategyResolver {
 
         @Override
         public boolean test(final String containerIdOrPath) {
-            return ContainerByFolderAssetsUtil.getInstance().getContainerSourceFromContainerIdOrPath(containerIdOrPath) == Source.DB;
+            return FileAssetContainerUtil.getInstance().getContainerSourceFromContainerIdOrPath(containerIdOrPath) == Source.DB;
         }
 
         @Override
@@ -127,7 +128,7 @@ public class LiveContainerFinderByIdOrPathStrategyResolver {
 
         @Override
         public boolean test(final String containerIdOrPath) {
-            return ContainerByFolderAssetsUtil.getInstance().getContainerSourceFromContainerIdOrPath(containerIdOrPath) == Source.FILE;
+            return FileAssetContainerUtil.getInstance().getContainerSourceFromContainerIdOrPath(containerIdOrPath) == Source.FILE;
         }
 
         @Override

@@ -18,6 +18,7 @@ import com.dotmarketing.util.Constants;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.collect.ImmutableSet;
 import com.liferay.util.StringPool;
 import org.apache.commons.io.IOUtils;
 import org.apache.velocity.VelocityContext;
@@ -29,6 +30,7 @@ import java.io.StringWriter;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import static com.dotmarketing.util.StringUtils.builder;
 import static com.liferay.util.StringPool.FORWARD_SLASH;
@@ -36,7 +38,7 @@ import static com.liferay.util.StringPool.FORWARD_SLASH;
 /**
  * This util is in charge of handling the creation of the FileAsset containers based on the folder and their contains.
  */
-public class ContainerByFolderAssetsUtil {
+public class FileAssetContainerUtil {
 
     private static final int DEFAULT_MAX_CONTENTLETS = 10;
     private static final String TITLE                = "title";
@@ -55,15 +57,15 @@ public class ContainerByFolderAssetsUtil {
 
 
     private static class SingletonHolder {
-        private static final ContainerByFolderAssetsUtil INSTANCE = new ContainerByFolderAssetsUtil();
+        private static final FileAssetContainerUtil INSTANCE = new FileAssetContainerUtil();
     }
     /**
      * Get the instance.
      * @return ContainerByFolderAssetsUtil
      */
-    public static ContainerByFolderAssetsUtil getInstance() {
+    public static FileAssetContainerUtil getInstance() {
 
-        return ContainerByFolderAssetsUtil.SingletonHolder.INSTANCE;
+        return FileAssetContainerUtil.SingletonHolder.INSTANCE;
     } // getInstance.
 
     /**
@@ -106,6 +108,18 @@ public class ContainerByFolderAssetsUtil {
         return UtilMethods.isSet(containerPath) && containerPath.contains(FORWARD_SLASH);
     }
 
+    /**
+     * Based on a host, folder and collection of asset, creates a fs container by convention.
+     * @param host {@link Host} the host of the container
+     * @param containerFolder {@link Folder} this folder represents the container
+     * @param assets {@link List} of {@link FileAsset} has all meta info such as container.vtl, preloop.vtl, postloop.vtl and all content types.
+     * @param showLive {@link Boolean} true if only want published assets
+     * @param includeHostOnPath {@link Boolean} true if want to include the host on the {@link Container}.path,
+     *                                         this is usually needed when a resource of host A, wants to use a container from host B, the path inside the {@link FileAssetContainer}
+     *                                         must include the host, otherwise will be relative
+     * @return Container
+     * @throws DotDataException
+     */
     public Container fromAssets(final Host host, final Folder containerFolder,
                                 final List<FileAsset> assets, final boolean showLive,
                                 final boolean includeHostOnPath) throws DotDataException {
@@ -304,5 +318,13 @@ public class ContainerByFolderAssetsUtil {
         } catch (IOException e) {
             return StringPool.BLANK;
         }
+    }
+
+    public Set<FileAsset> findContainerAssets(final Folder containerFolder)
+            throws DotDataException, DotSecurityException {
+        return ImmutableSet.<FileAsset>builder().addAll(APILocator.getFileAssetAPI()
+                .findFileAssetsByFolder(containerFolder, null, false, APILocator.systemUser(),
+                        false))
+                                .build();
     }
 }
