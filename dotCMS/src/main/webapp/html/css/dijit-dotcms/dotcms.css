@@ -3422,12 +3422,11 @@ html, body {
 }
 
 .dijitDropDownButton {
-  background-color: var(--color-main);
-  border: solid 1px #b3b1b8;
-  color: #fff;
+  background-color: #fff;
+  border: solid 1px var(--color-sec);
+  color: var(--color-sec);
   font-size: 12px;
   font-weight: 500;
-  box-shadow: 0;
 }
 
 .dijitDropDownButton .dijitButtonNode {
@@ -3454,12 +3453,11 @@ html, body {
 }
 
 .dijitDropDownButtonHover {
-  background-color: var(--color-main_mod);
-  border: solid 1px transparent;
-  color: #fff;
+  background-color: #fff;
+  border: solid 1px var(--color-main);
+  color: var(--color-main);
   font-size: 12px;
   font-weight: 500;
-  box-shadow: 0;
 }
 
 .dijitDropDownButtonHover .dijitArrowButtonInner {
@@ -3474,23 +3472,23 @@ html, body {
   top: 50%;
   border-left: 5px solid transparent;
   border-right: 5px solid transparent;
-  border-top: 5px solid #fff;
+  border-top: 5px solid var(--color-main);
   content: "";
   height: 0;
   width: 0;
 }
 
 .dijitDropDownButtonActive {
-  background-color: var(--color-main_mod);
+  background-color: rgba(var(--color-main_rgb), 0.26);
   border: solid 1px transparent;
-  color: #fff;
+  color: var(--color-main);
   font-size: 12px;
   font-weight: 500;
   box-shadow: 0;
 }
 
 .dijitDropDownButtonActive .dijitArrowButtonInner {
-  background-color: transparent;
+  background-color: none;
 }
 
 .dijitDropDownButtonActive .dijitArrowButtonInner:before {
@@ -3501,19 +3499,18 @@ html, body {
   top: 50%;
   border-left: 5px solid transparent;
   border-right: 5px solid transparent;
-  border-top: 5px solid #fff;
+  border-top: 5px solid var(--color-main);
   content: "";
   height: 0;
   width: 0;
 }
 
 .dijitDropDownButtonFocused {
-  background-color: #fff;
-  border: solid 1px var(--color-main);
+  background-color: rgba(var(--color-main_rgb), 0.12);
+  border: solid 1px transparent;
   color: var(--color-main);
   font-size: 12px;
   font-weight: 500;
-  box-shadow: 0;
 }
 
 .dijitDropDownButtonDisabled {
@@ -3544,9 +3541,9 @@ html, body {
 }
 
 .dijitComboButton {
-  background-color: var(--color-main);
-  border: solid 1px #b3b1b8;
-  color: #fff;
+  background-color: #fff;
+  border: solid 1px var(--color-sec);
+  color: var(--color-sec);
   font-size: 12px;
   font-weight: 500;
   box-shadow: 0;
@@ -3580,12 +3577,11 @@ html, body {
 }
 
 .dijitComboButtonHover {
-  background-color: var(--color-main_mod);
-  border: solid 1px transparent;
-  color: #fff;
+  background-color: #fff;
+  border: solid 1px var(--color-main);
+  color: var(--color-main);
   font-size: 12px;
   font-weight: 500;
-  box-shadow: 0;
 }
 
 .dijitComboButtonHover .dijitArrowButtonInner {
@@ -3600,19 +3596,18 @@ html, body {
   top: 50%;
   border-left: 5px solid transparent;
   border-right: 5px solid transparent;
-  border-top: 5px solid #fff;
+  border-top: 5px solid var(--color-main);
   content: "";
   height: 0;
   width: 0;
 }
 
 .dijitComboButtonActive {
-  background-color: var(--color-main_mod);
+  background-color: rgba(var(--color-main_rgb), 0.26) !important;
   border: solid 1px transparent;
-  color: #fff;
+  color: var(--color-main);
   font-size: 12px;
   font-weight: 500;
-  box-shadow: 0;
 }
 
 .dijitComboButtonActive .dijitArrowButtonInner {
@@ -3634,12 +3629,11 @@ html, body {
 }
 
 .dijitComboButtonFocused, .dijitComboButtonHoverFocused {
-  background-color: #fff;
-  border: solid 1px var(--color-main);
+  background-color: rgba(var(--color-main_rgb), 0.12) !important;
+  border: solid 1px transparent;
   color: var(--color-main);
   font-size: 12px;
   font-weight: 500;
-  box-shadow: 0;
 }
 
 .dijitComboButtonFocused .dijitArrowButtonInner, .dijitComboButtonHoverFocused .dijitArrowButtonInner {
@@ -3730,6 +3724,14 @@ html, body {
   font-size: 12px;
   font-weight: 500;
   box-shadow: 0;
+}
+
+.listingTable table.dijitComboButtonFocused {
+  background-color: rgba(var(--color-main_rgb), 0.12) !important;
+}
+
+.listingTable table.dijitComboButtonActive {
+  background-color: rgba(var(--color-main_rgb), 0.26) !important;
 }
 
 .dijitCheckBox {
@@ -6854,7 +6856,7 @@ select[multiple]:hover {
 
 .dijitButtonFlat.dijitButtonHover {
   color: var(--color-main);
-  border-color: var(--color-main);
+  border-color: solid 1px var(--color-main);
 }
 
 .dijitButtonFlat.dijitButtonFocused {
@@ -7223,6 +7225,14 @@ select[multiple]:hover {
 
 .listingTable td table tr {
   border: none;
+}
+
+.listingTable.relateContent td.beta {
+  width: 8%;
+}
+
+.listingTable.relateContent td.title {
+  width: 25%;
 }
 
 .listingTable.relateContent td a {
