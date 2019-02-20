@@ -1334,6 +1334,8 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 * Since the Contentlet is kept in cache it makes sense removing certain values from the map
 	 */
 	public void cleanup(){
+	    getMap().remove(IS_COPY_CONTENTLET);
+	    getMap().remove(SOURCE_CONTENTLET_ASSET_NAME);
 		getWritableNullProperties().clear();
 	}
 
