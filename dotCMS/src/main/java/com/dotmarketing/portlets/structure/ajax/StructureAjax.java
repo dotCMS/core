@@ -4,8 +4,11 @@ import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
 import static com.dotmarketing.portlets.contentlet.util.ContentletUtil.isFieldTypeAllowedOnImportExport;
 
 import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.contenttype.model.field.RelationshipField;
+import com.dotcms.contenttype.model.field.RelationshipsTabField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
+import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.repackage.org.directwebremoting.WebContext;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
 import com.dotmarketing.business.APILocator;
@@ -157,20 +160,26 @@ public class StructureAjax {
 		return searchableFields;
 	}
 
-	public Map<String,Object> getKeyStructureFields (String structureInode) {
-		Map<String,Object> result = new HashMap<String, Object>();
-		boolean allowImport = true;
-		
-		Structure struct = CacheLocator.getContentTypeCache().getStructureByInode(structureInode);
-		List<Field> fields = struct.getFields();
+	public Map<String,Object> getKeyStructureFields (String structureInode) throws SystemException, PortalException, DotDataException, DotSecurityException {
+		final Map<String,Object> result = new HashMap<String, Object>();
+		final boolean allowImport = true;
+
+		//Retrieving the current user
+		final WebContext ctx = WebContextFactory.get();
+		final HttpServletRequest request = ctx.getHttpServletRequest();
+		User user = PortalUtil.getUser(request);
+
+		final ContentType contentTypeToImport = APILocator.getContentTypeAPI(user).find(structureInode);
+		List<com.dotcms.contenttype.model.field.Field> fields = contentTypeToImport.fields();
 		ArrayList<Map> searchableFields = new ArrayList<Map> ();
-		for (Field field : fields) {
-			if (isFieldTypeAllowedOnImportExport(field)) {
+		for (com.dotcms.contenttype.model.field.Field field : fields) {
+			Field oldField = new LegacyFieldTransformer(field).asOldField();
+			if (isFieldTypeAllowedOnImportExport(oldField) && !(field instanceof RelationshipField) && !(field instanceof RelationshipsTabField)) {
 				try {
-					Map fieldMap = field.getMap();
+					Map fieldMap = oldField.getMap();
 					searchableFields.add(fieldMap);
 				} catch (Exception e) {
-					Logger.error(this, "Error getting the map of properties of a field: " + field.getInode());
+					Logger.error(this, "Error getting the map of properties of a field: " + field.inode());
 				}
 			}
 		}
