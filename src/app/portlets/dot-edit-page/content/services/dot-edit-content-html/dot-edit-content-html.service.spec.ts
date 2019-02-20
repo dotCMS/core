@@ -273,9 +273,12 @@ describe('DotEditContentHtmlService', () => {
             }
         });
 
-        expect(this.dotEditContentHtmlService.renderAddedContentlet).toHaveBeenCalledWith({
-            identifier: '123'
-        }, PageModelChangeEventType.ADD_CONTENT);
+        expect(this.dotEditContentHtmlService.renderAddedContentlet).toHaveBeenCalledWith(
+            {
+                identifier: '123'
+            },
+            PageModelChangeEventType.ADD_CONTENT
+        );
     });
 
     it('should render relocated contentlet', () => {
@@ -299,8 +302,48 @@ describe('DotEditContentHtmlService', () => {
             data: dataObj
         });
 
-        expect(this.dotEditContentHtmlService.renderRelocatedContentlet).toHaveBeenCalledWith(dataObj);
-        expect(dotContainerContentletService.getContentletToContainer).toHaveBeenCalledWith(dataObj.container, dataObj.contentlet);
+        expect(this.dotEditContentHtmlService.renderRelocatedContentlet).toHaveBeenCalledWith(
+            dataObj
+        );
+        expect(dotContainerContentletService.getContentletToContainer).toHaveBeenCalledWith(
+            dataObj.container,
+            dataObj.contentlet
+        );
+    });
+
+    it('should show and hide loading indicator on relocate contentlet', () => {
+        const dotContainerContentletService = this.injector.get(DotContainerContentletService);
+        spyOn(dotContainerContentletService, 'getContentletToContainer').and.returnValue(observableOf('<div></div>'));
+
+        const contentlet = this.dotEditContentHtmlService.iframe.nativeElement.contentDocument.querySelector(
+            'div[data-dot-object="contentlet"][data-dot-inode="456"]'
+        );
+        const removeSpy = jasmine.createSpy();
+        spyOn(contentlet, 'insertAdjacentElement');
+        spyOn(contentlet, 'querySelector').and.returnValue({
+            remove: removeSpy
+        });
+
+        const dataObj = {
+            container: {
+                identifier: '123',
+                uuid: '456'
+            },
+            contentlet: {
+                identifier: '456',
+                inode: '456'
+            }
+        };
+
+        this.dotEditContentHtmlService.contentletEvents$.next({
+            name: 'relocate',
+            data: dataObj
+        });
+
+        expect(contentlet.insertAdjacentElement).toHaveBeenCalledTimes(1);
+        expect(contentlet.insertAdjacentElement).toHaveBeenCalledWith('afterbegin', jasmine.any(HTMLElement));
+        expect(contentlet.querySelector).toHaveBeenCalledWith('.loader__overlay');
+        expect(removeSpy).toHaveBeenCalledTimes(1);
     });
 
     it('should not render relocated contentlet', () => {
@@ -367,7 +410,10 @@ describe('DotEditContentHtmlService', () => {
 
         this.dotEditContentHtmlService.pageModel$.subscribe((model) => (currentModel = model));
 
-        this.dotEditContentHtmlService.renderAddedContentlet(contentlet, PageModelChangeEventType.ADD_CONTENT);
+        this.dotEditContentHtmlService.renderAddedContentlet(
+            contentlet,
+            PageModelChangeEventType.ADD_CONTENT
+        );
 
         expect(this.dotEditContentHtmlService.currentAction === DotContentletAction.EDIT).toBe(
             true,
@@ -387,10 +433,13 @@ describe('DotEditContentHtmlService', () => {
             'currentContainer must be the same after add content'
         );
 
-        expect(currentModel).toEqual({
-            model: modelExpected,
-            type: PageModelChangeEventType.ADD_CONTENT
-        }, 'should tigger model change event');
+        expect(currentModel).toEqual(
+            {
+                model: modelExpected,
+                type: PageModelChangeEventType.ADD_CONTENT
+            },
+            'should tigger model change event'
+        );
     });
 
     it('should remove contentlet', () => {

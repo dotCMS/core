@@ -173,16 +173,16 @@ export class DotEditContentHtmlService {
      */
     renderEditedContentlet(contentlet: DotPageContent): void {
         const doc = this.getEditPageDocument();
-        const currentContentlets: HTMLDivElement[] = Array.from(
+        const currentContentlets: HTMLElement[] = Array.from(
             doc.querySelectorAll(
                 `div[data-dot-object="contentlet"][data-dot-identifier="${contentlet.identifier}"]`
             )
         );
 
-        currentContentlets.forEach((currentContentlet: HTMLDivElement) => {
+        currentContentlets.forEach((currentContentlet: HTMLElement) => {
             contentlet.type = currentContentlet.dataset.dotType;
 
-            const containerEl = <HTMLDivElement>currentContentlet.parentNode;
+            const containerEl = <HTMLElement>currentContentlet.parentNode;
 
             const container: DotPageContainer = {
                 identifier: containerEl.dataset.dotIdentifier,
@@ -193,7 +193,7 @@ export class DotEditContentHtmlService {
                 .getContentletToContainer(container, contentlet)
                 .pipe(take(1))
                 .subscribe((contentletHtml: string) => {
-                    const contentletEl: HTMLDivElement = this.createNewContentletFromString(
+                    const contentletEl: HTMLElement = this.createNewContentletFromString(
                         contentletHtml
                     );
                     containerEl.replaceChild(contentletEl, currentContentlet);
@@ -227,7 +227,7 @@ export class DotEditContentHtmlService {
      */
     renderAddedForm(form: ContentType): Observable<DotPageContainer[]> {
         const doc = this.getEditPageDocument();
-        const containerEl: HTMLDivElement = doc.querySelector(
+        const containerEl: HTMLElement = doc.querySelector(
             [
                 'div[data-dot-object="container"]',
                 `[data-dot-identifier="${this.currentContainer.identifier}"]`,
@@ -333,7 +333,7 @@ export class DotEditContentHtmlService {
 
     private renderAddedItem(params: RenderAddedItemParams): void {
         const doc = this.getEditPageDocument();
-        const containerEl: HTMLDivElement = doc.querySelector(
+        const containerEl: HTMLElement = doc.querySelector(
             `div[data-dot-object="container"][data-dot-identifier="${
                 this.currentContainer.identifier
             }"][data-dot-uuid="${this.currentContainer.uuid}"]`
@@ -345,7 +345,7 @@ export class DotEditContentHtmlService {
             params
                 .getContent(this.currentContainer, params.item)
                 .subscribe((contentletHtml: string) => {
-                    const contentletEl: HTMLDivElement = this.createNewContentletFromString(
+                    const contentletEl: HTMLElement = this.createNewContentletFromString(
                         contentletHtml
                     );
                     containerEl.insertAdjacentElement('beforeend', contentletEl);
@@ -440,7 +440,7 @@ export class DotEditContentHtmlService {
                     `[data-dot-identifier="${container.identifier}"]`,
                     `[data-dot-uuid="${container.uuid}"]`
                 ].join('');
-                const containerElement: HTMLDivElement = doc.querySelector(querySelector);
+                const containerElement: HTMLElement = doc.querySelector(querySelector);
                 containerElement.style.height = 'auto';
                 this.rowsMaxHeight[index] =
                     containerElement.offsetHeight > this.rowsMaxHeight[index]
@@ -475,9 +475,9 @@ export class DotEditContentHtmlService {
         );
     }
 
-    private isFormExistInContainer(form: ContentType, containerEL: HTMLDivElement): boolean {
+    private isFormExistInContainer(form: ContentType, containerEL: HTMLElement): boolean {
         const contentsSelector = `div[data-dot-object="contentlet"]`;
-        const currentContentlets: HTMLDivElement[] = <HTMLDivElement[]>(
+        const currentContentlets: HTMLElement[] = <HTMLElement[]>(
             Array.from(containerEL.querySelectorAll(contentsSelector).values())
         );
         return currentContentlets.some(
@@ -521,16 +521,17 @@ export class DotEditContentHtmlService {
         return scriptTags;
     }
 
-    private getNewContentlet(html: string): HTMLDivElement {
+    private getNewContentlet(html: string): HTMLElement {
         const doc = this.getEditPageDocument();
         // Add innerHTML to a plain so we can get the HTML nodes later
         const div = doc.createElement('div');
         div.innerHTML = html;
 
-        return <HTMLDivElement>div.children[0];
+        return <HTMLElement>div.children[0];
     }
 
-    private appendNewContentlets(contentletEl: HTMLDivElement, html: string): void {
+    private appendNewContentlets(contentletEl: HTMLElement, html: string): void {
+        console.log('appendNewContentlets');
         this.removeLoadingIndicator(contentletEl);
 
         const newContentlet = this.getNewContentlet(html);
@@ -569,7 +570,7 @@ export class DotEditContentHtmlService {
         });
     }
 
-    private createNewContentletFromString(contentletHTML: string): HTMLDivElement {
+    private createNewContentletFromString(contentletHTML: string): HTMLElement {
         const newContentlet = this.getNewContentlet(contentletHTML);
         const { identifier, inode, type, baseType } = newContentlet.dataset;
 
@@ -581,10 +582,10 @@ export class DotEditContentHtmlService {
         });
     }
 
-    private createNewContentlet(dotPageContent: DotPageContent): HTMLDivElement {
+    private createNewContentlet(dotPageContent: DotPageContent): HTMLElement {
         const doc = this.getEditPageDocument();
 
-        const dotEditContentletEl: HTMLDivElement = doc.createElement('div');
+        const dotEditContentletEl: HTMLElement = doc.createElement('div');
         Object.assign(dotEditContentletEl.dataset, dotPageContent);
 
         /*
@@ -741,15 +742,16 @@ export class DotEditContentHtmlService {
         });
     }
 
-    private renderHTMLToContentlet(contentletEl: HTMLDivElement, contentletHtml: string): void {
+    private renderHTMLToContentlet(contentletEl: HTMLElement, contentletHtml: string): void {
         this.appendNewContentlets(contentletEl, contentletHtml);
 
         this.addVtlEditMenu(contentletEl);
     }
 
     private renderRelocatedContentlet(relocateInfo: DotRelocatePayload): void {
+        console.log('renderRelocatedContentlet');
         const doc = this.getEditPageDocument();
-        const contenletEl: HTMLDivElement = doc.querySelector(
+        const contenletEl: HTMLElement = doc.querySelector(
             `div[data-dot-object="contentlet"][data-dot-inode="${relocateInfo.contentlet.inode}"]`
         );
 
@@ -765,15 +767,16 @@ export class DotEditContentHtmlService {
         this.dotContainerContentletService
             .getContentletToContainer(relocateInfo.container, relocateInfo.contentlet)
             .subscribe((contentletHtml: string) => {
+                console.log('contentletHtml', contentletHtml);
                 this.appendNewContentlets(contenletEl, contentletHtml);
             });
     }
 
-    private addLoadingIndicator(contentlet: HTMLDivElement): void {
+    private addLoadingIndicator(contentlet: HTMLElement): void {
         contentlet.insertAdjacentElement('afterbegin', this.getLoadingIndicator());
     }
 
-    private getLoadingIndicator(): HTMLDivElement {
+    private getLoadingIndicator(): HTMLElement {
         const div = document.createElement('div');
         div.innerHTML = `
             <div class="loader__overlay">
@@ -784,7 +787,7 @@ export class DotEditContentHtmlService {
         return div;
     }
 
-    private removeLoadingIndicator(contentlet: HTMLDivElement): void {
+    private removeLoadingIndicator(contentlet: HTMLElement): void {
         contentlet.querySelector('.loader__overlay').remove();
     }
 }

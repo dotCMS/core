@@ -1,21 +1,14 @@
 import { DotPageContent } from '@portlets/dot-edit-page/shared/models/dot-page-content.model';
 import { DotPageContainer } from '@portlets/dot-edit-page/shared/models/dot-page-container.model';
 
-export interface DotContentletEvent {
+export interface DotContentletEvent<T> {
     name: string;
+    data: T;
 }
 
-export interface DotContentletEventRelocate extends DotContentletEvent {
-    data: DotRelocatePayload;
-}
-
-export interface DotContentletEventSelect extends DotContentletEvent {
-    data: DotPageContent;
-}
-
-export interface DotContentletEventSave extends DotContentletEvent {
-    data: DotPageContent;
-}
+export interface DotContentletEventRelocate extends DotContentletEvent<DotRelocatePayload> {}
+export interface DotContentletEventSelect extends DotContentletEvent<DotPageContent> {}
+export interface DotContentletEventSave extends DotContentletEvent<DotPageContent> {}
 
 export interface DotRelocatePayload {
     container: DotPageContainer;
