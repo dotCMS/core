@@ -509,7 +509,8 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 
 		try {
 			final List<ContainerStructure>  containerStructureList = getContainerStructures(container);
-			final List<ContentType> contentTypeList = new ArrayList<>();
+			final Set<ContentType> contentTypeList =
+                    new TreeSet<>(Comparator.comparing(ContentType::id));
 			ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
 			PermissionAPI permissionAPI = APILocator.getPermissionAPI();
 
