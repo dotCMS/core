@@ -15,10 +15,7 @@ export class AppComponent implements OnInit {
         private dotCmsConfig: DotcmsConfig,
         private dotUiColors: DotUiColorsService
     ) {
-        document.ondragover = document.ondrop = (ev) => {
-            notLicensedService.init();
-            ev.preventDefault();
-        };
+        notLicensedService.init();
     }
 
     ngOnInit() {
