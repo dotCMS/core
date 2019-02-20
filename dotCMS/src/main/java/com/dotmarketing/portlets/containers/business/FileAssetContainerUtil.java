@@ -301,7 +301,7 @@ public class FileAssetContainerUtil {
         try {
             isArchive = fileAsset.isArchived();
         } catch (DotDataException | DotSecurityException e) {
-            isArchive = false;
+            return false;
         }
 
         final boolean isMode  = !isArchive && this.isMode(fileAsset, showLive);
