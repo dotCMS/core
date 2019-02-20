@@ -1,13 +1,5 @@
 package com.dotmarketing.portlets.htmlpageasset.business.render.page;
 
-import java.util.Collection;
-import java.util.Optional;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import org.apache.velocity.context.Context;
-
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.rendering.velocity.directive.RenderParams;
@@ -16,12 +8,7 @@ import com.dotcms.rendering.velocity.servlet.VelocityModeHandler;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
 import com.dotcms.visitor.domain.Visitor;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.LayoutAPI;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.PermissionLevel;
-import com.dotmarketing.business.UserAPI;
-import com.dotmarketing.business.VersionableAPI;
+import com.dotmarketing.business.*;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -30,7 +17,6 @@ import com.dotmarketing.portlets.contentlet.business.DotLockException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRaw;
-import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRendered;
 import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRenderedBuilder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
@@ -42,6 +28,12 @@ import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.VelocityUtil;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
+import org.apache.velocity.context.Context;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.util.Collection;
+import java.util.Optional;
 
 /**
  * Builder of {@link HTMLPageAssetRendered}
@@ -113,9 +105,7 @@ public class HTMLPageAssetRenderedBuilder {
         final User systemUser = APILocator.getUserAPI().getSystemUser();
         final boolean canEditTemplate = this.permissionAPI.doesUserHavePermission(template, PermissionLevel.EDIT.getType(), user);
         final boolean canCreateTemplates = layoutAPI.doesUserHaveAccessToPortlet("templates", user);
-        final PageContextBuilder pageContextBuilder = new PageContextBuilder(htmlPageAssetInfo.getPage(), systemUser, mode, language.getId());
-        
-
+        final PageContextBuilder pageContextBuilder = new PageContextBuilder(htmlPageAssetInfo.getPage(), systemUser, mode, language.getId(), this.site);
 
         if (!rendered) {
             final Collection<? extends ContainerRaw> containers =  pageContextBuilder.getContainersRaw();

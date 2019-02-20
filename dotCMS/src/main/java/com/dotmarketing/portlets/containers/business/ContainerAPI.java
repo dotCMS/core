@@ -15,6 +15,7 @@ import com.liferay.portal.model.User;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 
 /**
  * Provides access to the information of {@link Container} objects in dotCMS.
@@ -94,6 +95,19 @@ public interface ContainerAPI {
 	 */
 	Container getWorkingContainerByFolderPath(final String path, final Host host, final User user, final boolean respectFrontEndPermissions) throws DotSecurityException, DotDataException;
 
+	/***
+	 * Similar to the {@link #getWorkingContainerByFolderPath(String, Host, User, boolean)} but the host will be figured out from the path, it is particular useful when you
+	 * have the  full path such as //demo.dotcms.com/application/containers/large-column/
+	 * @param fullContainerPathWithHost String for instance //demo.dotcms.com/application/containers/large-column/
+	 * @param user
+	 * @param respectFrontEndPermissions
+	 * @param resourceHost {@link Supplier} this supplier will be called in case the fullContainerPathWithHost hasn't a host, if null will use the default one, for instance if fullContainerPathWithHost is (/application/containers/large-column/) will call the supplier
+	 * @return Container
+	 * @throws DotSecurityException
+	 * @throws DotDataException
+	 */
+	Container getWorkingContainerByFolderPath(final String fullContainerPathWithHost, final User user, final boolean respectFrontEndPermissions, final Supplier<Host> resourceHost) throws DotSecurityException, DotDataException;
+
 	/**
 	 * Returns the live container by path and host; this method is mostly used when the container is file asset based.
 	 * @param path
@@ -105,6 +119,22 @@ public interface ContainerAPI {
 	 * @throws DotDataException
 	 */
 	Container getLiveContainerByFolderPath(final String path, final Host host, final User user, final boolean respectFrontEndPermissions) throws DotSecurityException, DotDataException;
+
+	/**
+	 * Similar to the {@link #getLiveContainerByFolderPath(String, Host, User, boolean)} but the host will be figured out from the path, it is particular useful when you
+	 * 	 * have the  full path such as //demo.dotcms.com/application/containers/large-column/
+	 * 	 * @param fullContainerPathWithHost String for instance //demo.dotcms.com/application/containers/large-column/
+	 * @param path
+	 * @param host
+	 * @param user
+	 * @param respectFrontEndPermissions
+	 * resourceHost {@link Supplier} this supplier will be called in case the fullContainerPathWithHost hasn't a host, if null will use the default one, for instance if fullContainerPathWithHost is (/application/containers/large-column/) will call the supplier
+	 * @return Container
+	 * @throws DotSecurityException
+	 * @throws DotDataException
+	 */
+	Container getLiveContainerByFolderPath(final String fullContainerPathWithHost, final User user, final boolean respectFrontEndPermissions, final Supplier<Host> resourceHost) throws DotSecurityException, DotDataException;
+
 
 	/**
 	 * Returns the live container by the id
@@ -197,6 +227,7 @@ public interface ContainerAPI {
 
 	/**
 	 * Retrieves the list of all containers in the system
+	 * The fs container on the default host will return the path as a relative, the rest of them will include absolute path with the host appended
 	 * @param user
 	 * @param respectFrontendRoles
 	 * @return
@@ -204,6 +235,18 @@ public interface ContainerAPI {
 	 * @throws DotSecurityException
 	 */
 	List<Container> findAllContainers(User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+
+	/**
+	 * Retrieves the list of all containers in the system
+	 * The fs container on the current host will return the path as a relative, the rest of them will include absolute path with the host appended
+	 * @param currentHost {@link Host} this is the current host, all fs containers will use relative path for them
+	 * @param user
+	 * @param respectFrontendRoles
+	 * @return
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	List<Container> findAllContainers(final Host currentHost, final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
 	/**
 	 * Save container

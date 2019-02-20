@@ -903,4 +903,41 @@ public class CollectionsUtils implements Serializable {
 
 	    return joinList;
     }
+
+    /**
+     * Defines strategies for merging on collectors
+      */
+    public static class Merge {
+
+        /**
+         * Use this current value on the map, skipping the new one.
+         * @param <T>
+         * @return T
+         */
+        public static <T> BinaryOperator<T> current() {
+            return (current,last) -> current;
+        }
+
+        /**
+         * Discard the current value on the map in favor of the new one.
+         * @param <T>
+         * @return T
+         */
+        public static <T> BinaryOperator<T> last() {
+            return (current,last) -> last;
+        }
+
+        /**
+         * Use a comparator in order to decided witch one will be keep
+         * The one defined as a greater on the comparison will be the one keep
+         * @param comparator {@link Comparator}
+         * @param <T>
+         * @return T
+         */
+        public static <T> BinaryOperator<T> compare(final Comparator<T> comparator) {
+            return (current,last) -> comparator.compare(current,last) >= 0 ? current : last;
+        }
+
+
+    }
 }

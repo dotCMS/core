@@ -1,9 +1,5 @@
 package com.dotcms.rendering.velocity.viewtools.navigation;
 
-import java.util.LinkedList;
-import java.util.List;
-
-import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
@@ -13,6 +9,9 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+
+import java.util.LinkedList;
+import java.util.List;
 
 public class NavToolCacheImpl implements NavToolCache {
 
@@ -62,17 +61,18 @@ public class NavToolCacheImpl implements NavToolCache {
     public void removeNav(String hostid, String folderInode) {
         List<Language> allLanguages = APILocator.getLanguageAPI().getLanguages();
 
-        for(Language language : allLanguages){
-            removeNav(hostid, folderInode, language.getId());
+        if (null != folderInode) {
+            for (Language language : allLanguages) {
+                removeNav(hostid, folderInode, language.getId());
+            }
         }
-
     }
 
     @Override
     public void removeNav(String hostid, String folderInode, long languageId) {
         Folder folder;
         try {
-            if(!folderInode.equals(FolderAPI.SYSTEM_FOLDER)) {
+            if(!FolderAPI.SYSTEM_FOLDER.equals(folderInode)) {
                 try {
                     folder = APILocator.getFolderAPI().find(folderInode, APILocator.getUserAPI().getSystemUser(), false);
                 }

@@ -381,7 +381,6 @@ function addDrawedContainer(idDiv, container, value, error_msg, container_exist)
 	var span_container = document.getElementById(idDiv.value+"_span_"+value);
 	var uuid           = getUUID (span_container);
 
-	console.log("uuid", uuid);
 	// now, adding the ability to add repeated containers.
 
 	//create the container span
@@ -397,7 +396,13 @@ function addDrawedContainer(idDiv, container, value, error_msg, container_exist)
 	//set the title for better recognize the container's div
 	containerDivHidden.setAttribute("title","container_"+value);
 	containerDivHidden.setAttribute("id", idDiv.value+"_div_"+value+"_"+uuid);
-	containerDivHidden.innerHTML='#parseContainer(\'' + value + '\',\''+uuid+'\')\n';
+	if (container.source == "<%=Source.FILE%>") {
+
+        containerDivHidden.innerHTML='#parseContainer(\'' + container.path + '\',\''+uuid+'\')\n';
+    } else {
+        containerDivHidden.innerHTML='#parseContainer(\'' + value + '\',\''+uuid+'\')\n';
+    }
+
 
 	var div = document.getElementById(idDiv.value);
 
