@@ -71,17 +71,6 @@ export const getEditPageCss = (timestampId: string): string => {
         opacity: 1 !important;
     }
 
-    ${timestampId} .dotedit-contentlet__content {
-        min-height: 100px !important;
-        position: relative !important;
-    }
-
-    ${timestampId} .dotedit-contentlet__content:after {
-        content: "" !important;
-        clear: both !important;
-        display: table !important;
-    }
-
     ${timestampId} .loader,
     ${timestampId} .loader:after {
         border-radius: 50% !important;
