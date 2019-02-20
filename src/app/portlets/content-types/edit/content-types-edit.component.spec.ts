@@ -42,6 +42,8 @@ import * as _ from 'lodash';
 class TestContentTypeFieldsDropZoneComponent {
     @Input()
     fields: ContentTypeField[];
+    @Input()
+    loading: boolean;
     @Output()
     saveFields = new EventEmitter<ContentTypeField[]>();
     @Output()
@@ -502,6 +504,40 @@ describe('ContentTypesEditComponent', () => {
 
             // then: the saveFields method has to be called in FileService ...
             expect(fieldService.saveFields).toHaveBeenCalledWith('1234567890', newFieldsAdded);
+        });
+
+        it('should show loading when saving fields on dropzone', () => {
+            const newFieldsAdded: ContentTypeField[] = [
+                {
+                    name: 'field 1',
+                    clazz: 'com.dotcms.contenttype.model.field.ImmutableRowField',
+                    sortOrder: 1
+                },
+                {
+                    name: 'field 2',
+                    clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField',
+                    sortOrder: 2
+                }
+            ];
+
+            const fieldsReturnByServer: ContentTypeField[] = newFieldsAdded.concat(
+                currentFieldsInServer
+            );
+            const fieldService = fixture.debugElement.injector.get(FieldService);
+
+            const contentTypeFieldsDropZone = de.query(By.css('dot-content-type-fields-drop-zone'));
+
+            spyOn(fieldService, 'saveFields').and.callFake(() => {
+                fixture.detectChanges();
+                expect(contentTypeFieldsDropZone.componentInstance.loading).toBe(true);
+                return observableOf(fieldsReturnByServer);
+            });
+
+            // when: the saveFields event is tiggered in content-type-fields-drop-zone
+            contentTypeFieldsDropZone.componentInstance.saveFields.emit(newFieldsAdded);
+
+            fixture.detectChanges();
+            expect(contentTypeFieldsDropZone.componentInstance.loading).toBe(false);
         });
 
         it('should update fields on dropzone event when creating a new one or update', () => {

@@ -18,16 +18,13 @@ a {
 .dot-nav-sub {
     &__link {
         padding: 0 $basic-padding 0 56px;
-        white-space: nowrap;
+        align-items: center;
+        display: flex;
+        min-height: $navigation-item-height;
+        word-break: break-word;
 
         &--active {
             background-color: $brand-primary;
         }
     }
-}
-
-.dot-nav-sub__link {
-    align-items: center;
-    display: flex;
-    min-height: $navigation-item-height;
 }

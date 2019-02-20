@@ -395,9 +395,13 @@ export class RuleService {
 
   public requestRules(siteId: string): void {
     if (siteId) {
-      this.sendLoadRulesRequest(siteId);
+        this.sendLoadRulesRequest(siteId);
     } else if (this.siteService.currentSite) {
-      this.sendLoadRulesRequest(this.siteService.currentSite.identifier);
+        this.sendLoadRulesRequest(this.siteService.currentSite.identifier);
+    } else {
+        this.siteService.getCurrentSite().subscribe( site => {
+            this.sendLoadRulesRequest(site.identifier);
+        });
     }
   }
 

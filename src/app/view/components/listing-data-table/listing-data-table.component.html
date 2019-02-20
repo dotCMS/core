@@ -1,22 +1,27 @@
 <dot-action-header [options]="actionHeaderOptions">
-    <input #gf pInputText type="text" (input)="dataTable.filterGlobal($event.target.value, 'contains')" placeholder="{{ i18nMessages['global-search'] }}" [(ngModel)]="filter"/>
+    <input #gf pInputText type="text"
+           (input)="dataTable.filterGlobal($event.target.value, 'contains')"
+           placeholder="{{ i18nMessages['global-search'] }}"
+           [(ngModel)]="filter"
+           (keydown.arrowdown)="focusFirstRow()"
+    />
     <ng-content></ng-content>
 </dot-action-header>
 
 <p-table #dataTable
-        [columns]="columns" 
-        [value]="items"
-        [paginator]="true"
-        [pageLinks]="paginatorService.maxLinksPage"
-        [lazy]="true"
-        [totalRecords]="paginatorService.totalRecords"
         (onLazyLoad)="loadDataPaginationEvent($event)"
         (onRowSelect)="handleRowClick($event)"
+        [columns]="columns"
+        [lazy]="true"
+        [loading]="loading" loadingIcon="fa fa-circle-o-notch fa-spin"
+        [pageLinks]="paginatorService.maxLinksPage"
+        [paginator]="true"
+        [rows]="paginationPerPage"
         [sortOrder]="sortOrder && sortOrder.toLowerCase() === 'desc' ? -1 : 1"
-        [rows]="40"
-        selectionMode="single"
+        [totalRecords]="paginatorService.totalRecords"
+        [value]="items"
         dataKey="id"
-        [loading]="loading" loadingIcon="fa fa-spinner pi-spin">
+        selectionMode="single">
 
     <ng-template pTemplate="header" let-columns>
         <tr>

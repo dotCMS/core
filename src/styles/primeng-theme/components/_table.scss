@@ -1,6 +1,8 @@
 @import "variables";
 
 .ui-table {
+    min-height: 100%;
+
     .ui-table-thead tr th,
     .ui-table-tbody tr td {
         border-width: 0px;
@@ -48,7 +50,26 @@
             background-color: $gray-bg;
         }
     }
-    
+
+    .ui-table-loading {
+        background-color: $black;
+        opacity: 0.075;
+    }
+
+    .ui-table-loading-content {
+        align-items: center;
+        bottom: 0;
+        display: flex;
+        justify-content: center;
+        left: 0;
+        right: 0;
+        top: 0;
+
+        .fa {
+            opacity: 0.5;
+        }
+    }
+
     .ui-widget-content .ui-state-highlight {
         background: $table-highlight-row-bgcolor;
         color: $table-row-color;

@@ -5,6 +5,10 @@
     flex-direction: column;
     height: 100%;
 
+    p-table {
+        flex-grow: 1;
+    }
+
     ::ng-deep {
         .ui-datatable,
         .ui-table {

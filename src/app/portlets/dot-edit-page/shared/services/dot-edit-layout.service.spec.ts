@@ -103,6 +103,10 @@ describe('DotEditLayoutService', () => {
                                 {
                                     identifier: 'a6e9652b-8183-4c09-b775-26196b09a300',
                                     uuid: '4'
+                                },
+                                {
+                                    identifier: 'UNKNOWN ID',
+                                    uuid: 'UNKNOWN'
                                 }
                             ],
                             leftOffset: 1,
@@ -185,6 +189,10 @@ describe('DotEditLayoutService', () => {
                             categoryId: 'dde0b865-6cea-4ff0-8582-85e5974cf94f'
                         },
                         uuid: '2'
+                    },
+                    {
+                        container: null,
+                        uuid: '1234'
                     }
                 ],
                 config: {
@@ -211,11 +219,11 @@ describe('DotEditLayoutService', () => {
         expect(layoutBody.rows[0].columns[1].leftOffset).toEqual(9, 'set leftOffset to 9');
         expect(layoutBody.rows[0].columns[1].width).toEqual(
             4,
-            'create 4 containers for the first row'
+            'set container box to 4 in the second column'
         );
     });
 
-    it('should transform the Sidebar data to ContainerColumnBox to export the data', () => {
+    it('should transform the Sidebar data to ContainerColumnBox (ignore UNKNOWN ids) to export the data', () => {
         const rawContainers = [
             {
                 identifier: mockDotContainers[0].container.identifier,
@@ -224,6 +232,10 @@ describe('DotEditLayoutService', () => {
             {
                 identifier: mockDotContainers[1].container.identifier,
                 uuid: '1234567891'
+            },
+            {
+                identifier: 'UNKNOWN ID',
+                uuid: 'INVALID'
             }
         ];
 
