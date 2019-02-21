@@ -3,11 +3,8 @@ package com.dotcms.graphql.datafetcher;
 import com.dotcms.graphql.DotGraphQLContext;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-<<<<<<<HEAD
 import com.dotmarketing.util.Logger;
-=======
 import com.dotmarketing.portlets.contentlet.transform.ContentletToMapTransformer;
->>>>>>>f0d86aad967f644a3b164fa12e4bf238215ec16b
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
