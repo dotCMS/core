@@ -62,6 +62,12 @@
       ],
       "dotcms-js/*": [
         "dist-lib/dotcms-js/*"
+      ],
+      "dotcms": [
+        "dist-lib/dotcms"
+      ],
+      "dotcms/*": [
+        "dist-lib/dotcms/*"
       ]
     }
   }
