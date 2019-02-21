@@ -160,34 +160,40 @@ public class StructureAjax {
 		return searchableFields;
 	}
 
-	public Map<String,Object> getKeyStructureFields (String structureInode) throws SystemException, PortalException, DotDataException, DotSecurityException {
+	public Map<String,Object> getKeyStructureFields (final String contentTypeInode) throws SystemException, PortalException, DotDataException, DotSecurityException {
 		final Map<String,Object> result = new HashMap<String, Object>();
 		final boolean allowImport = true;
 
 		//Retrieving the current user
 		final WebContext ctx = WebContextFactory.get();
 		final HttpServletRequest request = ctx.getHttpServletRequest();
-		User user = PortalUtil.getUser(request);
+		final User user = PortalUtil.getUser(request);
 
-		final ContentType contentTypeToImport = APILocator.getContentTypeAPI(user).find(structureInode);
-		List<com.dotcms.contenttype.model.field.Field> fields = contentTypeToImport.fields();
-		ArrayList<Map> searchableFields = new ArrayList<Map> ();
-		for (com.dotcms.contenttype.model.field.Field field : fields) {
-			Field oldField = new LegacyFieldTransformer(field).asOldField();
-			if (isFieldTypeAllowedOnImportExport(oldField) && !(field instanceof RelationshipField) && !(field instanceof RelationshipsTabField)) {
-				try {
-					Map fieldMap = oldField.getMap();
-					searchableFields.add(fieldMap);
-				} catch (Exception e) {
-					Logger.error(this, "Error getting the map of properties of a field: " + field.inode());
-				}
-			}
-		}
+		final ContentType contentTypeToImport = APILocator.getContentTypeAPI(user).find(contentTypeInode);
+		final List<com.dotcms.contenttype.model.field.Field> fields = contentTypeToImport.fields();
+		final ArrayList<Map> searchableFields = new ArrayList<Map> ();
+
+		fields.stream().filter(field -> !(field instanceof RelationshipField))
+				.filter(field -> !(field instanceof RelationshipsTabField))
+				.map(field -> new LegacyFieldTransformer(field).asOldField())
+				.filter(field -> isFieldTypeAllowedOnImportExport(field))
+				.forEach(field -> addKeyFieldsToImport(field,searchableFields));
 
 		result.put("keyStructureFields",searchableFields);
 		result.put("allowImport", allowImport);
 
 		return result;
+	}
+
+	private ArrayList<Map> addKeyFieldsToImport(final Field field, final ArrayList<Map> searchableFields){
+		try {
+			Map fieldMap = field.getMap();
+			searchableFields.add(fieldMap);
+		} catch (Exception e) {
+			Logger.error(this, "Error getting the map of properties of a field: " + field.getInode());
+		}
+
+		return searchableFields;
 	}
 
 	public List<Map> getStructureCategories (String structureInode) throws DotDataException, DotSecurityException, PortalException, SystemException {
