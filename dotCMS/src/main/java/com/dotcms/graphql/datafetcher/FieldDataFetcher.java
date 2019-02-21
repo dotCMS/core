@@ -10,6 +10,7 @@ import com.dotcms.contenttype.model.field.TimeField;
 import com.dotcms.graphql.DotGraphQLContext;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
@@ -25,27 +26,32 @@ import graphql.schema.DataFetchingEnvironment;
 public class FieldDataFetcher implements DataFetcher<Object> {
     @Override
     public Object get(final DataFetchingEnvironment environment) throws Exception {
-        final Contentlet contentlet = environment.getSource();
-        final String var = environment.getField().getName();
+        try {
+            final Contentlet contentlet = environment.getSource();
+            final String var = environment.getField().getName();
 
-        Object fieldValue = contentlet.get(var);
+            Object fieldValue = contentlet.get(var);
 
-        final Field field = contentlet.getContentType().fieldMap().get(var);
+            final Field field = contentlet.getContentType().fieldMap().get(var);
 
-        if(!UtilMethods.isSet(fieldValue)) {
-            // null value - maybe a constant field
+            if(!UtilMethods.isSet(fieldValue)) {
+                // null value - maybe a constant field
 
-            if(field instanceof ConstantField) {
-                fieldValue = field.values();
-            } else if(field instanceof TextField && field.dataType().equals(DataTypes.INTEGER)) {
-                fieldValue = Integer.parseInt(field.values());
-            } else if(field instanceof TextField && field.dataType().equals(DataTypes.FLOAT)) {
-                fieldValue = Float.parseFloat(field.values());
-            } else {
-                fieldValue = field.defaultValue();
+                if(field instanceof ConstantField) {
+                    fieldValue = field.values();
+                } else if(field instanceof TextField && field.dataType().equals(DataTypes.INTEGER)) {
+                    fieldValue = Integer.parseInt(field.values());
+                } else if(field instanceof TextField && field.dataType().equals(DataTypes.FLOAT)) {
+                    fieldValue = Float.parseFloat(field.values());
+                } else {
+                    fieldValue = field.defaultValue();
+                }
             }
-        }
 
-        return fieldValue;
+            return fieldValue;
+        } catch (Exception e) {
+            Logger.error(this, e.getMessage(), e);
+            throw e;
+        }
     }
 }

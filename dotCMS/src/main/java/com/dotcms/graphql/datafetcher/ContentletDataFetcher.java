@@ -18,30 +18,35 @@ import graphql.schema.DataFetchingEnvironment;
 public class ContentletDataFetcher implements DataFetcher<List<Contentlet>> {
     @Override
     public List<Contentlet> get(final DataFetchingEnvironment environment) throws Exception {
-        final User user = ((DotGraphQLContext) environment.getContext()).getUser();
+        try {
+            final User user = ((DotGraphQLContext) environment.getContext()).getUser();
 
-        String query = UtilMethods.isSet((String) environment.getArgument("query"))
-            ? environment.getArgument("query")
-            : "";
+            String query = UtilMethods.isSet((String) environment.getArgument("query"))
+                ? environment.getArgument("query")
+                : "";
 
-        final Integer limit = environment.getArgument("limit")!=null ? environment.getArgument("limit") : 100;
-        final Integer offset = environment.getArgument("offset")!=null ? environment.getArgument("offset") : 0;
-        final String sortBy = environment.getArgument("sortBy");
+            final Integer limit = environment.getArgument("limit")!=null ? environment.getArgument("limit") : 100;
+            final Integer offset = environment.getArgument("offset")!=null ? environment.getArgument("offset") : 0;
+            final String sortBy = environment.getArgument("sortBy");
 
-        final String queriedFieldName = environment.getField().getName();
+            final String queriedFieldName = environment.getField().getName();
 
-        if(!queriedFieldName.equals("search")) {
-            final String typeName = TypeUtil.singularizeName(queriedFieldName);
-            if(isBaseType(typeName)) {
-                query = "+baseType:" + BaseContentType.getBaseContentType(typeName.toUpperCase()).ordinal() + " " + query;
-            } else {
-                query = "+contentType:" + TypeUtil.singularizeName(queriedFieldName) + " " + query;
+            if(!queriedFieldName.equals("search")) {
+                final String typeName = TypeUtil.singularizeName(queriedFieldName);
+                if(isBaseType(typeName)) {
+                    query = "+baseType:" + BaseContentType.getBaseContentType(typeName.toUpperCase()).ordinal() + " " + query;
+                } else {
+                    query = "+contentType:" + TypeUtil.singularizeName(queriedFieldName) + " " + query;
+                }
             }
-        }
 
-        final List<Contentlet> contentletList = APILocator.getContentletAPI().search(query, limit, offset, sortBy,
-            user, true);
-        return new ContentletToMapTransformer(contentletList).hydrate();
+            final List<Contentlet> contentletList = APILocator.getContentletAPI().search(query, limit, offset, sortBy,
+                user, true);
+            return new ContentletToMapTransformer(contentletList).hydrate();
+        } catch (Exception e) {
+            Logger.error(this, e.getMessage(), e);
+            throw e;
+        }
     }
 
     private boolean isBaseType(final String queriedFieldName) {
