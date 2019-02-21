@@ -6,7 +6,6 @@ import com.dotcms.api.system.event.message.SystemMessageEventUtil;
 import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.exception.ExceptionUtil;
-import com.dotcms.rendering.velocity.servlet.VelocityModeHandler;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -67,7 +66,7 @@ public class ContainerUtil {
 
                 }
             } catch (Exception ex) {
-                Logger.error(VelocityModeHandler.class, "Not found container error on requesting: " + containerId + ", msg: " + ex.getMessage(), ex);
+                Logger.error(ContainerUtil.class, "Not found container error on requesting: " + containerId + ", msg: " + ex.getMessage(), ex);
             }
         }
     } // notifyException.
