@@ -296,17 +296,9 @@ public class FileAssetContainerUtil {
     private boolean isType(final FileAsset fileAsset, final boolean showLive, final String type) {
 
         final String fileName = fileAsset.getFileName();
-        boolean isArchive     = false;
+        final boolean isMode  = this.isMode(fileAsset, showLive);
 
-        try {
-            isArchive = fileAsset.isArchived();
-        } catch (DotDataException | DotSecurityException e) {
-            return false;
-        }
-
-        final boolean isMode  = !isArchive && this.isMode(fileAsset, showLive);
-
-        return  UtilMethods.isSet(fileName) && type.equalsIgnoreCase(fileName) && isMode;
+        return UtilMethods.isSet(fileName) && type.equalsIgnoreCase(fileName) && isMode;
     }
 
     private boolean isMode (final FileAsset fileAsset, final boolean showLive) {
