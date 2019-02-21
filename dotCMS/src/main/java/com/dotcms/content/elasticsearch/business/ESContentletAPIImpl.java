@@ -5410,11 +5410,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
     public Contentlet copyContentlet(Contentlet contentletToCopy, Host host, Folder folder, User user, final String copySuffix, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException {
         Contentlet resultContentlet = new Contentlet();
         String newIdentifier = StringPool.BLANK;
-        ArrayList<Contentlet> versionsToCopy = new ArrayList<Contentlet>();
-        List<Contentlet> versionsToMarkWorking = new ArrayList<Contentlet>();
+        ArrayList<Contentlet> versionsToCopy = new ArrayList<>();
+        List<Contentlet> versionsToMarkWorking = new ArrayList<>();
         Map<String, Map<String, Contentlet>> contentletsToCopyRules = Maps.newHashMap();
-
-        versionsToCopy.addAll(findAllVersions(APILocator.getIdentifierAPI().find(contentletToCopy.getIdentifier()), false, user, respectFrontendRoles));
+        final Identifier sourceContentletIdentifier = APILocator.getIdentifierAPI().find(contentletToCopy.getIdentifier());
+        versionsToCopy.addAll(findAllVersions(sourceContentletIdentifier, false, user, respectFrontendRoles));
 
         // we need to save the versions from older-to-newer to make sure the last save
         // is the current version
@@ -5452,11 +5452,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
             newContentlet.setHost(host != null?host.getIdentifier(): (folder!=null? folder.getHostId() : contentlet.getHost()));
             newContentlet.setFolder(folder != null?folder.getInode(): null);
             newContentlet.setLowIndexPriority(contentlet.isLowIndexPriority());
-            if(BaseContentType.FILEASSET.equals(contentlet.getContentType().baseType())){
-
+            if(contentlet.isFileAsset()){
                 final String newName = generateCopyName(newContentlet.getStringProperty(FileAssetAPI.FILE_NAME_FIELD), copySuffix);
                 newContentlet.setStringProperty(FileAssetAPI.FILE_NAME_FIELD, newName);
-
+                //Used to replicate identifiers
+                newContentlet.setStringProperty(Contentlet.SOURCE_CONTENTLET_ASSET_NAME, sourceContentletIdentifier.getAssetName());
             }
 
             List <Field> fields = FieldsCache.getFieldsByStructureInode(contentlet.getStructureInode());
@@ -5520,8 +5520,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 }
             }
 
+
+
             //Set URL in the new contentlet because is needed to create Identifier in EscontentletAPI.
-            if(BaseContentType.HTMLPAGE.equals(contentlet.getContentType().baseType())){
+            if(contentlet.isHTMLPage()){
                 Identifier identifier = APILocator.getIdentifierAPI().find(contentlet);
                 if(UtilMethods.isSet(identifier) && UtilMethods.isSet(identifier.getAssetName())){
                     final String newAssetName = generateCopyName(identifier.getAssetName(), copySuffix);
@@ -5533,6 +5535,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             newContentlet.getMap().put(Contentlet.DISABLE_WORKFLOW, true);
             newContentlet.getMap().put(Contentlet.DONT_VALIDATE_ME, true);
+            newContentlet.getMap().put(Contentlet.IS_COPY_CONTENTLET, true);
             // Use the generated identifier if one version of this contentlet
             // has already been checked in
             if (UtilMethods.isSet(newIdentifier)) {
