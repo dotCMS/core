@@ -1,6 +1,7 @@
 package com.dotcms.graphql.datafetcher;
 
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 
 import graphql.schema.DataFetcher;
@@ -13,9 +14,14 @@ import java.util.List;
 public class MultiValueFieldDataFetcher implements DataFetcher<List<String>> {
     @Override
     public List<String> get(final DataFetchingEnvironment environment) throws Exception {
-        final Contentlet contentlet = environment.getSource();
-        final String var = environment.getField().getName();
-        final String values = (String) contentlet.get(var);
-        return UtilMethods.isSet(values)?Arrays.asList(values.split("\\s*,\\s*")): Collections.emptyList();
+        try {
+            final Contentlet contentlet = environment.getSource();
+            final String var = environment.getField().getName();
+            final String values = (String) contentlet.get(var);
+            return UtilMethods.isSet(values) ? Arrays.asList(values.split("\\s*,\\s*")) : Collections.emptyList();
+        } catch (Exception e) {
+            Logger.error(this, e.getMessage(), e);
+            throw e;
+        }
     }
 }
