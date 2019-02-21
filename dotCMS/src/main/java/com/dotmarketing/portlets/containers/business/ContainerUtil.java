@@ -1,4 +1,4 @@
-package com.dotcms.rendering.velocity.events;
+package com.dotmarketing.portlets.containers.business;
 
 import com.dotcms.api.system.event.message.MessageSeverity;
 import com.dotcms.api.system.event.message.MessageType;
@@ -13,45 +13,48 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.auth.PrincipalThreadLocal;
 import com.liferay.util.Html;
 import org.apache.commons.lang.WordUtils;
-import org.apache.velocity.exception.ParseErrorException;
 
 import java.util.Arrays;
 
-/**
- * Handle for the ParseErrorException
- * @author jsanca
- */
-public class ExceptionHandlerParseErrorException implements ExceptionHandler<ParseErrorException> {
+public class ContainerUtil {
+
+    private static class SingletonHolder {
+        private static final ContainerUtil INSTANCE = new ContainerUtil();
+    }
+    /**
+     * Get the instance.
+     * @return ContainerUtil
+     */
+    public static ContainerUtil getInstance() {
+
+        return ContainerUtil.SingletonHolder.INSTANCE;
+    } // getInstance.
 
     private static final String NEW_LINE = Html.br() + Html.space(2);
 
-    @Override
-    public void handle(final ParseErrorException e) {
+    /**
+     * Helper method to notify when container does not exist
+     * @param e {@link Exception}
+     * @param containerId {@link String}
+     */
+    public void notifyException(final Exception e, final String containerId) {
 
-        if (isPreviewOrEditMode(e)) {
+        if (ExceptionUtil.isPreviewOrEditMode(e, HttpServletRequestThreadLocal.INSTANCE.getRequest())) {
+
             try {
 
                 final String userId = PrincipalThreadLocal.getName();
                 if (UtilMethods.isSet(userId)) {
+
                     final SystemMessageBuilder systemMessageBuilder = new SystemMessageBuilder();
                     final StringBuilder message = new StringBuilder();
                     final String errorMessage = WordUtils.wrap
                             (e.getMessage(), 15, Html.br(), false);
 
-                    message.append(Html.h3("Parsing Error"))
+                    message.append(Html.h3("Container Not Found Error"))
 
-                            .append(Html.b("Template")).append(NEW_LINE)
-                            .append(e.getTemplateName()).append(Html.br())
-
-                            .append(Html.b("Invalid Syntax")).append(NEW_LINE)
-                            .append(e.getInvalidSyntax()).append(Html.br())
-
-                            .append(Html.b("Column Number")).append(NEW_LINE)
-                            .append(e.getColumnNumber()).append(Html.br())
-
-                            .append(Html.b("Line Number")).append(NEW_LINE)
-                            .append(e.getLineNumber()).append(Html.br())
-
+                            .append(Html.b("Container Id")).append(NEW_LINE)
+                            .append(containerId).append(Html.br())
                             .append(Html.pre(errorMessage));
 
                     systemMessageBuilder.setMessage(message.toString())
@@ -64,19 +67,8 @@ public class ExceptionHandlerParseErrorException implements ExceptionHandler<Par
 
                 }
             } catch (Exception ex) {
-                Logger.error(VelocityModeHandler.class, "Parsing error on: " + e.getTemplateName() + ", msg: " + ex.getMessage(), ex);
+                Logger.error(VelocityModeHandler.class, "Not found container error on requesting: " + containerId + ", msg: " + ex.getMessage(), ex);
             }
-
-            throw new PreviewEditParseErrorException(e);
         }
-
-        throw e;
-    }
-
-    boolean isPreviewOrEditMode(final Exception e) {
-
-        return ExceptionUtil.isPreviewOrEditMode(e, HttpServletRequestThreadLocal.INSTANCE.getRequest());
-    }
-
-
+    } // notifyException.
 }
