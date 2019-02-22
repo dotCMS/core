@@ -2,6 +2,7 @@ package com.dotmarketing.portlets.templates.business;
 
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
@@ -274,10 +275,17 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 							WorkingContainerFinderByIdOrPathStrategyResolver.getInstance();
 					final Optional<ContainerFinderByIdOrPathStrategy> strategy              = strategyResolver.get(containerIdOrPath);
 					final Supplier<Host> resourceHostSupplier								= Sneaky.sneaked(()->getTemplateHost(template));
+					Container container = null;
 
-					final Container container = strategy.isPresent()?
+					try {
+
+						container = strategy.isPresent()?
 							strategy.get().apply(containerIdOrPath, user, false, resourceHostSupplier):
 							strategyResolver.getDefaultStrategy().apply(containerIdOrPath, user, false, resourceHostSupplier);
+					} catch (NotFoundInDbException | DotRuntimeException e) {
+
+						container = null;
+					}
 
 					if (container == null) {
 						continue;

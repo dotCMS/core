@@ -14,6 +14,9 @@ import java.util.List;
 
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
+import graphql.schema.GraphQLFieldDefinition;
+
+import static com.dotcms.graphql.util.TypeUtil.BASE_TYPE_SUFFIX;
 
 public class ContentletDataFetcher implements DataFetcher<List<Contentlet>> {
     @Override
@@ -32,11 +35,14 @@ public class ContentletDataFetcher implements DataFetcher<List<Contentlet>> {
             final String queriedFieldName = environment.getField().getName();
 
             if(!queriedFieldName.equals("search")) {
-                final String typeName = TypeUtil.singularizeName(queriedFieldName);
-                if(isBaseType(typeName)) {
+                final boolean isBaseType = isBaseType(environment.getFieldDefinition());
+
+                if(isBaseType) {
+                    String typeName = TypeUtil.singularizeBaseTypeCollectionName(queriedFieldName);
                     query = "+baseType:" + BaseContentType.getBaseContentType(typeName.toUpperCase()).ordinal() + " " + query;
                 } else {
-                    query = "+contentType:" + TypeUtil.singularizeName(queriedFieldName) + " " + query;
+                    final String typeName = TypeUtil.singularizeCollectionName(queriedFieldName);
+                    query = "+contentType:" + TypeUtil.singularizeCollectionName(queriedFieldName) + " " + query;
                 }
             }
 
@@ -49,15 +55,8 @@ public class ContentletDataFetcher implements DataFetcher<List<Contentlet>> {
         }
     }
 
-    private boolean isBaseType(final String queriedFieldName) {
-        boolean isBaseType = false;
-
-        try {
-            isBaseType = UtilMethods.isSet(BaseContentType.getBaseContentType(queriedFieldName.toUpperCase()));
-        } catch (IllegalArgumentException e) {
-            Logger.debug(this, "Not a BaseContentType: " + queriedFieldName, e);
-        }
-
-        return isBaseType;
+    private boolean isBaseType(final GraphQLFieldDefinition fieldDefinition) {
+        return UtilMethods.isSet(fieldDefinition.getDescription())
+            && fieldDefinition.getDescription().equals(BASE_TYPE_SUFFIX);
     }
 }

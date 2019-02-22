@@ -18,10 +18,7 @@ import com.dotmarketing.common.db.Params;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.containers.business.ContainerAPI;
-import com.dotmarketing.portlets.containers.business.ContainerFinderByIdOrPathStrategy;
-import com.dotmarketing.portlets.containers.business.LiveContainerFinderByIdOrPathStrategyResolver;
-import com.dotmarketing.portlets.containers.business.WorkingContainerFinderByIdOrPathStrategyResolver;
+import com.dotmarketing.portlets.containers.business.*;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
@@ -540,6 +537,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
                     continue;
                 }
             } catch (NotFoundInDbException e) {
+
                 Logger.debug(this, e.getMessage(), e);
                 continue;
             }
@@ -594,7 +592,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
                     if (container == null && !liveMode) {
                         continue;
                     }
-                } catch (NotFoundInDbException e) {
+                } catch (NotFoundInDbException| DotRuntimeException e) {
                     Logger.debug(this, e.getMessage(), e);
                     continue;
                 }
