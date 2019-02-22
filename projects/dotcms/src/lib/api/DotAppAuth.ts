@@ -8,17 +8,19 @@ export interface DotAppAuthLoginParams {
 }
 
 export class DotAppAuth {
-    isLogin() {
+    isLogin(): boolean {
         return document.cookie.split('access_token').length > 1;
     }
 
-    logout() {
+    logout(): Promise<string> {
         return fetch('v1/logout', {
             method: 'PUT'
-        });
+        })
+            .then((data: Response) => data.json())
+            .then((data: { [key: string]: any }) => data.entity);
     }
 
-    login({ user, password, expirationDays, host }: DotAppAuthLoginParams): Promise<any> {
+    getToken({ user, password, expirationDays, host }: DotAppAuthLoginParams): Promise<string> {
         return fetch(`${host || ''}/api/v1/authentication/api-token`, {
             method: 'POST',
             headers: {
@@ -29,6 +31,8 @@ export class DotAppAuth {
                 password: password,
                 expirationDays: expirationDays || 10
             })
-        });
+        })
+            .then((data: Response) => data.json())
+            .then((data: { [key: string]: any }) => data.entity.token);
     }
 }

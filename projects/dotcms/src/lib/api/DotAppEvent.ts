@@ -4,7 +4,7 @@ export interface DotAppEventsParams {
 }
 
 export class DotAppEvent {
-    emit({ name, data }: DotAppEventsParams) {
+    emit({ name, data }: DotAppEventsParams): void {
         const customEvent = window.top.document.createEvent('CustomEvent');
         customEvent.initCustomEvent('ng-event', false, false, {
             name: name,
