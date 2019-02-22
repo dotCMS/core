@@ -29,11 +29,11 @@ export class WebSocketProtocol extends Protocol {
             };
 
             this.socket.onmessage = (ev: MessageEvent) => {
+                console.log('ev', ev);
                 this._message.next(JSON.parse(ev.data));
             };
 
             this.socket.onclose = (ev: CloseEvent) => {
-                console.log('web sickets close', ev);
                 if (ev.code === this.NORMAL_CLOSE_CODE) {
                     this._close.next(ev);
                     this._message.complete();
@@ -43,7 +43,6 @@ export class WebSocketProtocol extends Protocol {
             };
 
             this.socket.onerror = (ev: ErrorEvent) => {
-                console.log('onerror');
                 this.close();
                 this._error.next(ev);
             };

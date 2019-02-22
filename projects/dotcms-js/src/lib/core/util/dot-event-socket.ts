@@ -6,6 +6,7 @@ import { CoreWebService } from '../core-web.service';
 import { ConfigParams } from '../dotcms-config.service';
 import { Subject, Observable } from 'rxjs';
 import { Url } from './models/url';
+import { DotEventMessage } from './models/dot-event-message';
 
 enum CONNECTION_STATUS {
     NONE,
@@ -18,8 +19,7 @@ export class DotEventsSocket {
     private protocolImpl: Protocol;
 
     private status: CONNECTION_STATUS = CONNECTION_STATUS.NONE;
-    // TODO: any?
-    private _message: Subject<any> = new Subject<any>();
+    private _message: Subject<DotEventMessage> = new Subject<DotEventMessage>();
 
     /**
      * Initializes this service with the configuration properties that are
@@ -55,7 +55,7 @@ export class DotEventsSocket {
         }
     }
 
-    messages(): Observable<any> {
+    messages(): Observable<DotEventMessage> {
         return this._message.asObservable();
     }
 
@@ -68,17 +68,15 @@ export class DotEventsSocket {
 
         // tslint:disable-next-line:cyclomatic-complexity
         this.protocolImpl.error$().subscribe(() => {
-            console.log('ERROR this.isWebSocketProtocol() 22222', this.isWebSocketProtocol());
-            console.log('ERROR this.status', this.status);
-            if ( this.isWebSocketProtocol() && this.status !== CONNECTION_STATUS.CONNECTED) {
+            console.log('this.isWebSocketProtocol()', this.isWebSocketProtocol());
+            console.log('this.status', this.status);
+            if (this.isWebSocketProtocol() && this.status !== CONNECTION_STATUS.CONNECTED) {
                 this.loggerService.info(
-                    'Error connecting with Websockets, trying again with long pollingwwwwww'
+                    'Error connecting with Websockets, trying again with long polling'
                 );
 
                 this.protocolImpl = this.getLongPollingProtocol();
             }
-
-            console.log('this.configParams.websocketReconnectTime', this.configParams.websocketReconnectTime);
 
             setTimeout(
                 () => {
@@ -91,7 +89,6 @@ export class DotEventsSocket {
 
         this.protocolImpl.close$().subscribe((_event) => {
             this.status = CONNECTION_STATUS.CLOSED;
-
         });
 
         this.protocolImpl

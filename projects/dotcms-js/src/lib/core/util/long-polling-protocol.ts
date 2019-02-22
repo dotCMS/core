@@ -31,7 +31,6 @@ export class LongPollingProtocol extends Protocol {
 
     private connectLongPooling(lastCallBack?: number): void {
         this.isClosed = false;
-        console.log('connectLongPooling');
         this.loggerService.info('Starting long polling connection');
 
         this.coreWebService
@@ -44,7 +43,7 @@ export class LongPollingProtocol extends Protocol {
             .subscribe(
                 (data) => {
                     this.loggerService.debug('new Events', data);
-
+                    console.log('data', data);
                     if (data instanceof Array) {
                         data.forEach((message) => {
                             this._message.next(message);
@@ -58,7 +57,6 @@ export class LongPollingProtocol extends Protocol {
                     }
                 },
                 (e) => {
-                    console.log('ERROR LONG POLLING');
                     this.loggerService.info('A error occur connecting through long polling');
                     this._error.next(e);
                 }

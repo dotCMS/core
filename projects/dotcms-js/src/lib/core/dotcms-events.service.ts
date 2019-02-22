@@ -2,9 +2,10 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { LoggerService } from './logger.service';
 import { Subject } from 'rxjs';
-import { DotEventData, DotEventTypeWrapper } from './models';
+import { DotEventTypeWrapper } from './models';
 import { DotEventsSocketFactoryService } from './dot-events-socket-factory.service';
 import { DotEventsSocket } from './util/dot-event-socket';
+import { DotEventMessage } from './util/models/dot-event-message';
 
 @Injectable()
 export class DotcmsEventsService {
@@ -33,7 +34,7 @@ export class DotcmsEventsService {
                 this.socket = socket;
 
                 socket.messages().subscribe(
-                    (data) => {
+                    (data: DotEventMessage) => {
                         if (!this.subjects[data.event]) {
                             this.subjects[data.event] = new Subject();
                         }
@@ -65,7 +66,7 @@ export class DotcmsEventsService {
      *                          messages in the Notification section.
      * @returns any The system events that a client will receive.
      */
-    subscribeTo(clientEventType: string): Observable<DotEventData> {
+    subscribeTo(clientEventType: string): Observable<any> {
         if (!this.subjects[clientEventType]) {
             this.subjects[clientEventType] = new Subject();
         }
