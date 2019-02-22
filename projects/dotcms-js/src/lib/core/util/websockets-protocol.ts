@@ -29,7 +29,6 @@ export class WebSocketProtocol extends Protocol {
             };
 
             this.socket.onmessage = (ev: MessageEvent) => {
-                console.log('ev', ev);
                 this._message.next(JSON.parse(ev.data));
             };
 
@@ -48,7 +47,6 @@ export class WebSocketProtocol extends Protocol {
             };
         } catch (error) {
             this.loggerService.debug('Web EventsSocket connection error', error);
-            console.log('Web EventsSocket connection error', error);
             this._error.next(error);
         }
     }

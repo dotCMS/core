@@ -17,12 +17,11 @@ class CoreWebServiceMock extends CoreWebService {
     }
 
     public requestView(): Observable<ResponseView> {
-        console.log('AAAAAAA');
         return null;
     }
 }
 
-fdescribe('DotEventsSocket', () => {
+describe('DotEventsSocket', () => {
     let coreWebServiceMock: CoreWebServiceMock;
     let dotEventsSocket: DotEventsSocket;
     const url = new Url('ws', 'testing', 'localhost');
@@ -97,7 +96,6 @@ fdescribe('DotEventsSocket', () => {
             };
 
             spyOn(coreWebServiceMock, 'requestView').and.callFake(() => {
-                console.log('FAKE');
                 // dotEventsSocket.destroy();
                 return of({
                     entity: {

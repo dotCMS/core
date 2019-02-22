@@ -43,7 +43,6 @@ export class LongPollingProtocol extends Protocol {
             .subscribe(
                 (data) => {
                     this.loggerService.debug('new Events', data);
-                    console.log('data', data);
                     if (data instanceof Array) {
                         data.forEach((message) => {
                             this._message.next(message);

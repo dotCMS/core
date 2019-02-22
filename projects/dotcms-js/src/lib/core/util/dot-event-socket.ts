@@ -68,8 +68,6 @@ export class DotEventsSocket {
 
         // tslint:disable-next-line:cyclomatic-complexity
         this.protocolImpl.error$().subscribe(() => {
-            console.log('this.isWebSocketProtocol()', this.isWebSocketProtocol());
-            console.log('this.status', this.status);
             if (this.isWebSocketProtocol() && this.status !== CONNECTION_STATUS.CONNECTED) {
                 this.loggerService.info(
                     'Error connecting with Websockets, trying again with long polling'
