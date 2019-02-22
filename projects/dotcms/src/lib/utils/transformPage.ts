@@ -1,5 +1,5 @@
 // tslint:disable-next-line:cyclomatic-complexity
-export const transformPage = (page) => {
+export function transformPage(page): { [key: string]: any } {
     if (page.layout) {
         page.layout.body.rows.forEach((row) => {
             row.columns.forEach((col) => {
@@ -36,4 +36,4 @@ export const transformPage = (page) => {
     }
 
     return page;
-};
+}

@@ -1,7 +1,7 @@
 import { DotEsSearchParams } from '../api/DotAppEs';
 
 // tslint:disable-next-line:cyclomatic-complexity
-export const getEsQuery = ({
+export function getEsQuery({
     contentType,
     queryParams: {
         languageId,
@@ -13,7 +13,7 @@ export const getEsQuery = ({
         numberOfResults,
         detailedSearchQuery
     }
-}: DotEsSearchParams) => {
+}: DotEsSearchParams): string {
     const paginationQuery = `,
         "from": OFFSETVALUE,
         "size": SIZEPERPAGE`;
@@ -47,5 +47,6 @@ export const getEsQuery = ({
     Object.keys(esParams).forEach((key) => {
         query = query.replace(key, esParams[key]);
     });
+
     return query;
-};
+}

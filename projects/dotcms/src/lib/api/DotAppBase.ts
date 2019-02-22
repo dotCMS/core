@@ -1,4 +1,4 @@
-import { request } from '../utils';
+import { request, DotAppHttpRequestParams } from '../utils';
 
 export interface DotAppConfigParams {
     token: string;
@@ -17,7 +17,7 @@ export class DotAppBase {
         return this._config;
     }
 
-    request(params: { [key: string]: string }): Promise<any> {
+    request(params: DotAppHttpRequestParams): Promise<any> {
         return request(params, this.config);
     }
 }

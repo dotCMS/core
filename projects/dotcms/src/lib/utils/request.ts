@@ -1,21 +1,46 @@
 import fetch from 'node-fetch';
 import { DotAppConfigParams } from '../api/DotAppBase';
 
+export interface DotAppHttpRequestParams {
+    url: string;
+    method?: string;
+    body?: { [key: string]: any } | string;
+}
 
-const getUrl = (pathname: string, config: DotAppConfigParams) => {
+function getUrl(pathname: string, config: DotAppConfigParams): string {
     const host = config.environment !== 'development' ? config.host : '';
     return `${host}/api/v1/page/json/${pathname.slice(1)}?language_id=1`;
-};
+}
 
-export const request = (params: { [key: string]: string }, config: DotAppConfigParams) => {
-    const url = getUrl(params.url, config);
+function shouldAppendBody(params: DotAppHttpRequestParams): boolean {
+    return params.method === 'POST' && !!params.body;
+}
 
-    return fetch(url, {
+function getOpts(
+    params: DotAppHttpRequestParams,
+    config: DotAppConfigParams
+): { [key: string]: any } {
+    let opts: { [key: string]: any } = {
         method: params.method || 'GET',
         headers: {
             Authorization: `Bearer ${config.token}`,
             'Content-type': 'application/json'
-        },
-        body: params.body
-    });
-};
+        }
+    };
+
+    if (shouldAppendBody(params)) {
+        opts = {
+            ...opts,
+            body: params.body
+        };
+    }
+
+    return opts;
+}
+
+export function request (params: DotAppHttpRequestParams, config: DotAppConfigParams) {
+    const url = getUrl(params.url, config);
+    const opts = getOpts(params, config);
+
+    return fetch(url, opts);
+}
