@@ -40,6 +40,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * {@link URLMapAPI} implementation
+ *
+ * {@inheritDoc}
  */
 public class URLMapAPIImpl implements URLMapAPI {
 
