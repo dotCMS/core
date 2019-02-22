@@ -9,7 +9,7 @@ export interface DotAppHttpRequestParams {
 
 function getUrl(pathname: string, config: DotAppConfigParams): string {
     const host = config.environment !== 'development' ? config.host : '';
-    return `${host}/api/v1/page/json/${pathname.slice(1)}?language_id=1`;
+    return `${host}${pathname}?language_id=1`;
 }
 
 function shouldAppendBody(params: DotAppHttpRequestParams): boolean {
@@ -38,7 +38,7 @@ function getOpts(
     return opts;
 }
 
-export function request (params: DotAppHttpRequestParams, config: DotAppConfigParams) {
+export function request(params: DotAppHttpRequestParams, config: DotAppConfigParams) {
     const url = getUrl(params.url, config);
     const opts = getOpts(params, config);
 

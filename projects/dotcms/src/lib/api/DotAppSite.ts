@@ -8,8 +8,7 @@ export class DotAppSite extends DotAppBase {
 
     getCurrentSite(): Promise<DotCMSSite> {
         return this.request({
-            url: `/api/v1/site/currentSite`,
-            method: 'GET'
+            url: `/api/v1/site/currentSite`
         })
             .then((response: Response) => response.json())
             .then((data) => {
