@@ -17,12 +17,10 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.MultiTreeAPI;
-import com.dotmarketing.portlets.containers.business.ContainerAPI;
-import com.dotmarketing.portlets.containers.business.ContainerFinderByIdOrPathStrategy;
-import com.dotmarketing.portlets.containers.business.LiveContainerFinderByIdOrPathStrategyResolver;
-import com.dotmarketing.portlets.containers.business.WorkingContainerFinderByIdOrPathStrategyResolver;
+import com.dotmarketing.portlets.containers.business.*;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
@@ -222,6 +220,8 @@ public class PageContextBuilder implements Serializable {
                 defaultContainerFinderByIdOrPathStrategy.apply(containerIdOrPath, user, false, resourceHostSupplier);
     }
 
+
+
     private List<ContainerRaw> populateContainers() throws DotDataException, DotSecurityException {
 
         final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
@@ -242,14 +242,20 @@ public class PageContextBuilder implements Serializable {
             final ContainerFinderByIdOrPathStrategy workingStrategy    = strategy.isPresent()?strategy.get():strategyResolver.getDefaultStrategy();
             final Supplier<Host>                  resourceHostSupplier = ()-> this.site;
 
-            if (live) {
+            try {
+                if (live) {
 
-                container = this.getLiveContainerById(containerId);
-                if (null == container) {
-                    container = workingStrategy.apply(containerId, APILocator.systemUser(),false, resourceHostSupplier);
+                    container = this.getLiveContainerById(containerId);
+                    if (null == container) {
+                        container = workingStrategy.apply(containerId, APILocator.systemUser(), false, resourceHostSupplier);
+                    }
+                } else {
+                    container = workingStrategy.apply(containerId, APILocator.systemUser(), false, resourceHostSupplier);
                 }
-            } else {
-                container = workingStrategy.apply(containerId, APILocator.systemUser(),false, resourceHostSupplier);
+            } catch (NotFoundInDbException | DotRuntimeException e) {
+
+                ContainerUtil.getInstance().notifyException(e, containerId);
+                container = null;
             }
 
             if (container == null) {
