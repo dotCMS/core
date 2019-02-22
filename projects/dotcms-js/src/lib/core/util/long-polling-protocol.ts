@@ -15,10 +15,16 @@ export class LongPollingProtocol extends Protocol {
         super(loggerService);
     }
 
+    /**
+     * Connect to a Long Polling connection
+     */
     connect(): void {
         this.connectLongPooling();
     }
 
+    /**
+     * Close the connection
+     */
     close(): void {
         this.loggerService.info('destroying long polling');
         this.isClosed = true;

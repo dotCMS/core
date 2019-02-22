@@ -1,4 +1,4 @@
-export class Url {
+export class DotEventsSocketURL {
     constructor(private protocol: string, private baseUrl: string, private endPoint: string) {}
 
     get url(): string {
@@ -6,6 +6,6 @@ export class Url {
     }
 
     public getHttpUrl(): string {
-        return new Url(this.protocol === 'ws' ? 'http' : 'https', this.baseUrl, this.endPoint).url;
+        return new DotEventsSocketURL(this.protocol === 'ws' ? 'http' : 'https', this.baseUrl, this.endPoint).url;
     }
 }

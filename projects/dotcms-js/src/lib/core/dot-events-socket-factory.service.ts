@@ -5,7 +5,7 @@ import { Observable, of } from 'rxjs';
 import { CoreWebService } from './core-web.service';
 import { DotEventsSocket } from './util/dot-event-socket';
 import { map } from 'rxjs/operators';
-import { Url } from './util/models/url';
+import { DotEventsSocketURL } from './util/models/dot-event-socket-url';
 
 /**
  * Factory of {@link DotEventsSocket}
@@ -37,7 +37,7 @@ export class DotEventsSocketFactoryService {
     private createDotEventsSocket(): Observable<DotEventsSocket> {
         return this.dotcmsConfig.getConfig().pipe(
             map((configParams) => {
-                const url: Url = new Url(
+                const url: DotEventsSocketURL = new DotEventsSocketURL(
                     configParams.websocketProtocol,
                     configParams.websocketBaseURL,
                     configParams.websocketsSystemEventsEndpoint
