@@ -4,6 +4,8 @@ import { DotcmsConfig } from 'dotcms-js';
 import { DotUiColors, DotUiColorsService } from '@services/dot-ui-colors/dot-ui-colors.service';
 import { take, pluck } from 'rxjs/operators';
 
+import {initDotCMS} from 'dotcms';
+
 @Component({
     selector: 'dot-root',
     templateUrl: './app.component.html',
@@ -19,6 +21,10 @@ export class AppComponent implements OnInit {
     }
 
     ngOnInit() {
+        const a = initDotCMS;
+
+
+
         this.dotCmsConfig
             .getConfig()
             .pipe(

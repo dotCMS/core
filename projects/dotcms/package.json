@@ -2,5 +2,6 @@
   "name": "dotcms",
   "version": "0.0.1",
   "peerDependencies": {
+    "node-fetch": "^2.3.0"
   }
 }
