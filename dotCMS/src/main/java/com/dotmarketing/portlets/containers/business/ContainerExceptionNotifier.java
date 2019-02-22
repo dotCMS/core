@@ -15,30 +15,29 @@ import org.apache.commons.lang.WordUtils;
 
 import java.util.Arrays;
 
-public class ContainerUtil {
+/**
+ * Class to notified error on containers to the client
+ * @author jsanca
+ */
+public class ContainerExceptionNotifier {
 
-    private static class SingletonHolder {
-        private static final ContainerUtil INSTANCE = new ContainerUtil();
+    private final Exception exception;
+    private final String containerId;
+
+
+    public ContainerExceptionNotifier(final Exception exception, final String containerId) {
+        this.exception   = exception;
+        this.containerId = containerId;
     }
-    /**
-     * Get the instance.
-     * @return ContainerUtil
-     */
-    public static ContainerUtil getInstance() {
-
-        return ContainerUtil.SingletonHolder.INSTANCE;
-    } // getInstance.
 
     private static final String NEW_LINE = Html.br() + Html.space(2);
 
     /**
-     * Helper method to notify when container does not exist
-     * @param e {@link Exception}
-     * @param containerId {@link String}
+     * If there is any user on the current thread assigned will notify to them
      */
-    public void notifyException(final Exception e, final String containerId) {
+    public void notifyUser() {
 
-        if (ExceptionUtil.isPreviewOrEditMode(e, HttpServletRequestThreadLocal.INSTANCE.getRequest())) {
+        if (ExceptionUtil.isPreviewOrEditMode(exception, HttpServletRequestThreadLocal.INSTANCE.getRequest())) {
 
             try {
 
@@ -48,7 +47,7 @@ public class ContainerUtil {
                     final SystemMessageBuilder systemMessageBuilder = new SystemMessageBuilder();
                     final StringBuilder message = new StringBuilder();
                     final String errorMessage = WordUtils.wrap
-                            (e.getMessage(), 15, Html.br(), false);
+                            (exception.getMessage(), 15, Html.br(), false);
 
                     message.append(Html.h3("Container Not Found Error"))
 
@@ -62,12 +61,12 @@ public class ContainerUtil {
                             .setSeverity(MessageSeverity.ERROR);
 
                     SystemMessageEventUtil.getInstance().
-                            pushMessage(containerId, systemMessageBuilder.create(), Arrays.asList(userId));
+                            pushMessage(containerId + "-" + userId, systemMessageBuilder.create(), Arrays.asList(userId));
 
                 }
             } catch (Exception ex) {
-                Logger.error(ContainerUtil.class, "Not found container error on requesting: " + containerId + ", msg: " + ex.getMessage(), ex);
+                Logger.error(ContainerExceptionNotifier.class, "Not found container error on requesting: " + containerId + ", msg: " + ex.getMessage(), ex);
             }
         }
-    } // notifyException.
+    } // notifyUser.
 }

@@ -7,8 +7,11 @@ import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.ErrorEntity;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.expiring.ExpiringMap;
+import com.dotmarketing.business.expiring.ExpiringMapBuilder;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
 
 import java.util.*;
 
@@ -19,6 +22,8 @@ import java.util.*;
 public class SystemMessageEventUtil {
 
     private final SystemEventsAPI systemEventsAPI;
+    private final ExpiringMap<Object, Object> systemMessagesExpiringMap =
+                    new ExpiringMapBuilder<Object, Object>().build();
 
 
     ///////////////////////
@@ -260,11 +265,25 @@ public class SystemMessageEventUtil {
      */
     public void pushMessage (final Object resourceId, final SystemMessage message, final List<String> users) {
 
-
-
         if (Config.getBooleanProperty("dotcms.systemmessage.noduplicates", true) && null != resourceId) {
 
-            // if not in cache push it, otherwise just log
+            // if the message hasn't been sent in the last seconds.
+            if (!this.systemMessagesExpiringMap.containsKey(resourceId)) {
+
+                try {
+                    final SystemEvent systemEvent = new SystemEvent(SystemEventType.MESSAGE, this.createPayload(message, users));
+                    this.systemMessagesExpiringMap.put(resourceId, resourceId);
+                    this.systemEventsAPI.push(systemEvent);
+                } catch (DotDataException e) {
+
+                    this.systemMessagesExpiringMap.remove(resourceId);
+                    throw new CanNotPushSystemEventException(e);
+                }
+            } else {
+
+                Logger.debug(this, ()-> "We already sent a message in the last previous second, discarting a message for the resource id: " +
+                        resourceId + ", message: " + message);
+            }
         } else {
 
             this.pushMessage(message, users);
