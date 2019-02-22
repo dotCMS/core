@@ -59,7 +59,7 @@ public class TypeUtil {
     }
 
     public static String singularizeBaseTypeCollectionName(final String baseTypeCollectionName) {
-        return baseTypeCollectionName.replaceAll("Collection", "").replaceAll(BASE_TYPE_SUFFIX, "");
+        return singularizeCollectionName(baseTypeCollectionName).replaceAll(BASE_TYPE_SUFFIX, "");
     }
 
     public static class TypeFetcher {
