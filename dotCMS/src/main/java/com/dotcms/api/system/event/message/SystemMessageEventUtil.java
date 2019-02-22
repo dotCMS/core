@@ -300,7 +300,7 @@ public class SystemMessageEventUtil {
      */
     public void pushMessage (final Object resourceId, final SystemMessage message, final List<String> users) {
 
-        if (accumulateUniqueMessagesPerThread.get()) {
+        if (accumulateUniqueMessagesPerThread.get() && null != resourceId) {
 
             threadSystemMessageSet.get().computeIfAbsent(resourceId, k -> new SystemEvent(SystemEventType.MESSAGE, this.createPayload(message, users)));
         } else {
