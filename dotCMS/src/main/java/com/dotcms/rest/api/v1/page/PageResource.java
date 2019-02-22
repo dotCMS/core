@@ -2,7 +2,6 @@ package com.dotcms.rest.api.v1.page;
 
 
 
-import com.dotcms.api.system.event.message.SystemMessageEventUtil;
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
 import com.dotcms.repackage.javax.ws.rs.*;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
@@ -203,7 +202,6 @@ public class PageResource {
         final PageMode mode = modeParam != null ? PageMode.get(modeParam) : this.htmlPageAssetRenderedAPI.getDefaultEditPageMode(user, request,uri);
         PageMode.setPageMode(request, mode);
         // we want to accumulate the messages to sent uniques message at the end.
-        SystemMessageEventUtil.accumulateUniqueMessagesPerThread(true);
         try {
 
             if (deviceInode != null) {
@@ -231,9 +229,6 @@ public class PageResource {
                     request, uri, modeParam);
             Logger.error(this, errorMsg, e);
             res = ResponseUtil.mapExceptionResponse(e);
-        } finally {
-            // send all messages accumulated
-            SystemMessageEventUtil.finalizeCurrentSystemMessages();
         }
 
         return res;

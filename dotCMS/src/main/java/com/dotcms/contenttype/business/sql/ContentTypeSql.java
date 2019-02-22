@@ -53,13 +53,13 @@ public abstract class ContentTypeSql {
         + "where inode=?";
 
 	public static String SELECT_QUERY_CONDITION = SELECT_ALL_STRUCTURE_FIELDS
-        + " and (inode.inode like ? or name like ? or velocity_var_name like ?) "  //search
+        + " and (inode.inode like ? or lower(name) like ? or velocity_var_name like ?) "  //search
         + " %s" //if we have a condition
         + " and structuretype>=? and structuretype<= ? order by %s";
 
 	public static String SELECT_COUNT_CONDITION = "select count(*) as test from structure, inode "
         + "where inode.type='structure' and inode.inode=structure.inode and "
-        + " (inode.inode like ? or name like ? or velocity_var_name like ?) "
+        + " (inode.inode like ? or lower(name) like ? or velocity_var_name like ?) "
         + " %s" //if we have a condition
         + " and structuretype>=? and structuretype<= ? ";
 
