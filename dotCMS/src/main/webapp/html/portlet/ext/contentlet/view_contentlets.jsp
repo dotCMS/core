@@ -278,7 +278,8 @@
     function reloadRelationshipBox(box, relatedType){
     	var search = box.attr("displayedValue");
 
-        var boxValue = search == "" ? "*" : "*" +search + "*";
+        //whitespaces are escaped
+        var boxValue = search == "" ? "*" : "*" +search.trim().replace(/\s/g, "\\\\\\\\ ") + "*";
         var limit=box.pageSize;
         if (relatedType.indexOf(".") != -1){
             relatedType = relatedType.split('.')[0];
@@ -740,7 +741,7 @@
                     <input type="hidden" name="cmd" value="prepublish">
                     <div class="portlet-toolbar">
                         <div class="portlet-toolbar__actions-secondary">
-                            <button id="bulkAvailableActions" dojoType="dijit.form.Button" data-dojo-props="onClick: doShowAvailableActions" iconClass="actionIcon" >
+                            <button id="bulkAvailableActions" dojoType="dijit.form.Button" class="dijitButtonFlat" data-dojo-props="onClick: doShowAvailableActions" iconClass="actionIcon" >
                                 <%= LanguageUtil.get(pageContext, "Available-actions")%>
                             </button>
                         </div>

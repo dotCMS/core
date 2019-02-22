@@ -6,8 +6,6 @@ import com.dotcms.contenttype.model.field.CategoryField;
 import com.dotcms.contenttype.model.field.CheckboxField;
 import com.dotcms.contenttype.model.field.ColumnField;
 import com.dotcms.contenttype.model.field.DataTypes;
-import com.dotcms.contenttype.model.field.DateField;
-import com.dotcms.contenttype.model.field.DateTimeField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FileField;
 import com.dotcms.contenttype.model.field.HostFolderField;
@@ -18,7 +16,6 @@ import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.field.RowField;
 import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.field.TextField;
-import com.dotcms.contenttype.model.field.TimeField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.graphql.CustomFieldType;
 import com.dotcms.graphql.InterfaceType;
@@ -32,6 +29,7 @@ import com.dotcms.graphql.datafetcher.MultiValueFieldDataFetcher;
 import com.dotcms.graphql.datafetcher.RelationshipFieldDataFetcher;
 import com.dotcms.graphql.datafetcher.SiteOrFolderFieldDataFetcher;
 import com.dotcms.graphql.datafetcher.TagsFieldDataFetcher;
+import com.dotcms.graphql.util.TypeUtil;
 import com.dotcms.util.LogTime;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -47,6 +45,7 @@ import com.liferay.portal.model.User;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -56,6 +55,8 @@ import java.util.Set;
 import graphql.scalars.ExtendedScalars;
 import graphql.schema.DataFetcher;
 import graphql.schema.GraphQLArgument;
+import graphql.schema.GraphQLFieldDefinition;
+import graphql.schema.GraphQLInterfaceType;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLSchema;
@@ -63,6 +64,7 @@ import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLTypeReference;
 import graphql.schema.idl.SchemaPrinter;
 
+import static com.dotcms.graphql.util.TypeUtil.BASE_TYPE_SUFFIX;
 import static graphql.Scalars.GraphQLFloat;
 import static graphql.Scalars.GraphQLInt;
 import static graphql.Scalars.GraphQLString;
@@ -85,9 +87,6 @@ public class GraphqlAPIImpl implements GraphqlAPI {
         this.fieldClassGraphqlTypeMap.put(CategoryField.class, list(CustomFieldType.CATEGORY.getType()));
         this.fieldClassGraphqlTypeMap.put(ImageField.class, InterfaceType.FILEASSET.getType());
         this.fieldClassGraphqlTypeMap.put(FileField.class, InterfaceType.FILEASSET.getType());
-        this.fieldClassGraphqlTypeMap.put(DateTimeField.class, ExtendedScalars.DateTime);
-        this.fieldClassGraphqlTypeMap.put(DateField.class, ExtendedScalars.Date);
-        this.fieldClassGraphqlTypeMap.put(TimeField.class, ExtendedScalars.Time);
         this.fieldClassGraphqlTypeMap.put(KeyValueField.class, list(CustomFieldType.KEY_VALUE.getType()));
         this.fieldClassGraphqlTypeMap.put(CheckboxField.class, list(GraphQLString));
         this.fieldClassGraphqlTypeMap.put(MultiSelectField.class, list(GraphQLString));
@@ -163,7 +162,7 @@ public class GraphqlAPIImpl implements GraphqlAPI {
         fields.forEach((field)->{
             if(!(field instanceof RowField) && !(field instanceof ColumnField)) {
                 if (field instanceof RelationshipField) {
-                    handleRelationshipField(contentType, builder, field);
+                    handleRelationshipField(contentType, builder, field, graphqlObjectTypes);
                 } else {
                     builder.field(newFieldDefinition()
                         .name(field.variable())
@@ -183,7 +182,7 @@ public class GraphqlAPIImpl implements GraphqlAPI {
     }
 
     private void handleRelationshipField(final ContentType contentType, GraphQLObjectType.Builder builder,
-                                         final Field field) {
+                                         final Field field, final Map<String, GraphQLObjectType> typesMap) {
 
         final ContentType relatedContentType;
         try {
@@ -207,11 +206,14 @@ public class GraphqlAPIImpl implements GraphqlAPI {
             relationship,
             APILocator.getRelationshipAPI().isParent(relationship, contentType));
 
-        final GraphQLTypeReference typeReference = GraphQLTypeReference.typeRef(relatedContentType.variable());
+        GraphQLOutputType outputType = typesMap.get(relatedContentType.variable()) != null
+            ? typesMap.get(relatedContentType.variable())
+            : GraphQLTypeReference.typeRef(relatedContentType.variable());
 
-        final GraphQLOutputType outputType = records.doesAllowOnlyOne()
-            ? typeReference
-            : list(typeReference);
+
+        outputType = records.doesAllowOnlyOne()
+            ? outputType
+            : list(outputType);
 
         builder.field(newFieldDefinition()
             .name(field.variable())
@@ -241,15 +243,52 @@ public class GraphqlAPIImpl implements GraphqlAPI {
         List<ContentType> allTypes = contentTypeAPI.findAll();
 
         // create all types
-        Map<String, GraphQLObjectType> allSchemaTypes = new HashMap<>();
+        Map<String, GraphQLObjectType> concreteTypes = new HashMap<>();
 
-        allTypes.forEach((type)->createSchemaType(type, allSchemaTypes));
+        allTypes.forEach((type)->createSchemaType(type, concreteTypes));
+
+        final Set<GraphQLType> graphQLTypes = new HashSet<>(InterfaceType.valuesAsSet());
+        // custom scalar types
+        graphQLTypes.add(ExtendedScalars.DateTime);
+        // add here the rest of types
+        graphQLTypes.addAll(concreteTypes.values());
 
         // Root Type
-        GraphQLObjectType rootType = newObject()
+        GraphQLObjectType.Builder rootTypeBuilder = newObject()
             .name("Query")
             .field(newFieldDefinition()
                 .name("search")
+                .argument(GraphQLArgument.newArgument()
+                    .name("query")
+                    .type(nonNull(GraphQLString))
+                    .build())
+                .argument(GraphQLArgument.newArgument()
+                    .name("limit")
+                    .type(GraphQLInt)
+                    .build())
+                .argument(GraphQLArgument.newArgument()
+                    .name("offset")
+                    .type(GraphQLInt)
+                    .build())
+                .argument(GraphQLArgument.newArgument()
+                    .name("sortBy")
+                    .type(GraphQLString)
+                    .build())
+                .type(list(InterfaceType.CONTENTLET.getType()))
+                .dataFetcher(new ContentletDataFetcher()));
+
+        List<GraphQLFieldDefinition> typesFieldsDefinitions = new ArrayList<>();
+
+        // each content type as query'able collection field
+        graphQLTypes.forEach((type)-> {
+            if(type.getName().equals(InterfaceType.CONTENTLET.getType().getName())) {
+                return;
+            }
+
+            final String fieldDescription = type instanceof GraphQLInterfaceType ? BASE_TYPE_SUFFIX : null;
+
+            typesFieldsDefinitions.add(newFieldDefinition()
+                .name(TypeUtil.collectionizedName(type.getName()))
                 .argument(GraphQLArgument.newArgument()
                     .name("query")
                     .type(GraphQLString)
@@ -266,17 +305,15 @@ public class GraphqlAPIImpl implements GraphqlAPI {
                     .name("sortBy")
                     .type(GraphQLString)
                     .build())
-                .type(list(InterfaceType.CONTENTLET.getType()))
-                .dataFetcher(new ContentletDataFetcher()))
-            .build();
+                .type(list((type)))
+                .description(fieldDescription)
+                .dataFetcher(new ContentletDataFetcher()).build());
 
-        final Set<GraphQLType> graphQLTypes = new HashSet<>(InterfaceType.valuesAsSet());
-        // custom scalar types
-        graphQLTypes.add(ExtendedScalars.DateTime);
-        // add here the rest of types
-        graphQLTypes.addAll(allSchemaTypes.values());
+        });
 
-        return new GraphQLSchema(rootType, null, graphQLTypes);
+        rootTypeBuilder = rootTypeBuilder.fields(typesFieldsDefinitions);
+
+        return new GraphQLSchema.Builder().query(rootTypeBuilder.build()).additionalTypes(graphQLTypes).build();
     }
 
     private ContentType getRelatedContentTypeForField(final Field field, final User user) throws DotSecurityException, DotDataException {

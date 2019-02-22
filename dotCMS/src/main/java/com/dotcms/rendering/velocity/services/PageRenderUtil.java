@@ -11,14 +11,16 @@ import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.repackage.com.google.common.collect.Lists;
 import com.dotcms.repackage.com.ibm.icu.text.SimpleDateFormat;
 import com.dotmarketing.beans.ContainerStructure;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.MultiTreeAPI;
-import com.dotmarketing.portlets.containers.business.ContainerAPI;
+import com.dotmarketing.portlets.containers.business.*;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
@@ -34,17 +36,15 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Table;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import com.rainerhahnekamp.sneakythrow.Sneaky;
 import org.apache.velocity.context.Context;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.io.Serializable;
 import java.io.StringWriter;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static com.dotmarketing.business.PermissionAPI.*;
@@ -69,9 +69,16 @@ public class PageRenderUtil implements Serializable {
     final static String WIDGET_PRE_EXECUTE = "WIDGET_PRE_EXECUTE";
     final List<ContainerRaw> containersRaw;
     final long languageId;
+    final Host site;
 
-    public PageRenderUtil(final IHTMLPage htmlPage, final User user, final PageMode mode, final long languageId)
-            throws DotSecurityException, DotDataException {
+
+    public PageRenderUtil(
+            final IHTMLPage htmlPage,
+            final User user,
+            final PageMode mode,
+            final long languageId,
+            final Host site) throws DotSecurityException, DotDataException {
+
         this.pageFoundTags = Lists.newArrayList();
         this.htmlPage = htmlPage;
         this.user = user;
@@ -80,12 +87,19 @@ public class PageRenderUtil implements Serializable {
         this.widgetPreExecute = new StringBuilder();
         this.ctxMap = populateContext();
         this.containersRaw = populateContainers();
+        this.site = null == site? APILocator.getHostAPI().findDefaultHost(user, mode.respectAnonPerms):site;
+
+    }
+
+    public PageRenderUtil(final IHTMLPage htmlPage, final User user, final PageMode mode, final long languageId)
+            throws DotSecurityException, DotDataException {
+        this(htmlPage, user, mode, languageId, null);
 
     }
 
     public PageRenderUtil(final IHTMLPage htmlPage, final User user, final PageMode mode)
             throws DotSecurityException, DotDataException {
-        this(htmlPage,user, mode, htmlPage.getLanguageId());
+        this(htmlPage,user, mode, htmlPage.getLanguageId(), null);
     }
 
 
@@ -166,11 +180,18 @@ public class PageRenderUtil implements Serializable {
 
     private Container getLiveContainerById (final String containerId) throws DotSecurityException, DotDataException {
 
+        final LiveContainerFinderByIdOrPathStrategyResolver strategyResolver =
+                LiveContainerFinderByIdOrPathStrategyResolver.getInstance();
+        final Optional<ContainerFinderByIdOrPathStrategy> strategy = strategyResolver.get(containerId);
+        final ContainerFinderByIdOrPathStrategy liveStrategy    = strategy.isPresent()?strategy.get():strategyResolver.getDefaultStrategy();
+        final Supplier<Host>                  resourceHostSupplier = ()-> this.site;
+
+
         Container container = null;
         try {
 
             container =
-                    this.containerAPI.getLiveContainerById(containerId, APILocator.systemUser(), false);
+                    liveStrategy.apply(containerId, APILocator.systemUser(), false, resourceHostSupplier);
         } catch (NotFoundInDbException e) {
 
             container = null;
@@ -179,9 +200,40 @@ public class PageRenderUtil implements Serializable {
         return container;
     }
 
-    private List<ContainerRaw> populateContainers() throws DotDataException, DotSecurityException {
-        final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+    private Container getLiveContainerById(final String containerIdOrPath, final User user, final Template template) throws NotFoundInDbException {
 
+        final LiveContainerFinderByIdOrPathStrategyResolver strategyResolver =
+                LiveContainerFinderByIdOrPathStrategyResolver.getInstance();
+        final Optional<ContainerFinderByIdOrPathStrategy> strategy           = strategyResolver.get(containerIdOrPath);
+
+        return this.geContainerById(containerIdOrPath, user, template, strategy, strategyResolver.getDefaultStrategy());
+    }
+
+    private Container getWorkingContainerById(final String containerIdOrPath, final User user, final Template template) throws NotFoundInDbException {
+
+        final WorkingContainerFinderByIdOrPathStrategyResolver strategyResolver =
+                WorkingContainerFinderByIdOrPathStrategyResolver.getInstance();
+        final Optional<ContainerFinderByIdOrPathStrategy> strategy           = strategyResolver.get(containerIdOrPath);
+
+        return this.geContainerById(containerIdOrPath, user, template, strategy, strategyResolver.getDefaultStrategy());
+    }
+
+    private Container geContainerById(final String containerIdOrPath, final User user, final Template template,
+                                      final Optional<ContainerFinderByIdOrPathStrategy> strategy,
+                                      final ContainerFinderByIdOrPathStrategy defaultContainerFinderByIdOrPathStrategy) throws NotFoundInDbException  {
+
+        final Supplier<Host> resourceHostSupplier                            =  Sneaky.sneaked(()->APILocator.getTemplateAPI().getTemplateHost(template));
+
+        return strategy.isPresent()?
+                strategy.get().apply(containerIdOrPath, user, false, resourceHostSupplier):
+                defaultContainerFinderByIdOrPathStrategy.apply(containerIdOrPath, user, false, resourceHostSupplier);
+    }
+
+
+
+    private List<ContainerRaw> populateContainers() throws DotDataException, DotSecurityException {
+
+        final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
         final boolean live =
                 request != null && request.getSession(false) != null && request.getSession().getAttribute("tm_date") != null ?
                         false :
@@ -190,18 +242,29 @@ public class PageRenderUtil implements Serializable {
         final Table<String, String, Set<String>> pageContents = this.multiTreeAPI.getPageMultiTrees(htmlPage, live);
         final List<ContainerRaw> raws = Lists.newArrayList();
 
-
         for (final String containerId : pageContents.rowKeySet()) {
 
             Container container = null;
+            final WorkingContainerFinderByIdOrPathStrategyResolver strategyResolver =
+                    WorkingContainerFinderByIdOrPathStrategyResolver.getInstance();
+            final Optional<ContainerFinderByIdOrPathStrategy> strategy = strategyResolver.get(containerId);
+            final ContainerFinderByIdOrPathStrategy workingStrategy    = strategy.isPresent()?strategy.get():strategyResolver.getDefaultStrategy();
+            final Supplier<Host>                  resourceHostSupplier = ()-> this.site;
 
-            if (live) {
-                container = this.getLiveContainerById(containerId);
-                if (null == container) {
-                    container = this.containerAPI.getWorkingContainerById(containerId, APILocator.systemUser(),false);
+            try {
+                if (live) {
+
+                    container = this.getLiveContainerById(containerId);
+                    if (null == container) {
+                        container = workingStrategy.apply(containerId, APILocator.systemUser(), false, resourceHostSupplier);
+                    }
+                } else {
+                    container = workingStrategy.apply(containerId, APILocator.systemUser(), false, resourceHostSupplier);
                 }
-            } else {
-                container = this.containerAPI.getWorkingContainerById(containerId, APILocator.systemUser(),false);
+            } catch (NotFoundInDbException | DotRuntimeException e) {
+
+                ContainerUtil.getInstance().notifyException(e, containerId);
+                container = null;
             }
 
             if (container == null) {

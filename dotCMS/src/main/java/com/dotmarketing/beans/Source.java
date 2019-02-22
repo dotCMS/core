@@ -7,5 +7,5 @@ package com.dotmarketing.beans;
  */
 public enum Source {
 
-    DB, FILE
+    UNKNOWN, DB, FILE
 }

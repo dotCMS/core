@@ -34,7 +34,7 @@
 				<label for="showArchivedChk"><%=LanguageUtil.get(pageContext, "Show-Archived")%></label>
 				&nbsp; &nbsp;
 
-				<button dojoType="dijit.form.Button"
+				<button dojoType="dijit.form.Button" class="dijitButtonFlat"
 						onClick="schemeAdmin.showImport();return false;" iconClass="addIcon">
 					<%=LanguageUtil.get(pageContext, "Import-Workflow-Scheme")%>
 				</button>

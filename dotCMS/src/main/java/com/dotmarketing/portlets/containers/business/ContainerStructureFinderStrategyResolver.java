@@ -3,7 +3,6 @@ package com.dotmarketing.portlets.containers.business;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotmarketing.beans.ContainerStructure;
-import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
@@ -236,22 +235,14 @@ public class ContainerStructureFinderStrategyResolver {
 
         private String getVelocityVarName(final FileAsset asset) {
 
-            final String name = asset.getName();
+            final String name = getName(asset);
 
             return StringUtils.remove(name, FILE_EXTENSION);
         }
 
         private String wrapIntoDotParseDirective (final FileAsset fileAsset) {
 
-            try {
-
-                final Host host = APILocator.getHostAPI().find(fileAsset.getHost(), APILocator.systemUser(), false);
-
-                return "#dotParse(\"//" + host.getHostname()  + fileAsset.getPath() + fileAsset.getFileName() + "\")";
-
-            } catch (DotSecurityException | DotDataException  e) {
-                return StringPool.BLANK;
-            }
+            return FileAssetContainerUtil.getInstance().wrapIntoDotParseDirective(fileAsset);
         }
 
         private String toString (final FileAsset fileAsset) {
@@ -281,4 +272,15 @@ public class ContainerStructureFinderStrategyResolver {
             return Optional.of(contentType);
         }
     } // PathContainerStructureFinderStrategyImpl
+
+
+    private String getName(final FileAsset fileAsset){
+            try {
+                return APILocator.getContentletAPI().getName(fileAsset, APILocator.systemUser(), false);
+            } catch (DotSecurityException | DotDataException e) {
+                Logger.error(this, "Error determining contentlet name: ", e);
+            }
+            return fileAsset.getFileName();
+    }
+
 } // E:O:F:ContainerStructureFinderStrategyResolver.

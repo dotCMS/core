@@ -7,6 +7,7 @@ import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.rendering.velocity.services.PageLoader;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
 import com.dotcms.util.transform.TransformerLocator;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
@@ -17,7 +18,7 @@ import com.dotmarketing.common.db.Params;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.containers.business.ContainerAPI;
+import com.dotmarketing.portlets.containers.business.*;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
@@ -35,10 +36,12 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Table;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import com.rainerhahnekamp.sneakythrow.Sneaky;
 import org.apache.commons.lang.StringUtils;
 
 import java.sql.SQLException;
 import java.util.*;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 
@@ -534,6 +537,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
                     continue;
                 }
             } catch (NotFoundInDbException e) {
+
                 Logger.debug(this, e.getMessage(), e);
                 continue;
             }
@@ -568,8 +572,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
             throws DotDataException, DotSecurityException {
 
         try {
-            
-            
+
             final Template template =
                     APILocator.getTemplateAPI().findWorkingTemplate(page.getTemplateId(), APILocator.getUserAPI().getSystemUser(), false);
             if (!template.isDrawed()) {
@@ -583,13 +586,13 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
                 Container container = null;
                 try {
-                    container = (liveMode) ? APILocator.getContainerAPI().getLiveContainerById(containerUUID.getIdentifier(), APILocator.systemUser(), false)
-                            : APILocator.getContainerAPI().getWorkingContainerById(containerUUID.getIdentifier(), APILocator.systemUser(), false);
+                    container = liveMode ? this.getLiveContainerById(containerUUID.getIdentifier(), APILocator.systemUser(), template):
+                            this.getWorkingContainerById(containerUUID.getIdentifier(), APILocator.systemUser(), template);
 
                     if (container == null && !liveMode) {
                         continue;
                     }
-                } catch (NotFoundInDbException e) {
+                } catch (NotFoundInDbException| DotRuntimeException e) {
                     Logger.debug(this, e.getMessage(), e);
                     continue;
                 }
@@ -608,5 +611,32 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
         }
     }
 
+    private Container getLiveContainerById(final String containerIdOrPath, final User user, final Template template) throws NotFoundInDbException {
 
+        final LiveContainerFinderByIdOrPathStrategyResolver strategyResolver =
+                LiveContainerFinderByIdOrPathStrategyResolver.getInstance();
+        final Optional<ContainerFinderByIdOrPathStrategy> strategy           = strategyResolver.get(containerIdOrPath);
+
+        return this.geContainerById(containerIdOrPath, user, template, strategy, strategyResolver.getDefaultStrategy());
+    }
+
+    private Container getWorkingContainerById(final String containerIdOrPath, final User user, final Template template) throws NotFoundInDbException {
+
+        final WorkingContainerFinderByIdOrPathStrategyResolver strategyResolver =
+                WorkingContainerFinderByIdOrPathStrategyResolver.getInstance();
+        final Optional<ContainerFinderByIdOrPathStrategy> strategy           = strategyResolver.get(containerIdOrPath);
+
+        return this.geContainerById(containerIdOrPath, user, template, strategy, strategyResolver.getDefaultStrategy());
+    }
+
+    private Container geContainerById(final String containerIdOrPath, final User user, final Template template,
+                                      final Optional<ContainerFinderByIdOrPathStrategy> strategy,
+                                      final ContainerFinderByIdOrPathStrategy defaultContainerFinderByIdOrPathStrategy) throws NotFoundInDbException  {
+
+        final Supplier<Host> resourceHostSupplier = Sneaky.sneaked(()->APILocator.getTemplateAPI().getTemplateHost(template));
+
+        return strategy.isPresent()?
+                strategy.get().apply(containerIdOrPath, user, false, resourceHostSupplier):
+                defaultContainerFinderByIdOrPathStrategy.apply(containerIdOrPath, user, false, resourceHostSupplier);
+    }
 }

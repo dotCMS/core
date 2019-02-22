@@ -476,7 +476,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     dc.setMaxRows(limit);
     dc.setStartRow(offset);
     dc.addParam( searchCondition.search );
-    dc.addParam( searchCondition.search );
+    dc.addParam(searchCondition.search.toLowerCase());
     dc.addParam( searchCondition.search );
     dc.addParam(bottom);
     dc.addParam(top);
@@ -496,7 +496,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     DotConnect dc = new DotConnect();
     dc.setSQL( String.format( this.contentTypeSql.SELECT_COUNT_CONDITION, SQLUtil.sanitizeCondition( searchCondition.condition ) ) );
     dc.addParam( searchCondition.search );
-    dc.addParam( searchCondition.search );
+    dc.addParam( searchCondition.search.toLowerCase());
     dc.addParam( searchCondition.search );
     dc.addParam(bottom);
     dc.addParam(top);
@@ -542,7 +542,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     //Deletes the child relationship field (if exists) if the parent is deleted.
     relationships = FactoryLocator.getRelationshipFactory().byParent(type);
     for (final Relationship rel : relationships) {
-      if(UtilMethods.isSet(rel.getParentRelationName()) && APILocator.getRelationshipAPI().isRelationshipField(rel)) {
+      if(UtilMethods.isSet(rel.getParentRelationName()) && rel.isRelationshipField()) {
         final Field fieldToDelete = APILocator.getContentTypeFieldAPI().byContentTypeIdAndVar(rel.getChildStructureInode(), rel.getParentRelationName());
         APILocator.getContentTypeFieldAPI().delete(fieldToDelete);
       }
@@ -552,7 +552,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     //Deletes the parent relationship field if the child is deleted.
     relationships = FactoryLocator.getRelationshipFactory().byChild(type);
     for (final Relationship rel : relationships) {
-      if(UtilMethods.isSet(rel.getChildRelationName()) && APILocator.getRelationshipAPI().isRelationshipField(rel)) {
+      if(UtilMethods.isSet(rel.getChildRelationName()) && rel.isRelationshipField()) {
         final Field fieldToDelete = APILocator.getContentTypeFieldAPI().byContentTypeIdAndVar(rel.getParentStructureInode(), rel.getChildRelationName());
         APILocator.getContentTypeFieldAPI().delete(fieldToDelete);
       }

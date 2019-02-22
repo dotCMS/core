@@ -129,7 +129,7 @@ public class ContainerFinderStrategyResolver {
                     this.containerAPI.getLiveContainerById   (key.id1, APILocator.systemUser(), true):
                     this.containerAPI.getWorkingContainerById(key.id1, APILocator.systemUser(), true);
             } catch (DotDataException | DotSecurityException e) {
-                throw new DotStateException("cannot find container for : " +  key);
+                throw new DotStateException("cannot find container for : " +  key, e);
             }
 
             return container;
@@ -161,8 +161,7 @@ public class ContainerFinderStrategyResolver {
                 final Folder folder            = this.folderAPI.findFolderByPath(baseContainerPath, site, APILocator.systemUser(), false);
                 container                      = containerAPI.getContainerByFolder(folder, site, APILocator.systemUser(), key.mode.showLive);
             } catch (DotDataException | DotSecurityException e) {
-
-                throw new DotStateException("cannot find container for : " +  key);
+                throw new DotStateException("cannot find container for : " +  key, e);
             }
 
             return container;
@@ -195,8 +194,8 @@ public class ContainerFinderStrategyResolver {
         private String getHostName (final String path) {
 
             final int startsHost = path.indexOf(HOST_INDICATOR);
-            final int endsHost   = path.indexOf(StringPool.FORWARD_SLASH, startsHost);
-            return path.substring(startsHost, endsHost);
+            final int endsHost   = path.indexOf(StringPool.FORWARD_SLASH, startsHost+HOST_INDICATOR.length());
+            return path.substring(startsHost+HOST_INDICATOR.length(), endsHost);
         }
     } // PathContainerFinderStrategyImpl.
 }

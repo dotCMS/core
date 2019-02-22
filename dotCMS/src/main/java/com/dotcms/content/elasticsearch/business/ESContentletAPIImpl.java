@@ -1359,7 +1359,19 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         String q = getRelatedContentESQuery(contentlet, rel);
 
-        return searchIndex(q, -1, 0, rel.getRelationTypeValue() + "-" + contentlet.getIdentifier() + "-order", user, respectFrontendRoles);
+        try{
+            return searchIndex(q, -1, 0,
+                    rel.getRelationTypeValue() + "-" + contentlet.getIdentifier() + "-order", user,
+                    respectFrontendRoles);
+        } catch (Exception e){
+            final String errorMessage = "Unable to look up related content for contentlet with identifier "
+                    + contentlet.getIdentifier();
+            if (e.getCause() instanceof SearchPhaseExecutionException){
+                Logger.warn(this, errorMessage + ". An empty list will be returned", e);
+                return Collections.emptyList();
+            }
+            throw new DotDataException(errorMessage, e);
+        }
     }
 
     private List<Contentlet> getRelatedContentFromIndex(Contentlet contentlet,Relationship rel, User user, boolean respectFrontendRoles)throws DotDataException, DotSecurityException {
@@ -1384,15 +1396,20 @@ public class ESContentletAPIImpl implements ContentletAPI {
         try{
             return permissionAPI.filterCollection(searchByIdentifier(q, -1, 0, rel.getRelationTypeValue() + "-" + contentlet.getIdentifier() + "-order" , user, respectFrontendRoles, PermissionAPI.PERMISSION_READ, true), PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
         }catch (Exception e) {
+            final String errorMessage = "Unable to look up related content for contentlet with identifier "
+                    + contentlet.getIdentifier();
             if(e.getMessage() != null && e.getMessage().contains("[query_fetch]")){
                 try{
                     APILocator.getContentletIndexAPI().addContentToIndex(contentlet,false,false);
                     return permissionAPI.filterCollection(searchByIdentifier(q, 1, 0, rel.getRelationTypeValue() + "" + contentlet.getIdentifier() + "-order" , user, respectFrontendRoles, PermissionAPI.PERMISSION_READ, true), PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
                 }catch(Exception ex){
-                    throw new DotDataException("Unable to look up related content",ex);
+                    throw new DotDataException(errorMessage, ex);
                 }
+            } else if (e.getCause() instanceof SearchPhaseExecutionException){
+                Logger.warn(this, errorMessage + ". An empty list will be returned", e);
+                return Collections.emptyList();
             }
-            throw new DotDataException("Unable to look up related content",e);
+            throw new DotDataException(errorMessage, e);
         }
     }
 
@@ -1445,15 +1462,20 @@ public class ESContentletAPIImpl implements ContentletAPI {
         try{
             return permissionAPI.filterCollection(searchByIdentifier(q, -1, 0, rel.getRelationTypeValue() + "-" + contentlet.getIdentifier() + "-order" , user, respectFrontendRoles, PermissionAPI.PERMISSION_READ, true), PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
         }catch (Exception e) {
+            final String errorMessage = "Unable to look up related content for contentlet with identifier "
+                    + contentlet.getIdentifier();
             if(e instanceof SearchPhaseExecutionException){
                 try{
                     APILocator.getContentletIndexAPI().addContentToIndex(contentlet,false,true);
                     return permissionAPI.filterCollection(searchByIdentifier(q, -1, 0, rel.getRelationTypeValue() + "-" + contentlet.getIdentifier() + "-order" , user, respectFrontendRoles, PermissionAPI.PERMISSION_READ, true), PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
                 }catch(Exception ex){
-                    throw new DotDataException("Unable to look up related content",ex);
+                    throw new DotDataException(errorMessage, ex);
                 }
+            } else if (e.getCause() instanceof SearchPhaseExecutionException){
+                Logger.warn(this, errorMessage + ". An empty list will be returned", e);
+                return Collections.emptyList();
             }
-            throw new DotDataException("Unable to look up related content",e);
+            throw new DotDataException(errorMessage, e);
         }
 
     }
@@ -1465,11 +1487,20 @@ public class ESContentletAPIImpl implements ContentletAPI {
         String q = getRelatedContentESQuery(contentlet, rel, pullByParent);
         String sortBy = rel.getRelationTypeValue() + "-" + contentlet.getIdentifier() + "-order";
 
-        List<ContentletSearch> contentletSearchList =
-                searchIndex(q, -1, 0, sortBy, user, respectFrontendRoles);
-        return contentletSearchList.stream().map(ESContentletAPIImpl::transformContentletSearchToContent)
-                .collect(CollectionsUtils.toImmutableList());
-
+        try {
+            List<ContentletSearch> contentletSearchList =
+                    searchIndex(q, -1, 0, sortBy, user, respectFrontendRoles);
+            return contentletSearchList.stream().map(ESContentletAPIImpl::transformContentletSearchToContent)
+                    .collect(CollectionsUtils.toImmutableList());
+        } catch (Exception e){
+            final String errorMessage = "Unable to look up related content for contentlet with identifier "
+                    + contentlet.getIdentifier();
+            if (e.getCause() instanceof SearchPhaseExecutionException){
+                Logger.warn(this, errorMessage + ". An empty list will be returned", e);
+                return Collections.emptyList();
+            }
+            throw new DotDataException(errorMessage, e);
+        }
     }
 
     @Override
@@ -4099,7 +4130,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     contentlet.setFolder((String)value);
                 }else if(conVariable.equals(Contentlet.NULL_PROPERTIES)){
                     contentlet.setProperty(conVariable, value);
-                }else if(NEVER_EXPIRE.equals(conVariable)){
+                }else if(NEVER_EXPIRE.equals(conVariable) || conVariable.equals(Contentlet.CONTENT_TYPE_KEY)){
                     contentlet.setProperty(conVariable, value);
                 } else if(velFieldmap.get(conVariable) != null){
                     Field field = velFieldmap.get(conVariable);
@@ -4443,8 +4474,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     Identifier folderId = APILocator.getIdentifierAPI().find(folder);
                     String path = folder.getInode().equals(FolderAPI.SYSTEM_FOLDER)?"/"+url:folderId.getPath()+url;
                     Identifier htmlpage = APILocator.getIdentifierAPI().find(host, path);
-                    if(htmlpage!=null && InodeUtils.isSet(htmlpage.getId()) && !htmlpage.getId().equals(contentlet.getIdentifier()) && htmlpage.getAssetType().equals("htmlpage") ){
-                        DotContentletValidationException cve = new FileAssetValidationException("Page URL in contentlet [" + (contentlet != null ? contentlet.getIdentifier() : "Unknown/New") + "] already exists: " + url);
+                    if(htmlpage!=null && InodeUtils.isSet(htmlpage.getId()) && !htmlpage.getId().equals(contentlet.getIdentifier()) ){
+                        DotContentletValidationException cve = new FileAssetValidationException("Page URL: " + path + " already exists with content id: "  + htmlpage.getId());
                         cve.addBadTypeField(st.getFieldVar(HTMLPageAssetAPI.URL_FIELD));
                         throw cve;
                     }
@@ -5379,11 +5410,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
     public Contentlet copyContentlet(Contentlet contentletToCopy, Host host, Folder folder, User user, final String copySuffix, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException {
         Contentlet resultContentlet = new Contentlet();
         String newIdentifier = StringPool.BLANK;
-        ArrayList<Contentlet> versionsToCopy = new ArrayList<Contentlet>();
-        List<Contentlet> versionsToMarkWorking = new ArrayList<Contentlet>();
+        ArrayList<Contentlet> versionsToCopy = new ArrayList<>();
+        List<Contentlet> versionsToMarkWorking = new ArrayList<>();
         Map<String, Map<String, Contentlet>> contentletsToCopyRules = Maps.newHashMap();
-
-        versionsToCopy.addAll(findAllVersions(APILocator.getIdentifierAPI().find(contentletToCopy.getIdentifier()), false, user, respectFrontendRoles));
+        final Identifier sourceContentletIdentifier = APILocator.getIdentifierAPI().find(contentletToCopy.getIdentifier());
+        versionsToCopy.addAll(findAllVersions(sourceContentletIdentifier, false, user, respectFrontendRoles));
 
         // we need to save the versions from older-to-newer to make sure the last save
         // is the current version
@@ -5421,11 +5452,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
             newContentlet.setHost(host != null?host.getIdentifier(): (folder!=null? folder.getHostId() : contentlet.getHost()));
             newContentlet.setFolder(folder != null?folder.getInode(): null);
             newContentlet.setLowIndexPriority(contentlet.isLowIndexPriority());
-            if(BaseContentType.FILEASSET.equals(contentlet.getContentType().baseType())){
-
+            if(contentlet.isFileAsset()){
                 final String newName = generateCopyName(newContentlet.getStringProperty(FileAssetAPI.FILE_NAME_FIELD), copySuffix);
                 newContentlet.setStringProperty(FileAssetAPI.FILE_NAME_FIELD, newName);
-
+                //Used to replicate identifiers
+                newContentlet.setStringProperty(Contentlet.SOURCE_CONTENTLET_ASSET_NAME, sourceContentletIdentifier.getAssetName());
             }
 
             List <Field> fields = FieldsCache.getFieldsByStructureInode(contentlet.getStructureInode());
@@ -5489,8 +5520,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 }
             }
 
+
+
             //Set URL in the new contentlet because is needed to create Identifier in EscontentletAPI.
-            if(BaseContentType.HTMLPAGE.equals(contentlet.getContentType().baseType())){
+            if(contentlet.isHTMLPage()){
                 Identifier identifier = APILocator.getIdentifierAPI().find(contentlet);
                 if(UtilMethods.isSet(identifier) && UtilMethods.isSet(identifier.getAssetName())){
                     final String newAssetName = generateCopyName(identifier.getAssetName(), copySuffix);
@@ -5502,6 +5535,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             newContentlet.getMap().put(Contentlet.DISABLE_WORKFLOW, true);
             newContentlet.getMap().put(Contentlet.DONT_VALIDATE_ME, true);
+            newContentlet.getMap().put(Contentlet.IS_COPY_CONTENTLET, true);
             // Use the generated identifier if one version of this contentlet
             // has already been checked in
             if (UtilMethods.isSet(newIdentifier)) {

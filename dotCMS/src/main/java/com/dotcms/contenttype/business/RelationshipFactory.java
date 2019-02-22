@@ -81,4 +81,6 @@ public interface RelationshipFactory {
     List<Relationship> getOneSidedRelationships(final ContentTypeIf contentType, final int limit, final int offset) throws DotDataException;
 
     long getOneSidedRelationshipsCount(final ContentType contentType) throws DotDataException;
+
+    Relationship dbByTypeValue(String typeValue);
 }

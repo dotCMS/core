@@ -251,7 +251,7 @@
                     
                 </div>
                 <div class="portlet-toolbar__actions-secondary">
-                    <button  dojoType="dijit.form.Button" onClick="showBundleUpload();" iconClass="uploadIcon">
+                    <button  dojoType="dijit.form.Button" onClick="showBundleUpload();" class="dijitButtonFlat  iconClass="uploadIcon">
                         <%= LanguageUtil.get(pageContext, "publisher_upload") %>
                     </button>
                 	<button dojoType="dijit.form.Button" onClick="deleteQueue();" iconClass="deleteIcon" class="dijitButtonDanger">
@@ -273,10 +273,10 @@
                 </div>
 
 				<div class="portlet-toolbar__actions-secondary">
-                    <button  dojoType="dijit.form.Button" onClick="retryBundles();" iconClass="repeatIcon">
+                    <button  dojoType="dijit.form.Button" onClick="retryBundles();" class="dijitButtonFlat iconClass="repeatIcon">
                         <%= LanguageUtil.get(pageContext, "publisher_retry_bundles") %>
                     </button>
-                    <button  dojoType="dijit.form.Button" onClick="showBundleUpload();" iconClass="uploadIcon">
+                    <button  dojoType="dijit.form.Button" onClick="showBundleUpload();"  class="dijitButtonFlat iconClass="uploadIcon">
                         <%= LanguageUtil.get(pageContext, "publisher_upload") %>
                     </button>
                     <button dojoType="dijit.form.Button" onClick="deleteAudits();" id="deleteAuditsBtn" iconClass="deleteIcon" class="dijitButtonDanger">
@@ -304,7 +304,7 @@
             <%= LanguageUtil.get(pageContext, "File") %>  : <input type="file" style="width:400px;"  id="uploadBundleFile" name="uploadBundleFile">
         </div>
         <div style="text-align: center">
-            <button  dojoType="dijit.form.Button" onClick="doBundleUpload();" iconClass="uploadIcon">
+            <button  dojoType="dijit.form.Button" onClick="doBundleUpload();" class="dijitButtonFlat iconClass="uploadIcon">
                 <%= LanguageUtil.get(pageContext, "publisher_upload") %>
             </button>
         </div>

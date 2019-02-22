@@ -1,23 +1,33 @@
 package com.dotcms.rendering.velocity.services;
 
 import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.containers.business.ContainerUtil;
+import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
 import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.containers.model.FileAssetContainer;
+import com.dotmarketing.portlets.fileassets.business.FileAsset;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
+import org.apache.velocity.runtime.resource.ResourceManager;
 
 import java.io.InputStream;
 import java.io.StringWriter;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * @author will
@@ -35,17 +45,27 @@ public class ContainerLoader implements DotLoader {
         final Optional<ContainerFinderStrategy> strategy =
                 resolver.get(key);
 
-        final Container container = strategy.isPresent()?
-                strategy.get().apply(key):resolver.getDefaultStrategy().apply(key);
+        try {
+            final Container container = strategy.isPresent() ?
+                    strategy.get().apply(key) : resolver.getDefaultStrategy().apply(key);
 
-        if(null == container) {
+            if (null == container) {
 
-            throw new DotStateException("cannot find container for : " +  key);
+                final DotStateException e = new DotStateException("Cannot find container for : " + key);
+                ContainerUtil.getInstance().notifyException(e, UtilMethods.isSet(key.id1) ? key.id1 : key.path);
+                throw new DotStateException("cannot find container for : " + key);
+            }
+
+            Logger.debug(this, "DotResourceLoader:\tWriting out container inode = " + container.getInode());
+
+            return this.buildVelocity(container, key.id2, key.mode, key.path);
+        } catch (DotStateException e) {
+
+            if (ExceptionUtil.causedBy(e, NotFoundInDbException.class)) {
+                ContainerUtil.getInstance().notifyException(e, UtilMethods.isSet(key.id1) ? key.id1 : key.path);
+            }
+            throw e;
         }
-
-        Logger.debug(this, "DotResourceLoader:\tWriting out container inode = " + container.getInode());
-
-        return this.buildVelocity(container, key.id2, key.mode, key.path);
     }
 
 
@@ -59,6 +79,40 @@ public class ContainerLoader implements DotLoader {
                 CacheLocator.getVeloctyResourceCache();
 
         veloctyResourceCache.remove(key);
+    }
+
+    public void invalidate(final FileAssetContainer fileAssetContainer, final Folder containerFolder, final String fileAssetName) throws DotDataException, DotSecurityException{
+        final String cacheKeyMask = "%d%s";
+        final DotResourceCache velocityResourceCache = CacheLocator.getVeloctyResourceCache();
+        for(final PageMode mode:PageMode.values()){
+        final VelocityResourceKey key = new VelocityResourceKey(fileAssetContainer, fileAssetContainer.getIdentifier(), mode);
+
+        // Here's an example of how the key actually looks like when stored in the the velocity 2 cache.
+        // `1/LIVE/a050073a-a31e-4aab-9307-86bfb248096a/1550262106697.container`
+        // However when calling  DotResourceLoader.getResourceStream(path..
+        // it looks like this: `/LIVE/a050073a-a31e-4aab-9307-86bfb248096a/1550262106697.container` no leading `1`
+        // That leading character `1` comes from ResourceManagerImpl.getResource(.. it's the resource type defined in ResourceManager.RESOURCE_TEMPLATE
+            final String identifierKey = String.format(cacheKeyMask, ResourceManager.RESOURCE_TEMPLATE, key.path);
+            Logger.debug(this,()->String.format("Invalidating asset key: '%s'",identifierKey));
+            velocityResourceCache.remove(identifierKey);
+        }
+        // Sometimes the in-cache key is the file site/path or path it self.
+        // it's pretty difficult at this point knowing exactly what was used to put this thing in cache. So here we go trying a few options
+
+        final Set<FileAsset> fileAssetSet = FileAssetContainerUtil.getInstance().findContainerAssets(containerFolder);
+        if(UtilMethods.isSet(fileAssetName) && null != fileAssetSet ){
+           final Set<FileAsset> matchingFiles = fileAssetSet.stream().filter(fileAsset ->  fileAssetName.equals(fileAsset.getFileName())).collect(Collectors.toSet());
+           for(final FileAsset fileAsset:matchingFiles){
+               final String fileAssetPath = fileAsset.getFileAsset().getPath();
+               //e.g. /Users/fabrizzio/code/servers/server1/assets/5/8/58c39dc2-16a8-4268-b5d2-e609afb158a7/fileAsset/blog.vtl
+               Logger.debug(this,()->String.format("Invalidating asset-path key '%s'",fileAssetPath));
+               velocityResourceCache.remove(fileAssetPath);
+               //e.g. 1/Users/fabrizzio/code/servers/server1/assets/5/8/58c39dc2-16a8-4268-b5d2-e609afb158a7/fileAsset/blog.vtl
+               final String fileAssetPathKey = String.format(cacheKeyMask, ResourceManager.RESOURCE_TEMPLATE, fileAssetPath);
+               Logger.debug(this,()->String.format("Invalidating asset-path with resource key '%s'",fileAssetPathKey));
+               velocityResourceCache.remove(fileAssetPathKey);
+           }
+        }
     }
 
     private InputStream buildVelocity(Container container, String uuid, PageMode mode, String filePath) throws DotDataException, DotSecurityException {

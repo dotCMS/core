@@ -197,7 +197,7 @@ if(query == null){
 			
 		</div>
     	<div class="portlet-toolbar__actions-secondary">
-    		<button type="button" class="helpButton" iconClass="helpIcon" onClick="showEsHelpDialog()" dojoType="dijit.form.Button" value="Help"><%= LanguageUtil.get(pageContext, "Help") %></button>
+    		<button type="button" class="helpButton dijitButtonFlat" iconClass="helpIcon" onClick="showEsHelpDialog()" dojoType="dijit.form.Button" value="Help"><%= LanguageUtil.get(pageContext, "Help") %></button>
     	</div>
    </div>
    <!-- END Toolbar -->

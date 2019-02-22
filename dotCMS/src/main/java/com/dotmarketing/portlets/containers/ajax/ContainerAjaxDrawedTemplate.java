@@ -1,15 +1,6 @@
 package com.dotmarketing.portlets.containers.ajax;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-
-import javax.servlet.http.HttpServletRequest;
-
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
-
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -17,11 +8,15 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.ajax.util.ContainerAjaxUtil;
 import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.containers.model.FileAssetContainer;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
+
+import javax.servlet.http.HttpServletRequest;
+import java.util.*;
 
 /**
  * Class used by new dwr interface created for Design Template.
@@ -46,37 +41,43 @@ public class ContainerAjaxDrawedTemplate extends ContainerAjax {
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    public Map<String, Object> fetchContainersDesignTemplate ( Map<String, String> query, Map<String, String> queryOptions, int start, int count,
-                                                               List<String> sort, List<String> exclude ) throws PortalException, SystemException, DotDataException, DotSecurityException {
+    public Map<String, Object> fetchContainersDesignTemplate ( final Map<String, String> query,
+                                                               final Map<String, String> queryOptions,
+                                                               int start, int count,
+                                                               final List<String> sort,
+                                                               final List<String> exclude ) throws PortalException, SystemException, DotDataException, DotSecurityException {
 
-        HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
-        User user = userWebAPI.getLoggedInUser( req );
-        boolean respectFrontendRoles = userWebAPI.isLoggedToFrontend( req );
+        final HttpServletRequest request   = WebContextFactory.get().getHttpServletRequest();
+        final User user                    = userWebAPI.getLoggedInUser(request);
+        final boolean respectFrontendRoles = userWebAPI.isLoggedToFrontend( request );
+        final String baseHostId            = (String) request.getSession().getAttribute( com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID );
 
         List<Container> fullListContainers;
         try {
             if ( UtilMethods.isSet( query.get( "hostId" ) ) ) {
-                Host host = hostAPI.find( query.get( "hostId" ), user, respectFrontendRoles );
+                final Host host    = hostAPI.find( query.get( "hostId" ), user, respectFrontendRoles );
                 fullListContainers = containerAPI.findContainersUnder( host );
             } else {
-                fullListContainers = containerAPI.findAllContainers( user, respectFrontendRoles );
+                final Host host    = hostAPI.find(baseHostId, user, respectFrontendRoles);
+                fullListContainers = containerAPI.findAllContainers( host, user, respectFrontendRoles );
             }
         } catch ( DotDataException e ) {
             Logger.error( this, e.getMessage(), e );
             throw new DotDataException( e.getMessage(), e );
         }
 
-        String baseHostId = (String) req.getSession().getAttribute( com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID );
-        Collections.sort( fullListContainers, new ContainerComparator( baseHostId ) );
-        Map<String, Object> results = new HashMap<String, Object>();
-        List<Map<String, Object>> list = new LinkedList<Map<String, Object>>();
 
-        for ( Container cont : fullListContainers ) {
-          if(cont != null && !cont.isArchived()){
-            Map<String, Object> contMap = cont.getMap();
+        Collections.sort( fullListContainers, new ContainerComparator( baseHostId ) );
+        final Map<String, Object> results    = new HashMap<>();
+        final List<Map<String, Object>> list = new LinkedList<>();
+
+        for (final Container container : fullListContainers ) {
+          if(container != null && !container.isArchived()) {
+
+            final Map<String, Object> contMap = container.getMap();
             if ( passFilter( contMap, query ) ) {
 
-                Host parentHost = containerAPI.getParentHost( cont, user, respectFrontendRoles );
+                final Host parentHost = containerAPI.getParentHost( container, user, respectFrontendRoles );
                 if ( parentHost != null ) {
                     contMap.put( "hostName", parentHost.getHostname() );
                     contMap.put( "hostId", parentHost.getIdentifier() );
@@ -85,12 +86,18 @@ public class ContainerAjaxDrawedTemplate extends ContainerAjax {
                     contMap.put( "fullTitle", contMap.get( "title" ) );
                 }
 
+                contMap.put("source", container.getSource().toString());
+                if (container instanceof FileAssetContainer) {
+
+                    contMap.put("path", FileAssetContainer.class.cast(container).getPath());
+                }
+
 //                StringBuffer containerCode = new StringBuffer( cont.getCode() );
-                List<ContainerStructure> csList = APILocator.getContainerAPI().getContainerStructures(cont);
+                final List<ContainerStructure> containerStructureList = APILocator.getContainerAPI().getContainerStructures(container);
                 boolean checkContainerCode = false;
 
-                for (ContainerStructure cs : csList) {
-                	if(ContainerAjaxUtil.checkContainerCode( cs.getCode())) {
+                for (final ContainerStructure containerStructure : containerStructureList) {
+                	if(ContainerAjaxUtil.checkContainerCode( containerStructure.getCode())) {
                 		checkContainerCode = true;
                 	} else {
                 		checkContainerCode = false;
@@ -102,7 +109,7 @@ public class ContainerAjaxDrawedTemplate extends ContainerAjax {
                  * adding the max_contentlets information to the result map because we must filter for the containers that accept
                  * contents and doesn't stay into the template for more than one time.
                  */
-                contMap.put( "maxContentlets", cont.getMaxContentlets() );
+                contMap.put( "maxContentlets", container.getMaxContentlets() );
                 if ( !checkContainerCode  ) {
 
                     //Now we need to verify if an exclude list was sent from the client

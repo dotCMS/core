@@ -9,6 +9,7 @@ import org.jetbrains.annotations.NotNull;
 
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.util.DotPreconditions;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -34,7 +35,11 @@ public class BinaryToMapTransformer implements FieldsToMapTransformer {
             for (final Field field : con.getContentType().fields()) {
                 if (field instanceof BinaryField) {
                     try {
-                        newMap.put(field.variable(), con.getBinary(field.variable()).getName());
+                        final File conBinary = con.getBinary(field.variable());
+
+                        if(conBinary != null) {
+                            newMap.put(field.variable(), conBinary.getName());
+                        }
                     } catch (IOException e) {
                         Logger.warn(this, "Unable to get Binary from field with var " + field.variable());
                     }
@@ -67,6 +72,7 @@ public class BinaryToMapTransformer implements FieldsToMapTransformer {
     }
 
     public Map<String, Object> transform(final File file, final Contentlet con, final Field field) {
+        DotPreconditions.checkNotNull(file, IllegalArgumentException.class, "File can't be null");
         final Map<String, Object> map = new HashMap<>();
 
         map.put("versionPath", "/dA/" + APILocator.getShortyAPI().shortify(con.getInode()) + "/" + field.variable() + "/" + file.getName());

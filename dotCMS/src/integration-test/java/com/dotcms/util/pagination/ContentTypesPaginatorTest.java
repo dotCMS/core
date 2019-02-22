@@ -18,22 +18,44 @@ import static com.dotcms.util.CollectionsUtils.list;
 import static org.junit.Assert.*;
 
 import java.util.Map;
+
+import com.tngtech.java.junit.dataprovider.DataProvider;
+import com.tngtech.java.junit.dataprovider.DataProviderRunner;
+import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import java.util.Map;
-import java.util.stream.Collectors;
+import org.junit.runner.RunWith;
 
 import static com.dotcms.util.CollectionsUtils.map;
 
+@RunWith(DataProviderRunner.class)
 public class ContentTypesPaginatorTest {
 
     private static User user;
+    private static ContentTypeAPI contentTypeApi;
 
     @BeforeClass
     public static void prepare() throws Exception {
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
         user = APILocator.systemUser();
+        contentTypeApi = APILocator.getContentTypeAPI(user);
+    }
+
+    public static class TestCase {
+        boolean caseSensitive;
+
+        public TestCase(final boolean caseSensitive) {
+            this.caseSensitive = caseSensitive;
+        }
+    }
+
+    @DataProvider
+    public static Object[] testCases(){
+        return new TestCase[]{
+                new TestCase(true),
+                new TestCase(false)
+        };
     }
 
     @Test
@@ -73,36 +95,45 @@ public class ContentTypesPaginatorTest {
                         || contentType.get("name").toString().toLowerCase()
                         .contains(BaseContentType.PERSONA.name().toLowerCase())));
     }
+
+    @UseDataProvider("testCases")
     @Test
-    public void test_getItems_WhenFilterContainsContentTypeName_ReturnsTheContentTypeThatMatches()
+    public void test_getItems_WhenFilterContainsContentTypeName_ReturnsTheContentTypeThatMatches(final TestCase testCase)
             throws DotSecurityException, DotDataException {
 
-        final ContentTypeAPI contentTypeApi   = APILocator.getContentTypeAPI(user);
+        ContentType type = null;
         final ContentTypesPaginator paginator = new ContentTypesPaginator();
 
+        try {
+            type = createContentType();
+
+            final String contentTypeName = type.name();
+
+            final PaginatedArrayList<Map<String, Object>> result = paginator
+                    .getItems(user, testCase.caseSensitive?contentTypeName:contentTypeName.toLowerCase(), -1, 0);
+
+            assertTrue(UtilMethods.isSet(result));
+            assertEquals(1, result.size());
+            assertEquals(1, result.getTotalResults());
+            assertEquals(contentTypeName, result.get(0).get("name"));
+        }finally{
+            contentTypeApi.delete(type);
+        }
+    }
+
+
+    private ContentType createContentType() throws DotSecurityException, DotDataException {
         final long i = System.currentTimeMillis();
         final String contentTypeName = BaseContentType.FORM.name() + "Testing" + i;
 
         //Create a new content type
-        ContentTypeBuilder builder = ContentTypeBuilder.builder(BaseContentType.FORM.immutableClass())
+        final ContentTypeBuilder builder = ContentTypeBuilder.builder(BaseContentType.FORM.immutableClass())
                 .description("description" + i)
                 .expireDateVar(null).folder(FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST)
                 .name(contentTypeName).owner("owner")
                 .variable("velocityVarNameTesting" + i);
 
-        ContentType type = builder.build();
-        try {
-            type = contentTypeApi.save(type);
-
-            final PaginatedArrayList<Map<String, Object>> result = paginator
-                    .getItems(user, contentTypeName, -1, 0);
-
-            assertTrue(UtilMethods.isSet(result));
-            assertTrue(result.size() == 1);
-            assertTrue(result.get(0).get("name").toString().equals(contentTypeName));
-        }finally{
-            contentTypeApi.delete(type);
-        }
+        return contentTypeApi.save(builder.build());
     }
 
 }

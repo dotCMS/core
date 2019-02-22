@@ -690,7 +690,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 			this.currentSortBy = sortBy;
 		}
 
-        var searchFor = this.structureInode
+        var searchFor = this.structureInode;
         if (this.structureInode === 'catchall' && this.containerStructures.length > 0) {
             searchFor = this.containerStructures
 				.map(function(contentType) { return contentType.inode })

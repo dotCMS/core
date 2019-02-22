@@ -912,10 +912,10 @@ function deleteEnvPushHistory(envId) {
                             <%if((environment.getPushToAll() || i == 0)
                                     && !"awss3".equalsIgnoreCase(endpoint.getProtocol())
                                     && !"static".equalsIgnoreCase(endpoint.getProtocol())){%>
-                                <button dojoType="dijit.form.Button" onClick="checkIntegrity('<%=endpoint.getId()%>');" id="checkIntegrityButton<%=endpoint.getId()%>" style="display: none;">
+                                <button dojoType="dijit.form.Button" onClick="checkIntegrity('<%=endpoint.getId()%>');" id="checkIntegrityButton<%=endpoint.getId()%>" style="display: none;" class="dijitButtonFlat">
                                     <%= LanguageUtil.get( pageContext, "CheckIntegrity" ) %>
                                 </button>
-                                <button dojoType="dijit.form.Button" onClick="getIntegrityResult('<%=endpoint.getId()%>');" id="getIntegrityResultsButton<%=endpoint.getId()%>" style="display: none;">
+                                <button dojoType="dijit.form.Button" onClick="getIntegrityResult('<%=endpoint.getId()%>');" id="getIntegrityResultsButton<%=endpoint.getId()%>" style="display: none;" class="dijitButtonFlat">
                                     <%= LanguageUtil.get( pageContext, "Preview-Analysis-Results" ) %>
                                 </button>
                             <%} %>
@@ -925,7 +925,7 @@ function deleteEnvPushHistory(envId) {
                                         <img src="/html/images/icons/processing.gif" /></font>
                                 </div>
                             <%} %>
-                            <button dojoType="dijit.form.Button" onClick="cancelIntegrityCheck('<%=endpoint.getId()%>');" id="cancelCheckIntegrityButton<%=endpoint.getId()%>" style="margin-left:10px; display:none;">
+                            <button dojoType="dijit.form.Button" onClick="cancelIntegrityCheck('<%=endpoint.getId()%>');" id="cancelCheckIntegrityButton<%=endpoint.getId()%>" style="margin-left:10px; display:none;" class="dijitButtonFlat">
                                 <%= LanguageUtil.get( pageContext, "cancel" ) %>
                             </button>
                             <button dojoType="dijit.form.Button" onclick="deleteEndpoint('<%=endpoint.getId()%>', false)" title="<%= LanguageUtil.get(pageContext, "publisher_Delete_Endpoint_Title") %>" iconClass="deleteIcon" class="dijitButtonDanger" style="margin-left: 8px">

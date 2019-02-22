@@ -1310,7 +1310,7 @@ dd.leftdl {
                                 <option><%= c %></option>
                             <% } %>
                         </select>
-                        <button dojoType="dijit.form.Button" onClick="submitform('flushCache');" iconClass="deleteIcon">
+                        <button dojoType="dijit.form.Button" onClick="submitform('flushCache');" iconClass="deleteIcon" class="dijitButtonFlat">
                          <%= LanguageUtil.get(pageContext,"Flush-Cache-Button") %>
                         </button>
                     </td>
@@ -1322,7 +1322,7 @@ dd.leftdl {
                 <tr>
                     <td colspan="2">&nbsp;</td>
                     <td align="center">
-                        <button dojoType="dijit.form.Button"  onClick="submitform('<%=com.dotmarketing.util.WebKeys.Cache.CACHE_MENU_FILES%>');" iconClass="deleteIcon">
+                        <button dojoType="dijit.form.Button"  onClick="submitform('<%=com.dotmarketing.util.WebKeys.Cache.CACHE_MENU_FILES%>');" iconClass="deleteIcon" class="dijitButtonFlat">
                            <%= LanguageUtil.get(pageContext,"Delete-Menu-Cache") %>
                         </button>
                     </td>
@@ -1333,7 +1333,7 @@ dd.leftdl {
                 <tr>
                     <td colspan="3">
                         <div class="buttonRow" style="text-align: right">
-                        <button dojoType="dijit.form.Button"  onClick="refreshCache()" iconClass="resetIcon">
+                        <button dojoType="dijit.form.Button"  onClick="refreshCache()" iconClass="resetIcon" class="dijitButtonFlat">
                            <%= LanguageUtil.get(pageContext,"Refresh-Stats") %>
                         </button>
                         </div>
@@ -1411,10 +1411,10 @@ dd.leftdl {
 
                         </td>
                         <td style="text-align:center;white-space:nowrap;" width="350">
-                            <button dojoType="dijit.form.Button" id="idxReindexButton" iconClass="repeatIcon" onClick="doReindex()">
+                            <button dojoType="dijit.form.Button" id="idxReindexButton" iconClass="repeatIcon" onClick="doReindex()" class="dijitButtonFlat">
                                 <%= LanguageUtil.get(pageContext,"Reindex") %>
                             </button>
-                            <button dojoType="dijit.form.Button"  iconClass="reindexIcon" onClick="cleanReindexStructure();return false;" id="cleanReindexButton" disabled="disabled">
+                            <button dojoType="dijit.form.Button"  iconClass="reindexIcon" onClick="cleanReindexStructure();return false;" id="cleanReindexButton" disabled="disabled" class="dijitButtonFlat">
                                 <%= LanguageUtil.get(pageContext,"Delete-Reindex-Structure") %>
                             </button>
                         </td>
@@ -1424,7 +1424,7 @@ dd.leftdl {
                             <%= LanguageUtil.get(pageContext,"Optimize-Index-Info") %> 
                         </td>
                         <td align="center">
-                            <button dojoType="dijit.form.Button" id="idxShrinkBtn" onClick="CMSMaintenanceAjax.optimizeIndices(optimizeCallback)">
+                            <button dojoType="dijit.form.Button" id="idxShrinkBtn" onClick="CMSMaintenanceAjax.optimizeIndices(optimizeCallback)" class="dijitButtonFlat">
                                 <%= LanguageUtil.get(pageContext,"Optimize-Index") %>
                             </button>
                          </td>
@@ -1434,7 +1434,7 @@ dd.leftdl {
                             <%= LanguageUtil.get(pageContext,"maintenance.index.cache.flush.info") %> 
                         </td>
                         <td align="center">
-                            <button dojoType="dijit.form.Button"  onClick="CMSMaintenanceAjax.flushIndiciesCache(flushIndiciesCacheCallback)">
+                            <button dojoType="dijit.form.Button"  onClick="CMSMaintenanceAjax.flushIndiciesCache(flushIndiciesCacheCallback)" class="dijitButtonFlat">
                                 <%= LanguageUtil.get(pageContext,"maintenance.index.cache.flush") %>
                             </button>
                          </td>
@@ -1461,13 +1461,13 @@ dd.leftdl {
                     </tr>
                     <tr>
                         <td colspan="2" align="center">
-                            <button dojoType="dijit.form.Button"  iconClass="reindexIcon" onClick="stopReIndexing();">
+                            <button dojoType="dijit.form.Button"  iconClass="reindexIcon" onClick="stopReIndexing();" class="dijitButtonFlat">
                                 <%= LanguageUtil.get(pageContext,"Stop-Reindexation") %>
                             </button>
-                            <button dojoType="dijit.form.Button"  iconClass="resolveIcon" id="stopReindexAndSwitch" onClick="stopReIndexingAndSwitchover();">
+                            <button dojoType="dijit.form.Button"  iconClass="resolveIcon" id="stopReindexAndSwitch" onClick="stopReIndexingAndSwitchover();" class="dijitButtonFlat">
                                 <%= LanguageUtil.get(pageContext,"Stop-Reindexation-And-Make-Active") %>
                             </button>
-                            <button dojoType="dijit.form.Button"  iconClass="downloadIcon" onClick="downloadFailedAsCsv();">
+                            <button dojoType="dijit.form.Button"  iconClass="downloadIcon" onClick="downloadFailedAsCsv();" class="dijitButtonFlat">
                                 <%= LanguageUtil.get(pageContext,"Download-Failed-Records-As-CSV") %>
                             </button>
                         </td>
@@ -1493,10 +1493,10 @@ dd.leftdl {
                     <td><%= LanguageUtil.get(pageContext,"Backup-to-Zip-file") %></td>
                     <td style="text-align:center;white-space:nowrap;">
 						<div class="inline-form">
-							<button dojoType="dijit.form.Button" onClick="doCreateZipAjax('true');" iconClass="backupIcon">
+							<button dojoType="dijit.form.Button" onClick="doCreateZipAjax('true');" iconClass="backupIcon" class="dijitButtonFlat">
 							   <%= LanguageUtil.get(pageContext,"Backup-Data-Only") %>
 							</button>
-							<button dojoType="dijit.form.Button" onClick="doCreateZipAjax('false');" iconClass="backupIcon">
+							<button dojoType="dijit.form.Button" onClick="doCreateZipAjax('false');" iconClass="backupIcon" class="dijitButtonFlat">
 							  <%= LanguageUtil.get(pageContext,"Backup-Data/Assets") %>
 							</button>
 						</div>
@@ -1506,11 +1506,11 @@ dd.leftdl {
                     <td><%= LanguageUtil.get(pageContext,"Download-Zip-file") %></td>
                     <td style="text-align:center;white-space:nowrap;">
 						<div class="inline-form">
-							<button dojoType="dijit.form.Button" onClick="doDownloadZip('true');" iconClass="downloadIcon">
+							<button dojoType="dijit.form.Button" onClick="doDownloadZip('true');" iconClass="downloadIcon" class="dijitButtonFlat">
 							   <%= LanguageUtil.get(pageContext,"Download-Data-Only") %>
 							</button>
 
-							<button dojoType="dijit.form.Button" onClick="doDownloadZip('false');" iconClass="downloadIcon">
+							<button dojoType="dijit.form.Button" onClick="doDownloadZip('false');" iconClass="downloadIcon" class="dijitButtonFlat">
 							  <%= LanguageUtil.get(pageContext,"Download-Data/Assets") %>
 							</button>
 						</div>
@@ -1545,7 +1545,7 @@ dd.leftdl {
 						</div>
                     </td>
                     <td align="center" valing="middle">
-                        <button dojoType="dijit.form.Button" onclick="doReplace();" iconClass="reorderIcon">
+                        <button dojoType="dijit.form.Button" onclick="doReplace();" iconClass="reorderIcon" class="dijitButtonFlat">
                            <%= LanguageUtil.get(pageContext,"Replace") %>
                         </button>
                     </td>
@@ -1570,7 +1570,7 @@ dd.leftdl {
                     </td>
                     <td align="center">
                         <div id="fixAssetsButtonDiv">
-                            <button dojoType="dijit.form.Button" id="fixAssetsButton"  onClick="doFixAssetsInconsistencies();" iconClass="fixIcon">
+                            <button dojoType="dijit.form.Button" id="fixAssetsButton"  onClick="doFixAssetsInconsistencies();" iconClass="fixIcon" class="dijitButtonFlat">
                                 <%= LanguageUtil.get(pageContext,"Execute") %>
                             </button>
                         </div>
@@ -1601,7 +1601,7 @@ dd.leftdl {
 						<p style="color:#ff0000;"><%= LanguageUtil.get(pageContext,"It's-recommended-to-have-a-fresh") %></p>
                     </td>
                     <td align="center">
-                      <button dojoType="dijit.form.Button" onClick="doDropAssets();"  id="dropAssetsButton" iconClass="dropIcon">
+                      <button dojoType="dijit.form.Button" onClick="doDropAssets();"  id="dropAssetsButton" iconClass="dropIcon" class="dijitButtonFlat">
                          <%= LanguageUtil.get(pageContext,"Execute") %>
                       </button>
                     </td>
@@ -1619,7 +1619,7 @@ dd.leftdl {
 								<option value="binary"><%= LanguageUtil.get(pageContext,"Clean-only-bin") %></option>
 								<option value="file_asset"><%= LanguageUtil.get(pageContext,"Clean-only-fileasset") %></option>
 							</select>
-							<button dojoType="dijit.form.Button" onClick="doCleanAssets();"  id="cleanAssetsButton" iconClass="dropIcon">
+							<button dojoType="dijit.form.Button" onClick="doCleanAssets();"  id="cleanAssetsButton" iconClass="dropIcon" class="dijitButtonFlat">
 								<%= LanguageUtil.get(pageContext,"cms.maintenance.clean.assets.button.label") %>
 							</button>
 						</div>
@@ -1644,7 +1644,7 @@ dd.leftdl {
                         </div>
                     </td>
                     <td align="center">
-                      <button dojoType="dijit.form.Button" onClick="doDeleteContentlets();"  id="deleteContentletButton" iconClass="deleteIcon">
+                      <button dojoType="dijit.form.Button" onClick="doDeleteContentlets();"  id="deleteContentletButton" iconClass="deleteIcon" class="dijitButtonFlat">
                          <%= LanguageUtil.get(pageContext,"Execute") %>
                       </button>
                     </td>
@@ -1665,7 +1665,7 @@ dd.leftdl {
                         <p><%= LanguageUtil.get(pageContext,"This-utility-will-remove-all-pushed-assets") %></p>
                     </td>
                     <td align="center">
-                      <button dojoType="dijit.form.Button" onClick="doDeletePushedAssets();"  id="deletePushAssetsButton" iconClass="deleteIcon">
+                      <button dojoType="dijit.form.Button" onClick="doDeletePushedAssets();"  id="deletePushAssetsButton" iconClass="deleteIcon" class="dijitButtonFlat">
                          <%= LanguageUtil.get(pageContext,"Execute") %>
                       </button>
                     </td>
@@ -1779,15 +1779,15 @@ dd.leftdl {
         <img style="display:none;" id="sysInfoProgress" src="/html/images/icons/round-progress-bar.gif"/>
         <br/>
          <div class="buttonRow" style="text-align:right;width:98% !important;">
-            <button dojoType="dijit.form.Button" onClick="getAllThreads()" iconClass="resetIcon">
+            <button dojoType="dijit.form.Button" onClick="getAllThreads()" iconClass="resetIcon" class="dijitButtonFlat">
                 <%= LanguageUtil.get(pageContext,"thread-tab-reload") %>
             </button>
-            <button dojoType="dijit.form.Button" onClick="getSysInfo()" iconClass="infoIcon">
+            <button dojoType="dijit.form.Button" onClick="getSysInfo()" iconClass="infoIcon" class="dijitButtonFlat">
                 <%= LanguageUtil.get(pageContext,"thread-tab-reload-sysinfo") %>
             </button>
         </div>
 		<div style="width: 98%; margin-left:auto; margin-right:auto; margin-top: -30px">
-		<button dojoType="dijit.form.Button"  name="btn" onClick="selectAll('threadList');">
+		<button dojoType="dijit.form.Button"  name="btn" onClick="selectAll('threadList');" class="dijitButtonFlat">
 			 <%= LanguageUtil.get(pageContext,"Select-all") %>
 		</button>
 		</div>
@@ -1805,7 +1805,7 @@ dd.leftdl {
 			<div class="portlet-toolbar__actions-primary">
 			</div>
 			<div class="portlet-toolbar__actions-secondary">
-				<button dojoType="dijit.form.Button" onClick="loadUsers()" iconClass="resetIcon">
+				<button dojoType="dijit.form.Button" onClick="loadUsers()" iconClass="resetIcon" class="dijitButtonFlat">
 					<%= LanguageUtil.get(pageContext,"logged-users-reload") %>
 				</button>
 			</div>
@@ -1843,8 +1843,8 @@ dd.leftdl {
   		<input type="text" id="shards" name="shards" value="<%=Config.getIntProperty("es.index.number_of_shards", 2)%>">
   	</div><br />
   	<div class="buttonRow" align="center">
-	           <button id="addButton" dojoType="dijit.form.Button" iconClass="addIcon" onClick="shardCreating()"><%= LanguageUtil.get(pageContext, "Add") %></button>&nbsp; &nbsp; 
-	           <button dojoType="dijit.form.Button" iconClass="cancelIcon" onClick="javascript:dijit.byId('addIndex').hide();"><%= LanguageUtil.get(pageContext, "Cancel") %></button>&nbsp; &nbsp; 
+			<button dojoType="dijit.form.Button" iconClass="cancelIcon" class="dijitButtonFlat" onClick="javascript:dijit.byId('addIndex').hide();"><%= LanguageUtil.get(pageContext, "Cancel") %></button>&nbsp; &nbsp;
+			<button id="addButton" dojoType="dijit.form.Button" iconClass="addIcon" onClick="shardCreating()"><%= LanguageUtil.get(pageContext, "Add") %></button>&nbsp; &nbsp;
 	</div>
 	
 </div>

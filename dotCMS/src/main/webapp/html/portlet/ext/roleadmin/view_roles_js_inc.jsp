@@ -1026,7 +1026,7 @@
 	var portletListItemTemplate =
 	'<div id="listItem-${portletId}" class="view-roles__portlets-list-item">' +
 	'	${portletTitle}' +
-	'	<button id="removePortletButton${portletId}" dojoType="dijit.form.Button" type="button">' + removeMsg + '</button>' +
+	'	<button id="removePortletButton${portletId}" class="dijitButtonFlat" dojoType="dijit.form.Button" type="button">' + removeMsg + '</button>' +
 	'</div>';
 
 	var portletsListSource;

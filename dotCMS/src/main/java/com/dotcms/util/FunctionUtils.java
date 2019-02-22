@@ -1,5 +1,7 @@
 package com.dotcms.util;
 
+import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
@@ -57,6 +59,10 @@ public class FunctionUtils {
         return OptionalBoolean.of(condition).ifTrue(onTrueCallback).orElse(onFalseCallback).get();
     } // ifOrElse.
 
+    public static <T> boolean ifOrElse(final Optional<T> optionalT, final Consumer<T> onTrueConsumer, final Callback onFalseCallback) {
+
+        return OptionalBoolean.of(optionalT.isPresent()).ifTrue(onTrueConsumer, optionalT).orElse(onFalseCallback).get();
+    } // ifOrElse.
     /**
      * The idea behind this method is to concat a consequent callback if value is true or false.
      * For instance
@@ -100,6 +106,7 @@ public class FunctionUtils {
     /**
      * Just encapsulates a single callback
      */
+    @FunctionalInterface
     public interface Callback {
 
         /**

@@ -155,8 +155,8 @@
 								<select id="deleteUsersFilter" name="deleteUsersFilter" dojoType="dijit.form.FilteringSelect" store="usersStore" searchDelay="300" pageSize="30" labelAttr="name" invalidMessage="<%= LanguageUtil.get(pageContext, "Invalid-option-selected") %>"></select>
 								<div class="clear"></div>
 								<div class="buttonRow">
+									<button dojoType="dijit.form.Button" onclick="cancelDeleteUser()" type="button" iconClass="saveIcon" class="dijitButtonFlat"><%= LanguageUtil.get(pageContext, "Cancel") %></button>
 									<button dojoType="dijit.form.Button" onclick="deleteUser()" type="button" class="dijitButtonDanger"><%= LanguageUtil.get(pageContext, "Delete") %></button>
-									<button dojoType="dijit.form.Button" onclick="cancelDeleteUser()" type="button" iconClass="saveIcon"><%= LanguageUtil.get(pageContext, "Cancel") %></button>
 								</div>
 							</div>
 							<%} %>
@@ -176,8 +176,8 @@
 								</div>
 							</div>
 							<div id="actionsDiv" class="view-users__roles-actions">
-								<button id="addUserRoleBtn" dojoType="dijit.form.Button" onclick="addUserRoles()" type="button" disabled="disabled">&#62;&#62;</button>
-								<button id="removeUserRoleBtn" dojoType="dijit.form.Button" onclick="removeUserRoles()" type="button" disabled="disabled">&#60;&#60;</button>
+								<button id="addUserRoleBtn" dojoType="dijit.form.Button" onclick="addUserRoles()" type="button"  class="dijitButtonFlat" disabled="disabled">&#62;&#62;</button>
+								<button id="removeUserRoleBtn" dojoType="dijit.form.Button" onclick="removeUserRoles()" type="button" class="dijitButtonFlat" disabled="disabled">&#60;&#60;</button>
 							</div>
 							<div class="view-users__roles-granted">
 								<h4><%= LanguageUtil.get(pageContext, "Roles-Granted") %>:</h4>
@@ -247,7 +247,7 @@
 						</div>
 
 						<div class="view-user__add-contact">
-							<button dojoType="dijit.form.Button" id="addAddressIcon" onclick="addAddress()" type="button">
+							<button dojoType="dijit.form.Button" id="addAddressIcon" onclick="addAddress()" class="dijitButtonFlat" type="button">
 								<%= LanguageUtil.get(pageContext, "Addresses-Phones") %>
 							</button>
 						</div>
