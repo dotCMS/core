@@ -17,6 +17,13 @@ export class DotAppBase {
         return this._config;
     }
 
+    /**
+     * Global HTTP request to DotCMS instance
+     *
+     * @param {DotAppHttpRequestParams} params
+     * @returns {Promise<any>}
+     * @memberof DotAppBase
+     */
     request(params: DotAppHttpRequestParams): Promise<any> {
         return request(params, this.config);
     }
