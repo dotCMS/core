@@ -1,5 +1,6 @@
 import { DotAppBase, DotAppConfigParams } from './DotAppBase';
 import { getEsQuery } from '../utils';
+import { DotCMSEsResult } from '../models';
 
 export interface DotEsSearchParams {
     contentType: string;
@@ -20,7 +21,7 @@ export class DotAppEs extends DotAppBase {
         super(config);
     }
 
-    search(params: DotEsSearchParams): Promise<any> {
+    search(params: DotEsSearchParams): Promise<DotCMSEsResult> {
         return this.request({
             url: '/api/es/search',
             method: 'POST',

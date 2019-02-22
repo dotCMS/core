@@ -1,4 +1,4 @@
-import { DotCMSSite } from './DotCMSSite';
+import { DotCMSSite } from './DotCMSSite.model';
 
 export interface DotAppPageAsset {
     canCreateTemplate: boolean;
@@ -167,7 +167,7 @@ interface DotCMSContainer {
     contentlets: DotCMSContentlet[];
 }
 
-interface DotCMSContentlet {
+export interface DotCMSContentlet {
     owner: string;
     identifier: string;
     hostName: string;

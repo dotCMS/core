@@ -1,5 +1,5 @@
 import { DotAppBase, DotAppConfigParams } from './DotAppBase';
-import { DotCMSSite } from '../models/DotCMSSite';
+import { DotCMSSite } from '../models';
 
 export class DotAppSite extends DotAppBase {
     constructor(config: DotAppConfigParams) {
