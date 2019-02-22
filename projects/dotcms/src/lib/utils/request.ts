@@ -9,7 +9,7 @@ export interface DotAppHttpRequestParams {
 
 function getUrl(pathname: string, config: DotAppConfigParams): string {
     const host = config.environment !== 'development' ? config.host : '';
-    return `${host}${pathname}?language_id=1`;
+    return `${host}${pathname}`;
 }
 
 function shouldAppendBody(params: DotAppHttpRequestParams): boolean {
