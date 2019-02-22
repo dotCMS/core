@@ -1304,7 +1304,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 + "; ContentIdentifier: " + (contentlet != null ? contentlet.getIdentifier() : "Unknown"), contentlet.getHost());
 
         try {
-            canLock(contentlet, user);
+            canLock(contentlet, user, respectFrontendRoles);
 
             if(contentlet.isLocked() ){
                 // persists the webasset
@@ -3036,7 +3036,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
 
             if(contentlet.getMap().get(Contentlet.DONT_VALIDATE_ME) == null) {
-                canLock(contentlet, user);
+                canLock(contentlet, user, respectFrontendRoles);
             }
             contentlet.setModUser(user.getUserId());
             // start up workflow

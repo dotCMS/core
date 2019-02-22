@@ -56,6 +56,7 @@ import graphql.scalars.ExtendedScalars;
 import graphql.schema.DataFetcher;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLFieldDefinition;
+import graphql.schema.GraphQLInterfaceType;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLSchema;
@@ -63,6 +64,7 @@ import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLTypeReference;
 import graphql.schema.idl.SchemaPrinter;
 
+import static com.dotcms.graphql.util.TypeUtil.BASE_TYPE_SUFFIX;
 import static graphql.Scalars.GraphQLFloat;
 import static graphql.Scalars.GraphQLInt;
 import static graphql.Scalars.GraphQLString;
@@ -78,6 +80,8 @@ public class GraphqlAPIImpl implements GraphqlAPI {
     private Map<Class<? extends Field>, DataFetcher> fieldClassGraphqlDataFetcher = new HashMap<>();
 
     private volatile GraphQLSchema schema;
+
+    private static final String TYPES_AND_FIELDS_VALID_NAME_REGEX = "[_A-Za-z][_0-9A-Za-z]*";
 
     public GraphqlAPIImpl() {
         // custom type mappings
@@ -146,6 +150,11 @@ public class GraphqlAPIImpl implements GraphqlAPI {
     private void createSchemaType(ContentType contentType,
                                               final Map<String, GraphQLObjectType> graphqlObjectTypes) {
 
+        // skip contentType.variable not sticking to the regex
+        if(!contentType.variable().matches(TYPES_AND_FIELDS_VALID_NAME_REGEX)) {
+            return;
+        }
+
         final GraphQLObjectType.Builder builder = GraphQLObjectType.newObject().name(contentType.variable());
 
         // add CONTENT interface fields
@@ -158,6 +167,11 @@ public class GraphqlAPIImpl implements GraphqlAPI {
         final List<Field> fields = contentType.fields();
 
         fields.forEach((field)->{
+            // skip field.variable not sticking to the regex
+            if(!field.variable().matches(TYPES_AND_FIELDS_VALID_NAME_REGEX)) {
+                return;
+            }
+
             if(!(field instanceof RowField) && !(field instanceof ColumnField)) {
                 if (field instanceof RelationshipField) {
                     handleRelationshipField(contentType, builder, field, graphqlObjectTypes);
@@ -283,6 +297,8 @@ public class GraphqlAPIImpl implements GraphqlAPI {
                 return;
             }
 
+            final String fieldDescription = type instanceof GraphQLInterfaceType ? BASE_TYPE_SUFFIX : null;
+
             typesFieldsDefinitions.add(newFieldDefinition()
                 .name(TypeUtil.collectionizedName(type.getName()))
                 .argument(GraphQLArgument.newArgument()
@@ -302,7 +318,9 @@ public class GraphqlAPIImpl implements GraphqlAPI {
                     .type(GraphQLString)
                     .build())
                 .type(list((type)))
+                .description(fieldDescription)
                 .dataFetcher(new ContentletDataFetcher()).build());
+
         });
 
         rootTypeBuilder = rootTypeBuilder.fields(typesFieldsDefinitions);

@@ -15,12 +15,14 @@ import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.workflows.business.DotWorkflowException;
 import com.dotmarketing.portlets.workflows.business.WorkflowPortletAccessException;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.*;
 import java.util.Map.Entry;
 
@@ -381,5 +383,37 @@ public class ExceptionUtil {
             }
         }
         return builder.toString();
+    }
+
+    /**
+     * Determine if the exception happens on edit or preview mode, if the request is not null will use it to figure out
+     * @param e {@link Exception}
+     * @param request {@link HttpServletRequest}
+     * @return boolean
+     */
+    public static boolean isPreviewOrEditMode(final Exception e, final HttpServletRequest request) {
+
+        boolean isPreviewOrEdit          = false;
+
+        if (null != request) {
+
+            final PageMode pageMode = PageMode.get(request);
+            isPreviewOrEdit = (PageMode.EDIT_MODE == pageMode || PageMode.PREVIEW_MODE == pageMode);
+        } else {
+
+
+            for (final StackTraceElement stackTraceElement : e.getStackTrace()) {
+                if (stackTraceElement.getClassName().indexOf("EditMode") > -1 ||
+                        stackTraceElement.getMethodName().indexOf("EditMode") > -1 ||
+                        stackTraceElement.getClassName().indexOf("PreviewMode") > -1 ||
+                        stackTraceElement.getMethodName().indexOf("PreviewMode") > -1) {
+
+                    isPreviewOrEdit = true;
+                    break;
+                }
+            }
+        }
+
+        return isPreviewOrEdit;
     }
 }

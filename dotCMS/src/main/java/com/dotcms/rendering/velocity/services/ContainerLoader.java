@@ -1,13 +1,16 @@
 package com.dotcms.rendering.velocity.services;
 
 import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.containers.business.ContainerUtil;
 import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.containers.model.FileAssetContainer;
@@ -16,6 +19,8 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
+import org.apache.velocity.runtime.resource.ResourceManager;
+
 import java.io.InputStream;
 import java.io.StringWriter;
 import java.util.Iterator;
@@ -23,7 +28,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.apache.velocity.runtime.resource.ResourceManager;
 
 /**
  * @author will
@@ -41,17 +45,27 @@ public class ContainerLoader implements DotLoader {
         final Optional<ContainerFinderStrategy> strategy =
                 resolver.get(key);
 
-        final Container container = strategy.isPresent()?
-                strategy.get().apply(key):resolver.getDefaultStrategy().apply(key);
+        try {
+            final Container container = strategy.isPresent() ?
+                    strategy.get().apply(key) : resolver.getDefaultStrategy().apply(key);
 
-        if(null == container) {
+            if (null == container) {
 
-            throw new DotStateException("cannot find container for : " +  key);
+                final DotStateException e = new DotStateException("Cannot find container for : " + key);
+                ContainerUtil.getInstance().notifyException(e, UtilMethods.isSet(key.id1) ? key.id1 : key.path);
+                throw new DotStateException("cannot find container for : " + key);
+            }
+
+            Logger.debug(this, "DotResourceLoader:\tWriting out container inode = " + container.getInode());
+
+            return this.buildVelocity(container, key.id2, key.mode, key.path);
+        } catch (DotStateException e) {
+
+            if (ExceptionUtil.causedBy(e, NotFoundInDbException.class)) {
+                ContainerUtil.getInstance().notifyException(e, UtilMethods.isSet(key.id1) ? key.id1 : key.path);
+            }
+            throw e;
         }
-
-        Logger.debug(this, "DotResourceLoader:\tWriting out container inode = " + container.getInode());
-
-        return this.buildVelocity(container, key.id2, key.mode, key.path);
     }
 
 

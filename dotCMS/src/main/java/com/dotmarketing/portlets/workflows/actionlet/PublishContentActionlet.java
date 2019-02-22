@@ -58,10 +58,14 @@ public class PublishContentActionlet extends WorkFlowActionlet {
                  */
                 relatedNotPublished = PublishFactory.getUnpublishedRelatedAssetsForPage(htmlPageAsset, relatedNotPublished, true, processor.getUser(), false);
                 //Publish the page and the related content
-                PublishFactory.publishHTMLPage(htmlPageAsset, relatedNotPublished, processor.getUser(), false);
+                PublishFactory.publishHTMLPage(htmlPageAsset, relatedNotPublished, processor.getUser(),
+                        processor.getContentletDependencies() != null
+                                && processor.getContentletDependencies().isRespectAnonymousPermissions());
 
             } else {
-                APILocator.getContentletAPI().publish(processor.getContentlet(), processor.getUser(), false);
+                APILocator.getContentletAPI().publish(processor.getContentlet(), processor.getUser(),
+                        processor.getContentletDependencies() != null
+                                && processor.getContentletDependencies().isRespectAnonymousPermissions());
             }
 
         } catch (Exception e) {
