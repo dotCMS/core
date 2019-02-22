@@ -15,6 +15,8 @@ import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
 
 public class TypeUtil {
 
+    public static final String BASE_TYPE_SUFFIX = "BaseType";
+
     public static GraphQLObjectType createObjectType(final String typeName, final Map<String, GraphQLOutputType> typeFields,
                                                      final DataFetcher dataFetcher) {
         final GraphQLObjectType.Builder builder = GraphQLObjectType.newObject().name(typeName);
@@ -48,11 +50,16 @@ public class TypeUtil {
     }
 
     public static String collectionizedName(final String typeName) {
+
         return typeName.substring(0, 1).toLowerCase() + typeName.substring(1) + "Collection";
     }
 
-    public static String singularizeName(final String collectionName) {
+    public static String singularizeCollectionName(final String collectionName) {
         return collectionName.replaceAll("Collection", "");
+    }
+
+    public static String singularizeBaseTypeCollectionName(final String baseTypeCollectionName) {
+        return baseTypeCollectionName.replaceAll("Collection", "").replaceAll(BASE_TYPE_SUFFIX, "");
     }
 
     public static class TypeFetcher {
