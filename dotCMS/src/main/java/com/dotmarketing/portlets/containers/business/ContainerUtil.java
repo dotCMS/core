@@ -62,7 +62,7 @@ public class ContainerUtil {
                             .setSeverity(MessageSeverity.ERROR);
 
                     SystemMessageEventUtil.getInstance().
-                            pushMessage(systemMessageBuilder.create(), Arrays.asList(userId));
+                            pushMessage(containerId, systemMessageBuilder.create(), Arrays.asList(userId));
 
                 }
             } catch (Exception ex) {

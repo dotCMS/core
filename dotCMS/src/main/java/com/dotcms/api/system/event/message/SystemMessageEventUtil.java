@@ -18,6 +18,51 @@ import java.util.*;
 public class SystemMessageEventUtil {
 
     private final SystemEventsAPI systemEventsAPI;
+    private static ThreadLocal<Map<Object, SystemEvent>> threadSystemMessageSet            = new ThreadLocal<>();
+    private static ThreadLocal<Boolean>                  accumulateUniqueMessagesPerThread = ThreadLocal.withInitial(()-> Boolean.FALSE);
+
+    /**
+     * Gets the current value for the "accumulateUniqueMessagesPerThread".
+     * If it is true, means the messages will be accumulated per thread, and also will remove the repeated resource messages.
+     * The messages accumulated should be sent by calling finalizeCurrentSystemMessages method
+     * @return Boolean
+     */
+    public static boolean accumulateUniqueMessagesPerThread() {
+        return accumulateUniqueMessagesPerThread.get();
+    }
+
+    /**
+     * Sets the current value for the "accumulateUniqueMessagesPerThread".
+     * If it is true, means the messages will be accumulated per thread, and also will remove the repeated resource messages.
+     * The messages accumulated should be sent by calling finalizeCurrentSystemMessages method
+     * @param value {@link Boolean}
+     */
+    public static void accumulateUniqueMessagesPerThread(final boolean value) {
+
+        threadSystemMessageSet.set(new LinkedHashMap<>());
+        accumulateUniqueMessagesPerThread.set(value);
+    }
+
+    /**
+     * If the {@link #accumulateUniqueMessagesPerThread} is true and messages have been accumulated, this will send the unique messages to the user.
+     */
+    public static void finalizeCurrentSystemMessages() {
+
+        if (accumulateUniqueMessagesPerThread.get() && null != threadSystemMessageSet.get()) {
+            final Collection<SystemEvent> systemEvents = threadSystemMessageSet.get().values();
+            for(final SystemEvent systemEvent : systemEvents) {
+
+                try {
+
+                    SystemMessageEventUtil.getInstance().systemEventsAPI.push(systemEvent);
+                } catch (DotDataException e) {
+                    throw new CanNotPushSystemEventException(e);
+                }
+            }
+        }
+    }
+
+    ///////////////////////
 
     @VisibleForTesting
     protected SystemMessageEventUtil(final SystemEventsAPI systemEventsAPI){
@@ -246,15 +291,34 @@ public class SystemMessageEventUtil {
 
     ///**************
 
+    /**
+     * Similar to {@link #pushMessage(SystemMessage, List)} but if the {@link #accumulateUniqueMessagesPerThread} is true and the resourceId is unique, will be accumulated.
+     * In order to flush the message have to call the {@link #finalizeCurrentSystemMessages()}
+     * @param resourceId {@link Object}
+     * @param message    {@link SystemMessage}
+     * @param users      {@link List}
+     */
+    public void pushMessage (final Object resourceId, final SystemMessage message, final List<String> users) {
+
+        if (accumulateUniqueMessagesPerThread.get()) {
+
+            threadSystemMessageSet.get().computeIfAbsent(resourceId, k -> new SystemEvent(SystemEventType.MESSAGE, this.createPayload(message, users)));
+        } else {
+
+            this.pushMessage(message, users);
+        }
+    } // pushMessage.
+
     public void pushMessage (final SystemMessage message, final List<String> users) {
 
-        try {
+            try {
 
-            this.systemEventsAPI.push(new SystemEvent(SystemEventType.MESSAGE, this.createPayload(message, users)));
-        } catch (DotDataException e) {
-            throw new CanNotPushSystemEventException(e);
-        }
-    } // pushSimpleTextEvent.
+                final SystemEvent systemEvent = new SystemEvent(SystemEventType.MESSAGE, this.createPayload(message, users));
+                this.systemEventsAPI.push(systemEvent);
+            } catch (DotDataException e) {
+                throw new CanNotPushSystemEventException(e);
+            }
+    } // pushMessage.
 
     private Payload createPayload (final MessageType messageType,
                                    final Object message,
