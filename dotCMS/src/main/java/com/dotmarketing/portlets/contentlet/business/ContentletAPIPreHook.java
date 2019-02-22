@@ -344,11 +344,9 @@ public interface ContentletAPIPreHook {
 	 * Gets the value of a field with a given contentlet 
 	 * @param contentlet
 	 * @param theField
-	 * @param user
-	 * @param respectFrontendRoles
 	 * @return
 	 */
-	public default boolean getFieldValue(Contentlet contentlet, Field theField){
+	default boolean getFieldValue(Contentlet contentlet, Field theField){
       return true;
     }
 
@@ -1765,9 +1763,14 @@ public interface ContentletAPIPreHook {
 
 	
 	
-    public default boolean getFieldValue(Contentlet contentlet, com.dotcms.contenttype.model.field.Field theField) {
+    default boolean getFieldValue(Contentlet contentlet, com.dotcms.contenttype.model.field.Field theField) {
       return true;
     }
+
+
+	default boolean getFieldValue(Contentlet contentlet, com.dotcms.contenttype.model.field.Field theField, User user) {
+		return true;
+	}
 
 	/**
 	 *

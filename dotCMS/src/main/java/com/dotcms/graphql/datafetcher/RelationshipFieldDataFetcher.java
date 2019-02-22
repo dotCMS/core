@@ -31,9 +31,10 @@ public class RelationshipFieldDataFetcher implements DataFetcher<Object> {
                 APILocator.getContentTypeFieldAPI().byContentTypeIdAndVar(contentlet.getContentTypeId(), fieldVar);
 
             Relationship relationship;
+            User user;
 
             try {
-                final User user = ((DotGraphQLContext) environment.getContext()).getUser();
+                user = ((DotGraphQLContext) environment.getContext()).getUser();
                 relationship = APILocator.getRelationshipAPI().getRelationshipFromField(field,
                     user);
             } catch (DotDataException | DotSecurityException e) {
@@ -48,10 +49,10 @@ public class RelationshipFieldDataFetcher implements DataFetcher<Object> {
 
             Object objectToReturn = records.doesAllowOnlyOne() ? null : Collections.emptyList();
 
-            if (UtilMethods.isSet(contentlet.getRelated(fieldVar))) {
+            if (UtilMethods.isSet(contentlet.getRelated(fieldVar, user))) {
                 objectToReturn = records.doesAllowOnlyOne()
-                    ? contentlet.getRelated(fieldVar).get(0)
-                    : contentlet.getRelated(fieldVar);
+                    ? contentlet.getRelated(fieldVar, user).get(0)
+                    : contentlet.getRelated(fieldVar, user);
             }
 
             return objectToReturn;
