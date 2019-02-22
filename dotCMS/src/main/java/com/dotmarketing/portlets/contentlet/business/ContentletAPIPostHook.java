@@ -296,21 +296,27 @@ public interface ContentletAPIPostHook {
 	 * Gets the value of a field with a given contentlet 
 	 * @param contentlet
 	 * @param theField
-	 * @param user
-	 * @param respectFrontendRoles
 	 * @param returnValue - value returned by primary API Method 
 	 */
-	public default void getFieldValue(Contentlet contentlet, Field theField,Object returnValue){}
+	default void getFieldValue(Contentlet contentlet, Field theField,Object returnValue){}
 	
     /**
      * Gets the value of a field with a given contentlet 
      * @param contentlet
      * @param theField
-     * @param user
-     * @param respectFrontendRoles
      * @param returnValue - value returned by primary API Method 
      */
-    public default void getFieldValue(Contentlet contentlet, com.dotcms.contenttype.model.field.Field theField,Object returnValue){}
+    default void getFieldValue(Contentlet contentlet, com.dotcms.contenttype.model.field.Field theField,Object returnValue){}
+
+
+	/**
+	 * Gets the value of a field with a given contentlet
+	 * @param contentlet
+	 * @param theField
+	 * @param returnValue - value returned by primary API Method
+	 * @param user
+	 */
+	default void getFieldValue(Contentlet contentlet, com.dotcms.contenttype.model.field.Field theField,Object returnValue, User user){}
 
 	/**
 	 * Adds a relationship to a contentlet

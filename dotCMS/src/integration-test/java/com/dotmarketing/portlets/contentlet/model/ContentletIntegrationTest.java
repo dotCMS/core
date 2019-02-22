@@ -14,9 +14,13 @@ import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.RelationshipAPI;
+import com.dotmarketing.business.Role;
+import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -45,6 +49,7 @@ public class ContentletIntegrationTest {
     private static Language defaultLanguage;
     private static LanguageAPI languageAPI;
     private static RelationshipAPI relationshipAPI;
+    private static RoleAPI roleAPI;
     private static UserAPI userAPI;
     private static User user;
     private static Host defaultHost;
@@ -63,6 +68,7 @@ public class ContentletIntegrationTest {
         languageAPI = APILocator.getLanguageAPI();
 
         userAPI = APILocator.getUserAPI();
+        roleAPI = APILocator.getRoleAPI();
         user    = userAPI.getSystemUser();
 
         contentletAPI   = APILocator.getContentletAPI();
@@ -156,13 +162,13 @@ public class ContentletIntegrationTest {
                     false);
 
             //No cached value
-            List<Contentlet> result = parentContentlet.getRelated(field.variable());
+            List<Contentlet> result = parentContentlet.getRelated(field.variable(), user, false);
 
             assertEquals(1, result.size());
             assertEquals(childContentlet.getIdentifier(), result.get(0).getIdentifier());
 
             //Cached value
-            result = parentContentlet.getRelated(field.variable());
+            result = parentContentlet.getRelated(field.variable(), user, false);
 
             assertEquals(1, result.size());
             assertEquals(childContentlet.getIdentifier(), result.get(0).getIdentifier());
@@ -178,6 +184,91 @@ public class ContentletIntegrationTest {
             }
         }
     }
+
+    @Test
+    public void testGetRelatedForOneSidedRelationshipWhenLimitedUserShouldReturnEmptyList()
+            throws DotDataException, DotSecurityException {
+
+        ContentType parentContentType = null;
+        ContentType childContentType = null;
+        Role newRole = null;
+
+        try {
+
+            //Create Content Types
+            parentContentType = getNewContentType();
+            childContentType = getNewContentType();
+
+            //Create Content
+            Contentlet parentContentlet = new ContentletDataGen(parentContentType.id())
+                    .languageId(defaultLanguage.getId()).next();
+
+            final Contentlet childContentlet = new ContentletDataGen(childContentType.id())
+                    .languageId(defaultLanguage.getId()).nextPersisted();
+
+            //Create Relationship
+            final Field field = createAndSaveRelationshipField("myChild", parentContentType.id(),
+                    childContentType.variable(), CARDINALITY);
+
+            final Relationship relationship = relationshipAPI.getRelationshipFromField(field, user);
+
+            //Save related content
+            parentContentlet = contentletAPI.checkin(parentContentlet,
+                    CollectionsUtils.map(relationship, CollectionsUtils.list(childContentlet)),
+                    user,
+                    false);
+
+            newRole = createRole();
+
+            //set individual permissions to the child
+            APILocator.getPermissionAPI()
+                    .save(new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+                            childContentlet.getPermissionId(), newRole.getId(),
+                            PermissionAPI.PERMISSION_READ, true), childContentlet, user, false);
+
+            //Get related content with system user
+            List<Contentlet> result = parentContentlet.getRelated(field.variable(), user, false);
+
+            assertEquals(1, result.size());
+            assertEquals(childContentlet.getIdentifier(), result.get(0).getIdentifier());
+
+            //Get related content with anonymous user
+            result = parentContentlet.getRelated(field.variable(), null, false);
+
+            assertEquals(0, result.size());
+
+        } finally {
+
+            if (parentContentType != null && parentContentType.id() != null) {
+                contentTypeAPI.delete(parentContentType);
+            }
+
+            if (childContentType != null && childContentType.id() != null) {
+                contentTypeAPI.delete(childContentType);
+            }
+
+            if (newRole != null){
+                roleAPI.delete(newRole);
+            }
+        }
+    }
+
+    private Role createRole() throws DotDataException {
+        final long millis =  System.currentTimeMillis();
+
+        // Create Role.
+        Role newRole = new Role();
+        newRole.setName("Role" +  millis);
+        newRole.setEditUsers(true);
+        newRole.setEditPermissions(true);
+        newRole.setSystem(false);
+        newRole.setEditLayouts(true);
+        newRole.setParent(newRole.getId());
+        newRole = roleAPI.save(newRole);
+
+        return newRole;
+    }
+
 
     @Test
     public void testGetRelatedWhenNoRelatedContentShouldReturnEmptyList()
@@ -199,7 +290,7 @@ public class ContentletIntegrationTest {
             final Field field = createAndSaveRelationshipField("myChild", parentContentType.id(),
                     childContentType.variable(), CARDINALITY);
 
-            final List<Contentlet> result = contentlet.getRelated(field.variable());
+            final List<Contentlet> result = contentlet.getRelated(field.variable(), user, false);
 
             assertTrue(result.isEmpty());
 
@@ -227,7 +318,7 @@ public class ContentletIntegrationTest {
             final Contentlet contentlet = new ContentletDataGen(contentType.id())
                     .languageId(defaultLanguage.getId()).nextPersisted();
 
-            contentlet.getRelated("AnyField");
+            contentlet.getRelated("AnyField", user, false);
 
         }finally{
             contentTypeAPI.delete(contentType);

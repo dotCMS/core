@@ -2,6 +2,7 @@ package com.dotmarketing.portlets.contentlet.business;
 
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
+import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.enterprise.license.LicenseManager;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -1015,8 +1016,20 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		return c;
 	}
 
+	/**
+	 * @deprecated use {@link ContentletAPIInterceptor#getFieldValue(Contentlet, com.dotcms.contenttype.model.field.Field)} instead
+	 * @param contentlet
+	 * @param theField a legacy field from the contentlet's parent Content Type
+	 * @return
+	 */
+	@Deprecated
 	@Override
 	public Object getFieldValue(Contentlet contentlet, Field theField) {
+		return getFieldValue(contentlet, new LegacyFieldTransformer(theField).from());
+	}
+
+	@Override
+	public Object getFieldValue(Contentlet contentlet, com.dotcms.contenttype.model.field.Field theField) {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.getFieldValue(contentlet, theField);
 			if(!preResult){
@@ -1032,20 +1045,21 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 	}
 
 	@Override
-    public Object getFieldValue(Contentlet contentlet, com.dotcms.contenttype.model.field.Field theField) {
-      for(ContentletAPIPreHook pre : preHooks){
-          boolean preResult = pre.getFieldValue(contentlet, theField);
-          if(!preResult){
-              Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-              throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
-          }
-      }
-      Object c = conAPI.getFieldValue(contentlet, theField);
-      for(ContentletAPIPostHook post : postHooks){
-          post.getFieldValue(contentlet, theField,c);
-      }
-      return c;
-  }
+	public Object getFieldValue(Contentlet contentlet, com.dotcms.contenttype.model.field.Field theField, User user) {
+		for(ContentletAPIPreHook pre : preHooks){
+			boolean preResult = pre.getFieldValue(contentlet, theField, user);
+			if(!preResult){
+				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
+				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+			}
+		}
+		Object c = conAPI.getFieldValue(contentlet, theField, user);
+		for(ContentletAPIPostHook post : postHooks){
+			post.getFieldValue(contentlet, theField,c, user);
+		}
+		return c;
+	}
+
 	/* (non-Javadoc)
 	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#getName(com.dotmarketing.portlets.contentlet.model.Contentlet, com.liferay.portal.model.User, boolean)
 	 */
