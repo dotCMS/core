@@ -1,5 +1,3 @@
-// TODO realmente esta clase es necesaria?
-
 export class Url {
     constructor(private protocol: string, private baseUrl: string, private endPoint: string) {}
 
