@@ -22,7 +22,7 @@ public class DotGraphQLContextBuilder implements GraphQLContextBuilder {
     public GraphQLContext build(final HttpServletRequest httpServletRequest,
                                 final HttpServletResponse httpServletResponse) {
         final InitDataObject initDataObject = this.webResource.init
-            (null, true, httpServletRequest, true, null);
+            (null, true, httpServletRequest, false, null);
 
         return new DotGraphQLContext(httpServletRequest, httpServletResponse, initDataObject.getUser());
     }
