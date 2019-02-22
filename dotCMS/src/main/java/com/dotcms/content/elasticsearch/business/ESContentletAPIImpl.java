@@ -3,6 +3,7 @@ package com.dotcms.content.elasticsearch.business;
 
 import static com.dotcms.exception.ExceptionUtil.bubbleUpException;
 import static com.dotcms.exception.ExceptionUtil.getLocalizedMessageOrDefault;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.URL_MAP_FOR_CONTENT_KEY;
 
 import com.dotcms.api.system.event.ContentletSystemEventUtil;
 import com.dotcms.business.CloseDBIfOpened;
@@ -13,6 +14,7 @@ import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.event.ContentletCheckinEvent;
 import com.dotcms.content.elasticsearch.business.event.ContentletDeletedEvent;
 import com.dotcms.content.elasticsearch.business.event.ContentletPublishEvent;
+import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.field.CategoryField;
 import com.dotcms.contenttype.model.field.ConstantField;
@@ -4128,9 +4130,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     contentlet.setHost((String)value);
                 }else if(conVariable.equals(Contentlet.FOLDER_KEY)){
                     contentlet.setFolder((String)value);
-                }else if(conVariable.equals(Contentlet.NULL_PROPERTIES)){
-                    contentlet.setProperty(conVariable, value);
-                }else if(NEVER_EXPIRE.equals(conVariable) || conVariable.equals(Contentlet.CONTENT_TYPE_KEY)){
+                }else if(isSetPropertyVariable(conVariable)){
                     contentlet.setProperty(conVariable, value);
                 } else if(velFieldmap.get(conVariable) != null){
                     Field field = velFieldmap.get(conVariable);
@@ -4170,6 +4170,18 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         // workflow
         copyWorkflowProperties(contentlet, properties);
+    }
+
+    private boolean isSetPropertyVariable(String conVariable) {
+        return conVariable.equals(Contentlet.NULL_PROPERTIES)
+            || NEVER_EXPIRE.equals(conVariable)
+            || conVariable.equals(Contentlet.CONTENT_TYPE_KEY)
+            || conVariable.equals(Contentlet.BASE_TYPE_KEY)
+            || conVariable.equals(Contentlet.LIVE_KEY)
+            || conVariable.equals(Contentlet.WORKING_KEY)
+            || conVariable.equals(Contentlet.LOCKED_KEY)
+            || conVariable.equals(Contentlet.ARCHIVED_KEY)
+            || conVariable.equals(ESMappingConstants.URL_MAP);
     }
 
     private void copyWorkflowProperties(Contentlet contentlet, Map<String, Object> properties) {
@@ -5955,9 +5967,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
             return null;
         }
 
-        final String CONTENTLET_URL_MAP_FOR_CONTENT = "URL_MAP_FOR_CONTENT";
         final String CONTENTLET_URL_MAP_FOR_CONTENT_404 = "URL_MAP_FOR_CONTENT_404";
-        String result = (String) contentlet.getMap().get(CONTENTLET_URL_MAP_FOR_CONTENT);
+        String result = (String) contentlet.getMap().get(URL_MAP_FOR_CONTENT_KEY);
         if(result != null){
             if(CONTENTLET_URL_MAP_FOR_CONTENT_404.equals(result) ){
                 return null;
@@ -6018,7 +6029,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if(result == null){
             result = CONTENTLET_URL_MAP_FOR_CONTENT_404;
         }
-        contentlet.setStringProperty(CONTENTLET_URL_MAP_FOR_CONTENT, result);
+        contentlet.setStringProperty(URL_MAP_FOR_CONTENT_KEY, result);
         return result;
     }
 
