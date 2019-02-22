@@ -1,3 +1,5 @@
+import { DotCMSSite } from './DotCMSSite';
+
 export interface DotAppPageAsset {
     canCreateTemplate: boolean;
     containers: DotCMSPageAssetContainer;
@@ -212,60 +214,6 @@ interface DotCMSContentlet {
     categories?: string;
     image?: string;
     tags?: string;
-}
-
-interface DotCMSSite {
-    lowIndexPriority: boolean;
-    name: string;
-    default: boolean;
-    aliases: string;
-    parent: boolean;
-    tagStorage: string;
-    systemHost: boolean;
-    inode: string;
-    versionType: string;
-    structureInode: string;
-    hostname: string;
-    hostThumbnail?: any;
-    owner: string;
-    permissionId: string;
-    permissionType: string;
-    type: string;
-    identifier: string;
-    modDate: number;
-    host: string;
-    live: boolean;
-    indexPolicy: string;
-    categoryId: string;
-    actionId?: any;
-    new: boolean;
-    archived: boolean;
-    locked: boolean;
-    disabledWysiwyg: any[];
-    modUser: string;
-    working: boolean;
-    titleImage: {
-        present: boolean;
-    };
-    folder: string;
-    htmlpage: boolean;
-    fileAsset: boolean;
-    vanityUrl: boolean;
-    keyValue: boolean;
-    title: string;
-    languageId: number;
-    indexPolicyDependencies: string;
-    contentTypeId: string;
-    versionId: string;
-    lastReview: number;
-    nextReview?: any;
-    reviewInterval?: any;
-    sortOrder: number;
-    contentType: {
-        owner?: any;
-        permissionId: string;
-        permissionType: string;
-    };
 }
 
 interface DotCMSTemplate {
