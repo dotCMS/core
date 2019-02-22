@@ -11,6 +11,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Enumeration;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -101,9 +103,17 @@ public class ZipUtil {
 	     * @param toDir the target directory
 	     * @throws java.io.IOException
 	     */
-	    public static void extract(ZipFile zipFile, ZipEntry zipEntry, File toDir) throws IOException {
-	        File file = new File(toDir, zipEntry.getName());
-	        File parentDir = file.getParentFile();
+	    private static void extract(final ZipFile zipFile, final ZipEntry zipEntry, final File toDir) throws IOException {
+	        final File file = new File(toDir, zipEntry.getName());
+
+            if(!checkNewFileDestination(toDir,file)){
+                //Log detailed info into the security logger
+                SecurityLogger.logInfo(ZipUtil.class, String.format("An attempt to unzip entry '%s' under an illegal destination has been made.",file.getCanonicalPath()));
+                // and expose the minimum to the user
+                throw new SecurityException("Illegal unzip attempt");
+            }
+
+	        final File parentDir = file.getParentFile();
 	        if (! parentDir.exists()){
 	            parentDir.mkdirs();
 	        }
@@ -111,7 +121,7 @@ public class ZipUtil {
 	        BufferedInputStream bis = null;
 	        BufferedOutputStream bos = null;
 	        try{
-	            InputStream istr = zipFile.getInputStream(zipEntry);
+	            final InputStream istr = zipFile.getInputStream(zipEntry);
 	            bis = new BufferedInputStream(istr);
 	            final OutputStream os = Files.newOutputStream(file.toPath());
 	            bos  = new BufferedOutputStream(os);
@@ -125,4 +135,19 @@ public class ZipUtil {
 	            }
 	        }
 	    }
+
+
+	/**
+	 * Check paths to determine if being attacked
+	 * @param parentDir
+	 * @param newFile
+	 * @return
+	 * @throws IOException
+	 */
+	static boolean checkNewFileDestination(final File parentDir, final File newFile) throws IOException{
+			final String dirCanonicalPath = parentDir.getCanonicalPath();
+			final String newFileCanonicalPath = newFile.getCanonicalPath();
+			return newFileCanonicalPath.startsWith(dirCanonicalPath);
+	    }
+
 	}
