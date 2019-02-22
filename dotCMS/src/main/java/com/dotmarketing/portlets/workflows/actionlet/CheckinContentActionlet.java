@@ -33,8 +33,8 @@ public class CheckinContentActionlet extends WorkFlowActionlet {
 		try {
 
 			APILocator.getContentletAPI().unlock(processor.getContentlet(), processor.getUser(),
-					processor.getContentletDependencies() != null ?
-							processor.getContentletDependencies().isRespectAnonymousPermissions() : false);
+					processor.getContentletDependencies() != null
+							&& processor.getContentletDependencies().isRespectAnonymousPermissions());
 		} catch (Exception e) {
 			Logger.error(this.getClass(),e.getMessage(),e);
 			throw new  WorkflowActionFailureException(e.getMessage(),e);
