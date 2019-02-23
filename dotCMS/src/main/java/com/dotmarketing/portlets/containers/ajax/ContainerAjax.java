@@ -15,6 +15,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.containers.model.FileAssetContainer;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
@@ -27,15 +28,8 @@ import com.liferay.portal.SystemException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-
 import javax.servlet.http.HttpServletRequest;
+import java.util.*;
 
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
 
@@ -55,40 +49,53 @@ public class ContainerAjax {
 		hostAPI = APILocator.getHostAPI();
 	}
 
-	public Map<String, Object> fetchContainers (Map<String, String> query, Map<String, String> queryOptions, int start, int count,
-			List<String> sort) throws PortalException, SystemException, DotDataException, DotSecurityException {
-		HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
-		User user = userWebAPI.getLoggedInUser(req);
-		boolean respectFrontendRoles = userWebAPI.isLoggedToFrontend(req);
+	public Map<String, Object> fetchContainers (final Map<String, String> query,
+												final Map<String, String> queryOptions,
+												int start, int count,
+												final List<String> sort) throws PortalException, SystemException, DotDataException, DotSecurityException {
 
-		List<Container> fullListContainers = new ArrayList<Container>();
-		try{
+		final HttpServletRequest request   = WebContextFactory.get().getHttpServletRequest();
+		final User user 				   = userWebAPI.getLoggedInUser(request);
+		final boolean respectFrontendRoles = userWebAPI.isLoggedToFrontend(request);
+		final String baseHostId             = (String) request.getSession().getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);
+
+		List<Container> fullListContainers = new ArrayList<>();
+
+		try {
 			if(UtilMethods.isSet(query.get("hostId"))) {
-				Host host = hostAPI.find(query.get("hostId"), user, respectFrontendRoles);
+				final Host host = hostAPI.find(query.get("hostId"), user, respectFrontendRoles);
 				fullListContainers = containerAPI.findContainersUnder(host);
 			} else {
-				fullListContainers = containerAPI.findAllContainers(user, respectFrontendRoles);
+				final Host host = hostAPI.find(baseHostId, user, respectFrontendRoles);
+				fullListContainers = containerAPI.findAllContainers(host, user, respectFrontendRoles);
 			}
 		}catch (DotDataException e) {
 			Logger.error(this, e.getMessage(), e);
 			throw new DotDataException(e.getMessage(), e);
 		}
-		String baseHostId = (String) req.getSession().getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);
-		Collections.sort(fullListContainers, new ContainerComparator(baseHostId));
-		Map<String, Object> results = new HashMap<String, Object>();
-		List<Map<String, Object>> list = new LinkedList<Map<String, Object>> ();
 
-		for(Container cont : fullListContainers) {
-			if(cont != null && !cont.isArchived()){
-				Map<String, Object> contMap = cont.getMap();
+
+		Collections.sort(fullListContainers, new ContainerComparator(baseHostId));
+		final Map<String, Object> results    = new HashMap<>();
+		final List<Map<String, Object>> list = new LinkedList<> ();
+
+		for(final Container container : fullListContainers) {
+			if(container != null && !container.isArchived()){
+				final Map<String, Object> contMap = container.getMap();
 				if(passFilter(contMap, query)) {
-					Host parentHost = containerAPI.getParentHost(cont, user, respectFrontendRoles);
+					final Host parentHost = containerAPI.getParentHost(container, user, respectFrontendRoles);
 					if(parentHost != null) {
 						contMap.put("hostName", parentHost.getHostname());
 						contMap.put("hostId", parentHost.getIdentifier());
 						contMap.put("fullTitle", parentHost.getHostname() + ": " + contMap.get("title"));
 					} else {
 						contMap.put("fullTitle", contMap.get("title"));
+					}
+
+					contMap.put("source", container.getSource().toString());
+					if (container instanceof FileAssetContainer) {
+
+						contMap.put("path", FileAssetContainer.class.cast(container).getPath());
 					}
 
 					list.add(contMap);
@@ -99,7 +106,7 @@ public class ContainerAjax {
 		if(start >= list.size()) start =  list.size() - 1;
 		if(start < 0)  start  = 0;
 		if(start + count >= list.size()) count = list.size() - start;
-		List<Map<String, Object>> containers = list.subList(start, start + count);
+		final List<Map<String, Object>> containers = list.subList(start, start + count);
 
 		results.put("totalResults", list.size());
 		results.put("list", containers);

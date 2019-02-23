@@ -29,7 +29,7 @@ import javax.servlet.http.HttpServletResponse;
 public class JsonWebTokenUtils {
 
     public static final String CLAIM_UPDATED_AT = "updated_at";
-
+    public static final String CLAIM_ALLOWED_NETWORK = "allowed_net";
     private static class SingletonHolder {
         private static final JsonWebTokenUtils INSTANCE = new JsonWebTokenUtils();
     }

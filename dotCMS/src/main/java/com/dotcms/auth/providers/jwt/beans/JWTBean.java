@@ -3,6 +3,9 @@ package com.dotcms.auth.providers.jwt.beans;
 import java.io.Serializable;
 import java.util.Date;
 
+import com.dotcms.enterprise.cluster.ClusterFactory;
+import com.dotmarketing.business.APILocator;
+
 /**
  * Encapsulates all the different pieces of information that make up the JSON
  * Web Token (JWT).
@@ -18,7 +21,9 @@ public class JWTBean implements Serializable {
     private final String issuer;
     private final Date modificationDate;
     private final long ttlMillis;
-
+    private final String allowedNetwork;
+    private final ApiToken issued;
+    
 	/**
 	 * Creates a JWT with its required information.
 	 * 
@@ -32,12 +37,14 @@ public class JWTBean implements Serializable {
 	 *            - The expiration date of the token.
 	 */
     public JWTBean(String id, String subject, String issuer, Date modificationDate,
-            long ttlMillis) {
+            long ttlMillis, String allowedNetwork) {
         this.id = id;
         this.subject = subject;
         this.issuer = issuer;
         this.modificationDate = modificationDate;
         this.ttlMillis = ttlMillis;
+        this.allowedNetwork = allowedNetwork;
+        this.issued = APILocator.getApiTokenAPI().findJWTokenIssued(subject).orElse(null);
     }
 
     /**
@@ -48,13 +55,19 @@ public class JWTBean implements Serializable {
      * @param ttlMillis - The expiration date of the token.
      */
     public JWTBean(String id, String subject, Date modificationDate, long ttlMillis) {
-        this.id = id;
-        this.subject = subject;
-        this.issuer = null;
-        this.modificationDate = modificationDate;
-        this.ttlMillis = ttlMillis;
+        this(id, subject, ClusterFactory.getClusterId(), modificationDate,ttlMillis,"0.0.0./0");
     }
-
+    
+    /**
+     * Creates a JWT with its required information.
+     *
+     * @param id - The ID of the token.
+     * @param subject - The subject of the token
+     * @param ttlMillis - The expiration date of the token.
+     */
+    public JWTBean(String id, String subject, String issuer, Date modificationDate, long ttlMillis) {
+        this(id, subject, issuer, modificationDate,ttlMillis,"0.0.0./0");
+    }
     /**
      * Returns the ID of this token.
      * 
@@ -62,6 +75,13 @@ public class JWTBean implements Serializable {
      */
     public String getId() {
         return id;
+    }
+    /**
+     * Gets the allowed network
+     * @return
+     */
+    public String getAllowedNetwork() {
+        return allowedNetwork;
     }
 
     /**

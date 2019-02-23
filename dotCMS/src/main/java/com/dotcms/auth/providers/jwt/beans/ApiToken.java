@@ -7,22 +7,16 @@ import java.util.Date;
 import javax.annotation.Generated;
 import javax.annotation.Nonnull;
 
-import com.dotcms.auth.providers.jwt.factories.JWTokenIssuedAPI;
+import com.dotcms.auth.providers.jwt.factories.ApiTokenAPI;
 import com.dotcms.repackage.org.apache.commons.net.util.SubnetUtils;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.util.Logger;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
-/**
- * Encapsulates all the different pieces of information make up an 
- * 
- * @author jsanca
- * @version 3.7
- * @since Jun 14, 2016
- */
 
-@JsonDeserialize(builder = JWTokenIssued.Builder.class)
-public class JWTokenIssued implements Serializable {
+
+@JsonDeserialize(builder = ApiToken.Builder.class)
+public class ApiToken implements Serializable {
 
     /**
      * 
@@ -42,7 +36,7 @@ public class JWTokenIssued implements Serializable {
 
 
     @Generated("SparkTools")
-    private JWTokenIssued(Builder builder) {
+    private ApiToken(Builder builder) {
         this.id = builder.id;
         this.userId = builder.userId;
         this.requestingUserId = builder.requestingUserId;
@@ -129,7 +123,7 @@ public class JWTokenIssued implements Serializable {
             return false;
         if (getClass() != obj.getClass())
             return false;
-        JWTokenIssued other = (JWTokenIssued) obj;
+        ApiToken other = (ApiToken) obj;
         if (allowFromNetwork == null) {
             if (other.allowFromNetwork != null)
                 return false;
@@ -188,7 +182,7 @@ public class JWTokenIssued implements Serializable {
 
 
         /**
-         * Creates builder to build {@link JWTokenIssued}.
+         * Creates builder to build {@link ApiToken}.
          * @return created builder
          */
         @Generated("SparkTools")
@@ -198,18 +192,18 @@ public class JWTokenIssued implements Serializable {
 
 
         /**
-         * Creates a builder to build {@link JWTokenIssued} and initialize it with the given object.
+         * Creates a builder to build {@link ApiToken} and initialize it with the given object.
          * @param jWTokenIssue to initialize the builder with
          * @return created builder
          */
         @Generated("SparkTools")
-        public static Builder from(JWTokenIssued jWTokenIssue) {
+        public static Builder from(ApiToken jWTokenIssue) {
             return new Builder(jWTokenIssue);
         }
 
 
         /**
-         * Builder to build {@link JWTokenIssued}.
+         * Builder to build {@link ApiToken}.
          */
         @Generated("SparkTools")
         public static final class Builder {
@@ -226,7 +220,7 @@ public class JWTokenIssued implements Serializable {
             private String clusterId;
             private Builder() {}
 
-            private Builder(JWTokenIssued jWTokenIssue) {
+            private Builder(ApiToken jWTokenIssue) {
                 this.id = jWTokenIssue.id;
                 this.userId = jWTokenIssue.userId;
                 this.requestingUserId = jWTokenIssue.requestingUserId;
@@ -296,9 +290,9 @@ public class JWTokenIssued implements Serializable {
                 return this;
             }
 
-            public JWTokenIssued build() {
-                if(JWTokenIssuedAPI.TOKEN_404_STR.equals(id)) {
-                    return new JWTokenIssued(this);
+            public ApiToken build() {
+                if(ApiTokenAPI.TOKEN_404_STR.equals(id)) {
+                    return new ApiToken(this);
                 }
                 
                 if (this.userId == null ||  this.expires == null || expires.before(new Date())) {
@@ -308,7 +302,7 @@ public class JWTokenIssued implements Serializable {
                 
                 
 
-                return new JWTokenIssued(this);
+                return new ApiToken(this);
             }
         }
 

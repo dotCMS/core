@@ -5,15 +5,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import com.dotcms.auth.providers.jwt.beans.JWTokenIssued;
+import com.dotcms.auth.providers.jwt.beans.ApiToken;
 import com.dotcms.util.transform.DBTransformer;
 
 
-public class JWTokenDBTransformer implements DBTransformer<JWTokenIssued>{
+public class ApiTokenDBTransformer implements DBTransformer<ApiToken>{
 
     
-    private final List<JWTokenIssued> tokenList;
-    public JWTokenDBTransformer(final List<Map<String, Object>> dbMapList) {
+    private final List<ApiToken> tokenList;
+    public ApiTokenDBTransformer(final List<Map<String, Object>> dbMapList) {
         tokenList = dbMapList
                 .stream()
                 .map(db->fromMap(db))
@@ -22,30 +22,14 @@ public class JWTokenDBTransformer implements DBTransformer<JWTokenIssued>{
 
     
     @Override
-    public List<JWTokenIssued> asList() {
+    public List<ApiToken> asList() {
 
         return tokenList;
     }
-    /**
-     *  final static String BASE_SCRIPT = "create table jwt_token_issue("
-                + "token_id varchar(255) NOT NULL, "
-                + "token_userid varchar(255) NOT NULL, "
-                + "issue_date TIMESTAMP NOT NULL, "
-                + "expire_date TIMESTAMP NOT NULL, "
-                + "requested_by_userid  varchar(255) NOT NULL, "
-                + "requested_by_ip  varchar(255) NOT NULL, "
-                + "revoke_date  TIMESTAMP, "
-                + "allowed_from  varchar(255) , "
-                + "cluster_id  varchar(255) , "
-                + "meta_data  text , "
-                + "mod_date  TIMESTAMP NOT NULL, "
-                + "PRIMARY KEY (token_id));\n"
-                + "create index idx_jwt_token_issue_user ON jwt_token_issue (token_userid);";
-     *
-     */
-    private JWTokenIssued fromMap(Map<String, Object> dbMap) {
+
+    private ApiToken fromMap(Map<String, Object> dbMap) {
         
-        return JWTokenIssued
+        return ApiToken
                 .builder()
                 .withId((String) dbMap.get("token_id"))
                 .withUserId((String) dbMap.get("token_userid"))

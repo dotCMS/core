@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.contentlet.business;
 
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
 import com.dotmarketing.beans.Host;
@@ -401,14 +402,25 @@ public interface ContentletAPI {
 	 */
 	public List<Map<String, Object>> getContentletReferences(Contentlet contentlet, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException, DotContentletStateException;
 
-	/**
+    /**
+     * Gets the value of a field with a given contentlet
+     * @param contentlet
+     * @param theField
+     * @param user
+     * @return Object from DB with field's value
+     */
+    Object getFieldValue(Contentlet contentlet, com.dotcms.contenttype.model.field.Field theField, User user);
+
+    /**
 	 * Gets the value of a field with a given contentlet
 	 * @param contentlet
 	 * @param theField a legacy field from the contentlet's parent Content Type
 	 * @return Object from DB with field's value
 	 * @see ContentletAPI#getFieldValue(Contentlet, com.dotcms.contenttype.model.field.Field)
+	 * @deprecated use {@link ContentletAPI#getFieldValue(Contentlet, com.dotcms.contenttype.model.field.Field)} instead
 	 */
-	public Object getFieldValue(Contentlet contentlet, Field theField);
+    @Deprecated
+    Object getFieldValue(Contentlet contentlet, Field theField);
 
 	/**
 	 * Gets the value of a field with a given contentlet
@@ -416,7 +428,7 @@ public interface ContentletAPI {
 	 * @param theField
 	 * @return Object from DB with field's value
 	 */
-	public Object getFieldValue(Contentlet contentlet, com.dotcms.contenttype.model.field.Field theField);
+	Object getFieldValue(Contentlet contentlet, com.dotcms.contenttype.model.field.Field theField);
 
 
 	/**

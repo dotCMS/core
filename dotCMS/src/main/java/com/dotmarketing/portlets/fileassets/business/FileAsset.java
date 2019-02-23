@@ -289,4 +289,8 @@ public class FileAsset extends Contentlet implements IFileAsset {
 		return getModDate();
 	}
 
+	@Override
+	public String toString() {
+		return this.getFileName();
+	}
 }

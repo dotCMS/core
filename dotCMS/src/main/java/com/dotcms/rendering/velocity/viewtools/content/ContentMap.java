@@ -4,6 +4,7 @@
 package com.dotcms.rendering.velocity.viewtools.content;
 
 import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.rendering.velocity.services.VelocityType;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.rendering.velocity.viewtools.ContentsWebAPI;
@@ -166,7 +167,9 @@ public class ContentMap {
 				}
 			}
 			if(f != null && f.getFieldType().equals(Field.FieldType.CATEGORY.toString())){
-				return perAPI.filterCollection(new ArrayList<Category>((Set<Category>)conAPI.getFieldValue(content, f)), PermissionAPI.PERMISSION_USE, true, user);
+				return perAPI.filterCollection(new ArrayList<Category>((Set<Category>)
+						conAPI.getFieldValue(content, new LegacyFieldTransformer(f).from(),
+								this.user)), PermissionAPI.PERMISSION_USE, true, user);
 			}else if(f != null && (f.getFieldType().equals(Field.FieldType.FILE.toString()) || f.getFieldType().equals(Field.FieldType.IMAGE.toString()))){
                 // Check if image or file is in fieldValueMap hashmap
                 Object fieldvalue = retriveFieldValue(f);
@@ -324,10 +327,11 @@ public class ContentMap {
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
-	private Object getRelationshipInfo(Field field)
+	private Object getRelationshipInfo(final Field field)
 			throws DotDataException, DotSecurityException {
-		ContentletRelationships relationships = (ContentletRelationships)conAPI.getFieldValue(content, field);
-		ContentletRelationshipRecords records = relationships.getRelationshipsRecords().get(0);
+		final ContentletRelationships relationships = (ContentletRelationships) conAPI.getFieldValue(content,
+				new LegacyFieldTransformer(field).from(), this.user);
+		final ContentletRelationshipRecords records = relationships.getRelationshipsRecords().get(0);
 		if(records.getRecords().isEmpty()) {
 		    return null;
 		}

@@ -3,13 +3,13 @@ package com.dotcms.auth.providers.jwt.factories;
 import java.util.Arrays;
 import java.util.Optional;
 
-import com.dotcms.auth.providers.jwt.beans.JWTokenIssued;
+import com.dotcms.auth.providers.jwt.beans.ApiToken;
 import com.dotmarketing.business.Cachable;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.business.DotCacheException;
 
-public class JWTokenCache implements Cachable {
+public class ApiTokenCache implements Cachable {
 
     private final static String TOKEN_GROUP = "jwttokenIssued";
 
@@ -24,19 +24,19 @@ public class JWTokenCache implements Cachable {
     }
 
 
-    public Optional<JWTokenIssued> getToken(final String tokenId) {
+    public Optional<ApiToken> getToken(final String tokenId) {
 
         try {
-            return Optional.ofNullable((JWTokenIssued) cache.get(tokenId, TOKEN_GROUP));
+            return Optional.ofNullable((ApiToken) cache.get(tokenId, TOKEN_GROUP));
         } catch (DotCacheException e) {
             return Optional.empty();
         }
     }
 
-    public void putJWTokenIssued(final JWTokenIssued tokenIssued) {
+    public void putJWTokenIssued(final ApiToken tokenIssued) {
         putJWTokenIssued(tokenIssued.id, tokenIssued);
     }
-    public void putJWTokenIssued(final String tokenId, final JWTokenIssued tokenIssued) {
+    public void putJWTokenIssued(final String tokenId, final ApiToken tokenIssued) {
         cache.put(tokenId, tokenIssued, TOKEN_GROUP);
     }
 

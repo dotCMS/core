@@ -1,7 +1,7 @@
 package com.dotcms.auth.providers.jwt.factories;
 
 import static com.dotcms.auth.providers.jwt.JsonWebTokenUtils.CLAIM_UPDATED_AT;
-
+import static com.dotcms.auth.providers.jwt.JsonWebTokenUtils.CLAIM_ALLOWED_NETWORK;
 import com.dotcms.auth.providers.jwt.beans.JWTBean;
 import com.dotcms.auth.providers.jwt.services.JsonWebTokenService;
 import com.dotcms.enterprise.cluster.ClusterFactory;
@@ -155,6 +155,7 @@ public class JsonWebTokenFactory implements Serializable {
                     .setId(jwtBean.getId())
                     .setIssuedAt(now)
                     .claim(CLAIM_UPDATED_AT, jwtBean.getModificationDate())
+                    .claim(CLAIM_ALLOWED_NETWORK, jwtBean.getAllowedNetwork())
                     .setSubject(jwtBean.getSubject())
                     .setIssuer(this.getIssuer())
                     .signWith(signatureAlgorithm, this.getSigningKey());
@@ -201,7 +202,8 @@ public class JsonWebTokenFactory implements Serializable {
 
                             throw claimException;
                         }
-
+                        String allowNet = (String) body.getOrDefault(CLAIM_ALLOWED_NETWORK, "0.0.0.0/0");
+                        
                         jwtBean =
                                 new JWTBean(body.getId(),
                                         body.getSubject(),
@@ -209,7 +211,7 @@ public class JsonWebTokenFactory implements Serializable {
                                         body.get(CLAIM_UPDATED_AT, Date.class),
                                         (null != body.getExpiration()) ?
                                                 body.getExpiration().getTime() :
-                                                0);
+                                                0,allowNet);
                     }
                 }
             } catch (ExpiredJwtException e) {

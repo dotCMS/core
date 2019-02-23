@@ -114,7 +114,7 @@ public enum InterfaceType {
         interfaceTypes.put("CONTENTLET", createInterfaceType("Contentlet", contentFields, new ContentResolver()));
 
 
-        interfaceTypes.put("CONTENT", createInterfaceType("Content", contentFields, new ContentResolver()));
+        interfaceTypes.put("CONTENT", createInterfaceType("ContentBaseType", contentFields, new ContentResolver()));
 
         final Map<String, TypeFetcher> fileAssetFields = new HashMap<>(contentFields);
         fileAssetFields.put(FILEASSET_FILE_NAME_FIELD_VAR, new TypeFetcher(GraphQLString));
@@ -124,7 +124,7 @@ public enum InterfaceType {
         fileAssetFields.put(FILEASSET_SHOW_ON_MENU_FIELD_VAR, new TypeFetcher(list(GraphQLString)));
         fileAssetFields.put(FILEASSET_SORT_ORDER_FIELD_VAR, new TypeFetcher(GraphQLInt));
 
-        interfaceTypes.put("FILEASSET", createInterfaceType("Fileasset", fileAssetFields, new ContentResolver()));
+        interfaceTypes.put("FILEASSET", createInterfaceType("FileBaseType", fileAssetFields, new ContentResolver()));
 
         final Map<String, TypeFetcher> pageAssetFields = new HashMap<>(contentFields);
         pageAssetFields.put(PAGE_URL_FIELD_VAR, new TypeFetcher(GraphQLString));
@@ -139,7 +139,7 @@ public enum InterfaceType {
         pageAssetFields.put(PAGE_SEO_KEYWORDS_FIELD_VAR, new TypeFetcher(GraphQLString));
         pageAssetFields.put(PAGE_PAGE_METADATA_FIELD_VAR, new TypeFetcher(GraphQLString));
 
-        interfaceTypes.put("HTMLPAGE", createInterfaceType("Htmlpage", pageAssetFields, new ContentResolver()));
+        interfaceTypes.put("HTMLPAGE", createInterfaceType("PageBaseType", pageAssetFields, new ContentResolver()));
 
         final Map<String, TypeFetcher> personaFields = new HashMap<>(contentFields);
         personaFields.put(PERSONA_NAME_FIELD_VAR, new TypeFetcher(GraphQLString));
@@ -148,7 +148,7 @@ public enum InterfaceType {
         personaFields.put(PERSONA_OTHER_TAGS_FIELD_VAR, new TypeFetcher(list(GraphQLString)));
         personaFields.put(PERSONA_DESCRIPTION_FIELD_VAR, new TypeFetcher(GraphQLString));
 
-        interfaceTypes.put("PERSONA", createInterfaceType("Persona", personaFields, new ContentResolver()));
+        interfaceTypes.put("PERSONA", createInterfaceType("PersonaBaseType", personaFields, new ContentResolver()));
 
         final Map<String, TypeFetcher> widgetFields = new HashMap<>(contentFields);
         widgetFields.put(WIDGET_TITLE_FIELD_VAR, new TypeFetcher(GraphQLString));
@@ -156,7 +156,7 @@ public enum InterfaceType {
         widgetFields.put(WIDGET_USAGE_FIELD_VAR, new TypeFetcher(GraphQLString));
         widgetFields.put(WIDGET_PRE_EXECUTE_FIELD_VAR, new TypeFetcher(GraphQLString));
 
-        interfaceTypes.put("WIDGET", createInterfaceType("Widget", widgetFields, new ContentResolver()));
+        interfaceTypes.put("WIDGET", createInterfaceType("WidgetBaseType", widgetFields, new ContentResolver()));
 
         final Map<String, TypeFetcher> vanityUrlFields = new HashMap<>(contentFields);
         vanityUrlFields.put(URI_FIELD_VAR, new TypeFetcher(GraphQLString));
@@ -164,20 +164,20 @@ public enum InterfaceType {
         vanityUrlFields.put(ACTION_FIELD_VAR, new TypeFetcher(GraphQLString));
         vanityUrlFields.put(ORDER_FIELD_VAR, new TypeFetcher(GraphQLInt));
 
-        interfaceTypes.put("VANITY_URL", createInterfaceType("Vanity_url", vanityUrlFields, new ContentResolver()));
+        interfaceTypes.put("VANITY_URL", createInterfaceType("VanityURLBaseType", vanityUrlFields, new ContentResolver()));
 
         final Map<String, TypeFetcher> keyValueFields = new HashMap<>(contentFields);
         keyValueFields.put(KEY_VALUE_KEY_FIELD_VAR, new TypeFetcher(GraphQLString));
         keyValueFields.put(KEY_VALUE_VALUE_FIELD_VAR, new TypeFetcher(GraphQLString));
 
-        interfaceTypes.put("KEY_VALUE", createInterfaceType("Key_value", keyValueFields, new ContentResolver()));
+        interfaceTypes.put("KEY_VALUE", createInterfaceType("KeyValueBaseType", keyValueFields, new ContentResolver()));
 
         final Map<String, TypeFetcher> formFields = new HashMap<>(contentFields);
         formFields.put(FORM_TITLE_FIELD_VAR, new TypeFetcher(GraphQLString));
         formFields.put(FORM_EMAIL_FIELD_VAR, new TypeFetcher(GraphQLString));
         formFields.put(FORM_RETURN_PAGE_FIELD_VAR, new TypeFetcher(GraphQLString));
 
-        interfaceTypes.put("FORM", createInterfaceType("Form", formFields, new ContentResolver()));
+        interfaceTypes.put("FORM", createInterfaceType("FormBaseType", formFields, new ContentResolver()));
     }
 
     public GraphQLInterfaceType getType() {

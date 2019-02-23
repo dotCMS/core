@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.htmlpageasset.business.render.page;
 
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import java.util.Collection;
 import java.util.Optional;
 
@@ -11,17 +12,12 @@ import org.apache.velocity.context.Context;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.rendering.velocity.directive.RenderParams;
-import com.dotcms.rendering.velocity.services.PageContextBuilder;
+import com.dotcms.rendering.velocity.services.PageRenderUtil;
 import com.dotcms.rendering.velocity.servlet.VelocityModeHandler;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
 import com.dotcms.visitor.domain.Visitor;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.LayoutAPI;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.PermissionLevel;
-import com.dotmarketing.business.UserAPI;
-import com.dotmarketing.business.VersionableAPI;
+import com.dotmarketing.business.*;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -30,7 +26,6 @@ import com.dotmarketing.portlets.contentlet.business.DotLockException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRaw;
-import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRendered;
 import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRenderedBuilder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
@@ -42,12 +37,18 @@ import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.VelocityUtil;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
+import org.apache.velocity.context.Context;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.util.Collection;
+import java.util.Optional;
 
 /**
  * Builder of {@link HTMLPageAssetRendered}
  */
 public class HTMLPageAssetRenderedBuilder {
-    private HTMLPageAsset htmlPageAsset;
+    private IHTMLPage htmlPageAsset;
     private User user;
     private HttpServletRequest request;
     private HttpServletResponse response;
@@ -59,8 +60,6 @@ public class HTMLPageAssetRenderedBuilder {
     private final LayoutAPI layoutAPI;
     private final VersionableAPI versionableAPI;
 
-
-
     public HTMLPageAssetRenderedBuilder() {
         permissionAPI = APILocator.getPermissionAPI();
         userAPI = APILocator.getUserAPI();
@@ -70,27 +69,27 @@ public class HTMLPageAssetRenderedBuilder {
         versionableAPI = APILocator.getVersionableAPI();
     }
 
-    public HTMLPageAssetRenderedBuilder setHtmlPageAsset(HTMLPageAsset htmlPageAsset) {
+    public HTMLPageAssetRenderedBuilder setHtmlPageAsset(final IHTMLPage htmlPageAsset) {
         this.htmlPageAsset = htmlPageAsset;
         return this;
     }
 
-    public HTMLPageAssetRenderedBuilder setUser(User user) {
+    public HTMLPageAssetRenderedBuilder setUser(final User user) {
         this.user = user;
         return this;
     }
 
-    public HTMLPageAssetRenderedBuilder setRequest(HttpServletRequest request) {
+    public HTMLPageAssetRenderedBuilder setRequest(final HttpServletRequest request) {
         this.request = request;
         return this;
     }
 
-    public HTMLPageAssetRenderedBuilder setResponse(HttpServletResponse response) {
+    public HTMLPageAssetRenderedBuilder setResponse(final HttpServletResponse response) {
         this.response = response;
         return this;
     }
 
-    public HTMLPageAssetRenderedBuilder setSite(Host site) {
+    public HTMLPageAssetRenderedBuilder setSite(final Host site) {
         this.site = site;
         return this;
     }
@@ -113,16 +112,18 @@ public class HTMLPageAssetRenderedBuilder {
         final User systemUser = APILocator.getUserAPI().getSystemUser();
         final boolean canEditTemplate = this.permissionAPI.doesUserHavePermission(template, PermissionLevel.EDIT.getType(), user);
         final boolean canCreateTemplates = layoutAPI.doesUserHaveAccessToPortlet("templates", user);
-        final PageContextBuilder pageContextBuilder = new PageContextBuilder(htmlPageAssetInfo.getPage(), systemUser, mode, language.getId());
-        
 
+        final PageRenderUtil pageRenderUtil = new PageRenderUtil(
+                htmlPageAssetInfo.getPage(), systemUser, mode, language.getId(), this.site);
 
         if (!rendered) {
-            final Collection<? extends ContainerRaw> containers =  pageContextBuilder.getContainersRaw();
+            final Collection<? extends ContainerRaw> containers =  pageRenderUtil.getContainersRaw();
             return new PageView(site, template, containers, htmlPageAssetInfo, layout, canCreateTemplates, canEditTemplate, this.getViewAsStatus(mode));
         } else {
-            final Context velocityContext  = pageContextBuilder.addAll(VelocityUtil.getInstance().getContext(request, response));
-            final Collection<? extends ContainerRaw> containers = new ContainerRenderedBuilder(pageContextBuilder.getContainersRaw(), velocityContext, mode).build();
+            final Context velocityContext  = pageRenderUtil
+                    .addAll(VelocityUtil.getInstance().getContext(request, response));
+            final Collection<? extends ContainerRaw> containers = new ContainerRenderedBuilder(
+                    pageRenderUtil.getContainersRaw(), velocityContext, mode).build();
             final String pageHTML = this.getPageHTML();
             return new HTMLPageAssetRendered(site, template, containers, htmlPageAssetInfo, layout, pageHTML,
                     canCreateTemplates, canEditTemplate, this.getViewAsStatus(mode)
@@ -156,7 +157,7 @@ public class HTMLPageAssetRenderedBuilder {
 
     private HTMLPageAssetInfo getHTMLPageAssetInfo(final ContentletVersionInfo info) throws DotDataException {
         HTMLPageAssetInfo htmlPageAssetInfo = new HTMLPageAssetInfo()
-            .setPage(this.htmlPageAsset)
+            .setPage((HTMLPageAsset) this.htmlPageAsset)
             .setWorkingInode(info.getWorkingInode())
             .setShortyWorking(APILocator.getShortyAPI().shortify(info.getWorkingInode()))
             .setCanEdit(this.permissionAPI.doesUserHavePermission(htmlPageAsset, PermissionLevel.EDIT.getType(), user, false))
@@ -186,7 +187,7 @@ public class HTMLPageAssetRenderedBuilder {
 
     private boolean canLock()  {
         try {
-            APILocator.getContentletAPI().canLock(htmlPageAsset, user);
+            APILocator.getContentletAPI().canLock((HTMLPageAsset) htmlPageAsset, user);
             return true;
         } catch (DotLockException e) {
             return false;
