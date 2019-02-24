@@ -4,6 +4,8 @@ import java.io.Serializable;
 
 import com.dotcms.auth.providers.jwt.beans.JWTBean;
 
+import io.jsonwebtoken.JwtBuilder;
+
 /**
  * Encapsulates the logic that generates and reads the JSON Web Token (JWT).
  * This token is created when a user tries to log into the system.
@@ -32,5 +34,7 @@ public interface JsonWebTokenService extends Serializable {
 	 * @return JWTBean
 	 */
     public JWTBean parseToken(String jsonWebToken);
+
+    String generateToken(JwtBuilder jwtBuilder);
 
 } // E:O:F:JsonWebTokenService.

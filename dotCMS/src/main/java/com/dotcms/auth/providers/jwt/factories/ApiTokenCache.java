@@ -11,7 +11,7 @@ import com.dotmarketing.business.DotCacheException;
 
 public class ApiTokenCache implements Cachable {
 
-    private final static String TOKEN_GROUP = "jwttokenIssued";
+    private final static String TOKEN_GROUP = "jwtapiToken";
 
     private final static String[] GROUPS = {TOKEN_GROUP};
 
@@ -24,7 +24,7 @@ public class ApiTokenCache implements Cachable {
     }
 
 
-    public Optional<ApiToken> getToken(final String tokenId) {
+    public Optional<ApiToken> getApiToken(final String tokenId) {
 
         try {
             return Optional.ofNullable((ApiToken) cache.get(tokenId, TOKEN_GROUP));
@@ -33,14 +33,14 @@ public class ApiTokenCache implements Cachable {
         }
     }
 
-    public void putJWTokenIssued(final ApiToken tokenIssued) {
-        putJWTokenIssued(tokenIssued.id, tokenIssued);
+    public void putApiToken(final ApiToken apiToken) {
+        putApiToken(apiToken.id, apiToken);
     }
-    public void putJWTokenIssued(final String tokenId, final ApiToken tokenIssued) {
-        cache.put(tokenId, tokenIssued, TOKEN_GROUP);
+    public void putApiToken(final String tokenId, final ApiToken apiToken) {
+        cache.put(tokenId, apiToken, TOKEN_GROUP);
     }
 
-    public void removeToken(final String tokenId) {
+    public void removeApiToken(final String tokenId) {
 
         cache.remove(tokenId, TOKEN_GROUP);
     }

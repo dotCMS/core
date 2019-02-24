@@ -2,10 +2,14 @@ package com.dotcms.auth.providers.jwt.factories;
 
 import static com.dotcms.auth.providers.jwt.JsonWebTokenUtils.CLAIM_UPDATED_AT;
 import static com.dotcms.auth.providers.jwt.JsonWebTokenUtils.CLAIM_ALLOWED_NETWORK;
+
+import com.dotcms.auth.providers.jwt.beans.ApiToken;
 import com.dotcms.auth.providers.jwt.beans.JWTBean;
+import com.dotcms.auth.providers.jwt.beans.TokenType;
 import com.dotcms.auth.providers.jwt.services.JsonWebTokenService;
 import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotcms.util.ReflectionUtils;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -19,6 +23,7 @@ import io.jsonwebtoken.SignatureAlgorithm;
 import java.io.Serializable;
 import java.security.Key;
 import java.util.Date;
+import java.util.Optional;
 
 /**
  * This class in is charge of create the Token Factory. It use the
@@ -140,36 +145,38 @@ public class JsonWebTokenFactory implements Serializable {
             return issuerId;
         }
 
+        
+        @Override
+        public String generateToken(final JwtBuilder jwtBuilder) {
+            //The JWT signature algorithm we will be using to sign the token
+            jwtBuilder.signWith(SignatureAlgorithm.HS256, this.getSigningKey());
+            jwtBuilder.setIssuer(this.getIssuer());
+            jwtBuilder.setIssuedAt(new Date());
+            return jwtBuilder.compact();
+        }
+        
         @Override
         public String generateToken(final JWTBean jwtBean) {
-
-            //The JWT signature algorithm we will be using to sign the token
-            final SignatureAlgorithm signatureAlgorithm =
-                    SignatureAlgorithm.HS256;
-
-            final long nowMillis = System.currentTimeMillis();
-            final Date now = new Date(nowMillis);
 
             //Let's set the JWT Claims
             final JwtBuilder builder = Jwts.builder()
                     .setId(jwtBean.getId())
-                    .setIssuedAt(now)
                     .claim(CLAIM_UPDATED_AT, jwtBean.getModificationDate())
-                    .claim(CLAIM_ALLOWED_NETWORK, jwtBean.getAllowedNetwork())
-                    .setSubject(jwtBean.getSubject())
-                    .setIssuer(this.getIssuer())
-                    .signWith(signatureAlgorithm, this.getSigningKey());
+                    .claim(CLAIM_ALLOWED_NETWORK, jwtBean.getClaims().get(CLAIM_ALLOWED_NETWORK))
+                    .setSubject(jwtBean.getSubject());
 
+            
+            
+            
+            
             //if it has been specified, let's add the expiration
             if ( jwtBean.getTtlMillis() >= 0 ) {
-
-                final long expMillis = nowMillis + jwtBean.getTtlMillis();
-                final Date exp = new Date(expMillis);
-                builder.setExpiration(exp);
+                final long expMillis = System.currentTimeMillis() + jwtBean.getTtlMillis();
+                builder.setExpiration( new Date(expMillis));
             }
 
             //Builds the JWT and serializes it to a compact, URL-safe string
-            return builder.compact();
+            return generateToken(builder);
         } // generateToken.
 
         @Override
@@ -195,23 +202,39 @@ public class JsonWebTokenFactory implements Serializable {
 
                         // Validate the issuer is correct, meaning the same cluster id
                         if (!this.getIssuer().equals(body.getIssuer())) {
-                            IncorrectClaimException claimException = new IncorrectClaimException(
-                                    jws.getHeader(), jws.getBody(), "Invalid issuer");
+                            IncorrectClaimException claimException = new IncorrectClaimException( jws.getHeader(), jws.getBody(), "Invalid issuer");
                             claimException.setClaimName(Claims.ISSUER);
                             claimException.setClaimValue(body.getIssuer());
-
                             throw claimException;
                         }
-                        String allowNet = (String) body.getOrDefault(CLAIM_ALLOWED_NETWORK, "0.0.0.0/0");
-                        
+
                         jwtBean =
                                 new JWTBean(body.getId(),
                                         body.getSubject(),
                                         body.getIssuer(),
                                         body.get(CLAIM_UPDATED_AT, Date.class),
-                                        (null != body.getExpiration()) ?
-                                                body.getExpiration().getTime() :
-                                                0,allowNet);
+                                        (null != body.getExpiration()) ? body.getExpiration().getTime() : 0, 
+                                        body
+                                        );
+                        
+                        
+                        if(jwtBean.getTokenType() == TokenType.API_TOKEN) {
+                            Optional<ApiToken> apiToken = APILocator.getApiTokenAPI().findApiToken(jwtBean.getSubject());
+                            if(!apiToken.isPresent()) {
+                                IncorrectClaimException claimException = new IncorrectClaimException( jws.getHeader(), jws.getBody(), "Invalid API Token");
+                                claimException.setClaimName(Claims.SUBJECT);
+                                claimException.setClaimValue(body.getSubject());
+                                throw claimException;
+                            }
+                            if(!apiToken.get().isValid()) {
+                            
+                                IncorrectClaimException claimException = new IncorrectClaimException( jws.getHeader(), jws.getBody(), "Invalid API Token");
+                                claimException.setClaimName(Claims.EXPIRATION);
+                                claimException.setClaimValue(apiToken.get());
+                                throw claimException;
+                            }
+                        }
+                        
                     }
                 }
             } catch (ExpiredJwtException e) {

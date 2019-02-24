@@ -15,11 +15,12 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.common.db.DotConnect;
 
 
 public class ApiTokenAPITest {
 
-    static ApiTokenAPI jwTokenAPI;
+    static ApiTokenAPI apiTokenAPI;
 
     static ApiTokenCache cache;
 
@@ -31,224 +32,216 @@ public class ApiTokenAPITest {
 
     @BeforeClass
     public static void prepare() throws Exception {
-        
-        
+
+
         IntegrationTestInitService.getInstance().init();
-        jwTokenAPI = APILocator.getApiTokenAPI();
+        apiTokenAPI = APILocator.getApiTokenAPI();
         cache = CacheLocator.getApiTokenCache();
         REQUESTING_USER_ID = APILocator.systemUser().getUserId();
-        
-        //new DotConnect().setSQL("drop table jwt_token_issued").loadResult();
-        //System.out.println(new Task05060CreateTokensIssuedTable().getMySQLScript());
-        //new DotConnect().setSQL(new Task05060CreateTokensIssuedTable().getMySQLScript()).loadResult();
-        
+
+        // new DotConnect().setSQL("drop table jwt_token_issued").loadResult();
+        // System.out.println(new Task05060CreateTokensIssuedTable().getMySQLScript());
+        // new DotConnect().setSQL(new Task05060CreateTokensIssuedTable().getMySQLScript()).loadResult();
+
+
+        ApiTokenSQL apiTokenSql = ApiTokenSQL.getInstance();
+        new DotConnect().setSQL(apiTokenSql.DROP_TOKEN_TABLE).loadResult();
+
+        String[] sqls = apiTokenSql.CREATE_TOKEN_TABLE_SCRIPT.split(";");
+        for (String sql : sqls) {
+            new DotConnect().setSQL(sql).loadResult();
+        }
+
+
     }
 
-    
+
     Date futureDate(Duration d) {
         Instant myDate = Instant.now().plus(d);
 
         return Date.from(myDate);
 
-        
+
     }
-    
-    
-    
+
+
     /**
-     * gets a token with every field set except id and mod_date, 
-     * ready to be persisted in the DB
+     * gets a token with every field set except id and mod_date, ready to be persisted in the DB
+     * 
      * @return
      */
     ApiToken getLoadedToken() {
-        
+
         final Date expireDate = futureDate(Duration.ofDays(30));
         final Date issueDate = new Date();
         final Date revokedDate = futureDate(Duration.ofDays(2));
-        return ApiToken.builder()
-                .withClusterId("withClusterId")
-                .withExpires(expireDate)
-                .withIssueDate(issueDate)
-                .withMetaData("withMetaData")
-                .withRequestingIp("withRequestingIp")
-                .withRequestingUserId(APILocator.systemUser().getUserId())
-                .withRevoked(revokedDate)
-                .withUserId("withUserId")
-                .build();
-        
-        
+        return ApiToken.builder().withClusterId("withClusterId").withExpires(expireDate).withIssueDate(issueDate)
+                .withClaims("{'test':'test'}").withRequestingIp("withRequestingIp")
+                .withRequestingUserId(APILocator.systemUser().getUserId()).withRevoked(revokedDate).withUserId("withUserId").build();
+
+
     }
-    
+
     ApiToken getSkinnyToken() {
-        return ApiToken
-            .builder()
-            .withExpires(futureDate(Duration.ofDays(10)))
-            .withUserId("testUser")
-            .withRequestingUserId(APILocator.systemUser().getUserId())
-            .withRequestingIp("127.0.0.1")
-            .build();
+        return ApiToken.builder().withExpires(futureDate(Duration.ofDays(10))).withUserId("testUser")
+                .withRequestingUserId(APILocator.systemUser().getUserId()).withRequestingIp("127.0.0.1").build();
     }
-    
-    
+
+
     @Test
-    public void test_JWT_Issue_Cache() {
+    public void test_apiToken_Cache() {
 
         ApiToken testToken = getSkinnyToken();
-        
+
         // save token in db
-        ApiToken issued = jwTokenAPI.persistJWTokenIssued(testToken, APILocator.systemUser());
+        ApiToken issued = apiTokenAPI.persistApiToken(testToken, APILocator.systemUser());
 
         // not in cache
-        assert(!cache.getToken(issued.id).isPresent());
-        
+        assert (!cache.getApiToken(issued.id).isPresent());
+
         // loads cache, returns from db
-        ApiToken issuedFromDb = jwTokenAPI.findJWTokenIssued(issued.id).get();
-        
+        ApiToken issuedFromDb = apiTokenAPI.findApiToken(issued.id).get();
+
         // in cache
-        assert(cache.getToken(issued.id).isPresent());
-        
-        ApiToken issuedFromCache = cache.getToken(issued.id).get();
-        
+        assert (cache.getApiToken(issued.id).isPresent());
+
+        ApiToken issuedFromCache = cache.getApiToken(issued.id).get();
+
         // this is the same in memory object as was returned from db
-        assert(issuedFromCache == issuedFromDb);
-        
+        assert (issuedFromCache == issuedFromDb);
+
         // testing equals method
         assertEquals(issued, issuedFromDb);
-        
+
         // test remove
-        cache.removeToken(issued.id);
-        
-        assert(!cache.getToken(issued.id).isPresent());
+        cache.removeApiToken(issued.id);
+
+        assert (!cache.getApiToken(issued.id).isPresent());
 
     }
-    
-    
-    
-    
-    
-    
-    @Test
-    public void test_JWT_Issued_Persistance_Works() {
 
-        
+
+    @Test
+    public void test_ApiToken_Persistance_Works() {
+
+
         ApiToken fatToken = getLoadedToken();
         ApiToken skinnyToken = getSkinnyToken();
-        
-        skinnyToken = jwTokenAPI.persistJWTokenIssued(skinnyToken,APILocator.systemUser());
 
-        ApiToken issuedFromDb = jwTokenAPI.findJWTokenIssued(skinnyToken.id).get();
+        skinnyToken = apiTokenAPI.persistApiToken(skinnyToken, APILocator.systemUser());
+
+        ApiToken issuedFromDb = apiTokenAPI.findApiToken(skinnyToken.id).get();
 
         assertEquals(skinnyToken, issuedFromDb);
-        
-        
-        
-        
-        
-        
-        fatToken = jwTokenAPI.persistJWTokenIssued(fatToken,APILocator.systemUser());
 
 
-        issuedFromDb = jwTokenAPI.findJWTokenIssued(fatToken.id).get();
-        
-        
-        
-        
+        fatToken = apiTokenAPI.persistApiToken(fatToken, APILocator.systemUser());
+
+
+        issuedFromDb = apiTokenAPI.findApiToken(fatToken.id).get();
+
+
         // testing equals method
         assertEquals(fatToken, issuedFromDb);
 
     }
-    
-    
+
+
     @Test
-    public void test_JWT_Issued_Builder() {
+    public void test_ApiToken_Builder() {
         ApiToken fatToken = getLoadedToken();
 
-        ApiToken issued = jwTokenAPI.persistJWTokenIssued(fatToken,APILocator.systemUser());
+        ApiToken issued = apiTokenAPI.persistApiToken(fatToken, APILocator.systemUser());
 
-        ApiToken testToken=ApiToken.from(fatToken).withId(issued.id).build();
-        
+        ApiToken testToken = ApiToken.from(fatToken).withId(issued.id).build();
+
         // testing equals method
         assertEquals(issued, testToken);
 
     }
-    
-    
-    @Test(expected=DotStateException.class)
+
+
+    @Test(expected = DotStateException.class)
     public void test_JWT_subnets() {
         ApiToken fatToken = ApiToken.from(getLoadedToken()).withAllowFromNetwork("123").build();
-        assert(!fatToken.isValid());
-        ApiToken issued = jwTokenAPI.persistJWTokenIssued(fatToken,APILocator.systemUser());
+        assert (!fatToken.isValid());
+        ApiToken issued = apiTokenAPI.persistApiToken(fatToken, APILocator.systemUser());
     }
-    
+
+    @Test(expected = DotStateException.class)
+    public void test_JWT_claims_json() {
+        ApiToken fatToken = ApiToken.from(getLoadedToken()).withClaims("I am not a claim, I should be json").build();
+        assert (!fatToken.isValid());
+        ApiToken issued = apiTokenAPI.persistApiToken(fatToken, APILocator.systemUser());
+    }
 
     public void test_JWT_allow_all() {
         ApiToken fatToken = ApiToken.from(getLoadedToken()).withAllowFromNetwork("0.0.0.0/0").build();
-        assert(!fatToken.isValid());
-        ApiToken issued = jwTokenAPI.persistJWTokenIssued(fatToken,APILocator.systemUser());
+        assert (!fatToken.isValid());
+        ApiToken issued = apiTokenAPI.persistApiToken(fatToken, APILocator.systemUser());
     }
-    
-    @Test
-    public void test_JWT_Issue_isValid() {
 
-        
+    @Test
+    public void test_ApiToken_isValid() {
+
+
         ApiToken skinnyToken = getSkinnyToken();
-        assert(!skinnyToken.isValid());
-        skinnyToken = jwTokenAPI.persistJWTokenIssued(skinnyToken,APILocator.systemUser());
-        assert(skinnyToken.isValid());
-        skinnyToken = jwTokenAPI.findJWTokenIssued(skinnyToken.id).get();
-        assert(skinnyToken.isValid());
-        
-        
-        
+        assert (!skinnyToken.isValid());
+        skinnyToken = apiTokenAPI.persistApiToken(skinnyToken, APILocator.systemUser());
+        assert (skinnyToken.isValid());
+        skinnyToken = apiTokenAPI.findApiToken(skinnyToken.id).get();
+        assert (skinnyToken.isValid());
+
+
         ApiToken fatToken = ApiToken.from(getLoadedToken()).withRevoked(new Date()).build();
         // no id, not valid
-        assert(!fatToken.isValid());
+        assert (!fatToken.isValid());
         fatToken = ApiToken.from(getLoadedToken()).withRevoked(null).build();
-        fatToken = jwTokenAPI.persistJWTokenIssued(fatToken,APILocator.systemUser());
-        
+        fatToken = apiTokenAPI.persistApiToken(fatToken, APILocator.systemUser());
+
         // now has id, valid
-        assert(fatToken.isValid());
-        
-        ApiToken issuedFromDb = jwTokenAPI.findJWTokenIssued(fatToken.id).get();
-        assert(issuedFromDb.isValid());
-        
-        //revoking
-        jwTokenAPI.revokeToken(fatToken);
-        
-        //should be invalid
-        issuedFromDb = jwTokenAPI.findJWTokenIssued(fatToken.id).get();
-        assert(!issuedFromDb.isValid());
-        
+        assert (fatToken.isValid());
+
+        ApiToken issuedFromDb = apiTokenAPI.findApiToken(fatToken.id).get();
+        assert (issuedFromDb.isValid());
+
+        // revoking
+        apiTokenAPI.revokeToken(fatToken);
+
+        // should be invalid
+        issuedFromDb = apiTokenAPI.findApiToken(fatToken.id).get();
+        assert (!issuedFromDb.isValid());
+
 
     }
-    
-    
+
+
     @Test
-    public void test_JWT_Issue_isValid_from_ip() {
+    public void test_ApiToken_isValid_from_ip() {
 
-        
+
         ApiToken skinnyToken = ApiToken.from(getSkinnyToken()).withAllowFromNetwork("192.168.211.0/24").build();
-        
-        assert(!skinnyToken.isValid());
-        
-        skinnyToken = jwTokenAPI.persistJWTokenIssued(skinnyToken,APILocator.systemUser());
-        
-        assert(!skinnyToken.isValid());
 
-        
-        assert(skinnyToken.isValid("192.168.211.54"));
-        
+        assert (!skinnyToken.isValid());
+
+        skinnyToken = apiTokenAPI.persistApiToken(skinnyToken, APILocator.systemUser());
+
+        assert (!skinnyToken.isValid());
+
+
+        assert (skinnyToken.isValid("192.168.211.54"));
+
 
     }
-    
-    
+
+
     @Test
     public void test_Can_Create_Token_Issue_for_User_with_Expire_Date() {
         Calendar cal = Calendar.getInstance();
         cal.add(Calendar.MONTH, 1);
         cal.set(Calendar.MILLISECOND, 0);
         final Date expireDate = cal.getTime();
-        ApiToken issue = jwTokenAPI.persistJWTokenIssued(USER_ID, expireDate, REQUESTING_USER_ID, REQUESTING_IP);
+        ApiToken issue = apiTokenAPI.persistApiToken(USER_ID, expireDate, REQUESTING_USER_ID, REQUESTING_IP);
 
 
         assertEquals(REQUESTING_IP, issue.requestingIp);

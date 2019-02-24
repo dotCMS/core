@@ -2,9 +2,10 @@ package com.dotcms.auth.providers.jwt.beans;
 
 import java.io.Serializable;
 import java.util.Date;
+import java.util.Map;
 
 import com.dotcms.enterprise.cluster.ClusterFactory;
-import com.dotmarketing.business.APILocator;
+import com.google.common.collect.ImmutableMap;
 
 /**
  * Encapsulates all the different pieces of information that make up the JSON
@@ -16,13 +17,13 @@ import com.dotmarketing.business.APILocator;
  */
 public class JWTBean implements Serializable {
 
+    private static final long serialVersionUID = 1L;
     private final String id;
     private final String subject;
     private final String issuer;
     private final Date modificationDate;
     private final long ttlMillis;
-    private final String allowedNetwork;
-    private final ApiToken issued;
+    private final ImmutableMap<String,Object> claims;
     
 	/**
 	 * Creates a JWT with its required information.
@@ -36,15 +37,15 @@ public class JWTBean implements Serializable {
 	 * @param ttlMillis
 	 *            - The expiration date of the token.
 	 */
-    public JWTBean(String id, String subject, String issuer, Date modificationDate,
-            long ttlMillis, String allowedNetwork) {
+    public JWTBean(final String id, final String subject, final String issuer, final Date modificationDate,
+            long ttlMillis, final Map<String,Object> claims) {
         this.id = id;
         this.subject = subject;
         this.issuer = issuer;
         this.modificationDate = modificationDate;
         this.ttlMillis = ttlMillis;
-        this.allowedNetwork = allowedNetwork;
-        this.issued = APILocator.getApiTokenAPI().findJWTokenIssued(subject).orElse(null);
+        this.claims=ImmutableMap.copyOf(claims);
+        
     }
 
     /**
@@ -55,7 +56,7 @@ public class JWTBean implements Serializable {
      * @param ttlMillis - The expiration date of the token.
      */
     public JWTBean(String id, String subject, Date modificationDate, long ttlMillis) {
-        this(id, subject, ClusterFactory.getClusterId(), modificationDate,ttlMillis,"0.0.0./0");
+        this(id, subject, ClusterFactory.getClusterId(), modificationDate,ttlMillis, ImmutableMap.of());
     }
     
     /**
@@ -66,7 +67,7 @@ public class JWTBean implements Serializable {
      * @param ttlMillis - The expiration date of the token.
      */
     public JWTBean(String id, String subject, String issuer, Date modificationDate, long ttlMillis) {
-        this(id, subject, issuer, modificationDate,ttlMillis,"0.0.0./0");
+        this(id, subject, issuer, modificationDate,ttlMillis, ImmutableMap.of());
     }
     /**
      * Returns the ID of this token.
@@ -76,13 +77,7 @@ public class JWTBean implements Serializable {
     public String getId() {
         return id;
     }
-    /**
-     * Gets the allowed network
-     * @return
-     */
-    public String getAllowedNetwork() {
-        return allowedNetwork;
-    }
+
 
     /**
      * Returns the subject of this token.
@@ -92,7 +87,18 @@ public class JWTBean implements Serializable {
     public String getSubject() {
         return subject;
     }
-
+    
+    public ImmutableMap<String,Object> getClaims() {
+        return this.claims;
+    }
+    
+    /**
+     * Returns the token type for the given token
+     * @return
+     */
+    public TokenType getTokenType() {
+        return TokenType.getTokenType(this.subject);
+    }
     /**
      * Returns the issuer of this token.
      * 
@@ -137,6 +143,7 @@ public class JWTBean implements Serializable {
         int result = id != null ? id.hashCode() : 0;
         result = 31 * result + (subject != null ? subject.hashCode() : 0);
         result = 31 * result + (issuer != null ? issuer.hashCode() : 0);
+        result = 31 * result + (claims != null ? claims.hashCode() : 0);
         result = 31 * result + (modificationDate != null ? modificationDate.hashCode() : 0);
         result = 31 * result + (int) (ttlMillis ^ (ttlMillis >>> 32));
         return result;
@@ -150,6 +157,7 @@ public class JWTBean implements Serializable {
                 ", modificationDate='" + modificationDate + '\'' +
                 ", issuer='" + issuer + '\'' +
                 ", ttlMillis=" + ttlMillis +
+                ", claims=" + claims +
                 '}';
     }
 

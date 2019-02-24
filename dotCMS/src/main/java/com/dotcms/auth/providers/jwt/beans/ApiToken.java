@@ -30,7 +30,7 @@ public class ApiToken implements Serializable {
     public final Date revoked;
     public final String allowFromNetwork;
     public final Date issueDate;
-    public final String metaData;
+    public final String claims;
     public final String clusterId;
     public final Date modDate;
 
@@ -46,7 +46,7 @@ public class ApiToken implements Serializable {
 
         this.allowFromNetwork = builder.allowFromNetwork;
         this.issueDate = builder.issueDate;
-        this.metaData = builder.metaData;
+        this.claims = builder.claims;
         this.modDate = builder.modDate;
         this.clusterId = builder.clusterId;
     }
@@ -56,41 +56,58 @@ public class ApiToken implements Serializable {
         return isValid(null);
     }
     
+    public boolean isExpired() {
+        return this.expires!=null && this.expires.before(new Date());
+    }
+    
+    public boolean isRevoked() {
+        return this.revoked!=null && this.revoked.before(new Date());
+    }
+    
+    public boolean isNotBeforeDate() {
+        return this.issueDate!=null && this.issueDate.after(new Date());
+    }
+    
+    public boolean isInIpRange(final String ipAddress) {
+        if (this.allowFromNetwork == null || "0.0.0.0/0".equals(this.allowFromNetwork)) {
+            return true;
+        }
+        try {
+            return  new SubnetUtils(this.allowFromNetwork).getInfo().isInRange(ipAddress);
+        } catch (Exception e) {
+            Logger.warn(this.getClass(), "unable to validate ip address :" + ipAddress + " was part of network " + this.allowFromNetwork);
+            Logger.warn(this.getClass(), e.getMessage());
+            return false;
+        }
+    }
+    
     public boolean isValid(final String ipAddress) {
         
-        if(this.revoked!=null && this.revoked.before(new Date())){
-            return false;
-        }
-        if(this.expires!=null && this.expires.before(new Date())){
-            return false;
-        }
         if(this.id==null ||  this.userId==null){
             return false;
         }
         
-        if(this.issueDate!=null && this.issueDate.after(new Date())){
+        if(isRevoked()){
+            return false;
+        }
+        if(isExpired()){
+            return false;
+        }
+        
+
+        
+        if(isNotBeforeDate()){
+            return false;
+        }
+        if(!isInIpRange(ipAddress)){
             return false;
         }
 
 
-        if(this.allowFromNetwork==null || this.allowFromNetwork.startsWith("0.0.0.0")) {
-          return true;
-        }
-        try {
-            if(!new SubnetUtils(this.allowFromNetwork).getInfo().isInRange(ipAddress)) {
-                Logger.warn(this.getClass(), "unable to validate ip address :" + ipAddress + " was part of network " + this.allowFromNetwork );
-                return false;
-            }
-        }
-        catch(Exception e) {
-            Logger.warn(this.getClass(), "unable to validate ip address :" + ipAddress + " was part of network " + this.allowFromNetwork );
-            Logger.warn(this.getClass(), e.getMessage() );
-            return false;
-        }
         return true;
     }
     
-
+    
 
         @Override
     public int hashCode() {
@@ -101,7 +118,7 @@ public class ApiToken implements Serializable {
         result = prime * result + ((expires == null) ? 0 : expires.hashCode());
         result = prime * result + ((id == null) ? 0 : id.hashCode());
         result = prime * result + ((issueDate == null) ? 0 : issueDate.hashCode());
-        result = prime * result + ((metaData == null) ? 0 : metaData.hashCode());
+        result = prime * result + ((claims == null) ? 0 : claims.hashCode());
         result = prime * result + ((modDate == null) ? 0 : modDate.hashCode());
         result = prime * result + ((requestingIp == null) ? 0 : requestingIp.hashCode());
         result = prime * result + ((requestingUserId == null) ? 0 : requestingUserId.hashCode());
@@ -149,10 +166,10 @@ public class ApiToken implements Serializable {
                 return false;
         } else if (!issueDate.equals(other.issueDate))
             return false;
-        if (metaData == null) {
-            if (other.metaData != null)
+        if (claims == null) {
+            if (other.claims != null)
                 return false;
-        } else if (!metaData.equals(other.metaData))
+        } else if (!claims.equals(other.claims))
             return false;
         if (requestingIp == null) {
             if (other.requestingIp != null)
@@ -215,7 +232,7 @@ public class ApiToken implements Serializable {
             private Date revoked;
             private String allowFromNetwork;
             private Date issueDate;
-            private String metaData;
+            private String claims;
             private Date modDate;
             private String clusterId;
             private Builder() {}
@@ -229,7 +246,7 @@ public class ApiToken implements Serializable {
                 this.revoked = jWTokenIssue.revoked;
                 this.allowFromNetwork = jWTokenIssue.allowFromNetwork;
                 this.issueDate = jWTokenIssue.issueDate;
-                this.metaData = jWTokenIssue.metaData;
+                this.claims = jWTokenIssue.claims;
                 this.modDate = jWTokenIssue.modDate;
                 this.clusterId=jWTokenIssue.clusterId;
             }
@@ -277,8 +294,8 @@ public class ApiToken implements Serializable {
                 return this;
             }
 
-            public Builder withMetaData(@Nonnull String metaData) {
-                this.metaData = metaData;
+            public Builder withClaims(@Nonnull String claims) {
+                this.claims = claims;
                 return this;
             }
             public Builder withClusterId(@Nonnull String clusterId) {
