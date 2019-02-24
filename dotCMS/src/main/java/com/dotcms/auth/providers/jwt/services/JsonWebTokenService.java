@@ -2,7 +2,9 @@ package com.dotcms.auth.providers.jwt.services;
 
 import java.io.Serializable;
 
+import com.dotcms.auth.providers.jwt.beans.ApiToken;
 import com.dotcms.auth.providers.jwt.beans.JWTBean;
+import com.dotcms.auth.providers.jwt.beans.JWToken;
 
 import io.jsonwebtoken.JwtBuilder;
 
@@ -26,6 +28,9 @@ public interface JsonWebTokenService extends Serializable {
 	 */
     public String generateToken(JWTBean jwtBean);
 
+    public String generateToken(ApiToken apiToken);
+    
+    
 	/**
 	 * Based on a json token return the JWTBean
 	 * 
@@ -33,8 +38,8 @@ public interface JsonWebTokenService extends Serializable {
 	 *            - {@link String}
 	 * @return JWTBean
 	 */
-    public JWTBean parseToken(String jsonWebToken);
+    public JWToken parseToken(String jsonWebToken);
 
-    String generateToken(JwtBuilder jwtBuilder);
+
 
 } // E:O:F:JsonWebTokenService.

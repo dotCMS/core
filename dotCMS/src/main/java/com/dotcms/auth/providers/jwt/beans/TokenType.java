@@ -12,7 +12,7 @@ public enum TokenType {
         this.prefix = prefix;
     }
 
-    static TokenType getTokenType(final String token) {
+    public static TokenType getTokenType(final String token) {
         if (token != null && token.startsWith(API_TOKEN.prefix)) {
             return API_TOKEN;
         }

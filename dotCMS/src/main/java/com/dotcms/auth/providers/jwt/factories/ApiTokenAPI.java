@@ -11,7 +11,9 @@ import java.util.Optional;
 import java.util.UUID;
 
 import com.dotcms.auth.providers.jwt.beans.ApiToken;
+import com.dotcms.auth.providers.jwt.beans.JWToken;
 import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotcms.repackage.org.apache.commons.net.util.SubnetUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -68,34 +70,22 @@ public class ApiTokenAPI {
     
     
     public String getJWT(final ApiToken apiToken) {
+        if(!findApiToken(apiToken.id).isPresent()) {
+            throw new DotStateException("You can only get a JWT from a APIToken that has been persisted to db. Call persistApiToken first");
+        }
+        return JsonWebTokenFactory.getInstance().getJsonWebTokenService().generateToken(apiToken);
         
 
-        Map<String,Object> claims = Try.of(()->new ObjectMapper().readValue(apiToken.claims, HashMap.class)).getOrElse(new HashMap<>());
-        
-        claims.put(CLAIM_UPDATED_AT, apiToken.modDate);
-        claims.put(CLAIM_ALLOWED_NETWORK, apiToken.allowFromNetwork);
-        
-        //Let's set the JWT Claims
-        final JwtBuilder builder = Jwts.builder()
-                .setId(UUID.randomUUID().toString())
-                .setClaims(claims)
-                .setSubject(apiToken.id)
-                .setExpiration(apiToken.expires)
-                .setIssuedAt(apiToken.issueDate)
-                .setNotBefore(apiToken.issueDate);
-                
-        
-        
-        
-        
-        
-        return JsonWebTokenFactory.getInstance().getJsonWebTokenService().generateToken(builder);
-        
-        
-        
     }
     
-    
+    public Optional<ApiToken> getFromJwt(final String jwt) {
+        
+
+        JWToken bean  = JsonWebTokenFactory.getInstance().getJsonWebTokenService().parseToken(jwt);
+        
+        return findApiToken(bean.getSubject());
+        
+    }
 
 
     @CloseDBIfOpened
@@ -176,7 +166,7 @@ public class ApiTokenAPI {
             Try.of(() -> new SubnetUtils(token.allowFromNetwork).getInfo())
                     .getOrElseThrow(() -> new DotStateException("allowFromNetwork:" + token.allowFromNetwork + " is invalid"));
         }
-        
+
         
         if (token.claims != null) {
             Try.of(() -> new JSONObject(token.claims))

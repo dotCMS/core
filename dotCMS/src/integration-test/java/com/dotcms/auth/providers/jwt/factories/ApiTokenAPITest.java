@@ -17,6 +17,8 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.common.db.DotConnect;
 
+import io.jsonwebtoken.IncorrectClaimException;
+
 
 public class ApiTokenAPITest {
 
@@ -215,8 +217,15 @@ public class ApiTokenAPITest {
 
     }
 
+    
+    
+    
+    
+    
+    
+    
 
-    @Test
+    @Test(expected = DotStateException.class)
     public void test_ApiToken_isValid_from_ip() {
 
 
@@ -233,7 +242,46 @@ public class ApiTokenAPITest {
 
 
     }
+    
+    @Test(expected = IncorrectClaimException.class)
+    public void test_revoke_ApiToken() {
 
+
+        ApiToken skinnyToken = apiTokenAPI.persistApiToken(getSkinnyToken(), APILocator.systemUser());
+
+        String jwt = apiTokenAPI.getJWT(skinnyToken);
+
+        ApiToken savedToken = apiTokenAPI.getFromJwt(jwt).get();
+        
+        assertEquals(savedToken, skinnyToken);
+        
+        apiTokenAPI.revokeToken(savedToken);
+        
+        apiTokenAPI.getFromJwt(jwt).get();
+
+    }
+    
+    @Test
+    public void test_ApiToken_jwt() {
+
+
+        ApiToken skinnyToken = ApiToken.from(getSkinnyToken()).build();
+
+        assert (!skinnyToken.isValid());
+
+        skinnyToken = apiTokenAPI.persistApiToken(skinnyToken, APILocator.systemUser());
+
+        String jwt = apiTokenAPI.getJWT(skinnyToken);
+        
+        System.err.println(jwt);
+        
+        
+        
+        ApiToken savedToken = apiTokenAPI.getFromJwt(jwt).get();
+        
+        assertEquals(savedToken, skinnyToken);
+
+    }
 
     @Test
     public void test_Can_Create_Token_Issue_for_User_with_Expire_Date() {

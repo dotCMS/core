@@ -1,22 +1,28 @@
 package com.dotcms.auth.providers.jwt.beans;
 
-import java.io.Serializable;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 
-import javax.annotation.Generated;
 import javax.annotation.Nonnull;
 
 import com.dotcms.auth.providers.jwt.factories.ApiTokenAPI;
 import com.dotcms.repackage.org.apache.commons.net.util.SubnetUtils;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.util.Logger;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.google.common.collect.ImmutableMap;
+import com.liferay.portal.model.User;
 
+import io.vavr.control.Try;
 
 
 @JsonDeserialize(builder = ApiToken.Builder.class)
-public class ApiToken implements Serializable {
+public class ApiToken implements JWToken {
 
     /**
      * 
@@ -35,7 +41,6 @@ public class ApiToken implements Serializable {
     public final Date modDate;
 
 
-    @Generated("SparkTools")
     private ApiToken(Builder builder) {
         this.id = builder.id;
         this.userId = builder.userId;
@@ -55,61 +60,59 @@ public class ApiToken implements Serializable {
     public boolean isValid() {
         return isValid(null);
     }
-    
+
     public boolean isExpired() {
-        return this.expires!=null && this.expires.before(new Date());
+        return this.expires != null && this.expires.before(new Date());
     }
-    
+
     public boolean isRevoked() {
-        return this.revoked!=null && this.revoked.before(new Date());
+        return this.revoked != null && this.revoked.before(new Date());
     }
-    
+
     public boolean isNotBeforeDate() {
-        return this.issueDate!=null && this.issueDate.after(new Date());
+        return this.issueDate != null && this.issueDate.after(new Date());
     }
-    
+
     public boolean isInIpRange(final String ipAddress) {
         if (this.allowFromNetwork == null || "0.0.0.0/0".equals(this.allowFromNetwork)) {
             return true;
         }
         try {
-            return  new SubnetUtils(this.allowFromNetwork).getInfo().isInRange(ipAddress);
+            return new SubnetUtils(this.allowFromNetwork).getInfo().isInRange(ipAddress);
         } catch (Exception e) {
             Logger.warn(this.getClass(), "unable to validate ip address :" + ipAddress + " was part of network " + this.allowFromNetwork);
             Logger.warn(this.getClass(), e.getMessage());
             return false;
         }
     }
-    
-    public boolean isValid(final String ipAddress) {
-        
-        if(this.id==null ||  this.userId==null){
-            return false;
-        }
-        
-        if(isRevoked()){
-            return false;
-        }
-        if(isExpired()){
-            return false;
-        }
-        
 
-        
-        if(isNotBeforeDate()){
+    public boolean isValid(final String ipAddress) {
+
+        if (this.id == null || this.userId == null) {
             return false;
         }
-        if(!isInIpRange(ipAddress)){
+
+        if (isRevoked()) {
+            return false;
+        }
+        if (isExpired()) {
+            return false;
+        }
+
+
+        if (isNotBeforeDate()) {
+            return false;
+        }
+        if (!isInIpRange(ipAddress)) {
             return false;
         }
 
 
         return true;
     }
-    
-    
 
-        @Override
+
+    @Override
     public int hashCode() {
         final int prime = 31;
         int result = 1;
@@ -127,9 +130,6 @@ public class ApiToken implements Serializable {
         result = prime * result + ((userId == null) ? 0 : userId.hashCode());
         return result;
     }
-
-
-
 
 
     @Override
@@ -195,140 +195,202 @@ public class ApiToken implements Serializable {
     }
 
 
+    /**
+     * Creates builder to build {@link ApiToken}.
+     * 
+     * @return created builder
+     */
+
+    public static Builder builder() {
+        return new Builder();
+    }
 
 
+    /**
+     * Creates a builder to build {@link ApiToken} and initialize it with the given object.
+     * 
+     * @param jWTokenIssue to initialize the builder with
+     * @return created builder
+     */
 
-        /**
-         * Creates builder to build {@link ApiToken}.
-         * @return created builder
-         */
-        @Generated("SparkTools")
-        public static Builder builder() {
-            return new Builder();
+    public static Builder from(ApiToken jWTokenIssue) {
+        return new Builder(jWTokenIssue);
+    }
+
+
+    /**
+     * Builder to build {@link ApiToken}.
+     */
+
+    public static final class Builder {
+        private String id;
+        private String userId;
+        private String requestingUserId;
+        private String requestFromIp;
+        private Date expires;
+        private Date revoked;
+        private String allowFromNetwork;
+        private Date issueDate;
+        private String claims;
+        private Date modDate;
+        private String clusterId;
+
+        private Builder() {}
+
+        private Builder(ApiToken jWTokenIssue) {
+            this.id = jWTokenIssue.id;
+            this.userId = jWTokenIssue.userId;
+            this.requestingUserId = jWTokenIssue.requestingUserId;
+            this.requestFromIp = jWTokenIssue.requestingIp;
+            this.expires = jWTokenIssue.expires;
+            this.revoked = jWTokenIssue.revoked;
+            this.allowFromNetwork = jWTokenIssue.allowFromNetwork;
+            this.issueDate = jWTokenIssue.issueDate;
+            this.claims = jWTokenIssue.claims;
+            this.modDate = jWTokenIssue.modDate;
+            this.clusterId = jWTokenIssue.clusterId;
+        }
+
+        public Builder withId(@Nonnull String id) {
+            this.id = id;
+            return this;
+        }
+
+        public Builder withUserId(@Nonnull String userId) {
+            this.userId = userId;
+            return this;
+        }
+
+        public Builder withRequestingUserId(@Nonnull String requestingUserId) {
+            this.requestingUserId = requestingUserId;
+            return this;
+        }
+
+        public Builder withRequestingIp(@Nonnull String requestFromIp) {
+            this.requestFromIp = requestFromIp;
+            return this;
+        }
+
+        public Builder withExpires(@Nonnull Date expires) {
+
+            this.expires = expires == null ? null : Date.from(expires.toInstant().truncatedTo(ChronoUnit.SECONDS));
+            return this;
+        }
+
+        public Builder withRevoked(@Nonnull Date revoked) {
+            this.revoked = revoked == null ? null : Date.from(revoked.toInstant().truncatedTo(ChronoUnit.SECONDS));
+            return this;
         }
 
 
-        /**
-         * Creates a builder to build {@link ApiToken} and initialize it with the given object.
-         * @param jWTokenIssue to initialize the builder with
-         * @return created builder
-         */
-        @Generated("SparkTools")
-        public static Builder from(ApiToken jWTokenIssue) {
-            return new Builder(jWTokenIssue);
+        public Builder withAllowFromNetwork(@Nonnull String allowFromNetwork) {
+            this.allowFromNetwork = allowFromNetwork;
+            return this;
         }
 
+        public Builder withIssueDate(@Nonnull Date issueDate) {
+            this.issueDate = issueDate == null ? null : Date.from(issueDate.toInstant().truncatedTo(ChronoUnit.SECONDS));;
+            return this;
+        }
 
-        /**
-         * Builder to build {@link ApiToken}.
-         */
-        @Generated("SparkTools")
-        public static final class Builder {
-            private String id;
-            private String userId;
-            private String requestingUserId;
-            private String requestFromIp;
-            private Date expires;
-            private Date revoked;
-            private String allowFromNetwork;
-            private Date issueDate;
-            private String claims;
-            private Date modDate;
-            private String clusterId;
-            private Builder() {}
+        public Builder withClaims(@Nonnull String claims) {
+            this.claims = claims;
+            return this;
+        }
+        
+        public Builder withClaims(@Nonnull Map<String,Object> claims) {
+            this.claims = Try.of(()-> new ObjectMapper().writeValueAsString(claims)).getOrNull();
+            return this;
+        }
+        public Builder withClusterId(@Nonnull String clusterId) {
+            this.clusterId = clusterId;
+            return this;
+        }
 
-            private Builder(ApiToken jWTokenIssue) {
-                this.id = jWTokenIssue.id;
-                this.userId = jWTokenIssue.userId;
-                this.requestingUserId = jWTokenIssue.requestingUserId;
-                this.requestFromIp = jWTokenIssue.requestingIp;
-                this.expires = jWTokenIssue.expires;
-                this.revoked = jWTokenIssue.revoked;
-                this.allowFromNetwork = jWTokenIssue.allowFromNetwork;
-                this.issueDate = jWTokenIssue.issueDate;
-                this.claims = jWTokenIssue.claims;
-                this.modDate = jWTokenIssue.modDate;
-                this.clusterId=jWTokenIssue.clusterId;
-            }
+        public Builder withModDate(@Nonnull Date modDate) {
+            this.modDate = modDate == null ? null : Date.from(modDate.toInstant().truncatedTo(ChronoUnit.SECONDS));
+            return this;
+        }
 
-            public Builder withId(@Nonnull String id) {
-                this.id = id;
-                return this;
-            }
-
-            public Builder withUserId(@Nonnull String userId) {
-                this.userId = userId;
-                return this;
-            }
-
-            public Builder withRequestingUserId(@Nonnull String requestingUserId) {
-                this.requestingUserId = requestingUserId;
-                return this;
-            }
-
-            public Builder withRequestingIp(@Nonnull String requestFromIp) {
-                this.requestFromIp = requestFromIp;
-                return this;
-            }
-
-            public Builder withExpires(@Nonnull Date expires) {
-                
-                this.expires = expires==null ? null :Date.from(expires.toInstant().truncatedTo(ChronoUnit.SECONDS));
-                return this;
-            }
-
-            public Builder withRevoked(@Nonnull Date revoked) {
-                this.revoked = revoked==null ? null : Date.from(revoked.toInstant().truncatedTo(ChronoUnit.SECONDS));
-                return this;
-            }
-
-
-
-            public Builder withAllowFromNetwork(@Nonnull String allowFromNetwork) {
-                this.allowFromNetwork = allowFromNetwork;
-                return this;
-            }
-
-            public Builder withIssueDate(@Nonnull Date issueDate) {
-                this.issueDate = issueDate==null ? null :Date.from(issueDate.toInstant().truncatedTo(ChronoUnit.SECONDS));;
-                return this;
-            }
-
-            public Builder withClaims(@Nonnull String claims) {
-                this.claims = claims;
-                return this;
-            }
-            public Builder withClusterId(@Nonnull String clusterId) {
-                this.clusterId = clusterId;
-                return this;
-            }
-            public Builder withModDate(@Nonnull Date modDate) {
-                this.modDate =  modDate==null ? null :  Date.from(modDate.toInstant().truncatedTo(ChronoUnit.SECONDS));
-                return this;
-            }
-
-            public ApiToken build() {
-                if(ApiTokenAPI.TOKEN_404_STR.equals(id)) {
-                    return new ApiToken(this);
-                }
-                
-                if (this.userId == null ||  this.expires == null || expires.before(new Date())) {
-                    throw new DotStateException("JWTokenIsse is not valid - needs an userId, a requestingUser and an expires date");
-                }
-
-                
-                
-
+        public ApiToken build() {
+            if (ApiTokenAPI.TOKEN_404_STR.equals(id)) {
                 return new ApiToken(this);
             }
-        }
+
+            if (this.userId == null || this.expires == null || expires.before(new Date())) {
+                throw new DotStateException("JWTokenIsse is not valid - needs an userId, a requestingUser and an expires date");
+            }
 
 
-        @Override
-        public String toString() {
-           
-            return "{id:" + this.id + ", userId:" + this.userId + ", issueDate:" + this.issueDate+ ", expires:" + this.expires + ", revoked:" + this.revoked +"}";
+            return new ApiToken(this);
         }
+    }
+
+
+    @Override
+    public String toString() {
+
+        return "{id:" + this.id + ", userId:" + this.userId + ", issueDate:" + this.issueDate + ", expires:" + this.expires + ", revoked:"
+                + this.revoked + "}";
+    }
+
+
+    @Override
+    public String getId() {
+        return this.id;
+    }
+
+
+
+    public Optional<ApiToken> getApiToken() {
+        return APILocator.getApiTokenAPI().findApiToken(this.id);
+    }
     
+
+
+    @Override
+    public String getSubject() {
+        return this.getId();
+    }
+
+
+    @Override
+    public ImmutableMap<String, Object> getClaims() {
+        @SuppressWarnings("unchecked")
+        HashMap<String, Object> map =
+                (HashMap<String, Object>) Try.of(() -> new ObjectMapper().readValue(this.claims, HashMap.class)).getOrElse(new HashMap<>());
+        return ImmutableMap.copyOf(map);
+    }
+
+    @Override
+    public String getIssuer() {
+        return this.clusterId;
+    }
+
+
+    @Override
+    public Date getModificationDate() {
+        return this.modDate;
+    }
+
+
+    @Override
+    public Date getExpiresDate() {
+        return this.expires;
+    }
+
+
+    @Override
+    public String getAllowNetworks() {
+        return this.allowFromNetwork;
+    }
+
+
+    @Override
+    public Optional<User> getUser() {
+        return Optional.ofNullable((User) Try.of(()-> APILocator.getUserAPI().loadUserById(this.userId)).getOrElse(()->null));
+    }
+    
+
 }
 

@@ -1,11 +1,15 @@
 package com.dotcms.auth.providers.jwt.beans;
 
-import java.io.Serializable;
 import java.util.Date;
 import java.util.Map;
+import java.util.Optional;
 
 import com.dotcms.enterprise.cluster.ClusterFactory;
+import com.dotmarketing.business.APILocator;
 import com.google.common.collect.ImmutableMap;
+import com.liferay.portal.model.User;
+
+import io.vavr.control.Try;
 
 /**
  * Encapsulates all the different pieces of information that make up the JSON
@@ -15,15 +19,29 @@ import com.google.common.collect.ImmutableMap;
  * @version 3.7
  * @since Jun 14, 2016
  */
-public class JWTBean implements Serializable {
+public class JWTBean implements JWToken {
 
     private static final long serialVersionUID = 1L;
     private final String id;
     private final String subject;
     private final String issuer;
     private final Date modificationDate;
-    private final long ttlMillis;
+    private final Date expiresDate;
     private final ImmutableMap<String,Object> claims;
+
+    
+    public JWTBean(final String id, final String subject, final String issuer, final Date modificationDate,
+            Date expiresDate, final Map<String,Object> claims) {
+        this.id = id;
+        this.subject = subject;
+        this.issuer = issuer;
+        this.modificationDate = modificationDate;
+        this.expiresDate = expiresDate;
+        this.claims=ImmutableMap.copyOf(claims);
+        
+    }
+    
+    
     
 	/**
 	 * Creates a JWT with its required information.
@@ -39,12 +57,7 @@ public class JWTBean implements Serializable {
 	 */
     public JWTBean(final String id, final String subject, final String issuer, final Date modificationDate,
             long ttlMillis, final Map<String,Object> claims) {
-        this.id = id;
-        this.subject = subject;
-        this.issuer = issuer;
-        this.modificationDate = modificationDate;
-        this.ttlMillis = ttlMillis;
-        this.claims=ImmutableMap.copyOf(claims);
+        this(id,subject,issuer,modificationDate,new Date(System.currentTimeMillis()+ ttlMillis), claims);
         
     }
 
@@ -74,40 +87,41 @@ public class JWTBean implements Serializable {
      * 
      * @return The token ID.
      */
+    @Override
     public String getId() {
         return id;
     }
 
-
+    
+    public Optional<ApiToken> getApiToken() {
+        return APILocator.getApiTokenAPI().findApiToken(this.subject);
+    }
+    
     /**
      * Returns the subject of this token.
      * 
      * @return The token subject.
      */
+    @Override
     public String getSubject() {
         return subject;
     }
-    
+    @Override
     public ImmutableMap<String,Object> getClaims() {
         return this.claims;
     }
     
-    /**
-     * Returns the token type for the given token
-     * @return
-     */
-    public TokenType getTokenType() {
-        return TokenType.getTokenType(this.subject);
-    }
+
     /**
      * Returns the issuer of this token.
      * 
      * @return The token issuer.
      */
+    @Override
     public String getIssuer() {
         return issuer;
     }
-
+    @Override
     public Date getModificationDate() {
         return modificationDate;
     }
@@ -117,8 +131,9 @@ public class JWTBean implements Serializable {
      * 
      * @return The token time-to-live date.
      */
-    public long getTtlMillis() {
-        return ttlMillis;
+    @Override
+    public Date getExpiresDate() {
+        return expiresDate;
     }
 
     @Override
@@ -128,7 +143,7 @@ public class JWTBean implements Serializable {
 
         JWTBean jwtBean = (JWTBean) o;
 
-        if (ttlMillis != jwtBean.ttlMillis) return false;
+        if (!expiresDate.equals(jwtBean.expiresDate)) return false;
         if (modificationDate != jwtBean.modificationDate) {
             return false;
         }
@@ -145,7 +160,7 @@ public class JWTBean implements Serializable {
         result = 31 * result + (issuer != null ? issuer.hashCode() : 0);
         result = 31 * result + (claims != null ? claims.hashCode() : 0);
         result = 31 * result + (modificationDate != null ? modificationDate.hashCode() : 0);
-        result = 31 * result + (int) (ttlMillis ^ (ttlMillis >>> 32));
+        result = 31 * result + (expiresDate != null ? expiresDate.hashCode() : 0);
         return result;
     }
 
@@ -156,9 +171,23 @@ public class JWTBean implements Serializable {
                 ", subject='" + subject + '\'' +
                 ", modificationDate='" + modificationDate + '\'' +
                 ", issuer='" + issuer + '\'' +
-                ", ttlMillis=" + ttlMillis +
+                ", expiresDate=" + expiresDate +
                 ", claims=" + claims +
                 '}';
+    }
+
+
+
+    @Override
+    public String getAllowNetworks() {
+        return null;
+    }
+
+
+
+    @Override
+    public Optional<User> getUser() {
+        return Optional.ofNullable((User) Try.of(()-> APILocator.getUserAPI().loadUserById(this.subject)).getOrElse(()->null));
     }
 
 } // E:O:F:JWTBean.

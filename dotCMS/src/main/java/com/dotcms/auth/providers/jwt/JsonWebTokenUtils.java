@@ -3,6 +3,7 @@ package com.dotcms.auth.providers.jwt;
 import static com.dotcms.exception.ExceptionUtil.causedBy;
 
 import com.dotcms.auth.providers.jwt.beans.JWTBean;
+import com.dotcms.auth.providers.jwt.beans.JWToken;
 import com.dotcms.auth.providers.jwt.factories.JsonWebTokenFactory;
 import com.dotcms.auth.providers.jwt.services.JsonWebTokenService;
 import com.dotcms.business.LazyUserAPIWrapper;
@@ -68,7 +69,7 @@ public class JsonWebTokenUtils {
      */
     public String getSubject(final String jwtAccessToken) {
 
-        JWTBean jwtBean;
+        JWToken jwtBean;
         String subject = null;
 
         jwtBean = this.jsonWebTokenService.parseToken(jwtAccessToken);
@@ -93,7 +94,7 @@ public class JsonWebTokenUtils {
         try {
 
             //Parse the token
-            JWTBean jwtBean = this.jsonWebTokenService.parseToken(jwtAccessToken);
+            JWToken jwtBean = this.jsonWebTokenService.parseToken(jwtAccessToken);
             if (null != jwtBean) {
 
                 //Read the user id
