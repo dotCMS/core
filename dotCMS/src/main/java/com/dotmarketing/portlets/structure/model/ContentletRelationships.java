@@ -1,13 +1,11 @@
 package com.dotmarketing.portlets.structure.model;
 
-import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.util.StringPool;
 import java.util.ArrayList;
@@ -135,30 +133,9 @@ public class ContentletRelationships
 	public List<ContentletRelationshipRecords> getLegacyRelationshipsRecords() {
 
 		//Filter legacy relationship records, which do not have a relationship field
-		final List<ContentletRelationshipRecords> recordsToDisplay = relationshipsRecords.stream()
+		return relationshipsRecords.stream()
 				.filter(record -> !record.getRelationship().isRelationshipField())
 				.collect(CollectionsUtils.toImmutableList());
-
-		//if legacy relationships are found, the whole list of relationships without fields is populated
-		if (UtilMethods.isSet(recordsToDisplay)){
-			final ContentType contentType = contentlet.getContentType();
-
-			//Obtain field relationships
-			final List<ContentletRelationshipRecords> fieldRelationships = contentType.fields().stream()
-					.filter(field -> field instanceof RelationshipField)
-					.map(field -> getRelationshipsRecordsByField(field).get(0))
-					.collect(CollectionsUtils.toImmutableList());
-
-			//Filter legacy relationship records, which do not have a relationship field, including legacy
-			return relationshipsRecords.stream()
-					.filter(record -> !fieldRelationships.contains(record))
-					.collect(CollectionsUtils.toImmutableList());
-		} else{
-			//Otherwise, an empty list is returned
-			return Collections.emptyList();
-		}
-
-
 	}
 
 	/**
