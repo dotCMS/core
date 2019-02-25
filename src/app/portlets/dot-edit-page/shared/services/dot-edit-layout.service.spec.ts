@@ -79,7 +79,7 @@ describe('DotEditLayoutService', () => {
                         {
                             containers: [
                                 {
-                                    identifier: '56bd55ea-b04b-480d-9e37-5d6f9217dcc3',
+                                    identifier: '/container/path',
                                     uuid: '1'
                                 }
                             ],
@@ -145,6 +145,7 @@ describe('DotEditLayoutService', () => {
             maxCols: 12,
             maxRows: 1
         });
+        expect(grid[0].containers.length).toEqual(1, 'map FILE type containers');
     });
 
     it('should transform the grid data to LayoutBody to export the data', () => {
