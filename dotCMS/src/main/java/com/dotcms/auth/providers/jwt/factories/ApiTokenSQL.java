@@ -46,7 +46,7 @@ public class ApiTokenSQL {
     protected String INSERT_TOKEN_ISSUE_SQL =
             "insert into api_token_issued ( token_id, token_userid, issue_date, expire_date, requested_by_userid, requested_by_ip, revoke_date, allowed_from, cluster_id, meta_data, mod_date) values (?,?,?,?,?,?,?,?,?,?,?) ";
 
-
+    protected String DELETE_TOKEN_SQL = "delete from api_token_issued where token_id=?";
     
     public String DROP_TOKEN_TABLE = "drop table if exists api_token_issued";
     

@@ -64,7 +64,7 @@ public class ApiTokenAPI {
             return Optional.ofNullable((TOKEN_404.equals(token) ? null : token));
         }
 
-        return optToken;
+        return (TOKEN_404.equals(optToken.get()) ? Optional.empty() : optToken);
 
     }
     
@@ -99,7 +99,7 @@ public class ApiTokenAPI {
         } catch (DotDataException dde) {
 
             throw new DotStateException(dde);
-        } catch (ArrayIndexOutOfBoundsException aar) {
+        } catch (IndexOutOfBoundsException aar) {
 
             return Optional.empty();
         }
@@ -107,6 +107,26 @@ public class ApiTokenAPI {
 
     }
 
+    @CloseDBIfOpened
+    public boolean deleteToken(final String tokenId) {
+        SecurityLogger.logInfo(this.getClass(), "deleting token " + tokenId);
+        try {
+            new DotConnect().setSQL(sql.DELETE_TOKEN_SQL).addParam(tokenId).loadResult();
+            return true;
+        } catch (DotDataException e) {
+            throw new DotStateException(e);
+        } finally {
+            cache.removeApiToken(tokenId);
+        }
+
+    }
+    
+    public boolean deleteToken(ApiToken token) {
+        return this.deleteToken(token.id);
+    }
+    
+    
+    
     public boolean revokeToken(ApiToken token) {
         return this.revokeToken(token.id);
     }

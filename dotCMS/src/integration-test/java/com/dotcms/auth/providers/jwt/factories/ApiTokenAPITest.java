@@ -1,6 +1,9 @@
 package com.dotcms.auth.providers.jwt.factories;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -177,10 +180,11 @@ public class ApiTokenAPITest {
         ApiToken issued = apiTokenAPI.persistApiToken(fatToken, APILocator.systemUser());
     }
 
-    public void test_JWT_allow_all() {
+    public void test_JWT_allow_all_networks() {
         ApiToken fatToken = ApiToken.from(getLoadedToken()).withAllowFromNetwork("0.0.0.0/0").build();
         assert (!fatToken.isValid());
         ApiToken issued = apiTokenAPI.persistApiToken(fatToken, APILocator.systemUser());
+        assert(issued.isValid("192.112.123.123"));
     }
 
     @Test
@@ -225,12 +229,11 @@ public class ApiTokenAPITest {
     
     
 
-    @Test(expected = DotStateException.class)
+
     public void test_ApiToken_isValid_from_ip() {
 
 
         ApiToken skinnyToken = ApiToken.from(getSkinnyToken()).withAllowFromNetwork("192.168.211.0/24").build();
-
         assert (!skinnyToken.isValid());
 
         skinnyToken = apiTokenAPI.persistApiToken(skinnyToken, APILocator.systemUser());
@@ -246,7 +249,6 @@ public class ApiTokenAPITest {
     @Test(expected = IncorrectClaimException.class)
     public void test_revoke_ApiToken() {
 
-
         ApiToken skinnyToken = apiTokenAPI.persistApiToken(getSkinnyToken(), APILocator.systemUser());
 
         String jwt = apiTokenAPI.getJWT(skinnyToken);
@@ -258,12 +260,64 @@ public class ApiTokenAPITest {
         apiTokenAPI.revokeToken(savedToken);
         
         apiTokenAPI.getFromJwt(jwt).get();
+        
+    }
+    
+    @Test
+    public void test_each_issued_token_should_have_different_ids() {
+        ApiToken skinnyToken = apiTokenAPI.persistApiToken(getSkinnyToken(), APILocator.systemUser());
 
+        String jwt = apiTokenAPI.getJWT(skinnyToken);
+
+        String jwt2 = apiTokenAPI.getJWT(skinnyToken);
+        
+        assertNotEquals(jwt, jwt2);
+    }
+    
+    
+    
+    @Test
+    public void test_404_Cache_in_ApiToken_API() {
+        assertFalse("Optional<APIToken>  should be empty", apiTokenAPI.findApiToken("apiBadToken").isPresent());
+        assertFalse("Optional<APIToken>  should be empty, even with 404 cached", apiTokenAPI.findApiToken("apiBadToken").isPresent());
+
+    
+    }
+    
+    
+    @Test
+    public void test_delete_ApiToken() {
+        ApiToken skinnyToken = ApiToken.from(getSkinnyToken()).withUserId(APILocator.systemUser().getUserId()).build();
+        skinnyToken = apiTokenAPI.persistApiToken(skinnyToken, APILocator.systemUser());
+
+        String jwt = apiTokenAPI.getJWT(skinnyToken);
+
+        String jwt2 = apiTokenAPI.getJWT(skinnyToken);
+        
+        assertNotEquals(jwt, jwt2);
+        
+        ApiToken workingToken = apiTokenAPI.getFromJwt(jwt).get();
+        
+        apiTokenAPI.deleteToken(workingToken);
+        
+        try {
+            apiTokenAPI.getFromJwt(jwt).get();
+            assertTrue("jwt has been deleted and should not exist, throwing an exception",false);
+        }
+        catch(IncorrectClaimException e) {
+            assertTrue("jwt has been deleted and should not exist",true);
+        }
+        try {
+            apiTokenAPI.getFromJwt(jwt2).get();
+            assertTrue("jwt has been deleted and should not exist, throwing an exception",false);
+        }
+        catch(IncorrectClaimException e) {
+            assertTrue("jwt has been deleted and should not exist",true);
+        }
     }
     
     @Test
     public void test_Valid_ApiToken_jwt() {
-
 
         ApiToken skinnyToken = ApiToken.from(getSkinnyToken()).withUserId(APILocator.systemUser().getUserId()).build();
 
@@ -274,9 +328,7 @@ public class ApiTokenAPITest {
         String jwt = apiTokenAPI.getJWT(skinnyToken);
         
         System.err.println(jwt);
-        
-        
-        
+
         ApiToken savedToken = apiTokenAPI.getFromJwt(jwt).get();
         
         assertEquals(savedToken, skinnyToken);

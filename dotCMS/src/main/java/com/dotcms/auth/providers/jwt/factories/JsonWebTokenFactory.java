@@ -160,8 +160,10 @@ public class JsonWebTokenFactory implements Serializable {
             Map<String,Object> claims = Try.of(()->new ObjectMapper().readValue(apiToken.claims, HashMap.class)).getOrElse(new HashMap<>());
             
             claims.put(CLAIM_UPDATED_AT, apiToken.modDate);
-            claims.put(CLAIM_ALLOWED_NETWORK, apiToken.allowFromNetwork);
-            
+            claims.put("jti", UUID.randomUUID().toString());
+            if(apiToken.allowFromNetwork!=null) {
+                claims.put(CLAIM_ALLOWED_NETWORK, apiToken.allowFromNetwork);
+            }
             //Let's set the JWT Claims
             final JwtBuilder builder = Jwts.builder()
                     .setId(UUID.randomUUID().toString())
@@ -182,7 +184,6 @@ public class JsonWebTokenFactory implements Serializable {
         private String signToken(final JwtBuilder jwtBuilder) {
             //The JWT signature algorithm we will be using to sign the token
             jwtBuilder.signWith(SignatureAlgorithm.HS256, this.getSigningKey());
-            
             
             return jwtBuilder.compact();
         }
@@ -316,7 +317,7 @@ public class JsonWebTokenFactory implements Serializable {
                             (null != body.getExpiration()) ? body.getExpiration().getTime() : 0, 
                             body
                             )
-                   : APILocator.getApiTokenAPI().findApiToken(body.getSubject()).get();
+                   : APILocator.getApiTokenAPI().findApiToken(body.getSubject()).orElseGet(()->null);
             
             
             
