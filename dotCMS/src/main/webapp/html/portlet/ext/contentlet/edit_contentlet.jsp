@@ -341,7 +341,7 @@
                                 %>
                                         <jsp:include page="/html/portlet/ext/contentlet/field/relationship_field.jsp"/>
                                 <%  } else {
-                                        request.setAttribute("relationshipRecords", legacyRelationshipRecords); %>
+                                        request.setAttribute("relationshipRecords", relationshipRecords); %>
                                         <jsp:include page="/html/portlet/ext/contentlet/edit_contentlet_relationships.jsp"/>
                                 <%  }
                                 %>
@@ -465,7 +465,7 @@
 	<% if(legacyRelationshipRecords != null && legacyRelationshipRecords.size() > 0 && !relationshipsTabFieldExists){
 		   relationshipsTabFieldExists = true;
 		   request.setAttribute("isRelationsihpAField",false); //DOTCMS-6893
-		   request.setAttribute("relationshipRecords", legacyRelationshipRecords);
+		   request.setAttribute("relationshipRecords", relationshipRecords);
 		   request.removeAttribute("fieldRelationType");
 	%>
 		<div id="relationships" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Relationships") %>">
