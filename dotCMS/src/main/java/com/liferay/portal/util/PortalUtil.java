@@ -688,25 +688,18 @@ public class PortalUtil {
 			uploadReq, getPortletNamespace(actionReq.getPortletName()));
 	}
 
-	public static User getUser(HttpServletRequest req)
-		throws PortalException, SystemException {
-
-		String userId = PortalUtil.getUserId(req);
-
-		if (userId == null) {
-			return null;
-		}
-
-		User user = (User)req.getAttribute(WebKeys.USER);
-
-		if (user == null) {
-			user = UserLocalManagerUtil.getUserById(userId);
-
-			req.setAttribute(WebKeys.USER, user);
-		}
-
-		return user;
-	}
+    public static User getUser(HttpServletRequest req) throws PortalException, SystemException {
+        User user = (User) req.getAttribute(WebKeys.USER);
+        if (user == null) {
+            String userId = PortalUtil.getUserId(req);
+            if (userId == null) {
+                return null;
+            }
+            user = UserLocalManagerUtil.getUserById(userId);
+            req.setAttribute(WebKeys.USER, user);
+        }
+        return user;
+    }
 
 	public static User getUser(ActionRequest req)
 		throws PortalException, SystemException {
@@ -734,7 +727,11 @@ public class PortalUtil {
 	}
 
 	public static String getUserId(HttpServletRequest req) {
-		return getUserId(req.getSession(false));
+	    
+	    String userId = (String) req.getAttribute(WebKeys.USER_ID);
+	    userId =  (userId!=null) ? userId : getUserId(req.getSession(false));
+	    req.setAttribute(WebKeys.USER_ID, userId);
+	    return userId;
 	}
 
 	public static String getUserId(ActionRequest req) {

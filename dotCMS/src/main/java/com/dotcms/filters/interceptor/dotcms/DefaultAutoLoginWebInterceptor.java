@@ -10,7 +10,11 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.CookieKeys;
+import com.liferay.portal.util.PortalUtil;
 import com.liferay.util.CookieUtil;
+
+import io.vavr.control.Try;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -41,37 +45,28 @@ public class DefaultAutoLoginWebInterceptor implements WebInterceptor {
     }
 
     @Override
-    public Result intercept(final HttpServletRequest request,
-            final HttpServletResponse response) {
+    public Result intercept(final HttpServletRequest request, final HttpServletResponse response) {
 
-        final HttpSession session = request.getSession(false);
+
         Result result = Result.NEXT;
 
-        if ((null != session && session.getAttribute(WebKeys.CMS_USER) == null)
-                || session == null) {
+        User user = Try.of(()-> PortalUtil.getUser(request)).getOrNull();
+        if (user==null) {
 
-            final String jwtCookieValue = CookieUtil.get
-                    (request.getCookies(), CookieKeys.JWT_ACCESS_TOKEN);
+            final String jwtCookieValue = CookieUtil.get(request.getCookies(), CookieKeys.JWT_ACCESS_TOKEN);
             if (null != jwtCookieValue) {
-
-                try {
-                    final User user = this.jsonWebTokenUtils.getUser(jwtCookieValue);
-                    if (null != user) {
-
-                        if (this.loginServiceAPI.
-                                doCookieLogin(this.encryptor.encryptString(user.getUserId()),
-                                        request,
-                                        response)) {
-
-                            // if this login was successfully, do not need to do any other.
-                            result = Result.SKIP;
-                        }
+                user = this.jsonWebTokenUtils.getUser(jwtCookieValue);
+                if(user==null) {
+                    // user is null because token is expired
+                    CookieUtil.deleteCookie(request, response, CookieKeys.JWT_ACCESS_TOKEN);
+                }else {
+                    
+                    if (this.loginServiceAPI.doCookieLogin(this.encryptor.encryptString(user.getUserId()), request, response)) {
+                        // if this login was successfully, do not need to do any other.
+                        result = Result.SKIP;
                     }
-                } catch (Exception e) {
-                    //Handling this invalid token exception
-                    JsonWebTokenUtils.getInstance()
-                            .handleInvalidTokenExceptions(this.getClass(), e, request, response);
                 }
+
             }
         }
 

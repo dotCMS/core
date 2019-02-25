@@ -297,6 +297,20 @@
 
 					</div>
 					<!-- END Additional Info Tab -->
+					
+					<!-- START API Keys Tab -->
+					<div dojoType="dijit.layout.ContentPane" id="apiKeysTab" title="<%= LanguageUtil.get(pageContext, "API Access Keys") %>">
+
+                    
+                    
+                    
+                    </div>
+					<!-- START API Keys Tab -->
+					
+					
+					
+					
+					
 				</div>
 				<!-- END User Tabs -->
 			</div>

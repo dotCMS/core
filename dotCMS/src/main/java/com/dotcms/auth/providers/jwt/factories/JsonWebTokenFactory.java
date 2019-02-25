@@ -217,18 +217,13 @@ public class JsonWebTokenFactory implements Serializable {
         @Override
         public JWToken parseToken(final String jsonWebToken, final String requestingIp) {
 
-            JWToken jwtToken = null;
+
+            Jws<Claims> jws = Jwts.parser().setSigningKey(this.getSigningKey()).parseClaimsJws(jsonWebToken);
+  
+
             
-            // This line will throw an exception if it is not a signed JWS (as expected)
-            final Jws<Claims> jws = Jwts.parser().setSigningKey(this.getSigningKey()).parseClaimsJws(jsonWebToken);
+            return validateToken(jws, resolveJWTokenType(jws), requestingIp);
 
-
-            if (null != jws) {
-                jwtToken = validateToken(jws, resolveJWTokenType(jws), requestingIp);
-            }
-
-
-            return jwtToken;
         } // parseToken.
         
 
@@ -253,55 +248,58 @@ public class JsonWebTokenFactory implements Serializable {
                 claimException.setClaimValue(jwtToken.getExpiresDate());
                 throw claimException;
             }
+            
             // get the user tied to the token
-            if(!jwtToken.getActiveUser().isPresent()) {
+            final User user = jwtToken.getActiveUser().orElse(null);
+            if(user==null || ! user.isActive()) {
                 IncorrectClaimException claimException = new IncorrectClaimException( jws.getHeader(), body, "JWT Token user: " + jwtToken.getUserId() + " is not found or is not active");
                 claimException.setClaimName(Claims.SUBJECT);
                 claimException.setClaimValue(body.getSubject());
                 throw claimException;
             }
             
-            
-            if(jwtToken.getTokenType() == TokenType.API_TOKEN) {
-                Optional<ApiToken> apiTokenOpt = APILocator.getApiTokenAPI().findApiToken(jwtToken.getSubject());
-                if(!apiTokenOpt.isPresent()) {
-                    IncorrectClaimException claimException = new IncorrectClaimException( jws.getHeader(), body, "Invalid API Token, cannot find ApiToken id:"+ jwtToken.getSubject());
+            if(jwtToken.getTokenType() == TokenType.USER_TOKEN) {
+                if(jwtToken.getModificationDate().before(user.getModificationDate())) {
+                    IncorrectClaimException claimException = new IncorrectClaimException( jws.getHeader(), body, "JWT Token user: " + jwtToken.getUserId() + " has been modified, old tokens are invalid");
                     claimException.setClaimName(Claims.SUBJECT);
                     claimException.setClaimValue(body.getSubject());
                     throw claimException;
                 }
-                ApiToken apiToken = apiTokenOpt.get();
-
-                if(apiToken.isRevoked()) {
-                    IncorrectClaimException claimException = new IncorrectClaimException( jws.getHeader(), body, "API Token Revoked:" + apiToken.revoked);
-                    claimException.setClaimName(Claims.EXPIRATION);
-                    claimException.setClaimValue(apiToken.revoked);
-                    throw claimException;
-                    
-                }
-                if(apiToken.isNotBeforeDate()) {
-                    IncorrectClaimException claimException = new IncorrectClaimException( jws.getHeader(), body, "API Token Not Before:" + apiToken.issueDate);
-                    claimException.setClaimName(Claims.NOT_BEFORE);
-                    claimException.setClaimValue(apiToken.issueDate);
-                    throw claimException;
-                    
-                }
-                if(requestingIp!=null && !apiToken.isInIpRange(requestingIp)) {
-                    IncorrectClaimException claimException = new IncorrectClaimException( jws.getHeader(), body, "API Token not allowed for ip:" + requestingIp + ". Accepted range:" + apiToken.allowFromNetwork);
-                    claimException.setClaimName(Claims.AUDIENCE);
-                    claimException.setClaimValue(apiToken.allowFromNetwork);
-                    throw claimException;
-                    
-                }
-
+                return jwtToken;    
             }
             
-            
-            
-            
+            Optional<ApiToken> apiTokenOpt = APILocator.getApiTokenAPI().findApiToken(jwtToken.getSubject());
+            if(!apiTokenOpt.isPresent()) {
+                IncorrectClaimException claimException = new IncorrectClaimException( jws.getHeader(), body, "Invalid API Token, cannot find ApiToken id:"+ jwtToken.getSubject());
+                claimException.setClaimName(Claims.SUBJECT);
+                claimException.setClaimValue(body.getSubject());
+                throw claimException;
+            }
+            ApiToken apiToken = apiTokenOpt.get();
+
+            if(apiToken.isRevoked()) {
+                IncorrectClaimException claimException = new IncorrectClaimException( jws.getHeader(), body, "API Token Revoked:" + apiToken.revoked);
+                claimException.setClaimName(Claims.EXPIRATION);
+                claimException.setClaimValue(apiToken.revoked);
+                throw claimException;
+                
+            }
+            if(apiToken.isNotBeforeDate()) {
+                IncorrectClaimException claimException = new IncorrectClaimException( jws.getHeader(), body, "API Token Not Before:" + apiToken.issueDate);
+                claimException.setClaimName(Claims.NOT_BEFORE);
+                claimException.setClaimValue(apiToken.issueDate);
+                throw claimException;
+                
+            }
+            if(requestingIp!=null && !apiToken.isInIpRange(requestingIp)) {
+                IncorrectClaimException claimException = new IncorrectClaimException( jws.getHeader(), body, "API Token not allowed for ip:" + requestingIp + ". Accepted range:" + apiToken.allowFromNetwork);
+                claimException.setClaimName(Claims.AUDIENCE);
+                claimException.setClaimValue(apiToken.allowFromNetwork);
+                throw claimException;
+            }
             
 
-            return jwtToken;
+            return apiToken;
             
         }
         

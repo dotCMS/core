@@ -15,6 +15,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.dotcms.auth.providers.jwt.beans.ApiToken;
+import com.dotcms.auth.providers.jwt.beans.JWToken;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
@@ -22,8 +23,6 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.common.db.DotConnect;
 import com.liferay.portal.model.User;
-
-import io.jsonwebtoken.IncorrectClaimException;
 
 
 public class ApiTokenAPITest {
@@ -36,7 +35,7 @@ public class ApiTokenAPITest {
     static final String USER_ID = "userId1";
     static String REQUESTING_USER_ID;
     static final String REQUESTING_IP = "192.156.2.6";
-    
+
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -91,10 +90,10 @@ public class ApiTokenAPITest {
     }
 
     ApiToken getSkinnyToken() {
-        
-        
+
+
         User user = new UserDataGen().nextPersisted();
-        
+
         return ApiToken.builder().withExpires(futureDate(Duration.ofDays(10))).withUserId(user.getUserId())
                 .withRequestingUserId(APILocator.systemUser().getUserId()).withRequestingIp("127.0.0.1").build();
     }
@@ -178,17 +177,11 @@ public class ApiTokenAPITest {
         ApiToken fatToken = ApiToken.from(getLoadedToken()).withAllowFromNetwork("123").build();
         assert (!fatToken.isValid());
         ApiToken issued = apiTokenAPI.persistApiToken(fatToken, APILocator.systemUser());
-        
+
 
     }
 
-    
-    
-    
-    
-    
-    
-    
+
     @Test(expected = DotStateException.class)
     public void test_JWT_claims_json() {
         ApiToken fatToken = ApiToken.from(getLoadedToken()).withClaims("I am not a claim, I should be json").build();
@@ -200,7 +193,7 @@ public class ApiTokenAPITest {
         ApiToken fatToken = ApiToken.from(getLoadedToken()).withAllowFromNetwork("0.0.0.0/0").build();
         assert (!fatToken.isValid());
         ApiToken issued = apiTokenAPI.persistApiToken(fatToken, APILocator.systemUser());
-        assert(issued.isValid("192.112.123.123"));
+        assert (issued.isValid("192.112.123.123"));
     }
 
     @Test
@@ -237,14 +230,6 @@ public class ApiTokenAPITest {
 
     }
 
-    
-    
-    
-    
-    
-    
-    
-
 
     public void test_ApiToken_isValid_from_ip() {
 
@@ -261,7 +246,7 @@ public class ApiTokenAPITest {
 
 
     }
-    
+
     @Test
     public void test_revoke_ApiToken() {
         User user = new UserDataGen().nextPersisted();
@@ -269,16 +254,16 @@ public class ApiTokenAPITest {
 
         String jwt = apiTokenAPI.getJWT(skinnyToken);
 
-        ApiToken savedToken = apiTokenAPI.getFromJwt(jwt, "192.168.211.5").get();
-        
+        JWToken savedToken = apiTokenAPI.fromJwt(jwt, "192.168.211.5").get();
+
         assertEquals(savedToken, skinnyToken);
-        
+
         apiTokenAPI.revokeToken(savedToken);
-        
-        assertFalse("Optional will return empty b/c token is revoked", apiTokenAPI.getFromJwt(jwt).isPresent());
-        
+
+        assertFalse("Optional will return empty b/c token is revoked", apiTokenAPI.fromJwt(jwt).isPresent());
+
     }
-    
+
     @Test
     public void test_each_issued_token_should_have_different_ids() {
         ApiToken skinnyToken = apiTokenAPI.persistApiToken(getSkinnyToken(), APILocator.systemUser());
@@ -286,118 +271,101 @@ public class ApiTokenAPITest {
         String jwt = apiTokenAPI.getJWT(skinnyToken);
 
         String jwt2 = apiTokenAPI.getJWT(skinnyToken);
-        
+
         assertNotEquals(jwt, jwt2);
     }
-    
-    
-    
+
+
     @Test
     public void test_404_Cache_in_ApiToken_API() {
         assertFalse("Optional<APIToken>  should be empty", apiTokenAPI.findApiToken("apiBadToken").isPresent());
         assertFalse("Optional<APIToken>  should be empty, even with 404 cached", apiTokenAPI.findApiToken("apiBadToken").isPresent());
 
-    
+
     }
-    
-    
+
+
     @Test
     public void test_delete_ApiToken() {
-        
-        
-        
-        
+
+
         ApiToken skinnyToken = ApiToken.from(getSkinnyToken()).withUserId(APILocator.systemUser().getUserId()).build();
         skinnyToken = apiTokenAPI.persistApiToken(skinnyToken, APILocator.systemUser());
 
         String jwt = apiTokenAPI.getJWT(skinnyToken);
 
         String jwt2 = apiTokenAPI.getJWT(skinnyToken);
-        
+
         assertNotEquals(jwt, jwt2);
-        
-        ApiToken workingToken = apiTokenAPI.getFromJwt(jwt).get();
-        
+
+        ApiToken workingToken = (ApiToken) apiTokenAPI.fromJwt(jwt).get();
+
         apiTokenAPI.deleteToken(workingToken);
-        
+
         try {
-            apiTokenAPI.getFromJwt(jwt).get();
-            assertTrue("jwt has been deleted and should not exist, throwing an exception",false);
-        }
-        catch(NoSuchElementException e) {
-            assertTrue("jwt has been deleted and should not exist",true);
+            apiTokenAPI.fromJwt(jwt).get();
+            assertTrue("jwt has been deleted and should not exist, throwing an exception", false);
+        } catch (NoSuchElementException e) {
+            assertTrue("jwt has been deleted and should not exist", true);
         }
         try {
-            apiTokenAPI.getFromJwt(jwt2).get();
-            assertTrue("jwt has been deleted and should not exist, throwing an exception",false);
-        }
-        catch(NoSuchElementException e) {
-            assertTrue("jwt has been deleted and should not exist",true);
+            apiTokenAPI.fromJwt(jwt2).get();
+            assertTrue("jwt has been deleted and should not exist, throwing an exception", false);
+        } catch (NoSuchElementException e) {
+            assertTrue("jwt has been deleted and should not exist", true);
         }
     }
-    
+
     @Test
-    public void test_expired_ApiToken() throws Exception{
+    public void test_expired_ApiToken() throws Exception {
         long inTheFuture = 5000;
-        Date future = new Date(System.currentTimeMillis()+inTheFuture);
-        
-        
-        
-        ApiToken skinnyToken = ApiToken.from(getSkinnyToken())
-                .withUserId(APILocator.systemUser().getUserId())
-                .withExpires(future)
-                
+        Date future = new Date(System.currentTimeMillis() + inTheFuture);
+
+
+        ApiToken skinnyToken = ApiToken.from(getSkinnyToken()).withUserId(APILocator.systemUser().getUserId()).withExpires(future)
+
                 .build();
         skinnyToken = apiTokenAPI.persistApiToken(skinnyToken, APILocator.systemUser());
 
         String jwt = apiTokenAPI.getJWT(skinnyToken);
 
         String jwt2 = apiTokenAPI.getJWT(skinnyToken);
-        
+
         assertNotEquals(jwt, jwt2);
-        
+
         Thread.sleep(inTheFuture);
 
-        
 
-        assertFalse("Optional will return empty b/c token is expired", apiTokenAPI.getFromJwt(jwt).isPresent());
+        assertFalse("Optional will return empty b/c token is expired", apiTokenAPI.fromJwt(jwt).isPresent());
 
 
     }
-    
-    
-    
+
+
     @Test
-    public void test_user_must_be_active_to_validate_ApiToken() throws Exception{
-        
-        
+    public void test_user_must_be_active_to_validate_ApiToken() throws Exception {
+
+
         User user = new UserDataGen().nextPersisted();
         assertTrue(user.isActive());
-        
 
-        
-        
-        ApiToken skinnyToken = ApiToken.from(getSkinnyToken())
-                .withUserId(user.getUserId())
-                .build();
-        
+
+        ApiToken skinnyToken = ApiToken.from(getSkinnyToken()).withUserId(user.getUserId()).build();
+
         skinnyToken = apiTokenAPI.persistApiToken(skinnyToken, APILocator.systemUser());
 
         String jwt = apiTokenAPI.getJWT(skinnyToken);
 
         user.setActive(false);
         APILocator.getUserAPI().save(user, APILocator.systemUser(), true);
-        
 
-        assertFalse("API token no longer valid, returns empty", apiTokenAPI.getFromJwt(jwt).isPresent());
-        
-        
+
+        assertFalse("API token no longer valid, returns empty", apiTokenAPI.fromJwt(jwt).isPresent());
 
 
     }
-    
-    
-    
+
+
     @Test
     public void test_Valid_ApiToken_jwt() {
 
@@ -409,8 +377,8 @@ public class ApiTokenAPITest {
 
         String jwt = apiTokenAPI.getJWT(skinnyToken);
 
-        ApiToken savedToken = apiTokenAPI.getFromJwt(jwt).get();
-        
+        ApiToken savedToken = (ApiToken) apiTokenAPI.fromJwt(jwt).get();
+
         assertEquals(savedToken, skinnyToken);
 
     }

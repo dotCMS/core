@@ -1,6 +1,7 @@
 package com.dotcms.rest.api.v1.authentication;
 
 import com.dotcms.auth.providers.jwt.JsonWebTokenUtils;
+import com.dotcms.auth.providers.jwt.beans.ApiToken;
 import com.dotcms.cms.login.LoginServiceAPI;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.ws.rs.POST;
@@ -30,14 +31,20 @@ import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.language.LanguageWrapper;
 import com.liferay.portal.model.User;
+import com.liferay.portal.util.PortalUtil;
 import com.liferay.portal.util.WebKeys;
 import com.liferay.util.LocaleUtil;
+
+import io.vavr.API;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.Serializable;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.Locale;
 
 import static com.dotcms.util.CollectionsUtils.map;
@@ -107,9 +114,9 @@ public class CreateJsonWebTokenResource implements Serializable {
 
             if (authenticated) {
 
-                final HttpSession ses = request.getSession();
-                final User user = this.userLocalManager.getUserById((String) ses.getAttribute(WebKeys.USER_ID));
-                final int jwtMaxAge = createTokenForm.getExpirationDays() > 0 ?
+
+                final User user = this.userLocalManager.getUserById(PortalUtil.getUserId(request));
+                final int jwtMaxAgeDays = createTokenForm.getExpirationDays() > 0 ?
                         this.getExpirationDays (createTokenForm.getExpirationDays()):
                         Config.getIntProperty(
                             LoginServiceAPI.JSON_WEB_TOKEN_DAYS_MAX_AGE,
@@ -119,7 +126,7 @@ public class CreateJsonWebTokenResource implements Serializable {
                         "A Json Web Token " + userId.toLowerCase() + " has been created from IP: " +
                                 HttpRequestDataUtil.getRemoteAddress(request));
                 res = Response.ok(new ResponseEntityView(map("token",
-                        createJsonWebToken(user, jwtMaxAge)), EMPTY_MAP)).build(); // 200
+                        createJsonWebToken(user, jwtMaxAgeDays, request.getRemoteAddr())), EMPTY_MAP)).build(); // 200
             } else {
 
                 res = this.responseUtil.getErrorResponse(request, Response.Status.UNAUTHORIZED,
@@ -199,8 +206,15 @@ public class CreateJsonWebTokenResource implements Serializable {
      * @throws PortalException
      * @throws SystemException
      */
-    protected String createJsonWebToken (final User user, final int jwtMaxAge) throws PortalException, SystemException {
+    protected String createJsonWebToken (final User user, final int jwtMaxAgeDays, final String ipAddress) throws PortalException, SystemException {
+        
+        Date expireDate =   Date.from(Instant.now().plus(jwtMaxAgeDays, ChronoUnit.DAYS));
 
-        return this.jsonWebTokenUtils.createToken(user, jwtMaxAge);
+        
+
+        ApiToken token  = APILocator.getApiTokenAPI().persistApiToken(user.getUserId(), expireDate, user.getUserId(), ipAddress);
+        
+        
+        return APILocator.getApiTokenAPI().getJWT(token);
     }
 } // E:O:F:CreateJsonWebTokenResource.

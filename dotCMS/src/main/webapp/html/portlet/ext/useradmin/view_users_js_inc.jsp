@@ -303,6 +303,9 @@
 			case 'marketingInfoTab':
 				loadMarketingInfo(userId);
 				break;
+            case 'apiKeysTab':
+                loadApiKeys(userId);
+                break;
 		}
 	}
 
@@ -1307,6 +1310,19 @@
 				}
 	}
 
+	
+  function loadApiKeys(user) {
+
+	    alert("tbd")
+   }
+	
+	
+	
+	
+	
+	
+	
+	
 	function saveUserAdditionalInfo(){
 		if(currentUser == null)
 			return;

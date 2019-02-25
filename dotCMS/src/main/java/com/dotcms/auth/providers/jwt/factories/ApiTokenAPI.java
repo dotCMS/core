@@ -7,6 +7,7 @@ import java.util.UUID;
 
 import com.dotcms.auth.providers.jwt.beans.ApiToken;
 import com.dotcms.auth.providers.jwt.beans.JWToken;
+import com.dotcms.auth.providers.jwt.beans.TokenType;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.repackage.org.apache.commons.net.util.SubnetUtils;
 import com.dotmarketing.business.APILocator;
@@ -75,17 +76,18 @@ public class ApiTokenAPI {
      * @param jwt
      * @return
      */
-    public Optional<ApiToken> getFromJwt(final String jwt, final String ipAddress) {
+    public Optional<JWToken> fromJwt(final String jwt, final String ipAddress) {
         
 
-        JWToken bean  = Try.of(()->JsonWebTokenFactory.getInstance().getJsonWebTokenService().parseToken(jwt, ipAddress)).onFailure(e-> {
-            SecurityLogger.logInfo(this.getClass(), "from ipaddress:" + ipAddress + " " + e.getMessage());
-            Logger.warn(this.getClass(), e.getMessage());
-        }).getOrNull();
+        JWToken bean  = Try.of(()->JsonWebTokenFactory.getInstance().getJsonWebTokenService().parseToken(jwt, ipAddress))
+                .onFailure(e-> {
+                    SecurityLogger.logInfo(this.getClass(), "from ipaddress:" + ipAddress + " " + e.getMessage());
+                    Logger.warn(this.getClass(), e.getMessage());
+                }).getOrNull();
                 
         
         
-        return (bean!=null) ? findApiToken(bean.getSubject()) : Optional.empty();
+        return Optional.ofNullable(bean) ;
         
     }
     /**
@@ -94,8 +96,8 @@ public class ApiTokenAPI {
      * @param jwt
      * @return
      */
-    public Optional<ApiToken> getFromJwt(final String jwt) {
-        return getFromJwt(jwt, null);
+    public Optional<JWToken> fromJwt(final String jwt) {
+        return fromJwt(jwt, null);
     }
 
     @CloseDBIfOpened
@@ -135,10 +137,16 @@ public class ApiTokenAPI {
         return this.deleteToken(token.id);
     }
     
+    public boolean revokeToken(JWToken token) {
+        if(token.getTokenType()==TokenType.API_TOKEN ) {
+            return revokeToken(token.getSubject());
+        }
+        return false;
+    }
     
     
     public boolean revokeToken(ApiToken token) {
-        return this.revokeToken(token.id);
+        return this.revokeToken(token.getSubject());
     }
 
     @CloseDBIfOpened
@@ -235,7 +243,7 @@ public class ApiTokenAPI {
 
 
     @CloseDBIfOpened
-    protected List<ApiToken> findApiTokensByUserIdDB(final String userId, final boolean showRevoked) {
+    public List<ApiToken> findApiTokensByUserIdDB(final String userId, final boolean showRevoked) {
 
         final String SQL = (showRevoked) ? sql.SELECT_BY_TOKEN_USER_ID_SQL_ALL : sql.SELECT_BY_TOKEN_USER_ID_SQL_ACTIVE;
 

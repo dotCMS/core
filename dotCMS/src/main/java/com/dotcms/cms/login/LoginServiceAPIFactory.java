@@ -394,7 +394,7 @@ public class LoginServiceAPIFactory implements Serializable {
                                          final User user,
                                          final int maxAge) throws PortalException, SystemException {
 
-            final String jwtAccessToken = this.jsonWebTokenUtils.createToken(user, maxAge);
+            final String jwtAccessToken = this.jsonWebTokenUtils.createUserToken(user, maxAge);
             createJsonWebTokenCookie(req, res, jwtAccessToken, Optional.of(maxAge));
         }
 
@@ -445,6 +445,7 @@ public class LoginServiceAPIFactory implements Serializable {
             if (doCookieLogin) {
 
                 final String decryptedId = PublicEncryptionFactory.decryptString(encryptedId);
+                request.setAttribute(WebKeys.USER_ID, decryptedId);
                 final HttpSession session = request.getSession(false);
                 if (null != session && null != decryptedId) {
                     // this is what the PortalRequestProcessor needs to check the login.
