@@ -48,7 +48,7 @@ public class JsonWebTokenAuthCredentialProcessorImpl implements JsonWebTokenAuth
 
     @Override
     public User processAuthCredentialsFromJWT(final String authorizationHeader,
-                                              final HttpSession httpSession) {
+                                              final HttpSession httpSession, final String ipAddress) {
 
         final String jsonWebToken;
         User user = null;
@@ -63,7 +63,7 @@ public class JsonWebTokenAuthCredentialProcessorImpl implements JsonWebTokenAuth
             }
 
             try {
-                user = jsonWebTokenUtils.getUser(jsonWebToken.trim());
+                user = jsonWebTokenUtils.getUser(jsonWebToken.trim(), ipAddress);
             } catch (Exception e) {
                 this.jsonWebTokenUtils.handleInvalidTokenExceptions(this.getClass(), e, null, null);
             }
@@ -89,7 +89,7 @@ public class JsonWebTokenAuthCredentialProcessorImpl implements JsonWebTokenAuth
         final String authentication = request.getHeader(ContainerRequest.AUTHORIZATION);
         final HttpSession session = request.getSession();
 
-        return this.processAuthCredentialsFromJWT(authentication, session);
+        return this.processAuthCredentialsFromJWT(authentication, session, request.getRemoteAddr());
     } // processAuthCredentialsFromJWT.
 
 } // E:O:F:JsonWebTokenAuthCredentialProcessorImpl.

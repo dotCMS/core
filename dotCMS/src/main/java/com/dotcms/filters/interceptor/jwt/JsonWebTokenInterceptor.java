@@ -197,7 +197,7 @@ public class JsonWebTokenInterceptor implements WebInterceptor {
                         CookieKeys.JWT_ACCESS_TOKEN);
 		Result result = Result.NEXT;
 
-        if (null != jwtAccessToken) {
+        if (UtilMethods.isSet(jwtAccessToken)) {
 
 			result =
 				this.parseJwtToken(jwtAccessToken, response, request);

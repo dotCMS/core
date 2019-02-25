@@ -55,12 +55,11 @@ public class DefaultAutoLoginWebInterceptor implements WebInterceptor {
 
             final String jwtCookieValue = CookieUtil.get(request.getCookies(), CookieKeys.JWT_ACCESS_TOKEN);
             if (null != jwtCookieValue) {
-                user = this.jsonWebTokenUtils.getUser(jwtCookieValue);
+                user = this.jsonWebTokenUtils.getUser(jwtCookieValue, request.getRemoteAddr());
                 if(user==null) {
                     // user is null because token is expired
                     CookieUtil.deleteCookie(request, response, CookieKeys.JWT_ACCESS_TOKEN);
                 }else {
-                    
                     if (this.loginServiceAPI.doCookieLogin(this.encryptor.encryptString(user.getUserId()), request, response)) {
                         // if this login was successfully, do not need to do any other.
                         result = Result.SKIP;

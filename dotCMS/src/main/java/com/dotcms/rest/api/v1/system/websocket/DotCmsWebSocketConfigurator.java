@@ -98,7 +98,7 @@ public class DotCmsWebSocketConfigurator extends Configurator {
 
 				authorizationHeader = headers.get(0);
 				user = this.authCredentialProcessor.processAuthCredentialsFromJWT
-						(authorizationHeader, httpSession);
+						(authorizationHeader, httpSession, "websocket");
 			}
 
 			if (UtilMethods.isSet(user)) {

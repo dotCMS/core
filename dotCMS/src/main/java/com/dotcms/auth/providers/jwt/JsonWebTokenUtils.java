@@ -71,9 +71,9 @@ public class JsonWebTokenUtils {
      * @param jwtAccessToken String
      * @return String returns the User, if the user does not exists or is invalid will return null;
      */
-    public User getUser(final String jwtAccessToken) {
+    public User getUser(final String jwtAccessToken, final String ipAddress) {
 
-        Optional<JWToken> token = APILocator.getApiTokenAPI().fromJwt(jwtAccessToken);
+        Optional<JWToken> token = APILocator.getApiTokenAPI().fromJwt(jwtAccessToken, ipAddress);
         return (token.isPresent()) ? token.get().getActiveUser().get() : null;
     } // getUser
 
