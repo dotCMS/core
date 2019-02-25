@@ -12,7 +12,7 @@ import { DebugElement } from '@angular/core';
 import { DotContainerSelectorComponent } from './dot-container-selector.component';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
-fdescribe('ContainerSelectorComponent', () => {
+describe('ContainerSelectorComponent', () => {
     let comp: DotContainerSelectorComponent;
     let fixture: ComponentFixture<DotContainerSelectorComponent>;
     let de: DebugElement;
@@ -159,4 +159,16 @@ fdescribe('ContainerSelectorComponent', () => {
 
         expect(comp.data.length).toEqual(2);
     });
+
+
+    it('should set container list replacing the identifier for the path, if needed', () => {
+        fixture.detectChanges();
+        const paginatorService: PaginatorService = de.injector.get(PaginatorService);
+        spyOn(paginatorService, 'getWithOffset').and.returnValue(observableOf(containers));
+        comp.handleFilterChange('');
+
+        expect(comp.currentContainers[0].identifier).toEqual('427c47a4-c380-439f');
+        expect(comp.currentContainers[1].identifier).toEqual('container/path');
+    });
+
 });

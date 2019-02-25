@@ -1,7 +1,7 @@
 import { TemplateContainersCacheService } from './template-containers-cache.service';
 import { TestBed } from '@angular/core/testing';
 
-fdescribe('TemplateContainersCacheService', () => {
+describe('TemplateContainersCacheService', () => {
     let service: TemplateContainersCacheService;
 
     beforeEach(() => {
