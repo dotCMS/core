@@ -19,7 +19,7 @@ import io.vavr.control.Try;
  * @version 3.7
  * @since Jun 14, 2016
  */
-public class JWTBean implements JWToken {
+public class UserToken implements JWToken {
 
     private static final long serialVersionUID = 1L;
     private final String id;
@@ -30,7 +30,7 @@ public class JWTBean implements JWToken {
     private final ImmutableMap<String,Object> claims;
 
     
-    public JWTBean(final String id, final String subject, final String issuer, final Date modificationDate,
+    public UserToken(final String id, final String subject, final String issuer, final Date modificationDate,
             Date expiresDate, final Map<String,Object> claims) {
         this.id = id;
         this.subject = subject;
@@ -55,7 +55,7 @@ public class JWTBean implements JWToken {
 	 * @param ttlMillis
 	 *            - The expiration date of the token.
 	 */
-    public JWTBean(final String id, final String subject, final String issuer, final Date modificationDate,
+    public UserToken(final String id, final String subject, final String issuer, final Date modificationDate,
             long ttlMillis, final Map<String,Object> claims) {
         this(id,subject,issuer,modificationDate,new Date(System.currentTimeMillis()+ ttlMillis), claims);
         
@@ -68,7 +68,7 @@ public class JWTBean implements JWToken {
      * @param subject - The subject of the token
      * @param ttlMillis - The expiration date of the token.
      */
-    public JWTBean(String id, String subject, Date modificationDate, long ttlMillis) {
+    public UserToken(String id, String subject, Date modificationDate, long ttlMillis) {
         this(id, subject, ClusterFactory.getClusterId(), modificationDate,ttlMillis, ImmutableMap.of());
     }
     
@@ -79,7 +79,7 @@ public class JWTBean implements JWToken {
      * @param subject - The subject of the token
      * @param ttlMillis - The expiration date of the token.
      */
-    public JWTBean(String id, String subject, String issuer, Date modificationDate, long ttlMillis) {
+    public UserToken(String id, String subject, String issuer, Date modificationDate, long ttlMillis) {
         this(id, subject, issuer, modificationDate,ttlMillis, ImmutableMap.of());
     }
     /**
@@ -106,6 +106,7 @@ public class JWTBean implements JWToken {
     public String getSubject() {
         return subject;
     }
+    
     @Override
     public ImmutableMap<String,Object> getClaims() {
         return this.claims;
@@ -141,7 +142,7 @@ public class JWTBean implements JWToken {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        JWTBean jwtBean = (JWTBean) o;
+        UserToken jwtBean = (UserToken) o;
 
         if (!expiresDate.equals(jwtBean.expiresDate)) return false;
         if (modificationDate != jwtBean.modificationDate) {
@@ -183,11 +184,10 @@ public class JWTBean implements JWToken {
         return null;
     }
 
-
-
     @Override
-    public Optional<User> getUser() {
-        return Optional.ofNullable((User) Try.of(()-> APILocator.getUserAPI().loadUserById(this.subject)).getOrElse(()->null));
+    public String getUserId() {
+        return this.subject;
     }
+
 
 } // E:O:F:JWTBean.

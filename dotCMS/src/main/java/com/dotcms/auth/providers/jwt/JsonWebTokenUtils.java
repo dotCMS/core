@@ -2,7 +2,7 @@ package com.dotcms.auth.providers.jwt;
 
 import static com.dotcms.exception.ExceptionUtil.causedBy;
 
-import com.dotcms.auth.providers.jwt.beans.JWTBean;
+import com.dotcms.auth.providers.jwt.beans.UserToken;
 import com.dotcms.auth.providers.jwt.beans.JWToken;
 import com.dotcms.auth.providers.jwt.factories.JsonWebTokenFactory;
 import com.dotcms.auth.providers.jwt.services.JsonWebTokenService;
@@ -19,6 +19,7 @@ import com.liferay.portal.model.User;
 import io.jsonwebtoken.IncorrectClaimException;
 import io.jsonwebtoken.SignatureException;
 import java.util.Date;
+import java.util.Optional;
 import java.util.UUID;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -97,6 +98,7 @@ public class JsonWebTokenUtils {
             JWToken jwtBean = this.jsonWebTokenService.parseToken(jwtAccessToken);
             if (null != jwtBean) {
 
+                Optional<User> user = jwtBean.getActiveUser();
                 //Read the user id
                 String subject = jwtBean.getSubject();
                 if (null != subject) {
@@ -153,8 +155,8 @@ public class JsonWebTokenUtils {
      */
     public String createToken(final User user, int jwtMaxAge) {
 
-        return this.jsonWebTokenService.generateToken(
-                new JWTBean(UUID.randomUUID().toString(),
+        return this.jsonWebTokenService.generateUserToken(
+                new UserToken(UUID.randomUUID().toString(),
                         user.getUserId(),
                         user.getModificationDate(),
                         (jwtMaxAge > 0) ?

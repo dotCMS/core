@@ -3,10 +3,8 @@ package com.dotcms.auth.providers.jwt.services;
 import java.io.Serializable;
 
 import com.dotcms.auth.providers.jwt.beans.ApiToken;
-import com.dotcms.auth.providers.jwt.beans.JWTBean;
 import com.dotcms.auth.providers.jwt.beans.JWToken;
-
-import io.jsonwebtoken.JwtBuilder;
+import com.dotcms.auth.providers.jwt.beans.UserToken;
 
 /**
  * Encapsulates the logic that generates and reads the JSON Web Token (JWT).
@@ -23,12 +21,12 @@ public interface JsonWebTokenService extends Serializable {
 	 * ttlMillis determines how long will be valid the token
 	 *
 	 * @param jwtBean - 
-	 *            {@link JWTBean}
+	 *            {@link UserToken}
 	 * @return String the actual encrypted token
 	 */
-    public String generateToken(JWTBean jwtBean);
+    public String generateUserToken(UserToken JWToken);
 
-    public String generateToken(ApiToken apiToken);
+    public String generateApiToken(ApiToken apiToken);
     
     
 	/**

@@ -73,7 +73,7 @@ public class ApiTokenAPI {
         if(!findApiToken(apiToken.id).isPresent()) {
             throw new DotStateException("You can only get a JWT from a APIToken that has been persisted to db. Call persistApiToken first");
         }
-        return JsonWebTokenFactory.getInstance().getJsonWebTokenService().generateToken(apiToken);
+        return JsonWebTokenFactory.getInstance().getJsonWebTokenService().generateApiToken(apiToken);
         
 
     }

@@ -262,10 +262,10 @@ public class ApiTokenAPITest {
     }
     
     @Test
-    public void test_ApiToken_jwt() {
+    public void test_Valid_ApiToken_jwt() {
 
 
-        ApiToken skinnyToken = ApiToken.from(getSkinnyToken()).build();
+        ApiToken skinnyToken = ApiToken.from(getSkinnyToken()).withUserId(APILocator.systemUser().getUserId()).build();
 
         assert (!skinnyToken.isValid());
 

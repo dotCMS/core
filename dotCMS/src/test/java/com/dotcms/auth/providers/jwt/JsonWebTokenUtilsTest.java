@@ -7,8 +7,23 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.TimeZone;
+
+import javax.servlet.ServletContext;
+
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
+
 import com.dotcms.UnitTestBase;
-import com.dotcms.auth.providers.jwt.beans.JWTBean;
+import com.dotcms.auth.providers.jwt.beans.UserToken;
+import com.dotcms.auth.providers.jwt.beans.JWToken;
 import com.dotcms.auth.providers.jwt.factories.JsonWebTokenFactory;
 import com.dotcms.auth.providers.jwt.factories.KeyFactoryUtils;
 import com.dotcms.auth.providers.jwt.services.JsonWebTokenService;
@@ -20,17 +35,6 @@ import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
 import com.liferay.portal.model.User;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.TimeZone;
-import javax.servlet.ServletContext;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 /**
  * @author Jonathan Gamba 6/5/18
@@ -80,7 +84,7 @@ public class JsonWebTokenUtilsTest extends UnitTestBase {
         assertNotNull(jsonWebTokenService);
 
         //Generate a new token
-        String jsonWebToken = jsonWebTokenService.generateToken(new JWTBean(jwtId,
+        String jsonWebToken = jsonWebTokenService.generateUserToken(new UserToken(jwtId,
                 userId, date, DateUtil.daysToMillis(2)
         ));
         System.out.println(jsonWebToken);
@@ -88,7 +92,7 @@ public class JsonWebTokenUtilsTest extends UnitTestBase {
         assertTrue(jsonWebToken.startsWith("eyJhbGciOiJIUzI1NiJ9"));
 
         //Parse the generated token
-        final JWTBean jwtBean = jsonWebTokenService.parseToken(jsonWebToken);
+        final JWToken jwtBean = jsonWebTokenService.parseToken(jsonWebToken);
         assertNotNull(jwtBean);
         assertEquals(jwtBean.getId(), jwtId);
         assertEquals(jwtBean.getIssuer(), clusterId);
@@ -145,7 +149,7 @@ public class JsonWebTokenUtilsTest extends UnitTestBase {
         assertNotNull(jsonWebTokenService);
 
         //Generate a new token
-        String jsonWebToken = jsonWebTokenService.generateToken(new JWTBean(jwtId,
+        String jsonWebToken = jsonWebTokenService.generateUserToken(new UserToken(jwtId,
                 userId, date, DateUtil.daysToMillis(2)
         ));
         System.out.println(jsonWebToken);
@@ -153,7 +157,7 @@ public class JsonWebTokenUtilsTest extends UnitTestBase {
         assertTrue(jsonWebToken.startsWith("eyJhbGciOiJIUzI1NiJ9"));
 
         //Parse the generated token
-        final JWTBean jwtBean = jsonWebTokenService.parseToken(jsonWebToken);
+        final JWToken jwtBean = jsonWebTokenService.parseToken(jsonWebToken);
         assertNotNull(jwtBean);
         assertEquals(jwtBean.getId(), jwtId);
         assertEquals(jwtBean.getIssuer(), clusterId);

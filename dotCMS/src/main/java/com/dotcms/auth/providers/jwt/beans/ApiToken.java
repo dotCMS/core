@@ -16,7 +16,6 @@ import com.dotmarketing.util.Logger;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.google.common.collect.ImmutableMap;
-import com.liferay.portal.model.User;
 
 import io.vavr.control.Try;
 
@@ -24,9 +23,7 @@ import io.vavr.control.Try;
 @JsonDeserialize(builder = ApiToken.Builder.class)
 public class ApiToken implements JWToken {
 
-    /**
-     * 
-     */
+
     private static final long serialVersionUID = 1L;
     public final String id;
     public final String userId;
@@ -318,7 +315,7 @@ public class ApiToken implements JWToken {
             }
 
             if (this.userId == null || this.expires == null || expires.before(new Date())) {
-                throw new DotStateException("JWTokenIsse is not valid - needs an userId, a requestingUser and an expires date");
+                throw new DotStateException("JWToken is is not valid - needs an userId, a requestingUser and an expires date");
             }
 
 
@@ -385,12 +382,10 @@ public class ApiToken implements JWToken {
         return this.allowFromNetwork;
     }
 
-
     @Override
-    public Optional<User> getUser() {
-        return Optional.ofNullable((User) Try.of(()-> APILocator.getUserAPI().loadUserById(this.userId)).getOrElse(()->null));
+    public String getUserId() {
+        return this.userId;
     }
-    
 
 }
 
