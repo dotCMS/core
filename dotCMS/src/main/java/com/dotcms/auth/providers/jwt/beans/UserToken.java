@@ -7,9 +7,6 @@ import java.util.Optional;
 import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotmarketing.business.APILocator;
 import com.google.common.collect.ImmutableMap;
-import com.liferay.portal.model.User;
-
-import io.vavr.control.Try;
 
 /**
  * Encapsulates all the different pieces of information that make up the JSON

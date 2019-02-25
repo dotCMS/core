@@ -15,6 +15,7 @@ import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.model.User;
@@ -68,16 +69,34 @@ public class ApiTokenAPI {
         
 
     }
-    
-    public Optional<ApiToken> getFromJwt(final String jwt) {
+    /**
+     * this will either return your ApiToken or 
+     * empty if token is expired/revoked/etc
+     * @param jwt
+     * @return
+     */
+    public Optional<ApiToken> getFromJwt(final String jwt, final String ipAddress) {
         
 
-        JWToken bean  = JsonWebTokenFactory.getInstance().getJsonWebTokenService().parseToken(jwt);
+        JWToken bean  = Try.of(()->JsonWebTokenFactory.getInstance().getJsonWebTokenService().parseToken(jwt, ipAddress)).onFailure(e-> {
+            SecurityLogger.logInfo(this.getClass(), "from ipaddress:" + ipAddress + " " + e.getMessage());
+            Logger.warn(this.getClass(), e.getMessage());
+        }).getOrNull();
+                
         
-        return findApiToken(bean.getSubject());
+        
+        return (bean!=null) ? findApiToken(bean.getSubject()) : Optional.empty();
         
     }
-
+    /**
+     * this will either return your ApiToken or 
+     * empty if token is expired/revoked/etc
+     * @param jwt
+     * @return
+     */
+    public Optional<ApiToken> getFromJwt(final String jwt) {
+        return getFromJwt(jwt, null);
+    }
 
     @CloseDBIfOpened
     protected Optional<ApiToken> findApiTokenDB(final String tokenId) {

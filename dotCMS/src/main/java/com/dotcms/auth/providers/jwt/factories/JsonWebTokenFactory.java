@@ -195,7 +195,7 @@ public class JsonWebTokenFactory implements Serializable {
             //Let's set the JWT Claims
             final JwtBuilder builder = Jwts.builder()
                     .setId(jwtBean.getId())
-                    .claim(CLAIM_UPDATED_AT, jwtBean.getModificationDate())
+                    .claim(CLAIM_UPDATED_AT, jwtBean.getActiveUser().get().getModificationDate())
                     .claim(CLAIM_ALLOWED_NETWORK, jwtBean.getClaims().get(CLAIM_ALLOWED_NETWORK))
                     .setSubject(jwtBean.getSubject())
                     .setIssuedAt(new Date())
@@ -209,9 +209,13 @@ public class JsonWebTokenFactory implements Serializable {
         } // generateToken.
 
         
-        
         @Override
         public JWToken parseToken(final String jsonWebToken) {
+            return parseToken(jsonWebToken, null);
+        } // parseToken.
+        
+        @Override
+        public JWToken parseToken(final String jsonWebToken, final String requestingIp) {
 
             JWToken jwtToken = null;
             
@@ -220,7 +224,7 @@ public class JsonWebTokenFactory implements Serializable {
 
 
             if (null != jws) {
-                jwtToken = validateToken(jws, resolveJWToken(jws));
+                jwtToken = validateToken(jws, resolveJWTokenType(jws), requestingIp);
             }
 
 
@@ -228,30 +232,30 @@ public class JsonWebTokenFactory implements Serializable {
         } // parseToken.
         
 
-        private JWToken validateToken(final Jws<Claims> jws, JWToken jwtToken) {
+        private JWToken validateToken(final Jws<Claims> jws, JWToken jwtToken, final String requestingIp) {
             final Claims body = jws.getBody();
             if(jwtToken==null) {
-                IncorrectClaimException claimException = new IncorrectClaimException( jws.getHeader(), body, "No Valid Token Found");
+                IncorrectClaimException claimException = new IncorrectClaimException( jws.getHeader(), body, "No Valid Token Found for:" + body);
                 claimException.setClaimName(Claims.SUBJECT);
                 claimException.setClaimValue(body.getSubject());
                 throw claimException;
             }
             // Validate the issuer is correct, meaning the same cluster id
             if (!this.getIssuer().equals(body.getIssuer())) {
-                IncorrectClaimException claimException = new IncorrectClaimException( jws.getHeader(), body, "Invalid JWT issuer");
+                IncorrectClaimException claimException = new IncorrectClaimException( jws.getHeader(), body, "Invalid JWT issuer. Expected:"  + this.getIssuer() + " and got:" + body.getIssuer());
                 claimException.setClaimName(Claims.ISSUER);
                 claimException.setClaimValue(body.getIssuer());
                 throw claimException;
             }
             if(jwtToken.isExpired()) {
-                IncorrectClaimException claimException = new IncorrectClaimException( jws.getHeader(), body, "Token Expired");
+                IncorrectClaimException claimException = new IncorrectClaimException( jws.getHeader(), body, "Token Expired:" + jwtToken.getExpiresDate());
                 claimException.setClaimName(Claims.EXPIRATION);
                 claimException.setClaimValue(jwtToken.getExpiresDate());
                 throw claimException;
             }
             // get the user tied to the token
             if(!jwtToken.getActiveUser().isPresent()) {
-                IncorrectClaimException claimException = new IncorrectClaimException( jws.getHeader(), body, "JWT Token has No Active User");
+                IncorrectClaimException claimException = new IncorrectClaimException( jws.getHeader(), body, "JWT Token user: " + jwtToken.getUserId() + " is not found or is not active");
                 claimException.setClaimName(Claims.SUBJECT);
                 claimException.setClaimValue(body.getSubject());
                 throw claimException;
@@ -261,40 +265,40 @@ public class JsonWebTokenFactory implements Serializable {
             if(jwtToken.getTokenType() == TokenType.API_TOKEN) {
                 Optional<ApiToken> apiTokenOpt = APILocator.getApiTokenAPI().findApiToken(jwtToken.getSubject());
                 if(!apiTokenOpt.isPresent()) {
-                    IncorrectClaimException claimException = new IncorrectClaimException( jws.getHeader(), body, "Invalid API Token");
+                    IncorrectClaimException claimException = new IncorrectClaimException( jws.getHeader(), body, "Invalid API Token, cannot find ApiToken id:"+ jwtToken.getSubject());
                     claimException.setClaimName(Claims.SUBJECT);
                     claimException.setClaimValue(body.getSubject());
                     throw claimException;
                 }
                 ApiToken apiToken = apiTokenOpt.get();
-                if(apiToken.isExpired()) {
-                    IncorrectClaimException claimException = new IncorrectClaimException( jws.getHeader(), body, "API Token Expired");
-                    claimException.setClaimName(Claims.EXPIRATION);
-                    claimException.setClaimValue(apiToken.expires);
-                    throw claimException;
-                    
-                }
+
                 if(apiToken.isRevoked()) {
-                    IncorrectClaimException claimException = new IncorrectClaimException( jws.getHeader(), body, "API Token Revoked");
+                    IncorrectClaimException claimException = new IncorrectClaimException( jws.getHeader(), body, "API Token Revoked:" + apiToken.revoked);
                     claimException.setClaimName(Claims.EXPIRATION);
                     claimException.setClaimValue(apiToken.revoked);
                     throw claimException;
                     
                 }
                 if(apiToken.isNotBeforeDate()) {
-                    IncorrectClaimException claimException = new IncorrectClaimException( jws.getHeader(), body, "API Token Not Before");
+                    IncorrectClaimException claimException = new IncorrectClaimException( jws.getHeader(), body, "API Token Not Before:" + apiToken.issueDate);
                     claimException.setClaimName(Claims.NOT_BEFORE);
                     claimException.setClaimValue(apiToken.issueDate);
                     throw claimException;
                     
                 }
-                if(!apiToken.isValid()) {
-                    IncorrectClaimException claimException = new IncorrectClaimException( jws.getHeader(), body, "Invalid API Token");
-                    claimException.setClaimName(Claims.SUBJECT);
-                    claimException.setClaimValue(body.getSubject());
+                if(requestingIp!=null && !apiToken.isInIpRange(requestingIp)) {
+                    IncorrectClaimException claimException = new IncorrectClaimException( jws.getHeader(), body, "API Token not allowed for ip:" + requestingIp + ". Accepted range:" + apiToken.allowFromNetwork);
+                    claimException.setClaimName(Claims.AUDIENCE);
+                    claimException.setClaimValue(apiToken.allowFromNetwork);
                     throw claimException;
+                    
                 }
+
             }
+            
+            
+            
+            
             
 
             return jwtToken;
@@ -303,7 +307,7 @@ public class JsonWebTokenFactory implements Serializable {
         
         
         
-        private JWToken resolveJWToken(Jws<Claims> jws) {
+        private JWToken resolveJWTokenType(Jws<Claims> jws) {
            final Claims body = jws.getBody();
            return TokenType.getTokenType(body.getSubject()) == TokenType.USER_TOKEN ? 
                     new UserToken(body.getId(),

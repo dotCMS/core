@@ -38,6 +38,8 @@ public interface JsonWebTokenService extends Serializable {
 	 */
     public JWToken parseToken(String jsonWebToken);
 
+    JWToken parseToken(String jsonWebToken, String requestingIp);
+
 
 
 } // E:O:F:JsonWebTokenService.

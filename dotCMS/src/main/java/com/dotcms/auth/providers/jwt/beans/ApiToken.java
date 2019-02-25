@@ -1,5 +1,6 @@
 package com.dotcms.auth.providers.jwt.beans;
 
+import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.HashMap;
@@ -12,6 +13,7 @@ import com.dotcms.auth.providers.jwt.factories.ApiTokenAPI;
 import com.dotcms.repackage.org.apache.commons.net.util.SubnetUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -318,11 +320,21 @@ public class ApiToken implements JWToken {
                 return new ApiToken(this);
             }
 
-            if (this.userId == null || this.expires == null || expires.before(new Date())) {
-                throw new DotStateException("JWToken is is not valid - needs an userId, a requestingUser and an expires date");
+            
+            if (this.userId == null ) {
+                throw new DotStateException("JWToken is is not valid - needs an userId");
+            }
+            
+            if (this.expires == null || expires.before(new Date())) {
+                throw new DotStateException("JWToken is is not valid -expire date not set or set in the past");
             }
 
-
+            final int days = Config.getIntProperty( "json.web.token.max.allowed.expiration.days",  1000);
+            final Date maxExpirationDate = Date.from(Instant.now().plus(days, ChronoUnit.DAYS));
+            if(this.expires.after(maxExpirationDate)) {
+                throw new DotStateException("JWToken is is not valid, expires " + this.expires + ".  Max expiration date is " + maxExpirationDate + " or " + days + " days in the future");
+            }
+            
             return new ApiToken(this);
         }
     }
