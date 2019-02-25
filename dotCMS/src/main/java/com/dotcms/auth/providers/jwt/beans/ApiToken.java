@@ -16,6 +16,7 @@ import com.dotmarketing.util.Logger;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.google.common.collect.ImmutableMap;
+import com.liferay.portal.model.User;
 
 import io.vavr.control.Try;
 
@@ -58,9 +59,7 @@ public class ApiToken implements JWToken {
         return isValid(null);
     }
 
-    public boolean isExpired() {
-        return this.expires != null && this.expires.before(new Date());
-    }
+
 
     public boolean isRevoked() {
         return this.revoked != null && this.revoked.before(new Date());
@@ -257,7 +256,12 @@ public class ApiToken implements JWToken {
             this.userId = userId;
             return this;
         }
-
+        
+        public Builder withUser(@Nonnull User user) {
+            this.userId = (user!=null) ? user.getUserId() : null;
+            return this;
+        }
+        
         public Builder withRequestingUserId(@Nonnull String requestingUserId) {
             this.requestingUserId = requestingUserId;
             return this;

@@ -66,5 +66,12 @@ public interface JWToken extends Serializable {
      * @return
      */
     String getUserId();
+    
+    default boolean isExpired() {
+        return getExpiresDate() ==null || getExpiresDate().before(new Date());
+    }
+    
+    
+    
 
 } // E:O:F:JWTBean.

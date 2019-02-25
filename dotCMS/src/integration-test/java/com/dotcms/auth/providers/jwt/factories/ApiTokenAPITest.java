@@ -326,8 +326,6 @@ public class ApiTokenAPITest {
         skinnyToken = apiTokenAPI.persistApiToken(skinnyToken, APILocator.systemUser());
 
         String jwt = apiTokenAPI.getJWT(skinnyToken);
-        
-        System.err.println(jwt);
 
         ApiToken savedToken = apiTokenAPI.getFromJwt(jwt).get();
         

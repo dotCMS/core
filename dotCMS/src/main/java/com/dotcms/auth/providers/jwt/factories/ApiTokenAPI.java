@@ -1,19 +1,13 @@
 package com.dotcms.auth.providers.jwt.factories;
 
-import static com.dotcms.auth.providers.jwt.JsonWebTokenUtils.CLAIM_ALLOWED_NETWORK;
-import static com.dotcms.auth.providers.jwt.JsonWebTokenUtils.CLAIM_UPDATED_AT;
-
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
 import com.dotcms.auth.providers.jwt.beans.ApiToken;
 import com.dotcms.auth.providers.jwt.beans.JWToken;
 import com.dotcms.business.CloseDBIfOpened;
-import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotcms.repackage.org.apache.commons.net.util.SubnetUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -23,11 +17,8 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.json.JSONObject;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liferay.portal.model.User;
 
-import io.jsonwebtoken.JwtBuilder;
-import io.jsonwebtoken.Jwts;
 import io.vavr.control.Try;
 
 
