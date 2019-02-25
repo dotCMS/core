@@ -5,6 +5,7 @@ import java.util.Date;
 import java.util.Optional;
 
 import com.dotmarketing.business.APILocator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 
@@ -45,6 +46,7 @@ public interface JWToken extends Serializable {
      * If the user is not active, no user will be returned
      * @return
      */
+    @JsonIgnore
     default Optional<User> getActiveUser(){
         User user = Try.of(()-> APILocator.getUserAPI().loadUserById(getUserId())).getOrNull();
         if(user!=null && user.isActive()) {

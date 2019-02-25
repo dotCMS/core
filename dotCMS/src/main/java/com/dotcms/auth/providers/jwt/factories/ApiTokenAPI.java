@@ -19,6 +19,7 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.json.JSONObject;
+import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
 
 import io.vavr.control.Try;
@@ -243,7 +244,7 @@ public class ApiTokenAPI {
 
 
     @CloseDBIfOpened
-    public List<ApiToken> findApiTokensByUserIdDB(final String userId, final boolean showRevoked) {
+    private List<ApiToken> findApiTokensByUserIdDB(final String userId, final boolean showRevoked) {
 
         final String SQL = (showRevoked) ? sql.SELECT_BY_TOKEN_USER_ID_SQL_ALL : sql.SELECT_BY_TOKEN_USER_ID_SQL_ACTIVE;
 
@@ -257,5 +258,16 @@ public class ApiTokenAPI {
 
     }
 
+    @CloseDBIfOpened
+    public List<ApiToken> findApiTokensByUserId(final String userId, final boolean showRevoked, final User requestingUser) {
+
+        User userWithTokens = Try.of(()->APILocator.getUserAPI().loadUserById(userId, requestingUser, false)).getOrNull();
+        if(userWithTokens==null || userWithTokens.getUserId()==null) {
+            return ImmutableList.of();
+        }
+
+        return findApiTokensByUserIdDB(userId, showRevoked);
+
+    }
 
 }

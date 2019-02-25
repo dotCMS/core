@@ -15,6 +15,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.google.common.collect.ImmutableMap;
@@ -354,7 +355,7 @@ public class ApiToken implements JWToken {
     }
 
 
-
+    @JsonIgnore
     public Optional<ApiToken> getApiToken() {
         return APILocator.getApiTokenAPI().findApiToken(this.id);
     }
@@ -402,6 +403,13 @@ public class ApiToken implements JWToken {
     public String getUserId() {
         return this.userId;
     }
+    
+    
+    public Date getRevokedDate() {
+        return this.revoked;
+    }
+    
+    
 
 }
 

@@ -40,7 +40,7 @@ public class ApiTokenSQL {
 
     protected String SELECT_BY_TOKEN_USER_ID_SQL_ALL = "select * from api_token_issued where token_userid=? order by issue_date desc";
     protected String SELECT_BY_TOKEN_USER_ID_SQL_ACTIVE =
-            "select * from api_token_issued where token_userid=? and reoke_date is null order by issue_date desc";
+            "select * from api_token_issued where token_userid=? and revoke_date is null order by issue_date desc";
     protected String SELECT_BY_TOKEN_ID_SQL = "select * from api_token_issued where token_id=?";
     protected String UPDATE_REVOKE_TOKEN_SQL = "update api_token_issued set revoke_date=?, mod_date=? where token_id=?";
     protected String INSERT_TOKEN_ISSUE_SQL =
