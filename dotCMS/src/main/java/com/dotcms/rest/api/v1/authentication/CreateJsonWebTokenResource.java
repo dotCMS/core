@@ -1,5 +1,18 @@
 package com.dotcms.rest.api.v1.authentication;
 
+import static com.dotcms.util.CollectionsUtils.map;
+import static java.util.Collections.EMPTY_MAP;
+
+import java.io.Serializable;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.Locale;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 import com.dotcms.auth.providers.jwt.JsonWebTokenUtils;
 import com.dotcms.auth.providers.jwt.beans.ApiToken;
 import com.dotcms.cms.login.LoginServiceAPI;
@@ -23,7 +36,13 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
-import com.liferay.portal.*;
+import com.liferay.portal.NoSuchUserException;
+import com.liferay.portal.PortalException;
+import com.liferay.portal.RequiredLayoutException;
+import com.liferay.portal.SystemException;
+import com.liferay.portal.UserActiveException;
+import com.liferay.portal.UserEmailAddressException;
+import com.liferay.portal.UserPasswordException;
 import com.liferay.portal.auth.AuthException;
 import com.liferay.portal.ejb.UserLocalManager;
 import com.liferay.portal.ejb.UserLocalManagerFactory;
@@ -32,23 +51,7 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.language.LanguageWrapper;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
-import com.liferay.portal.util.WebKeys;
 import com.liferay.util.LocaleUtil;
-
-import io.vavr.API;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-import java.io.Serializable;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.Locale;
-
-import static com.dotcms.util.CollectionsUtils.map;
-import static java.util.Collections.EMPTY_MAP;
 
 /**
  * Create a new Json Web Token
