@@ -101,6 +101,7 @@ import com.dotmarketing.portlets.structure.model.Field.FieldType;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.structure.transform.ContentletRelationshipsTransformer;
+import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowComment;
 import com.dotmarketing.portlets.workflows.model.WorkflowHistory;
@@ -5509,6 +5510,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             //Set URL in the new contentlet because is needed to create Identifier in EscontentletAPI.
             if(contentlet.isHTMLPage()){
+                final Template template = APILocator.getTemplateAPI().findWorkingTemplate(contentlet.getStringProperty(HTMLPageAssetAPI.TEMPLATE_FIELD),user,false);
+                if(template.isAnonymous()){//If the Template has a custom layout we need to create a copy of it, so when is modified it does not modify the other pages.
+                    final Template copiedTemplate = APILocator.getTemplateAPI().copy(template,user);
+                    newContentlet.setStringProperty(HTMLPageAssetAPI.TEMPLATE_FIELD, copiedTemplate.getIdentifier());
+                }
                 Identifier identifier = APILocator.getIdentifierAPI().find(contentlet);
                 if(UtilMethods.isSet(identifier) && UtilMethods.isSet(identifier.getAssetName())){
                     final String newAssetName = generateCopyName(identifier.getAssetName(), copySuffix);
