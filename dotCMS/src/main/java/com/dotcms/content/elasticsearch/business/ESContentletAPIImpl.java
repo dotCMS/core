@@ -4174,7 +4174,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     private boolean isSetPropertyVariable(String conVariable) {
         return conVariable.equals(Contentlet.NULL_PROPERTIES)
-            || NEVER_EXPIRE.equals(conVariable)
+            || conVariable.equals(NEVER_EXPIRE)
             || conVariable.equals(Contentlet.CONTENT_TYPE_KEY)
             || conVariable.equals(Contentlet.BASE_TYPE_KEY)
             || conVariable.equals(Contentlet.LIVE_KEY)
