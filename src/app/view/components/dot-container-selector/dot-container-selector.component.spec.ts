@@ -19,49 +19,52 @@ describe('ContainerSelectorComponent', () => {
     let searchableDropdownComponent;
     let containers: DotContainer[];
 
-    beforeEach(async(() => {
-        const messageServiceMock = new MockDotMessageService({
-            addcontainer: 'Add a Container'
-        });
+    beforeEach(
+        async(() => {
+            const messageServiceMock = new MockDotMessageService({
+                addcontainer: 'Add a Container'
+            });
 
-        DOTTestBed.configureTestingModule({
-            declarations: [DotContainerSelectorComponent],
-            imports: [SearchableDropDownModule, BrowserAnimationsModule],
-            providers: [
-                { provide: DotMessageService, useValue: messageServiceMock },
-                IframeOverlayService,
-                PaginatorService
-            ]
-        });
+            DOTTestBed.configureTestingModule({
+                declarations: [DotContainerSelectorComponent],
+                imports: [SearchableDropDownModule, BrowserAnimationsModule],
+                providers: [
+                    { provide: DotMessageService, useValue: messageServiceMock },
+                    IframeOverlayService,
+                    PaginatorService
+                ]
+            });
 
-        fixture = DOTTestBed.createComponent(DotContainerSelectorComponent);
-        comp = fixture.componentInstance;
-        de = fixture.debugElement;
+            fixture = DOTTestBed.createComponent(DotContainerSelectorComponent);
+            comp = fixture.componentInstance;
+            de = fixture.debugElement;
 
-        searchableDropdownComponent = de.query(By.css('dot-searchable-dropdown')).componentInstance;
+            searchableDropdownComponent = de.query(By.css('dot-searchable-dropdown'))
+                .componentInstance;
 
-        containers = [
-            {
-                categoryId: '427c47a4-c380-439f-a6d0-97d81deed57e',
-                deleted: false,
-                friendlyName: 'Friendly Container name',
-                identifier: '427c47a4-c380-439f',
-                name: 'Container 1',
-                type: 'Container',
-                source: 'DB'
-            },
-            {
-                categoryId: '40204d-c380-439f-a6d0-97d8sdeed57e',
-                deleted: false,
-                friendlyName: 'Friendly Container2 name',
-                identifier: '427c47a4-c380-439f',
-                name: 'Container 2',
-                type: 'Container',
-                source: 'FILE',
-                path: 'container/path'
-            }
-        ];
-    }));
+            containers = [
+                {
+                    categoryId: '427c47a4-c380-439f-a6d0-97d81deed57e',
+                    deleted: false,
+                    friendlyName: 'Friendly Container name',
+                    identifier: '427c47a4-c380-439f',
+                    name: 'Container 1',
+                    type: 'Container',
+                    source: 'DB'
+                },
+                {
+                    categoryId: '40204d-c380-439f-a6d0-97d8sdeed57e',
+                    deleted: false,
+                    friendlyName: 'Friendly Container2 name',
+                    identifier: '427c47a4-c380-439f',
+                    name: 'Container 2',
+                    type: 'Container',
+                    source: 'FILE',
+                    path: 'container/path'
+                }
+            ];
+        })
+    );
 
     it(
         'should change Page',
@@ -160,7 +163,6 @@ describe('ContainerSelectorComponent', () => {
         expect(comp.data.length).toEqual(2);
     });
 
-
     it('should set container list replacing the identifier for the path, if needed', () => {
         fixture.detectChanges();
         const paginatorService: PaginatorService = de.injector.get(PaginatorService);
@@ -170,5 +172,4 @@ describe('ContainerSelectorComponent', () => {
         expect(comp.currentContainers[0].identifier).toEqual('427c47a4-c380-439f');
         expect(comp.currentContainers[1].identifier).toEqual('container/path');
     });
-
 });
