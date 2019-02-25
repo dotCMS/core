@@ -9,15 +9,15 @@ export class TemplateContainersCacheService {
     private containers: { [key: string]: { container: DotContainer } };
 
     set(containers: { [key: string]: { container: DotContainer } }): void {
-        const c: { [key: string]: { container: DotContainer } } = {};
+        const mappedContainers: { [key: string]: { container: DotContainer } } = {};
         Object.keys(containers).forEach(function(item: string) {
             if (containers[item].container.source === 'FILE') {
-                c[containers[item].container.path] = containers[item];
+                mappedContainers[containers[item].container.path] = containers[item];
             } else {
-                c[item] = containers[item];
+                mappedContainers[item] = containers[item];
             }
         });
-        this.containers = c;
+        this.containers = mappedContainers;
     }
 
     get(containerId: string): DotContainer {
