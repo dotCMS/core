@@ -3,19 +3,15 @@ import { DotMessageService } from '@services/dot-messages-service';
 import { PaginatorService } from '@services/paginator/paginator.service';
 import { Component, OnInit, Output, EventEmitter, Input } from '@angular/core';
 import { DotContainerColumnBox } from '@portlets/dot-edit-page/shared/models/dot-container-column-box.model';
-
 @Component({
     selector: 'dot-container-selector',
     templateUrl: './dot-container-selector.component.html',
     styleUrls: ['./dot-container-selector.component.scss']
 })
 export class DotContainerSelectorComponent implements OnInit {
-    @Input()
-    data: DotContainerColumnBox[] = [];
-    @Input()
-    multiple: boolean;
-    @Output()
-    change: EventEmitter<DotContainerColumnBox[]> = new EventEmitter();
+    @Input() data: DotContainerColumnBox[] = [];
+    @Input() multiple: boolean;
+    @Output() change: EventEmitter<DotContainerColumnBox[]> = new EventEmitter();
 
     totalRecords: number;
     currentContainers: DotContainer[] = [];
@@ -83,15 +79,23 @@ export class DotContainerSelectorComponent implements OnInit {
      */
     isContainerSelected(dotContainer: DotContainer): boolean {
         return this.data.some(
-            (containerItem) => containerItem.container.identifier === dotContainer.identifier
+            containerItem => containerItem.container.identifier === dotContainer.identifier
         );
     }
 
     private getContainersList(filter = '', offset = 0): void {
         this.paginationService.filter = filter;
-        this.paginationService.getWithOffset(offset).subscribe((items) => {
-            this.currentContainers = items.splice(0);
+        this.paginationService.getWithOffset(offset).subscribe(items => {
+            this.currentContainers = this.setIdentifierReference(items.splice(0));
             this.totalRecords = this.totalRecords || this.paginationService.totalRecords;
+        });
+    }
+
+    private setIdentifierReference(items: DotContainer[]): any {
+        return items.map(dotContainer => {
+            dotContainer.identifier =
+                dotContainer.source === 'FILE' ? dotContainer.path : dotContainer.identifier;
+            return dotContainer;
         });
     }
 }

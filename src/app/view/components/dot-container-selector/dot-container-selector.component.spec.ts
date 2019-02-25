@@ -12,7 +12,7 @@ import { DebugElement } from '@angular/core';
 import { DotContainerSelectorComponent } from './dot-container-selector.component';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
-describe('ContainerSelectorComponent', () => {
+fdescribe('ContainerSelectorComponent', () => {
     let comp: DotContainerSelectorComponent;
     let fixture: ComponentFixture<DotContainerSelectorComponent>;
     let de: DebugElement;
@@ -47,7 +47,8 @@ describe('ContainerSelectorComponent', () => {
                 friendlyName: 'Friendly Container name',
                 identifier: '427c47a4-c380-439f',
                 name: 'Container 1',
-                type: 'Container'
+                type: 'Container',
+                source: 'DB'
             },
             {
                 categoryId: '40204d-c380-439f-a6d0-97d8sdeed57e',
@@ -55,7 +56,9 @@ describe('ContainerSelectorComponent', () => {
                 friendlyName: 'Friendly Container2 name',
                 identifier: '427c47a4-c380-439f',
                 name: 'Container 2',
-                type: 'Container'
+                type: 'Container',
+                source: 'FILE',
+                path: 'container/path'
             }
         ];
     }));

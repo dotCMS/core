@@ -5,4 +5,5 @@ export interface DotPageContainer {
     identifier: string;
     uuid: string;
     contentletsId?: string[];
+    path?: string;
 }
