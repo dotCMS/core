@@ -1,4 +1,4 @@
-package com.dotmarketing.business.expiring;
+package com.dotcms.business.expiring;
 
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;

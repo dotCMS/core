@@ -4,11 +4,11 @@ import com.dotcms.api.system.event.*;
 import com.dotcms.api.system.event.message.builder.SystemConfirmationMessage;
 import com.dotcms.api.system.event.message.builder.SystemMessage;
 import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
+import com.dotcms.business.expiring.ExpiringMap;
+import com.dotcms.business.expiring.ExpiringMapBuilder;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.ErrorEntity;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.expiring.ExpiringMap;
-import com.dotmarketing.business.expiring.ExpiringMapBuilder;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
@@ -23,7 +23,7 @@ public class SystemMessageEventUtil {
 
     private final SystemEventsAPI systemEventsAPI;
     private final ExpiringMap<Object, Object> systemMessagesExpiringMap =
-                    new ExpiringMapBuilder<Object, Object>().build();
+                    new ExpiringMapBuilder<>().build();
 
 
     ///////////////////////

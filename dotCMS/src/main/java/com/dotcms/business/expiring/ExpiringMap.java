@@ -1,4 +1,4 @@
-package com.dotmarketing.business.expiring;
+package com.dotcms.business.expiring;
 
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
@@ -15,7 +15,7 @@ public interface ExpiringMap<K, V> {
      * By default the implementation spend 3 seconds to remove the entry from the cache.
      * @return ExpiringEntryStrategy
      */
-    ExpiringEntryStrategy<K,V> getExpiringEntryStrategy ();
+    ExpiringEntryStrategy<K,V> getExpiringEntryStrategy();
 
     /**
      * Put a value with a key, it will live on the map for the millisecond on millisTtl parameter

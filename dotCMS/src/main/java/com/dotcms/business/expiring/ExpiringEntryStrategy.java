@@ -1,4 +1,4 @@
-package com.dotmarketing.business.expiring;
+package com.dotcms.business.expiring;
 
 import io.vavr.Tuple2;
 
@@ -25,5 +25,5 @@ public interface ExpiringEntryStrategy<K, V> {
      * @param value V
      * @return Tuple2 with the time and their unit
      */
-    Tuple2<Long, TimeUnit> getExpireTime (K key, V value);
+    Tuple2<Long, TimeUnit> getExpireTime(K key, V value);
 }

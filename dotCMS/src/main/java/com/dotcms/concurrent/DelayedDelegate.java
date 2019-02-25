@@ -20,7 +20,8 @@ public class DelayedDelegate implements Delayed {
                            final long delay,
                            final TimeUnit timeUnit) {
 
-        this.delay    = System.currentTimeMillis() + timeUnit.convert(delay, TimeUnit.MILLISECONDS);
+
+        this.delay    = System.currentTimeMillis() + TimeUnit.MILLISECONDS.convert(delay, timeUnit);
         this.delegate = delegate;
     }
 
