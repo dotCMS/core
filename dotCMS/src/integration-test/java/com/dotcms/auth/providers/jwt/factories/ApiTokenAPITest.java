@@ -64,9 +64,8 @@ public class ApiTokenAPITest {
 
 
     Date futureDate(Duration d) {
-        Instant myDate = Instant.now().plus(d);
 
-        return Date.from(myDate);
+        return Date.from(Instant.now().plus(d));
 
 
     }

@@ -4,42 +4,66 @@ import static com.dotcms.util.CollectionsUtils.map;
 import static java.util.Collections.EMPTY_MAP;
 
 import java.io.Serializable;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
+import org.apache.struts.Globals;
 
 import com.dotcms.auth.providers.jwt.beans.ApiToken;
 import com.dotcms.auth.providers.jwt.factories.ApiTokenAPI;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.ws.rs.DELETE;
 import com.dotcms.repackage.javax.ws.rs.GET;
+import com.dotcms.repackage.javax.ws.rs.POST;
 import com.dotcms.repackage.javax.ws.rs.PUT;
 import com.dotcms.repackage.javax.ws.rs.Path;
 import com.dotcms.repackage.javax.ws.rs.PathParam;
 import com.dotcms.repackage.javax.ws.rs.Produces;
+import com.dotcms.repackage.javax.ws.rs.QueryParam;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
+import com.dotcms.repackage.org.apache.commons.net.util.SubnetUtils;
 import com.dotcms.repackage.org.glassfish.jersey.server.JSONP;
+import com.dotcms.rest.ErrorEntity;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.exception.ForbiddenException;
+import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.PermissionLevel;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.SecurityLogger;
+import com.dotmarketing.util.json.JSONObject;
+import com.liferay.portal.NoSuchUserException;
+import com.liferay.portal.RequiredLayoutException;
+import com.liferay.portal.UserActiveException;
+import com.liferay.portal.UserEmailAddressException;
+import com.liferay.portal.UserPasswordException;
+import com.liferay.portal.auth.AuthException;
+import com.liferay.portal.language.LanguageException;
+import com.liferay.portal.language.LanguageUtil;
+import com.liferay.portal.language.LanguageWrapper;
 import com.liferay.portal.model.User;
+import com.liferay.portal.util.WebKeys;
+import com.liferay.util.LocaleUtil;
 
-import io.vavr.API;
 import io.vavr.control.Try;
 
-/**
- * Create a new Json Web Token
- * 
- * @author jsanca
- */
+
 @Path("/v1/authentication")
 public class JsonWebTokenResource implements Serializable {
 
@@ -67,10 +91,12 @@ public class JsonWebTokenResource implements Serializable {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final Response getApiTokens(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
-            @PathParam("userId") final String userId) {
+    public final Response getApiTokens(
+            @Context final HttpServletRequest request, 
+            @Context final HttpServletResponse response,
+            @PathParam("userId") final String userId, 
+            @QueryParam("showRevoked") final boolean showRevoked) {
 
-        final boolean showRevoked = Try.of(() -> Boolean.valueOf(request.getParameter("showRevoked"))).getOrElse(Boolean.FALSE);
 
         final InitDataObject initDataObject = this.webResource.init(null, true, request, true, "users");
 
@@ -103,7 +129,7 @@ public class JsonWebTokenResource implements Serializable {
             }
             return Response.ok(new ResponseEntityView(map("revoked", token), EMPTY_MAP)).build(); // 200
         }
-        return Response.status(404).build();
+        return ExceptionMapperUtil.createResponse(new DotStateException("No token"), Response.Status.NOT_FOUND);
     }
 
     @DELETE
@@ -127,15 +153,53 @@ public class JsonWebTokenResource implements Serializable {
                 return Response.ok(new ResponseEntityView(map("deleted", token), EMPTY_MAP)).build(); // 200
 
             }
-            return Response.status(403).build(); // 403
+            return ExceptionMapperUtil.createResponse(new DotStateException("No permissions to token"), Response.Status.FORBIDDEN);
 
         }
 
 
-        return Response.status(404).build();
+        return ExceptionMapperUtil.createResponse(new DotStateException("No token"), Response.Status.NOT_FOUND);
 
     }
+    
+    @POST
+    @Path("/api-token/issue")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response issueApiToken(@Context final HttpServletRequest request,
+                                   @Context final HttpServletResponse response,
+                                   final Map<String,String> formData) {
+        
+        final InitDataObject initDataObject = this.webResource.init(null, true, request, true, null);
+        final User requestingUser = initDataObject.getUser();
+        final User forUser = Try.of(()->APILocator.getUserAPI().loadUserById(formData.get("userId"),requestingUser, false )).getOrNull();
+        
+        if(forUser ==null) {
+            return ExceptionMapperUtil.createResponse(new DotStateException("No user found"), Response.Status.NOT_FOUND);
+        }
 
+        String netmaskStr = (formData.get("netmask")!=null && !"0.0.0.0/0".equals(formData.get("netmask"))) ? formData.get("netmask"):null;
+
+        
+        final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.ENGLISH);
+        LocalDate expiresDate = Try.of(()->LocalDate.parse(formData.get("expiresDate"), formatter)).getOrElse(LocalDate.now());
+        final String netmask = Try.of(()->new SubnetUtils(netmaskStr).getInfo().getCidrSignature()).getOrNull();
+        ApiToken token = ApiToken.builder()
+                .withAllowFromNetwork(netmask)
+                .withIssueDate(new Date())
+                .withUser(forUser)
+                .withRequestingIp(request.getRemoteAddr())
+                .withRequestingUserId(requestingUser.getUserId())
+                .withExpires( Date.from(expiresDate.atStartOfDay(ZoneId.systemDefault()).toInstant()))
+                .build();
+        token = tokenApi.persistApiToken(token, requestingUser);
+        final String jwt = tokenApi.getJWT(token);
+        return Response.ok(new ResponseEntityView(map("token", token,"jwt", jwt), EMPTY_MAP)).build(); // 200
+        
+                
+        
+    } // authentication
     @GET
     @Path("/api-token/{tokenId}/jwt")
     @JSONP
@@ -171,7 +235,9 @@ public class JsonWebTokenResource implements Serializable {
     
     private boolean checkPerms(final User user, final ApiToken token) {
         return Try.of(() -> (APILocator.getRoleAPI().doesUserHaveRole(user, APILocator.getRoleAPI().loadCMSAdminRole())
-                || user.getUserId().equals(token.getUserId()) || user.getUserId().equals(token.requestingUserId))).getOrElse(false);
+                || user.getUserId().equals(token.getUserId()) 
+                || user.getUserId().equals(token.requestingUserId)))
+                .getOrElse(false);
 
 
     }

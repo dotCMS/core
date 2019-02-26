@@ -1434,26 +1434,20 @@
   
   function requestNewAPIToken(formData) {
 
-	  var nowsers = new Date();
-	  var expires = formData.expiresDate;
+	  formData.userId=currentUser.id;
 
-	  var timeDiff = Math.abs(expires.getTime() - nowsers.getTime());
-	  var diffDays = Math.ceil(timeDiff / (1000 * 3600 * 24)); 
-
-	  
-	  formData.expirationDays=diffDays;
-	  
-	    
         var xhrArgs = {
-            url : "/api/v1/authentication/api-token",
-            handleAs : "json",
-            postData : formData,
+            url : "/api/v1/authentication/api-token/issue",
+            handleAs: "text",
+            postData : dojo.toJson(formData),
+            headers: {
+            	"Content-Type": "application/json"
+            	},
             load : function(data){
-                
-                alert(data);
+            	loadApiKeys() ;
             },
             error : function(error) {
-                console.error("Error deleting APIKey data for keyId [" + keyId + "]", error);
+                console.error("Error requesting a new APIKey", error);
 
             }
         };
@@ -1472,8 +1466,8 @@
       var myTable= `<table class="listingTable">
     	  <tr>
 	    	  <td style='width: 250px;'>Key Id</td>
+	    	  <td style='width: 200px;'>Issued</td>
 	    	  <td style='width: 200px;'>Expires</td>
-	    	  <td style='width: 200px;'>Revoked</td>
 	    	  <td style='width: 150px;'>Requested By</td>
 	    	  <td style='width: 150px;'>Ip Range</td>
 	    	  <td></td>
@@ -1499,7 +1493,7 @@
     	  .replace(new RegExp("{token.id}", 'g'), token.id)
     	  .replace(new RegExp("{token.expires}", 'g'), toDate(token.expires))
     	  .replace(new RegExp("{token.requestingUserId}", 'g'), token.requestingUserId)
-    	  .replace(new RegExp("{token.allowNetworks}", 'g'), (token.allowNetworks==null) ? "" : token.allowNetworks)
+    	  .replace(new RegExp("{token.allowNetworks}", 'g'), (token.allowNetworks==null) ? "any" : token.allowNetworks)
     	  .replace(new RegExp("{token.issueDate}", 'g'), toDate(token.issueDate ))
     	  .replace(new RegExp("{token.requestingUserId}", 'g'), toDate(token.requestingUserId ))
     	  .replace(new RegExp("{token.revoked}", 'g'), token.revoked) 

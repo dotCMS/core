@@ -1,3 +1,7 @@
+<%@page import="java.time.LocalDate"%>
+<%@page import="java.time.temporal.ChronoUnit"%>
+<%@page import="java.time.Instant"%>
+<%@page import="java.time.format.DateTimeFormatter"%>
 <%@ include file="/html/portlet/ext/useradmin/init.jsp" %>
 <%@ include file="/html/portlet/ext/remotepublish/init.jsp" %>
 <%@ include file="/html/portlet/ext/roleadmin/view_role_permissions_js_inc.jsp" %>
@@ -330,12 +334,14 @@
 <h3>Request New Token</h3>
 <table class="listingTable">
         <tr>
+        
             <td><label for="expiresDate">Expires Date: </label></td>
-            <td><input dojoType="dijit.form.DateTextBox" type="text" name="expiresDate" id="expiresDate"></td>
+            <td><input dojoType="dijit.form.DateTextBox" type="text" name="expiresDate" id="expiresDate" value="<%=DateTimeFormatter.ofPattern("uuuu-MM-dd").format(LocalDate.now().plus(3, ChronoUnit.YEARS)) %>"></td>
         </tr>
 
         <tr>
             <td><label for="netmask">CIDR Netmask: </label></td>
+            
             <td><input dojoType="dijit.form.TextBox" type="text" name="netmask" id="netmask" value="0.0.0.0/0"></td>
         </tr>
             <td align="center" colspan="2">

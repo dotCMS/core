@@ -201,7 +201,10 @@ public class ApiTokenAPI {
         if (token.requestingUserId == null || token.requestingIp == null) {
             throw new DotStateException("ApiToken require requesting user and requesting ip addresses to be set");
         }
-        if (token.allowFromNetwork != null) {
+
+        
+        
+        if (token.allowFromNetwork != null && !token.allowFromNetwork.equals("0.0.0.0/0")) {
             Try.of(() -> new SubnetUtils(token.allowFromNetwork).getInfo())
                     .getOrElseThrow(() -> new DotStateException("allowFromNetwork:" + token.allowFromNetwork + " is invalid"));
         }
@@ -230,7 +233,7 @@ public class ApiTokenAPI {
             .addParam(newToken.requestingUserId)
             .addParam(newToken.requestingIp)
             .addParam(newToken.revoked)
-            .addParam(newToken.allowFromNetwork)
+            .addParam("0.0.0.0/0".equals(newToken.allowFromNetwork) ? null : newToken.allowFromNetwork)
             .addParam(newToken.clusterId)
             .addParam(newToken.claims)
             .addParam(newToken.modDate).loadResult();
