@@ -1311,16 +1311,182 @@
 	}
 
 	
-  function loadApiKeys(user) {
+	function revokeKey(keyId){
 
-	    alert("tbd")
+		    var xhrArgs = {
+		        url : "/api/v1/authentication/api-token/" + keyId+ "/revoke",
+		        handleAs : "json",
+		        load : function(data){
+		        	loadApiKeys()
+		        },
+		        error : function(error) {
+		            console.error("Error revoking APIKey data for keyId [" + keyId + "]", error);
+
+		        }
+		    };
+		
+		    dojo.xhrPut(xhrArgs);
+
+	}
+	
+	function requestNewJwt() {
+		  var howLong = prompt("How Many Days?", "3560");
+		  howLong =  (howLong != null && parseInt(howLong)!=NaN ) ? parseInt(howLong) : 60;
+		  howLong = howLong<0 ? 60 : howLong > 1000000 ? 1000000 : howLong;
+          var ipRange = prompt("CICR Network (e.g. 192.168.1.0/24)?", "0.0.0.0/0");
+          ipRange =  (ipRange != null ) ? ipRange : "0.0.0.0/0";
+          
+          var data = {};
+          data.howLong=howLong;
+          data.ipRange=ipRange;
+          
+          
+          
+          
+          var xhrArgs = {
+                  url : "/api/v1/authentication/api-token/",
+                  handleAs : "json",
+                  load : function(data){
+                      confirm( data.entity.jwt);
+                  },
+                  error : function(error) {
+                      console.error("Error deleting APIKey data for keyId [" + keyId + "]", error);
+
+                  }
+              };
+          
+              dojo.xhrPost(xhrArgs);
+          
+          
+		}
+	
+	
+	
+    function getJwt(keyId){
+    	
+    	var x = document.querySelectorAll(".tokenHolderDiv");
+    	for (var i = 0; i < x.length; i++) {
+    	  x[i].style.display = "none";
+    	}
+    	
+        var xhrArgs = {
+            url : "/api/v1/authentication/api-token/" + keyId + "/jwt",
+            handleAs : "json",
+            load : function(data){
+            	
+            	var myTd = document.getElementById("tokenDiv" + keyId);
+            	myTd.style.display="";
+            	myTd.innerHTML =  data.entity.jwt;
+            },
+            error : function(error) {
+                console.error("Error deleting APIKey data for keyId [" + keyId + "]", error);
+
+            }
+        };
+    
+        dojo.xhrGet(xhrArgs);
+
+}
+	
+	
+	
+	   function deleteKey(keyId){
+
+           var xhrArgs = {
+               url : "/api/v1/authentication/api-token/" + keyId + "/delete",
+               handleAs : "json",
+               load : function(data){
+                   loadApiKeys()
+               },
+               error : function(error) {
+                   console.error("Error deleting APIKey data for keyId [" + keyId + "]", error);
+
+               }
+           };
+       
+           dojo.xhrDelete(xhrArgs);
+
    }
 	
 	
+  function loadApiKeys() {
+	    var showRevokedApiTokens = document.getElementById("showRevokedApiTokens").checked;
+	  var parent=document.getElementById("apiKeysDiv")
+        var xhrArgs = {
+            url : "/api/v1/authentication/api-tokens/" + currentUser.id + "?showRevoked=" + showRevokedApiTokens,
+            handleAs : "json",
+            load : function(data){
+            	writeApiKeys(data);
+            },
+            error : function(error) {
+                console.error("Error returning APIKey data for user id [" + currentUser.id + "]", error);
+                parent.innerHTML = "An unexpected error occurred: " + error;
+            }
+        };
+
+	    dojo.xhrGet(xhrArgs);
+
+   }
 	
+  
+  function toDate(millis){
+	  
+	  return new Date(millis).toLocaleString();
+	  
+  }
+  
+  
+  
 	
-	
-	
+  function writeApiKeys(data) {
+      var parent=document.getElementById("apiKeysDiv")
+      var tokens = data.entity.tokens;
+   
+      var myTable= `<table class="listingTable">
+    	  <tr>
+	    	  <td style='width: 250px;'>Key Id</td>
+	    	  <td style='width: 200px;'>Expires</td>
+	    	  <td style='width: 200px;'>Revoked</td>
+	    	  <td style='width: 150px;'>Requested By</td>
+	    	  <td style='width: 150px;'>Ip Range</td>
+	    	  <td></td>
+    	  </tr>`;
+      for (var i=0; i<tokens.length; i++) {
+    	  var token=tokens[i];
+    	  var myRow=`<tr>
+	    	   <td style="{revokedClass}">{token.id}</td>
+	    	   <td>{token.issueDate}</td>
+	    	   <td>{token.expires}</td>
+	    	   <td>{token.requestingUserId}</td>
+	    	   <td>{token.allowNetworks}</td>`;
+	    	   
+	    	   if(token.revoked){
+	    		   myRow+=`<td style="display:{isNotRevoked}"><a href='javascript:deleteKey(\"{token.id}\")'>delete</a> </td>`;
+	    	   }
+	    	   else{
+	    		   myRow+=`<td style="display:{isRevoked}"><a href='javascript:revokeKey(\"{token.id}\")'>revoke</a> | <a href='javascript:getJwt("{token.id}")'>get token</a></td>`;
+               }
+	    	   myRow+=`</tr>`;
+    	   
+    	  myRow=myRow
+    	  .replace(new RegExp("{token.id}", 'g'), token.id)
+    	  .replace(new RegExp("{token.expires}", 'g'), toDate(token.expires))
+    	  .replace(new RegExp("{token.requestingUserId}", 'g'), token.requestingUserId)
+    	  .replace(new RegExp("{token.allowNetworks}", 'g'), (token.allowNetworks==null) ? "" : token.allowNetworks)
+    	  .replace(new RegExp("{token.issueDate}", 'g'), toDate(token.issueDate ))
+    	  .replace(new RegExp("{token.requestingUserId}", 'g'), toDate(token.requestingUserId ))
+    	  .replace(new RegExp("{token.revoked}", 'g'), token.revoked) 
+          .replace(new RegExp("{revokedClass}", 'g'), (token.revoked) ? "text-decoration:line-through;" : "")
+          .replace(new RegExp("{isRevoked}", 'g'),  (token.revoked) ? "none" : "")
+    	  .replace(new RegExp("{isNotRevoked}", 'g'),  (token.revoked) ? "" : "none");
+    	   myTable+=   myRow; 
+
+    	   myTable+="<tr><td colspan='6' class='tokenHolderDiv' style='white-space:normal;padding:10px 200px;display:none;font-family:monospace; word-break: break-word;' id='tokenDiv"+token.id+"'></div></td></tr>";
+    	  
+      }
+      myTable+="</table>";
+      parent.innerHTML=myTable;
+  }
 	
 	
 	function saveUserAdditionalInfo(){

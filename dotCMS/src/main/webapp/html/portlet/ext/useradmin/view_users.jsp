@@ -300,9 +300,14 @@
 					
 					<!-- START API Keys Tab -->
 					<div dojoType="dijit.layout.ContentPane" id="apiKeysTab" title="<%= LanguageUtil.get(pageContext, "API Access Keys") %>">
-
+					
+					
+					    <div style="text-align:right"><input type="checkbox" id="showRevokedApiTokens" onclick="loadApiKeys()" dojoType="dijit.form.CheckBox" /> Show Revoked</div>  
+                        <div id="apiKeysDiv"></div>
                     
-                    
+                        <div class="buttonRow">
+                            <button dojoType="dijit.form.Button" onclick="requestNewToken()" type="button" iconClass="saveIcon"><%= LanguageUtil.get(pageContext, "Request New Token") %></button>
+                        </div>
                     
                     </div>
 					<!-- START API Keys Tab -->
