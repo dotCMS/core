@@ -1,16 +1,11 @@
 package com.dotmarketing.portlets.htmlpageasset.business.render.page;
 
-import com.dotcms.repackage.com.fasterxml.jackson.core.JsonGenerator;
-import com.dotcms.repackage.com.fasterxml.jackson.databind.JsonSerializer;
-import com.dotcms.repackage.com.fasterxml.jackson.databind.SerializerProvider;
+
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.fasterxml.jackson.databind.ObjectWriter;
-import com.google.common.collect.ImmutableMap;
 
-import java.io.IOException;
 import java.util.Date;
-import java.util.Map;
+
 
 /**
  * Contain information about a {@link HTMLPageAssetRendered}

@@ -94,7 +94,7 @@ public class ContentletRelationshipsTest extends IntegrationTestBase {
     public static Object[] testCases() {
         return new TestCase[]{
                 //invalid indexed
-                new TestCase(false, true, 4, 2),
+                new TestCase(false, true, 4, 1),
                 new TestCase(false, false, 3, 0),
                 //invalid listed
                 new TestCase(true, true, 3, 1),

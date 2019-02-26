@@ -2,7 +2,7 @@ package com.dotmarketing.portlets.htmlpageasset.business.render;
 
 
 import com.beust.jcommander.internal.Maps;
-import com.dotcms.rendering.velocity.services.PageContextBuilder;
+import com.dotcms.rendering.velocity.services.PageRenderUtil;
 import com.dotcms.rendering.velocity.services.VelocityResourceKey;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -31,7 +31,7 @@ public class ContainerRenderedBuilder {
 
 
     public ContainerRenderedBuilder(final HTMLPageAsset page, final PageMode mode) throws DotDataException, DotSecurityException {
-        this(new PageContextBuilder(page, APILocator.systemUser(), mode).getContainersRaw(), null, mode);
+        this(new PageRenderUtil(page, APILocator.systemUser(), mode).getContainersRaw(), null, mode);
 
 
     }

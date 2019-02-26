@@ -43,7 +43,7 @@ public class FieldDataFetcher implements DataFetcher<Object> {
                     fieldValue = Integer.parseInt(field.values());
                 } else if(field instanceof TextField && field.dataType().equals(DataTypes.FLOAT)) {
                     fieldValue = Float.parseFloat(field.values());
-                } else {
+                } else if(UtilMethods.isSet(field)) {
                     fieldValue = field.defaultValue();
                 }
             }
