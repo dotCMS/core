@@ -158,16 +158,17 @@
 				for(var sibIndex = 0; sibIndex < o['siblings'].length ; sibIndex++){
 					langImg = o['siblings'][sibIndex]['langCode'];
 	                langName = o['siblings'][sibIndex]['langName'];
-	
+	                var siblingExists=true;
 	                if (o['siblings'][sibIndex]['deleted'] == 'true') {
 	                    imgLangName = langImg + '_gray';
+	                    siblingExists=false;
 	                } else {
 	                    imgLangName = langImg;
 	                }
 	
 	                var dataTags = 'data-inode="' + o['siblings'][sibIndex]['inode'] + '" data-siblingInode="' + o['siblings'][sibIndex]['siblingInode'] + '" data-langId="' + o['siblings'][sibIndex]['langId'] + '"';
 	                var imgTag = '<img style="vertical-align: middle; padding:2px 8px 2px 2px;" src="/html/images/languages/' + imgLangName + '.gif" alt="' + langName +'">';
-	                result = result + '<span value="' + sibIndex + '"><span onclick="openContentletPage(this)" ' + dataTags + '>' + imgTag + '(' + langImg + ')</span></span>';
+	                result = result + '<span value="' + sibIndex + '"><span ' + ((siblingExists) ? '' : 'style="text-decoration:line-through "') + ' onclick="openContentletPage(this)" ' + dataTags + '>' + imgTag + '(' + langImg + ')</span></span>';
 				}
 
                 result = result + "</div></div>";
