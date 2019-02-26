@@ -85,7 +85,7 @@ public class MethodExceptionEventHandlerImpl implements org.apache.velocity.app.
 					.setSeverity(MessageSeverity.ERROR);
 
 			SystemMessageEventUtil.getInstance().
-					pushMessage(systemMessageBuilder.create(), Arrays.asList(userId));
+					pushMessage(e.getMessage(), systemMessageBuilder.create(), Arrays.asList(userId));
 		}
 	}
 
