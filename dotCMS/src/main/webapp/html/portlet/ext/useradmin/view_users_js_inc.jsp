@@ -1364,7 +1364,7 @@
 	
     function getJwt(keyId){
     	
-    	var x = document.querySelectorAll(".tokenHolderDiv");
+    	var x = document.querySelectorAll(".tokenHolderTr");
     	for (var i = 0; i < x.length; i++) {
     	  x[i].style.display = "none";
     	}
@@ -1373,10 +1373,11 @@
             url : "/api/v1/authentication/api-token/" + keyId + "/jwt",
             handleAs : "json",
             load : function(data){
+            	document.getElementById("tokenTr" + keyId).style.display="";
             	
-            	var myTd = document.getElementById("tokenDiv" + keyId);
-            	myTd.style.display="";
-            	myTd.innerHTML =  data.entity.jwt;
+            	var myDiv = document.getElementById("tokenDiv" + keyId);
+            	myDiv.innerHTML =  data.entity.jwt;
+            	
             },
             error : function(error) {
                 console.error("Error deleting APIKey data for keyId [" + keyId + "]", error);
@@ -1502,7 +1503,7 @@
     	  .replace(new RegExp("{isNotRevoked}", 'g'),  (token.revoked) ? "" : "none");
     	   myTable+=   myRow; 
 
-    	   myTable+="<tr><td colspan='6' class='tokenHolderDiv' style='white-space:normal;padding:10px 200px;display:none;font-family:monospace; word-break: break-word;' id='tokenDiv"+token.id+"'></div></td></tr>";
+    	   myTable+="<tr class='tokenHolderTr' style='display:none' id='tokenTr"+token.id+"'><td colspan='6'><div style='background:#eeeeee;margin:auto;max-width:650px;white-space:normal;padding:10px 20px;font-family:monospace; word-break: break-word;'  id='tokenDiv"+token.id+"'></div></td></tr>";
     	  
       }
       myTable+="</table>";
