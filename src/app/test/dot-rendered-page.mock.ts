@@ -4,6 +4,7 @@ import { DotRenderedPage } from '@portlets/dot-edit-page/shared/models/dot-rende
 import { DotLayout } from '@portlets/dot-edit-page/shared/models/dot-layout.model';
 import { mockDotLanguage } from './dot-language.mock';
 import { PageMode } from '@portlets/dot-edit-page/shared/models/page-mode.enum';
+import { CONTAINER_SOURCE } from '@models/container/dot-container.model';
 
 export const mockDotPage: DotPage = {
     canEdit: true,
@@ -68,7 +69,8 @@ export const mockDotContainers: any = [
             type: 'containers',
             identifier: '5363c6c6-5ba0-4946-b7af-cf875188ac2e',
             name: 'Medium Column (md-1)',
-            categoryId: '9ab97328-e72f-4d7e-8be6-232f53218a93'
+            categoryId: '9ab97328-e72f-4d7e-8be6-232f53218a93',
+            source: CONTAINER_SOURCE.DB
         }
     },
     {
@@ -76,7 +78,9 @@ export const mockDotContainers: any = [
             type: 'containers',
             identifier: '56bd55ea-b04b-480d-9e37-5d6f9217dcc3',
             name: 'Large Column (lg-1)',
-            categoryId: 'dde0b865-6cea-4ff0-8582-85e5974cf94f'
+            categoryId: 'dde0b865-6cea-4ff0-8582-85e5974cf94f',
+            source: CONTAINER_SOURCE.FILE,
+            path: '/container/path'
         }
     }
 ];

@@ -1,5 +1,5 @@
 import { of as observableOf } from 'rxjs';
-import { DotContainer } from '@models/container/dot-container.model';
+import { CONTAINER_SOURCE, DotContainer } from '@models/container/dot-container.model';
 import { By } from '@angular/platform-browser';
 import { PaginatorService } from '@services/paginator/paginator.service';
 import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
@@ -11,6 +11,7 @@ import { async, ComponentFixture, fakeAsync, tick } from '@angular/core/testing'
 import { DebugElement } from '@angular/core';
 import { DotContainerSelectorComponent } from './dot-container-selector.component';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { TemplateContainersCacheService } from '@portlets/dot-edit-page/template-containers-cache.service';
 
 describe('ContainerSelectorComponent', () => {
     let comp: DotContainerSelectorComponent;
@@ -19,46 +20,53 @@ describe('ContainerSelectorComponent', () => {
     let searchableDropdownComponent;
     let containers: DotContainer[];
 
-    beforeEach(async(() => {
-        const messageServiceMock = new MockDotMessageService({
-            addcontainer: 'Add a Container'
-        });
+    beforeEach(
+        async(() => {
+            const messageServiceMock = new MockDotMessageService({
+                addcontainer: 'Add a Container'
+            });
 
-        DOTTestBed.configureTestingModule({
-            declarations: [DotContainerSelectorComponent],
-            imports: [SearchableDropDownModule, BrowserAnimationsModule],
-            providers: [
-                { provide: DotMessageService, useValue: messageServiceMock },
-                IframeOverlayService,
-                PaginatorService
-            ]
-        });
+            DOTTestBed.configureTestingModule({
+                declarations: [DotContainerSelectorComponent],
+                imports: [SearchableDropDownModule, BrowserAnimationsModule],
+                providers: [
+                    { provide: DotMessageService, useValue: messageServiceMock },
+                    IframeOverlayService,
+                    PaginatorService,
+                    TemplateContainersCacheService
+                ]
+            });
 
-        fixture = DOTTestBed.createComponent(DotContainerSelectorComponent);
-        comp = fixture.componentInstance;
-        de = fixture.debugElement;
+            fixture = DOTTestBed.createComponent(DotContainerSelectorComponent);
+            comp = fixture.componentInstance;
+            de = fixture.debugElement;
 
-        searchableDropdownComponent = de.query(By.css('dot-searchable-dropdown')).componentInstance;
+            searchableDropdownComponent = de.query(By.css('dot-searchable-dropdown'))
+                .componentInstance;
 
-        containers = [
-            {
-                categoryId: '427c47a4-c380-439f-a6d0-97d81deed57e',
-                deleted: false,
-                friendlyName: 'Friendly Container name',
-                identifier: '427c47a4-c380-439f',
-                name: 'Container 1',
-                type: 'Container'
-            },
-            {
-                categoryId: '40204d-c380-439f-a6d0-97d8sdeed57e',
-                deleted: false,
-                friendlyName: 'Friendly Container2 name',
-                identifier: '427c47a4-c380-439f',
-                name: 'Container 2',
-                type: 'Container'
-            }
-        ];
-    }));
+            containers = [
+                {
+                    categoryId: '427c47a4-c380-439f-a6d0-97d81deed57e',
+                    deleted: false,
+                    friendlyName: 'Friendly Container name',
+                    identifier: '427c47a4-c380-439f',
+                    name: 'Container 1',
+                    type: 'Container',
+                    source: CONTAINER_SOURCE.DB
+                },
+                {
+                    categoryId: '40204d-c380-439f-a6d0-97d8sdeed57e',
+                    deleted: false,
+                    friendlyName: 'Friendly Container2 name',
+                    identifier: '427c47a4-c380-439f',
+                    name: 'Container 2',
+                    type: 'Container',
+                    source: CONTAINER_SOURCE.FILE,
+                    path: 'container/path'
+                }
+            ];
+        })
+    );
 
     it(
         'should change Page',
@@ -155,5 +163,15 @@ describe('ContainerSelectorComponent', () => {
         fixture.detectChanges();
 
         expect(comp.data.length).toEqual(2);
+    });
+
+    it('should set container list replacing the identifier for the path, if needed', () => {
+        fixture.detectChanges();
+        const paginatorService: PaginatorService = de.injector.get(PaginatorService);
+        spyOn(paginatorService, 'getWithOffset').and.returnValue(observableOf(containers));
+        comp.handleFilterChange('');
+
+        expect(comp.currentContainers[0].identifier).toEqual('427c47a4-c380-439f');
+        expect(comp.currentContainers[1].identifier).toEqual('container/path');
     });
 });

@@ -30,7 +30,9 @@ export class DotEditLayoutService {
         dotLayoutBody.rows.forEach((row, rowIndex) => {
             row.columns.forEach(column => {
                 grid.push({
-                    containers: this.getDotContainerColumnBoxFromDotPageContainer(column.containers),
+                    containers: this.getDotContainerColumnBoxFromDotPageContainer(
+                        column.containers
+                    ),
                     config: Object.assign({}, DOT_LAYOUT_GRID_NEW_ROW_TEMPLATE, {
                         sizex: column.width,
                         col: column.leftOffset,
@@ -56,7 +58,9 @@ export class DotEditLayoutService {
                 .sortBy('config.col')
                 .groupBy('config.row')
                 .values()
-                .map(this.getLayoutRowFromLayoutGridBoxes)
+                .map((dotLayoutGrid: DotLayoutGridBox[]) =>
+                    this.getLayoutRowFromLayoutGridBoxes(dotLayoutGrid)
+                )
                 .value()
         };
     }
@@ -80,7 +84,9 @@ export class DotEditLayoutService {
         return this.getDotContainerColumnBoxFromDotPageContainer(containers);
     }
 
-    private getDotContainerColumnBoxFromDotPageContainer(containers: DotPageContainer[]): DotContainerColumnBox[] {
+    private getDotContainerColumnBoxFromDotPageContainer(
+        containers: DotPageContainer[]
+    ): DotContainerColumnBox[] {
         return containers
             .filter(dotPageContainer =>
                 this.templateContainersCacheService.get(dotPageContainer.identifier)
@@ -105,7 +111,9 @@ export class DotEditLayoutService {
                             .map(
                                 (dotContainersColumnBox: DotContainerColumnBox) =>
                                     <DotPageContainer>{
-                                        identifier: dotContainersColumnBox.container.identifier,
+                                        identifier: this.templateContainersCacheService.getContainerReference(
+                                            dotContainersColumnBox.container
+                                        ),
                                         uuid: dotContainersColumnBox.uuid
                                     }
                             )
