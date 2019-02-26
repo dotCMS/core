@@ -2,6 +2,10 @@ import { fakeAsync, tick } from '@angular/core/testing';
 import { Response, ResponseOptions, ConnectionBackend } from '@angular/http';
 import { MockBackend } from '@angular/http/testing';
 import { Site } from './treeable/shared/site.model';
+/**
+ * This should keep comment for now, because import the DOTTestBed throw some build errors and avois to run the dotcms-js test.
+ * Later in anothe issue we should fix this test.
+ */
 // import { DOTTestBed } from 'src/app/test/dot-test-bed';
 import { LoginService } from './login.service';
 import { LoginServiceMock } from 'src/app/test/login-service.mock';
