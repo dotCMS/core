@@ -44,9 +44,9 @@ describe('TemplateContainersCacheService', () => {
 
     it('should return the right container identifier', () => {
         const fileContainer = service.getContainerReference(containers['1'].container);
-        const dataBasseConstainer = service.getContainerReference(containers['2'].container);
+        const dataBaseConstainer = service.getContainerReference(containers['2'].container);
 
         expect(fileContainer).toEqual(containers['1'].container.path);
-        expect(dataBasseConstainer).toEqual(containers['2'].container.identifier);
+        expect(dataBaseConstainer).toEqual(containers['2'].container.identifier);
     });
 });
