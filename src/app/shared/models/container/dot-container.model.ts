@@ -14,6 +14,6 @@ export interface DotContainer {
     source: CONTAINER_SOURCE;
 }
 
-export interface DotContaierMap {
+export interface DotContainerMap {
     [key: string]: { container: DotContainer };
 }

@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import {
     CONTAINER_SOURCE,
-    DotContaierMap,
+    DotContainerMap,
     DotContainer
 } from '@models/container/dot-container.model';
 
@@ -10,9 +10,9 @@ import {
  */
 @Injectable()
 export class TemplateContainersCacheService {
-    private containers: DotContaierMap;
+    private containers: DotContainerMap;
 
-    set(containers: DotContaierMap): void {
+    set(containers: DotContainerMap): void {
         const mappedContainers: { [key: string]: { container: DotContainer } } = {};
 
         Object.keys(containers).forEach(function(item: string) {
