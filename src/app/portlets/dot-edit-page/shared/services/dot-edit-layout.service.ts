@@ -58,7 +58,9 @@ export class DotEditLayoutService {
                 .sortBy('config.col')
                 .groupBy('config.row')
                 .values()
-                .map(this.getLayoutRowFromLayoutGridBoxes)
+                .map((dotLayoutGrid: DotLayoutGridBox[]) =>
+                    this.getLayoutRowFromLayoutGridBoxes(dotLayoutGrid)
+                )
                 .value()
         };
     }
@@ -109,10 +111,9 @@ export class DotEditLayoutService {
                             .map(
                                 (dotContainersColumnBox: DotContainerColumnBox) =>
                                     <DotPageContainer>{
-                                        identifier:
-                                            dotContainersColumnBox.container.source === 'FILE'
-                                                ? dotContainersColumnBox.container.path
-                                                : dotContainersColumnBox.container.identifier,
+                                        identifier: this.templateContainersCacheService.getContainerReference(
+                                            dotContainersColumnBox.container
+                                        ),
                                         uuid: dotContainersColumnBox.uuid
                                     }
                             )

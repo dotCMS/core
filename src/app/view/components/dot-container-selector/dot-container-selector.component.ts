@@ -3,6 +3,7 @@ import { DotMessageService } from '@services/dot-messages-service';
 import { PaginatorService } from '@services/paginator/paginator.service';
 import { Component, OnInit, Output, EventEmitter, Input } from '@angular/core';
 import { DotContainerColumnBox } from '@portlets/dot-edit-page/shared/models/dot-container-column-box.model';
+import { TemplateContainersCacheService } from '@portlets/dot-edit-page/template-containers-cache.service';
 @Component({
     selector: 'dot-container-selector',
     templateUrl: './dot-container-selector.component.html',
@@ -18,7 +19,8 @@ export class DotContainerSelectorComponent implements OnInit {
 
     constructor(
         public paginationService: PaginatorService,
-        public dotMessageService: DotMessageService
+        public dotMessageService: DotMessageService,
+        private templateContainersCacheService: TemplateContainersCacheService
     ) {}
 
     ngOnInit(): void {
@@ -93,8 +95,9 @@ export class DotContainerSelectorComponent implements OnInit {
 
     private setIdentifierReference(items: DotContainer[]): any {
         return items.map(dotContainer => {
-            dotContainer.identifier =
-                dotContainer.source === 'FILE' ? dotContainer.path : dotContainer.identifier;
+            dotContainer.identifier = this.templateContainersCacheService.getContainerReference(
+                dotContainer
+            );
             return dotContainer;
         });
     }

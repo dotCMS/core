@@ -1,5 +1,6 @@
 import { TemplateContainersCacheService } from './template-containers-cache.service';
 import { TestBed } from '@angular/core/testing';
+import { CONTAINER_SOURCE } from '@models/container/dot-container.model';
 
 describe('TemplateContainersCacheService', () => {
     let service: TemplateContainersCacheService;
@@ -20,7 +21,7 @@ describe('TemplateContainersCacheService', () => {
                     identifier: '1',
                     name: 'container 1',
                     type: 'type',
-                    source: 'FILE',
+                    source: CONTAINER_SOURCE.FILE,
                     path: '/containers/path'
                 }
             },
@@ -29,7 +30,7 @@ describe('TemplateContainersCacheService', () => {
                     identifier: '2',
                     name: 'container 2',
                     type: 'type',
-                    source: 'DB'
+                    source: CONTAINER_SOURCE.DB
                 }
             }
         };

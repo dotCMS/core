@@ -1,5 +1,5 @@
 import { of as observableOf } from 'rxjs';
-import { DotContainer } from '@models/container/dot-container.model';
+import { CONTAINER_SOURCE, DotContainer } from '@models/container/dot-container.model';
 import { By } from '@angular/platform-browser';
 import { PaginatorService } from '@services/paginator/paginator.service';
 import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
@@ -11,6 +11,7 @@ import { async, ComponentFixture, fakeAsync, tick } from '@angular/core/testing'
 import { DebugElement } from '@angular/core';
 import { DotContainerSelectorComponent } from './dot-container-selector.component';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { TemplateContainersCacheService } from '@portlets/dot-edit-page/template-containers-cache.service';
 
 describe('ContainerSelectorComponent', () => {
     let comp: DotContainerSelectorComponent;
@@ -31,7 +32,8 @@ describe('ContainerSelectorComponent', () => {
                 providers: [
                     { provide: DotMessageService, useValue: messageServiceMock },
                     IframeOverlayService,
-                    PaginatorService
+                    PaginatorService,
+                    TemplateContainersCacheService
                 ]
             });
 
@@ -50,7 +52,7 @@ describe('ContainerSelectorComponent', () => {
                     identifier: '427c47a4-c380-439f',
                     name: 'Container 1',
                     type: 'Container',
-                    source: 'DB'
+                    source: CONTAINER_SOURCE.DB
                 },
                 {
                     categoryId: '40204d-c380-439f-a6d0-97d8sdeed57e',
@@ -59,7 +61,7 @@ describe('ContainerSelectorComponent', () => {
                     identifier: '427c47a4-c380-439f',
                     name: 'Container 2',
                     type: 'Container',
-                    source: 'FILE',
+                    source: CONTAINER_SOURCE.FILE,
                     path: 'container/path'
                 }
             ];
