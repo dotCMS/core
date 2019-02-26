@@ -1,8 +1,8 @@
 import { Injectable } from '@angular/core';
 import {
     CONTAINER_SOURCE,
-    DotContainerMap,
-    DotContainer
+    DotContainer,
+    DotContainerMap
 } from '@models/container/dot-container.model';
 
 /**
@@ -14,16 +14,26 @@ export class TemplateContainersCacheService {
 
     set(containers: DotContainerMap): void {
         const mappedContainers: DotContainerMap = {};
+        this.containers = containers;
 
         Object.keys(containers).forEach(function(item: string) {
-            mappedContainers[this.getContainerReference(containers[item].container)] =
-                containers[item];
-        }, this);
-        this.containers = mappedContainers;
+            if (containers[item].container.source === CONTAINER_SOURCE.FILE) {
+                mappedContainers[containers[item].container.path] =
+                    containers[item].container.identifier;
+            }
+        });
+
+        this.containers = { ...this.containers, ...mappedContainers };
+        console.log('containers', this.containers);
     }
 
     get(containerId: string): DotContainer {
-        return this.containers[containerId] ? this.containers[containerId].container : null;
+        // return this.containers[containerId] ? this.containers[containerId].container : null;
+        return this.containers[containerId]
+            ? typeof this.containers[containerId].container === 'string'
+              ? this.containers[<string>(<unknown>this.containers[containerId])]
+              : this.containers[containerId].container
+            : null;
     }
 
     /**
