@@ -563,7 +563,7 @@ describe('DotEditContentHtmlService', () => {
         expect(window.top['changed']).toEqual(true);
     });
 
-    it('should emit "save" event when remote rendered edit contentlet', () => {
+    it('should emit "save" event when remote rendered edit contentlet', (done) => {
         this.dotEditContentHtmlService.remoteRendered = true;
 
         const contentlet: DotPageContent = {
@@ -577,6 +577,7 @@ describe('DotEditContentHtmlService', () => {
             expect(res).toEqual({
                 name: 'save'
             });
+            done();
         });
 
         this.dotEditContentHtmlService.renderEditedContentlet(contentlet);
