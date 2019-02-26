@@ -306,7 +306,7 @@
                         <div id="apiKeysDiv"></div>
                     
                         <div class="buttonRow">
-                            <button dojoType="dijit.form.Button" onclick="requestNewToken()" type="button" iconClass="saveIcon"><%= LanguageUtil.get(pageContext, "Request New Token") %></button>
+                            <button dojoType="dijit.form.Button" class="dijitButtonFlat" onclick="dijit.byId('tokenFormDialog').show()" type="button" iconClass="saveIcon"><%= LanguageUtil.get(pageContext, "Request New Token") %></button>
                         </div>
                     
                     </div>
@@ -325,6 +325,34 @@
 
 </div>
 <!-- End Portlet -->
+
+<div dojoType="dijit.Dialog" id="tokenFormDialog" title="Request new API Token" execute="requestNewAPIToken(arguments[0]);">
+<h3>Request New Token</h3>
+<table class="listingTable">
+        <tr>
+            <td><label for="expiresDate">Expires Date: </label></td>
+            <td><input dojoType="dijit.form.DateTextBox" type="text" name="expiresDate" id="expiresDate"></td>
+        </tr>
+
+        <tr>
+            <td><label for="netmask">CIDR Netmask: </label></td>
+            <td><input dojoType="dijit.form.TextBox" type="text" name="netmask" id="netmask" value="0.0.0.0/0"></td>
+        </tr>
+            <td align="center" colspan="2">
+                 <button dojoType="dijit.form.Button" type="button" class="dijitButtonFlat"
+                    onClick="dijit.byId('tokenFormDialog').hide();">Cancel</button>
+                    &nbsp;
+                <button dojoType="dijit.form.Button" type="submit"
+                    onClick="return dijit.byId('tokenFormDialog').isValid();">OK</button>
+            </td>
+</table>
+
+
+</div>
+
+
+
+
 
 <div dojoType="dijit.Menu" id="usersGrid_rowMenu" jsId="usersGrid_rowMenu" style="display: none;">
     <% if ( endPoints ) {%>

@@ -1405,8 +1405,7 @@
            };
        
            dojo.xhrDelete(xhrArgs);
-
-   }
+           }
 	
 	
   function loadApiKeys() {
@@ -1430,11 +1429,39 @@
 	
   
   function toDate(millis){
-	  
-	  return new Date(millis).toLocaleString();
-	  
+     return new Date(millis).toLocaleString();
   }
   
+  function requestNewAPIToken(formData) {
+
+	  var nowsers = new Date();
+	  var expires = formData.expiresDate;
+
+	  var timeDiff = Math.abs(expires.getTime() - nowsers.getTime());
+	  var diffDays = Math.ceil(timeDiff / (1000 * 3600 * 24)); 
+
+	  
+	  formData.expirationDays=diffDays;
+	  
+	    
+        var xhrArgs = {
+            url : "/api/v1/authentication/api-token",
+            handleAs : "json",
+            postData : formData,
+            load : function(data){
+                
+                alert(data);
+            },
+            error : function(error) {
+                console.error("Error deleting APIKey data for keyId [" + keyId + "]", error);
+
+            }
+        };
+    
+        dojo.xhrPost(xhrArgs);
+	  
+	  
+  }
   
   
 	
