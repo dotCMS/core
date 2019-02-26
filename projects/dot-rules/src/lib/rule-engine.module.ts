@@ -37,7 +37,6 @@ import {
     DotcmsEventsService,
     LoggerService,
     SiteService,
-    SocketFactory,
     StringUtils,
     UserModel,
     BrowserUtil
@@ -101,7 +100,6 @@ import { DotAutofocusModule } from './directives/dot-autofocus/dot-autofocus.mod
         DotcmsEventsService,
         LoggerService,
         SiteService,
-        SocketFactory,
         StringUtils,
         UserModel,
 
