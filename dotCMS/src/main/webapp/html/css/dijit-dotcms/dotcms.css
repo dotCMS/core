@@ -4055,8 +4055,8 @@ html, body {
   border-radius: 2px;
   width: 20px;
   height: 16px;
-  border: solid 1px transparent;
-  background-color: var(--color-main);
+  border: solid 1px var(--color-sec);
+  background-color: #fff;
   position: relative;
 }
 
@@ -4065,7 +4065,7 @@ html, body {
 }
 
 .dijitSliderDecrementButtonHover, .dijitSliderIncrementButtonHover {
-  border: solid 1px transparent;
+  border: solid 1px var(--color-main);
 }
 
 .dijitSliderIncrementIconV {
@@ -4105,7 +4105,7 @@ html, body {
 }
 
 .dijitSliderDecrementButtonActive, .dijitSliderIncrementButtonActive {
-  background-color: var(--color-main_mod);
+  background-color: rgba(var(--color-main_rgb), 0.26);
   border: solid 1px transparent;
 }
 
