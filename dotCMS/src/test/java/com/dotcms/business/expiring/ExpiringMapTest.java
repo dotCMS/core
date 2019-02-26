@@ -27,7 +27,7 @@ public class ExpiringMapTest extends UnitTestBase {
         final ExpiringMap<String, String> map = new ExpiringMapBuilder<>()
                 .size(10).ttl(DateUtil.MINUTE_MILLIS).build();
 
-        final String one = "one";
+        final String one = ONE;
         try {
             map.put(one, one, DateUtil.FOUR_SECOND_MILLIS);
             IntStream.of(1, 2, 3).forEach(i -> Assert.assertTrue(map.containsKey(one)));
@@ -46,7 +46,7 @@ public class ExpiringMapTest extends UnitTestBase {
         final ExpiringMap<String, String> map = new ExpiringMapBuilder<>()
                 .size(10).ttl(DateUtil.MINUTE_MILLIS).build();
 
-        final String one = "one";
+        final String one = ONE;
         try {
             map.put(one, one, 4, TimeUnit.SECONDS);
             IntStream.of(1, 2, 3).forEach(i -> Assert.assertTrue(map.containsKey(one)));
@@ -65,7 +65,7 @@ public class ExpiringMapTest extends UnitTestBase {
                 .size(10).ttl(DateUtil.MINUTE_MILLIS).build();
 
 
-        final String one = "one";
+        final String one = ONE;
         try {
             map.put(one, one, Duration.ofMillis(DateUtil.FOUR_SECOND_MILLIS));
             IntStream.of(1, 2, 3).forEach(i -> Assert.assertTrue(map.containsKey(one)));
@@ -83,7 +83,7 @@ public class ExpiringMapTest extends UnitTestBase {
         final ExpiringMap<String, String> map = new ExpiringMapBuilder<>()
                 .size(10).ttl(DateUtil.MINUTE_MILLIS).build();
 
-        final String one = "one";
+        final String one = ONE;
         try {
             map.put(one, one);
             IntStream.of(1, 2, 3).forEach(i -> Assert.assertTrue(map.containsKey(one)));
@@ -117,9 +117,9 @@ public class ExpiringMapTest extends UnitTestBase {
                 })
                 .build();
 
-        final String one   = "one";
-        final String two   = "two";
-        final String three = "three";
+        final String one   = ONE;
+        final String two   = TWO;
+        final String three = THREE;
         try {
             map.put(one, one);
             IntStream.of(1, 2, 3).forEach(i -> Assert.assertTrue(map.containsKey(one)));
