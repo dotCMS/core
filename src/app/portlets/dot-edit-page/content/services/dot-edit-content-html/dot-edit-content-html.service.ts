@@ -43,7 +43,10 @@ export enum DotContentletAction {
 interface RenderAddedItemParams {
     event: PageModelChangeEventType;
     item: DotPageContent | ContentType | DotRelocatePayload;
-    checkExistFunc: (item: DotPageContent | ContentType | DotRelocatePayload, containerEL: HTMLElement) => boolean;
+    checkExistFunc: (
+        item: DotPageContent | ContentType | DotRelocatePayload,
+        containerEL: HTMLElement
+    ) => boolean;
     getContent: (
         container: DotPageContainer,
         form: DotPageContent | ContentType | DotRelocatePayload
@@ -178,28 +181,32 @@ export class DotEditContentHtmlService {
                 `div[data-dot-object="contentlet"][data-dot-identifier="${contentlet.identifier}"]`
             )
         );
+        if (this.remoteRendered) {
+            this.iframeActions$.next({
+                name: 'save'
+            });
+        } else {
+            currentContentlets.forEach((currentContentlet: HTMLElement) => {
+                contentlet.type = currentContentlet.dataset.dotType;
+                const containerEl = <HTMLElement>currentContentlet.parentNode;
 
-        currentContentlets.forEach((currentContentlet: HTMLElement) => {
-            contentlet.type = currentContentlet.dataset.dotType;
+                const container: DotPageContainer = {
+                    identifier: containerEl.dataset.dotIdentifier,
+                    uuid: containerEl.dataset.dotUuid
+                };
 
-            const containerEl = <HTMLElement>currentContentlet.parentNode;
-
-            const container: DotPageContainer = {
-                identifier: containerEl.dataset.dotIdentifier,
-                uuid: containerEl.dataset.dotUuid
-            };
-
-            this.dotContainerContentletService
-                .getContentletToContainer(container, contentlet)
-                .pipe(take(1))
-                .subscribe((contentletHtml: string) => {
-                    const contentletEl: HTMLElement = this.createNewContentletFromString(
-                        contentletHtml
-                    );
-                    containerEl.replaceChild(contentletEl, currentContentlet);
-                    this.renderHTMLToContentlet(contentletEl, contentletHtml);
-                });
-        });
+                this.dotContainerContentletService
+                    .getContentletToContainer(container, contentlet)
+                    .pipe(take(1))
+                    .subscribe((contentletHtml: string) => {
+                        const contentletEl: HTMLElement = this.createNewContentletFromString(
+                            contentletHtml
+                        );
+                        containerEl.replaceChild(contentletEl, currentContentlet);
+                        this.renderHTMLToContentlet(contentletEl, contentletHtml);
+                    });
+            });
+        }
     }
 
     /**
@@ -208,7 +215,10 @@ export class DotEditContentHtmlService {
      * @param * contentlet
      * @memberof DotEditContentHtmlService
      */
-    renderAddedContentlet(contentlet: DotPageContent | DotRelocatePayload, eventType: PageModelChangeEventType): void {
+    renderAddedContentlet(
+        contentlet: DotPageContent | DotRelocatePayload,
+        eventType: PageModelChangeEventType
+    ): void {
         this.renderAddedItem({
             event: eventType,
             item: contentlet,
@@ -621,9 +631,7 @@ export class DotEditContentHtmlService {
     private handlerContentletEvents(event: string): (contentletEvent: any) => void {
         const contentletEventsMap = {
             // When an user create or edit a contentlet from the jsp
-            save: (
-                contentletEvent: DotContentletEventSave
-            ) => {
+            save: (contentletEvent: DotContentletEventSave) => {
                 if (this.currentAction === DotContentletAction.ADD) {
                     this.renderAddedContentlet(
                         contentletEvent.data,

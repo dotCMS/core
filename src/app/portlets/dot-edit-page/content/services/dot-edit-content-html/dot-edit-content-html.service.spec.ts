@@ -563,6 +563,27 @@ describe('DotEditContentHtmlService', () => {
         expect(window.top['changed']).toEqual(true);
     });
 
+    it('should emit "save" event when remote rendered edit contentlet', (done) => {
+        this.dotEditContentHtmlService.remoteRendered = true;
+
+        const contentlet: DotPageContent = {
+            identifier: '456',
+            inode: '456',
+            type: 'type',
+            baseType: 'CONTENT'
+        };
+
+        this.dotEditContentHtmlService.iframeActions$.subscribe((res) => {
+            expect(res).toEqual({
+                name: 'save'
+            });
+            done();
+        });
+
+        this.dotEditContentHtmlService.renderEditedContentlet(contentlet);
+
+    });
+
     describe('document click', () => {
         beforeEach(() => {
             spyOn(dotLicenseService, 'isEnterprise').and.returnValue(observableOf(true));

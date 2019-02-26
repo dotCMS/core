@@ -931,6 +931,18 @@ describe('DotEditContentComponent', () => {
                 expect(dotContentletEditorService.clear).toHaveBeenCalledTimes(1);
             });
         });
+
+        describe('save', () => {
+            it('should reload contentlet when saved', () => {
+                spyOn(component, 'reload').and.callThrough();
+
+                dotEditContentHtmlService.iframeActions$.next({
+                    name: 'save'
+                });
+
+                expect(component.reload).toHaveBeenCalledTimes(1);
+            });
+        });
     });
 
     describe('dialog configuration', () => {

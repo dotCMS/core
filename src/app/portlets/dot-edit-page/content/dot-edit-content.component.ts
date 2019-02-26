@@ -355,7 +355,9 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
             select: () => {
                 this.dotContentletEditorService.clear();
             },
-            save: () => {}
+            save: () => {
+                this.reload();
+            }
         };
 
         return eventsHandlerMap[event];
