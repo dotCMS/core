@@ -9,28 +9,13 @@ export class TemplateContainersCacheService {
     private containers: { [key: string]: { container: DotContainer } };
 
     set(containers: { [key: string]: { container: DotContainer } }): void {
-        // const _this = this;
         const mappedContainers: { [key: string]: { container: DotContainer } } = {};
 
-        // Object.keys(containers).forEach(function(item: string) {
-        //     if (containers[item].container.source === 'FILE') {
-        //         mappedContainers[containers[item].container.path] = containers[item];
-        //     } else {
-        //         mappedContainers[item] = containers[item];
-        //     }
-        // });
-
-
         Object.keys(containers).forEach(function(item: string) {
-            mappedContainers[this.getContainerReference(containers[item].container)] =  containers[item];
-        },  this);
+            mappedContainers[this.getContainerReference(containers[item].container)] =
+                containers[item];
+        }, this);
         this.containers = mappedContainers;
-
-        // Object.keys(containers).forEach(item => {
-        //     debugger;
-        //     this.containers[this.getContainerReference(containers[item].container)] =
-        //         containers[item];
-        // }, this);
     }
 
     get(containerId: string): DotContainer {
