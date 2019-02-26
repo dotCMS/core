@@ -19,7 +19,6 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionSummary;
 import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.RelatedPermissionableGroup;
-import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.business.Ruleable;
 import com.dotmarketing.business.Treeable;
 import com.dotmarketing.business.UserAPI;
@@ -1483,18 +1482,27 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 				currentUser = APILocator.getUserAPI().getAnonymousUser();
 			}
 
-			final RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
+			final List<Contentlet> relatedContentlet;
 
 			if (this.relatedIds.containsKey(variableName)) {
-				return getCachedRelatedContentlets(variableName, currentUser,
-						currentUser.equals(APILocator.getUserAPI().getAnonymousUser()) ? true
-								: respectFrontendRoles);
+				relatedContentlet = getCachedRelatedContentlets(variableName);
 			} else {
 
-				return getNonCachedRelatedContentlets(variableName, currentUser,
-						currentUser.equals(APILocator.getUserAPI().getAnonymousUser()) ? true
-								: respectFrontendRoles, relationshipAPI);
+				relatedContentlet = getNonCachedRelatedContentlets(variableName);
 			}
+
+			//Restricts contentlet according to user permissions
+			return relatedContentlet.stream().filter(contentlet -> {
+				try {
+					return APILocator.getPermissionAPI()
+							.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ,
+									currentUser,
+									currentUser.equals(APILocator.getUserAPI().getAnonymousUser())
+											? true : respectFrontendRoles);
+				} catch (DotDataException e) {
+					return false;
+				}
+			}).collect(Collectors.toList());
 
 		} catch (DotDataException | DotSecurityException e) {
 			Logger.warn(this, "Error getting related content for field " + variableName, e);
@@ -1505,31 +1513,28 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	/**
 	 *
 	 * @param variableName
-	 * @param currentUser
-	 * @param relationshipAPI
 	 * @return
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
 	@Nullable
-	private List<Contentlet> getNonCachedRelatedContentlets(final String variableName,
-			final User currentUser,
-			final boolean respectFrontendRoles, final RelationshipAPI relationshipAPI)
+	private List<Contentlet> getNonCachedRelatedContentlets(final String variableName)
 			throws DotDataException, DotSecurityException {
+
+		final User systemUser = APILocator.getUserAPI().getSystemUser();
 		final com.dotcms.contenttype.model.field.Field field = APILocator.getContentTypeFieldAPI()
 				.byContentTypeIdAndVar(getContentTypeId(), variableName);
 
 		final List<Contentlet> relatedList = APILocator.getContentletAPI()
-				.getRelatedContent(this, relationshipAPI
-								.getRelationshipFromField(field, currentUser),
-				currentUser, respectFrontendRoles);
+				.getRelatedContent(this, APILocator.getRelationshipAPI()
+								.getRelationshipFromField(field, systemUser),
+						systemUser, false);
 
 		if (UtilMethods.isSet(relatedList)) {
 			this.relatedIds.put(variableName,
 					relatedList.stream().map(contentlet -> contentlet.getIdentifier())
 							.collect(
 									CollectionsUtils.toImmutableList()));
-
 		}else{
 			this.relatedIds.put(variableName, Collections.emptyList());
 		}
@@ -1540,12 +1545,10 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	/**
 	 *
 	 * @param variableName
-	 * @param currentUser
 	 * @return
 	 */
 	@NotNull
-	private List<Contentlet> getCachedRelatedContentlets(final String variableName,
-			final User currentUser, final boolean respectFrontendRoles) {
+	private List<Contentlet> getCachedRelatedContentlets(final String variableName) {
 		final List<Contentlet> relatedList = this.relatedIds.get(variableName).stream()
 				.map(identifier -> {
 					try {
@@ -1558,17 +1561,6 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 					}
 				}).collect(Collectors.toList());
 
-		return relatedList.stream().filter(contentlet -> {
-			try {
-				return APILocator.getPermissionAPI()
-						.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ,
-								currentUser, respectFrontendRoles);
-			} catch (DotDataException e) {
-				Logger.warn(this,
-						"Error getting permissions for related content with id "
-								+ contentlet.getIdentifier(), e);
-				return false;
-			}
-		}).collect(Collectors.toList());
+		return relatedList;
 	}
 }
