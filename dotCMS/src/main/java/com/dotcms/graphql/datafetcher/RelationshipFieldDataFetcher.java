@@ -23,7 +23,13 @@ public class RelationshipFieldDataFetcher implements DataFetcher<Object> {
     @Override
     public Object get(final DataFetchingEnvironment environment) throws Exception {
         try {
-            final Contentlet contentlet = environment.getSource();
+            final Contentlet nonCachedContentlet = environment.getSource();
+
+            // let's use the cache content so relationships are also cached
+            final Contentlet contentlet = APILocator.getContentletAPI()
+                .findContentletByIdentifier(nonCachedContentlet.getIdentifier(), nonCachedContentlet.isLive(),
+                nonCachedContentlet.getLanguageId(), APILocator.systemUser(), true);
+
             final String fieldVar = environment.getField().getName();
 
             final Field
