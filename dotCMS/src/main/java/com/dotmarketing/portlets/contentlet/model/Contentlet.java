@@ -108,6 +108,8 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 
     public static final String TITLE_IMAGE_KEY="titleImage";
 
+    public static final String URL_MAP_FOR_CONTENT_KEY = "URL_MAP_FOR_CONTENT";
+
 
 
     public static final String DONT_VALIDATE_ME = "_dont_validate_me";
