@@ -13,3 +13,7 @@ export interface DotContainer {
     type: string;
     source: CONTAINER_SOURCE;
 }
+
+export interface DotContaierMap {
+    [key: string]: { container: DotContainer };
+}

@@ -1,14 +1,18 @@
 import { Injectable } from '@angular/core';
-import { CONTAINER_SOURCE, DotContainer } from '@models/container/dot-container.model';
+import {
+    CONTAINER_SOURCE,
+    DotContaierMap,
+    DotContainer
+} from '@models/container/dot-container.model';
 
 /**
  * Save into cache the containers used by the current template
  */
 @Injectable()
 export class TemplateContainersCacheService {
-    private containers: { [key: string]: { container: DotContainer } };
+    private containers: DotContaierMap;
 
-    set(containers: { [key: string]: { container: DotContainer } }): void {
+    set(containers: DotContaierMap): void {
         const mappedContainers: { [key: string]: { container: DotContainer } } = {};
 
         Object.keys(containers).forEach(function(item: string) {
