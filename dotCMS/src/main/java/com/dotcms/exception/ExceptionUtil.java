@@ -387,22 +387,22 @@ public class ExceptionUtil {
 
     /**
      * Determine if the exception happens on edit or preview mode, if the request is not null will use it to figure out
-     * @param e {@link Exception}
+     * @param exception {@link Exception}
      * @param request {@link HttpServletRequest}
      * @return boolean
      */
-    public static boolean isPreviewOrEditMode(final Exception e, final HttpServletRequest request) {
+    public static boolean isPreviewOrEditMode(final Exception exception, final HttpServletRequest request) {
 
         boolean isPreviewOrEdit          = false;
 
         if (null != request) {
 
             final PageMode pageMode = PageMode.get(request);
-            isPreviewOrEdit = (PageMode.EDIT_MODE == pageMode || PageMode.PREVIEW_MODE == pageMode);
+            isPreviewOrEdit = PageMode.EDIT_MODE == pageMode || PageMode.PREVIEW_MODE == pageMode;
         } else {
 
 
-            for (final StackTraceElement stackTraceElement : e.getStackTrace()) {
+            for (final StackTraceElement stackTraceElement : exception.getStackTrace()) {
                 if (stackTraceElement.getClassName().indexOf("EditMode") > -1 ||
                         stackTraceElement.getMethodName().indexOf("EditMode") > -1 ||
                         stackTraceElement.getClassName().indexOf("PreviewMode") > -1 ||

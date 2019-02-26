@@ -462,7 +462,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 			dc.setSQL(query);
 
 			dc.addParam(id.getParentPath());
-			dc.addParam(id.getAssetName());
+			dc.addParam(id.getAssetName().toLowerCase());
 			dc.addParam(id.getHostId());
 			dc.addParam(id.getAssetType());
 			dc.addParam(id.getSysPublishDate());

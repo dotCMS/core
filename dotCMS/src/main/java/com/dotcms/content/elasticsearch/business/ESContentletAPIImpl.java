@@ -3,6 +3,7 @@ package com.dotcms.content.elasticsearch.business;
 
 import static com.dotcms.exception.ExceptionUtil.bubbleUpException;
 import static com.dotcms.exception.ExceptionUtil.getLocalizedMessageOrDefault;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.URL_MAP_FOR_CONTENT_KEY;
 
 import com.dotcms.api.system.event.ContentletSystemEventUtil;
 import com.dotcms.business.CloseDBIfOpened;
@@ -13,6 +14,7 @@ import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.event.ContentletCheckinEvent;
 import com.dotcms.content.elasticsearch.business.event.ContentletDeletedEvent;
 import com.dotcms.content.elasticsearch.business.event.ContentletPublishEvent;
+import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.field.*;
 import com.dotcms.contenttype.model.type.BaseContentType;
@@ -25,6 +27,7 @@ import com.dotcms.publisher.business.PublisherAPI;
 import com.dotcms.rendering.velocity.services.ContentletLoader;
 import com.dotcms.rendering.velocity.services.PageLoader;
 import com.dotcms.repackage.com.google.common.base.Preconditions;
+import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
 import com.dotcms.repackage.com.google.common.collect.Lists;
 import com.dotcms.repackage.com.google.common.collect.Maps;
 import com.dotcms.repackage.com.google.common.collect.Sets;
@@ -3615,7 +3618,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             if (contentlet != null && contentlet.isFileAsset() && changedURI) {
                 final Contentlet contentletRef = contentlet;
                 HibernateUtil.addCommitListener(() -> {
-                    CacheLocator.getIdentifierCache().removeFromCacheByIdentifier(contentletRef.getIdentifier());
+                    cleanupCacheOnChangedURI(contentletRef);
                 });
             }
 
@@ -3663,7 +3666,27 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return contentlet;
     }
 
+    private void cleanupCacheOnChangedURI(final Contentlet contentlet){
+        CacheLocator.getIdentifierCache().removeFromCacheByIdentifier(contentlet.getIdentifier());
+        //Need both live and working contentlets for they all need to be evicted from cache.
+        try {
+            final Set<Contentlet> allLangContentlets = new ImmutableSet.Builder<Contentlet>()
+                    .addAll(getAllLanguages(contentlet, true,
+                            APILocator.systemUser(), false))
+                    .addAll(getAllLanguages(contentlet, false,
+                            APILocator.systemUser(), false)).build();
+            final ContentletCache contentletCache = CacheLocator.getContentletCache();
+            for (final Contentlet content : allLangContentlets) {
+                contentletCache.remove(content);
+            }
 
+        } catch (DotDataException | DotSecurityException e) {
+            Logger.error(getClass(),
+                    "Unable to cleanup cache fo"
+                    + "r fileAsset identifier " + contentlet
+                            .getIdentifier(), e);
+        }
+    }
 
     private void cleanup(final Contentlet contentlet) {
        if(null != contentlet){
@@ -4114,9 +4137,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     contentlet.setHost((String)value);
                 }else if(conVariable.equals(Contentlet.FOLDER_KEY)){
                     contentlet.setFolder((String)value);
-                }else if(conVariable.equals(Contentlet.NULL_PROPERTIES)){
-                    contentlet.setProperty(conVariable, value);
-                }else if(NEVER_EXPIRE.equals(conVariable) || conVariable.equals(Contentlet.CONTENT_TYPE_KEY)){
+                }else if(isSetPropertyVariable(conVariable)){
                     contentlet.setProperty(conVariable, value);
                 } else if(velFieldmap.get(conVariable) != null){
                     Field field = velFieldmap.get(conVariable);
@@ -4156,6 +4177,18 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         // workflow
         copyWorkflowProperties(contentlet, properties);
+    }
+
+    private boolean isSetPropertyVariable(String conVariable) {
+        return conVariable.equals(Contentlet.NULL_PROPERTIES)
+            || conVariable.equals(NEVER_EXPIRE)
+            || conVariable.equals(Contentlet.CONTENT_TYPE_KEY)
+            || conVariable.equals(Contentlet.BASE_TYPE_KEY)
+            || conVariable.equals(Contentlet.LIVE_KEY)
+            || conVariable.equals(Contentlet.WORKING_KEY)
+            || conVariable.equals(Contentlet.LOCKED_KEY)
+            || conVariable.equals(Contentlet.ARCHIVED_KEY)
+            || conVariable.equals(ESMappingConstants.URL_MAP);
     }
 
     private void copyWorkflowProperties(Contentlet contentlet, Map<String, Object> properties) {
@@ -5946,9 +5979,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
             return null;
         }
 
-        final String CONTENTLET_URL_MAP_FOR_CONTENT = "URL_MAP_FOR_CONTENT";
         final String CONTENTLET_URL_MAP_FOR_CONTENT_404 = "URL_MAP_FOR_CONTENT_404";
-        String result = (String) contentlet.getMap().get(CONTENTLET_URL_MAP_FOR_CONTENT);
+        String result = (String) contentlet.getMap().get(URL_MAP_FOR_CONTENT_KEY);
         if(result != null){
             if(CONTENTLET_URL_MAP_FOR_CONTENT_404.equals(result) ){
                 return null;
@@ -6009,7 +6041,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if(result == null){
             result = CONTENTLET_URL_MAP_FOR_CONTENT_404;
         }
-        contentlet.setStringProperty(CONTENTLET_URL_MAP_FOR_CONTENT, result);
+        contentlet.setStringProperty(URL_MAP_FOR_CONTENT_KEY, result);
         return result;
     }
 

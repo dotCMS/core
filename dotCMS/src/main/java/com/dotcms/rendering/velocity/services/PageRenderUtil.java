@@ -263,7 +263,7 @@ public class PageRenderUtil implements Serializable {
                 }
             } catch (NotFoundInDbException | DotRuntimeException e) {
 
-                ContainerUtil.getInstance().notifyException(e, containerId);
+                new ContainerExceptionNotifier(e, containerId).notifyUser();
                 container = null;
             }
 

@@ -10,7 +10,7 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.containers.business.ContainerUtil;
+import com.dotmarketing.portlets.containers.business.ContainerExceptionNotifier;
 import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.containers.model.FileAssetContainer;
@@ -51,8 +51,8 @@ public class ContainerLoader implements DotLoader {
 
             if (null == container) {
 
-                final DotStateException e = new DotStateException("Cannot find container for : " + key);
-                ContainerUtil.getInstance().notifyException(e, UtilMethods.isSet(key.id1) ? key.id1 : key.path);
+                final DotStateException dotStateException = new DotStateException("Cannot find container for : " + key);
+                new ContainerExceptionNotifier(dotStateException, UtilMethods.isSet(key.id1) ? key.id1 : key.path).notifyUser();
                 throw new DotStateException("cannot find container for : " + key);
             }
 
@@ -62,7 +62,7 @@ public class ContainerLoader implements DotLoader {
         } catch (DotStateException e) {
 
             if (ExceptionUtil.causedBy(e, NotFoundInDbException.class)) {
-                ContainerUtil.getInstance().notifyException(e, UtilMethods.isSet(key.id1) ? key.id1 : key.path);
+                new ContainerExceptionNotifier(e, UtilMethods.isSet(key.id1) ? key.id1 : key.path).notifyUser();
             }
             throw e;
         }

@@ -203,8 +203,14 @@ public class ContentletIntegrationTest {
             Contentlet parentContentlet = new ContentletDataGen(parentContentType.id())
                     .languageId(defaultLanguage.getId()).next();
 
-            final Contentlet childContentlet = new ContentletDataGen(childContentType.id())
+            final ContentletDataGen childContentletDataGen = new ContentletDataGen(childContentType.id());
+
+            final Contentlet childContentlet1 = childContentletDataGen
                     .languageId(defaultLanguage.getId()).nextPersisted();
+
+            final Contentlet childContentlet2 = childContentletDataGen
+                    .languageId(defaultLanguage.getId()).nextPersisted();
+
 
             //Create Relationship
             final Field field = createAndSaveRelationshipField("myChild", parentContentType.id(),
@@ -214,7 +220,7 @@ public class ContentletIntegrationTest {
 
             //Save related content
             parentContentlet = contentletAPI.checkin(parentContentlet,
-                    CollectionsUtils.map(relationship, CollectionsUtils.list(childContentlet)),
+                    CollectionsUtils.map(relationship, CollectionsUtils.list(childContentlet1, childContentlet2)),
                     user,
                     false);
 
@@ -223,19 +229,23 @@ public class ContentletIntegrationTest {
             //set individual permissions to the child
             APILocator.getPermissionAPI()
                     .save(new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
-                            childContentlet.getPermissionId(), newRole.getId(),
-                            PermissionAPI.PERMISSION_READ, true), childContentlet, user, false);
-
-            //Get related content with system user
-            List<Contentlet> result = parentContentlet.getRelated(field.variable(), user, false);
-
-            assertEquals(1, result.size());
-            assertEquals(childContentlet.getIdentifier(), result.get(0).getIdentifier());
+                            childContentlet1.getPermissionId(), newRole.getId(),
+                            PermissionAPI.PERMISSION_READ, true), childContentlet1, user, false);
 
             //Get related content with anonymous user
-            result = parentContentlet.getRelated(field.variable(), null, false);
+            List<Contentlet> result = parentContentlet.getRelated(field.variable(), null, false);
 
-            assertEquals(0, result.size());
+            assertEquals(1, result.size());
+            assertEquals(childContentlet2.getIdentifier(), result.get(0).getIdentifier());
+
+            //Get related content with system user
+            result = parentContentlet.getRelated(field.variable(), user, false);
+
+            assertEquals(2, result.size());
+            assertEquals(childContentlet1.getIdentifier(), result.get(0).getIdentifier());
+            assertEquals(childContentlet2.getIdentifier(), result.get(1).getIdentifier());
+
+
 
         } finally {
 
