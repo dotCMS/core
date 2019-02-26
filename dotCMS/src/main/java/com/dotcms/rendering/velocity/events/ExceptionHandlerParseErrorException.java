@@ -60,7 +60,7 @@ public class ExceptionHandlerParseErrorException implements ExceptionHandler<Par
                             .setSeverity(MessageSeverity.ERROR);
 
                     SystemMessageEventUtil.getInstance().
-                            pushMessage(systemMessageBuilder.create(), Arrays.asList(userId));
+                            pushMessage(e.getTemplateName(), systemMessageBuilder.create(), Arrays.asList(userId));
 
                 }
             } catch (Exception ex) {

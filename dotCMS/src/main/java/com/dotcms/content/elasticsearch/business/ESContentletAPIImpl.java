@@ -27,6 +27,7 @@ import com.dotcms.publisher.business.PublisherAPI;
 import com.dotcms.rendering.velocity.services.ContentletLoader;
 import com.dotcms.rendering.velocity.services.PageLoader;
 import com.dotcms.repackage.com.google.common.base.Preconditions;
+import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
 import com.dotcms.repackage.com.google.common.collect.Lists;
 import com.dotcms.repackage.com.google.common.collect.Maps;
 import com.dotcms.repackage.com.google.common.collect.Sets;
@@ -3617,7 +3618,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             if (contentlet != null && contentlet.isFileAsset() && changedURI) {
                 final Contentlet contentletRef = contentlet;
                 HibernateUtil.addCommitListener(() -> {
-                    CacheLocator.getIdentifierCache().removeFromCacheByIdentifier(contentletRef.getIdentifier());
+                    cleanupCacheOnChangedURI(contentletRef);
                 });
             }
 
@@ -3665,7 +3666,27 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return contentlet;
     }
 
+    private void cleanupCacheOnChangedURI(final Contentlet contentlet){
+        CacheLocator.getIdentifierCache().removeFromCacheByIdentifier(contentlet.getIdentifier());
+        //Need both live and working contentlets for they all need to be evicted from cache.
+        try {
+            final Set<Contentlet> allLangContentlets = new ImmutableSet.Builder<Contentlet>()
+                    .addAll(getAllLanguages(contentlet, true,
+                            APILocator.systemUser(), false))
+                    .addAll(getAllLanguages(contentlet, false,
+                            APILocator.systemUser(), false)).build();
+            final ContentletCache contentletCache = CacheLocator.getContentletCache();
+            for (final Contentlet content : allLangContentlets) {
+                contentletCache.remove(content);
+            }
 
+        } catch (DotDataException | DotSecurityException e) {
+            Logger.error(getClass(),
+                    "Unable to cleanup cache fo"
+                    + "r fileAsset identifier " + contentlet
+                            .getIdentifier(), e);
+        }
+    }
 
     private void cleanup(final Contentlet contentlet) {
        if(null != contentlet){
