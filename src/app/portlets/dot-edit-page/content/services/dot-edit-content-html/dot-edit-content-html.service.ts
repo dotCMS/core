@@ -43,7 +43,10 @@ export enum DotContentletAction {
 interface RenderAddedItemParams {
     event: PageModelChangeEventType;
     item: DotPageContent | ContentType | DotRelocatePayload;
-    checkExistFunc: (item: DotPageContent | ContentType | DotRelocatePayload, containerEL: HTMLElement) => boolean;
+    checkExistFunc: (
+        item: DotPageContent | ContentType | DotRelocatePayload,
+        containerEL: HTMLElement
+    ) => boolean;
     getContent: (
         container: DotPageContainer,
         form: DotPageContent | ContentType | DotRelocatePayload
@@ -208,7 +211,10 @@ export class DotEditContentHtmlService {
      * @param * contentlet
      * @memberof DotEditContentHtmlService
      */
-    renderAddedContentlet(contentlet: DotPageContent | DotRelocatePayload, eventType: PageModelChangeEventType): void {
+    renderAddedContentlet(
+        contentlet: DotPageContent | DotRelocatePayload,
+        eventType: PageModelChangeEventType
+    ): void {
         this.renderAddedItem({
             event: eventType,
             item: contentlet,
@@ -305,16 +311,21 @@ export class DotEditContentHtmlService {
      * @memberof DotEditContentHtmlService
      */
     setContaintersSameHeight(pageLayout: DotLayout): void {
-        const containersLayoutIds = this.getContainersLayoutIds(pageLayout);
-        const containerDomElements = this.getContainerDomElements(containersLayoutIds);
+        try {
+            const containersLayoutIds = this.getContainersLayoutIds(pageLayout);
+            const containerDomElements = this.getContainerDomElements(containersLayoutIds);
 
-        containerDomElements.forEach((containerRow: Array<HTMLElement>, index: number) => {
-            if (containerRow.length > 1) {
-                containerRow.forEach((container: HTMLElement) => {
-                    container.style.height = `${this.rowsMaxHeight[index]}px`;
-                });
-            }
-        });
+            containerDomElements.forEach((containerRow: Array<HTMLElement>, index: number) => {
+                if (containerRow.length > 1) {
+                    containerRow.forEach((container: HTMLElement) => {
+                        container.style.height = `${this.rowsMaxHeight[index]}px`;
+                    });
+                }
+            });
+        } catch (err) {
+            console.error(err);
+        }
+
 
         const body = this.getEditPageDocument().querySelector('body');
         body.style.display = 'none';
@@ -441,7 +452,14 @@ export class DotEditContentHtmlService {
                     `[data-dot-uuid="${container.uuid}"]`
                 ].join('');
                 const containerElement: HTMLElement = doc.querySelector(querySelector);
-                containerElement.style.height = 'auto';
+
+
+                try {
+                    containerElement.style.height = 'auto';
+                } catch (error) {
+                    console.error(error);
+                }
+
                 this.rowsMaxHeight[index] =
                     containerElement.offsetHeight > this.rowsMaxHeight[index]
                         ? containerElement.offsetHeight
@@ -621,9 +639,7 @@ export class DotEditContentHtmlService {
     private handlerContentletEvents(event: string): (contentletEvent: any) => void {
         const contentletEventsMap = {
             // When an user create or edit a contentlet from the jsp
-            save: (
-                contentletEvent: DotContentletEventSave
-            ) => {
+            save: (contentletEvent: DotContentletEventSave) => {
                 if (this.currentAction === DotContentletAction.ADD) {
                     this.renderAddedContentlet(
                         contentletEvent.data,
