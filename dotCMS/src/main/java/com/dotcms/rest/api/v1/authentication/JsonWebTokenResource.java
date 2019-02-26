@@ -4,9 +4,11 @@ import static com.dotcms.util.CollectionsUtils.map;
 import static java.util.Collections.EMPTY_MAP;
 
 import java.io.Serializable;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
@@ -161,7 +163,13 @@ public class JsonWebTokenResource implements Serializable {
         return ExceptionMapperUtil.createResponse(new DotStateException("No token"), Response.Status.NOT_FOUND);
 
     }
-    
+    /**
+     * Issue a new APIToken
+     * @param request
+     * @param response
+     * @param formData - json data, expecting {netmask:'192.168.1.0/24', expirationDays:1000, userId:'dotcms.org.1'}
+     * @return
+     */
     @POST
     @Path("/api-token/issue")
     @JSONP
@@ -180,26 +188,35 @@ public class JsonWebTokenResource implements Serializable {
         }
 
         String netmaskStr = (formData.get("netmask")!=null && !"0.0.0.0/0".equals(formData.get("netmask"))) ? formData.get("netmask"):null;
-
-        
-        final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.ENGLISH);
-        LocalDate expiresDate = Try.of(()->LocalDate.parse(formData.get("expiresDate"), formatter)).getOrElse(LocalDate.now());
         final String netmask = Try.of(()->new SubnetUtils(netmaskStr).getInfo().getCidrSignature()).getOrNull();
+        
+        final int expirationSeconds = Try.of(()->Integer.parseInt(formData.get("expirationSeconds"))).getOrElse(-1);
+        if(expirationSeconds<0) {
+            return ExceptionMapperUtil.createResponse(new DotStateException("invalid expirationDays"), Response.Status.NOT_FOUND);
+        }
+
         ApiToken token = ApiToken.builder()
                 .withAllowFromNetwork(netmask)
                 .withIssueDate(new Date())
                 .withUser(forUser)
                 .withRequestingIp(request.getRemoteAddr())
                 .withRequestingUserId(requestingUser.getUserId())
-                .withExpires( Date.from(expiresDate.atStartOfDay(ZoneId.systemDefault()).toInstant()))
+                .withExpires( Date.from(Instant.now().plus(expirationSeconds, ChronoUnit.SECONDS)))
                 .build();
         token = tokenApi.persistApiToken(token, requestingUser);
         final String jwt = tokenApi.getJWT(token);
         return Response.ok(new ResponseEntityView(map("token", token,"jwt", jwt), EMPTY_MAP)).build(); // 200
-        
-                
-        
-    } // authentication
+
+    }
+
+    
+    /**
+     * Get a JWT issued from a token
+     * @param request
+     * @param response
+     * @param tokenId
+     * @return
+     */
     @GET
     @Path("/api-token/{tokenId}/jwt")
     @JSONP

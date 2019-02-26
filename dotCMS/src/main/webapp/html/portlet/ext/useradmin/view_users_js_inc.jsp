@@ -1434,8 +1434,13 @@
   }
   
   function requestNewAPIToken(formData) {
+      var nowsers = new Date();
+      var expires = formData.expiresDate;
 
-	  formData.userId=currentUser.id;
+      var timeDiff = Math.abs(expires.getTime() - nowsers.getTime());
+      
+      formData.expirationSeconds = Math.ceil(timeDiff / 1000 ); 
+	  formData.userId = currentUser.id;
 
         var xhrArgs = {
             url : "/api/v1/authentication/api-token/issue",
