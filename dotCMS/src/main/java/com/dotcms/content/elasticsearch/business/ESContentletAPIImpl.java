@@ -124,6 +124,7 @@ import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.liferay.portal.NoSuchUserException;
@@ -2642,7 +2643,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
             throw new DotSecurityException("User: " + (user != null ? user.getUserId() : "Unknown")
                     + " cannot edit Contentlet: " + (contentlet != null ? contentlet.getInode() : "Unknown"));
         }
-        final List<Relationship> relationships = this.getRelationships(contentlet.getContentType());
+
+        final ContentType contentType = contentlet.getContentType();
+        final List<Relationship> relationships = this.getRelationships(contentType);
+        final Relationship relationship = related.getRelationship();
+
         if(!relationships.contains(related.getRelationship())){
             throw new DotContentletStateException(
                     "Error adding relationships in contentlet:  " + (contentlet != null ? contentlet
@@ -2665,12 +2670,17 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 throw new DotDataException(e.getMessage(),e);
             }
 
-            deleteRelatedContent(contentlet, related.getRelationship(), related.isHasParent(), user, respectFrontendRoles);
-            Tree newTree = null;
-            Set<Tree> uniqueRelationshipSet = new HashSet<Tree>();
+            /**If there is no relationship field on this content type associated to the relationship,
+               related content should not be deleted**/
+            if (isDeleteRelatedContentNeeded(related.isHasParent(), contentType, relationship)){
+                deleteRelatedContent(contentlet, relationship, related.isHasParent(), user,
+                        respectFrontendRoles);
+            }
 
-            Relationship rel = related.getRelationship();
-            List<Contentlet> conRels = getRelatedContentFromIndex(contentlet,related.getRelationship(),
+            Tree newTree;
+            Set<Tree> uniqueRelationshipSet = new HashSet<>();
+
+            List<Contentlet> conRels = getRelatedContentFromIndex(contentlet,relationship,
                     related.isHasParent(), user,respectFrontendRoles) ;
 
             int treePosition = (conRels != null && conRels.size() != 0) ? conRels.size() : 1 ;
@@ -2679,14 +2689,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
             for (Contentlet c : related.getRecords()) {
                 if (child) {
                     for (Tree currentTree: contentParents) {
-                        if (currentTree.getRelationType().equals(rel.getRelationTypeValue()) && c.getIdentifier().equals(currentTree.getParent())) {
+                        if (currentTree.getRelationType().equals(relationship.getRelationTypeValue()) && c.getIdentifier().equals(currentTree.getParent())) {
                             positionInParent = currentTree.getTreeOrder();
                         }
                     }
 
-                    newTree = new Tree(c.getIdentifier(), contentlet.getIdentifier(), rel.getRelationTypeValue(), positionInParent);
+                    newTree = new Tree(c.getIdentifier(), contentlet.getIdentifier(), relationship.getRelationTypeValue(), positionInParent);
                 } else {
-                    newTree = new Tree(contentlet.getIdentifier(), c.getIdentifier(), rel.getRelationTypeValue(), treePosition);
+                    newTree = new Tree(contentlet.getIdentifier(), c.getIdentifier(), relationship.getRelationTypeValue(), treePosition);
                 }
                 positionInParent=positionInParent+1;
 
@@ -2722,6 +2732,29 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 HibernateUtil.closeSessionSilently();
             }
         }
+    }
+
+    /**
+     * @param hasParent
+     * @param contentType
+     * @param relationship
+     * @return
+     */
+    @VisibleForTesting
+    protected boolean isDeleteRelatedContentNeeded(final boolean hasParent,
+            final ContentType contentType, final Relationship relationship) {
+        com.dotcms.contenttype.model.field.Field field = null;
+
+        if (relationship.isRelationshipField()) {
+            if (hasParent && relationship.getChildRelationName() != null) {
+                field = contentType.fieldMap().get(relationship.getChildRelationName());
+            } else if (relationship.getParentRelationName() != null) {
+                field = contentType.fieldMap().get(relationship.getParentRelationName());
+            }
+        }
+
+        return (!relationship.isRelationshipField() || (relationship.isRelationshipField()
+                && field != null));
     }
 
     // todo: should be in a transaction.????
