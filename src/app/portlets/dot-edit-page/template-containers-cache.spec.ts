@@ -1,9 +1,10 @@
 import { TemplateContainersCacheService } from './template-containers-cache.service';
 import { TestBed } from '@angular/core/testing';
-import { CONTAINER_SOURCE } from '@models/container/dot-container.model';
+import { CONTAINER_SOURCE, DotContainerMap } from '@models/container/dot-container.model';
 
-describe('TemplateContainersCacheService', () => {
+fdescribe('TemplateContainersCacheService', () => {
     let service: TemplateContainersCacheService;
+    let containers: DotContainerMap = {};
 
     beforeEach(() => {
         TestBed.configureTestingModule({
@@ -12,10 +13,7 @@ describe('TemplateContainersCacheService', () => {
         });
 
         service = TestBed.get(TemplateContainersCacheService);
-    });
-
-    it('should return the right container', () => {
-        const containers = {
+        containers = {
             '1': {
                 container: {
                     identifier: '1',
@@ -34,11 +32,21 @@ describe('TemplateContainersCacheService', () => {
                 }
             }
         };
+    });
 
+    it('should return the right container', () => {
         service.set(containers);
 
         expect(service.get('/containers/path')).toEqual(containers[1].container);
         expect(service.get('2')).toEqual(containers[2].container);
         expect(service.get('3')).toBeNull();
+    });
+
+    it('should return the right container identifier', () => {
+        const fileContainer = service.getContainerReference(containers['1'].container);
+        const dataBasseConstainer = service.getContainerReference(containers['2'].container);
+
+        expect(fileContainer).toEqual(containers['1'].container.path);
+        expect(dataBasseConstainer).toEqual(containers['2'].container.identifier);
     });
 });
