@@ -315,16 +315,21 @@ export class DotEditContentHtmlService {
      * @memberof DotEditContentHtmlService
      */
     setContaintersSameHeight(pageLayout: DotLayout): void {
-        const containersLayoutIds = this.getContainersLayoutIds(pageLayout);
-        const containerDomElements = this.getContainerDomElements(containersLayoutIds);
+        try {
+            const containersLayoutIds = this.getContainersLayoutIds(pageLayout);
+            const containerDomElements = this.getContainerDomElements(containersLayoutIds);
 
-        containerDomElements.forEach((containerRow: Array<HTMLElement>, index: number) => {
-            if (containerRow.length > 1) {
-                containerRow.forEach((container: HTMLElement) => {
-                    container.style.height = `${this.rowsMaxHeight[index]}px`;
-                });
-            }
-        });
+            containerDomElements.forEach((containerRow: Array<HTMLElement>, index: number) => {
+                if (containerRow.length > 1) {
+                    containerRow.forEach((container: HTMLElement) => {
+                        container.style.height = `${this.rowsMaxHeight[index]}px`;
+                    });
+                }
+            });
+        } catch (err) {
+            console.error(err);
+        }
+
 
         const body = this.getEditPageDocument().querySelector('body');
         body.style.display = 'none';
@@ -451,7 +456,14 @@ export class DotEditContentHtmlService {
                     `[data-dot-uuid="${container.uuid}"]`
                 ].join('');
                 const containerElement: HTMLElement = doc.querySelector(querySelector);
-                containerElement.style.height = 'auto';
+
+
+                try {
+                    containerElement.style.height = 'auto';
+                } catch (error) {
+                    console.error(error);
+                }
+
                 this.rowsMaxHeight[index] =
                     containerElement.offsetHeight > this.rowsMaxHeight[index]
                         ? containerElement.offsetHeight
