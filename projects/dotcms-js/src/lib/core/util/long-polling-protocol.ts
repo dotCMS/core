@@ -6,6 +6,7 @@ import { pluck } from 'rxjs/operators';
 
 export class LongPollingProtocol extends Protocol {
     private isClosed = false;
+    private isAlreadyOpen = false;
 
     constructor(
         private url: string,
@@ -49,6 +50,8 @@ export class LongPollingProtocol extends Protocol {
             .subscribe(
                 (data) => {
                     this.loggerService.debug('new Events', data);
+                    this.triggerOpen();
+
                     if (data instanceof Array) {
                         data.forEach((message) => {
                             this._message.next(message);
@@ -66,5 +69,12 @@ export class LongPollingProtocol extends Protocol {
                     this._error.next(e);
                 }
             );
+    }
+
+    private triggerOpen(): void {
+        if (!this.isAlreadyOpen) {
+            this._open.next(true);
+            this.isAlreadyOpen = true;
+        }
     }
 }

@@ -36,8 +36,6 @@ export class WebSocketProtocol extends Protocol {
                 if (ev.code === this.NORMAL_CLOSE_CODE) {
                     this._close.next(ev);
                     this._message.complete();
-                } else {
-                    this._error.next(ev);
                 }
             };
 
@@ -49,6 +47,7 @@ export class WebSocketProtocol extends Protocol {
             this.loggerService.debug('Web EventsSocket connection error', error);
             this._error.next(error);
         }
+
     }
 
     close(): void {

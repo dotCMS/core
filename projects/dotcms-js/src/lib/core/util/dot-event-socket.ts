@@ -20,6 +20,7 @@ export class DotEventsSocket {
 
     private status: CONNECTION_STATUS = CONNECTION_STATUS.NONE;
     private _message: Subject<DotEventMessage> = new Subject<DotEventMessage>();
+    private _open: Subject<boolean> = new Subject<boolean>();
 
     /**
      * Initializes this service with the configuration properties that are
@@ -69,14 +70,21 @@ export class DotEventsSocket {
         return this._message.asObservable();
     }
 
-    private connectProtocol(): void {
-        this.protocolImpl.connect();
+    /**
+     * Trigger when a connect is open
+     */
+    open(): Observable<boolean> {
+        return this._open.asObservable();
+    }
 
+    private connectProtocol(): void {
         this.protocolImpl.open$().subscribe(() => {
             this.status = CONNECTION_STATUS.CONNECTED;
+            this._open.next(true);
         });
 
         this.protocolImpl.error$().subscribe(() => {
+
             if (this.isWebSocketProtocol() && this.status !== CONNECTION_STATUS.CONNECTED) {
                 this.loggerService.info(
                     'Error connecting with Websockets, trying again with long polling'
@@ -84,9 +92,8 @@ export class DotEventsSocket {
 
                 this.protocolImpl = this.getLongPollingProtocol();
             }
-
             setTimeout(
-                () => {
+               () => {
                     this.protocolImpl.close();
                     this.connect();
                 },
@@ -108,6 +115,8 @@ export class DotEventsSocket {
                     ),
                 () => this.loggerService.debug('Completed')
             );
+
+        this.protocolImpl.connect();
     }
 
     private getWebSocketProtocol(): WebSocketProtocol {
@@ -127,7 +136,6 @@ export class DotEventsSocket {
     }
 
     private isWebSocketProtocol(): boolean {
-
         return this.protocolImpl instanceof WebSocketProtocol;
     }
 }

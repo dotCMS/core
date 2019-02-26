@@ -1,35 +1,33 @@
 import { Observable, of } from 'rxjs';
-import { ResponseView } from './response-view';
 import { StringUtils } from '../string-utils.service';
 import { LoggerService } from '../logger.service';
 import { DotEventsSocket } from './dot-event-socket';
-import { Url } from './models/url';
+import { DotEventsSocketURL } from './models/dot-event-socket-url';
 import { ConfigParams } from '../dotcms-config.service';
 import { CoreWebService } from '../core-web.service';
 import { Server } from 'mock-socket';
 import { RequestMethod } from '@angular/http';
 import { DotEventMessage } from './models/dot-event-message';
 
-class CoreWebServiceMock extends CoreWebService {
+class CoreWebServiceMock  extends CoreWebService {
 
     constructor() {
         super(null, null, null, null, null);
     }
 
-    public requestView(): Observable<ResponseView> {
+    public requestView(): Observable<any> {
         return null;
     }
 }
 
 describe('DotEventsSocket', () => {
-    let coreWebServiceMock: CoreWebServiceMock;
+    let coreWebServiceMock;
     let dotEventsSocket: DotEventsSocket;
-    const url = new Url('ws', 'testing', 'localhost');
+    const url = new DotEventsSocketURL('ws', 'localhost', '/testing');
 
     beforeEach(() => {
         coreWebServiceMock = new CoreWebServiceMock();
 
-        const loggerService = new LoggerService(new StringUtils());
         const configParamsMock: ConfigParams = {
             colors: {},
             disabledWebsockets: '',
@@ -41,9 +39,11 @@ describe('DotEventsSocket', () => {
             websocketBaseURL: '',
             websocketEndpoints: '',
             websocketProtocol: '',
-            websocketReconnectTime: 3,
+            websocketReconnectTime: 0,
             websocketsSystemEventsEndpoint: '',
         };
+
+        const loggerService = new LoggerService(new StringUtils());
 
         dotEventsSocket = new DotEventsSocket(url, configParamsMock, loggerService, coreWebServiceMock);
     });
@@ -87,16 +87,19 @@ describe('DotEventsSocket', () => {
         });
     });
 
-    xdescribe('LongPolling', () => {
-        it('should connect', () => {
+    fdescribe('LongPolling', () => {
+        it('should connect', (done) => {
             const requestOpts = {
                 method: RequestMethod.Get,
-                url: url,
+                url: 'http://localhost/testing',
                 params: {}
             };
 
+            coreWebServiceMock.dotEventsSocket = dotEventsSocket;
+
             spyOn(coreWebServiceMock, 'requestView').and.callFake(() => {
-                // dotEventsSocket.destroy();
+                dotEventsSocket.destroy();
+
                 return of({
                     entity: {
                         message: 'message'
@@ -106,7 +109,10 @@ describe('DotEventsSocket', () => {
 
             dotEventsSocket.connect();
 
-            expect(coreWebServiceMock.requestView).toHaveBeenCalledWith(requestOpts);
+            dotEventsSocket.open().subscribe(() => {
+                expect(coreWebServiceMock.requestView).toHaveBeenCalledWith(requestOpts);
+                done();
+            });
         });
     });
 });
