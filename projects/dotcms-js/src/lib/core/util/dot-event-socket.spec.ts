@@ -87,7 +87,7 @@ describe('DotEventsSocket', () => {
         });
     });
 
-    fdescribe('LongPolling', () => {
+    describe('LongPolling', () => {
         it('should connect', (done) => {
             const requestOpts = {
                 method: RequestMethod.Get,
