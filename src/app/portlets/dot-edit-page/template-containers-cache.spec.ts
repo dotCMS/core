@@ -2,7 +2,7 @@ import { TemplateContainersCacheService } from './template-containers-cache.serv
 import { TestBed } from '@angular/core/testing';
 import { CONTAINER_SOURCE, DotContainerMap } from '@models/container/dot-container.model';
 
-fdescribe('TemplateContainersCacheService', () => {
+describe('TemplateContainersCacheService', () => {
     let service: TemplateContainersCacheService;
     let containers: DotContainerMap = {};
 
