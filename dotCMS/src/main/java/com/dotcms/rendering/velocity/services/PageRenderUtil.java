@@ -49,7 +49,10 @@ import java.util.stream.Collectors;
 
 import static com.dotmarketing.business.PermissionAPI.*;
 
-public class PageContextBuilder implements Serializable {
+/**
+ * Util class for rendering a Page
+ */
+public class PageRenderUtil implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
@@ -68,8 +71,14 @@ public class PageContextBuilder implements Serializable {
     final long languageId;
     final Host site;
 
-    public PageContextBuilder(final IHTMLPage htmlPage, final User user, final PageMode mode, final long languageId, final Host site)
-            throws DotSecurityException, DotDataException {
+
+    public PageRenderUtil(
+            final IHTMLPage htmlPage,
+            final User user,
+            final PageMode mode,
+            final long languageId,
+            final Host site) throws DotSecurityException, DotDataException {
+
         this.pageFoundTags = Lists.newArrayList();
         this.htmlPage = htmlPage;
         this.user = user;
@@ -82,13 +91,13 @@ public class PageContextBuilder implements Serializable {
 
     }
 
-    public PageContextBuilder(final IHTMLPage htmlPage, final User user, final PageMode mode, final long languageId)
+    public PageRenderUtil(final IHTMLPage htmlPage, final User user, final PageMode mode, final long languageId)
             throws DotSecurityException, DotDataException {
         this(htmlPage, user, mode, languageId, null);
 
     }
 
-    public PageContextBuilder(final IHTMLPage htmlPage, final User user, final PageMode mode)
+    public PageRenderUtil(final IHTMLPage htmlPage, final User user, final PageMode mode)
             throws DotSecurityException, DotDataException {
         this(htmlPage,user, mode, htmlPage.getLanguageId(), null);
     }
@@ -352,13 +361,6 @@ public class PageContextBuilder implements Serializable {
         return raws;
     }
 
-
-    
-    
-    
-    
-    
-    
     public List<Tag> getPageFoundTags() {
         return this.pageFoundTags;
     }
@@ -378,7 +380,12 @@ public class PageContextBuilder implements Serializable {
         return incoming;
     }
 
-
+    /**
+     * Return the Velocity code to set the Page's variables as: contentletList, contentType,
+     * totalSize, etc.
+     *
+     * @return
+     */
     public String asString() {
 
         final StringWriter s = new StringWriter();
@@ -390,6 +397,10 @@ public class PageContextBuilder implements Serializable {
 
     }
 
+    /**
+     * Return the Page's {@link ContainerRaw}
+     * @return
+     */
     public List<ContainerRaw> getContainersRaw() {
         return this.containersRaw;
     }

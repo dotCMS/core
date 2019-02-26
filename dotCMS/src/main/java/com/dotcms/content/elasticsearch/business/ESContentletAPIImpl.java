@@ -14,13 +14,11 @@ import com.dotcms.content.elasticsearch.business.event.ContentletCheckinEvent;
 import com.dotcms.content.elasticsearch.business.event.ContentletDeletedEvent;
 import com.dotcms.content.elasticsearch.business.event.ContentletPublishEvent;
 import com.dotcms.contenttype.business.ContentTypeAPI;
-import com.dotcms.contenttype.model.field.CategoryField;
-import com.dotcms.contenttype.model.field.ConstantField;
-import com.dotcms.contenttype.model.field.DataTypes;
-import com.dotcms.contenttype.model.field.HostFolderField;
+import com.dotcms.contenttype.model.field.*;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeIf;
+import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publisher.business.PublisherAPI;
@@ -103,6 +101,7 @@ import com.dotmarketing.portlets.structure.model.Field.FieldType;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.structure.transform.ContentletRelationshipsTransformer;
+import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowComment;
 import com.dotmarketing.portlets.workflows.model.WorkflowHistory;
@@ -1101,72 +1100,42 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     @CloseDBIfOpened
     @Override
-    public Object getFieldValue(Contentlet contentlet, com.dotcms.contenttype.model.field.Field theField){
-        if(theField instanceof ConstantField){
-            contentlet.getMap().put(theField.variable(), theField.values());
-            return theField.values();
-        }
-        if(theField instanceof HostFolderField){
-            if(FolderAPI.SYSTEM_FOLDER.equals(contentlet.getFolder())){
-                return contentlet.getHost();
-            }else{
-                return contentlet.getFolder();
-            }
-        }else if(theField instanceof CategoryField){
-            Category category;
-            try {
-                category = categoryAPI.find(theField.values(), APILocator.getUserAPI().getSystemUser(), false);
-                // Get all the Contentlets Categories
-                List<Category> selectedCategories = categoryAPI.getParents(contentlet, APILocator.getUserAPI().getSystemUser(), false);
-                Set<Category> categoryList = new HashSet<Category>();
-                List<Category> categoryTree = categoryAPI.getAllChildren(category, APILocator.getUserAPI().getSystemUser(), false);
-                if (selectedCategories.size() > 0 && categoryTree != null) {
-                    for (int k = 0; k < categoryTree.size(); k++) {
-                        Category cat = (Category) categoryTree.get(k);
-                        for (Category categ : selectedCategories) {
-                            if (categ.getInode().equalsIgnoreCase(cat.getInode())) {
-                                categoryList.add(cat);
-                            }
-                        }
-                    }
-                }
-                return categoryList;
-            } catch (DotDataException | DotSecurityException e) {
-                throw new DotStateException(e);
-            }
-
-        }else{
-            return contentlet.get(theField.variable());
-        }
+    public Object getFieldValue(final Contentlet contentlet,
+            final com.dotcms.contenttype.model.field.Field theField) {
+        return getFieldValue(contentlet, theField, null);
     }
 
     @CloseDBIfOpened
     @Override
-    public Object getFieldValue(Contentlet contentlet, Field theField){
+    public Object getFieldValue(final Contentlet contentlet,
+            final com.dotcms.contenttype.model.field.Field theField, final User user) {
         try {
-
-            final User user = APILocator.getUserAPI().getSystemUser();
-            if(fieldAPI.isElementConstant(theField)){
-                if(contentlet.getMap().get(theField.getVelocityVarName())==null)
-                    contentlet.getMap().put(theField.getVelocityVarName(), theField.getValues());
-                return theField.getValues();
+            User currentUser = user;
+            if (currentUser == null) {
+                currentUser = APILocator.getUserAPI().getSystemUser();
             }
 
-
-            if(theField.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString())){
-                if(FolderAPI.SYSTEM_FOLDER.equals(contentlet.getFolder()))
+            if (theField instanceof ConstantField) {
+                contentlet.getMap().put(theField.variable(), theField.values());
+                return theField.values();
+            }
+            if (theField instanceof HostFolderField) {
+                if (FolderAPI.SYSTEM_FOLDER.equals(contentlet.getFolder())) {
                     return contentlet.getHost();
-                else
+                } else {
                     return contentlet.getFolder();
-            }else if(theField.getFieldType().equals(Field.FieldType.CATEGORY.toString())){
-                Category category = categoryAPI.find(theField.getValues(), user, false);
+                }
+            } else if (theField instanceof CategoryField) {
+                final Category category = categoryAPI.find(theField.values(), currentUser, false);
                 // Get all the Contentlets Categories
-                List<Category> selectedCategories = categoryAPI.getParents(contentlet, user, false);
-                Set<Category> categoryList = new HashSet<Category>();
-                List<Category> categoryTree = categoryAPI.getAllChildren(category, user, false);
+                final List<Category> selectedCategories = categoryAPI
+                        .getParents(contentlet, currentUser, false);
+                final Set<Category> categoryList = new HashSet<Category>();
+                final List<Category> categoryTree = categoryAPI
+                        .getAllChildren(category, currentUser, false);
                 if (selectedCategories.size() > 0 && categoryTree != null) {
                     for (int k = 0; k < categoryTree.size(); k++) {
-                        Category cat = (Category) categoryTree.get(k);
+                        final Category cat = categoryTree.get(k);
                         for (Category categ : selectedCategories) {
                             if (categ.getInode().equalsIgnoreCase(cat.getInode())) {
                                 categoryList.add(cat);
@@ -1175,20 +1144,37 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     }
                 }
                 return categoryList;
-            } else if (theField.getFieldType().equals(FieldType.RELATIONSHIP.toString())) {
-                ContentletRelationships contentletRelationships = new ContentletRelationships(
+
+            } else if (theField instanceof RelationshipField) {
+                final ContentletRelationships contentletRelationships = new ContentletRelationships(
                         contentlet);
-                Relationship relationship = relationshipAPI
-                        .getRelationshipFromField(theField, user);
-                ContentletRelationshipRecords records = contentletRelationships.new ContentletRelationshipRecords(
+                final Relationship relationship = relationshipAPI
+                        .getRelationshipFromField(theField, currentUser);
+                final ContentletRelationshipRecords records = contentletRelationships.new ContentletRelationshipRecords(
                         relationship,
                         relationshipAPI.isParent(relationship, contentlet.getContentType()));
-                records.setRecords(contentlet.getRelated(theField.getVelocityVarName()));
+                records.setRecords(contentlet.getRelated(theField.variable(), user));
                 contentletRelationships.setRelationshipsRecords(CollectionsUtils.list(records));
                 return contentletRelationships;
-            }else{
-                return contentlet.get(theField.getVelocityVarName());
+            } else {
+                return contentlet.get(theField.variable());
             }
+        } catch (DotDataException | DotSecurityException e) {
+            throw new DotStateException(e);
+        }
+    }
+
+    /**
+     * @param theField a legacy field from the contentlet's parent Content Type
+     * @deprecated Use {@link ESContentletAPIImpl#getFieldValue(Contentlet,
+     * com.dotcms.contenttype.model.field.Field)} instead
+     */
+    @CloseDBIfOpened
+    @Override
+    @Deprecated
+    public Object getFieldValue(final Contentlet contentlet, final Field theField) {
+        try {
+            return getFieldValue(contentlet, new LegacyFieldTransformer(theField).from());
         } catch (Exception e) {
             Logger.error(this, e.getMessage(), e);
             return null;
@@ -1319,7 +1305,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 + "; ContentIdentifier: " + (contentlet != null ? contentlet.getIdentifier() : "Unknown"), contentlet.getHost());
 
         try {
-            canLock(contentlet, user);
+            canLock(contentlet, user, respectFrontendRoles);
 
             if(contentlet.isLocked() ){
                 // persists the webasset
@@ -3051,7 +3037,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
 
             if(contentlet.getMap().get(Contentlet.DONT_VALIDATE_ME) == null) {
-                canLock(contentlet, user);
+                canLock(contentlet, user, respectFrontendRoles);
             }
             contentlet.setModUser(user.getUserId());
             // start up workflow
@@ -5524,6 +5510,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             //Set URL in the new contentlet because is needed to create Identifier in EscontentletAPI.
             if(contentlet.isHTMLPage()){
+                final Template template = APILocator.getTemplateAPI().findWorkingTemplate(contentlet.getStringProperty(HTMLPageAssetAPI.TEMPLATE_FIELD),user,false);
+                if(template.isAnonymous()){//If the Template has a custom layout we need to create a copy of it, so when is modified it does not modify the other pages.
+                    final Template copiedTemplate = APILocator.getTemplateAPI().copy(template,user);
+                    newContentlet.setStringProperty(HTMLPageAssetAPI.TEMPLATE_FIELD, copiedTemplate.getIdentifier());
+                }
                 Identifier identifier = APILocator.getIdentifierAPI().find(contentlet);
                 if(UtilMethods.isSet(identifier) && UtilMethods.isSet(identifier.getAssetName())){
                     final String newAssetName = generateCopyName(identifier.getAssetName(), copySuffix);

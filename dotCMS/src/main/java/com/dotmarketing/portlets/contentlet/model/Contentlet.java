@@ -60,6 +60,8 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import org.apache.commons.lang.builder.ToStringBuilder;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a content unit in the system. Ideally, every single domain object
@@ -546,8 +548,6 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	}
 
     /**
-     *
-     * @param fieldVarName
      * @param stringValue
      * @throws DotRuntimeException
      */
@@ -590,8 +590,6 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 		map.put(fieldVarName, boolValue);
 	}
     /**
-     *
-     * @param fieldVarName
      * @param boolValue
      * @throws DotRuntimeException
      */
@@ -658,8 +656,6 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	}
 
     /**
-     *
-     * @param fieldVarName
      * @param floatValue
      * @throws DotRuntimeException
      */
@@ -1457,51 +1453,122 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	/**
 	 * Returns a list of all contentlets related to this instance given a RelationshipField variable
 	 * @param variableName
+	 * @param user
 	 * @return
 	 */
-	public List<Contentlet> getRelated(final String variableName) {
+	public List<Contentlet> getRelated(final String variableName, final User user){
+		return getRelated(variableName, user, true);
+	}
+
+	/**
+	 * Returns a list of all contentlets related to this instance given a RelationshipField variable
+	 * @param variableName
+	 * @param user
+	 * @param respectFrontendRoles
+	 * @return
+	 */
+	public List<Contentlet> getRelated(final String variableName, final User user,
+			final boolean respectFrontendRoles) {
 
 		if (!UtilMethods.isSet(this.relatedIds)){
 			relatedIds = Maps.newConcurrentMap();
 		}
 
-		final RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
+		try {
+			User currentUser;
 
-		if (this.relatedIds.containsKey(variableName)) {
-			return this.relatedIds.get(variableName).stream().map(identifier -> {
-				try {
-					return APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(identifier);
-				} catch (DotDataException | DotSecurityException e) {
-					Logger.warn(this, "No field found with this variable name " + variableName, e);
-					throw new DotStateException(e);
-				}
-			}).collect(Collectors.toList());
-		} else {
-			try {
-				final User user = APILocator.getUserAPI().getSystemUser();
-				com.dotcms.contenttype.model.field.Field field = APILocator.getContentTypeFieldAPI()
-						.byContentTypeIdAndVar(getContentTypeId(), variableName);
-
-				final List<Contentlet> relatedList = APILocator.getContentletAPI()
-						.getRelatedContent(this, relationshipAPI
-										.getRelationshipFromField(field, user),
-						user, false);
-
-				if (UtilMethods.isSet(relatedList)) {
-					this.relatedIds.put(variableName,
-							relatedList.stream().map(contentlet -> contentlet.getIdentifier())
-									.collect(
-											CollectionsUtils.toImmutableList()));
-
-				}else{
-					this.relatedIds.put(variableName, Collections.emptyList());
-				}
-
-				return relatedList;
-			} catch (DotDataException | DotSecurityException e) {
-				Logger.warn(this, "No field found with this variable name " + variableName, e);
-				throw new DotStateException(e);
+			if (user != null){
+				currentUser = user;
+			} else{
+				currentUser = APILocator.getUserAPI().getAnonymousUser();
 			}
+
+			final RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
+
+			if (this.relatedIds.containsKey(variableName)) {
+				return getCachedRelatedContentlets(variableName, currentUser,
+						currentUser.equals(APILocator.getUserAPI().getAnonymousUser()) ? true
+								: respectFrontendRoles);
+			} else {
+
+				return getNonCachedRelatedContentlets(variableName, currentUser,
+						currentUser.equals(APILocator.getUserAPI().getAnonymousUser()) ? true
+								: respectFrontendRoles, relationshipAPI);
+			}
+
+		} catch (DotDataException | DotSecurityException e) {
+			Logger.warn(this, "Error getting related content for field " + variableName, e);
+			throw new DotStateException(e);
 		}
+	}
+
+	/**
+	 *
+	 * @param variableName
+	 * @param currentUser
+	 * @param relationshipAPI
+	 * @return
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	@Nullable
+	private List<Contentlet> getNonCachedRelatedContentlets(final String variableName,
+			final User currentUser,
+			final boolean respectFrontendRoles, final RelationshipAPI relationshipAPI)
+			throws DotDataException, DotSecurityException {
+		final com.dotcms.contenttype.model.field.Field field = APILocator.getContentTypeFieldAPI()
+				.byContentTypeIdAndVar(getContentTypeId(), variableName);
+
+		final List<Contentlet> relatedList = APILocator.getContentletAPI()
+				.getRelatedContent(this, relationshipAPI
+								.getRelationshipFromField(field, currentUser),
+				currentUser, respectFrontendRoles);
+
+		if (UtilMethods.isSet(relatedList)) {
+			this.relatedIds.put(variableName,
+					relatedList.stream().map(contentlet -> contentlet.getIdentifier())
+							.collect(
+									CollectionsUtils.toImmutableList()));
+
+		}else{
+			this.relatedIds.put(variableName, Collections.emptyList());
+		}
+
+		return relatedList;
+	}
+
+	/**
+	 *
+	 * @param variableName
+	 * @param currentUser
+	 * @return
+	 */
+	@NotNull
+	private List<Contentlet> getCachedRelatedContentlets(final String variableName,
+			final User currentUser, final boolean respectFrontendRoles) {
+		final List<Contentlet> relatedList = this.relatedIds.get(variableName).stream()
+				.map(identifier -> {
+					try {
+						return APILocator.getContentletAPI()
+								.findContentletByIdentifierAnyLanguage(identifier);
+					} catch (DotDataException | DotSecurityException e) {
+						Logger.warn(this, "No content found with id " + identifier,
+								e);
+						throw new DotStateException(e);
+					}
+				}).collect(Collectors.toList());
+
+		return relatedList.stream().filter(contentlet -> {
+			try {
+				return APILocator.getPermissionAPI()
+						.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ,
+								currentUser, respectFrontendRoles);
+			} catch (DotDataException e) {
+				Logger.warn(this,
+						"Error getting permissions for related content with id "
+								+ contentlet.getIdentifier(), e);
+				return false;
+			}
+		}).collect(Collectors.toList());
 	}
 }

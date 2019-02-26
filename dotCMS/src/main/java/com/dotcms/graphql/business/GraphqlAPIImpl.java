@@ -81,6 +81,8 @@ public class GraphqlAPIImpl implements GraphqlAPI {
 
     private volatile GraphQLSchema schema;
 
+    private static final String TYPES_AND_FIELDS_VALID_NAME_REGEX = "[_A-Za-z][_0-9A-Za-z]*";
+
     public GraphqlAPIImpl() {
         // custom type mappings
         this.fieldClassGraphqlTypeMap.put(BinaryField.class, CustomFieldType.BINARY.getType());
@@ -148,6 +150,11 @@ public class GraphqlAPIImpl implements GraphqlAPI {
     private void createSchemaType(ContentType contentType,
                                               final Map<String, GraphQLObjectType> graphqlObjectTypes) {
 
+        // skip contentType.variable not sticking to the regex
+        if(!contentType.variable().matches(TYPES_AND_FIELDS_VALID_NAME_REGEX)) {
+            return;
+        }
+
         final GraphQLObjectType.Builder builder = GraphQLObjectType.newObject().name(contentType.variable());
 
         // add CONTENT interface fields
@@ -160,6 +167,11 @@ public class GraphqlAPIImpl implements GraphqlAPI {
         final List<Field> fields = contentType.fields();
 
         fields.forEach((field)->{
+            // skip field.variable not sticking to the regex
+            if(!field.variable().matches(TYPES_AND_FIELDS_VALID_NAME_REGEX)) {
+                return;
+            }
+
             if(!(field instanceof RowField) && !(field instanceof ColumnField)) {
                 if (field instanceof RelationshipField) {
                     handleRelationshipField(contentType, builder, field, graphqlObjectTypes);

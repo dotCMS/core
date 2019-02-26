@@ -659,10 +659,10 @@ function doRestoreIndexSnapshot(evt){
 		oReq.onreadystatechange = function(){
 			if (oReq.readyState === 4) {
 		     var msgJson = JSON.parse(oReq.response)
-				 if (oReq.status === 200) {
+			 if (oReq.status === 200) {
 		      	 showDotCMSErrorMessage(msgJson.message,true);
 		     } else {
-		     	 showDotCMSErrorMessage(msgJson.errors[0].message);
+		     	 showDotCMSErrorMessage(msgJson.message);
 		     }
 		     restoreSnapshotUploadCompleted();
 		  }

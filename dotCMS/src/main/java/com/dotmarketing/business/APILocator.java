@@ -61,6 +61,7 @@ import com.dotcms.visitor.business.VisitorAPIImpl;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.portal.PortletAPI;
 import com.dotmarketing.business.portal.PortletAPIImpl;
+import com.dotmarketing.cms.urlmap.URLMapAPIImpl;
 import com.dotmarketing.common.business.journal.DistributedJournalAPI;
 import com.dotmarketing.common.business.journal.DistributedJournalAPIImpl;
 import com.dotmarketing.exception.DotDataException;
@@ -908,6 +909,15 @@ public class APILocator extends Locator<APIIndex>{
 	}
 
 	/**
+	 * Creates a single instance of the {@link ThemeAPI} class.
+	 *
+	 * @return The {@link ThemeAPI} class.
+	 */
+	public static URLMapAPIImpl getURLMapAPI() {
+		return (URLMapAPIImpl) getInstance(APIIndex.URLMAP_API);
+	}
+
+	/**
 	 * Generates a unique instance of the specified dotCMS API.
 	 *
 	 * @param index
@@ -1042,7 +1052,8 @@ enum APIIndex
 	HTMLPAGE_ASSET_RENDERED_API,
 	CLUSTER_API,
 	THEME_API,
-	GRAPHQL_API;
+	GRAPHQL_API,
+	URLMAP_API;
 
 
 	Object create() {
@@ -1116,6 +1127,7 @@ enum APIIndex
 			case CLUSTER_API: return new ClusterAPIImpl();
 			case THEME_API: return new ThemeAPIImpl();
 			case GRAPHQL_API: return  new GraphqlAPIImpl();
+			case URLMAP_API: return new URLMapAPIImpl();
 		}
 		throw new AssertionError("Unknown API index: " + this);
 	}

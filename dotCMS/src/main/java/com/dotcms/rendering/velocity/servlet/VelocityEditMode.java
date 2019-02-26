@@ -1,7 +1,7 @@
 package com.dotcms.rendering.velocity.servlet;
 
 import com.dotcms.rendering.velocity.events.PreviewEditParseErrorException;
-import com.dotcms.rendering.velocity.services.PageContextBuilder;
+import com.dotcms.rendering.velocity.services.PageRenderUtil;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.rendering.velocity.viewtools.content.ContentMap;
 import com.dotmarketing.beans.Host;
@@ -63,7 +63,7 @@ public class VelocityEditMode extends VelocityModeHandler {
 
         long langId = WebAPILocator.getLanguageWebAPI().getLanguage(request).getId();
         IHTMLPage htmlPage = APILocator.getHTMLPageAssetAPI().findByIdLanguageFallback(id, langId, mode.showLive,user, mode.respectAnonPerms);
-        new PageContextBuilder(htmlPage, user, PageMode.EDIT_MODE).addAll(context);
+        new PageRenderUtil(htmlPage, user, PageMode.EDIT_MODE).addAll(context);
 
         context.put("dotPageContent", new ContentMap(((Contentlet) htmlPage), user, mode, host, context));
 

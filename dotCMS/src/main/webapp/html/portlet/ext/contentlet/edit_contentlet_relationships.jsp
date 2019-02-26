@@ -96,7 +96,7 @@
 			String parentInode="";
 			String isParent="";
 			String relationTypeValue = rel.getRelationTypeValue();
-			String relationJsName = "rel_" + UtilMethods.javaScriptifyVariable(relationTypeValue) + "_" + (records.isHasParent()?"P":"C");
+			String relationJsName = "rel_tab_" + UtilMethods.javaScriptifyVariable(relationTypeValue) + "_" + (records.isHasParent()?"P":"C");
 			relationType= rel.getRelationTypeValue();
 			if (records.isHasParent()) {
 				targetStructure = rel.getChildStructure();

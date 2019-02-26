@@ -15,8 +15,6 @@ import com.dotmarketing.portlets.templates.model.Template;
 @JsonSerialize(using = HTMLPageAssetRenderedSerializer.class)
 public class HTMLPageAssetRendered extends PageView {
     private final String html;
-    
-
 
     public HTMLPageAssetRendered(final Host site,
                                  final Template template,

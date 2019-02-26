@@ -1,9 +1,5 @@
 package com.dotmarketing.portlets.htmlpages.business;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FolderDataGen;
@@ -51,20 +47,25 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import static org.junit.Assert.*;
+
 @RunWith(DataProviderRunner.class)
 public class HTMLPageAPITest extends IntegrationTestBase {
+
+	private static User sysuser;
 	
     @BeforeClass
     public static void prepare () throws Exception {
     	
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
+
+		sysuser=APILocator.getUserAPI().getSystemUser();
     }
     
     @Test
     public void saveHTMLPage() throws Exception {
-    	
-        User sysuser=APILocator.getUserAPI().getSystemUser();
+
         Host host=APILocator.getHostAPI().findDefaultHost(sysuser, false);
         String ext="."+Config.getStringProperty("VELOCITY_PAGE_EXTENSION");
         
@@ -122,7 +123,6 @@ public class HTMLPageAPITest extends IntegrationTestBase {
 
     @Test
     public void delete() throws Exception {
-        User sysuser=APILocator.getUserAPI().getSystemUser();
         Host host=APILocator.getHostAPI().findDefaultHost(sysuser, false);
         String ext="."+Config.getStringProperty("VELOCITY_PAGE_EXTENSION");
 
@@ -191,7 +191,6 @@ public class HTMLPageAPITest extends IntegrationTestBase {
 
     @Test
     public void move() throws Exception {
-    	User sysuser=null;
     	HTMLPageAsset page=null;
     	Template template=null;
     	Container container=null;
@@ -200,7 +199,6 @@ public class HTMLPageAPITest extends IntegrationTestBase {
     	Folder folder=null;
 
     	try {
-    		sysuser=APILocator.getUserAPI().getSystemUser();
     		Host host=APILocator.getHostAPI().findDefaultHost(sysuser, false);
     		String ext="."+Config.getStringProperty("VELOCITY_PAGE_EXTENSION");
 
@@ -291,6 +289,37 @@ public class HTMLPageAPITest extends IntegrationTestBase {
     	}
 
     }
+
+    @Test
+	public void testCopy_customTemplateCreatesNewTemplate() throws Exception{
+    	Template template = null;
+    	Folder folder = null;
+    	HTMLPageAsset pageAsset= null;
+		HTMLPageAsset copiedHTMLPageAsset = null;
+		try{
+			//Create Template with Anonymous prefix, so it's a custom layout
+    		template = new TemplateDataGen().title(Template.ANONYMOUS_PREFIX + System.currentTimeMillis()).nextPersisted();
+
+    		//Create page with that template
+			folder = new FolderDataGen().nextPersisted();
+			pageAsset = new HTMLPageDataGen(folder, template).nextPersisted();
+
+			//Copy Page
+			final Contentlet contentlet_copiedHTMLPageAsset = APILocator.getContentletAPI().copyContentlet(pageAsset,sysuser,false);
+			copiedHTMLPageAsset = APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet_copiedHTMLPageAsset);
+
+
+			//Assert that the template id of the copied page is different than the original page
+			assertNotEquals("Template ID is the same for both pages",pageAsset.getTemplateId(),copiedHTMLPageAsset.getTemplateId());
+		}finally {
+    		if(template!=null){
+    			TemplateDataGen.remove(template);
+			}
+			if(folder!=null){
+				FolderDataGen.remove(folder);
+			}
+		}
+	}
 
 	/**
 	 * Tests the deletion of a multi-lang page in only one language.
