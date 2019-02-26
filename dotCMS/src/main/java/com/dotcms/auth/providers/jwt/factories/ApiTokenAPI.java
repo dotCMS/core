@@ -46,7 +46,12 @@ public class ApiTokenAPI {
 
     private final static ApiToken TOKEN_404 = ApiToken.builder().withId(TOKEN_404_STR).build();
 
-
+    /**
+     * Returns the API token 
+     * that matches the token id.  tokenId must start with "api"
+     * @param tokenId
+     * @return
+     */
     public Optional<ApiToken> findApiToken(final String tokenId) {
         if(!tokenId.startsWith(TOKEN_PREFIX)) {
             return Optional.empty();
@@ -62,7 +67,14 @@ public class ApiTokenAPI {
 
     }
     
-    
+    /**
+     * Issues a unique compact JWT 
+     * for the token.  Multiple JWTs can be issued, though
+     * when the APIToken is revoked, they will all
+     * become invalid
+     * @param tokenId
+     * @return
+     */
     public String getJWT(final ApiToken apiToken) {
         if(!findApiToken(apiToken.id).isPresent()) {
             throw new DotStateException("You can only get a JWT from a APIToken that has been persisted to db. Call persistApiToken first");
@@ -100,7 +112,11 @@ public class ApiTokenAPI {
     public Optional<JWToken> fromJwt(final String jwt) {
         return fromJwt(jwt, null);
     }
-
+    /**
+     * Finds ApiToken in the db
+     * @param tokenId
+     * @return
+     */
     @CloseDBIfOpened
     protected Optional<ApiToken> findApiTokenDB(final String tokenId) {
 
@@ -119,7 +135,11 @@ public class ApiTokenAPI {
 
 
     }
-
+    /**
+     * deletes ApiToken in the db
+     * @param tokenId
+     * @return
+     */
     @CloseDBIfOpened
     public boolean deleteToken(final String tokenId) {
         SecurityLogger.logInfo(this.getClass(), "deleting token " + tokenId);
@@ -134,10 +154,22 @@ public class ApiTokenAPI {
 
     }
     
+    /**
+     * deletes ApiToken in the db
+     * @param token
+     * @return
+     */
     public boolean deleteToken(ApiToken token) {
         return this.deleteToken(token.id);
     }
     
+    /**
+     * sets the Token revoke date to now
+     * invalidating all JWT issued for this ApiToken
+     * only works if ApiToken is passed in
+     * @param token
+     * @return
+     */
     public boolean revokeToken(JWToken token) {
         if(token.getTokenType()==TokenType.API_TOKEN ) {
             return revokeToken(token.getSubject());
@@ -145,11 +177,22 @@ public class ApiTokenAPI {
         return false;
     }
     
-    
+    /**
+     * sets the Token revoke date to now
+     * invalidating all JWT issued for this ApiToken
+     * @param token
+     * @return
+     */
     public boolean revokeToken(ApiToken token) {
         return this.revokeToken(token.getSubject());
     }
-
+    
+    /**
+     * sets the Token revoke date to now
+     * invalidating all JWT issued for this ApiToken
+     * @param tokenId
+     * @return
+     */
     @CloseDBIfOpened
     public boolean revokeToken(final String tokenId) {
 
@@ -166,6 +209,14 @@ public class ApiTokenAPI {
     }
 
 
+    /**
+     * creates and inserts a new ApiToken
+     * @param userId
+     * @param expireDate
+     * @param requestingUserId
+     * @param requestingIpAddress
+     * @return
+     */
     public ApiToken persistApiToken(final String userId, final Date expireDate, final String requestingUserId,
             final String requestingIpAddress) {
 
@@ -180,17 +231,26 @@ public class ApiTokenAPI {
 
 
     }
+    /**
+     * creates and inserts a new ApiToken and sets the requesting user to the user passed in
+     * @param tokenIssued
+     * @param user
+     * @return
+     */
+    public ApiToken persistApiToken(final ApiToken apiToken, final User user) {
 
-    public ApiToken persistApiToken(final ApiToken tokenIssued, final User user) {
-
-        ApiToken tokenRequested = ApiToken.from(tokenIssued).withRequestingUserId(user.getUserId()).build();
+        ApiToken tokenRequested = ApiToken.from(apiToken).withRequestingUserId(user.getUserId()).build();
 
         return insertApiTokenDB(tokenRequested);
 
 
     }
 
-
+    /**
+     * Inserts ApiToken into the db
+     * @param token
+     * @return
+     */
     @CloseDBIfOpened
     private ApiToken insertApiTokenDB(final ApiToken token) {
 
@@ -245,7 +305,12 @@ public class ApiTokenAPI {
 
     }
 
-
+    /**
+     * Finds all api tokens associated with a userId
+     * @param userId
+     * @param showRevoked
+     * @return
+     */
     @CloseDBIfOpened
     private List<ApiToken> findApiTokensByUserIdDB(final String userId, final boolean showRevoked) {
 
@@ -260,7 +325,13 @@ public class ApiTokenAPI {
         }
 
     }
-
+    /**
+     * Finds all api tokens associated with a userId
+     * Takes the requestingUser and checks permissions on them
+     * @param userId
+     * @param showRevoked
+     * @return
+     */
     @CloseDBIfOpened
     public List<ApiToken> findApiTokensByUserId(final String userId, final boolean showRevoked, final User requestingUser) {
 

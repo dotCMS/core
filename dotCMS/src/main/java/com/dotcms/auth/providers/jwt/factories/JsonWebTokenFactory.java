@@ -1,12 +1,20 @@
 package com.dotcms.auth.providers.jwt.factories;
 
-import static com.dotcms.auth.providers.jwt.JsonWebTokenUtils.CLAIM_UPDATED_AT;
 import static com.dotcms.auth.providers.jwt.JsonWebTokenUtils.CLAIM_ALLOWED_NETWORK;
+import static com.dotcms.auth.providers.jwt.JsonWebTokenUtils.CLAIM_UPDATED_AT;
+
+import java.io.Serializable;
+import java.security.Key;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
 
 import com.dotcms.auth.providers.jwt.beans.ApiToken;
-import com.dotcms.auth.providers.jwt.beans.UserToken;
 import com.dotcms.auth.providers.jwt.beans.JWToken;
 import com.dotcms.auth.providers.jwt.beans.TokenType;
+import com.dotcms.auth.providers.jwt.beans.UserToken;
 import com.dotcms.auth.providers.jwt.services.JsonWebTokenService;
 import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotcms.util.ReflectionUtils;
@@ -18,21 +26,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liferay.portal.model.User;
 
 import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.IncorrectClaimException;
 import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.JwtBuilder;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.vavr.control.Try;
-
-import java.io.Serializable;
-import java.security.Key;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
 
 /**
  * This class in is charge of create the Token Factory. It use the

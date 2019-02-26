@@ -49,7 +49,6 @@ public class ApiToken implements JWToken {
         this.requestingIp = builder.requestFromIp;
         this.expires = builder.expires;
         this.revoked = builder.revoked;
-
         this.allowFromNetwork = builder.allowFromNetwork;
         this.issueDate = builder.issueDate;
         this.claims = builder.claims;

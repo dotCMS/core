@@ -73,10 +73,6 @@ public class JsonWebTokenAuthCredentialProcessorImpl implements JsonWebTokenAuth
                 throw new SecurityException("Invalid Json Web Token", Response.Status.BAD_REQUEST);
             }
 
-            if (null != httpSession) {
-                httpSession.setAttribute(WebKeys.CMS_USER, user);
-                httpSession.setAttribute(com.liferay.portal.util.WebKeys.USER_ID, user.getUserId());
-            }
         }
 
         return user;
@@ -87,9 +83,21 @@ public class JsonWebTokenAuthCredentialProcessorImpl implements JsonWebTokenAuth
 
         // Extract authentication credentials
         final String authentication = request.getHeader(ContainerRequest.AUTHORIZATION);
-        final HttpSession session = request.getSession();
+        final HttpSession session = request.getSession(false);
 
-        return this.processAuthCredentialsFromJWT(authentication, session, request.getRemoteAddr());
+        User user = this.processAuthCredentialsFromJWT(authentication, session, request.getRemoteAddr());
+        
+        if(user != null) {
+            request.setAttribute(com.liferay.portal.util.WebKeys.USER_ID, user.getUserId());
+            request.setAttribute(com.liferay.portal.util.WebKeys.USER, user);
+            if (null != session) {
+                session.setAttribute(WebKeys.CMS_USER, user);
+                session.setAttribute(com.liferay.portal.util.WebKeys.USER_ID, user.getUserId());
+            }
+        }
+        return user;
+        
+        
     } // processAuthCredentialsFromJWT.
 
 } // E:O:F:JsonWebTokenAuthCredentialProcessorImpl.

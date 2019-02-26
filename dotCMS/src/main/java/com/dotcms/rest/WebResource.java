@@ -22,6 +22,7 @@ import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.cms.login.factories.LoginFactory;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
@@ -30,6 +31,10 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.auth.PrincipalThreadLocal;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
+import com.liferay.portal.util.PortalUtil;
+
+import io.vavr.control.Try;
+
 import org.apache.commons.lang.StringUtils;
 
 import javax.servlet.http.HttpServletRequest;
@@ -185,21 +190,14 @@ public  class WebResource {
     public User getCurrentUser(HttpServletRequest request, Map<String, String> paramsMap, boolean rejectWhenNoUser) {
 
         User user = null;
-        HttpSession session = request.getSession();
+        HttpSession session = request.getSession(false);
 
-        if (this.isLoggedAsUser(session)){
-            try {
-                user = this.userAPI.loadUserById(
-                        (String) session.getAttribute(com.liferay.portal.util.WebKeys.USER_ID));
-            } catch (DotSecurityException e) {
-                throw new ForbiddenException(e);
-            } catch (DotDataException e) {
-                throw new RuntimeException(e);
-            }
-        }else {
+        if (session!=null && this.isLoggedAsUser(session)){
+            user = Try.of(()->PortalUtil.getUser(request)).getOrNull();
+        }
+        if(user==null) {
             user = authenticate(request, paramsMap, rejectWhenNoUser);
         }
-
         return user;
     }
 
@@ -266,7 +264,9 @@ public  class WebResource {
 
             user = this.getAnonymousUser();
         }
-
+        
+        request.setAttribute(com.liferay.portal.util.WebKeys.USER_ID, user.getUserId());
+        request.setAttribute(com.liferay.portal.util.WebKeys.USER, user);
         PrincipalThreadLocal.setName(user.getUserId());
 
         return user;

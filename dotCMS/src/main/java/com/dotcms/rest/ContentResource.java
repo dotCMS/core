@@ -505,7 +505,7 @@ public class ContentResource {
         } catch (DotSecurityException e) {
 
             Logger.debug(this, "Permission error: " + e.getMessage(), e);
-            throw new ForbiddenException(e);
+            throw new ForbiddenException("no permissions");
         } catch (Exception e) {
             if (idPassed) {
                 Logger.warn(this, "Can't find Content with Identifier: " + id);
