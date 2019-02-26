@@ -1,8 +1,11 @@
 {
-    "name": "dotcms-js",
-    "version": "0.0.1",
-    "peerDependencies": {
-      "@angular/common": "^6.0.0 || ^7.2.0",
-      "@angular/core": "^6.0.0 || ^7.2.0"
-    }
+  "name": "dotcms-js",
+  "version": "0.0.1",
+  "peerDependencies": {
+    "@angular/common": "^6.0.0 || ^7.2.0",
+    "@angular/core": "^6.0.0 || ^7.2.0"
+  },
+  "devDependencies": {
+    "mock-socket": "^8.0.5"
   }
+}

@@ -11,7 +11,7 @@ export * from './lib/core/logger.service';
 export * from './lib/core/login.service';
 export * from './lib/core/routing.service';
 export * from './lib/core/site.service';
-export * from './lib/core/socket-factory.service';
+export * from './lib/core/dot-events-socket-factory.service';
 export * from './lib/core/string-utils.service';
 export * from './lib/core/util/app.config';
 export * from './lib/core/util/folder.service';
@@ -28,7 +28,7 @@ export * from './lib/core/util/response-view';
 export * from './lib/core/util/settings-storage.service';
 export * from './lib/core/util/site-browser.service';
 export * from './lib/core/util/site-browser.state';
-export * from './lib/core/util/socket';
+export * from './lib/core/util/dot-event-socket';
 export * from './lib/core/util/websockets-protocol';
 
 // COMPONENTS
