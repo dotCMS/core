@@ -13,7 +13,7 @@ export class TemplateContainersCacheService {
     private containers: DotContainerMap;
 
     set(containers: DotContainerMap): void {
-        const mappedContainers: { [key: string]: { container: DotContainer } } = {};
+        const mappedContainers: DotContainerMap = {};
 
         Object.keys(containers).forEach(function(item: string) {
             mappedContainers[this.getContainerReference(containers[item].container)] =
