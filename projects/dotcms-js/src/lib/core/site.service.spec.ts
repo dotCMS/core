@@ -3,7 +3,7 @@ import { Response, ResponseOptions, ConnectionBackend } from '@angular/http';
 import { MockBackend } from '@angular/http/testing';
 import { Site } from './treeable/shared/site.model';
 /**
- * This should keep comment for now, because import the DOTTestBed throw some build errors and avois to run the dotcms-js test.
+ * This should keep comment for now, because import the DOTTestBed throw some build errors and avoid to run the dotcms-js test.
  * Later in anothe issue we should fix this test.
  */
 // import { DOTTestBed } from 'src/app/test/dot-test-bed';
