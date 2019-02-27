@@ -85,7 +85,7 @@ public class VelocityResourceKey implements Serializable {
         this.cacheKey = cacheKey();
 
     }
-
+    // todo: create constants and clean up a bit more.
     private Tuple2<String, String> getPathNormalizedFileAssetContainerPath(final String path) {
 
         final int startPath = path.indexOf("///");

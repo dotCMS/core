@@ -2,7 +2,6 @@ package com.dotcms.business;
 
 @FunctionalInterface
 public interface ParameterDecorator {
-    static ParameterDecorator DEFAULT = arg -> arg;
 
     /**
      * Decorates the arguments

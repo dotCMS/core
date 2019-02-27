@@ -2,7 +2,6 @@ package com.dotmarketing.factories;
 
 
 import com.dotcms.business.CloseDBIfOpened;
-import com.dotcms.business.MethodDecorator;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.rendering.velocity.services.PageLoader;
@@ -19,7 +18,10 @@ import com.dotmarketing.common.db.Params;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.containers.business.*;
+import com.dotmarketing.portlets.containers.business.ContainerAPI;
+import com.dotmarketing.portlets.containers.business.ContainerFinderByIdOrPathStrategy;
+import com.dotmarketing.portlets.containers.business.LiveContainerFinderByIdOrPathStrategyResolver;
+import com.dotmarketing.portlets.containers.business.WorkingContainerFinderByIdOrPathStrategyResolver;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
@@ -139,7 +141,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
      */
     private void _dbDelete(final MultiTree multiTree) throws DotDataException {
 
-        final DotConnect db = new DotConnect().setSQL(DELETE_SQL).addParam(multiTree.getHtmlPage()).addParam(multiTree.getContainer())
+        final DotConnect db = new DotConnect().setSQL(DELETE_SQL).addParam(multiTree.getHtmlPage()).addParam(multiTree.getContainerAsID())
                 .addParam(multiTree.getContentlet()).addParam(multiTree.getRelationType());
         db.loadResult();
 
@@ -313,7 +315,6 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     }
 
     @Override
-    @MethodDecorator(parameterDecorator =  SaveMultiTreeMethodDecorator.class)
     @WrapInTransaction
     public void saveMultiTree(final MultiTree mTree) throws DotDataException {
         Logger.info(this, String.format("Saving MutiTree: %s", mTree));
@@ -337,11 +338,12 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
      * @throws DotDataException
      */
     @Override
-    @MethodDecorator(parameterDecorator =  SaveMultiTreesMethodDecorator.class)
     @WrapInTransaction
     public void saveMultiTrees(final List<MultiTree> mTrees) throws DotDataException {
-        if (mTrees == null || mTrees.isEmpty())
+        if (mTrees == null || mTrees.isEmpty()) {
             throw new DotDataException("empty list passed in");
+        }
+
         int i = 0;
         for (final MultiTree tree : mTrees) {
             _dbUpsert(tree.setTreeOrder(i++));
@@ -350,7 +352,6 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
         final MultiTree mTree = mTrees.get(0);
         updateHTMLPageVersionTS(mTree.getHtmlPage());
         refreshPageInCache(mTree.getHtmlPage());
-
     }
 
     /**
@@ -362,7 +363,6 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
      * @throws DotDataException
      */
     @Override
-    @MethodDecorator(parameterDecorator =  SaveMultiTreesMethodDecorator.class)
     @WrapInTransaction
     public void saveMultiTrees(final String pageId, final List<MultiTree> mTrees) throws DotDataException {
         Logger.info(this, String.format("Saving MutiTrees: pageId -> %s multiTrees-> %s", pageId, mTrees));
@@ -370,7 +370,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
             throw new DotDataException("empty list passed in");
         }
 
-        Logger.debug(MultiTreeAPIImpl.class, String.format("Saving page's content: %s", mTrees));
+        Logger.debug(MultiTreeAPIImpl.class, ()->String.format("Saving page's content: %s", mTrees));
 
         final DotConnect db = new DotConnect();
 
@@ -382,7 +382,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
             for (final MultiTree tree : mTrees) {
                 insertParams
-                        .add(new Params(pageId, tree.getContainer(), tree.getContentlet(), tree.getRelationType(), tree.getTreeOrder()));
+                        .add(new Params(pageId, tree.getContainerAsID(), tree.getContentlet(), tree.getRelationType(), tree.getTreeOrder()));
                 newContainers.add(tree.getContainer());
             }
 
@@ -409,7 +409,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
     private void _reorder(final MultiTree tree) throws DotDataException {
 
-        List<MultiTree> trees = getMultiTrees(tree.getHtmlPage(), tree.getContainer(), tree.getRelationType());
+        List<MultiTree> trees = getMultiTrees(tree.getHtmlPage(), tree.getContainerAsID(), tree.getRelationType());
         trees = trees.stream().filter(rowTree -> !rowTree.equals(tree)).collect(Collectors.toList());
         int maxOrder = (tree.getTreeOrder() > trees.size()) ? trees.size() : tree.getTreeOrder();
         trees.add(maxOrder, tree);
@@ -419,9 +419,9 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     }
 
 
-    private void _dbInsert(final MultiTree o) throws DotDataException {
-        new DotConnect().setSQL(INSERT_SQL).addParam(o.getHtmlPage()).addParam(o.getContainer()).addParam(o.getContentlet())
-                .addParam(o.getRelationType()).addParam(o.getTreeOrder()).loadResult();
+    private void _dbInsert(final MultiTree multiTree) throws DotDataException {
+        new DotConnect().setSQL(INSERT_SQL).addParam(multiTree.getHtmlPage()).addParam(multiTree.getContainerAsID()).addParam(multiTree.getContentlet())
+                .addParam(multiTree.getRelationType()).addParam(multiTree.getTreeOrder()).loadResult();
     }
 
 
@@ -430,14 +430,14 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
      * has been added or deleted from this page, its version_ts value needs to be updated so it can be
      * included in future Push Publishing tasks
      * 
-     * @param id The HTMLPage Identifier to pass in
+     * @param pageId The HTMLPage Identifier to pass in
      * @throws DotContentletStateException
      * @throws DotDataException
      * @throws DotSecurityException
      * 
      */
-    private void updateHTMLPageVersionTS(final String id) throws DotDataException {
-        final List<ContentletVersionInfo> infos = APILocator.getVersionableAPI().findContentletVersionInfos(id);
+    private void updateHTMLPageVersionTS(final String pageId) throws DotDataException {
+        final List<ContentletVersionInfo> infos = APILocator.getVersionableAPI().findContentletVersionInfos(pageId);
         for (ContentletVersionInfo versionInfo : infos) {
             if (versionInfo != null) {
                 versionInfo.setVersionTs(new Date());
