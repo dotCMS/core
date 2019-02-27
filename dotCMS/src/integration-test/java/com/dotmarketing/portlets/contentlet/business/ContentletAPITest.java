@@ -58,6 +58,7 @@ import com.google.common.collect.Maps;
 import com.google.common.io.Files;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
+import com.liferay.util.StringPool;
 import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.context.InternalContextAdapterImpl;
@@ -5351,6 +5352,239 @@ public class ContentletAPITest extends ContentletBaseTest {
         }
 
     }
+
+    @Test
+    public void testMoveContentDependenciesFromChild()
+            throws DotSecurityException, DotDataException {
+        ContentType parentContentType = null;
+        ContentType childContentType = null;
+        try {
+            final long time = System.currentTimeMillis();
+            parentContentType = createContentType("parentContentType" + time,
+                    BaseContentType.CONTENT);
+            childContentType = createContentType("childContentType" + time,
+                    BaseContentType.CONTENT);
+
+            //One side of the relationship is set parentContentType --> childContentType
+            com.dotcms.contenttype.model.field.Field parentField = createRelationshipField("child",
+                    parentContentType.id(), childContentType.variable());
+
+            final Relationship relationship = relationshipAPI
+                    .getRelationshipFromField(parentField, user);
+
+            Contentlet childContent = new ContentletDataGen(childContentType.id())
+                    .languageId(languageAPI.getDefaultLanguage().getId()).nextPersisted();
+
+            Contentlet parentContent = new ContentletDataGen(parentContentType.id())
+                    .languageId(languageAPI.getDefaultLanguage().getId()).next();
+
+            parentContent = contentletAPI.checkin(parentContent, CollectionsUtils
+                    .map(relationship, CollectionsUtils.list(childContent)), user, false);
+
+            Map<Relationship, List<Contentlet>> relationshipRecords = contentletAPI
+                    .findContentRelationships(parentContent, user);
+
+            assertTrue(relationshipRecords.containsKey(relationship));
+            assertEquals(1, relationshipRecords.get(relationship).size());
+            assertEquals(childContent.getIdentifier(),
+                    relationshipRecords.get(relationship).get(0).getIdentifier());
+
+            //creates a new version of the child
+            childContent.setInode("");
+            childContent = contentletAPI
+                    .checkin(childContent, (ContentletRelationships) null, null, null,
+                            user, false);
+
+            relationshipRecords = contentletAPI
+                    .findContentRelationships(parentContent, user);
+
+            assertTrue(relationshipRecords.containsKey(relationship));
+            assertEquals(1, relationshipRecords.get(relationship).size());
+            assertEquals(childContent.getIdentifier(),
+                    relationshipRecords.get(relationship).get(0).getIdentifier());
+
+        } finally {
+            if (parentContentType != null) {
+                contentTypeAPI.delete(parentContentType);
+            }
+
+            if (childContentType != null) {
+                contentTypeAPI.delete(childContentType);
+            }
+        }
+    }
+
+    @Test
+    public void testMoveContentDependenciesFromChildSelfRelated()
+            throws DotDataException, DotSecurityException {
+        ContentType parentContentType = null;
+        try {
+            final long time = System.currentTimeMillis();
+            parentContentType = createContentType("parentContentType" + time,
+                    BaseContentType.CONTENT);
+
+            //One side of the relationship is set parentContentType --> parentContentType (self-related)
+            com.dotcms.contenttype.model.field.Field parentField = createRelationshipField("child",
+                    parentContentType.id(), parentContentType.variable());
+
+            final Relationship relationship = relationshipAPI
+                    .getRelationshipFromField(parentField, user);
+
+            final ContentletDataGen dataGen = new ContentletDataGen(parentContentType.id());
+            Contentlet childContent = dataGen.languageId(languageAPI.getDefaultLanguage().getId()).nextPersisted();
+
+            Contentlet parentContent = dataGen.languageId(languageAPI.getDefaultLanguage().getId()).next();
+
+            parentContent = contentletAPI.checkin(parentContent, CollectionsUtils
+                    .map(relationship, CollectionsUtils.list(childContent)), user, false);
+
+            List<Contentlet> relatedContent = relationshipAPI.dbRelatedContent(relationship, parentContent, true);
+
+            assertEquals(1, relatedContent.size());
+            assertEquals(childContent.getIdentifier(), relatedContent.get(0).getIdentifier());
+
+            //creates a new version of the child
+            childContent.setInode("");
+            childContent = contentletAPI
+                    .checkin(childContent, (ContentletRelationships) null, null, null,
+                            user, false);
+
+            relatedContent = relationshipAPI.dbRelatedContent(relationship, parentContent, true);
+
+            assertEquals(1, relatedContent.size());
+            assertEquals(childContent.getIdentifier(), relatedContent.get(0).getIdentifier());
+
+        } finally {
+            if (parentContentType != null) {
+                contentTypeAPI.delete(parentContentType);
+            }
+        }
+
+    }
+
+    @Test
+    public void testMoveContentDependenciesFromParent()
+            throws DotDataException, DotSecurityException {
+        ContentType parentContentType = null;
+        ContentType childContentType = null;
+        try {
+            final long time = System.currentTimeMillis();
+            parentContentType = createContentType("parentContentType" + time,
+                    BaseContentType.CONTENT);
+            childContentType = createContentType("childContentType" + time,
+                    BaseContentType.CONTENT);
+
+            //One side of the relationship is set parentContentType --> childContentType
+            com.dotcms.contenttype.model.field.Field parentField = createRelationshipField("child",
+                    parentContentType.id(), childContentType.variable());
+
+            //Setting the other side of the relationship childContentType --> parentContentType
+            com.dotcms.contenttype.model.field.Field childField = createRelationshipField("parent",
+                    childContentType.id(), parentContentType.variable() + StringPool.PERIOD + parentField.variable());
+
+            //Removing parent field
+            fieldAPI.delete(parentField, user);
+
+            final Relationship relationship = relationshipAPI
+                    .getRelationshipFromField(childField, user);
+
+            Contentlet childContent = new ContentletDataGen(childContentType.id())
+                    .languageId(languageAPI.getDefaultLanguage().getId()).next();
+
+            Contentlet parentContent = new ContentletDataGen(parentContentType.id())
+                    .languageId(languageAPI.getDefaultLanguage().getId()).nextPersisted();
+
+            childContent = contentletAPI.checkin(childContent, CollectionsUtils
+                    .map(relationship, CollectionsUtils.list(parentContent)), user, false);
+
+            Map<Relationship, List<Contentlet>> relationshipRecords = contentletAPI
+                    .findContentRelationships(childContent, user);
+
+            assertTrue(relationshipRecords.containsKey(relationship));
+            assertEquals(1, relationshipRecords.get(relationship).size());
+            assertEquals(parentContent.getIdentifier(),
+                    relationshipRecords.get(relationship).get(0).getIdentifier());
+
+            //creates a new version of the child
+            parentContent.setInode("");
+            parentContent = contentletAPI
+                    .checkin(parentContent, (ContentletRelationships) null, null, null,
+                            user, false);
+
+            relationshipRecords = contentletAPI
+                    .findContentRelationships(childContent, user);
+
+            assertTrue(relationshipRecords.containsKey(relationship));
+            assertEquals(1, relationshipRecords.get(relationship).size());
+            assertEquals(parentContent.getIdentifier(),
+                    relationshipRecords.get(relationship).get(0).getIdentifier());
+
+        } finally {
+            if (parentContentType != null) {
+                contentTypeAPI.delete(parentContentType);
+            }
+
+            if (childContentType != null) {
+                contentTypeAPI.delete(childContentType);
+            }
+        }
+    }
+
+    @Test
+    public void testMoveContentDependenciesFromParentSelfRelated()
+            throws DotDataException, DotSecurityException {
+        ContentType parentContentType = null;
+        try {
+            final long time = System.currentTimeMillis();
+            parentContentType = createContentType("parentContentType" + time,
+                    BaseContentType.CONTENT);
+
+            //One side of the relationship is set parentContentType --> parentContentType (self-related as parent)
+            com.dotcms.contenttype.model.field.Field parentField = createRelationshipField("child",
+                    parentContentType.id(), parentContentType.variable());
+
+            //Setting the other side of the relationship parentContentType --> parentContentType (self-related as child)
+            com.dotcms.contenttype.model.field.Field childField = createRelationshipField("parent",
+                    parentContentType.id(), parentContentType.variable() + StringPool.PERIOD + parentField.variable());
+
+            //Removing parent field
+            fieldAPI.delete(parentField, user);
+
+            final Relationship relationship = relationshipAPI
+                    .getRelationshipFromField(childField, user);
+
+            final ContentletDataGen dataGen = new ContentletDataGen(parentContentType.id());
+            Contentlet parentContent = dataGen.languageId(languageAPI.getDefaultLanguage().getId()).nextPersisted();
+
+            Contentlet childContent = dataGen.languageId(languageAPI.getDefaultLanguage().getId()).next();
+
+            childContent = contentletAPI.checkin(childContent, CollectionsUtils
+                    .map(relationship, CollectionsUtils.list(parentContent)), user, false);
+
+            List<Contentlet> relatedContent = relationshipAPI.dbRelatedContent(relationship, childContent, false);
+
+            assertEquals(1, relatedContent.size());
+            assertEquals(parentContent.getIdentifier(), relatedContent.get(0).getIdentifier());
+
+            //creates a new version of the parent
+            parentContent.setInode("");
+            parentContent = contentletAPI
+                    .checkin(parentContent, (ContentletRelationships) null, null, null,
+                            user, false);
+
+            relatedContent = relationshipAPI.dbRelatedContent(relationship, childContent, false);
+
+            assertEquals(1, relatedContent.size());
+            assertEquals(parentContent.getIdentifier(), relatedContent.get(0).getIdentifier());
+
+        } finally {
+            if (parentContentType != null) {
+                contentTypeAPI.delete(parentContentType);
+            }
+        }
+    }
+
+
 
     @Test
     public void test_update_mod_date_contentlet_expect_success() throws Exception {

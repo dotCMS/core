@@ -37,16 +37,22 @@ public class TitleImageFieldDataFetcher implements DataFetcher<Map<String, Objec
                 final String imageContentletId = contentlet.getStringProperty(imageField.get().variable());
 
                 final User user = ((DotGraphQLContext) environment.getContext()).getUser();
-                final Contentlet
-                    imageContentlet =
-                    APILocator.getContentletAPI().findContentletByIdentifier(imageContentletId, contentlet.isLive(),
+                final Optional<Contentlet>
+                    imageContentletOptional =
+                    APILocator.getContentletAPI().findContentletByIdentifierOrFallback(imageContentletId, contentlet.isLive(),
                         contentlet.getLanguageId(), user, true);
-                final File imageFile = imageContentlet.getBinary("fileAsset");
+
+                if(!imageContentletOptional.isPresent()) {
+                    return Collections.emptyMap();
+                }
+
+                final Contentlet imageContentlet = imageContentletOptional.get();
 
                 if (imageContentlet.getTitleImage().isPresent()) {
-                    titleImageMap =
-                        new BinaryToMapTransformer(contentlet)
-                            .transform(imageFile, contentlet, imageContentlet.getTitleImage().get());
+                    final File imageFile = imageContentletOptional.get().getBinary("fileAsset");
+
+                    titleImageMap = new BinaryToMapTransformer(imageContentlet)
+                            .transform(imageFile, imageContentlet, imageContentlet.getTitleImage().get());
                 }
 
 
