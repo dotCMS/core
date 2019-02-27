@@ -126,7 +126,7 @@ public class CreateJsonWebTokenResource implements Serializable {
                             LoginServiceAPI.JSON_WEB_TOKEN_DAYS_MAX_AGE_DEFAULT);
 
                 this.securityLoggerServiceAPI.logInfo(this.getClass(),
-                        "A Json Web Token " + userId.toLowerCase() + " has been created from IP: " +
+                        "A Json Web Token " + userId.toLowerCase() + " is being created from IP: " +
                                 HttpRequestDataUtil.getRemoteAddress(request));
                 res = Response.ok(new ResponseEntityView(map("token",
                         createJsonWebToken(user, jwtMaxAgeDays, request.getRemoteAddr())), EMPTY_MAP)).build(); // 200

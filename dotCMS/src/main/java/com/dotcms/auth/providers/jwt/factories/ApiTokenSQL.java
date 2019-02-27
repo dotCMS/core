@@ -25,7 +25,7 @@ public class ApiTokenSQL {
     protected String SELECT_BY_TOKEN_ID_SQL = "select * from api_token_issued where token_id=?";
     protected String UPDATE_REVOKE_TOKEN_SQL = "update api_token_issued set revoke_date=?, mod_date=? where token_id=?";
     protected String INSERT_TOKEN_ISSUE_SQL =
-            "insert into api_token_issued ( token_id, token_userid, issue_date, expire_date, requested_by_userid, requested_by_ip, revoke_date, allowed_from, cluster_id, meta_data, mod_date) values (?,?,?,?,?,?,?,?,?,?,?) ";
+            "insert into api_token_issued ( token_id, token_userid, issue_date, expire_date, requested_by_userid, requested_by_ip, revoke_date, allowed_from, cluster_id, claims, mod_date) values (?,?,?,?,?,?,?,?,?,?,?) ";
 
     protected String DELETE_TOKEN_SQL = "delete from api_token_issued where token_id=?";
     
@@ -41,7 +41,7 @@ public class ApiTokenSQL {
                     + "revoke_date TIMESTAMP NULL DEFAULT NULL, "
                     + "allowed_from  varchar(255) , "
                     + "cluster_id  varchar(255) , "
-                    + "meta_data  text , "
+                    + "claims  text , "
                     + "mod_date  TIMESTAMP NOT NULL, "
                     + "PRIMARY KEY (token_id));"
                     + "create index idx_api_token_issued_user ON api_token_issued (token_userid)";

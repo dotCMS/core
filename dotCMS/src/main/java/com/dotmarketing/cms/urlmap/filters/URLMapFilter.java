@@ -95,7 +95,7 @@ public class URLMapFilter implements Filter {
         final HttpSession optSession       = request.getSession(false);
         final String previewPage           = request.getParameter(PREVIEW_PAGE);
         final long languageId              = this.languageWebAPI.getLanguage(request).getId();
-        String uri                         = this.cmsUrlUtil.getURIFromRequest(request);
+        String uri                         = request.getRequestURI();
         final Host host                    = getHost(request, uri);
         final User user                    = getUser(request);
 

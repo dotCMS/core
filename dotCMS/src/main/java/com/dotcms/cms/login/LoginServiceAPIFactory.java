@@ -397,8 +397,8 @@ public class LoginServiceAPIFactory implements Serializable {
                                          final HttpServletResponse res,
                                          final User user,
                                          final int maxAge) throws PortalException, SystemException {
-
-            final String jwtAccessToken = this.jsonWebTokenUtils.createUserToken(user, maxAge);
+            
+            final String jwtAccessToken = this.jsonWebTokenUtils.createUserToken(user, Math.abs(maxAge));
             createJsonWebTokenCookie(req, res, jwtAccessToken, Optional.of(maxAge));
         }
 

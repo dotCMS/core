@@ -80,9 +80,32 @@ public class ApiTokenAPI {
             throw new DotStateException("You can only get a JWT from a APIToken that has been persisted to db. Call persistApiToken first");
         }
         return JsonWebTokenFactory.getInstance().getJsonWebTokenService().generateApiToken(apiToken);
+    }
+    
+    
+    /**
+     * this will either return your ApiToken or 
+     * empty if token is expired/revoked/etc
+     * @param jwt
+     * @return
+     */
+    public Optional<User> userFromJwt(final String jwt, final String ipAddress) {
         
 
+        JWToken bean  = Try.of(()->JsonWebTokenFactory.getInstance().getJsonWebTokenService().parseToken(jwt, ipAddress))
+                .onFailure(e-> {
+                    SecurityLogger.logInfo(this.getClass(), "JWT Failed from ipaddress:" + ipAddress + " " + e.getMessage());
+                    Logger.warn(this.getClass(), e.getMessage());
+                }).getOrNull();
+        if(bean!=null ) {
+            return bean.getActiveUser();
+        }
+        
+        
+        return Optional.empty() ;
+        
     }
+    
     /**
      * this will either return your ApiToken or 
      * empty if token is expired/revoked/etc

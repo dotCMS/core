@@ -3,7 +3,6 @@ package com.dotcms.rest;
 import com.dotcms.auth.providers.jwt.JsonWebTokenAuthCredentialProcessor;
 import com.dotcms.auth.providers.jwt.services.JsonWebTokenAuthCredentialProcessorImpl;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.repackage.com.google.common.base.Optional;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
@@ -31,7 +30,9 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.auth.PrincipalThreadLocal;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
+import com.liferay.portal.util.CookieKeys;
 import com.liferay.portal.util.PortalUtil;
+import com.liferay.util.CookieUtil;
 
 import io.vavr.control.Try;
 
@@ -44,6 +45,7 @@ import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Optional;
 
 public  class WebResource {
 
@@ -249,6 +251,11 @@ public  class WebResource {
             user = this.jsonWebTokenAuthCredentialProcessor.processAuthHeaderFromJWT(request);
         }
 
+        if(null == user) {
+           // user = this.processCookieJWT(request);
+        }
+        
+
         if(user == null && !forceFrontendAuth) {
             user = getBackUserFromRequest(request, userWebAPI);
         }
@@ -290,7 +297,7 @@ public  class WebResource {
 
     private static Optional<UsernamePassword> getAuthCredentialsFromMap(Map<String, String> map) {
 
-        Optional<UsernamePassword> result = Optional.absent();
+        Optional<UsernamePassword> result = Optional.empty();
 
         String username = map.get(RESTParams.USER.getValue());
         String password = map.get(RESTParams.PASSWORD.getValue());
@@ -305,7 +312,7 @@ public  class WebResource {
     @VisibleForTesting
     static Optional<UsernamePassword> getAuthCredentialsFromBasicAuth(HttpServletRequest request) throws SecurityException {
 
-        Optional<UsernamePassword> result = Optional.absent();
+        Optional<UsernamePassword> result =  Optional.empty();
         // Extract authentication credentials
         String authentication = request.getHeader(ContainerRequest.AUTHORIZATION);
 
@@ -326,7 +333,7 @@ public  class WebResource {
 
     @VisibleForTesting
     static Optional<UsernamePassword> getAuthCredentialsFromHeaderAuth(HttpServletRequest request) throws SecurityException {
-        Optional<UsernamePassword> result = Optional.absent();
+        Optional<UsernamePassword> result =  Optional.empty();
 
         String authentication = request.getHeader("DOTAUTH");
         if(StringUtils.isNotEmpty(authentication)) {
@@ -420,6 +427,22 @@ public  class WebResource {
         return user;
     }
 
+    private User processCookieJWT(final HttpServletRequest request) {
+        User user = null;
+
+        if(request != null) { 
+            final String jwt=Try.of(()->CookieUtil.get(request.getCookies(), CookieKeys.JWT_ACCESS_TOKEN)).getOrNull();
+            user = APILocator.getApiTokenAPI().userFromJwt(jwt, request.getRemoteAddr()).orElse(null);
+        }
+
+        return user;
+    }
+
+    
+    
+    
+    
+    
     /**
      * This method returns a <code>Map</code> with the keys and values extracted from <code>params</code>
      *

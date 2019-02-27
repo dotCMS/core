@@ -194,7 +194,7 @@ public class JsonWebTokenFactory implements Serializable {
             //Let's set the JWT Claims
             final JwtBuilder builder = Jwts.builder()
                     .setId(jwtBean.getId())
-                    .claim(CLAIM_UPDATED_AT, jwtBean.getActiveUser().get().getModificationDate())
+                    .claim(CLAIM_UPDATED_AT, jwtBean.getActiveUser().get().getModificationDate().getTime())
                     .claim(CLAIM_ALLOWED_NETWORK, jwtBean.getClaims().get(CLAIM_ALLOWED_NETWORK))
                     .setSubject(jwtBean.getSubject())
                     .setIssuedAt(new Date())

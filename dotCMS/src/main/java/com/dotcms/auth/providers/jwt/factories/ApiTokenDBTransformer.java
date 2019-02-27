@@ -40,7 +40,7 @@ public class ApiTokenDBTransformer implements DBTransformer<ApiToken>{
                 .withRevoked((Date) dbMap.get("revoke_date"))
                 .withAllowFromNetwork((String) dbMap.get("allowed_from"))
                 .withClusterId((String) dbMap.get("cluster_id"))
-                .withClaims((String) dbMap.get("meta_data"))
+                .withClaims((String) dbMap.get("claims"))
                 .withModDate((Date) dbMap.get("mod_date"))
                 .build();
 
