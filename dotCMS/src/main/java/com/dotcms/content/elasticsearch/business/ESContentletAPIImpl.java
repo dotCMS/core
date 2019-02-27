@@ -2646,7 +2646,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
             throw new DotSecurityException("User: " + (user != null ? user.getUserId() : "Unknown")
                     + " cannot edit Contentlet: " + (contentlet != null ? contentlet.getInode() : "Unknown"));
         }
-        final List<Relationship> relationships = this.getRelationships(contentlet.getContentType());
+
+        final ContentType contentType = contentlet.getContentType();
+        final List<Relationship> relationships = this.getRelationships(contentType);
+        final Relationship relationship = related.getRelationship();
+
         if(!relationships.contains(related.getRelationship())){
             throw new DotContentletStateException(
                     "Error adding relationships in contentlet:  " + (contentlet != null ? contentlet
@@ -2669,12 +2673,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 throw new DotDataException(e.getMessage(),e);
             }
 
-            deleteRelatedContent(contentlet, related.getRelationship(), related.isHasParent(), user, respectFrontendRoles);
-            Tree newTree = null;
-            Set<Tree> uniqueRelationshipSet = new HashSet<Tree>();
+            deleteRelatedContent(contentlet, relationship, related.isHasParent(), user,
+                    respectFrontendRoles);
 
-            Relationship rel = related.getRelationship();
-            List<Contentlet> conRels = getRelatedContentFromIndex(contentlet,related.getRelationship(),
+            Tree newTree;
+            Set<Tree> uniqueRelationshipSet = new HashSet<>();
+
+            List<Contentlet> conRels = getRelatedContentFromIndex(contentlet,relationship,
                     related.isHasParent(), user,respectFrontendRoles) ;
 
             int treePosition = (conRels != null && conRels.size() != 0) ? conRels.size() : 1 ;
@@ -2683,14 +2688,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
             for (Contentlet c : related.getRecords()) {
                 if (child) {
                     for (Tree currentTree: contentParents) {
-                        if (currentTree.getRelationType().equals(rel.getRelationTypeValue()) && c.getIdentifier().equals(currentTree.getParent())) {
+                        if (currentTree.getRelationType().equals(relationship.getRelationTypeValue()) && c.getIdentifier().equals(currentTree.getParent())) {
                             positionInParent = currentTree.getTreeOrder();
                         }
                     }
 
-                    newTree = new Tree(c.getIdentifier(), contentlet.getIdentifier(), rel.getRelationTypeValue(), positionInParent);
+                    newTree = new Tree(c.getIdentifier(), contentlet.getIdentifier(), relationship.getRelationTypeValue(), positionInParent);
                 } else {
-                    newTree = new Tree(contentlet.getIdentifier(), c.getIdentifier(), rel.getRelationTypeValue(), treePosition);
+                    newTree = new Tree(contentlet.getIdentifier(), c.getIdentifier(), relationship.getRelationTypeValue(), treePosition);
                 }
                 positionInParent=positionInParent+1;
 
@@ -3866,7 +3871,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
         categoryAPI.setParents(toContentlet, categories, user, respect);
 
         //Handle Relationships
-
         if(contentRelationships == null){
             contentRelationships = new ContentletRelationships(toContentlet);
         }
@@ -3886,17 +3890,20 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 }
                 if (selectedRecords == null) {
                     selectedRecords = contentRelationships.new ContentletRelationshipRecords(relationship, true);
-                    contentRelationships.getRelationshipsRecords().add(contentRelationships.new ContentletRelationshipRecords(relationship, true));
+                    contentRelationships.getRelationshipsRecords().add(selectedRecords);
                 }
 
                 //Adding to the list all the records the user was not able to see becuase permissions forcing them into the relationship
                 List<Contentlet> relatedContentlets = getRelatedContentFromIndex(fromContentlet, relationship, true, APILocator.getUserAPI().getSystemUser(), true);
                 for (final Contentlet contentlet : relatedContentlets) {
-                    if (!permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ, user, false)) {
+                    if (!permissionAPI
+                            .doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ, user,
+                                    false)) {
                         selectedRecords.getRecords().add(0, contentlet);
                     }
                 }
 
+                selectedRecords = null;
                 //Then all relationships as child
                 for(final ContentletRelationshipRecords records : contentRelationships.getRelationshipsRecords()) {
                     if(records.getRelationship().getInode().equalsIgnoreCase(relationship.getInode()) && !records.isHasParent()) {
@@ -3906,13 +3913,15 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 }
                 if (selectedRecords == null) {
                     selectedRecords = contentRelationships.new ContentletRelationshipRecords(relationship, false);
-                    contentRelationships.getRelationshipsRecords().add(contentRelationships.new ContentletRelationshipRecords(relationship, false));
+                    contentRelationships.getRelationshipsRecords().add(selectedRecords);
                 }
 
                 //Adding to the list all the records the user was not able to see becuase permissions forcing them into the relationship
                 relatedContentlets = getRelatedContentFromIndex(fromContentlet, relationship, false, APILocator.getUserAPI().getSystemUser(), true);
                 for (final Contentlet contentlet : relatedContentlets) {
-                    if (!permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ, user, false)) {
+                    if (!permissionAPI
+                            .doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ, user,
+                                    false)) {
                         selectedRecords.getRecords().add(0, contentlet);
                     }
                 }
@@ -3930,13 +3939,15 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 final boolean hasParent = FactoryLocator.getRelationshipFactory().isParent(relationship, fromContentlet.getStructure());
                 if (selectedRecords == null) {
                     selectedRecords = contentRelationships.new ContentletRelationshipRecords(relationship, hasParent);
-                    contentRelationships.getRelationshipsRecords().add(contentRelationships.new ContentletRelationshipRecords(relationship, hasParent));
+                    contentRelationships.getRelationshipsRecords().add(selectedRecords);
                 }
 
                 //Adding to the list all the records the user was not able to see because permissions forcing them into the relationship
                 final List<Contentlet> relatedContentlets = getRelatedContentFromIndex(fromContentlet, relationship, APILocator.getUserAPI().getSystemUser(), true);
                 for (final Contentlet contentlet : relatedContentlets) {
-                    if (!permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ, user, false)) {
+                    if (!permissionAPI
+                            .doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ, user,
+                                    false)) {
                         selectedRecords.getRecords().add(0, contentlet);
                     }
                 }
