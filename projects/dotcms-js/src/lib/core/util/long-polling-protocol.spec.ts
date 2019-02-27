@@ -82,6 +82,47 @@ describe('LongPollingProtocol', () => {
         expect(coreWebServiceMock.requestView).toHaveBeenCalledWith(requestOpts);
     });
 
+    it('should trigger message with lastCallback', (done) => {
+        let countRequest = 0;
+
+        spyOn(coreWebServiceMock, 'requestView').and.callFake((opts) => {
+            countRequest++;
+
+            if (countRequest === 2) {
+                expect(opts).toEqual({
+                    method: RequestMethod.Get,
+                    url: url,
+                    params: {
+                        lastCallBack: 2
+                    }
+                });
+            }
+
+            return of({
+                entity: [
+                    {
+                        message: 'message',
+                        creationDate: 1
+                    }
+                ]
+            });
+        });
+
+        longPollingProtocol.message$().subscribe((message) => {
+            expect(message).toEqual({
+                message: 'message',
+                creationDate: 1
+            });
+
+            if (countRequest === 2) {
+                longPollingProtocol.close();
+                done();
+            }
+        });
+
+        longPollingProtocol.connect();
+    });
+
     it('should reconnect after a message', () => {
         let firstMessage = true;
         const requestOpts = {
@@ -93,20 +134,22 @@ describe('LongPollingProtocol', () => {
         spyOn(coreWebServiceMock, 'requestView').and.callFake(() => {
             if (!firstMessage) {
                 longPollingProtocol.close();
+                expect(coreWebServiceMock.requestView).toHaveBeenCalledWith(requestOpts);
+                expect(coreWebServiceMock.requestView).toHaveBeenCalledTimes(2);
+            } else {
+                firstMessage = false;
             }
 
-            firstMessage = false;
             return of({
-                entity: {
-                    message: 'message'
-                }
+                entity: [
+                    {
+                        message: 'message'
+                    }
+                ]
             });
         });
 
         longPollingProtocol.connect();
-
-        expect(coreWebServiceMock.requestView).toHaveBeenCalledWith(requestOpts);
-        expect(coreWebServiceMock.requestView).toHaveBeenCalledTimes(2);
     });
 
     it('should trigger a error', (done) => {
@@ -126,7 +169,5 @@ describe('LongPollingProtocol', () => {
             done();
         });
         longPollingProtocol.connect();
-
-        expect(coreWebServiceMock.requestView).toHaveBeenCalledWith(requestOpts);
     });
 });

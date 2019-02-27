@@ -2,11 +2,12 @@ import { Protocol } from './protocol';
 import { LoggerService } from '../logger.service';
 import { CoreWebService } from '../core-web.service';
 import { RequestMethod } from '@angular/http';
-import { pluck } from 'rxjs/operators';
+import { pluck, take } from 'rxjs/operators';
 
 export class LongPollingProtocol extends Protocol {
     private isClosed = false;
     private isAlreadyOpen = false;
+    private lastCallback: number;
 
     constructor(
         private url: string,
@@ -29,11 +30,13 @@ export class LongPollingProtocol extends Protocol {
     close(): void {
         this.loggerService.info('destroying long polling');
         this.isClosed = true;
+        this.isAlreadyOpen = false;
         this._close.next();
     }
 
     private getLastCallback(data): number {
-        return data.length > 0 ? data[data.length - 1].creationDate + 1 : undefined;
+        this.lastCallback = data.length > 0 ? data[data.length - 1].creationDate + 1 : this.lastCallback;
+        return this.lastCallback;
     }
 
     private connectLongPooling(lastCallBack?: number): void {
@@ -46,7 +49,10 @@ export class LongPollingProtocol extends Protocol {
                 url: this.url,
                 params: lastCallBack ? {lastCallBack: lastCallBack} : {}
             })
-            .pipe(pluck('entity'))
+            .pipe(
+                pluck('entity'),
+                take(1)
+            )
             .subscribe(
                 (data) => {
                     this.loggerService.debug('new Events', data);

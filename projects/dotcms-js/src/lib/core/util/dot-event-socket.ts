@@ -84,21 +84,21 @@ export class DotEventsSocket {
         });
 
         this.protocolImpl.error$().subscribe(() => {
-
             if (this.isWebSocketProtocol() && this.status !== CONNECTION_STATUS.CONNECTED) {
                 this.loggerService.info(
                     'Error connecting with Websockets, trying again with long polling'
                 );
 
                 this.protocolImpl = this.getLongPollingProtocol();
+                this.connectProtocol();
+            } else {
+                setTimeout(
+                () => {
+                    this.protocolImpl.connect();
+                    },
+                    this.configParams.websocketReconnectTime
+                );
             }
-            setTimeout(
-               () => {
-                    this.protocolImpl.close();
-                    this.connect();
-                },
-                this.configParams.websocketReconnectTime
-            );
         });
 
         this.protocolImpl.close$().subscribe((_event) => {
