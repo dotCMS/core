@@ -1,6 +1,7 @@
 package com.dotcms.graphql.datafetcher;
 
 import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.graphql.DotGraphQLContext;
 import com.dotcms.graphql.util.TypeUtil;
 import com.dotmarketing.business.APILocator;
@@ -11,11 +12,13 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.GraphQLFieldDefinition;
 
+import static com.dotcms.graphql.business.GraphqlAPIImpl.TYPES_AND_FIELDS_VALID_NAME_REGEX;
 import static com.dotcms.graphql.util.TypeUtil.BASE_TYPE_SUFFIX;
 
 public class ContentletDataFetcher implements DataFetcher<List<Contentlet>> {
@@ -46,9 +49,16 @@ public class ContentletDataFetcher implements DataFetcher<List<Contentlet>> {
                 }
             }
 
-            final List<Contentlet> contentletList = APILocator.getContentletAPI().search(query, limit, offset, sortBy,
+            final List<Contentlet> unfilteredContentletList = APILocator.getContentletAPI().search(query, limit, offset, sortBy,
                 user, true);
-            return new ContentletToMapTransformer(contentletList).hydrate();
+
+            // filter out content whose content types don't stick to GraphQL naming convention
+            final List<Contentlet> filteredContentletList = unfilteredContentletList.stream()
+                .filter(contentlet -> contentlet.getContentType().variable().matches(TYPES_AND_FIELDS_VALID_NAME_REGEX))
+                .collect(Collectors.toList());
+
+
+            return new ContentletToMapTransformer(filteredContentletList).hydrate();
         } catch (Exception e) {
             Logger.error(this, e.getMessage(), e);
             throw e;
@@ -59,4 +69,5 @@ public class ContentletDataFetcher implements DataFetcher<List<Contentlet>> {
         return UtilMethods.isSet(fieldDefinition.getDescription())
             && fieldDefinition.getDescription().equals(BASE_TYPE_SUFFIX);
     }
+
 }
