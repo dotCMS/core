@@ -12,7 +12,6 @@ import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
 
 import java.util.List;
@@ -116,7 +115,7 @@ public class ContainerFinderStrategyResolver {
         @Override
         public boolean test(final VelocityResourceKey key) {
 
-            return UtilMethods.isSet(key.id1);
+            return FileAssetContainerUtil.getInstance().isDataBaseContainerId(key.id1);
         }
 
         @Override
@@ -147,7 +146,7 @@ public class ContainerFinderStrategyResolver {
         @Override
         public boolean test(final VelocityResourceKey key) {
 
-            return !UtilMethods.isSet(key.id1);
+            return FileAssetContainerUtil.getInstance().isFolderAssetContainerId(key.id1);
         }
 
         @Override
