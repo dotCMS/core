@@ -81,7 +81,7 @@ public class GraphqlAPIImpl implements GraphqlAPI {
 
     private volatile GraphQLSchema schema;
 
-    private static final String TYPES_AND_FIELDS_VALID_NAME_REGEX = "[_A-Za-z][_0-9A-Za-z]*";
+    public static final String TYPES_AND_FIELDS_VALID_NAME_REGEX = "[_A-Za-z][_0-9A-Za-z]*";
 
     public GraphqlAPIImpl() {
         // custom type mappings
