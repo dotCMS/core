@@ -42,8 +42,7 @@
                 "geomapping": {
                     "match": "*latlon",
                     "mapping": {
-                        "type": "geo_point",
-                        "doc_values": true 
+                        "type": "geo_point"
                     }
                 }
             },
@@ -51,8 +50,7 @@
                 "geomapping_2": {
                     "match": "*latlong",
                     "mapping": {
-                        "type": "geo_point",
-                        "doc_values": true 
+                        "type": "geo_point"
                     }
                 }
             },
@@ -60,8 +58,8 @@
                 "tags" : {
                     "match": "tags",
                     "mapping": {
-                        "type": "keyword",
-                        "doc_values": true
+                        "type": "keyword"
+
                     }
                 }
             },
@@ -77,8 +75,7 @@
                 "wfstep" : {
                     "match": "wfstep",
                     "mapping": {
-                        "type": "keyword",
-                        "doc_values": true
+                        "type": "keyword"
                     }
                 }
             },
@@ -86,8 +83,7 @@
                 "textmapping": {
                     "match_mapping_type": "string",
                     "mapping": {
-                        "analyzer": "whitespace",
-                        "search_analyzer": "whitespace",
+                        "analyzer": "standard",
                         "store": "false",
                         "type": "text"
                     }
@@ -96,4 +92,3 @@
         ]
     }
 }
-
