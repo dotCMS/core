@@ -18,12 +18,12 @@ public interface JsonWebTokenAuthCredentialProcessor extends Serializable {
      * @param httpSession {@link HttpSession}
      * @return User
      */
-    User processAuthCredentialsFromJWT(final String authorizationHeader, final HttpSession httpSession, final String ipAddress);
+    User processAuthHeaderFromJWT(final String authorizationHeader, final HttpSession httpSession, final String ipAddress);
 
     /**
      * Process the authentication credentials based on the jwt authorization header (it should starts with BEARER prefix)
      * @param request {@link HttpServletRequest}
      * @return User
      */
-    User processAuthCredentialsFromJWT(final HttpServletRequest request);
+    User processAuthHeaderFromJWT(final HttpServletRequest request);
 } // E:O:F:JsonWebTokenAuthCredentialProcessor.

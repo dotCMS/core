@@ -94,7 +94,7 @@ public class ApiTokenAPI {
 
         JWToken bean  = Try.of(()->JsonWebTokenFactory.getInstance().getJsonWebTokenService().parseToken(jwt, ipAddress))
                 .onFailure(e-> {
-                    SecurityLogger.logInfo(this.getClass(), "from ipaddress:" + ipAddress + " " + e.getMessage());
+                    SecurityLogger.logInfo(this.getClass(), "JWT Failed from ipaddress:" + ipAddress + " " + e.getMessage());
                     Logger.warn(this.getClass(), e.getMessage());
                 }).getOrNull();
                 

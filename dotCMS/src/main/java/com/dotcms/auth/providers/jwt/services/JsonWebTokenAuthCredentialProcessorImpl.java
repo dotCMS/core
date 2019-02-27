@@ -47,8 +47,8 @@ public class JsonWebTokenAuthCredentialProcessorImpl implements JsonWebTokenAuth
 
 
     @Override
-    public User processAuthCredentialsFromJWT(final String authorizationHeader,
-                                              final HttpSession httpSession, final String ipAddress) {
+    public User processAuthHeaderFromJWT(final String authorizationHeader,
+                                              final HttpSession session, final String ipAddress) {
 
         final String jsonWebToken;
         User user = null;
@@ -67,10 +67,9 @@ public class JsonWebTokenAuthCredentialProcessorImpl implements JsonWebTokenAuth
             } catch (Exception e) {
                 this.jsonWebTokenUtils.handleInvalidTokenExceptions(this.getClass(), e, null, null);
             }
-
-            if(!UtilMethods.isSet(user)) {
-                // "Invalid syntax for username and password"
-                throw new SecurityException("Invalid Json Web Token", Response.Status.BAD_REQUEST);
+            if(user != null && null != session) {
+                session.setAttribute(WebKeys.CMS_USER, user);
+                session.setAttribute(com.liferay.portal.util.WebKeys.USER_ID, user.getUserId());
             }
 
         }
@@ -79,21 +78,17 @@ public class JsonWebTokenAuthCredentialProcessorImpl implements JsonWebTokenAuth
     } // processAuthCredentialsFromJWT.
 
     @Override
-    public User processAuthCredentialsFromJWT(final HttpServletRequest request) {
+    public User processAuthHeaderFromJWT(final HttpServletRequest request) {
 
         // Extract authentication credentials
         final String authentication = request.getHeader(ContainerRequest.AUTHORIZATION);
         final HttpSession session = request.getSession(false);
 
-        User user = this.processAuthCredentialsFromJWT(authentication, session, request.getRemoteAddr());
+        User user = this.processAuthHeaderFromJWT(authentication, session, request.getRemoteAddr());
         
         if(user != null) {
             request.setAttribute(com.liferay.portal.util.WebKeys.USER_ID, user.getUserId());
             request.setAttribute(com.liferay.portal.util.WebKeys.USER, user);
-            if (null != session) {
-                session.setAttribute(WebKeys.CMS_USER, user);
-                session.setAttribute(com.liferay.portal.util.WebKeys.USER_ID, user.getUserId());
-            }
         }
         return user;
         

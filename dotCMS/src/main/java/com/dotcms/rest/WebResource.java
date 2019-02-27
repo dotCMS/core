@@ -246,7 +246,7 @@ public  class WebResource {
         }
 
         if(null == user) {
-            user = processAuthCredentialsFromJWT(request, this.jsonWebTokenAuthCredentialProcessor);
+            user = this.jsonWebTokenAuthCredentialProcessor.processAuthHeaderFromJWT(request);
         }
 
         if(user == null && !forceFrontendAuth) {
@@ -261,7 +261,6 @@ public  class WebResource {
 
             throw new SecurityException("Invalid User", Response.Status.UNAUTHORIZED);
         } else if(user == null) {
-
             user = this.getAnonymousUser();
         }
         
@@ -287,11 +286,6 @@ public  class WebResource {
         }
         return user;
     } // getAnonymousUser.
-
-    private static User processAuthCredentialsFromJWT(final HttpServletRequest request, final JsonWebTokenAuthCredentialProcessor authCredentialProcessor) {
-
-        return authCredentialProcessor.processAuthCredentialsFromJWT(request);
-    } // getAuthCredentialsFromJWT.
 
 
     private static Optional<UsernamePassword> getAuthCredentialsFromMap(Map<String, String> map) {

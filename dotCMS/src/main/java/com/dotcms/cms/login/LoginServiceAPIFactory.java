@@ -1,5 +1,22 @@
 package com.dotcms.cms.login;
 
+import static com.dotmarketing.util.CookieUtil.createJsonWebTokenCookie;
+
+import java.io.Serializable;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.auth.providers.jwt.JsonWebTokenUtils;
 import com.dotcms.business.CloseDBIfOpened;
@@ -18,8 +35,10 @@ import com.dotmarketing.cms.login.factories.LoginFactory;
 import com.dotmarketing.cms.login.struts.LoginForm;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.factories.PreviewFactory;
-import com.dotmarketing.util.*;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.SecurityLogger;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.NoSuchUserException;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
@@ -37,21 +56,6 @@ import com.liferay.portal.util.PortalUtil;
 import com.liferay.portal.util.PropsUtil;
 import com.liferay.portal.util.WebKeys;
 import com.liferay.util.InstancePool;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-import java.io.Serializable;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Optional;
-
-import static com.dotmarketing.util.CookieUtil.createJsonWebTokenCookie;
 
 /**
  * Login Service Factory that allows developers to inject custom login services.
