@@ -15,12 +15,8 @@
 <%@page import="java.util.Enumeration"%>
 
 <%
-User user = null;
-try {
-	user = com.liferay.portal.util.PortalUtil.getUser(request);
-} catch (Exception e) {
-	Logger.warn(this.getClass(), "no user found");
-} 
+User user = com.liferay.portal.util.PortalUtil.getUser(request);
+
 if(user ==null || LicenseUtil.getLevel()==LicenseLevel.COMMUNITY.level) {
 	response.getWriter().println("Unauthorized");
 	return;
