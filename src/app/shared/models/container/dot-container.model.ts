@@ -15,5 +15,5 @@ export interface DotContainer {
 }
 
 export interface DotContainerMap {
-    [key: string]: { container: any };
+    [key: string]: { container: DotContainer };
 }
