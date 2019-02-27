@@ -7,6 +7,7 @@ import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
+import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
@@ -171,7 +172,7 @@ public class ContainerFinderStrategyResolver {
 
             int hostIndexOf     = path.indexOf(hostName);
             final int lastSlash = path.lastIndexOf(StringPool.FORWARD_SLASH);
-            hostIndexOf         = hostIndexOf > 0? hostIndexOf: path.indexOf(this.getHostName(hostName));
+            hostIndexOf         = hostIndexOf > 0? hostIndexOf: path.indexOf(FileAssetContainerUtil.getInstance().getHostName(hostName));
 
             return path.substring(hostIndexOf + hostName.length(), lastSlash);
         }
@@ -183,19 +184,12 @@ public class ContainerFinderStrategyResolver {
 
             try {
 
-                return this.hostAPI.resolveHostName
-                        (this.getHostName(path), APILocator.systemUser(), false);
+                return FileAssetContainerUtil.getInstance().getHost(path);
             } catch (Exception e) {
 
                 return APILocator.systemHost();
             }
         }
 
-        private String getHostName (final String path) {
-
-            final int startsHost = path.indexOf(HOST_INDICATOR);
-            final int endsHost   = path.indexOf(StringPool.FORWARD_SLASH, startsHost+HOST_INDICATOR.length());
-            return path.substring(startsHost+HOST_INDICATOR.length(), endsHost);
-        }
     } // PathContainerFinderStrategyImpl.
 }

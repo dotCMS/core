@@ -1,8 +1,5 @@
 package com.dotmarketing.portlets.folders.business;
 
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
-import static com.dotmarketing.util.StringUtils.builder;
-
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.business.ContentTypeAPI;
@@ -30,8 +27,12 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+
 import java.util.List;
 import java.util.Optional;
+
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
+import static com.dotmarketing.util.StringUtils.builder;
 
 /**
  * Folder listener for the application/container folder
@@ -59,8 +60,7 @@ public class ApplicationContainerFolderListener implements FolderListener {
                 try {
 
                     // otherwise we have to fetch the object it self.
-                    final Container container = ContainerAPI.CONTAINER_META_INFO.contains(fileAssetName)?
-                            this.createFakeContainer(child):
+                    final Container container =
                             this.containerAPI.getContainerByFolder(containerFolder, folderEvent.getUser(), false);
 
                     if (null != container && UtilMethods.isSet(container.getIdentifier())) {
@@ -269,6 +269,7 @@ public class ApplicationContainerFolderListener implements FolderListener {
         final ContainerLoader containerLoader = new ContainerLoader();
         if(container instanceof FileAssetContainer){
             containerLoader.invalidate(FileAssetContainer.class.cast(container), containerFolder, fileAssetName);
+            CacheLocator.getContainerCache().remove(container);
         } else {
             containerLoader.invalidate(container);
             CacheLocator.getContainerCache().remove(container);

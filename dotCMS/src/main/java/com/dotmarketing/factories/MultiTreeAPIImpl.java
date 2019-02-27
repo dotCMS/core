@@ -2,6 +2,7 @@ package com.dotmarketing.factories;
 
 
 import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.business.MethodDecorator;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.rendering.velocity.services.PageLoader;
@@ -312,6 +313,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     }
 
     @Override
+    @MethodDecorator(parameterDecorator =  SaveMultiTreeMethodDecorator.class)
     @WrapInTransaction
     public void saveMultiTree(final MultiTree mTree) throws DotDataException {
         Logger.info(this, String.format("Saving MutiTree: %s", mTree));
@@ -335,6 +337,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
      * @throws DotDataException
      */
     @Override
+    @MethodDecorator(parameterDecorator =  SaveMultiTreesMethodDecorator.class)
     @WrapInTransaction
     public void saveMultiTrees(final List<MultiTree> mTrees) throws DotDataException {
         if (mTrees == null || mTrees.isEmpty())
@@ -359,6 +362,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
      * @throws DotDataException
      */
     @Override
+    @MethodDecorator(parameterDecorator =  SaveMultiTreesMethodDecorator.class)
     @WrapInTransaction
     public void saveMultiTrees(final String pageId, final List<MultiTree> mTrees) throws DotDataException {
         Logger.info(this, String.format("Saving MutiTrees: pageId -> %s multiTrees-> %s", pageId, mTrees));
@@ -557,7 +561,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
                 }
 
                 pageContents.put(multiTree.getContainer(), multiTree.getRelationType(), myContents);
-            } ;
+            }
 
         }
 

@@ -6,6 +6,7 @@ import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotcms.util.ConversionUtils;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Source;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -101,6 +102,60 @@ public class FileAssetContainerUtil {
         }
 
         return isIdentifier;
+    }
+
+    // todo: test me
+    public Host getHost (final String path) throws DotSecurityException, DotDataException {
+
+        return this.getHostFromHostname(this.getHostName(path));
+    }
+
+    public Host getHostFromHostname (final String hostname) throws DotSecurityException, DotDataException {
+
+        return APILocator.getHostAPI().resolveHostName
+                (hostname, APILocator.systemUser(), false);
+    }
+
+    //demo.dotcms.com/application/containers/test/
+    public String getHostName (final String path) {
+
+        final int startsHost = path.indexOf(HOST_INDICATOR);
+        final int endsHost   = path.indexOf(StringPool.FORWARD_SLASH, startsHost+HOST_INDICATOR.length());
+        return path.substring(startsHost+HOST_INDICATOR.length(), endsHost);
+    }
+
+    public String getContainerIdFromPath(final String fullPath) throws DotDataException {
+
+        Host host             = null;
+        final String hostname = this.getHostName(fullPath);
+
+        try {
+            host = this.getHostFromHostname(hostname);
+        } catch (DotDataException | DotSecurityException e) {
+            host = null;
+        }
+
+        if (null == host) {
+
+            try {
+                host = APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false);
+            } catch (DotDataException | DotSecurityException e) {
+                host = APILocator.systemHost();
+            }
+        }
+
+        final String relativePath = this.getPathFromFullPath (hostname, fullPath);
+        final String containerUri = (relativePath.endsWith(FORWARD_SLASH)?relativePath:relativePath+FORWARD_SLASH)+"container.vtl";
+
+        final Identifier identifier = APILocator.getIdentifierAPI().find(host, containerUri);
+        return identifier.getId();
+    }
+
+    private String getPathFromFullPath(final String hostname, final String fullPath) {
+
+        final int indexOf = fullPath.indexOf(hostname);
+
+        return -1 != indexOf? fullPath.substring(indexOf + hostname.length()): fullPath;
     }
 
     public boolean isFolderAssetContainerId(final String containerPath) {
