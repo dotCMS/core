@@ -1,7 +1,7 @@
-export interface DotAppNavChildren {
+export interface DotAppNavItem {
     code?: any;
     folder: string;
-    children?: DotAppNavChildren[];
+    children?: DotAppNavItem[];
     host: string;
     languageId: number;
     href: string;

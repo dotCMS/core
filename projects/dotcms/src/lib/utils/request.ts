@@ -5,11 +5,19 @@ export interface DotAppHttpRequestParams {
     url: string;
     method?: string;
     body?: { [key: string]: any } | string;
+    language?: string;
 }
 
-function getUrl(pathname: string, config: DotAppConfigParams): string {
+async function getLangQueryParam(language: string): Promise<string> {
+    return language ? `?language_id=${language}` : '';
+}
+
+async function getUrl(
+    params: DotAppHttpRequestParams,
+    config: DotAppConfigParams
+): Promise<string> {
     const host = config.environment !== 'development' ? config.host : '';
-    return `${host}${pathname}`;
+    return `${host}${params.url}${await getLangQueryParam(params.language)}`;
 }
 
 function shouldAppendBody(params: DotAppHttpRequestParams): boolean {
@@ -38,8 +46,8 @@ function getOpts(
     return opts;
 }
 
-export function request(params: DotAppHttpRequestParams, config: DotAppConfigParams) {
-    const url = getUrl(params.url, config);
+export async function request(params: DotAppHttpRequestParams, config: DotAppConfigParams) {
+    const url = await getUrl(params, config);
     const opts = getOpts(params, config);
 
     return fetch(url, opts);

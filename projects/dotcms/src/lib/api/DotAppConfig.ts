@@ -1,14 +1,14 @@
 import { DotAppBase, DotAppConfigParams } from './DotAppBase';
-import { DotAppNavItem } from '../models';
+import { DotCMSConfigItem } from '../models';
 
-export class DotAppNav extends DotAppBase {
+export class DotAppConfig extends DotAppBase {
     constructor(config: DotAppConfigParams) {
         super(config);
     }
 
-    get(deep = '2', location = '/'): Promise<DotAppNavItem> {
+    get(): Promise<DotCMSConfigItem> {
         return this.request({
-            url: `/api/v1/nav/${location}?depth=${deep}`
+            url: '/api/v1/configuration'
         })
             .then((response: Response) => response.json())
             .then((data) => data.entity);

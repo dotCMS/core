@@ -1,4 +1,4 @@
-import { DotCMSContentlet } from './DotAppPageAsset.model';
+import { DotCMSContentlet } from './DotCMSPageAsset.model';
 
 export interface DotCMSEsResult {
     contentlets: DotCMSContentlet[];
