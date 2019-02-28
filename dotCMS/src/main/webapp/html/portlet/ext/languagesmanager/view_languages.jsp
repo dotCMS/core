@@ -49,7 +49,7 @@ var pushHandler = new dotcms.dojo.push.PushHandler('Push Publish');
 			
 		</div>
     	<div class="portlet-toolbar__actions-secondary">
-    		<button dojoType="dijit.form.Button" onClick="editDefault" iconClass="editIcon" class="dijitButtonFlat">
+    		<button dojoType="dijit.form.Button" onClick="editDefault" iconClass="editIcon">
     			<%=LanguageUtil.get(pageContext, "Edit-Default-Language-Variables")%>
     		</button>
 			<button dojoType="dijit.form.Button" onClick="addLanguage" iconClass="plusIcon">

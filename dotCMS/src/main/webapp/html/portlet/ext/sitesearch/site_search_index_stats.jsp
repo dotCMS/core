@@ -88,7 +88,7 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 <!-- START Toolbar -->
 	<div class="portlet-toolbar">
 		<div class="portlet-toolbar__actions-primary">
-			<button dojoType="dijit.form.Button"  class="dijitButtonFlat" onClick="showNewIndexDialog()" iconClass="addIcon">
+			<button dojoType="dijit.form.Button"  onClick="showNewIndexDialog()" iconClass="addIcon">
                <%= LanguageUtil.get(pageContext,"Create-SiteSearch-Index") %>
             </button>
 		</div>
@@ -96,7 +96,7 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 			
 		</div>
     	<div class="portlet-toolbar__actions-secondary">
-    		<button dojoType="dijit.form.Button"  class="dijitButtonFlat" onClick="refreshIndexStats()">
+    		<button dojoType="dijit.form.Button"  onClick="refreshIndexStats()">
                <%= LanguageUtil.get(pageContext,"Refresh") %>
             </button>
     	</div>
@@ -271,13 +271,13 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 		   </form>
 		   <br/>
 
-           <button id="uploadSubmit" data-dojo-type="dijit.form.Button" type="button" class="dijitButtonFlat">
+           <button id="uploadSubmit" data-dojo-type="dijit.form.Button" type="button">
               <span class="uploadIcon"></span>
               <%= LanguageUtil.get(pageContext,"Upload-File") %>
               <script type="dojo/method" data-dojo-event="onClick" data-dojo-args="evt">doRestoreIndex();</script>
            </button>
 
-		   <button data-dojo-type="dijit.form.Button" type="button" class="dijitButtonFlat">
+		   <button data-dojo-type="dijit.form.Button" type="button">
 		      <span class="deleteIcon"></span>
 		      <%= LanguageUtil.get(pageContext,"Close") %>
               <script type="dojo/method" data-dojo-event="onClick" data-dojo-args="evt">hideRestoreIndex();</script>

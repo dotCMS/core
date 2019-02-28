@@ -108,19 +108,19 @@
 	<div class="buttonRow scheme">
         <div>
 		<%if(!scheme.isNew()){%>
-			<button dojoType="dijit.form.Button" class="dijitButtonFlat" onClick='schemeAdmin.copyScheme("<%=UtilMethods.webifyString(scheme.getId())%>", "<%=UtilMethods.webifyString(scheme.getName())%>")' iconClass="saveIcon" type="button">
+			<button dojoType="dijit.form.Button" onClick='schemeAdmin.copyScheme("<%=UtilMethods.webifyString(scheme.getId())%>", "<%=UtilMethods.webifyString(scheme.getName())%>")' iconClass="saveIcon" type="button">
 				<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Copy"))%>
 			</button>
 			
 			<%if(scheme.isArchived()){%>
-	        <button dojoType="dijit.form.Button" class="dijitButtonFlat" onClick='schemeAdmin.unArchiveScheme("<%=UtilMethods.webifyString(scheme.getId())%>")' iconClass="archiveIcon"  type="button">
+	        <button dojoType="dijit.form.Button" onClick='schemeAdmin.unArchiveScheme("<%=UtilMethods.webifyString(scheme.getId())%>")' iconClass="archiveIcon"  type="button">
 	            <%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Unarchive"))%>
 	        </button>
-			<button dojoType="dijit.form.Button" class="dijitButtonFlat" onClick='schemeAdmin.deleteScheme("<%=UtilMethods.webifyString(scheme.getId())%>")' iconClass="deleteIcon" style="background:black;color:white" type="button">
+			<button dojoType="dijit.form.Button" onClick='schemeAdmin.deleteScheme("<%=UtilMethods.webifyString(scheme.getId())%>")' iconClass="deleteIcon" style="background:black;color:white" type="button">
 				<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "delete"))%>
 			</button>
 			<%}else{%>
-	        <button dojoType="dijit.form.Button" class="dijitButtonFlat" onClick='schemeAdmin.archiveScheme("<%=UtilMethods.webifyString(scheme.getId())%>")' iconClass="archiveIcon"  type="button">
+	        <button dojoType="dijit.form.Button" onClick='schemeAdmin.archiveScheme("<%=UtilMethods.webifyString(scheme.getId())%>")' iconClass="archiveIcon"  type="button">
 	            <%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Archive"))%>
 	        </button>
 			<%} %>

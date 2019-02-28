@@ -121,7 +121,7 @@ SiteSearchAPI ssapi = APILocator.getSiteSearchAPI();
 			<tr>
 			<td colspan="100" align="center">
 				<div style="padding:30px;">
-						<button dojoType="dijit.form.Button" class="dijitButtonFlat"
+						<button dojoType="dijit.form.Button"
 							id="refreshButton" onClick="refreshJobStats()"
 							iconClass="resetIcon"><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Refresh")) %>
 						</button>

@@ -66,7 +66,7 @@
 	                    <div id="bgColorBlock" style="position:absolute;left:75px;top: 7px;width:18px;height:18px;"></div>
 	                    <div class="inline-form">
 		                    <input id="bgColor" dojoType="dijit.form.TextBox" name="companySize" size="5" type="text" value="<%= company.getSize() %>" style="width: 250px">
-		                    <button id="bgButton" dojoType="dijit.form.Button" type="button" iconClass="colorIcon" class="dijitButtonFlat">
+		                    <button id="bgButton" dojoType="dijit.form.Button" type="button" iconClass="colorIcon">
 								<%= LanguageUtil.get(pageContext, "color.picker") %>
 		                        <script type="dojo/method" data-dojo-event="onClick" data-dojo-args="evt">
 		                            dijit.byId("bgColorPicker").show();
@@ -81,7 +81,7 @@
 						<div id="pColorBlock" style="position:absolute;left:75px;top: 7px;width:18px;height:18px;"></div>
 						<div class="inline-form">
 							<input id="pColor" dojoType="dijit.form.TextBox" name="companySize" size="5" type="text" value="<%= company.getType() %>" style="width: 250px">
-							<button id="pButton" dojoType="dijit.form.Button" type="button" iconClass="colorIcon" class="dijitButtonFlat">
+							<button id="pButton" dojoType="dijit.form.Button" type="button" iconClass="colorIcon">
 								<%= LanguageUtil.get(pageContext, "color.picker") %>
 								<script type="dojo/method" data-dojo-event="onClick" data-dojo-args="evt">
 		                            dijit.byId("pColorPicker").show();
@@ -96,8 +96,8 @@
 						<div id="sColorBlock" style="position:absolute;left:75px;top: 7px;width:18px;height:18px;"></div>
 						<div class="inline-form">
 							<input id="sColor" dojoType="dijit.form.TextBox" name="companySize" size="5" type="text" value="<%= company.getStreet() %>" style="width: 250px">
-							<button id="sButton" dojoType="dijit.form.Button" type="button" iconClass="colorIcon" class="dijitButtonFlat">
-								Color Picker
+							<button id="sButton" dojoType="dijit.form.Button" type="button" iconClass="colorIcon">
+								<%= LanguageUtil.get(pageContext, "color.picker") %>
 								<script type="dojo/method" data-dojo-event="onClick" data-dojo-args="evt">
 		                            dijit.byId("sColorPicker").show();
 		                        </script>
@@ -110,7 +110,7 @@
 	                <dd>
 	                	<div class="inline-form">
 		                    <input id="bgURL" dojoType="dijit.form.TextBox" name="companyHomeUrl" size="25" type="text" value="<%= company.getHomeURL() %>" style="width: 250px">
-		                    <button id="buttonTwo" dojoType="dijit.form.Button" type="button" iconClass="bgIcon" class="dijitButtonFlat">
+		                    <button id="buttonTwo" dojoType="dijit.form.Button" type="button" iconClass="bgIcon">
 								<%= LanguageUtil.get(pageContext, "backgrounds") %>
 		                        <script type="dojo/method" data-dojo-event="onClick" data-dojo-args="evt">
 		                            dijit.byId("bgPicker").show();
@@ -181,7 +181,7 @@
             	<div style="margin-top:32px;">
                     <div style="margin-top:16px;"><%= LanguageUtil.get(pageContext, "File") %>  : <input type="file" id="logoFile" name="logoFile"></div>
                     <div style="margin-top:16px;">
-                        <button  dojoType="dijit.form.Button" onClick="uploadCompanyLogo();" iconClass="saveIcon" class="dijitButtonFlat">
+                        <button  dojoType="dijit.form.Button" onClick="uploadCompanyLogo();" iconClass="saveIcon">
                             <%= LanguageUtil.get(pageContext, "upload-image") %>
                         </button>
                     </div>

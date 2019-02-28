@@ -67,16 +67,16 @@
 		<div class="portlet-toolbar__actions-primary">
 			<div dojoType="dojo.data.ItemFileReadStore" jsId="test" url="/html/portlet/ext/osgi/available_bundles_json.jsp"></div>
 				<%= LanguageUtil.get(pageContext,"OSGI-AVAIL-BUNDLES") %> : <input dojoType="dijit.form.ComboBox" store="test" searchAttr="label" name="availBundlesCombo" id="availBundlesCombo">
-			<button dojoType="dijit.form.Button" class="dijitButtonFlat" type="submit" onclick="javascript:bundles.deploy()"><%=LanguageUtil.get(pageContext, "OSGI-Load-Bundle")%></button>
+			<button dojoType="dijit.form.Button" type="submit" onclick="javascript:bundles.deploy()"><%=LanguageUtil.get(pageContext, "OSGI-Load-Bundle")%></button>
 		</div>
 		<div class="portlet-toolbar__info">
 		</div>
     	<div class="portlet-toolbar__actions-secondary">
     		<!-- START Actions -->			
-			<button dojoType="dijit.form.Button" class="dijitButtonFlat" onClick="javascript:dijit.byId('uploadOSGIDialog').show()" iconClass="plusIcon" type="button"><%=LanguageUtil.get(pageContext, "OSGI-Upload-Bundle")%></button>
-			<button dojoType="dijit.form.Button" class="dijitButtonFlat" onClick="bundles.reboot(true);" iconClass="resetIcon" type="button"><%=LanguageUtil.get(pageContext, "OSGI-restart-framework")%></button>
-			<button dojoType="dijit.form.Button" class="dijitButtonFlat" onClick="bundles.extraPackages();" iconClass="editIcon" type="button"><%=LanguageUtil.get(pageContext, "OSGI-extra-packages")%></button>
-			<button dojoType="dijit.form.Button" class="dijitButtonFlat" onClick="mainAdmin.refresh();" iconClass="resetIcon" type="button"><%=LanguageUtil.get(pageContext, "Refresh")%></button>
+			<button dojoType="dijit.form.Button" onClick="javascript:dijit.byId('uploadOSGIDialog').show()" iconClass="plusIcon" type="button"><%=LanguageUtil.get(pageContext, "OSGI-Upload-Bundle")%></button>
+			<button dojoType="dijit.form.Button" onClick="bundles.reboot(true);" iconClass="resetIcon" type="button"><%=LanguageUtil.get(pageContext, "OSGI-restart-framework")%></button>
+			<button dojoType="dijit.form.Button" onClick="bundles.extraPackages();" iconClass="editIcon" type="button"><%=LanguageUtil.get(pageContext, "OSGI-extra-packages")%></button>
+			<button dojoType="dijit.form.Button" onClick="mainAdmin.refresh();" iconClass="resetIcon" type="button"><%=LanguageUtil.get(pageContext, "Refresh")%></button>
 			<!-- END Actions -->
     	</div>
    </div>

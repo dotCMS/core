@@ -628,7 +628,7 @@ td {font-size: 100%;}
         </div>
         <br>
         <div class="buttonRow">
-            <button dojoType="dijit.form.Button" type="button" iconClass="cancelIcon" class="dijitButtonFlat" onClick="cancelImportTags()" id="cancelImport">
+            <button dojoType="dijit.form.Button" type="button" iconClass="cancelIcon" onClick="cancelImportTags()" id="cancelImport">
                 <%= LanguageUtil.get(pageContext, "Cancel") %>
             </button>
             <button dojoType="dijit.form.Button" type="button" iconClass="uploadIcon" onClick="importTags()" id="importButton">

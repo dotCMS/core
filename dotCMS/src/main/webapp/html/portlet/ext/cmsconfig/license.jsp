@@ -489,7 +489,7 @@
 
          <%} else {%>
             <div style="text-align:center;margin:30px 0;">
-                <button type="button" onclick="licenseAdmin.requestTrial()" id="trailBtn" data-dojo-type="dijit.form.Button" class="dijitButtonFlat">
+                <button type="button" onclick="licenseAdmin.requestTrial()" id="trailBtn" data-dojo-type="dijit.form.Button">
                     <%= LanguageUtil.get(pageContext, "request-trial-license") %>
                 </button>
             </div>
@@ -506,11 +506,11 @@
             </div>
             
             <div style="margin:20px;text-align: center">
-                <button type="button" onclick="licenseAdmin.doLicensePaste()" class="dijitButtonFlat" data-dojo-id="uploadButton" id="uploadButton" data-dojo-type="dijit.form.Button" name="upload_button" iconClass="keyIcon" value="upload">
+                <button type="button" onclick="licenseAdmin.doLicensePaste()" data-dojo-id="uploadButton" id="uploadButton" data-dojo-type="dijit.form.Button" name="upload_button" iconClass="keyIcon" value="upload">
                     <%= LanguageUtil.get(pageContext, "save-license") %>
                 </button>
                  &nbsp;&nbsp;&nbsp;or&nbsp;&nbsp;&nbsp;
-                 <button data-dojo-type="dijit.form.Button" class="dijitButtonFlat" onClick="dijit.byId('uploadDiaWindow').show()">
+                 <button data-dojo-type="dijit.form.Button" onClick="dijit.byId('uploadDiaWindow').show()">
                      <%= LanguageUtil.get(pageContext, "Upload-license-pack-button") %>
                 </button>
             </div>
