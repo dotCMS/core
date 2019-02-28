@@ -944,7 +944,7 @@
 					<div class="portlet-toolbar__actions-secondary">
 						<div class="inline-form">
 							<input  name="catFilter" id="catFilter" onkeyup="doSearch(false, true);" type="text" dojoType="dijit.form.TextBox" placeholder="<%= LanguageUtil.get(pageContext, "message.filter.categories") %>">
-							<button dojoType="dijit.form.Button" class="dijitButtonFlat" onclick="clearCatFilter()" type="button"><%= LanguageUtil.get(pageContext, "Clear") %></button>
+							<button dojoType="dijit.form.Button" onclick="clearCatFilter()" type="button"><%= LanguageUtil.get(pageContext, "Clear") %></button>
 						</div>
 					</div>
 				</div>
@@ -952,7 +952,7 @@
 				<div id="catHolder" style="text-align: center; " class="claro"></div>
 
 				<div style="text-align: right; margin: 16px 0">
-					<button dojoType="dijit.form.Button" type="button" class="dijitButtonFlat" onClick="doSearch(true);" iconClass="resetIcon"><%= LanguageUtil.get(pageContext,"Reorder") %></button>
+					<button dojoType="dijit.form.Button" type="button" onClick="doSearch(true);" iconClass="resetIcon"><%= LanguageUtil.get(pageContext,"Reorder") %></button>
 				</div>
 				<input type="hidden" name="fullCommand" id="fullCommand" value="">
 			</div>

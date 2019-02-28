@@ -759,7 +759,7 @@
 	        <div class="yui-g portlet-toolbar">
 	            <div class="yui-u" style="text-align:right;">
 	
-	                <div dojoType="dijit.form.DropDownButton" class="dijitButtonFlat" data-dojo-props="iconClass:'mobileIcon', showLabel:true">
+	                <div dojoType="dijit.form.DropDownButton" data-dojo-props="iconClass:'mobileIcon', showLabel:true">
 	                    <span><%=UtilMethods.escapeSingleQuotes( LanguageUtil.get( pageContext, "Mobile Preview" ) )%></span>
 	
 	                    <div dojoType="dijit.Menu">
