@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -14,6 +15,7 @@ import java.util.Map;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import com.dotcms.rest.ContentHelper;
 import com.dotcms.rest.MapToContentletPopulator;
@@ -26,7 +28,14 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.struts.ContentletForm;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.workflows.business.BaseWorkflowIntegrationTest;
+import com.liferay.portal.model.User;
+import com.tngtech.java.junit.dataprovider.DataProvider;
+import com.tngtech.java.junit.dataprovider.DataProviderRunner;
+import com.tngtech.java.junit.dataprovider.UseDataProvider;
 
+import io.vavr.Tuple2;
+
+@RunWith(DataProviderRunner.class)
 public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
 
     @BeforeClass
@@ -34,13 +43,27 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
         IntegrationTestInitService.getInstance().init();
     }
 
+    @DataProvider
+    public static Object[] testCases() {
+        // tuple values : anon user, should get modUser and owner data
+        return new Tuple2[]{
+            new Tuple2<>(true, false),
+            new Tuple2<>(false, true)
+        };
+    }
+
+
     @Test
-    public void Transformer_Simple_Test() throws DotDataException {
+    @UseDataProvider("testCases")
+    public void Transformer_Simple_Test(final Tuple2<Boolean, Boolean> testCase) throws DotDataException {
 
         final List<Contentlet> list = APILocator.getContentletAPI().findAllContent(0,20);
         assertFalse("I was expecting at least 20 contentlets returned from the index",list.isEmpty());
+
+        final User userToUse = testCase._1() ? APILocator.getUserAPI().getAnonymousUser() : APILocator.systemUser();
+
         final List<Map<String, Object>> transformedList =
-            new ContentletToMapTransformer(list, APILocator.systemUser()).toMaps();
+            new ContentletToMapTransformer(list, userToUse).toMaps();
 
         assertEquals(list.size(), transformedList.size());
         for(int i=0; i < list.size(); i++){
@@ -51,7 +74,19 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
             assertEquals(original.getMap().get(Contentlet.INODE_KEY),transformed.get(Contentlet.INODE_KEY));
             assertEquals(original.getMap().get(Contentlet.LANGUAGEID_KEY),transformed.get(Contentlet.LANGUAGEID_KEY));
             assertEquals(original.getMap().get(Contentlet.MOD_DATE_KEY),transformed.get(Contentlet.MOD_DATE_KEY));
-            assertEquals(original.getMap().get(Contentlet.MOD_USER_KEY),transformed.get(Contentlet.MOD_USER_KEY));
+
+            // should we get data from modUser and owner?
+            if(testCase._2()) {
+                assertEquals(original.getMap().get(Contentlet.MOD_USER_KEY), transformed.get(Contentlet.MOD_USER_KEY));
+                assertNotNull(transformed.get(Contentlet.MOD_USER_OBJECT_KEY));
+                assertEquals(original.getMap().get(Contentlet.OWNER_KEY), transformed.get(Contentlet.OWNER_KEY));
+                assertNotNull(transformed.get(Contentlet.OWNER_OBJECT_KEY));
+            } else {
+                assertNull(transformed.get(Contentlet.MOD_USER_KEY));
+                assertNull(transformed.get(Contentlet.MOD_USER_OBJECT_KEY));
+                assertNull(transformed.get(Contentlet.OWNER_KEY));
+                assertNull(transformed.get(Contentlet.OWNER_OBJECT_KEY));
+            }
 
             //New Properties expected
             assertNotNull(transformed.get(Contentlet.TITTLE_KEY));
