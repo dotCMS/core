@@ -18,6 +18,8 @@ import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -170,8 +172,8 @@ public class ContentletToMapTransformer {
                 Logger.warn(this, e.getMessage());
             }
 
-            contentlet.getMap().put(Contentlet.MOD_USER_OBJECT_KEY, modUser );
-            contentlet.getMap().put(Contentlet.OWNER_OBJECT_KEY, ownerUser );
+            contentlet.getMap().put(Contentlet.MOD_USER_OBJECT_KEY, userToMap(modUser));
+            contentlet.getMap().put(Contentlet.OWNER_OBJECT_KEY, userToMap(ownerUser));
             contentlet.getMap().put(Contentlet.WORKING_KEY, contentlet.isWorking());
             contentlet.getMap().put(Contentlet.LIVE_KEY, contentlet.isLive());
             contentlet.getMap().put(Contentlet.ARCHIVED_KEY, contentlet.isArchived());
@@ -183,6 +185,17 @@ public class ContentletToMapTransformer {
         } catch (Exception e) {
             Logger.error(getClass(),"Error calculating modUser", e);
         }
+    }
+
+    private static Map<String, String> userToMap(final User user) {
+        if(user==null) return Collections.emptyMap();
+
+        Map<String, String> userMap = new HashMap<>();
+        userMap.put("userId", user.getUserId());
+        userMap.put("firstName", user.getFirstName());
+        userMap.put("lastName", user.getLastName());
+        userMap.put("email", user.getEmailAddress());
+        return userMap;
     }
 
 }

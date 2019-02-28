@@ -83,9 +83,9 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
                 assertNotNull(transformed.get(Contentlet.OWNER_OBJECT_KEY));
             } else {
                 assertNull(transformed.get(Contentlet.MOD_USER_KEY));
-                assertNull(transformed.get(Contentlet.MOD_USER_OBJECT_KEY));
+                assertEquals(Collections.emptyMap(), transformed.get(Contentlet.MOD_USER_OBJECT_KEY));
                 assertNull(transformed.get(Contentlet.OWNER_KEY));
-                assertNull(transformed.get(Contentlet.OWNER_OBJECT_KEY));
+                assertEquals(Collections.emptyMap(), transformed.get(Contentlet.OWNER_OBJECT_KEY));
             }
 
             //New Properties expected
@@ -115,6 +115,8 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
 
         contentlet.getMap().put(ContentletForm.IDENTIFIER_KEY, identifier);
         contentlet.getMap().put(HTMLPageAssetAPI.URL_FIELD, urlExpected);
+        contentlet.getMap().put(Contentlet.OWNER_KEY, APILocator.systemUser());
+        contentlet.getMap().put(Contentlet.MOD_USER_KEY, APILocator.systemUser());
 
 
         when(identifierAPI.find(identifier)).thenReturn(identifierObject);

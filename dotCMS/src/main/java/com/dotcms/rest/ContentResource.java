@@ -958,6 +958,8 @@ public class ContentResource {
                     Logger.info(ContentResource.class,
                             key + " is a json field: " + map.get(key).toString());
                     jo.put(key, new JSONObject(con.getKeyValueProperty(key)));
+                } else if(key.equals(Contentlet.MOD_USER_OBJECT_KEY) || key.equals(Contentlet.OWNER_OBJECT_KEY)) {
+                    jo.put(key, new JSONObject((Map) map.get(key)));
                 } else {
                     jo.put(key, map.get(key));
                 }
