@@ -1,4 +1,4 @@
-import { Observable, of } from 'rxjs';
+import { Observable, of, throwError } from 'rxjs';
 import { StringUtils } from '../string-utils.service';
 import { LoggerService } from '../logger.service';
 import { DotEventsSocket } from './dot-event-socket';
@@ -8,7 +8,6 @@ import { CoreWebService } from '../core-web.service';
 import { Server } from 'mock-socket';
 import { RequestMethod } from '@angular/http';
 import { DotEventMessage } from './models/dot-event-message';
-
 class CoreWebServiceMock  extends CoreWebService {
 
     constructor() {
@@ -88,15 +87,14 @@ describe('DotEventsSocket', () => {
     });
 
     describe('LongPolling', () => {
+
+        const requestOpts = {
+            method: RequestMethod.Get,
+            url: 'http://localhost/testing',
+            params: {}
+        };
+
         it('should connect', (done) => {
-            const requestOpts = {
-                method: RequestMethod.Get,
-                url: 'http://localhost/testing',
-                params: {}
-            };
-
-            coreWebServiceMock.dotEventsSocket = dotEventsSocket;
-
             spyOn(coreWebServiceMock, 'requestView').and.callFake(() => {
                 dotEventsSocket.destroy();
 
@@ -112,6 +110,67 @@ describe('DotEventsSocket', () => {
             dotEventsSocket.open().subscribe(() => {
                 expect(coreWebServiceMock.requestView).toHaveBeenCalledWith(requestOpts);
                 done();
+            });
+        });
+
+        it('should catch a message', (done) => {
+            spyOn(coreWebServiceMock, 'requestView').and.callFake(() => {
+                return of({
+                    entity: {
+                        event: 'event',
+                        payload: 'message'
+                    }
+                });
+            });
+
+            dotEventsSocket.connect();
+
+            dotEventsSocket.messages().subscribe((message) => {
+                dotEventsSocket.destroy();
+                expect(message).toEqual({
+                    event: 'event',
+                    payload: 'message'
+                });
+                done();
+            });
+        });
+
+        it('should catch a message', (done) => {
+            let firstTime = true;
+            let countMessage = 0;
+
+            spyOn(coreWebServiceMock, 'requestView').and.callFake(() => {
+                if (firstTime) {
+                    firstTime = false;
+                    return throwError('ERROR');
+                } else {
+                    return of({
+                        entity: {
+                            event: 'event',
+                            payload: 'message'
+                        }
+                    });
+                }
+            });
+
+            dotEventsSocket.connect();
+
+            dotEventsSocket.messages().subscribe((message) => {
+                dotEventsSocket.destroy();
+
+                countMessage++;
+                expect(message).toEqual({
+                    event: 'event',
+                    payload: 'message'
+                });
+
+                setTimeout(() => {
+                    if (countMessage === 1) {
+                        done();
+                    } else if (countMessage === 2) {
+                        expect(true).toBe(false, 'should be call just one');
+                    }
+                }, 10);
             });
         });
     });

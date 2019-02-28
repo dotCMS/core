@@ -2,11 +2,14 @@ import { Subject } from 'rxjs';
 import { LoggerService } from '../logger.service';
 import { Protocol } from './protocol';
 
+enum WEB_SOCKET_PROTOCOL_CODE {
+    NORMAL_CLOSE_CODE = 1000,
+    GO_AWAY_CODE = 1001,
+}
 export class WebSocketProtocol extends Protocol {
     dataStream: Subject<{}> = new Subject();
     private socket: WebSocket;
 
-    private readonly NORMAL_CLOSE_CODE = 1000;
 
     constructor(private url: string, loggerService: LoggerService) {
         super(loggerService);
@@ -33,14 +36,15 @@ export class WebSocketProtocol extends Protocol {
             };
 
             this.socket.onclose = (ev: CloseEvent) => {
-                if (ev.code === this.NORMAL_CLOSE_CODE) {
+                if (ev.code === WEB_SOCKET_PROTOCOL_CODE.NORMAL_CLOSE_CODE) {
                     this._close.next(ev);
                     this._message.complete();
+                } else if (ev.code === WEB_SOCKET_PROTOCOL_CODE.GO_AWAY_CODE) {
+                    this._error.next(ev);
                 }
             };
 
             this.socket.onerror = (ev: ErrorEvent) => {
-                this.close();
                 this._error.next(ev);
             };
         } catch (error) {
