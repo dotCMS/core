@@ -27,7 +27,7 @@
                     <div class="clear"></div>
                     <div class="buttonRow">
                         <button dojoType="dijit.form.Button" dojoAttachEvent='onClick:_doSearchPage1' iconClass="searchIcon"><%= LanguageUtil.get(pageContext, "Search") %></button>
-                        <button dojoType="dijit.form.Button" dojoAttachEvent='onClick:_clearSearch' iconClass="cancelIcon" class="dijitButtonFlat" style="margin-top: 16px"><%= LanguageUtil.get(pageContext, "Clear") %></button>
+                        <button dojoType="dijit.form.Button" dojoAttachEvent='onClick:_clearSearch' iconClass="cancelIcon" class="dijitButtonFlat"><%= LanguageUtil.get(pageContext, "Clear") %></button>
                     </div>
                 </div>
             </div>

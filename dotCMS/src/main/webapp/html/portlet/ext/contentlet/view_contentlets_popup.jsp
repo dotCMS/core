@@ -804,7 +804,7 @@ function renderSearchField (field) {
 			<div class="clear"></div>
 			<div class="buttonRow">
 				<button dojoType="dijit.form.Button" onclick="doSearch()" iconClass="searchIcon"><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Search")) %></button>
-				<button dojoType="dijit.form.Button" onClick="clearSearch()" iconClass="cancelIcon" class="dijitButtonFlat" ><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Clear-Search")) %></button>
+				<button dojoType="dijit.form.Button" onClick="clearSearch()" iconClass="cancelIcon"><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Clear-Search")) %></button>
 			</div>
 		</div>     
 	</div>
@@ -818,12 +818,12 @@ function renderSearchField (field) {
 		<div class="yui-g buttonRow">
 			<div class="yui-u first" style="text-align:left;">
 		        <div id="previousDiv" style="display: none;">
-		             <button dojoType="dijit.form.Button" class="bg" class="dijitButtonFlat" onClick="previousPage()" iconClass="previousIcon"><%= LanguageUtil.get(pageContext, "Previous") %></button>
+		             <button dojoType="dijit.form.Button" class="bg" onClick="previousPage()" iconClass="previousIcon"><%= LanguageUtil.get(pageContext, "Previous") %></button>
 		        </div>
 			</div>
 			<div class="yui-u" style="text-align:right;">
 		        <div id="nextDiv" style="display: none;">
-		             <button dojoType="dijit.form.Button" class="bg" class="dijitButtonFlat" onClick="nextPage()" iconClass="nextIcon"><%= LanguageUtil.get(pageContext, "Next") %></button>
+		             <button dojoType="dijit.form.Button" class="bg" onClick="nextPage()" iconClass="nextIcon"><%= LanguageUtil.get(pageContext, "Next") %></button>
 		        </div>
 			</div>
 		</div>
