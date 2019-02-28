@@ -1,4 +1,4 @@
-export interface DotCMSConfigLanguageItem {
+export interface DotCMSLanguageItem {
     id: number;
     languageCode: string;
     countryCode: string;

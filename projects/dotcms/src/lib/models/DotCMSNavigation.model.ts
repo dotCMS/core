@@ -1,7 +1,7 @@
-export interface DotAppNavItem {
+export interface DotCMSNavigationItem {
     code?: any;
     folder: string;
-    children?: DotAppNavItem[];
+    children?: DotCMSNavigationItem[];
     host: string;
     languageId: number;
     href: string;

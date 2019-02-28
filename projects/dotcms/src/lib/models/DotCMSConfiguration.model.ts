@@ -1,6 +1,12 @@
-import { DotCMSConfigLanguageItem } from './DotCMSConfigLanguageItem.model';
+import { DotCMSLanguageItem } from './';
 
-export interface DotCMSConfigItem {
+export interface DotCMSConfigurationParams {
+    token: string;
+    host: string;
+    environment: string;
+}
+
+export interface DotCMSConfigurationItem {
     license: {
         level: number;
         displayServerId: string;
@@ -37,7 +43,7 @@ export interface DotCMSConfigItem {
         notifications_title: string;
     };
     emailRegex: string;
-    languages: DotCMSConfigLanguageItem[];
+    languages: DotCMSLanguageItem[];
     EDIT_CONTENT_STRUCTURES_PER_COLUMN: number;
     'dotcms.websocket.disable': boolean;
     'dotcms.websocket.reconnect.time': number;

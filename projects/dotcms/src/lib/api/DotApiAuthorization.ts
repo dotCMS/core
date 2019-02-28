@@ -1,8 +1,7 @@
 import fetch from 'node-fetch';
-import { DotCMSAuthLoginParams } from '../models';
+import { DotCMSAuthorizationLoginParams } from '../models';
 
-
-export class DotAppAuth {
+export class DotApiAuthorization {
     isLogin(): boolean {
         return document.cookie.split('access_token').length > 1;
     }
@@ -15,7 +14,7 @@ export class DotAppAuth {
             .then((data: { [key: string]: any }) => data.entity);
     }
 
-    getToken({ user, password, expirationDays, host }: DotCMSAuthLoginParams): Promise<string> {
+    getToken({ user, password, expirationDays, host }: DotCMSAuthorizationLoginParams): Promise<string> {
         return fetch(`${host || ''}/api/v1/authentication/api-token`, {
             method: 'POST',
             headers: {
@@ -28,6 +27,6 @@ export class DotAppAuth {
             })
         })
             .then((data: Response) => data.json())
-            .then((data: { [key: string]: any }) => data.entity.token);
+            .then((data: { [key: string]: any }) => <string>data.entity.token);
     }
 }

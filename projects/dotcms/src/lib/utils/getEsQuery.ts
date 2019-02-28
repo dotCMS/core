@@ -1,4 +1,4 @@
-import { DotEsSearchParams } from '../api/DotAppEs';
+import { DotCMSElasticSearchParams } from '../models';
 
 // tslint:disable-next-line:cyclomatic-complexity
 export function getEsQuery({
@@ -13,7 +13,7 @@ export function getEsQuery({
         numberOfResults,
         detailedSearchQuery
     }
-}: DotEsSearchParams): string {
+}: DotCMSElasticSearchParams): string {
     const paginationQuery = `,
         "from": OFFSETVALUE,
         "size": SIZEPERPAGE`;

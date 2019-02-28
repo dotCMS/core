@@ -1,6 +1,6 @@
 import { DotCMSSite } from './DotCMSSite.model';
 
-export interface DotAppPageAsset {
+export interface DotCMSPageAsset {
     canCreateTemplate: boolean;
     containers: DotCMSPageAssetContainer;
     layout: DotCMSLayout;

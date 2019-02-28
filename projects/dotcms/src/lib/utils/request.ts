@@ -1,5 +1,5 @@
 import fetch from 'node-fetch';
-import { DotAppConfigParams } from '../api/DotAppBase';
+import { DotCMSConfigurationParams } from '../models';
 
 export interface DotAppHttpRequestParams {
     url: string;
@@ -14,7 +14,7 @@ async function getLangQueryParam(language: string): Promise<string> {
 
 async function getUrl(
     params: DotAppHttpRequestParams,
-    config: DotAppConfigParams
+    config: DotCMSConfigurationParams
 ): Promise<string> {
     const host = config.environment !== 'development' ? config.host : '';
     return `${host}${params.url}${await getLangQueryParam(params.language)}`;
@@ -26,7 +26,7 @@ function shouldAppendBody(params: DotAppHttpRequestParams): boolean {
 
 function getOpts(
     params: DotAppHttpRequestParams,
-    config: DotAppConfigParams
+    config: DotCMSConfigurationParams
 ): { [key: string]: any } {
     let opts: { [key: string]: any } = {
         method: params.method || 'GET',
@@ -46,7 +46,7 @@ function getOpts(
     return opts;
 }
 
-export async function request(params: DotAppHttpRequestParams, config: DotAppConfigParams) {
+export async function request(params: DotAppHttpRequestParams, config: DotCMSConfigurationParams) {
     const url = await getUrl(params, config);
     const opts = getOpts(params, config);
 

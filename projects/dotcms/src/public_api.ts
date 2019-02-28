@@ -1,36 +1,36 @@
-import { DotAppAuth } from './lib/api/DotAppAuth';
-import { DotAppConfig } from './lib/api/DotAppConfig';
-import { DotAppConfigParams } from './lib/api/DotAppBase';
-import { DotAppEs } from './lib/api/DotAppEs';
-import { DotAppEvent } from './lib/api/DotAppEvent';
-import { DotAppLanguage } from './lib/api/DotAppLanguage';
-import { DotAppNav } from './lib/api/DotAppNav';
-import { DotAppPage } from './lib/api/DotAppPage';
-import { DotAppSite } from './lib/api/DotAppSite';
-import { DotAppWidget } from './lib/api/DotAppWidget';
+import { DotApiAuthorization } from './lib/api/DotApiAuthorization';
+import { DotApiConfiguration } from './lib/api/DotApiConfiguration';
+import { DotApiElasticSearch } from './lib/api/DotApiElasticSearch';
+import { DotApiEvent } from './lib/api/DotApiEvent';
+import { DotApiLanguage } from './lib/api/DotApiLanguage';
+import { DotApiNavigation } from './lib/api/DotApiNavigation';
+import { DotApiPage } from './lib/api/DotApiPage';
+import { DotApiSite } from './lib/api/DotApiSite';
+import { DotApiWidget } from './lib/api/DotApiWidget';
+import { DotCMSConfigurationParams } from './lib/models';
 
 export interface DotCMSApp {
-    auth: DotAppAuth;
-    esSearch: DotAppEs;
-    event: DotAppEvent;
-    nav: DotAppNav;
-    page: DotAppPage;
-    site: DotAppSite;
-    widget: DotAppWidget;
-    config: DotAppConfig;
-    language: DotAppLanguage;
+    auth: DotApiAuthorization;
+    esSearch: DotApiElasticSearch;
+    event: DotApiEvent;
+    nav: DotApiNavigation;
+    page: DotApiPage;
+    site: DotApiSite;
+    widget: DotApiWidget;
+    config: DotApiConfiguration;
+    language: DotApiLanguage;
 }
 
-export const initDotCMS = (config: DotAppConfigParams): DotCMSApp => {
+export const initDotCMS = (config: DotCMSConfigurationParams): DotCMSApp => {
     return {
-        auth: new DotAppAuth(),
-        config: new DotAppConfig(config),
-        esSearch: new DotAppEs(config),
-        event: new DotAppEvent(),
-        language: new DotAppLanguage(config),
-        nav: new DotAppNav(config),
-        page: new DotAppPage(config),
-        site: new DotAppSite(config),
-        widget: new DotAppWidget(config)
+        auth: new DotApiAuthorization(),
+        config: new DotApiConfiguration(config),
+        esSearch: new DotApiElasticSearch(config),
+        event: new DotApiEvent(),
+        language: new DotApiLanguage(config),
+        nav: new DotApiNavigation(config),
+        page: new DotApiPage(config),
+        site: new DotApiSite(config),
+        widget: new DotApiWidget(config)
     };
 };
