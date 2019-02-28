@@ -59,16 +59,17 @@ public class PageViewSerializer extends JsonSerializer<PageView> {
 
             if (containerRaw.getContainer() instanceof FileAssetContainer) {
 
-                containerRawMap.put
-                        (FileAssetContainer.class.cast(containerRaw.getContainer()).getPath(), containerRaw);
+                final String path = FileAssetContainer.class.cast(containerRaw.getContainer()).getPath();
+                containerRawMap.put(path, containerRaw);
             }
 
-            containerRawMap.put
-                    (containerRaw.getContainer().getIdentifier(), containerRaw);
+            final String identifier = containerRaw.getContainer().getIdentifier();
+            containerRawMap.put(identifier, containerRaw);
         });
 
         return containerRawMap;
     }
+
 
     private Map<Object, Object> asMap(final Object object)  {
         final ObjectWriter objectWriter = JsonMapper.mapper.writer().withDefaultPrettyPrinter();

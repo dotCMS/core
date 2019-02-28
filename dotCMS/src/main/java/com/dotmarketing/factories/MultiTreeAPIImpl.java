@@ -373,7 +373,6 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
         Logger.debug(MultiTreeAPIImpl.class, ()->String.format("Saving page's content: %s", mTrees));
 
         final DotConnect db = new DotConnect();
-
         db.setSQL(DELETE_ALL_MULTI_TREE_SQL).addParam(pageId).addParam(ContainerUUID.UUID_DEFAULT_VALUE).loadResult();
 
         if (!mTrees.isEmpty()) {
@@ -523,19 +522,21 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
         }
 
         final Table<String, String, Set<String>> pageContents = HashBasedTable.create();
-        final List<MultiTree> multiTrees = this.getMultiTrees(page.getIdentifier());
+        final List<MultiTree> multiTrees  = this.getMultiTrees(page.getIdentifier());
+        final ContainerAPI  containerAPI  = APILocator.getContainerAPI();
+        final ContentletAPI contentletAPI = APILocator.getContentletAPI();
+        final User systemUser = APILocator.systemUser();
 
         for (final MultiTree multiTree : multiTrees) {
-            final ContainerAPI containerAPI = APILocator.getContainerAPI();
-            final ContentletAPI contentletAPI = APILocator.getContentletAPI();
-            final User systemUser = APILocator.systemUser();
-            Container container = null;
+
+            Container container   = null;
+            String    containerId = multiTree.getContainerAsID();
 
             try {
 
-                //container = containerAPI.getWorkingContainerById(multiTree.getContainer(), systemUser, false);
-                container = liveMode? containerAPI.getLiveContainerById(multiTree.getContainer(), systemUser, false)
-                        : containerAPI.getWorkingContainerById(multiTree.getContainer(), systemUser, false);
+                container = liveMode?
+                        containerAPI.getLiveContainerById(containerId, systemUser, false):
+                        containerAPI.getWorkingContainerById(containerId, systemUser, false);
 
                 if (container == null && !liveMode) {
                     continue;
@@ -548,21 +549,24 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
             Contentlet contentlet = null;
             try {
-                contentlet = contentletAPI.findContentletByIdentifierAnyLanguage(multiTree.getContentlet());;
+                contentlet = contentletAPI.findContentletByIdentifierAnyLanguage(multiTree.getContentlet());
             } catch (DotDataException | DotSecurityException | DotContentletStateException e) {
                 Logger.warn(this.getClass(), "invalid contentlet on multitree:" + multiTree);
             }
+
             if (contentlet != null) {
-                final Set<String> myContents = pageContents.contains(multiTree.getContainer(), multiTree.getRelationType())
-                        ? pageContents.get(multiTree.getContainer(), multiTree.getRelationType())
+
+                final Set<String> myContents = pageContents.contains(containerId, multiTree.getRelationType())
+                        ? pageContents.get(containerId, multiTree.getRelationType())
                         : new LinkedHashSet<>();
+
                 if (container != null && myContents.size() < container.getMaxContentlets()) {
+
                     myContents.add(multiTree.getContentlet());
                 }
 
-                pageContents.put(multiTree.getContainer(), multiTree.getRelationType(), myContents);
+                pageContents.put(containerId, multiTree.getRelationType(), myContents);
             }
-
         }
 
         this.addEmptyContainers(page, pageContents, liveMode);
@@ -572,7 +576,9 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     }
 
 
-    private void addEmptyContainers(final IHTMLPage page, Table<String, String, Set<String>> pageContents, final boolean liveMode)
+    private void addEmptyContainers(final IHTMLPage page,
+                                    final Table<String, String, Set<String>> pageContents,
+                                    final boolean liveMode)
             throws DotDataException, DotSecurityException {
 
         try {
@@ -590,6 +596,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
                 Container container = null;
                 try {
+                    // this read path or id.
                     container = liveMode ? this.getLiveContainerById(containerUUID.getIdentifier(), APILocator.systemUser(), template):
                             this.getWorkingContainerById(containerUUID.getIdentifier(), APILocator.systemUser(), template);
 
@@ -602,11 +609,13 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
                 }
 
 
-                if (!pageContents.contains(containerUUID.getIdentifier(), containerUUID.getUUID())) {
+                if (!pageContents.contains(container.getIdentifier(), containerUUID.getUUID())) {
                     final boolean isLegacyValue = ContainerUUID.UUID_LEGACY_VALUE.equals(containerUUID.getUUID());
 
-                    if (!isLegacyValue || !pageContents.contains(containerUUID.getIdentifier(), ContainerUUID.UUID_START_VALUE)) {
-                        pageContents.put(containerUUID.getIdentifier(), containerUUID.getUUID(), new LinkedHashSet<>());
+                    if (!isLegacyValue && !pageContents.contains(container.getIdentifier(), ContainerUUID.UUID_START_VALUE)
+                            && !pageContents.contains(container.getIdentifier(), ContainerUUID.UUID_DEFAULT_VALUE)) { // todo: double check this
+
+                        pageContents.put(container.getIdentifier(), containerUUID.getUUID(), new LinkedHashSet<>());
                     }
                 }
             }

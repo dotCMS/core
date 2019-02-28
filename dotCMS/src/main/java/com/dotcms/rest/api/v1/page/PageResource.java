@@ -202,7 +202,7 @@ public class PageResource {
                                    @QueryParam("language_id") final String languageId,
                                    @QueryParam("device_inode") final String deviceInode) throws DotSecurityException, DotDataException {
 
-        Logger.debug(this, String.format(
+        Logger.debug(this, ()->String.format(
                 "Rendering page: uri -> %s mode-> %s language -> persona -> %s device_inode -> %s live -> %b",
                 uri, modeParam, languageId, personaId, deviceInode));
 
@@ -392,7 +392,7 @@ public class PageResource {
                                      final PageContainerForm pageContainerForm)
             throws DotSecurityException, DotDataException {
 
-        Logger.debug(this, String.format("Saving page's content: %s",
+        Logger.debug(this, ()->String.format("Saving page's content: %s",
                 pageContainerForm != null ? pageContainerForm.getRequestJson() : null));
 
         if (pageContainerForm == null) {

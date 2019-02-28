@@ -11,11 +11,17 @@ import java.lang.annotation.*;
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
-public @interface MethodDecorator {
+public @interface MethodHook {
 
     /**
-     * Decorator for the parameter
+     * Pre hook
      * @return Class
      */
-    Class<? extends ParameterDecorator> parameterDecorator () default ParameterDecorator.class;
+    Class<? extends PreHook>  preHook  () default PreHook.class;
+
+    /**
+     * Post hook
+     * @return
+     */
+    Class<? extends PostHook> postHook () default PostHook.class;
 }

@@ -1,22 +1,20 @@
 package com.dotcms.rest.api.v1.page;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
-import com.dotcms.business.CloseDB;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.rest.exception.BadRequestException;
-import com.dotcms.rest.exception.NotFoundException;
-import com.dotcms.uuid.shorty.ShortyId;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.MultiTree;
-import com.dotmarketing.business.*;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.PermissionLevel;
+import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.MultiTreeAPI;
-import com.dotmarketing.factories.MultiTreeFactory;
-import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
@@ -25,27 +23,26 @@ import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetNotFoundException;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
-import com.dotmarketing.portlets.htmlpageasset.business.render.page.PageView;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.portlets.templates.model.Template;
-import com.dotmarketing.util.*;
-import com.fasterxml.jackson.core.JsonProcessingException;
+import com.dotmarketing.util.PageMode;
+import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.Table;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
-
-import java.io.IOException;
-import java.io.Serializable;
-import java.util.*;
-
-import org.apache.velocity.exception.ResourceNotFoundException;
 import org.jetbrains.annotations.NotNull;
 
 import javax.servlet.http.HttpServletRequest;
+import java.io.IOException;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Provides the utility methods that interact with HTML Pages in dotCMS. These methods are used by
@@ -88,7 +85,7 @@ public class PageResourceHelper implements Serializable {
             for (final String contentletId : contentIds) {
                 final MultiTree multiTree = new MultiTree().setContainer(containerEntry.getContainerId())
                         .setContentlet(contentletId)
-                        .setRelationType(containerEntry.getContainerUUID())
+                        .setInstanceId(containerEntry.getContainerUUID())
                         .setTreeOrder(i++)
                         .setHtmlPage(pageId);
 
