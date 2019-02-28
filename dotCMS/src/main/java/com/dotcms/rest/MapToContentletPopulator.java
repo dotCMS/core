@@ -22,6 +22,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -285,7 +286,18 @@ public class MapToContentletPopulator  {
 
                 try {
 
-                    final List<Contentlet> contentlets = RelationshipUtil
+                    List<Contentlet> contentlets = new ArrayList<>();
+
+                    if (query.equals("[]")){
+                        if(relationships==null) {
+
+                            relationships = new HashMap<>();
+                        }
+                        relationships.put(relationship, contentlets);
+                        continue;
+                    }
+
+                    contentlets = RelationshipUtil
                             .filterContentlet(contentlet.getLanguageId(), query,
                                     APILocator.getUserAPI().getSystemUser(), false);
 

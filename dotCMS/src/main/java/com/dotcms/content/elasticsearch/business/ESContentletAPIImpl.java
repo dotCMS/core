@@ -49,6 +49,7 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.Treeable;
+import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.query.GenericQueryFactory.Query;
 import com.dotmarketing.business.query.QueryUtil;
 import com.dotmarketing.business.query.ValidationException;
@@ -2647,6 +2648,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     + " cannot edit Contentlet: " + (contentlet != null ? contentlet.getInode() : "Unknown"));
         }
 
+        //do not perform any changes on related records
+        if (related.getRecords() == null){
+            return;
+        }
+
         final ContentType contentType = contentlet.getContentType();
         final List<Relationship> relationships = this.getRelationships(contentType);
         final Relationship relationship = related.getRelationship();
@@ -3838,7 +3844,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     /**
-     *
+     * This moethod moves categories and relationships dependencies
      * @param fromContentlet
      * @param toContentlet
      * @param contentRelationships
@@ -3851,6 +3857,157 @@ public class ESContentletAPIImpl implements ContentletAPI {
     private void moveContentDependencies(final Contentlet fromContentlet, final Contentlet toContentlet, ContentletRelationships contentRelationships, List<Category> categories, final User user, final boolean respect) throws DotDataException, DotSecurityException{
 
         //Handles Categories
+        moveContentCategories(fromContentlet, toContentlet, categories, user, respect);
+
+        //Handle Relationships
+        moveContentRelationships(fromContentlet, toContentlet, contentRelationships, user);
+    }
+
+    /**
+     *
+     * @param fromContentlet
+     * @param toContentlet
+     * @param contentRelationships
+     * @param user
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    private void moveContentRelationships(final Contentlet fromContentlet, final Contentlet toContentlet,
+            ContentletRelationships contentRelationships, final User user)
+            throws DotDataException, DotSecurityException {
+
+        if (contentRelationships == null) {
+            return;
+        }
+
+        final ContentType contentType = fromContentlet.getContentType();
+        final RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
+        if (contentRelationships.getRelationshipsRecords().isEmpty()) {
+            getWipeOutRelationships(contentRelationships, contentType, relationshipAPI);
+        } else {
+            //keep relationships as they are, but add related content limited by permissions
+            addRestrictedContentForLimitedUser(fromContentlet, contentRelationships, user,
+                    contentType,
+                    relationshipAPI);
+        }
+
+        for (final ContentletRelationshipRecords cr : contentRelationships.getRelationshipsRecords()) {
+            relateContent(toContentlet, cr, APILocator.getUserAPI().getSystemUser(), true);
+        }
+    }
+
+    /**
+     * This method keeps relationships as they are but also includes restricted content to the list to avoid deleting it
+     * @param fromContentlet
+     * @param contentRelationships
+     * @param user
+     * @param contentType
+     * @param relationshipAPI
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    private void addRestrictedContentForLimitedUser(final Contentlet fromContentlet,
+            final ContentletRelationships contentRelationships, final User user, final ContentType contentType,
+            final RelationshipAPI relationshipAPI) throws DotDataException, DotSecurityException {
+        for (ContentletRelationshipRecords contentletRelationshipRecords : contentRelationships
+                .getRelationshipsRecords()) {
+            if (contentletRelationshipRecords.getRecords() != null) {
+                final Relationship relationship = contentletRelationshipRecords
+                        .getRelationship();
+                final UserAPI userAPI = APILocator.getUserAPI();
+                if (relationshipAPI.sameParentAndChild(relationship)) {
+                    //from parent
+                    addContentLimitedByPermissions(user, contentletRelationshipRecords,
+                            getRelatedContentFromIndex(
+                                    fromContentlet, relationship, true, userAPI.getSystemUser(),
+                                    true));
+
+                    //from child
+                    addContentLimitedByPermissions(user, contentletRelationshipRecords,
+                            getRelatedContentFromIndex(
+                                    fromContentlet, relationship, false,
+                                    userAPI.getSystemUser(),
+                                    true));
+
+                } else {
+                    addContentLimitedByPermissions(user, contentletRelationshipRecords,
+                            getRelatedContentFromIndex(
+                                    fromContentlet, relationship,
+                                    relationshipAPI.isParent(relationship, contentType),
+                                    userAPI.getSystemUser(),
+                                    true));
+                }
+            }
+        }
+    }
+
+    /**
+     * This method creates a list of all relationships that will be wiped out
+     * @param contentRelationships
+     * @param contentType
+     * @param relationshipAPI
+     */
+    private void getWipeOutRelationships(final ContentletRelationships contentRelationships,
+            final ContentType contentType, final RelationshipAPI relationshipAPI) {
+        //wipe out all relationships
+        final List<Relationship> relationships = FactoryLocator.getRelationshipFactory()
+                .byContentType(contentType);
+        relationships.forEach(relationship -> {
+            //add empty list to each relationship
+            if (relationshipAPI.sameParentAndChild(relationship)) {
+                //add empty list as parent
+                contentRelationships.getRelationshipsRecords()
+                        .add(contentRelationships.new ContentletRelationshipRecords(
+                                relationship, true));
+                //add empty list as child
+                contentRelationships.getRelationshipsRecords()
+                        .add(contentRelationships.new ContentletRelationshipRecords(
+                                relationship, false));
+            } else {
+                contentRelationships.getRelationshipsRecords()
+                        .add(contentRelationships.new ContentletRelationshipRecords(
+                                relationship,
+                                relationshipAPI.isParent(relationship, contentType)));
+            }
+        });
+    }
+
+    /**
+     * This method adds restricted content to the list of related content to be updated
+     * @param user
+     * @param contentletRelationshipRecords
+     * @param relatedContentlets
+     */
+    private void addContentLimitedByPermissions(User user,
+            ContentletRelationshipRecords contentletRelationshipRecords,
+            List<Contentlet> relatedContentlets) {
+        contentletRelationshipRecords.getRecords()
+                .addAll(relatedContentlets.stream()
+                        .filter(contentlet -> {
+                            try {
+                                return !permissionAPI
+                                        .doesUserHavePermission(contentlet,
+                                                PermissionAPI.PERMISSION_READ, user,
+                                                false);
+                            } catch (DotDataException e) {
+                               return false;
+                            }
+                        }).collect(Collectors.toList()));
+    }
+
+    /**
+     *
+     * @param fromContentlet
+     * @param toContentlet
+     * @param categories
+     * @param user
+     * @param respect
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    private void moveContentCategories(final Contentlet fromContentlet, final Contentlet toContentlet,
+            List<Category> categories, final User user, final boolean respect)
+            throws DotDataException, DotSecurityException {
         final List<Category> categoriesUserCannotRemove = new ArrayList<>();
         if(categories == null){
             categories = new ArrayList<>();
@@ -3869,94 +4026,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
         categories.addAll(categoriesUserCannotRemove);
 
         categoryAPI.setParents(toContentlet, categories, user, respect);
-
-        //Handle Relationships
-        if(contentRelationships == null){
-            contentRelationships = new ContentletRelationships(toContentlet);
-        }
-
-        final List<Relationship> relationships = FactoryLocator.getRelationshipFactory().byContentType(fromContentlet.getStructure());
-        for (final Relationship relationship : relationships) {
-
-            if(FactoryLocator.getRelationshipFactory().sameParentAndChild(relationship)) {
-                ContentletRelationshipRecords selectedRecords = null;
-
-                //First all relationships as parent
-                for(final ContentletRelationshipRecords records : contentRelationships.getRelationshipsRecords()) {
-                    if(records.getRelationship().getInode().equalsIgnoreCase(relationship.getInode()) && records.isHasParent()) {
-                        selectedRecords = records;
-                        break;
-                    }
-                }
-                if (selectedRecords == null) {
-                    selectedRecords = contentRelationships.new ContentletRelationshipRecords(relationship, true);
-                    contentRelationships.getRelationshipsRecords().add(selectedRecords);
-                }
-
-                //Adding to the list all the records the user was not able to see becuase permissions forcing them into the relationship
-                List<Contentlet> relatedContentlets = getRelatedContentFromIndex(fromContentlet, relationship, true, APILocator.getUserAPI().getSystemUser(), true);
-                for (final Contentlet contentlet : relatedContentlets) {
-                    if (!permissionAPI
-                            .doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ, user,
-                                    false)) {
-                        selectedRecords.getRecords().add(0, contentlet);
-                    }
-                }
-
-                selectedRecords = null;
-                //Then all relationships as child
-                for(final ContentletRelationshipRecords records : contentRelationships.getRelationshipsRecords()) {
-                    if(records.getRelationship().getInode().equalsIgnoreCase(relationship.getInode()) && !records.isHasParent()) {
-                        selectedRecords = records;
-                        break;
-                    }
-                }
-                if (selectedRecords == null) {
-                    selectedRecords = contentRelationships.new ContentletRelationshipRecords(relationship, false);
-                    contentRelationships.getRelationshipsRecords().add(selectedRecords);
-                }
-
-                //Adding to the list all the records the user was not able to see becuase permissions forcing them into the relationship
-                relatedContentlets = getRelatedContentFromIndex(fromContentlet, relationship, false, APILocator.getUserAPI().getSystemUser(), true);
-                for (final Contentlet contentlet : relatedContentlets) {
-                    if (!permissionAPI
-                            .doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ, user,
-                                    false)) {
-                        selectedRecords.getRecords().add(0, contentlet);
-                    }
-                }
-
-            } else {
-                ContentletRelationshipRecords selectedRecords = null;
-
-                //First all relationships as parent
-                for(final ContentletRelationshipRecords records : contentRelationships.getRelationshipsRecords()) {
-                    if(records.getRelationship().getInode().equalsIgnoreCase(relationship.getInode())) {
-                        selectedRecords = records;
-                        break;
-                    }
-                }
-                final boolean hasParent = FactoryLocator.getRelationshipFactory().isParent(relationship, fromContentlet.getStructure());
-                if (selectedRecords == null) {
-                    selectedRecords = contentRelationships.new ContentletRelationshipRecords(relationship, hasParent);
-                    contentRelationships.getRelationshipsRecords().add(selectedRecords);
-                }
-
-                //Adding to the list all the records the user was not able to see because permissions forcing them into the relationship
-                final List<Contentlet> relatedContentlets = getRelatedContentFromIndex(fromContentlet, relationship, APILocator.getUserAPI().getSystemUser(), true);
-                for (final Contentlet contentlet : relatedContentlets) {
-                    if (!permissionAPI
-                            .doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ, user,
-                                    false)) {
-                        selectedRecords.getRecords().add(0, contentlet);
-                    }
-                }
-            }
-        }
-
-        for (final ContentletRelationshipRecords cr : contentRelationships.getRelationshipsRecords()) {
-            relateContent(toContentlet, cr, APILocator.getUserAPI().getSystemUser(), true);
-        }
     }
 
     @CloseDBIfOpened
