@@ -337,7 +337,7 @@
 								<dl>
 									<dt>&nbsp;</dt>
 									<dd>
-										<button dojoType="dijit.form.Button" class="dijitButtonFlat" onclick="submitForm()" id="goToPreviewButton" iconClass="previewIcon">
+										<button dojoType="dijit.form.Button" onclick="submitForm()" id="goToPreviewButton" iconClass="previewIcon">
 										<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Go-to-Preview")) %>
 										</button>
 									</dd>

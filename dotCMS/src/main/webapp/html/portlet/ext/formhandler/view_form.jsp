@@ -125,11 +125,11 @@ function downloadToExcel(structureInode){
 					
 					<input type="text" dojoType="dijit.form.TextBox" name="query" value="<%= com.dotmarketing.util.UtilMethods.isSet(query) ? query : "" %>">
 					
-					<button dojoType="dijit.form.Button" onClick="submitfm()" class="dijitButtonFlat">
+					<button dojoType="dijit.form.Button" onClick="submitfm()">
 						<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Search")) %>
 					</button>
 		
-					<button dojoType="dijit.form.Button" onClick="resetSearch()" class="dijitButtonFlat">
+					<button dojoType="dijit.form.Button" onClick="resetSearch()">
 						<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "reset")) %>
 					</button>
 					<input type="hidden" name="pageNumber" value="<%=pageNumber%>">

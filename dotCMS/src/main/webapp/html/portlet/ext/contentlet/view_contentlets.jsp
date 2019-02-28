@@ -700,7 +700,7 @@
                 <div class="buttonRow">
                     <dl class="vertical">
                         <dd>
-                            <button dojoType="dijit.form.ComboButton" id="searchButton" class="dijitButtonFlat" optionsTitle='createOptions' onClick="doSearch();return false;" iconClass="searchIcon" title="<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "search")) %>">
+                            <button dojoType="dijit.form.ComboButton" id="searchButton" optionsTitle='createOptions' onClick="doSearch();return false;" iconClass="searchIcon" title="<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "search")) %>">
                                 <span><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "search")) %></span>
                                 <div dojoType="dijit.Menu" style="display: none;" onClick="doSearch();return false;">
                                     <div dojoType="dijit.MenuItem"  iconClass="searchIcon" onClick="doSearch();return false;"><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "search")) %></div>
@@ -741,7 +741,7 @@
                     <input type="hidden" name="cmd" value="prepublish">
                     <div class="portlet-toolbar">
                         <div class="portlet-toolbar__actions-secondary">
-                            <button id="bulkAvailableActions" dojoType="dijit.form.Button" class="dijitButtonFlat" data-dojo-props="onClick: doShowAvailableActions" iconClass="actionIcon" >
+                            <button id="bulkAvailableActions" dojoType="dijit.form.Button" data-dojo-props="onClick: doShowAvailableActions" iconClass="actionIcon" >
                                 <%= LanguageUtil.get(pageContext, "Available-actions")%>
                             </button>
                         </div>

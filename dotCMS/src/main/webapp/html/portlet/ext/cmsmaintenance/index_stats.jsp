@@ -89,7 +89,7 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 
 		<div class="buttonRow" style="text-align: right;padding:20px;">
 
-			<button dojoType="dijit.form.Button" class="dijitButtonFlat" onClick="showRestoreSnapshotDialog();" iconClass="uploadIcon">
+			<button dojoType="dijit.form.Button"  onClick="showRestoreSnapshotDialog();" iconClass="uploadIcon">
                <%= LanguageUtil.get(pageContext,"Restore-Index-Snapshot") %>
             </button>
 			<!-- div dojoType="dijit.form.DropDownButton">
@@ -109,7 +109,7 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
                     </div>
 		           </div>
 			</div -->
-		    <button dojoType="dijit.form.Button" class="dijitButtonFlat" onClick="refreshIndexStats()" iconClass="resetIcon">
+		    <button dojoType="dijit.form.Button"  onClick="refreshIndexStats()" iconClass="resetIcon">
                <%= LanguageUtil.get(pageContext,"Refresh") %>
             </button>
 		
@@ -329,14 +329,14 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
          <br/>
       </form>
       <br/>
-		<button data-dojo-type="dijit.form.Button" type="button" class="dijitButtonFlat">
-			<%= LanguageUtil.get(pageContext,"Close") %>
-		<script type="dojo/method" data-dojo-event="onClick" data-dojo-args="evt">hideRestoreSnapshotIndex();</script>
-		</button>
-		  <button id="uploadSnapshotSubmit" data-dojo-type="dijit.form.Button" type="button">
-			  <%= LanguageUtil.get(pageContext,"Upload-File") %>
-				  <script type="dojo/method" data-dojo-event="onClick" data-dojo-args="evt">doRestoreIndexSnapshot();</script>
-		  </button>
+      <button id="uploadSnapshotSubmit" data-dojo-type="dijit.form.Button" type="button">
+          <%= LanguageUtil.get(pageContext,"Upload-File") %>
+              <script type="dojo/method" data-dojo-event="onClick" data-dojo-args="evt">doRestoreIndexSnapshot();</script>
+      </button>
+      <button data-dojo-type="dijit.form.Button" type="button" class="dijitButtonFlat">
+          <%= LanguageUtil.get(pageContext,"Close") %>
+              <script type="dojo/method" data-dojo-event="onClick" data-dojo-args="evt">hideRestoreSnapshotIndex();</script>
+           </button>
       <br/>
     </div>
 

@@ -326,7 +326,7 @@ value='<%=(request.getParameter("wysiwyg")!=null)? request.getParameter("wysiwyg
 				<dl id="internalURL" style="display:<% if(contentLink.getLinkType() != Link.LinkType.INTERNAL.toString()) { %>none;<% } %>">
 					<dt>&nbsp;</dt>
 					<dd>
-						<input type="text" name="internalLinkIdentifier" dojoType="dotcms.dijit.form.FileSelector"  fileBrowserView="list"
+						<input type="text" name="internalLinkIdentifier" dojoType="dotcms.dijit.form.FileSelector" fileBrowserView="list"
 							value="<%= linkForm.getInternalLinkIdentifier() %>" showThumbnail="false" />
 					</dd>
 				</dl>
@@ -432,7 +432,7 @@ value='<%=(request.getParameter("wysiwyg")!=null)? request.getParameter("wysiwyg
 		<% if (!UtilMethods.isSet(request.getParameter("browse"))) { %>
 
 		<% if( canUserPublishLink ) { %>
-			<button dojoType="dijit.form.Button" class="dijitButtonFlat" onClick="submitfm(document.getElementById('fm'),'publish')" type="button">
+			<button dojoType="dijit.form.Button" onClick="submitfm(document.getElementById('fm'),'publish')" type="button">
 				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "save-and-publish")) %>
 			</button>
 		<% } %>
@@ -448,12 +448,12 @@ value='<%=(request.getParameter("wysiwyg")!=null)? request.getParameter("wysiwyg
 			title = title.replaceAll("\'","\\\\\'");
 			}
 		%>
-			<button dojoType="dijit.form.Button" class="dijitButtonFlat" onClick="selectLink('<%=contentLink.getInode()%>','<%=contentLink.getWorkingURL()%>', '<%= title %>', '<%= contentLink.getTarget() %>')" iconClass="linkIcon" type="button">
+			<button dojoType="dijit.form.Button" onClick="selectLink('<%=contentLink.getInode()%>','<%=contentLink.getWorkingURL()%>', '<%= title %>', '<%= contentLink.getTarget() %>')" iconClass="linkIcon" type="button">
 				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "select-link")) %>
 			</button>
 		<% } %>
 		<% } else { %>
-			<button dojoType="dijit.form.Button" class="dijitButtonFlat" onClick="selectVersion(<%=contentLink.getInode()%>, '<%=referer%>')" type="button">
+			<button dojoType="dijit.form.Button" onClick="selectVersion(<%=contentLink.getInode()%>, '<%=referer%>')" type="button">
 				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "bring-back-this-version")) %>
 			</button>
 		<% } %>
