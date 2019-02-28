@@ -39,7 +39,8 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
 
         final List<Contentlet> list = APILocator.getContentletAPI().findAllContent(0,20);
         assertFalse("I was expecting at least 20 contentlets returned from the index",list.isEmpty());
-        final List<Map<String, Object>> transformedList = new ContentletToMapTransformer(list).toMaps();
+        final List<Map<String, Object>> transformedList =
+            new ContentletToMapTransformer(list, APILocator.systemUser()).toMaps();
 
         assertEquals(list.size(), transformedList.size());
         for(int i=0; i < list.size(); i++){
@@ -83,7 +84,8 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
 
         when(identifierAPI.find(identifier)).thenReturn(identifierObject);
 
-        final Contentlet newContentlet = new ContentletToMapTransformer(Collections.singletonList(contentlet), contentHelper, APILocator.getUserAPI()).hydrate().get(0);
+        final Contentlet newContentlet = new ContentletToMapTransformer(Collections.singletonList(contentlet),
+            contentHelper, APILocator.getUserAPI(), APILocator.systemUser()).hydrate().get(0);
 
         assertNotNull(newContentlet);
         assertNotSame(newContentlet, contentlet); //This method now returns a new instance. A copy of the original contentlet
@@ -111,7 +113,7 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
         when(identifierAPI.find(identifier)).thenReturn(null);
 
         final Contentlet newContentlet = new ContentletToMapTransformer(
-                  Collections.singletonList(contentlet), contentHelper, APILocator.getUserAPI()
+                  Collections.singletonList(contentlet), contentHelper, APILocator.getUserAPI(), APILocator.systemUser()
         ).hydrate().get(0);
 
         assertNotNull(newContentlet);
@@ -141,7 +143,7 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
         when(identifierAPI.find(identifier)).thenReturn(identifierObject);
 
         final Contentlet newContentlet = new ContentletToMapTransformer(
-                  Collections.singletonList(contentlet), contentHelper, APILocator.getUserAPI()
+                  Collections.singletonList(contentlet), contentHelper, APILocator.getUserAPI(), APILocator.systemUser()
         ).hydrate().get(0);
 
         assertNotNull(newContentlet);

@@ -37,6 +37,7 @@ public class ContentletToMapTransformer {
     private final ContentHelper contentHelper;
     private final UserAPI userAPI;
     private final List<Contentlet> contentlets;
+    private final User userToUse;
 
     /**
     *
@@ -44,16 +45,16 @@ public class ContentletToMapTransformer {
      * Bulk transform constructor
      * @param contentlets input
      */
-    public ContentletToMapTransformer(final List<Contentlet> contentlets) {
-        this(contentlets,ContentHelper.getInstance(),APILocator.getUserAPI());
+    public ContentletToMapTransformer(final List<Contentlet> contentlets, final User user) {
+        this(contentlets,ContentHelper.getInstance(),APILocator.getUserAPI(), user);
     }
 
     /**
      * Convenience constructor
      * @param contentlets input
      */
-    public ContentletToMapTransformer(final Contentlet... contentlets) {
-        this(Arrays.asList(contentlets),ContentHelper.getInstance(),APILocator.getUserAPI());
+    public ContentletToMapTransformer(final User user, final Contentlet... contentlets) {
+        this(Arrays.asList(contentlets),ContentHelper.getInstance(),APILocator.getUserAPI(), user);
     }
 
     /**
@@ -63,10 +64,12 @@ public class ContentletToMapTransformer {
      * @param userAPI userAPI
      */
     @VisibleForTesting
-    ContentletToMapTransformer(final List<Contentlet> contentlets, final ContentHelper contentHelper, final UserAPI userAPI) {
+    ContentletToMapTransformer(final List<Contentlet> contentlets, final ContentHelper contentHelper,
+                               final UserAPI userAPI, final User user) {
         this.contentHelper = contentHelper;
         this.userAPI = userAPI;
         this.contentlets = contentlets;
+        this.userToUse = user;
     }
 
     /**
@@ -150,8 +153,24 @@ public class ContentletToMapTransformer {
      */
     private void setAdditionalProperties(final Contentlet contentlet){
         try {
-            final User modUser = userAPI.loadUserById(contentlet.getModUser());
+            User modUser = null;
+            User ownerUser = null;
+
+            try {
+                modUser = userAPI.loadUserById(contentlet.getModUser(), userToUse, false);
+            } catch (DotSecurityException e) {
+                Logger.warn(this, e.getMessage());
+            }
+
+            try {
+                ownerUser = userAPI.loadUserById(contentlet.getOwner(), userToUse, false);
+            } catch (DotSecurityException e) {
+                Logger.warn(this, e.getMessage());
+            }
+
             contentlet.getMap().put("modUserName", null != modUser ? modUser.getFullName() : NA );
+            contentlet.getMap().put("modUser", modUser );
+            contentlet.getMap().put("ownerUser", ownerUser );
             contentlet.getMap().put(Contentlet.WORKING_KEY, contentlet.isWorking());
             contentlet.getMap().put(Contentlet.LIVE_KEY, contentlet.isLive());
             contentlet.getMap().put(Contentlet.ARCHIVED_KEY, contentlet.isArchived());
