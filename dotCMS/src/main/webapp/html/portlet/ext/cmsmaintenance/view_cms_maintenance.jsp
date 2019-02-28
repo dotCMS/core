@@ -1843,8 +1843,8 @@ dd.leftdl {
   		<input type="text" id="shards" name="shards" value="<%=Config.getIntProperty("es.index.number_of_shards", 2)%>">
   	</div><br />
   	<div class="buttonRow" align="center">
-	           <button id="addButton" dojoType="dijit.form.Button" iconClass="addIcon" onClick="shardCreating()"><%= LanguageUtil.get(pageContext, "Add") %></button>&nbsp; &nbsp; 
-	           <button dojoType="dijit.form.Button" iconClass="cancelIcon" onClick="javascript:dijit.byId('addIndex').hide();"><%= LanguageUtil.get(pageContext, "Cancel") %></button>&nbsp; &nbsp; 
+		<button dojoType="dijit.form.Button" iconClass="cancelIcon" onClick="javascript:dijit.byId('addIndex').hide();"><%= LanguageUtil.get(pageContext, "Cancel") %></button>&nbsp; &nbsp;
+		<button id="addButton" dojoType="dijit.form.Button" iconClass="addIcon" onClick="shardCreating()"><%= LanguageUtil.get(pageContext, "Add") %></button>&nbsp; &nbsp;
 	</div>
 	
 </div>
