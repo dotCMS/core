@@ -1,0 +1,9 @@
+{
+    "name": "dotcms",
+    "mode": "file",
+    "out": "/users/fmontes/Downloads/doc-test",
+    "module": "commonjs",
+    "target": "ES6",
+    "readme": "./README.md",
+    "excludePrivate": true
+}
