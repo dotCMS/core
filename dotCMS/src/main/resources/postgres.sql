@@ -2462,3 +2462,29 @@ CREATE INDEX idx_system_event ON system_event (created);
 
 --Content Types improvement
 CREATE INDEX idx_lower_structure_name ON structure (LOWER(velocity_var_name));
+
+
+CREATE TABLE api_token_issued(
+    token_id varchar(255) NOT NULL, 
+    token_userid varchar(255) NOT NULL, 
+    issue_date TIMESTAMP NOT NULL, 
+    expire_date TIMESTAMP NOT NULL, 
+    requested_by_userid  varchar(255) NOT NULL, 
+    requested_by_ip  varchar(255) NOT NULL, 
+    revoke_date TIMESTAMP, 
+    allowed_from  varchar(255) , 
+    cluster_id  varchar(255) , 
+    claims  text , 
+    mod_date  TIMESTAMP NOT NULL, 
+    PRIMARY KEY (token_id)
+ );
+
+create index idx_api_token_issued_user ON api_token_issued (token_userid);
+
+
+
+
+
+
+
+
