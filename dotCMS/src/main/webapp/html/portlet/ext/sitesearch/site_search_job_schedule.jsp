@@ -139,7 +139,7 @@ boolean hasPath = false;
 			<dd>
 				<div class="inline-form">
 					<select id="hostSelector" name="hostSelector" dojoType="dijit.form.FilteringSelect" store="HostStore" pageSize="30" labelAttr="hostname" searchAttr="hostname" invalidMessage="<%= LanguageUtil.get(pageContext, "Invalid-option-selected")%>" <%=indexAll?"disabled=true":"" %> required="false" style="width:308px"></select>
-					<button id="addHostButton" dojoType="dijit.form.Button" type="button" iconClass="plusIcon" class="dijitButtonFlat" onclick="addNewHost()" <%=indexAll?"disabled":"" %>><%= LanguageUtil.get(pageContext, "Add-Host") %></button>
+					<button id="addHostButton" dojoType="dijit.form.Button" type="button" iconClass="plusIcon" onclick="addNewHost()" <%=indexAll?"disabled":"" %>><%= LanguageUtil.get(pageContext, "Add-Host") %></button>
 				</div>
 
 				<table class="listingTable job-scheduler__host-list" id="hostTable">
@@ -280,7 +280,7 @@ boolean hasPath = false;
 			class="dijitButtonFlat"><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Cancel")) %>
 		</button>
 		<span class="showRunNow" style='<%=(!runNow) ? "display: none; " : "" %>;'>
-			<button dojoType="dijit.form.Button" class="dijitButtonFlat"
+			<button dojoType="dijit.form.Button"
 				id="saveAndExecuteButton" onClick="scheduleJob();"
 				iconClass="republishIcon"><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Execute")) %>
 			</button>

@@ -28,7 +28,7 @@
             <% } %>
         </select>
 
-        <button dojoType="dijit.form.Button" iconClass="searchIcon" class="dijitButtonFlat" onClick="refreshAuditData(dijit.byId('auditJobSel').get('value'),0,<%=limit%>)">
+        <button dojoType="dijit.form.Button" iconClass="searchIcon" onClick="refreshAuditData(dijit.byId('auditJobSel').get('value'),0,<%=limit%>)">
             <%= LanguageUtil.get(pageContext, "Load") %>
         </button>
     </div>
@@ -89,13 +89,13 @@
 
 <div class="buttonRow">
     <% if(offset>0) { %>
-    <button dojoType="dijit.form.Button" iconClass="previousIcon" class="dijitButtonFlat" onClick="refreshAuditData('<%=jobId %>',<%=offset-limit %>,<%=limit%>)">
+    <button dojoType="dijit.form.Button" iconClass="previousIcon" onClick="refreshAuditData('<%=jobId %>',<%=offset-limit %>,<%=limit%>)">
         <%= LanguageUtil.get(pageContext, "Newer") %>
     </button>
     <% } %>
 
     <% if(recents.size()>=limit) { %>
-    <button dojoType="dijit.form.Button" iconClass="nextIcon" class="dijitButtonFlat" onClick="refreshAuditData('<%=jobId %>',<%=offset+limit %>,<%=limit%>)">
+    <button dojoType="dijit.form.Button" iconClass="nextIcon" onClick="refreshAuditData('<%=jobId %>',<%=offset+limit %>,<%=limit%>)">
         <%= LanguageUtil.get(pageContext, "Older") %>
     </button>
     <% } %>

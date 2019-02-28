@@ -5,9 +5,9 @@
 	<div class="portlet-toolbar">
 		<div class="portlet-toolbar__actions-primary">
 			<div class="inline-form">
-				<button dojoType="dijit.form.Button" class="dijitButtonFlat" onClick="previousWeek()" iconClass="arrowLeftIcon"></button>
-				<button dojoType="dijit.form.Button" class="dijitButtonFlat" onClick="nextWeek()" iconClass="arrowRightIcon"></button>
-				<button dojoType="dijit.form.Button" class="dijitButtonFlat" onClick="setTodayView()" >
+				<button dojoType="dijit.form.Button" onClick="previousWeek()" iconClass="arrowLeftIcon"></button>
+				<button dojoType="dijit.form.Button" onClick="nextWeek()" iconClass="arrowRightIcon"></button>
+				<button dojoType="dijit.form.Button" onClick="setTodayView()" >
 					<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Today")) %>
 				</button>
 			</div>

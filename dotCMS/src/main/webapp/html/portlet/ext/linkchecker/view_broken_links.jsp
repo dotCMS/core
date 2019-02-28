@@ -231,7 +231,7 @@ dojo.ready(function(){
 					<div class="portlet-toolbar__actions-primary">
 						<!-- <%=LanguageUtil.get(pageContext, "Structure")%>:-->
 						<div id="structureSelect"></div>
-						<button id="refreshBtn" type="button" dojoType="dijit.form.Button" class="dijitButtonFlat" onClick="loadTable()">
+						<button id="refreshBtn" type="button" dojoType="dijit.form.Button" onClick="loadTable()">
 		                   <span class="reindexIcon"></span>
 		                   <%=LanguageUtil.get(pageContext,"Refresh")%>
 		                </button>
@@ -240,7 +240,7 @@ dojo.ready(function(){
 						
 					</div>
 			    	<div class="portlet-toolbar__actions-secondary">
-			    		<button id="runBtn" type="button" dojoType="dijit.form.Button" class="dijitButtonFlat" onClick="runNow()">
+			    		<button id="runBtn" type="button" dojoType="dijit.form.Button" onClick="runNow()">
 		                   <%=LanguageUtil.get(pageContext,"BROKEN_LINKS_RUNNOW")%>
 		                </button>
 			    	</div>
@@ -271,12 +271,12 @@ dojo.ready(function(){
 </div>
 <div class="portlet-pagination">
 	<span id="tools">
-		<button id="prevBtn" type="button" dojoType="dijit.form.Button" class="dijitButtonFlat" onClick="movePage(-1)" style="float: left">
+		<button id="prevBtn" type="button" dojoType="dijit.form.Button" onClick="movePage(-1)" style="float: left">
 			<%= LanguageUtil.get(pageContext, "Previous")%>
 		</button>
 		<span id="currentPage"><%=pageNumber %></span> / <span id="totalPages"></span>
 		
-		<button id="nextBtn" type="button" dojoType="dijit.form.Button" class="dijitButtonFlat" onClick="movePage(1)" style="float: right">
+		<button id="nextBtn" type="button" dojoType="dijit.form.Button" onClick="movePage(1)" style="float: right">
 			<%= LanguageUtil.get(pageContext, "Next")%>
 		</button>
 	</span>

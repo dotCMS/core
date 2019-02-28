@@ -125,7 +125,7 @@
 		<%=LanguageUtil.get(pageContext, "Workflows") %> :
 		<select name="performAction" id="performAction" store="actionStore" dojoType="dijit.form.FilteringSelect"></select>
 
-		<button dojoType="dijit.form.Button" class="dijitButtonFlat" onClick="excuteWorkflowAction()">
+		<button dojoType="dijit.form.Button" onClick="excuteWorkflowAction()">
 			<%=LanguageUtil.get(pageContext, "Perform-Workflow") %>
 		</button>
 		<%} %>
@@ -245,7 +245,7 @@
 				<%if(searcher.hasBack()){
 					fakeSearcher.setPage(searcher.getPage()-1);
 				%>
-				<button dojoType="dijit.form.Button" class="dijitButtonFlat" onClick="refreshTaskList('<%=fakeSearcher.getQueryString()%>');" iconClass="previousIcon">
+				<button dojoType="dijit.form.Button" onClick="refreshTaskList('<%=fakeSearcher.getQueryString()%>');" iconClass="previousIcon">
 					<%= LanguageUtil.get(pageContext, "Back") %>
 				</button>
 
@@ -275,7 +275,7 @@
 					fakeSearcher.setPage(searcher.getPage()+1);
 				%>
 
-				<button dojoType="dijit.form.Button" class="dijitButtonFlat" onClick="refreshTaskList('<%=fakeSearcher.getQueryString()%>');" iconClass="nextIcon">
+				<button dojoType="dijit.form.Button" onClick="refreshTaskList('<%=fakeSearcher.getQueryString()%>');" iconClass="nextIcon">
 					<%= LanguageUtil.get(pageContext, "Next") %>
 				</button>
 

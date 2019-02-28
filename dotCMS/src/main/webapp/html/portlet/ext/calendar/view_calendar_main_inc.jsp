@@ -69,10 +69,10 @@
 				<div class="portlet-toolbar__actions-primary">
 					<div class="inline-form">
 						<input type="text" dojoType="dijit.form.TextBox" style="width:250px;" name="keywordBox" id="keywordBox" />
-						<button dojoType="dijit.form.Button" id="moreOptionsButton" class="dijitButtonFlat" onclick="addKeyword()">
+						<button dojoType="dijit.form.Button" id="moreOptionsButton" onclick="addKeyword()">
 							<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "View")) %>
 						</button>
-						<button dojoType="dijit.form.Button" id="addFilterButton" class="dijitButtonFlat" onclick="addKeyword()">
+						<button dojoType="dijit.form.Button" id="addFilterButton" onclick="addKeyword()">
 							<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Filter")) %>
 						</button>
 					</div>
@@ -82,15 +82,15 @@
 				</div>
 		    	<div class="portlet-toolbar__actions-secondary">
 					<div class="inline-form">
-						<button dojoType="dijit.form.Button" onclick="changeCalendarView('list');" class="dijitButtonFlat" iconClass="calListIcon">
+						<button dojoType="dijit.form.Button" onclick="changeCalendarView('list');" iconClass="calListIcon">
 							<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "List-View")) %>
 						</button>
 
-						<button dojoType="dijit.form.Button" onclick="changeCalendarView('weekly');" class="dijitButtonFlat" iconClass="calWeekIcon">
+						<button dojoType="dijit.form.Button" onclick="changeCalendarView('weekly');" iconClass="calWeekIcon">
 							<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Weekly-View")) %>
 						</button>
 
-						<button dojoType="dijit.form.Button" onclick="changeCalendarView('monthly');" class="dijitButtonFlat" iconClass="calMonthIcon">
+						<button dojoType="dijit.form.Button" onclick="changeCalendarView('monthly');" iconClass="calMonthIcon">
 							<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Monthly-View")) %>
 						</button>
 						<%

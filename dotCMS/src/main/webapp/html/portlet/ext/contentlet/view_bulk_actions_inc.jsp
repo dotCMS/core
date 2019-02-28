@@ -51,7 +51,7 @@
             = '<tr class="workflowActionsOption"> '
             + '   <td style="">&nbsp;&nbsp;'+action.workflowAction.name+'</td> '
             + '     <td style="width:140px;text-align: right"> '
-            + '     <button dojoType="dijit.form.Button" class="dijitButton dijitButtonFlat wfAction" '
+            + '     <button dojoType="dijit.form.Button" class="dijitButton wfAction" '
             + '             data-acction-id="'+action.workflowAction.id+'" '
             + '             data-action-commentable="'+action.workflowAction.commentable+'" '
             + '             data-action-assignable="'+action.workflowAction.assignable+'" '
@@ -468,26 +468,26 @@
             <tr class="workflowActionsOption">
                 <%if(enterprise){%>
                 <td style="width:140px;text-align: right">
-                    <button id="addToBundleButton" dojoType="dijit.form.Button" class="dijitButton dijitButtonFlat" data-dojo-props="onClick: addToBundleSelectedContentletsProxy">
+                    <button id="addToBundleButton" dojoType="dijit.form.Button" class="dijitButton" data-dojo-props="onClick: addToBundleSelectedContentletsProxy">
                         <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-To-Bundle")) %>
                     </button>
                 </td>
                 <% if ( sendingEndpoints ) { %>
                 <td style="width:140px;text-align: right">
-                  <button id="pushPublishButton"  dojoType="dijit.form.Button" class="dijitButton dijitButtonFlat" data-dojo-props="onClick: pushPublishSelectedContentletsProxy">
+                  <button id="pushPublishButton"  dojoType="dijit.form.Button" class="dijitButton" data-dojo-props="onClick: pushPublishSelectedContentletsProxy">
                        <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Remote-Publish")) %>
                   </button>
                 </td>
                 <% } %>
                 <%}%>
                 <td style="width:140px;text-align: right">
-                    <button id="unlockButton" dojoType="dijit.form.Button" class="dijitButton dijitButtonFlat" data-dojo-props="onClick: unlockSelectedContentletsProxy">
+                    <button id="unlockButton" dojoType="dijit.form.Button" class="dijitButton" data-dojo-props="onClick: unlockSelectedContentletsProxy">
                         <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Unlock"))%>
                     </button>
                 </td>
                 <%if(canReindexContentlets){%>
                 <td style="width:140px;text-align: right">
-                    <button id="reindexButton" dojoType="dijit.form.Button" class="dijitButton dijitButtonFlat" data-dojo-props="onClick: reindexSelectedContentletsProxy">
+                    <button id="reindexButton" dojoType="dijit.form.Button" class="dijitButton" data-dojo-props="onClick: reindexSelectedContentletsProxy">
                         <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Refresh")) %>
                     </button>
                 </td>
@@ -505,31 +505,31 @@
             <tr class="workflowActionsOption">
                 <td style="">&nbsp;&nbsp;Publish</td>
                 <td style="width:140px;text-align: right">
-                    <button dojoType="dijit.form.Button" class="dijitButton dijitButtonFlat">10 content(s)</button>
+                    <button dojoType="dijit.form.Button" class="dijitButton">10 content(s)</button>
                 </td>
             </tr>
             <tr class="workflowActionsOption">
                 <td style="">&nbsp;&nbsp;Unpublish</td>
                 <td style="width:140px;text-align: right">
-                    <button dojoType="dijit.form.Button" class="dijitButton dijitButtonFlat">8 content(s)</button>
+                    <button dojoType="dijit.form.Button" class="dijitButton">8 content(s)</button>
                 </td>
             </tr>
             <tr class="workflowActionsOption">
                 <td style="">&nbsp;&nbsp;Tweet This!</td>
                 <td style="width:140px;text-align: right">
-                    <button dojoType="dijit.form.Button" class="dijitButton dijitButtonFlat">17 content(s)</button>
+                    <button dojoType="dijit.form.Button" class="dijitButton">17 content(s)</button>
                 </td>
             </tr>
             <tr class="workflowActionsOption">
                 <td style="">&nbsp;&nbsp;Unpublish</td>
                 <td style="width:140px;text-align: right">
-                    <button dojoType="dijit.form.Button" class="dijitButton dijitButtonFlat">8 content(s)</button>
+                    <button dojoType="dijit.form.Button" class="dijitButton">8 content(s)</button>
                 </td>
             </tr>
             <tr class="workflowActionsOption">
                 <td style="">&nbsp;&nbsp;Full Delete</td>
                 <td style="width:140px;text-align: right">
-                    <button dojoType="dijit.form.Button" class="dijitButton dijitButtonFlat">17 content(s)</button>
+                    <button dojoType="dijit.form.Button" class="dijitButton">17 content(s)</button>
                 </td>
             </tr>
         </table>
@@ -542,19 +542,19 @@
             <tr class="workflowActionsOption">
                 <td style="">&nbsp;&nbsp;Publish</td>
                 <td style="width:140px;text-align: right">
-                    <button dojoType="dijit.form.Button" class="dijitButton dijitButtonFlat">14 content(s)</button>
+                    <button dojoType="dijit.form.Button" class="dijitButton">14 content(s)</button>
                 </td>
             </tr>
             <tr class="workflowActionsOption">
                 <td style="">&nbsp;&nbsp;Save</td>
                 <td style="width:140px;text-align: right">
-                    <button dojoType="dijit.form.Button" class="dijitButton dijitButtonFlat">22 content(s)</button>
+                    <button dojoType="dijit.form.Button" class="dijitButton">22 content(s)</button>
                 </td>
             </tr>
             <tr class="workflowActionsOption">
                 <td style="">&nbsp;&nbsp;Save as Draft</td>
                 <td style="width:140px;text-align: right">
-                    <button dojoType="dijit.form.Button" class="dijitButton dijitButtonFlat">22 content(s)</button>
+                    <button dojoType="dijit.form.Button" class="dijitButton">22 content(s)</button>
                 </td>
             </tr>
         </table>
