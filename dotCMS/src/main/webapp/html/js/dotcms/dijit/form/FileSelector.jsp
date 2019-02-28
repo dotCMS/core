@@ -22,7 +22,7 @@
 		<input name="${name}" type="hidden" value="${value}" dojoAttachPoint="valueTextField"/>
 		<input type="text" dojoType="dijit.form.TextBox" name="${name}-filename" readonly="readonly" dojoAttachPoint="labelTextField"/>
 		<button dojoType="dijit.form.Button" type="button" dojoAttachEvent="onClick: _browseClicked" iconClass="browseIcon"><%= LanguageUtil.get(pageContext, "browse")%>...</button>
-		<button dojoType="dijit.form.Button" type="button" class="dijitButtonFlat" style="display:none;" dojoAttachEvent="onClick: _infoClicked"
+		<button dojoType="dijit.form.Button" type="button" style="display:none;" dojoAttachEvent="onClick: _infoClicked"
 			dojoAttachPoint="infoFileButton" iconClass="infoIcon"><%= LanguageUtil.get(pageContext, "Info")%></button>
 		<button dojoType="dijit.form.Button" type="button" style="display:none;" dojoAttachEvent="onClick: _removeClicked" class="dijitButtonFlat"
 	dojoAttachPoint="removeFileButton" iconClass="deleteIcon"><%= LanguageUtil.get(pageContext, "remove")%></button>
