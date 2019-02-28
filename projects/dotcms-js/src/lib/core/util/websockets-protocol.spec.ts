@@ -3,7 +3,7 @@ import { StringUtils } from '../string-utils.service';
 import { LoggerService } from '../logger.service';
 import { Server } from 'mock-socket';
 
-describe('LongPollingProtocol', () => {
+describe('WebSocketProtocol', () => {
     let webSocketProtocol: WebSocketProtocol;
     const url = 'wss://testing';
     let mockServer: Server;
@@ -46,7 +46,7 @@ describe('LongPollingProtocol', () => {
 
     it('should tigger close event', (done) => {
         webSocketProtocol.open$().subscribe(() => {
-            webSocketProtocol.close();
+            mockServer.close();
         });
 
         webSocketProtocol.close$().subscribe(() => {
@@ -55,22 +55,6 @@ describe('LongPollingProtocol', () => {
 
         webSocketProtocol.error$().subscribe(() => {
             expect(true).toBe(false, 'Should not trigger error event');
-        });
-
-        webSocketProtocol.connect();
-    });
-
-    xit('should tigger error event', (done) => {
-        webSocketProtocol.open$().subscribe(() => {
-            // mockServer.simulate();
-        });
-
-        webSocketProtocol.close$().subscribe(() => {
-            expect(true).toBe(false, 'Should not trigger close event');
-        });
-
-        webSocketProtocol.error$().subscribe(() => {
-            done();
         });
 
         webSocketProtocol.connect();
