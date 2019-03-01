@@ -490,12 +490,12 @@ public class ContentResource {
             if (idPassed = UtilMethods.isSet(id)) {
                 Optional.ofNullable(
                         this.contentHelper.hydrateContentlet(APILocator.getContentletAPI()
-                                .findContentletByIdentifier(id, live, language, user, respectFrontendRoles)))
+                                .findContentletByIdentifier(id, live, language, user, respectFrontendRoles), user))
                         .ifPresent(contentlets::add);
             } else if (inodePassed = UtilMethods.isSet(inode)) {
                 Optional.ofNullable(
                         this.contentHelper.hydrateContentlet(APILocator.getContentletAPI()
-                                .find(inode, user, respectFrontendRoles)))
+                                .find(inode, user, respectFrontendRoles), user))
                         .ifPresent(contentlets::add);
             } else if (queryPassed = UtilMethods.isSet(query)) {
                 String tmDate = (String) request.getSession().getAttribute("tm_date");

@@ -58,7 +58,7 @@ public class ContentletDataFetcher implements DataFetcher<List<Contentlet>> {
                 .collect(Collectors.toList());
 
 
-            return new ContentletToMapTransformer(filteredContentletList).hydrate();
+            return new ContentletToMapTransformer(filteredContentletList, user).hydrate();
         } catch (Exception e) {
             Logger.error(this, e.getMessage(), e);
             throw e;
