@@ -93,9 +93,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
     public static final String WORKING_KEY = "working";
     public static final String MOD_DATE_KEY = "modDate";
     public static final String MOD_USER_KEY = "modUser";
-    public static final String MOD_USER_OBJECT_KEY = "modUserObject";
     public static final String OWNER_KEY = "owner";
-    public static final String OWNER_OBJECT_KEY = "ownerObject";
     public static final String IDENTIFIER_KEY = "identifier";
     public static final String SORT_ORDER_KEY = "sortOrder";
     public static final String HOST_KEY = "host";
