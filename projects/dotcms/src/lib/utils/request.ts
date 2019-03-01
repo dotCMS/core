@@ -42,6 +42,5 @@ function getOpts(
 export async function request(params: DotAppHttpRequestParams, config: DotCMSConfigurationParams) {
     const url = await getUrl(params, config);
     const opts = getOpts(params, config);
-
     return fetch(url, opts);
 }

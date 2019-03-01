@@ -1,5 +1,5 @@
 import { DotCMSHttpClient } from '../utils/DotCMSHttpClient';
-import { DotCMSConfigurationItem, DotCMSConfigurationParams } from '../models';
+import { DotCMSConfigurationItem, DotCMSConfigurationParams, DotCMSError } from '../models';
 
 export class DotApiConfiguration extends DotCMSHttpClient {
     constructor(config: DotCMSConfigurationParams) {
@@ -10,7 +10,16 @@ export class DotApiConfiguration extends DotCMSHttpClient {
         return this.request({
             url: '/api/v1/configuration'
         })
-            .then((response: Response) => response.json())
-            .then((data) => data.entity);
+        .then(async (response: Response) => {
+            if (response.status === 200) {
+                const data = await response.json();
+                return data.entity;
+            }
+
+            throw <DotCMSError>{
+                message: await response.text(),
+                status: response.status
+            };
+        });
     }
 }

@@ -1,5 +1,5 @@
 import { DotCMSHttpClient } from '../utils/DotCMSHttpClient';
-import { DotCMSSite, DotCMSConfigurationParams } from '../models';
+import { DotCMSSite, DotCMSConfigurationParams, DotCMSError } from '../models';
 
 export class DotApiSite {
     private dotCMSHttpClient: DotCMSHttpClient;
@@ -12,11 +12,17 @@ export class DotApiSite {
         return this.dotCMSHttpClient
             .request({
                 url: `/api/v1/site/currentSite`
-            })
-            .then((response: Response) => response.json())
-            .then((data) => {
-                const { map, ...site } = data.entity;
-                return <DotCMSSite>site;
+            }).then(async (response: Response) => {
+                if (response.status === 200) {
+                    const data = await response.json();
+                    const { map, ...site } = data.entity;
+                    return <DotCMSSite>site;
+                }
+
+                throw <DotCMSError>{
+                    message: await response.text(),
+                    status: response.status
+                };
             });
     }
 }

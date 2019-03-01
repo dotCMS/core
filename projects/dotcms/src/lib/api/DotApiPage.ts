@@ -1,5 +1,5 @@
 import { DotCMSHttpClient } from '../utils/DotCMSHttpClient';
-import { DotCMSConfigurationParams, DotCMSPageAsset, DotAppHttpRequestParams } from '../models';
+import { DotCMSConfigurationParams, DotCMSPageAsset, DotAppHttpRequestParams, DotCMSError } from '../models';
 import { DotApiLanguage } from './DotApiLanguage';
 
 export class DotApiPage {
@@ -30,7 +30,16 @@ export class DotApiPage {
 
         return this.dotCMSHttpClient
             .request(params)
-            .then((data: Response) => (data.ok ? data.json() : data))
-            .then((data) => <DotCMSPageAsset>data.entity);
+            .then(async (res: Response) => {
+                if (res.status === 200) {
+                    const data = await res.json();
+                    return <DotCMSPageAsset>data.entity;
+                }
+
+                throw <DotCMSError>{
+                    message: await res.text(),
+                    status: res.status
+                };
+            });
     }
 }
