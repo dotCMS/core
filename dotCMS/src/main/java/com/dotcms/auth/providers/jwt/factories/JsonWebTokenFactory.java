@@ -226,7 +226,7 @@ public class JsonWebTokenFactory implements Serializable {
         } // parseToken.
         
 
-        private JWToken validateToken(final Jws<Claims> jws, JWToken jwtToken, final String requestingIp) {
+        private JWToken validateToken(final Jws<Claims> jws, final JWToken jwtToken, final String requestingIp) {
             final Claims body = jws.getBody();
             if(jwtToken==null) {
                 IncorrectClaimException claimException = new IncorrectClaimException( jws.getHeader(), body, "No Valid Token Found for:" + body);
@@ -266,15 +266,8 @@ public class JsonWebTokenFactory implements Serializable {
                 }
                 return jwtToken;    
             }
-            
-            Optional<ApiToken> apiTokenOpt = APILocator.getApiTokenAPI().findApiToken(jwtToken.getSubject());
-            if(!apiTokenOpt.isPresent()) {
-                IncorrectClaimException claimException = new IncorrectClaimException( jws.getHeader(), body, "Invalid API Token, cannot find ApiToken id:"+ jwtToken.getSubject());
-                claimException.setClaimName(Claims.SUBJECT);
-                claimException.setClaimValue(body.getSubject());
-                throw claimException;
-            }
-            ApiToken apiToken = apiTokenOpt.get();
+
+            ApiToken apiToken = (ApiToken) jwtToken;
 
             if(apiToken.isRevoked()) {
                 IncorrectClaimException claimException = new IncorrectClaimException( jws.getHeader(), body, "API Token Revoked:" + apiToken.revoked);

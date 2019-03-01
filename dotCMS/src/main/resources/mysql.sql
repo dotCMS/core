@@ -2328,8 +2328,8 @@ CREATE TABLE api_token_issued(
     revoke_date TIMESTAMP NULL DEFAULT NULL, 
     allowed_from  varchar(255) , 
     cluster_id  varchar(255) , 
-    meta_data  text , 
-    claims  TIMESTAMP NOT NULL, 
+    claims  text , 
+    mod_date  TIMESTAMP NOT NULL, 
     PRIMARY KEY (token_id)
  );
 

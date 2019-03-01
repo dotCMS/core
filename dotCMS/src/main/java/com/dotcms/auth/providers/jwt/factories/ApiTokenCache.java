@@ -11,7 +11,7 @@ import com.dotmarketing.business.DotCacheException;
 
 public class ApiTokenCache implements Cachable {
 
-    private final static String TOKEN_GROUP = "jwtapiToken";
+    private final static String TOKEN_GROUP = ApiTokenCache.class.getSimpleName().toLowerCase();
 
     private final static String[] GROUPS = {TOKEN_GROUP};
 
