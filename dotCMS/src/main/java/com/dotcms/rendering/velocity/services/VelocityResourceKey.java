@@ -8,6 +8,7 @@ import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
+import com.liferay.util.StringPool;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import org.apache.commons.lang3.StringUtils;
@@ -21,9 +22,10 @@ import java.util.Optional;
 
 public class VelocityResourceKey implements Serializable {
 
-    private final static char RESOURCE_TEMPLATE = ResourceManager.RESOURCE_TEMPLATE + '0';
-
+    private static final char RESOURCE_TEMPLATE = ResourceManager.RESOURCE_TEMPLATE + '0';
+    private static final String HOST_INDICATOR = "///";
     private static final long serialVersionUID = 1L;
+
     public final String path, language, id1, id2, cacheKey;
     public final VelocityType type;
     public final PageMode mode;
@@ -58,7 +60,7 @@ public class VelocityResourceKey implements Serializable {
 
         path = cleanKey(filePath);
         // if it is like this: 1/EDIT_MODE///demo.dotcms.com/application/containers/large-column//1551200983126.container
-        final boolean isFileAssetContainer = filePath.endsWith(".container") && filePath.contains("///");
+        final boolean isFileAssetContainer = filePath.endsWith("." + VelocityType.CONTAINER.fileExtension) && filePath.contains(HOST_INDICATOR);
 
         // if it is a container and container fs with a path as key
         final Tuple2<String, String> containerPathIdAndNormalizedPathTuple = isFileAssetContainer?
@@ -85,11 +87,11 @@ public class VelocityResourceKey implements Serializable {
         this.cacheKey = cacheKey();
 
     }
-    // todo: create constants and clean up a bit more.
+
     private Tuple2<String, String> getPathNormalizedFileAssetContainerPath(final String path) {
 
-        final int startPath = path.indexOf("///");
-        final int endPath   = path.lastIndexOf("/");
+        final int startPath = path.indexOf(HOST_INDICATOR);
+        final int endPath   = path.lastIndexOf(StringPool.FORWARD_SLASH);
         final String containerPath  = path.substring(startPath, endPath);
         // we just want to replace the container path in the keypath, with a single number, but 1 is not important will be discard later.
         final String normalizedPath = StringUtils.replace(path, containerPath, "/1");

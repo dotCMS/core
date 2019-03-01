@@ -141,10 +141,9 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
      */
     private void _dbDelete(final MultiTree multiTree) throws DotDataException {
 
-        final DotConnect db = new DotConnect().setSQL(DELETE_SQL).addParam(multiTree.getHtmlPage()).addParam(multiTree.getContainerAsID())
-                .addParam(multiTree.getContentlet()).addParam(multiTree.getRelationType());
-        db.loadResult();
-
+        new DotConnect().setSQL(DELETE_SQL).addParam(multiTree.getHtmlPage()).addParam(multiTree.getContainerAsID())
+                .addParam(multiTree.getContentlet()).addParam(multiTree.getRelationType())
+                .loadResult();
     }
 
 
@@ -530,7 +529,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
         for (final MultiTree multiTree : multiTrees) {
 
             Container container   = null;
-            String    containerId = multiTree.getContainerAsID();
+            final String    containerId = multiTree.getContainerAsID();
 
             try {
 

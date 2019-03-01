@@ -288,12 +288,12 @@ public class PageRenderUtil implements Serializable {
             final Map<String, List<Map<String,Object>>> contentMaps = Maps.newLinkedHashMap();
             
             for (final String uniqueId : pageContents.row(containerId).keySet()) {
-                if(ContainerUUID.UUID_DEFAULT_VALUE.equals(uniqueId)) continue;  // todo: double check this
+                if(ContainerUUID.UUID_DEFAULT_VALUE.equals(uniqueId)) continue;
                 final Set<String> conIdSet = pageContents.get(containerId, uniqueId);
                 final List<Contentlet> contentlets = conIdSet.stream().map(id -> {
                     try {
                         final Optional<Contentlet> contentlet = APILocator.getContentletAPI().findContentletByIdentifierOrFallback(id, mode.showLive, languageId, user, mode.respectAnonPerms);
-                        return (contentlet.isPresent()) 
+                        return (contentlet.isPresent())
                                 ? contentlet.get() : APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(id);
                     } catch (Exception e) {
                         throw new DotStateException(e);

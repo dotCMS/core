@@ -104,7 +104,6 @@ public class FileAssetContainerUtil {
         return isIdentifier;
     }
 
-    // todo: test me
     public Host getHost (final String path) throws DotSecurityException, DotDataException {
 
         return this.getHostFromHostname(this.getHostName(path));
@@ -112,16 +111,18 @@ public class FileAssetContainerUtil {
 
     public Host getHostFromHostname (final String hostname) throws DotSecurityException, DotDataException {
 
-        return APILocator.getHostAPI().resolveHostName
-                (hostname, APILocator.systemUser(), false);
+        return null == hostname?
+                APILocator.getHostAPI().resolveHostName(hostname, APILocator.systemUser(), false):
+                APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false);
     }
 
     //demo.dotcms.com/application/containers/test/
     public String getHostName (final String path) {
 
-        final int startsHost = path.indexOf(HOST_INDICATOR);
-        final int endsHost   = path.indexOf(StringPool.FORWARD_SLASH, startsHost+HOST_INDICATOR.length());
-        return path.substring(startsHost+HOST_INDICATOR.length(), endsHost);
+        final int startsHost = null != path?     path.indexOf(HOST_INDICATOR): -1;
+        final int endsHost   = -1 != startsHost? path.indexOf(FORWARD_SLASH, startsHost+HOST_INDICATOR.length()): -1;
+        return startsHost != -1 && endsHost != -1?
+                path.substring(startsHost+HOST_INDICATOR.length(), endsHost): null;
     }
 
     public String getContainerIdFromPath(final String fullPath) throws DotDataException {
@@ -130,7 +131,9 @@ public class FileAssetContainerUtil {
         final String hostname = this.getHostName(fullPath);
 
         try {
-            host = this.getHostFromHostname(hostname);
+            if (null != hostname) {
+                host = this.getHostFromHostname(hostname);
+            }
         } catch (DotDataException | DotSecurityException e) {
             host = null;
         }
