@@ -3844,7 +3844,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     /**
-     * This moethod moves categories and relationships dependencies
+     * This method moves categories and relationships dependencies
      * @param fromContentlet
      * @param toContentlet
      * @param contentRelationships

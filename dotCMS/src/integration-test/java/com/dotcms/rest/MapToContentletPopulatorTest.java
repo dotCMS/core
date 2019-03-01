@@ -115,7 +115,7 @@ public class MapToContentletPopulatorTest {
 
     @UseDataProvider("testCases")
     @Test
-    public void testPopulateOneSidedRelationship(TestCase testCase) throws DotDataException, DotSecurityException {
+    public void testPopulateOneSidedRelationship(final TestCase testCase) throws DotDataException, DotSecurityException {
         final MapToContentletPopulator populator = new MapToContentletPopulator();
 
         ContentType parentContentType = null;
@@ -142,11 +142,11 @@ public class MapToContentletPopulatorTest {
 
                 assertNotNull(contentlet.get(Contentlet.RELATIONSHIP_KEY));
 
-                Map<Relationship, List<Contentlet>>  resultMap = (Map<Relationship, List<Contentlet>> ) contentlet
+                final Map<Relationship, List<Contentlet>> resultMap = (Map<Relationship, List<Contentlet>>) contentlet
                         .get(Contentlet.RELATIONSHIP_KEY);
 
                 assertEquals(testCase.relationshipsCount, resultMap.size());
-                Entry<Relationship, List<Contentlet>> result = resultMap.entrySet().iterator()
+                final Entry<Relationship, List<Contentlet>> result = resultMap.entrySet().iterator()
                         .next();
 
                 //validates the relationship
