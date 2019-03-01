@@ -1,13 +1,15 @@
 import { DotCMSHttpClient } from '../utils/DotCMSHttpClient';
 import { DotCMSConfigurationItem, DotCMSConfigurationParams, DotCMSError } from '../models';
 
-export class DotApiConfiguration extends DotCMSHttpClient {
+export class DotApiConfiguration {
+    private dotCMSHttpClient: DotCMSHttpClient;
+
     constructor(config: DotCMSConfigurationParams) {
-        super(config);
+        this.dotCMSHttpClient = new DotCMSHttpClient(config);
     }
 
     get(): Promise<DotCMSConfigurationItem> {
-        return this.request({
+        return this.dotCMSHttpClient.request({
             url: '/api/v1/configuration'
         })
         .then(async (response: Response) => {
