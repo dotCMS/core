@@ -4981,6 +4981,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 boolean isRelationshipParent = true;
 
                 if(FactoryLocator.getRelationshipFactory().sameParentAndChild(rel)){
+                    for (final Contentlet con : cons) {
+                        if (contentlet.getIdentifier().equals(con.getIdentifier())) {
+                            Logger.error(this, "Can not relate content to itself");
+                            hasError = true;
+                            cve.addInvalidContentRelationship(rel, cons);
+                        }
+                    }
                     if(!cr.isHasParent()){
                         isRelationshipParent = false;
                     }
