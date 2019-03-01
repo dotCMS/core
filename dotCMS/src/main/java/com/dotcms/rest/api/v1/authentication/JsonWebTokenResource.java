@@ -124,11 +124,15 @@ public class JsonWebTokenResource implements Serializable {
         Optional<ApiToken> optToken = tokenApi.findApiToken(tokenId);
         if (optToken.isPresent()) {
             ApiToken token = optToken.get();
-            if (checkPerms(user, token)) {
-                SecurityLogger.logInfo(this.getClass(), "Revoking token " + token + " from " + request.getRemoteAddr() + " ");
-                tokenApi.revokeToken(token);
-                token = tokenApi.findApiToken(tokenId).get();
+            
+            if(token.isExpired()) {
+                return ExceptionMapperUtil.createResponse(new DotStateException("Token Expired"), Response.Status.NOT_FOUND);
             }
+            
+            
+            SecurityLogger.logInfo(this.getClass(), "Revoking token " + token + " from " + request.getRemoteAddr() + " ");
+            tokenApi.revokeToken(token, user);
+            token = tokenApi.findApiToken(tokenId).get();
             return Response.ok(new ResponseEntityView(map("revoked", token), EMPTY_MAP)).build(); // 200
         }
         return ExceptionMapperUtil.createResponse(new DotStateException("No token"), Response.Status.NOT_FOUND);
@@ -149,12 +153,12 @@ public class JsonWebTokenResource implements Serializable {
         if (optToken.isPresent()) {
             ApiToken token = optToken.get();
 
-            if (checkPerms(user, token)) {
-                SecurityLogger.logInfo(this.getClass(), "Deleting token " + token + " from " + request.getRemoteAddr() + " ");
-                tokenApi.deleteToken(token);
+            
+            SecurityLogger.logInfo(this.getClass(), "Deleting token " + token + " from " + request.getRemoteAddr() + " ");
+            if(tokenApi.deleteToken(token, user)) {
                 return Response.ok(new ResponseEntityView(map("deleted", token), EMPTY_MAP)).build(); // 200
-
             }
+
             return ExceptionMapperUtil.createResponse(new DotStateException("No permissions to token"), Response.Status.FORBIDDEN);
 
         }
@@ -196,7 +200,7 @@ public class JsonWebTokenResource implements Serializable {
         }
 
         ApiToken token = ApiToken.builder()
-                .withAllowFromNetwork(netmask)
+                .withAllowNetwork(netmask)
                 .withIssueDate(new Date())
                 .withUser(forUser)
                 .withRequestingIp(request.getRemoteAddr())
@@ -204,7 +208,7 @@ public class JsonWebTokenResource implements Serializable {
                 .withExpires( Date.from(Instant.now().plus(expirationSeconds, ChronoUnit.SECONDS)))
                 .build();
         token = tokenApi.persistApiToken(token, requestingUser);
-        final String jwt = tokenApi.getJWT(token);
+        final String jwt = tokenApi.getJWT(token, requestingUser);
         return Response.ok(new ResponseEntityView(map("token", token,"jwt", jwt), EMPTY_MAP)).build(); // 200
 
     }
@@ -238,26 +242,17 @@ public class JsonWebTokenResource implements Serializable {
             return Response.status(500).build(); // 500
         }
 
-        if (checkPerms(user, token)) {
-            SecurityLogger.logInfo(this.getClass(), "Revealing token " + token + " to " + request.getRemoteAddr() + " ");
-            final String jwt = tokenApi.getJWT(token);
-            return Response.ok(new ResponseEntityView(map("jwt", jwt), EMPTY_MAP)).build(); // 200
 
-        }
-        
-        return Response.status(403).build(); // 403
+        SecurityLogger.logInfo(this.getClass(), "Revealing token " + token + " to " + request.getRemoteAddr() + " ");
+        final String jwt = tokenApi.getJWT(token, user);
+        return Response.ok(new ResponseEntityView(map("jwt", jwt), EMPTY_MAP)).build(); // 200
+
+
         
 
     }
     
-    private boolean checkPerms(final User user, final ApiToken token) {
-        return Try.of(() -> (APILocator.getRoleAPI().doesUserHaveRole(user, APILocator.getRoleAPI().loadCMSAdminRole())
-                || user.getUserId().equals(token.getUserId()) 
-                || user.getUserId().equals(token.requestingUserId)))
-                .getOrElse(false);
 
-
-    }
 
 
 }

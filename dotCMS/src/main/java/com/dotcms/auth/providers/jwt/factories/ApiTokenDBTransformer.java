@@ -38,8 +38,8 @@ public class ApiTokenDBTransformer implements DBTransformer<ApiToken>{
                 .withRequestingUserId((String) dbMap.get("requested_by_userid"))
                 .withRequestingIp((String) dbMap.get("requested_by_ip"))
                 .withRevoked((Date) dbMap.get("revoke_date"))
-                .withAllowFromNetwork((String) dbMap.get("allowed_from"))
-                .withClusterId((String) dbMap.get("cluster_id"))
+                .withAllowNetwork((String) dbMap.get("allowed_from"))
+                .withIssuer((String) dbMap.get("issuer"))
                 .withClaims((String) dbMap.get("claims"))
                 .withModDate((Date) dbMap.get("mod_date"))
                 .build();

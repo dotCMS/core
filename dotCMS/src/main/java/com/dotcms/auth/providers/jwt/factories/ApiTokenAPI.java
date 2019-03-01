@@ -4,11 +4,13 @@ import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import com.dotcms.auth.providers.jwt.beans.ApiToken;
 import com.dotcms.auth.providers.jwt.beans.JWToken;
 import com.dotcms.auth.providers.jwt.beans.TokenType;
 import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotcms.repackage.org.apache.commons.net.util.SubnetUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -16,6 +18,7 @@ import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.json.JSONObject;
@@ -52,6 +55,7 @@ public class ApiTokenAPI {
      * @param tokenId
      * @return
      */
+    @CloseDBIfOpened
     public Optional<ApiToken> findApiToken(final String tokenId) {
         if(!tokenId.startsWith(TOKEN_PREFIX)) {
             return Optional.empty();
@@ -75,9 +79,17 @@ public class ApiTokenAPI {
      * @param tokenId
      * @return
      */
-    public String getJWT(final ApiToken apiToken) {
+    @CloseDBIfOpened
+    public String getJWT(final ApiToken apiToken, final User user) {
         if(!findApiToken(apiToken.id).isPresent()) {
             throw new DotStateException("You can only get a JWT from a APIToken that has been persisted to db. Call persistApiToken first");
+        }
+        
+        if(!checkPerms(apiToken, user)) {
+            throw new DotStateException("User :" + user.getUserId() + " does not have permission to token " + apiToken);
+        }
+        if(!apiToken.isValid()) {
+            throw new DotStateException("API token is not valid " + apiToken);
         }
         return JsonWebTokenFactory.getInstance().getJsonWebTokenService().generateApiToken(apiToken);
     }
@@ -89,6 +101,7 @@ public class ApiTokenAPI {
      * @param jwt
      * @return
      */
+    @CloseDBIfOpened
     public Optional<User> userFromJwt(final String jwt, final String ipAddress) {
         
 
@@ -112,6 +125,7 @@ public class ApiTokenAPI {
      * @param jwt
      * @return
      */
+    @CloseDBIfOpened
     public Optional<JWToken> fromJwt(final String jwt, final String ipAddress) {
         
 
@@ -164,7 +178,7 @@ public class ApiTokenAPI {
      * @return
      */
     @CloseDBIfOpened
-    public boolean deleteToken(final String tokenId) {
+    private boolean deleteToken(final String tokenId) {
         SecurityLogger.logInfo(this.getClass(), "deleting token " + tokenId);
         try {
             new DotConnect().setSQL(sql.DELETE_TOKEN_SQL).addParam(tokenId).loadResult();
@@ -182,23 +196,16 @@ public class ApiTokenAPI {
      * @param token
      * @return
      */
-    public boolean deleteToken(ApiToken token) {
-        return this.deleteToken(token.id);
-    }
-    
-    /**
-     * sets the Token revoke date to now
-     * invalidating all JWT issued for this ApiToken
-     * only works if ApiToken is passed in
-     * @param token
-     * @return
-     */
-    public boolean revokeToken(JWToken token) {
-        if(token.getTokenType()==TokenType.API_TOKEN ) {
-            return revokeToken(token.getSubject());
+    @CloseDBIfOpened
+    public boolean deleteToken(ApiToken token, final User user) {
+        
+        if(checkPerms(token, user)){
+            return this.deleteToken(token.id);
         }
-        return false;
+        throw new DotStateException("User :" + user.getUserId() + " does not have permission to token " + token);
     }
+    
+
     
     /**
      * sets the Token revoke date to now
@@ -206,8 +213,18 @@ public class ApiTokenAPI {
      * @param token
      * @return
      */
-    public boolean revokeToken(ApiToken token) {
-        return this.revokeToken(token.getSubject());
+    @CloseDBIfOpened
+    public boolean revokeToken(ApiToken token, final User user) {
+        if(token.isExpired() || token.isRevoked()) {
+            throw new DotStateException("Token is already revoked or expired");
+        }
+        if(checkPerms(token, user)){
+            SecurityLogger.logInfo(this.getClass(), "Revoking token " + token  );
+            return this.revokeTokenDb(token.getSubject());
+        }
+        
+        throw new DotStateException("User :" + user.getUserId() + " does not have permission to token " + token);
+        
     }
     
     /**
@@ -216,8 +233,8 @@ public class ApiTokenAPI {
      * @param tokenId
      * @return
      */
-    @CloseDBIfOpened
-    public boolean revokeToken(final String tokenId) {
+   
+    private boolean revokeTokenDb(final String tokenId) {
 
         SecurityLogger.logInfo(this.getClass(), "revoking token " + tokenId);
         try {
@@ -240,6 +257,7 @@ public class ApiTokenAPI {
      * @param requestingIpAddress
      * @return
      */
+    @CloseDBIfOpened
     public ApiToken persistApiToken(final String userId, final Date expireDate, final String requestingUserId,
             final String requestingIpAddress) {
 
@@ -260,13 +278,17 @@ public class ApiTokenAPI {
      * @param user
      * @return
      */
+    @CloseDBIfOpened
     public ApiToken persistApiToken(final ApiToken apiToken, final User user) {
 
         ApiToken tokenRequested = ApiToken.from(apiToken).withRequestingUserId(user.getUserId()).build();
 
-        return insertApiTokenDB(tokenRequested);
-
-
+        
+        if(checkPerms(tokenRequested, user)){
+            return insertApiTokenDB(tokenRequested);
+        }
+        
+        throw new DotStateException("User :" + user.getUserId() + " does not have permission to token " + tokenRequested);
     }
 
     /**
@@ -287,9 +309,9 @@ public class ApiTokenAPI {
 
         
         
-        if (token.allowFromNetwork != null && !token.allowFromNetwork.equals("0.0.0.0/0")) {
-            Try.of(() -> new SubnetUtils(token.allowFromNetwork).getInfo())
-                    .getOrElseThrow(() -> new DotStateException("allowFromNetwork:" + token.allowFromNetwork + " is invalid"));
+        if (token.allowNetwork != null && !token.allowNetwork.equals("0.0.0.0/0")) {
+            Try.of(() -> new SubnetUtils(token.allowNetwork).getInfo())
+                    .getOrElseThrow(() -> new DotStateException("allowFromNetwork:" + token.allowNetwork + " is invalid"));
         }
 
         
@@ -302,8 +324,11 @@ public class ApiTokenAPI {
         
 
 
-        final ApiToken newToken = ApiToken.from(token).withId(TOKEN_PREFIX + UUID.randomUUID().toString()).withModDate(new Date())
-                .withIssueDate(new Date()).build();
+        final ApiToken newToken = ApiToken.from(token).withId(TOKEN_PREFIX + UUID.randomUUID().toString())
+                .withModDate(new Date())
+                .withIssuer(ClusterFactory.getClusterId())
+                .withIssueDate(new Date())
+                .build();
 
 
         try {
@@ -312,14 +337,14 @@ public class ApiTokenAPI {
             .addParam(newToken.id)
             .addParam(newToken.userId)
             .addParam(newToken.issueDate)
-            .addParam(newToken.expires)
+            .addParam(newToken.expiresDate)
             .addParam(newToken.requestingUserId)
             .addParam(newToken.requestingIp)
             .addParam(newToken.revoked)
-            .addParam("0.0.0.0/0".equals(newToken.allowFromNetwork) ? null : newToken.allowFromNetwork)
-            .addParam(newToken.clusterId)
+            .addParam("0.0.0.0/0".equals(newToken.allowNetwork) ? null : newToken.allowNetwork)
+            .addParam(newToken.issuer)
             .addParam(newToken.claims)
-            .addParam(newToken.modDate).loadResult();
+            .addParam(newToken.modificationDate).loadResult();
 
             return newToken;
         } catch (DotDataException e) {
@@ -335,17 +360,22 @@ public class ApiTokenAPI {
      * @return
      */
     @CloseDBIfOpened
-    private List<ApiToken> findApiTokensByUserIdDB(final String userId, final boolean showRevoked) {
+    private List<ApiToken> findApiTokensByUserIdDB(final String userId, final boolean showRevokedExpired) {
 
-        final String SQL = (showRevoked) ? sql.SELECT_BY_TOKEN_USER_ID_SQL_ALL : sql.SELECT_BY_TOKEN_USER_ID_SQL_ACTIVE;
+        final DotConnect db = (showRevokedExpired) 
+                ? new DotConnect().setSQL(sql.SELECT_BY_TOKEN_USER_ID_SQL_ALL).addParam(userId) 
+                : new DotConnect().setSQL(sql.SELECT_BY_TOKEN_USER_ID_SQL_ACTIVE).addParam(userId).addParam(new Date());
+                
 
 
-        try {
-            return new ApiTokenDBTransformer(new DotConnect().setSQL(SQL).addParam(userId).loadObjectResults()).asList();
-        } catch (DotDataException dde) {
+            try {
+                return new ApiTokenDBTransformer(db.loadObjectResults()).asList();
+            } catch (DotDataException dde) {
 
-            throw new DotStateException(dde);
-        }
+                throw new DotStateException(dde);
+            }
+
+
 
     }
     /**
@@ -363,8 +393,29 @@ public class ApiTokenAPI {
             return ImmutableList.of();
         }
 
-        return findApiTokensByUserIdDB(userId, showRevoked);
+            
+       return findApiTokensByUserIdDB(userId, showRevoked).stream().filter(token -> checkPerms(token, requestingUser))    
+               .collect(Collectors.toList());  
 
     }
 
+    
+    /***
+     * checks if a requesting user has permissions over a token
+     * true if any of these - user == token user || user == user who requested the token || user == cmsAdmin || user has userManager rights
+     * @param token
+     * @param user
+     * @return
+     */
+    private boolean checkPerms(final ApiToken token,final User user) {
+        if(token ==null || user==null) return false;
+        return Try.of(() -> (APILocator.getRoleAPI().doesUserHaveRole(user, APILocator.getRoleAPI().loadCMSAdminRole())
+                || user.getUserId().equals(token.getUserId()) 
+                || user.getUserId().equals(token.requestingUserId))
+                || APILocator.getPortletAPI().hasUserAdminRights(user))
+                .getOrElse(false);
+
+
+    }
+    
 }

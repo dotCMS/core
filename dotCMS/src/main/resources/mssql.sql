@@ -2660,7 +2660,7 @@ CREATE TABLE api_token_issued(
     requested_by_ip  NVARCHAR(255) NOT NULL, 
     revoke_date datetime DEFAULT NULL, 
     allowed_from  NVARCHAR(255) , 
-    cluster_id  NVARCHAR(255) , 
+    issuer  NVARCHAR(255) , 
     claims  NVARCHAR(5000) , 
     mod_date  datetime NOT NULL, 
     PRIMARY KEY (token_id)

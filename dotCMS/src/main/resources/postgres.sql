@@ -2473,7 +2473,7 @@ CREATE TABLE api_token_issued(
     requested_by_ip  varchar(255) NOT NULL, 
     revoke_date TIMESTAMP, 
     allowed_from  varchar(255) , 
-    cluster_id  varchar(255) , 
+    issuer  varchar(255) , 
     claims  text , 
     mod_date  TIMESTAMP NOT NULL, 
     PRIMARY KEY (token_id)

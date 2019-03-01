@@ -43,6 +43,24 @@
 <style type="text/css">
 	@import url("<%=dojoPath%>/dojox/grid/resources/tundraGrid.css?b=3.7.0");
 	<%request.setAttribute("ViewingUserRole", true); %>
+	
+	#userRolesSelect option{
+		font-family:Roboto;
+		font-size:13px;
+		padding:4px ;
+		color: rgb(85,85,85);
+	}
+	
+	.tokenDivClass{
+		background:#eeeeee;
+		margin:auto;
+		max-width:650px;
+		white-space:normal;
+		padding:10px 20px;
+		font-family:monospace; 
+		word-break: break-word;
+	}
+	
 </style>
 
 <script language="Javascript">
@@ -167,6 +185,53 @@
 					</div>
 					<!-- END User Detail Tab -->
 
+                    <!-- START Additional Info Tab -->
+                    <div dojoType="dijit.layout.ContentPane" id="userAdditionalInfoTab" title="<%= LanguageUtil.get(pageContext, "Additional-Info") %>" class="view-users__additional-info">
+
+                        <h3 id="fullUserName" class="fullUserName"></h3>
+
+                        <div class="form-horizontal view-user__form" id="additionalUserInfoFormWrapper">
+                            <form id="userAdditionalInfoForm" dojoType="dijit.form.Form">
+                                <dl>
+                                    <dt><%= LanguageUtil.get(pageContext, "Active") %>:</dt>
+                                    <dd><input id="userActive" type="checkbox" onkeyup="userInfoChanged()" checked="checked" dojoType="dijit.form.CheckBox" /></dd>
+                                </dl>
+                                <dl>
+                                    <dt><%= LanguageUtil.get(pageContext, "Prefix") %>:</dt>
+                                    <dd><input id="prefix" type="text" onkeyup="userInfoChanged()" value="" dojoType="dijit.form.TextBox" /></dd>
+                                </dl>
+                                <dl>
+                                    <dt><%= LanguageUtil.get(pageContext, "Suffix") %>:</dt>
+                                    <dd><input id="suffix" type="text" onkeyup="userInfoChanged()" value="" dojoType="dijit.form.TextBox" /></dd>
+                                </dl>
+                                <dl>
+                                    <dt><%= LanguageUtil.get(pageContext, "Title") %>:</dt>
+                                    <dd><input id=title type="text" onkeyup="userInfoChanged()" value="" dojoType="dijit.form.TextBox" /></dd>
+                                </dl>
+                                <dl>
+                                    <dt><%= LanguageUtil.get(pageContext, "Company") %>:</dt>
+                                    <dd><input id="company" type="text" onkeyup="userInfoChanged()" value="" dojoType="dijit.form.TextBox" /></dd>
+                                </dl>
+                                <dl>
+                                    <dt><%= LanguageUtil.get(pageContext, "Website") %>:</dt>
+                                    <dd><input id="website" type="text" onkeyup="userInfoChanged()" value="" dojoType="dijit.form.TextBox" /></dd>
+                                </dl>
+                                <% for (int i = 1; i <= additionalVariablesCount; i++) { %>
+                                    <dl>
+                                        <dt id="var<%=i%>Label"><%=additionalVariableLabels[i]%>:</dt>
+                                        <dd id="var<%=i%>Value"><input id="var<%=i%>" type="text" onkeyup="userInfoChanged()" value="" dojoType="dijit.form.TextBox" /></dd>
+                                    </dl>
+                                <% } %>
+                            </form>
+                        </div>
+
+
+                    </div>
+                    <!-- END Additional Info Tab -->
+
+
+
+
 					<!-- START Roles Tab -->
 					<div dojoType="dijit.layout.ContentPane" id="userRolesTab" title="<%= LanguageUtil.get(pageContext, "Roles") %>">
 
@@ -210,103 +275,17 @@
 					</div>
 					<!-- END Permissions Tab -->
 
-					<!-- START Additional Info Tab -->
-					<div dojoType="dijit.layout.ContentPane" id="userAdditionalInfoTab" title="<%= LanguageUtil.get(pageContext, "Additional-Info") %>" class="view-users__additional-info">
 
-						<h3 id="fullUserName" class="fullUserName"></h3>
-
-						<div class="form-horizontal view-user__form" id="additionalUserInfoFormWrapper">
-							<form id="userAdditionalInfoForm" dojoType="dijit.form.Form">
-								<dl>
-									<dt><%= LanguageUtil.get(pageContext, "Active") %>:</dt>
-									<dd><input id="userActive" type="checkbox" onkeyup="userInfoChanged()" checked="checked" dojoType="dijit.form.CheckBox" /></dd>
-								</dl>
-								<dl>
-									<dt><%= LanguageUtil.get(pageContext, "Prefix") %>:</dt>
-									<dd><input id="prefix" type="text" onkeyup="userInfoChanged()" value="" dojoType="dijit.form.TextBox" /></dd>
-								</dl>
-								<dl>
-									<dt><%= LanguageUtil.get(pageContext, "Suffix") %>:</dt>
-									<dd><input id="suffix" type="text" onkeyup="userInfoChanged()" value="" dojoType="dijit.form.TextBox" /></dd>
-								</dl>
-								<dl>
-									<dt><%= LanguageUtil.get(pageContext, "Title") %>:</dt>
-									<dd><input id=title type="text" onkeyup="userInfoChanged()" value="" dojoType="dijit.form.TextBox" /></dd>
-								</dl>
-								<dl>
-									<dt><%= LanguageUtil.get(pageContext, "Company") %>:</dt>
-									<dd><input id="company" type="text" onkeyup="userInfoChanged()" value="" dojoType="dijit.form.TextBox" /></dd>
-								</dl>
-								<dl>
-									<dt><%= LanguageUtil.get(pageContext, "Website") %>:</dt>
-									<dd><input id="website" type="text" onkeyup="userInfoChanged()" value="" dojoType="dijit.form.TextBox" /></dd>
-								</dl>
-								<% for (int i = 1; i <= additionalVariablesCount; i++) { %>
-									<dl>
-										<dt id="var<%=i%>Label"><%=additionalVariableLabels[i]%>:</dt>
-										<dd id="var<%=i%>Value"><input id="var<%=i%>" type="text" onkeyup="userInfoChanged()" value="" dojoType="dijit.form.TextBox" /></dd>
-									</dl>
-								<% } %>
-							</form>
-						</div>
-
-						<div class="view-user__add-contact">
-							<button dojoType="dijit.form.Button" id="addAddressIcon" onclick="addAddress()" type="button">
-								<%= LanguageUtil.get(pageContext, "Addresses-Phones") %>
-							</button>
-						</div>
-
-						<div dojoType="dojox.grid.DataGrid" jsId="userAddressesGrid" id="userAddressesGrid" autoHeight="true" store="userAddressesStore" structure="userAddressesGridLayout" query="{ addressId: '*' }"> </div>
-
-						<div class="clear"></div>
-
-						<div class="buttonRow">
-							<button dojoType="dijit.form.Button" onclick="saveUserAdditionalInfo()" type="button" iconClass="saveIcon"><%= LanguageUtil.get(pageContext, "Save") %></button>
-						</div>
-
-
-						<!-- START Popup Address -->
-							<div id="addressDialog" title="<%= LanguageUtil.get(pageContext, "edit-address") %>" dojoType="dijit.Dialog" style="display: none; width:400px;">
-								<form id="addressForm" dojoType="dijit.form.Form" class="userInfoForm">
-									<input id="addressId" type="hidden" />
-									<dl>
-										<dt><%= LanguageUtil.get(pageContext, "Description") %>:</dt>
-										<dd><input id="addressDescription" type="text" required="true" invalidMessage="Required." dojoType="dijit.form.ValidationTextBox" /></dd>
-										<dt><%= LanguageUtil.get(pageContext, "Street-1") %>:</dt>
-										<dd><input id="addressStreet1" type="text" required="true" invalidMessage="Required." dojoType="dijit.form.ValidationTextBox" /></dd>
-										<dt><%= LanguageUtil.get(pageContext, "Street-2") %>:</dt>
-										<dd><input id="addressStreet2" type="text" dojoType="dijit.form.ValidationTextBox" /></dd>
-										<dt><%= LanguageUtil.get(pageContext, "City") %>:</dt>
-										<dd><input id="addressCity" type="text" required="true" invalidMessage="Required." dojoType="dijit.form.ValidationTextBox" /></dd>
-										<dt><%= LanguageUtil.get(pageContext, "State") %>:</dt>
-										<dd><input id="addressState" type="text" required="true" invalidMessage="Required." dojoType="dijit.form.ValidationTextBox" /></dd>
-										<dt><%= LanguageUtil.get(pageContext, "Zip") %>:</dt>
-										<dd><input id="addressZip" type="text" required="true" invalidMessage="Required." dojoType="dijit.form.ValidationTextBox" /></dd>
-										<dt><%= LanguageUtil.get(pageContext, "Country") %>:</dt>
-										<dd><input id="addressCountry" type="text" required="true" invalidMessage="Required." dojoType="dijit.form.ValidationTextBox" /></dd>
-										<dt><%= LanguageUtil.get(pageContext, "Phone") %>:</dt>
-										<dd><input id="addressPhone" type="text" dojoType="dijit.form.ValidationTextBox" /></dd>
-										<dt><%= LanguageUtil.get(pageContext, "Fax") %>:</dt>
-										<dd><input id="addressFax" type="text" dojoType="dijit.form.ValidationTextBox" /></dd>
-										<dt><%= LanguageUtil.get(pageContext, "Cell") %>:</dt>
-										<dd><input id="addressCell" type="text" dojoType="dijit.form.ValidationTextBox" /></dd>
-									</dl>
-									<div class="buttonRow-right">
-										<button dojoType="dijit.form.Button" type="button" onClick="cancelSaveAddress()" class="dijitButtonFlat"><%= LanguageUtil.get(pageContext, "Cancel") %></button>
-										<button dojoType="dijit.form.Button" type="button" onClick="saveAddress()"><%= LanguageUtil.get(pageContext, "Save") %></button>
-									</div>
-								</form>
-							</div>
-						<!-- END Popup Address -->
-
-					</div>
-					<!-- END Additional Info Tab -->
+					
+					
+					
+					
 					
 					<!-- START API Keys Tab -->
 					<div dojoType="dijit.layout.ContentPane" id="apiKeysTab" title="<%= LanguageUtil.get(pageContext, "API Access Keys") %>">
 					
-					
-					    <div style="text-align:right"><input type="checkbox" id="showRevokedApiTokens" onclick="loadApiKeys()" dojoType="dijit.form.CheckBox" /> Show Revoked</div>  
+					 <div class="buttonRow" style="text-align:right"><input type="checkbox" id="showRevokedApiTokens" onclick="loadApiKeys()" dojoType="dijit.form.CheckBox" /> Show Inactive</div>  
+
                         <div id="apiKeysDiv"></div>
                     
                         <div class="buttonRow">
@@ -331,27 +310,27 @@
 <!-- End Portlet -->
 
 <div dojoType="dijit.Dialog" id="tokenFormDialog" title="Request new API Token" execute="requestNewAPIToken(arguments[0]);">
-<h3>Request New Token</h3>
-<table class="listingTable">
-        <tr>
-        
-            <td><label for="expiresDate">Expires Date: </label></td>
-            <td><input dojoType="dijit.form.DateTextBox" type="text" name="expiresDate" id="expiresDate" value="<%=DateTimeFormatter.ofPattern("uuuu-MM-dd").format(LocalDate.now().plus(3, ChronoUnit.YEARS)) %>"></td>
-        </tr>
-
-        <tr>
-            <td><label for="netmask">CIDR Netmask: </label></td>
-            
-            <td><input dojoType="dijit.form.TextBox" type="text" name="netmask" id="netmask" value="0.0.0.0/0"></td>
-        </tr>
-            <td align="center" colspan="2">
-                 <button dojoType="dijit.form.Button" type="button" class="dijitButtonFlat"
-                    onClick="dijit.byId('tokenFormDialog').hide();">Cancel</button>
-                    &nbsp;
-                <button dojoType="dijit.form.Button" type="submit"
-                    onClick="return dijit.byId('tokenFormDialog').isValid();">OK</button>
-            </td>
-</table>
+	<h3>Request New Token</h3>
+	<table class="listingTable">
+	        <tr>
+	        
+	            <td><label for="expiresDate">Expires Date: </label></td>
+	            <td><input dojoType="dijit.form.DateTextBox" type="text" name="expiresDate" id="expiresDate" value="<%=DateTimeFormatter.ofPattern("uuuu-MM-dd").format(LocalDate.now().plus(3, ChronoUnit.YEARS)) %>"></td>
+	        </tr>
+	
+	        <tr>
+	            <td><label for="netmask">CIDR Netmask: </label></td>
+	            
+	            <td><input dojoType="dijit.form.TextBox" type="text" name="netmask" id="netmask" value="0.0.0.0/0"></td>
+	        </tr>
+	            <td align="center" colspan="2">
+	                 <button dojoType="dijit.form.Button" type="button" class="dijitButtonFlat"
+	                    onClick="dijit.byId('tokenFormDialog').hide();">Cancel</button>
+	                    &nbsp;
+	                <button dojoType="dijit.form.Button" type="submit"
+	                    onClick="return dijit.byId('tokenFormDialog').isValid();">OK</button>
+	            </td>
+	</table>
 
 
 </div>

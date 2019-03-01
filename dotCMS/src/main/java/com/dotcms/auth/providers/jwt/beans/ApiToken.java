@@ -33,13 +33,13 @@ public class ApiToken implements JWToken {
     public final String userId;
     public final String requestingUserId;
     public final String requestingIp;
-    public final Date expires;
+    public final Date expiresDate;
     public final Date revoked;
-    public final String allowFromNetwork;
+    public final String allowNetwork;
     public final Date issueDate;
     public final String claims;
-    public final String clusterId;
-    public final Date modDate;
+    public final String issuer;
+    public final Date modificationDate;
 
 
     private ApiToken(Builder builder) {
@@ -47,13 +47,13 @@ public class ApiToken implements JWToken {
         this.userId = builder.userId;
         this.requestingUserId = builder.requestingUserId;
         this.requestingIp = builder.requestFromIp;
-        this.expires = builder.expires;
+        this.expiresDate = builder.expiresDate;
         this.revoked = builder.revoked;
-        this.allowFromNetwork = builder.allowFromNetwork;
+        this.allowNetwork = builder.allowNetwork;
         this.issueDate = builder.issueDate;
         this.claims = builder.claims;
-        this.modDate = builder.modDate;
-        this.clusterId = builder.clusterId;
+        this.modificationDate = builder.modificationDate;
+        this.issuer = builder.issuer;
     }
 
 
@@ -72,13 +72,13 @@ public class ApiToken implements JWToken {
     }
 
     public boolean isInIpRange(final String ipAddress) {
-        if (this.allowFromNetwork == null || "0.0.0.0/0".equals(this.allowFromNetwork)) {
+        if (ipAddress==null || this.allowNetwork == null || "0.0.0.0/0".equals(this.allowNetwork)) {
             return true;
         }
         try {
-            return new SubnetUtils(this.allowFromNetwork).getInfo().isInRange(ipAddress);
+            return new SubnetUtils(this.allowNetwork).getInfo().isInRange(ipAddress);
         } catch (Exception e) {
-            Logger.warn(this.getClass(), "unable to validate ip address :" + ipAddress + " was part of network " + this.allowFromNetwork);
+            Logger.warn(this.getClass(), "unable to validate ip address :" + ipAddress + " was part of network " + this.allowNetwork);
             Logger.warn(this.getClass(), e.getMessage());
             return false;
         }
@@ -114,13 +114,13 @@ public class ApiToken implements JWToken {
     public int hashCode() {
         final int prime = 31;
         int result = 1;
-        result = prime * result + ((allowFromNetwork == null) ? 0 : allowFromNetwork.hashCode());
-        result = prime * result + ((clusterId == null) ? 0 : clusterId.hashCode());
-        result = prime * result + ((expires == null) ? 0 : expires.hashCode());
+        result = prime * result + ((allowNetwork == null) ? 0 : allowNetwork.hashCode());
+        result = prime * result + ((issuer == null) ? 0 : issuer.hashCode());
+        result = prime * result + ((expiresDate == null) ? 0 : expiresDate.hashCode());
         result = prime * result + ((id == null) ? 0 : id.hashCode());
         result = prime * result + ((issueDate == null) ? 0 : issueDate.hashCode());
         result = prime * result + ((claims == null) ? 0 : claims.hashCode());
-        result = prime * result + ((modDate == null) ? 0 : modDate.hashCode());
+        result = prime * result + ((modificationDate == null) ? 0 : modificationDate.hashCode());
         result = prime * result + ((requestingIp == null) ? 0 : requestingIp.hashCode());
         result = prime * result + ((requestingUserId == null) ? 0 : requestingUserId.hashCode());
         result = prime * result + ((revoked == null) ? 0 : revoked.hashCode());
@@ -139,20 +139,20 @@ public class ApiToken implements JWToken {
         if (getClass() != obj.getClass())
             return false;
         ApiToken other = (ApiToken) obj;
-        if (allowFromNetwork == null) {
-            if (other.allowFromNetwork != null)
+        if (allowNetwork == null) {
+            if (other.allowNetwork != null)
                 return false;
-        } else if (!allowFromNetwork.equals(other.allowFromNetwork))
+        } else if (!allowNetwork.equals(other.allowNetwork))
             return false;
-        if (clusterId == null) {
-            if (other.clusterId != null)
+        if (issuer == null) {
+            if (other.issuer != null)
                 return false;
-        } else if (!clusterId.equals(other.clusterId))
+        } else if (!issuer.equals(other.issuer))
             return false;
-        if (expires == null) {
-            if (other.expires != null)
+        if (expiresDate == null) {
+            if (other.expiresDate != null)
                 return false;
-        } else if (!expires.equals(other.expires))
+        } else if (!expiresDate.equals(other.expiresDate))
             return false;
         if (id == null) {
             if (other.id != null)
@@ -225,13 +225,13 @@ public class ApiToken implements JWToken {
         private String userId;
         private String requestingUserId;
         private String requestFromIp;
-        private Date expires;
+        private Date expiresDate;
         private Date revoked;
-        private String allowFromNetwork;
+        private String allowNetwork;
         private Date issueDate;
         private String claims;
-        private Date modDate;
-        private String clusterId;
+        private Date modificationDate;
+        private String issuer;
 
         private Builder() {}
 
@@ -240,13 +240,13 @@ public class ApiToken implements JWToken {
             this.userId = jWTokenIssue.userId;
             this.requestingUserId = jWTokenIssue.requestingUserId;
             this.requestFromIp = jWTokenIssue.requestingIp;
-            this.expires = jWTokenIssue.expires;
+            this.expiresDate = jWTokenIssue.expiresDate;
             this.revoked = jWTokenIssue.revoked;
-            this.allowFromNetwork = jWTokenIssue.allowFromNetwork;
+            this.allowNetwork = jWTokenIssue.allowNetwork;
             this.issueDate = jWTokenIssue.issueDate;
             this.claims = jWTokenIssue.claims;
-            this.modDate = jWTokenIssue.modDate;
-            this.clusterId = jWTokenIssue.clusterId;
+            this.modificationDate = jWTokenIssue.modificationDate;
+            this.issuer = jWTokenIssue.issuer;
         }
 
         public Builder withId(@Nonnull String id) {
@@ -274,9 +274,9 @@ public class ApiToken implements JWToken {
             return this;
         }
 
-        public Builder withExpires(@Nonnull Date expires) {
+        public Builder withExpires(@Nonnull Date expiresDate) {
 
-            this.expires = expires == null ? null : Date.from(expires.toInstant().truncatedTo(ChronoUnit.SECONDS));
+            this.expiresDate = expiresDate == null ? null : Date.from(expiresDate.toInstant().truncatedTo(ChronoUnit.SECONDS));
             return this;
         }
 
@@ -286,8 +286,8 @@ public class ApiToken implements JWToken {
         }
 
 
-        public Builder withAllowFromNetwork(@Nonnull String allowFromNetwork) {
-            this.allowFromNetwork = allowFromNetwork;
+        public Builder withAllowNetwork(@Nonnull String allowNetwork) {
+            this.allowNetwork = allowNetwork;
             return this;
         }
 
@@ -305,13 +305,13 @@ public class ApiToken implements JWToken {
             this.claims = Try.of(()-> new ObjectMapper().writeValueAsString(claims)).getOrNull();
             return this;
         }
-        public Builder withClusterId(@Nonnull String clusterId) {
-            this.clusterId = clusterId;
+        public Builder withIssuer(@Nonnull String issuer) {
+            this.issuer = issuer;
             return this;
         }
 
-        public Builder withModDate(@Nonnull Date modDate) {
-            this.modDate = modDate == null ? null : Date.from(modDate.toInstant().truncatedTo(ChronoUnit.SECONDS));
+        public Builder withModDate(@Nonnull Date modificationDate) {
+            this.modificationDate = modificationDate == null ? null : Date.from(modificationDate.toInstant().truncatedTo(ChronoUnit.SECONDS));
             return this;
         }
 
@@ -325,15 +325,11 @@ public class ApiToken implements JWToken {
                 throw new DotStateException("JWToken is is not valid - needs an userId");
             }
             
-            if (this.expires == null || expires.before(new Date())) {
-                throw new DotStateException("JWToken is is not valid -expire date not set or set in the past");
+            if (this.expiresDate == null ) {
+                throw new DotStateException("JWToken is is not valid - expire date not set or set in the past");
             }
 
-            final int days = Config.getIntProperty( "json.web.token.max.allowed.expiration.days",  1000);
-            final Date maxExpirationDate = Date.from(Instant.now().plus(days, ChronoUnit.DAYS));
-            if(this.expires.after(maxExpirationDate)) {
-                throw new DotStateException("JWToken is is not valid, expires " + this.expires + ".  Max expiration date is " + maxExpirationDate + " or " + days + " days in the future");
-            }
+
             
             return new ApiToken(this);
         }
@@ -343,8 +339,7 @@ public class ApiToken implements JWToken {
     @Override
     public String toString() {
 
-        return "{id:" + this.id + ", userId:" + this.userId + ", issueDate:" + this.issueDate + ", expires:" + this.expires + ", revoked:"
-                + this.revoked + "}";
+        return "{id:" + this.id + ", userId:" + this.userId + ", issueDate:" + this.issueDate + ", expiresDate:" + this.expiresDate + ", revoked:" + this.revoked + ", requestingUserId:" + this.requestingUserId + ", issuer:" + this.issuer +"}";
     }
 
 
@@ -355,6 +350,7 @@ public class ApiToken implements JWToken {
 
 
     @JsonIgnore
+    @com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore
     public Optional<ApiToken> getApiToken() {
         return APILocator.getApiTokenAPI().findApiToken(this.id);
     }
@@ -377,25 +373,25 @@ public class ApiToken implements JWToken {
 
     @Override
     public String getIssuer() {
-        return this.clusterId;
+        return this.issuer;
     }
 
 
     @Override
     public Date getModificationDate() {
-        return this.modDate;
+        return this.modificationDate;
     }
 
 
     @Override
     public Date getExpiresDate() {
-        return this.expires;
+        return this.expiresDate;
     }
 
 
     @Override
-    public String getAllowNetworks() {
-        return this.allowFromNetwork;
+    public String getAllowNetwork() {
+        return this.allowNetwork;
     }
 
     @Override

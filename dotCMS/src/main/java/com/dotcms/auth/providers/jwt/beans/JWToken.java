@@ -57,7 +57,7 @@ public interface JWToken extends Serializable {
      * 
      * @return
      */
-    public String getAllowNetworks();
+    public String getAllowNetwork();
 
     /**
      * Optionally gets the user associated with this token. If the user is not active, no user will be
@@ -66,6 +66,7 @@ public interface JWToken extends Serializable {
      * @return
      */
     @JsonIgnore
+    @com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore
     default Optional<User> getActiveUser() {
         User user = Try.of(() -> APILocator.getUserAPI().loadUserById(getUserId())).getOrNull();
         if (user != null && user.isActive()) {

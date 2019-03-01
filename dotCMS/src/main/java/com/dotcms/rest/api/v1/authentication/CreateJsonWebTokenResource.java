@@ -167,8 +167,9 @@ public class CreateJsonWebTokenResource implements Serializable {
 
         } catch (Exception e) { // this is an unknown error, so we report as a 500.
 
-            SecurityLogger.logInfo(this.getClass(),"An invalid attempt to login as "
+            SecurityLogger.logInfo(this.getClass(),"Possible invalid attempt to login as "
                     + userId.toLowerCase() + " has been made from IP: " + request.getRemoteAddr());
+            SecurityLogger.logInfo(this.getClass(),"Error was:" + e);
             res = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
         }
 
@@ -218,6 +219,6 @@ public class CreateJsonWebTokenResource implements Serializable {
         ApiToken token  = APILocator.getApiTokenAPI().persistApiToken(user.getUserId(), expireDate, user.getUserId(), ipAddress);
         
         
-        return APILocator.getApiTokenAPI().getJWT(token);
+        return APILocator.getApiTokenAPI().getJWT(token, user);
     }
 } // E:O:F:CreateJsonWebTokenResource.

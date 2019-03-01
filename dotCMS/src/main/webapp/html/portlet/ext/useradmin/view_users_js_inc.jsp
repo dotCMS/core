@@ -1430,6 +1430,9 @@
 	
   
   function toDate(millis){
+	  if(millis==null){
+		  return "";
+	  }
      return new Date(millis).toLocaleString();
   }
   
@@ -1437,7 +1440,12 @@
       var nowsers = new Date();
       var expires = formData.expiresDate;
 
-      var timeDiff = Math.abs(expires.getTime() - nowsers.getTime());
+      var timeDiff = expires.getTime() - nowsers.getTime();
+      
+      if(timeDiff<1000){
+    	  alert("you cannot request a key in the past");
+    	  return;
+      }
       
       formData.expirationSeconds = Math.ceil(timeDiff / 1000 ); 
 	  formData.userId = currentUser.id;
@@ -1471,44 +1479,44 @@
    
       var myTable= `<table class="listingTable">
     	  <tr>
-	    	  <td style='width: 250px;'>Key Id</td>
+	    	  <td style='width: 200px;'>Key Id</td>
 	    	  <td style='width: 200px;'>Issued</td>
 	    	  <td style='width: 200px;'>Expires</td>
+	    	  <td style='width: 200px;'>Revoked</td>
 	    	  <td style='width: 150px;'>Requested By</td>
 	    	  <td style='width: 150px;'>Ip Range</td>
 	    	  <td></td>
     	  </tr>`;
       for (var i=0; i<tokens.length; i++) {
+    	  
     	  var token=tokens[i];
-    	  var myRow=`<tr>
-	    	   <td style="{revokedClass}">{token.id}</td>
-	    	   <td>{token.issueDate}</td>
-	    	   <td>{token.expires}</td>
-	    	   <td>{token.requestingUserId}</td>
-	    	   <td>{token.allowNetworks}</td>`;
+    	  var myRow=(token.valid) ? `<tr style="cursor:pointer">`                          : `<tr style="background: rgb(250,250,250)">`;
+    	  myRow +=(token.valid)   ? `<td onclick='getJwt("{token.id}")'>{token.id}</td>`   : `<td style="text-decoration:line-through;">{token.id}</td>`;
+    	  myRow +=(token.valid)   ? `<td onclick='getJwt("{token.id}")'>{token.issueDate}</td>`:`<td>{token.issueDate}</td>`;
+          myRow +=(!token.expired)? `<td onclick='getJwt("{token.id}")'>{token.expiresDate}</td>` : `<td style="text-decoration:line-through;">{token.expiresDate}</td>` ;
+          myRow +=(!token.revoked)? `<td onclick='getJwt("{token.id}")'>{token.revokedDate}</td>` : `<td style="text-decoration:line-through;">{token.revokedDate}</td>` ;
+          myRow +=(token.valid)   ? `<td onclick='getJwt("{token.id}")'>{token.requestingUserId}</td>`: `<td>{token.requestingUserId}</td>`;
+          myRow +=(token.valid)   ? `<td onclick='getJwt("{token.id}")'>{token.allowNetwork}</td>`:`<td>{token.allowNetwork}</td>`;
+          myRow +=(token.valid) 
+                ? `<td style="text-align:right"><a href='javascript:revokeKey(\"{token.id}\")'>revoke</a> | <a href='javascript:getJwt("{token.id}")'>get token</a></td>`
+                : `<td style="text-align:right"><a href='javascript:deleteKey(\"{token.id}\")'>delete</a> </td>` ;
+
+          myRow+=`</tr>`;
 	    	   
-	    	   if(token.revoked){
-	    		   myRow+=`<td style="display:{isNotRevoked}"><a href='javascript:deleteKey(\"{token.id}\")'>delete</a> </td>`;
-	    	   }
-	    	   else{
-	    		   myRow+=`<td style="display:{isRevoked}"><a href='javascript:revokeKey(\"{token.id}\")'>revoke</a> | <a href='javascript:getJwt("{token.id}")'>get token</a></td>`;
-               }
-	    	   myRow+=`</tr>`;
     	   
     	  myRow=myRow
     	  .replace(new RegExp("{token.id}", 'g'), token.id)
-    	  .replace(new RegExp("{token.expires}", 'g'), toDate(token.expires))
+    	  .replace(new RegExp("{token.expiresDate}", 'g'), toDate(token.expiresDate))
+    	  .replace(new RegExp("{token.revokedDate}", 'g'), toDate(token.revokedDate))
     	  .replace(new RegExp("{token.requestingUserId}", 'g'), token.requestingUserId)
-    	  .replace(new RegExp("{token.allowNetworks}", 'g'), (token.allowNetworks==null) ? "any" : token.allowNetworks)
+    	  .replace(new RegExp("{token.allowNetwork}", 'g'), (token.allowNetwork==null) ? "any" : token.allowNetwork)
     	  .replace(new RegExp("{token.issueDate}", 'g'), toDate(token.issueDate ))
     	  .replace(new RegExp("{token.requestingUserId}", 'g'), toDate(token.requestingUserId ))
     	  .replace(new RegExp("{token.revoked}", 'g'), token.revoked) 
-          .replace(new RegExp("{revokedClass}", 'g'), (token.revoked) ? "text-decoration:line-through;" : "")
-          .replace(new RegExp("{isRevoked}", 'g'),  (token.revoked) ? "none" : "")
-    	  .replace(new RegExp("{isNotRevoked}", 'g'),  (token.revoked) ? "" : "none");
+          .replace(new RegExp("{validClass}", 'g'), (!token.valid) ? "text-decoration:line-through;" : "")
     	   myTable+=   myRow; 
 
-    	   myTable+="<tr class='tokenHolderTr' style='display:none' id='tokenTr"+token.id+"'><td colspan='6'><div style='background:#eeeeee;margin:auto;max-width:650px;white-space:normal;padding:10px 20px;font-family:monospace; word-break: break-word;'  id='tokenDiv"+token.id+"'></div></td></tr>";
+    	   myTable+="<tr class='tokenHolderTr' style='display:none' id='tokenTr"+token.id+"'><td colspan='6'><div class='tokenDivClass'  id='tokenDiv"+token.id+"'></div></td></tr>";
     	  
       }
       myTable+="</table>";

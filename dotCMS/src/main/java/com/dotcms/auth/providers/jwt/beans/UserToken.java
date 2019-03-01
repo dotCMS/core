@@ -177,7 +177,7 @@ public class UserToken implements JWToken {
 
 
     @Override
-    public String getAllowNetworks() {
+    public String getAllowNetwork() {
         return null;
     }
 

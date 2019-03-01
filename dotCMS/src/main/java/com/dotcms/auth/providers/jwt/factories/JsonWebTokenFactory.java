@@ -158,16 +158,16 @@ public class JsonWebTokenFactory implements Serializable {
         public String generateApiToken(final ApiToken apiToken) {
             Map<String,Object> claims = Try.of(()->new ObjectMapper().readValue(apiToken.claims, HashMap.class)).getOrElse(new HashMap<>());
             
-            claims.put(CLAIM_UPDATED_AT, apiToken.modDate);
-            if(apiToken.allowFromNetwork!=null) {
-                claims.put(CLAIM_ALLOWED_NETWORK, apiToken.allowFromNetwork);
+            claims.put(CLAIM_UPDATED_AT, apiToken.modificationDate);
+            if(apiToken.allowNetwork!=null) {
+                claims.put(CLAIM_ALLOWED_NETWORK, apiToken.allowNetwork);
             }
             //Let's set the JWT Claims
             final JwtBuilder builder = Jwts.builder()
                     .setClaims(claims)
                     .setId(UUID.randomUUID().toString())
                     .setSubject(apiToken.id)
-                    .setExpiration(apiToken.expires)
+                    .setExpiration(apiToken.expiresDate)
                     .setIssuedAt(apiToken.issueDate)
                     .setIssuer(this.getIssuer())
                     .setNotBefore(apiToken.issueDate);
@@ -284,9 +284,9 @@ public class JsonWebTokenFactory implements Serializable {
                 
             }
             if(requestingIp!=null && !apiToken.isInIpRange(requestingIp)) {
-                IncorrectClaimException claimException = new IncorrectClaimException( jws.getHeader(), body, "API Token not allowed for ip:" + requestingIp + ". Accepted range:" + apiToken.allowFromNetwork);
+                IncorrectClaimException claimException = new IncorrectClaimException( jws.getHeader(), body, "API Token not allowed for ip:" + requestingIp + ". Accepted range:" + apiToken.allowNetwork);
                 claimException.setClaimName(Claims.AUDIENCE);
-                claimException.setClaimValue(apiToken.allowFromNetwork);
+                claimException.setClaimValue(apiToken.allowNetwork);
                 throw claimException;
             }
             

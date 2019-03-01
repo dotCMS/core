@@ -17,28 +17,28 @@ public class Task05060ApiTokensIssuedTable extends AbstractJDBCStartupTask {
 
     @Override
     public String getPostgresScript() {
-        return sql.CREATE_TOKEN_TABLE_SCRIPT;
+        return sql.CREATE_TOKEN_TABLE_SCRIPT();
 
     }
 
     @Override
     public String getMySQLScript() {
-        return sql.CREATE_TOKEN_TABLE_SCRIPT;
+        return sql.CREATE_TOKEN_TABLE_SCRIPT();
     }
 
     @Override
     public String getOracleScript() {
-        return sql.CREATE_TOKEN_TABLE_SCRIPT.replaceAll(" text", " nclob");
+        return sql.CREATE_TOKEN_TABLE_SCRIPT().replaceAll(" text", " nclob");
     }
 
     @Override
     public String getMSSQLScript() {
-        return sql.CREATE_TOKEN_TABLE_SCRIPT;
+        return sql.CREATE_TOKEN_TABLE_SCRIPT();
     }
 
     @Override
     public String getH2Script() {
-        return sql.CREATE_TOKEN_TABLE_SCRIPT;
+        return sql.CREATE_TOKEN_TABLE_SCRIPT();
     }
 
     @Override

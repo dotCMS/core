@@ -103,9 +103,7 @@ public class TimedCacheProvider extends CacheProvider {
 
 	@Override
 	public void remove(String group, String key) {
-		Logger.info(this.getClass(), "===== Calling remove for [" + getName()
-				+ "] - " + cacheKey(group, key));
-		// Get the cache for the given group
+
 		Cache<String, Object> cache = getCache(group);
 		// Invalidates from Cache a key from a given group
 		cache.invalidate(key);
