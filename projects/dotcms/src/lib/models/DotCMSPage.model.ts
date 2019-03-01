@@ -1,5 +1,10 @@
 import { DotCMSSite } from './DotCMSSite.model';
 
+export interface DotCMSPageParams {
+    url: string;
+    language?: string;
+}
+
 export interface DotCMSPageAsset {
     canCreateTemplate: boolean;
     containers: DotCMSPageAssetContainer;

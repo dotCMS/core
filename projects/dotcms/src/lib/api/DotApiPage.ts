@@ -1,7 +1,14 @@
+import { DotCMSPageParams } from './../models/DotCMSPage.model';
 import { DotCMSHttpClient } from '../utils/DotCMSHttpClient';
-import { DotCMSConfigurationParams, DotCMSPageAsset, DotAppHttpRequestParams, DotCMSError } from '../models';
+import { DotCMSConfigurationParams, DotCMSPageAsset, DotCMSError } from '../models';
 import { DotApiLanguage } from './DotApiLanguage';
 
+/**
+ * Allow easy interaction with {@link https://dotcms.com/docs/latest/page-rest-api-layout-as-a-service-laas | DotCMS Page Api
+ *
+ * @export
+ * @class DotApiPage
+ */
 export class DotApiPage {
     private dotAppLanguage: DotApiLanguage;
     private dotCMSHttpClient: DotCMSHttpClient;
@@ -12,10 +19,10 @@ export class DotApiPage {
     }
 
     /**
-     * Return a {@link DotCMSPageAsset} from the {@link https://dotcms.com/docs/latest/page-rest-api-layout-as-a-service-laas | DotCMS Page Api}
+     * Given the page url and the language return a {@link DotCMSPageAsset}
      *
      */
-    async get(params: DotAppHttpRequestParams): Promise<DotCMSPageAsset> {
+    async get(params: DotCMSPageParams): Promise<DotCMSPageAsset> {
         if (params.language) {
             params = {
                 ...params,
