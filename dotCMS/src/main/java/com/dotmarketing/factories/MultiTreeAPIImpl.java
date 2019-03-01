@@ -612,8 +612,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
                 if (!pageContents.contains(container.getIdentifier(), containerUUID.getUUID())) {
                     final boolean isLegacyValue = ContainerUUID.UUID_LEGACY_VALUE.equals(containerUUID.getUUID());
 
-                    if (!isLegacyValue && !pageContents.contains(container.getIdentifier(), ContainerUUID.UUID_START_VALUE)
-                            && !pageContents.contains(container.getIdentifier(), ContainerUUID.UUID_DEFAULT_VALUE)) { // todo: double check this
+                    if (!isLegacyValue || !pageContents.contains(containerUUID.getIdentifier(), ContainerUUID.UUID_START_VALUE)) {
 
                         pageContents.put(container.getIdentifier(), containerUUID.getUUID(), new LinkedHashSet<>());
                     }
