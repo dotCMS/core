@@ -310,7 +310,7 @@
                         <div id="apiKeysDiv"></div>
                     
                         <div class="buttonRow">
-                            <button dojoType="dijit.form.Button" class="dijitButtonFlat" onclick="dijit.byId('tokenFormDialog').show()" type="button" iconClass="saveIcon"><%= LanguageUtil.get(pageContext, "Request New Token") %></button>
+                            <button dojoType="dijit.form.Button" onclick="dijit.byId('tokenFormDialog').show()" type="button" iconClass="saveIcon"><%= LanguageUtil.get(pageContext, "Request New Token") %></button>
                         </div>
                     
                     </div>
