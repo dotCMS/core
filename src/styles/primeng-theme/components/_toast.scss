@@ -9,6 +9,11 @@
 
     .ui-toast-message-content {
         padding: $toast-padding ($icon-button-size + $basic-padding) $toast-padding $toast-padding;
+
+        span{
+            word-break: break-word;
+        }
+
     }
 
     .ui-toast-close-icon {
