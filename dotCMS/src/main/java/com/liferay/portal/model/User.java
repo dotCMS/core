@@ -22,23 +22,21 @@
 
 package com.liferay.portal.model;
 
-import com.dotmarketing.util.Logger;
+import java.lang.reflect.InvocationTargetException;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
+import java.util.TimeZone;
+
 import com.dotmarketing.util.UtilMethods;
-import com.liferay.portal.PortalException;
-import com.liferay.portal.SystemException;
-import com.liferay.portal.ejb.AddressManagerUtil;
-import com.liferay.portal.ejb.CompanyManagerUtil;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.liferay.portal.util.PropsUtil;
 import com.liferay.portal.util.Recipient;
-import com.liferay.portlet.admin.ejb.AdminConfigManagerUtil;
-import com.liferay.portlet.admin.model.UserConfig;
 import com.liferay.util.LocaleUtil;
 import com.liferay.util.StringPool;
 import com.liferay.util.StringUtil;
 import com.liferay.util.Validator;
-
-import java.lang.reflect.InvocationTargetException;
-import java.util.*;
 
 /**
  * <a href="User.java.html"><b><i>View Source</i></b></a>
@@ -137,46 +135,7 @@ public class User extends UserModel implements Recipient {
 		}
 	}
 
-	public String getCompanyMx() {
-		String companyMx = null;
 
-		try {
-			companyMx =
-				CompanyManagerUtil.getCompany(getCompanyId()).getMx();
-		}
-		catch (Exception e) {
-			Logger.error(this,e.getMessage(),e);
-		}
-
-		return companyMx;
-	}
-
-	public boolean hasCompanyMx() {
-		return hasCompanyMx(getEmailAddress());
-	}
-
-	public boolean hasCompanyMx(String emailAddress) {
-		String mx = emailAddress.substring(
-			emailAddress.indexOf('@') + 1, emailAddress.length());
-
-		if (mx.equals(getCompanyMx())) {
-			return true;
-		}
-
-		try {
-			UserConfig userConfig =
-				AdminConfigManagerUtil.getUserConfig(getCompanyId());
-
-			if (userConfig.hasMailHostName(mx)) {
-				return true;
-			}
-		}
-		catch (Exception e) {
-			Logger.error(this,e.getMessage(),e);
-		}
-
-		return false;
-	}
 
 	public boolean isPasswordExpired() {
 		if (getPasswordExpirationDate() != null &&
@@ -248,7 +207,7 @@ public class User extends UserModel implements Recipient {
 			return false;
 		}
 	}
-
+	@JsonIgnore
 	public void setResolution(String resolution) {
 		if (Validator.isNull(resolution)) {
 			resolution = PropsUtil.get(
@@ -257,7 +216,7 @@ public class User extends UserModel implements Recipient {
 
 		super.setResolution(resolution);
 	}
-
+	@JsonIgnore
 	public void setRefreshRate(String refreshRate) {
 		if (Validator.isNull(refreshRate)) {
 			refreshRate = PropsUtil.get(
@@ -267,16 +226,6 @@ public class User extends UserModel implements Recipient {
 		super.setRefreshRate(refreshRate);
 	}
 
-
-	public Address getPrimaryAddress() throws PortalException, SystemException {
-		return AddressManagerUtil.getPrimaryAddress(
-			User.class.getName(), getUserId());
-	}
-
-	public List getAddresses() throws PortalException, SystemException {
-		return AddressManagerUtil.getAddresses(
-			User.class.getName(), getUserId());
-	}
 
 	public BaseModel getProtected() {
 		if (_user == null) {

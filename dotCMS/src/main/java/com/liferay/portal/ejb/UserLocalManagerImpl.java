@@ -460,26 +460,6 @@ public class UserLocalManagerImpl implements UserLocalManager {
 
 		if (!emailAddress.equals(user.getEmailAddress())) {
 
-			// test@test.com -> test@liferay.com
-
-			if (!user.hasCompanyMx() && user.hasCompanyMx(emailAddress)) {
-				MailManagerUtil.addUser(
-					userId, password, firstName, middleName, lastName,
-					emailAddress);
-			}
-
-			// test@liferay.com -> bob@liferay.com
-
-			else if (user.hasCompanyMx() && user.hasCompanyMx(emailAddress)) {
-				MailManagerUtil.updateEmailAddress(userId, emailAddress);
-			}
-
-			// test@liferay.com -> test@test.com
-
-			else if (user.hasCompanyMx() && !user.hasCompanyMx(emailAddress)) {
-				MailManagerUtil.deleteEmailAddress(userId);
-			}
-
 			user.setEmailAddress(emailAddress);
 		}
 
