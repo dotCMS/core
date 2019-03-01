@@ -36,7 +36,7 @@ public class FileFieldDataFetcher implements DataFetcher<Contentlet> {
 
             if(fileAsContentOptional.isPresent()) {
                 final Contentlet fileAsContent =
-                    new ContentletToMapTransformer(Collections.singletonList(fileAsContentOptional.get()), user).hydrate().get(0);
+                    new ContentletToMapTransformer(Collections.singletonList(fileAsContentOptional.get())).hydrate().get(0);
                 fileAsset = APILocator.getFileAssetAPI().fromContentlet(fileAsContent);
             }
 

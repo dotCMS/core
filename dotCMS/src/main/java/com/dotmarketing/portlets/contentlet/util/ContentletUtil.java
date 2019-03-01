@@ -122,7 +122,7 @@ public class ContentletUtil {
 		Map<String, Object> m = new HashMap<>();
 
 		contentlet.setTags();
-		contentlet = ContentHelper.getInstance().hydrateContentlet(contentlet, user);
+		contentlet = ContentHelper.getInstance().hydrateContentlet(contentlet);
 		m.putAll(contentlet.getMap());
 
 

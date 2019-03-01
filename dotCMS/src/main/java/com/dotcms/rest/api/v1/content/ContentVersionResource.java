@@ -117,11 +117,11 @@ public class ContentVersionResource {
 
                if(groupByLang){
                    final Map<String, List<Map<String, Object>>> versionsByLang = mapVersionsByLang(contentletAPI
-                           .findAllVersions(identifierObj, user, respectFrontendRoles), showing, user);
+                           .findAllVersions(identifierObj, user, respectFrontendRoles), showing);
                    responseEntityView = new ResponseEntityView(ImmutableMap.of(VERSIONS, versionsByLang));
                } else {
                    final List<Map<String, Object>> versions = mapVersions(contentletAPI
-                            .findAllVersions(identifierObj, user, respectFrontendRoles), showing, user);
+                            .findAllVersions(identifierObj, user, respectFrontendRoles), showing);
 
                    responseEntityView = new ResponseEntityView(ImmutableMap.of(VERSIONS, versions));
                }
@@ -136,12 +136,10 @@ public class ContentVersionResource {
                            ()->"Getting versions for inodes: " + StringUtils.join(inodesSet, ',') + " grouping by language: '" + BooleanUtils.toStringYesNo(groupByLang)+ "' and limit: "+limit);
 
                    if(groupByLang){
-                       final Map<String, List<Map<String, Object>>> versionsByLang =
-                           mapVersionsByLang(findByInodes(user, inodesSet, respectFrontendRoles), showing, user);
+                       final Map<String, List<Map<String, Object>>> versionsByLang = mapVersionsByLang(findByInodes(user, inodesSet, respectFrontendRoles), showing);
                        responseEntityView = new ResponseEntityView(ImmutableMap.of(VERSIONS, versionsByLang));
                    } else {
-                       final Map<String,Map<String,Object>> versions =
-                           mapVersionsByInode(findByInodes(user, inodesSet, respectFrontendRoles), showing, user);
+                       final Map<String,Map<String,Object>> versions = mapVersionsByInode(findByInodes(user, inodesSet, respectFrontendRoles), showing);
                        responseEntityView = new ResponseEntityView(ImmutableMap.of(VERSIONS, versions));
                    }
 
@@ -226,9 +224,8 @@ public class ContentVersionResource {
      * @param limit cuts the number of items to be processed
      * @return a List of Maps
      */
-    private List<Map<String, Object>> mapVersions(final List<Contentlet> input, final int limit, final User user){
-        return input.stream().limit(limit).map((contentlet)->contentletToMap(contentlet, user))
-            .collect(Collectors.toList());
+    private List<Map<String, Object>> mapVersions(final List<Contentlet> input, final int limit){
+        return input.stream().limit(limit).map(this::contentletToMap).collect(Collectors.toList());
     }
 
     /**
@@ -237,10 +234,8 @@ public class ContentVersionResource {
      * @param limit cuts the number of items to be processed
      * @return a Map of Maps (Organized by inode)
      */
-    private Map<String,Map<String,Object>> mapVersionsByInode(final List<Contentlet> input, final int limit,
-                                                              final User user){
-        return input.stream().limit(limit).collect(Collectors.toMap(Contentlet::getInode,
-            (contentlet)->contentletToMap(contentlet, user)));
+    private Map<String,Map<String,Object>> mapVersionsByInode(final List<Contentlet> input, final int limit){
+        return input.stream().limit(limit).collect(Collectors.toMap(Contentlet::getInode,this::contentletToMap));
     }
 
     /**
@@ -249,14 +244,13 @@ public class ContentVersionResource {
      * @param limit cuts the number of items to be processed
      * @return A Map o lists, on which each entry (Mapped by language) is a list of contents.
      */
-    private Map<String, List<Map<String, Object>>> mapVersionsByLang(final List<Contentlet> input, final int limit,
-                                                                     final User user){
+    private Map<String, List<Map<String, Object>>> mapVersionsByLang(final List<Contentlet> input, final int limit){
         final Map<String, List<Map<String, Object>>> versionsByLang = new HashMap<>();
         final Map<Long, List<Contentlet>> contentByLangMap = input.stream().limit(limit).collect(Collectors.groupingBy(Contentlet::getLanguageId));
         contentByLangMap.forEach((langId, contentlets) -> {
             final Language lang = languageAPI.getLanguage(langId);
             final List<Map<String, Object>> asMaps = contentlets.stream()
-                    .map((contentlet)->contentletToMap(contentlet, user)).collect(Collectors.toList());
+                    .map(this::contentletToMap).collect(Collectors.toList());
             versionsByLang.put(lang.toString(), asMaps);
         });
         return versionsByLang;
@@ -301,7 +295,7 @@ public class ContentVersionResource {
                                 inode));
             }
             final Response.ResponseBuilder responseBuilder = Response.ok(
-                    new ResponseEntityView(contentletToMap(contentlet, user))
+                    new ResponseEntityView(contentletToMap(contentlet))
             );
             return responseBuilder.build();
         } catch (Exception ex) {
@@ -318,7 +312,7 @@ public class ContentVersionResource {
      * @param con A Contentlet
      * @return Transformed Map
      */
-    private Map<String, Object> contentletToMap(final Contentlet con, final User user) {
-        return new ContentletToMapTransformer(user, con).toMaps().get(0);
+    private Map<String, Object> contentletToMap( final Contentlet con) {
+        return new ContentletToMapTransformer(con).toMaps().get(0);
     }
 }

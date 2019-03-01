@@ -10,8 +10,6 @@ import com.dotmarketing.portlets.contentlet.struts.ContentletForm;
 import com.dotmarketing.portlets.contentlet.transform.ContentletToMapTransformer;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.liferay.portal.model.User;
-
 import java.util.Map;
 
 /**
@@ -61,8 +59,8 @@ public class ContentHelper {
      * @param contentlet {@link Contentlet} original contentlet to hydrate, won't be modified.
      * @return Contentlet returns a contentlet, if there is something to add will create a new instance based on the current one in the parameter and the new attributes, otherwise will the same instance
      */
-    public Contentlet hydrateContentlet(final Contentlet contentlet, final User user) {
-       return new ContentletToMapTransformer(user, contentlet).hydrate().get(0);
+    public Contentlet hydrateContentlet(final Contentlet contentlet) {
+       return new ContentletToMapTransformer(contentlet).hydrate().get(0);
     } // hydrateContentlet.
 
     /**

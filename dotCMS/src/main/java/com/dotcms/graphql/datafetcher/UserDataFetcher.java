@@ -1,5 +1,8 @@
 package com.dotcms.graphql.datafetcher;
 
+import com.dotcms.graphql.DotGraphQLContext;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
@@ -14,15 +17,14 @@ import graphql.schema.DataFetchingEnvironment;
 public class UserDataFetcher implements DataFetcher<Map<String, String>> {
     @Override
     public Map<String, String> get(final DataFetchingEnvironment environment) throws Exception {
+        String var = null;
         try {
+            final User apiUser = ((DotGraphQLContext) environment.getContext()).getUser();
             final Contentlet contentlet = environment.getSource();
-            final String var = environment.getField().getName();
+            var = environment.getField().getName();
 
-            final User user = (User) (var.equals("owner") ? contentlet.get(var+"User") : contentlet.get(var));
-
-            if(user==null) {
-                return Collections.emptyMap();
-            }
+            final String userId = contentlet.getStringProperty(var);
+            final User user = APILocator.getUserAPI().loadUserById(userId, apiUser, true);
 
             final Map<String, String> userMap = new HashMap<>();
             userMap.put("userId", user.getUserId());
@@ -31,6 +33,9 @@ public class UserDataFetcher implements DataFetcher<Map<String, String>> {
             userMap.put("email", user.getEmailAddress());
 
             return userMap;
+        } catch(DotSecurityException e) {
+            Logger.warn(this, "No permissions to get value for field: '" + var + "'. " + e.getMessage());
+            return Collections.emptyMap();
         } catch (Exception e) {
             Logger.error(this, e.getMessage(), e);
             throw e;
