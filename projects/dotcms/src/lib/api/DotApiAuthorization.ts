@@ -1,5 +1,15 @@
 import fetch from 'node-fetch';
-import { DotCMSAuthorizationLoginParams } from '../models';
+import { DotCMSAuthorizationLoginParams, DotCMSError } from '../models';
+
+function getErrorMessage(data: {[key: string]: any}) {
+    if (data.errors) {
+        return data.errors[0].message;
+    }
+
+    if (data.error) {
+        return data.error;
+    }
+}
 
 export class DotApiAuthorization {
     isLogin(): boolean {
@@ -14,7 +24,9 @@ export class DotApiAuthorization {
             .then((data: { [key: string]: any }) => data.entity);
     }
 
-    getToken({ user, password, expirationDays, host }: DotCMSAuthorizationLoginParams): Promise<string> {
+    getToken(params: DotCMSAuthorizationLoginParams): Promise<Response> {
+        const { user, password, expirationDays, host } = params;
+
         return fetch(`${host || ''}/api/v1/authentication/api-token`, {
             method: 'POST',
             headers: {
@@ -25,8 +37,17 @@ export class DotApiAuthorization {
                 password: password,
                 expirationDays: expirationDays || 10
             })
-        })
-            .then((data: Response) => data.json())
-            .then((data: { [key: string]: any }) => <string>data.entity.token);
+        }).then(async (res: Response) => {
+            const data = await res.json();
+
+            if (res.status === 200) {
+                return data.entity.token;
+            }
+
+            throw <DotCMSError>{
+                message: getErrorMessage(data),
+                status: res.status
+            };
+        });
     }
 }

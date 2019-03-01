@@ -1,5 +1,5 @@
-import { request, DotAppHttpRequestParams } from '.';
-import { DotCMSConfigurationParams } from '../models';
+import { request } from './request';
+import { DotCMSConfigurationParams, DotAppHttpRequestParams } from '../models';
 
 export class DotCMSHttpClient {
     private _config: DotCMSConfigurationParams;

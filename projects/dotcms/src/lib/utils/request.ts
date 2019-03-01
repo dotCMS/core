@@ -1,12 +1,5 @@
 import fetch from 'node-fetch';
-import { DotCMSConfigurationParams } from '../models';
-
-export interface DotAppHttpRequestParams {
-    url: string;
-    method?: string;
-    body?: { [key: string]: any } | string;
-    language?: string;
-}
+import { DotCMSConfigurationParams, DotAppHttpRequestParams } from '../models';
 
 async function getLangQueryParam(language: string): Promise<string> {
     return language ? `?language_id=${language}` : '';

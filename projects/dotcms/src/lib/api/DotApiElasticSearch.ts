@@ -1,5 +1,5 @@
 import { DotCMSHttpClient } from '../utils/DotCMSHttpClient';
-import { getEsQuery } from '../utils';
+import { getEsQuery } from '../utils/getEsQuery';
 import { DotCMSElasticSearchResult, DotCMSConfigurationParams, DotCMSElasticSearchParams } from '../models';
 
 export class DotApiElasticSearch {

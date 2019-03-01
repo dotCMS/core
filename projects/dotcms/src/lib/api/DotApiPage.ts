@@ -1,6 +1,5 @@
 import { DotCMSHttpClient } from '../utils/DotCMSHttpClient';
-import { DotAppHttpRequestParams } from '../utils';
-import { DotCMSConfigurationParams, DotCMSPageAsset } from '../models';
+import { DotCMSConfigurationParams, DotCMSPageAsset, DotAppHttpRequestParams } from '../models';
 import { DotApiLanguage } from './DotApiLanguage';
 
 export class DotApiPage {
@@ -12,6 +11,10 @@ export class DotApiPage {
         this.dotAppLanguage = new DotApiLanguage(config);
     }
 
+    /**
+     * Return a {@link DotCMSPageAsset} from the {@link https://dotcms.com/docs/latest/page-rest-api-layout-as-a-service-laas | DotCMS Page Api}
+     *
+     */
     async get(params: DotAppHttpRequestParams): Promise<DotCMSPageAsset> {
         if (params.language) {
             params = {
