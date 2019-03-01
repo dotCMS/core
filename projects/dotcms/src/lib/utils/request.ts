@@ -9,7 +9,7 @@ async function getUrl(
     params: DotAppHttpRequestParams,
     config: DotCMSConfigurationParams
 ): Promise<string> {
-    const host = config.environment !== 'development' ? config.host : '';
+    const host = config.host || '';
     return `${host}${params.url}${await getLangQueryParam(params.language)}`;
 }
 
