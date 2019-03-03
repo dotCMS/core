@@ -27,9 +27,9 @@ public class ApiTokenSQL {
     }
 
 
-    protected final String SELECT_BY_TOKEN_USER_ID_SQL_ALL = "select * from api_token_issued where token_userid=? order by issue_date desc";
+    protected final String SELECT_BY_TOKEN_USER_ID_SQL_INACTIVE = "select * from api_token_issued where token_userid=? and (expire_date < ? or revoke_date is  not null ) order by issue_date desc";
     protected final String SELECT_BY_TOKEN_USER_ID_SQL_ACTIVE =
-            "select * from api_token_issued where token_userid=? and expire_date> ? and revoke_date is null order by issue_date desc";
+            "select * from api_token_issued where token_userid=? and expire_date > ? and revoke_date is null order by issue_date desc";
     protected final String SELECT_BY_TOKEN_ID_SQL = "select * from api_token_issued where token_id=?";
     protected final String UPDATE_REVOKE_TOKEN_SQL = "update api_token_issued set revoke_date=?, mod_date=? where token_id=? and revoke_date is null";
     protected final String INSERT_TOKEN_ISSUE_SQL =

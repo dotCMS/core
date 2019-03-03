@@ -8,7 +8,7 @@ import com.dotcms.rest.api.v1.fileasset.FileAssetsResource;
 import com.dotcms.rest.api.v1.authentication.AuthenticationResource;
 import com.dotcms.rest.api.v1.authentication.CreateJsonWebTokenResource;
 import com.dotcms.rest.api.v1.authentication.ForgotPasswordResource;
-import com.dotcms.rest.api.v1.authentication.JsonWebTokenResource;
+import com.dotcms.rest.api.v1.authentication.ApiTokenResource;
 import com.dotcms.rest.api.v1.authentication.LoginFormResource;
 import com.dotcms.rest.api.v1.authentication.LogoutResource;
 import com.dotcms.rest.api.v1.authentication.ResetPasswordResource;
@@ -128,7 +128,7 @@ public class DotRestApplication extends com.dotcms.repackage.javax.ws.rs.core.Ap
 					REST_CLASSES.add(ResetPasswordResource.class);
 					REST_CLASSES.add(RoleResource.class);
 					REST_CLASSES.add(CreateJsonWebTokenResource.class);
-					REST_CLASSES.add(JsonWebTokenResource.class);
+					REST_CLASSES.add(ApiTokenResource.class);
 
 					REST_CLASSES.add(EventsResource.class);
 					REST_CLASSES.add(FolderResource.class);

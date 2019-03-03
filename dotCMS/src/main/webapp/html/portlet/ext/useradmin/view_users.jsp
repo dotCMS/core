@@ -54,13 +54,23 @@
 	.tokenDivClass{
 		background:#eeeeee;
 		margin:auto;
-		max-width:650px;
+		width:100%;
+		height:190px;
 		white-space:normal;
 		padding:10px 20px;
 		font-family:monospace; 
+		font-size:13px;
 		word-break: break-word;
 	}
-	
+	#tokenFormDialog{
+	   width:500px;
+
+	}
+	#revealJwtDialog{
+	   width:400px;
+	   height:320px;
+	}
+
 </style>
 
 <script language="Javascript">
@@ -289,7 +299,7 @@
                         <div id="apiKeysDiv"></div>
                     
                         <div class="buttonRow">
-                            <button dojoType="dijit.form.Button" onclick="dijit.byId('tokenFormDialog').show()" type="button" iconClass="saveIcon"><%= LanguageUtil.get(pageContext, "Request New Token") %></button>
+                            <button dojoType="dijit.form.Button" onclick="showRequestTokenDialog()" type="button" iconClass="saveIcon"><%= LanguageUtil.get(pageContext, "Request New Token") %></button>
                         </div>
                     
                     </div>
@@ -309,33 +319,38 @@
 </div>
 <!-- End Portlet -->
 
-<div dojoType="dijit.Dialog" id="tokenFormDialog" title="Request new API Token" execute="requestNewAPIToken(arguments[0]);">
-	<h3>Request New Token</h3>
-	<table class="listingTable">
-	        <tr>
-	        
-	            <td><label for="expiresDate">Expires Date: </label></td>
-	            <td><input dojoType="dijit.form.DateTextBox" type="text" name="expiresDate" id="expiresDate" value="<%=DateTimeFormatter.ofPattern("uuuu-MM-dd").format(LocalDate.now().plus(3, ChronoUnit.YEARS)) %>"></td>
-	        </tr>
+<div dojoType="dijit.Dialog" id="tokenFormDialog" title="API Token" execute="requestNewAPIToken(arguments[0]);">
+		<h3>Request New Token</h3>
+		<table class="listingTable">
+	       <tr>
+	       
+	           <td><label for="expiresDate">Expires Date: </label></td>
+	           <td><input dojoType="dijit.form.DateTextBox" type="text" name="expiresDate" id="expiresDate" value="<%=DateTimeFormatter.ofPattern("uuuu-MM-dd").format(LocalDate.now().plus(3, ChronoUnit.YEARS)) %>"></td>
+	       </tr>
 	
-	        <tr>
-	            <td><label for="netmask">CIDR Netmask: </label></td>
-	            
-	            <td><input dojoType="dijit.form.TextBox" type="text" name="netmask" id="netmask" value="0.0.0.0/0"></td>
-	        </tr>
-	            <td align="center" colspan="2">
-	                 <button dojoType="dijit.form.Button" type="button" class="dijitButtonFlat"
-	                    onClick="dijit.byId('tokenFormDialog').hide();">Cancel</button>
-	                    &nbsp;
-	                <button dojoType="dijit.form.Button" type="submit"
-	                    onClick="return dijit.byId('tokenFormDialog').isValid();">OK</button>
-	            </td>
-	</table>
-
-
+	       <tr>
+	           <td><label for="netmask">Allow Network (CIDR): </label></td>
+	           
+	           <td><input dojoType="dijit.form.TextBox" type="text" name="network" id="network" value="0.0.0.0/0"></td>
+	       </tr>
+       </table>
+       
+      <div class="buttonRow">
+                <button dojoType="dijit.form.Button" type="button" class="dijitButtonFlat"
+                   onClick="dijit.byId('tokenFormDialog').hide();">Cancel</button>
+                   &nbsp;
+               <button dojoType="dijit.form.Button" type="submit"
+                   onClick="return dijit.byId('tokenFormDialog').isValid();">OK</button>
+      </div>
 </div>
 
+<div dojoType="dijit.Dialog" id="revealJwtDialog" title="API Token">
+	   <textarea class="tokenDivClass" id="revealTokenDiv"></textarea>
+      <div class="buttonRow">
+         <button dojoType="dijit.form.Button" type="button" class=""  onClick="dijit.byId('revealJwtDialog').hide();">Close</button>
+      </div>
 
+</div>
 
 
 

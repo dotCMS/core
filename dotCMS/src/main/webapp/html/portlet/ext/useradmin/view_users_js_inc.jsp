@@ -304,7 +304,7 @@
 				loadMarketingInfo(userId);
 				break;
             case 'apiKeysTab':
-                loadApiKeys(userId);
+                loadApiKeys();
                 break;
 		}
 	}
@@ -1314,7 +1314,7 @@
 	function revokeKey(keyId){
 
 		    var xhrArgs = {
-		        url : "/api/v1/authentication/api-token/" + keyId+ "/revoke",
+		        url : "/api/v1/apitoken/" + keyId + "/revoke" ,
 		        handleAs : "json",
 		        load : function(data){
 		        	loadApiKeys()
@@ -1344,7 +1344,7 @@
           
           
           var xhrArgs = {
-                  url : "/api/v1/authentication/api-token/",
+                  url : "/api/v1/apitoken",
                   handleAs : "json",
                   load : function(data){
                       confirm( data.entity.jwt);
@@ -1362,39 +1362,50 @@
 	
 	
 	
+	function revealJWT(jwt){
+
+        
+        dijit.byId('tokenFormDialog').hide();
+        dijit.byId('revealJwtDialog').show();
+        
+        var myDiv = dojo.byId("revealTokenDiv");
+
+        myDiv.value =  jwt;
+
+		
+	}
+	
+	
+	
+	
+	
+	
+	
     function getJwt(keyId){
-    	
-    	var x = document.querySelectorAll(".tokenHolderTr");
-    	for (var i = 0; i < x.length; i++) {
-    	  x[i].style.display = "none";
-    	}
+
     	
         var xhrArgs = {
-            url : "/api/v1/authentication/api-token/" + keyId + "/jwt",
+            url : "/api/v1/apitoken/" + keyId +"/jwt",
             handleAs : "json",
             load : function(data){
-            	document.getElementById("tokenTr" + keyId).style.display="";
-            	
-            	var myDiv = document.getElementById("tokenDiv" + keyId);
-            	myDiv.innerHTML =  data.entity.jwt;
+    
+            	revealJWT(data.entity.jwt);
             	
             },
             error : function(error) {
-                console.error("Error deleting APIKey data for keyId [" + keyId + "]", error);
+                console.error("Error getting JWT data for keyId [" + keyId + "]", error);
 
             }
         };
     
         dojo.xhrGet(xhrArgs);
-
-}
-	
+    }
 	
 	
 	   function deleteKey(keyId){
 
            var xhrArgs = {
-               url : "/api/v1/authentication/api-token/" + keyId + "/delete",
+               url : "/api/v1/apitoken/" + keyId ,
                handleAs : "json",
                load : function(data){
                    loadApiKeys()
@@ -1410,10 +1421,10 @@
 	
 	
   function loadApiKeys() {
-	    var showRevokedApiTokens = document.getElementById("showRevokedApiTokens").checked;
+	  var showRevokedApiTokens = document.getElementById("showRevokedApiTokens").checked;
 	  var parent=document.getElementById("apiKeysDiv")
         var xhrArgs = {
-            url : "/api/v1/authentication/api-tokens/" + currentUser.id + "?showRevoked=" + showRevokedApiTokens,
+            url : "/api/v1/apitoken/" + currentUser.id + "/tokens?showRevoked=" + showRevokedApiTokens,
             handleAs : "json",
             load : function(data){
             	writeApiKeys(data);
@@ -1436,6 +1447,13 @@
      return new Date(millis).toLocaleString();
   }
   
+  function showRequestTokenDialog() {
+
+
+	  dijit.byId('tokenFormDialog').show();
+
+  }
+  
   function requestNewAPIToken(formData) {
       var nowsers = new Date();
       var expires = formData.expiresDate;
@@ -1446,19 +1464,21 @@
     	  alert("you cannot request a key in the past");
     	  return;
       }
-      
-      formData.expirationSeconds = Math.ceil(timeDiff / 1000 ); 
-	  formData.userId = currentUser.id;
-
+      var data={};
+      data.expirationSeconds = Math.ceil(timeDiff / 1000 ); 
+      data.userId = currentUser.id;
+      data.network=formData.network;
         var xhrArgs = {
-            url : "/api/v1/authentication/api-token/issue",
-            handleAs: "text",
-            postData : dojo.toJson(formData),
+            url : "/api/v1/apitoken",
+            handleAs: "json",
+            postData : dojo.toJson(data),
             headers: {
             	"Content-Type": "application/json"
             	},
             load : function(data){
+            	console.log("jwt", data);
             	loadApiKeys() ;
+                revealJWT(data.entity.jwt);
             },
             error : function(error) {
                 console.error("Error requesting a new APIKey", error);
@@ -1516,7 +1536,7 @@
           .replace(new RegExp("{validClass}", 'g'), (!token.valid) ? "text-decoration:line-through;" : "")
     	   myTable+=   myRow; 
 
-    	   myTable+="<tr class='tokenHolderTr' style='display:none' id='tokenTr"+token.id+"'><td colspan='6'><div class='tokenDivClass'  id='tokenDiv"+token.id+"'></div></td></tr>";
+
     	  
       }
       myTable+="</table>";

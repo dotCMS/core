@@ -1,5 +1,6 @@
 package com.dotcms.auth.providers.jwt.factories;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -8,7 +9,6 @@ import java.util.stream.Collectors;
 
 import com.dotcms.auth.providers.jwt.beans.ApiToken;
 import com.dotcms.auth.providers.jwt.beans.JWToken;
-import com.dotcms.auth.providers.jwt.beans.TokenType;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotcms.repackage.org.apache.commons.net.util.SubnetUtils;
@@ -18,7 +18,6 @@ import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.json.JSONObject;
@@ -57,7 +56,7 @@ public class ApiTokenAPI {
      */
     @CloseDBIfOpened
     public Optional<ApiToken> findApiToken(final String tokenId) {
-        if(!tokenId.startsWith(TOKEN_PREFIX)) {
+        if(tokenId==null || !tokenId.startsWith(TOKEN_PREFIX)) {
             return Optional.empty();
         }
         final Optional<ApiToken> optToken = cache.getApiToken(tokenId);
@@ -361,21 +360,28 @@ public class ApiTokenAPI {
      */
     @CloseDBIfOpened
     private List<ApiToken> findApiTokensByUserIdDB(final String userId, final boolean showRevokedExpired) {
-
-        final DotConnect db = (showRevokedExpired) 
-                ? new DotConnect().setSQL(sql.SELECT_BY_TOKEN_USER_ID_SQL_ALL).addParam(userId) 
-                : new DotConnect().setSQL(sql.SELECT_BY_TOKEN_USER_ID_SQL_ACTIVE).addParam(userId).addParam(new Date());
-                
-
-
-            try {
-                return new ApiTokenDBTransformer(db.loadObjectResults()).asList();
-            } catch (DotDataException dde) {
-
-                throw new DotStateException(dde);
+        List<ApiToken> tokenList= new ArrayList<>();
+        try {
+            tokenList.addAll(new ApiTokenDBTransformer(new DotConnect()
+                    .setSQL(sql.SELECT_BY_TOKEN_USER_ID_SQL_ACTIVE)
+                    .addParam(userId)
+                    .addParam(new Date())
+                    .loadObjectResults()).asList());
+            if(showRevokedExpired) {
+                tokenList.addAll(new ApiTokenDBTransformer(new DotConnect()
+                        .setSQL(sql.SELECT_BY_TOKEN_USER_ID_SQL_INACTIVE)
+                        .addParam(userId)
+                        .addParam(new Date())
+                        .loadObjectResults()).asList());
             }
+            return tokenList;
+            
+            
+            
+        } catch (DotDataException dde) {
 
-
+            throw new DotStateException(dde);
+        }
 
     }
     /**

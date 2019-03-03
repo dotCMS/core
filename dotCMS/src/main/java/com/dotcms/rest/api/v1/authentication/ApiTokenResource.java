@@ -5,26 +5,19 @@ import static java.util.Collections.EMPTY_MAP;
 
 import java.io.Serializable;
 import java.time.Instant;
-import java.time.LocalDate;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-
-import org.apache.struts.Globals;
 
 import com.dotcms.auth.providers.jwt.beans.ApiToken;
 import com.dotcms.auth.providers.jwt.factories.ApiTokenAPI;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotcms.repackage.javax.ws.rs.Consumes;
 import com.dotcms.repackage.javax.ws.rs.DELETE;
 import com.dotcms.repackage.javax.ws.rs.GET;
 import com.dotcms.repackage.javax.ws.rs.POST;
@@ -38,36 +31,21 @@ import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.apache.commons.net.util.SubnetUtils;
 import com.dotcms.repackage.org.glassfish.jersey.server.JSONP;
-import com.dotcms.rest.ErrorEntity;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
-import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.SecurityLogger;
-import com.dotmarketing.util.json.JSONObject;
-import com.liferay.portal.NoSuchUserException;
-import com.liferay.portal.RequiredLayoutException;
-import com.liferay.portal.UserActiveException;
-import com.liferay.portal.UserEmailAddressException;
-import com.liferay.portal.UserPasswordException;
-import com.liferay.portal.auth.AuthException;
-import com.liferay.portal.language.LanguageException;
-import com.liferay.portal.language.LanguageUtil;
-import com.liferay.portal.language.LanguageWrapper;
 import com.liferay.portal.model.User;
-import com.liferay.portal.util.WebKeys;
-import com.liferay.util.LocaleUtil;
 
 import io.vavr.control.Try;
 
 
-@Path("/v1/authentication")
-public class JsonWebTokenResource implements Serializable {
+@Path("/v1/apitoken")
+public class ApiTokenResource implements Serializable {
 
 
     private final ApiTokenAPI tokenApi;
@@ -76,12 +54,12 @@ public class JsonWebTokenResource implements Serializable {
     /**
      * Default constructor.
      */
-    public JsonWebTokenResource() {
+    public ApiTokenResource() {
         this(APILocator.getApiTokenAPI(), new WebResource());
     }
 
     @VisibleForTesting
-    protected JsonWebTokenResource(final ApiTokenAPI tokenApi, final WebResource webResource) {
+    protected ApiTokenResource(final ApiTokenAPI tokenApi, final WebResource webResource) {
 
         this.tokenApi = tokenApi;
         this.webResource = webResource;
@@ -89,7 +67,7 @@ public class JsonWebTokenResource implements Serializable {
 
 
     @GET
-    @Path("/api-tokens/{userId}")
+    @Path("/{userId}/tokens")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
@@ -111,7 +89,7 @@ public class JsonWebTokenResource implements Serializable {
     }
 
     @PUT
-    @Path("/api-token/{tokenId}/revoke")
+    @Path("/{tokenId}/revoke")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
@@ -126,7 +104,7 @@ public class JsonWebTokenResource implements Serializable {
             ApiToken token = optToken.get();
             
             if(token.isExpired()) {
-                return ExceptionMapperUtil.createResponse(new DotStateException("Token Expired"), Response.Status.NOT_FOUND);
+                return ExceptionMapperUtil.createResponse(new DotStateException("Token Expired"), Response.Status.NOT_ACCEPTABLE);
             }
             
             
@@ -139,7 +117,7 @@ public class JsonWebTokenResource implements Serializable {
     }
 
     @DELETE
-    @Path("/api-token/{tokenId}/delete")
+    @Path("/{tokenId}")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
@@ -175,26 +153,27 @@ public class JsonWebTokenResource implements Serializable {
      * @return
      */
     @POST
-    @Path("/api-token/issue")
+    @Path("/")
     @JSONP
     @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response issueApiToken(@Context final HttpServletRequest request,
                                    @Context final HttpServletResponse response,
-                                   final Map<String,String> formData) {
+                                   final ApiTokenForm formData) {
         
         final InitDataObject initDataObject = this.webResource.init(null, true, request, true, null);
         final User requestingUser = initDataObject.getUser();
-        final User forUser = Try.of(()->APILocator.getUserAPI().loadUserById(formData.get("userId"),requestingUser, false )).getOrNull();
+        final User forUser = Try.of(()->APILocator.getUserAPI().loadUserById(formData.userId,requestingUser, false )).getOrNull();
         
         if(forUser ==null) {
             return ExceptionMapperUtil.createResponse(new DotStateException("No user found"), Response.Status.NOT_FOUND);
         }
 
-        String netmaskStr = (formData.get("netmask")!=null && !"0.0.0.0/0".equals(formData.get("netmask"))) ? formData.get("netmask"):null;
+        String netmaskStr = (formData.network!=null && !"0.0.0.0/0".equals(formData.network)) ? formData.network:null;
         final String netmask = Try.of(()->new SubnetUtils(netmaskStr).getInfo().getCidrSignature()).getOrNull();
         
-        final int expirationSeconds = Try.of(()->Integer.parseInt(formData.get("expirationSeconds"))).getOrElse(-1);
+        final int expirationSeconds = formData.expirationSeconds;
         if(expirationSeconds<0) {
             return ExceptionMapperUtil.createResponse(new DotStateException("invalid expirationDays"), Response.Status.NOT_FOUND);
         }
@@ -222,7 +201,7 @@ public class JsonWebTokenResource implements Serializable {
      * @return
      */
     @GET
-    @Path("/api-token/{tokenId}/jwt")
+    @Path("/{tokenId}/jwt")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
@@ -235,11 +214,11 @@ public class JsonWebTokenResource implements Serializable {
 
         Optional<ApiToken> optToken = tokenApi.findApiToken(tokenId);
         if (!optToken.isPresent()) {
-            return Response.status(404).build();
+            return ExceptionMapperUtil.createResponse(new DotStateException("token id not found"), Response.Status.NOT_FOUND);
         }
         ApiToken token = optToken.get();
         if(!token.isValid()) {
-            return Response.status(500).build(); // 500
+            return ExceptionMapperUtil.createResponse(new DotStateException("token not valid"), Response.Status.BAD_REQUEST);
         }
 
 
