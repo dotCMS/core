@@ -1,6 +1,5 @@
 package com.dotcms.auth.providers.jwt.beans;
 
-import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.HashMap;
@@ -11,9 +10,9 @@ import javax.annotation.Nonnull;
 
 import com.dotcms.auth.providers.jwt.factories.ApiTokenAPI;
 import com.dotcms.repackage.org.apache.commons.net.util.SubnetUtils;
+import com.dotcms.repackage.org.apache.commons.net.util.SubnetUtils.SubnetInfo;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -71,12 +70,22 @@ public class ApiToken implements JWToken {
         return this.issueDate != null && this.issueDate.after(new Date());
     }
 
+    
+    
+    
+    
     public boolean isInIpRange(final String ipAddress) {
-        if (ipAddress==null || this.allowNetwork == null || "0.0.0.0/0".equals(this.allowNetwork)) {
+        if (this.allowNetwork == null || "0.0.0.0/0".equals(this.allowNetwork)) {
             return true;
         }
+        if(ipAddress==null) {
+            return false;
+        }
         try {
-            return new SubnetUtils(this.allowNetwork).getInfo().isInRange(ipAddress);
+            SubnetUtils utils = new SubnetUtils(this.allowNetwork);
+            utils.setInclusiveHostCount(true);
+            return utils.getInfo().isInRange(ipAddress);
+
         } catch (Exception e) {
             Logger.warn(this.getClass(), "unable to validate ip address :" + ipAddress + " was part of network " + this.allowNetwork);
             Logger.warn(this.getClass(), e.getMessage());
@@ -207,12 +216,12 @@ public class ApiToken implements JWToken {
     /**
      * Creates a builder to build {@link ApiToken} and initialize it with the given object.
      * 
-     * @param jWTokenIssue to initialize the builder with
+     * @param apiToken to initialize the builder with
      * @return created builder
      */
 
-    public static Builder from(ApiToken jWTokenIssue) {
-        return new Builder(jWTokenIssue);
+    public static Builder from(ApiToken apiToken) {
+        return new Builder(apiToken);
     }
 
 
@@ -235,18 +244,18 @@ public class ApiToken implements JWToken {
 
         private Builder() {}
 
-        private Builder(ApiToken jWTokenIssue) {
-            this.id = jWTokenIssue.id;
-            this.userId = jWTokenIssue.userId;
-            this.requestingUserId = jWTokenIssue.requestingUserId;
-            this.requestFromIp = jWTokenIssue.requestingIp;
-            this.expiresDate = jWTokenIssue.expiresDate;
-            this.revoked = jWTokenIssue.revoked;
-            this.allowNetwork = jWTokenIssue.allowNetwork;
-            this.issueDate = jWTokenIssue.issueDate;
-            this.claims = jWTokenIssue.claims;
-            this.modificationDate = jWTokenIssue.modificationDate;
-            this.issuer = jWTokenIssue.issuer;
+        private Builder(ApiToken apiToken) {
+            this.id = apiToken.id;
+            this.userId = apiToken.userId;
+            this.requestingUserId = apiToken.requestingUserId;
+            this.requestFromIp = apiToken.requestingIp;
+            this.expiresDate = apiToken.expiresDate;
+            this.revoked = apiToken.revoked;
+            this.allowNetwork = apiToken.allowNetwork;
+            this.issueDate = apiToken.issueDate;
+            this.claims = apiToken.claims;
+            this.modificationDate = apiToken.modificationDate;
+            this.issuer = apiToken.issuer;
         }
 
         public Builder withId(@Nonnull String id) {
@@ -339,7 +348,7 @@ public class ApiToken implements JWToken {
     @Override
     public String toString() {
 
-        return "{id:" + this.id + ", userId:" + this.userId + ", issueDate:" + this.issueDate + ", expiresDate:" + this.expiresDate + ", revoked:" + this.revoked + ", requestingUserId:" + this.requestingUserId + ", issuer:" + this.issuer +"}";
+        return "{id:" + this.id + ", userId:" + this.userId + ", issueDate:" + this.issueDate + ", expiresDate:" + this.expiresDate + ", revoked:" + this.revoked + ", requestingUserId:" + this.requestingUserId + ", issuer:" + this.issuer + ", allowNetwork:" + this.allowNetwork +"}";
     }
 
 

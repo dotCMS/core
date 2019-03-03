@@ -16,9 +16,9 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.dotcms.auth.providers.jwt.beans.ApiToken;
-import com.dotcms.auth.providers.jwt.beans.JWToken;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.enterprise.cluster.ClusterFactory;
+import com.dotcms.repackage.org.apache.commons.net.util.SubnetUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -38,6 +38,9 @@ public class ApiTokenAPITest {
     static String REQUESTING_USER_ID;
     static final String REQUESTING_IP = "192.156.2.6";
 
+    static final String IP_NETWORK = "192.168.211.0/24";
+    static final String IN_NETWORK = "192.168.211.55";
+    static final String OUT_OF_NETWORK = "10.0.0.4";
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -95,8 +98,9 @@ public class ApiTokenAPITest {
 
         User user = new UserDataGen().nextPersisted();
 
-        return ApiToken.builder().withIssuer(ClusterFactory.getClusterId()).withExpires(futureDate(Duration.ofDays(10))).withUserId(user.getUserId())
-                .withRequestingUserId(APILocator.systemUser().getUserId()).withRequestingIp("127.0.0.1").build();
+        return ApiToken.builder().withIssuer(ClusterFactory.getClusterId()).withExpires(futureDate(Duration.ofDays(10)))
+                .withUserId(user.getUserId()).withRequestingUserId(APILocator.systemUser().getUserId()).withRequestingIp("127.0.0.1")
+                .build();
     }
 
 
@@ -109,18 +113,18 @@ public class ApiTokenAPITest {
         ApiToken issued = apiTokenAPI.persistApiToken(testToken, APILocator.systemUser());
 
         // not in cache
-        assert (!cache.getApiToken(issued.id).isPresent());
+        assertFalse(cache.getApiToken(issued.id).isPresent());
 
         // loads cache, returns from db
         ApiToken issuedFromDb = apiTokenAPI.findApiToken(issued.id).get();
 
         // in cache
-        assert (cache.getApiToken(issued.id).isPresent());
+        assertTrue(cache.getApiToken(issued.id).isPresent());
 
         ApiToken issuedFromCache = cache.getApiToken(issued.id).get();
 
         // this is the same in memory object as was returned from db
-        assert (issuedFromCache == issuedFromDb);
+        assertTrue(issuedFromCache == issuedFromDb);
 
         // testing equals method
         assertEquals(issued, issuedFromDb);
@@ -128,7 +132,7 @@ public class ApiTokenAPITest {
         // test remove
         cache.removeApiToken(issued.id);
 
-        assert (!cache.getApiToken(issued.id).isPresent());
+        assertFalse(cache.getApiToken(issued.id).isPresent());
 
     }
 
@@ -176,9 +180,9 @@ public class ApiTokenAPITest {
     @Test(expected = DotStateException.class)
     public void test_JWT_subnets() {
         ApiToken fatToken = ApiToken.from(getLoadedToken()).withAllowNetwork("123").build();
-        assert (!fatToken.isValid());
+        assertFalse(fatToken.isValid());
         ApiToken issued = apiTokenAPI.persistApiToken(fatToken, APILocator.systemUser());
-
+        assertFalse(issued.isValid());
 
     }
 
@@ -190,9 +194,10 @@ public class ApiTokenAPITest {
         ApiToken issued = apiTokenAPI.persistApiToken(fatToken, APILocator.systemUser());
     }
 
+    @Test
     public void test_JWT_allow_all_networks() {
         ApiToken fatToken = ApiToken.from(getLoadedToken()).withAllowNetwork("0.0.0.0/0").build();
-        assert (!fatToken.isValid());
+        assertFalse(fatToken.isValid());
         ApiToken issued = apiTokenAPI.persistApiToken(fatToken, APILocator.systemUser());
         assert (issued.isValid("192.112.123.123"));
     }
@@ -231,7 +236,7 @@ public class ApiTokenAPITest {
 
     }
 
-
+    @Test
     public void test_ApiToken_isValid_from_ip() {
 
 
@@ -244,6 +249,30 @@ public class ApiTokenAPITest {
 
 
         assert (skinnyToken.isValid("192.168.211.54"));
+
+        assertFalse(skinnyToken.isValid("10.10.20.54"));
+    }
+
+    @Test
+    public void test_JWT_isValid_from_ip() {
+
+
+        SubnetUtils utils = new SubnetUtils(IP_NETWORK);
+        utils.setInclusiveHostCount(true);
+        assertTrue(utils.getInfo().isInRange(IN_NETWORK));
+
+
+        ApiToken skinnyToken = ApiToken.from(getSkinnyToken()).withAllowNetwork(IP_NETWORK).build();
+        assertTrue(skinnyToken.isInIpRange(IN_NETWORK));
+
+        skinnyToken = apiTokenAPI.persistApiToken(skinnyToken, APILocator.systemUser());
+
+        String jwt = apiTokenAPI.getJWT(skinnyToken, APILocator.systemUser());
+
+
+        assertFalse(apiTokenAPI.fromJwt(jwt).isPresent());
+        assertTrue(apiTokenAPI.fromJwt(jwt, IN_NETWORK).isPresent());
+        assertFalse(apiTokenAPI.fromJwt(jwt, OUT_OF_NETWORK).isPresent());
 
 
     }
@@ -399,8 +428,8 @@ public class ApiTokenAPITest {
         assertEquals(expireDate, issue.expiresDate);
 
     }
-    
-    
+
+
     @Test(expected = DotStateException.class)
     public void test_revoke_permissions_fail() {
 
@@ -408,35 +437,35 @@ public class ApiTokenAPITest {
         User user2 = new UserDataGen().nextPersisted();
 
         ApiToken issue = null;
-        
-        try{
+
+        try {
             issue = apiTokenAPI.persistApiToken(user1.getUserId(), futureDate(Duration.ofDays(30)), user1.getUserId(), REQUESTING_IP);
-        }catch(Exception e) {
+        } catch (Exception e) {
             assertTrue("should not be here: " + e.getMessage(), false);
         }
-        
+
         // revoke with a user with no perms
         apiTokenAPI.revokeToken(issue, user2);
-        assertTrue("should not be here: " , false);
+        assertTrue("should not be here: ", false);
 
     }
 
-    
+
     @Test
     public void test_revoke_permissions_work() {
 
         User user1 = new UserDataGen().nextPersisted();
 
 
-        ApiToken  issue = apiTokenAPI.persistApiToken(user1.getUserId(), futureDate(Duration.ofDays(30)), user1.getUserId(), REQUESTING_IP);
+        ApiToken issue = apiTokenAPI.persistApiToken(user1.getUserId(), futureDate(Duration.ofDays(30)), user1.getUserId(), REQUESTING_IP);
 
-        
+
         // revoke with a user with no perms
 
-        assertTrue("should be here: " , apiTokenAPI.revokeToken(issue, user1));
+        assertTrue("should be here: ", apiTokenAPI.revokeToken(issue, user1));
 
     }
-    
+
 
     @Test(expected = DotStateException.class)
     public void test_get_JWT_permissions_work() {
@@ -453,14 +482,14 @@ public class ApiTokenAPITest {
         }
 
         String jwt = apiTokenAPI.getJWT(apiToken, user1);
-        assertTrue("jwt should be here: " , jwt!=null);
-        
+        assertTrue("jwt should be here: ", jwt != null);
+
         jwt = apiTokenAPI.getJWT(apiToken, user2);
-        assertTrue("should have errored out alreay: " , false);
+        assertTrue("should have errored out alreay: ", false);
 
     }
 
-    
+
     @Test
     public void test_listing_permissions_work() {
 
@@ -469,22 +498,21 @@ public class ApiTokenAPITest {
 
         apiTokenAPI.persistApiToken(user1.getUserId(), futureDate(Duration.ofDays(30)), user1.getUserId(), REQUESTING_IP);
         apiTokenAPI.persistApiToken(user1.getUserId(), futureDate(Duration.ofDays(30)), REQUESTING_USER_ID, REQUESTING_IP);
-        
+
         // you can see your own tokens
         List<ApiToken> tokens = apiTokenAPI.findApiTokensByUserId(user1.getUserId(), false, user1);
-        assertTrue(tokens.size()==2);
-        
+        assertTrue(tokens.size() == 2);
+
         // others cannot
         tokens = apiTokenAPI.findApiTokensByUserId(user1.getUserId(), false, user2);
         assertTrue(tokens.isEmpty());
-        
+
         // system user can see your tokens
         tokens = apiTokenAPI.findApiTokensByUserId(user1.getUserId(), false, APILocator.systemUser());
-        assertTrue(tokens.size()==2);
-        
-        
+        assertTrue(tokens.size() == 2);
+
 
     }
-    
-    
+
+
 }

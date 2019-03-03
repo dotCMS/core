@@ -3,6 +3,7 @@ package com.dotcms.cms.login;
 import static com.dotmarketing.util.CookieUtil.createJsonWebTokenCookie;
 
 import java.io.Serializable;
+import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -291,21 +292,27 @@ public class LoginServiceAPIFactory implements Serializable {
         }
 
         @WrapInTransaction
-        private void doAuthentication(String userId, boolean rememberMe, HttpServletRequest req, HttpServletResponse res) throws PortalException, SystemException, DotDataException, DotSecurityException {
+        private void doAuthentication(final String userId, final boolean rememberMe, final HttpServletRequest req, final HttpServletResponse res) throws PortalException, SystemException, DotDataException, DotSecurityException {
 
             final HttpSession ses = req.getSession();
             final User user = UserLocalManagerUtil.getUserById(userId);
 
             //DOTCMS-4943
             final UserAPI userAPI = APILocator.getUserAPI();
-            final boolean respectFrontend = WebAPILocator.getUserWebAPI().isLoggedToBackend(req);
+
             final Locale userSelectedLocale = LanguageUtil.getDefaultLocale(req);
             if (null != userSelectedLocale) {
 
                 user.setLanguageId(userSelectedLocale.toString());
             }
 
-            userAPI.save(user, userAPI.getSystemUser(), respectFrontend);
+            user.setLastLoginDate(new Date());
+            user.setFailedLoginAttempts(0);
+            user.setLastLoginIP(req.getRemoteAddr());
+            
+            
+            
+            userAPI.save(user, userAPI.getSystemUser(), true);
 
             ses.setAttribute(WebKeys.USER_ID, userId);
 

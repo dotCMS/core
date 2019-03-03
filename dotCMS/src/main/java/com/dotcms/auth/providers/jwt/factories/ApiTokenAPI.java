@@ -87,8 +87,8 @@ public class ApiTokenAPI {
         if(!checkPerms(apiToken, user)) {
             throw new DotStateException("User :" + user.getUserId() + " does not have permission to token " + apiToken);
         }
-        if(!apiToken.isValid()) {
-            throw new DotStateException("API token is not valid " + apiToken);
+        if(apiToken.isExpired() || apiToken.isRevoked()) {
+            throw new DotStateException("API token is either revoked or expired " + apiToken);
         }
         return JsonWebTokenFactory.getInstance().getJsonWebTokenService().generateApiToken(apiToken);
     }

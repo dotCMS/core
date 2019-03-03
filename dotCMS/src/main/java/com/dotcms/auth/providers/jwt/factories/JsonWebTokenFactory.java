@@ -277,7 +277,7 @@ public class JsonWebTokenFactory implements Serializable {
                 throw claimException;
                 
             }
-            if(requestingIp!=null && !apiToken.isInIpRange(requestingIp)) {
+            if(!apiToken.isInIpRange(requestingIp)) {
                 IncorrectClaimException claimException = new IncorrectClaimException( jws.getHeader(), body, "API Token not allowed for ip:" + requestingIp + ". Accepted range:" + apiToken.allowNetwork);
                 claimException.setClaimName(Claims.AUDIENCE);
                 claimException.setClaimValue(apiToken.allowNetwork);

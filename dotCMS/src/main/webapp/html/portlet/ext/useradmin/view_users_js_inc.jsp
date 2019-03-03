@@ -253,6 +253,13 @@
 		dijit.byId('firstName').attr('value', user.firstName);
 		dijit.byId('lastName').attr('value', user.lastName);
 		dijit.byId('emailAddress').attr('value', user.emailaddress);
+		var lastLoginStr = (user.lastLoginDate==null) ? "" : user.lastLoginDate.toLocaleString();
+		lastLoginStr+= (user.lastLoginIP==null) ? "" : " @ " + user.lastLoginIP;
+		
+		
+		dojo.byId('lastLogin').innerHTML = lastLoginStr;
+		dojo.byId('loginAttempts').innerHTML = (user.failedLoginAttempts==0) ? "n/a" : user.failedLoginAttempts;
+		
 		dijit.byId('password').attr('value', '********');
 		dijit.byId('passwordCheck').attr('value', '********');
 		dojo.query(".fullUserName").forEach(function (elem) { elem.innerHTML = user.name; });
@@ -1499,27 +1506,27 @@
    
       var myTable= `<table class="listingTable">
     	  <tr>
-	    	  <td style='width: 200px;'>Key Id</td>
-	    	  <td style='width: 200px;'>Issued</td>
-	    	  <td style='width: 200px;'>Expires</td>
-	    	  <td style='width: 200px;'>Revoked</td>
-	    	  <td style='width: 150px;'>Requested By</td>
-	    	  <td style='width: 150px;'>Ip Range</td>
-	    	  <td></td>
+	    	  <th style='width: 200px;'>Key Id</th>
+	    	  <th style='width: 200px;'>Issued</th>
+	    	  <th style='width: 200px;'>Expires</th>
+	    	  <th style='width: 200px;'>Revoked</th>
+	    	  <th style='width: 150px;'>Requested By</th>
+	    	  <th style='width: 150px;'>Ip Range</th>
+	    	  <th></th>
     	  </tr>`;
       for (var i=0; i<tokens.length; i++) {
     	  
     	  var token=tokens[i];
-    	  var myRow=(token.valid) ? `<tr style="cursor:pointer">`                          : `<tr style="background: rgb(250,250,250)">`;
-    	  myRow +=(token.valid)   ? `<td onclick='getJwt("{token.id}")'>{token.id}</td>`   : `<td style="text-decoration:line-through;">{token.id}</td>`;
-    	  myRow +=(token.valid)   ? `<td onclick='getJwt("{token.id}")'>{token.issueDate}</td>`:`<td>{token.issueDate}</td>`;
-          myRow +=(!token.expired)? `<td onclick='getJwt("{token.id}")'>{token.expiresDate}</td>` : `<td style="text-decoration:line-through;">{token.expiresDate}</td>` ;
-          myRow +=(!token.revoked)? `<td onclick='getJwt("{token.id}")'>{token.revokedDate}</td>` : `<td style="text-decoration:line-through;">{token.revokedDate}</td>` ;
-          myRow +=(token.valid)   ? `<td onclick='getJwt("{token.id}")'>{token.requestingUserId}</td>`: `<td>{token.requestingUserId}</td>`;
-          myRow +=(token.valid)   ? `<td onclick='getJwt("{token.id}")'>{token.allowNetwork}</td>`:`<td>{token.allowNetwork}</td>`;
+    	  var myRow=(token.valid) ? `<tr >`                          : `<tr style="background: rgb(250,250,250)">`;
+    	  myRow +=(token.valid)   ? `<td >{token.id}</td>`   : `<td style="text-decoration:line-through;">{token.id}</td>`;
+    	  myRow +=(token.valid)   ? `<td >{token.issueDate}</td>`:`<td>{token.issueDate}</td>`;
+          myRow +=(!token.expired)? `<td >{token.expiresDate}</td>` : `<td style="text-decoration:line-through;">{token.expiresDate}</td>` ;
+          myRow +=(!token.revoked)? `<td >{token.revokedDate}</td>` : `<td style="text-decoration:line-through;">{token.revokedDate}</td>` ;
+          myRow +=(token.valid)   ? `<td >{token.requestingUserId}</td>`: `<td>{token.requestingUserId}</td>`;
+          myRow +=(token.valid)   ? `<td >{token.allowNetwork}</td>`:`<td>{token.allowNetwork}</td>`;
           myRow +=(token.valid) 
-                ? `<td style="text-align:right"><a href='javascript:revokeKey(\"{token.id}\")'>revoke</a> | <a href='javascript:getJwt("{token.id}")'>get token</a></td>`
-                : `<td style="text-align:right"><a href='javascript:deleteKey(\"{token.id}\")'>delete</a> </td>` ;
+                ? `<td style="text-align:center"><a style="text-decoration:underline" href='javascript:revokeKey(\"{token.id}\")'>revoke</a> | <a style="text-decoration:underline" href='javascript:getJwt("{token.id}")'>get token</a></td>`
+                : `<td style="text-align:center"><a style="text-decoration:underline" href='javascript:deleteKey(\"{token.id}\")'>delete</a> </td>` ;
 
           myRow+=`</tr>`;
 	    	   
