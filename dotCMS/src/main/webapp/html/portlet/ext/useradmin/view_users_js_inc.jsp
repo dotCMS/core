@@ -1517,17 +1517,16 @@
       for (var i=0; i<tokens.length; i++) {
     	  
     	  var token=tokens[i];
-    	  var myRow=(token.valid) ? `<tr >`                          : `<tr style="background: rgb(250,250,250)">`;
-    	  myRow +=(token.valid)   ? `<td >{token.id}</td>`   : `<td style="text-decoration:line-through;">{token.id}</td>`;
+    	  var myRow=(token.valid) ? `<tr >` : `<tr style="background: rgb(250,250,250)">`;
+    	  myRow +=(token.expired || token.revoked)   ? `<td style="text-decoration:line-through;">{token.id}</td>` : `<td >{token.id}</td>`   ;
     	  myRow +=(token.valid)   ? `<td >{token.issueDate}</td>`:`<td>{token.issueDate}</td>`;
           myRow +=(!token.expired)? `<td >{token.expiresDate}</td>` : `<td style="text-decoration:line-through;">{token.expiresDate}</td>` ;
           myRow +=(!token.revoked)? `<td >{token.revokedDate}</td>` : `<td style="text-decoration:line-through;">{token.revokedDate}</td>` ;
           myRow +=(token.valid)   ? `<td >{token.requestingUserId}</td>`: `<td>{token.requestingUserId}</td>`;
           myRow +=(token.valid)   ? `<td >{token.allowNetwork}</td>`:`<td>{token.allowNetwork}</td>`;
-          myRow +=(token.valid) 
-                ? `<td style="text-align:center"><a style="text-decoration:underline" href='javascript:revokeKey(\"{token.id}\")'>revoke</a> | <a style="text-decoration:underline" href='javascript:getJwt("{token.id}")'>get token</a></td>`
-                : `<td style="text-align:center"><a style="text-decoration:underline" href='javascript:deleteKey(\"{token.id}\")'>delete</a> </td>` ;
-
+          myRow +=(token.expired || token.revoked) 
+                ? `<td style="text-align:center"><a style="text-decoration:underline" href='javascript:deleteKey(\"{token.id}\")'>delete</a> </td>` 
+                : `<td style="text-align:center"><a style="text-decoration:underline" href='javascript:revokeKey(\"{token.id}\")'>revoke</a> | <a style="text-decoration:underline" href='javascript:getJwt("{token.id}")'>get token</a></td>`;
           myRow+=`</tr>`;
 	    	   
     	   

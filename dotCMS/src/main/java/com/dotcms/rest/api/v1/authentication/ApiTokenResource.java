@@ -217,7 +217,7 @@ public class ApiTokenResource implements Serializable {
             return ExceptionMapperUtil.createResponse(new DotStateException("token id not found"), Response.Status.NOT_FOUND);
         }
         ApiToken token = optToken.get();
-        if(!token.isValid()) {
+        if(token.isExpired() || token.isRevoked()) {
             return ExceptionMapperUtil.createResponse(new DotStateException("token not valid"), Response.Status.BAD_REQUEST);
         }
 
