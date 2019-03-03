@@ -455,7 +455,7 @@ function removeDrawedContainer(idDiv,idContainer, uuid){
 		var nodes = div.childNodes;
 		for(var i=0; i<nodes.length; i++) {
 			var child = nodes[i];
-			if(child.getAttribute("id")==idDiv+"_span_"+idContainer + "_" + uuid || child.getAttribute("id")==idDiv+"_div_"+idContainer) //this element is a container
+			if(child.getAttribute("id")==idDiv+"_span_"+idContainer + "_" + uuid || child.getAttribute("id")==idDiv+"_div_"+idContainer+ "_" + uuid) //this element is a container
 				containerToRemove.push(child);
 		}
 	}

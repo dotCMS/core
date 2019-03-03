@@ -3981,6 +3981,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
     private void addContentLimitedByPermissions(User user,
             ContentletRelationshipRecords contentletRelationshipRecords,
             List<Contentlet> relatedContentlets) {
+
+        //consider immutable collections
+        contentletRelationshipRecords.setRecords(new ArrayList<>(contentletRelationshipRecords.getRecords()));
         contentletRelationshipRecords.getRecords()
                 .addAll(relatedContentlets.stream()
                         .filter(contentlet -> {
