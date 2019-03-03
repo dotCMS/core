@@ -29,6 +29,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
 
+import com.dotmarketing.portlets.user.ajax.UserAjax;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.liferay.portal.util.PropsUtil;
@@ -295,34 +296,46 @@ public class User extends UserModel implements Recipient {
         setModified(true);
     }
 
-	public Map<String, Object> toMap() throws IllegalAccessException, InvocationTargetException, NoSuchMethodException {
-		Map<String, Object> map = new HashMap<String, Object>();
-		map.put("active", this.getActive());
-		map.put("actualCompanyId", this.getActualCompanyId());
-		map.put("birthday", this.getBirthday());
-		map.put("comments", this.getComments());
-		map.put("companyId", this.getCompanyId());
-		map.put("createDate", this.getCreateDate());
+    public Map<String, Object> toMap() throws IllegalAccessException, InvocationTargetException, NoSuchMethodException {
+        Map<String, Object> map = new HashMap<String, Object>();
+        map.put("active", this.getActive());
+        map.put("actualCompanyId", this.getActualCompanyId());
+        map.put("birthday", this.getBirthday());
+        map.put("comments", this.getComments());
+        map.put("companyId", this.getCompanyId());
+        map.put("createDate", this.getCreateDate());
         map.put("modificationDate", this.getModificationDate());
-		map.put("emailAddress", this.getEmailAddress());
-		map.put("failedLoginAttempts", this.getFailedLoginAttempts());
-		map.put("male", this.getMale());
-		map.put("firstName", this.getFirstName());
-		map.put("fullName", this.getFullName());
-		map.put("languageId", this.getLanguageId());
-		map.put("lastLoginDate", this.getLastLoginDate());
-		map.put("lastLoginIP", this.getLastLoginIP());
-		map.put("lastName", this.getLastName());
-		map.put("middleName", this.getMiddleName());
-		map.put("female", this.getFemale());
-		map.put("nickname", this.getNickName());
-		map.put("userId", this.getUserId());
-		map.put("timeZoneId", this.getTimeZoneId());
-		map.put("deleteInProgress", getDeleteInProgress());
-		map.put("deleteDate", getDeleteDate());
+        map.put("emailAddress", this.getEmailAddress());
+        map.put("emailaddress", this.getEmailAddress());
+        map.put("failedLoginAttempts", this.getFailedLoginAttempts());
+        map.put("male", this.getMale());
+        map.put("firstName", this.getFirstName());
+        map.put("fullName", this.getFullName());
+        map.put("name", getFullName());
+        map.put("languageId", this.getLanguageId());
+        map.put("lastLoginDate", this.getLastLoginDate());
+        map.put("lastLoginIP", this.getLastLoginIP());
+        map.put("lastName", this.getLastName());
+        map.put("middleName", this.getMiddleName());
+        map.put("female", this.getFemale());
+        map.put("nickname", this.getNickName());
+        map.put("userId", this.getUserId());
+        map.put("timeZoneId", this.getTimeZoneId());
+        map.put("deleteInProgress", getDeleteInProgress());
+        map.put("deleteDate", getDeleteDate());
+        map.put("userId", getUserId());
+        map.put("passwordExpirationDate", getPasswordExpirationDate());
+        map.put("passwordExpired", isPasswordExpired());
+        map.put("passwordReset", isPasswordReset());
+        map.put("userId", getUserId());
+        map.put("id", getUserId());
+        map.put("name", getFullName());
+        map.put("id", getUserId());
+        map.put("type", UserAjax.USER_TYPE_VALUE);
 
-		return map;
-	}
+
+        return map;
+    }
 
 	private boolean _defaultUser;
 	private Locale _locale;

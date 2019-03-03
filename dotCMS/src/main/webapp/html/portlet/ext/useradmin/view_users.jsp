@@ -172,6 +172,16 @@
 										<dt><%= LanguageUtil.get(pageContext, "Password-Again") %>:</dt>
 										<dd><input id="passwordCheck" type="password" onkeyup="userPasswordChanged()" required="true" invalidMessage="Required." dojoType="dijit.form.ValidationTextBox" autocomplete="off"/></dd>
 									</dl>
+                                    <dl>
+                                        <dt><%= LanguageUtil.get(pageContext, "Last-Login") %>:</dt>
+                                        <dd style="padding:9px 16px" id="lastLogin"  ></dd>
+                                    </dl>
+									
+									
+                                    <dl>
+                                        <dt><%= LanguageUtil.get(pageContext, "Failed-Login-Attempts") %>:</dt>
+                                        <dd style="padding:9px 16px" id="loginAttempts"  ></dd>
+                                    </dl>
 								</form>
 							</div>
 							<div class="buttonRow view-user__buttonRow">
@@ -235,6 +245,9 @@
                             </form>
                         </div>
 
+                        <div class="buttonRow">
+                            <button dojoType="dijit.form.Button" onclick="saveUserAdditionalInfo()" type="button" iconClass="saveIcon"><%= LanguageUtil.get(pageContext, "Save") %></button>
+                        </div>
 
                     </div>
                     <!-- END Additional Info Tab -->

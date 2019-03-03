@@ -205,7 +205,7 @@ public class ApiTokenResource implements Serializable {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final Response getApiToken(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
+    public final Response getJwtFromApiToken(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
             @PathParam("tokenId") final String tokenId) {
 
 
@@ -222,7 +222,7 @@ public class ApiTokenResource implements Serializable {
         }
 
 
-        SecurityLogger.logInfo(this.getClass(), "Revealing token " + token + " to " + request.getRemoteAddr() + " ");
+        SecurityLogger.logInfo(this.getClass(), "Revealing token to user: " + user.getUserId() + " from: " + request.getRemoteAddr() + " token:"  + token );
         final String jwt = tokenApi.getJWT(token, user);
         return Response.ok(new ResponseEntityView(map("jwt", jwt), EMPTY_MAP)).build(); // 200
 
