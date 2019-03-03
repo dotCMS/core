@@ -84,13 +84,8 @@ public class JsonWebTokenAuthCredentialProcessorImpl implements JsonWebTokenAuth
         final String authentication = request.getHeader(ContainerRequest.AUTHORIZATION);
         final HttpSession session = request.getSession(false);
 
-        User user = this.processAuthHeaderFromJWT(authentication, session, request.getRemoteAddr());
-        
-        if(user != null) {
-            request.setAttribute(com.liferay.portal.util.WebKeys.USER_ID, user.getUserId());
-            request.setAttribute(com.liferay.portal.util.WebKeys.USER, user);
-        }
-        return user;
+        return this.processAuthHeaderFromJWT(authentication, session, request.getRemoteAddr());
+
         
         
     } // processAuthCredentialsFromJWT.

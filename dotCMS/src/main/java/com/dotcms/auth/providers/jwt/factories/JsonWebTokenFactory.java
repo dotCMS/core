@@ -8,7 +8,6 @@ import java.security.Key;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
 
 import com.dotcms.auth.providers.jwt.beans.ApiToken;
@@ -78,9 +77,10 @@ public class JsonWebTokenFactory implements Serializable {
 
     /**
      * Creates the Json Web Token Service based on the configuration on dotmarketing-config.properties
+     * 
      * @return JsonWebTokenService
      */
-    public JsonWebTokenService getJsonWebTokenService () {
+    public JsonWebTokenService getJsonWebTokenService() {
 
         if (null == this.jsonWebTokenService) {
 
@@ -94,14 +94,13 @@ public class JsonWebTokenFactory implements Serializable {
 
                 } catch (Exception e) {
 
-                    if (Logger.isErrorEnabled(JsonWebTokenService.class)) {
-                        Logger.error(JsonWebTokenService.class, e.getMessage(), e);
-                    }
 
-                    if (Logger.isDebugEnabled(JsonWebTokenService.class)) {
-                        Logger.debug(JsonWebTokenService.class,
-                                "There is an error trying to create the Json Web Token Service, going with the default implementation...");
-                    }
+                    Logger.error(JsonWebTokenService.class, e.getMessage(), e);
+
+
+                    Logger.debug(JsonWebTokenService.class,
+                            "There is an error trying to create the Json Web Token Service, going with the default implementation...");
+
                 }
             }
         }
@@ -126,14 +125,9 @@ public class JsonWebTokenFactory implements Serializable {
                                 DEFAULT_JSON_WEB_TOKEN_SIGNING_KEY_FACTORY_CLASS);
 
                 if (UtilMethods.isSet(signingKeyFactoryClass)) {
+                    Logger.debug(JsonWebTokenService.class, "Using the signing key factory class: " + signingKeyFactoryClass);
 
-                    if (Logger.isDebugEnabled(JsonWebTokenService.class)) {
-                        Logger.debug(JsonWebTokenService.class,
-                                "Using the signing key factory class: " + signingKeyFactoryClass);
-                    }
-
-                    SigningKeyFactory signingKeyFactory =
-                            (SigningKeyFactory) ReflectionUtils.newInstance(signingKeyFactoryClass);
+                    SigningKeyFactory signingKeyFactory =   (SigningKeyFactory) ReflectionUtils.newInstance(signingKeyFactoryClass);
                     if (null != signingKeyFactory) {
 
                         signingKey = signingKeyFactory.getKey();
