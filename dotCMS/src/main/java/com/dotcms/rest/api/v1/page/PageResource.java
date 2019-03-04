@@ -393,7 +393,7 @@ public class PageResource {
                                      final PageContainerForm pageContainerForm)
             throws DotSecurityException, DotDataException {
 
-        Logger.debug(this, String.format("Saving page's content: %s",
+        Logger.debug(this, ()->String.format("Saving page's content: %s",
                 pageContainerForm != null ? pageContainerForm.getRequestJson() : null));
 
         if (pageContainerForm == null) {

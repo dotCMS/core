@@ -293,7 +293,7 @@ public class PageRenderUtil implements Serializable {
                 final List<Contentlet> contentlets = conIdSet.stream().map(id -> {
                     try {
                         final Optional<Contentlet> contentlet = APILocator.getContentletAPI().findContentletByIdentifierOrFallback(id, mode.showLive, languageId, user, mode.respectAnonPerms);
-                        return (contentlet.isPresent()) 
+                        return (contentlet.isPresent())
                                 ? contentlet.get() : APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(id);
                     } catch (Exception e) {
                         throw new DotStateException(e);

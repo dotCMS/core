@@ -6,7 +6,6 @@ import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.util.LogTime;
 import com.dotcms.util.LogTimeUtil;
 
-import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 
 /**
