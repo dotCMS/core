@@ -3,7 +3,7 @@ Client and node library that allows easy interaction with several [DotCMS Rest A
 
 ## Install
 
-`npm install dotcms --save`
+`npm install dotcms node-fetch --save`
 
 ## Use
 

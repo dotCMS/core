@@ -1,9 +1,11 @@
 {
     "name": "DotCMS",
     "mode": "file",
-    "out": "/users/fmontes/Downloads/doc-test",
+    "out": "./dist-docs/dotcms",
     "module": "commonjs",
     "target": "ES6",
-    "readme": "./README.md",
-    "excludePrivate": true
+    "readme": "./projects/dotcms/README.md",
+    "excludePrivate": true,
+    "tsconfig": "./projects/dotcms/tsconfig.lib.json",
+    "excludeExternals": true
 }
