@@ -29,6 +29,16 @@ describe('DotEditLayoutService', () => {
                 path: '/container/path'
             }
         },
+        '/container/path': {
+            container: {
+                type: 'containers',
+                identifier: '56bd55ea-b04b-480d-9e37-5d6f9217dcc3',
+                name: 'Large Column (lg-1)',
+                categoryId: 'dde0b865-6cea-4ff0-8582-85e5974cf94f',
+                source: CONTAINER_SOURCE.FILE,
+                path: '/container/path'
+            }
+        },
         '6a12bbda-0ae2-4121-a98b-ad8069eaff3a': {
             container: {
                 type: 'containers',

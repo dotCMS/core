@@ -14,7 +14,7 @@ describe('TemplateContainersCacheService', () => {
 
         service = TestBed.get(TemplateContainersCacheService);
         containers = {
-            '1': {
+            '/containers/path': {
                 container: {
                     identifier: '1',
                     name: 'container 1',
@@ -37,16 +37,16 @@ describe('TemplateContainersCacheService', () => {
     it('should return the right container', () => {
         service.set(containers);
 
-        expect(service.get('/containers/path')).toEqual(containers[1].container);
+        expect(service.get('/containers/path')).toEqual(containers['/containers/path'].container);
         expect(service.get('2')).toEqual(containers[2].container);
         expect(service.get('3')).toBeNull();
     });
 
     it('should return the right container identifier', () => {
-        const fileContainer = service.getContainerReference(containers['1'].container);
+        const fileContainer = service.getContainerReference(containers['/containers/path'].container);
         const dataBaseConstainer = service.getContainerReference(containers['2'].container);
 
-        expect(fileContainer).toEqual(containers['1'].container.path);
+        expect(fileContainer).toEqual(containers['/containers/path'].container.path);
         expect(dataBaseConstainer).toEqual(containers['2'].container.identifier);
     });
 });
