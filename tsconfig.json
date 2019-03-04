@@ -64,17 +64,11 @@
         "dist-lib/dotcms-js/*"
       ],
       "dotcms": [
-        "projects/dotcms/src/public_api"
+        "dist-lib/dotcms"
       ],
       "dotcms/*": [
-        "projects/dotcms/src/*"
+        "dist-lib/dotcms/*"
       ]
-    //   "dotcms": [
-    //     "dist-lib/dotcms"
-    //   ],
-    //   "dotcms/*": [
-    //     "dist-lib/dotcms/*"
-    //   ]
     }
   }
 }
