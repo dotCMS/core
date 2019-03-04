@@ -1,19 +1,20 @@
 import { DotCMSElasticSearchParams } from '../models';
 
 // tslint:disable-next-line:cyclomatic-complexity
-export function getEsQuery({
-    contentType,
-    queryParams: {
-        languageId,
-        sortResultsBy,
-        sortOrder1,
-        offset,
-        pagination,
-        itemsPerPage,
-        numberOfResults,
-        detailedSearchQuery
-    }
-}: DotCMSElasticSearchParams): string {
+export function getEsQuery(params: DotCMSElasticSearchParams): string {
+    const {
+        contentType,
+        queryParams: {
+            languageId,
+            sortResultsBy,
+            sortOrder1,
+            offset,
+            pagination,
+            itemsPerPage,
+            numberOfResults,
+            detailedSearchQuery
+        }
+    } = params;
     const paginationQuery = `,
         "from": OFFSETVALUE,
         "size": SIZEPERPAGE`;

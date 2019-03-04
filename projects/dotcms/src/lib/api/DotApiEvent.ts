@@ -5,7 +5,8 @@ import { DotCMSEventsParams } from '../models';
  *
  */
 export class DotApiEvent {
-    emit({ name, data }: DotCMSEventsParams): void {
+    emit(params: DotCMSEventsParams): void {
+        const { name, data } = params;
         const customEvent = window.top.document.createEvent('CustomEvent');
         customEvent.initCustomEvent('ng-event', false, false, {
             name: name,

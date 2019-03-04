@@ -15,9 +15,6 @@ export class DotApiWidget {
     /**
      * Get the widght HTML strong with it identifier
      *
-     * @param {string} widgetId
-     * @returns {Promise<string>}
-     * @memberof DotApiWidget
      */
     getHtml(widgetId: string): Promise<string> {
         return this.dotCMSHttpClient
