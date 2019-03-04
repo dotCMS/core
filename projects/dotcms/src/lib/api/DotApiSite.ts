@@ -1,6 +1,9 @@
 import { DotCMSHttpClient } from '../utils/DotCMSHttpClient';
 import { DotCMSSite, DotCMSConfigurationParams, DotCMSError } from '../models';
 
+/**
+ * Get information from {@link https://dotcms.com/docs/latest/multi-site-management | DotCMS Sites}
+ */
 export class DotApiSite {
     private dotCMSHttpClient: DotCMSHttpClient;
 

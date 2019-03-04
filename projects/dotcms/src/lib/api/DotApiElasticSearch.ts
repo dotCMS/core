@@ -3,6 +3,10 @@ import { DotCMSHttpClient } from '../utils/DotCMSHttpClient';
 import { getEsQuery } from '../utils/getEsQuery';
 import { DotCMSElasticSearchResult, DotCMSConfigurationParams, DotCMSElasticSearchParams } from '../models';
 
+/**
+ * Request content from DotCMS using the {@link https://dotcms.com/docs/latest/elasticsearch-rest-api | Elastic Search API}
+ *
+ */
 export class DotApiElasticSearch {
     private dotCMSHttpClient: DotCMSHttpClient;
 
@@ -10,6 +14,10 @@ export class DotApiElasticSearch {
         this.dotCMSHttpClient = new DotCMSHttpClient(config);
     }
 
+    /**
+     * Provide the content type and the elastic search query and get the results contentlets and elastic search information
+     *
+     */
     search(params: DotCMSElasticSearchParams): Promise<DotCMSElasticSearchResult> {
         return this.dotCMSHttpClient.request({
             url: '/api/es/search',

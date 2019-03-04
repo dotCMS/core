@@ -1,6 +1,10 @@
 import { DotApiConfiguration } from './DotApiConfiguration';
 import { DotCMSConfigurationItem, DotCMSConfigurationParams, DotCMSLanguageItem } from '../models';
 
+ /**
+ * Get DotCMS {@link https://dotcms.com/docs/latest/adding-and-editing-languages | Language code}
+ *
+ */
 export class DotApiLanguage {
     private _config: DotCMSConfigurationParams;
     private _languagesConf: DotCMSLanguageItem[];

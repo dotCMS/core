@@ -1,6 +1,10 @@
 import { DotCMSHttpClient } from '../utils/DotCMSHttpClient';
 import { DotCMSConfigurationItem, DotCMSConfigurationParams, DotCMSError } from '../models';
 
+/**
+ * Get the information of DotCMS configuration
+ *
+ */
 export class DotApiConfiguration {
     private dotCMSHttpClient: DotCMSHttpClient;
 

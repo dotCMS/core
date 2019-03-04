@@ -11,19 +11,16 @@ function getErrorMessage(data: {[key: string]: any}) {
     }
 }
 
+
+/**
+ * DotCMS Authentication handler to intereact with  {@link https://dotcms.com/docs/latest/rest-api-authentication | Authentication API}
+ *
+ */
 export class DotApiAuthorization {
-    isLogin(): boolean {
-        return document.cookie.split('access_token').length > 1;
-    }
 
-    logout(): Promise<string> {
-        return fetch('v1/logout', {
-            method: 'PUT'
-        })
-            .then((data: Response) => data.json())
-            .then((data: { [key: string]: any }) => data.entity);
-    }
-
+    /**
+     * Given user, password and expiration date to get a DotCMS Autorization Token
+     */
     getToken(params: DotCMSAuthorizationLoginParams): Promise<Response> {
         const { user, password, expirationDays, host } = params;
 

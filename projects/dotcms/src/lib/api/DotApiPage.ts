@@ -4,10 +4,8 @@ import { DotCMSConfigurationParams, DotCMSPageAsset, DotCMSError } from '../mode
 import { DotApiLanguage } from './DotApiLanguage';
 
 /**
- * Allow easy interaction with {@link https://dotcms.com/docs/latest/page-rest-api-layout-as-a-service-laas | DotCMS Page Api
+ * Allow easy interaction with {@link https://dotcms.com/docs/latest/page-rest-api-layout-as-a-service-laas | DotCMS Page API}
  *
- * @export
- * @class DotApiPage
  */
 export class DotApiPage {
     private dotAppLanguage: DotApiLanguage;

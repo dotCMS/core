@@ -1,6 +1,10 @@
 import { DotCMSHttpClient } from '../utils/DotCMSHttpClient';
 import { DotCMSNavigationItem, DotCMSConfigurationParams, DotCMSError } from '../models';
 
+/**
+ * Retrieve information about the dotCMS file and folder tree with the  {@link https://dotcms.com/docs/latest/navigation-rest-api | Navigation REST API }
+ *
+ */
 export class DotApiNavigation {
     private dotCMSHttpClient: DotCMSHttpClient;
 

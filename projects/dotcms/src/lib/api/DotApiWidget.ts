@@ -1,6 +1,10 @@
 import { DotCMSHttpClient } from '../utils/DotCMSHttpClient';
 import { DotCMSConfigurationParams, DotCMSError } from '../models';
 
+
+ /**
+ * DotCMS {@link https://dotcms.com/docs/latest/widgets | widgets handler}
+ */
 export class DotApiWidget {
     private dotCMSHttpClient: DotCMSHttpClient;
 
@@ -8,6 +12,13 @@ export class DotApiWidget {
         this.dotCMSHttpClient = new DotCMSHttpClient(config);
     }
 
+    /**
+     * Get the widght HTML strong with it identifier
+     *
+     * @param {string} widgetId
+     * @returns {Promise<string>}
+     * @memberof DotApiWidget
+     */
     getHtml(widgetId: string): Promise<string> {
         return this.dotCMSHttpClient
             .request({
