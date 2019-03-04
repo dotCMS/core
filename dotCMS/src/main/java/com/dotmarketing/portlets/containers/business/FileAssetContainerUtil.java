@@ -215,7 +215,7 @@ public class FileAssetContainerUtil {
             }
         }
 
-        if (null == metaInfoFileAsset && metaInfoFileAsset.getLanguageId() != APILocator.getLanguageAPI().getDefaultLanguage().getId()) {
+        if (null == metaInfoFileAsset) {
 
             throw new NotFoundInDbException("On getting the container by folder, the folder: " + containerFolder.getPath() +
                     " is not valid, it must be under: " + Constants.CONTAINER_FOLDER_PATH + " and must have a child file asset called: " +
@@ -294,7 +294,8 @@ public class FileAssetContainerUtil {
 
     private boolean isContainerMetaInfo(final FileAsset fileAsset, final boolean showLive) {
 
-        return isType(fileAsset, showLive, CONTAINER_META_INFO);
+        return isType(fileAsset, showLive, CONTAINER_META_INFO)
+                && fileAsset.getLanguageId() == APILocator.getLanguageAPI().getDefaultLanguage().getId();
     }
 
     private boolean isPreLoop(final FileAsset fileAsset, final boolean showLive) {

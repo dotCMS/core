@@ -19,6 +19,7 @@ import com.dotmarketing.factories.MultiTreeAPI;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.containers.model.FileAssetContainer;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -47,6 +48,7 @@ public class ApplicationContainerFolderListener implements FolderListener {
     private final MultiTreeAPI   multiTreeAPI        = APILocator.getMultiTreeAPI();
     private final HostAPI        hostAPI             = APILocator.getHostAPI();
     private final LanguageAPI    languageAPI         = APILocator.getLanguageAPI();
+    private final ContentletAPI  contentletAPI       = APILocator.getContentletAPI();
 
     @Override
     public void folderChildModified(final FolderEvent folderEvent) {
@@ -134,7 +136,8 @@ public class ApplicationContainerFolderListener implements FolderListener {
                             this.removeContainerFromTemplate(container, folderEvent.getUser());
                         }
 
-                        if (isContentType) {
+                        // if it is a content type and exists at least one
+                        if (isContentType && !this.existAnyContentTypeInAnyLanguage(this.getIdentifier(child))) {
                             this.removeContentTypeMultitreesAssociated (contentType.get(), container);
                         }
 
@@ -151,6 +154,17 @@ public class ApplicationContainerFolderListener implements FolderListener {
             }
         }
     } // folderChildDeleted.
+
+    private boolean existAnyContentTypeInAnyLanguage(final String assetIdentifier) throws DotDataException, DotSecurityException {
+
+
+        return null != this.contentletAPI.findContentletByIdentifierAnyLanguage(assetIdentifier);
+    }
+
+    private String getIdentifier(final Object child) {
+
+        return child instanceof Contentlet?Contentlet.class.cast(child).getIdentifier():Inode.class.cast(child).getIdentifier();
+    }
 
     @WrapInTransaction
     private void removeContentTypeMultitreesAssociated(final ContentType childContentTypeAsset, final Container container) throws DotDataException {
