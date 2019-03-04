@@ -204,4 +204,73 @@ public class StringUtilsTest {
         assertEquals("hello world 2", StringUtils.builder(null, "hello", " ", null, null, "world", null).append(" ").append(2).toString());
         assertEquals("hello world 2", StringUtils.builder("hello", null, " ", null, "world", null, " ", 2).toString());
     }
+
+    /**
+     * Test of {@link StringUtils#camelCaseLower(String)}
+     */
+    @Test
+    public void test_camelCaseLower() {
+        testCamelCaseLower("MP3 ./,test", "mp3Test");
+        testCamelCaseLower("MP3      test", "mp3Test");
+        testCamelCaseLower("MP3 test", "mp3Test");
+        testCamelCaseLower("-MP3 ./,test", "mp3Test");
+        testCamelCaseLower("3MP3 ./,test", "mp3Test");
+        testCamelCaseLower("3MP3 -- -- test", "mp3Test");
+        testCamelCaseLower("3MP3      test", "mp3Test");
+        testCamelCaseLower("3MP3  --  --  --  test", "mp3Test");
+        testCamelCaseLower("Simple Test", "simpleTest");
+        testCamelCaseLower("-Simple Test", "simpleTest");
+        testCamelCaseLower("3Simple Test", "simpleTest");
+        testCamelCaseLower("3MP3 ..///..//--- 65test36", "mp365test36");
+
+        testCamelCaseLower("simple --   test", "simpleTest");
+        testCamelCaseLower("mp3 ./,test", "mp3Test");
+        testCamelCaseLower("3simple test", "simpleTest");
+        testCamelCaseLower("-simple test", "simpleTest");
+        testCamelCaseLower("-simple Test", "simpleTest");
+        testCamelCaseLower("simple Test", "simpleTest");
+        testCamelCaseLower("simple       Test", "simpleTest");
+        testCamelCaseLower("Simple !@#$%^&*()_-+= Test", "simpleTest");
+    }
+
+    private void testCamelCaseLower(final String toConvert, final String expected) {
+        String result = StringUtils.camelCaseLower(toConvert);
+        assertNotNull(result);
+        assertEquals(expected, result);
+    }
+
+    /**
+     * Test of {@link StringUtils#camelCaseUpper(String)}
+     */
+    @Test
+    public void test_camelCaseUpper() {
+        testCamelCaseUpper("MP3 ./,test", "Mp3Test");
+        testCamelCaseUpper("Mp3 ./,test", "Mp3Test");
+        testCamelCaseUpper("MP3      test", "Mp3Test");
+        testCamelCaseUpper("MP3 test", "Mp3Test");
+        testCamelCaseUpper("-MP3 ./,test", "Mp3Test");
+        testCamelCaseUpper("3MP3 ./,test", "Mp3Test");
+        testCamelCaseUpper("3MP3 -- -- test", "Mp3Test");
+        testCamelCaseUpper("3MP3      test", "Mp3Test");
+        testCamelCaseUpper("3MP3  --  --  --  test", "Mp3Test");
+        testCamelCaseUpper("Simple Test", "SimpleTest");
+        testCamelCaseUpper("-Simple Test", "SimpleTest");
+        testCamelCaseUpper("3Simple Test", "SimpleTest");
+        testCamelCaseUpper("3MP3 ..///..//--- 65test36", "Mp365test36");
+        testCamelCaseUpper("simple --   test", "SimpleTest");
+        testCamelCaseUpper("mp3 ./,test", "Mp3Test");
+        testCamelCaseUpper("3simple test", "SimpleTest");
+        testCamelCaseUpper("-simple test", "SimpleTest");
+        testCamelCaseUpper("-simple Test", "SimpleTest");
+        testCamelCaseUpper("simple Test", "SimpleTest");
+        testCamelCaseUpper("simple       Test", "SimpleTest");
+        testCamelCaseUpper("Simple !@#$%^&*()_-+= Test", "SimpleTest");
+    }
+
+    private void testCamelCaseUpper(final String toConvert, final String expected) {
+        String result = StringUtils.camelCaseUpper(toConvert);
+        assertNotNull(result);
+        assertEquals(expected, result);
+    }
+
 }
