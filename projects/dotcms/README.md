@@ -28,3 +28,6 @@ dotcms.page
     });
 ```
 
+## Documentation
+[Full Documentation](https://dotcms.github.io/core-web/docs/dotcms/globals.html)
+
