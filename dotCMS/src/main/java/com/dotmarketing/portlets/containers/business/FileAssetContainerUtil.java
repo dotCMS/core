@@ -215,7 +215,7 @@ public class FileAssetContainerUtil {
             }
         }
 
-        if (null == metaInfoFileAsset) {
+        if (null == metaInfoFileAsset && metaInfoFileAsset.getLanguageId() != APILocator.getLanguageAPI().getDefaultLanguage().getId()) {
 
             throw new NotFoundInDbException("On getting the container by folder, the folder: " + containerFolder.getPath() +
                     " is not valid, it must be under: " + Constants.CONTAINER_FOLDER_PATH + " and must have a child file asset called: " +
