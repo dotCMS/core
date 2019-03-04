@@ -75,6 +75,7 @@ xdescribe('Site Service', () => {
             tick();
             expect(this.lastCurrentSiteConnection.request.url).toContain('v1/site/currentSite');
             expect(currentSite).toEqual(mockResponse.entity.currentSite);
+            expect(newCurrentSite).toEqual(mockResponse.entity.currentSite);
             expect(currentCounter).toEqual(mockResponse.entity.totalRecords);
         })
     );

@@ -153,12 +153,6 @@ describe('LongPollingProtocol', () => {
     });
 
     it('should trigger a error', (done) => {
-        const requestOpts = {
-            method: RequestMethod.Get,
-            url: url,
-            params: {}
-        };
-
         spyOn(coreWebServiceMock, 'requestView').and.callFake(() => {
             return throwError({
                 entity: {}
