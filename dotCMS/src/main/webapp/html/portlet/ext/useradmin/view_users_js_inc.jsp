@@ -1497,7 +1497,7 @@
 	  
 	  
   }
-  
+
   
 	
   function writeApiKeys(data) {
@@ -1506,12 +1506,12 @@
    
       var myTable= `<table class="listingTable">
     	  <tr>
-	    	  <th style='width: 200px;'>Key Id</th>
-	    	  <th style='width: 200px;'>Issued</th>
-	    	  <th style='width: 200px;'>Expires</th>
-	    	  <th style='width: 200px;'>Revoked</th>
-	    	  <th style='width: 150px;'>Requested By</th>
-	    	  <th style='width: 150px;'>Ip Range</th>
+	    	  <th style='width: 200px;'><%=LanguageUtil.get(pageContext, "api.token.id") %></th>
+	    	  <th style='width: 200px;'><%=LanguageUtil.get(pageContext, "api.token.issued") %></th>
+	    	  <th style='width: 200px;'><%=LanguageUtil.get(pageContext, "api.token.expires") %></th>
+	    	  <th style='width: 200px;'><%=LanguageUtil.get(pageContext, "api.token.revoke") %></th>
+	    	  <th style='width: 150px;'><%=LanguageUtil.get(pageContext, "api.token.requested.by") %></th>
+	    	  <th style='width: 150px;'><%=LanguageUtil.get(pageContext, "api.token.ip.range") %></th>
 	    	  <th></th>
     	  </tr>`;
       for (var i=0; i<tokens.length; i++) {
@@ -1525,8 +1525,8 @@
           myRow +=(token.valid)   ? `<td >{token.requestingUserId}</td>`: `<td>{token.requestingUserId}</td>`;
           myRow +=(token.valid)   ? `<td >{token.allowNetwork}</td>`:`<td>{token.allowNetwork}</td>`;
           myRow +=(token.expired || token.revoked) 
-                ? `<td style="text-align:center"><a style="text-decoration:underline" href='javascript:deleteKey(\"{token.id}\")'>delete</a> </td>` 
-                : `<td style="text-align:center"><a style="text-decoration:underline" href='javascript:revokeKey(\"{token.id}\")'>revoke</a> | <a style="text-decoration:underline" href='javascript:getJwt("{token.id}")'>get token</a></td>`;
+                ? `<td style="text-align:center"><a style="text-decoration:underline" href='javascript:deleteKey(\"{token.id}\")'><%=LanguageUtil.get(pageContext, "api.token.delete") %></a> </td>`
+                : `<td style="text-align:center"><a style="text-decoration:underline" href='javascript:revokeKey(\"{token.id}\")'><%=LanguageUtil.get(pageContext, "api.token.revoke") %></a> | <a style="text-decoration:underline" href='javascript:getJwt("{token.id}")'><%=LanguageUtil.get(pageContext, "api.token.get.token") %></a></td>`;
           myRow+=`</tr>`;
 	    	   
     	   

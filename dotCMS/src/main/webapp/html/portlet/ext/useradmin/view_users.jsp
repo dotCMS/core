@@ -305,16 +305,12 @@
 					
 					
 					<!-- START API Keys Tab -->
-					<div dojoType="dijit.layout.ContentPane" id="apiKeysTab" title="<%= LanguageUtil.get(pageContext, "API Access Keys") %>">
-					
-					 <div class="buttonRow" style="text-align:right"><input type="checkbox" id="showRevokedApiTokens" onclick="loadApiKeys()" dojoType="dijit.form.CheckBox" /> Show Inactive</div>  
-
+					<div dojoType="dijit.layout.ContentPane" id="apiKeysTab" title="<%= LanguageUtil.get(pageContext, "api.token.all.keys") %>">
+					 <div class="buttonRow" style="text-align:right"><input type="checkbox" id="showRevokedApiTokens" onclick="loadApiKeys()" dojoType="dijit.form.CheckBox" /> <%= LanguageUtil.get(pageContext, "api.token.show.inactive") %></div>  
                         <div id="apiKeysDiv"></div>
-                    
                         <div class="buttonRow">
-                            <button dojoType="dijit.form.Button" onclick="showRequestTokenDialog()" type="button" iconClass="saveIcon"><%= LanguageUtil.get(pageContext, "Request New Token") %></button>
+                            <button dojoType="dijit.form.Button" onclick="showRequestTokenDialog()" type="button" iconClass="saveIcon"><%= LanguageUtil.get(pageContext, "api.token.request.new.token") %></button>
                         </div>
-                    
                     </div>
 					<!-- START API Keys Tab -->
 					
@@ -332,37 +328,44 @@
 </div>
 <!-- End Portlet -->
 
-<div dojoType="dijit.Dialog" id="tokenFormDialog" title="API Token" execute="requestNewAPIToken(arguments[0]);">
-		<h3>Request New Token</h3>
-		<table class="listingTable">
-	       <tr>
-	       
-	           <td><label for="expiresDate">Expires Date: </label></td>
-	           <td><input dojoType="dijit.form.DateTextBox" type="text" name="expiresDate" id="expiresDate" value="<%=DateTimeFormatter.ofPattern("uuuu-MM-dd").format(LocalDate.now().plus(3, ChronoUnit.YEARS)) %>"></td>
-	       </tr>
-	
-	       <tr>
-	           <td><label for="netmask">Allow Network (CIDR): </label></td>
-	           
-	           <td><input dojoType="dijit.form.TextBox" type="text" name="network" id="network" value="0.0.0.0/0"></td>
-	       </tr>
-       </table>
-       
-      <div class="buttonRow">
-                <button dojoType="dijit.form.Button" type="button" class="dijitButtonFlat"
-                   onClick="dijit.byId('tokenFormDialog').hide();">Cancel</button>
-                   &nbsp;
-               <button dojoType="dijit.form.Button" type="submit"
-                   onClick="return dijit.byId('tokenFormDialog').isValid();">OK</button>
-      </div>
+<div dojoType="dijit.Dialog" id="tokenFormDialog" title="API Token"
+	execute="requestNewAPIToken(arguments[0]);">
+	<h3>Request New Token</h3>
+	<table class="listingTable">
+		<tr>
+
+			<td><label for="expiresDate"><%=LanguageUtil.get(pageContext, "api.token.request.expires.date")%>:
+			</label></td>
+			<td><input dojoType="dijit.form.DateTextBox" type="text"
+				name="expiresDate" id="expiresDate"
+				value="<%=DateTimeFormatter.ofPattern("uuuu-MM-dd").format(LocalDate.now().plus(3, ChronoUnit.YEARS))%>"></td>
+		</tr>
+
+		<tr>
+			<td><label for="netmask"><%=LanguageUtil.get(pageContext, "api.token.allowed.network")%>:
+			</label></td>
+
+			<td><input dojoType="dijit.form.TextBox" type="text"
+				name="network" id="network" value="0.0.0.0/0"></td>
+		</tr>
+	</table>
+
+	<div class="buttonRow">
+		<button dojoType="dijit.form.Button" type="button"
+			class="dijitButtonFlat"
+			onClick="dijit.byId('tokenFormDialog').hide();"><%=LanguageUtil.get(pageContext, "cancel")%></button>
+		&nbsp;
+		<button dojoType="dijit.form.Button" type="submit"
+			onClick="return dijit.byId('tokenFormDialog').isValid();"><%=LanguageUtil.get(pageContext, "ok")%></button>
+	</div>
 </div>
 
 <div dojoType="dijit.Dialog" id="revealJwtDialog" title="API Token">
-	   <textarea class="tokenDivClass" id="revealTokenDiv"></textarea>
-      <div class="buttonRow">
-         <button dojoType="dijit.form.Button" type="button" class=""  onClick="dijit.byId('revealJwtDialog').hide();">Close</button>
-      </div>
-
+	<textarea class="tokenDivClass" id="revealTokenDiv"></textarea>
+	<div class="buttonRow">
+		<button dojoType="dijit.form.Button" type="button" class=""
+			onClick="dijit.byId('revealJwtDialog').hide();"><%=LanguageUtil.get(pageContext, "close")%></button>
+	</div>
 </div>
 
 
