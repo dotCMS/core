@@ -1,24 +1,19 @@
 import { DotApiConfiguration } from './DotApiConfiguration';
-import { DotCMSConfigurationItem, DotCMSConfigurationParams, DotCMSLanguageItem } from '../models';
+import { DotCMSConfigurationItem, DotCMSLanguageItem } from '../models';
 
  /**
  * Get DotCMS {@link https://dotcms.com/docs/latest/adding-and-editing-languages | Language code}
  *
  */
 export class DotApiLanguage {
-    private _config: DotCMSConfigurationParams;
     private _languagesConf: DotCMSLanguageItem[];
     private dotAppConfig: DotApiConfiguration;
 
-    constructor(config: DotCMSConfigurationParams) {
-        this._config = config;
+    constructor(appConfig: DotApiConfiguration) {
+        this.dotAppConfig = appConfig;
     }
 
     async getId(langCode: string): Promise<string> {
-        if (!this.dotAppConfig) {
-            this.dotAppConfig = new DotApiConfiguration(this._config);
-        }
-
         const languages: DotCMSLanguageItem[] = await this.getLanguages();
 
         const language = languages.find(

@@ -1,5 +1,5 @@
 import { DotCMSHttpClient } from '../utils/DotCMSHttpClient';
-import { DotCMSSite, DotCMSConfigurationParams, DotCMSError } from '../models';
+import { DotCMSSite, DotCMSError } from '../models';
 
 /**
  * Get information from {@link https://dotcms.com/docs/latest/multi-site-management | DotCMS Sites}
@@ -7,8 +7,8 @@ import { DotCMSSite, DotCMSConfigurationParams, DotCMSError } from '../models';
 export class DotApiSite {
     private dotCMSHttpClient: DotCMSHttpClient;
 
-    constructor(config: DotCMSConfigurationParams) {
-        this.dotCMSHttpClient = new DotCMSHttpClient(config);
+    constructor(httpClient: DotCMSHttpClient) {
+        this.dotCMSHttpClient = httpClient;
     }
 
     getCurrentSite(): Promise<DotCMSSite> {

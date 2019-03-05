@@ -11,7 +11,6 @@ function getErrorMessage(data: {[key: string]: any}) {
     }
 }
 
-
 /**
  * DotCMS Authentication handler to intereact with  {@link https://dotcms.com/docs/latest/rest-api-authentication | Authentication API}
  *

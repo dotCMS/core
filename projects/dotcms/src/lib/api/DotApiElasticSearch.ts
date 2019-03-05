@@ -1,7 +1,7 @@
 import { DotCMSError } from './../models/DotCMSError.model';
 import { DotCMSHttpClient } from '../utils/DotCMSHttpClient';
 import { getEsQuery } from '../utils/getEsQuery';
-import { DotCMSElasticSearchResult, DotCMSConfigurationParams, DotCMSElasticSearchParams } from '../models';
+import { DotCMSElasticSearchResult, DotCMSElasticSearchParams } from '../models';
 
 /**
  * Request content from DotCMS using the {@link https://dotcms.com/docs/latest/elasticsearch-rest-api | Elastic Search API}
@@ -10,8 +10,8 @@ import { DotCMSElasticSearchResult, DotCMSConfigurationParams, DotCMSElasticSear
 export class DotApiElasticSearch {
     private dotCMSHttpClient: DotCMSHttpClient;
 
-    constructor(config: DotCMSConfigurationParams) {
-        this.dotCMSHttpClient = new DotCMSHttpClient(config);
+    constructor(httpClient: DotCMSHttpClient) {
+        this.dotCMSHttpClient = httpClient;
     }
 
     /**

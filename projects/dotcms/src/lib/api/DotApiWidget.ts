@@ -1,5 +1,5 @@
 import { DotCMSHttpClient } from '../utils/DotCMSHttpClient';
-import { DotCMSConfigurationParams, DotCMSError } from '../models';
+import { DotCMSError } from '../models';
 
 
  /**
@@ -8,8 +8,8 @@ import { DotCMSConfigurationParams, DotCMSError } from '../models';
 export class DotApiWidget {
     private dotCMSHttpClient: DotCMSHttpClient;
 
-    constructor(config: DotCMSConfigurationParams) {
-        this.dotCMSHttpClient = new DotCMSHttpClient(config);
+    constructor(httpClient: DotCMSHttpClient) {
+        this.dotCMSHttpClient = httpClient;
     }
 
     /**
@@ -22,7 +22,6 @@ export class DotApiWidget {
                 url: `/api/widget/id/${widgetId}`
             }).then(async (response: Response) => {
                 if (response.status === 200) {
-
                     return response.text();
                 }
 

@@ -1,5 +1,5 @@
 import { DotCMSHttpClient } from '../utils/DotCMSHttpClient';
-import { DotCMSConfigurationItem, DotCMSConfigurationParams, DotCMSError } from '../models';
+import { DotCMSConfigurationItem, DotCMSError } from '../models';
 
 /**
  * Get the information of DotCMS configuration
@@ -8,8 +8,8 @@ import { DotCMSConfigurationItem, DotCMSConfigurationParams, DotCMSError } from 
 export class DotApiConfiguration {
     private dotCMSHttpClient: DotCMSHttpClient;
 
-    constructor(config: DotCMSConfigurationParams) {
-        this.dotCMSHttpClient = new DotCMSHttpClient(config);
+    constructor(httpClient: DotCMSHttpClient) {
+        this.dotCMSHttpClient = httpClient;
     }
 
     get(): Promise<DotCMSConfigurationItem> {

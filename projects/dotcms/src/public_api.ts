@@ -7,6 +7,7 @@ import { DotApiNavigation } from './lib/api/DotApiNavigation';
 import { DotApiPage } from './lib/api/DotApiPage';
 import { DotApiSite } from './lib/api/DotApiSite';
 import { DotApiWidget } from './lib/api/DotApiWidget';
+import { DotCMSHttpClient } from './lib/utils/DotCMSHttpClient';
 import { DotCMSConfigurationParams } from './lib/models';
 
 export interface DotCMSApp {
@@ -22,15 +23,19 @@ export interface DotCMSApp {
 }
 
 export const initDotCMS = (config: DotCMSConfigurationParams): DotCMSApp => {
+    const httpClient = new DotCMSHttpClient(config);
+    const apiConfig = new DotApiConfiguration(httpClient);
+    const apiLanguage = new DotApiLanguage(apiConfig);
+
     return {
         auth: new DotApiAuthorization(),
-        config: new DotApiConfiguration(config),
-        esSearch: new DotApiElasticSearch(config),
+        config: apiConfig,
+        esSearch: new DotApiElasticSearch(httpClient),
         event: new DotApiEvent(),
-        language: new DotApiLanguage(config),
-        nav: new DotApiNavigation(config),
-        page: new DotApiPage(config),
-        site: new DotApiSite(config),
-        widget: new DotApiWidget(config)
+        language: apiLanguage,
+        nav: new DotApiNavigation(httpClient),
+        page: new DotApiPage(httpClient, apiLanguage),
+        site: new DotApiSite(httpClient),
+        widget: new DotApiWidget(httpClient)
     };
 };
