@@ -95,7 +95,7 @@ public class DotParse extends DotDirective {
       ContentletVersionInfo contentletVersionInfo = APILocator.getVersionableAPI()
               .getContentletVersionInfo(identifier.getId(), languageId);
 
-      if (contentletVersionInfo == null) {
+      if (contentletVersionInfo == null || contentletVersionInfo.isDeleted()) {
 
           final long defaultLang = APILocator.getLanguageAPI().getDefaultLanguage().getId();
         if (defaultLang != languageId) {
