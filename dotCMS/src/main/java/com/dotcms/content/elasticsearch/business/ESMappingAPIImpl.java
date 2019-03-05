@@ -26,6 +26,7 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
@@ -639,65 +640,60 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 	}
 
 	@CloseDBIfOpened
-	public List<String> dependenciesLeftToReindex(Contentlet con) throws DotStateException, DotDataException, DotSecurityException {
-		List<String> dependenciesToReindex = new ArrayList<String>();
+	public List<String> dependenciesLeftToReindex(final Contentlet contentlet) throws DotStateException, DotDataException, DotSecurityException {
+		final List<String> dependenciesToReindex = new ArrayList<>();
 
-		ContentletAPI conAPI=APILocator.getContentletAPI();
+		final ContentletAPI conAPI=APILocator.getContentletAPI();
 
-		String relatedSQL = "select tree.* from tree where parent = ? or child = ? order by tree_order";
-		DotConnect db = new DotConnect();
+		final String relatedSQL = "select tree.* from tree where parent = ? or child = ? order by tree_order";
+		final DotConnect db = new DotConnect();
 		db.setSQL(relatedSQL);
-		db.addParam(con.getIdentifier());
-		db.addParam(con.getIdentifier());
-		ArrayList<HashMap<String, String>> relatedContentlets = db.loadResults();
+		db.addParam(contentlet.getIdentifier());
+		db.addParam(contentlet.getIdentifier());
+
+		final List<HashMap<String, String>> relatedContentlets = db.loadResults();
 
 		if(relatedContentlets.size()>0) {
 
-			List<Relationship> relationships = FactoryLocator.getRelationshipFactory().byContentType(con.getStructure());
+			final List<Relationship> relationships = FactoryLocator.getRelationshipFactory()
+					.byContentType(contentlet.getContentType());
 
-			for(Relationship rel : relationships) {
+			for(Relationship relationship : relationships) {
 
-				List<Contentlet> oldDocs;
+				final List<Contentlet> oldDocs;
+				final List<String> oldRelatedIds = new ArrayList<>();
+				final List<String> newRelatedIds = new ArrayList<>();
+				final StringBuilder q = new StringBuilder();
 
-				StringBuilder q = new StringBuilder();
-				boolean isSameStructRelationship = FactoryLocator.getRelationshipFactory().sameParentAndChild(rel);
+				boolean isSameStructRelationship = FactoryLocator.getRelationshipFactory()
+						.sameParentAndChild(relationship);
 
 				if(isSameStructRelationship) {
-					q.append("+type:content +(").append(rel.getRelationTypeValue())
+					q.append("+type:content +(").append(relationship.getRelationTypeValue())
 							.append(ESMappingConstants.SUFFIX_PARENT).append(":")
-							.append(con.getIdentifier())
-							.append(" ").append(rel.getRelationTypeValue())
+							.append(contentlet.getIdentifier())
+							.append(" ").append(relationship.getRelationTypeValue())
 							.append(ESMappingConstants.SUFFIX_CHILD).append(":")
-							.append(con.getIdentifier()).append(") ");
+							.append(contentlet.getIdentifier()).append(") ");
 				}else {
-					q.append("+type:content +").append(rel.getRelationTypeValue()).append(":")
-							.append(con.getIdentifier());
+					q.append("+type:content +").append(relationship.getRelationTypeValue()).append(":")
+							.append(contentlet.getIdentifier());
 				}
+
 				oldDocs = conAPI
 						.search(q.toString(), -1, 0, null, APILocator.getUserAPI().getSystemUser(),
 								false);
 
-				List<String> oldRelatedIds = new ArrayList<String>();
 				if(oldDocs.size() > 0) {
 					for(Contentlet oldDoc : oldDocs) {
 						oldRelatedIds.add(oldDoc.getIdentifier());
 					}
 				}
 
-				List<String> newRelatedIds = new ArrayList<String>();
-				for(HashMap<String, String> relatedEntry : relatedContentlets) {
-					String childId = relatedEntry.get(ESMappingConstants.CHILD);
-					String parentId = relatedEntry.get(ESMappingConstants.PARENT);
-					if(relatedEntry.get(ESMappingConstants.RELATION_TYPE).equals(rel.getRelationTypeValue())) {
-						if(con.getIdentifier().equalsIgnoreCase(childId)) {
-							newRelatedIds.add(parentId);
-							oldRelatedIds.remove(parentId);
-						} else {
-							newRelatedIds.add(childId);
-							oldRelatedIds.remove(childId);
-						}
-					}
-				}
+				relatedContentlets.stream().filter(map -> map.get(ESMappingConstants.RELATION_TYPE)
+						.equals(relationship.getRelationTypeValue())).forEach(
+						entry -> replaceExistingRelatedContent(entry, contentlet,
+								oldRelatedIds, newRelatedIds));
 
 				//Taking the disjunction of both collections will give the old list of dependencies that need to be removed from the
 				//re-indexation and the list of new dependencies no re-indexed yet
@@ -708,47 +704,71 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 		return dependenciesToReindex;
 	}
 
-	protected void loadRelationshipFields(final Contentlet con, final Map<String, Object> esMap)
-			throws DotStateException, DotDataException {
-		String propName;
-		final Map<String, List> relationshipsRecords = new HashMap<>();
-		String orderKey;
+	/**
+	 *
+	 * @param relatedEntry
+	 * @param con
+	 * @param oldRelatedIds
+	 * @param newRelatedIds
+	 */
+	private void replaceExistingRelatedContent(final Map<String, String> relatedEntry,
+			final Contentlet con, final List<String> oldRelatedIds,
+			final List<String> newRelatedIds) {
 
-		DotConnect db = new DotConnect();
+		final String childId = relatedEntry.get(ESMappingConstants.CHILD);
+		final String parentId = relatedEntry.get(ESMappingConstants.PARENT);
+		if (con.getIdentifier().equalsIgnoreCase(childId)) {
+			newRelatedIds.add(parentId);
+			oldRelatedIds.remove(parentId);
+		} else {
+			newRelatedIds.add(childId);
+			oldRelatedIds.remove(childId);
+		}
+	}
+
+	protected void loadRelationshipFields(final Contentlet contentlet, final Map<String, Object> esMap)
+			throws DotStateException, DotDataException {
+
+		String orderKey;
+		String propName;
+
+		final RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
+		final Map<String, List> relationshipsRecords = new HashMap<>();
+
+		final DotConnect db = new DotConnect();
 		db.setSQL("select * from tree where parent = ? or child = ? order by tree_order asc");
-		db.addParam(con.getIdentifier());
-		db.addParam(con.getIdentifier());
+		db.addParam(contentlet.getIdentifier());
+		db.addParam(contentlet.getIdentifier());
 
 		for (Map<String, Object> relatedEntry : db.loadObjectResults()) {
 
-			String childId = relatedEntry.get(ESMappingConstants.CHILD).toString();
-			String parentId = relatedEntry.get(ESMappingConstants.PARENT).toString();
-			String relType = relatedEntry.get(ESMappingConstants.RELATION_TYPE).toString();
-			String order = relatedEntry.get(ESMappingConstants.TREE_ORDER).toString();
+			final String childId = relatedEntry.get(ESMappingConstants.CHILD).toString();
+			final String parentId = relatedEntry.get(ESMappingConstants.PARENT).toString();
+			final String relType = relatedEntry.get(ESMappingConstants.RELATION_TYPE).toString();
+			final String order = relatedEntry.get(ESMappingConstants.TREE_ORDER).toString();
 
 			if ("child".equals(relType)) {
 				continue;
 			}
 
-			Relationship rel = FactoryLocator.getRelationshipFactory().byTypeValue(relType);
+			final Relationship relationship = relationshipAPI.byTypeValue(relType);
 
-			if (rel != null && InodeUtils.isSet(rel.getInode())) {
+			if (relationship != null && InodeUtils.isSet(relationship.getInode())) {
 
-				boolean isSameStructRelationship = FactoryLocator.getRelationshipFactory()
-						.sameParentAndChild(rel);
+				final boolean isSameStructRelationship = relationshipAPI.sameParentAndChild(relationship);
 
 				//Support for legacy relationships
 				propName = isSameStructRelationship ?
-						(con.getIdentifier().equals(parentId) ? rel.getRelationTypeValue()
+						(contentlet.getIdentifier().equals(parentId) ? relationship.getRelationTypeValue()
 								+ ESMappingConstants.SUFFIX_CHILD
-								: rel.getRelationTypeValue() + ESMappingConstants.SUFFIX_PARENT)
-						: rel.getRelationTypeValue();
+								: relationship.getRelationTypeValue() + ESMappingConstants.SUFFIX_PARENT)
+						: relationship.getRelationTypeValue();
 
-				orderKey = rel.getRelationTypeValue() + ESMappingConstants.SUFFIX_ORDER;
+				orderKey = relationship.getRelationTypeValue() + ESMappingConstants.SUFFIX_ORDER;
 
-				if (relType.equals(rel.getRelationTypeValue())) {
-					String me = con.getIdentifier();
-					String related = me.equals(childId) ? parentId : childId;
+				if (relType.equals(relationship.getRelationTypeValue())) {
+					final String me = contentlet.getIdentifier();
+					final String related = me.equals(childId) ? parentId : childId;
 
 					List.class.cast(esMap.computeIfAbsent(propName, k -> new ArrayList<>())).add(related);
 
@@ -756,8 +776,11 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 					List.class.cast(esMap.computeIfAbsent(orderKey, k -> new ArrayList<>()))
 							.add(related + "_" + order);
 
-					addRelationshipRecords(con, me.equals(childId) ? rel.getParentRelationName()
-							: rel.getChildRelationName(), related, relationshipsRecords, esMap);
+					if (relationship.isRelationshipField()){
+						addRelationshipRecords(contentlet, me.equals(childId) ? relationship.getParentRelationName()
+								: relationship.getChildRelationName(), related, relationshipsRecords, esMap);
+					}
+
 				}
 			}
 		}
