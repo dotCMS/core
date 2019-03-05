@@ -166,27 +166,22 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 		}
 	}
 
-	
-    //Verify if it is enabled the option to regenerate missing metadata files on reindex
-    private boolean regenerateMissingMetadata = Config
-            .getBooleanProperty("regenerate.missing.metadata.on.reindex", true);
-    /*
-    Verify if it is enabled the option to always regenerate metadata files on reindex,
-    enabling this could affect greatly the performance of a reindex process.
-     */
-    private boolean alwaysRegenerateMetadata = Config
-            .getBooleanProperty("always.regenerate.metadata.on.reindex", false);
-	
-	
-    final Map<String,Object> contentletMap = new HashMap();
-    final Map<String,Object> mlowered      = new HashMap();
+	/**
+	 * This method is the same of the toJson except that it returns directly the mlowered map.
+	 *
+	 * It checks first if this contentlet is already into the temporarily memory otherwise it recreate.
+	 *
+	 * @author Graziano Aliberti - Engineering Ingegneria Informatica S.p.a
+	 *
+	 * Jun 7, 2013 - 3:47:26 PM
+	 */
 	@CloseDBIfOpened
 	public Map<String,Object> toMap(final Contentlet contentlet) throws DotMappingException {
 
 		try {
-		    contentletMap.clear();
-		    mlowered.clear();
 
+			final Map<String,Object> contentletMap = new HashMap();
+			final Map<String,Object> mlowered	   = new HashMap();
 			loadCategories(contentlet, contentletMap);
 			loadFields(contentlet, contentletMap);
 			loadPermissions(contentlet, contentletMap);
@@ -307,7 +302,15 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 
 			if(contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET) {
 			    
-			    // Regenerate meta if we need to
+                //Verify if it is enabled the option to regenerate missing metadata files on reindex
+                boolean regenerateMissingMetadata = Config
+                        .getBooleanProperty("regenerate.missing.metadata.on.reindex", true);
+                /*
+                Verify if it is enabled the option to always regenerate metadata files on reindex,
+                enabling this could affect greatly the performance of a reindex process.
+                 */
+                boolean alwaysRegenerateMetadata = Config
+                        .getBooleanProperty("always.regenerate.metadata.on.reindex", false);
                 if (contentlet.isLive() || contentlet.isWorking()) {
                     if (alwaysRegenerateMetadata) {
                         new TikaUtils().generateMetaData(contentlet, true);
@@ -316,7 +319,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
                     }
                 }
 			    
-
+			    
 				// see if we have content metadata
 				File contentMeta=APILocator.getFileAssetAPI().getContentMetadataFile(contentlet.getInode());
 				if(contentMeta.exists() && contentMeta.length()>0) {
@@ -822,13 +825,20 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 				return;
 			}
 			if (!relationshipsRecords.containsKey(key)) {
-				//Search for a relationship field
-				final com.dotcms.contenttype.model.field.Field field = contentType.fieldMap().get(relationName);
-				if (field != null) {
-					relationshipsRecords.put(key, new ArrayList());
-					relationshipsRecords.get(key).add(related);
+				try {
+					//Search for a relationship field
+					final com.dotcms.contenttype.model.field.Field field = APILocator
+							.getContentTypeFieldAPI()
+							.byContentTypeAndVar(contentType, relationName);
+					if (field != null) {
+						relationshipsRecords.put(key, new ArrayList());
+						relationshipsRecords.get(key).add(related);
+					}
+				} catch (NotFoundInDbException e) {
+					//Do nothing and continue searching for others relationships fields
+				} catch (DotDataException e) {
+					Logger.warn(this, "Error getting field for relation type " + key, e);
 				}
-
 
 			} else{
 				relationshipsRecords.get(key).add(related);

@@ -566,10 +566,11 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 		Set<Contentlet> contentToIndexSet = new HashSet<>(contentToIndex);
 
 
+
 		for(final Contentlet contentlet : contentToIndexSet) {
 
             final String id=contentlet.getIdentifier()+"_"+contentlet.getLanguageId();
-			Logger.info(this, ()->"\n*********----------- Indexing : " + Thread.currentThread().getName()
+			Logger.debug(this, ()->"\n*********----------- Indexing : " + Thread.currentThread().getName()
 					+ ", id: " + contentlet.getIdentifier() + ", identityHashCode: " + System.identityHashCode(contentlet));
 			Logger.debug(this, ()->"*********-----------  " + DbConnectionFactory.getConnection());
 			Logger.debug(this, ()->"*********-----------  " + ExceptionUtil.getCurrentStackTraceAsString(Config.getIntProperty("stacktracelimit", 10)) + "\n");
@@ -579,7 +580,6 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
             String mapping          = null;
 
             try {
-
 
 
 				if (contentlet.isWorking()) {
@@ -592,7 +592,6 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 					}
 
                     if (info.reindex_working!=null) {
-                        
 						req.add(new IndexRequest(info.reindex_working, "content", id)
 								.source(mapping, XContentType.JSON));
 					}
