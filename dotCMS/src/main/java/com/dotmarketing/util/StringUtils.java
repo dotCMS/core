@@ -81,7 +81,8 @@ public class StringUtils {
             return variable;
         }
         String var = variable.toLowerCase().replaceAll("[^a-z\\d]", StringPool.DASH);
-        while (var.startsWith("-") || Character.isDigit(var.charAt(0))) {
+        while (UtilMethods.isSet(var) && (var.startsWith("-")
+                || Character.isDigit(var.charAt(0)))) {
             var = var.substring(1);
         }
         return CaseFormat.LOWER_HYPHEN.to(CaseFormat.LOWER_CAMEL,var);
@@ -93,9 +94,13 @@ public class StringUtils {
             return variable;
         }
         String ret = camelCaseLower(variable);
-        String firstChar = ret.substring(0,1);
+        if (UtilMethods.isSet(ret)) {
 
-        return firstChar.toUpperCase() + ret.substring(1);
+            String firstChar = ret.substring(0, 1);
+            return firstChar.toUpperCase() + ret.substring(1);
+        }
+
+        return ret;
     }
     
     public static boolean isSet(String test){
