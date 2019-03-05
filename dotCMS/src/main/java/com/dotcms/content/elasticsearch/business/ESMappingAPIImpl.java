@@ -385,10 +385,10 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
                 final Set<String> schemeWriter = new HashSet<>();
                 final List<WorkflowScheme> schemes = workflowAPI.findSchemesForContentType(contentlet.getContentType());
                 for (final WorkflowScheme scheme : schemes) {
-                    final List<WorkflowStep> steps = workflowAPI.findSteps(scheme);
-                    if (steps != null && !steps.isEmpty()) {
+                    final String entryStep = scheme.entryStep();
+                    if (entryStep != null) {
                         schemeWriter.add(scheme.getId());
-                        stepIds.add(steps.get(0).getId());
+                        stepIds.add(entryStep);
                     }
                 }
     
