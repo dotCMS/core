@@ -13,6 +13,7 @@ import com.dotcms.contenttype.model.field.ImageField;
 import com.dotcms.contenttype.model.field.KeyValueField;
 import com.dotcms.contenttype.model.field.MultiSelectField;
 import com.dotcms.contenttype.model.field.RelationshipField;
+import com.dotcms.contenttype.model.field.RelationshipsTabField;
 import com.dotcms.contenttype.model.field.RowField;
 import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.field.TextField;
@@ -168,7 +169,8 @@ public class GraphqlAPIImpl implements GraphqlAPI {
 
         fields.forEach((field)->{
             // skip field.variable not sticking to the regex
-            if(!field.variable().matches(TYPES_AND_FIELDS_VALID_NAME_REGEX)) {
+            if(!field.variable().matches(TYPES_AND_FIELDS_VALID_NAME_REGEX)
+                || field instanceof RelationshipsTabField) {
                 return;
             }
 
