@@ -301,6 +301,25 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 			}
 
 			if(contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET) {
+			    
+                //Verify if it is enabled the option to regenerate missing metadata files on reindex
+                boolean regenerateMissingMetadata = Config
+                        .getBooleanProperty("regenerate.missing.metadata.on.reindex", true);
+                /*
+                Verify if it is enabled the option to always regenerate metadata files on reindex,
+                enabling this could affect greatly the performance of a reindex process.
+                 */
+                boolean alwaysRegenerateMetadata = Config
+                        .getBooleanProperty("always.regenerate.metadata.on.reindex", false);
+                if (contentlet.isLive() || contentlet.isWorking()) {
+                    if (alwaysRegenerateMetadata) {
+                        new TikaUtils().generateMetaData(contentlet, true);
+                    } else if (regenerateMissingMetadata) {
+                        new TikaUtils().generateMetaData(contentlet);
+                    }
+                }
+			    
+			    
 				// see if we have content metadata
 				File contentMeta=APILocator.getFileAssetAPI().getContentMetadataFile(contentlet.getInode());
 				if(contentMeta.exists() && contentMeta.length()>0) {
@@ -366,10 +385,10 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
                 final Set<String> schemeWriter = new HashSet<>();
                 final List<WorkflowScheme> schemes = workflowAPI.findSchemesForContentType(contentlet.getContentType());
                 for (final WorkflowScheme scheme : schemes) {
-                    final List<WorkflowStep> steps = workflowAPI.findSteps(scheme);
-                    if (steps != null && !steps.isEmpty()) {
+                    final String entryStep = scheme.entryStep();
+                    if (entryStep != null) {
                         schemeWriter.add(scheme.getId());
-                        stepIds.add(steps.get(0).getId());
+                        stepIds.add(entryStep);
                     }
                 }
     
