@@ -1,7 +1,6 @@
 <p-confirmDialog #cd
     *ngIf="dotDialogService.confirmModel"
     [closable]="false"
-    [responsive]="true"
     width="400">
     <p-footer>
         <button type="button" pButton secondary tabindex="-1" [label]="dotDialogService.confirmModel.footerLabel.reject" (click)="onClickConfirm('reject')"></button>

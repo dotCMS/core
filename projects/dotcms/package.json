@@ -1,0 +1,10 @@
+{
+  "name": "dotcms",
+  "version": "0.0.1",
+  "scripts": {
+      "doc": "typedoc src/lib --options typedoc.json"
+  },
+  "peerDependencies": {
+    "node-fetch": "^2.3.0"
+  }
+}
