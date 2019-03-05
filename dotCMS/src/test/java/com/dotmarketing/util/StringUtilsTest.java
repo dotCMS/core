@@ -222,7 +222,6 @@ public class StringUtilsTest {
         testCamelCaseLower("-Simple Test", "simpleTest");
         testCamelCaseLower("3Simple Test", "simpleTest");
         testCamelCaseLower("3MP3 ..///..//--- 65test36", "mp365test36");
-
         testCamelCaseLower("simple --   test", "simpleTest");
         testCamelCaseLower("mp3 ./,test", "mp3Test");
         testCamelCaseLower("3simple test", "simpleTest");
@@ -231,6 +230,13 @@ public class StringUtilsTest {
         testCamelCaseLower("simple Test", "simpleTest");
         testCamelCaseLower("simple       Test", "simpleTest");
         testCamelCaseLower("Simple !@#$%^&*()_-+= Test", "simpleTest");
+        testCamelCaseLower("你好吗", "");
+        testCamelCaseLower("你好吗3", "");
+        testCamelCaseLower("你好吗34", "");
+        testCamelCaseLower("你好吗t", "t");
+        testCamelCaseLower("你好吗tt", "tt");
+        testCamelCaseLower("D", "d");
+        testCamelCaseLower("Dw", "dw");
     }
 
     private void testCamelCaseLower(final String toConvert, final String expected) {
@@ -265,6 +271,13 @@ public class StringUtilsTest {
         testCamelCaseUpper("simple Test", "SimpleTest");
         testCamelCaseUpper("simple       Test", "SimpleTest");
         testCamelCaseUpper("Simple !@#$%^&*()_-+= Test", "SimpleTest");
+        testCamelCaseUpper("你好吗", "");
+        testCamelCaseUpper("你好吗3", "");
+        testCamelCaseUpper("你好吗34", "");
+        testCamelCaseUpper("你好吗t", "T");
+        testCamelCaseUpper("你好吗tt", "Tt");
+        testCamelCaseUpper("D", "D");
+        testCamelCaseUpper("Dw", "Dw");
     }
 
     private void testCamelCaseUpper(final String toConvert, final String expected) {
