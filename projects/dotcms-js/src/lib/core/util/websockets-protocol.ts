@@ -9,7 +9,7 @@ enum WEB_SOCKET_PROTOCOL_CODE {
 export class WebSocketProtocol extends Protocol {
     dataStream: Subject<{}> = new Subject();
     private socket: WebSocket;
-
+    private errorThrown: boolean;
 
     constructor(private url: string, loggerService: LoggerService) {
         super(loggerService);
@@ -21,6 +21,7 @@ export class WebSocketProtocol extends Protocol {
     }
 
     connect(): void {
+        this.errorThrown = false;
         this.loggerService.debug('Connecting with Web socket', this.url);
 
         try {
@@ -36,15 +37,18 @@ export class WebSocketProtocol extends Protocol {
             };
 
             this.socket.onclose = (ev: CloseEvent) => {
-                if (ev.code === WEB_SOCKET_PROTOCOL_CODE.NORMAL_CLOSE_CODE) {
-                    this._close.next(ev);
-                    this._message.complete();
-                } else if (ev.code === WEB_SOCKET_PROTOCOL_CODE.GO_AWAY_CODE) {
-                    this._error.next(ev);
+                if (!this.errorThrown) {
+                    if (ev.code === WEB_SOCKET_PROTOCOL_CODE.NORMAL_CLOSE_CODE) {
+                        this._close.next(ev);
+                        this._message.complete();
+                    } else {
+                        this._error.next(ev);
+                    }
                 }
             };
 
             this.socket.onerror = (ev: ErrorEvent) => {
+                this.errorThrown = true;
                 this._error.next(ev);
             };
         } catch (error) {
@@ -55,7 +59,7 @@ export class WebSocketProtocol extends Protocol {
     }
 
     close(): void {
-        if (this.socket && !this.socket.bufferedAmount) {
+        if (this.socket && this.socket.readyState !== 3) {
             this.socket.close();
         }
     }
