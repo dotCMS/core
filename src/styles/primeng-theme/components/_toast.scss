@@ -11,8 +11,8 @@
         padding: $toast-padding ($icon-button-size + $basic-padding) $toast-padding $toast-padding;
 
         span {
-            word-break: break-word;
-            white-space: pre-wrap;
+            overflow: hidden;
+            overflow-wrap: break-word;
         }
     }
 
