@@ -8,9 +8,10 @@ import { Subject, Observable } from 'rxjs';
 import { DotEventsSocketURL } from './models/dot-event-socket-url';
 import { DotEventMessage } from './models/dot-event-message';
 
-enum CONNECTION_STATUS {
+enum ConnectionStatus {
     NONE,
     CONNECTING,
+    RECONNECTING,
     CONNECTED,
     CLOSED
 }
@@ -18,7 +19,7 @@ enum CONNECTION_STATUS {
 export class DotEventsSocket {
     private protocolImpl: Protocol;
 
-    private status: CONNECTION_STATUS = CONNECTION_STATUS.NONE;
+    private status: ConnectionStatus = ConnectionStatus.NONE;
     private _message: Subject<DotEventMessage> = new Subject<DotEventMessage>();
     private _open: Subject<boolean> = new Subject<boolean>();
 
@@ -47,7 +48,7 @@ export class DotEventsSocket {
     connect(): void {
         this.loggerService.debug('Creating a new socket connection', this.dotEventsSocketURL.url);
 
-        this.status = CONNECTION_STATUS.CONNECTING;
+        this.status = ConnectionStatus.CONNECTING;
         this.connectProtocol();
     }
 
@@ -58,7 +59,7 @@ export class DotEventsSocket {
         // On logout, meaning no authenticated user lets try to close the socket
         if (this.protocolImpl) {
             this.loggerService.debug('Closing socket');
-            this.status = CONNECTION_STATUS.CLOSED;
+            this.status = ConnectionStatus.CLOSED;
             this.protocolImpl.close();
         }
     }
@@ -79,22 +80,24 @@ export class DotEventsSocket {
 
     private connectProtocol(): void {
         this.protocolImpl.open$().subscribe(() => {
-            this.status = CONNECTION_STATUS.CONNECTED;
+            this.status = ConnectionStatus.CONNECTED;
             this._open.next(true);
         });
 
         this.protocolImpl.error$().subscribe(() => {
-            if (this.isWebSocketProtocol() && this.status !== CONNECTION_STATUS.CONNECTED) {
+            if (this.shouldTryWithLongPooling()) {
                 this.loggerService.info(
                     'Error connecting with Websockets, trying again with long polling'
                 );
 
+                this.protocolImpl.destroy();
                 this.protocolImpl = this.getLongPollingProtocol();
                 this.connectProtocol();
             } else {
                 setTimeout(
                 () => {
-                    this.protocolImpl.connect();
+                        this.status = this.getAfterErrorStatus();
+                        this.protocolImpl.connect();
                     },
                     this.configParams.websocketReconnectTime
                 );
@@ -102,7 +105,7 @@ export class DotEventsSocket {
         });
 
         this.protocolImpl.close$().subscribe((_event) => {
-            this.status = CONNECTION_STATUS.CLOSED;
+            this.status = ConnectionStatus.CLOSED;
         });
 
         this.protocolImpl
@@ -117,6 +120,14 @@ export class DotEventsSocket {
             );
 
         this.protocolImpl.connect();
+    }
+
+    private getAfterErrorStatus(): ConnectionStatus {
+        return this.status === ConnectionStatus.CONNECTING ? ConnectionStatus.CONNECTING : ConnectionStatus.RECONNECTING;
+    }
+
+    private shouldTryWithLongPooling(): boolean {
+        return this.isWebSocketProtocol() && this.status !== ConnectionStatus.CONNECTED && this.status !== ConnectionStatus.RECONNECTING;
     }
 
     private getWebSocketProtocol(): WebSocketProtocol {
