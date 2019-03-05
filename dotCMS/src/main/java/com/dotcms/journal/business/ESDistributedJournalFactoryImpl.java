@@ -439,9 +439,7 @@ public class ESDistributedJournalFactoryImpl<T> extends DistributedJournalFactor
     @Override
     protected long recordsLeftToIndexForServer(final Connection conn) throws DotDataException {
         final DotConnect dc = new DotConnect();
-        final String serverId = ConfigUtils.getServerId();
         dc.setSQL("select count(*) as count from dist_reindex_journal");
-        dc.addParam(serverId);
         final List<Map<String, String>> results = dc.loadResults(conn);
         final String c = results.get(0).get("count");
         return Long.parseLong(c);
