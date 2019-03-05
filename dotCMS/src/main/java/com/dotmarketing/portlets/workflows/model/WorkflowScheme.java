@@ -130,16 +130,16 @@ public class WorkflowScheme implements Serializable {
 	}
 
 	
-	private String entryStep=null;
-	@JsonIgnore
-	public String entryStep(){
-        if(this.entryStep==null) {
-            this.entryStep = Try.of(()->APILocator.getWorkflowAPI().findSteps(this).get(0).getId()).getOrNull();
+    private String entryStep = null;
+
+    @JsonIgnore
+    public String entryStep() {
+        if (this.entryStep == null) {
+            this.entryStep = Try.of(() -> APILocator.getWorkflowAPI().findSteps(this).get(0).getId()).getOrNull();
         }
-	    return this.entryStep;
-	    
-	}
-	
+        return this.entryStep;
+
+    }
 	
 	
 	
