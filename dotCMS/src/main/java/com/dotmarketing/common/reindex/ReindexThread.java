@@ -293,7 +293,7 @@ public class ReindexThread extends Thread {
 						BulkRequestBuilder bulk=client.prepareBulk();
 						final ArrayList<IndexJournal<String>> recordsToDelete= new ArrayList<>();
 						while(!remoteQ.isEmpty()) {
-
+	                        bulk=client.prepareBulk();
 							IndexJournal<String> idx = remoteQ.removeFirst();
 
 							try {
