@@ -3,10 +3,16 @@ package com.dotmarketing.portlets.workflows.model;
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore;
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonProperty;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.workflows.business.WorkFlowFactory;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.collect.ImmutableList;
+
+import io.vavr.control.Try;
+
 import java.io.Serializable;
 import java.util.Date;
+import java.util.List;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class WorkflowScheme implements Serializable {
@@ -123,4 +129,18 @@ public class WorkflowScheme implements Serializable {
 		this.modDate = modDate;
 	}
 
+	
+	private String entryStep=null;
+	@JsonIgnore
+	public String entryStep(){
+        if(this.entryStep==null) {
+            this.entryStep = Try.of(()->APILocator.getWorkflowAPI().findSteps(this).get(0).getId()).getOrNull();
+        }
+	    return this.entryStep;
+	    
+	}
+	
+	
+	
+	
 }
