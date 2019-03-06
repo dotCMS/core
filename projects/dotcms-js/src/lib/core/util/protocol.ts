@@ -34,4 +34,11 @@ export abstract class Protocol {
         this.close();
         setTimeout(() => { this.connect(); }, 0);
     }
+
+    destroy(): void {
+        this._open.complete();
+        this._close.complete();
+        this._message.complete();
+        this._error.complete();
+    }
 }
