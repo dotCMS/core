@@ -5,17 +5,15 @@ import com.dotcms.repackage.com.fasterxml.jackson.core.JsonProcessingException;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.JsonSerializer;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectWriter;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.SerializerProvider;
-import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.portlets.containers.model.FileAssetContainer;
+import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRaw;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.google.common.collect.ImmutableMap;
 
 import java.io.CharArrayReader;
 import java.io.IOException;
-import java.util.Map;
-import java.util.Objects;
-import java.util.TreeMap;
-import java.util.stream.Collectors;
+import java.util.*;
 
 /**
  * JsonSerializer of {@link PageView}
@@ -37,14 +35,8 @@ public class PageViewSerializer extends JsonSerializer<PageView> {
 
         final Map<String, Object> pageViewMap = new TreeMap<>();
         pageViewMap.put("page", this.asMap(pageView.getPageInfo()));
-        pageViewMap.put("containers", pageView.getContainers()
-                .stream()
-                .collect(Collectors.toMap(
-                        containerRendered -> containerRendered.getContainer().getIdentifier(),
-                        containerRendered -> containerRendered,
-                        CollectionsUtils.Merge.current()
-                ))
-        );
+        pageViewMap.put("containers", getContainerRawAsMap(pageView.getContainers()));
+
         final Map<Object, Object> templateMap = this.asMap(template);
         templateMap.put("canEdit", pageView.canEditTemplate());
         pageViewMap.put("template", templateMap);
@@ -58,6 +50,26 @@ public class PageViewSerializer extends JsonSerializer<PageView> {
         }
         return pageViewMap;
     }
+
+    private Map<String, ContainerRaw> getContainerRawAsMap(final Collection<? extends ContainerRaw> containerRaws) {
+
+        final Map<String, ContainerRaw> containerRawMap = new HashMap<>();
+
+        containerRaws.stream().forEach(containerRaw -> {
+
+            if (containerRaw.getContainer() instanceof FileAssetContainer) {
+
+                final String path = FileAssetContainer.class.cast(containerRaw.getContainer()).getPath();
+                containerRawMap.put(path, containerRaw);
+            }
+
+            final String identifier = containerRaw.getContainer().getIdentifier();
+            containerRawMap.put(identifier, containerRaw);
+        });
+
+        return containerRawMap;
+    }
+
 
     private Map<Object, Object> asMap(final Object object)  {
         final ObjectWriter objectWriter = JsonMapper.mapper.writer().withDefaultPrettyPrinter();

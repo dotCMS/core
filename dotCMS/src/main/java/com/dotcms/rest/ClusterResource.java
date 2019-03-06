@@ -146,9 +146,9 @@ public class ClusterResource {
 			
 			//If the result is failed we need to gather the info available.
 			if(resultActionBean.isFailed()){
-				Logger.error(ClusterResource.class, 
-						"Error trying to get Node Status for server " + resultActionBean.getServerId());
-				
+				Logger.error(ClusterResource.class, String.format("Error trying to get Node Status for server '%s' " +
+						"(actionId='%s'): %s", resultActionBean.getServerId(), resultActionBean.getServerActionId(),
+						resultActionBean.getResponse()));
 				jsonNodeStatusObject = 
 						ClusterUtilProxy.createFailedJson(APILocator.getServerAPI().getServer(resultActionBean.getServerId()));
 			

@@ -157,11 +157,11 @@ dependencies {
 
     starter group: 'com.dotcms', name: 'starter', version: '20190207', ext: 'zip'
 
-    profiler group: 'glowroot-custom', name: 'glowroot-agent', version: '0.10.7'
-    profilerDependencies group: 'glowroot-custom', name: 'collector-https-linux', version: '0.10.7'
-    profilerDependencies group: 'glowroot-custom', name: 'collector-https-osx', version: '0.10.7'
-    profilerDependencies group: 'glowroot-custom', name: 'collector-https-windows', version: '0.10.7'
-    profilerDependencies group: 'glowroot-custom', name: 'embedded-collector', version: '0.10.7'
+    profiler group: 'glowroot-custom', name: 'glowroot-agent', version: '0.13.1'
+    profilerDependencies group: 'glowroot-custom', name: 'collector-https-linux', version: '0.13.1'
+    profilerDependencies group: 'glowroot-custom', name: 'collector-https-osx', version: '0.13.1'
+    profilerDependencies group: 'glowroot-custom', name: 'collector-https-windows', version: '0.13.1'
+    profilerDependencies group: 'glowroot-custom', name: 'embedded-collector', version: '0.13.1'
 
     providedCompile "javax.servlet:javax.servlet-api:3.1.0"
     providedCompile fileTree("../libs/buildlibs").include('**/*.jar')

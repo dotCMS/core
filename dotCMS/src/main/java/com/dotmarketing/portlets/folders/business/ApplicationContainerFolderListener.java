@@ -1,8 +1,5 @@
 package com.dotmarketing.portlets.folders.business;
 
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
-import static com.dotmarketing.util.StringUtils.builder;
-
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.business.ContentTypeAPI;
@@ -22,16 +19,22 @@ import com.dotmarketing.factories.MultiTreeAPI;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.containers.model.FileAssetContainer;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.util.Constants;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+
 import java.util.List;
 import java.util.Optional;
+
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
+import static com.dotmarketing.util.StringUtils.builder;
 
 /**
  * Folder listener for the application/container folder
@@ -44,6 +47,8 @@ public class ApplicationContainerFolderListener implements FolderListener {
     private final IdentifierAPI  identifierAPI       = APILocator.getIdentifierAPI();
     private final MultiTreeAPI   multiTreeAPI        = APILocator.getMultiTreeAPI();
     private final HostAPI        hostAPI             = APILocator.getHostAPI();
+    private final LanguageAPI    languageAPI         = APILocator.getLanguageAPI();
+    private final ContentletAPI  contentletAPI       = APILocator.getContentletAPI();
 
     @Override
     public void folderChildModified(final FolderEvent folderEvent) {
@@ -53,19 +58,26 @@ public class ApplicationContainerFolderListener implements FolderListener {
             final String fileAssetName       = folderEvent.getChildName();
             final Folder containerFolder = folderEvent.getParent();
             final Object child           = folderEvent.getChild();
+            final long childLanguageId   = this.getLanguageFromChild(child);
+            final long defaultLangId     = this.languageAPI.getDefaultLanguage().getId();
 
             if (this.isValidChild(folderEvent, fileAssetName, containerFolder)) {
 
                 try {
 
                     // otherwise we have to fetch the object it self.
-                    final Container container = ContainerAPI.CONTAINER_META_INFO.contains(fileAssetName)?
-                            this.createFakeContainer(child):
+                    final Container container =
                             this.containerAPI.getContainerByFolder(containerFolder, folderEvent.getUser(), false);
 
                     if (null != container && UtilMethods.isSet(container.getIdentifier())) {
 
                         if (Constants.CONTAINER_META_INFO_FILE_NAME.equals(fileAssetName)) {
+
+                            // if the container.vtl invalidated is in another lang, does no matter by now
+                            if (defaultLangId != childLanguageId) {
+                                return;
+                            }
+
                             this.invalidatedRelatedPages (container);
                             CacheLocator.getIdentifierCache().removeFromCacheByVersionable(container);
                         }
@@ -84,6 +96,11 @@ public class ApplicationContainerFolderListener implements FolderListener {
         }
     }
 
+    private long getLanguageFromChild(final Object child) {
+
+        return child instanceof Contentlet? Contentlet.class.cast(child).getLanguageId():0;
+    }
+
 
     @Override
     public void folderChildDeleted(final FolderEvent folderEvent) {
@@ -95,6 +112,8 @@ public class ApplicationContainerFolderListener implements FolderListener {
             final Object  child                     = folderEvent.getChild();
             final Optional<ContentType> contentType = getContentType(folderEvent, fileAssetName);
             final boolean isContentType             = contentType.isPresent();
+            final long childLanguageId              = this.getLanguageFromChild(child);
+            final long defaultLangId                = this.languageAPI.getDefaultLanguage().getId();
 
             if (isContentType || this.isSpecialAsset (fileAssetName)) {
                 try {
@@ -107,11 +126,18 @@ public class ApplicationContainerFolderListener implements FolderListener {
 
                         // removing the whole container folder, so remove the relationship
                         if (Constants.CONTAINER_META_INFO_FILE_NAME.equals(fileAssetName)) {
+
+                            // if the container.vtl invalidated is in another lang (non-default lang), does no matter by now
+                            if (defaultLangId != childLanguageId) {
+                                return;
+                            }
+
                             this.invalidatedRelatedPages (container);
                             this.removeContainerFromTemplate(container, folderEvent.getUser());
                         }
 
-                        if (isContentType) {
+                        // if it is a content type and exists at least one
+                        if (isContentType && !this.existAnyContentTypeInAnyLanguage(this.getIdentifier(child))) {
                             this.removeContentTypeMultitreesAssociated (contentType.get(), container);
                         }
 
@@ -128,6 +154,17 @@ public class ApplicationContainerFolderListener implements FolderListener {
             }
         }
     } // folderChildDeleted.
+
+    private boolean existAnyContentTypeInAnyLanguage(final String assetIdentifier) throws DotDataException, DotSecurityException {
+
+
+        return null != this.contentletAPI.findContentletByIdentifierAnyLanguage(assetIdentifier);
+    }
+
+    private String getIdentifier(final Object child) {
+
+        return child instanceof Contentlet?Contentlet.class.cast(child).getIdentifier():Inode.class.cast(child).getIdentifier();
+    }
 
     @WrapInTransaction
     private void removeContentTypeMultitreesAssociated(final ContentType childContentTypeAsset, final Container container) throws DotDataException {
@@ -146,17 +183,19 @@ public class ApplicationContainerFolderListener implements FolderListener {
      * @return Container
      */
     private Container createFakeContainer(final Object child) {
-        final Container container = new Container();
+        final FileAssetContainer container = new FileAssetContainer();
         if (child instanceof Contentlet) {
             final Contentlet webAsset = (Contentlet) child;
             container.setIdentifier(webAsset.getIdentifier());
             container.setInode(webAsset.getInode());
             container.setOwner(webAsset.getOwner());
+            container.setLanguage(webAsset.getLanguageId());
         } else {
             final Inode webAsset = (Inode) child;
             container.setIdentifier(webAsset.getIdentifier());
             container.setInode(webAsset.getInode());
             container.setOwner(webAsset.getOwner());
+            container.setLanguage(0);
         }
         return container;
     }
@@ -269,6 +308,7 @@ public class ApplicationContainerFolderListener implements FolderListener {
         final ContainerLoader containerLoader = new ContainerLoader();
         if(container instanceof FileAssetContainer){
             containerLoader.invalidate(FileAssetContainer.class.cast(container), containerFolder, fileAssetName);
+            CacheLocator.getContainerCache().remove(container);
         } else {
             containerLoader.invalidate(container);
             CacheLocator.getContainerCache().remove(container);

@@ -6,6 +6,7 @@ import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotcms.util.ConversionUtils;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Source;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -101,6 +102,63 @@ public class FileAssetContainerUtil {
         }
 
         return isIdentifier;
+    }
+
+    public Host getHost (final String path) throws DotSecurityException, DotDataException {
+
+        return this.getHostFromHostname(this.getHostName(path));
+    }
+
+    public Host getHostFromHostname (final String hostname) throws DotSecurityException, DotDataException {
+
+        return null == hostname?
+                APILocator.getHostAPI().resolveHostName(hostname, APILocator.systemUser(), false):
+                APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false);
+    }
+
+    //demo.dotcms.com/application/containers/test/
+    public String getHostName (final String path) {
+
+        final int startsHost = null != path?     path.indexOf(HOST_INDICATOR): -1;
+        final int endsHost   = -1 != startsHost? path.indexOf(FORWARD_SLASH, startsHost+HOST_INDICATOR.length()): -1;
+        return startsHost != -1 && endsHost != -1?
+                path.substring(startsHost+HOST_INDICATOR.length(), endsHost): null;
+    }
+
+    public String getContainerIdFromPath(final String fullPath) throws DotDataException {
+
+        Host host             = null;
+        final String hostname = this.getHostName(fullPath);
+
+        try {
+            if (null != hostname) {
+                host = this.getHostFromHostname(hostname);
+            }
+        } catch (DotDataException | DotSecurityException e) {
+            host = null;
+        }
+
+        if (null == host) {
+
+            try {
+                host = APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false);
+            } catch (DotDataException | DotSecurityException e) {
+                host = APILocator.systemHost();
+            }
+        }
+
+        final String relativePath = this.getPathFromFullPath (hostname, fullPath);
+        final String containerUri = (relativePath.endsWith(FORWARD_SLASH)?relativePath:relativePath+FORWARD_SLASH)+"container.vtl";
+
+        final Identifier identifier = APILocator.getIdentifierAPI().find(host, containerUri);
+        return identifier.getId();
+    }
+
+    private String getPathFromFullPath(final String hostname, final String fullPath) {
+
+        final int indexOf = fullPath.indexOf(hostname);
+
+        return -1 != indexOf? fullPath.substring(indexOf + hostname.length()): fullPath;
     }
 
     public boolean isFolderAssetContainerId(final String containerPath) {
@@ -236,7 +294,8 @@ public class FileAssetContainerUtil {
 
     private boolean isContainerMetaInfo(final FileAsset fileAsset, final boolean showLive) {
 
-        return isType(fileAsset, showLive, CONTAINER_META_INFO);
+        return isType(fileAsset, showLive, CONTAINER_META_INFO)
+                && fileAsset.getLanguageId() == APILocator.getLanguageAPI().getDefaultLanguage().getId();
     }
 
     private boolean isPreLoop(final FileAsset fileAsset, final boolean showLive) {
