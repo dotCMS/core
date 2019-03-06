@@ -111,7 +111,7 @@ function checkReindexationCallback (response) {
 
 		}
 	}
-	setTimeout("checkReindexation()", 5000);
+	setTimeout("checkReindexation()", 8000);
 }
 
 function checkReindexation () {
