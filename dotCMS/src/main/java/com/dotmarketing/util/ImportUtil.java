@@ -835,13 +835,13 @@ public class ImportUtil {
             }
 
             //Find the relationships and their related contents
-            HashMap<Relationship, List<Contentlet>> csvRelationshipRecordsParentOnly = new HashMap<>();
-            HashMap<Relationship, List<Contentlet>> csvRelationshipRecordsChildOnly = new HashMap<>();
-            HashMap<Relationship, List<Contentlet>> csvRelationshipRecords = new HashMap<>();
+            final HashMap<Relationship, List<Contentlet>> csvRelationshipRecordsParentOnly = new HashMap<>();
+            final HashMap<Relationship, List<Contentlet>> csvRelationshipRecordsChildOnly = new HashMap<>();
+            final HashMap<Relationship, List<Contentlet>> csvRelationshipRecords = new HashMap<>();
             for (Integer column : relationships.keySet()) {
-                Relationship relationship = relationships.get(column);
-                String relatedQuery = line[column];
-                List<Contentlet> relatedContentlets;
+                final Relationship relationship = relationships.get(column);
+                final String relatedQuery = line[column];
+                List<Contentlet> relatedContentlets = null;
                 try{
                     if(relatedQuery !=null && !relatedQuery.trim().isEmpty()) {
                         relatedContentlets = RelationshipUtil
@@ -857,6 +857,8 @@ public class ImportUtil {
                         } else {
                             csvRelationshipRecords.put(relationship, relatedContentlets);
                         }
+                    } else{
+                        csvRelationshipRecords.put(relationship, relatedContentlets);
                     }
                 } catch(DotDataValidationException e){
                     //add the error message
@@ -1485,7 +1487,9 @@ public class ImportUtil {
             List<Contentlet> csvRelatedContentlet = csvRelationshipRecords
                     .get(relationshipRecord.getRelationship());
 
-            if (csvRelatedContentlet == null){
+            //Relationship must be wiped out when the relationship field is sent as empty
+            if (csvRelationshipRecords.containsKey(relationshipRecord.getRelationship())
+                    && csvRelatedContentlet == null) {
                 relationshipRecord.setRecords(new ArrayList<>());
             }
 
