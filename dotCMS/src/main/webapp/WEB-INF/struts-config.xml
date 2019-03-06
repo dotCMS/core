@@ -367,10 +367,26 @@
 
 
       <!-- END STRUCTURE & FIELD-->
+      
+      
+    <!-- FORM HANDLER -->
+      <action path="/ext/formhandler/view_form" type="com.dotmarketing.portlets.form.action.ViewFormHandlerAction" name="" input="portlet.ext.formhandler.view" validate="false" scope="request">
+         <forward name="portlet.ext.formhandler.view" path="portlet.ext.formhandler.view" />
+         <forward name="portlet.ext.formhandler.view_form" path="portlet.ext.formhandler.view_form" />
+      </action>
+    <!-- END FORM HANDLER -->
+      
+      
+      
+      
+      
+      
+      
       <!-- User Admin -->
       <action path="/ext/useradmin/view_users" type="com.dotmarketing.portlets.useradmin.action.ViewUsersAction" name="" validate="false" scope="request">
          <forward name="portlet.ext.useradmin.view_users" path="portlet.ext.useradmin.view_users" />
       </action>
+
 
       <!-- Role Admin -->
       <action path="/ext/roleadmin/view_roles" type="com.dotmarketing.portlets.roleadmin.action.ViewRolesAction" name="" validate="false" scope="request">
