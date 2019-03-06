@@ -610,7 +610,7 @@ public class DependencyManager {
 
 			IdentifierAPI idenAPI = APILocator.getIdentifierAPI();
 			FolderAPI folderAPI = APILocator.getFolderAPI();
-			List<Container> containerList = new ArrayList<>();
+			Set<Container> containerList = new HashSet<>();
 
 			for (String pageId : idsToWork) {
 				Identifier iden = idenAPI.find(pageId);
@@ -694,13 +694,13 @@ public class DependencyManager {
 
 				for (Container container : containerList) {
 
-				    if(container instanceof FileAssetContainer){
-					   fileAssetContainersSet.add(container.getIdentifier());
-					   continue;
-				    }
+					if (container instanceof FileAssetContainer) {
+						fileAssetContainersSet.add(container.getIdentifier());
+					} else {
+						containers.addOrClean(container.getIdentifier(), container.getModDate());
+						containersSet.add(container.getIdentifier());
+					}
 
-					containers.addOrClean( container.getIdentifier(), container.getModDate());
-					containersSet.add(container.getIdentifier());
 					// Structure dependencies
 					List<ContainerStructure> csList = APILocator.getContainerAPI().getContainerStructures(container);
 
