@@ -565,15 +565,7 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 		// eliminate dups
 		Set<Contentlet> contentToIndexSet = new HashSet<>(contentToIndex);
 
-		//Verify if it is enabled the option to regenerate missing metadata files on reindex
-		boolean regenerateMissingMetadata = Config
-				.getBooleanProperty("regenerate.missing.metadata.on.reindex", true);
-		/*
-		Verify if it is enabled the option to always regenerate metadata files on reindex,
-		enabling this could affect greatly the performance of a reindex process.
-		 */
-		boolean alwaysRegenerateMetadata = Config
-				.getBooleanProperty("always.regenerate.metadata.on.reindex", false);
+
 
 		for(final Contentlet contentlet : contentToIndexSet) {
 
@@ -589,13 +581,6 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 
             try {
 
-				if (contentlet.isLive() || contentlet.isWorking()) {
-					if (alwaysRegenerateMetadata) {
-						new TikaUtils().generateMetaData(contentlet, true);
-					} else if (regenerateMissingMetadata) {
-						new TikaUtils().generateMetaData(contentlet);
-					}
-				}
 
 				if (contentlet.isWorking()) {
 

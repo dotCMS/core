@@ -293,7 +293,7 @@ public class ReindexThread extends Thread {
 						BulkRequestBuilder bulk=client.prepareBulk();
 						final ArrayList<IndexJournal<String>> recordsToDelete= new ArrayList<>();
 						while(!remoteQ.isEmpty()) {
-
+	                        bulk=client.prepareBulk();
 							IndexJournal<String> idx = remoteQ.removeFirst();
 
 							try {
@@ -629,6 +629,7 @@ public class ReindexThread extends Thread {
 	public synchronized static void createThread() {
 		if (instance == null) {
 			instance = new ReindexThread();
+			instance.setName("ReindexThread");
 			instance.sleep = Config.getIntProperty("reindex.thread.sleep", 100);
 			instance.delay = Config.getIntProperty("reindex.thread.delay", 7500);
 			instance.delayOnError = Config.getIntProperty("reindex.thread.delayonerror", 500);

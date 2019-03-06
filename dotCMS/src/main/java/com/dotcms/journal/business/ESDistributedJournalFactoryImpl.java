@@ -106,21 +106,13 @@ public class ESDistributedJournalFactoryImpl<T> extends DistributedJournalFactor
     @Override
     protected boolean areRecordsLeftToIndex() throws DotDataException {
 
-        DotConnect dc = new DotConnect();
-        String serverId = ConfigUtils.getServerId();
-        long count = 0;
         try {
-            dc.setSQL("select count(*) as count from dist_reindex_journal");
-            dc.addParam(serverId);
-            List<Map<String, String>> results = dc.loadResults();
-            String c = results.get(0).get("count");
-            count = Long.parseLong(c);
+            return recordsLeftToIndexForServer() > 0;
         } catch (Exception ex) {
             Logger
-            .fatal(this,"Error  unlocking the reindex journal table" +  ex);
+            .fatal(this,"Error unlocking the reindex journal table" +  ex);
         }
-
-        return count > 0;
+        return false;
     }
 
     @Override
@@ -445,11 +437,11 @@ public class ESDistributedJournalFactoryImpl<T> extends DistributedJournalFactor
     }
 
     @Override
-    protected long recordsLeftToIndexForServer(Connection conn) throws DotDataException {
-        DotConnect dc = new DotConnect();
+    protected long recordsLeftToIndexForServer(final Connection conn) throws DotDataException {
+        final DotConnect dc = new DotConnect();
         dc.setSQL("select count(*) as count from dist_reindex_journal");
-        List<Map<String, String>> results = results = dc.loadResults(conn);
-        String c = results.get(0).get("count");
+        final List<Map<String, String>> results = dc.loadResults(conn);
+        final String c = results.get(0).get("count");
         return Long.parseLong(c);
     }
 
