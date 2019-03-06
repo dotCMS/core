@@ -843,17 +843,20 @@ public class ImportUtil {
                 String relatedQuery = line[column];
                 List<Contentlet> relatedContentlets;
                 try{
-                    relatedContentlets = RelationshipUtil
-                            .getRelatedContentFromQuery(relationship, new StructureTransformer(contentType).from(), language,
-                                    relatedQuery, user);
+                    if(relatedQuery !=null && !relatedQuery.trim().isEmpty()) {
+                        relatedContentlets = RelationshipUtil
+                                .getRelatedContentFromQuery(relationship,
+                                        new StructureTransformer(contentType).from(), language,
+                                        relatedQuery, user);
 
-                    //If no error add the relatedContentlets
-                    if(onlyChild.get(column)) {
-                        csvRelationshipRecordsChildOnly.put(relationship, relatedContentlets);
-                    } else if(onlyParent.get(column)) {
-                        csvRelationshipRecordsParentOnly.put(relationship, relatedContentlets);
-                    } else {
-                        csvRelationshipRecords.put(relationship, relatedContentlets);
+                        //If no error add the relatedContentlets
+                        if (onlyChild.get(column)) {
+                            csvRelationshipRecordsChildOnly.put(relationship, relatedContentlets);
+                        } else if (onlyParent.get(column)) {
+                            csvRelationshipRecordsParentOnly.put(relationship, relatedContentlets);
+                        } else {
+                            csvRelationshipRecords.put(relationship, relatedContentlets);
+                        }
                     }
                 } catch(DotDataValidationException e){
                     //add the error message
@@ -1481,6 +1484,11 @@ public class ImportUtil {
         for (ContentletRelationships.ContentletRelationshipRecords relationshipRecord : relationshipRecords) {
             List<Contentlet> csvRelatedContentlet = csvRelationshipRecords
                     .get(relationshipRecord.getRelationship());
+
+            if (csvRelatedContentlet == null){
+                relationshipRecord.setRecords(new ArrayList<>());
+            }
+
             if (UtilMethods.isSet(csvRelatedContentlet)) {
                 relationshipRecord.getRecords().addAll(csvRelatedContentlet);
             }
