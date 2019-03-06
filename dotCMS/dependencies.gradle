@@ -36,7 +36,7 @@ dependencies {
     compile group: 'com.dotcms.lib', name: 'dot.chemistry-opencmis-server-support', version:'0.8.0_4'
     compile group: 'com.dotcms.lib', name: 'dot.chemistry-opencmis-test-util', version:'0.8.0_4'
     compile group: 'com.dotcms.lib', name: 'dot.com.dotmarketing.jhlabs.images.filters', version:'ukv_2'
-    compile group: 'com.dotcms.lib', name: 'dot.commons-beanutils', version:'1.6.1_2'
+    compile group: 'com.dotcms.lib', name: 'dot.commons-beanutils', version:'1.9.3_2'
     compile group: 'com.dotcms.lib', name: 'dot.commons-cli', version:'1.2_2'
     compile group: 'com.dotcms.lib', name: 'dot.commons-collections', version:'3.2_2'
     compile group: 'com.dotcms.lib', name: 'dot.commons-configuration', version:'1.0_2'
