@@ -1,14 +1,5 @@
 package com.dotcms.integritycheckers;
 
-import java.io.File;
-import java.io.IOException;
-import java.math.BigDecimal;
-import java.sql.SQLException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -24,10 +15,20 @@ import com.dotmarketing.portlets.contentlet.business.DotContentletStateException
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.util.Constants;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
+
+import java.io.File;
+import java.io.IOException;
+import java.math.BigDecimal;
+import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 /**
  * File assets integrity checker implementation.
@@ -367,6 +368,17 @@ public class ContentFileAssetIntegrityChecker extends AbstractIntegrityChecker {
                 dc.addParam(newContentletIdentifier);
                 dc.addParam(oldContentletIdentifier);
                 dc.loadResult();
+            }
+
+
+            if (structureTypeId == Structure.STRUCTURE_TYPE_FILEASSET || assetURL.contains(Constants.CONTAINER_FOLDER_PATH)) {
+                // Update the content references in the page with the new
+                // Identifier
+                dc.setSQL("UPDATE multi_tree SET parent2 = ? WHERE parent2 = ?");
+                dc.addParam(newContentletIdentifier);
+                dc.addParam(oldContentletIdentifier);
+                dc.loadResult();
+                // todo: invalidate multi tree cache
             }
         }
 
