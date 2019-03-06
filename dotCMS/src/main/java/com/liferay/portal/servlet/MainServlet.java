@@ -24,6 +24,8 @@ package com.liferay.portal.servlet;
 
 import com.dotcms.config.DotInitializationService;
 import com.dotcms.repackage.com.httpbridge.webproxy.http.TaskController;
+import com.dotcms.repackage.org.apache.commons.beanutils.PropertyUtils;
+import com.dotcms.repackage.org.apache.commons.beanutils.SuppressPropertiesBeanIntrospector;
 import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.repackage.org.apache.struts.action.ActionServlet;
 import com.dotcms.repackage.org.apache.struts.tiles.TilesUtilImpl;
@@ -39,6 +41,7 @@ import com.dotmarketing.servlets.InitServlet;
 import com.dotmarketing.startup.StartupTasksExecutor;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.SecurityLogger;
 import com.liferay.portal.auth.PrincipalThreadLocal;
 import com.liferay.portal.ejb.CompanyLocalManagerUtil;
 import com.liferay.portal.ejb.PortletManagerUtil;
@@ -58,6 +61,7 @@ import com.liferay.util.ParamUtil;
 import com.liferay.util.StringUtil;
 import com.liferay.util.servlet.EncryptedServletRequest;
 import com.liferay.util.servlet.UploadServletRequest;
+import java.util.HashSet;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -73,6 +77,7 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Optional;
 import java.util.TreeMap;
 
 /**
@@ -107,6 +112,15 @@ public class MainServlet extends ActionServlet {
 			} finally {
 				DbConnectionFactory.closeSilently();
 			}
+			
+			HashSet<String> suppressProperties = new HashSet<>();
+            suppressProperties.add("class");
+            suppressProperties.add("multipartRequestHandler");
+            suppressProperties.add("resultValueMap");
+            PropertyUtils.addBeanIntrospector(new SuppressPropertiesBeanIntrospector(suppressProperties));
+            PropertyUtils.clearDescriptors();
+            Logger.info(this.getClass(), "SuppressPropertiesBeanIntrospector enabled for legacy Struts applications");
+
 
 			// Context path
 
@@ -422,6 +436,20 @@ public class MainServlet extends ActionServlet {
 				Logger.error(this, e.getMessage(), e);
 			}
 		}
+		
+		Optional<String> badProp = req.getParameterMap().keySet().stream().filter(k -> k.startsWith("class.")).findFirst();
+        if (badProp.isPresent()) {
+          SecurityLogger.logInfo(this.getClass(), "Possible exploit probe from " + req.getRemoteAddr()
+              + ".  See: CVE-2014-0114 -  class parameter found in request: " + badProp.get());
+          try {
+            PropertyUtils.getNestedProperty(this, "class");
+            Logger.error(this, "SECURITY ISSUE- `class` attribute NOT DISABLED for BeanUtil introspection, See: CVE-2014-0114 ");
+          } catch (java.lang.NoSuchMethodException nse) {
+            Logger.info(this, "`class` is disabled as a property for introspection in struts for security");
+          } catch (Exception e) {
+            Logger.warn(this, e.getMessage(), e);
+          }
+        }
 
 		// Process pre service events
 
