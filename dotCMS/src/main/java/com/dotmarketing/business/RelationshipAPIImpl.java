@@ -295,23 +295,23 @@ public class RelationshipAPIImpl implements RelationshipAPI {
             return name;
         }
 
-        String s = "";
+        String finalSuffix = "";
 
         if(isChild){
             if (relationship.getCardinality() != WebKeys.Relationship.RELATIONSHIP_CARDINALITY.ONE_TO_ONE.ordinal()){
-                s = selfRelated?"Children":suffix;
+                finalSuffix = selfRelated?"Children":suffix;
             } else if(selfRelated){
-                s = suffix;
+                finalSuffix = suffix;
             }
         } else{
             if (relationship.getCardinality()  == WebKeys.Relationship.RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal()){
-                s = selfRelated?"Parents":suffix;
+                finalSuffix = selfRelated?"Parents":suffix;
             } else if(selfRelated){
-                s = suffix;
+                finalSuffix = suffix;
             }
         }
 
-       return name + s;
+       return name + finalSuffix;
     }
 
 
