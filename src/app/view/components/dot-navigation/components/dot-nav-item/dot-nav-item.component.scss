@@ -34,9 +34,10 @@ dot-sub-nav {
         cursor: pointer;
         display: flex;
         min-height: $navigation-item-height;
-        padding: 0 $basic-padding 0 23px; // Centered icon when the menu is collapsed
+        padding: 14px $basic-padding 13px 23px; // top and bottom padding to get min 48px height
         position: relative;
         transition: background-color $basic-speed ease $basic-speed;
+        width: $navigation-width;
 
         dot-nav-icon {
             display: flex;
@@ -47,8 +48,8 @@ dot-sub-nav {
         }
 
         &-label {
-            word-break: break-word;
             margin-left: $basic-padding * 2;
+            word-break: break-word;
         }
     }
 
