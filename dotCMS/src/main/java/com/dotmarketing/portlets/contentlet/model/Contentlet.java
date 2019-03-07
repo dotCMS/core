@@ -137,7 +137,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 
     	    return title;
 		} catch (Exception e) {
-			Logger.error(this,"Unable to get title.");
+			Logger.debug(this,"Unable to get title for contentlet, id: " + getIdentifier(), e);
 			return  "";
 		}
 	}
