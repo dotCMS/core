@@ -208,6 +208,7 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
         const dialog = de.query(By.css('dot-dialog')).componentInstance;
         dialog.hide.emit();
         expect(comp.displayDialog).toBe(false);
+        expect(comp.hideButtons).toBe(false);
         expect(comp.formData).toBe(null);
         expect(comp.dialogActiveTab).toBe(null);
         expect(comp.setDialogOkButtonState).toHaveBeenCalledWith(false);
