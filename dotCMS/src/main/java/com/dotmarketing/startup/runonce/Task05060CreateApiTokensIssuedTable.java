@@ -5,7 +5,7 @@ import java.util.List;
 import com.dotcms.auth.providers.jwt.factories.ApiTokenSQL;
 import com.dotmarketing.startup.AbstractJDBCStartupTask;
 
-public class Task05060ApiTokensIssuedTable extends AbstractJDBCStartupTask {
+public class Task05060CreateApiTokensIssuedTable extends AbstractJDBCStartupTask {
 
     @Override
     public boolean forceRun() {
