@@ -247,6 +247,7 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
                 this.fieldRows.splice(rowIndex, 1);
             }
         });
+        this.hideButtons = false;
         this.displayDialog = false;
         this.formData = null;
         this.dialogActiveTab = null;
