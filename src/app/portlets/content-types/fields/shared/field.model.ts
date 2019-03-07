@@ -12,5 +12,6 @@ export interface ContentTypeField {
     sortOrder?: number;
     dataType?: string;
     hint?: string;
+    fieldTypeLabel?: string;
     variable?: string;
 }

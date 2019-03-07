@@ -80,6 +80,7 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
     it('should have field attributes label', () => {
         const field = {
             fieldType: 'fieldType',
+            fieldTypeLabel: 'FieldLabel',
             fixed: true,
             indexed: true,
             listed: true,
@@ -96,7 +97,7 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
         const container = de.query(By.css('.field__attribute'));
         expect(container).not.toBeNull();
         expect(container.nativeElement.textContent).toEqual(
-            'Required\u00A0\u00A0•\u00A0\u00A0Indexed\u00A0\u00A0•\u00A0\u00A0Show on list'
+            'FieldLabel\u00A0\u00A0•\u00A0\u00A0Required\u00A0\u00A0•\u00A0\u00A0Indexed\u00A0\u00A0•\u00A0\u00A0Show on list'
         );
     });
 
