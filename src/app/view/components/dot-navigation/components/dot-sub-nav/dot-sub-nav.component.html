@@ -4,8 +4,6 @@
             class="dot-nav-sub__link"
             [class.dot-nav-sub__link--active]="subItem.active"
             (click)="onItemClick($event, subItem)"
-            [routerLink]="subItem.menuLink">
-            {{ subItem.label }}
-        </a>
+            [routerLink]="subItem.menuLink">{{ subItem.label }}</a>
     </li>
 </ul>
