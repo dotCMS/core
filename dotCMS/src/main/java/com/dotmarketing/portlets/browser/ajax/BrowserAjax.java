@@ -1109,6 +1109,7 @@ public class BrowserAjax {
                 List<MultiTree> pageContents = MultiTreeFactory.getMultiTree(cont.getIdentifier());
                 for(MultiTree m : pageContents){
                    	MultiTree mt = new MultiTree(newContentlet.getIdentifier(), m.getParent2(), m.getChild());
+                   	mt.setTreeOrder(m.getTreeOrder());
                    	MultiTreeFactory.saveMultiTree(mt);
                 }
 
