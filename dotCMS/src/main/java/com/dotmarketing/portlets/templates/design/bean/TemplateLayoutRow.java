@@ -25,12 +25,21 @@ public class TemplateLayoutRow implements Serializable{
     private String value;
     private String id;
 
+    private String styleClass;
+
     private Integer[] gridWidths;
     private List<TemplateLayoutColumn> columns;
-    private final Map<Integer,TemplateLayoutColumn> columnMap;;
+    private final Map<Integer,TemplateLayoutColumn> columnMap;
+
     @JsonCreator
-    public TemplateLayoutRow(@JsonProperty("columns") List<TemplateLayoutColumn> columns) {
+    public TemplateLayoutRow(
+            @JsonProperty("columns") final List<TemplateLayoutColumn> columns,
+            @JsonProperty("styleClass") final String styleClass
+    ) {
+
         this.columns = columns;
+        this.styleClass = styleClass;
+
         columnMap = new HashMap<>();
         if(null != columns) {
             for(TemplateLayoutColumn column : columns) {
@@ -40,8 +49,7 @@ public class TemplateLayoutRow implements Serializable{
     }
 
     public TemplateLayoutRow() {
-        
-        this(null);
+        this(null, null);
         
     }
 
@@ -114,6 +122,10 @@ public class TemplateLayoutRow implements Serializable{
 
     public List<TemplateLayoutColumn> getColumns () {
         return columns;
+    }
+
+    public String getStyleClass() {
+        return styleClass;
     }
 
     /**
