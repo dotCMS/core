@@ -286,7 +286,7 @@ public class MapToContentletPopulator  {
 
                 try {
 
-                    List<Contentlet> contentlets = RelationshipUtil
+                    final List<Contentlet> contentlets = RelationshipUtil
                             .filterContentlet(contentlet.getLanguageId(), query,
                                     APILocator.getUserAPI().getSystemUser(), false);
 
