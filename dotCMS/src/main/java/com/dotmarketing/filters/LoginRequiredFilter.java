@@ -8,12 +8,12 @@
  */
 package com.dotmarketing.filters;
 
+import javax.servlet.FilterConfig;
+import javax.servlet.ServletException;
+
 import com.dotcms.filters.interceptor.AbstractWebInterceptorSupportFilter;
 import com.dotcms.filters.interceptor.WebInterceptorDelegate;
 import com.dotcms.filters.interceptor.dotcms.DefaultBackEndLoginRequiredWebInterceptor;
-import com.dotcms.filters.interceptor.dotcms.DefaultFrontEndLoginRequiredWebInterceptor;
-import javax.servlet.FilterConfig;
-import javax.servlet.ServletException;
 
 /**
  * This Filter is in charge if checking if the user is logged in or not.
@@ -37,7 +37,7 @@ public class LoginRequiredFilter extends AbstractWebInterceptorSupportFilter {
         final WebInterceptorDelegate delegate =
                 this.getDelegate(config.getServletContext());
 
-        delegate.add(new DefaultFrontEndLoginRequiredWebInterceptor());
+
         delegate.add(new DefaultBackEndLoginRequiredWebInterceptor());
 
     } // addDefaultInterceptors.
