@@ -361,7 +361,7 @@
 </div>
 
 <div dojoType="dijit.Dialog" id="revealJwtDialog" title="API Token">
-	<textarea class="tokenDivClass" readonly="true" id="revealTokenDiv"></textarea>
+	<textarea class="tokenDivClass" id="revealTokenDiv"></textarea>
 	<div class="buttonRow">
 		<button dojoType="dijit.form.Button" type="button" class=""
 			onClick="dijit.byId('revealJwtDialog').hide();"><%=LanguageUtil.get(pageContext, "close")%></button>
