@@ -62,6 +62,7 @@ dot-icon {
 .field__variable {
     color: gray;
     font-size: $font-size-small;
+    overflow: hidden;
     display: flex;
 }
 
