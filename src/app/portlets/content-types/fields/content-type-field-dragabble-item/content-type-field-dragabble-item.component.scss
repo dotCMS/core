@@ -62,14 +62,11 @@ dot-icon {
 .field__variable {
     color: gray;
     font-size: $font-size-small;
-    line-height: 1rem;
-    overflow: hidden;
     display: flex;
 }
 
 .field__attribute {
     min-height: $font-size-small;
-    margin-top: 6px;
     margin-left: 26px;
 }
 
