@@ -576,7 +576,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 anyone who need it can subscribed to this commit listener event, on this case will be
                 mostly use it in order to invalidate this contentlet cache.
                  */
-                triggerCommitListenerEvent(contentlet, user);
+                triggerCommitListenerEvent(contentlet, user, true);
 
                 // by now, the publish event is making a duplicate reload events on the site browser
                 // so we decided to comment it out by now, and
@@ -2176,7 +2176,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 }
 
                 HibernateUtil.addCommitListener(() -> this.contentletSystemEventUtil.pushArchiveEvent(workingContentlet), 1000);
-
+                HibernateUtil.addCommitListener(() -> localSystemEventsAPI.notify(new ContentletPublishEvent(contentlet, user, true)));
             } else {
                 throw new DotContentletStateException("Contentlet with Identifier '" + contentlet.getIdentifier() +
                         "' must be unlocked before being archived");
@@ -2467,7 +2467,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             anyone who need it can subscribed to this commit listener event, on this case will be
             mostly use it in order to invalidate this contentlet cache.
              */
-            triggerCommitListenerEvent(contentlet, user);
+            triggerCommitListenerEvent(contentlet, user, false);
 
         } catch(DotDataException | DotStateException| DotSecurityException e) {
             ActivityLogger.logInfo(getClass(), "Error Unpublishing Content", "StartDate: " +contentPushPublishDate+ "; "
@@ -2549,6 +2549,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             publishRelatedHtmlPages(contentlet);
 
             HibernateUtil.addCommitListener(() -> this.sendUnArchiveContentSystemEvent(contentlet), 1000);
+            HibernateUtil.addCommitListener(() -> localSystemEventsAPI.notify(new ContentletPublishEvent(contentlet, user, false)));
         } catch(DotDataException | DotStateException| DotSecurityException e) {
             ActivityLogger.logInfo(getClass(), "Error Unarchiving Content", "StartDate: " +contentPushPublishDate+ "; "
                     + "EndDate: " +contentPushExpireDate + "; User:" + (user != null ? user.getUserId() : "Unknown")
@@ -6519,8 +6520,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
      *
      * @param contentlet Contentlet to be processed by the Commit listener event
      * @param user       User that triggered the event
+     * @param publish    true if it is publish, false unpublish
      */
-    private void triggerCommitListenerEvent(final Contentlet contentlet, final User user) {
+    private void triggerCommitListenerEvent(final Contentlet contentlet, final User user, final boolean publish) {
 
         try {
             if (!contentlet.getBoolProperty(Contentlet.IS_TEST_MODE)) {
@@ -6544,7 +6546,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             HibernateUtil.addCommitListener(()-> {
                 //Triggering event listener when this commit listener is executed
                 localSystemEventsAPI
-                        .notify(new ContentletPublishEvent(contentlet, user));
+                        .notify(new ContentletPublishEvent(contentlet, user, publish));
             });
         } catch (DotHibernateException e) {
             throw new DotRuntimeException(e);

@@ -55,7 +55,12 @@ public class ContainerLoader implements DotLoader {
 
                 final DotStateException dotStateException = new DotStateException("Cannot find container for : " + key);
                 new ContainerExceptionNotifier(dotStateException, UtilMethods.isSet(key.id1) ? key.id1 : key.path).notifyUser();
-                throw new DotStateException("cannot find container for : " + key);
+                throw dotStateException;
+            }
+
+            if (container.isArchived()) {
+
+                throw new DotStateException("The container  : " + key  + " is archived");
             }
 
             Logger.debug(this, "DotResourceLoader:\tWriting out container inode = " + container.getInode());
