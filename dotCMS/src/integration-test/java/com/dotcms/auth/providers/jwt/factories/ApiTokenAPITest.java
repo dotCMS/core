@@ -16,6 +16,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.dotcms.auth.providers.jwt.beans.ApiToken;
+import com.dotcms.auth.providers.jwt.beans.JWToken;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotcms.repackage.org.apache.commons.net.util.SubnetUtils;
@@ -33,14 +34,16 @@ public class ApiTokenAPITest {
 
     static ApiTokenCache cache;
 
+    static User TOKEN_USER =null;
 
-    static final String USER_ID = "userId1";
     static String REQUESTING_USER_ID;
     static final String REQUESTING_IP = "192.156.2.6";
 
     static final String IP_NETWORK = "192.168.211.0/24";
     static final String IN_NETWORK = "192.168.211.55";
     static final String OUT_OF_NETWORK = "10.0.0.4";
+
+    
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -63,7 +66,7 @@ public class ApiTokenAPITest {
         for (String sql : sqls) {
             new DotConnect().setSQL(sql).loadResult();
         }
-
+         TOKEN_USER = new UserDataGen().nextPersisted();
 
     }
 
@@ -82,13 +85,13 @@ public class ApiTokenAPITest {
      * @return
      */
     ApiToken getLoadedToken() {
-
+        
         final Date expireDate = futureDate(Duration.ofDays(30));
         final Date issueDate = new Date();
         final Date revokedDate = futureDate(Duration.ofDays(2));
         return ApiToken.builder().withIssuer(ClusterFactory.getClusterId()).withExpires(expireDate).withIssueDate(issueDate)
                 .withClaims("{'test':'test'}").withRequestingIp("withRequestingIp")
-                .withRequestingUserId(APILocator.systemUser().getUserId()).withRevoked(revokedDate).withUserId("withUserId").build();
+                .withRequestingUserId(APILocator.systemUser().getUserId()).withRevoked(revokedDate).withUserId(TOKEN_USER.getUserId()).build();
 
 
     }
@@ -96,10 +99,9 @@ public class ApiTokenAPITest {
     ApiToken getSkinnyToken() {
 
 
-        User user = new UserDataGen().nextPersisted();
 
         return ApiToken.builder().withIssuer(ClusterFactory.getClusterId()).withExpires(futureDate(Duration.ofDays(10)))
-                .withUserId(user.getUserId()).withRequestingUserId(APILocator.systemUser().getUserId()).withRequestingIp("127.0.0.1")
+                .withUserId(TOKEN_USER.getUserId()).withRequestingUserId(APILocator.systemUser().getUserId()).withRequestingIp("127.0.0.1")
                 .build();
     }
 
@@ -187,11 +189,37 @@ public class ApiTokenAPITest {
     }
 
 
-    @Test(expected = DotStateException.class)
+
     public void test_JWT_claims_json() {
+        
+        final String key="realClaim";
+        final String value="I am a claim, I am json";
+        final String json = "{\"" + key +"\":\""+value+"\"}";
+        
         ApiToken fatToken = ApiToken.from(getLoadedToken()).withClaims("I am not a claim, I should be json").build();
-        assert (!fatToken.isValid());
-        ApiToken issued = apiTokenAPI.persistApiToken(fatToken, APILocator.systemUser());
+        assert (fatToken.claims.isEmpty());
+        fatToken = apiTokenAPI.persistApiToken(fatToken, APILocator.systemUser());
+        assert (fatToken.isValid());
+        
+        fatToken = ApiToken.from(getLoadedToken()).withClaims(json).build();
+        assert (fatToken.claims.size()==1);
+        assert (fatToken.claims.get(key).equals(value));
+        
+        fatToken = apiTokenAPI.persistApiToken(fatToken, APILocator.systemUser());
+        fatToken = apiTokenAPI.findApiToken(fatToken.id).get();
+        assert (fatToken.isValid());
+        assert (fatToken.claims.size()==1);
+        assert (fatToken.claims.get(key).equals(value));
+        
+        
+        String jwt = apiTokenAPI.getJWT(fatToken, APILocator.systemUser());
+        
+        JWToken token=JsonWebTokenFactory.getInstance().getJsonWebTokenService().parseToken(jwt);
+
+        assert (token.getClaims().size()==1);
+        assert (token.getClaims().get(key).equals(value));
+        
+        
     }
 
     @Test
@@ -419,11 +447,11 @@ public class ApiTokenAPITest {
         cal.add(Calendar.MONTH, 1);
         cal.set(Calendar.MILLISECOND, 0);
         final Date expireDate = cal.getTime();
-        ApiToken issue = apiTokenAPI.persistApiToken(USER_ID, expireDate, REQUESTING_USER_ID, REQUESTING_IP);
+        ApiToken issue = apiTokenAPI.persistApiToken(TOKEN_USER.getUserId(), expireDate, REQUESTING_USER_ID, REQUESTING_IP);
 
 
         assertEquals(REQUESTING_IP, issue.requestingIp);
-        assertEquals(USER_ID, issue.userId);
+        assertEquals(TOKEN_USER.getUserId(), issue.userId);
         assertEquals(REQUESTING_USER_ID, issue.requestingUserId);
         assertEquals(expireDate, issue.expiresDate);
 

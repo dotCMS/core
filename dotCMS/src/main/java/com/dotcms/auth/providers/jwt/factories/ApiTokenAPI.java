@@ -22,6 +22,7 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.json.JSONObject;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
@@ -282,7 +283,7 @@ public class ApiTokenAPI {
         User user = Try.of(() -> APILocator.getUserAPI().loadUserById(requestingUserId))
                 .getOrElseThrow(() -> new DotRuntimeException("Unable to load user" + requestingUserId));
 
-        Map<String,String> claims = (label!=null) ? ImmutableMap.of("label", label) : ImmutableMap.of();
+        Map<String,Object> claims = (label!=null) ? ImmutableMap.of("label", label) : ImmutableMap.of();
         
         
         final ApiToken tokenIssued = ApiToken.builder()
@@ -372,7 +373,8 @@ public class ApiTokenAPI {
             .addParam(newToken.revoked)
             .addParam("0.0.0.0/0".equals(newToken.allowNetwork) ? null : newToken.allowNetwork)
             .addParam(newToken.issuer)
-            .addParam(newToken.claims)
+            .addParam(Try.of(()->new ObjectMapper().writeValueAsString(newToken.claims)).getOrNull())
+            
             .addParam(newToken.modificationDate).loadResult();
 
             return newToken;
@@ -445,6 +447,13 @@ public class ApiTokenAPI {
      */
     private boolean checkPerms(final ApiToken token,final User user) {
         if(token ==null || user==null) return false;
+
+        if(null == Try.of(() -> APILocator.getUserAPI().loadUserById(token.userId)).getOrNull()) {
+            Logger.warn(this.getClass(), "trying to generate an API token for a non existing user.  Trying:" + token);
+            return false;
+        }
+        
+        
         return Try.of(() -> (APILocator.getRoleAPI().doesUserHaveRole(user, APILocator.getRoleAPI().loadCMSAdminRole())
                 || user.getUserId().equals(token.getUserId()) 
                 || user.getUserId().equals(token.requestingUserId))

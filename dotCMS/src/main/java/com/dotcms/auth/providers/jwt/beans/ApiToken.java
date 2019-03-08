@@ -10,7 +10,6 @@ import javax.annotation.Nonnull;
 
 import com.dotcms.auth.providers.jwt.factories.ApiTokenAPI;
 import com.dotcms.repackage.org.apache.commons.net.util.SubnetUtils;
-import com.dotcms.repackage.org.apache.commons.net.util.SubnetUtils.SubnetInfo;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.util.Logger;
@@ -36,7 +35,7 @@ public class ApiToken implements JWToken {
     public final Date revoked;
     public final String allowNetwork;
     public final Date issueDate;
-    public final String claims;
+    public final Map<String,Object> claims;
     public final String issuer;
     public final Date modificationDate;
 
@@ -50,7 +49,7 @@ public class ApiToken implements JWToken {
         this.revoked = builder.revoked;
         this.allowNetwork = builder.allowNetwork;
         this.issueDate = builder.issueDate;
-        this.claims = builder.claims;
+        this.claims = (builder.claims==null) ? ImmutableMap.of() : builder.claims;
         this.modificationDate = builder.modificationDate;
         this.issuer = builder.issuer;
     }
@@ -238,7 +237,7 @@ public class ApiToken implements JWToken {
         private Date revoked;
         private String allowNetwork;
         private Date issueDate;
-        private String claims;
+        private Map<String,Object> claims;
         private Date modificationDate;
         private String issuer;
 
@@ -306,12 +305,12 @@ public class ApiToken implements JWToken {
         }
 
         public Builder withClaims(@Nonnull String claims) {
-            this.claims = claims;
+            this.claims = Try.of(()-> new ObjectMapper().readValue(claims,HashMap.class)).getOrElse(new HashMap<String, Object>());
             return this;
         }
 
-        public Builder withClaims(@Nonnull Map<String,String> claims) {
-            this.claims = Try.of(()-> new ObjectMapper().writeValueAsString(claims)).getOrNull();
+        public Builder withClaims(@Nonnull Map<String,Object> claims) {
+            this.claims = claims;
             return this;
         }
         public Builder withIssuer(@Nonnull String issuer) {
@@ -374,10 +373,8 @@ public class ApiToken implements JWToken {
 
     @Override
     public ImmutableMap<String, Object> getClaims() {
-        @SuppressWarnings("unchecked")
-        HashMap<String, Object> map =
-                (HashMap<String, Object>) Try.of(() -> new ObjectMapper().readValue(this.claims, HashMap.class)).getOrElse(new HashMap<>());
-        return ImmutableMap.copyOf(map);
+
+        return ImmutableMap.copyOf(claims);
     }
 
     @Override

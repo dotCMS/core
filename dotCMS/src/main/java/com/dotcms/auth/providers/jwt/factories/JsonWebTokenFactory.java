@@ -150,7 +150,10 @@ public class JsonWebTokenFactory implements Serializable {
         
         @Override
         public String generateApiToken(final ApiToken apiToken) {
-            Map<String,Object> claims = Try.of(()->new ObjectMapper().readValue(apiToken.claims, HashMap.class)).getOrElse(new HashMap<>());
+            final Map<String,Object> claims = new HashMap<>();
+            apiToken.getClaims().forEach((k,v)->{if(v!=null) claims.put(k,v);});
+            
+
             
             claims.put(CLAIM_UPDATED_AT, apiToken.modificationDate);
             if(apiToken.allowNetwork!=null) {

@@ -172,7 +172,7 @@ public class ApiTokenResource implements Serializable {
 
         String netmaskStr = (formData.network!=null && !"0.0.0.0/0".equals(formData.network)) ? formData.network:null;
         final String netmask = Try.of(()->new SubnetUtils(netmaskStr).getInfo().getCidrSignature()).getOrNull();
-        Map<String, String> claims = formData.claims;
+        Map<String, Object> claims = formData.claims;
         final int expirationSeconds = formData.expirationSeconds;
         if(expirationSeconds<0) {
             return ExceptionMapperUtil.createResponse(new DotStateException("invalid expirationDays"), Response.Status.NOT_FOUND);
