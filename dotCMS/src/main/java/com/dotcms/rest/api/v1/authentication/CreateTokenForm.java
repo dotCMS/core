@@ -8,6 +8,7 @@ import com.dotcms.repackage.org.hibernate.validator.constraints.Length;
 import com.dotcms.rest.api.Validated;
 import com.dotcms.rest.exception.ValidationException;
 import com.dotmarketing.util.SecurityLogger;
+import com.dotmarketing.util.UtilMethods;
 
 @JsonDeserialize(builder = CreateTokenForm.Builder.class)
 public class CreateTokenForm extends Validated {
@@ -58,7 +59,7 @@ public class CreateTokenForm extends Validated {
             return this;
         }
         public Builder label(String label) {
-            this.label = label;
+            this.label = UtilMethods.isSet(label) ? label : null;
             return this;
         }
         

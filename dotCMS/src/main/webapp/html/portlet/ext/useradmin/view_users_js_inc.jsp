@@ -1474,8 +1474,10 @@
       var data={};
       data.expirationSeconds = Math.ceil(timeDiff / 1000 ); 
       data.userId = currentUser.id;
-      data.network=formData.network;
-      data.claims={"label" : formData.nameLabel};
+      data.network=formData.network; 
+      if(formData.nameLabel!=null && formData.nameLabel.length>0){
+          data.claims={"label" : formData.nameLabel};
+      }
         var xhrArgs = {
             url : "/api/v1/apitoken",
             handleAs: "json",
