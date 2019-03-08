@@ -286,18 +286,7 @@ public class MapToContentletPopulator  {
 
                 try {
 
-                    List<Contentlet> contentlets = new ArrayList<>();
-
-                    if (query.equals("[]")){
-                        if(relationships==null) {
-
-                            relationships = new HashMap<>();
-                        }
-                        relationships.put(relationship, contentlets);
-                        continue;
-                    }
-
-                    contentlets = RelationshipUtil
+                    List<Contentlet> contentlets = RelationshipUtil
                             .filterContentlet(contentlet.getLanguageId(), query,
                                     APILocator.getUserAPI().getSystemUser(), false);
 
@@ -316,6 +305,14 @@ public class MapToContentletPopulator  {
 
                     Logger.warn(this, e.getMessage(), e);
                 }
+            } else if (query != null && query.trim().equals("")){
+
+                //wipe out relationship
+                if(relationships==null) {
+
+                    relationships = new HashMap<>();
+                }
+                relationships.put(relationship, new ArrayList<>());
             }
         }
 
