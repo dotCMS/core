@@ -1475,6 +1475,7 @@
       data.expirationSeconds = Math.ceil(timeDiff / 1000 ); 
       data.userId = currentUser.id;
       data.network=formData.network;
+      data.claims={"label" : formData.nameLabel};
         var xhrArgs = {
             url : "/api/v1/apitoken",
             handleAs: "json",
@@ -1499,6 +1500,21 @@
   }
 
   
+  function toggleTokens(){
+
+      if(document.getElementsByClassName('tokenLong')[0].style.display!="none") return;
+
+      var all = document.getElementsByClassName('tokenShort');
+      for (var i = 0; i < all.length; i++) {
+        all[i].style.display = (all[i].style.display=="none") ? "" : "none";
+      }
+      var all = document.getElementsByClassName('tokenLong');
+      for (var i = 0; i < all.length; i++) {
+        all[i].style.display = (all[i].style.display=="none") ? "" : "none";
+      }
+      
+      
+  }
 	
   function writeApiKeys(data) {
       var parent=document.getElementById("apiKeysDiv")
@@ -1507,6 +1523,7 @@
       var myTable= `<table class="listingTable">
     	  <tr>
 	    	  <th style='width: 200px;'><%=LanguageUtil.get(pageContext, "api.token.id") %></th>
+	    	  <th style='width: 200px;'><%=LanguageUtil.get(pageContext, "Label") %></th>
 	    	  <th style='width: 200px;'><%=LanguageUtil.get(pageContext, "api.token.issued") %></th>
 	    	  <th style='width: 200px;'><%=LanguageUtil.get(pageContext, "api.token.expires") %></th>
 	    	  <th style='width: 200px;'><%=LanguageUtil.get(pageContext, "api.token.revoke") %></th>
@@ -1518,7 +1535,8 @@
     	  
     	  var token=tokens[i];
     	  var myRow=(token.valid) ? `<tr >` : `<tr style="background: rgb(250,250,250)">`;
-    	  myRow +=(token.expired || token.revoked)   ? `<td style="text-decoration:line-through;">{token.id}</td>` : `<td >{token.id}</td>`   ;
+    	  myRow +=((token.expired || token.revoked)   ? `<td style="text-decoration:line-through;cursor:pointer;" ` : `<td style="cursor:pointer;" `) + ` onclick="toggleTokens()"><span class="tokenShort">{token.idShort}</span><span style="display:none;" class="tokenLong">{token.id}</span></td>`;
+          myRow +=(token.expired || token.revoked)   ? `<td style="text-decoration:line-through;">{token.label}</td>` : `<td >{token.label}</td>`   ;
     	  myRow +=(token.valid)   ? `<td >{token.issueDate}</td>`:`<td>{token.issueDate}</td>`;
           myRow +=(!token.expired)? `<td >{token.expiresDate}</td>` : `<td style="text-decoration:line-through;">{token.expiresDate}</td>` ;
           myRow +=(!token.revoked)? `<td >{token.revokedDate}</td>` : `<td style="text-decoration:line-through;">{token.revokedDate}</td>` ;
@@ -1529,9 +1547,11 @@
                 : `<td style="text-align:center"><a style="text-decoration:underline" href='javascript:revokeKey(\"{token.id}\")'><%=LanguageUtil.get(pageContext, "api.token.revoke") %></a> | <a style="text-decoration:underline" href='javascript:getJwt("{token.id}")'><%=LanguageUtil.get(pageContext, "api.token.get.token") %></a></td>`;
           myRow+=`</tr>`;
 	    	   
-    	   
+
     	  myRow=myRow
     	  .replace(new RegExp("{token.id}", 'g'), token.id)
+    	  .replace(new RegExp("{token.idShort}", 'g'), token.id.substring(0, token.id.indexOf('-'))+"...")
+          .replace(new RegExp("{token.label}", 'g'), (token.claims.label==null) ?"-" : token.claims.label)
     	  .replace(new RegExp("{token.expiresDate}", 'g'), toDate(token.expiresDate))
     	  .replace(new RegExp("{token.revokedDate}", 'g'), toDate(token.revokedDate))
     	  .replace(new RegExp("{token.requestingUserId}", 'g'), token.requestingUserId)

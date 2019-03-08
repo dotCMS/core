@@ -332,8 +332,16 @@
 	execute="requestNewAPIToken(arguments[0]);">
 	<h3>Request New Token</h3>
 	<table class="listingTable">
-		<tr>
+        <tr>
+            <td><label for="netmask"><%=LanguageUtil.get(pageContext, "Label")%>:
+            </label></td>
 
+            <td><input dojoType="dijit.form.TextBox" type="text"
+                name="nameLabel" id="nameLabel" value=""></td>
+        </tr>
+    
+    
+		<tr>
 			<td><label for="expiresDate"><%=LanguageUtil.get(pageContext, "api.token.request.expires.date")%>:
 			</label></td>
 			<td><input dojoType="dijit.form.DateTextBox" type="text"

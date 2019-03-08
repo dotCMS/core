@@ -3,6 +3,7 @@ package com.dotcms.auth.providers.jwt.factories;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -22,6 +23,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.json.JSONObject;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 
 import io.vavr.control.Try;
@@ -260,17 +262,45 @@ public class ApiTokenAPI {
     public ApiToken persistApiToken(final String userId, final Date expireDate, final String requestingUserId,
             final String requestingIpAddress) {
 
+        return persistApiToken(userId, expireDate, requestingUserId, requestingIpAddress, null);
+
+
+    }
+    
+    /**
+     * creates and inserts a new ApiToken
+     * @param userId
+     * @param expireDate
+     * @param requestingUserId
+     * @param requestingIpAddress
+     * @return
+     */
+    @CloseDBIfOpened
+    public ApiToken persistApiToken(final String userId, final Date expireDate, final String requestingUserId,
+            final String requestingIpAddress, String label) {
+
         User user = Try.of(() -> APILocator.getUserAPI().loadUserById(requestingUserId))
                 .getOrElseThrow(() -> new DotRuntimeException("Unable to load user" + requestingUserId));
 
-        final ApiToken tokenIssued = ApiToken.builder().withUserId(userId).withExpires(expireDate)
-                .withRequestingUserId(requestingUserId).withRequestingIp(requestingIpAddress).build();
+        Map<String,String> claims = (label!=null) ? ImmutableMap.of("label", label) : ImmutableMap.of();
+        
+        
+        final ApiToken tokenIssued = ApiToken.builder()
+                .withUserId(userId)
+                .withExpires(expireDate)
+                .withClaims(claims)
+                .withRequestingUserId(requestingUserId)
+                .withRequestingIp(requestingIpAddress)
+                .build();
 
 
         return persistApiToken(tokenIssued, user);
 
 
     }
+    
+    
+    
     /**
      * creates and inserts a new ApiToken and sets the requesting user to the user passed in
      * @param tokenIssued

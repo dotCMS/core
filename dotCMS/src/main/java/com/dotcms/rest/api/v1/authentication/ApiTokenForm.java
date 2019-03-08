@@ -1,7 +1,10 @@
 package com.dotcms.rest.api.v1.authentication;
 
+import java.util.Map;
+
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonProperty;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.google.common.collect.ImmutableMap;
 
 @JsonDeserialize(builder = ApiTokenForm.Builder.class)
 public class ApiTokenForm  {
@@ -13,7 +16,7 @@ public class ApiTokenForm  {
     public final boolean showRevoked;
     public final int expirationSeconds;
     public final String network;
-
+    public final Map<String,String> claims;
 
     private ApiTokenForm(Builder builder) {
         userId = builder.userId;
@@ -21,7 +24,7 @@ public class ApiTokenForm  {
         showRevoked = builder.showRevoked;
         network = builder.network;
         expirationSeconds = builder.expirationSeconds;
-
+        claims=builder.claims;
     }
 
     public static final class Builder {
@@ -33,6 +36,8 @@ public class ApiTokenForm  {
         private boolean showRevoked = false;
         @JsonProperty
         private String network;
+        @JsonProperty
+        public  Map<String,String> claims = ImmutableMap.of();
         @JsonProperty
         private int expirationSeconds=-1;
 
@@ -60,7 +65,10 @@ public class ApiTokenForm  {
             this.expirationSeconds = expirationSeconds;
             return this;
         }
-
+        public Builder claims(Map<String,String> claims) {
+            this.claims = claims;
+            return this;
+        }
         public ApiTokenForm build() {
             return new ApiTokenForm(this);
         }

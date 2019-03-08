@@ -309,8 +309,8 @@ public class ApiToken implements JWToken {
             this.claims = claims;
             return this;
         }
-        
-        public Builder withClaims(@Nonnull Map<String,Object> claims) {
+
+        public Builder withClaims(@Nonnull Map<String,String> claims) {
             this.claims = Try.of(()-> new ObjectMapper().writeValueAsString(claims)).getOrNull();
             return this;
         }

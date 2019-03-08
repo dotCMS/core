@@ -14,29 +14,20 @@ public class CreateTokenForm extends Validated {
 
     @NotNull
     @Length(min = 2, max = 100)
-    private final String user;
+    public final String user;
 
     @NotNull
-    private final String password;
+    public final String password;
 
-    private final int expirationDays;
-
-    public String getUser() {
-        return user;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public int getExpirationDays() {
-        return expirationDays;
-    }
+    public final int expirationDays;
+    
+    public final String label;;
 
     private CreateTokenForm(Builder builder) {
         user = builder.user;
         password = builder.password;
         expirationDays = builder.expirationDays;
+        label=builder.label;
         try {
         	checkValid();
         }catch(ValidationException ve){
@@ -51,7 +42,7 @@ public class CreateTokenForm extends Validated {
         @JsonProperty(required = true) private String user; // not present on create
         @JsonProperty(required = true) private String password;
         @JsonProperty private int expirationDays = -1;
-
+        @JsonProperty private String label=null;
         public Builder user(String user) {
             this.user = user;
             return this;
@@ -66,6 +57,12 @@ public class CreateTokenForm extends Validated {
             this.expirationDays = expirationDays;
             return this;
         }
+        public Builder label(String label) {
+            this.label = label;
+            return this;
+        }
+        
+        
 
         public CreateTokenForm build() {
             return new CreateTokenForm(this);
