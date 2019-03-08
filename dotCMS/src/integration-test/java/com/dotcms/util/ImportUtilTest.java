@@ -1347,7 +1347,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                             + "\r\n" +
                             "parent contentlet, parent contentlet body, ");
 
-            Map results = importContentWithRelationships(parentContentType, reader,
+            final Map results = importContentWithRelationships(parentContentType, reader,
                     new String[]{
                             parentContentType.fieldMap().get(TITLE_FIELD_NAME).inode()});
 
@@ -1415,7 +1415,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                             + "\r\n" +
                             "parent contentlet, parent contentlet body, " + childContentlet.getIdentifier());
 
-            Map results = importContentWithRelationships(parentContentType, reader,
+            final Map results = importContentWithRelationships(parentContentType, reader,
                     new String[]{
                             parentContentType.fieldMap().get(TITLE_FIELD_NAME).inode()});
 
