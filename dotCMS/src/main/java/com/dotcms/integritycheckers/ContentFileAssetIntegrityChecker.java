@@ -343,6 +343,13 @@ public class ContentFileAssetIntegrityChecker extends AbstractIntegrityChecker {
         dc.addParam(oldContentletIdentifier);
         dc.addParam(languageId);
         dc.loadResult();
+
+        // Update other workflow task with new Identifier
+        dc.setSQL("UPDATE workflow_task SET webasset = ? WHERE webasset = ? AND language_id = ?");
+        dc.addParam(newContentletIdentifier);
+        dc.addParam(oldContentletIdentifier);
+        dc.addParam(languageId);
+        dc.loadResult();
         // Update previous version of the Contentlet_version_info with
         // new Identifier
         dc.setSQL("UPDATE contentlet_version_info SET identifier = ? WHERE identifier = ? AND lang = ?");
@@ -371,14 +378,25 @@ public class ContentFileAssetIntegrityChecker extends AbstractIntegrityChecker {
             }
 
 
-            if (structureTypeId == Structure.STRUCTURE_TYPE_FILEASSET || assetURL.contains(Constants.CONTAINER_FOLDER_PATH)) {
-                // Update the content references in the page with the new
-                // Identifier
+            if (structureTypeId == Structure.STRUCTURE_TYPE_FILEASSET && assetURL.contains(Constants.CONTAINER_FOLDER_PATH) &&
+                        assetURL.endsWith("/container.vtl")) {
+
+                // select the page associated to the old container
+                dc.setSQL("SELECT parent1 FROM multi_tree WHERE parent2 = ?");
+                dc.addParam(oldContentletIdentifier);
+                final List<Map<String, Object>> pages = dc.loadObjectResults();
+
+                // Update the multitree with the new containerid
                 dc.setSQL("UPDATE multi_tree SET parent2 = ? WHERE parent2 = ?");
                 dc.addParam(newContentletIdentifier);
                 dc.addParam(oldContentletIdentifier);
                 dc.loadResult();
-                // todo: invalidate multi tree cache
+
+                // remove the multi tree for each page associated to the container
+                for (final Map<String, Object> page : pages) {
+                    final String pageId = (String) page.get("parent1");
+                    CacheLocator.getMultiTreeCache().removePageMultiTrees(pageId);
+                }
             }
         }
 
