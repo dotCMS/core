@@ -42,6 +42,7 @@ export class ContentTypesFieldDragabbleItemComponent implements OnInit {
             .subscribe((res) => {
                 this.i18nMessages = res;
                 this.fieldAttributes = [
+                    { name: this.field.fieldTypeLabel, value: !!this.field.fieldTypeLabel },
                     {
                         name: this.dotMessageService.get('contenttypes.field.atributes.required'),
                         value: this.field.required
