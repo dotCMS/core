@@ -51,16 +51,16 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 		StringBuilder bob = new StringBuilder("select distinct i.* from identifier i ");
 
 		if(DbConnectionFactory.isMySql()){
-			bob.append("where concat(parent_path, asset_name) ");
+			bob.append("where lower(concat(parent_path, asset_name)) ");
 		}else if (DbConnectionFactory.isMsSql()) {
-			bob.append("where (parent_path + asset_name) ");
+			bob.append("where lower(parent_path + asset_name) ");
 		}else {
-			bob.append("where (parent_path || asset_name) ");
+			bob.append("where lower(parent_path || asset_name) ");
 		}
 		bob.append((include ? "":"NOT ") + "LIKE ? and host_inode = ? and asset_type = ? ");
 
 		dc.setSQL(bob.toString());
-		dc.addParam(uri.replace("*", "%"));
+		dc.addParam(uri.replace("*", "%").toLowerCase());
 		dc.addParam(host.getIdentifier());
 		dc.addParam(assetType);
 
@@ -150,7 +150,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 		DotConnect dc = new DotConnect();
 		String parentPath = uri.substring(0, uri.lastIndexOf("/") + 1).toLowerCase();
 		String assetName = uri.substring(uri.lastIndexOf("/") + 1).toLowerCase();
-		dc.setSQL("select * from identifier where parent_path = ? and asset_name = ? and host_inode = ?");
+		dc.setSQL("select * from identifier where lower(parent_path) = ? and lower(asset_name) = ? and host_inode = ?");
 		dc.addParam(parentPath);
 		dc.addParam(assetName);
 		dc.addParam(siteId);
@@ -183,7 +183,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 	    parent_path = parent_path.toLowerCase();
 
 		DotConnect dc = new DotConnect();
-		dc.setSQL("select * from identifier where parent_path = ? and host_inode = ?");
+		dc.setSQL("select * from identifier where lower(parent_path) = ? and host_inode = ?");
 		dc.addParam(parent_path);
 		dc.addParam(siteId);
 
@@ -278,7 +278,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 		final Identifier parentId = APILocator.getIdentifierAPI().find(folder);
 		if(versionable instanceof Folder) {
 			identifier.setAssetType(Identifier.ASSET_TYPE_FOLDER);
-			identifier.setAssetName(((Folder) versionable).getName().toLowerCase());
+			identifier.setAssetName(((Folder) versionable).getName());
 		} else {
 			String uri = versionable.getVersionType() + "." + versionable.getInode();
 			if(versionable instanceof Contentlet){
@@ -310,7 +310,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 				}
 				identifier.setAssetType(Identifier.ASSET_TYPE_CONTENTLET);
 				identifier.setParentPath(parentId.getPath());
-				identifier.setAssetName(uri.toLowerCase());
+				identifier.setAssetName(uri);
 			} else if (versionable instanceof WebAsset) {
 				identifier.setURI(((WebAsset) versionable).getURI(folder));
 				identifier.setAssetType(versionable.getVersionType());
@@ -357,7 +357,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 
         if ( versionable instanceof Folder ) {
             identifier.setAssetType(Identifier.ASSET_TYPE_FOLDER);
-			identifier.setAssetName(((Folder) versionable).getName().toLowerCase());
+			identifier.setAssetName(((Folder) versionable).getName());
             identifier.setParentPath( "/" );
         } else {
             String uri = versionable.getVersionType() + "." + versionable.getInode();
@@ -380,7 +380,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
                 }
                 identifier.setAssetType(Identifier.ASSET_TYPE_CONTENTLET);
                 identifier.setParentPath( "/" );
-                identifier.setAssetName( uri.toLowerCase() );
+                identifier.setAssetName( uri );
             } else if ( versionable instanceof Link ) {
                 identifier.setAssetName( versionable.getInode() );
                 identifier.setParentPath("/");
@@ -462,7 +462,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 			dc.setSQL(query);
 
 			dc.addParam(id.getParentPath());
-			dc.addParam(id.getAssetName().toLowerCase());
+			dc.addParam(id.getAssetName());
 			dc.addParam(id.getHostId());
 			dc.addParam(id.getAssetType());
 			dc.addParam(id.getSysPublishDate());

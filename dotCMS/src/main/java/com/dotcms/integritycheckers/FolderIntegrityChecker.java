@@ -18,11 +18,9 @@ import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
-
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.nio.charset.Charset;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -167,8 +165,8 @@ public class FolderIntegrityChecker extends AbstractIntegrityChecker {
             dc.setSQL("select 1 from identifier iden "
                     + "join folder f on iden.id = f.identifier join "
                     + tempTableName
-                    + " ft on iden.parent_path = ft.parent_path "
-                    + "join contentlet c on iden.host_inode = c.identifier and iden.asset_name = ft.asset_name and ft.host_identifier = iden.host_inode "
+                    + " ft on lower(iden.parent_path) = lower(ft.parent_path) "
+                    + "join contentlet c on iden.host_inode = c.identifier and lower(iden.asset_name) = lower(ft.asset_name) and ft.host_identifier = iden.host_inode "
                     + "join contentlet_version_info cvi on c.inode = cvi.working_inode "
                     + "where asset_type = 'folder' and f.inode <> ft.inode order by c.title, iden.asset_name");
 
@@ -185,6 +183,7 @@ public class FolderIntegrityChecker extends AbstractIntegrityChecker {
                     fullFolder = " c.title + iden.parent_path + iden.asset_name ";
                 }
 
+                //TODO: Verify that this Query works as expected for case-insensitivity
                 final String INSERT_INTO_RESULTS_TABLE = "insert into "
                         + getIntegrityType().getResultsTableName() 
                         + " (folder, local_inode, remote_inode, local_identifier, remote_identifier, endpoint_id)" 
@@ -197,8 +196,8 @@ public class FolderIntegrityChecker extends AbstractIntegrityChecker {
                         + "' from identifier iden "
                         + "join folder f on iden.id = f.identifier join "
                         + tempTableName
-                        + " ft on iden.parent_path = ft.parent_path "
-                        + "join contentlet c on iden.host_inode = c.identifier and iden.asset_name = ft.asset_name and ft.host_identifier = iden.host_inode "
+                        + " ft on lower(iden.parent_path) = lower(ft.parent_path) "
+                        + "join contentlet c on iden.host_inode = c.identifier and lower(iden.asset_name) = lower(ft.asset_name) and ft.host_identifier = iden.host_inode "
                         + "join contentlet_version_info cvi on c.inode = cvi.working_inode "
                         + "where asset_type = 'folder' and f.inode <> ft.inode order by c.title, iden.asset_name";
 

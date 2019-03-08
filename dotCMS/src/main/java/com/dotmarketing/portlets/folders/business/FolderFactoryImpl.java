@@ -1,6 +1,11 @@
 package com.dotmarketing.portlets.folders.business;
 // 1212
 
+import static com.dotmarketing.portlets.folders.business.FolderAPI.SYSTEM_FOLDER;
+import static com.dotmarketing.portlets.folders.business.FolderAPI.SYSTEM_FOLDER_ASSET_NAME;
+import static com.dotmarketing.portlets.folders.business.FolderAPI.SYSTEM_FOLDER_ID;
+import static com.dotmarketing.portlets.folders.business.FolderAPI.SYSTEM_FOLDER_PARENT_PATH;
+
 import com.dotcms.util.transform.DBTransformer;
 import com.dotcms.util.transform.TransformerLocator;
 import com.dotmarketing.beans.Host;
@@ -193,7 +198,7 @@ public class FolderFactoryImpl extends FolderFactory {
 			return null;
 		}
 
-		if(path.equals("/") || path.equals("/System folder")) {
+		if(path.equals("/") || path.equals(SYSTEM_FOLDER_PARENT_PATH)) {
 			folder = fc.getFolderByPathAndHost(path, APILocator.getHostAPI().findSystemHost());
 		} else{
 			folder = fc.getFolderByPathAndHost(path, host);
@@ -205,9 +210,9 @@ public class FolderFactoryImpl extends FolderFactory {
 			String hostId;
 
 			try{
-				if(path.equals("/") || path.equals("/System folder")) {
-					parentPath = "/System folder";
-					assetName = "system folder";
+				if(path.equals("/") || path.equals(SYSTEM_FOLDER_PARENT_PATH)) {
+					parentPath = SYSTEM_FOLDER_PARENT_PATH;
+					assetName = SYSTEM_FOLDER_ASSET_NAME;
 					hostId = "SYSTEM_HOST";
 				}
 				else {
@@ -223,7 +228,7 @@ public class FolderFactoryImpl extends FolderFactory {
 				}
 
 				DotConnect dc = new DotConnect();
-				dc.setSQL("select folder.*, folder_1_.* from " + Type.FOLDER.getTableName() + " folder, inode folder_1_, identifier  where asset_name = ? and parent_path = ? and "
+				dc.setSQL("select folder.*, folder_1_.* from " + Type.FOLDER.getTableName() + " folder, inode folder_1_, identifier  where lower(asset_name) = ? and lower(parent_path) = ? and "
 						+ "folder_1_.type = 'folder' and folder.inode = folder_1_.inode and folder.identifier = identifier.id and host_inode = ?");
 				dc.addParam(assetName.toLowerCase());
 				dc.addParam(parentPath.toLowerCase());
@@ -270,8 +275,8 @@ public class FolderFactoryImpl extends FolderFactory {
 
 					dc = new DotConnect();
 					dc.setSQL("select folder.*, folder_1_.* from " + Type.FOLDER.getTableName() + " folder, inode folder_1_, identifier"
-							+ " where asset_name = ?"
-							+ " and parent_path = ?"
+							+ " where lower(asset_name) = ?"
+							+ " and lower(parent_path) = ?"
 							+ " and folder_1_.type = 'folder'"
 							+ " and folder.inode = folder_1_.inode"
 							+ " and folder.identifier = identifier.id"
@@ -625,7 +630,7 @@ public class FolderFactoryImpl extends FolderFactory {
 			newParentPath = "/";
 			newParentHostId = ((Host)destination).getIdentifier();
 			if(!contains)
-			    CacheLocator.getNavToolCache().removeNav(newParentHostId, FolderAPI.SYSTEM_FOLDER);
+			    CacheLocator.getNavToolCache().removeNav(newParentHostId, SYSTEM_FOLDER);
 		}
 		if (contains)
 			return false;
@@ -865,7 +870,7 @@ public class FolderFactoryImpl extends FolderFactory {
 		});
 
         Folder ff=(Folder) HibernateUtil.load(Folder.class, folder.getInode());
-		ff.setName(newName.toLowerCase());
+		ff.setName(newName);
 		ff.setTitle(newName);
 		ff.setModDate(new Date());
 
@@ -931,21 +936,21 @@ public class FolderFactoryImpl extends FolderFactory {
 	// http://jira.dotmarketing.net/browse/DOTCMS-3232
 	protected Folder findSystemFolder() throws DotDataException {
 		Folder folder = new Folder();
-		folder = fc.getFolder(FolderAPI.SYSTEM_FOLDER);
-		if (folder!=null && folder.getInode().equalsIgnoreCase(FolderAPI.SYSTEM_FOLDER)) {
+		folder = fc.getFolder(SYSTEM_FOLDER);
+		if (folder!=null && folder.getInode().equalsIgnoreCase(SYSTEM_FOLDER)) {
 			return folder;
 		} else {
-			folder = find(FolderAPI.SYSTEM_FOLDER);
+			folder = find(SYSTEM_FOLDER);
 		}
-		if (UtilMethods.isSet(folder.getInode()) && folder.getInode().equalsIgnoreCase(FolderAPI.SYSTEM_FOLDER)) {
+		if (UtilMethods.isSet(folder.getInode()) && folder.getInode().equalsIgnoreCase(SYSTEM_FOLDER)) {
 			fc.addFolder(folder,APILocator.getIdentifierAPI().find(folder.getIdentifier()));
 			return folder;
 		} else {
 			DotConnect dc = new DotConnect();
 			Folder folder1 = new Folder();
 			String hostInode = "";
-			folder1.setInode(FolderAPI.SYSTEM_FOLDER);
-			folder1.setName("system folder");
+			folder1.setInode(SYSTEM_FOLDER);
+			folder1.setName(SYSTEM_FOLDER_ASSET_NAME);
 			folder1.setTitle("System folder");
 			try {
 				hostInode = APILocator.getHostAPI().findSystemHost(APILocator.getUserAPI().getSystemUser(), true).getIdentifier();
@@ -958,10 +963,10 @@ public class FolderFactoryImpl extends FolderFactory {
 			folder1.setShowOnMenu(false);
 
 			String IdentifierQuery = "INSERT INTO IDENTIFIER(ID,PARENT_PATH,ASSET_NAME,HOST_INODE,ASSET_TYPE) VALUES(?,?,?,?,?)";
-			String uuid = FolderAPI.SYSTEM_FOLDER_ID;
+			String uuid = SYSTEM_FOLDER_ID;
 			dc.setSQL(IdentifierQuery);
 			dc.addParam(uuid);
-			dc.addParam("/System folder");
+			dc.addParam(SYSTEM_FOLDER_PARENT_PATH);
 			dc.addParam(folder1.getName());
 			dc.addParam(hostInode);
 			dc.addParam(folder1.getType());

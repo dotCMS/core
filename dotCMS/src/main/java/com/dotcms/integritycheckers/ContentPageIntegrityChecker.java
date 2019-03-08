@@ -254,7 +254,7 @@ public class ContentPageIntegrityChecker extends AbstractIntegrityChecker {
                     + "INNER JOIN contentlet_version_info lcvi ON (lc.identifier = lcvi.identifier) "
                     + "INNER JOIN structure ls ON (lc.structure_inode = ls.inode and ls.structuretype = 5) "
                     + "INNER JOIN " + tempTableName
-                    + " t ON (LOWER(li.asset_name) = t.asset_name AND li.parent_path = t.parent_path "
+                    + " t ON (LOWER(li.asset_name) = LOWER(t.asset_name) AND LOWER(li.parent_path) = LOWER(t.parent_path) "
                     + "AND li.host_inode = host_identifier AND lc.identifier <> t.identifier "
                     + "AND lc.language_id = t.language_id)";
         
@@ -298,7 +298,7 @@ public class ContentPageIntegrityChecker extends AbstractIntegrityChecker {
                         + "INNER JOIN contentlet_version_info lcvi ON (lc.identifier = lcvi.identifier and lc.language_id = lcvi.lang) "
                         + "INNER JOIN structure ls ON (lc.structure_inode = ls.inode and ls.structuretype = 5) "
                         + "INNER JOIN " + tempTableName
-                        + " t ON (LOWER(li.asset_name) = t.asset_name AND li.parent_path = t.parent_path "
+                        + " t ON (LOWER(li.asset_name) = LOWER(t.asset_name) AND LOWER(li.parent_path) = LOWER(t.parent_path) "
                         + "AND li.host_inode = host_identifier AND lc.identifier <> t.identifier "
                         + "AND lc.language_id = t.language_id)";
             

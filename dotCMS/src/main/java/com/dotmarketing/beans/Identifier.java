@@ -1,9 +1,7 @@
 package com.dotmarketing.beans;
 
-import java.io.Serializable;
-import java.util.Date;
-import java.util.List;
-import java.util.UUID;
+import static com.dotmarketing.portlets.folders.business.FolderAPI.SYSTEM_FOLDER_ASSET_NAME;
+import static com.dotmarketing.portlets.folders.business.FolderAPI.SYSTEM_FOLDER_PARENT_PATH;
 
 import com.dotmarketing.business.PermissionSummary;
 import com.dotmarketing.business.Permissionable;
@@ -11,9 +9,14 @@ import com.dotmarketing.business.RelatedPermissionableGroup;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.factories.TreeFactory;
 import com.dotmarketing.portlets.categories.business.Categorizable;
+import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.UtilMethods;
+import java.io.Serializable;
+import java.util.Date;
+import java.util.List;
+import java.util.UUID;
 
 /**
  * An Identifier uniquely represents a content in dotCMS. In its simplest form, it's a UUID, which
@@ -268,7 +271,7 @@ public class Identifier implements UUIDable,Serializable,Permissionable,Categori
      * @see getURI
      */
 	public String getPath(){
-	    if(("system folder").equals(getAssetName()) && ("/System folder").equals(getParentPath())){
+	    if((SYSTEM_FOLDER_ASSET_NAME).equals(getAssetName()) && (SYSTEM_FOLDER_PARENT_PATH).equals(getParentPath())){
 	        return "/";
 	    } else {
     		String x = getParentPath() + getAssetName();
