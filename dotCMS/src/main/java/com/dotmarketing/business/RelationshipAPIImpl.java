@@ -23,10 +23,10 @@ import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.transform.ContentletRelationshipsTransformer;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
+import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 
-import javax.management.relation.Relation;
 import java.util.List;
 import java.util.Optional;
 import java.util.Map;
@@ -285,51 +285,74 @@ public class RelationshipAPIImpl implements RelationshipAPI {
 
     
     
-    
-    protected String suggestNewFieldName(ContentType con, Relationship relationship) {
+    @VisibleForTesting
+    protected String suggestNewFieldName(final ContentType con, final Relationship relationship, final boolean isChild) {
         final String name = UtilMethods.capitalize(con.variable());
-        
-        if(name.toLowerCase().endsWith("s")) {
+        final boolean selfRelated = sameParentAndChild(relationship);
+        String suffix = selfRelated? isChild?"Child" : "Parent": "s";
+
+        if(name.toLowerCase().endsWith(suffix)) {
             return name;
         }
-        
-        final boolean isChild = relationship.getChildStructureInode().equals(con.id());
-        
-        final String s = (isChild)
-                    ? (relationship.getCardinality()  == WebKeys.Relationship.RELATIONSHIP_CARDINALITY.ONE_TO_ONE.ordinal() )
-                            ?  "" : "s"
-                                :  (relationship.getCardinality()  == WebKeys.Relationship.RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal() )
-                                        ? "s" : "";
-       return name + s;
+
+        String finalSuffix = "";
+
+        if(isChild){
+            if (relationship.getCardinality() != WebKeys.Relationship.RELATIONSHIP_CARDINALITY.ONE_TO_ONE.ordinal()){
+                finalSuffix = selfRelated?"Children":suffix;
+            } else if(selfRelated){
+                finalSuffix = suffix;
+            }
+        } else{
+            if (relationship.getCardinality()  == WebKeys.Relationship.RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal()){
+                finalSuffix = selfRelated?"Parents":suffix;
+            } else if(selfRelated){
+                finalSuffix = suffix;
+            }
+        }
+
+       return name + finalSuffix;
     }
-    
-    
-    
-    
+
+
+
+
     @WrapInTransaction
     public void convertRelationshipToRelationshipField(final Relationship oldRelationship) throws DotDataException, DotSecurityException{
         //Transform Structures to Content Types
-        final ContentType parentContentType = new StructureTransformer(oldRelationship.getParentStructure()).from();
-        final ContentType childContentType = new StructureTransformer(oldRelationship.getChildStructure()).from();
+        final ContentType parentContentType = new StructureTransformer(
+                oldRelationship.getParentStructure()).from();
+        final ContentType childContentType = new StructureTransformer(
+                oldRelationship.getChildStructure()).from();
         //Create Relationship Fields
-        
-        String parentFieldName = suggestNewFieldName(parentContentType, oldRelationship);
-        String childFieldName = suggestNewFieldName(childContentType, oldRelationship);
-        
-        final com.dotcms.contenttype.model.field.Field parentRelationshipField = createRelationshipField(childFieldName,parentContentType.id(),
-                oldRelationship.getCardinality(),oldRelationship.isChildRequired(),childContentType.variable());
+
+        final String parentFieldName = suggestNewFieldName(parentContentType, oldRelationship,
+                false);
+        final String childFieldName = suggestNewFieldName(childContentType, oldRelationship, true);
+
+        final com.dotcms.contenttype.model.field.Field parentRelationshipField = createRelationshipField(
+                childFieldName, parentContentType.id(),
+                oldRelationship.getCardinality(), oldRelationship.isChildRequired(),
+                childContentType.variable());
+
         createRelationshipField(parentFieldName, childContentType.id(),
-                oldRelationship.getCardinality(), oldRelationship.isParentRequired(), parentContentType.variable()+"."+parentRelationshipField.variable());
+                oldRelationship.getCardinality(), oldRelationship.isParentRequired(),
+                parentContentType.variable() + "." + parentRelationshipField.variable());
+
         //Get the new Relationship
-        final Relationship newRelationship = byTypeValue(parentContentType.variable()+"."+parentRelationshipField.variable());
+        final Relationship newRelationship = byTypeValue(
+                parentContentType.variable() + "." + parentRelationshipField.variable());
+
         //Update tree table entries with the new Relationship
-        final DotConnect dc = new DotConnect ();
+        final DotConnect dc = new DotConnect();
         dc.setSQL("update tree set relation_type = ? where relation_type = ?");
         dc.addParam(newRelationship.getRelationTypeValue());
         dc.addParam(oldRelationship.getRelationTypeValue());
         dc.loadResult();
+
         //Delete the old relationship
         APILocator.getRelationshipAPI().delete(oldRelationship);
+
         //Reindex both Content Types, so the content show the relationships
         APILocator.getContentletAPI().refresh(oldRelationship.getParentStructure());
         APILocator.getContentletAPI().refresh(oldRelationship.getChildStructure());

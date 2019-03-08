@@ -1,27 +1,14 @@
 package com.dotmarketing.portlets.containers.business;
 
-import static com.dotcms.util.FunctionUtils.ifOrElse;
-import static com.dotmarketing.util.StringUtils.builder;
-
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.transform.TransformerLocator;
-import com.dotmarketing.beans.ContainerStructure;
-import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.beans.Inode;
+import com.dotmarketing.beans.*;
 import com.dotmarketing.beans.Inode.Type;
-import com.dotmarketing.beans.VersionInfo;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.IdentifierAPI;
-import com.dotmarketing.business.IdentifierCache;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.Permissionable;
+import com.dotmarketing.business.*;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
@@ -30,6 +17,7 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.containers.model.ContainerVersionInfo;
+import com.dotmarketing.portlets.containers.model.FileAssetContainer;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -38,20 +26,15 @@ import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.util.Constants;
-import com.dotmarketing.util.InodeUtils;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.PaginatedArrayList;
-import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.*;
 import com.liferay.portal.model.User;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import com.liferay.util.StringPool;
+
+import java.util.*;
+import java.util.stream.Collectors;
+
+import static com.dotcms.util.FunctionUtils.ifOrElse;
+import static com.dotmarketing.util.StringUtils.builder;
 
 public class ContainerFactoryImpl implements ContainerFactory {
 
@@ -278,7 +261,8 @@ public class ContainerFactoryImpl implements ContainerFactory {
 			}
 
 			// adding the container from the site browser
-			toReturn.addAll(this.findFolderAssetContainers(user, hostId, orderByParam));
+			toReturn.addAll(this.findFolderAssetContainers(user, hostId, orderByParam,
+					includeArchived, Optional.ofNullable(parent), params != null? params.values(): Collections.emptyList()));
 
 			while(!done) {
 
@@ -332,20 +316,66 @@ public class ContainerFactoryImpl implements ContainerFactory {
 		}
 	}
 
+	private boolean containsContentType (final FileAssetContainer fileAssetContainer, final String velocityVarName) {
+
+		return UtilMethods.isSet(fileAssetContainer.getContainerStructuresAssets())?
+				fileAssetContainer.getContainerStructuresAssets().stream()
+						.filter(fileAsset -> null != fileAsset.getFileName())
+						.anyMatch(fileAsset -> fileAsset.getFileName().equalsIgnoreCase(velocityVarName)):
+				false;
+	}
+
+	private List<Container> filterFileAssetContainersByContentType (final List<Container> containers, final String contentTypeId, final User user) throws DotDataException, DotSecurityException {
+
+		final ContentType contentType       =  APILocator.getContentTypeAPI(user).find(contentTypeId);
+
+		if (null == contentType) {
+			return containers;
+		}
+
+		final String contentTypeVelocityVar = contentType.variable() + ".vtl";
+		return containers.stream().map(container ->  FileAssetContainer.class.cast(container) ).
+				filter(container -> containsContentType(container, contentTypeVelocityVar)).
+				collect(Collectors.toList());
+	}
+
 	/**
 	 * Finds all file base container for an user. Also order by orderByParam values (title asc, title desc, modDate asc, modDate desc)
 	 * @param user {@link User} to check the permissions
 	 * @param hostId {@link String} host id to find the containers
 	 * @param orderByParam {@link String} order by parameter
+	 * @param includeArchived {@link Boolean} if wants to include archive containers
 	 **/
 	private Collection<? extends Permissionable> findFolderAssetContainers(final User user, final String hostId,
-																		   final String orderByParam) {
+																		   final String orderByParam, final boolean includeArchived,
+																		   final Optional<String> contentTypeId,
+																		   final Collection<Object> filterByNameCollection) {
 
 		try {
 
 			final Host host     			 = this.hostAPI.find(hostId, user, false);
-			final List<Folder> subFolders    = this.findContainersAssetsByHost(host, user);
-			final List<Container> containers = this.getFolderContainers(host, user, subFolders, false);
+			final List<Folder> subFolders    = this.findContainersAssetsByHost(host, user, includeArchived);
+			List<Container> containers = this.getFolderContainers(host, user, subFolders, false);
+
+			if (contentTypeId.isPresent() && UtilMethods.isSet(contentTypeId.get())) {
+
+				containers = this.filterFileAssetContainersByContentType(containers, contentTypeId.get(), user);
+
+			}
+
+			if (UtilMethods.isSet(filterByNameCollection)) {
+
+				containers = containers.stream().filter(container -> {
+
+					for (final Object name : filterByNameCollection) {
+
+						if (container.getName().toLowerCase().contains(name.toString())) {
+							return true;
+						}
+					}
+					return false;
+				}).collect(Collectors.toList());
+			}
 
 			if (UtilMethods.isSet(orderByParam)) {
 				switch (orderByParam.toLowerCase()) {
@@ -406,7 +436,7 @@ public class ContainerFactoryImpl implements ContainerFactory {
 	 */
 	private List<Container> findHostContainers(final Host host, final User user, final boolean includeHostOnPath) throws DotDataException, DotSecurityException {
 
-		final List<Folder> subFolders = this.findContainersAssetsByHost(host, user);
+		final List<Folder> subFolders = this.findContainersAssetsByHost(host, user, false);
 		return this.getFolderContainers(host, user, subFolders, includeHostOnPath);
 	}
 
@@ -418,9 +448,10 @@ public class ContainerFactoryImpl implements ContainerFactory {
 	 *
 	 * @param host {@link Host}
 	 * @param user {@link User}
+	 * @param includeArchived {@link Boolean} if wants to include archive containers
 	 * @return List of Folder
 	 */
-	private List<Folder> findContainersAssetsByHost(final Host host, final User user) {
+	private List<Folder> findContainersAssetsByHost(final Host host, final User user, final boolean includeArchived) {
 
 		List<Contentlet>           containers = null;
 		final List<Folder>         folders    = new ArrayList<>();
@@ -430,7 +461,9 @@ public class ContainerFactoryImpl implements ContainerFactory {
 			final StringBuilder queryBuilder = builder("+structureType:", Structure.STRUCTURE_TYPE_FILEASSET,
 					" +path:", Constants.CONTAINER_FOLDER_PATH, "/*",
 					" +path:*/container.vtl",
-					" +working:true +deleted:false");
+					" +working:true",
+			includeArchived? StringPool.BLANK : " +deleted:false");
+
 
 			if (null != host) {
 
