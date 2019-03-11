@@ -104,10 +104,10 @@ public class ContainerLoader implements DotLoader {
             // However when calling  DotResourceLoader.getResourceStream(path..
             // it looks like this: `/LIVE/a050073a-a31e-4aab-9307-86bfb248096a/1550262106697.container` no leading `1`
             // That leading character `1` comes from ResourceManagerImpl.getResource(.. it's the resource type defined in ResourceManager.RESOURCE_TEMPLATE
-            this.invalidateFileAssetContainer(fileAssetContainer, cacheKeyMask, velocityResourceCache, mode, fileAssetContainer.getIdentifier());
+            this.invalidateContainer(fileAssetContainer, cacheKeyMask, velocityResourceCache, mode, fileAssetContainer.getIdentifier());
 
             // Now removing by path //demo.dotcms.com/application/containers/large-column/
-            this.invalidateFileAssetContainer(container, cacheKeyMask, velocityResourceCache, mode, ContainerUUID.UUID_DEFAULT_VALUE);
+            this.invalidateContainer(container, cacheKeyMask, velocityResourceCache, mode, ContainerUUID.UUID_DEFAULT_VALUE);
 
 
         }
@@ -130,11 +130,11 @@ public class ContainerLoader implements DotLoader {
         }
     }
 
-    private void invalidateFileAssetContainer(final Container container,
-                                              final String cacheKeyMask,
-                                              final DotResourceCache velocityResourceCache,
-                                              final PageMode mode,
-                                              final String uuid) {
+    private void invalidateContainer(final Container container,
+                                     final String cacheKeyMask,
+                                     final DotResourceCache velocityResourceCache,
+                                     final PageMode mode,
+                                     final String uuid) {
 
         final VelocityResourceKey key = new VelocityResourceKey(container, uuid, mode);
         final String identifierKey = String.format(cacheKeyMask, ResourceManager.RESOURCE_TEMPLATE, key.path);

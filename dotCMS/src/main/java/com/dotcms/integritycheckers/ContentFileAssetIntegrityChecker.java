@@ -1,6 +1,8 @@
 package com.dotcms.integritycheckers;
 
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
+import com.dotcms.rendering.velocity.services.ContainerLoader;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
@@ -10,10 +12,12 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.containers.model.FileAssetContainer;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Constants;
 import com.dotmarketing.util.Logger;
@@ -25,10 +29,7 @@ import java.io.File;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.sql.SQLException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 /**
  * File assets integrity checker implementation.
@@ -169,7 +170,7 @@ public class ContentFileAssetIntegrityChecker extends AbstractIntegrityChecker {
      * @throws Exception
      * @throws SQLException
      */
-    private void fixContentletConflicts(Map<String, Object> contentletData,
+    private void fixContentletConflicts(final Map<String, Object> contentletData,
             final int structureTypeId, final boolean isTheLastConflict) throws DotDataException,
             DotSecurityException, DotRuntimeException {
         final String oldContentletIdentifier = (String) contentletData.get("local_identifier");
@@ -381,22 +382,7 @@ public class ContentFileAssetIntegrityChecker extends AbstractIntegrityChecker {
             if (structureTypeId == Structure.STRUCTURE_TYPE_FILEASSET && assetURL.contains(Constants.CONTAINER_FOLDER_PATH) &&
                         assetURL.endsWith("/container.vtl")) {
 
-                // select the page associated to the old container
-                dc.setSQL("SELECT parent1 FROM multi_tree WHERE parent2 = ?");
-                dc.addParam(oldContentletIdentifier);
-                final List<Map<String, Object>> pages = dc.loadObjectResults();
-
-                // Update the multitree with the new containerid
-                dc.setSQL("UPDATE multi_tree SET parent2 = ? WHERE parent2 = ?");
-                dc.addParam(newContentletIdentifier);
-                dc.addParam(oldContentletIdentifier);
-                dc.loadResult();
-
-                // remove the multi tree for each page associated to the container
-                for (final Map<String, Object> page : pages) {
-                    final String pageId = (String) page.get("parent1");
-                    CacheLocator.getMultiTreeCache().removePageMultiTrees(pageId);
-                }
+                this.fixFileAssetContainer(oldContentletIdentifier, newContentletIdentifier, localWorkingInode, dc);
             }
         }
 
@@ -441,6 +427,57 @@ public class ContentFileAssetIntegrityChecker extends AbstractIntegrityChecker {
         for (Map<String, Object> result : versions) {
             String historyInode = (String) result.get("inode");
             CacheLocator.getContentletCache().remove(historyInode);
+        }
+    }
+
+    private void fixFileAssetContainer(final String oldContentletIdentifier, final String newContentletIdentifier,
+                                       final String localWorkingInode, final DotConnect dotConnect) throws DotDataException {
+        // select the page associated to the old container
+        dotConnect.setSQL("SELECT parent1 FROM multi_tree WHERE parent2 = ?");
+        dotConnect.addParam(oldContentletIdentifier);
+        final List<Map<String, Object>> pages = dotConnect.loadObjectResults();
+
+        // Update the multitree with the new containerid
+        dotConnect.setSQL("UPDATE multi_tree SET parent2 = ? WHERE parent2 = ?");
+        dotConnect.addParam(newContentletIdentifier);
+        dotConnect.addParam(oldContentletIdentifier);
+        dotConnect.loadResult();
+
+        // remove the multi tree for each page associated to the container
+        for (final Map<String, Object> page : pages) {
+            final String pageId = (String) page.get("parent1");
+            CacheLocator.getMultiTreeCache().removePageMultiTrees(pageId);
+        }
+
+        dotConnect.setSQL("SELECT parent_path, host_inode FROM identifier WHERE id = ?");
+        dotConnect.addParam(newContentletIdentifier);
+        final List<Map<String, Object>> identifier = dotConnect.loadObjectResults();
+
+        if (UtilMethods.isSet(identifier)) {
+
+            final Map<String, Object> identifierMap = identifier.stream().findFirst().orElse(Collections.emptyMap());
+            if (!identifierMap.isEmpty()) {
+
+                try {
+
+                    final String parentPath = (String) identifierMap.get("parent_path");
+                    final String hostId     = (String) identifierMap.get("host_inode");
+                    final Host   host       = APILocator.getHostAPI().find(hostId, APILocator.systemUser(), false);
+                    final Folder folder     = APILocator.getFolderAPI().findFolderByPath
+                            (parentPath, host, APILocator.systemUser(), false);
+
+                    final ContainerLoader containerLoader       = new ContainerLoader();
+                    final FileAssetContainer fileAssetContainer = new FileAssetContainer();
+
+                    fileAssetContainer.setIdentifier(oldContentletIdentifier);
+                    fileAssetContainer.setInode(localWorkingInode);
+                    containerLoader.invalidate(fileAssetContainer, folder, "container.vtl");
+                    CacheLocator.getContainerCache().remove(fileAssetContainer);
+                } catch (DotSecurityException e) {
+                    Logger.error(this, e.getMessage(), e);
+                }
+            }
+
         }
     }
 
@@ -602,3 +639,4 @@ public class ContentFileAssetIntegrityChecker extends AbstractIntegrityChecker {
         throw new DotStateException(errorMsg);
     }
 }
+
