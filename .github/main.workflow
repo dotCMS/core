@@ -8,5 +8,5 @@ action "build-dotcms-docker" {
   env = {
     MY_NAME = "Monas"
   }
-  args="--build-arg BUILD_FROM=COMMIT --build-arg BUILD_ID=c4e97b3"
+  args="--build-arg COMMIT=c4e97b3"
 }
