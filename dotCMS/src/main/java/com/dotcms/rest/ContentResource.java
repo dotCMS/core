@@ -438,9 +438,6 @@ public class ContentResource {
 				String tmDate=(String)request.getSession().getAttribute("tm_date");
 				contentlets = ContentUtils.pull(query, offset, limit,orderBy,user,tmDate);
 			}
-
-			status = (null == contentlets || contentlets.isEmpty())?
-					Optional.of(Status.NOT_FOUND): status;
 		} catch (DotSecurityException e) {
 
 			Logger.debug(this, "Permission error: " + e.getMessage(), e);
