@@ -1,14 +1,5 @@
 package com.dotcms.integritycheckers;
 
-import java.io.File;
-import java.io.IOException;
-import java.math.BigDecimal;
-import java.sql.SQLException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -24,10 +15,20 @@ import com.dotmarketing.portlets.contentlet.business.DotContentletStateException
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.util.Constants;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
+
+import java.io.File;
+import java.io.IOException;
+import java.math.BigDecimal;
+import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 /**
  * File assets integrity checker implementation.
@@ -342,6 +343,13 @@ public class ContentFileAssetIntegrityChecker extends AbstractIntegrityChecker {
         dc.addParam(oldContentletIdentifier);
         dc.addParam(languageId);
         dc.loadResult();
+
+        // Update other workflow task with new Identifier
+        dc.setSQL("UPDATE workflow_task SET webasset = ? WHERE webasset = ? AND language_id = ?");
+        dc.addParam(newContentletIdentifier);
+        dc.addParam(oldContentletIdentifier);
+        dc.addParam(languageId);
+        dc.loadResult();
         // Update previous version of the Contentlet_version_info with
         // new Identifier
         dc.setSQL("UPDATE contentlet_version_info SET identifier = ? WHERE identifier = ? AND lang = ?");
@@ -367,6 +375,28 @@ public class ContentFileAssetIntegrityChecker extends AbstractIntegrityChecker {
                 dc.addParam(newContentletIdentifier);
                 dc.addParam(oldContentletIdentifier);
                 dc.loadResult();
+            }
+
+
+            if (structureTypeId == Structure.STRUCTURE_TYPE_FILEASSET && assetURL.contains(Constants.CONTAINER_FOLDER_PATH) &&
+                        assetURL.endsWith("/container.vtl")) {
+
+                // select the page associated to the old container
+                dc.setSQL("SELECT parent1 FROM multi_tree WHERE parent2 = ?");
+                dc.addParam(oldContentletIdentifier);
+                final List<Map<String, Object>> pages = dc.loadObjectResults();
+
+                // Update the multitree with the new containerid
+                dc.setSQL("UPDATE multi_tree SET parent2 = ? WHERE parent2 = ?");
+                dc.addParam(newContentletIdentifier);
+                dc.addParam(oldContentletIdentifier);
+                dc.loadResult();
+
+                // remove the multi tree for each page associated to the container
+                for (final Map<String, Object> page : pages) {
+                    final String pageId = (String) page.get("parent1");
+                    CacheLocator.getMultiTreeCache().removePageMultiTrees(pageId);
+                }
             }
         }
 
