@@ -7,6 +7,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.transform.ContentletToMapTransformer;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.Logger;
@@ -23,7 +24,13 @@ public class RelationshipFieldDataFetcher implements DataFetcher<Object> {
     @Override
     public Object get(final DataFetchingEnvironment environment) throws Exception {
         try {
-            final Contentlet contentlet = environment.getSource();
+            final Contentlet nonCachedContentlet = environment.getSource();
+
+            // let's use the cache content so relationships are also cached
+            final Contentlet contentlet = APILocator.getContentletAPI()
+                .findContentletByIdentifier(nonCachedContentlet.getIdentifier(), nonCachedContentlet.isLive(),
+                nonCachedContentlet.getLanguageId(), APILocator.systemUser(), true);
+
             final String fieldVar = environment.getField().getName();
 
             final Field
@@ -50,9 +57,12 @@ public class RelationshipFieldDataFetcher implements DataFetcher<Object> {
             Object objectToReturn = records.doesAllowOnlyOne() ? null : Collections.emptyList();
 
             if (UtilMethods.isSet(contentlet.getRelated(fieldVar, user))) {
+
+                final List<Contentlet> relatedContent = contentlet.getRelated(fieldVar, user);
+
                 objectToReturn = records.doesAllowOnlyOne()
-                    ? contentlet.getRelated(fieldVar, user).get(0)
-                    : contentlet.getRelated(fieldVar, user);
+                    ? new ContentletToMapTransformer(relatedContent).hydrate().get(0)
+                    : new ContentletToMapTransformer(relatedContent).hydrate();
             }
 
             return objectToReturn;

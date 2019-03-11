@@ -294,7 +294,8 @@ public class FileAssetContainerUtil {
 
     private boolean isContainerMetaInfo(final FileAsset fileAsset, final boolean showLive) {
 
-        return isType(fileAsset, showLive, CONTAINER_META_INFO);
+        return isType(fileAsset, showLive, CONTAINER_META_INFO)
+                && fileAsset.getLanguageId() == APILocator.getLanguageAPI().getDefaultLanguage().getId();
     }
 
     private boolean isPreLoop(final FileAsset fileAsset, final boolean showLive) {

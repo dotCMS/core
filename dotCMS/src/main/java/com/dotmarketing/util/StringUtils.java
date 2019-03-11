@@ -22,8 +22,8 @@ public class StringUtils {
     private final static char COMMA = ',';
     
     // Pattern is threadsafe
-    private static final Pattern camelCaseLowerPattern = Pattern.compile("^[a-z]+([A-Z][a-z0-9]+)+");
-    private static final Pattern camelCaseUpperPattern = Pattern.compile("^[A-Z]+([A-Z][a-z0-9]+)+");
+    private static final Pattern camelCaseLowerPattern = Pattern.compile("^[a-z]([a-zA-Z0-9]+)*$");
+    private static final Pattern camelCaseUpperPattern = Pattern.compile("^[A-Z]([a-zA-Z0-9]+)*$");
 
     private static Map<String, Pattern> patternCacheMap = new ConcurrentHashMap<>();
 
@@ -80,9 +80,10 @@ public class StringUtils {
         if(camelCaseLowerPattern.matcher(variable).find()){
             return variable;
         }
-        String var = variable.toLowerCase().replaceAll("[^a-z\\d]", "-");
-        while(var.startsWith("-")){
-            var =var.substring(1, var.length());
+        String var = variable.toLowerCase().replaceAll("[^a-z\\d]", StringPool.DASH);
+        while (UtilMethods.isSet(var) && (var.startsWith("-")
+                || Character.isDigit(var.charAt(0)))) {
+            var = var.substring(1);
         }
         return CaseFormat.LOWER_HYPHEN.to(CaseFormat.LOWER_CAMEL,var);
     }
@@ -93,9 +94,13 @@ public class StringUtils {
             return variable;
         }
         String ret = camelCaseLower(variable);
-        String firstChar = ret.substring(0,1);
-        
-        return firstChar.toUpperCase() + ret.substring(1,ret.length());
+        if (UtilMethods.isSet(ret)) {
+
+            String firstChar = ret.substring(0, 1);
+            return firstChar.toUpperCase() + ret.substring(1);
+        }
+
+        return ret;
     }
     
     public static boolean isSet(String test){
