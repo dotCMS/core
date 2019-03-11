@@ -7,64 +7,80 @@
 <%@page import="com.dotmarketing.filters.CMSUrlUtil"%>
 <%@page import="com.dotmarketing.filters.Constants"%>
 <%@page import="com.dotmarketing.util.Logger"%>
+<%@page import="com.dotmarketing.util.UtilMethods" %>
 <%@page import="com.dotmarketing.util.WebKeys"%>
 <%@page import="com.liferay.portal.language.LanguageUtil"%>
 
 <%
-  int status = response.getStatus();
-  String title = LanguageUtil.get(pageContext, status + "-page-title");
-  String body = LanguageUtil.get(pageContext, status + "-body1");
-  long languageId = WebAPILocator.getLanguageWebAPI().getLanguage(request).getId();
-  try {
-    String errorPage = "/cms" + status + "Page";
-    Host host = WebAPILocator.getHostWebAPI().getCurrentHost(request);
-    // Get from virtual link
-      if (CMSUrlUtil.getInstance().isVanityUrl(errorPage, host, languageId)) {
-        CachedVanityUrl vanityurl = APILocator.getVanityUrlAPI().getLiveCachedVanityUrl(errorPage, host, languageId, APILocator.systemUser());
-        String uri = vanityurl.getForwardTo();
+	final int status = response.getStatus();
+  	final String title = LanguageUtil.get(pageContext, status + "-page-title");
+  	final String body = LanguageUtil.get(pageContext, status + "-body1");
+  	final long languageId = WebAPILocator.getLanguageWebAPI().getLanguage(request).getId();
+  	try {	  
+		final boolean isAPICall = pageContext.getErrorData().getRequestURI().startsWith("/api/");
+	  	if (isAPICall) {
+	    	if (status == 500) {
+        		if (null != request.getAttribute("javax.servlet.error.message")) {
+	        		final String err = request.getAttribute("javax.servlet.error.message") + " on " + request.getRequestURI();
+	          		Logger.warn(this.getClass(),err);
+	        	}
+	    	}
+	    	return; // empty response is better than an HTML response to a REST API call
+	  	}
+	  
+		final String errorPage = "/cms" + status + "Page";
+    	final Host host = WebAPILocator.getHostWebAPI().getCurrentHost(request);
+    	// Get from virtual link
+      	if (CMSUrlUtil.getInstance().isVanityUrl(errorPage, host, languageId)) {
+        	final CachedVanityUrl vanityurl = APILocator.getVanityUrlAPI().getLiveCachedVanityUrl(errorPage, host, languageId, APILocator.systemUser());
+        	final String uri = vanityurl.getForwardTo();
 
-        if (uri.contains("://")) {
-          response.setStatus(301);
-          response.setHeader("Location", uri);
+        	if (uri.contains("://")) {
+          		response.setStatus(301);
+          		response.setHeader("Location", uri);
 
-        } else {
-          Logger.debug(this, errorPage + " path is: " + uri);
-          request.setAttribute(Constants.CMS_FILTER_URI_OVERRIDE, uri);
-          request.getRequestDispatcher("/servlets/VelocityServlet").forward(request, response);
-        }
-        return;
-      }
+        	} else {
+          		Logger.debug(this, errorPage + " path is: " + uri);
+          		request.setAttribute(Constants.CMS_FILTER_URI_OVERRIDE, uri);
+          		request.getRequestDispatcher("/servlets/VelocityServlet").forward(request, response);
+        	}
+        	return;
+      	}
 
-    if (status == 401) {
-      String referer = (session.getAttribute(WebKeys.REDIRECT_AFTER_LOGIN) != null)
-          ? (String) session.getAttribute(WebKeys.REDIRECT_AFTER_LOGIN)
-          : (request.getAttribute(RequestDispatcher.FORWARD_REQUEST_URI) != null)
-              ? (String) request.getAttribute(RequestDispatcher.FORWARD_REQUEST_URI) : request.getRequestURI();
+    	if (status == 401) {
+    		final String conMap = (String)request.getAttribute(com.dotmarketing.util.WebKeys.WIKI_CONTENTLET_URL);
+      		final String referer = (session.getAttribute(WebKeys.REDIRECT_AFTER_LOGIN) != null)
+		          ? (String) session.getAttribute(WebKeys.REDIRECT_AFTER_LOGIN)
+		          : (null != request.getAttribute(RequestDispatcher.FORWARD_REQUEST_URI))
+		              ? (String) request.getAttribute(RequestDispatcher.FORWARD_REQUEST_URI) : request.getRequestURI();
+			
+             if (!UtilMethods.isSet(conMap) && UtilMethods.isSet(referer)) {
+             	response.sendRedirect("/dotCMS/login?referrer=" + referer);
+             } else {
+             	if (UtilMethods.isSet(conMap)) {
+                	request.getSession().setAttribute(com.dotmarketing.util.WebKeys.REDIRECT_AFTER_LOGIN, conMap);
+                }
+               	request.getRequestDispatcher("/dotCMS/login").forward(request, response);
+             }
+    	} else if (status == 404) {
+      		ClickstreamFactory.add404Request(request, response, host);
+    	} else if (status == 500) {
+      		if(null != request.getAttribute("javax.servlet.error.message")){        
+        		final String err = request.getAttribute("javax.servlet.error.message") + " on " + request.getRequestURI();
+        		Logger.warn(this.getClass(),err);
+      		}
+    	}
 
-
-      request.getSession().setAttribute(WebKeys.REDIRECT_AFTER_LOGIN, referer);
-      request.getRequestDispatcher("/dotCMS/login").forward(request, response);
-    } else if (status == 404) {
-      ClickstreamFactory.add404Request(request, response, host);
-    }
-    else if (status == 500) {
-      if(request.getAttribute("javax.servlet.error.message")!=null){
-        
-        String err = request.getAttribute("javax.servlet.error.message") + " on " + request.getRequestURI();
-        Logger.warn(this.getClass(),err);
-      }
-    }
-
-  } finally {
-    DbConnectionFactory.closeSilently();
-  }
+	} finally {
+    	DbConnectionFactory.closeSilently();
+  	}
 %>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
 	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
 <html>
 <head>
-<title><%=title%></title>
+<title><%= title %></title>
 
 <style type="text/css">
 body {
@@ -101,9 +117,9 @@ h1 {
 	<div id="main">
 		<div id="text">
 
-			<h1><%=title%></h1>
+			<h1><%= title %></h1>
 
-			<p><%=body%></p>
+			<p><%= body %></p>
 
 		</div>
 	</div>
