@@ -495,10 +495,10 @@ public class FieldAPITest extends IntegrationTestBase {
             relationship = relationshipAPI.byTypeValue(fullFieldVar);
 
             assertNotNull(relationship);
-            assertFalse(relationship.isChildRequired());
-            assertTrue(relationship.isParentRequired());
-            assertTrue(secondField.required());
-            assertFalse(field.required());
+            assertTrue(relationship.isChildRequired());
+            assertFalse(relationship.isParentRequired());
+            assertFalse(secondField.required());
+            assertTrue(field.required());
             assertEquals(newCardinality, secondField.values());
             assertEquals(newCardinality, field.values());
             assertEquals(newCardinality, String.valueOf(relationship.getCardinality()));
@@ -629,15 +629,15 @@ public class FieldAPITest extends IntegrationTestBase {
 
             assertNotNull(updatedField);
             assertEquals(parentTypeRelationshipField.id(), updatedField.id());
-            assertTrue(updatedField.required());
-            assertTrue(relationship.isChildRequired());
-            assertFalse(relationship.isParentRequired());
+            assertTrue(secondField.required());
+            assertFalse(updatedField.required());
+            assertFalse(relationship.isChildRequired());
+            assertTrue(relationship.isParentRequired());
             assertEquals(newCardinality, updatedField.values());
             assertEquals(newCardinality, String.valueOf(relationship.getCardinality()));
 
             //new cardinality should have been updated on the child field and required field is set to false
             assertEquals(newCardinality, secondField.values());
-            assertFalse(secondField.required());
 
         } finally {
             if (UtilMethods.isSet(parentContentType) && UtilMethods.isSet(parentContentType.id())) {
