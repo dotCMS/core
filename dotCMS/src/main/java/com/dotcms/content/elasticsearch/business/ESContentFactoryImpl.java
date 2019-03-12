@@ -590,8 +590,8 @@ public class ESContentFactoryImpl extends ContentletFactory {
                     }
                 }
                 catch(Exception ex) {
-                    Logger.warn(this, "Error deleting contentlet inode "+con.getInode()+". Probably it was already deleted?");
-                    Logger.debug(this, "Error deleting contentlet inode "+con.getInode()+". Probably it was already deleted?", ex);
+//                    Logger.warn(this, "Error deleting contentlet inode "+con.getInode()+". Probably it was already deleted?");
+                    Logger.error(this, "Error deleting contentlet inode "+con.getInode()+". Probably it was already deleted?", ex);
                     this.checkOrphanInode (con.getInode());
                 }
 
