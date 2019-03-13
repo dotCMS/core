@@ -15,11 +15,11 @@ import { LoggerService } from 'dotcms-js';
     template: `<div *ngIf="typeDropdown != null" flex layout="row" class="cw-condition cw-entry">
   <div class="cw-btn-group cw-condition-toggle">
     <button class="ui basic button cw-button-toggle-operator" aria-label="Swap And/Or" (click)="toggleOperator()" *ngIf="index !== 0">
-      {{condition.operator}}
+      {{ condition.operator }}
     </button>
   </div>
   <cw-input-dropdown
-  [options]="typeDropdown.options"
+      [options]="typeDropdown.options"
       flex="25"
       class="cw-type-dropdown"
       [value]="condition.type?.key"

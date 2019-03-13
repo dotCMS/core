@@ -11,10 +11,10 @@ import {
 } from '@angular/core';
 import { Host, Output, Input, ChangeDetectionStrategy } from '@angular/core';
 import { ControlValueAccessor, NgControl } from '@angular/forms';
-import { BehaviorSubject, of, Observable } from 'rxjs';
+import { BehaviorSubject, of, Observable, from } from 'rxjs';
 import * as _ from 'lodash';
 import { LoggerService } from 'dotcms-js';
-import { switchMap, map } from 'rxjs/operators';
+import { switchMap, map, mergeMap, toArray } from 'rxjs/operators';
 
 /**
  * Angular wrapper around OLD Semantic UI Dropdown Module.
@@ -24,7 +24,6 @@ import { switchMap, map } from 'rxjs/operators';
     changeDetection: ChangeDetectionStrategy.OnPush,
     selector: 'cw-input-dropdown',
     template: `
-        {{ dropdownOptions | json }}
         <p-dropdown
             ng-valid
             class="ui fluid ng-valid"
@@ -67,7 +66,7 @@ export class Dropdown implements ControlValueAccessor, OnChanges {
     @Output() enter: EventEmitter<boolean> = new EventEmitter(false);
 
     modelValue: string;
-    dropdownOptions: Observable<MenuItem>;
+    dropdownOptions: Observable<MenuItem[]>;
 
     constructor(elementRef: ElementRef, @Optional() control: NgControl) {
         if (control && !control.valueAccessor) {
@@ -80,17 +79,20 @@ export class Dropdown implements ControlValueAccessor, OnChanges {
     }
 
     ngOnChanges(changes: SimpleChanges) {
-        if (changes.options.currentValue.length) {
-            this.dropdownOptions = of(this.options).pipe(switchMap(item => {
-                console.log(item);
-                return item.label.pipe(switchMap(label => {
+        if (changes.options && changes.options.currentValue) {
+            this.dropdownOptions = from(this.options).pipe(mergeMap((item: any) => {
+                return item.label.pipe(map(label => {
                     console.log(label);
-                    return of({
+                    return {
                         label: label,
                         value: item.value
-                    });
+                    };
                 }));
-            }));
+            }), toArray());
+
+            this.dropdownOptions.subscribe(options => {
+                console.log(options);
+            });
         }
     }
 
