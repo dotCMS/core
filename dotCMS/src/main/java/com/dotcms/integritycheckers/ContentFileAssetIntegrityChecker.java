@@ -8,6 +8,8 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.db.FlushCacheRunnable;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -462,19 +464,34 @@ public class ContentFileAssetIntegrityChecker extends AbstractIntegrityChecker {
                 try {
 
                     final String parentPath = (String) identifierMap.get("parent_path");
-                    final String hostId     = (String) identifierMap.get("host_inode");
-                    final Host   host       = APILocator.getHostAPI().find(hostId, APILocator.systemUser(), false);
-                    final Folder folder     = APILocator.getFolderAPI().findFolderByPath
-                            (parentPath, host, APILocator.systemUser(), false);
+                    final String hostId = (String) identifierMap.get("host_inode");
 
-                    final ContainerLoader containerLoader       = new ContainerLoader();
-                    final FileAssetContainer fileAssetContainer = new FileAssetContainer();
+                    HibernateUtil.addCommitListener(new FlushCacheRunnable() {
+                        @Override
+                        public void run() {
+                            try {
 
-                    fileAssetContainer.setIdentifier(oldContentletIdentifier);
-                    fileAssetContainer.setInode(localWorkingInode);
-                    containerLoader.invalidate(fileAssetContainer, folder, "container.vtl");
-                    CacheLocator.getContainerCache().remove(fileAssetContainer);
-                } catch (DotSecurityException e) {
+                                final Host host = APILocator.getHostAPI()
+                                        .find(hostId, APILocator.systemUser(), false);
+                                final Folder folder = APILocator.getFolderAPI().findFolderByPath
+                                        (parentPath, host, APILocator.systemUser(), false);
+
+                                final ContainerLoader containerLoader = new ContainerLoader();
+                                final FileAssetContainer fileAssetContainer = new FileAssetContainer();
+
+                                fileAssetContainer.setIdentifier(oldContentletIdentifier);
+                                fileAssetContainer.setInode(localWorkingInode);
+
+                                containerLoader
+                                        .invalidate(fileAssetContainer, folder, "container.vtl");
+                                CacheLocator.getContainerCache().remove(fileAssetContainer);
+                            } catch (Exception e) {
+                                Logger.error(this, e.getMessage(), e);
+                            }
+                        }
+                    });
+
+                } catch (Exception e) {
                     Logger.error(this, e.getMessage(), e);
                 }
             }
