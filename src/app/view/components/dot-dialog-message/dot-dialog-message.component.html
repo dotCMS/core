@@ -1,0 +1,21 @@
+<button (click)="show('html')">html</button>
+<button (click)="show('code')">code</button>
+
+<dot-dialog
+    *ngIf="(data$ | async) as data"
+    [visible]="!!data.title"
+    [header]="data.title"
+    [width]="data.width"
+    (hide)="close()"
+>
+    <div [innerHTML]="data.body" *ngIf="data.body"></div>
+    <div *ngIf="data.code">
+        <pre
+            [ngStyle]="{
+                overflow: 'auto'
+            }"
+        >
+            {{ data.code.content }}
+        </pre>
+    </div>
+</dot-dialog>

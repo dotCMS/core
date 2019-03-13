@@ -1,16 +1,19 @@
 <div
     #dialog
     *ngIf="visible"
-    [style.height]="height"
-    [style.width]="width"
-    class="dialog">
-    <header class="dialog__header" [class.dialog__header--shadowed]="isContentScrolled" [ngStyle]="headerStyle">
+    [ngStyle]="{
+        width: width,
+        height: height
+    }"
+    class="dialog"
+>
+    <header
+        class="dialog__header"
+        [class.dialog__header--shadowed]="isContentScrolled"
+        [ngStyle]="headerStyle"
+    >
         <h4 class="dialog__title" [textContent]="header"></h4>
-        <dot-icon-button
-            big
-            icon="close"
-            (click)="close($event)"
-            *ngIf="closeable">
+        <dot-icon-button big icon="close" (click)="close($event)" *ngIf="closeable">
         </dot-icon-button>
     </header>
 
@@ -18,7 +21,11 @@
         <ng-content></ng-content>
     </div>
 
-    <footer class="dialog__footer" *ngIf="actions" [class.dialog__footer--shadowed]="isContentScrolled">
+    <footer
+        class="dialog__footer"
+        *ngIf="actions"
+        [class.dialog__footer--shadowed]="isContentScrolled"
+    >
         <button
             *ngIf="actions.cancel"
             class="dialog__button-cancel"
@@ -27,8 +34,8 @@
             (click)="cancelAction()"
             [disabled]="actions.cancel.disabled"
             [label]="actions.cancel.label"
-            [style.display]="hideButtons ? 'none' : 'block'">
-        </button>
+            [style.display]="hideButtons ? 'none' : 'block'"
+        ></button>
         <button
             *ngIf="actions.accept"
             class="dialog__button-accept"
@@ -36,7 +43,7 @@
             [disabled]="actions.accept.disabled"
             [label]="actions.accept.label"
             (click)="acceptAction()"
-            [style.display]="hideButtons ? 'none' : 'block'">
-        </button>
+            [style.display]="hideButtons ? 'none' : 'block'"
+        ></button>
     </footer>
 </div>

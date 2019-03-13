@@ -1,3 +1,4 @@
+import { DotDialogMessageService } from './../view/components/dot-dialog-message/services/dot-dialog-message.service';
 import { NgModule, ModuleWithProviders } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
@@ -42,6 +43,7 @@ export class SharedModule {
                 CoreWebService,
                 DotEventsService,
                 DotNavigationService,
+                DotDialogMessageService,
                 DotcmsConfig,
                 DotcmsEventsService,
                 LoggerService,

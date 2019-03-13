@@ -450,6 +450,7 @@ export class DotEditContentHtmlService {
         return containersLayoutIds.map((containerRow: Array<DotPageContainer>, index: number) => {
             this.rowsMaxHeight[index] = 0;
             return containerRow.map((container: DotPageContainer) => {
+                console.log(containerRow);
                 const querySelector = [
                     `div[data-dot-object="container"]`,
                     `[data-dot-identifier="${container.identifier}"]`,
