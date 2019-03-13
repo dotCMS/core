@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.browser.ajax;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.rendering.velocity.viewtools.BrowserAPI;
@@ -11,13 +12,13 @@ import com.dotmarketing.business.util.HostNameComparator;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.db.FlushCacheRunnable;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.InodeFactory;
-import com.dotmarketing.factories.MultiTreeFactory;
 import com.dotmarketing.factories.PublishFactory;
 import com.dotmarketing.factories.WebAssetFactory;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -38,7 +39,6 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.util.*;
-
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.language.LanguageException;
@@ -66,7 +66,7 @@ public class BrowserAjax {
 	private HostAPI hostAPI = APILocator.getHostAPI();
 	private HostWebAPI hostWebAPI = WebAPILocator.getHostWebAPI();
 	private FolderAPI folderAPI = APILocator.getFolderAPI();
-	private ContentletAPI contAPI = APILocator.getContentletAPI();
+	private ContentletAPI contentletAPI = APILocator.getContentletAPI();
 	private LanguageAPI languageAPI = APILocator.getLanguageAPI();
 	private BrowserAPI browserAPI = new BrowserAPI();
 	private VersionableAPI versionAPI = APILocator.getVersionableAPI();
@@ -580,7 +580,7 @@ public class BrowserAjax {
 				vinfo=versionAPI.getContentletVersionInfo(ident.getId(), languageId);
 			}
 		    boolean live = respectFrontendRoles || vinfo.getLiveInode()!=null;
-			Contentlet cont = contAPI.findContentletByIdentifier(ident.getId(),live, languageId , user, respectFrontendRoles);
+			Contentlet cont = contentletAPI.findContentletByIdentifier(ident.getId(),live, languageId , user, respectFrontendRoles);
 			if(cont.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET) {
     			FileAsset fileAsset = APILocator.getFileAssetAPI().fromContentlet(cont);
     			java.io.File file = fileAsset.getFileAsset();
@@ -740,6 +740,58 @@ public class BrowserAjax {
         return true;
     }
 
+    private Optional<String> moveFolderWhenDestinationDoesNotExists(final String newFolder,
+																	final Folder currentFolder,
+																	final User user,
+																	final boolean respectFrontendRoles,
+																	final String errorString) throws Exception {
+
+		final Host parentHost = this.hostAPI.find(newFolder, user, respectFrontendRoles);
+
+		if (!permissionAPI.doesUserHavePermission(currentFolder, PERMISSION_WRITE, user)
+				|| !permissionAPI.doesUserHavePermission(parentHost, PERMISSION_WRITE, user)) {
+
+			throw new DotRuntimeException( "The user doesn't have the required permissions." );
+		}
+
+		if (!this.folderAPI.move(currentFolder, parentHost, user, respectFrontendRoles)) {
+			//A folder with the same name already exists on the destination
+			return Optional.ofNullable(errorString);
+		}
+
+		this.addRefreshIndexCommitListener(null, parentHost, currentFolder);
+		return Optional.empty();
+	}
+
+	private Optional<String> moveFolderToExistingDestination(final String newFolder,
+															 final Folder currentFolder,
+															 final User user,
+															 final boolean respectFrontendRoles,
+															 final String errorString) throws Exception {
+
+		final Folder parentFolder = this.folderAPI.find(newFolder, user, false);
+
+		if (!permissionAPI.doesUserHavePermission( currentFolder, PERMISSION_WRITE, user )
+				|| !permissionAPI.doesUserHavePermission( parentFolder, PERMISSION_WRITE, user )) {
+
+			throw new DotRuntimeException( "The user doesn't have the required permissions.");
+		}
+
+		if (parentFolder.getInode().equalsIgnoreCase(currentFolder.getInode()) || //Trying to move a folder over itself
+				this.folderAPI.isChildFolder(parentFolder, currentFolder)) {    //Trying to move a folder over one of its children
+
+			return Optional.ofNullable(errorString);
+		}
+
+		if (!folderAPI.move(currentFolder, parentFolder, user, respectFrontendRoles)) { //A folder with the same name already exists on the destination
+
+			return Optional.ofNullable(errorString);
+		}
+
+		this.addRefreshIndexCommitListener(parentFolder,null, currentFolder );
+		APILocator.getPermissionAPI().resetPermissionReferences(currentFolder);
+		return Optional.empty();
+	}
     /**
      * Moves a given inode folder/host reference into another given folder
      *
@@ -748,66 +800,39 @@ public class BrowserAjax {
      * @return Confirmation message
      * @throws Exception
      */
-    public String moveFolder ( String inode, String newFolder ) throws Exception {
+    @WrapInTransaction
+    public String moveFolder (final String inode, final String newFolder) throws Exception {
 
-        HibernateUtil.startTransaction();
-
-        Locale requestLocale = WebContextFactory.get().getHttpServletRequest().getLocale();
-        String successString = UtilMethods.escapeSingleQuotes(LanguageUtil.get(requestLocale, "Folder-moved"));
-        String errorString = UtilMethods.escapeSingleQuotes(LanguageUtil.get(requestLocale, "Failed-to-move-another-folder-with-the-same-name-already-exists-in-the-destination"));
+    	final HttpServletRequest request = WebContextFactory.get().getHttpServletRequest();
+        final Locale requestLocale       = request.getLocale();
+        final String successString       = UtilMethods.escapeSingleQuotes(LanguageUtil.get(requestLocale, "Folder-moved"));
+		final String errorString         = UtilMethods.escapeSingleQuotes(LanguageUtil.get(requestLocale, "Failed-to-move-another-folder-with-the-same-name-already-exists-in-the-destination"));
 
         try {
-            HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
-            User user = getUser( req );
 
-            boolean respectFrontendRoles = !userAPI.isLoggedToBackend( req );
+            final User user = getUser(request);
+            final boolean respectFrontendRoles = !this.userAPI.isLoggedToBackend(request);
 
             //Searching for the folder to move
-            Folder folder = APILocator.getFolderAPI().find( inode, user, false );
+            final Folder folder = this.folderAPI.find( inode, user, false );
 
-            if ( !folderAPI.exists( newFolder ) ) {
+			final Optional<String> errorMessage =
+					!this.folderAPI.exists(newFolder)?
 
-                Host parentHost = hostAPI.find( newFolder, user, respectFrontendRoles );
+							this.moveFolderWhenDestinationDoesNotExists
+								(newFolder, folder, user, respectFrontendRoles, errorString):
 
-                if ( !permissionAPI.doesUserHavePermission( folder, PERMISSION_WRITE, user ) || !permissionAPI.doesUserHavePermission( parentHost, PERMISSION_WRITE, user ) ) {
-                    throw new DotRuntimeException( "The user doesn't have the required permissions." );
-                }
+                			this.moveFolderToExistingDestination
+								(newFolder, folder, user, respectFrontendRoles, errorString);
 
-                if ( !folderAPI.move( folder, parentHost, user, respectFrontendRoles ) ) {
-                    //A folder with the same name already exists on the destination
-                    return errorString;
-                }
-                refreshIndex(null, parentHost, folder );
-            } else {
+			if (errorMessage.isPresent()) {
 
-                Folder parentFolder = APILocator.getFolderAPI().find( newFolder, user, false );
+				return errorMessage.get();
+			}
+        } catch (Exception e) {
 
-                if ( !permissionAPI.doesUserHavePermission( folder, PERMISSION_WRITE, user ) || !permissionAPI.doesUserHavePermission( parentFolder, PERMISSION_WRITE, user ) ) {
-                    throw new DotRuntimeException( "The user doesn't have the required permissions." );
-                }
-
-                if ( parentFolder.getInode().equalsIgnoreCase( folder.getInode() ) ) {
-                    //Trying to move a folder over itself
-                    return errorString;
-                }
-                if ( folderAPI.isChildFolder( parentFolder, folder ) ) {
-                    //Trying to move a folder over one of its children
-                    return errorString;
-                }
-
-                if ( !folderAPI.move( folder, parentFolder, user, respectFrontendRoles ) ) {
-                    //A folder with the same name already exists on the destination
-                    return errorString;
-                }
-
-                refreshIndex(parentFolder,null, folder );
-                APILocator.getPermissionAPI().resetPermissionReferences(folder);
-            }
-        } catch ( Exception e ) {
-            HibernateUtil.rollbackTransaction();
+        	Logger.error(this, e.getMessage(), e);
             return e.getLocalizedMessage();
-        } finally {
-            HibernateUtil.closeAndCommitTransaction();
         }
 
         return successString;
@@ -1269,7 +1294,7 @@ public class BrowserAjax {
           throw new DotRuntimeException ("Error trying to obtain the current liferay user from the request.");
       }
       
-      Contentlet c = contAPI.find(inode, user, false);
+      Contentlet c = contentletAPI.find(inode, user, false);
       HashMap<String, Object> result = new HashMap<String, Object> ();
       result.put("LIVE", false);
       result.put("WORKING", false);
@@ -1607,10 +1632,10 @@ public class BrowserAjax {
         }
 
         if (id != null && id.getAssetType().equals("contentlet")) {
-			Contentlet cont = contAPI.find(inode, user, false);
+			Contentlet cont = contentletAPI.find(inode, user, false);
 
             // If delete has errors send a message
-            if (!contAPI.delete(cont, user, false)) {
+            if (!contentletAPI.delete(cont, user, false)) {
                 result.put("status", "error");
                 result.put("message", UtilMethods.escapeSingleQuotes(LanguageUtil.get(user,
                         "HTML-Page-deleted-error")));
@@ -1638,7 +1663,7 @@ public class BrowserAjax {
 		User user = getUser(req);
 		StringBuilder relatedPagesMessage = new StringBuilder();
 		ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
-		Contentlet cont = contAPI.find(inode, user, false);
+		Contentlet cont = contentletAPI.find(inode, user, false);
 		int relatedContentTypes = contentTypeAPI.count("page_detail='" + cont.getIdentifier() + "'");
 
 		//Verifies if the page is related to any content type
@@ -2201,16 +2226,35 @@ public class BrowserAjax {
 		return foldersToReturn;
 	}
 
-	public void refreshIndex(Folder parent, Host host, Folder folder ) throws Exception {
+	private void addRefreshIndexCommitListener(final Folder parent,
+							 final Host host,
+							 final Folder folder ) throws Exception {
+		HibernateUtil.addCommitListener(new FlushCacheRunnable() {
+			@Override
+			public void run() {
+				try {
+					refreshIndex(parent, host, folder);
+				} catch (Exception e) {
+					Logger.error(this, e.getMessage(), e);
+				}
+			}
+		});
+	}
 
-        if (folder!=null){
-        	APILocator.getContentletAPI().refreshContentUnderFolder(folder);
+
+	public void refreshIndex(final Folder parent,
+							 final Host host,
+							 final Folder folder ) throws Exception {
+
+        if (folder!=null) {
+
+			this.contentletAPI.refreshContentUnderFolderPath(folder.getHostId(), folder.getPath());
      	}
 
         if ( parent != null ) {
-        	APILocator.getContentletAPI().refreshContentUnderFolder(parent);
+			this.contentletAPI.refreshContentUnderFolderPath(parent.getHostId(), parent.getPath());
         } else {
-        	APILocator.getContentletAPI().refreshContentUnderHost(host);
+			this.contentletAPI.refreshContentUnderHost(host);
         }
 	}
 	

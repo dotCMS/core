@@ -35,6 +35,7 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.*;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import com.rainerhahnekamp.sneakythrow.Sneaky;
 import org.apache.commons.lang.StringUtils;
 
 import java.io.IOException;
@@ -45,6 +46,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static com.dotmarketing.business.APILocator.getPermissionAPI;
+import static com.dotmarketing.db.HibernateUtil.addCommitListener;
 import static com.liferay.util.StringPool.BLANK;
 
 public class FolderAPIImpl implements FolderAPI  {
@@ -752,21 +754,34 @@ public class FolderAPIImpl implements FolderAPI  {
 	}
 
 	@WrapInTransaction
-	public boolean move(Folder folderToMove, Host newParentHost,User user,boolean respectFrontEndPermissions)throws DotDataException, DotSecurityException {
+	public boolean move(final Folder folderToMove,
+						final Host newParentHost,
+						final User user,
+						final boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException {
+
 		if (!permissionAPI.doesUserHavePermission(folderToMove, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions)) {
+
 			throw new DotSecurityException("User " + (user.getUserId() != null?user.getUserId():BLANK) + " does not have permission to read Folder " + folderToMove.getPath());
 		}
 
 		if (!permissionAPI.doesUserHavePermission(newParentHost, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, respectFrontEndPermissions)) {
+
 			throw new DotSecurityException("User " + (user.getUserId() != null?user.getUserId():BLANK) + " does not have permission to add to Folder " + newParentHost.getHostname());
 		}
-		boolean move = folderFactory.move(folderToMove, newParentHost);
 
-		this.systemEventsAPI.pushAsync(SystemEventType.MOVE_FOLDER, new Payload(folderToMove, Visibility.EXCLUDE_OWNER,
-				new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
+		final boolean move = folderFactory.move(folderToMove, newParentHost);
+
+		addCommitListener(Sneaky.sneaked(()->sendMoveFolderSystemEvent(folderToMove, user)),1000);
 
 		return move;
 	}
+
+	private void sendMoveFolderSystemEvent (final Folder folderToMove, final User user) throws DotDataException {
+
+		this.systemEventsAPI.pushAsync(SystemEventType.MOVE_FOLDER, new Payload(folderToMove, Visibility.EXCLUDE_OWNER,
+				new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
+	}
+
 
 	@CloseDBIfOpened
 	public List<Folder> findSubFolders(Host host, boolean showOnMenu) throws DotHibernateException{
