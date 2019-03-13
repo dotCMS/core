@@ -5,9 +5,10 @@
     (onAfterHide)="hideDialogHandler()">
     <header class="searchable-dropdown__search">
         <dot-icon class="searchable-dropdown__search-icon" name="search"></dot-icon>
-        <input #searchInput pInputText placeholder="{{ i18nMessages['search'] }}" type="text" class="searchable-dropdown__search-field"/>
+        <input #searchInput pInputText [placeholder]="i18nMessages['search']" type="text" class="searchable-dropdown__search-field" (click)="$event.stopPropagation()" />
     </header>
     <p-dataList
+        (click)="$event.stopPropagation()"
         (onLazyLoad)="paginate($event)"
         [lazy]="true"
         [pageLinks]="pageLinkSize"
