@@ -15,6 +15,8 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.MultiTreeAPI;
+import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.containers.model.FileAssetContainer;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
@@ -34,15 +36,14 @@ import com.google.common.collect.Table;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
-import org.jetbrains.annotations.NotNull;
-
-import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import javax.servlet.http.HttpServletRequest;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Provides the utility methods that interact with HTML Pages in dotCMS. These methods are used by
@@ -238,12 +239,30 @@ public class PageResourceHelper implements Serializable {
         multiTreeAPI.saveMultiTrees(pageIdentifier, multiTrees);
     }
 
-    private String getNewUUID(final PageForm pageForm, final String containerId, final String uniqueId) {
+    private String getNewUUID(final PageForm pageForm, final String containerId,
+            final String uniqueId)
+            throws DotDataException, DotSecurityException {
+
+        //If we have a FileAssetContainer we may need to search also by path
+        String containerPath = null;
+        final Container foundContainer = APILocator.getContainerAPI()
+                .getWorkingContainerById(containerId, userAPI.getSystemUser(), false);
+        if (foundContainer instanceof FileAssetContainer) {
+            containerPath = FileAssetContainer.class.cast(foundContainer).getPath();
+        }
+
         if (ContainerUUID.UUID_DEFAULT_VALUE.equals(uniqueId)) {
             String newlyContainerUUID = pageForm.getNewlyContainerUUID(containerId);
-            return newlyContainerUUID != null ? newlyContainerUUID : ContainerUUID.UUID_DEFAULT_VALUE;
+            if (newlyContainerUUID == null && containerPath != null) {//Searching also by path if nothing found
+                newlyContainerUUID = pageForm.getNewlyContainerUUID(containerPath);
+            }
+            return newlyContainerUUID != null ? newlyContainerUUID
+                    : ContainerUUID.UUID_DEFAULT_VALUE;
         } else {
             ContainerUUIDChanged change = pageForm.getChange(containerId, uniqueId);
+            if (change == null && containerPath != null) {//Searching also by path if nothing found
+                change = pageForm.getChange(containerPath, uniqueId);
+            }
             return change != null ? change.getNew().getUUID() : ContainerUUID.UUID_DEFAULT_VALUE;
         }
     }

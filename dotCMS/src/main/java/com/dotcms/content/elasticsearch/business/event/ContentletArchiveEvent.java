@@ -7,24 +7,23 @@ import java.io.Serializable;
 import java.util.Date;
 
 /**
- * Event to notified when a contentlet is being publish or unpublish
+ * Event to notified when a contentlet is being archive or unarchive
  * @author jsanca
  */
-public class ContentletPublishEvent implements Serializable {
+public class ContentletArchiveEvent implements Serializable {
 
-    // true if it is a publish, false if it is unpublish
-    private final boolean publish;
+    private final boolean    archive;
     private final Contentlet contentlet;
     private final User user;
     private final Date date;
 
-    public ContentletPublishEvent(final Contentlet contentlet,
-                                  final User user, final boolean publish) {
+    public ContentletArchiveEvent(final Contentlet contentlet,
+                                  final User user, final boolean archive) {
 
+        this.archive    = archive;
         this.contentlet = contentlet;
-        this.publish    = publish;
-        this.user       = user;
-        this.date        = new Date();
+        this.user = user;
+        this.date = new Date();
     }
 
     public Contentlet getContentlet() {
@@ -39,7 +38,7 @@ public class ContentletPublishEvent implements Serializable {
         return date;
     }
 
-    public boolean isPublish() {
-        return publish;
+    public boolean isArchive() {
+        return archive;
     }
 }
