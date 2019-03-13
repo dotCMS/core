@@ -16,15 +16,12 @@ import { IBundle } from '../services/bundle-service';
       <p-message  *ngIf="errorMessage" style="margin-bottom: 16px; display: block;" severity="error" [text]="errorMessage"></p-message>
       <cw-input-dropdown
         flex
+        [options]="bundleStores"
         [value]="bundleStores ? bundleStores[0]?.id : null"
         allowAdditions="true"
         (onDropDownChange)="setSelectedBundle($event)"
         (enter)="addToBundle.emit(selectedBundle)">
-        <cw-input-option
-          *ngFor="let opt of bundleStores"
-          [value]="opt.id"
-          [label]="opt.name"
-        ></cw-input-option>
+
       </cw-input-dropdown>
       <p-footer>
           <button type="button" pButton secondary (click)="cancel.emit()" label="Cancel" class="ui-button-secondary" ></button>

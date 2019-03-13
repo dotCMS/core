@@ -19,13 +19,10 @@ import { LoggerService } from 'dotcms-js';
       flex
       class="cw-type-dropdown"
       [value]="action.type?.key"
+      [options]="typeDropdown.options"
       placeholder="{{actionTypePlaceholder}}"
       (onDropDownChange)="onTypeChange($event)">
-        <cw-input-option
-        *ngFor="let opt of typeDropdown.options"
-        [value]="opt.value"
-        [label]="opt.label"
-        icon="{{opt.icon}}"></cw-input-option>
+
     </cw-input-dropdown>
   </div>
   <cw-serverside-condition flex="75"

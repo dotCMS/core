@@ -22,8 +22,8 @@ import * as _ from 'lodash';
        [allowAdditions]="allowAdditions"
       (onDropDownChange)="fireChange($event)"
       (touch)="fireTouch($event)"
+      [options]="options | async"
       >
-        <cw-input-option *ngFor="let opt of options | async" [value]="opt.value" [label]="opt.label" [icon]="opt.icon"></cw-input-option>
       </cw-input-dropdown>`,
 })
 export class RestDropdown implements AfterViewInit, ControlValueAccessor {

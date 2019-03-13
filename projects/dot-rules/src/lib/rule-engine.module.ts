@@ -13,7 +13,7 @@ import { ConditionComponent } from './rule-condition-component';
 import { ConditionGroupComponent } from './rule-condition-group-component';
 import { ConditionGroupService } from './services/ConditionGroup';
 import { ConditionService } from './services/Condition';
-import { Dropdown, InputOption } from './semantic/modules/dropdown/dropdown';
+import { Dropdown } from './semantic/modules/dropdown/dropdown';
 import { GoogleMapService } from './services/GoogleMapService';
 import { I18nService } from './services/system/locale/I18n';
 import { InputDate } from './semantic/elements/input-date/input-date';
@@ -78,7 +78,6 @@ import { DotAutofocusModule } from './directives/dot-autofocus/dot-autofocus.mod
         ConditionGroupComponent,
         Dropdown,
         InputDate,
-        InputOption,
         ModalDialogComponent,
         PushPublishDialogComponent,
         PushPublishDialogContainer,

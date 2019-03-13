@@ -7,14 +7,11 @@ import {IPublishEnvironment} from '../services/bundle-service';
   template: `<p-dialog width="700" header="Push Publish" [visible]="!hidden" [modal]="true" [dismissableMask]="true" [closable]="false"  [focusOnShow]="false" appendTo="body" [draggable]="false" >
       <p-message  *ngIf="errorMessage" style="margin-bottom: 16px; display: block;" severity="error" [text]="errorMessage"></p-message>
       <cw-input-dropdown
+        [options]="environmentStores"
         flex
         [value]="environmentStores[0]?.id"
         (onDropDownChange)="setSelectedEnvironment($event)">
-        <cw-input-option
-          *ngFor="let opt of environmentStores"
-          [value]="opt.id"
-          [label]="opt.name"
-        ></cw-input-option>
+
       </cw-input-dropdown>
       <p-footer>
           <button type="button" pButton secondary (click)="cancel.emit()" label="Cancel" class="ui-button-secondary"></button>

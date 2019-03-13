@@ -43,16 +43,13 @@ const I8N_BASE = 'api.sites.ruleengine';
     selector: 'cw-visitors-location-component',
     template: `<div flex layout="row" class="cw-visitors-location cw-condition-component-body" *ngIf="comparisonDropdown != null">
   <cw-input-dropdown flex
-                     class="cw-input"x
+                     class="cw-input"
+                     [options]="comparisonDropdown.options"
                      [formControl]="comparisonDropdown.control"
                      [required]="true"
                      [class.cw-comparator-selector]="true"
                      (onDropDownChange)="comparisonChange.emit($event)"
                      placeholder="{{comparisonDropdown.placeholder}}">
-    <cw-input-option *ngFor="let opt of comparisonDropdown.options"
-                     [value]="opt.value"
-                     [label]="opt.label | async"
-                     icon="{{opt.icon}}"></cw-input-option>
   </cw-input-dropdown>
   <div flex="15" layout-fill layout="row" layout-align="start center" class="cw-input">
       <input  pInputText
@@ -60,10 +57,10 @@ const I8N_BASE = 'api.sites.ruleengine';
               [value]="getRadiusInPreferredUnit() | number:'1.0-0'"
               [readonly]="true"
       />
-    <label class="cw-input-label-right">{{preferredUnit}}</label>
+    <label class="cw-input-label-right">{{ preferredUnit }}</label>
   </div>
   <div flex layout-fill layout="row" layout-align="start center" class="cw-input">
-    <label class="cw-input-label-left">{{fromLabel}}</label>
+    <label class="cw-input-label-left">{{ fromLabel }}</label>
       <input  pInputText
               class="cw-radius"
               [value]="getLatLong()"

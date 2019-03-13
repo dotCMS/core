@@ -88,13 +88,11 @@ const rsrc = {
                          *ngIf="!hideFireOn"
                          class="cw-fire-on-dropdown"
                          [value]="fireOn.value"
+                         [options]="fireOn.options"
                          placeholder="{{fireOn.placeholder | async}}"
                          (onDropDownChange)="updateFireOn.emit({type: 'RULE_UPDATE_FIRE_ON', payload:{rule:rule, value:$event}})"
                          (click)="$event.stopPropagation()">
-        <cw-input-option *ngFor="let opt of fireOn.options"
-            [value]="opt.value"
-            [label]="opt.label | async"
-            icon="{{opt.icon}}"></cw-input-option>
+
       </cw-input-dropdown>
     </div>
     <div flex="30" layout="row" layout-align="end center" class="cw-header-actions" >

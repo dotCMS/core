@@ -19,16 +19,13 @@ import { LoggerService } from 'dotcms-js';
     </button>
   </div>
   <cw-input-dropdown
+  [options]="typeDropdown.options"
       flex="25"
       class="cw-type-dropdown"
       [value]="condition.type?.key"
       placeholder="{{conditionTypePlaceholder}}"
       (onDropDownChange)="onTypeChange($event)">
-    <cw-input-option
-        *ngFor="let opt of typeDropdown.options"
-        [value]="opt.value"
-        [label]="opt.label"
-        icon="{{opt.icon}}"></cw-input-option>
+
   </cw-input-dropdown>
   <div flex="75" class="cw-condition-row-main" [ngSwitch]="condition.type?.key">
     <ng-template [ngSwitchCase]="'NoSelection'">
