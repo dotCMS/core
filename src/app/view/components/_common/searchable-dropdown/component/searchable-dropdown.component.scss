@@ -41,12 +41,21 @@ dot-searchable-dropdown {
 }
 
 .searchable-dropdown__data-list {
+    .ui-datalist {
+        min-height: 321px;
+    }
+
     .ui-datalist-content {
-        margin: $basic-padding 0;
         width: 300px;
     }
 
+    .ui-datalist-emptymessage {
+        padding: 1em;
+    }
+
     .ui-datalist-data {
+        margin: $basic-padding 0;
+
         span {
             cursor: pointer;
             display: block;
