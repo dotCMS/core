@@ -22,6 +22,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.MultiTreeAPI;
 import com.dotmarketing.portlets.containers.business.*;
 import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
 import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRaw;
@@ -281,8 +282,6 @@ public class PageRenderUtil implements Serializable {
             } else {
                 ctxMap.put("USE_CONTAINER_PERMISSION" + container.getIdentifier(), hasReadPermissionOnContainer);
             }
-            // to check user has permission to write this container
-            boolean hasWritePermOverTheStructure = false;
 
 
             final Map<String, List<Map<String,Object>>> contentMaps = Maps.newLinkedHashMap();
@@ -295,6 +294,8 @@ public class PageRenderUtil implements Serializable {
                         final Optional<Contentlet> contentlet = APILocator.getContentletAPI().findContentletByIdentifierOrFallback(id, mode.showLive, languageId, user, mode.respectAnonPerms);
                         return (contentlet.isPresent())
                                 ? contentlet.get() : APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(id);
+                    } catch (final DotContentletStateException e) {
+                        return null;
                     } catch (Exception e) {
                         throw new DotStateException(e);
                     }
