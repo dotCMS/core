@@ -31,6 +31,7 @@ import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.Maps;
@@ -295,6 +296,7 @@ public class PageRenderUtil implements Serializable {
                         return (contentlet.isPresent())
                                 ? contentlet.get() : APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(id);
                     } catch (final DotContentletStateException e) {
+                        // Expected behavior, DotContentletState Exception is used for flow control
                         return null;
                     } catch (Exception e) {
                         throw new DotStateException(e);
