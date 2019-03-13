@@ -92,10 +92,16 @@ public class ContainerLoader implements DotLoader {
 
         final String cacheKeyMask = "%d%s";
         final DotResourceCache velocityResourceCache = CacheLocator.getVeloctyResourceCache();
-        final Host   host = APILocator.getHostAPI().find(containerFolder.getHostId(), APILocator.systemUser(), false);
-        final String path = "//" + host.getHostname() + containerFolder.getPath();
+        final Host      host      = APILocator.getHostAPI().find(containerFolder.getHostId(), APILocator.systemUser(), false);
         final Container container = new Container();
-        container.setIdentifier(path);
+        if (UtilMethods.isSet(host) && UtilMethods.isSet(host.getHostname())
+                && UtilMethods.isSet(containerFolder) && UtilMethods.isSet(containerFolder.getPath())) {
+
+            final String path = "//" + host.getHostname() + containerFolder.getPath();
+            container.setIdentifier(path);
+        }
+
+
 
         for(final PageMode mode:PageMode.values()) {
 
@@ -106,8 +112,10 @@ public class ContainerLoader implements DotLoader {
             // That leading character `1` comes from ResourceManagerImpl.getResource(.. it's the resource type defined in ResourceManager.RESOURCE_TEMPLATE
             this.invalidateContainer(fileAssetContainer, cacheKeyMask, velocityResourceCache, mode, fileAssetContainer.getIdentifier());
 
-            // Now removing by path //demo.dotcms.com/application/containers/large-column/
-            this.invalidateContainer(container, cacheKeyMask, velocityResourceCache, mode, ContainerUUID.UUID_DEFAULT_VALUE);
+            if (UtilMethods.isSet(container.getIdentifier())) {
+                // Now removing by path //demo.dotcms.com/application/containers/large-column/
+                this.invalidateContainer(container, cacheKeyMask, velocityResourceCache, mode, ContainerUUID.UUID_DEFAULT_VALUE);
+            }
 
 
         }

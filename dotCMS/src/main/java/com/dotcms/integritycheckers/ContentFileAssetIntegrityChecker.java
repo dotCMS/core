@@ -314,6 +314,13 @@ public class ContentFileAssetIntegrityChecker extends AbstractIntegrityChecker {
             dc.loadResult();
         }
 
+        // Update other workflow task with new Identifier
+        dc.setSQL("UPDATE workflow_task SET webasset = ? WHERE webasset = ? AND language_id = ?");
+        dc.addParam(newContentletIdentifier);
+        dc.addParam(oldContentletIdentifier);
+        dc.addParam(languageId);
+        dc.loadResult();
+
         // Remove the live_inode references from Contentlet_version_info
         dc.setSQL("DELETE FROM contentlet_version_info WHERE identifier = ? AND lang = ? AND working_inode = ?");
         dc.addParam(oldContentletIdentifier);
@@ -345,12 +352,6 @@ public class ContentFileAssetIntegrityChecker extends AbstractIntegrityChecker {
         dc.addParam(languageId);
         dc.loadResult();
 
-        // Update other workflow task with new Identifier
-        dc.setSQL("UPDATE workflow_task SET webasset = ? WHERE webasset = ? AND language_id = ?");
-        dc.addParam(newContentletIdentifier);
-        dc.addParam(oldContentletIdentifier);
-        dc.addParam(languageId);
-        dc.loadResult();
         // Update previous version of the Contentlet_version_info with
         // new Identifier
         dc.setSQL("UPDATE contentlet_version_info SET identifier = ? WHERE identifier = ? AND lang = ?");
