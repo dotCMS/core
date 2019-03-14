@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output, AfterViewInit, OnInit } from '@angular/core';
+import { Component, EventEmitter, Input, Output, OnInit } from '@angular/core';
 import { ServerSideTypeModel } from './services/ServerSideFieldModel';
 import { I18nService } from './services/system/locale/I18n';
 import {
@@ -18,6 +18,7 @@ import { LoggerService } from 'dotcms-js';
       {{ condition.operator }}
     </button>
   </div>
+
   <cw-input-dropdown
       [options]="typeDropdown.options"
       flex="25"
@@ -53,7 +54,7 @@ import { LoggerService } from 'dotcms-js';
 </div>
 `
 })
-export class ConditionComponent implements AfterViewInit, OnInit {
+export class ConditionComponent implements OnInit {
     @Input() condition: ConditionModel;
     @Input() index: number;
     @Input() conditionTypes: { [key: string]: ServerSideTypeModel } = {};
@@ -82,11 +83,19 @@ export class ConditionComponent implements AfterViewInit, OnInit {
 
     ngOnInit(): void {
         this.typeDropdown = {
-            options: [],
+            options: Object.keys(this.conditionTypes).map(key => {
+                const type = this.conditionTypes[key];
+                return {
+                    label: type._opt.label,
+                    value: type._opt.value
+                };
+            }),
             placeholder: this._resources.get(
                 'api.sites.ruleengine.rules.inputs.condition.type.placeholder'
             )
         };
+
+
     }
 
     ngOnChanges(change): void {
@@ -101,13 +110,6 @@ export class ConditionComponent implements AfterViewInit, OnInit {
         } catch (e) {
             this.loggerService.error('ConditionComponent', 'ngOnChanges', e);
         }
-    }
-
-    ngAfterViewInit(): void {
-        Object.keys(this.conditionTypes).forEach(key => {
-            const type = this.conditionTypes[key];
-            this.typeDropdown.options.push(type._opt);
-        });
     }
 
     onTypeChange(type: string): void {

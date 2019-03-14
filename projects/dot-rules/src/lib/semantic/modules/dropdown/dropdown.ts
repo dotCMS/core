@@ -3,18 +3,16 @@ import { MenuItem } from 'primeng/components/common/api';
 import {
     ElementRef,
     Component,
-    Directive,
     EventEmitter,
     Optional,
     OnChanges,
     SimpleChanges
 } from '@angular/core';
-import { Host, Output, Input, ChangeDetectionStrategy } from '@angular/core';
+import { Output, Input, ChangeDetectionStrategy } from '@angular/core';
 import { ControlValueAccessor, NgControl } from '@angular/forms';
-import { BehaviorSubject, of, Observable, from } from 'rxjs';
+import { of, Observable, from } from 'rxjs';
 import * as _ from 'lodash';
-import { LoggerService } from 'dotcms-js';
-import { switchMap, map, mergeMap, toArray } from 'rxjs/operators';
+import { map, mergeMap, toArray } from 'rxjs/operators';
 
 /**
  * Angular wrapper around OLD Semantic UI Dropdown Module.
@@ -68,7 +66,7 @@ export class Dropdown implements ControlValueAccessor, OnChanges {
     modelValue: string;
     dropdownOptions: Observable<MenuItem[]>;
 
-    constructor(elementRef: ElementRef, @Optional() control: NgControl) {
+    constructor(@Optional() control: NgControl) {
         if (control && !control.valueAccessor) {
             control.valueAccessor = this;
         }
@@ -80,19 +78,27 @@ export class Dropdown implements ControlValueAccessor, OnChanges {
 
     ngOnChanges(changes: SimpleChanges) {
         if (changes.options && changes.options.currentValue) {
-            this.dropdownOptions = from(this.options).pipe(mergeMap((item: any) => {
-                return item.label.pipe(map(label => {
-                    console.log(label);
-                    return {
-                        label: label,
-                        value: item.value
-                    };
-                }));
-            }), toArray());
+            this.dropdownOptions = from(this.options).pipe(
+                mergeMap((item: any) => {
+                    console.log(item);
+                    if (item.label.pipe) {
+                        return item.label.pipe(
+                            map((text) => {
+                                return {
+                                    label: text,
+                                    value: item.value
+                                };
+                            })
+                        );
+                    }
 
-            this.dropdownOptions.subscribe(options => {
-                console.log(options);
-            });
+                    return of({
+                        label: item.label,
+                        value: item.value
+                    });
+                }),
+                toArray()
+            );
         }
     }
 

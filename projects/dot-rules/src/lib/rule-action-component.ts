@@ -39,7 +39,7 @@ import { LoggerService } from 'dotcms-js';
   </div>
 </div>`
 })
-export class RuleActionComponent implements AfterViewInit, OnInit {
+export class RuleActionComponent implements OnInit {
     @Input() action: ActionModel;
     @Input() index = 0;
     @Input() actionTypePlaceholder: string;
@@ -66,17 +66,15 @@ export class RuleActionComponent implements AfterViewInit, OnInit {
 
     ngOnInit(): void {
         this.typeDropdown = {
-            options: []
+            options: Object.keys(this.ruleActionTypes).map(key => {
+                const type = this.ruleActionTypes[key];
+                return {
+                    label: type._opt.label,
+                    value: type._opt.value
+                };
+            })
         };
     }
-
-    ngAfterViewInit(): void {
-        Object.keys(this.ruleActionTypes).forEach(key => {
-            const type = this.ruleActionTypes[key];
-            this.typeDropdown.options.push(type._opt);
-        });
-    }
-
     onTypeChange(type: string): void {
         this.loggerService.info('RuleActionComponent', 'onTypeChange', type);
         this.updateRuleActionType.emit({
