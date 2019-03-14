@@ -71,7 +71,7 @@ public class MapToContentletPopulatorTest {
     public static Object[] testCases() {
         return new TestCase[]{
                 new TestCase("identifier", 1,1),
-                new TestCase("[]", 1,0),
+                new TestCase("", 1,0),
                 new TestCase("null", 0,0),
                 new TestCase(null, 0,0),
         };

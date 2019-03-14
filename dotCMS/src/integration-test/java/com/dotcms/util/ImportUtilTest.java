@@ -1347,15 +1347,85 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                             + "\r\n" +
                             "parent contentlet, parent contentlet body, ");
 
-            importContentWithRelationships(parentContentType, reader,
+            final Map results = importContentWithRelationships(parentContentType, reader,
                     new String[]{
                             parentContentType.fieldMap().get(TITLE_FIELD_NAME).inode()});
+
+            validate(results, false,false, true);
 
             //validate that related content was wiped out
             final List<Tree> childTrees = relationshipAPI
                     .relatedContentTrees(relationship, parentContentlet, true);
             assertNotNull(childTrees);
             assertEquals(0, childTrees.size());
+        } finally {
+            if (parentContentType != null) {
+                contentTypeApi.delete(parentContentType);
+            }
+
+            if (childContentType != null) {
+                contentTypeApi.delete(childContentType);
+            }
+        }
+    }
+
+    @Test
+    public void importFile_updateRelatedContentWithTheSameIdentifier_doesNotThrowException()
+            throws DotSecurityException, DotDataException, IOException {
+
+        //Creates content types
+        ContentType parentContentType = null;
+        ContentType childContentType  = null;
+        final int cardinality = RELATIONSHIP_CARDINALITY.ONE_TO_ONE.ordinal();
+
+        try {
+            final Relationship relationship;
+            parentContentType = createTestContentType("parentContentType", "parentContentType");
+            childContentType = createTestContentType("childContentType", "childContentType");
+
+            com.dotcms.contenttype.model.field.Field field = FieldBuilder.builder(RelationshipField.class).name("testRelationship")
+                    .variable("testRelationship")
+                    .contentTypeId(parentContentType.id()).values(String.valueOf(cardinality))
+                    .relationType(childContentType.variable()).build();
+
+            field = fieldAPI.save(field, user);
+            relationship = relationshipAPI.byTypeValue(
+                    parentContentType.variable() + StringPool.PERIOD + field.variable());
+
+
+            //Creates child contentlet
+            final Contentlet childContentlet = new ContentletDataGen(childContentType.id())
+                    .languageId(defaultLanguage.getId())
+                    .setProperty(TITLE_FIELD_NAME, "child contentlet")
+                    .setProperty(BODY_FIELD_NAME, "child contentlet").nextPersisted();
+
+            //Creates parent contentlet
+            Contentlet parentContentlet = new ContentletDataGen(parentContentType.id())
+                    .languageId(defaultLanguage.getId())
+                    .setProperty(TITLE_FIELD_NAME, "parent contentlet")
+                    .setProperty(BODY_FIELD_NAME, "parent contentlet").next();
+
+            parentContentlet = contentletAPI.checkin(parentContentlet,
+                    CollectionsUtils.map(relationship, CollectionsUtils.list(childContentlet)),
+                    user, false);
+
+            //Creating csv to update parent
+            final Reader reader = createTempFile(
+                    TITLE_FIELD_NAME + ", " + BODY_FIELD_NAME + ", " + field.variable()
+                            + "\r\n" +
+                            "parent contentlet, parent contentlet body, " + childContentlet.getIdentifier());
+
+            final Map results = importContentWithRelationships(parentContentType, reader,
+                    new String[]{
+                            parentContentType.fieldMap().get(TITLE_FIELD_NAME).inode()});
+
+            validate(results, false,false, true);
+            //validate that related content is kept
+            final List<Tree> childTrees = relationshipAPI
+                    .relatedContentTrees(relationship, parentContentlet, true);
+            assertNotNull(childTrees);
+            assertEquals(1, childTrees.size());
+            assertEquals(childContentlet.getIdentifier(), childTrees.get(0).getChild());
         } finally {
             if (parentContentType != null) {
                 contentTypeApi.delete(parentContentType);
@@ -1417,6 +1487,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                     new String[]{parentContentType.fieldMap().get(TITLE_FIELD_NAME).inode(),
                             parentContentType.fieldMap().get(BODY_FIELD_NAME).inode()});
 
+            validate(results, false,false, true);
             //validate that related content is kept
             final List<Tree> childTrees = relationshipAPI
                     .relatedContentTrees(relationship, parentContentlet, true);

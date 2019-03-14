@@ -35,6 +35,7 @@ import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
+import com.dotmarketing.portlets.structure.model.ContentletRelationships.ContentletRelationshipRecords;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Field.FieldType;
 import com.dotmarketing.portlets.structure.model.Relationship;
@@ -1494,21 +1495,34 @@ public class ImportUtil {
             }
 
             if (UtilMethods.isSet(csvRelatedContentlet)) {
-                relationshipRecord.getRecords().addAll(csvRelatedContentlet);
+                addRelatedContent(relationshipRecord, csvRelatedContentlet);
             }
             csvRelatedContentlet = csvRelationshipRecordsChildOnly
                     .get(relationshipRecord.getRelationship());
             if (UtilMethods.isSet(csvRelatedContentlet) && relationshipRecord.isHasParent()) {
-                relationshipRecord.getRecords().addAll(csvRelatedContentlet);
+                addRelatedContent(relationshipRecord, csvRelatedContentlet);
             }
             csvRelatedContentlet = csvRelationshipRecordsParentOnly
                     .get(relationshipRecord.getRelationship());
             if (UtilMethods.isSet(csvRelatedContentlet) && !relationshipRecord.isHasParent()) {
-                relationshipRecord.getRecords().addAll(csvRelatedContentlet);
+                addRelatedContent(relationshipRecord, csvRelatedContentlet);
             }
         }
         //END Load the old relationShips and add the new ones
         return contentletRelationships;
+    }
+
+    /**
+     *
+     * @param relationshipRecord
+     * @param csvRelatedContentlet
+     */
+    private static void addRelatedContent(final ContentletRelationshipRecords relationshipRecord,
+            final List<Contentlet> csvRelatedContentlet) {
+        relationshipRecord.getRecords().addAll(csvRelatedContentlet.stream()
+                .filter(related -> relationshipRecord.getRecords().stream().noneMatch(
+                        record -> record.getIdentifier().equals(related.getIdentifier())))
+                .collect(Collectors.toList()));
     }
 
     /**

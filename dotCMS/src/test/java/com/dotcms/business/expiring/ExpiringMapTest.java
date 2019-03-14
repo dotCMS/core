@@ -123,7 +123,7 @@ public class ExpiringMapTest extends UnitTestBase {
         try {
             map.put(one, one);
             IntStream.of(1, 2, 3).forEach(i -> Assert.assertTrue(map.containsKey(one)));
-            DateUtil.sleep(DateUtil.TWO_SECOND_MILLIS);
+            DateUtil.sleep(DateUtil.THREE_SECOND_MILLIS);
             IntStream.of(1, 2, 3).forEach(i -> Assert.assertFalse(map.containsKey(one)));
 
             map.put(two, two);
@@ -139,7 +139,7 @@ public class ExpiringMapTest extends UnitTestBase {
             IntStream.of(1, 2, 3).forEach(i -> Assert.assertTrue(map.containsKey(three)));
             DateUtil.sleep(DateUtil.TWO_SECOND_MILLIS);
             IntStream.of(1, 2, 3).forEach(i -> Assert.assertTrue(map.containsKey(three)));
-            DateUtil.sleep(DateUtil.FOUR_SECOND_MILLIS);
+            DateUtil.sleep(DateUtil.SECOND_MILLIS * 6);
             IntStream.of(1, 2, 3).forEach(i -> Assert.assertFalse(map.containsKey(three)));
         } finally {
             map.remove(one);

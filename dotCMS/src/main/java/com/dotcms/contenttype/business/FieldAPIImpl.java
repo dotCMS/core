@@ -182,6 +182,9 @@ public class FieldAPIImpl implements FieldAPI {
               Logger.info(this,
                       "The relationship has been saved successfully for field " + field.name());
             }
+
+            //update field reference (in case it might have been modified)
+            result = fieldFactory.byId(result.id());
        }
       //update Content Type mod_date to detect the changes done on the field
 		contentTypeAPI.updateModDate(type);
@@ -210,8 +213,9 @@ public class FieldAPIImpl implements FieldAPI {
                           structure.getName()));
       }
 
+      Field finalResult = result;
       HibernateUtil.addCommitListener(()-> {
-          localSystemEventsAPI.notify(new FieldSavedEvent(result));
+          localSystemEventsAPI.notify(new FieldSavedEvent(finalResult));
       });
 
       return result;
@@ -326,6 +330,7 @@ public class FieldAPIImpl implements FieldAPI {
             final Relationship relationship, final int cardinality, final User user)
             throws DotDataException {
         final String relationName = field.variable();
+        FieldBuilder builder;
         //check which side of the relationship is being updated (parent or child)
         if (relationship.getChildStructureInode().equals(type.id())) {
             //parent is updated
@@ -335,17 +340,26 @@ public class FieldAPIImpl implements FieldAPI {
 
             //only one side of the relationship can be required
             if (relationship.getChildRelationName() != null && field.required() && relationship.isChildRequired()) {
-                //setting as not required the other side of the relationship
-                relationship.setChildRequired(false);
+                //setting as not required this side of the relationship
+                relationship.setParentRequired(false);
 
                 sendRelationshipErrorMessage(relationship.getParentRelationName(), user);
-                final FieldBuilder builder = FieldBuilder.builder(byContentTypeAndVar(relatedContentType, relationship.getChildRelationName()));
-                if(field.required()){
-                    builder.required(false);
-                }
 
-                //update cardinality in case it is changed
-                fieldFactory.save(builder.values(field.values()).build());
+                builder = FieldBuilder.builder(field);
+                builder.required(false);
+                fieldFactory.save(builder.build());
+            }
+
+            if (relationship.getChildRelationName() != null) {
+                //verify if the cardinality was changed to update it on the other side of the relationship
+                final Field otherSideField = byContentTypeAndVar(relatedContentType,
+                        relationship.getChildRelationName());
+
+                if (!otherSideField.values().equals(field.values())) {
+                    //if cardinality changes, the other side field will be updated with the new cardinality
+                    builder = FieldBuilder.builder(otherSideField);
+                    fieldFactory.save(builder.values(field.values()).build());
+                }
             }
         } else {
             //child is updated
@@ -354,17 +368,25 @@ public class FieldAPIImpl implements FieldAPI {
 
             //only one side of the relationship can be required
             if (field.required() && relationship.getParentRelationName() != null && relationship.isParentRequired()) {
-                //setting as not required the other side of the relationship
-                relationship.setParentRequired(false);
+                //setting this side of the relationship as not required
+                relationship.setChildRequired(false);
                 sendRelationshipErrorMessage(relationship.getChildRelationName(), user);
 
-                final FieldBuilder builder = FieldBuilder.builder(byContentTypeAndVar(relatedContentType, relationship.getParentRelationName()));
-                if(field.required()){
-                    builder.required(false);
-                }
-
-                //update cardinality in case it is changed
+                builder = FieldBuilder.builder(field);
+                builder.required(false);
                 fieldFactory.save(builder.values(field.values()).build());
+            }
+
+            //verify if the cardinality was changed to update it on the other side of the relationship
+            if (relationship.getParentRelationName() != null) {
+                final Field otherSideField = byContentTypeAndVar(relatedContentType,
+                        relationship.getParentRelationName());
+
+                if (!otherSideField.values().equals(field.values())) {
+                    //if cardinality changes, the other side field will be updated with the new cardinality
+                    builder = FieldBuilder.builder(otherSideField);
+                    fieldFactory.save(builder.values(field.values()).build());
+                }
             }
         }
         relationship.setCardinality(cardinality);
