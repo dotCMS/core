@@ -1,5 +1,7 @@
 package com.dotcms.contenttype.business;
 
+import static com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY.MANY_TO_ONE;
+import static com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY.ONE_TO_MANY;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -161,6 +163,49 @@ public class FieldAPITest extends IntegrationTestBase {
             assertEquals(childContentType.id(), relationship.getChildStructureInode());
             assertEquals(parentTypeRelationshipField.variable(), relationship.getChildRelationName());
             assertEquals(CARDINALITY, Integer.toString(relationship.getCardinality()));
+            assertEquals(fullFieldVar, relationship.getRelationTypeValue());
+        } finally {
+            if (UtilMethods.isSet(parentContentType) && UtilMethods.isSet(parentContentType.id())) {
+                contentTypeAPI.delete(parentContentType);
+            }
+
+            if (UtilMethods.isSet(childContentType) && UtilMethods.isSet(childContentType.id())) {
+                contentTypeAPI.delete(childContentType);
+            }
+        }
+    }
+
+    @Test
+    public void testSaveOneSidedManyToOneRelationshipField_returns_newRelationshipObject()
+            throws DotSecurityException, DotDataException {
+        final long time = System.currentTimeMillis();
+
+        ContentType parentContentType = null;
+        ContentType childContentType = null;
+        try {
+            parentContentType = createAndSaveSimpleContentType("parentContentType" + time);
+            childContentType = createAndSaveSimpleContentType("childContentType" + time);
+
+            final Field parentTypeRelationshipField = createAndSaveManyToManyRelationshipField(
+                    "newRel",
+                    parentContentType.id(), childContentType.variable(),
+                    String.valueOf(MANY_TO_ONE.ordinal()));
+
+            final String fullFieldVar =
+                    parentContentType.variable() + StringPool.PERIOD + parentTypeRelationshipField
+                            .variable();
+
+            final Relationship relationship = relationshipAPI.byTypeValue(fullFieldVar);
+
+            assertNotNull(relationship);
+
+            assertNull(relationship.getChildRelationName());
+            assertEquals(parentContentType.id(), relationship.getChildStructureInode());
+            assertEquals(childContentType.id(), relationship.getParentStructureInode());
+            assertEquals(parentTypeRelationshipField.variable(),
+                    relationship.getParentRelationName());
+            assertEquals(String.valueOf(ONE_TO_MANY.ordinal()),
+                    Integer.toString(relationship.getCardinality()));
             assertEquals(fullFieldVar, relationship.getRelationTypeValue());
         } finally {
             if (UtilMethods.isSet(parentContentType) && UtilMethods.isSet(parentContentType.id())) {

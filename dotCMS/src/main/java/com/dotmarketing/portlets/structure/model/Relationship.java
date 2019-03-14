@@ -1,5 +1,8 @@
 package com.dotmarketing.portlets.structure.model;
 
+import static com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY.MANY_TO_ONE;
+import static com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY.ONE_TO_MANY;
+
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
@@ -51,29 +54,57 @@ public class Relationship extends Inode
 			final boolean parentRequired, final boolean childRequired) {
 		super();
 		this.setType("relationship");
-		this.parentStructureInode = parentStructure.getInode();
-		this.childStructureInode = childStructure.getInode();
-		this.parentRelationName = parentRelationName;
-		this.childRelationName = childRelationName;
-		this.cardinality = cardinality;
-		this.parentRequired = parentRequired;
-		this.childRequired = childRequired;
+
+		final boolean isManyToOne = cardinality == MANY_TO_ONE.ordinal();
+
+		if (isManyToOne){
+			this.parentStructureInode = childStructure.getInode();
+			this.childStructureInode = parentStructure.getInode();
+			this.parentRelationName = childRelationName;
+			this.childRelationName = parentRelationName;
+			this.cardinality = ONE_TO_MANY.ordinal();
+			this.parentRequired = childRequired;
+			this.childRequired = parentRequired;
+		} else{
+			this.parentStructureInode = parentStructure.getInode();
+			this.childStructureInode = childStructure.getInode();
+			this.parentRelationName = isManyToOne ? childRelationName: parentRelationName;
+			this.childRelationName = isManyToOne ? parentRelationName: childRelationName;
+			this.cardinality = isManyToOne ? ONE_TO_MANY.ordinal() : cardinality;
+			this.parentRequired = parentRequired;
+			this.childRequired = childRequired;
+		}
+
 		this.relationTypeValue = parentRelationName.replaceAll(" ", "_") + "-" + childRelationName
 				.replaceAll(" ", "_");
-
 	}
 
 	public Relationship(final ContentType parentContentType, final ContentType childContentType,
 			final Field field) {
 		super();
 		this.setType("relationship");
-		this.parentStructureInode = parentContentType.id();
-		this.childStructureInode = childContentType.id();
-		this.parentRelationName = null;
-		this.childRelationName = field.variable();
-		this.cardinality = Integer.parseInt(field.values());
-		this.parentRequired = false;
-		this.childRequired = field.required();
+
+		final int cardinality = Integer.parseInt(field.values());
+		final boolean isManyToOne = cardinality == MANY_TO_ONE.ordinal();
+
+		if (isManyToOne){
+			this.parentStructureInode = childContentType.id();
+			this.childStructureInode = parentContentType.id();
+			this.parentRelationName = field.variable();
+			this.childRelationName = null;
+			this.cardinality = ONE_TO_MANY.ordinal();
+			this.parentRequired = field.required();
+			this.childRequired =  false;
+		}else{
+			this.parentStructureInode = parentContentType.id();
+			this.childStructureInode = childContentType.id();
+			this.parentRelationName = null;
+			this.childRelationName = field.variable();
+			this.cardinality = Integer.parseInt(field.values());
+			this.parentRequired = false;
+			this.childRequired = field.required();
+		}
+
 		this.relationTypeValue = parentContentType.variable() + StringPool.PERIOD + field.variable();
 	}
 
