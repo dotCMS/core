@@ -1,7 +1,6 @@
-import { MenuItem } from 'primeng/components/common/api';
+import { MenuItem } from 'primeng/primeng';
 
 import {
-    ElementRef,
     Component,
     EventEmitter,
     Optional,
@@ -79,11 +78,10 @@ export class Dropdown implements ControlValueAccessor, OnChanges {
     ngOnChanges(changes: SimpleChanges) {
         if (changes.options && changes.options.currentValue) {
             this.dropdownOptions = from(this.options).pipe(
-                mergeMap((item: any) => {
-                    console.log(item);
+                mergeMap((item: {[key: string]: any}) => {
                     if (item.label.pipe) {
                         return item.label.pipe(
-                            map((text) => {
+                            map((text: string) => {
                                 return {
                                     label: text,
                                     value: item.value
