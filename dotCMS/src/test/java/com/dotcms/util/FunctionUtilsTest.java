@@ -1,8 +1,10 @@
 package com.dotcms.util;
 
 import com.dotcms.UnitTestBase;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import org.junit.Test;
 
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.assertFalse;
@@ -34,5 +36,34 @@ public class FunctionUtilsTest extends UnitTestBase {
         assertFalse( atomicBoolean.get() );
     }
 
+    @Test
+    public void ifElseTestWithEmptyOptional()  {
+
+        final Optional<Contentlet> optionalContentlet = Optional.empty();
+        final AtomicBoolean atomicBoolean = new AtomicBoolean(false);
+
+        assertFalse( FunctionUtils.ifOrElse(optionalContentlet, v-> atomicBoolean.set(true), () -> atomicBoolean.set(false)));
+        assertFalse( atomicBoolean.get() );
+    }
+
+    @Test
+    public void ifElseTestWithNullableOptional()  {
+
+        final Optional<Contentlet> optionalContentlet = Optional.ofNullable(null);
+        final AtomicBoolean atomicBoolean = new AtomicBoolean(false);
+
+        assertFalse( FunctionUtils.ifOrElse(optionalContentlet, v-> atomicBoolean.set(true), () -> atomicBoolean.set(false)));
+        assertFalse( atomicBoolean.get() );
+    }
+
+    @Test
+    public void ifElseTestWithValidOptional()  {
+
+        final Optional<Contentlet> optionalContentlet = Optional.ofNullable(new Contentlet());
+        final AtomicBoolean atomicBoolean = new AtomicBoolean(false);
+
+        assertTrue( FunctionUtils.ifOrElse(optionalContentlet, v-> atomicBoolean.set(true), () -> atomicBoolean.set(false)));
+        assertTrue( atomicBoolean.get() );
+    }
 
 }

@@ -1,9 +1,12 @@
 package com.dotcms.util;
 
 import com.dotcms.UnitTestBase;
+import io.vavr.Tuple;
+import io.vavr.Tuple2;
 import org.junit.Test;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static com.dotcms.util.CollectionsUtils.*;
 import static org.junit.Assert.*;
@@ -13,6 +16,89 @@ import static org.junit.Assert.*;
  * @author jsanca
  */
 public class CollectionsUtilsTest extends UnitTestBase {
+
+    @Test
+    public void merge_current() {
+
+        final List<Tuple2<String, Integer>> list = Arrays.asList(Tuple.of("hello", 1), Tuple.of("hello", 2),
+                Tuple.of("hi", 3), Tuple.of("yeah", 4), Tuple.of("hi", 5), Tuple.of("hello", 6));
+        final Map<String, Integer> map = list
+                .stream()
+                .collect(Collectors.toMap(
+                        tuple -> tuple._1,
+                        tuple -> tuple._2,
+                        Merge.current()
+                ));
+
+        assertEquals(3, map.size()); // 2, 5 and 6 would skipped. 1,3 and 4 will be part of it
+        assertEquals(1, (int)map.get("hello")); // 2, 5 and 6 would skipped. 1,3 and 4 will be part of it
+        assertEquals(3, (int)map.get("hi")); // 2, 5 and 6 would skipped. 1,3 and 4 will be part of it
+        assertEquals(4, (int)map.get("yeah")); // 2, 5 and 6 would skipped. 1,3 and 4 will be part of it
+        assertNotEquals(2, (int)map.get("hello"));
+        assertNotEquals(5, (int)map.get("hi")); // 2, 5 and 6 would skipped. 1,3 and 4 will be part of it
+        assertNotEquals(6, (int)map.get("hello")); // 2, 5 and 6 would skipped. 1,3 and 4 will be part of it
+    }
+
+    @Test
+    public void merge_last() {
+
+        final List<Tuple2<String, Integer>> list = Arrays.asList(Tuple.of("hello", 1), Tuple.of("hello", 2),
+                Tuple.of("hi", 3), Tuple.of("yeah", 4), Tuple.of("hi", 5), Tuple.of("hello", 6));
+        final Map<String, Integer> map = list
+                .stream()
+                .collect(Collectors.toMap(
+                        tuple -> tuple._1,
+                        tuple -> tuple._2,
+                        Merge.last()
+                ));
+
+        assertEquals(3, map.size());
+        assertEquals(6, (int)map.get("hello"));
+        assertEquals(5, (int)map.get("hi"));
+        assertEquals(4, (int)map.get("yeah"));
+        assertNotEquals(1, (int)map.get("hello"));
+        assertNotEquals(3, (int)map.get("hi"));
+        assertNotEquals(2, (int)map.get("hello"));
+    }
+
+    @Test
+    public void merge_compare() {
+
+        final List<Tuple2<String, Integer>> list = Arrays.asList(Tuple.of("hello", 10), Tuple.of("hello", 2),
+                Tuple.of("hi", 33), Tuple.of("yeah", 4), Tuple.of("hi", 5), Tuple.of("hello", 6));
+        final Map<String, Integer> map = list
+                .stream()
+                .collect(Collectors.toMap(
+                        tuple -> tuple._1,
+                        tuple -> tuple._2,
+                        Merge.compare((current, last)-> Math.max(current, last))
+                ));
+
+        assertEquals(3, map.size());
+        assertEquals(10, (int)map.get("hello"));
+        assertEquals(33, (int)map.get("hi"));
+        assertEquals(4, (int)map.get("yeah"));
+        assertNotEquals(1, (int)map.get("hello"));
+        assertNotEquals(3, (int)map.get("hi"));
+        assertNotEquals(2, (int)map.get("hello"));
+    }
+
+    @Test
+    public void groupByKeyTest()  {
+
+        final List<String> list = Arrays.asList("hello","hello","hi","yeah","hi","hello");
+
+        assertNotNull(list);
+
+        final Map<String, List<String>> groupByKeyMap = groupByKey(list, v -> v);
+
+        assertNotNull(groupByKeyMap);
+        assertEquals(3, groupByKeyMap.size());
+        assertEquals(3, groupByKeyMap.get("hello").size());
+        assertEquals(2, groupByKeyMap.get("hi").size());
+        assertEquals(1, groupByKeyMap.get("yeah").size());
+
+    }
 
 
     @Test

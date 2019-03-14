@@ -4,10 +4,14 @@ import com.dotcms.api.system.event.*;
 import com.dotcms.api.system.event.message.builder.SystemConfirmationMessage;
 import com.dotcms.api.system.event.message.builder.SystemMessage;
 import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
+import com.dotcms.business.expiring.ExpiringMap;
+import com.dotcms.business.expiring.ExpiringMapBuilder;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.ErrorEntity;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
 
 import java.util.*;
 
@@ -18,6 +22,11 @@ import java.util.*;
 public class SystemMessageEventUtil {
 
     private final SystemEventsAPI systemEventsAPI;
+    private final ExpiringMap<Object, Object> systemMessagesExpiringMap =
+                    new ExpiringMapBuilder<>().build();
+
+
+    ///////////////////////
 
     @VisibleForTesting
     protected SystemMessageEventUtil(final SystemEventsAPI systemEventsAPI){
@@ -246,15 +255,51 @@ public class SystemMessageEventUtil {
 
     ///**************
 
+    /**
+     * Similar to {@link #pushMessage(SystemMessage, List)} but if the resourceId is not null will avoid duplicates messages
+     * on Config.getLongProperty("dotcms.systemmessage.noduplicates.ttl", 3000) milliseconds (3 seconds by default)
+     * The "dotcms.systemmessage.noduplicates" property on the config will be true by default, that means duplicated messages will be discarted.
+     * @param resourceId {@link Object}
+     * @param message    {@link SystemMessage}
+     * @param users      {@link List}
+     */
+    public void pushMessage (final Object resourceId, final SystemMessage message, final List<String> users) {
+
+        if (Config.getBooleanProperty("dotcms.systemmessage.noduplicates", true) && null != resourceId) {
+
+            // if the message hasn't been sent in the last seconds.
+            if (!this.systemMessagesExpiringMap.containsKey(resourceId)) {
+
+                try {
+                    final SystemEvent systemEvent = new SystemEvent(SystemEventType.MESSAGE, this.createPayload(message, users));
+                    this.systemMessagesExpiringMap.put(resourceId, resourceId);
+                    this.systemEventsAPI.push(systemEvent);
+                } catch (DotDataException e) {
+
+                    this.systemMessagesExpiringMap.remove(resourceId);
+                    throw new CanNotPushSystemEventException(e);
+                }
+            } else {
+
+                Logger.debug(this, ()-> "We already sent a message in the last previous second, discarting a message for the resource id: " +
+                        resourceId + ", message: " + message);
+            }
+        } else {
+
+            this.pushMessage(message, users);
+        }
+    } // pushMessage.
+
     public void pushMessage (final SystemMessage message, final List<String> users) {
 
-        try {
+            try {
 
-            this.systemEventsAPI.push(new SystemEvent(SystemEventType.MESSAGE, this.createPayload(message, users)));
-        } catch (DotDataException e) {
-            throw new CanNotPushSystemEventException(e);
-        }
-    } // pushSimpleTextEvent.
+                final SystemEvent systemEvent = new SystemEvent(SystemEventType.MESSAGE, this.createPayload(message, users));
+                this.systemEventsAPI.push(systemEvent);
+            } catch (DotDataException e) {
+                throw new CanNotPushSystemEventException(e);
+            }
+    } // pushMessage.
 
     private Payload createPayload (final MessageType messageType,
                                    final Object message,

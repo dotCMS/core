@@ -30,8 +30,6 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships.ContentletRelationshipRecords;
 import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.WebKeys;
-import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import com.tngtech.java.junit.dataprovider.DataProvider;
@@ -70,9 +68,16 @@ public class ContentletRelationshipsTest extends IntegrationTestBase {
     public static class TestCase {
 
         boolean bothSided;
+        boolean withLegacy;
+        int totalRelationshipRecords;
+        int expectedLegacyRelationships;
 
-        public TestCase(final boolean bothSided) {
-            this.bothSided = bothSided;
+        public TestCase(final boolean bothSided, final boolean withLegacy, final int totalRelationshipRecords, final int expectedLegacyRelationships) {
+            this.bothSided  = bothSided;
+            this.withLegacy = withLegacy;
+
+            this.totalRelationshipRecords    = totalRelationshipRecords;
+            this.expectedLegacyRelationships = expectedLegacyRelationships;
         }
     }
 
@@ -89,9 +94,11 @@ public class ContentletRelationshipsTest extends IntegrationTestBase {
     public static Object[] testCases() {
         return new TestCase[]{
                 //invalid indexed
-                new TestCase(false),
+                new TestCase(false, true, 4, 1),
+                new TestCase(false, false, 3, 0),
                 //invalid listed
-                new TestCase(true)
+                new TestCase(true, true, 3, 1),
+                new TestCase(true, false, 2, 0)
         };
     }
 
@@ -153,13 +160,13 @@ public class ContentletRelationshipsTest extends IntegrationTestBase {
 
             //add legacy contentlet relationship records
             final Relationship legacyRelationship = new Relationship(
-                    new StructureTransformer(parentContentType).asStructure(),
-                    new StructureTransformer(childContentType).asStructure(),
-                    parentContentType.variable(), childContentType.variable(),
-                    MANY_TO_MANY.ordinal(), false, false);
-
-            relationshipAPI.save(legacyRelationship);
-
+                        new StructureTransformer(parentContentType).asStructure(),
+                        new StructureTransformer(childContentType).asStructure(),
+                        parentContentType.variable(), childContentType.variable(),
+                        MANY_TO_MANY.ordinal(), false, false);
+            if (testCase.withLegacy) {
+                relationshipAPI.save(legacyRelationship);
+            }
             final ContentletDataGen contentletDataGen = new ContentletDataGen(
                     parentContentType.id());
             final Contentlet contentlet = contentletDataGen.nextPersisted();
@@ -167,19 +174,21 @@ public class ContentletRelationshipsTest extends IntegrationTestBase {
             final ContentletRelationships contentletRelationships = contentletAPI
                     .getAllRelationships(contentlet);
 
-            assertEquals(testCase.bothSided ? 3 : 4,
-                    contentletRelationships.getRelationshipsRecords().size());
+            assertEquals(testCase.totalRelationshipRecords, contentletRelationships.getRelationshipsRecords().size());
 
             final List<ContentletRelationships.ContentletRelationshipRecords> legacyRelationshipRecords = contentletRelationships
                     .getLegacyRelationshipsRecords();
             assertNotNull(legacyRelationshipRecords);
-            assertEquals(1, legacyRelationshipRecords.size());
 
-            assertTrue(legacyRelationshipRecords.stream().allMatch(
-                    record -> record.getRelationship().equals(legacyRelationship) ? record
-                            .isHasParent()
-                            : record.getRelationship().equals(selfRelationship) && !record
-                                    .isHasParent()));
+            assertEquals(testCase.expectedLegacyRelationships, legacyRelationshipRecords.size());
+
+            if (testCase.withLegacy) {
+                assertTrue(legacyRelationshipRecords.stream().allMatch(
+                        record -> record.getRelationship().equals(legacyRelationship) ? record
+                                .isHasParent()
+                                : record.getRelationship().equals(selfRelationship) && !record
+                                .isHasParent()));
+            }
 
             //validate field relationships
             assertTrue(contentletRelationships.getRelationshipsRecordsByField(firstField).get(0)

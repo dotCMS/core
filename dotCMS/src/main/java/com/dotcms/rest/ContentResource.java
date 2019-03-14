@@ -33,6 +33,7 @@ import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.uuid.shorty.ShortyId;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.db.HibernateUtil;
@@ -519,9 +520,9 @@ public class ContentResource {
         /* Converting the Contentlet list to XML or JSON */
         try {
             if ("xml".equals(type)) {
-                result = getXML(contentlets, request, response, render, user, depth);
+                result = getXML(contentlets, request, response, render, user, depth, respectFrontendRoles);
             } else {
-                result = getJSON(contentlets, request, response, render, user, depth);
+                result = getJSON(contentlets, request, response, render, user, depth, respectFrontendRoles);
             }
         } catch (Exception e) {
             Logger.warn(this, "Error converting result to XML/JSON");
@@ -577,14 +578,15 @@ public class ContentResource {
      * @param render
      * @param user
      * @param depth
+     * @param respectFrontendRoles
      * @return
      * @throws DotDataException
      * @throws IOException
      * @throws DotSecurityException
      */
     private String getXML(final List<Contentlet> cons, final HttpServletRequest request,
-            final HttpServletResponse response, final String render, final User user, final int depth)
-            throws DotDataException, IOException, DotSecurityException {
+            final HttpServletResponse response, final String render, final User user,
+            final int depth, final boolean respectFrontendRoles){
 
         final StringBuilder sb = new StringBuilder();
         final XStream xstream = new XStream(new DomDriver());
@@ -598,7 +600,7 @@ public class ContentResource {
                 //we need to add relationships
                 if (depth != -1){
                     sb.append(xstream.toXML(
-                            addRelationshipsToXML(request, response, render, user, depth, contentlet,
+                            addRelationshipsToXML(request, response, render, user, depth, respectFrontendRoles, contentlet,
                                     getContentXML(contentlet, request, response, render, user), null)));
                 } else{
                     sb.append(xstream.toXML(
@@ -660,10 +662,11 @@ public class ContentResource {
      */
     private Map<String, Object> addRelationshipsToXML(final HttpServletRequest request,
             final HttpServletResponse response,
-            final String render, final User user, final int depth, final Contentlet contentlet,
-            final Map<String, Object> objectMap, Set<Relationship> addedRelationships)
-            throws DotDataException, JSONException, IOException, DotSecurityException {
+            final String render, final User user, final int depth, final boolean respectFrontendRoles,
+            final Contentlet contentlet, final Map<String, Object> objectMap, Set<Relationship> addedRelationships)
+            throws DotDataException, IOException, DotSecurityException {
 
+        Relationship relationship;
         final RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
 
         //filter relationships fields
@@ -681,7 +684,12 @@ public class ContentResource {
 
         for (com.dotcms.contenttype.model.field.Field field : fields) {
 
-            final Relationship relationship = relationshipAPI.getRelationshipFromField(field, user);
+            try{
+                relationship = relationshipAPI.getRelationshipFromField(field, user);
+            }catch(DotDataException | DotSecurityException e){
+                Logger.warn("Error getting relationship for field " + field, e.getMessage(), e);
+                continue;
+            }
 
             final List records = new ArrayList();
 
@@ -689,11 +697,11 @@ public class ContentResource {
                 continue;
             }
             addedRelationships.add(relationship);
-            ContentletRelationships.ContentletRelationshipRecords relationshipRecords = contentletRelationships.new ContentletRelationshipRecords(
+            final ContentletRelationships.ContentletRelationshipRecords relationshipRecords = contentletRelationships.new ContentletRelationshipRecords(
                     relationship,
                     relationshipAPI.isParent(relationship, contentlet.getContentType()));
 
-            for (Contentlet relatedContent : contentlet.getRelated(field.variable())) {
+            for (Contentlet relatedContent : contentlet.getRelated(field.variable(), user, respectFrontendRoles)) {
                 switch (depth) {
                     //returns a list of identifiers
                     case 0:
@@ -702,13 +710,14 @@ public class ContentResource {
 
                     //returns a list of related content objects
                     case 1:
-                        records.add(getContentXML(relatedContent, request, response, render, user));
+                        records.add(
+                                getContentXML(relatedContent, request, response, render, user));
                         break;
 
                     //returns a list of related content identifiers for each of the related content
                     case 2:
                         records.add(addRelationshipsToXML(request, response, render, user, 0,
-                                relatedContent,
+                                respectFrontendRoles, relatedContent,
                                 getContentXML(relatedContent, request, response, render, user),
                                 new HashSet<>(addedRelationships)));
                         break;
@@ -716,7 +725,7 @@ public class ContentResource {
                     //returns a list of hydrated related content for each of the related content
                     case 3:
                         records.add(addRelationshipsToXML(request, response, render, user, 1,
-                                relatedContent,
+                                respectFrontendRoles, relatedContent,
                                 getContentXML(relatedContent, request, response, render, user),
                                 new HashSet<>(addedRelationships)));
                         break;
@@ -731,7 +740,7 @@ public class ContentResource {
     }
 
 
-    private String getXMLContentIds(Contentlet con) throws DotDataException, IOException {
+    private String getXMLContentIds(Contentlet con) {
         XStream xstream = new XStream(new DomDriver());
         xstream.alias("content", Map.class);
         xstream.registerConverter(new MapEntryConverter());
@@ -746,7 +755,7 @@ public class ContentResource {
         return sb.toString();
     }
 
-    private String getJSONContentIds(Contentlet con) throws IOException {
+    private String getJSONContentIds(Contentlet con){
         JSONObject json = new JSONObject();
         try {
             json.put("inode", con.getInode());
@@ -766,13 +775,14 @@ public class ContentResource {
      * @param render
      * @param user
      * @param depth
+     * @param respectFrontendRoles
      * @return
      * @throws IOException
      * @throws DotDataException
      */
     private String getJSON(final List<Contentlet> cons, final HttpServletRequest request,
-            final HttpServletResponse response, final String render, final User user,  final int depth)
-            throws IOException, DotDataException {
+            final HttpServletResponse response, final String render, final User user,
+            final int depth, boolean respectFrontendRoles){
         final JSONObject json = new JSONObject();
         final JSONArray jsonCons = new JSONArray();
 
@@ -783,10 +793,11 @@ public class ContentResource {
                 jsonCons.put(jo);
                 //we need to add relationships fields
                 if (depth != -1){
-                    addRelationshipsToJSON(request, response, render, user, depth, c, jo, null);
+                    addRelationshipsToJSON(request, response, render, user, depth,
+                            respectFrontendRoles, c, jo, null);
                 }
             } catch (Exception e) {
-                Logger.warn(this.getClass(), "unable JSON contentlet " + c.getIdentifier());
+                Logger.warn(this.getClass(), "unable to get JSON contentlet " + c.getIdentifier());
                 Logger.debug(this.getClass(), "unable to find contentlet", e);
             }
         }
@@ -819,9 +830,12 @@ public class ContentResource {
      */
     public static JSONObject addRelationshipsToJSON(final HttpServletRequest request,
             final HttpServletResponse response,
-            final String render, final User user, final int depth, final Contentlet contentlet,
+            final String render, final User user, final int depth, final boolean respectFrontendRoles,
+            final Contentlet contentlet,
             final JSONObject jsonObject, Set<Relationship> addedRelationships)
             throws DotDataException, JSONException, IOException, DotSecurityException {
+
+        Relationship relationship;
 
         final RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
 
@@ -838,20 +852,25 @@ public class ContentResource {
 
         for (com.dotcms.contenttype.model.field.Field field:fields) {
 
-            final Relationship relationship = relationshipAPI.getRelationshipFromField(field, user);
+            try {
+                relationship = relationshipAPI.getRelationshipFromField(field, user);
+            }catch(DotDataException | DotSecurityException e){
+                Logger.warn("Error getting relationship for field " + field, e.getMessage(), e);
+                continue;
+            }
 
             if (addedRelationships.contains(relationship)){
                 continue;
             }
             addedRelationships.add(relationship);
 
-            final JSONArray jsonArray = new JSONArray();
-
-            ContentletRelationships.ContentletRelationshipRecords records = contentletRelationships.new ContentletRelationshipRecords(
+            final ContentletRelationships.ContentletRelationshipRecords records = contentletRelationships.new ContentletRelationshipRecords(
                     relationship,
                     relationshipAPI.isParent(relationship, contentlet.getContentType()));
 
-            for (Contentlet relatedContent : contentlet.getRelated(field.variable())) {
+            final JSONArray jsonArray = new JSONArray();
+
+            for (Contentlet relatedContent : contentlet.getRelated(field.variable(), user, respectFrontendRoles)) {
                 switch (depth) {
                     //returns a list of identifiers
                     case 0:
@@ -860,26 +879,30 @@ public class ContentResource {
 
                     //returns a list of related content objects
                     case 1:
-                        jsonArray.put(contentletToJSON(relatedContent, request, response, render,
-                                user));
+                        jsonArray
+                                .put(contentletToJSON(relatedContent, request, response, render,
+                                        user));
                         break;
 
                     //returns a list of related content identifiers for each of the related content
                     case 2:
                         jsonArray.put(addRelationshipsToJSON(request, response, render, user, 0,
-                                relatedContent,
-                                contentletToJSON(relatedContent, request, response, render, user),
+                                respectFrontendRoles, relatedContent,
+                                contentletToJSON(relatedContent, request, response, render,
+                                        user),
                                 new HashSet<>(addedRelationships)));
                         break;
 
                     //returns a list of hydrated related content for each of the related content
                     case 3:
                         jsonArray.put(addRelationshipsToJSON(request, response, render, user, 1,
-                                relatedContent,
-                                contentletToJSON(relatedContent, request, response, render, user),
+                                respectFrontendRoles, relatedContent,
+                                contentletToJSON(relatedContent, request, response, render,
+                                        user),
                                 new HashSet<>(addedRelationships)));
                         break;
                 }
+
             }
 
             jsonObject.put(field.variable(), getJSONArrayValue(jsonArray, records.doesAllowOnlyOne()));

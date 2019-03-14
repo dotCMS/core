@@ -19,7 +19,6 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionSummary;
 import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.RelatedPermissionableGroup;
-import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.business.Ruleable;
 import com.dotmarketing.business.Treeable;
 import com.dotmarketing.business.UserAPI;
@@ -60,6 +59,8 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import org.apache.commons.lang.builder.ToStringBuilder;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a content unit in the system. Ideally, every single domain object
@@ -107,6 +108,8 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 
     public static final String TITLE_IMAGE_KEY="titleImage";
 
+    public static final String URL_MAP_FOR_CONTENT_KEY = "URL_MAP_FOR_CONTENT";
+
 
 
     public static final String DONT_VALIDATE_ME = "_dont_validate_me";
@@ -119,6 +122,8 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 * Flag to avoid to trigger the workflow again on the checkin when it is already in progress.
 	 */
 	public static final String WORKFLOW_IN_PROGRESS = "__workflow_in_progress__";
+	public static final String IS_COPY_CONTENTLET = "_is_copy_contentlet";
+	public static final String SOURCE_CONTENTLET_ASSET_NAME = "_source_contentlet_assetName";
 
     public static final String WORKFLOW_PUBLISH_DATE = "wfPublishDate";
     public static final String WORKFLOW_PUBLISH_TIME = "wfPublishTime";
@@ -544,8 +549,6 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	}
 
     /**
-     *
-     * @param fieldVarName
      * @param stringValue
      * @throws DotRuntimeException
      */
@@ -588,8 +591,6 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 		map.put(fieldVarName, boolValue);
 	}
     /**
-     *
-     * @param fieldVarName
      * @param boolValue
      * @throws DotRuntimeException
      */
@@ -656,8 +657,6 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	}
 
     /**
-     *
-     * @param fieldVarName
      * @param floatValue
      * @throws DotRuntimeException
      */
@@ -1332,6 +1331,8 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 * Since the Contentlet is kept in cache it makes sense removing certain values from the map
 	 */
 	public void cleanup(){
+	    getMap().remove(IS_COPY_CONTENTLET);
+	    getMap().remove(SOURCE_CONTENTLET_ASSET_NAME);
 		getWritableNullProperties().clear();
 	}
 
@@ -1453,51 +1454,115 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	/**
 	 * Returns a list of all contentlets related to this instance given a RelationshipField variable
 	 * @param variableName
+	 * @param user
 	 * @return
 	 */
-	public List<Contentlet> getRelated(final String variableName) {
+	public List<Contentlet> getRelated(final String variableName, final User user){
+		return getRelated(variableName, user, true);
+	}
+
+	/**
+	 * Returns a list of all contentlets related to this instance given a RelationshipField variable
+	 * @param variableName
+	 * @param user
+	 * @param respectFrontendRoles
+	 * @return
+	 */
+	public List<Contentlet> getRelated(final String variableName, final User user,
+			final boolean respectFrontendRoles) {
 
 		if (!UtilMethods.isSet(this.relatedIds)){
 			relatedIds = Maps.newConcurrentMap();
 		}
 
-		final RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
+		try {
+			User currentUser;
 
-		if (this.relatedIds.containsKey(variableName)) {
-			return this.relatedIds.get(variableName).stream().map(identifier -> {
+			if (user != null){
+				currentUser = user;
+			} else{
+				currentUser = APILocator.getUserAPI().getAnonymousUser();
+			}
+
+			final List<Contentlet> relatedContentlet;
+
+			if (this.relatedIds.containsKey(variableName)) {
+				relatedContentlet = getCachedRelatedContentlets(variableName);
+			} else {
+
+				relatedContentlet = getNonCachedRelatedContentlets(variableName);
+			}
+
+			//Restricts contentlet according to user permissions
+			return relatedContentlet.stream().filter(contentlet -> {
 				try {
-					return APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(identifier);
-				} catch (DotDataException | DotSecurityException e) {
-					Logger.warn(this, "No field found with this variable name " + variableName, e);
-					throw new DotStateException(e);
+					return APILocator.getPermissionAPI()
+							.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ,
+									currentUser,
+									currentUser.equals(APILocator.getUserAPI().getAnonymousUser())
+											? true : respectFrontendRoles);
+				} catch (DotDataException e) {
+					return false;
 				}
 			}).collect(Collectors.toList());
-		} else {
-			try {
-				final User user = APILocator.getUserAPI().getSystemUser();
-				com.dotcms.contenttype.model.field.Field field = APILocator.getContentTypeFieldAPI()
-						.byContentTypeIdAndVar(getContentTypeId(), variableName);
 
-				final List<Contentlet> relatedList = APILocator.getContentletAPI()
-						.getRelatedContent(this, relationshipAPI
-										.getRelationshipFromField(field, user),
-						user, false);
-
-				if (UtilMethods.isSet(relatedList)) {
-					this.relatedIds.put(variableName,
-							relatedList.stream().map(contentlet -> contentlet.getIdentifier())
-									.collect(
-											CollectionsUtils.toImmutableList()));
-
-				}else{
-					this.relatedIds.put(variableName, Collections.emptyList());
-				}
-
-				return relatedList;
-			} catch (DotDataException | DotSecurityException e) {
-				Logger.warn(this, "No field found with this variable name " + variableName, e);
-				throw new DotStateException(e);
-			}
+		} catch (DotDataException | DotSecurityException e) {
+			Logger.warn(this, "Error getting related content for field " + variableName, e);
+			throw new DotStateException(e);
 		}
+	}
+
+	/**
+	 *
+	 * @param variableName
+	 * @return
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	@Nullable
+	private List<Contentlet> getNonCachedRelatedContentlets(final String variableName)
+			throws DotDataException, DotSecurityException {
+
+		final User systemUser = APILocator.getUserAPI().getSystemUser();
+		final com.dotcms.contenttype.model.field.Field field = APILocator.getContentTypeFieldAPI()
+				.byContentTypeIdAndVar(getContentTypeId(), variableName);
+
+		final List<Contentlet> relatedList = APILocator.getContentletAPI()
+				.getRelatedContent(this, APILocator.getRelationshipAPI()
+								.getRelationshipFromField(field, systemUser),
+						systemUser, false);
+
+		if (UtilMethods.isSet(relatedList)) {
+			this.relatedIds.put(variableName,
+					relatedList.stream().map(contentlet -> contentlet.getIdentifier())
+							.collect(
+									CollectionsUtils.toImmutableList()));
+		}else{
+			this.relatedIds.put(variableName, Collections.emptyList());
+		}
+
+		return relatedList;
+	}
+
+	/**
+	 *
+	 * @param variableName
+	 * @return
+	 */
+	@NotNull
+	private List<Contentlet> getCachedRelatedContentlets(final String variableName) {
+		final List<Contentlet> relatedList = this.relatedIds.get(variableName).stream()
+				.map(identifier -> {
+					try {
+						return APILocator.getContentletAPI()
+								.findContentletByIdentifierAnyLanguage(identifier);
+					} catch (DotDataException | DotSecurityException e) {
+						Logger.warn(this, "No content found with id " + identifier,
+								e);
+						throw new DotStateException(e);
+					}
+				}).collect(Collectors.toList());
+
+		return relatedList;
 	}
 }

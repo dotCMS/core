@@ -111,7 +111,7 @@ function checkReindexationCallback (response) {
 
 		}
 	}
-	setTimeout("checkReindexation()", 5000);
+	setTimeout("checkReindexation()", 8000);
 }
 
 function checkReindexation () {
@@ -659,10 +659,10 @@ function doRestoreIndexSnapshot(evt){
 		oReq.onreadystatechange = function(){
 			if (oReq.readyState === 4) {
 		     var msgJson = JSON.parse(oReq.response)
-				 if (oReq.status === 200) {
+			 if (oReq.status === 200) {
 		      	 showDotCMSErrorMessage(msgJson.message,true);
 		     } else {
-		     	 showDotCMSErrorMessage(msgJson.errors[0].message);
+		     	 showDotCMSErrorMessage(msgJson.message);
 		     }
 		     restoreSnapshotUploadCompleted();
 		  }
@@ -1843,8 +1843,8 @@ dd.leftdl {
   		<input type="text" id="shards" name="shards" value="<%=Config.getIntProperty("es.index.number_of_shards", 2)%>">
   	</div><br />
   	<div class="buttonRow" align="center">
-	           <button id="addButton" dojoType="dijit.form.Button" iconClass="addIcon" onClick="shardCreating()"><%= LanguageUtil.get(pageContext, "Add") %></button>&nbsp; &nbsp; 
-	           <button dojoType="dijit.form.Button" iconClass="cancelIcon" onClick="javascript:dijit.byId('addIndex').hide();"><%= LanguageUtil.get(pageContext, "Cancel") %></button>&nbsp; &nbsp; 
+		<button dojoType="dijit.form.Button" iconClass="cancelIcon" onClick="javascript:dijit.byId('addIndex').hide();"><%= LanguageUtil.get(pageContext, "Cancel") %></button>&nbsp; &nbsp;
+		<button id="addButton" dojoType="dijit.form.Button" iconClass="addIcon" onClick="shardCreating()"><%= LanguageUtil.get(pageContext, "Add") %></button>&nbsp; &nbsp;
 	</div>
 	
 </div>

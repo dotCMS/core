@@ -22,6 +22,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -304,6 +305,14 @@ public class MapToContentletPopulator  {
 
                     Logger.warn(this, e.getMessage(), e);
                 }
+            } else if (query != null && query.trim().equals("")){
+
+                //wipe out relationship
+                if(relationships==null) {
+
+                    relationships = new HashMap<>();
+                }
+                relationships.put(relationship, new ArrayList<>());
             }
         }
 

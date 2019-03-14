@@ -3,12 +3,7 @@ package com.dotcms.contenttype.test;
 import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.DM_WORKFLOW;
 import static com.dotmarketing.business.Role.ADMINISTRATOR;
 import static com.dotmarketing.portlets.workflows.business.BaseWorkflowIntegrationTest.createContentTypeAndAssignPermissions;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -38,10 +33,8 @@ import com.dotcms.repackage.org.glassfish.jersey.internal.util.Base64;
 import com.dotcms.rest.ContentResource;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.RelationshipAPI;
-import com.dotmarketing.business.Role;
+import com.dotmarketing.beans.Permission;
+import com.dotmarketing.business.*;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -102,54 +95,65 @@ public class ContentResourceTest extends IntegrationTestBase {
     private static LanguageAPI languageAPI;
     private static ContentletAPI contentletAPI;
     private static ContentTypeAPI contentTypeAPI;
+    private static PermissionAPI permissionAPI;
     private static RelationshipAPI relationshipAPI;
+    private static RoleAPI roleAPI;
     private static User user;
+    private static UserAPI userAPI;
 
     @BeforeClass
     public static void prepare() throws Exception {
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
 
+        roleAPI   = APILocator.getRoleAPI();
         user      = APILocator.getUserAPI().getSystemUser();
+        userAPI   = APILocator.getUserAPI();
         fieldAPI  = APILocator.getContentTypeFieldAPI();
 
         contentTypeAPI  = APILocator.getContentTypeAPI(user);
         contentletAPI   = APILocator.getContentletAPI();
         languageAPI     = APILocator.getLanguageAPI();
+        permissionAPI   = APILocator.getPermissionAPI();
         relationshipAPI = APILocator.getRelationshipAPI();
     }
 
     public static class TestCase {
         String depth;
         String responseType;
+        boolean limitedUser;
         int statusCode;
 
-        public TestCase(final String depth, final String responseType, final int statusCode) {
+        public TestCase(final String depth, final String responseType, final int statusCode, final boolean limitedUser) {
             this.depth        = depth;
             this.responseType = responseType;
             this.statusCode   = statusCode;
+            this.limitedUser  = limitedUser;
         }
     }
 
     @DataProvider
     public static Object[] testCases(){
         return new TestCase[]{
-                new TestCase(null, JSON_RESPONSE, Status.OK.getStatusCode()),
-                new TestCase("0", JSON_RESPONSE, Status.OK.getStatusCode()),
-                new TestCase("1", JSON_RESPONSE, Status.OK.getStatusCode()),
-                new TestCase("2", JSON_RESPONSE, Status.OK.getStatusCode()),
-                new TestCase("3", JSON_RESPONSE, Status.OK.getStatusCode()),
-                new TestCase(null, XML_RESPONSE, Status.OK.getStatusCode()),
-                new TestCase("0", XML_RESPONSE, Status.OK.getStatusCode()),
-                new TestCase("1", XML_RESPONSE, Status.OK.getStatusCode()),
-                new TestCase("2", XML_RESPONSE, Status.OK.getStatusCode()),
-                new TestCase("3", XML_RESPONSE, Status.OK.getStatusCode()),
-                new TestCase(null, null, Status.OK.getStatusCode()),
+                new TestCase(null, JSON_RESPONSE, Status.OK.getStatusCode(), false),
+                new TestCase("0", JSON_RESPONSE, Status.OK.getStatusCode(), false),
+                new TestCase("1", JSON_RESPONSE, Status.OK.getStatusCode(), false),
+                new TestCase("2", JSON_RESPONSE, Status.OK.getStatusCode(), false),
+                new TestCase("3", JSON_RESPONSE, Status.OK.getStatusCode(), false),
+                new TestCase(null, XML_RESPONSE, Status.OK.getStatusCode(), false),
+                new TestCase("0", XML_RESPONSE, Status.OK.getStatusCode(), false),
+                new TestCase("1", XML_RESPONSE, Status.OK.getStatusCode(), false),
+                new TestCase("2", XML_RESPONSE, Status.OK.getStatusCode(), false),
+                new TestCase("3", XML_RESPONSE, Status.OK.getStatusCode(), false),
+                new TestCase(null, null, Status.OK.getStatusCode(), false),
                 //Bad depth cases
-                new TestCase("5", JSON_RESPONSE, Status.BAD_REQUEST.getStatusCode()),
-                new TestCase("5", XML_RESPONSE, Status.BAD_REQUEST.getStatusCode()),
-                new TestCase("no_depth", JSON_RESPONSE, Status.BAD_REQUEST.getStatusCode()),
-                new TestCase("no_depth", XML_RESPONSE, Status.BAD_REQUEST.getStatusCode()),
+                new TestCase("5", JSON_RESPONSE, Status.BAD_REQUEST.getStatusCode(), false),
+                new TestCase("5", XML_RESPONSE, Status.BAD_REQUEST.getStatusCode(), false),
+                new TestCase("no_depth", JSON_RESPONSE, Status.BAD_REQUEST.getStatusCode(), false),
+                new TestCase("no_depth", XML_RESPONSE, Status.BAD_REQUEST.getStatusCode(), false),
+
+                new TestCase("0", JSON_RESPONSE, Status.OK.getStatusCode(), true),
+                new TestCase("0", XML_RESPONSE, Status.OK.getStatusCode(), true)
         };
     }
 
@@ -234,6 +238,8 @@ public class ContentResourceTest extends IntegrationTestBase {
         ContentType childContentType  = null;
         ContentType grandChildContentType = null;
 
+        Role newRole = null;
+
         try {
 
             //creates content types
@@ -275,9 +281,18 @@ public class ContentResourceTest extends IntegrationTestBase {
 
             final ContentletDataGen childDataGen = new ContentletDataGen(childContentType.id());
             Contentlet child = childDataGen.languageId(language).next();
+
             child = contentletAPI.checkin(child, CollectionsUtils
                             .map(childRelationship, CollectionsUtils.list(grandChild1, grandChild2)), user,
                     false);
+            if (testCase.limitedUser){
+                newRole = createRole();
+
+                //set individual permissions to the child
+                permissionAPI.save(new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+                        child.getPermissionId(), newRole.getId(), PermissionAPI.PERMISSION_READ, true), child, user, false);
+            }
+
 
             final ContentletDataGen parentDataGen = new ContentletDataGen(parentContentType.id());
             Contentlet parent = parentDataGen.languageId(language).next();
@@ -293,7 +308,7 @@ public class ContentResourceTest extends IntegrationTestBase {
 
             //calls endpoint
             final ContentResource contentResource = new ContentResource();
-            final HttpServletRequest request = createHttpRequest();
+            final HttpServletRequest request = createHttpRequest(null, testCase.limitedUser?userAPI.getAnonymousUser():null);
             final HttpServletResponse response = mock(HttpServletResponse.class);
             final Response endpointResponse = contentResource.getContent(request, response,
                     "/id/" + parent.getIdentifier() + "/live/false/type/" + testCase.responseType
@@ -314,8 +329,28 @@ public class ContentResourceTest extends IntegrationTestBase {
         }finally{
             deleteContentTypes(CollectionsUtils
                     .list(parentContentType, childContentType, grandChildContentType));
+
+            if (newRole != null){
+                roleAPI.delete(newRole);
+            }
         }
 
+    }
+
+    private Role createRole() throws DotDataException {
+        final long millis =  System.currentTimeMillis();
+
+        // Create Role.
+        Role newRole = new Role();
+        newRole.setName("Role" +  millis);
+        newRole.setEditUsers(true);
+        newRole.setEditPermissions(true);
+        newRole.setSystem(false);
+        newRole.setEditLayouts(true);
+        newRole.setParent(newRole.getId());
+        newRole = roleAPI.save(newRole);
+
+        return newRole;
     }
 
     private void deleteContentTypes(final List<ContentType> contentTypes) throws DotSecurityException, DotDataException {
@@ -354,11 +389,18 @@ public class ContentResourceTest extends IntegrationTestBase {
             assertFalse(contentlet.has(childVariable));
         } else {
             final int depth = Integer.parseInt(testCase.depth);
-            if (depth == 0){
-                assertEquals(child.getIdentifier(), contentlet.get(childVariable));
-            } else{
-                validateChildrenJSON(contentletMap, contentlet, parent, child, depth);
+
+            if (testCase.limitedUser){
+                //it shouldn't return any children
+                assertFalse(contentlet.has(childVariable));
+            }else{
+                if (depth == 0){
+                    assertEquals(child.getIdentifier(), contentlet.get(childVariable));
+                } else{
+                    validateChildrenJSON(contentletMap, contentlet, parent, child, depth);
+                }
             }
+
         }
     }
 
@@ -434,13 +476,19 @@ public class ContentResourceTest extends IntegrationTestBase {
             return;
         }
 
-        final int depth = Integer.parseInt(testCase.depth);
-        if (depth == 0) {
-            assertEquals(child.getIdentifier(), contentlet
-                    .getElementsByTagName(parent.getContentType().fields().get(0).variable())
-                    .item(0).getTextContent());
-        } else{
-            validateChildrenXML(contentletMap, contentlet, parent, child, depth);
+        if (testCase.limitedUser){
+            //it shouldn't return any children
+            assertEquals(0, contentlet
+                    .getElementsByTagName(parent.getContentType().fields().get(0).variable()).getLength());
+        }else {
+            final int depth = Integer.parseInt(testCase.depth);
+            if (depth == 0) {
+                assertEquals(child.getIdentifier(), contentlet
+                        .getElementsByTagName(parent.getContentType().fields().get(0).variable())
+                        .item(0).getTextContent());
+            } else {
+                validateChildrenXML(contentletMap, contentlet, parent, child, depth);
+            }
         }
     }
 
@@ -661,7 +709,8 @@ public class ContentResourceTest extends IntegrationTestBase {
 
     }
 
-    private HttpServletRequest createHttpRequest(final String jsonPayload) throws Exception{
+    private HttpServletRequest createHttpRequest(final String jsonPayload, final User user) throws Exception{
+
         MockHeaderRequest request = new MockHeaderRequest(
 
                 (
@@ -669,30 +718,59 @@ public class ContentResourceTest extends IntegrationTestBase {
                 ).request()
         );
 
-        request.setHeader("Authorization", "Basic " + new String(Base64.encode("admin@dotcms.com:admin".getBytes())));
+        if (user == null){
+            request.setHeader("Authorization", "Basic " + new String(Base64.encode(("admin@dotcms.com:admin").getBytes())));
+
+        } else if (!user.equals(userAPI.getAnonymousUser())){
+            request.setHeader("Authorization", "Basic " + new String(Base64.encode((user.getEmailAddress() + ":" + user.getPassword()).getBytes())));
+        }
+
+        if (jsonPayload != null) {
+            final MockServletInputStream stream = new MockServletInputStream(new ByteArrayInputStream(jsonPayload.getBytes(StandardCharsets.UTF_8)));
+
+            when(request.getInputStream()).thenReturn(stream);
+        }
 
         when(request.getContentType()).thenReturn(MediaType.APPLICATION_JSON);
 
-        final MockServletInputStream stream = new MockServletInputStream(new ByteArrayInputStream(jsonPayload.getBytes(StandardCharsets.UTF_8)));
-
-        when(request.getInputStream()).thenReturn(stream);
-
         return request;
+
     }
 
-    private  HttpServletRequest createHttpRequest() throws Exception{
-        MockHeaderRequest request = new MockHeaderRequest(
+    private HttpServletRequest createHttpRequest(final String jsonPayload) throws Exception {
+        return createHttpRequest(jsonPayload, null);
+    }
 
-                (
-                        new MockSessionRequest(new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
-                ).request()
-        );
 
-        request.setHeader("Authorization", "Basic " + new String(Base64.encode("admin@dotcms.com:admin".getBytes())));
+    private HttpServletRequest createHttpRequest() throws Exception {
+        return createHttpRequest(null, null);
+    }
 
-        when(request.getContentType()).thenReturn(MediaType.APPLICATION_JSON);
+    private User createUser() throws DotSecurityException, DotDataException {
 
-        return request;
+        final long millis =  System.currentTimeMillis();
+
+        // Create Role.
+        Role newRole = new Role();
+        newRole.setName("Role" +  millis);
+        newRole.setEditUsers(true);
+        newRole.setEditPermissions(true);
+        newRole.setSystem(false);
+        newRole.setEditLayouts(true);
+        newRole.setParent(newRole.getId());
+        newRole = roleAPI.save(newRole);
+
+        final String userName = "user" + millis;
+        // Now lets create a user, assign the role and test basic permissions.
+        final User newUser = userAPI.createUser(userName + "@test.com", userName +  "@test.com");
+        newUser.setFirstName(userName);
+        newUser.setLastName(userName);
+        newUser.setPassword("mypass");
+        userAPI.save(newUser, user, false);
+
+        roleAPI.addRoleToUser(newRole, newUser);
+
+        return newUser;
     }
 
     static class MockServletInputStream extends ServletInputStream {

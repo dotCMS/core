@@ -6,6 +6,7 @@ import static com.dotcms.util.CollectionsUtils.mapEntries;
 import static com.dotcms.util.HttpRequestDataUtil.getHostname;
 import static com.dotmarketing.util.WebKeys.*;
 
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.util.Constants;
 import com.dotmarketing.util.Logger;
 
@@ -60,6 +61,7 @@ public class ConfigurationHelper implements Serializable {
 	public static final String PRIMARY_COLOR = "primary";
 	public static final String SECONDARY_COLOR = "secondary";
 	public static final String COLORS = "colors";
+	public static final String LANGUAGES = "languages";
 	public static ConfigurationHelper INSTANCE = new ConfigurationHelper();
 
 	/**
@@ -95,7 +97,7 @@ public class ConfigurationHelper implements Serializable {
 			Logger.warn(this.getClass(), "unable to get color:" +e.getMessage());
 		}
 
-		return map(
+		final Map<String, Object> map = map(
 				DOTCMS_WEBSOCKET_PROTOCOL,
 				Config.getAsString(DOTCMS_WEBSOCKET_PROTOCOL, () -> getWebSocketProtocol(request)),
 				DOTCMS_WEBSOCKET_BASEURL,
@@ -106,9 +108,9 @@ public class ConfigurationHelper implements Serializable {
 				EDIT_CONTENT_STRUCTURES_PER_COLUMN,
 				Config.getIntProperty(EDIT_CONTENT_STRUCTURES_PER_COLUMN, 15),
 				DOTCMS_WEBSOCKET_TIME_TO_WAIT_TO_RECONNECT,
-				Config.getIntProperty(DOTCMS_WEBSOCKET_TIME_TO_WAIT_TO_RECONNECT, 1000),
+				Config.getIntProperty(DOTCMS_WEBSOCKET_TIME_TO_WAIT_TO_RECONNECT, 15000),
 				DOTCMS_DISABLE_WEBSOCKET_PROTOCOL,
-				Boolean.valueOf( Config.getBooleanProperty(DOTCMS_DISABLE_WEBSOCKET_PROTOCOL, false) ),
+				Boolean.valueOf(Config.getBooleanProperty(DOTCMS_DISABLE_WEBSOCKET_PROTOCOL, false)),
 				I18N_MESSAGES_MAP,
 				mapEntries(
 						message("notifications_title", locale), // Notifications
@@ -118,25 +120,28 @@ public class ConfigurationHelper implements Serializable {
 				),
 				LICENSE,
 				map(
-						IS_COMMUNITY,      LicenseManager.getInstance().isCommunity(),
+						IS_COMMUNITY, LicenseManager.getInstance().isCommunity(),
 						DISPLAY_SERVER_ID, LicenseUtil.getDisplayServerId(),
-						LEVEL_NAME,        LicenseUtil.getLevelName(),
+						LEVEL_NAME, LicenseUtil.getLevelName(),
 						LICENSE_LEVEL, LicenseUtil.getLevel()
 
 				),
 				RELEASE_INFO,
 				map(
-						VERSION,           ReleaseInfo.getVersion(),
-						BUILD_DATE,        ReleaseInfo.getBuildDateString()
+						VERSION, ReleaseInfo.getVersion(),
+						BUILD_DATE, ReleaseInfo.getBuildDateString()
 				),
 				EMAIL_REGEX, Constants.REG_EX_EMAIL,
 				COLORS,
 				map(
-					BACKGROUND_COLOR, backgroundColor,
-					PRIMARY_COLOR, primaryColor,
-					SECONDARY_COLOR, secondaryColor
+						BACKGROUND_COLOR, backgroundColor,
+						PRIMARY_COLOR, primaryColor,
+						SECONDARY_COLOR, secondaryColor
 				)
 		);
+
+	    map.put(LANGUAGES, APILocator.getLanguageAPI().getLanguages());
+	    return map;
 	}
 
 	private String getWebSocketProtocol (final HttpServletRequest request) {

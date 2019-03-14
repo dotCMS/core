@@ -9,8 +9,8 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
 import org.apache.velocity.context.Context;
@@ -134,7 +134,7 @@ public class TemplatePathStrategyResolver {
 
         private boolean isPath (final String templatePath) {
 
-            return UtilMethods.isSet(templatePath) && templatePath.contains(FORWARD_SLASH);
+            return FileAssetContainerUtil.getInstance().isFolderAssetContainerId(templatePath);
         }
 
         private String getPath(final RenderParams params, final String path, final String uid) {
@@ -151,8 +151,7 @@ public class TemplatePathStrategyResolver {
                             this.getHost(host).getHostname(), path.startsWith(FORWARD_SLASH)? StringPool.BLANK:FORWARD_SLASH,
                             path, FORWARD_SLASH, uid, PERIOD, VelocityType.CONTAINER.fileExtension).toString():
 
-                        builder(FORWARD_SLASH, params.mode.name(), FORWARD_SLASH, HOST_INDICATOR,
-                            path.startsWith(FORWARD_SLASH)? StringPool.BLANK:FORWARD_SLASH,
+                        builder(FORWARD_SLASH, params.mode.name(), FORWARD_SLASH,
                             path, FORWARD_SLASH, uid, PERIOD, VelocityType.CONTAINER.fileExtension).toString();
             } catch (Exception e) {
 
@@ -213,19 +212,7 @@ public class TemplatePathStrategyResolver {
 
         private boolean isIdentifier (final String identifier) {
 
-            boolean isIdentifier = false;
-            isIdentifier |= UUIDUtil.isUUID(identifier);
-
-            if (!isIdentifier) {
-                try {
-                    APILocator.getShortyAPI().validShorty(identifier);
-                    isIdentifier = true;
-                } catch (Exception e) {
-                    isIdentifier = false;
-                }
-            }
-
-            return isIdentifier;
+           return FileAssetContainerUtil.getInstance().isDataBaseContainerId(identifier);
         }
     } // IdentifierTemplatePathStrategyImpl.
 } // E:O:F:TemplatePathStrategyResolver.

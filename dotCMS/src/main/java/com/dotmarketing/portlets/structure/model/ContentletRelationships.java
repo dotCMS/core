@@ -1,6 +1,5 @@
 package com.dotmarketing.portlets.structure.model;
 
-import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.util.CollectionsUtils;

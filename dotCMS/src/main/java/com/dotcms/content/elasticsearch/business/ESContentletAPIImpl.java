@@ -3,6 +3,7 @@ package com.dotcms.content.elasticsearch.business;
 
 import static com.dotcms.exception.ExceptionUtil.bubbleUpException;
 import static com.dotcms.exception.ExceptionUtil.getLocalizedMessageOrDefault;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.URL_MAP_FOR_CONTENT_KEY;
 
 import com.dotcms.api.system.event.ContentletSystemEventUtil;
 import com.dotcms.business.CloseDBIfOpened;
@@ -13,20 +14,20 @@ import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.event.ContentletCheckinEvent;
 import com.dotcms.content.elasticsearch.business.event.ContentletDeletedEvent;
 import com.dotcms.content.elasticsearch.business.event.ContentletPublishEvent;
+import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
 import com.dotcms.contenttype.business.ContentTypeAPI;
-import com.dotcms.contenttype.model.field.CategoryField;
-import com.dotcms.contenttype.model.field.ConstantField;
-import com.dotcms.contenttype.model.field.DataTypes;
-import com.dotcms.contenttype.model.field.HostFolderField;
+import com.dotcms.contenttype.model.field.*;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeIf;
+import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publisher.business.PublisherAPI;
 import com.dotcms.rendering.velocity.services.ContentletLoader;
 import com.dotcms.rendering.velocity.services.PageLoader;
 import com.dotcms.repackage.com.google.common.base.Preconditions;
+import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
 import com.dotcms.repackage.com.google.common.collect.Lists;
 import com.dotcms.repackage.com.google.common.collect.Maps;
 import com.dotcms.repackage.com.google.common.collect.Sets;
@@ -48,6 +49,7 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.Treeable;
+import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.query.GenericQueryFactory.Query;
 import com.dotmarketing.business.query.QueryUtil;
 import com.dotmarketing.business.query.ValidationException;
@@ -103,6 +105,7 @@ import com.dotmarketing.portlets.structure.model.Field.FieldType;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.structure.transform.ContentletRelationshipsTransformer;
+import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowComment;
 import com.dotmarketing.portlets.workflows.model.WorkflowHistory;
@@ -599,7 +602,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 anyone who need it can subscribed to this commit listener event, on this case will be
                 mostly use it in order to invalidate this contentlet cache.
                  */
-                triggerCommitListenerEvent(contentlet, user);
+                triggerCommitListenerEvent(contentlet, user, true);
 
                 // by now, the publish event is making a duplicate reload events on the site browser
                 // so we decided to comment it out by now, and
@@ -1127,72 +1130,42 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     @CloseDBIfOpened
     @Override
-    public Object getFieldValue(Contentlet contentlet, com.dotcms.contenttype.model.field.Field theField){
-        if(theField instanceof ConstantField){
-            contentlet.getMap().put(theField.variable(), theField.values());
-            return theField.values();
-        }
-        if(theField instanceof HostFolderField){
-            if(FolderAPI.SYSTEM_FOLDER.equals(contentlet.getFolder())){
-                return contentlet.getHost();
-            }else{
-                return contentlet.getFolder();
-            }
-        }else if(theField instanceof CategoryField){
-            Category category;
-            try {
-                category = categoryAPI.find(theField.values(), APILocator.getUserAPI().getSystemUser(), false);
-                // Get all the Contentlets Categories
-                List<Category> selectedCategories = categoryAPI.getParents(contentlet, APILocator.getUserAPI().getSystemUser(), false);
-                Set<Category> categoryList = new HashSet<Category>();
-                List<Category> categoryTree = categoryAPI.getAllChildren(category, APILocator.getUserAPI().getSystemUser(), false);
-                if (selectedCategories.size() > 0 && categoryTree != null) {
-                    for (int k = 0; k < categoryTree.size(); k++) {
-                        Category cat = (Category) categoryTree.get(k);
-                        for (Category categ : selectedCategories) {
-                            if (categ.getInode().equalsIgnoreCase(cat.getInode())) {
-                                categoryList.add(cat);
-                            }
-                        }
-                    }
-                }
-                return categoryList;
-            } catch (DotDataException | DotSecurityException e) {
-                throw new DotStateException(e);
-            }
-
-        }else{
-            return contentlet.get(theField.variable());
-        }
+    public Object getFieldValue(final Contentlet contentlet,
+            final com.dotcms.contenttype.model.field.Field theField) {
+        return getFieldValue(contentlet, theField, null);
     }
 
     @CloseDBIfOpened
     @Override
-    public Object getFieldValue(Contentlet contentlet, Field theField){
+    public Object getFieldValue(final Contentlet contentlet,
+            final com.dotcms.contenttype.model.field.Field theField, final User user) {
         try {
-
-            final User user = APILocator.getUserAPI().getSystemUser();
-            if(fieldAPI.isElementConstant(theField)){
-                if(contentlet.getMap().get(theField.getVelocityVarName())==null)
-                    contentlet.getMap().put(theField.getVelocityVarName(), theField.getValues());
-                return theField.getValues();
+            User currentUser = user;
+            if (currentUser == null) {
+                currentUser = APILocator.getUserAPI().getSystemUser();
             }
 
-
-            if(theField.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString())){
-                if(FolderAPI.SYSTEM_FOLDER.equals(contentlet.getFolder()))
+            if (theField instanceof ConstantField) {
+                contentlet.getMap().put(theField.variable(), theField.values());
+                return theField.values();
+            }
+            if (theField instanceof HostFolderField) {
+                if (FolderAPI.SYSTEM_FOLDER.equals(contentlet.getFolder())) {
                     return contentlet.getHost();
-                else
+                } else {
                     return contentlet.getFolder();
-            }else if(theField.getFieldType().equals(Field.FieldType.CATEGORY.toString())){
-                Category category = categoryAPI.find(theField.getValues(), user, false);
+                }
+            } else if (theField instanceof CategoryField) {
+                final Category category = categoryAPI.find(theField.values(), currentUser, false);
                 // Get all the Contentlets Categories
-                List<Category> selectedCategories = categoryAPI.getParents(contentlet, user, false);
-                Set<Category> categoryList = new HashSet<Category>();
-                List<Category> categoryTree = categoryAPI.getAllChildren(category, user, false);
+                final List<Category> selectedCategories = categoryAPI
+                        .getParents(contentlet, currentUser, false);
+                final Set<Category> categoryList = new HashSet<Category>();
+                final List<Category> categoryTree = categoryAPI
+                        .getAllChildren(category, currentUser, false);
                 if (selectedCategories.size() > 0 && categoryTree != null) {
                     for (int k = 0; k < categoryTree.size(); k++) {
-                        Category cat = (Category) categoryTree.get(k);
+                        final Category cat = categoryTree.get(k);
                         for (Category categ : selectedCategories) {
                             if (categ.getInode().equalsIgnoreCase(cat.getInode())) {
                                 categoryList.add(cat);
@@ -1201,20 +1174,37 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     }
                 }
                 return categoryList;
-            } else if (theField.getFieldType().equals(FieldType.RELATIONSHIP.toString())) {
-                ContentletRelationships contentletRelationships = new ContentletRelationships(
+
+            } else if (theField instanceof RelationshipField) {
+                final ContentletRelationships contentletRelationships = new ContentletRelationships(
                         contentlet);
-                Relationship relationship = relationshipAPI
-                        .getRelationshipFromField(theField, user);
-                ContentletRelationshipRecords records = contentletRelationships.new ContentletRelationshipRecords(
+                final Relationship relationship = relationshipAPI
+                        .getRelationshipFromField(theField, currentUser);
+                final ContentletRelationshipRecords records = contentletRelationships.new ContentletRelationshipRecords(
                         relationship,
                         relationshipAPI.isParent(relationship, contentlet.getContentType()));
-                records.setRecords(contentlet.getRelated(theField.getVelocityVarName()));
+                records.setRecords(contentlet.getRelated(theField.variable(), user));
                 contentletRelationships.setRelationshipsRecords(CollectionsUtils.list(records));
                 return contentletRelationships;
-            }else{
-                return contentlet.get(theField.getVelocityVarName());
+            } else {
+                return contentlet.get(theField.variable());
             }
+        } catch (DotDataException | DotSecurityException e) {
+            throw new DotStateException(e);
+        }
+    }
+
+    /**
+     * @param theField a legacy field from the contentlet's parent Content Type
+     * @deprecated Use {@link ESContentletAPIImpl#getFieldValue(Contentlet,
+     * com.dotcms.contenttype.model.field.Field)} instead
+     */
+    @CloseDBIfOpened
+    @Override
+    @Deprecated
+    public Object getFieldValue(final Contentlet contentlet, final Field theField) {
+        try {
+            return getFieldValue(contentlet, new LegacyFieldTransformer(theField).from());
         } catch (Exception e) {
             Logger.error(this, e.getMessage(), e);
             return null;
@@ -1345,7 +1335,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 + "; ContentIdentifier: " + (contentlet != null ? contentlet.getIdentifier() : "Unknown"), contentlet.getHost());
 
         try {
-            canLock(contentlet, user);
+            canLock(contentlet, user, respectFrontendRoles);
 
             if(contentlet.isLocked() ){
                 // persists the webasset
@@ -2212,7 +2202,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 }
 
                 HibernateUtil.addCommitListener(() -> this.contentletSystemEventUtil.pushArchiveEvent(workingContentlet), 1000);
-
+                HibernateUtil.addCommitListener(() -> localSystemEventsAPI.notify(new ContentletPublishEvent(contentlet, user, true)));
             } else {
                 throw new DotContentletStateException("Contentlet with Identifier '" + contentlet.getIdentifier() +
                         "' must be unlocked before being archived");
@@ -2503,7 +2493,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             anyone who need it can subscribed to this commit listener event, on this case will be
             mostly use it in order to invalidate this contentlet cache.
              */
-            triggerCommitListenerEvent(contentlet, user);
+            triggerCommitListenerEvent(contentlet, user, false);
 
         } catch(DotDataException | DotStateException| DotSecurityException e) {
             ActivityLogger.logInfo(getClass(), "Error Unpublishing Content", "StartDate: " +contentPushPublishDate+ "; "
@@ -2585,6 +2575,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             publishRelatedHtmlPages(contentlet);
 
             HibernateUtil.addCommitListener(() -> this.sendUnArchiveContentSystemEvent(contentlet), 1000);
+            HibernateUtil.addCommitListener(() -> localSystemEventsAPI.notify(new ContentletPublishEvent(contentlet, user, false)));
         } catch(DotDataException | DotStateException| DotSecurityException e) {
             ActivityLogger.logInfo(getClass(), "Error Unarchiving Content", "StartDate: " +contentPushPublishDate+ "; "
                     + "EndDate: " +contentPushExpireDate + "; User:" + (user != null ? user.getUserId() : "Unknown")
@@ -2683,7 +2674,16 @@ public class ESContentletAPIImpl implements ContentletAPI {
             throw new DotSecurityException("User: " + (user != null ? user.getUserId() : "Unknown")
                     + " cannot edit Contentlet: " + (contentlet != null ? contentlet.getInode() : "Unknown"));
         }
-        final List<Relationship> relationships = this.getRelationships(contentlet.getContentType());
+
+        //do not perform any changes on related records
+        if (related.getRecords() == null){
+            return;
+        }
+
+        final ContentType contentType = contentlet.getContentType();
+        final List<Relationship> relationships = this.getRelationships(contentType);
+        final Relationship relationship = related.getRelationship();
+
         if(!relationships.contains(related.getRelationship())){
             throw new DotContentletStateException(
                     "Error adding relationships in contentlet:  " + (contentlet != null ? contentlet
@@ -2706,12 +2706,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 throw new DotDataException(e.getMessage(),e);
             }
 
-            deleteRelatedContent(contentlet, related.getRelationship(), related.isHasParent(), user, respectFrontendRoles);
-            Tree newTree = null;
-            Set<Tree> uniqueRelationshipSet = new HashSet<Tree>();
+            deleteRelatedContent(contentlet, relationship, related.isHasParent(), user,
+                    respectFrontendRoles);
 
-            Relationship rel = related.getRelationship();
-            List<Contentlet> conRels = getRelatedContentFromIndex(contentlet,related.getRelationship(),
+            Tree newTree;
+            Set<Tree> uniqueRelationshipSet = new HashSet<>();
+
+            List<Contentlet> conRels = getRelatedContentFromIndex(contentlet,relationship,
                     related.isHasParent(), user,respectFrontendRoles) ;
 
             int treePosition = (conRels != null && conRels.size() != 0) ? conRels.size() : 1 ;
@@ -2720,14 +2721,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
             for (Contentlet c : related.getRecords()) {
                 if (child) {
                     for (Tree currentTree: contentParents) {
-                        if (currentTree.getRelationType().equals(rel.getRelationTypeValue()) && c.getIdentifier().equals(currentTree.getParent())) {
+                        if (currentTree.getRelationType().equals(relationship.getRelationTypeValue()) && c.getIdentifier().equals(currentTree.getParent())) {
                             positionInParent = currentTree.getTreeOrder();
                         }
                     }
 
-                    newTree = new Tree(c.getIdentifier(), contentlet.getIdentifier(), rel.getRelationTypeValue(), positionInParent);
+                    newTree = new Tree(c.getIdentifier(), contentlet.getIdentifier(), relationship.getRelationTypeValue(), positionInParent);
                 } else {
-                    newTree = new Tree(contentlet.getIdentifier(), c.getIdentifier(), rel.getRelationTypeValue(), treePosition);
+                    newTree = new Tree(contentlet.getIdentifier(), c.getIdentifier(), relationship.getRelationTypeValue(), treePosition);
                 }
                 positionInParent=positionInParent+1;
 
@@ -3077,7 +3078,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
 
             if(contentlet.getMap().get(Contentlet.DONT_VALIDATE_ME) == null) {
-                canLock(contentlet, user);
+                canLock(contentlet, user, respectFrontendRoles);
             }
             contentlet.setModUser(user.getUserId());
             // start up workflow
@@ -3655,7 +3656,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             if (contentlet != null && contentlet.isFileAsset() && changedURI) {
                 final Contentlet contentletRef = contentlet;
                 HibernateUtil.addCommitListener(() -> {
-                    CacheLocator.getIdentifierCache().removeFromCacheByIdentifier(contentletRef.getIdentifier());
+                    cleanupCacheOnChangedURI(contentletRef);
                 });
             }
 
@@ -3703,7 +3704,27 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return contentlet;
     }
 
+    private void cleanupCacheOnChangedURI(final Contentlet contentlet){
+        CacheLocator.getIdentifierCache().removeFromCacheByIdentifier(contentlet.getIdentifier());
+        //Need both live and working contentlets for they all need to be evicted from cache.
+        try {
+            final Set<Contentlet> allLangContentlets = new ImmutableSet.Builder<Contentlet>()
+                    .addAll(getAllLanguages(contentlet, true,
+                            APILocator.systemUser(), false))
+                    .addAll(getAllLanguages(contentlet, false,
+                            APILocator.systemUser(), false)).build();
+            final ContentletCache contentletCache = CacheLocator.getContentletCache();
+            for (final Contentlet content : allLangContentlets) {
+                contentletCache.remove(content);
+            }
 
+        } catch (DotDataException | DotSecurityException e) {
+            Logger.error(getClass(),
+                    "Unable to cleanup cache fo"
+                    + "r fileAsset identifier " + contentlet
+                            .getIdentifier(), e);
+        }
+    }
 
     private void cleanup(final Contentlet contentlet) {
        if(null != contentlet){
@@ -3850,7 +3871,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     /**
-     *
+     * This method moves categories and relationships dependencies
      * @param fromContentlet
      * @param toContentlet
      * @param contentRelationships
@@ -3863,6 +3884,160 @@ public class ESContentletAPIImpl implements ContentletAPI {
     private void moveContentDependencies(final Contentlet fromContentlet, final Contentlet toContentlet, ContentletRelationships contentRelationships, List<Category> categories, final User user, final boolean respect) throws DotDataException, DotSecurityException{
 
         //Handles Categories
+        moveContentCategories(fromContentlet, toContentlet, categories, user, respect);
+
+        //Handle Relationships
+        moveContentRelationships(fromContentlet, toContentlet, contentRelationships, user);
+    }
+
+    /**
+     *
+     * @param fromContentlet
+     * @param toContentlet
+     * @param contentRelationships
+     * @param user
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    private void moveContentRelationships(final Contentlet fromContentlet, final Contentlet toContentlet,
+            ContentletRelationships contentRelationships, final User user)
+            throws DotDataException, DotSecurityException {
+
+        if (contentRelationships == null) {
+            return;
+        }
+
+        final ContentType contentType = fromContentlet.getContentType();
+        final RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
+        if (contentRelationships.getRelationshipsRecords().isEmpty()) {
+            getWipeOutRelationships(contentRelationships, contentType, relationshipAPI);
+        } else {
+            //keep relationships as they are, but add related content limited by permissions
+            addRestrictedContentForLimitedUser(fromContentlet, contentRelationships, user,
+                    contentType,
+                    relationshipAPI);
+        }
+
+        for (final ContentletRelationshipRecords cr : contentRelationships.getRelationshipsRecords()) {
+            relateContent(toContentlet, cr, APILocator.getUserAPI().getSystemUser(), true);
+        }
+    }
+
+    /**
+     * This method keeps relationships as they are but also includes restricted content to the list to avoid deleting it
+     * @param fromContentlet
+     * @param contentRelationships
+     * @param user
+     * @param contentType
+     * @param relationshipAPI
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    private void addRestrictedContentForLimitedUser(final Contentlet fromContentlet,
+            final ContentletRelationships contentRelationships, final User user, final ContentType contentType,
+            final RelationshipAPI relationshipAPI) throws DotDataException, DotSecurityException {
+        for (ContentletRelationshipRecords contentletRelationshipRecords : contentRelationships
+                .getRelationshipsRecords()) {
+            if (contentletRelationshipRecords.getRecords() != null) {
+                final Relationship relationship = contentletRelationshipRecords
+                        .getRelationship();
+                final UserAPI userAPI = APILocator.getUserAPI();
+                if (relationshipAPI.sameParentAndChild(relationship)) {
+                    //from parent
+                    addContentLimitedByPermissions(user, contentletRelationshipRecords,
+                            getRelatedContentFromIndex(
+                                    fromContentlet, relationship, true, userAPI.getSystemUser(),
+                                    true));
+
+                    //from child
+                    addContentLimitedByPermissions(user, contentletRelationshipRecords,
+                            getRelatedContentFromIndex(
+                                    fromContentlet, relationship, false,
+                                    userAPI.getSystemUser(),
+                                    true));
+
+                } else {
+                    addContentLimitedByPermissions(user, contentletRelationshipRecords,
+                            getRelatedContentFromIndex(
+                                    fromContentlet, relationship,
+                                    relationshipAPI.isParent(relationship, contentType),
+                                    userAPI.getSystemUser(),
+                                    true));
+                }
+            }
+        }
+    }
+
+    /**
+     * This method creates a list of all relationships that will be wiped out
+     * @param contentRelationships
+     * @param contentType
+     * @param relationshipAPI
+     */
+    private void getWipeOutRelationships(final ContentletRelationships contentRelationships,
+            final ContentType contentType, final RelationshipAPI relationshipAPI) {
+        //wipe out all relationships
+        final List<Relationship> relationships = FactoryLocator.getRelationshipFactory()
+                .byContentType(contentType);
+        relationships.forEach(relationship -> {
+            //add empty list to each relationship
+            if (relationshipAPI.sameParentAndChild(relationship)) {
+                //add empty list as parent
+                contentRelationships.getRelationshipsRecords()
+                        .add(contentRelationships.new ContentletRelationshipRecords(
+                                relationship, true));
+                //add empty list as child
+                contentRelationships.getRelationshipsRecords()
+                        .add(contentRelationships.new ContentletRelationshipRecords(
+                                relationship, false));
+            } else {
+                contentRelationships.getRelationshipsRecords()
+                        .add(contentRelationships.new ContentletRelationshipRecords(
+                                relationship,
+                                relationshipAPI.isParent(relationship, contentType)));
+            }
+        });
+    }
+
+    /**
+     * This method adds restricted content to the list of related content to be updated
+     * @param user
+     * @param contentletRelationshipRecords
+     * @param relatedContentlets
+     */
+    private void addContentLimitedByPermissions(User user,
+            ContentletRelationshipRecords contentletRelationshipRecords,
+            List<Contentlet> relatedContentlets) {
+
+        //consider immutable collections
+        contentletRelationshipRecords.setRecords(new ArrayList<>(contentletRelationshipRecords.getRecords()));
+        contentletRelationshipRecords.getRecords()
+                .addAll(relatedContentlets.stream()
+                        .filter(contentlet -> {
+                            try {
+                                return !permissionAPI
+                                        .doesUserHavePermission(contentlet,
+                                                PermissionAPI.PERMISSION_READ, user,
+                                                false);
+                            } catch (DotDataException e) {
+                               return false;
+                            }
+                        }).collect(Collectors.toList()));
+    }
+
+    /**
+     *
+     * @param fromContentlet
+     * @param toContentlet
+     * @param categories
+     * @param user
+     * @param respect
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    private void moveContentCategories(final Contentlet fromContentlet, final Contentlet toContentlet,
+            List<Category> categories, final User user, final boolean respect)
+            throws DotDataException, DotSecurityException {
         final List<Category> categoriesUserCannotRemove = new ArrayList<>();
         if(categories == null){
             categories = new ArrayList<>();
@@ -3881,88 +4056,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
         categories.addAll(categoriesUserCannotRemove);
 
         categoryAPI.setParents(toContentlet, categories, user, respect);
-
-        //Handle Relationships
-
-        if(contentRelationships == null){
-            contentRelationships = new ContentletRelationships(toContentlet);
-        }
-
-        final List<Relationship> relationships = FactoryLocator.getRelationshipFactory().byContentType(fromContentlet.getStructure());
-        for (final Relationship relationship : relationships) {
-
-            if(FactoryLocator.getRelationshipFactory().sameParentAndChild(relationship)) {
-                ContentletRelationshipRecords selectedRecords = null;
-
-                //First all relationships as parent
-                for(final ContentletRelationshipRecords records : contentRelationships.getRelationshipsRecords()) {
-                    if(records.getRelationship().getInode().equalsIgnoreCase(relationship.getInode()) && records.isHasParent()) {
-                        selectedRecords = records;
-                        break;
-                    }
-                }
-                if (selectedRecords == null) {
-                    selectedRecords = contentRelationships.new ContentletRelationshipRecords(relationship, true);
-                    contentRelationships.getRelationshipsRecords().add(contentRelationships.new ContentletRelationshipRecords(relationship, true));
-                }
-
-                //Adding to the list all the records the user was not able to see becuase permissions forcing them into the relationship
-                List<Contentlet> relatedContentlets = getRelatedContentFromIndex(fromContentlet, relationship, true, APILocator.getUserAPI().getSystemUser(), true);
-                for (final Contentlet contentlet : relatedContentlets) {
-                    if (!permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ, user, false)) {
-                        selectedRecords.getRecords().add(0, contentlet);
-                    }
-                }
-
-                //Then all relationships as child
-                for(final ContentletRelationshipRecords records : contentRelationships.getRelationshipsRecords()) {
-                    if(records.getRelationship().getInode().equalsIgnoreCase(relationship.getInode()) && !records.isHasParent()) {
-                        selectedRecords = records;
-                        break;
-                    }
-                }
-                if (selectedRecords == null) {
-                    selectedRecords = contentRelationships.new ContentletRelationshipRecords(relationship, false);
-                    contentRelationships.getRelationshipsRecords().add(contentRelationships.new ContentletRelationshipRecords(relationship, false));
-                }
-
-                //Adding to the list all the records the user was not able to see becuase permissions forcing them into the relationship
-                relatedContentlets = getRelatedContentFromIndex(fromContentlet, relationship, false, APILocator.getUserAPI().getSystemUser(), true);
-                for (final Contentlet contentlet : relatedContentlets) {
-                    if (!permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ, user, false)) {
-                        selectedRecords.getRecords().add(0, contentlet);
-                    }
-                }
-
-            } else {
-                ContentletRelationshipRecords selectedRecords = null;
-
-                //First all relationships as parent
-                for(final ContentletRelationshipRecords records : contentRelationships.getRelationshipsRecords()) {
-                    if(records.getRelationship().getInode().equalsIgnoreCase(relationship.getInode())) {
-                        selectedRecords = records;
-                        break;
-                    }
-                }
-                final boolean hasParent = FactoryLocator.getRelationshipFactory().isParent(relationship, fromContentlet.getStructure());
-                if (selectedRecords == null) {
-                    selectedRecords = contentRelationships.new ContentletRelationshipRecords(relationship, hasParent);
-                    contentRelationships.getRelationshipsRecords().add(contentRelationships.new ContentletRelationshipRecords(relationship, hasParent));
-                }
-
-                //Adding to the list all the records the user was not able to see because permissions forcing them into the relationship
-                final List<Contentlet> relatedContentlets = getRelatedContentFromIndex(fromContentlet, relationship, APILocator.getUserAPI().getSystemUser(), true);
-                for (final Contentlet contentlet : relatedContentlets) {
-                    if (!permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ, user, false)) {
-                        selectedRecords.getRecords().add(0, contentlet);
-                    }
-                }
-            }
-        }
-
-        for (final ContentletRelationshipRecords cr : contentRelationships.getRelationshipsRecords()) {
-            relateContent(toContentlet, cr, APILocator.getUserAPI().getSystemUser(), true);
-        }
     }
 
     @CloseDBIfOpened
@@ -4154,9 +4247,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     contentlet.setHost((String)value);
                 }else if(conVariable.equals(Contentlet.FOLDER_KEY)){
                     contentlet.setFolder((String)value);
-                }else if(conVariable.equals(Contentlet.NULL_PROPERTIES)){
-                    contentlet.setProperty(conVariable, value);
-                }else if(NEVER_EXPIRE.equals(conVariable)){
+                }else if(isSetPropertyVariable(conVariable)){
                     contentlet.setProperty(conVariable, value);
                 } else if(velFieldmap.get(conVariable) != null){
                     Field field = velFieldmap.get(conVariable);
@@ -4196,6 +4287,18 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         // workflow
         copyWorkflowProperties(contentlet, properties);
+    }
+
+    private boolean isSetPropertyVariable(String conVariable) {
+        return conVariable.equals(Contentlet.NULL_PROPERTIES)
+            || conVariable.equals(NEVER_EXPIRE)
+            || conVariable.equals(Contentlet.CONTENT_TYPE_KEY)
+            || conVariable.equals(Contentlet.BASE_TYPE_KEY)
+            || conVariable.equals(Contentlet.LIVE_KEY)
+            || conVariable.equals(Contentlet.WORKING_KEY)
+            || conVariable.equals(Contentlet.LOCKED_KEY)
+            || conVariable.equals(Contentlet.ARCHIVED_KEY)
+            || conVariable.equals(ESMappingConstants.URL_MAP);
     }
 
     private void copyWorkflowProperties(Contentlet contentlet, Map<String, Object> properties) {
@@ -4905,6 +5008,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 boolean isRelationshipParent = true;
 
                 if(FactoryLocator.getRelationshipFactory().sameParentAndChild(rel)){
+                    if (cons.stream().anyMatch(con -> contentlet.getIdentifier().equals(con.getIdentifier()))) {
+                        Logger.error(this, "Can not relate content to itself");
+                        hasError = true;
+                        cve.addInvalidContentRelationship(rel, cons);
+                    }
                     if(!cr.isHasParent()){
                         isRelationshipParent = false;
                     }
@@ -5436,11 +5544,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
     public Contentlet copyContentlet(Contentlet contentletToCopy, Host host, Folder folder, User user, final String copySuffix, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException {
         Contentlet resultContentlet = new Contentlet();
         String newIdentifier = StringPool.BLANK;
-        ArrayList<Contentlet> versionsToCopy = new ArrayList<Contentlet>();
-        List<Contentlet> versionsToMarkWorking = new ArrayList<Contentlet>();
+        ArrayList<Contentlet> versionsToCopy = new ArrayList<>();
+        List<Contentlet> versionsToMarkWorking = new ArrayList<>();
         Map<String, Map<String, Contentlet>> contentletsToCopyRules = Maps.newHashMap();
-
-        versionsToCopy.addAll(findAllVersions(APILocator.getIdentifierAPI().find(contentletToCopy.getIdentifier()), false, user, respectFrontendRoles));
+        final Identifier sourceContentletIdentifier = APILocator.getIdentifierAPI().find(contentletToCopy.getIdentifier());
+        versionsToCopy.addAll(findAllVersions(sourceContentletIdentifier, false, user, respectFrontendRoles));
 
         // we need to save the versions from older-to-newer to make sure the last save
         // is the current version
@@ -5478,11 +5586,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
             newContentlet.setHost(host != null?host.getIdentifier(): (folder!=null? folder.getHostId() : contentlet.getHost()));
             newContentlet.setFolder(folder != null?folder.getInode(): null);
             newContentlet.setLowIndexPriority(contentlet.isLowIndexPriority());
-            if(BaseContentType.FILEASSET.equals(contentlet.getContentType().baseType())){
-
+            if(contentlet.isFileAsset()){
                 final String newName = generateCopyName(newContentlet.getStringProperty(FileAssetAPI.FILE_NAME_FIELD), copySuffix);
                 newContentlet.setStringProperty(FileAssetAPI.FILE_NAME_FIELD, newName);
-
+                //Used to replicate identifiers
+                newContentlet.setStringProperty(Contentlet.SOURCE_CONTENTLET_ASSET_NAME, sourceContentletIdentifier.getAssetName());
             }
 
             List <Field> fields = FieldsCache.getFieldsByStructureInode(contentlet.getStructureInode());
@@ -5546,8 +5654,15 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 }
             }
 
+
+
             //Set URL in the new contentlet because is needed to create Identifier in EscontentletAPI.
-            if(BaseContentType.HTMLPAGE.equals(contentlet.getContentType().baseType())){
+            if(contentlet.isHTMLPage()){
+                final Template template = APILocator.getTemplateAPI().findWorkingTemplate(contentlet.getStringProperty(HTMLPageAssetAPI.TEMPLATE_FIELD),user,false);
+                if(template.isAnonymous()){//If the Template has a custom layout we need to create a copy of it, so when is modified it does not modify the other pages.
+                    final Template copiedTemplate = APILocator.getTemplateAPI().copy(template,user);
+                    newContentlet.setStringProperty(HTMLPageAssetAPI.TEMPLATE_FIELD, copiedTemplate.getIdentifier());
+                }
                 Identifier identifier = APILocator.getIdentifierAPI().find(contentlet);
                 if(UtilMethods.isSet(identifier) && UtilMethods.isSet(identifier.getAssetName())){
                     final String newAssetName = generateCopyName(identifier.getAssetName(), copySuffix);
@@ -5559,6 +5674,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             newContentlet.getMap().put(Contentlet.DISABLE_WORKFLOW, true);
             newContentlet.getMap().put(Contentlet.DONT_VALIDATE_ME, true);
+            newContentlet.getMap().put(Contentlet.IS_COPY_CONTENTLET, true);
             // Use the generated identifier if one version of this contentlet
             // has already been checked in
             if (UtilMethods.isSet(newIdentifier)) {
@@ -5978,9 +6094,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
             return null;
         }
 
-        final String CONTENTLET_URL_MAP_FOR_CONTENT = "URL_MAP_FOR_CONTENT";
         final String CONTENTLET_URL_MAP_FOR_CONTENT_404 = "URL_MAP_FOR_CONTENT_404";
-        String result = (String) contentlet.getMap().get(CONTENTLET_URL_MAP_FOR_CONTENT);
+        String result = (String) contentlet.getMap().get(URL_MAP_FOR_CONTENT_KEY);
         if(result != null){
             if(CONTENTLET_URL_MAP_FOR_CONTENT_404.equals(result) ){
                 return null;
@@ -6041,7 +6156,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if(result == null){
             result = CONTENTLET_URL_MAP_FOR_CONTENT_404;
         }
-        contentlet.setStringProperty(CONTENTLET_URL_MAP_FOR_CONTENT, result);
+        contentlet.setStringProperty(URL_MAP_FOR_CONTENT_KEY, result);
         return result;
     }
 
@@ -6431,8 +6546,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
      *
      * @param contentlet Contentlet to be processed by the Commit listener event
      * @param user       User that triggered the event
+     * @param publish    true if it is publish, false unpublish
      */
-    private void triggerCommitListenerEvent(final Contentlet contentlet, final User user) {
+    private void triggerCommitListenerEvent(final Contentlet contentlet, final User user, final boolean publish) {
 
         try {
             if (!contentlet.getBoolProperty(Contentlet.IS_TEST_MODE)) {
@@ -6456,7 +6572,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             HibernateUtil.addCommitListener(()-> {
                 //Triggering event listener when this commit listener is executed
                 localSystemEventsAPI
-                        .notify(new ContentletPublishEvent(contentlet, user));
+                        .notify(new ContentletPublishEvent(contentlet, user, publish));
             });
         } catch (DotHibernateException e) {
             throw new DotRuntimeException(e);

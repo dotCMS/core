@@ -3,6 +3,7 @@ package com.dotcms.rest.api.v1.container;
 
 import com.beust.jcommander.internal.Maps;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.rendering.velocity.directive.DotParse;
 import com.dotcms.rendering.velocity.services.ContainerLoader;
 import com.dotcms.rendering.velocity.services.VelocityResourceKey;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
@@ -34,13 +35,16 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.containers.model.FileAssetContainer;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.form.business.FormAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.liferay.portal.model.User;
@@ -55,6 +59,7 @@ import java.io.Serializable;
 import java.io.StringWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -201,8 +206,7 @@ public class ContainerResource implements Serializable {
         final InitDataObject initData = this.webResource.init(true, req, true);
         final User user               = initData.getUser();
         final PageMode mode           = PageMode.EDIT_MODE;
-        final Language landId         = WebAPILocator.getLanguageWebAPI().getLanguage(req); // todo: used
-        
+
         PageMode.setPageMode(req, PageMode.EDIT_MODE);
 
         final ShortyId contentShorty = this.shortyAPI
@@ -281,6 +285,7 @@ public class ContainerResource implements Serializable {
 
         final PageMode mode = PageMode.EDIT_MODE;
         final Container container = getContainer(containerId, user);
+        this.setContainerLanguage(container, req);
 
         final org.apache.velocity.context.Context context = velocityUtil.getContext(req, res);
 
@@ -292,6 +297,31 @@ public class ContainerResource implements Serializable {
         final VelocityResourceKey key = new VelocityResourceKey(container, Container.LEGACY_RELATION_TYPE, mode);
 
         return velocityUtil.merge(key.path, context);
+    }
+
+    private void setContainerLanguage(final Container container, final HttpServletRequest request) {
+
+        if (request.getParameter(WebKeys.LANGUAGE_ID_PARAMETER) == null && container instanceof FileAssetContainer) {
+
+            final Language containerLanguage = APILocator.getLanguageAPI().getLanguage
+                    (FileAssetContainer.class.cast(container).getLanguageId());
+            if (null != containerLanguage && UtilMethods.isSet(containerLanguage.getLanguageCode())) {
+
+                // unfortunately we need this level of linkage between the ContainerResource and the DotParse
+                // in order to tell to the DotParse (in a way that it could understand) that the container is
+                // in a diff language than the request is.
+                DotParse.setContentLanguageId(request, container.getIdentifier(), containerLanguage.getId());
+                final List<FileAsset> containerContentTypeFileAssets =
+                        FileAssetContainer.class.cast(container).getContainerStructuresAssets();
+                if (null != containerContentTypeFileAssets) {
+
+                    for (final FileAsset fileAsset: containerContentTypeFileAssets) {
+
+                        DotParse.setContentLanguageId(request, fileAsset.getIdentifier(), fileAsset.getLanguageId());
+                    }
+                }
+            }
+        }
     }
 
     private Container getContainer(final String containerId, final User user) throws DotDataException, DotSecurityException {

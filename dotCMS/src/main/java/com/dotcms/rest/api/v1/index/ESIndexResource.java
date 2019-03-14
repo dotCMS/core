@@ -1,14 +1,28 @@
 package com.dotcms.rest.api.v1.index;
 
+import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
+import static com.dotcms.util.DotPreconditions.checkArgument;
+
 import com.dotcms.business.CloseDBIfOpened;
-import com.dotcms.content.elasticsearch.business.*;
+import com.dotcms.content.elasticsearch.business.DotIndexException;
+import com.dotcms.content.elasticsearch.business.ESContentletIndexAPI;
+import com.dotcms.content.elasticsearch.business.ESIndexAPI;
+import com.dotcms.content.elasticsearch.business.ESIndexHelper;
+import com.dotcms.content.elasticsearch.business.IndiciesAPI;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
 import com.dotcms.content.elasticsearch.util.ESClient;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.com.google.common.io.ByteStreams;
-import com.dotcms.repackage.javax.ws.rs.*;
+import com.dotcms.repackage.javax.ws.rs.Consumes;
+import com.dotcms.repackage.javax.ws.rs.DELETE;
+import com.dotcms.repackage.javax.ws.rs.GET;
+import com.dotcms.repackage.javax.ws.rs.POST;
+import com.dotcms.repackage.javax.ws.rs.PUT;
+import com.dotcms.repackage.javax.ws.rs.Path;
+import com.dotcms.repackage.javax.ws.rs.PathParam;
+import com.dotcms.repackage.javax.ws.rs.Produces;
 import com.dotcms.repackage.javax.ws.rs.container.AsyncResponse;
 import com.dotcms.repackage.javax.ws.rs.container.Suspended;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
@@ -29,6 +43,7 @@ import com.dotcms.rest.exception.ServiceUnavailableException;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.LayoutAPI;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.sitesearch.business.SiteSearchAPI;
 import com.dotmarketing.util.AdminLogger;
@@ -39,20 +54,16 @@ import com.google.gson.Gson;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
-import org.elasticsearch.action.admin.indices.stats.IndexStats;
-import org.elasticsearch.action.admin.indices.stats.IndicesStatsResponse;
-import org.elasticsearch.client.Client;
-
-import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.util.Date;
 import java.util.concurrent.ExecutionException;
-
-import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
-import static com.dotcms.util.DotPreconditions.checkArgument;
+import javax.servlet.http.HttpServletRequest;
+import org.elasticsearch.action.admin.indices.stats.IndexStats;
+import org.elasticsearch.action.admin.indices.stats.IndicesStatsResponse;
+import org.elasticsearch.client.Client;
 
 /**
  * Index endpoint for REST calls version 1
@@ -320,7 +331,7 @@ public class ESIndexResource {
     @Path("/restoresnapshot/{params:.*}")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public Response restoreSnapshotIndex(@Context final HttpServletRequest request,
+    public void restoreSnapshotIndex(@Context final HttpServletRequest request,
                                          @Suspended final AsyncResponse asyncResponse,
                                          @FormDataParam("file") final InputStream inputFile,
                                          @FormDataParam("file") final FormDataContentDisposition inputFileDetail,
@@ -345,7 +356,7 @@ public class ESIndexResource {
                         } catch (InterruptedException | LanguageException | ExecutionException | IOException e) {
 
                             Logger.error(ESIndexResource.class, e.getMessage(), e);
-                            throw new ServiceUnavailableException("snapshot.upload.failed");
+                            throw new DotRuntimeException("snapshot.upload.failed", e);
                         }
                     },
                     (Throwable e) -> {
@@ -355,11 +366,9 @@ public class ESIndexResource {
                     },
                     asyncResponse);
 
-            return this.responseUtil.getErrorResponse(request, Response.Status.SERVICE_UNAVAILABLE, user.getLocale(), null, "snapshot.upload.failed");
         } catch (Exception e) {
-
             Logger.error(this.getClass(),"Exception trying to restore index snapshot: " + e.getMessage(), e);
-            return ResponseUtil.mapExceptionResponse(e);
+            asyncResponse.resume(ResponseUtil.mapExceptionResponse(e));
         }
     }
 

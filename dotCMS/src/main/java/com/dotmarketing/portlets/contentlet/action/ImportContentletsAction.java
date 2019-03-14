@@ -206,7 +206,8 @@ public class ImportContentletsAction extends DotPortletAction {
 			} else {
 				final ActionRequestImpl reqImpl = (ActionRequestImpl) req;
 				final HttpServletRequest httpReq = reqImpl.getHttpServletRequest();
-				final long importId = ImportAuditUtil.createAuditRecord(user.getUserId(), (String)httpReq.getSession().getAttribute("fileName"));
+				final HttpSession httpSession = httpReq.getSession();
+				final long importId = ImportAuditUtil.createAuditRecord(user.getUserId(), (String)httpSession.getAttribute("fileName"));
 				Thread t=new Thread() {
 					@CloseDBIfOpened
 					public void run() {
@@ -219,9 +220,9 @@ public class ImportContentletsAction extends DotPortletAction {
 							int languageCodeHeaderColumn = -1;
 							int countryCodeHeaderColumn = -1;
 							
-							byte[] bytes = (byte[]) httpReq.getSession().getAttribute("file_to_import");
+							byte[] bytes = (byte[]) httpSession.getAttribute("file_to_import");
 							ImportContentletsForm importContentletsForm = (ImportContentletsForm) form;
-							String eCode = (String) httpReq.getSession().getAttribute(ENCODE_TYPE);
+							String eCode = (String) httpSession.getAttribute(ENCODE_TYPE);
 							if (importContentletsForm.getLanguage() == -1)
 								reader = new InputStreamReader(new ByteArrayInputStream(bytes), Charset.forName("UTF-8"));
 							else if(eCode != null)
@@ -245,25 +246,26 @@ public class ImportContentletsAction extends DotPortletAction {
 									}
 								}
 							}
-							HttpSession session = ((ActionRequestImpl)req).getHttpServletRequest().getSession();
-							User user = _getUser(req);
-							
-			
-							HashMap<String, List<String>> importresults=null;
-							if(importSession.equals(session.getAttribute("importSession"))){
-								session.removeAttribute("importSession");
-								importresults=_processFile(importId, req, res, config, form, user, csvHeaders, csvreader, languageCodeHeaderColumn, countryCodeHeaderColumn, reader);
+
+							final User user = _getUser(req);
+
+							HashMap<String, List<String>> importresults= new HashMap<>();
+							if(importSession.equals(httpSession.getAttribute("importSession"))){
+								httpSession.removeAttribute("importSession");
+								importresults = _processFile(importId, httpSession, user,
+										csvHeaders, csvreader, languageCodeHeaderColumn,
+										countryCodeHeaderColumn, reader);
 							}
 											
-							List<String> counters= importresults .get("counters");
+							final List<String> counters= importresults.get("counters");
 							int contentsToImport=0;
-							for(String counter: counters ){
+							for(String counter: counters){
 								String counterArray[]=counter.split("=");
 								if(counterArray[0].equals("newContent") || counterArray[0].equals("contentToUpdate"))
 									contentsToImport=contentsToImport + Integer.parseInt(counterArray[1]);		
 							}
 							
-							List<String> inodes= importresults.get("lastInode");
+							final List<String> inodes= importresults.get("lastInode");
 							if(!inodes.isEmpty()){
 								ImportAuditUtil.updateAuditRecord(inodes.get(0), contentsToImport, importId,importresults);
 							}
@@ -473,15 +475,8 @@ public class ImportContentletsAction extends DotPortletAction {
 	 * 
 	 * @param importId
 	 *            - The ID of this data import.
-	 * @param req
-	 *            - The Struts wrapper for the HTTP Request object.
-	 * @param res
-	 *            - The Struts wrapper for the HTTP Response object.
-	 * @param config
-	 *            - The configuration parameters for this portlet.
-	 * @param form
-	 *            - The form containing the information selected by the user in
-	 *            the UI.
+	 * @param session
+	 *            - HTTP Session object.
 	 * @param user
 	 *            - The {@link User} performing this action.
 	 * @param csvHeaders
@@ -501,16 +496,20 @@ public class ImportContentletsAction extends DotPortletAction {
 	 *             An error occurred when adding/updating data to the content
 	 *             repository.
 	 */
-	private HashMap<String, List<String>> _processFile(long importId,ActionRequest req, ActionResponse res, PortletConfig config, ActionForm form, User user, String[] csvHeaders, CsvReader csvreader, int languageCodeHeaderColumn, int countryCodeHeaderColumn, Reader reader)
-	throws Exception {
-		// wraps request to get session object
-		ActionRequestImpl reqImpl = (ActionRequestImpl) req;
-		HttpServletRequest httpReq = reqImpl.getHttpServletRequest();
-		HttpSession session = httpReq.getSession();
-		ImportContentletsForm importForm = (ImportContentletsForm) httpReq.getSession().getAttribute("form_to_import");
-		String currentSiteId = (String)session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);
-	 	HashMap<String, List<String>> results = ImportUtil.importFile(importId, currentSiteId, importForm.getStructure(), importForm.getFields(), false, (importForm.getLanguage() == -1), user, importForm.getLanguage(), csvHeaders, csvreader, languageCodeHeaderColumn, countryCodeHeaderColumn, reader,  importForm.getWorkflowActionId());
-	 	return results;
+	private HashMap<String, List<String>> _processFile(final long importId, final HttpSession session,
+			final User user, final String[] csvHeaders, final CsvReader csvreader,
+			final int languageCodeHeaderColumn, final int countryCodeHeaderColumn, final Reader reader)
+			throws Exception {
+		final ImportContentletsForm importForm = (ImportContentletsForm) session
+				.getAttribute("form_to_import");
+		final String currentSiteId = (String) session
+				.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);
+		final HashMap<String, List<String>> results = ImportUtil
+				.importFile(importId, currentSiteId, importForm.getStructure(),
+						importForm.getFields(), false, (importForm.getLanguage() == -1), user,
+						importForm.getLanguage(), csvHeaders, csvreader, languageCodeHeaderColumn,
+						countryCodeHeaderColumn, reader, importForm.getWorkflowActionId());
+		return results;
 	}
 
 }

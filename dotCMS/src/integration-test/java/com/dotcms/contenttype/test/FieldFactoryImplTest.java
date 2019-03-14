@@ -485,7 +485,7 @@ public class FieldFactoryImplTest extends ContentTypeBaseTest {
 				.put("TeST", "test3")
 				.put("TeSt", "test4")
 				.put("Test", "test5")
-				.put("1 x 2/5", "1X25")
+				.put("1 x 2/5", "x25")
 				.put("Test5", "test51")
 				.put("SKU", "sku")
 				.put("Camel Case DOne Wrong", "camelCaseDoneWrong")

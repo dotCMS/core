@@ -36,11 +36,16 @@ public class ESReindexationProcessStatus implements Serializable {
 
     @CloseDBIfOpened
     public synchronized static int getLastIndexationProgress () throws DotDataException {
+        return getLastIndexationProgress(getContentCountToIndex());
+    }
+
+    public synchronized static int getLastIndexationProgress (int countToIndex) throws DotDataException {
         long left = APILocator.getDistributedJournalAPI().recordsLeftToIndexForServer();
-        int x = (int) (getContentCountToIndex()-left);
+        int x = (int) (countToIndex-left);
 
         return (x<0) ? 0 : x;
     }
+
     
     public synchronized static String currentIndexPath() throws DotDataException {
         IndiciesInfo info=APILocator.getIndiciesAPI().loadIndicies();
@@ -59,8 +64,9 @@ public class ESReindexationProcessStatus implements Serializable {
         theMap.put("inFullReindexation", inFullReindexation());
         // no reason to hit db if not needed
         if(inFullReindexation()){
-            theMap.put("contentCountToIndex", getContentCountToIndex());
-            theMap.put("lastIndexationProgress", getLastIndexationProgress());
+            final int countToIndex = getContentCountToIndex();
+            theMap.put("contentCountToIndex", countToIndex);
+            theMap.put("lastIndexationProgress", getLastIndexationProgress(countToIndex));
             theMap.put("currentIndexPath", currentIndexPath());
             theMap.put("newIndexPath", getNewIndexPath());
         }

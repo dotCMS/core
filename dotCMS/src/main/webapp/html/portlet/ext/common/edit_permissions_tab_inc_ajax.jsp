@@ -95,8 +95,8 @@
      <div dojoType="dijit.Dialog" id="applyPermissionsChangesDialog" title='<%=LanguageUtil.get(pageContext, "Permissions-Confirmation") %>' style="display: none">
      	 <%=LanguageUtil.get(pageContext, "permissions-changes-confirmation") %>
 		 <div class="buttonRow">
-     		<button dojoType="dijit.form.Button" onClick="dijit.byId('applyPermissionsChangesDialog').hide(); applyPermissionChanges('${id}'); " type="button"><%= LanguageUtil.get(pageContext, "Yes") %></button>
-			<button dojoType="dijit.form.Button" onClick="dijit.byId('applyPermissionsChangesDialog').hide();" type="button"><%= LanguageUtil.get(pageContext, "No") %></button>	 
+			<button dojoType="dijit.form.Button" onClick="dijit.byId('applyPermissionsChangesDialog').hide();" type="button"><%= LanguageUtil.get(pageContext, "No") %></button>
+			<button dojoType="dijit.form.Button" onClick="dijit.byId('applyPermissionsChangesDialog').hide(); applyPermissionChanges('${id}'); " type="button"><%= LanguageUtil.get(pageContext, "Yes") %></button>
      	 </div>				
      </div>
 <!-- END Confirm Save permissions  change dialog -->

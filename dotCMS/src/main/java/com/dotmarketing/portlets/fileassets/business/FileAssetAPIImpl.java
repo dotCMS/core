@@ -11,11 +11,7 @@ import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotcms.tika.TikaUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.IdentifierAPI;
-import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.*;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -36,17 +32,14 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import com.liferay.util.StringPool;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
+import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
+
+import java.io.*;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.zip.GZIPInputStream;
-import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 
 /**
  * This class is a bridge impl that will support the older
@@ -423,12 +416,12 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 	}
 
 
-	@CloseDBIfOpened
+	@WrapInTransaction
     public boolean moveFile ( Contentlet fileAssetCont, Host host, User user, boolean respectFrontendRoles ) throws DotStateException, DotDataException, DotSecurityException {
         return moveFile( fileAssetCont, null, host, user, respectFrontendRoles );
     }
 
-	@CloseDBIfOpened
+	@WrapInTransaction
     public  boolean moveFile (Contentlet fileAssetCont, Folder parent, User user, boolean respectFrontendRoles) throws DotStateException, DotDataException, DotSecurityException  {
         return moveFile( fileAssetCont, parent, null, user, respectFrontendRoles );
     }

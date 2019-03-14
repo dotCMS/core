@@ -1,6 +1,7 @@
 package com.dotcms.contenttype.business;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import com.dotcms.contenttype.model.type.BaseContentType;
@@ -11,11 +12,14 @@ import com.dotcms.contenttype.test.ContentTypeBaseTest;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.structure.factories.RelationshipCache;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import java.util.List;
 import org.junit.Test;
@@ -34,6 +38,23 @@ public class RelationshipFactoryImplTest extends ContentTypeBaseTest{
             Relationship relationshipWithUpperCase = relationshipFactory.byTypeValue(relationship.getRelationTypeValue().toUpperCase());
             assertEquals(relationship,relationshipWithUpperCase);
 
+        }
+    }
+
+    @Test
+    public void testByTypeValueCachesRelationship()
+            throws DotCacheException, DotDataException, DotSecurityException {
+
+        final Relationship relationship = saveRelationship();
+        try {
+            final RelationshipCache cache = CacheLocator.getRelationshipCache();
+            assertNull(cache.getRelationshipByName(relationship.getRelationTypeValue()));
+            relationshipFactory.byTypeValue(relationship.getRelationTypeValue());
+            assertEquals(relationship,
+                    cache.getRelationshipByName(relationship.getRelationTypeValue()));
+        } finally {
+            contentTypeAPI.delete(parentContentType);
+            contentTypeAPI.delete(childContentType);
         }
     }
 

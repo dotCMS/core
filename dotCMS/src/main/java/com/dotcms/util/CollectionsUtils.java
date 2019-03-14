@@ -23,6 +23,37 @@ import java.util.stream.Collector;
 public class CollectionsUtils implements Serializable {
 
     /**
+     * Group the list collection based on a key function, grouping all the items with the same key into a sub list
+     *
+     * For instance if you have a list such as
+     * [1, 2, 3, 1, 3, 4, 5] and the key function is v -> v,
+     * that means the same value is the key, but you can might have an object and return the id for instance myentity -> myentity.getId(), it will group by id, etc.
+     *
+     * it will return:
+     * 1 -> [1, 1]
+     * 2 -> [2]
+     * 3 -> [3, 3]
+     * 4 -> [4]
+     * 5 -> [5]
+     *
+     * @param list
+     * @param keyFunction
+     * @param <K>
+     * @param <V>
+     * @return
+     */
+    public static <K,V> Map<K, List<V>> groupByKey (final List<V> list, final Function<V, K> keyFunction) {
+
+        final Map<K, List<V>> listGroupByKey = new HashMap<>();
+
+        list.stream().forEach(v ->
+                listGroupByKey.computeIfAbsent(keyFunction.apply(v),
+                        k -> new ArrayList<>()).add(v));
+
+        return listGroupByKey;
+    }
+
+    /**
      * Split out the collection in ArrayList of ArrayList that satisfied each Predicate
      * it means all the items on collections that match the predicate 0 for instance will be stored in the first list of the final returned list, for instance:
      *
@@ -871,5 +902,42 @@ public class CollectionsUtils implements Serializable {
         }
 
 	    return joinList;
+    }
+
+    /**
+     * Defines strategies for merging on collectors
+      */
+    public static class Merge {
+
+        /**
+         * Use this current value on the map, skipping the new one.
+         * @param <T>
+         * @return T
+         */
+        public static <T> BinaryOperator<T> current() {
+            return (current,last) -> current;
+        }
+
+        /**
+         * Discard the current value on the map in favor of the new one.
+         * @param <T>
+         * @return T
+         */
+        public static <T> BinaryOperator<T> last() {
+            return (current,last) -> last;
+        }
+
+        /**
+         * Use a comparator in order to decided witch one will be keep
+         * The one defined as a greater on the comparison will be the one keep
+         * @param comparator {@link Comparator}
+         * @param <T>
+         * @return T
+         */
+        public static <T> BinaryOperator<T> compare(final Comparator<T> comparator) {
+            return (current,last) -> comparator.compare(current,last) >= 0 ? current : last;
+        }
+
+
     }
 }

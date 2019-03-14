@@ -13,6 +13,7 @@ import com.dotcms.contenttype.model.field.ImageField;
 import com.dotcms.contenttype.model.field.KeyValueField;
 import com.dotcms.contenttype.model.field.MultiSelectField;
 import com.dotcms.contenttype.model.field.RelationshipField;
+import com.dotcms.contenttype.model.field.RelationshipsTabField;
 import com.dotcms.contenttype.model.field.RowField;
 import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.field.TextField;
@@ -56,6 +57,7 @@ import graphql.scalars.ExtendedScalars;
 import graphql.schema.DataFetcher;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLFieldDefinition;
+import graphql.schema.GraphQLInterfaceType;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLSchema;
@@ -63,6 +65,7 @@ import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLTypeReference;
 import graphql.schema.idl.SchemaPrinter;
 
+import static com.dotcms.graphql.util.TypeUtil.BASE_TYPE_SUFFIX;
 import static graphql.Scalars.GraphQLFloat;
 import static graphql.Scalars.GraphQLInt;
 import static graphql.Scalars.GraphQLString;
@@ -78,6 +81,8 @@ public class GraphqlAPIImpl implements GraphqlAPI {
     private Map<Class<? extends Field>, DataFetcher> fieldClassGraphqlDataFetcher = new HashMap<>();
 
     private volatile GraphQLSchema schema;
+
+    public static final String TYPES_AND_FIELDS_VALID_NAME_REGEX = "[_A-Za-z][_0-9A-Za-z]*";
 
     public GraphqlAPIImpl() {
         // custom type mappings
@@ -146,6 +151,11 @@ public class GraphqlAPIImpl implements GraphqlAPI {
     private void createSchemaType(ContentType contentType,
                                               final Map<String, GraphQLObjectType> graphqlObjectTypes) {
 
+        // skip contentType.variable not sticking to the regex
+        if(!contentType.variable().matches(TYPES_AND_FIELDS_VALID_NAME_REGEX)) {
+            return;
+        }
+
         final GraphQLObjectType.Builder builder = GraphQLObjectType.newObject().name(contentType.variable());
 
         // add CONTENT interface fields
@@ -158,6 +168,12 @@ public class GraphqlAPIImpl implements GraphqlAPI {
         final List<Field> fields = contentType.fields();
 
         fields.forEach((field)->{
+            // skip field.variable not sticking to the regex
+            if(!field.variable().matches(TYPES_AND_FIELDS_VALID_NAME_REGEX)
+                || field instanceof RelationshipsTabField) {
+                return;
+            }
+
             if(!(field instanceof RowField) && !(field instanceof ColumnField)) {
                 if (field instanceof RelationshipField) {
                     handleRelationshipField(contentType, builder, field, graphqlObjectTypes);
@@ -208,6 +224,7 @@ public class GraphqlAPIImpl implements GraphqlAPI {
             ? typesMap.get(relatedContentType.variable())
             : GraphQLTypeReference.typeRef(relatedContentType.variable());
 
+
         outputType = records.doesAllowOnlyOne()
             ? outputType
             : list(outputType);
@@ -257,7 +274,7 @@ public class GraphqlAPIImpl implements GraphqlAPI {
                 .name("search")
                 .argument(GraphQLArgument.newArgument()
                     .name("query")
-                    .type(GraphQLString)
+                    .type(nonNull(GraphQLString))
                     .build())
                 .argument(GraphQLArgument.newArgument()
                     .name("limit")
@@ -278,6 +295,12 @@ public class GraphqlAPIImpl implements GraphqlAPI {
 
         // each content type as query'able collection field
         graphQLTypes.forEach((type)-> {
+            if(type.getName().equals(InterfaceType.CONTENTLET.getType().getName())) {
+                return;
+            }
+
+            final String fieldDescription = type instanceof GraphQLInterfaceType ? BASE_TYPE_SUFFIX : null;
+
             typesFieldsDefinitions.add(newFieldDefinition()
                 .name(TypeUtil.collectionizedName(type.getName()))
                 .argument(GraphQLArgument.newArgument()
@@ -297,12 +320,14 @@ public class GraphqlAPIImpl implements GraphqlAPI {
                     .type(GraphQLString)
                     .build())
                 .type(list((type)))
+                .description(fieldDescription)
                 .dataFetcher(new ContentletDataFetcher()).build());
+
         });
 
         rootTypeBuilder = rootTypeBuilder.fields(typesFieldsDefinitions);
 
-        return new GraphQLSchema(rootTypeBuilder.build(), null, graphQLTypes);
+        return new GraphQLSchema.Builder().query(rootTypeBuilder.build()).additionalTypes(graphQLTypes).build();
     }
 
     private ContentType getRelatedContentTypeForField(final Field field, final User user) throws DotSecurityException, DotDataException {

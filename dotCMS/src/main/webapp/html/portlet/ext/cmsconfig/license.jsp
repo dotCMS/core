@@ -489,14 +489,9 @@
 
          <%} else {%>
             <div style="text-align:center;margin:30px 0;">
-                <a href="#"
-                    onclick="licenseAdmin.requestTrial()"
-                    id="trailBtn"
-                    class="btn btn-info">
+                <button type="button" onclick="licenseAdmin.requestTrial()" id="trailBtn" data-dojo-type="dijit.form.Button">
                     <%= LanguageUtil.get(pageContext, "request-trial-license") %>
-                </a>
-        
-
+                </button>
             </div>
          <%} %>
         </div>

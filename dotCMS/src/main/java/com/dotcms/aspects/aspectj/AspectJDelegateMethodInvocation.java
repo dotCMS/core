@@ -1,7 +1,6 @@
 package com.dotcms.aspects.aspectj;
 
 import com.dotcms.aspects.DelegateMethodInvocation;
-import com.dotcms.aspects.DotAspectException;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.Signature;
 import org.aspectj.lang.reflect.MethodSignature;
@@ -41,6 +40,12 @@ public class AspectJDelegateMethodInvocation<T> implements DelegateMethodInvocat
     public Object proceed() throws Throwable {
 
             return this.joinPoint.proceed();
+    }
+
+    @Override
+    public Object proceed(final Object[] arguments) throws Throwable {
+
+        return this.joinPoint.proceed(arguments);
     }
 
     @Override

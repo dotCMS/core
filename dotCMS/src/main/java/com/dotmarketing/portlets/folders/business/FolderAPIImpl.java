@@ -4,6 +4,7 @@ import com.dotcms.api.system.event.*;
 import com.dotcms.api.system.event.verifier.ExcludeOwnerVerifierBean;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.content.elasticsearch.business.event.ContentletArchiveEvent;
 import com.dotcms.content.elasticsearch.business.event.ContentletCheckinEvent;
 import com.dotcms.content.elasticsearch.business.event.ContentletDeletedEvent;
 import com.dotcms.content.elasticsearch.business.event.ContentletPublishEvent;
@@ -879,6 +880,22 @@ public class FolderAPIImpl implements FolderAPI  {
 			Logger.info(this, () -> "Subscribing the folder listener: " + folderListener.getId() +
 					", to the folder: " + folder);
 
+			// handle archive and unarchive
+			this.localSystemEventsAPI.subscribe(ContentletArchiveEvent.class, new EventSubscriber<ContentletArchiveEvent>() {
+
+				@Override
+				public String getId() {
+
+					return folderListener.getId() + StringPool.FORWARD_SLASH + ContentletArchiveEvent.class.getName();
+				}
+
+				@Override
+				public void notify(final ContentletArchiveEvent event) {
+
+					FolderAPIImpl.this.triggerChildModifiedEvent(event, folder, folderListener, childNameFilter);
+				}
+			});
+
 			// handle publish and unpublish
 			this.localSystemEventsAPI.subscribe(ContentletPublishEvent.class, new EventSubscriber<ContentletPublishEvent>() {
 
@@ -927,6 +944,16 @@ public class FolderAPIImpl implements FolderAPI  {
 				}
 			});
 		}
+	}
+
+	private void triggerChildModifiedEvent(final ContentletArchiveEvent event,
+										   final Folder parentFolder,
+										   final FolderListener folderListener,
+										   final Predicate<String> childNameFilter) {
+
+		final Contentlet contentlet = event.getContentlet();
+		this.triggerChildEvent(contentlet, event.getUser(), event.getDate(), parentFolder, childNameFilter,
+				folderEvent-> folderListener.folderChildModified(folderEvent));
 	}
 
 	private void triggerChildModifiedEvent(final ContentletPublishEvent event,

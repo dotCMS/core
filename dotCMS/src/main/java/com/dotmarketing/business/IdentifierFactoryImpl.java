@@ -269,31 +269,44 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 	}
 
 	@Override
-	protected Identifier createNewIdentifier(Versionable versionable, Folder folder, String existingId) throws DotDataException {
-		User systemUser = APILocator.getUserAPI().getSystemUser();
-		Identifier identifier = new Identifier();
+	protected Identifier createNewIdentifier(final Versionable versionable, final Folder folder, final String existingId) throws DotDataException {
+		final User systemUser = APILocator.getUserAPI().getSystemUser();
+		final Identifier identifier = new Identifier();
 
 		identifier.setId(existingId!=null?existingId:UUIDGenerator.generateUuid());
 
-		Identifier parentId = APILocator.getIdentifierAPI().find(folder);
+		final Identifier parentId = APILocator.getIdentifierAPI().find(folder);
 		if(versionable instanceof Folder) {
 			identifier.setAssetType(Identifier.ASSET_TYPE_FOLDER);
 			identifier.setAssetName(((Folder) versionable).getName().toLowerCase());
 		} else {
 			String uri = versionable.getVersionType() + "." + versionable.getInode();
 			if(versionable instanceof Contentlet){
-				Contentlet cont = (Contentlet)versionable;
-				if (cont.getStructure().getStructureType() == BaseContentType.FILEASSET.getType()) {
-					try {
-						uri = cont.getBinary(FileAssetAPI.BINARY_FIELD)!=null?cont.getBinary(FileAssetAPI.BINARY_FIELD).getName():"";
-						if(UtilMethods.isSet(cont.getStringProperty(FileAssetAPI.FILE_NAME_FIELD))) {
-							uri = cont.getStringProperty(FileAssetAPI.FILE_NAME_FIELD);
+				final Contentlet contentlet = (Contentlet)versionable;
+				final boolean isCopyContentlet = contentlet.getBoolProperty(Contentlet.IS_COPY_CONTENTLET);
+				if (contentlet.isFileAsset()) {
+					final String sourceContentletAssetName = contentlet.getStringProperty(Contentlet.SOURCE_CONTENTLET_ASSET_NAME);
+					if (isCopyContentlet && UtilMethods.isSet(sourceContentletAssetName)) {
+					    // if this is being called from ContentlAPI.copyContentlet then we must re-use the original assetName which is guaranteed to be unique
+					    //Other wise we might get into trouble since binary assets are now allowed to be assigned into multiple assetNames
+						uri = sourceContentletAssetName;
+					} else {
+						try {
+							uri = contentlet.getBinary(FileAssetAPI.BINARY_FIELD) != null
+									? contentlet.getBinary(FileAssetAPI.BINARY_FIELD).getName()
+									: StringPool.BLANK;
+							if (UtilMethods.isSet(contentlet
+									.getStringProperty(FileAssetAPI.FILE_NAME_FIELD))) {
+								uri = contentlet.getStringProperty(FileAssetAPI.FILE_NAME_FIELD);
+							}
+						} catch (IOException e) {
+							Logger.debug(this,
+									"An error occurred while assigning Binary Field: " + e
+											.getMessage());
 						}
-					} catch (IOException e) {
-						Logger.debug(this, "An error occurred while assigning Binary Field: " + e.getMessage());
 					}
-				} else if (cont.getStructure().getStructureType() == BaseContentType.HTMLPAGE.getType()) {
-				    uri = cont.getStringProperty(HTMLPageAssetAPI.URL_FIELD) ;
+				} else if (contentlet.isHTMLPage()) {
+				    uri = contentlet.getStringProperty(HTMLPageAssetAPI.URL_FIELD) ;
 				}
 				identifier.setAssetType(Identifier.ASSET_TYPE_CONTENTLET);
 				identifier.setParentPath(parentId.getPath());
@@ -449,7 +462,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 			dc.setSQL(query);
 
 			dc.addParam(id.getParentPath());
-			dc.addParam(id.getAssetName());
+			dc.addParam(id.getAssetName().toLowerCase());
 			dc.addParam(id.getHostId());
 			dc.addParam(id.getAssetType());
 			dc.addParam(id.getSysPublishDate());
