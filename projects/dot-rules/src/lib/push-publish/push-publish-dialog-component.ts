@@ -1,5 +1,6 @@
 import {Component, ChangeDetectionStrategy, Input, Output, EventEmitter} from '@angular/core';
 import {IPublishEnvironment} from '../services/bundle-service';
+import { MenuItem } from 'primeng/api';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -7,14 +8,11 @@ import {IPublishEnvironment} from '../services/bundle-service';
   template: `<p-dialog width="700" header="Push Publish" [visible]="!hidden" [modal]="true" [dismissableMask]="true" [closable]="false"  [focusOnShow]="false" appendTo="body" [draggable]="false" >
       <p-message  *ngIf="errorMessage" style="margin-bottom: 16px; display: block;" severity="error" [text]="errorMessage"></p-message>
       <cw-input-dropdown
+        [options]="options"
         flex
         [value]="environmentStores[0]?.id"
         (onDropDownChange)="setSelectedEnvironment($event)">
-        <cw-input-option
-          *ngFor="let opt of environmentStores"
-          [value]="opt.id"
-          [label]="opt.name"
-        ></cw-input-option>
+
       </cw-input-dropdown>
       <p-footer>
           <button type="button" pButton secondary (click)="cancel.emit()" label="Cancel" class="ui-button-secondary"></button>
@@ -31,6 +29,8 @@ export class PushPublishDialogComponent {
   @Output() cancel: EventEmitter<boolean> = new EventEmitter(false);
   @Output() doPushPublish: EventEmitter<string> = new EventEmitter(false);
 
+  options: MenuItem[];
+
   public selectedEnvironmentId: string;
 
   constructor() { }
@@ -38,6 +38,13 @@ export class PushPublishDialogComponent {
   ngOnChanges(change): void {
     if (change.environmentStores) {
       this.selectedEnvironmentId = change.environmentStores.currentValue[0];
+
+      this.options = this.environmentStores.map((item: IPublishEnvironment) => {
+        return {
+            label: item.name,
+            value: item.id
+        };
+    });
     }
   }
 

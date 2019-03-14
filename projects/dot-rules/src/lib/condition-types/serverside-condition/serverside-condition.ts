@@ -21,19 +21,17 @@ import { LoggerService } from 'dotcms-js';
       <cw-input-dropdown *ngIf="input.type == 'dropdown'"
                          flex
                          class="cw-input"
-                         [hidden]="input.argIndex !== null && input.argIndex >= _rhArgCount"
-                         [formControl]="input.control"
-                         [required]="input.required"
+                         (touch)="onBlur(input)"
                          [allowAdditions]="input.allowAdditions"
                          [class.cw-comparator-selector]="input.name == 'comparison'"
                          [class.cw-last]="islast"
-                         (touch)="onBlur(input)"
-                         placeholder="{{input.placeholder | async}}">
-        <cw-input-option
-            *ngFor="let opt of input.options"
-            [value]="opt.value"
-            [label]="opt.label | async"
-            icon="{{opt.icon}}"></cw-input-option>
+                         [formControl]="input.control"
+                         [hidden]="input.argIndex !== null && input.argIndex >= _rhArgCount"
+                         [required]="input.required"
+                         [value]="input.value"
+                         [placeholder]="input.placeholder | async"
+                         [options]="input.options"
+                         >
       </cw-input-dropdown>
 
       <div flex layout-fill layout="column" class="cw-input" [class.cw-last]="islast" *ngIf="input.type == 'restDropdown'">
@@ -57,7 +55,7 @@ import { LoggerService } from 'dotcms-js';
                                 >
         </cw-input-rest-dropdown>
         <div flex="50" *ngIf="rdInput.touched && !rdInput.valid && (input.argIndex == null || input.argIndex < _rhArgCount)"
-            class="name cw-warn basic label">{{getErrorMessage(input)}}</div>
+            class="name cw-warn basic label">{{ getErrorMessage(input) }}</div>
       </div>
 
       <div flex layout-fill layout="column" class="cw-input" [class.cw-last]="islast" *ngIf="input.type == 'text' || input.type == 'number'">
@@ -70,7 +68,7 @@ import { LoggerService } from 'dotcms-js';
               #fInput="ngForm"
           />
         <div flex="50" *ngIf="fInput.touched && !fInput.valid && (input.argIndex == null || input.argIndex < _rhArgCount)"
-            class="name cw-warn basic label">{{getErrorMessage(input)}}</div>
+            class="name cw-warn basic label">{{ getErrorMessage(input) }}</div>
       </div>
 
       <cw-input-date *ngIf="input.type == 'datetime'"
@@ -96,14 +94,19 @@ export class ServersideCondition {
     islast = null;
 
     _inputs: Array<any>;
-    private _resources: I18nService;
     _rhArgCount: boolean;
+    private _resources: I18nService;
 
     private _errorMessageFormatters = {
         minLength: 'Input must be at least ${len} characters long.',
         noQuotes: 'Input cannot contain quote [" or \'] characters.',
         required: 'Required'
     };
+
+    constructor(fb: FormBuilder, resources: I18nService, private loggerService: LoggerService) {
+        this._resources = resources;
+        this._inputs = [];
+    }
 
     private static getRightHandArgCount(selectedComparison): boolean {
         let argCount = null;
@@ -128,11 +131,6 @@ export class ServersideCondition {
             opt = optAry[0];
         }
         return opt;
-    }
-
-    constructor(fb: FormBuilder, resources: I18nService, private loggerService: LoggerService) {
-        this._resources = resources;
-        this._inputs = [];
     }
 
     ngOnChanges(change): void {
