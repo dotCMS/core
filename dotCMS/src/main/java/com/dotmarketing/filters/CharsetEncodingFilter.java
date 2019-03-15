@@ -84,8 +84,6 @@ public class CharsetEncodingFilter implements Filter {
 					            session.setAttribute(Globals.LOCALE_KEY, userLocale);
 						        session.setAttribute(com.dotmarketing.util.WebKeys.LOCALE, userLocale);
 							}
-						} catch (PortalException e) {
-							Logger.warn(this, "Unable to retrieve user locale", e);
 						} catch (Exception e) {
 							Logger.warn(this, "Unable to retrieve user locale", e);
 						}

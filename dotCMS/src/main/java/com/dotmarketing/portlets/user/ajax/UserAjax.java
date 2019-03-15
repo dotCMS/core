@@ -68,8 +68,8 @@ import org.apache.velocity.tools.generic.SortTool;
 public class UserAjax {
 
 	// Constants for internal use only
-	private static final String USER_TYPE_VALUE = "user";
-	private static final String ROLE_TYPE_VALUE = "role";
+	public static final String USER_TYPE_VALUE = "user";
+	public static final String ROLE_TYPE_VALUE = "role";
 
 	/**
 	 * 
@@ -96,13 +96,9 @@ public class UserAjax {
 			user = uAPI.loadUserById(userId,modUser, !uWebAPI.isLoggedToBackend(request));
 
 			Map<String, Object> aRecord = user.toMap();
-			aRecord.put("id", user.getUserId());
-			aRecord.put("type", USER_TYPE_VALUE);
-			aRecord.put("name", user.getFullName());
-			aRecord.put("firstName", user.getFirstName());
-			aRecord.put("lastName", user.getLastName());
-			aRecord.put("emailaddress", user.getEmailAddress());
 
+
+			
 			UserProxy up = uProxyWebAPI.getUserProxy(user, modUser, !uWebAPI.isLoggedToBackend(request));
 			aRecord.putAll(up.getMap());
 

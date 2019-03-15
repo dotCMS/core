@@ -1,35 +1,29 @@
 package com.dotmarketing.business.cache.provider.timedcache;
 
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 import com.dotcms.enterprise.cache.provider.CacheProviderAPI;
-import com.dotcms.repackage.com.google.common.cache.Cache;
-import com.dotcms.repackage.com.google.common.cache.CacheBuilder;
-import com.dotcms.repackage.com.google.common.cache.CacheLoader;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.cache.provider.CacheProvider;
 import com.dotmarketing.business.cache.provider.CacheProviderStats;
 import com.dotmarketing.business.cache.provider.CacheStats;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 
 /**
  * @author Jonathan Gamba Date: 9/2/15
  */
 public class TimedCacheProvider extends CacheProvider {
 
-	/**
-	 * 
-	 */
+
 	private static final long serialVersionUID = 1L;
 
 	private Boolean isInitialized = false;
@@ -40,7 +34,7 @@ public class TimedCacheProvider extends CacheProvider {
 	static final String LIVE_CACHE_PREFIX = CacheProviderAPI.LIVE_CACHE_PREFIX;
 	static final String WORKING_CACHE_PREFIX = CacheProviderAPI.WORKING_CACHE_PREFIX;
 
-	private NullCallable nullCallable = new NullCallable();
+
 	private final HashSet<String> availableCaches = new HashSet<>();
 
 	private final int DEFAULT_TIMEOUT = 100;
@@ -103,26 +97,13 @@ public class TimedCacheProvider extends CacheProvider {
 	public synchronized Object get(String group, String key) {
 		// Get the cache for the given group
 		Cache cache = getCache(group);
-		Object foundObject = null;
-		try {
-			// Get the content from the group and for a given key
-			foundObject = cache.get(key, nullCallable);
-		} catch (CacheLoader.InvalidCacheLoadException e) {
-			// Do nothing, we are expecting this error when no value for a key
-			// is found
-		} catch (Exception e) {
-			Logger.error(this.getClass(),
-					"Error getting value from cache from group [" + group
-							+ "] and key [" + key + "].", e);
-		}
-		return foundObject;
+		return cache.getIfPresent(key);
+
 	}
 
 	@Override
 	public void remove(String group, String key) {
-		Logger.info(this.getClass(), "===== Calling remove for [" + getName()
-				+ "] - " + cacheKey(group, key));
-		// Get the cache for the given group
+
 		Cache<String, Object> cache = getCache(group);
 		// Invalidates from Cache a key from a given group
 		cache.invalidate(key);
@@ -156,48 +137,55 @@ public class TimedCacheProvider extends CacheProvider {
 		return groups.keySet();
 	}
 
-	@Override
-	public CacheProviderStats getStats() {
-		CacheStats providerStats = new CacheStats();
-		CacheProviderStats ret = new CacheProviderStats(providerStats,getName());
-		Set<String> currentGroups = new HashSet<>();
-		currentGroups.addAll(getGroups());
-		Cache defaultCache = getCache(DEFAULT_CACHE);
-		for (String group : currentGroups) {
-			CacheStats stats = new CacheStats();
-			stats.addStat("region", group);
-			Cache foundCache = getCache(group);
-			stats.addStat("memory", foundCache.size() + "");
-			stats.addStat("CacheStats", foundCache.stats().toString());
-			boolean isDefault = (!DEFAULT_CACHE.equals(group) && foundCache
-					.equals(defaultCache));
-			stats.addStat("isDefault", isDefault + "");
-			int configured = isDefault ? Config.getIntProperty("cache."
-					+ DEFAULT_CACHE + ".seconds", DEFAULT_TIMEOUT)
-					: (Config.getIntProperty("cache." + group + ".seconds", -1) != -1) ? Config
-							.getIntProperty("cache." + group + ".seconds")
-							: (group.startsWith(WORKING_CACHE_PREFIX) && Config
-									.getIntProperty(
-											"cache." + WORKING_CACHE_PREFIX
-													+ ".seconds", -1) != -1) ? Config
-									.getIntProperty("cache."
-											+ WORKING_CACHE_PREFIX + ".seconds")
-									: (group.startsWith(LIVE_CACHE_PREFIX) && Config
-											.getIntProperty("cache."
-													+ LIVE_CACHE_PREFIX
-													+ ".seconds", -1) != -1) ? Config
-											.getIntProperty("cache."
-													+ LIVE_CACHE_PREFIX
-													+ ".seconds") : Config
-											.getIntProperty("cache."
-													+ DEFAULT_CACHE
-													+ ".seconds",
-													DEFAULT_TIMEOUT);
-			stats.addStat("configuredSize", configured + "");
-			ret.addStatRecord(stats);
-		}
-		return ret;
-	}
+    @Override
+    public CacheProviderStats getStats() {
+
+        CacheStats providerStats = new CacheStats();
+        CacheProviderStats ret = new CacheProviderStats(providerStats,getName());
+
+        Set<String> currentGroups = new HashSet<>();
+        currentGroups.addAll(getGroups());
+
+        NumberFormat nf = DecimalFormat.getInstance();
+        DecimalFormat pf = new DecimalFormat("##.##%");
+        for (String group : currentGroups) {
+            CacheStats stats = new CacheStats();
+
+            Cache<String, Object> foundCache = getCache(group);
+
+
+            boolean isDefault = (Config.getIntProperty("cache." + group + ".size", -1) == -1 && Config.getIntProperty("cache." + group + ".seconds", -1) == -1);
+
+
+            int size = isDefault ? Config.getIntProperty("cache." + DEFAULT_CACHE + ".size", 100)
+                : (Config.getIntProperty("cache." + group + ".size", -1) != -1)
+                  ? Config.getIntProperty("cache." + group + ".size")
+                      : Config.getIntProperty("cache." + DEFAULT_CACHE + ".size", 100);
+
+              int seconds = isDefault ? Config.getIntProperty("cache." + DEFAULT_CACHE + ".seconds", 100)
+                      : (Config.getIntProperty("cache." + group + ".seconds", -1) != -1)
+                        ? Config.getIntProperty("cache." + group + ".seconds")
+                            : Config.getIntProperty("cache." + DEFAULT_CACHE + ".seconds", 100);
+                  
+                  
+
+            com.github.benmanes.caffeine.cache.stats.CacheStats cstats = foundCache.stats();
+            stats.addStat(CacheStats.REGION, group);
+            stats.addStat(CacheStats.REGION_DEFAULT, isDefault + "");
+            stats.addStat(CacheStats.REGION_CONFIGURED_SIZE, "size:" + nf.format(size) + " / " + seconds + "s");
+            stats.addStat(CacheStats.REGION_SIZE, nf.format(foundCache.estimatedSize()));
+            stats.addStat(CacheStats.REGION_LOAD, nf.format(cstats.missCount()+cstats.hitCount()));
+            stats.addStat(CacheStats.REGION_HITS, nf.format(cstats.hitCount()));
+            stats.addStat(CacheStats.REGION_HIT_RATE, pf.format(cstats.hitRate()));
+            stats.addStat(CacheStats.REGION_AVG_LOAD_TIME, nf.format(cstats.averageLoadPenalty()/1000000) + " ms");
+            stats.addStat(CacheStats.REGION_EVICTIONS, nf.format(cstats.evictionCount()));
+            
+
+            ret.addStatRecord(stats);
+        }
+
+        return ret;
+    }
 
 	@Override
 	public void shutdown() {
@@ -219,92 +207,55 @@ public class TimedCacheProvider extends CacheProvider {
 		if (cache == null) {
 			synchronized (cacheName.intern()) {
 				cache = groups.get(cacheName);
-				if (cache == null) {
-					boolean separateCache = (availableCaches
-							.contains(cacheName)
-							|| DEFAULT_CACHE.equals(cacheName)
-							|| cacheName.startsWith(LIVE_CACHE_PREFIX) || cacheName
-							.startsWith(WORKING_CACHE_PREFIX));
-					if (separateCache) {
-						int seconds;
-						int size;
-						if (cacheName.startsWith(LIVE_CACHE_PREFIX)) {
-							size = Config.getIntProperty("cache." + cacheName
-									+ ".size", -1);
-							if (size < 0) {
-								size = Config.getIntProperty("cache."
-										+ LIVE_CACHE_PREFIX + ".size", -1);
-							}
-							seconds = Config.getIntProperty("cache."
-									+ cacheName + ".seconds", -1);
-							if (seconds < 0) {
-								seconds = Config.getIntProperty("cache."
-										+ LIVE_CACHE_PREFIX + ".seconds", -1);
-							}
-						} else if (cacheName.startsWith(WORKING_CACHE_PREFIX)) {
-							size = Config.getIntProperty("cache." + cacheName
-									+ ".size", -1);
-							if (size < 0) {
-								size = Config.getIntProperty("cache."
-										+ WORKING_CACHE_PREFIX + ".size", -1);
-							}
-							seconds = Config.getIntProperty("cache."
-									+ cacheName + ".seconds", -1);
-							if (seconds < 0) {
-								seconds = Config
-										.getIntProperty("cache."
-												+ WORKING_CACHE_PREFIX
-												+ ".seconds", -1);
-							}
-						} else {
-							size = Config.getIntProperty("cache." + cacheName
-									+ ".size", -1);
-							seconds = Config.getIntProperty("cache."
-									+ cacheName + ".seconds", -1);
-						}
-						if (size == -1) {
-							size = Config.getIntProperty("cache."
-									+ DEFAULT_CACHE + ".size", 100);
-						}
-						if (seconds == -1) {
-							seconds = Config.getIntProperty("cache."
-									+ DEFAULT_CACHE + ".seconds",
-									DEFAULT_TIMEOUT);
-						}
-						Logger.info(
-								this.getClass(),
-								"***\t Building Cache : "
-										+ cacheName
-										+ ", seconds:"
-										+ seconds
-										+ ",Concurrency:"
-										+ Config.getIntProperty(
-												"cache.concurrencylevel", 32));
-						CacheBuilder<Object, Object> cb = CacheBuilder
-								.newBuilder()
-								.maximumSize(size)
-								.expireAfterWrite(seconds, TimeUnit.SECONDS)
-								.concurrencyLevel(
-										Config.getIntProperty(
-												"cache.concurrencylevel", 32));
-						cache = cb.build();
-						groups.put(cacheName, cache);
-					} else {
-						Logger.info(this.getClass(), "***\t No Cache for   : "
-								+ cacheName + ", using " + DEFAULT_CACHE);
-						cache = getCache(DEFAULT_CACHE);
-						groups.put(cacheName, cache);
-					}
-				}
+		        // init cache if it does not exist
+		        if (cache == null) {
+		            synchronized (cacheName.intern()) {
+		                cache = groups.get(cacheName);
+		                if (cache == null) {
+
+		                    boolean separateCache = (Config.getBooleanProperty(
+		                            "cache.separate.caches.for.non.defined.regions", true)
+		                            || availableCaches.contains(cacheName)
+		                            || DEFAULT_CACHE.equals(cacheName));
+
+		                    if (separateCache) {
+		                        int size = Config.getIntProperty("cache." + cacheName + ".size", -1);
+                                int seconds = Config.getIntProperty("cache." + cacheName + ".seconds", -1);
+		                        if (size == -1) {
+		                            size = Config.getIntProperty("cache." + DEFAULT_CACHE + ".size", 100);
+		                        }
+                                if (seconds == -1) {
+                                    seconds = Config.getIntProperty("cache." + DEFAULT_CACHE + ".seconds", 100);
+                                }
+		                        Logger.info(this.getClass(),
+		                                "***\t Building Cache : " + cacheName + ", size:" + size
+		                                        + ",Concurrency:"
+		                                        + Config.getIntProperty("cache.concurrencylevel", 32));
+		                        cache = Caffeine.newBuilder()
+		                                .maximumSize(size)
+		                                .expireAfterWrite(seconds, TimeUnit.SECONDS)
+		                                .recordStats()
+		                                //.softValues()
+		                                .build();
+
+
+		                        groups.put(cacheName, cache);
+
+		                    } else {
+		                        Logger.info(this.getClass(),
+		                                "***\t No Cache for   : " + cacheName + ", using " + DEFAULT_CACHE);
+		                        cache = getCache(DEFAULT_CACHE);
+		                        groups.put(cacheName, cache);
+		                    }
+		                }
+		            }
+		        }
+	
 			}
 		}
 		return cache;
 	}
 
-	private class NullCallable implements Callable {
-		public Object call() throws Exception {
-			return null;
-		}
-	}
+
 
 }

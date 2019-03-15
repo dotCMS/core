@@ -62,12 +62,9 @@ public class ServicePreAction extends Action {
 
 			User user = null;
 
-			try {
+	
 				user = PortalUtil.getUser(req);
-			}
-			catch (NoSuchUserException nsue) {
-				return;
-			}
+
 
 			boolean signedIn = false;
 

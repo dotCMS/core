@@ -1,7 +1,15 @@
 package com.dotcms.filters.interceptor.jwt;
 
+import java.io.IOException;
+import java.util.Date;
+
+import javax.servlet.ServletRequest;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 import com.dotcms.auth.providers.jwt.JsonWebTokenUtils;
-import com.dotcms.auth.providers.jwt.beans.JWTBean;
+import com.dotcms.auth.providers.jwt.beans.UserToken;
+import com.dotcms.auth.providers.jwt.beans.JWToken;
 import com.dotcms.auth.providers.jwt.factories.JsonWebTokenFactory;
 import com.dotcms.auth.providers.jwt.services.JsonWebTokenService;
 import com.dotcms.business.CloseDBIfOpened;
@@ -25,11 +33,6 @@ import com.liferay.portal.ejb.CompanyLocalManagerFactory;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.CookieKeys;
-import java.io.IOException;
-import java.util.Date;
-import javax.servlet.ServletRequest;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
 /**
  * This Interceptor is useful to active the remember me using JWT It is going to
@@ -194,7 +197,7 @@ public class JsonWebTokenInterceptor implements WebInterceptor {
                         CookieKeys.JWT_ACCESS_TOKEN);
 		Result result = Result.NEXT;
 
-        if (null != jwtAccessToken) {
+        if (UtilMethods.isSet(jwtAccessToken)) {
 
 			result =
 				this.parseJwtToken(jwtAccessToken, response, request);
@@ -219,7 +222,7 @@ public class JsonWebTokenInterceptor implements WebInterceptor {
                                  final HttpServletResponse response,
                                  final HttpServletRequest request) {
 
-        final JWTBean jwtBean =
+        final JWToken jwtBean =
                 this.jsonWebTokenService.parseToken(jwtAccessToken);
 		Result result = Result.NEXT;
 
@@ -238,7 +241,7 @@ public class JsonWebTokenInterceptor implements WebInterceptor {
 	 * @param response - The {@link HttpServletResponse} object.
 	 * @param request - The {@link HttpServletRequest} object.
 	 */
-	protected Result processSubject(final JWTBean jwtBean,
+	protected Result processSubject(final JWToken jwtBean,
 			final HttpServletResponse response,
 			final HttpServletRequest request) {
 

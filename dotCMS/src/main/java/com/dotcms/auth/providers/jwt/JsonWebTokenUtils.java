@@ -2,7 +2,8 @@ package com.dotcms.auth.providers.jwt;
 
 import static com.dotcms.exception.ExceptionUtil.causedBy;
 
-import com.dotcms.auth.providers.jwt.beans.JWTBean;
+import com.dotcms.auth.providers.jwt.beans.UserToken;
+import com.dotcms.auth.providers.jwt.beans.JWToken;
 import com.dotcms.auth.providers.jwt.factories.JsonWebTokenFactory;
 import com.dotcms.auth.providers.jwt.services.JsonWebTokenService;
 import com.dotcms.business.LazyUserAPIWrapper;
@@ -17,7 +18,10 @@ import com.dotmarketing.util.SecurityLogger;
 import com.liferay.portal.model.User;
 import io.jsonwebtoken.IncorrectClaimException;
 import io.jsonwebtoken.SignatureException;
+import io.vavr.API;
+
 import java.util.Date;
+import java.util.Optional;
 import java.util.UUID;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -28,8 +32,8 @@ import javax.servlet.http.HttpServletResponse;
  */
 public class JsonWebTokenUtils {
 
-    public static final String CLAIM_UPDATED_AT = "updated_at";
-
+    public static final String CLAIM_UPDATED_AT = "xmod";
+    public static final String CLAIM_ALLOWED_NETWORK = "xnet";
     private static class SingletonHolder {
         private static final JsonWebTokenUtils INSTANCE = new JsonWebTokenUtils();
     }
@@ -53,31 +57,13 @@ public class JsonWebTokenUtils {
                              final  UserAPI userAPI) {
 
         this.jsonWebTokenService = jsonWebTokenService;
-        this.userAPI             = userAPI;
+
     }
 
     private final JsonWebTokenService jsonWebTokenService;
-    private final UserAPI userAPI;
 
-    /**
-     * Gets from the json web access token, the subject.
-     *
-     * @param jwtAccessToken String
-     * @return String returns the subject, if the subjet does not exists or is a invalid token will
-     * return null
-     */
-    public String getSubject(final String jwtAccessToken) {
 
-        JWTBean jwtBean;
-        String subject = null;
 
-        jwtBean = this.jsonWebTokenService.parseToken(jwtAccessToken);
-        if (null != jwtBean) {
-            subject = jwtBean.getSubject();
-        }
-
-        return subject;
-    }
 
     /**
      * Gets from the json web access token, the user.
@@ -85,52 +71,13 @@ public class JsonWebTokenUtils {
      * @param jwtAccessToken String
      * @return String returns the User, if the user does not exists or is invalid will return null;
      */
-    public User getUser(final String jwtAccessToken) {
+    public User getUser(final String jwtAccessToken, final String ipAddress) {
 
-        User userToReturn = null;
-        IsValidResult isValidResult;
-
-        try {
-
-            //Parse the token
-            JWTBean jwtBean = this.jsonWebTokenService.parseToken(jwtAccessToken);
-            if (null != jwtBean) {
-
-                //Read the user id
-                String subject = jwtBean.getSubject();
-                if (null != subject) {
-
-                    isValidResult = this.isValidUser(subject, jwtBean.getModificationDate());
-
-                    if (isValidResult.isValid()) {
-                        userToReturn = isValidResult.getUser();
-                    }
-                }
-            }
-        } catch (DotDataException | DotSecurityException e) {
-            Logger.error(JsonWebTokenUtils.class, e.getMessage(), e);
-        }
-
-        return userToReturn;
+        Optional<JWToken> token = APILocator.getApiTokenAPI().fromJwt(jwtAccessToken, ipAddress);
+        return (token.isPresent()) ? token.get().getActiveUser().get() : null;
     } // getUser
 
-    private IsValidResult isValidUser(final String userId, final Date lastModifiedDate)
-            throws DotSecurityException, DotDataException {
 
-        boolean isValidUser = false;
-        User user = null;
-
-        if (null != userId) {
-
-            user = this.userAPI.loadUserById(userId);
-
-            // The user hasn't change since the creation of the JWT
-            isValidUser = ((null != user) && (0 == user.getModificationDate()
-                    .compareTo(lastModifiedDate)));
-        }
-
-        return new IsValidResult(isValidUser, user);
-    } // isValidUser.
 
     /**
      * Gets from the json web access token, the user id decrypt.
@@ -139,8 +86,8 @@ public class JsonWebTokenUtils {
      * @return String returns the userId, null if it is not possible to get it.
      */
     public static String getUserIdFromJsonWebToken(final String jwtAccessToken) {
-
-        return getInstance().getSubject(jwtAccessToken);
+        JWToken token = getInstance().jsonWebTokenService.parseToken(jwtAccessToken);
+        return (token!=null) ? token.getUserId() : null;
     } // getUserIdFromJsonWebToken
 
     /**
@@ -150,10 +97,10 @@ public class JsonWebTokenUtils {
      * @param jwtMaxAge int how much days to keep the token valid
      * @return String Json Web Token
      */
-    public String createToken(final User user, int jwtMaxAge) {
+    public String createUserToken(final User user, int jwtMaxAge) {
 
-        return this.jsonWebTokenService.generateToken(
-                new JWTBean(UUID.randomUUID().toString(),
+        return this.jsonWebTokenService.generateUserToken(
+                new UserToken(UUID.randomUUID().toString(),
                         user.getUserId(),
                         user.getModificationDate(),
                         (jwtMaxAge > 0) ?
@@ -210,23 +157,5 @@ public class JsonWebTokenUtils {
         }
     }
 
-    private class IsValidResult {
 
-        private final boolean valid;
-        private final User user;
-
-        private IsValidResult(final boolean valid, final User user) {
-
-            this.valid   = valid;
-            this.user    = user;
-        }
-
-        public boolean isValid() {
-            return valid;
-        }
-
-        public User getUser() {
-            return user;
-        }
-    }
 } // E:O:F:JsonWebTokenUtils.
