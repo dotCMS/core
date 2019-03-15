@@ -97,7 +97,7 @@ class CommitListenerCacheWrapper implements DotCacheAdministrator {
     }
 
     public void remove(final String key, final String group) {
-        if (DbConnectionFactory.inTransaction()) {
+        if (false && DbConnectionFactory.inTransaction()) {
             try {
                 HibernateUtil.addCommitListener(new FlushCacheRunnable() {
                     public void run() {
