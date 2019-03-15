@@ -21,8 +21,7 @@ public class PortletAPIImpl implements PortletAPI {
         try {
             for (Layout layout : APILocator.getLayoutAPI().loadLayoutsForUser(user)) {
                 if(layout.getPortletIds().contains(pId)){
-                    hasRights = true;
-                    break;
+                   return true;
                 }
             }
         }

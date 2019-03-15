@@ -130,12 +130,8 @@ String COMMON_IMG = contextPath + "/html/skin/image/common";
 
 Company company = PortalUtil.getCompany(request);
 
-User user = null;
-try {
-	user = PortalUtil.getUser(request);
-}
-catch (NoSuchUserException nsue) {
-}
+User user = PortalUtil.getUser(request);
+
 
 boolean signedIn = false;
 

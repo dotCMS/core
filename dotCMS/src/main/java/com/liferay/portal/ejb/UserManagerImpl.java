@@ -1,23 +1,20 @@
 /**
  * Copyright (c) 2000-2005 Liferay, LLC. All rights reserved.
  *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
+ * associated documentation files (the "Software"), to deal in the Software without restriction,
+ * including without limitation the rights to use, copy, modify, merge, publish, distribute,
+ * sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
  *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
+ * The above copyright notice and this permission notice shall be included in all copies or
+ * substantial portions of the Software.
  *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT
+ * NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+ * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
 package com.liferay.portal.ejb;
@@ -87,789 +84,662 @@ import com.liferay.util.mail.MailMessage;
 import static com.dotcms.util.CollectionsUtils.map;
 
 /**
- * This manager provides interaction with {@link User} objects in terms of 
- * authentication, verification, maintenance, etc.
+ * This manager provides interaction with {@link User} objects in terms of authentication,
+ * verification, maintenance, etc.
  *
- * @author  Brian Wing Shun Chan
+ * @author Brian Wing Shun Chan
  * @version $Revision: 1.3 $
  *
  */
 public class UserManagerImpl extends PrincipalBean implements UserManager {
 
-	private static final Log _log = LogFactory.getLog(UserManagerImpl.class);
+    private static final Log _log = LogFactory.getLog(UserManagerImpl.class);
 
-	// Business methods
+    // Business methods
 
-	@Override
-	public User addUser(
-			String companyId, boolean autoUserId, String userId,
-			boolean autoPassword, String password1, String password2,
-			boolean passwordReset, String firstName, String middleName,
-			String lastName, String nickName, boolean male, Date birthday,
-			String emailAddress, Locale locale)
-		throws PortalException, SystemException {
+    @Override
+    public User addUser(String companyId, boolean autoUserId, String userId, boolean autoPassword, String password1, String password2,
+            boolean passwordReset, String firstName, String middleName, String lastName, String nickName, boolean male, Date birthday,
+            String emailAddress, Locale locale) throws PortalException, SystemException {
 
-		Company company = CompanyUtil.findByPrimaryKey(companyId);
+        Company company = CompanyUtil.findByPrimaryKey(companyId);
 
-		if (!company.isStrangers() && !hasAdministrator(companyId)) {
-			throw new PrincipalException();
-		}
+        if (!company.isStrangers() && !hasAdministrator(companyId)) {
+            throw new PrincipalException();
+        }
 
-		return UserLocalManagerUtil.addUser(
-			companyId, autoUserId, userId, autoPassword, password1, password2,
-			passwordReset, firstName, middleName, lastName, nickName, male,
-			birthday, emailAddress, locale);
-	}
+        return UserLocalManagerUtil.addUser(companyId, autoUserId, userId, autoPassword, password1, password2, passwordReset, firstName,
+                middleName, lastName, nickName, male, birthday, emailAddress, locale);
+    }
 
-	@Override
-	public int authenticateByEmailAddress(
-			String companyId, String emailAddress, String password)
-		throws PortalException, SystemException {
+    @Override
+    public int authenticateByEmailAddress(String companyId, String emailAddress, String password) throws PortalException, SystemException {
 
-		return _authenticate(companyId, emailAddress, password, true);
-	}
+        return _authenticate(companyId, emailAddress, password, true);
+    }
 
-	@Override
-	public int authenticateByUserId(
-			String companyId, String userId, String password)
-		throws PortalException, SystemException {
+    @Override
+    public int authenticateByUserId(String companyId, String userId, String password) throws PortalException, SystemException {
 
-		return _authenticate(companyId, userId, password, false);
-	}
+        return _authenticate(companyId, userId, password, false);
+    }
 
-	@Override
-	public KeyValuePair decryptUserId(
-			String companyId, String userId, String password)
-		throws PortalException, SystemException {
+    @Override
+    public KeyValuePair decryptUserId(String companyId, String userId, String password) throws PortalException, SystemException {
 
-		Company company = CompanyUtil.findByPrimaryKey(companyId);
+        Company company = CompanyUtil.findByPrimaryKey(companyId);
 
-		try {
-			userId = Encryptor.decrypt(company.getKeyObj(), userId);
-		}
-		catch (EncryptorException ee) {
-			throw new SystemException(ee);
-		}
+        try {
+            userId = Encryptor.decrypt(company.getKeyObj(), userId);
+        } catch (EncryptorException ee) {
+            throw new SystemException(ee);
+        }
 
-		String liferayUserId = userId;
+        String liferayUserId = userId;
 
-		try {
-			PrincipalFinder principalFinder = (PrincipalFinder)InstancePool.get(
-				PropsUtil.get(PropsUtil.PRINCIPAL_FINDER));
+        try {
+            PrincipalFinder principalFinder = (PrincipalFinder) InstancePool.get(PropsUtil.get(PropsUtil.PRINCIPAL_FINDER));
 
-			liferayUserId = principalFinder.toLiferay(userId);
-		}
-		catch (Exception e) {
-		}
+            liferayUserId = principalFinder.toLiferay(userId);
+        } catch (Exception e) {
+        }
 
-		User user = UserUtil.findByPrimaryKey(liferayUserId);
+        User user = UserUtil.findByPrimaryKey(liferayUserId);
 
         AuthenticationStatus authenticationStatus = PasswordFactoryProxy.AuthenticationStatus.NOT_AUTHENTICATED;
         try {
             authenticationStatus = PasswordFactoryProxy.authPassword(password, user.getPassword());
         } catch (PasswordException e) {
-            Logger.error(UserManagerImpl.class, "An error occurred generating the hashed password for userId: "
-                    + userId, e);
+            Logger.error(UserManagerImpl.class, "An error occurred generating the hashed password for userId: " + userId, e);
             throw new SystemException("An error occurred generating the hashed password.");
         }
 
-		if (authenticationStatus.equals(PasswordFactoryProxy.AuthenticationStatus.AUTHENTICATED)) {
-			if (user.isPasswordExpired()) {
-				user.setPasswordReset(true);
-
-				UserUtil.update(user);
-			}
-
-			return new KeyValuePair(userId, password);
-		}
-		else {
-			throw new PrincipalException();
-		}
-	}
-
-	@Override
-	public void deleteUser(String userId)
-		throws PortalException, SystemException {
-
-		if (!hasAdmin(userId)) {
-			throw new PrincipalException();
-		}
-
-		if (getUserId().equals(userId)) {
-			throw new RequiredUserException();
-		}
-
-		UserLocalManagerUtil.deleteUser(userId);
-	}
-
-	@CloseDBIfOpened
-	@Override
-	public String encryptUserId(String userId)
-		throws PortalException, SystemException {
-
-		userId = userId.trim().toLowerCase();
-
-		String liferayUserId = userId;
-
-		try {
-			PrincipalFinder principalFinder = (PrincipalFinder)InstancePool.get(
-				PropsUtil.get(PropsUtil.PRINCIPAL_FINDER));
-
-			liferayUserId = principalFinder.toLiferay(userId);
-		}
-		catch (Exception e) {
-		}
-
-		User user = UserUtil.findByPrimaryKey(liferayUserId);
-
-		Company company = CompanyUtil.findByPrimaryKey(user.getCompanyId());
-
-		try {
-			return Encryptor.encrypt(company.getKeyObj(), userId);
-		}
-		catch (EncryptorException ee) {
-			throw new SystemException(ee);
-		}
-	}
-
-	@Override
-	public List<?> findByAnd_C_FN_MN_LN_EA_M_BD_IM_A(
-			String firstName, String middleName, String lastName,
-			String emailAddress, Boolean male, Date age1, Date age2, String im,
-			String street1, String street2, String city, String state,
-			String zip, String phone, String fax, String cell)
-		throws PortalException, SystemException {
-
-		return UserFinder.findByAnd_C_FN_MN_LN_EA_M_BD_IM_A(
-			getUser().getCompanyId(), firstName, middleName, lastName,
-			emailAddress, male, age1, age2, im, street1, street2, city, state,
-			zip, phone,fax, cell);
-	}
+        if (authenticationStatus.equals(PasswordFactoryProxy.AuthenticationStatus.AUTHENTICATED)) {
+            if (user.isPasswordExpired()) {
+                user.setPasswordReset(true);
 
-	@Override
-	public List<?> findByC_SMS() throws PortalException, SystemException {
-		return UserFinder.findByC_SMS(getUser().getCompanyId());
-	}
+                UserUtil.update(user);
+            }
 
-	@Override
-	public List<?> findByOr_C_FN_MN_LN_EA_M_BD_IM_A(
-			String firstName, String middleName, String lastName,
-			String emailAddress, Boolean male, Date age1, Date age2, String im,
-			String street1, String street2, String city, String state,
-			String zip, String phone, String fax, String cell)
-		throws PortalException, SystemException {
+            return new KeyValuePair(userId, password);
+        } else {
+            throw new PrincipalException();
+        }
+    }
 
-		return UserFinder.findByOr_C_FN_MN_LN_EA_M_BD_IM_A(
-			getUser().getCompanyId(), firstName, middleName, lastName,
-			emailAddress, male, age1, age2, im, street1, street2, city, state,
-			zip, phone,fax, cell);
-	}
+    @Override
+    public void deleteUser(String userId) throws PortalException, SystemException {
 
-	@Override
-	public String getCompanyId(String userId)
-		throws PortalException, SystemException {
+        if (!hasAdmin(userId)) {
+            throw new PrincipalException();
+        }
 
-		User user = UserUtil.findByPrimaryKey(userId);
+        if (getUserId().equals(userId)) {
+            throw new RequiredUserException();
+        }
 
-		return user.getCompanyId();
-	}
+        UserLocalManagerUtil.deleteUser(userId);
+    }
 
-	@Override
-	public User getDefaultUser(String companyId)
-		throws PortalException, SystemException {
+    @CloseDBIfOpened
+    @Override
+    public String encryptUserId(String userId) throws PortalException, SystemException {
 
-		return UserLocalManagerUtil.getDefaultUser(companyId);
-	}
+        userId = userId.trim().toLowerCase();
 
-	@Override
-	public User getUserByEmailAddress(String emailAddress)
-		throws PortalException, SystemException {
+        String liferayUserId = userId;
 
-		emailAddress = emailAddress.trim().toLowerCase();
+        try {
+            PrincipalFinder principalFinder = (PrincipalFinder) InstancePool.get(PropsUtil.get(PropsUtil.PRINCIPAL_FINDER));
 
-		User user = UserUtil.findByC_EA(getUser().getCompanyId(), emailAddress);
+            liferayUserId = principalFinder.toLiferay(userId);
+        } catch (Exception e) {
+        }
 
-		if (getUserId().equals(user.getUserId()) ||
-			hasAdministrator(user.getCompanyId())) {
+        User user = UserUtil.findByPrimaryKey(liferayUserId);
 
-			return user;
-		}
-		else {
-			return (User)user.getProtected();
-		}
-	}
+        Company company = CompanyUtil.findByPrimaryKey(user.getCompanyId());
 
-	@Override
-	public User getUserById(String userId)
-		throws PortalException, SystemException {
+        try {
+            return Encryptor.encrypt(company.getKeyObj(), userId);
+        } catch (EncryptorException ee) {
+            throw new SystemException(ee);
+        }
+    }
 
-		userId = userId.trim().toLowerCase();
+    @Override
+    public List<?> findByAnd_C_FN_MN_LN_EA_M_BD_IM_A(String firstName, String middleName, String lastName, String emailAddress,
+            Boolean male, Date age1, Date age2, String im, String street1, String street2, String city, String state, String zip,
+            String phone, String fax, String cell) throws PortalException, SystemException {
 
-		User user = UserUtil.findByPrimaryKey(userId);
+        return UserFinder.findByAnd_C_FN_MN_LN_EA_M_BD_IM_A(getUser().getCompanyId(), firstName, middleName, lastName, emailAddress, male,
+                age1, age2, im, street1, street2, city, state, zip, phone, fax, cell);
+    }
 
-		if (getUserId().equals(userId) ||
-			hasAdministrator(user.getCompanyId())) {
+    @Override
+    public List<?> findByC_SMS() throws PortalException, SystemException {
+        return UserFinder.findByC_SMS(getUser().getCompanyId());
+    }
 
-			return user;
-		}
-		else {
-			return (User)user.getProtected();
-		}
-	}
+    @Override
+    public List<?> findByOr_C_FN_MN_LN_EA_M_BD_IM_A(String firstName, String middleName, String lastName, String emailAddress, Boolean male,
+            Date age1, Date age2, String im, String street1, String street2, String city, String state, String zip, String phone,
+            String fax, String cell) throws PortalException, SystemException {
 
-	@Override
-	public User getUserById(String companyId, String userId)
-		throws PortalException, SystemException {
+        return UserFinder.findByOr_C_FN_MN_LN_EA_M_BD_IM_A(getUser().getCompanyId(), firstName, middleName, lastName, emailAddress, male,
+                age1, age2, im, street1, street2, city, state, zip, phone, fax, cell);
+    }
 
-		userId = userId.trim().toLowerCase();
+    @Override
+    public String getCompanyId(String userId) throws PortalException, SystemException {
 
-		User user = UserUtil.findByC_U(companyId, userId);
+        User user = UserUtil.findByPrimaryKey(userId);
 
-		if (getUserId().equals(userId) ||
-			hasAdministrator(user.getCompanyId())) {
+        return user.getCompanyId();
+    }
 
-			return user;
-		}
-		else {
-			return (User)user.getProtected();
-		}
-	}
+    @Override
+    public User getDefaultUser(String companyId) throws PortalException, SystemException {
 
-	@Override
-	public String getUserId(String companyId, String emailAddress)
-		throws PortalException, SystemException {
+        return UserLocalManagerUtil.getDefaultUser(companyId);
+    }
 
-		emailAddress = emailAddress.trim().toLowerCase();
+    @Override
+    public User getUserByEmailAddress(String emailAddress) throws PortalException, SystemException {
 
-		User user = UserUtil.findByC_EA(companyId, emailAddress);
+        emailAddress = emailAddress.trim().toLowerCase();
 
-		return user.getUserId();
-	}
+        User user = UserUtil.findByC_EA(getUser().getCompanyId(), emailAddress);
 
-	@Override
-	public int notifyNewUsers() throws PortalException, SystemException {
-		String companyId = getUser().getCompanyId();
+        if (getUserId().equals(user.getUserId()) || hasAdministrator(user.getCompanyId())) {
 
-		if (!hasAdministrator(companyId)) {
-			throw new PrincipalException();
-		}
+            return user;
+        } else {
+            return (User) user.getProtected();
+        }
+    }
 
-		UserConfig userConfig = AdminConfigManagerUtil.getUserConfig(companyId);
+    @Override
+    public User getUserById(String userId) throws PortalException, SystemException {
 
-		EmailConfig registrationEmail = userConfig.getRegistrationEmail();
+        userId = userId.trim().toLowerCase();
 
-		if (registrationEmail == null || !registrationEmail.isSend()) {
-			return 0;
-		}
+        User user = UserUtil.findByPrimaryKey(userId);
 
-		// Send email notification
+        if (getUserId().equals(userId) || hasAdministrator(user.getCompanyId())) {
 
-		Company company = CompanyUtil.findByPrimaryKey(companyId);
+            return user;
+        } else {
+            return (User) user.getProtected();
+        }
+    }
 
-		String adminName = company.getAdminName();
+    @Override
+    public User getUserById(String companyId, String userId) throws PortalException, SystemException {
 
-		String subject = registrationEmail.getSubject();
-		String body = registrationEmail.getBody();
-
-		List<?> users = UserUtil.findByC_P(companyId, "password");
+        userId = userId.trim().toLowerCase();
 
-		for (int i = 0; i < users.size(); i++) {
-			User user = (User)users.get(i);
+        User user = UserUtil.findByC_U(companyId, userId);
 
-			user.setPassword(PwdToolkitUtil.generate());
+        if (getUserId().equals(userId) || hasAdministrator(user.getCompanyId())) {
 
-			UserUtil.update(user);
+            return user;
+        } else {
+            return (User) user.getProtected();
+        }
+    }
 
-			subject = StringUtil.replace(
-				subject,
-				new String[] {"[$ADMIN_EMAIL_ADDRESS$]", "[$ADMIN_NAME$]",
-							  "[$COMPANY_MX$]", "[$COMPANY_NAME$]",
-							  "[$PORTAL_URL$]",
-							  "[$USER_EMAIL_ADDRESS$]", "[$USER_NAME$]",
-							  "[$USER_PASSWORD$]"},
-				new String[] {company.getEmailAddress(), adminName,
-							  company.getMx(), company.getName(),
-							  company.getPortalURL(),
-							  user.getEmailAddress(), user.getFullName(),
-							  user.getPassword()});
+    @Override
+    public String getUserId(String companyId, String emailAddress) throws PortalException, SystemException {
 
-			body = StringUtil.replace(
-				body,
-				new String[] {"[$ADMIN_EMAIL_ADDRESS$]", "[$ADMIN_NAME$]",
-							  "[$COMPANY_MX$]", "[$COMPANY_NAME$]",
-							  "[$PORTAL_URL$]",
-							  "[$USER_EMAIL_ADDRESS$]", "[$USER_NAME$]",
-							  "[$USER_PASSWORD$]"},
-				new String[] {company.getEmailAddress(), adminName,
-							  company.getMx(), company.getName(),
-							  company.getPortalURL(),
-							  user.getEmailAddress(), user.getFullName(),
-							  user.getPassword()});
+        emailAddress = emailAddress.trim().toLowerCase();
 
-			try {
-				MailManagerUtil.sendEmail(new MailMessage(
-					new InternetAddress(company.getEmailAddress(), adminName),
-					new InternetAddress(
-						user.getEmailAddress(), user.getFullName()),
-					subject, body));
-			}
-			catch (IOException ioe) {
-				throw new SystemException(ioe);
-			}
-		}
+        User user = UserUtil.findByC_EA(companyId, emailAddress);
 
-		return users.size();
-	}
+        return user.getUserId();
+    }
 
-	@Override
-	public void sendPassword(String companyId, String emailAddress, Locale locale, boolean fromAngular)
-		throws PortalException, SystemException {
+    @Override
+    public int notifyNewUsers() throws PortalException, SystemException {
+        String companyId = getUser().getCompanyId();
 
-		emailAddress = emailAddress.trim().toLowerCase();
+        if (!hasAdministrator(companyId)) {
+            throw new PrincipalException();
+        }
 
-		if (!Validator.isEmailAddress(emailAddress)) {
-			throw new UserEmailAddressException();
-		}
-		
-		User user = UserUtil.findByC_EA(companyId, emailAddress);
+        UserConfig userConfig = AdminConfigManagerUtil.getUserConfig(companyId);
 
-		// we use the ICQ field to store the token:timestamp of the
-		// password reset request we put in the email
-		// the timestamp is used to set an expiration on the token
-		String token = ResetPasswordTokenUtil.createToken();
-		user.setIcqId(token+":"+new Date().getTime());
-		
-		UserUtil.update(user);
+        EmailConfig registrationEmail = userConfig.getRegistrationEmail();
 
-		// Send new password
+        if (registrationEmail == null || !registrationEmail.isSend()) {
+            return 0;
+        }
 
-		Company company = CompanyUtil.findByPrimaryKey(companyId);
+        // Send email notification
 
-		String url = UrlStrategyUtil.getURL(company,
-				map(UrlStrategy.USER, user, UrlStrategy.TOKEN, token, UrlStrategy.LOCALE, locale),
-				(fromAngular)? UserService.ANGULAR_RESET_PASSWORD_URL_STRATEGY: UserService.DEFAULT_RESET_PASSWORD_URL_STRATEGY);
+        Company company = CompanyUtil.findByPrimaryKey(companyId);
 
-		String body = LanguageUtil.format(locale, "reset-password-email-body", url, false);
-		String subject = LanguageUtil.get(locale, "reset-password-email-subject");
+        String adminName = company.getAdminName();
 
-		try {
-			EmailUtils.sendMail(user, company, subject, body);
-		}
-		catch (Exception ioe) {
-			throw new SystemException(ioe);
-		}
-	}
+        String subject = registrationEmail.getSubject();
+        String body = registrationEmail.getBody();
 
-	@Override
-	public void test() {
-		String userId = null;
+        List<?> users = UserUtil.findByC_P(companyId, "password");
 
-		try {
-			userId = getUserId();
-		}
-		catch (Exception e) {
-			Logger.error(this,e.getMessage(),e);
-		}
+        for (int i = 0; i < users.size(); i++) {
+            User user = (User) users.get(i);
 
-		_log.info(userId);
-	}
+            user.setPassword(PwdToolkitUtil.generate());
 
-	@Override
-	public User updateActive(String userId, boolean active)
-		throws PortalException, SystemException {
+            UserUtil.update(user);
 
-		userId = userId.trim().toLowerCase();
+            subject = StringUtil.replace(subject,
+                    new String[] {"[$ADMIN_EMAIL_ADDRESS$]", "[$ADMIN_NAME$]", "[$COMPANY_MX$]", "[$COMPANY_NAME$]", "[$PORTAL_URL$]",
+                            "[$USER_EMAIL_ADDRESS$]", "[$USER_NAME$]", "[$USER_PASSWORD$]"},
+                    new String[] {company.getEmailAddress(), adminName, company.getMx(), company.getName(), company.getPortalURL(),
+                            user.getEmailAddress(), user.getFullName(), user.getPassword()});
 
-		User user = UserUtil.findByPrimaryKey(userId);
+            body = StringUtil.replace(body,
+                    new String[] {"[$ADMIN_EMAIL_ADDRESS$]", "[$ADMIN_NAME$]", "[$COMPANY_MX$]", "[$COMPANY_NAME$]", "[$PORTAL_URL$]",
+                            "[$USER_EMAIL_ADDRESS$]", "[$USER_NAME$]", "[$USER_PASSWORD$]"},
+                    new String[] {company.getEmailAddress(), adminName, company.getMx(), company.getName(), company.getPortalURL(),
+                            user.getEmailAddress(), user.getFullName(), user.getPassword()});
 
-		if (!hasAdministrator(user.getCompanyId())) {
-			throw new PrincipalException();
-		}
+            try {
+                MailManagerUtil.sendEmail(new MailMessage(new InternetAddress(company.getEmailAddress(), adminName),
+                        new InternetAddress(user.getEmailAddress(), user.getFullName()), subject, body));
+            } catch (IOException ioe) {
+                throw new SystemException(ioe);
+            }
+        }
 
-		if (active == false && getUserId().equals(userId)) {
-			throw new RequiredUserException();
-		}
+        return users.size();
+    }
 
-		user.setActive(active);
+    @Override
+    public void sendPassword(String companyId, String emailAddress, Locale locale, boolean fromAngular)
+            throws PortalException, SystemException {
 
-		UserUtil.update(user);
+        emailAddress = emailAddress.trim().toLowerCase();
 
-		return user;
-	}
+        if (!Validator.isEmailAddress(emailAddress)) {
+            throw new UserEmailAddressException();
+        }
 
-	@Override
-	public User updateAgreedToTermsOfUse(boolean agreedToTermsOfUse)
-		throws PortalException, SystemException {
+        User user = UserUtil.findByC_EA(companyId, emailAddress);
 
-		User user = UserUtil.findByPrimaryKey(getUserId());
+        // we use the ICQ field to store the token:timestamp of the
+        // password reset request we put in the email
+        // the timestamp is used to set an expiration on the token
+        String token = ResetPasswordTokenUtil.createToken();
+        user.setIcqId(token + ":" + new Date().getTime());
 
-		user.setAgreedToTermsOfUse(agreedToTermsOfUse);
+        UserUtil.update(user);
 
-		UserUtil.update(user);
+        // Send new password
 
-		return user;
-	}
+        Company company = CompanyUtil.findByPrimaryKey(companyId);
 
-	@Override
-	public User updateLastLogin(String loginIP)
-		throws PortalException, SystemException {
+        String url = UrlStrategyUtil.getURL(company, map(UrlStrategy.USER, user, UrlStrategy.TOKEN, token, UrlStrategy.LOCALE, locale),
+                (fromAngular) ? UserService.ANGULAR_RESET_PASSWORD_URL_STRATEGY : UserService.DEFAULT_RESET_PASSWORD_URL_STRATEGY);
 
-		User user = UserUtil.findByPrimaryKey(getUserId());
+        String body = LanguageUtil.format(locale, "reset-password-email-body", url, false);
+        String subject = LanguageUtil.get(locale, "reset-password-email-subject");
 
-		if (user.getLoginDate() == null &&
-			user.getLastLoginDate() == null) {
-		}
+        try {
+            EmailUtils.sendMail(user, company, subject, body);
+        } catch (Exception ioe) {
+            throw new SystemException(ioe);
+        }
+    }
 
-		user.setLastLoginDate(user.getLoginDate());
-		user.setLastLoginIP(user.getLoginIP());
-		user.setLoginDate(new Date());
-		user.setLoginIP(loginIP);
-		user.setFailedLoginAttempts(0);
+    @Override
+    public void test() {
+        String userId = null;
 
-		UserUtil.update(user);
+        try {
+            userId = getUserId();
+        } catch (Exception e) {
+            Logger.error(this, e.getMessage(), e);
+        }
 
-		return user;
-	}
-
-	@Override
-	public void updatePortrait(String userId, byte[] bytes)
-		throws PortalException, SystemException {
-
-		userId = userId.trim().toLowerCase();
-
-		if (!getUserId().equals(userId) && !hasAdmin(userId)) {
-			throw new PrincipalException();
-		}
-
-		ImageLocalUtil.put(userId, bytes);
-	}
-
-	@Override
-	public User updateUser(
-			String userId, String password1, String password2,
-			boolean passwordReset)
-		throws PortalException, SystemException {
-
-		User user = UserUtil.findByPrimaryKey(userId);
-
-		if (!getUserId().equals(userId) &&
-			!hasAdministrator(user.getCompanyId())) {
-
-			throw new PrincipalException();
-		}
-
-		return UserLocalManagerUtil.updateUser(
-			userId, password1, password2, passwordReset);
-	}
-
-	@Override
-	public User updateUser(
-			String userId, String password, String firstName, String middleName,
-			String lastName, String nickName, boolean male, Date birthday,
-			String emailAddress, String smsId, String aimId, String icqId,
-			String msnId, String ymId, String favoriteActivity,
-			String favoriteBibleVerse, String favoriteFood,
-			String favoriteMovie, String favoriteMusic, String languageId,
-			String timeZoneId, String skinId, boolean dottedSkins,
-			boolean roundedSkins, String greeting, String resolution,
-			String refreshRate, String comments)
-		throws PortalException, SystemException {
-
-		User user = UserUtil.findByPrimaryKey(userId);
+        _log.info(userId);
+    }
 
-		if (!getUserId().equals(userId) &&
-			!hasAdministrator(user.getCompanyId())) {
+    @Override
+    public User updateActive(String userId, boolean active) throws PortalException, SystemException {
 
-			throw new PrincipalException();
-		}
+        userId = userId.trim().toLowerCase();
 
-		return UserLocalManagerUtil.updateUser(
-			userId, password, firstName, middleName, lastName, nickName, male,
-			birthday, emailAddress, smsId, aimId, icqId, msnId, ymId,
-			favoriteActivity, favoriteBibleVerse, favoriteFood, favoriteMovie,
-			favoriteMusic, languageId, timeZoneId, skinId, dottedSkins,
-			roundedSkins, greeting, resolution, refreshRate, comments);
-	}
-
-	// Permission methods
-
-	@Override
-	public boolean hasAdmin(String userId)
-		throws PortalException, SystemException {
+        User user = UserUtil.findByPrimaryKey(userId);
 
-		User user = UserUtil.findByPrimaryKey(userId);
-
-		if (hasAdministrator(user.getCompanyId())) {
-			return true;
-		}
-		else {
-			return false;
-		}
-	}
+        if (!hasAdministrator(user.getCompanyId())) {
+            throw new PrincipalException();
+        }
 
-	// Private methods
+        if (active == false && getUserId().equals(userId)) {
+            throw new RequiredUserException();
+        }
 
-	/**
-	 * Authenticates the user based on their e-mail or user ID.
-	 * 
-	 * @param companyId
-	 *            - The ID of the company that the user belongs to.
-	 * @param login
-	 *            - The identification mechanism: The user e-mail, or the user
-	 *            ID.
-	 * @param password
-	 *            - The user password.
-	 * @param byEmailAddress
-	 *            - If the user authentication is performed against e-mail, set
-	 *            this to {@code true}. If it's against the user ID, set to
-	 *            {@code false}.
-	 * @return A status code indicating the result of the operation:
-	 *         {@link Authenticator#SUCCESS}, {@link Authenticator#FAILURE}, or
-	 *         {@link Authenticator#DNE}.
-	 * @throws PortalException
-	 *             - There's a problem with the information provided by or
-	 *             retrieved for the user.
-	 * @throws SystemException
-	 *             - User information could not be updated.
-	 */
-	private int _authenticate(
-			String companyId, String login, String password,
-			boolean byEmailAddress)
-		throws PortalException, SystemException {
+        user.setActive(active);
 
-		login = login.trim().toLowerCase();
+        UserUtil.update(user);
 
-		Logger.debug(this, "Doing authentication for: " + login);
+        return user;
+    }
 
-		if (byEmailAddress) {
-			if (!Validator.isEmailAddress(login)) {
+    @Override
+    public User updateAgreedToTermsOfUse(boolean agreedToTermsOfUse) throws PortalException, SystemException {
 
-				Logger.error(this, "Invalid email throwing a UserEmailAddressException: " + login);
-				throw new UserEmailAddressException();
-			}
-		}
-		else {
-			if (Validator.isNull(login)) {
-
-				Logger.error(this, "User can not be null, throwing UserIdException: " + login);
-				throw new UserIdException();
-			}
-		}
-
-		if (Validator.isNull(password)) {
+        User user = UserUtil.findByPrimaryKey(getUserId());
 
-			Logger.error(this, "Password can not be null, throwing UserPasswordException");
-			throw new UserPasswordException(
-				UserPasswordException.PASSWORD_INVALID);
-		}
-
-		int authResult = Authenticator.FAILURE;
-
-		if (byEmailAddress) {
-
-			Logger.debug(this, "Doing PRE authentication by email address for: " + login);
-
-			authResult = AuthPipeProxy.authenticateByEmailAddress(
-				PropsUtil.getArray(
-					PropsUtil.AUTH_PIPELINE_PRE), companyId, login, password);
-		}
-		else {
-
-			Logger.debug(this, "Doing PRE authentication by userId for: " + login);
-
-			authResult = AuthPipeProxy.authenticateByUserId(
-				PropsUtil.getArray(
-					PropsUtil.AUTH_PIPELINE_PRE), companyId, login, password);
-		}
+        user.setAgreedToTermsOfUse(agreedToTermsOfUse);
 
-		User user = null;
+        UserUtil.update(user);
 
-		try {
-			if (byEmailAddress) {
-				user = UserUtil.findByC_EA(companyId, login);
-			}
-			else {
-				user = UserUtil.findByC_U(companyId, login);
-			}
-		}
-		catch (NoSuchUserException nsue) {
+        return user;
+    }
 
-			Logger.error(this, "Could not find the user: " + nsue.getMessage() + ", return DNE");
+    @Override
+    public User updateLastLogin(String loginIP) throws PortalException, SystemException {
 
-			return Authenticator.DNE;
-		}
+        User user = UserUtil.findByPrimaryKey(getUserId());
 
-		if (user.isPasswordExpired()) {
+        if (user.getLoginDate() == null && user.getLastLoginDate() == null) {
+        }
 
-			Logger.debug(this, "The Password expired for: " + login);
+        user.setLastLoginDate(user.getLoginDate());
+        user.setLastLoginIP(user.getLoginIP());
+        user.setLoginDate(new Date());
+        user.setLoginIP(loginIP);
+        user.setFailedLoginAttempts(0);
 
-			user.setPasswordReset(true);
+        UserUtil.update(user);
 
-			UserUtil.update(user);
-		}
+        return user;
+    }
 
-		if (authResult == Authenticator.SUCCESS) {
-			if (LoginFactory.passwordMatch(password, user)) {
+    @Override
+    public void updatePortrait(String userId, byte[] bytes) throws PortalException, SystemException {
 
-				Logger.debug(this, "The Password match for: " + login);
-				authResult = Authenticator.SUCCESS;
-			}
-			else {
+        userId = userId.trim().toLowerCase();
 
-				Logger.debug(this, "The Password does not match for: " + login);
-				authResult = Authenticator.FAILURE;
-			}
-		}
+        if (!getUserId().equals(userId) && !hasAdmin(userId)) {
+            throw new PrincipalException();
+        }
 
-		if (authResult == Authenticator.SUCCESS) {
-			if(!user.getActive()){
-
-				Logger.error(this, "Login was success but user is not active, throwing UserActiveException");
-				throw new UserActiveException();
-			}
-			
-			if (byEmailAddress) {
-
-				Logger.debug(this, "Doing POST authentication by email address for: " + login);
-
-				authResult = AuthPipeProxy.authenticateByEmailAddress(
-					PropsUtil.getArray(
-						PropsUtil.AUTH_PIPELINE_POST), companyId, login,
-						password);
-			}
-			else {
-
-				Logger.debug(this, "Doing POST authentication by userId for: " + login);
-
-				authResult = AuthPipeProxy.authenticateByUserId(
-					PropsUtil.getArray(
-						PropsUtil.AUTH_PIPELINE_POST), companyId, login,
-						password);
-			}
-			if (authResult == Authenticator.SUCCESS) {
-				// User authenticated, reset failed attempts
-				Logger.debug(this, "Setting the user: " + user.getUserId() + ", failed login attempts: 0");
-				user.setFailedLoginAttempts(0);
-				UserUtil.update(user);
-			}
-		}
-
-		if (authResult == Authenticator.FAILURE) {
-
-			Logger.debug(this, "Authenticated failed for: " + login);
-
-			try {
-				if (byEmailAddress) {
-					AuthPipeProxy.onFailureByEmailAddress(PropsUtil.getArray(
-						PropsUtil.AUTH_FAILURE), companyId, login);
-				}
-				else {
-					AuthPipeProxy.onFailureByUserId(PropsUtil.getArray(
-						PropsUtil.AUTH_FAILURE), companyId, login);
-				}
-
-				int failedLoginAttempts = user.getFailedLoginAttempts();
-				Logger.debug(this, "Current failed login attempts for: " + login + ", is: " + failedLoginAttempts);
-
-				if (Config.getBooleanProperty(WebKeys.AUTH_FAILED_ATTEMPTS_DELAY_STRATEGY_ENABLED, true)) {
-
-					Logger.debug(this, "Making a delay request for failed login attempts for: " + login + ", with: " + failedLoginAttempts);
-					delayRequest(failedLoginAttempts);
-				}
-
-				user.setFailedLoginAttempts(++failedLoginAttempts);
-				Logger.debug(this, "Increasing failed login attempts for: " + login + ", with: " + user.getFailedLoginAttempts());
-
-				UserUtil.update(user);
-
-				int maxFailures = GetterUtil.get(PropsUtil.get(
-					PropsUtil.AUTH_MAX_FAILURES_LIMIT), 0);
-
-				Logger.debug(this, "Max failures: " + maxFailures);
-
-				if ((failedLoginAttempts >= maxFailures) &&
-					(maxFailures != 0)) {
-
-					if (byEmailAddress) {
-
-						Logger.debug(this, "Reporting Max failures by email, maxFailures: " + maxFailures +
-									", failed login attemps: " + failedLoginAttempts);
-
-						AuthPipeProxy.onMaxFailuresByEmailAddress(
-							PropsUtil.getArray(
-								PropsUtil.AUTH_MAX_FAILURES), companyId, login);
-					}
-					else {
-
-						Logger.debug(this, "Reporting Max failures by userId, maxFailures: " + maxFailures +
-								", failed login attemps: " + failedLoginAttempts);
-
-						AuthPipeProxy.onMaxFailuresByUserId(
-							PropsUtil.getArray(
-								PropsUtil.AUTH_MAX_FAILURES), companyId, login);
-					}
-				}
-			}
-			catch (Exception e) {
-				Logger.error(this,e.getMessage(),e);
-			}
-		}
-
-		return authResult;
-	}
-
-	/**
-	 * If the user trying to authenticate has failed to do so, their login
-	 * process will be penalized in order to prevent potential hacking attacks.
-	 * The time that the user will have to wait is based on a specific delay
-	 * strategy. It defaults to raising the {@code defaultSeed} value to the 
-	 * power of 2.
-	 * 
-	 * @param defaultSeed
-	 *            - The default time seed in case the delay strategy does not
-	 *            specify one.
-	 */
-	private void delayRequest(int defaultSeed) {
-		int seed = defaultSeed;
-		String delayStrat = Config.getStringProperty(WebKeys.AUTH_FAILED_ATTEMPTS_DELAY_STRATEGY, "pow");
-		String[] stratParams = delayStrat.split(":");
-		DelayStrategy strategy;
-		try {
-			strategy = (UtilMethods.isSet(stratParams[0]))?
-					DelayStrategy.valueOf(stratParams[0].toUpperCase()):DelayStrategy.POW;
-			if (stratParams.length > 1) {
-				seed = ConversionUtils.toInt(stratParams[1], defaultSeed);
-			}
-
-			Logger.debug(this, "Doing a delay request, with seed: " + seed
-					+ ", defaultSeed: " + defaultSeed + ", strategy: " + strategy);
-		} catch (Exception e) {
-			Logger.error(this, "The specified delay strategy is invalid. Defaults to POW strategy.", e);
-			strategy = DelayStrategy.POW;
-		}
-
-		SecurityUtils.delayRequest(seed, strategy);
-	}
-
-	/**
-	 * 
-	 */
-	public void resetPassword(String userId, String token, String newPassword) throws com.dotmarketing.business.NoSuchUserException,
-			DotSecurityException, DotInvalidTokenException, DotInvalidPasswordException {
-		try {
-			if(UtilMethods.isSet(userId) && UtilMethods.isSet(token)) {
-				User user  = APILocator.getUserAPI().loadUserById(userId);
-
-				if (user == null){
-					throw new com.dotmarketing.business.NoSuchUserException("");
-				}
-
-				ResetPasswordTokenUtil.checkToken(user, token);
-				APILocator.getUserAPI().updatePassword(user, newPassword, APILocator.getUserAPI().getSystemUser(), false);
-			}
-		} catch (DotDataException e) {
-			throw new IllegalArgumentException();
-		}
-	}
+        ImageLocalUtil.put(userId, bytes);
+    }
+
+    @Override
+    public User updateUser(String userId, String password1, String password2, boolean passwordReset)
+            throws PortalException, SystemException {
+
+        User user = UserUtil.findByPrimaryKey(userId);
+
+        if (!getUserId().equals(userId) && !hasAdministrator(user.getCompanyId())) {
+
+            throw new PrincipalException();
+        }
+
+        return UserLocalManagerUtil.updateUser(userId, password1, password2, passwordReset);
+    }
+
+    @Override
+    public User updateUser(String userId, String password, String firstName, String middleName, String lastName, String nickName,
+            boolean male, Date birthday, String emailAddress, String smsId, String aimId, String icqId, String msnId, String ymId,
+            String favoriteActivity, String favoriteBibleVerse, String favoriteFood, String favoriteMovie, String favoriteMusic,
+            String languageId, String timeZoneId, String skinId, boolean dottedSkins, boolean roundedSkins, String greeting,
+            String resolution, String refreshRate, String comments) throws PortalException, SystemException {
+
+        User user = UserUtil.findByPrimaryKey(userId);
+
+        if (!getUserId().equals(userId) && !hasAdministrator(user.getCompanyId())) {
+
+            throw new PrincipalException();
+        }
+
+        return UserLocalManagerUtil.updateUser(userId, password, firstName, middleName, lastName, nickName, male, birthday, emailAddress,
+                smsId, aimId, icqId, msnId, ymId, favoriteActivity, favoriteBibleVerse, favoriteFood, favoriteMovie, favoriteMusic,
+                languageId, timeZoneId, skinId, dottedSkins, roundedSkins, greeting, resolution, refreshRate, comments);
+    }
+
+    // Permission methods
+
+    @Override
+    public boolean hasAdmin(String userId) throws PortalException, SystemException {
+
+        User user = UserUtil.findByPrimaryKey(userId);
+
+        if (hasAdministrator(user.getCompanyId())) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    // Private methods
+
+    /**
+     * Authenticates the user based on their e-mail or user ID.
+     * 
+     * @param companyId - The ID of the company that the user belongs to.
+     * @param login - The identification mechanism: The user e-mail, or the user ID.
+     * @param password - The user password.
+     * @param byEmailAddress - If the user authentication is performed against e-mail, set this to
+     *        {@code true}. If it's against the user ID, set to {@code false}.
+     * @return A status code indicating the result of the operation: {@link Authenticator#SUCCESS},
+     *         {@link Authenticator#FAILURE}, or {@link Authenticator#DNE}.
+     * @throws PortalException - There's a problem with the information provided by or retrieved for the
+     *         user.
+     * @throws SystemException - User information could not be updated.
+     */
+    private int _authenticate(String companyId, String login, String password, boolean byEmailAddress)
+            throws PortalException, SystemException {
+
+        login = login.trim().toLowerCase();
+
+        Logger.debug(this, "Doing authentication for: " + login);
+
+        if (byEmailAddress) {
+            if (!Validator.isEmailAddress(login)) {
+
+                Logger.error(this, "Invalid email throwing a UserEmailAddressException: " + login);
+                throw new UserEmailAddressException();
+            }
+        } else {
+            if (Validator.isNull(login)) {
+
+                Logger.error(this, "User can not be null, throwing UserIdException: " + login);
+                throw new UserIdException();
+            }
+        }
+
+        if (Validator.isNull(password)) {
+
+            Logger.error(this, "Password can not be null, throwing UserPasswordException");
+            throw new UserPasswordException(UserPasswordException.PASSWORD_INVALID);
+        }
+
+        int authResult = Authenticator.FAILURE;
+
+        if (byEmailAddress) {
+
+            Logger.debug(this, "Doing PRE authentication by email address for: " + login);
+
+            authResult =
+                    AuthPipeProxy.authenticateByEmailAddress(PropsUtil.getArray(PropsUtil.AUTH_PIPELINE_PRE), companyId, login, password);
+        } else {
+
+            Logger.debug(this, "Doing PRE authentication by userId for: " + login);
+
+            authResult = AuthPipeProxy.authenticateByUserId(PropsUtil.getArray(PropsUtil.AUTH_PIPELINE_PRE), companyId, login, password);
+        }
+
+        User user = null;
+
+        try {
+            if (byEmailAddress) {
+                user = UserUtil.findByC_EA(companyId, login);
+            } else {
+                user = UserUtil.findByC_U(companyId, login);
+            }
+        } catch (NoSuchUserException nsue) {
+
+            Logger.error(this, "Could not find the user: " + nsue.getMessage() + ", return DNE");
+
+            return Authenticator.DNE;
+        }
+
+        if (user.isPasswordExpired()) {
+
+            Logger.debug(this, "The Password expired for: " + login);
+
+            user.setPasswordReset(true);
+
+            UserUtil.update(user);
+        }
+
+        if (authResult == Authenticator.SUCCESS) {
+            if (LoginFactory.passwordMatch(password, user)) {
+
+                Logger.debug(this, "The Password match for: " + login);
+                authResult = Authenticator.SUCCESS;
+            } else {
+
+                Logger.debug(this, "The Password does not match for: " + login);
+                authResult = Authenticator.FAILURE;
+            }
+        }
+
+        if (authResult == Authenticator.SUCCESS) {
+            if (!user.getActive()) {
+
+                Logger.error(this, "Login was success but user is not active, throwing UserActiveException");
+                throw new UserActiveException();
+            }
+
+            if (byEmailAddress) {
+
+                Logger.debug(this, "Doing POST authentication by email address for: " + login);
+
+                authResult = AuthPipeProxy.authenticateByEmailAddress(PropsUtil.getArray(PropsUtil.AUTH_PIPELINE_POST), companyId, login,
+                        password);
+            } else {
+
+                Logger.debug(this, "Doing POST authentication by userId for: " + login);
+
+                authResult =
+                        AuthPipeProxy.authenticateByUserId(PropsUtil.getArray(PropsUtil.AUTH_PIPELINE_POST), companyId, login, password);
+            }
+            if (authResult == Authenticator.SUCCESS) {
+                // User authenticated, reset failed attempts
+                Logger.debug(this, "Setting the user: " + user.getUserId() + ", failed login attempts: 0");
+                user.setFailedLoginAttempts(0);
+                UserUtil.update(user);
+            }
+        }
+
+        if (authResult == Authenticator.FAILURE) {
+
+            Logger.debug(this, "Authenticated failed for: " + login);
+
+            try {
+                if (byEmailAddress) {
+                    AuthPipeProxy.onFailureByEmailAddress(PropsUtil.getArray(PropsUtil.AUTH_FAILURE), companyId, login);
+                } else {
+                    AuthPipeProxy.onFailureByUserId(PropsUtil.getArray(PropsUtil.AUTH_FAILURE), companyId, login);
+                }
+
+                int failedLoginAttempts = user.getFailedLoginAttempts();
+                Logger.debug(this, "Current failed login attempts for: " + login + ", is: " + failedLoginAttempts);
+
+                if (Config.getBooleanProperty(WebKeys.AUTH_FAILED_ATTEMPTS_DELAY_STRATEGY_ENABLED, true)) {
+
+                    Logger.debug(this, "Making a delay request for failed login attempts for: " + login + ", with: " + failedLoginAttempts);
+                    delayRequest(failedLoginAttempts);
+                }
+
+                user.setFailedLoginAttempts(++failedLoginAttempts);
+                Logger.debug(this, "Increasing failed login attempts for: " + login + ", with: " + user.getFailedLoginAttempts());
+
+                UserUtil.update(user);
+
+                int maxFailures = GetterUtil.get(PropsUtil.get(PropsUtil.AUTH_MAX_FAILURES_LIMIT), 0);
+
+                Logger.debug(this, "Max failures: " + maxFailures);
+
+                if ((failedLoginAttempts >= maxFailures) && (maxFailures != 0)) {
+
+                    if (byEmailAddress) {
+
+                        Logger.debug(this, "Reporting Max failures by email, maxFailures: " + maxFailures + ", failed login attemps: "
+                                + failedLoginAttempts);
+
+                        AuthPipeProxy.onMaxFailuresByEmailAddress(PropsUtil.getArray(PropsUtil.AUTH_MAX_FAILURES), companyId, login);
+                    } else {
+
+                        Logger.debug(this, "Reporting Max failures by userId, maxFailures: " + maxFailures + ", failed login attemps: "
+                                + failedLoginAttempts);
+
+                        AuthPipeProxy.onMaxFailuresByUserId(PropsUtil.getArray(PropsUtil.AUTH_MAX_FAILURES), companyId, login);
+                    }
+                }
+            } catch (Exception e) {
+                Logger.error(this, e.getMessage(), e);
+            }
+        }
+
+        return authResult;
+    }
+
+    /**
+     * If the user trying to authenticate has failed to do so, their login process will be penalized in
+     * order to prevent potential hacking attacks. The time that the user will have to wait is based on
+     * a specific delay strategy. It defaults to raising the {@code defaultSeed} value to the power of
+     * 2.
+     * 
+     * @param defaultSeed - The default time seed in case the delay strategy does not specify one.
+     */
+    private void delayRequest(int defaultSeed) {
+        int seed = defaultSeed;
+        String delayStrat = Config.getStringProperty(WebKeys.AUTH_FAILED_ATTEMPTS_DELAY_STRATEGY, "pow");
+        String[] stratParams = delayStrat.split(":");
+        DelayStrategy strategy;
+        try {
+            strategy = (UtilMethods.isSet(stratParams[0])) ? DelayStrategy.valueOf(stratParams[0].toUpperCase()) : DelayStrategy.POW;
+            if (stratParams.length > 1) {
+                seed = ConversionUtils.toInt(stratParams[1], defaultSeed);
+            }
+
+            Logger.debug(this, "Doing a delay request, with seed: " + seed + ", defaultSeed: " + defaultSeed + ", strategy: " + strategy);
+        } catch (Exception e) {
+            Logger.error(this, "The specified delay strategy is invalid. Defaults to POW strategy.", e);
+            strategy = DelayStrategy.POW;
+        }
+
+        SecurityUtils.delayRequest(seed, strategy);
+    }
+
+    /**
+     * 
+     */
+    public void resetPassword(String userId, String token, String newPassword) throws com.dotmarketing.business.NoSuchUserException,
+            DotSecurityException, DotInvalidTokenException, DotInvalidPasswordException {
+        try {
+            if (UtilMethods.isSet(userId) && UtilMethods.isSet(token)) {
+                User user = APILocator.getUserAPI().loadUserById(userId);
+
+                if (user == null) {
+                    throw new com.dotmarketing.business.NoSuchUserException("");
+                }
+
+                ResetPasswordTokenUtil.checkToken(user, token);
+                APILocator.getUserAPI().updatePassword(user, newPassword, APILocator.getUserAPI().getSystemUser(), false);
+            }
+        } catch (DotDataException e) {
+            throw new IllegalArgumentException();
+        }
+    }
 
 }

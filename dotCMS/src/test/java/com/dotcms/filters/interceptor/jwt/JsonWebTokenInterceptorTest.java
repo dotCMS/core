@@ -7,7 +7,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.dotcms.UnitTestBase;
-import com.dotcms.auth.providers.jwt.beans.JWTBean;
+import com.dotcms.auth.providers.jwt.beans.UserToken;
 import com.dotcms.auth.providers.jwt.factories.JsonWebTokenFactory;
 import com.dotcms.auth.providers.jwt.factories.KeyFactoryUtils;
 import com.dotcms.auth.providers.jwt.services.JsonWebTokenService;
@@ -165,13 +165,13 @@ public class JsonWebTokenInterceptorTest extends UnitTestBase {
                 return new Cookie[0];
             }
         });
-        when(jsonWebTokenService.parseToken(anyString())).thenAnswer(new Answer<JWTBean>() {
+        when(jsonWebTokenService.parseToken(anyString())).thenAnswer(new Answer<UserToken>() {
 
             @Override
-            public JWTBean answer(InvocationOnMock invocation) throws Throwable {
+            public UserToken answer(InvocationOnMock invocation) throws Throwable {
 
                 fail("On no access token should not call the method parseToken");
-                return new JWTBean("jwtId", "subject", new Date(), 0l);
+                return new UserToken("jwtId", "subject", new Date(), 0l);
             }
         });
 
@@ -221,7 +221,7 @@ public class JsonWebTokenInterceptorTest extends UnitTestBase {
         dateFormat.setLenient(true);
         final Date date = dateFormat.parse("04/10/1981");
 
-        final String jsonWebToken = jsonWebTokenService.generateToken(new JWTBean(jwtId,
+        final String jsonWebToken = jsonWebTokenService.generateUserToken(new UserToken(jwtId,
                 userId, date, date.getTime() - System.currentTimeMillis()
         ));
 
@@ -289,7 +289,7 @@ public class JsonWebTokenInterceptorTest extends UnitTestBase {
 
         final Date date = dateFormat.parse("04/10/1981");
 
-        final String jsonWebToken = jsonWebTokenService.generateToken(new JWTBean(jwtId,
+        final String jsonWebToken = jsonWebTokenService.generateUserToken(new UserToken(jwtId,
                 userId, date, date.getTime()
         ));
 
@@ -384,7 +384,7 @@ public class JsonWebTokenInterceptorTest extends UnitTestBase {
         dateFormat.setLenient(true);
         final Date date = dateFormat.parse("04/10/1981");
 
-        final String jsonWebToken = jsonWebTokenService.generateToken(new JWTBean(jwtId,
+        final String jsonWebToken = jsonWebTokenService.generateUserToken(new UserToken(jwtId,
                 userId, date, date.getTime()
         ));
 

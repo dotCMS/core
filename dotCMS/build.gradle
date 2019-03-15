@@ -459,11 +459,12 @@ task createDistPrep(dependsOn: ['clonePullTomcatDist', 'deployWarTomcatDist']) {
     }
 
 }
-createDistPrep.finalizedBy 'zip', 'tgzTask', 'removeDistFolder'
-task createDist(dependsOn: 'createDistPrep') {
+
+task createDist(dependsOn: ['createDistPrep','zip', 'tgzTask']) {
     group 'dotCMS Development'
     description 'Creates the final distribution files for dotCMS.'
 }
+createDist.finalizedBy 'removeDistFolder'
 
 //Task used to create a .zip file from the distribution
 task zip(type: Zip) {

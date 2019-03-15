@@ -1,6 +1,10 @@
 package com.dotcms.rest.api.v1.authentication;
 
-import com.dotcms.auth.providers.jwt.beans.JWTBean;
+import java.util.Locale;
+
+import javax.servlet.http.HttpServletRequest;
+
+import com.dotcms.auth.providers.jwt.beans.JWToken;
 import com.dotcms.auth.providers.jwt.factories.JsonWebTokenFactory;
 import com.dotcms.auth.providers.jwt.services.JsonWebTokenService;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
@@ -23,8 +27,6 @@ import com.dotmarketing.util.SecurityLogger;
 import com.liferay.portal.ejb.UserManager;
 import com.liferay.portal.ejb.UserManagerFactory;
 import com.liferay.util.LocaleUtil;
-import java.util.Locale;
-import javax.servlet.http.HttpServletRequest;
 
 /**
  * This resource change the user password.
@@ -70,7 +72,7 @@ public class ResetPasswordResource {
         final Locale locale   = LocaleUtil.getLocale(request);
         final String changePasswordToken;
         final String userId;
-        final JWTBean jwtBean;
+        final JWToken jwtBean;
 
         try {
 

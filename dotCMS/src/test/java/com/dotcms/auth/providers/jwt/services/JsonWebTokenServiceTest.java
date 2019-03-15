@@ -8,7 +8,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.dotcms.UnitTestBase;
-import com.dotcms.auth.providers.jwt.beans.JWTBean;
+import com.dotcms.auth.providers.jwt.beans.UserToken;
+import com.dotcms.auth.providers.jwt.beans.JWToken;
 import com.dotcms.auth.providers.jwt.factories.JsonWebTokenFactory;
 import com.dotcms.auth.providers.jwt.factories.KeyFactoryUtils;
 import com.dotcms.enterprise.cluster.ClusterFactory;
@@ -70,7 +71,7 @@ public class JsonWebTokenServiceTest extends UnitTestBase {
         assertNotNull(jsonWebTokenService);
 
         //Generate a new token
-        String jsonWebToken = jsonWebTokenService.generateToken(new JWTBean(jwtId,
+        String jsonWebToken = jsonWebTokenService.generateUserToken(new UserToken(jwtId,
                 userId, new Date(), DateUtil.daysToMillis(2)
         ));
         System.out.println(jsonWebToken);
@@ -78,7 +79,7 @@ public class JsonWebTokenServiceTest extends UnitTestBase {
         assertTrue(jsonWebToken.startsWith("eyJhbGciOiJIUzI1NiJ9"));
 
         //Parse the generated token
-        final JWTBean jwtBean = jsonWebTokenService.parseToken(jsonWebToken);
+        final JWToken jwtBean = jsonWebTokenService.parseToken(jsonWebToken);
         assertNotNull(jwtBean);
         assertEquals(jwtBean.getId(), jwtId);
         assertEquals(jwtBean.getIssuer(), clusterId);
@@ -123,7 +124,7 @@ public class JsonWebTokenServiceTest extends UnitTestBase {
         assertNotNull(jsonWebTokenService);
 
         //Generate a new token
-        String jsonWebToken = jsonWebTokenService.generateToken(new JWTBean(jwtId,
+        String jsonWebToken = jsonWebTokenService.generateUserToken(new UserToken(jwtId,
                 userId, new Date(), DateUtil.daysToMillis(2)
         ));
         System.out.println(jsonWebToken);
@@ -134,7 +135,7 @@ public class JsonWebTokenServiceTest extends UnitTestBase {
         PowerMockito.when(System.currentTimeMillis()).thenReturn(new Date().getTime());
 
         //Parse the expired token
-        final JWTBean jwtBean = jsonWebTokenService.parseToken(jsonWebToken);
+        final JWToken jwtBean = jsonWebTokenService.parseToken(jsonWebToken);
         assertNull(jwtBean);
     }
 
@@ -166,7 +167,7 @@ public class JsonWebTokenServiceTest extends UnitTestBase {
         assertNotNull(jsonWebTokenService);
 
         //Generate a new token
-        String jsonWebToken = jsonWebTokenService.generateToken(new JWTBean(jwtId,
+        String jsonWebToken = jsonWebTokenService.generateUserToken(new UserToken(jwtId,
                 userId, new Date(), DateUtil.daysToMillis(2)
         ));
         System.out.println(jsonWebToken);
