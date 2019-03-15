@@ -1,7 +1,11 @@
 package com.dotmarketing.portlets.structure.model;
 
+import static com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY.MANY_TO_ONE;
+import static com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY.ONE_TO_MANY;
+
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.transform.contenttype.ContentTypeTransformer;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.business.APILocator;
@@ -58,15 +62,21 @@ public class Relationship extends Inode
 		this.cardinality = cardinality;
 		this.parentRequired = parentRequired;
 		this.childRequired = childRequired;
+
 		this.relationTypeValue = parentRelationName.replaceAll(" ", "_") + "-" + childRelationName
 				.replaceAll(" ", "_");
 
+		final RelationshipConstructionStrategy strategy = new RelationshipStrategyFactory()
+				.getRelationshipConstructionStrategy(cardinality == MANY_TO_ONE.ordinal());
+		strategy.apply(this);
 	}
 
 	public Relationship(final ContentType parentContentType, final ContentType childContentType,
 			final Field field) {
 		super();
 		this.setType("relationship");
+		final int cardinality = Integer.parseInt(field.values());
+
 		this.parentStructureInode = parentContentType.id();
 		this.childStructureInode = childContentType.id();
 		this.parentRelationName = null;
@@ -74,7 +84,12 @@ public class Relationship extends Inode
 		this.cardinality = Integer.parseInt(field.values());
 		this.parentRequired = false;
 		this.childRequired = field.required();
-		this.relationTypeValue = parentContentType.variable() + StringPool.PERIOD + field.variable();
+		this.relationTypeValue =
+				parentContentType.variable() + StringPool.PERIOD + field.variable();
+
+		final RelationshipConstructionStrategy strategy = new RelationshipStrategyFactory()
+				.getRelationshipConstructionStrategy(cardinality == MANY_TO_ONE.ordinal());
+		strategy.apply(this);
 	}
 
 
