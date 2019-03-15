@@ -1,7 +1,10 @@
 package com.dotmarketing.business;
 
 import com.dotcms.business.SystemCache;
-import com.dotcms.cache.*;
+import com.dotcms.cache.KeyValueCache;
+import com.dotcms.cache.KeyValueCacheImpl;
+import com.dotcms.cache.VanityUrlCache;
+import com.dotcms.cache.VanityUrlCacheImpl;
 import com.dotcms.content.elasticsearch.business.IndiciesCache;
 import com.dotcms.content.elasticsearch.business.IndiciesCacheImpl;
 import com.dotcms.contenttype.business.ContentTypeCache2;
@@ -17,17 +20,12 @@ import com.dotcms.publisher.endpoint.business.PublishingEndPointCacheImpl;
 import com.dotcms.rendering.velocity.services.DotResourceCache;
 import com.dotcms.rendering.velocity.viewtools.navigation.NavToolCache;
 import com.dotcms.rendering.velocity.viewtools.navigation.NavToolCacheImpl;
-
-import com.dotmarketing.business.cache.provider.CacheProviderStats;
 import com.dotmarketing.business.cache.transport.CacheTransport;
 import com.dotmarketing.cache.ContentTypeCache;
 import com.dotmarketing.cache.FolderCache;
 import com.dotmarketing.cache.FolderCacheImpl;
 import com.dotmarketing.cache.LegacyContentTypeCacheImpl;
 import com.dotmarketing.cache.MultiTreeCache;
-import com.dotmarketing.db.DbConnectionFactory;
-import com.dotmarketing.db.FlushCacheRunnable;
-import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.logConsole.model.LogMapperCache;
 import com.dotmarketing.logConsole.model.LogMapperCacheImpl;
@@ -66,10 +64,6 @@ import com.dotmarketing.tag.business.TagInodeCacheImpl;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.WebKeys;
-
-
-import java.util.List;
-import java.util.Set;
 
 
 /**
