@@ -265,6 +265,9 @@ public class VersionableFactoryImpl extends VersionableFactory {
 
     @Override
     protected ContentletVersionInfo getContentletVersionInfo(String identifier, long lang) throws DotDataException, DotStateException {
+        if (DbConnectionFactory.inTransaction()) {
+            return findContentletVersionInfoInDB(identifier, lang);
+        }
         ContentletVersionInfo contv = this.icache.getContentVersionInfo(identifier, lang);
         if(contv!=null && fourOhFour.equals(contv.getWorkingInode())) {
         	return null;

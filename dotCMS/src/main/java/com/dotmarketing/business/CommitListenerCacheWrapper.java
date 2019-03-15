@@ -25,54 +25,76 @@ class CommitListenerCacheWrapper implements DotCacheAdministrator {
         this.dotcache = dotcache;
     }
 
+    @Override
     public void initProviders() {
         dotcache.initProviders();
     }
 
+    @Override
     public Set<String> getGroups() {
         return dotcache.getGroups();
     }
 
+    @Override
     public void flushAll() {
         dotcache.flushAll();
     }
 
+    @Override
     public void flushGroup(String group) {
         dotcache.flushGroup(group);
     }
 
+    @Override
     public void flushAlLocalOnly(boolean ignoreDistributed) {
         dotcache.flushAlLocalOnly(ignoreDistributed);
     }
 
+    @Override
     public void flushGroupLocalOnly(String group, boolean ignoreDistributed) {
         dotcache.flushGroupLocalOnly(group, ignoreDistributed);
     }
 
+    @Override
     public Object get(String key, String group) throws DotCacheException {
+
         return dotcache.get(key, group);
+
     }
 
+    @Override
+    public Object getNoThrow(String key, String group) {
+
+        return dotcache.getNoThrow(key, group);
+
+    }
+
+    @Override
     public void removeLocalOnly(String key, String group, boolean ignoreDistributed) {
         dotcache.removeLocalOnly(key, group, ignoreDistributed);
     }
 
+    @Override
     public void shutdown() {
         dotcache.shutdown();
     }
 
+    @Override
     public List<CacheProviderStats> getCacheStatsList() {
         return dotcache.getCacheStatsList();
     }
 
+    @Override
     public CacheTransport getTransport() {
         return dotcache.getTransport();
     }
 
+    @Override
     public void setTransport(CacheTransport transport) {
         dotcache.setTransport(transport);
     }
 
+    @Override
     public void invalidateCacheMesageFromCluster(String message) {
         dotcache.invalidateCacheMesageFromCluster(message);
     }
@@ -81,14 +103,15 @@ class CommitListenerCacheWrapper implements DotCacheAdministrator {
         return dotcache.getClass();
     }
 
-    
     // only put when we are not in a transaction
+    @Override
     public void put(final String key, final Object content, final String group) {
         if (!DbConnectionFactory.inTransaction()) {
             dotcache.put(key, content, group);
         }
     }
 
+    @Override
     public void remove(final String key, final String group) {
         if (DbConnectionFactory.inTransaction()) {
             try {
@@ -98,15 +121,15 @@ class CommitListenerCacheWrapper implements DotCacheAdministrator {
                     }
                 });
             } catch (DotHibernateException e) {
-                dotcache.remove(key, group);
                 throw new RuntimeException(e);
             }
-        } 
+        }
         dotcache.remove(key, group);
-        
+
     }
 
     public DotCacheAdministrator getImplementationObject() {
         return dotcache;
     }
+
 }
