@@ -92,7 +92,10 @@ public class CommitListenerCacheWrapperTest {
             // DB has the NEW name
             Identifier id2 = Try.of(() -> api.loadFromDb(identifierId)).get();
             assertTrue(id2.getAssetName().equals(newName));
+            
 
+            Thread.sleep(500);
+            
             // API has the OLD name
             id2 = Try.of(() -> api.find(identifierId)).get();
             assertTrue(id2.getAssetName().equals(originalName));
@@ -101,7 +104,12 @@ public class CommitListenerCacheWrapperTest {
             assertEquals(originalName, cache.getIdentifier(syshost.getIdentifier(), "/" + originalName).getAssetName());
             assertEquals(originalName, cache.getIdentifier(identifierId).getAssetName());
 
-            pool.shutdownNow();
+            pool.shutdown();
+
+            while(!pool.isTerminated()){
+                Thread.sleep(50);
+            }
+            
             // if the OldCacheRunner got an error, throw it
             if (cacheErrors.size() > 0) {
                 throw new AssertionError(cacheErrors.get(0));
@@ -125,7 +133,9 @@ public class CommitListenerCacheWrapperTest {
                 throw cacheErrors.get(0);
             }
         } finally {
-            pool.shutdownNow();
+            if (!pool.isShutdown()) {
+                pool.shutdownNow();
+            }
 
         }
     }

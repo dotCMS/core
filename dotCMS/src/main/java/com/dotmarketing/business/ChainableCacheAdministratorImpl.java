@@ -41,7 +41,7 @@ public class ChainableCacheAdministratorImpl implements DotCacheAdministrator {
 
 	CacheTransport cacheTransport;
 
-	private DistributedJournalAPI journalAPI;
+
 	private CacheProviderAPI cacheProviderAPI;
 	private boolean useTransportChannel = false;
 
@@ -78,7 +78,6 @@ public class ChainableCacheAdministratorImpl implements DotCacheAdministrator {
 			useTransportChannel = false;
 		}
 
-		journalAPI = APILocator.getDistributedJournalAPI();
 	}
 
 	public void initProviders () {
@@ -474,13 +473,7 @@ public class ChainableCacheAdministratorImpl implements DotCacheAdministrator {
 
 	}
 
-	private class DotRemoval implements RemovalListener {
 
-		public void onRemoval(RemovalNotification removalEvent) {
-
-		}
-
-	}
 
 	public void invalidateCacheMesageFromCluster ( String message ) {
 		if(message==null){return;};
