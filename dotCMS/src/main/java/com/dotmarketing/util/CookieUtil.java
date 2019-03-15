@@ -132,7 +132,7 @@ public class CookieUtil {
         if (null != cookies) {
 
             for (Cookie cookie : cookies) {
-
+                cookie.setValue("");
                 cookie.setMaxAge(0);
                 cookie.setPath("/");
                 response.addCookie(cookie);
@@ -140,6 +140,32 @@ public class CookieUtil {
         }
     } // setExpireCookies.
 
+    
+    /**
+     * Set to expire all cookies
+     * @param request HttpServletRequest
+     * @param response HttpServletResponse
+     */
+    public static void expireCookie (final String cookieName, final HttpServletRequest request,
+                                         final HttpServletResponse response) {
+
+        final Cookie[] cookies =
+            request.getCookies();
+
+        if (null != cookies) {
+
+            for (Cookie cookie : cookies) {
+                if (cookie.getName().equals(cookieName)) {
+                    cookie.setValue("");
+                    cookie.setMaxAge(0);
+                    cookie.setPath("/");
+                    response.addCookie(cookie);
+                }
+            }
+        }
+    } // setExpireCookies.
+    
+    
     /**
      * Set HttpOnly to cookie on demand and if needed
      */

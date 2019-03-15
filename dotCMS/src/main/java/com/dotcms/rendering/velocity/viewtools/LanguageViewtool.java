@@ -287,15 +287,8 @@ public class LanguageViewtool implements ViewTool {
 	}
 
 	public String getFromUserLanguage(String key) {
-		User user1=null;
-		try {
-			user1 = com.liferay.portal.util.PortalUtil.getUser(this.request);
-		} catch (PortalException e) {
-			Logger.error(this, e.toString());
-			
-		} catch (SystemException e) {
-			Logger.error(this, e.toString());
-		}
+		User user1 = com.liferay.portal.util.PortalUtil.getUser(this.request);
+
 		String message=null;
 		try {
 			message=LanguageUtil.get(user1, key);

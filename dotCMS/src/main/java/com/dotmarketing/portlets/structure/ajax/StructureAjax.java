@@ -74,13 +74,9 @@ public class StructureAjax {
 		User user = null;
 		List<Map<String,Object>> wids = new ArrayList<Map<String,Object>>();
 		List<Structure> wstructures = new ArrayList<Structure>();
-		try {
+
 			user = com.liferay.portal.util.PortalUtil.getUser(req);
-		} catch (PortalException e) {
-			Logger.error(this,e.getMessage(),e);
-		} catch (SystemException e) {
-			Logger.error(this,e.getMessage(),e);
-		}
+
 		try {
 			wstructures = wAPI.findAll(user, false);
 		} catch (DotDataException e) {

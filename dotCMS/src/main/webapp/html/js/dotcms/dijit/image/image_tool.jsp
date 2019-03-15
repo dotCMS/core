@@ -28,12 +28,8 @@
 	}
 		
 	
-    User user = null;
-	try {
-		user = com.liferay.portal.util.PortalUtil.getUser(request);
-	} catch (Exception e) {
-		Logger.warn(this.getClass(), "Unauthorized access to ImageToolAjax from IP + "+ request.getRemoteAddr() +", no user found");
-	} 
+    User user = com.liferay.portal.util.PortalUtil.getUser(request);
+
     if(user ==null || LicenseLevel.COMMUNITY.level == LicenseUtil.getLevel()){
     	response.getWriter().println("Unauthorized");
     	return;

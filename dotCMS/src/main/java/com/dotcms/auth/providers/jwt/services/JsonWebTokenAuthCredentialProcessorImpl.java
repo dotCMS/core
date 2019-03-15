@@ -47,8 +47,8 @@ public class JsonWebTokenAuthCredentialProcessorImpl implements JsonWebTokenAuth
 
 
     @Override
-    public User processAuthCredentialsFromJWT(final String authorizationHeader,
-                                              final HttpSession httpSession) {
+    public User processAuthHeaderFromJWT(final String authorizationHeader,
+                                              final HttpSession session, final String ipAddress) {
 
         final String jsonWebToken;
         User user = null;
@@ -63,33 +63,31 @@ public class JsonWebTokenAuthCredentialProcessorImpl implements JsonWebTokenAuth
             }
 
             try {
-                user = jsonWebTokenUtils.getUser(jsonWebToken.trim());
+                user = jsonWebTokenUtils.getUser(jsonWebToken.trim(), ipAddress);
             } catch (Exception e) {
                 this.jsonWebTokenUtils.handleInvalidTokenExceptions(this.getClass(), e, null, null);
             }
-
-            if(!UtilMethods.isSet(user)) {
-                // "Invalid syntax for username and password"
-                throw new SecurityException("Invalid Json Web Token", Response.Status.BAD_REQUEST);
+            if(user != null && null != session) {
+                session.setAttribute(WebKeys.CMS_USER, user);
+                session.setAttribute(com.liferay.portal.util.WebKeys.USER_ID, user.getUserId());
             }
 
-            if (null != httpSession) {
-                httpSession.setAttribute(WebKeys.CMS_USER, user);
-                httpSession.setAttribute(com.liferay.portal.util.WebKeys.USER_ID, user.getUserId());
-            }
         }
 
         return user;
     } // processAuthCredentialsFromJWT.
 
     @Override
-    public User processAuthCredentialsFromJWT(final HttpServletRequest request) {
+    public User processAuthHeaderFromJWT(final HttpServletRequest request) {
 
         // Extract authentication credentials
         final String authentication = request.getHeader(ContainerRequest.AUTHORIZATION);
-        final HttpSession session = request.getSession();
+        final HttpSession session = request.getSession(false);
 
-        return this.processAuthCredentialsFromJWT(authentication, session);
+        return this.processAuthHeaderFromJWT(authentication, session, request.getRemoteAddr());
+
+        
+        
     } // processAuthCredentialsFromJWT.
 
 } // E:O:F:JsonWebTokenAuthCredentialProcessorImpl.

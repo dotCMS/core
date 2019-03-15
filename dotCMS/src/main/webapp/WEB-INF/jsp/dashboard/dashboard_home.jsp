@@ -16,12 +16,8 @@
 
 
 <%
-User user = null;
-try {
-	user = PortalUtil.getUser(request);
-} catch (NoSuchUserException nsue) {
-	return;
-}
+User user = PortalUtil.getUser(request);
+
 
 DashboardAPI dAPI = APILocator.getDashboardAPI();
 List<WorkflowTask> workflows = new java.util.ArrayList<WorkflowTask>();

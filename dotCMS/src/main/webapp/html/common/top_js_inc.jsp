@@ -12,11 +12,7 @@
 <%
 	HttpSession sess = request.getSession(false);
 	Locale locale = null;
-	User user = null;
-	try {
-		user = PortalUtil.getUser(request);
-	} catch (NoSuchUserException nsue) {
-	}
+	User user = PortalUtil.getUser(request);
 	
 
 	if(sess != null){

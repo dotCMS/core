@@ -696,17 +696,6 @@ public class UserProxy extends Inode implements Serializable{
 	public Map<String, Object> getMap () {
 		Map<String, Object> map = UtilMethods.toMap(this);
 
-		//Adding the user properties as well
-		User user;
-		try {
-			user = APILocator.getUserAPI().loadUserById(userId,APILocator.getUserAPI().getSystemUser(),false);
-		} catch (Exception e) {
-			Logger.error(this, e.getMessage(), e);
-			return map;
-		}
-		Map<String, Object> usermap = UtilMethods.toMap(user);
-		
-		map.putAll(usermap);
 		
 		return map;
 	}
