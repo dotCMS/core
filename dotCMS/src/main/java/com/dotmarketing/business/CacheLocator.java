@@ -28,6 +28,7 @@ import com.dotmarketing.cache.MultiTreeCache;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.FlushCacheRunnable;
 import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.logConsole.model.LogMapperCache;
 import com.dotmarketing.logConsole.model.LogMapperCacheImpl;
@@ -95,7 +96,6 @@ public class CacheLocator extends Locator<CacheIndex>{
         public void flushAlLocalOnly(boolean ignoreDistributed) { dotcache.flushAlLocalOnly(ignoreDistributed); }
         public void flushGroupLocalOnly(String group, boolean ignoreDistributed) { dotcache.flushGroupLocalOnly(group, ignoreDistributed); }
         public Object get(String key, String group) throws DotCacheException { return dotcache.get(key, group); }
-        public void remove(String key, String group) { dotcache.remove(key,group); }
         public void removeLocalOnly(String key, String group, boolean ignoreDistributed) { dotcache.removeLocalOnly(key, group, ignoreDistributed); }
         public void shutdown() { dotcache.shutdown(); }
         public List<CacheProviderStats> getCacheStatsList() { return dotcache.getCacheStatsList(); }
@@ -117,6 +117,24 @@ public class CacheLocator extends Locator<CacheIndex>{
                 throw new RuntimeException(e);
             }
         }
+        
+        public void remove(final String key, final String group) {
+            if(DbConnectionFactory.inTransaction()) {
+                try {
+                    HibernateUtil.addCommitListener(new FlushCacheRunnable() {
+                       public void run() {
+                           dotcache.remove(key, group);
+                       }
+                    });
+                } catch (DotHibernateException e) {
+                    dotcache.remove(key, group);
+                    throw new RuntimeException(e);
+                }
+            }else {
+                dotcache.remove(key, group);
+            }
+        }
+        
         public DotCacheAdministrator getImplementationObject() {
             return dotcache;
         }
