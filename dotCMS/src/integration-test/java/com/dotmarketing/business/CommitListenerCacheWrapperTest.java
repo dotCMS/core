@@ -6,12 +6,15 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import static org.junit.Assert.*;
+
+import org.apache.commons.beanutils.BeanUtils;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.UUIDGenerator;
 
@@ -21,10 +24,10 @@ public class CommitListenerCacheWrapperTest {
     private static IdentifierAPI api;
     private static IdentifierCache cache;
 
-    final static String rightId = UUIDGenerator.generateUuid();
-    final static String wrongId = UUIDGenerator.generateUuid();
-    final static String contentId = UUIDGenerator.generateUuid();
-    
+    final static String identifierId = UUIDGenerator.generateUuid();
+    final static String originalName = UUIDGenerator.generateUuid();
+    final static String newName = UUIDGenerator.generateUuid();
+
     @BeforeClass
     public static void prepare() throws Exception {
         // Setting web app environment
@@ -35,68 +38,129 @@ public class CommitListenerCacheWrapperTest {
     }
 
     @Test
-    public void testing404() throws Exception {
+    public void Testing_API_And_Cache_Visibility_In_A_Transaction() throws Throwable {
         final ExecutorService pool = Executors.newFixedThreadPool(1);
 
         try {
             final Host syshost = APILocator.getHostAPI().findSystemHost();
 
-
+            final List<Throwable> cacheErrors = new ArrayList<>();
 
             // fake not yet created id and asset
             Contentlet fakeCont = new Contentlet();
-            fakeCont.setInode(contentId);
-            fakeCont.setStructureInode(CacheLocator.getContentTypeCache().getStructureByVelocityVarName("Host").getInode());
+            fakeCont.setInode(UUIDGenerator.generateUuid());
+            fakeCont.setContentTypeId(CacheLocator.getContentTypeCache().getStructureByVelocityVarName("Host").getInode());
 
             // now if we create an asset with that ID it should be cleared
-            Identifier id = api.createNew(fakeCont, syshost, rightId);
-            assertNull(cache.getIdentifier(rightId));
-            assertNull(cache.getIdentifier(syshost.getIdentifier(), "/content." + fakeCont.getInode()));
-            pool.execute(new EndlessRunner(pool));
-            // load cache
-            id = Try.of(() -> api.find(rightId)).get();
-            assertTrue(rightId.equals(id.getId()));
+            Identifier id = api.createNew(fakeCont, syshost, identifierId);
+
+            // Save with the right name
+            id.setAssetName(originalName);
+            id = api.save(id);
+
+            // Not in cache yet
+            assertNull(cache.getIdentifier(identifierId));
+            assertNull(cache.getIdentifier(syshost.getIdentifier(), "/" + originalName));
+
+            // find method loads cache
+            id = Try.of(() -> api.find(identifierId)).get();
+
+            assertEquals(identifierId, cache.getIdentifier(identifierId).getId());
+            assertEquals(originalName, cache.getIdentifier(identifierId).getAssetName());
+            assertEquals(originalName, cache.getIdentifier(syshost.getIdentifier(), "/" + originalName).getAssetName());
+
+            // fire off another thread that should only the old cache entries
+            pool.execute(new OldCacheRunner(pool, cacheErrors));
+
             
+            
+            
+            // ------------------------------------------------------------------------
+            // start a transaction, thread running in background
+            // ------------------------------------------------------------------------
+            HibernateUtil.startTransaction();
 
+            id = (Identifier) BeanUtils.cloneBean(id);
+
+            // Save with a NEW name
+            id.setAssetName(newName);
+            id = api.save(id);
+
+            // saved identifier has the NEW name
+            assertTrue(id.getAssetName().equals(newName));
+
+            // DB has the NEW name
+            Identifier id2 = Try.of(() -> api.loadFromDb(identifierId)).get();
+            assertTrue(id2.getAssetName().equals(newName));
+
+            // API has the OLD name
+            id2 = Try.of(() -> api.find(identifierId)).get();
+            assertTrue(id2.getAssetName().equals(originalName));
+
+            // Cache has the OLD name (cache should not be flushed until after the commit
+            assertEquals(originalName, cache.getIdentifier(syshost.getIdentifier(), "/" + originalName).getAssetName());
+            assertEquals(originalName, cache.getIdentifier(identifierId).getAssetName());
+
+            pool.shutdownNow();
+            // if the OldCacheRunner got an error, throw it
+            if (cacheErrors.size() > 0) {
+                throw new AssertionError(cacheErrors.get(0));
+            }
+            // ------------------------------------------------------------------------
+            // commit and everyone should see the new values
+            // ------------------------------------------------------------------------
+            HibernateUtil.commitTransaction();
+
+            
+            
+            
+            
             // this should load the identifier in both cache entries (by url and by id)
-            api.find(rightId);
-            assertEquals(rightId, cache.getIdentifier(rightId).getId());
-            assertEquals(rightId, cache.getIdentifier(APILocator.systemHost().getIdentifier(), "/content." + fakeCont.getInode()).getId());
+            api.find(identifierId);
 
+            assertEquals(newName, cache.getIdentifier(syshost.getIdentifier(), "/" + newName).getAssetName());
+            assertEquals(newName, cache.getIdentifier(identifierId).getAssetName());
+
+            if (!cacheErrors.isEmpty()) {
+                throw cacheErrors.get(0);
+            }
         } finally {
             pool.shutdownNow();
 
         }
     }
 
-    class EndlessRunner implements Runnable {
+    class OldCacheRunner implements Runnable {
 
         final ExecutorService pool;
         final List<Throwable> errors;
 
-        public EndlessRunner(ExecutorService pool) {
-            this(pool, new ArrayList<>());
-        }
-
-        private EndlessRunner(ExecutorService pool, List<Throwable> errors) {
+        private OldCacheRunner(ExecutorService pool, List<Throwable> errors) {
             this.errors = (errors == null) ? new ArrayList<>() : errors;
             this.pool = pool;
         }
 
         @Override
         public void run() {
-            System.err.println("Running a thread!");
-            Identifier id = Try.of(() -> api.find(rightId)).get();
-            assertTrue(rightId.equals(id.getId()));
-            assertEquals(rightId, cache.getIdentifier(APILocator.systemHost().getIdentifier(), "/content." + contentId).getId());
-            
-            Try.of(() -> {
-                Thread.sleep(100);
-                return true;
-            });
 
-            if (!pool.isShutdown()) {
-                pool.execute(new EndlessRunner(pool, errors));
+            Identifier id = Try.of(() -> api.find(identifierId)).get();
+            try {
+                // Thread should always have the OLD ID
+                assertTrue(id.getAssetName().equals(originalName));
+                assertEquals(originalName, cache.getIdentifier(identifierId).getAssetName());
+
+            } catch (Throwable t) {
+                errors.add(t);
+            }
+            Try.of(() -> {
+                Thread.sleep(5);
+                return true;
+            }).get();
+
+            if (!pool.isShutdown() && errors.isEmpty()) {
+                pool.execute(new OldCacheRunner(pool, errors));
+            } else if (!errors.isEmpty()) {
+                errors.get(0).printStackTrace();
             }
         }
 
