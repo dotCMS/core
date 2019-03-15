@@ -20,6 +20,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
@@ -59,7 +60,57 @@ public class TemplateAPITest extends IntegrationTestBase {
         versionableAPI = APILocator.getVersionableAPI();
         host           = hostAPI.findDefaultHost(user, false);
     }
-	
+
+    @Test
+    public void getContainersUUIDFromDrawTemplateBodyTest() throws Exception {
+
+        final String templateBody = "  This is just test<br/>  \n" +
+                                    "  #parseContainer   ('f4a02846-7ca4-4e08-bf07-a61366bbacbb','1552493847863')  \n" +
+                                    "  <p>This is just test</p>  \n" +
+                                    "  #parseContainer   ('/application/containers/test1/','1552493847864')  \n" +
+                                    "#parseContainer('/application/containers/test2/','1552493847868')\n" +
+                                    "#parseContainer('/application/containers/test3/'     ,'1552493847869'       )\n" +
+                                    "#parseContainer(    '/application/containers/test4/',    '1552493847870')\n";
+
+        final TemplateAPI templateAPI = APILocator.getTemplateAPI();
+        final List<ContainerUUID> containerUUIDS = templateAPI.getContainersUUIDFromDrawTemplateBody(templateBody);
+
+        assertNotNull(containerUUIDS);
+        assertEquals(5, containerUUIDS.size());
+
+        final ContainerUUID containerUUID1 = containerUUIDS.get(0);
+        assertEquals("f4a02846-7ca4-4e08-bf07-a61366bbacbb", containerUUID1.getIdentifier());
+        assertEquals("1552493847863", containerUUID1.getUUID());
+
+        final ContainerUUID containerUUID2 = containerUUIDS.get(1);
+        assertEquals("/application/containers/test1/", containerUUID2.getIdentifier());
+        assertEquals("1552493847864", containerUUID2.getUUID());
+
+        final ContainerUUID containerUUID3 = containerUUIDS.get(2);
+        assertEquals("/application/containers/test2/", containerUUID3.getIdentifier());
+        assertEquals("1552493847868", containerUUID3.getUUID());
+
+        final ContainerUUID containerUUID4 = containerUUIDS.get(3);
+        assertEquals("/application/containers/test3/", containerUUID4.getIdentifier());
+        assertEquals("1552493847869", containerUUID4.getUUID());
+
+        final ContainerUUID containerUUID5 = containerUUIDS.get(4);
+        assertEquals("/application/containers/test4/", containerUUID5.getIdentifier());
+        assertEquals("1552493847870", containerUUID5.getUUID());
+    }
+
+    @Test
+    public void getContainersUUIDFromDrawTemplateBodyTestNullInput() throws Exception {
+
+        final String templateBody = null;
+
+        final TemplateAPI templateAPI = APILocator.getTemplateAPI();
+        final List<ContainerUUID> containerUUIDS = templateAPI.getContainersUUIDFromDrawTemplateBody(templateBody);
+
+        assertNotNull(containerUUIDS);
+        assertEquals(0, containerUUIDS.size());
+    }
+
     @Test
     public void saveTemplate() throws Exception {
         final Host host= hostAPI.findDefaultHost(user, false);

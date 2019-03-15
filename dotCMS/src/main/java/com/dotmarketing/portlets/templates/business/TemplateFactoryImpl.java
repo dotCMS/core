@@ -5,11 +5,7 @@ import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
 import com.dotcms.util.transform.TransformerLocator;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Inode.Type;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.Permissionable;
+import com.dotmarketing.business.*;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
@@ -17,34 +13,19 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
-import com.dotmarketing.portlets.templates.design.bean.Body;
-import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
-import com.dotmarketing.portlets.templates.design.bean.Sidebar;
-import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
-import com.dotmarketing.portlets.templates.design.bean.TemplateLayoutColumn;
-import com.dotmarketing.portlets.templates.design.bean.TemplateLayoutRow;
+import com.dotmarketing.portlets.templates.design.bean.*;
 import com.dotmarketing.portlets.templates.model.Template;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.PaginatedArrayList;
-import com.dotmarketing.util.RegEX;
-import com.dotmarketing.util.UUIDGenerator;
-import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.*;
+import com.google.common.io.LineReader;
 import com.liferay.portal.model.User;
+import org.apache.commons.beanutils.BeanUtils;
+
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
+import java.io.StringReader;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import org.apache.commons.beanutils.BeanUtils;
 
 public class TemplateFactoryImpl implements TemplateFactory {
 	static TemplateCache templateCache = CacheLocator.getTemplateCache();
@@ -375,6 +356,8 @@ public class TemplateFactoryImpl implements TemplateFactory {
 		}
 	}
 
+
+
 	private Collection<String> getContainerIdsFromJSON(Template template) throws IOException {
 		TemplateLayout templateLayout = DotTemplateTool.getTemplateLayoutFromJSON(template.getDrawedBody());
 
@@ -424,6 +407,43 @@ public class TemplateFactoryImpl implements TemplateFactory {
 			ids.add(containerId);
 		}
         return new ArrayList<>(ids);
+	}
+
+	private static final String PARSE_CONTAINER_ID_UUDI_PATTERN =
+			"\\s*#parseContainer\\s*\\(\\s*['\"]{1}([^'\")]+)['\"]{1}\\s*,\\s*['\"]{1}([^'\")]+)['\"]{1}\\s*\\)\\s*";
+
+	@Override
+	public List<ContainerUUID> getContainerUUIDFromHTML(final String templateBody) {
+
+		final LineReader lineReader = new LineReader(new StringReader(templateBody));
+		final List<ContainerUUID> containerUUIDS = new ArrayList<>();
+		String line  = null;
+
+		try {
+
+			line = lineReader.readLine();
+			final Pattern newContainerReferencesRegex =
+					Pattern.compile(PARSE_CONTAINER_ID_UUDI_PATTERN);
+
+			while (null != line) {
+
+				final Matcher matcher = newContainerReferencesRegex.matcher(line);
+
+				if (matcher.find() && matcher.groupCount() == 2) {
+
+					final String containerId = matcher.group(1).trim();
+					final String uuid        = matcher.group(2).trim();
+					containerUUIDS.add(new ContainerUUID(containerId, uuid));
+				}
+
+				line = lineReader.readLine();
+			}
+		} catch (IOException e) {
+
+			Logger.error(this, e.getMessage(), e);
+		}
+
+		return containerUUIDS;
 	}
 	
 	
