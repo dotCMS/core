@@ -4,7 +4,7 @@ import static org.junit.Assert.*;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.util.IntegrationTestInitService;
-import com.dotmarketing.db.HibernateUtil;
+
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.google.common.collect.Lists;
@@ -91,7 +91,6 @@ public class RoleAPITest extends IntegrationTestBase {
         //ADDING NEW RECORDS
         //-----------------------------------------------
 
-        HibernateUtil.startTransaction();
 
         //Creating a new test user
         String time = String.valueOf( new Date().getTime() );
@@ -109,8 +108,13 @@ public class RoleAPITest extends IntegrationTestBase {
         rootRole.setEditLayouts( true );
         rootRole.setDescription( "Test Root Role" );
         roleAPI.save( rootRole );//This will clear the cache for the root roles -> cache.clearRootRoleCache
+        
+
+        
         //Verify for this one
         verifyNewRole( rootRole );
+        
+
         //The root roles changed
         List<Role> newCachedRootRoles = CacheLocator.getRoleCache().getRootRoles();
         assertNull( newCachedRootRoles );
@@ -133,6 +137,7 @@ public class RoleAPITest extends IntegrationTestBase {
         childRole.setDescription( "Test Child Role 1" );
         childRole.setParent( rootRole.getId() );
         roleAPI.save( childRole );
+
         //Verify for this one
         verifyNewRole( childRole );
 
@@ -147,14 +152,17 @@ public class RoleAPITest extends IntegrationTestBase {
         childRole2.setParent( childRole.getId() );
         roleAPI.save( childRole2 );
         //Verify for this one
-        verifyNewRole( childRole2 );
+
+        //Verify for this one
+        verifyNewRole( childRole );
+
 
         //Add to the test user the root role
         roleAPI.addRoleToUser( rootRole, newUser );//This save cleans from cache the roles associated to this user
         List<RoleCache.UserRoleCacheHelper> userRoles = CacheLocator.getRoleCache().getRoleIdsForUser( newUser.getUserId() );
         assertNull( userRoles );
 
-        HibernateUtil.closeAndCommitTransaction();
+
 
         //Verify if we find the implicit roles
         foundRoles = roleAPI.loadRolesForUser( newUser.getUserId(), true );//We know we have too 3 levels here: "Test Root Role" -> "Test Child Role 1" -> "Test Child Role 2" + User role
@@ -184,12 +192,12 @@ public class RoleAPITest extends IntegrationTestBase {
         //REMOVING RECORDS
         //-----------------------------------------------
         //Delete the childRole2
-        HibernateUtil.startTransaction();
+
         String key = primaryGroup + childRole2.getId();
         roleAPI.delete( childRole2 );//Should clean up the cache
         Object cachedRole = cache.get( key, primaryGroup );
         assertNull( cachedRole );
-        HibernateUtil.closeAndCommitTransaction();
+
 
         userRoles = CacheLocator.getRoleCache().getRoleIdsForUser( newUser.getUserId() );
         assertNull( userRoles );
@@ -204,12 +212,12 @@ public class RoleAPITest extends IntegrationTestBase {
 
         //--------
         //Delete the childRole
-        HibernateUtil.startTransaction();
+
         key = primaryGroup + childRole.getId();
         roleAPI.delete( childRole );//Should clean up the cache
         cachedRole = cache.get( key, primaryGroup );
         assertNull( cachedRole );
-        HibernateUtil.closeAndCommitTransaction();
+
 
         userRoles = CacheLocator.getRoleCache().getRoleIdsForUser( newUser.getUserId() );
         assertNull( userRoles );
@@ -224,12 +232,12 @@ public class RoleAPITest extends IntegrationTestBase {
 
         //--------
         //Delete the rootRole
-        HibernateUtil.startTransaction();
+
         key = primaryGroup + rootRole.getId();
         roleAPI.delete( rootRole );//Should clean up the cache
         cachedRole = cache.get( key, primaryGroup );
         assertNull( cachedRole );
-        HibernateUtil.closeAndCommitTransaction();
+
 
         //Cache
         userRoles = CacheLocator.getRoleCache().getRoleIdsForUser( newUser.getUserId() );
@@ -272,14 +280,16 @@ public class RoleAPITest extends IntegrationTestBase {
     private void verifyNewRole ( Role testRole ) throws DotCacheException, DotDataException {
 
         RoleAPI roleAPI = APILocator.getRoleAPI();
-
+        Role foundRole = roleAPI.loadRoleById( testRole.getId() );
+        assertNotNull( foundRole );
+        
         String key = primaryGroup + testRole.getId();
         Object cachedRole = cache.get( key, primaryGroup );
         assertNotNull( cachedRole );
         assertEquals( cachedRole, testRole );
 
-        Role foundRole = roleAPI.loadRoleById( testRole.getId() );
-        assertNotNull( foundRole );
+
+
         assertEquals( cachedRole, foundRole );
     }
 
