@@ -1,5 +1,6 @@
 package com.dotmarketing.business;
 
+import com.dotcms.auth.providers.jwt.factories.ApiTokenCache;
 import com.dotcms.business.SystemCache;
 import com.dotcms.cache.*;
 import com.dotcms.content.elasticsearch.business.IndiciesCache;
@@ -326,7 +327,9 @@ public class CacheLocator extends Locator<CacheIndex>{
     public static KeyValueCache getKeyValueCache() {
     	return (KeyValueCache) getInstance(CacheIndex.KeyValueCache);
     }
-
+    public static ApiTokenCache getApiTokenCache() {
+        return (ApiTokenCache) getInstance(CacheIndex.ApiTokenCache);
+    }
 	/**
 	 * The legacy cache administrator will invalidate cache entries within a cluster
 	 * on a put where the non legacy one will not.
@@ -423,6 +426,7 @@ enum CacheIndex
 	Velocity2("Velocity2"),
 	NavTool2("Navigation Tool2"),
 	MultiTreeCache("MultiTree Cache"),
+	ApiTokenCache("ApiTokenCache"),
 	KeyValueCache("Key/Value Cache");
 
 	Cachable create() {
@@ -468,6 +472,8 @@ enum CacheIndex
 	      	case VanityURLCache : return new VanityUrlCacheImpl();
 	      	case KeyValueCache : return new KeyValueCacheImpl();
 	      	case MultiTreeCache : return new MultiTreeCache();
+	      	case ApiTokenCache : return new ApiTokenCache();
+	      	
 		}
 		throw new AssertionError("Unknown Cache index: " + this);
 	}

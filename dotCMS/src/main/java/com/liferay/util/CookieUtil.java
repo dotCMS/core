@@ -65,6 +65,22 @@ public class CookieUtil {
 		return null;
 	}
 
+	
+    public static void deleteCookie(HttpServletRequest req, HttpServletResponse resp, String cookieName) {
+        Cookie[] cookies = req.getCookies();
+
+        for (Cookie cookie : cookies) {
+            if (cookie.getName().equals(cookieName)) {
+                cookie.setValue("");
+                cookie.setPath("/");
+                cookie.setMaxAge(0);
+                resp.addCookie(cookie);
+            }
+        }
+    }
+	
+	
+	
 	/**
 	 * 
 	 * @param cookie
