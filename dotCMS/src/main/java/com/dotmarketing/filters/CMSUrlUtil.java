@@ -211,8 +211,9 @@ public class CMSUrlUtil {
 		}
 
 		if (CONTENTLET.equals(id.getAssetType())) {
+		    ContentletVersionInfo cinfo = null;
 			try {
-				ContentletVersionInfo cinfo = APILocator.getVersionableAPI()
+				 cinfo = APILocator.getVersionableAPI()
 						.getContentletVersionInfo(id.getId(), languageId);
 
 				if ((cinfo == null || cinfo.getWorkingInode().equals(NOT_FOUND)) && Config
@@ -227,12 +228,16 @@ public class CMSUrlUtil {
 				if (cinfo == null || cinfo.getWorkingInode().equals(NOT_FOUND)) {
 					return false;//At this point we know is not a File Asset
 				} else {
+				    
+				    
+				    
 					Contentlet c = APILocator.getContentletAPI()
 							.find(cinfo.getWorkingInode(), APILocator.getUserAPI().getSystemUser(),
 									false);
 					return (c.getContentType().baseType() == BaseContentType.FILEASSET);
 				}
-			} catch (DotDataException | DotSecurityException e) {
+			} catch (Exception e) {
+			    System.err.println("looking for contentlet inode:" + cinfo.getWorkingInode());
 				Logger.debug(this.getClass(), UNABLE_TO_FIND + uri);
 				return false;
 			}

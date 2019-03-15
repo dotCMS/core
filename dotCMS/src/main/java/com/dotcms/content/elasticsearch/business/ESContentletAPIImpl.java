@@ -139,6 +139,10 @@ import com.liferay.util.FileUtil;
 import com.liferay.util.StringPool;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.xml.DomDriver;
+
+import io.vavr.API;
+import io.vavr.control.Try;
+
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -765,7 +769,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
         List<Contentlet> contentlets = findContentlets(inodes);
         Map<String, Contentlet> map = new HashMap<String, Contentlet>(contentlets.size());
         for (Contentlet contentlet : contentlets) {
-            map.put(contentlet.getInode(), contentlet);
+            if(contentlet!=null) {
+                map.put(contentlet.getInode(), contentlet);
+            }
         }
         for (String inode : inodes) {
             if(map.get(inode) != null)
@@ -1340,7 +1346,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             if(contentlet.isLocked() ){
                 // persists the webasset
                 APILocator.getVersionableAPI().setLocked(contentlet, false, user);
-                indexAPI.addContentToIndex(contentlet,false);
+                APILocator.getDistributedJournalAPI().addContentletReindex(contentlet);
             }
 
         } catch(DotDataException | DotStateException| DotSecurityException e) {
@@ -2132,7 +2138,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         logContentletActivity(contentlet, "Archiving Content", user);
         try {
 
-            if(contentlet.getInode().equals("")) {
+            if(contentlet==null || contentlet.getInode().equals("")) {
                 throw new DotContentletStateException(CAN_T_CHANGE_STATE_OF_CHECKED_OUT_CONTENT);
             }
             if(!permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_EDIT, user, respectFrontendRoles)){
@@ -2141,28 +2147,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
             final IndexPolicy  indexPolicy             = contentlet.getIndexPolicy();
             final IndexPolicy  indexPolicyDependencies = contentlet.getIndexPolicyDependencies();
-            final Contentlet workingContentlet = findContentletByIdentifier(contentlet.getIdentifier(), false, contentlet.getLanguageId(), user, respectFrontendRoles);
-            Contentlet liveContentlet = null;
-            try{
-                liveContentlet = findContentletByIdentifier(contentlet.getIdentifier(), true, contentlet.getLanguageId(), user, respectFrontendRoles);
-            }catch (DotContentletStateException ce) {
-                Logger.debug(this,"No live contentlet found for identifier = " + contentlet.getIdentifier());
-            }
-            canLock(contentlet, user);
-            User modUser = null;
-            User systemUser = null;
-            try{
-                modUser = APILocator.getUserAPI().loadUserById(workingContentlet.getModUser(),APILocator.getUserAPI().getSystemUser(),false);
-                systemUser = APILocator.getUserAPI().getSystemUser();
-            }catch(Exception ex){
-                if(ex instanceof NoSuchUserException){
-                    modUser = APILocator.getUserAPI().getSystemUser();
-                }
-            }
+            final Contentlet workingContentlet = findContentletByIdentifierDB(contentlet.getIdentifier(), false, contentlet.getLanguageId(), user, respectFrontendRoles).get();
+            final Contentlet liveContentlet = findContentletByIdentifierDB(contentlet.getIdentifier(), true, contentlet.getLanguageId(), user, respectFrontendRoles).orElse(null);
 
-            if(modUser != null){
-                workingContentlet.setModUser(modUser.getUserId());
-            }
+            canLock(contentlet, user);
+            final User modUser = Try.of(()->APILocator.getUserAPI().loadUserById(workingContentlet.getModUser(),APILocator.getUserAPI().getSystemUser(),false)).getOrElse(()->APILocator.systemUser());
+            workingContentlet.setModUser(modUser.getUserId());
+
 
             // If the user calling this method is System, no other condition is required.
             // Note: no need to validate this on DELETE SITE/HOST.
@@ -2996,11 +2987,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 contentlet.getMap().get("_validateEmptyFile_") == null;
 
         if(contentRelationships == null) {
-            contentRelationships = getAllRelationships(contentlet);
+            contentRelationships = this.getAllRelationships(contentlet);
         }
 
         if(cats == null) {
-            cats = getExistingContentCategories(contentlet);
+            cats = this.getExistingContentCategories(contentlet);
         }
 
         boolean saveWithExistingID = false;
@@ -3027,7 +3018,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     existingInode=contentlet.getInode();
                     contentlet.setInode(null);
 
-                    Identifier ident=APILocator.getIdentifierAPI().find(contentlet.getIdentifier());
+                    Identifier ident=APILocator.getIdentifierAPI().loadFromDb(contentlet.getIdentifier());
                     if(ident==null || !UtilMethods.isSet(ident.getId())) {
                         existingIdentifier=contentlet.getIdentifier();
                         contentlet.setIdentifier(null);
@@ -3094,14 +3085,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             workingContentlet = contentlet;
             if(createNewVersion){
-                workingContentlet = findWorkingContentlet(contentlet);
+                workingContentlet = findWorkingContentletDB(contentlet).orElse(workingContentlet);
             }
             String workingContentletInode = (workingContentlet==null) ? "" : workingContentlet.getInode();
 
             boolean priority = contentlet.isLowIndexPriority();
 
-            Boolean dontValidateMe = (Boolean)contentlet.getMap().get(Contentlet.DONT_VALIDATE_ME);
-            Boolean disableWorkflow = (Boolean)contentlet.getMap().get(Contentlet.DISABLE_WORKFLOW);
+            boolean dontValidateMe = !contentlet.validateMe();
+            boolean disableWorkflow = contentlet.disableWorkflow();
 
             boolean isNewContent = false;
             if(!InodeUtils.isSet(workingContentletInode)){
@@ -3328,11 +3319,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             //set again the don't validate me and disable workflow properties
             //if they were set
-            if(dontValidateMe != null){
+            if(dontValidateMe){
                 contentlet.setProperty(Contentlet.DONT_VALIDATE_ME, dontValidateMe);
             }
 
-            if(disableWorkflow != null){
+            if(disableWorkflow){
                 contentlet.setProperty(Contentlet.DISABLE_WORKFLOW, disableWorkflow);
             }
 
@@ -3786,10 +3777,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
     private List<Category> getExistingContentCategories(Contentlet contentlet)
         throws DotSecurityException, DotDataException {
         List<Category> cats = new ArrayList<>();
-        Contentlet workingCon = findWorkingContentlet(contentlet);
+        Optional<Contentlet> workingCon = findWorkingContentletDB(contentlet);
 
-        if(workingCon!=null) {
-            cats = categoryAPI.getParents(workingCon, APILocator.getUserAPI().getSystemUser(), true);
+        if(workingCon.isPresent()) {
+            cats = categoryAPI.getParents(workingCon.get(), APILocator.getUserAPI().getSystemUser(), true);
         }
         return cats;
     }
@@ -5207,17 +5198,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * @throws DotDataException
      * @throws DotContentletStateException
      */
-    private Contentlet findWorkingContentlet(Contentlet content)throws DotSecurityException, DotDataException, DotContentletStateException{
-        Contentlet con = null;
-        List<Contentlet> workingCons = new ArrayList<Contentlet>();
-        if(InodeUtils.isSet(content.getIdentifier())){
-            workingCons = contentFactory.findContentletsByIdentifier(content.getIdentifier(), false, content.getLanguageId());
-        }
-        if(workingCons.size() > 0)
-            con = workingCons.get(0);
-        if(workingCons.size()>1)
-            Logger.warn(this, "Multiple working contentlets found for identifier:" + content.getIdentifier() + " with languageid:" + content.getLanguageId() + " returning the lastest modified.");
-        return con;
+    private Optional<Contentlet> findWorkingContentletDB(final Contentlet content)throws DotSecurityException, DotDataException, DotContentletStateException{
+        return findContentletByIdentifierDB(content.getIdentifier(), false, content.getLanguageId(), APILocator.systemUser(), false);
     }
 
     /**
@@ -6191,9 +6173,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
         } else {
             canLock(contentlet, user);
             //get the latest and greatest from db
-            final Contentlet working = contentFactory
-                    .findContentletByIdentifier(contentlet.getIdentifier(), false,
-                            contentlet.getLanguageId());
+            final Contentlet working = contentFactory.findContentletByIdentifierDB(contentlet.getIdentifier(), false,
+                            contentlet.getLanguageId()).orElse(null);
 
             /*
              * Only draft if there is a working version that is not live
@@ -6227,48 +6208,39 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     @WrapInTransaction
     @Override
-    public Contentlet saveDraft(Contentlet contentlet,
-            Map<Relationship, List<Contentlet>> contentRelationships, List<Category> cats,
-            List<Permission> permissions, User user, boolean respectFrontendRoles)
-            throws IllegalArgumentException, DotDataException, DotSecurityException, DotContentletStateException, DotContentletValidationException {
+    public Contentlet saveDraft(Contentlet contentlet, Map<Relationship, List<Contentlet>> contentRelationships, List<Category> cats,
+            List<Permission> permissions, User user, boolean respectFrontendRoles) throws IllegalArgumentException, DotDataException,
+            DotSecurityException, DotContentletStateException, DotContentletValidationException {
         if (!InodeUtils.isSet(contentlet.getInode())) {
             return checkin(contentlet, contentRelationships, cats, permissions, user, false);
         } else {
             canLock(contentlet, user);
-            //get the latest and greatest from db
-            Contentlet working = contentFactory
-                    .findContentletByIdentifier(contentlet.getIdentifier(), false,
-                            contentlet.getLanguageId());
-
-        /*
-         * Only draft if there is a working version that is not live
-         * and always create a new version if the user is different
-         */
-            if (null != working &&
-                    !working.isLive() && working.getModUser().equals(contentlet.getModUser())) {
+            // get the latest and greatest from db
+            Contentlet working =
+                    contentFactory.findContentletByIdentifierDB(contentlet.getIdentifier(), false, contentlet.getLanguageId()).orElse(null);
+            
+            /*
+             * Only draft if there is a working version that is not live and always create a new version if the
+             * user is different
+             */
+            if (null != working && !working.isLive() && working.getModUser().equals(contentlet.getModUser())) {
 
                 // if we are the latest and greatest and are a draft
                 if (working.getInode().equals(contentlet.getInode())) {
 
-                    return checkinWithoutVersioning(contentlet, contentRelationships,
-                            cats,
-                            permissions, user, false);
+                    return checkinWithoutVersioning(contentlet, contentRelationships, cats, permissions, user, false);
 
                 } else {
                     String workingInode = working.getInode();
                     copyProperties(working, contentlet.getMap());
                     working.setInode(workingInode);
                     working.setModUser(user.getUserId());
-                    return checkinWithoutVersioning(working, contentRelationships,
-                            cats,
-                            permissions, user, false);
+                    return checkinWithoutVersioning(working, contentRelationships, cats, permissions, user, false);
                 }
             }
 
             contentlet.setInode(null);
-            return checkin(contentlet, contentRelationships,
-                    cats,
-                    permissions, user, false);
+            return checkin(contentlet, contentRelationships, cats, permissions, user, false);
         }
     }
 

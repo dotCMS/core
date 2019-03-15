@@ -875,7 +875,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	}
 
 	@Override
-	protected Contentlet findContentletByIdentifier(String identifier, Boolean live, Long languageId) throws DotDataException {
+	protected Contentlet searchContentletByIdentifier(String identifier, boolean live, long languageId) throws DotDataException {
 		try {
 			Client client = new ESClient().getClient();
 
@@ -918,10 +918,6 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
     }
 
-	@Override
-	protected Contentlet findContentletForLanguage(long languageId, Identifier identifier) throws DotDataException {
-		return findContentletByIdentifier(identifier.getId(), false, languageId);
-	}
 
 	@Override
 	protected List<Contentlet> findContentlets(List<String> inodes) throws DotDataException, DotStateException, DotSecurityException {
@@ -967,29 +963,24 @@ public class ESContentFactoryImpl extends ContentletFactory {
 		}
 	}
 
-	@Override
-	protected List<Contentlet> findContentletsByIdentifier(String identifier, Boolean live, Long languageId) throws DotDataException, DotStateException, DotSecurityException {
-	    List<Contentlet> cons = new ArrayList<>();
+    @Override
+    protected Optional<Contentlet> findContentletByIdentifierDB(String identifier, boolean live, long languageId)
+            throws DotDataException, DotStateException, DotSecurityException {
+        List<Contentlet> cons = new ArrayList<>();
         StringBuilder queryBuffer = new StringBuilder();
-        queryBuffer.append("select {contentlet.*} ")
-                   .append("from contentlet, inode contentlet_1_, contentlet_version_info contentvi ")
-                   .append("where contentlet_1_.type = 'contentlet' and contentlet.inode = contentlet_1_.inode and ")
-                   .append("contentvi.identifier=contentlet.identifier and ")
-                   .append(((live!=null && live.booleanValue()) ?
-                            "contentvi.live_inode":"contentvi.working_inode"))
-                   .append(" = contentlet_1_.inode ");
-
-        if(languageId!=null){
-            queryBuffer.append(" and contentvi.lang = ? ");
-        }
-
-        queryBuffer.append(" and contentlet.identifier = ? ");
+        queryBuffer
+                .append("select {contentlet.*} ")
+                .append("from contentlet, inode contentlet_1_, contentlet_version_info contentvi ")
+                .append("where contentlet_1_.type = 'contentlet' and contentlet.inode = contentlet_1_.inode and ")
+                .append("contentvi.identifier=contentlet.identifier and ")
+                .append(((live) ? "contentvi.live_inode" : "contentvi.working_inode"))
+                .append(" = contentlet_1_.inode ")
+                .append(" and contentvi.lang = ? ")
+                .append(" and contentlet.identifier = ? ");
 
         HibernateUtil hu = new HibernateUtil(com.dotmarketing.portlets.contentlet.business.Contentlet.class);
         hu.setSQLQuery(queryBuffer.toString());
-        if(languageId!=null){
-          hu.setParam(languageId.longValue());
-        }
+        hu.setParam(languageId);
         hu.setParam(identifier);
         List<com.dotmarketing.portlets.contentlet.business.Contentlet> fatties = hu.list();
         for (com.dotmarketing.portlets.contentlet.business.Contentlet fatty : fatties) {
@@ -997,8 +988,8 @@ public class ESContentFactoryImpl extends ContentletFactory {
             contentletCache.add(String.valueOf(con.getInode()), con);
             cons.add(con);
         }
-        return cons;
-	}
+        return cons.isEmpty() ? Optional.empty() : Optional.of(cons.get(0));
+    }
 
 	@Override
 	protected List<Contentlet> findContentletsWithFieldValue(String structureInode, Field field) throws DotDataException {
@@ -1657,7 +1648,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	}
 
 	@Override
-	protected Contentlet save(Contentlet contentlet, String existingInode) throws DotDataException, DotStateException, DotSecurityException {
+	protected Contentlet save(final Contentlet contentlet, final String existingInode) throws DotDataException, DotStateException, DotSecurityException {
 	    com.dotmarketing.portlets.contentlet.business.Contentlet fatty = new com.dotmarketing.portlets.contentlet.business.Contentlet();
         if(InodeUtils.isSet(contentlet.getInode())){
             fatty = (com.dotmarketing.portlets.contentlet.business.Contentlet)HibernateUtil.load(com.dotmarketing.portlets.contentlet.business.Contentlet.class, contentlet.getInode());
@@ -1680,7 +1671,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
         }
 
         contentletCache.remove(content.getInode());
-        contentletCache.add(content.getInode(), content);
+
         HibernateUtil.evict(content);
 
         return content;

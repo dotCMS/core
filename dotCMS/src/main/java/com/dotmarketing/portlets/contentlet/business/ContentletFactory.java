@@ -60,16 +60,7 @@ public abstract class ContentletFactory {
 	 */
 	protected abstract Contentlet find(String inode) throws DotDataException, DotSecurityException;
 	
-	/**
-	 * Returns a live Contentlet Object for a given language
-	 * @param languageId
-	 * @param inode
-	 * @return
-	 * @throws DotDataException
-	 * @throws DotSecurityException 
-	 */
-	protected abstract Contentlet findContentletForLanguage(long languageId, Identifier contentletId) throws DotDataException, DotSecurityException;
-	
+
 	/**
 	 * Retrieves a contentlet from the database based on its identifier
 	 * @param identifier 
@@ -78,7 +69,7 @@ public abstract class ContentletFactory {
 	 * @throws DotDataException 
 	 * @throws DotSecurityException 
 	 */
-	protected abstract Contentlet findContentletByIdentifier(String identifier, Boolean live, Long languageId) throws DotDataException, DotSecurityException;
+	protected abstract Contentlet searchContentletByIdentifier(String identifier, boolean live, long languageId) throws DotDataException, DotSecurityException;
 
 	/**
 	 * Retrieves a contentlet from the database based on its identifier and the working version
@@ -97,7 +88,7 @@ public abstract class ContentletFactory {
 	 * @throws DotDataException 
 	 * @throws DotSecurityException 
 	 */
-	protected abstract List<Contentlet> findContentletsByIdentifier(String identifier, Boolean live, Long languageId) throws DotDataException, DotSecurityException;
+	protected abstract Optional<Contentlet> findContentletByIdentifierDB(String identifier, boolean live, long languageId) throws DotDataException, DotSecurityException;
 	
 	/**
 	 * Gets a list of Contentlets from a passed in list of inodes.  

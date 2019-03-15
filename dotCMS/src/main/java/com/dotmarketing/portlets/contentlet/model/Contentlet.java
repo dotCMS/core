@@ -43,6 +43,9 @@ import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.model.User;
+
+import io.vavr.control.Try;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -1448,9 +1451,12 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	}
 
 	public boolean validateMe() {
-		return !UtilMethods.isSet(map.get(Contentlet.DONT_VALIDATE_ME));
-	}
+        return Try.of(()-> !Boolean.valueOf(String.valueOf(map.get(Contentlet.DONT_VALIDATE_ME))).booleanValue()).getOrElse(true);
 
+	}
+    public boolean disableWorkflow() {
+        return Try.of(()-> Boolean.valueOf(String.valueOf(map.get(Contentlet.DISABLE_WORKFLOW))).booleanValue()).getOrElse(false);
+    }
 	/**
 	 * Returns a list of all contentlets related to this instance given a RelationshipField variable
 	 * @param variableName

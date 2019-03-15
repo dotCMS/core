@@ -197,7 +197,7 @@ public class VersionableAPIImpl implements VersionableAPI {
         if(!UtilMethods.isSet(versionable) || !InodeUtils.isSet(versionable.getVersionId()))
         	return false;
 
-        final Identifier identifier = APILocator.getIdentifierAPI().find(versionable.getVersionId());
+        final Identifier identifier = APILocator.getIdentifierAPI().loadFromDb(versionable.getVersionId());
 
         if(!UtilMethods.isSet(identifier.getId()))
         	return false;
@@ -205,7 +205,7 @@ public class VersionableAPIImpl implements VersionableAPI {
         if(identifier.getAssetType().equals("contentlet")) {
             final Contentlet contentlet = (Contentlet)versionable;
             final ContentletVersionInfo cinfo = versionableFactory.
-                    getContentletVersionInfo(contentlet.getIdentifier(), contentlet.getLanguageId());
+                    findContentletVersionInfoInDB(contentlet.getIdentifier(), contentlet.getLanguageId());
 
             return (cinfo !=null && cinfo.isDeleted());
         } else {
@@ -225,7 +225,7 @@ public class VersionableAPIImpl implements VersionableAPI {
         if(!UtilMethods.isSet(versionable) || !InodeUtils.isSet(versionable.getVersionId()))
         	return false;
 
-        final Identifier identifier = APILocator.getIdentifierAPI().find(versionable);
+        final Identifier identifier = APILocator.getIdentifierAPI().loadFromDb(versionable.getVersionId());
         if(identifier==null || !UtilMethods.isSet(identifier.getId()) || !UtilMethods.isSet(identifier.getAssetType()))
             return false;
 
@@ -233,7 +233,7 @@ public class VersionableAPIImpl implements VersionableAPI {
         if(identifier.getAssetType().equals("contentlet")) {
             final Contentlet contentlet = (Contentlet)versionable;
             final ContentletVersionInfo info = versionableFactory
-                    .getContentletVersionInfo(contentlet.getIdentifier(), contentlet.getLanguageId());
+                    .findContentletVersionInfoInDB(contentlet.getIdentifier(), contentlet.getLanguageId());
 
             if(info ==null || !UtilMethods.isSet(info.getIdentifier()))
                 throw new DotStateException("No version info. Call setWorking first "+identifier.getId());
@@ -257,13 +257,13 @@ public class VersionableAPIImpl implements VersionableAPI {
             return false;
         }
 
-        final Identifier identifier = APILocator.getIdentifierAPI().find(versionable.getVersionId());
+        final Identifier identifier = APILocator.getIdentifierAPI().loadFromDb(versionable.getVersionId());
         if(identifier==null || !UtilMethods.isSet(identifier.getId()) || !UtilMethods.isSet(identifier.getAssetType())) {
             return false;
         }
         if("contentlet".equals(identifier.getAssetType())) {
             final Contentlet contentlet = (Contentlet)versionable;
-            final ContentletVersionInfo info = versionableFactory.getContentletVersionInfo(contentlet.getIdentifier(),contentlet.getLanguageId());
+            final ContentletVersionInfo info = versionableFactory.findContentletVersionInfoInDB(contentlet.getIdentifier(),contentlet.getLanguageId());
 
             if(!UtilMethods.isSet(info.getIdentifier()))
                 throw new DotStateException("No version info. Call setWorking first");
@@ -285,7 +285,7 @@ public class VersionableAPIImpl implements VersionableAPI {
         if(!UtilMethods.isSet(versionable) || !InodeUtils.isSet(versionable.getVersionId()))
         	return false;
 
-        final Identifier identifier = APILocator.getIdentifierAPI().find(versionable);
+        final Identifier identifier = APILocator.getIdentifierAPI().loadFromDb(versionable.getVersionId());
         if(identifier==null || !UtilMethods.isSet(identifier.getId()) || !UtilMethods.isSet(identifier.getAssetType()))
             return false;
 
@@ -294,7 +294,7 @@ public class VersionableAPIImpl implements VersionableAPI {
 
             final Contentlet contentlet = (Contentlet)versionable;
             final ContentletVersionInfo info= versionableFactory
-                    .getContentletVersionInfo(contentlet.getIdentifier(), contentlet.getLanguageId());
+                    .findContentletVersionInfoInDB(contentlet.getIdentifier(), contentlet.getLanguageId());
             if(info ==null || !UtilMethods.isSet(info.getIdentifier()))
                 throw new DotStateException("No version info. Call setWorking first");
 
@@ -336,9 +336,9 @@ public class VersionableAPIImpl implements VersionableAPI {
             throw new DotStateException( "invalid identifier" );
         }
 
-        final Identifier identifier = APILocator.getIdentifierAPI().find( identifierId );
+        final Identifier identifier = APILocator.getIdentifierAPI().loadFromDb( identifierId );
         final ContentletVersionInfo contentletVersionInfo =
-                this.versionableFactory.getContentletVersionInfo( identifierId, lang );
+                this.versionableFactory.findContentletVersionInfoInDB(identifierId, lang );
 
         if ( contentletVersionInfo == null || !UtilMethods.isSet( contentletVersionInfo.getIdentifier() ) ) {
             throw new DotStateException( "No version info. Call setLive first" );
@@ -379,12 +379,12 @@ public class VersionableAPIImpl implements VersionableAPI {
         if(!UtilMethods.isSet(versionable.getVersionId()))
             throw new DotStateException("invalid identifier");
 
-        final Identifier identifier = APILocator.getIdentifierAPI().find(versionable.getVersionId());
+        final Identifier identifier = APILocator.getIdentifierAPI().loadFromDb(versionable.getVersionId());
 
         if(identifier.getAssetType().equals("contentlet")) {
             final Contentlet contentlet      = (Contentlet)versionable;
             final ContentletVersionInfo info = versionableFactory
-                    .getContentletVersionInfo(contentlet.getIdentifier(),contentlet.getLanguageId());
+                    .findContentletVersionInfoInDB(contentlet.getIdentifier(),contentlet.getLanguageId());
             if(!UtilMethods.isSet(info.getIdentifier()))
                 throw new DotStateException("No version info. Call setWorking first");
             info.setDeleted(deleted);
@@ -408,7 +408,7 @@ public class VersionableAPIImpl implements VersionableAPI {
             throw new DotStateException( "invalid identifier" );
         }
 
-        final Identifier identifier = APILocator.getIdentifierAPI().find( versionable );
+        final Identifier identifier = APILocator.getIdentifierAPI().loadFromDb( versionable.getVersionId() );
         if ( identifier.getAssetType().equals( "contentlet" ) ) {
 
             final Contentlet contentlet = (Contentlet) versionable;
@@ -454,12 +454,12 @@ public class VersionableAPIImpl implements VersionableAPI {
         if(!UtilMethods.isSet(versionable.getVersionId()))
             throw new DotStateException("invalid identifier");
 
-        final Identifier identifier = APILocator.getIdentifierAPI().find(versionable.getVersionId());
+        final Identifier identifier = APILocator.getIdentifierAPI().loadFromDb(versionable.getVersionId());
         if(identifier.getAssetType().equals("contentlet")) {
 
             final Contentlet contentlet =(Contentlet)versionable;
             final ContentletVersionInfo info = versionableFactory
-                    .getContentletVersionInfo(contentlet.getIdentifier(),contentlet.getLanguageId());
+                    .findContentletVersionInfoInDB(contentlet.getIdentifier(),contentlet.getLanguageId());
 
             if(!UtilMethods.isSet(info.getIdentifier()))
                 throw new DotStateException("No version info. Call setWorking first");
@@ -494,12 +494,12 @@ public class VersionableAPIImpl implements VersionableAPI {
         if(!UtilMethods.isSet(versionable) || !UtilMethods.isSet(versionable.getVersionId()))
             throw new DotStateException("invalid identifier");
 
-        final Identifier identifier = APILocator.getIdentifierAPI().find(versionable);
+        final Identifier identifier = APILocator.getIdentifierAPI().loadFromDb(versionable.getVersionId());
         if(identifier.getAssetType().equals("contentlet")) {
 
             final Contentlet contentlet = (Contentlet)versionable;
             ContentletVersionInfo info = versionableFactory
-                    .getContentletVersionInfo(contentlet.getIdentifier(), contentlet.getLanguageId());
+                    .findContentletVersionInfoInDB(contentlet.getIdentifier(),contentlet.getLanguageId());
 
             if(info ==null || !UtilMethods.isSet(info.getIdentifier())) {
                 // Not yet created
@@ -533,14 +533,14 @@ public class VersionableAPIImpl implements VersionableAPI {
         if(!UtilMethods.isSet(versionable.getVersionId()))
             throw new DotStateException("invalid identifier");
 
-        final Identifier identifier = APILocator.getIdentifierAPI().find(versionable.getVersionId());
+        final Identifier identifier = APILocator.getIdentifierAPI().loadFromDb(versionable.getVersionId());
         String userId;
 
         if(identifier.getAssetType().equals("contentlet")) {
 
             final Contentlet contentlet = (Contentlet)versionable;
             final ContentletVersionInfo vinfo = versionableFactory
-                    .getContentletVersionInfo(contentlet.getIdentifier(),contentlet.getLanguageId());
+                    .findContentletVersionInfoInDB(contentlet.getIdentifier(),contentlet.getLanguageId());
             userId = vinfo.getLockedBy();
         }
         else {
@@ -561,11 +561,12 @@ public class VersionableAPIImpl implements VersionableAPI {
         if(!UtilMethods.isSet(versionable.getVersionId()))
             throw new DotStateException("invalid identifier");
 
-        final Identifier identifier = APILocator.getIdentifierAPI().find(versionable.getVersionId());
+        final Identifier identifier = APILocator.getIdentifierAPI().loadFromDb(versionable.getVersionId());
         Date date;
         if(identifier.getAssetType().equals("contentlet")) {
             final Contentlet contentlet = (Contentlet)versionable;
-            final ContentletVersionInfo vinfo= versionableFactory.getContentletVersionInfo(contentlet.getIdentifier(),contentlet.getLanguageId());
+            final ContentletVersionInfo vinfo = versionableFactory
+                    .findContentletVersionInfoInDB(contentlet.getIdentifier(),contentlet.getLanguageId());
             date=vinfo.getLockedOn();
         } else {
             final VersionInfo vinfo= versionableFactory.getVersionInfo(identifier.getId());
