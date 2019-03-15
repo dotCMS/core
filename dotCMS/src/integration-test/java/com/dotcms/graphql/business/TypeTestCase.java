@@ -1,5 +1,6 @@
 package com.dotcms.graphql.business;
 
+import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 
@@ -13,32 +14,30 @@ public class TypeTestCase {
 
     final List<BiFunction<String, BaseContentType, ContentType>> operations;
     final String contentTypeName;
-    final String updatedContentTypeName;
     final BaseContentType baseType;
-    final String expectedGraphQLTypeName;
-    final String expectedGraphQLUpdatedTypeName;
-    final String expectedCollectionTypeName;
     final String expectedGraphQLInterfaceToInherit;
     final List<Consumer<AssertionParams>> assertions;
+    final String fieldVarName;
+    final Class<? extends Field> fieldType;
+    final boolean fieldRequired;
 
 
     private TypeTestCase(
-        List<BiFunction<String, BaseContentType, ContentType>> operations, String contentTypeName, String updatedContentTypeName,
-        BaseContentType baseType, String expectedGraphQLTypeName, String expectedGraphQLUpdatedTypeName,
-        String expectedCollectionTypeName, String expectedGraphQLInterfaceToInherit,
-        List<Consumer<AssertionParams>> assertions) {
+        final List<BiFunction<String, BaseContentType, ContentType>> operations, final String contentTypeName,
+        final BaseContentType baseType, final String expectedGraphQLInterfaceToInherit,
+        final List<Consumer<AssertionParams>> assertions, final String fieldVarName, final Class<? extends Field> fieldType,
+        final boolean fieldRequired) {
         this.operations = operations;
         this.contentTypeName = contentTypeName;
-        this.updatedContentTypeName = updatedContentTypeName;
         this.baseType = baseType;
-        this.expectedGraphQLTypeName = expectedGraphQLTypeName;
-        this.expectedGraphQLUpdatedTypeName = expectedGraphQLUpdatedTypeName;
-        this.expectedCollectionTypeName = expectedCollectionTypeName;
         this.expectedGraphQLInterfaceToInherit = expectedGraphQLInterfaceToInherit;
         this.assertions = assertions;
+        this.fieldVarName = fieldVarName;
+        this.fieldType = fieldType;
+        this.fieldRequired = fieldRequired;
     }
 
-    public List<BiFunction<String, BaseContentType, ContentType>> getOperations() {
+    List<BiFunction<String, BaseContentType, ContentType>> getOperations() {
         return operations;
     }
 
@@ -46,40 +45,36 @@ public class TypeTestCase {
         return contentTypeName;
     }
 
-    public String getUpdatedContentTypeName() {
-        return updatedContentTypeName;
-    }
-
     public BaseContentType getBaseType() {
         return baseType;
     }
 
-    public String getExpectedGraphQLTypeName() {
-        return expectedGraphQLTypeName;
-    }
-
-    public String getExpectedGraphQLUpdatedTypeName() {
-        return expectedGraphQLUpdatedTypeName;
-    }
-
-    public String getExpectedCollectionTypeName() {
-        return expectedCollectionTypeName;
-    }
-
-    public String getExpectedGraphQLInterfaceToInherit() {
-        return expectedGraphQLInterfaceToInherit;
-    }
 
     public static class Builder {
         private List<BiFunction<String, BaseContentType, ContentType>> operations;
         private String contentTypeName;
-        private String updatedContentTypeName;
         private BaseContentType baseType;
-        private String expectedGraphQLTypeName;
-        private String expectedGraphQLUpdatedTypeName;
-        private String expectedCollectionTypeName;
         private String expectedGraphQLInterfaceToInherit;
         private List<Consumer<AssertionParams>> assertions;
+        private String fieldVarName;
+        private Class<? extends Field> fieldType;
+        private boolean fieldRequired;
+
+
+        public Builder setFieldVarName(String fieldVarName) {
+            this.fieldVarName = fieldVarName;
+            return this;
+        }
+
+        public Builder setFieldType(Class<? extends Field> fieldType) {
+            this.fieldType = fieldType;
+            return this;
+        }
+
+        public Builder setFieldRequired(boolean fieldRequired) {
+            this.fieldRequired = fieldRequired;
+            return this;
+        }
 
         public Builder operations(List<BiFunction<String, BaseContentType, ContentType>> operations) {
             this.operations = operations;
@@ -91,28 +86,8 @@ public class TypeTestCase {
             return this;
         }
 
-        public Builder updatedContentTypeName(String updatedContentTypeName) {
-            this.updatedContentTypeName = updatedContentTypeName;
-            return this;
-        }
-
         public Builder baseType(BaseContentType baseType) {
             this.baseType = baseType;
-            return this;
-        }
-
-        public Builder expectedGraphQLTypeName(String expectedGraphQLTypeName) {
-            this.expectedGraphQLTypeName = expectedGraphQLTypeName;
-            return this;
-        }
-
-        public Builder expectedGraphQLUpdatedTypeName(String expectedGraphQLUpdatedTypeName) {
-            this.expectedGraphQLUpdatedTypeName = expectedGraphQLUpdatedTypeName;
-            return this;
-        }
-
-        public Builder expectedCollectionTypeName(String expectedCollectionTypeName) {
-            this.expectedCollectionTypeName = expectedCollectionTypeName;
             return this;
         }
 
@@ -127,8 +102,8 @@ public class TypeTestCase {
         }
 
         public TypeTestCase build() {
-            return new TypeTestCase(operations, contentTypeName, updatedContentTypeName, baseType, expectedGraphQLTypeName,
-                expectedGraphQLUpdatedTypeName, expectedCollectionTypeName, expectedGraphQLInterfaceToInherit, assertions);
+            return new TypeTestCase(operations, contentTypeName, baseType,
+                expectedGraphQLInterfaceToInherit, assertions, fieldVarName, fieldType, fieldRequired);
         }
     }
 

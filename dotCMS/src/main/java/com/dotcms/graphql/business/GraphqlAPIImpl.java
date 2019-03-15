@@ -129,6 +129,11 @@ public class GraphqlAPIImpl implements GraphqlAPI {
         this.schema = null;
     }
 
+    @Override
+    public Map<Class<? extends Field>, GraphQLOutputType> getFieldClassGraphqlTypeMap() {
+        return fieldClassGraphqlTypeMap;
+    }
+
     private void printSchema() {
         if (Config.getBooleanProperty("PRINT_GRAPHQL_SCHEMA", false)) {
             SchemaPrinter printer = new SchemaPrinter();

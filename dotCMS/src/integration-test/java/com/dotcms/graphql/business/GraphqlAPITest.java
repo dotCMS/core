@@ -1,6 +1,15 @@
 package com.dotcms.graphql.business;
 
 import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.contenttype.business.FieldAPI;
+import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.FieldBuilder;
+import com.dotcms.contenttype.model.field.ImmutableBinaryField;
+import com.dotcms.contenttype.model.field.ImmutableCategoryField;
+import com.dotcms.contenttype.model.field.ImmutableFileField;
+import com.dotcms.contenttype.model.field.ImmutableHostFolderField;
+import com.dotcms.contenttype.model.field.ImmutableImageField;
+import com.dotcms.contenttype.model.field.ImmutableKeyValueField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
@@ -22,7 +31,9 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.function.BiFunction;
 
+import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLObjectType;
+import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLSchema;
 
 import static com.dotcms.graphql.InterfaceType.CONTENT_INTERFACE_NAME;
@@ -34,6 +45,7 @@ import static com.dotcms.graphql.InterfaceType.PERSONA_INTERFACE_NAME;
 import static com.dotcms.graphql.InterfaceType.VANITY_URL_INTERFACE_NAME;
 import static com.dotcms.graphql.InterfaceType.WIDGET_INTERFACE_NAME;
 import static junit.framework.TestCase.assertTrue;
+import static org.junit.Assert.assertNotNull;
 
 @RunWith(DataProviderRunner.class)
 public class GraphqlAPITest {
@@ -251,6 +263,63 @@ public class GraphqlAPITest {
         };
     }
 
+
+    @DataProvider
+    public static Object[] fieldTestCases() {
+        return new TypeTestCase[]{
+
+            // CREATE TYPE CASES
+            new TypeTestCase.Builder()
+                .baseType(BaseContentType.CONTENT)
+                .contentTypeName("newContentContentType")
+                .setFieldVarName("testFieldVar")
+                .setFieldType(ImmutableBinaryField.class)
+                .setFieldRequired(false)
+                .build(),
+
+            new TypeTestCase.Builder()
+                .baseType(BaseContentType.CONTENT)
+                .contentTypeName("newContentContentType")
+                .setFieldVarName("testFieldVar")
+                .setFieldType(ImmutableCategoryField.class)
+                .setFieldRequired(false)
+                .build(),
+
+            new TypeTestCase.Builder()
+                .baseType(BaseContentType.CONTENT)
+                .contentTypeName("newContentContentType")
+                .setFieldVarName("testFieldVar")
+                .setFieldType(ImmutableImageField.class)
+                .setFieldRequired(false)
+                .build(),
+
+            new TypeTestCase.Builder()
+                .baseType(BaseContentType.CONTENT)
+                .contentTypeName("newContentContentType")
+                .setFieldVarName("testFieldVar")
+                .setFieldType(ImmutableFileField.class)
+                .setFieldRequired(false)
+                .build(),
+
+            new TypeTestCase.Builder()
+                .baseType(BaseContentType.CONTENT)
+                .contentTypeName("newContentContentType")
+                .setFieldVarName("testFieldVar")
+                .setFieldType(ImmutableKeyValueField.class)
+                .setFieldRequired(false)
+                .build(),
+
+            new TypeTestCase.Builder()
+                .baseType(BaseContentType.CONTENT)
+                .contentTypeName("newContentContentType")
+                .setFieldVarName("testFieldVar")
+                .setFieldType(ImmutableHostFolderField.class)
+                .setFieldRequired(false)
+                .build(),
+        };
+    }
+
+
     @UseDataProvider("typeTestCases")
     @Test
     public void testGetSchema_ContentTypeOperations(final TypeTestCase testCase)
@@ -285,16 +354,41 @@ public class GraphqlAPITest {
 
     }
 
-    private static ContentType createType(final String typeName, final BaseContentType baseType) {
-        try {
-            final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
-            final ContentTypeBuilder contentTypeBuilder = getContentTypeBuilder(baseType);
 
-            final ContentType contentType = contentTypeBuilder.name(typeName).variable(typeName).build();
-            return contentTypeAPI.save(contentType);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+    @UseDataProvider("fieldTestCases")
+    @Test
+    public void testGetSchema_FieldOperations(final TypeTestCase testCase) throws DotDataException,
+        DotSecurityException {
+
+        // create type
+        ContentType contentType = null;
+
+        try {
+            contentType = createType(testCase.contentTypeName, testCase.baseType);
+            createField(contentType, testCase.fieldVarName,
+                testCase.fieldType, testCase.fieldRequired);
+
+            final GraphqlAPI api = APILocator.getGraphqlAPI();
+            final GraphQLSchema schema = api.getSchema();
+
+            final GraphQLFieldDefinition fieldDefinition =
+                schema.getObjectType(testCase.contentTypeName).getFieldDefinition(testCase.fieldVarName);
+
+            final GraphQLOutputType expectedType = api.getFieldClassGraphqlTypeMap().get(testCase.fieldType.getSuperclass());
+            final GraphQLOutputType graphQLFieldType = fieldDefinition.getType();
+
+            assertNotNull(expectedType);
+            assertNotNull(graphQLFieldType);
+
+            Assert.assertEquals("Type of GraphQL Field should match type expected", expectedType
+                ,graphQLFieldType);
+
+        } finally {
+            if(contentType!=null) {
+                APILocator.getContentTypeAPI(APILocator.systemUser()).delete(contentType);
+            }
         }
+
     }
 
     private static ContentType deleteType(final String typeVariable, final BaseContentType baseType) {
@@ -312,6 +406,32 @@ public class GraphqlAPITest {
 
     }
 
+    private static ContentType createType(final String typeName, final BaseContentType baseType) {
+        try {
+            final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
+            final ContentTypeBuilder contentTypeBuilder = getContentTypeBuilder(baseType);
+
+            final ContentType contentType = contentTypeBuilder.name(typeName).variable(typeName).build();
+            return contentTypeAPI.save(contentType);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private Field createField(final ContentType contentType, final String fieldVarName, final Class<? extends Field> fieldType,
+                              final boolean fieldRequired) {
+        try {
+            final FieldAPI fieldAPI = APILocator.getContentTypeFieldAPI();
+            final FieldBuilder fieldBuilder = getFieldBuilder(fieldType);
+            final Field field =  fieldBuilder.contentTypeId(contentType.id()).name(fieldVarName).variable(fieldVarName)
+                .required(fieldRequired).build();
+            return fieldAPI.save(field, APILocator.systemUser());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+    }
+
     private static ContentTypeBuilder getContentTypeBuilder(BaseContentType baseType)
         throws ClassNotFoundException, IllegalAccessException, InvocationTargetException, NoSuchMethodException {
         final String packageName = baseType.immutableClass().getPackage().getName();
@@ -322,8 +442,13 @@ public class GraphqlAPITest {
         return (ContentTypeBuilder) immutableClass.getMethod("builder").invoke(null);
     }
 
+    private static FieldBuilder getFieldBuilder(final Class<? extends Field> fieldType)
+        throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+        return (FieldBuilder) fieldType.getMethod("builder").invoke(null);
+    }
+
     private static void assertTypeCreated(final TypeTestCase.AssertionParams assertionParams) {
-        Assert.assertNotNull("GraphQL Type: "+assertionParams.typeName+" exists",
+        assertNotNull("GraphQL Type: "+assertionParams.typeName+" exists",
             assertionParams.schema.getType(assertionParams.typeName));
     }
 
