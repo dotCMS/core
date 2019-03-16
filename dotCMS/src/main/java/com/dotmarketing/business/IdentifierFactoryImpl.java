@@ -431,7 +431,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 	@Override
 	protected Identifier find(final String identifier) throws DotStateException, DotDataException {
         if (DbConnectionFactory.inTransaction()) {
-            Identifier id = loadFromDb(identifier);
+            final Identifier id = loadFromDb(identifier);
             return id == null ? new Identifier() : id;
         }
 		Identifier id = ic.getIdentifier(identifier);
