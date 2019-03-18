@@ -1386,8 +1386,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
         try{
             return permissionAPI.filterCollection(searchByIdentifier(q, -1, 0, rel.getRelationTypeValue() + "-" + contentlet.getIdentifier() + "-order" , user, respectFrontendRoles, PermissionAPI.PERMISSION_READ, true), PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
         }catch (Exception e) {
-            final String errorMessage = "Unable to look up related content for contentlet with identifier "
-                    + contentlet.getIdentifier();
+            final String errorMessage =
+                    "Unable to look up related content for contentlet with identifier "
+                            + contentlet.getIdentifier() + " and title " + contentlet.getTitle()
+                            + ". Relationship Name: " + rel.getRelationTypeValue();
             if(e.getMessage() != null && e.getMessage().contains("[query_fetch]")){
                 try{
                     APILocator.getContentletIndexAPI().addContentToIndex(contentlet,false,false);
@@ -1396,7 +1398,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     throw new DotDataException(errorMessage, ex);
                 }
             } else if (e.getCause() instanceof SearchPhaseExecutionException){
-                Logger.warn(this, errorMessage + ". An empty list will be returned", e);
+                Logger.warn(this, errorMessage + ". An empty list will be returned");
+                Logger.debug(this, errorMessage + ". An empty list will be returned", e);
                 return Collections.emptyList();
             }
             throw new DotDataException(errorMessage, e);
