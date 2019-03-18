@@ -24,6 +24,7 @@ import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
+import java.sql.Timestamp;
 import java.util.stream.Collectors;
 
 import com.google.common.collect.Maps;
@@ -289,12 +290,12 @@ public class RelationshipAPITest extends IntegrationTestBase {
                         .toMap(elem -> elem.get("identifier"), elem -> elem.get("version_ts")));
 
         //Verify versionTs has been updated after migration
-        assertNotEquals(versionTsBefore.get(contentletParent.getIdentifier()),
-                versionTsAfter.get(contentletParent.getIdentifier()));
+        assertTrue(((Timestamp)versionTsBefore.get(contentletParent.getIdentifier())).before(
+                (Timestamp) versionTsAfter.get(contentletParent.getIdentifier())));
 
         for (int i = 0; i < relationshipList.size(); i++) {
-            assertNotEquals(versionTsBefore.get(relationshipList.get(i).getIdentifier()),
-                    versionTsAfter.get(relationshipList.get(i).getIdentifier()));
+            assertTrue(((Timestamp) versionTsBefore.get(relationshipList.get(i).getIdentifier())).before(
+                    (Timestamp) versionTsAfter.get(relationshipList.get(i).getIdentifier())));
         }
     }
 
