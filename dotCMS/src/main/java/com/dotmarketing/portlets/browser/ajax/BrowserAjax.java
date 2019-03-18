@@ -739,36 +739,16 @@ public class BrowserAjax {
         return true;
     }
 
-    private Optional<String> moveFolderWhenDestinationDoesNotExists(final String newFolder,
-																	final Folder currentFolder,
-																	final User user,
-																	final boolean respectFrontendRoles,
-																	final String errorString) throws Exception {
-
-    	return this.folderAPI.moveWhenDestinationDoesNotExists(newFolder, currentFolder, user, respectFrontendRoles)?
-								Optional.empty():Optional.ofNullable(errorString);
-	}
-
-	private Optional<String> moveFolderToExistingDestination(final String newFolder,
-															 final Folder currentFolder,
-															 final User user,
-															 final boolean respectFrontendRoles,
-															 final String errorString) throws Exception {
-
-		return this.folderAPI.moveToExistingDestination(newFolder, currentFolder, user, respectFrontendRoles)?
-				Optional.empty():Optional.ofNullable(errorString);
-	}
-
     /**
      * Moves a given inode folder/host reference into another given folder
      *
-     * @param inode     folder inode
+     * @param folderId     folder identifier
      * @param newFolder This could be the inode of a folder or a host
      * @return Confirmation message
      * @throws Exception
      */
     @WrapInTransaction
-    public String moveFolder (final String inode, final String newFolder) throws Exception {
+    public String moveFolder (final String folderId, final String newFolder) throws Exception {
 
     	final HttpServletRequest request = WebContextFactory.get().getHttpServletRequest();
         final Locale requestLocale       = request.getLocale();
@@ -780,21 +760,9 @@ public class BrowserAjax {
             final User user = getUser(request);
             final boolean respectFrontendRoles = !this.userAPI.isLoggedToBackend(request);
 
-            //Searching for the folder to move
-            final Folder folder = this.folderAPI.find( inode, user, false );
+            if (!this.folderAPI.move(folderId, newFolder, user, respectFrontendRoles)) {
 
-			final Optional<String> errorMessage =
-					!this.folderAPI.exists(newFolder)?
-
-							this.moveFolderWhenDestinationDoesNotExists
-								(newFolder, folder, user, respectFrontendRoles, errorString):
-
-                			this.moveFolderToExistingDestination
-								(newFolder, folder, user, respectFrontendRoles, errorString);
-
-			if (errorMessage.isPresent()) {
-
-				return errorMessage.get();
+            	return errorString;
 			}
         } catch (Exception e) {
 
