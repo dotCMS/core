@@ -32,14 +32,31 @@ export class DotLargeMessageDisplayService {
         });
     }
 
+    /**
+     * Clear service's Observable content
+     *
+     * @memberof DotLargeMessageDisplayService
+     */
     clear(): void {
         this._messages.next(null);
     }
 
+    /**
+     * Allow set/publish new large messages
+     *
+     * @param DotLargeMessageDisplayParams message
+     * @memberof DotLargeMessageDisplayService
+     */
     push(message: DotLargeMessageDisplayParams): void {
         this._messages.next(message);
     }
 
+    /**
+     * Allow subscribe to receive new messages
+     *
+     * @returns {Observable<DotLargeMessageDisplayParams>}
+     * @memberof DotLargeMessageDisplayService
+     */
     sub(): Observable<DotLargeMessageDisplayParams> {
         return this._messages.asObservable();
     }
