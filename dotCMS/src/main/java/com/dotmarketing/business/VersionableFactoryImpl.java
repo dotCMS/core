@@ -345,7 +345,7 @@ public class VersionableFactoryImpl extends VersionableFactory {
         cVer.setWorkingInode(workingInode);
         cVer.setVersionTs(new Date());
 
-        HibernateUtil.save(cVer);
+        HibernateUtil.save(cVer); 
         return cVer;
     }
 

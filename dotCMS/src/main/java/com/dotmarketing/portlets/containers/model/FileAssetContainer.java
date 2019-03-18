@@ -42,6 +42,35 @@ public class FileAssetContainer extends Container {
 
     @JsonIgnore
     @com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore
+    private transient FileAsset postLoopAsset = null;
+
+    @JsonIgnore
+    @com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore
+    public FileAsset getPostLoopAsset() {
+        return postLoopAsset;
+    }
+
+    public void setPostLoopAsset(final FileAsset postLoopAsset) {
+        this.postLoopAsset = postLoopAsset;
+    }
+
+    @JsonIgnore
+    @com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore
+    private transient FileAsset preLoopAsset = null;
+
+    @JsonIgnore
+    @com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore
+    public FileAsset getPreLoopAsset() {
+        return preLoopAsset;
+    }
+
+    public void setPreLoopAsset(final FileAsset preLoopAsset) {
+        this.preLoopAsset = preLoopAsset;
+    }
+
+    /////
+    @JsonIgnore
+    @com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore
     private transient List<FileAsset> containerStructuresAssets = Collections.emptyList();
 
     @JsonIgnore

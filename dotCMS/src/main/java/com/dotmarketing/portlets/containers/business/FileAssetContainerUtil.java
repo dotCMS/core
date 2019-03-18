@@ -188,6 +188,8 @@ public class FileAssetContainerUtil {
                 new FileAssetContainer();
         Optional<String> preLoop           = Optional.empty();
         Optional<String> postLoop          = Optional.empty();
+        Optional<FileAsset> preLoopAsset   = Optional.empty();
+        Optional<FileAsset> postLoopAsset  = Optional.empty();
         Optional<String> containerMetaInfo = Optional.empty();
         FileAsset metaInfoFileAsset        =  null;
 
@@ -196,12 +198,14 @@ public class FileAssetContainerUtil {
 
             if (this.isPreLoop(fileAsset, showLive)) {
 
-                preLoop = Optional.of(this.wrapIntoDotParseDirective(fileAsset)); continue;
+                preLoopAsset = Optional.of(fileAsset);
+                preLoop      = Optional.of(this.wrapIntoDotParseDirective(fileAsset)); continue;
             }
 
             if (this.isPostLoop(fileAsset, showLive)) {
 
-                postLoop = Optional.of(this.wrapIntoDotParseDirective(fileAsset)); continue;
+                postLoopAsset = Optional.of(fileAsset);
+                postLoop      = Optional.of(this.wrapIntoDotParseDirective(fileAsset)); continue;
             }
 
             if (this.isContainerMetaInfo(fileAsset, showLive)) {
@@ -223,7 +227,7 @@ public class FileAssetContainerUtil {
         }
 
         this.setContainerData(host, containerFolder, metaInfoFileAsset, containerStructures.build(), container,
-                preLoop, postLoop, containerMetaInfo.get(), includeHostOnPath);
+                preLoop, postLoop, preLoopAsset, postLoopAsset, containerMetaInfo.get(), includeHostOnPath);
 
         return container;
     }
@@ -261,6 +265,8 @@ public class FileAssetContainerUtil {
                                   final FileAssetContainer container,
                                   final Optional<String> preLoop,
                                   final Optional<String> postLoop,
+                                  final Optional<FileAsset> preLoopAsset,
+                                  final Optional<FileAsset> postLoopAsset,
                                   final String containerMetaInfo,
                                   final boolean includeHostOnPath) {
 
@@ -283,6 +289,8 @@ public class FileAssetContainerUtil {
         this.setMetaInfo (containerMetaInfo, container);
 
         container.setContainerStructuresAssets(containerStructures);
+        preLoopAsset.ifPresent (asset -> container.setPreLoopAsset (asset));
+        postLoopAsset.ifPresent(asset -> container.setPostLoopAsset(asset));
     }
 
     private String buildPath(final Host host, final Folder containerFolder, final boolean includeHostOnPath) {

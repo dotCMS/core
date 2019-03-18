@@ -89,7 +89,7 @@ public class DotParse extends DotDirective {
 
         String errorMessage = String.format("No resource found for [%s]",  arguments[0]);
 
-            throw new ResourceNotFoundException(errorMessage);
+        throw new ResourceNotFoundException(errorMessage);
       }
 
       ContentletVersionInfo contentletVersionInfo = APILocator.getVersionableAPI()
@@ -97,25 +97,29 @@ public class DotParse extends DotDirective {
 
       if (contentletVersionInfo == null || contentletVersionInfo.isDeleted()) {
 
-          final long defaultLang = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+        final long defaultLang = APILocator.getLanguageAPI().getDefaultLanguage().getId();
         if (defaultLang != languageId) {
           contentletVersionInfo = APILocator.getVersionableAPI().getContentletVersionInfo(identifier.getId(), defaultLang);
         }
       }
-      String inode = (params.mode.showLive) ? contentletVersionInfo.getLiveInode() : contentletVersionInfo.getWorkingInode();
+
+      if ( null == contentletVersionInfo ) {
+          throwNotResourceNotFoundException(params, templatePath);
+      }
+
+      final String inode = params.mode.showLive ?
+              contentletVersionInfo.getLiveInode() : contentletVersionInfo.getWorkingInode();
 
       //We found the resource but not the version we are looking for
       if ( null == inode ) {
-        String errorMessage = String.format("Not found %s version of [%s]",  params.mode, templatePath);
-        throw new ResourceNotFoundException(errorMessage);
+          throwNotResourceNotFoundException(params, templatePath);
       }
 
-      final boolean respectFrontEndRolesForVTL = (params.mode.respectAnonPerms) ? Config.getBooleanProperty("RESPECT_FRONTEND_ROLES_FOR_DOTPARSE", true) : params.mode.respectAnonPerms;
-
+      final boolean respectFrontEndRolesForVTL = params.mode.respectAnonPerms?
+              Config.getBooleanProperty("RESPECT_FRONTEND_ROLES_FOR_DOTPARSE", true) : params.mode.respectAnonPerms;
       final Contentlet contentlet = APILocator.getContentletAPI().find(inode, APILocator.getUserAPI().getSystemUser(), respectFrontEndRolesForVTL);
       final FileAsset asset = APILocator.getFileAssetAPI().fromContentlet(contentlet);
-      
-      
+
       // add the edit control if we have run through a page render
       if (!context.containsKey("dontShowIcon") &&
               PageMode.EDIT_MODE == params.mode ) {
@@ -125,24 +129,20 @@ public class DotParse extends DotDirective {
           writer.append(editIcon);
       }
 
-
-      return (null != asset.getFileAsset())?asset.getFileAsset().getAbsolutePath():null;
-    } 
-    catch (ResourceNotFoundException e) {
+      return null != asset.getFileAsset()? asset.getFileAsset().getAbsolutePath():null;
+    } catch (ResourceNotFoundException e) {
         Logger.warn(this.getClass(), " - unable to resolve " + templatePath + " getting this: "+ e.getMessage() );
         if(e.getStackTrace().length>0){
           Logger.warn(this.getClass(), " - at " + e.getStackTrace()[0]);
         }
         throw e;
-    }
-    catch (DotSecurityException  e) {
+    } catch (DotSecurityException  e) {
         Logger.warn(this.getClass(), " - unable to resolve " + templatePath + " getting this: "+ e.getMessage() );
         if(e.getStackTrace().length>0){
             Logger.warn(this.getClass(), " - at " + e.getStackTrace()[0]);
         }
         throw new ResourceNotFoundException(e);
-    }
-    catch (Exception e) {
+    } catch (Exception e) {
         Logger.warn(this.getClass(), " - unable to resolve " + templatePath + " getting this: "+ e.getMessage() );
         if(e.getStackTrace().length>0){
             Logger.warn(this.getClass(), " - at " + e.getStackTrace()[0]);
@@ -151,6 +151,9 @@ public class DotParse extends DotDirective {
     }
   }
 
-
+    private void throwNotResourceNotFoundException(final RenderParams params, final String templatePath) {
+        final String errorMessage = String.format("Not found %s version of [%s]", params.mode, templatePath);
+        throw new ResourceNotFoundException(errorMessage);
+    }
 }
 
