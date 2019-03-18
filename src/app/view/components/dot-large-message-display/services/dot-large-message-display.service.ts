@@ -2,7 +2,7 @@ import { BehaviorSubject, Observable } from 'rxjs';
 import { Injectable } from '@angular/core';
 import { DotcmsEventsService, DotEventData } from 'dotcms-js';
 
-export interface DotDialogMessageParams {
+export interface DotLargeMessageDisplayParams {
     title: string;
     width?: string;
     height?: string;
@@ -13,9 +13,11 @@ export interface DotDialogMessageParams {
     };
 }
 
-@Injectable()
-export class DotDialogMessageService {
-    private _messages: BehaviorSubject<DotDialogMessageParams> = new BehaviorSubject(null);
+@Injectable({
+    providedIn: 'root'
+})
+export class DotLargeMessageDisplayService {
+    private _messages: BehaviorSubject<DotLargeMessageDisplayParams> = new BehaviorSubject(null);
 
     constructor(dotcmsEventsService: DotcmsEventsService) {
         dotcmsEventsService.subscribeTo('LARGE_MESSAGE').subscribe((messageEvent: DotEventData) => {
@@ -30,11 +32,16 @@ export class DotDialogMessageService {
         });
     }
 
-    push(message: DotDialogMessageParams): void {
+    clear(): void {
+        this._messages.next(null);
+    }
+
+    push(message: DotLargeMessageDisplayParams): void {
         this._messages.next(message);
     }
 
-    sub(): Observable<DotDialogMessageParams> {
+    sub(): Observable<DotLargeMessageDisplayParams> {
         return this._messages.asObservable();
     }
+
 }

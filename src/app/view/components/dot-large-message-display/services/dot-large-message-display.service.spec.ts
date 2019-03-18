@@ -1,11 +1,11 @@
-import { DotDialogMessageService } from './dot-dialog-message.service';
+import { DotLargeMessageDisplayService } from './dot-large-message-display.service';
 import { DotcmsEventsServiceMock } from '@tests/dotcms-events-service.mock';
 import { DOTTestBed } from '@tests/dot-test-bed';
 import { DotcmsEventsService } from 'dotcms-js';
 
-describe('DotDialogMessageService', () => {
+describe('DotLargeMessageDisplayService', () => {
     const mockDotcmsEventsService: DotcmsEventsServiceMock = new DotcmsEventsServiceMock();
-    let dotDialogMessageService;
+    let dotLargeMessageDisplayService;
 
     const message: any = {
         data: {
@@ -21,15 +21,15 @@ describe('DotDialogMessageService', () => {
     beforeEach(() => {
         const injector = DOTTestBed.resolveAndCreate([
             { provide: DotcmsEventsService, useValue: mockDotcmsEventsService },
-            DotDialogMessageService
+            DotLargeMessageDisplayService
         ]);
 
-        dotDialogMessageService = injector.get(DotDialogMessageService);
+        dotLargeMessageDisplayService = injector.get(DotLargeMessageDisplayService);
     });
 
     it('should emit a message', (done) => {
         mockDotcmsEventsService.triggerSubscribeTo('LARGE_MESSAGE', message);
-        dotDialogMessageService.sub().subscribe((msg) => {
+        dotLargeMessageDisplayService.sub().subscribe((msg) => {
             const { code, width, body, title, lang, height } = message.data;
             const emittedMsg = {
                 title,

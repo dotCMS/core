@@ -1,4 +1,4 @@
-import { DotDialogMessageModule } from './view/components/dot-dialog-message/dot-dialog-message.module';
+import { DotLargeMessageDisplayModule } from './view/components/dot-large-message-display/dot-large-message-display.module';
 // CUSTOM MDOULES
 import { DotActionButtonModule } from './view/components/_common/dot-action-button/dot-action-button.module';
 import { DotFieldValidationMessageModule } from './view/components/_common/dot-field-validation-message/dot-file-validation-message.module';
@@ -55,7 +55,7 @@ export const CUSTOM_MODULES = [
     ListingDataTableModule,
     SearchableDropDownModule,
     SiteSelectorModule,
-    DotDialogMessageModule
+    DotLargeMessageDisplayModule
 ];
 
 export const NGFACES_MODULES = [
