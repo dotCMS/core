@@ -15,6 +15,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotValidationException;
 import com.dotmarketing.business.RelationshipAPI;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -23,7 +24,7 @@ import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
-import javax.management.relation.Relation;
+import java.util.stream.Collectors;
 
 import com.google.common.collect.Maps;
 import com.liferay.portal.model.User;
@@ -150,52 +151,34 @@ public class RelationshipAPITest extends IntegrationTestBase {
             APILocator.getContentTypeFieldAPI().save(field, user);
 
             //Create an old Relationship
-            final Structure parentStructure = new StructureTransformer(parentContentType).asStructure();
-            final Structure childStructure = new StructureTransformer(childContentType).asStructure();
-            final Relationship relationship = new Relationship(parentStructure,childStructure,parentContentType.name(),
-                    childContentType.name(),0,false,false);
+            final Structure parentStructure = new StructureTransformer(parentContentType)
+                    .asStructure();
+            final Structure childStructure = new StructureTransformer(childContentType)
+                    .asStructure();
+            final Relationship relationship = new Relationship(parentStructure, childStructure,
+                    parentContentType.name(),
+                    childContentType.name(), 0, false, false);
             relationshipAPI.save(relationship);
 
-            //Create Contentlets
+            //Create Contentlet
             Contentlet contentletParent = new ContentletDataGen(parentContentType.id())
-                    .setProperty(titleFieldString,"parent Contentlet").next();
-            Contentlet contentletParent2 = new ContentletDataGen(parentContentType.id())
-                    .setProperty(titleFieldString,"parent Contentlet 2").next();
-            final Contentlet contentletChild = new ContentletDataGen(childContentType.id()).setProperty(titleFieldString,"child Contentlet").nextPersisted();
-            final Contentlet contentletChild2 = new ContentletDataGen(childContentType.id()).setProperty(titleFieldString,"child Contentlet 2").nextPersisted();
+                    .setProperty(titleFieldString, "parent Contentlet").next();
+
+            final Contentlet contentletChild = new ContentletDataGen(childContentType.id())
+                    .setProperty(titleFieldString, "child Contentlet").nextPersisted();
+            final Contentlet contentletChild2 = new ContentletDataGen(childContentType.id())
+                    .setProperty(titleFieldString, "child Contentlet 2").nextPersisted();
 
             //Relate contentlets
-            Map<Relationship, List<Contentlet>> relationshipListMap = Maps.newHashMap();
-            relationshipListMap.put(relationship, CollectionsUtils.list(contentletChild,contentletChild2));
+            final List<Contentlet> relationshipList = CollectionsUtils
+                    .list(contentletChild, contentletChild2);
+            migrateRelationshipAndValidate(relationship, contentletParent, relationshipList);
 
-            //Checkin of the parent to validate Relationships
-            contentletParent = APILocator.getContentletAPI().checkin(contentletParent,relationshipListMap,user,false);
-
-            //List Related Contentlets
-            List<Contentlet> relatedContent = APILocator.getContentletAPI().getRelatedContent(contentletParent,relationship,user,false);
-            assertNotNull(relatedContent);
-            assertEquals(2,relatedContent.size());
-            assertEquals(contentletChild.getIdentifier(),relatedContent.get(0).getIdentifier());
-            assertEquals(contentletChild2.getIdentifier(),relatedContent.get(1).getIdentifier());
-
-            //Migrate Relationship
-            relationshipAPI.convertRelationshipToRelationshipField(relationship);
-
-            //Check old relationship does not exists
-            assertNull(relationshipAPI.byInode(relationship.getInode()));
-
-            //Check Content is still related
-            relatedContent = APILocator.getContentletAPI().getRelatedContent(contentletParent,relationship,user,false);
-            assertNotNull(relatedContent);
-            assertEquals(2,relatedContent.size());
-            assertEquals(contentletChild.getIdentifier(),relatedContent.get(0).getIdentifier());
-            assertEquals(contentletChild2.getIdentifier(),relatedContent.get(1).getIdentifier());
-
-        }finally {
-            if(parentContentType != null){
+        } finally {
+            if (parentContentType != null) {
                 contentTypeAPI.delete(parentContentType);
             }
-            if(childContentType != null){
+            if (childContentType != null) {
                 contentTypeAPI.delete(childContentType);
             }
         }
@@ -217,45 +200,101 @@ public class RelationshipAPITest extends IntegrationTestBase {
             APILocator.getContentTypeFieldAPI().save(field, user);
 
             //Create an old Relationship
-            final Structure parentStructure = new StructureTransformer(parentContentType).asStructure();
-            final Relationship relationship = new Relationship(parentStructure,parentStructure,"parent" + parentContentType.name(),
-                    "child" + parentContentType.name(),0,false,false);
+            final Structure parentStructure = new StructureTransformer(parentContentType)
+                    .asStructure();
+            final Relationship relationship = new Relationship(parentStructure, parentStructure,
+                    "parent" + parentContentType.name(),
+                    "child" + parentContentType.name(), 0, false, false);
             relationshipAPI.save(relationship);
 
             //Create Contentlets
             Contentlet contentletParent = new ContentletDataGen(parentContentType.id())
-                    .setProperty(titleFieldString,"parent Contentlet").next();
-            final Contentlet contentletChild = new ContentletDataGen(parentContentType.id()).setProperty(titleFieldString,"child Contentlet").nextPersisted();
+                    .setProperty(titleFieldString, "parent Contentlet").next();
+            final Contentlet contentletChild = new ContentletDataGen(parentContentType.id())
+                    .setProperty(titleFieldString, "child Contentlet").nextPersisted();
 
             //Relate contentlets
-            Map<Relationship, List<Contentlet>> relationshipListMap = Maps.newHashMap();
-            relationshipListMap.put(relationship, CollectionsUtils.list(contentletChild));
+            final List<Contentlet> relationshipList = CollectionsUtils.list(contentletChild);
+            migrateRelationshipAndValidate(relationship, contentletParent, relationshipList);
 
-            //Checkin of the parent to validate Relationships
-            contentletParent = APILocator.getContentletAPI().checkin(contentletParent,relationshipListMap,user,false);
-
-            //List Related Contentlets
-            List<Contentlet> relatedContent = APILocator.getContentletAPI().getRelatedContent(contentletParent,relationship,user,false);
-            assertNotNull(relatedContent);
-            assertEquals(1,relatedContent.size());
-            assertEquals(contentletChild.getIdentifier(),relatedContent.get(0).getIdentifier());
-
-            //Migrate Relationship
-            relationshipAPI.convertRelationshipToRelationshipField(relationship);
-
-            //Check old relationship does not exists
-            assertNull(relationshipAPI.byInode(relationship.getInode()));
-
-            //Check Content is still related
-            relatedContent = APILocator.getContentletAPI().getRelatedContent(contentletParent,relationship,user,false);
-            assertNotNull(relatedContent);
-            assertEquals(1,relatedContent.size());
-            assertEquals(contentletChild.getIdentifier(),relatedContent.get(0).getIdentifier());
-
-        }finally {
-            if(parentContentType != null){
+        } finally {
+            if (parentContentType != null) {
                 contentTypeAPI.delete(parentContentType);
             }
+        }
+    }
+
+    private void migrateRelationshipAndValidate(final Relationship relationship,
+            Contentlet contentletParent, final List<Contentlet> relationshipList)
+            throws DotDataException, DotSecurityException {
+
+        final Map<Relationship, List<Contentlet>> relationshipListMap = Maps.newHashMap();
+        relationshipListMap.put(relationship, relationshipList);
+        //Checkin of the parent to validate Relationships
+        contentletParent = APILocator
+                .getContentletAPI().checkin(contentletParent,relationshipListMap,user,false);
+
+        //List Related Contentlets
+        List<Contentlet> relatedContent = APILocator.getContentletAPI()
+                .getRelatedContent(contentletParent, relationship, user, false);
+        assertNotNull(relatedContent);
+        assertEquals(relationshipList.size(), relatedContent.size());
+
+        for (int i = 0; i< relationshipList.size(); i++){
+            assertEquals(relationshipList.get(i).getIdentifier(),relatedContent.get(i).getIdentifier());
+        }
+
+        //Get versionTs before migration
+        final StringBuilder versionTsQuery = new StringBuilder(
+                "select identifier, version_ts from contentlet_version_info where identifier=?");
+
+        final DotConnect dcBefore = new DotConnect();
+
+        relationshipList.forEach(elem -> versionTsQuery.append(" or identifier=?"));
+        dcBefore.setSQL(versionTsQuery.toString());
+
+        dcBefore.addParam(contentletParent.getIdentifier());
+        relationshipList.forEach(elem -> dcBefore.addParam(elem.getIdentifier()));
+
+        final Map versionTsBefore = dcBefore.loadObjectResults().stream()
+                .collect(Collectors
+                        .toMap(elem -> elem.get("identifier"), elem -> elem.get("version_ts")));
+
+        //Migrate Relationship
+        relationshipAPI.convertRelationshipToRelationshipField(relationship);
+
+        //Check old relationship does not exists
+        assertNull(relationshipAPI.byInode(relationship.getInode()));
+
+        //Check Content is still related
+        relatedContent = APILocator.getContentletAPI()
+                .getRelatedContent(contentletParent, relationship, user, false);
+        assertNotNull(relatedContent);
+        assertEquals(relationshipList.size(), relatedContent.size());
+
+        for (int i = 0; i < relationshipList.size(); i++) {
+            assertEquals(relationshipList.get(i).getIdentifier(),
+                    relatedContent.get(i).getIdentifier());
+        }
+
+        //Get versionTs after migration
+        final DotConnect dcAfter = new DotConnect();
+
+        dcAfter.setSQL(versionTsQuery.toString());
+        dcAfter.addParam(contentletParent.getIdentifier());
+        relationshipList.forEach(elem -> dcAfter.addParam(elem.getIdentifier()));
+
+        final Map versionTsAfter = dcAfter.loadObjectResults().stream()
+                .collect(Collectors
+                        .toMap(elem -> elem.get("identifier"), elem -> elem.get("version_ts")));
+
+        //Verify versionTs has been updated after migration
+        assertNotEquals(versionTsBefore.get(contentletParent.getIdentifier()),
+                versionTsAfter.get(contentletParent.getIdentifier()));
+
+        for (int i = 0; i < relationshipList.size(); i++) {
+            assertNotEquals(versionTsBefore.get(relationshipList.get(i).getIdentifier()),
+                    versionTsAfter.get(relationshipList.get(i).getIdentifier()));
         }
     }
 
