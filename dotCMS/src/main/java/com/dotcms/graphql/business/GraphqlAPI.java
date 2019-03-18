@@ -10,7 +10,7 @@ import graphql.schema.GraphQLSchema;
 
 public interface GraphqlAPI {
     GraphQLSchema getSchema() throws DotDataException;
-    Map<Class<? extends Field>, GraphQLOutputType> getFieldClassGraphqlTypeMap();
+    GraphQLOutputType getGraphqlTypeForFieldClass(final Class<? extends Field> fieldClass, final Field field);
     void invalidateSchema();
 
 }

@@ -129,11 +129,6 @@ public class GraphqlAPIImpl implements GraphqlAPI {
         this.schema = null;
     }
 
-    @Override
-    public Map<Class<? extends Field>, GraphQLOutputType> getFieldClassGraphqlTypeMap() {
-        return fieldClassGraphqlTypeMap;
-    }
-
     private void printSchema() {
         if (Config.getBooleanProperty("PRINT_GRAPHQL_SCHEMA", false)) {
             SchemaPrinter printer = new SchemaPrinter();
@@ -241,7 +236,8 @@ public class GraphqlAPIImpl implements GraphqlAPI {
         );
     }
 
-    private GraphQLOutputType getGraphqlTypeForFieldClass(final Class<Field> fieldClass, final Field field) {
+    @Override
+    public GraphQLOutputType getGraphqlTypeForFieldClass(final Class<? extends Field> fieldClass, final Field field) {
         return fieldClassGraphqlTypeMap.get(fieldClass)!= null
             ? fieldClassGraphqlTypeMap.get(fieldClass)
             : fieldClass.equals(TextField.class) && field.dataType().equals(DataTypes.INTEGER) ? GraphQLInt

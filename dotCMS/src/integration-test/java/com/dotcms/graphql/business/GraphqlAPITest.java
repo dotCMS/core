@@ -6,17 +6,36 @@ import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.ImmutableBinaryField;
 import com.dotcms.contenttype.model.field.ImmutableCategoryField;
+import com.dotcms.contenttype.model.field.ImmutableCheckboxField;
+import com.dotcms.contenttype.model.field.ImmutableConstantField;
+import com.dotcms.contenttype.model.field.ImmutableCustomField;
+import com.dotcms.contenttype.model.field.ImmutableDateField;
 import com.dotcms.contenttype.model.field.ImmutableFileField;
 import com.dotcms.contenttype.model.field.ImmutableHostFolderField;
 import com.dotcms.contenttype.model.field.ImmutableImageField;
 import com.dotcms.contenttype.model.field.ImmutableKeyValueField;
+import com.dotcms.contenttype.model.field.ImmutableMultiSelectField;
+import com.dotcms.contenttype.model.field.ImmutableRadioField;
+import com.dotcms.contenttype.model.field.ImmutableSelectField;
+import com.dotcms.contenttype.model.field.ImmutableTagField;
+import com.dotcms.contenttype.model.field.ImmutableTextAreaField;
+import com.dotcms.contenttype.model.field.ImmutableTextField;
+import com.dotcms.contenttype.model.field.ImmutableTimeField;
+import com.dotcms.contenttype.model.field.ImmutableWysiwygField;
+import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
+import com.dotcms.contenttype.model.type.SimpleContentType;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.folders.business.FolderAPI;
+import com.dotmarketing.portlets.structure.model.Relationship;
+import com.dotmarketing.util.UtilMethods;
+import com.liferay.util.StringPool;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
@@ -32,6 +51,7 @@ import java.util.Collections;
 import java.util.function.BiFunction;
 
 import graphql.schema.GraphQLFieldDefinition;
+import graphql.schema.GraphQLNonNull;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLSchema;
@@ -44,8 +64,12 @@ import static com.dotcms.graphql.InterfaceType.PAGE_INTERFACE_NAME;
 import static com.dotcms.graphql.InterfaceType.PERSONA_INTERFACE_NAME;
 import static com.dotcms.graphql.InterfaceType.VANITY_URL_INTERFACE_NAME;
 import static com.dotcms.graphql.InterfaceType.WIDGET_INTERFACE_NAME;
+import static com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY.MANY_TO_ONE;
+import static com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY.ONE_TO_MANY;
 import static junit.framework.TestCase.assertTrue;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 @RunWith(DataProviderRunner.class)
 public class GraphqlAPITest {
@@ -268,7 +292,7 @@ public class GraphqlAPITest {
     public static Object[] fieldTestCases() {
         return new TypeTestCase[]{
 
-            // CREATE TYPE CASES
+            // test each field type with required FALSE
             new TypeTestCase.Builder()
                 .baseType(BaseContentType.CONTENT)
                 .contentTypeName("newContentContentType")
@@ -316,6 +340,114 @@ public class GraphqlAPITest {
                 .setFieldType(ImmutableHostFolderField.class)
                 .setFieldRequired(false)
                 .build(),
+
+            new TypeTestCase.Builder()
+                .baseType(BaseContentType.CONTENT)
+                .contentTypeName("newContentContentType")
+                .setFieldVarName("testFieldVar")
+                .setFieldType(ImmutableCheckboxField.class)
+                .setFieldRequired(false)
+                .build(),
+
+            new TypeTestCase.Builder()
+                .baseType(BaseContentType.CONTENT)
+                .contentTypeName("newContentContentType")
+                .setFieldVarName("testFieldVar")
+                .setFieldType(ImmutableConstantField.class)
+                .setFieldRequired(false)
+                .build(),
+
+            new TypeTestCase.Builder()
+                .baseType(BaseContentType.CONTENT)
+                .contentTypeName("newContentContentType")
+                .setFieldVarName("testFieldVar")
+                .setFieldType(ImmutableCustomField.class)
+                .setFieldRequired(false)
+                .build(),
+
+            new TypeTestCase.Builder()
+                .baseType(BaseContentType.CONTENT)
+                .contentTypeName("newContentContentType")
+                .setFieldVarName("testFieldVar")
+                .setFieldType(ImmutableDateField.class)
+                .setFieldRequired(false)
+                .build(),
+
+            new TypeTestCase.Builder()
+                .baseType(BaseContentType.CONTENT)
+                .contentTypeName("newContentContentType")
+                .setFieldVarName("testFieldVar")
+                .setFieldType(ImmutableMultiSelectField.class)
+                .setFieldRequired(false)
+                .build(),
+
+            new TypeTestCase.Builder()
+                .baseType(BaseContentType.CONTENT)
+                .contentTypeName("newContentContentType")
+                .setFieldVarName("testFieldVar")
+                .setFieldType(ImmutableRadioField.class)
+                .setFieldRequired(false)
+                .build(),
+
+            new TypeTestCase.Builder()
+                .baseType(BaseContentType.CONTENT)
+                .contentTypeName("newContentContentType")
+                .setFieldVarName("testFieldVar")
+                .setFieldType(ImmutableSelectField.class)
+                .setFieldRequired(false)
+                .build(),
+
+            new TypeTestCase.Builder()
+                .baseType(BaseContentType.CONTENT)
+                .contentTypeName("newContentContentType")
+                .setFieldVarName("testFieldVar")
+                .setFieldType(ImmutableTagField.class)
+                .setFieldRequired(false)
+                .build(),
+
+            new TypeTestCase.Builder()
+                .baseType(BaseContentType.CONTENT)
+                .contentTypeName("newContentContentType")
+                .setFieldVarName("testFieldVar")
+                .setFieldType(ImmutableTextAreaField.class)
+                .setFieldRequired(false)
+                .build(),
+
+            new TypeTestCase.Builder()
+                .baseType(BaseContentType.CONTENT)
+                .contentTypeName("newContentContentType")
+                .setFieldVarName("testFieldVar")
+                .setFieldType(ImmutableTextField.class)
+                .setFieldRequired(false)
+                .build(),
+
+            new TypeTestCase.Builder()
+                .baseType(BaseContentType.CONTENT)
+                .contentTypeName("newContentContentType")
+                .setFieldVarName("testFieldVar")
+                .setFieldType(ImmutableTimeField.class)
+                .setFieldRequired(false)
+                .build(),
+
+            new TypeTestCase.Builder()
+                .baseType(BaseContentType.CONTENT)
+                .contentTypeName("newContentContentType")
+                .setFieldVarName("testFieldVar")
+                .setFieldType(ImmutableWysiwygField.class)
+                .setFieldRequired(false)
+                .build(),
+
+            // test field with required TRUE
+
+            new TypeTestCase.Builder()
+                .baseType(BaseContentType.CONTENT)
+                .contentTypeName("newContentContentType")
+                .setFieldVarName("testFieldVar")
+                .setFieldType(ImmutableBinaryField.class)
+                .setFieldRequired(true)
+                .build(),
+
+
         };
     }
 
@@ -344,8 +476,6 @@ public class GraphqlAPITest {
 
             testCase.assertions.forEach((assertion)->assertion.accept(assertionParams));
 
-
-
         } finally {
             if(contentType!=null) {
                 APILocator.getContentTypeAPI(APILocator.systemUser()).delete(contentType);
@@ -365,7 +495,7 @@ public class GraphqlAPITest {
 
         try {
             contentType = createType(testCase.contentTypeName, testCase.baseType);
-            createField(contentType, testCase.fieldVarName,
+            final Field field = createField(contentType, testCase.fieldVarName,
                 testCase.fieldType, testCase.fieldRequired);
 
             final GraphqlAPI api = APILocator.getGraphqlAPI();
@@ -374,14 +504,21 @@ public class GraphqlAPITest {
             final GraphQLFieldDefinition fieldDefinition =
                 schema.getObjectType(testCase.contentTypeName).getFieldDefinition(testCase.fieldVarName);
 
-            final GraphQLOutputType expectedType = api.getFieldClassGraphqlTypeMap().get(testCase.fieldType.getSuperclass());
+            GraphQLOutputType expectedType = api.getGraphqlTypeForFieldClass(
+                (Class<? extends Field>) testCase.fieldType.getSuperclass(), field);
+
             final GraphQLOutputType graphQLFieldType = fieldDefinition.getType();
 
             assertNotNull(expectedType);
             assertNotNull(graphQLFieldType);
 
-            Assert.assertEquals("Type of GraphQL Field should match type expected", expectedType
-                ,graphQLFieldType);
+            if(testCase.fieldRequired) {
+                Assert.assertEquals("Type of GraphQL Field should match type expected", new GraphQLNonNull(expectedType)
+                    , graphQLFieldType);
+            } else {
+                Assert.assertEquals("Type of GraphQL Field should match type expected", expectedType
+                    , graphQLFieldType);
+            }
 
         } finally {
             if(contentType!=null) {
@@ -389,6 +526,106 @@ public class GraphqlAPITest {
             }
         }
 
+    }
+
+    @Test
+    public void testGetSchema_WhenFieldDeleted_ShouldNotBeAvailableInSchema() throws DotDataException,
+        DotSecurityException {
+
+        // create type
+        ContentType contentType = null;
+
+        try {
+
+            final String contentTypeName = "testType";
+            final String fieldVarName = "testFieldVar";
+            contentType = createType(contentTypeName, BaseContentType.CONTENT);
+            final Field field = createField(contentType,fieldVarName ,
+                ImmutableTextField.class, false);
+
+            final GraphqlAPI api = APILocator.getGraphqlAPI();
+            final GraphQLSchema schema = api.getSchema();
+
+            final GraphQLFieldDefinition fieldDefinition =
+                schema.getObjectType(contentTypeName).getFieldDefinition(fieldVarName);
+
+            final GraphQLOutputType graphQLFieldType = fieldDefinition.getType();
+            assertNotNull(graphQLFieldType);
+
+            // let's now delete the field
+            APILocator.getContentTypeFieldAPI().delete(field);
+
+            // after deletion the field should not be available in the schema
+            final GraphQLSchema schemaReloaded = api.getSchema();
+
+            final GraphQLFieldDefinition reloadedFieldDefinition =
+                schemaReloaded.getObjectType(contentTypeName).getFieldDefinition(fieldVarName);
+
+            assertNull(reloadedFieldDefinition);
+
+        } finally {
+            if(contentType!=null) {
+                APILocator.getContentTypeAPI(APILocator.systemUser()).delete(contentType);
+            }
+        }
+
+    }
+
+
+    @Test
+    public void testGetSchema_RelationshipField() throws DotDataException,
+        DotSecurityException {
+
+        ContentType parentContentType = null;
+        ContentType childContentType = null;
+        try {
+            parentContentType = createAndSaveSimpleContentType("parentContentTypeGraphQL");
+            childContentType = createAndSaveSimpleContentType("childContentTypeGraphQL");
+
+            final Field parentTypeRelationshipField = createAndSaveManyToManyRelationshipField(
+                "newRelGraphQL",
+                parentContentType.id(), childContentType.variable(),
+                String.valueOf(MANY_TO_ONE.ordinal()));
+
+            final GraphQLSchema schema = APILocator.getGraphqlAPI().getSchema();
+
+            final GraphQLFieldDefinition fieldDefinition =
+                schema.getObjectType(parentContentType.variable())
+                    .getFieldDefinition(parentTypeRelationshipField.variable());
+
+            final GraphQLOutputType graphQLFieldType = fieldDefinition.getType();
+            assertEquals(childContentType.variable(), graphQLFieldType.getName());
+
+
+        } finally {
+            if (UtilMethods.isSet(parentContentType) && UtilMethods.isSet(parentContentType.id())) {
+                APILocator.getContentTypeAPI(APILocator.systemUser()).delete(parentContentType);
+            }
+
+            if (UtilMethods.isSet(childContentType) && UtilMethods.isSet(childContentType.id())) {
+                APILocator.getContentTypeAPI(APILocator.systemUser()).delete(childContentType);
+            }
+        }
+
+    }
+
+    private ContentType createAndSaveSimpleContentType(final String name) throws DotSecurityException, DotDataException {
+        return APILocator.getContentTypeAPI(APILocator.systemUser())
+            .save(ContentTypeBuilder.builder(SimpleContentType.class).folder(
+            FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST).name(name)
+            .owner(APILocator.systemUser().getUserId()).build());
+    }
+
+    private Field createAndSaveManyToManyRelationshipField(final String relationshipName, final String parentTypeId,
+                                                           final String childTypeVar, final String cardinality)
+        throws DotSecurityException, DotDataException {
+
+        final Field field = FieldBuilder.builder(RelationshipField.class).name(relationshipName)
+            .contentTypeId(parentTypeId).values(cardinality)
+            .relationType(childTypeVar).build();
+
+        //One side of the relationship is set parentContentType --> childContentType
+        return APILocator.getContentTypeFieldAPI().save(field, APILocator.systemUser());
     }
 
     private static ContentType deleteType(final String typeVariable, final BaseContentType baseType) {
@@ -429,7 +666,6 @@ public class GraphqlAPITest {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-
     }
 
     private static ContentTypeBuilder getContentTypeBuilder(BaseContentType baseType)
