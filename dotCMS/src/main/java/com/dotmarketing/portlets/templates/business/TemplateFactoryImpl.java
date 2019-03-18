@@ -400,7 +400,7 @@ public class TemplateFactoryImpl implements TemplateFactory {
 	        return new ArrayList<>(ids);
 	    }
 
-		Pattern newContainerReferencesRegex = Pattern.compile("#parseContainer\\s*\\(\\s*['\"]*([^'\")]+)['\"]*\\s*\\)");
+		Pattern newContainerReferencesRegex = Pattern.compile(PARSE_CONTAINER_ID_PATTERN);
 		Matcher matcher = newContainerReferencesRegex.matcher(templateBody);
 		while(matcher.find()) {
 			String containerId = matcher.group(1).trim();
@@ -409,6 +409,8 @@ public class TemplateFactoryImpl implements TemplateFactory {
         return new ArrayList<>(ids);
 	}
 
+    private static final String PARSE_CONTAINER_ID_PATTERN =
+            "#parseContainer\\s*\\(\\s*['\"]*([^'\")]+)['\"]*\\s*\\)";
 	private static final String PARSE_CONTAINER_ID_UUDI_PATTERN =
 			"\\s*#parseContainer\\s*\\(\\s*['\"]{1}([^'\")]+)['\"]{1}\\s*,\\s*['\"]{1}([^'\")]+)['\"]{1}\\s*\\)\\s*";
 
@@ -422,19 +424,30 @@ public class TemplateFactoryImpl implements TemplateFactory {
 		try {
 
 			line = lineReader.readLine();
-			final Pattern newContainerReferencesRegex =
+			final Pattern newContainerUUIDReferencesRegex =
 					Pattern.compile(PARSE_CONTAINER_ID_UUDI_PATTERN);
+            final Pattern newContainerReferencesRegex =
+                    Pattern.compile(PARSE_CONTAINER_ID_PATTERN);
 
 			while (null != line) {
 
-				final Matcher matcher = newContainerReferencesRegex.matcher(line);
+				Matcher matcher = newContainerUUIDReferencesRegex.matcher(line);
 
 				if (matcher.find() && matcher.groupCount() == 2) {
 
 					final String containerId = matcher.group(1).trim();
 					final String uuid        = matcher.group(2).trim();
 					containerUUIDS.add(new ContainerUUID(containerId, uuid));
-				}
+				} else {
+
+                    matcher = newContainerReferencesRegex.matcher(line);
+                    if (matcher.find() && matcher.groupCount() == 1) {
+
+                        final String containerId = matcher.group(1).trim();
+                        final String uuid        = ContainerUUID.UUID_LEGACY_VALUE;
+                        containerUUIDS.add(new ContainerUUID(containerId, uuid));
+                    }
+                }
 
 				line = lineReader.readLine();
 			}
