@@ -933,6 +933,20 @@ task copyNodeModules(type: Copy) {
     finalizedBy 'cleanNodeModules'
 }
 
+task downloadDependencies(type: Exec) {
+    configurations.compile.files
+    configurations.buildlibs.files
+    configurations.starter.files
+    configurations.profiler.files
+    configurations.profilerDependencies.files
+    configurations.provided.files
+    configurations.felix.files
+
+    commandLine 'echo', 'Downloaded all dependencies'
+}
+
+
+
 // reference:  https://github.com/palantir/gradle-docker
 docker {
     name "dotcms/dotcms:base-$dotcmsReleaseVersion-$dotcmsReleaseBuild"
