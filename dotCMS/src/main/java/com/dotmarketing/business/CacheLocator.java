@@ -2,7 +2,10 @@ package com.dotmarketing.business;
 
 import com.dotcms.auth.providers.jwt.factories.ApiTokenCache;
 import com.dotcms.business.SystemCache;
-import com.dotcms.cache.*;
+import com.dotcms.cache.KeyValueCache;
+import com.dotcms.cache.KeyValueCacheImpl;
+import com.dotcms.cache.VanityUrlCache;
+import com.dotcms.cache.VanityUrlCacheImpl;
 import com.dotcms.content.elasticsearch.business.IndiciesCache;
 import com.dotcms.content.elasticsearch.business.IndiciesCacheImpl;
 import com.dotcms.contenttype.business.ContentTypeCache2;
@@ -18,17 +21,12 @@ import com.dotcms.publisher.endpoint.business.PublishingEndPointCacheImpl;
 import com.dotcms.rendering.velocity.services.DotResourceCache;
 import com.dotcms.rendering.velocity.viewtools.navigation.NavToolCache;
 import com.dotcms.rendering.velocity.viewtools.navigation.NavToolCacheImpl;
-
-import com.dotmarketing.business.cache.provider.CacheProviderStats;
 import com.dotmarketing.business.cache.transport.CacheTransport;
 import com.dotmarketing.cache.ContentTypeCache;
 import com.dotmarketing.cache.FolderCache;
 import com.dotmarketing.cache.FolderCacheImpl;
 import com.dotmarketing.cache.LegacyContentTypeCacheImpl;
 import com.dotmarketing.cache.MultiTreeCache;
-import com.dotmarketing.db.DbConnectionFactory;
-import com.dotmarketing.db.FlushCacheRunnable;
-import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.logConsole.model.LogMapperCache;
 import com.dotmarketing.logConsole.model.LogMapperCacheImpl;
@@ -69,10 +67,6 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.WebKeys;
 
 
-import java.util.List;
-import java.util.Set;
-
-
 /**
  * FactoryLocator is a factory method to get single(ton) service objects.
  * This is a kind of implementation, and there may be others.
@@ -84,44 +78,7 @@ import java.util.Set;
  */
 public class CacheLocator extends Locator<CacheIndex>{
 
-    private static class CommitListenerCacheWrapper implements DotCacheAdministrator {
 
-        DotCacheAdministrator dotcache;
-        public CommitListenerCacheWrapper(DotCacheAdministrator dotcache) { this.dotcache=dotcache; }
-
-		public void initProviders () {dotcache.initProviders();}
-		public Set<String> getGroups () {return dotcache.getGroups();}
-		public void flushAll() { dotcache.flushAll(); }
-        public void flushGroup(String group) { dotcache.flushGroup(group); }
-        public void flushAlLocalOnly(boolean ignoreDistributed) { dotcache.flushAlLocalOnly(ignoreDistributed); }
-        public void flushGroupLocalOnly(String group, boolean ignoreDistributed) { dotcache.flushGroupLocalOnly(group, ignoreDistributed); }
-        public Object get(String key, String group) throws DotCacheException { return dotcache.get(key, group); }
-        public void remove(String key, String group) { dotcache.remove(key,group); }
-        public void removeLocalOnly(String key, String group, boolean ignoreDistributed) { dotcache.removeLocalOnly(key, group, ignoreDistributed); }
-        public void shutdown() { dotcache.shutdown(); }
-        public List<CacheProviderStats> getCacheStatsList() { return dotcache.getCacheStatsList(); }
-		public CacheTransport getTransport () {return dotcache.getTransport();}
-		public void setTransport ( CacheTransport transport ) {dotcache.setTransport(transport);}
-		public void invalidateCacheMesageFromCluster ( String message ) {dotcache.invalidateCacheMesageFromCluster(message);}
-        public Class<?> getImplementationClass() { return dotcache.getClass(); }
-        public void put(final String key, final Object content, final String group) {
-            dotcache.put(key, content, group);
-            try {
-                if(DbConnectionFactory.inTransaction()) {
-                    HibernateUtil.addRollbackListener(new FlushCacheRunnable() {
-                       public void run() {
-                           dotcache.remove(key, group);
-                       }
-                    });
-                }
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        }
-        public DotCacheAdministrator getImplementationObject() {
-            return dotcache;
-        }
-	}
 
 	private static CacheLocator instance;
 	private static DotCacheAdministrator adminCache;

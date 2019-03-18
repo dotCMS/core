@@ -62,7 +62,7 @@ public class HostResourceImpl extends BasicFolderResourceImpl implements Resourc
 
 	public boolean authorise(Request request, Method method, Auth auth) {
 		try {
-			if(auth == null)
+			if(auth == null || host==null)
 				return false;
 			else {
 			    User user=(User)auth.getTag();
