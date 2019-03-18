@@ -1037,7 +1037,7 @@ public class HibernateUtil {
 			}
 
 			if (!flushers.isEmpty()) {
-			    submitter.submit(new DotRunnableThread(flushers, true));
+			    submitter.submit(new DotRunnableFlusherThread(flushers, true));
 				submitter.delay(new DotRunnableFlusherThread(flushers, true),
 						Config.getLongProperty(NETWORK_CACHE_FLUSH_DELAY, 3000), TimeUnit.MILLISECONDS);
 			}
@@ -1052,7 +1052,7 @@ public class HibernateUtil {
 			}
 
 			if (!flushers.isEmpty()) {
-			    new DotRunnableThread(flushers).run();
+			    new DotRunnableFlusherThread(flushers).run();
 				DateUtil.sleep(Config.getLongProperty(NETWORK_CACHE_FLUSH_DELAY, 3000));
 				new DotRunnableFlusherThread(flushers, false).run(); // todo: double check this if we still want a thread for the flushers
 			}
