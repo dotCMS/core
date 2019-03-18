@@ -429,8 +429,38 @@ import java.util.function.Predicate;
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
-	boolean move(Folder folderToMove, Host newParentHost,User user,boolean respectFrontEndPermissions)throws DotDataException, DotSecurityException;
+	boolean move(Folder folderToMove, Host newParentHost,User user,boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException;
 
+
+	/**
+	 * Move the currentFolder to non-existing folder.
+	 * @param newFolder     {@link String} destination
+	 * @param currentFolder {@link Folder} folder to move to the destination
+	 * @param user			{@link User}
+	 * @param respectFrontendRoles {@link Boolean}
+	 * @return boolean true if successfully removed
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	boolean moveWhenDestinationDoesNotExists(final String newFolder,
+																	final Folder currentFolder,
+																	final User user,
+																	final boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+
+	/**
+	 * Move the current folder to existing destination
+	 * @param newFolder     {@link String} destination
+	 * @param currentFolder {@link Folder} folder to move to the destination
+	 * @param user			{@link User}
+	 * @param respectFrontendRoles {@link Boolean}
+	 * @return boolean true if successfully removed
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	boolean moveToExistingDestination(final String newFolder,
+															 final Folder currentFolder,
+															 final User user,
+															 final boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 	/**
 	 *
 	 * @param host

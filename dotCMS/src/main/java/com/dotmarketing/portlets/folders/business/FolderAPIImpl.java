@@ -21,8 +21,11 @@ import com.dotmarketing.business.PermissionAPI.PermissionableType;
 import com.dotmarketing.business.query.GenericQueryFactory.Query;
 import com.dotmarketing.business.query.QueryUtil;
 import com.dotmarketing.business.query.ValidationException;
+import com.dotmarketing.db.FlushCacheRunnable;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.menubuilders.RefreshMenus;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -46,6 +49,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static com.dotmarketing.business.APILocator.getPermissionAPI;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
 import static com.dotmarketing.db.HibernateUtil.addCommitListener;
 import static com.liferay.util.StringPool.BLANK;
 
@@ -774,6 +778,85 @@ public class FolderAPIImpl implements FolderAPI  {
 		addCommitListener(Sneaky.sneaked(()->sendMoveFolderSystemEvent(folderToMove, user)),1000);
 
 		return move;
+	}
+
+	@WrapInTransaction
+	@Override
+	public boolean moveWhenDestinationDoesNotExists(final String newFolder,
+											 final Folder currentFolder,
+											 final User user,
+											 final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+
+		final Host parentHost = APILocator.getHostAPI().find(newFolder, user, respectFrontendRoles);
+
+		if (!permissionAPI.doesUserHavePermission(currentFolder, PERMISSION_WRITE, user)
+				|| !permissionAPI.doesUserHavePermission(parentHost, PERMISSION_WRITE, user)) {
+
+			throw new DotRuntimeException( "The user doesn't have the required permissions." );
+		}
+
+		if (!this.move(currentFolder, parentHost, user, respectFrontendRoles)) {
+			//A folder with the same name already exists on the destination
+			return false;
+		}
+
+		this.addRefreshIndexCommitListener(null, parentHost, currentFolder);
+		return true;
+	}
+
+	@WrapInTransaction
+	@Override
+	public boolean moveToExistingDestination(final String newFolder,
+											 final Folder currentFolder,
+											 final User user,
+											 final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+
+		final Folder parentFolder = this.find(newFolder, user, false);
+
+		if (!permissionAPI.doesUserHavePermission( currentFolder, PERMISSION_WRITE, user )
+				|| !permissionAPI.doesUserHavePermission( parentFolder, PERMISSION_WRITE, user )) {
+
+			throw new DotRuntimeException( "The user doesn't have the required permissions.");
+		}
+
+		if (parentFolder.getInode().equalsIgnoreCase(currentFolder.getInode()) || //Trying to move a folder over itself
+				this.isChildFolder(parentFolder, currentFolder)) {    //Trying to move a folder over one of its children
+
+			return false;
+		}
+
+		if (!this.move(currentFolder, parentFolder, user, respectFrontendRoles)) { //A folder with the same name already exists on the destination
+
+			return false;
+		}
+
+		this.addRefreshIndexCommitListener(parentFolder,null, currentFolder );
+		APILocator.getPermissionAPI().resetPermissionReferences(currentFolder);
+		return true;
+	}
+
+	private void addRefreshIndexCommitListener(final Folder parent,
+											   final Host host,
+											   final Folder folder ) throws DotDataException {
+		HibernateUtil.addCommitListener(new FlushCacheRunnable() {
+			@Override
+			public void run() {
+				try {
+					if (folder!=null) {
+
+						FolderAPIImpl.this.contentletAPI.refreshContentUnderFolderPath(folder.getHostId(), folder.getPath());
+					}
+
+					if ( parent != null ) {
+						FolderAPIImpl.this.contentletAPI.refreshContentUnderFolderPath(parent.getHostId(), parent.getPath());
+					} else {
+						FolderAPIImpl.this.contentletAPI.refreshContentUnderHost(host);
+					}
+				} catch (Exception e) {
+					Logger.error(this, e.getMessage(), e);
+				}
+			}
+		});
 	}
 
 	private void sendMoveFolderSystemEvent (final Folder folderToMove, final User user) throws DotDataException {

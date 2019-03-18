@@ -12,7 +12,6 @@ import com.dotmarketing.business.util.HostNameComparator;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
-import com.dotmarketing.db.FlushCacheRunnable;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
@@ -746,21 +745,8 @@ public class BrowserAjax {
 																	final boolean respectFrontendRoles,
 																	final String errorString) throws Exception {
 
-		final Host parentHost = this.hostAPI.find(newFolder, user, respectFrontendRoles);
-
-		if (!permissionAPI.doesUserHavePermission(currentFolder, PERMISSION_WRITE, user)
-				|| !permissionAPI.doesUserHavePermission(parentHost, PERMISSION_WRITE, user)) {
-
-			throw new DotRuntimeException( "The user doesn't have the required permissions." );
-		}
-
-		if (!this.folderAPI.move(currentFolder, parentHost, user, respectFrontendRoles)) {
-			//A folder with the same name already exists on the destination
-			return Optional.ofNullable(errorString);
-		}
-
-		this.addRefreshIndexCommitListener(null, parentHost, currentFolder);
-		return Optional.empty();
+    	return this.folderAPI.moveWhenDestinationDoesNotExists(newFolder, currentFolder, user, respectFrontendRoles)?
+								Optional.empty():Optional.ofNullable(errorString);
 	}
 
 	private Optional<String> moveFolderToExistingDestination(final String newFolder,
@@ -769,29 +755,10 @@ public class BrowserAjax {
 															 final boolean respectFrontendRoles,
 															 final String errorString) throws Exception {
 
-		final Folder parentFolder = this.folderAPI.find(newFolder, user, false);
-
-		if (!permissionAPI.doesUserHavePermission( currentFolder, PERMISSION_WRITE, user )
-				|| !permissionAPI.doesUserHavePermission( parentFolder, PERMISSION_WRITE, user )) {
-
-			throw new DotRuntimeException( "The user doesn't have the required permissions.");
-		}
-
-		if (parentFolder.getInode().equalsIgnoreCase(currentFolder.getInode()) || //Trying to move a folder over itself
-				this.folderAPI.isChildFolder(parentFolder, currentFolder)) {    //Trying to move a folder over one of its children
-
-			return Optional.ofNullable(errorString);
-		}
-
-		if (!folderAPI.move(currentFolder, parentFolder, user, respectFrontendRoles)) { //A folder with the same name already exists on the destination
-
-			return Optional.ofNullable(errorString);
-		}
-
-		this.addRefreshIndexCommitListener(parentFolder,null, currentFolder );
-		APILocator.getPermissionAPI().resetPermissionReferences(currentFolder);
-		return Optional.empty();
+		return this.folderAPI.moveToExistingDestination(newFolder, currentFolder, user, respectFrontendRoles)?
+				Optional.empty():Optional.ofNullable(errorString);
 	}
+
     /**
      * Moves a given inode folder/host reference into another given folder
      *
@@ -2224,21 +2191,6 @@ public class BrowserAjax {
 			}
 		}
 		return foldersToReturn;
-	}
-
-	private void addRefreshIndexCommitListener(final Folder parent,
-							 final Host host,
-							 final Folder folder ) throws Exception {
-		HibernateUtil.addCommitListener(new FlushCacheRunnable() {
-			@Override
-			public void run() {
-				try {
-					refreshIndex(parent, host, folder);
-				} catch (Exception e) {
-					Logger.error(this, e.getMessage(), e);
-				}
-			}
-		});
 	}
 
 
