@@ -68,12 +68,11 @@ describe('DotLargeMessageDisplayComponent', () => {
         expect(bodyElem.nativeElement.innerHTML.trim()).toBe('bodyTest');
         expect(codeElem.nativeElement.innerHTML.trim()).toBe('codeTest');
         expect(dotLargeMessageDisplayServiceMock.sub).toHaveBeenCalled();
-        expect(component.data$).not.toBe(null);
+        expect(component.data$).not.toBe(undefined);
     });
 
     it('should close DotLargeMessageDisplayComponent', () => {
         dialog.triggerEventHandler('hide', {});
-        fixture.detectChanges();
         expect(dotLargeMessageDisplayServiceMock.clear).toHaveBeenCalled();
     });
 });

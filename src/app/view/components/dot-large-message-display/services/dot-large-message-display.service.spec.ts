@@ -25,10 +25,9 @@ describe('DotLargeMessageDisplayService', () => {
         dotLargeMessageDisplayService = injector.get(DotLargeMessageDisplayService);
     });
 
-    it('should emit a message', (done) => {
+    it('should emit a message', () => {
         dotLargeMessageDisplayService.sub().subscribe((msg: DotEventData) => {
             expect(msg).toEqual(message.data);
-            done();
         });
         mockDotcmsEventsService.triggerSubscribeTo('LARGE_MESSAGE', message);
     });
