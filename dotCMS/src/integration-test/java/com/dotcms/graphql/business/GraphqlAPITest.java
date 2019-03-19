@@ -31,10 +31,14 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
+import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
+import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.liferay.util.StringPool;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
@@ -51,6 +55,7 @@ import java.util.Collections;
 import java.util.function.BiFunction;
 
 import graphql.schema.GraphQLFieldDefinition;
+import graphql.schema.GraphQLList;
 import graphql.schema.GraphQLNonNull;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
@@ -66,8 +71,10 @@ import static com.dotcms.graphql.InterfaceType.VANITY_URL_INTERFACE_NAME;
 import static com.dotcms.graphql.InterfaceType.WIDGET_INTERFACE_NAME;
 import static com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY.MANY_TO_ONE;
 import static com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY.ONE_TO_MANY;
+import static com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY.ONE_TO_ONE;
 import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
@@ -572,8 +579,15 @@ public class GraphqlAPITest {
     }
 
 
+    @DataProvider
+    public static Object[] relationshipFieldTestCases() {
+        return RELATIONSHIP_CARDINALITY.values();
+    }
+
+
+    @UseDataProvider("relationshipFieldTestCases")
     @Test
-    public void testGetSchema_RelationshipField() throws DotDataException,
+    public void testGetSchema_RelationshipField(final RELATIONSHIP_CARDINALITY cardinality) throws DotDataException,
         DotSecurityException {
 
         ContentType parentContentType = null;
@@ -585,7 +599,7 @@ public class GraphqlAPITest {
             final Field parentTypeRelationshipField = createAndSaveManyToManyRelationshipField(
                 "newRelGraphQL",
                 parentContentType.id(), childContentType.variable(),
-                String.valueOf(MANY_TO_ONE.ordinal()));
+                String.valueOf(cardinality.ordinal()));
 
             final GraphQLSchema schema = APILocator.getGraphqlAPI().getSchema();
 
@@ -594,7 +608,14 @@ public class GraphqlAPITest {
                     .getFieldDefinition(parentTypeRelationshipField.variable());
 
             final GraphQLOutputType graphQLFieldType = fieldDefinition.getType();
-            assertEquals(childContentType.variable(), graphQLFieldType.getName());
+
+            if(isOneEndingCardinality(cardinality)) {
+                assertFalse(graphQLFieldType instanceof GraphQLList);
+                assertEquals(childContentType.variable(), graphQLFieldType.getName());
+            } else {
+                assertTrue(graphQLFieldType instanceof GraphQLList);
+                assertEquals(childContentType.variable(), ((GraphQLList)graphQLFieldType).getWrappedType().getName());
+            }
 
 
         } finally {
@@ -700,6 +721,10 @@ public class GraphqlAPITest {
             graphQLObjectType.getInterfaces().stream().anyMatch(
             (interfaceType)-> interfaceType.getName().toLowerCase().equals(assertionParams.expectedInterfaceName.toLowerCase())
         ));
+    }
+
+    private boolean isOneEndingCardinality(final RELATIONSHIP_CARDINALITY cardinality) {
+        return cardinality.equals(ONE_TO_ONE) || cardinality.equals(MANY_TO_ONE);
     }
 
 }
