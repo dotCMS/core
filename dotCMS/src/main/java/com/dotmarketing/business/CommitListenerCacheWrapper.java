@@ -1,5 +1,6 @@
 package com.dotmarketing.business;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
@@ -9,6 +10,9 @@ import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.FlushCacheRunnable;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotHibernateException;
+import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.util.Logger;
+import com.rainerhahnekamp.sneakythrow.Sneaky;
 
 /**
  * this class wraps our cache administrator and will automatically make cache removes and puts
@@ -106,7 +110,18 @@ class CommitListenerCacheWrapper implements DotCacheAdministrator {
     // only put when we are not in a transaction
     @Override
     public void put(final String key, final Object content, final String group) {
-        if (!DbConnectionFactory.inTransaction()) {
+        if (DbConnectionFactory.inTransaction()) {
+            try {
+                HibernateUtil.addCommitListener(new Runnable() {
+                    public void run() {
+                        dotcache.put(key, content, group);
+                    }
+                });
+            } catch (DotHibernateException e) {
+                Logger.warn(this.getClass(),"Unable to put to cache in a commit listener: "+ group + " - " + key + e.getMessage() );
+                Logger.debug(this.getClass(), "Unable to put to cache in a commit listener: "+ group + " - " + key , e);
+            }
+        }else {
             dotcache.put(key, content, group);
         }
     }
@@ -115,17 +130,17 @@ class CommitListenerCacheWrapper implements DotCacheAdministrator {
     public void remove(final String key, final String group) {
         if (DbConnectionFactory.inTransaction()) {
             try {
-                HibernateUtil.addCommitListener(new FlushCacheRunnable() {
+                HibernateUtil.addRollbackListener(new FlushCacheRunnable() {
                     public void run() {
                         dotcache.remove(key, group);
                     }
                 });
             } catch (DotHibernateException e) {
-                throw new RuntimeException(e);
+                Logger.warn(this.getClass(), "Unable to remove from cache in a rollback listener: " + group + " - " + key + e.getMessage() );
+                Logger.debug(this.getClass(), "Unable to remove from cache in a rollback listener: "+ group + " - " + key , e);
             }
         }
         dotcache.remove(key, group);
-
     }
 
     public DotCacheAdministrator getImplementationObject() {
