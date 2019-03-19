@@ -2474,7 +2474,9 @@ public class FieldResourceTest {
     private static Field convertMapToField(Map<String, Object> fieldMap) {
         try {
             fieldMap.remove("fieldVariables");
-
+            fieldMap.remove("fieldTypeLabel");
+            fieldMap.remove("fieldType");
+            
             return mapper.readValue(
                     mapper.writeValueAsString(fieldMap),
                     Field.class
