@@ -13,8 +13,10 @@ import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.util.DotPreconditions;
 import com.dotmarketing.beans.Tree;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Field;
@@ -27,6 +29,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.Map;
@@ -343,8 +346,32 @@ public class RelationshipAPIImpl implements RelationshipAPI {
         final Relationship newRelationship = byTypeValue(
                 parentContentType.variable() + "." + parentRelationshipField.variable());
 
+        migrateOldRelationshipReferences(oldRelationship, newRelationship);
+
+    }
+
+    private void migrateOldRelationshipReferences(Relationship oldRelationship,
+            Relationship newRelationship) throws DotDataException {
+
+        final ContentletAPI contentletAPI = APILocator.getContentletAPI();
+        final Date now = DbConnectionFactory.now();
+        DotConnect dc = new DotConnect();
+
+        //update version_ts on children
+        dc.setSQL("update contentlet_version_info set version_ts = ? where identifier in (select child from tree where relation_type = ?)");
+        dc.addParam(now);
+        dc.addParam(oldRelationship.getRelationTypeValue());
+        dc.loadResult();
+
+        //update version_ts on parents
+        dc = new DotConnect();
+        dc.setSQL("update contentlet_version_info set version_ts = ? where identifier in (select parent from tree where relation_type = ?)");
+        dc.addParam(now);
+        dc.addParam(oldRelationship.getRelationTypeValue());
+        dc.loadResult();
+
         //Update tree table entries with the new Relationship
-        final DotConnect dc = new DotConnect();
+        dc = new DotConnect();
         dc.setSQL("update tree set relation_type = ? where relation_type = ?");
         dc.addParam(newRelationship.getRelationTypeValue());
         dc.addParam(oldRelationship.getRelationTypeValue());
@@ -354,8 +381,8 @@ public class RelationshipAPIImpl implements RelationshipAPI {
         APILocator.getRelationshipAPI().delete(oldRelationship);
 
         //Reindex both Content Types, so the content show the relationships
-        APILocator.getContentletAPI().refresh(oldRelationship.getParentStructure());
-        APILocator.getContentletAPI().refresh(oldRelationship.getChildStructure());
+        contentletAPI.refresh(oldRelationship.getParentStructure());
+        contentletAPI.refresh(oldRelationship.getChildStructure());
     }
 
     private com.dotcms.contenttype.model.field.Field createRelationshipField(final String fieldName, final String parentContentTypeID, final int cardinality, final boolean isRequired, final String childContentTypeVariable)
