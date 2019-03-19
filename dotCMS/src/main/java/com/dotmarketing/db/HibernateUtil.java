@@ -1047,6 +1047,8 @@ public class HibernateUtil {
 
 			final List<Runnable> listeners = getListeners(syncListeners);
 			final List<Runnable> flushers  = getFlushers(syncListeners);
+			
+
 			if (!listeners.isEmpty()) {
 				new DotRunnableThread(listeners).run();
 			}

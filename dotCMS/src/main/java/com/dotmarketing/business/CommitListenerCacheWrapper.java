@@ -1,6 +1,5 @@
 package com.dotmarketing.business;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
@@ -10,9 +9,7 @@ import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.FlushCacheRunnable;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotHibernateException;
-import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Logger;
-import com.rainerhahnekamp.sneakythrow.Sneaky;
 
 /**
  * this class wraps our cache administrator and will automatically make cache removes and puts
@@ -135,7 +132,7 @@ class CommitListenerCacheWrapper implements DotCacheAdministrator {
                         dotcache.remove(key, group);
                     }
                 });
-                HibernateUtil.addCommitListener(new FlushCacheRunnable() {
+                HibernateUtil.addCommitListener(String.valueOf(key+group).toLowerCase(), new FlushCacheRunnable() {
                     public void run() {
                         dotcache.remove(key, group);
                     }
