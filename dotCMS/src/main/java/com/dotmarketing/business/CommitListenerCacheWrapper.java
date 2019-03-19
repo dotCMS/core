@@ -135,6 +135,11 @@ class CommitListenerCacheWrapper implements DotCacheAdministrator {
                         dotcache.remove(key, group);
                     }
                 });
+                HibernateUtil.addCommitListener(new FlushCacheRunnable() {
+                    public void run() {
+                        dotcache.remove(key, group);
+                    }
+                });
             } catch (DotHibernateException e) {
                 Logger.warn(this.getClass(), "Unable to remove from cache in a rollback listener: " + group + " - " + key + e.getMessage() );
                 Logger.debug(this.getClass(), "Unable to remove from cache in a rollback listener: "+ group + " - " + key , e);
