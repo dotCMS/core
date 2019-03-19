@@ -1,6 +1,6 @@
 import { async, ComponentFixture, TestBed } from '@angular/core/testing';
 import { DotLargeMessageDisplayComponent } from './dot-large-message-display.component';
-import { Injectable } from '@angular/core';
+import { Injectable, DebugElement } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
 import {
     DotLargeMessageDisplayParams,
@@ -22,12 +22,15 @@ export class DotLargeMessageDisplayServiceMock {
         this._messages.next(message);
     }
 
-    clear(): void {}
+    clear(): void {
+        this._messages.next(null);
+    }
 }
 
 describe('DotLargeMessageDisplayComponent', () => {
     let component: DotLargeMessageDisplayComponent;
     let fixture: ComponentFixture<DotLargeMessageDisplayComponent>;
+    let dialog: DebugElement;
     const dotLargeMessageDisplayServiceMock: DotLargeMessageDisplayServiceMock = new DotLargeMessageDisplayServiceMock();
 
     beforeEach(async(() => {
@@ -52,21 +55,25 @@ describe('DotLargeMessageDisplayComponent', () => {
             code: { lang: 'eng', content: 'codeTest' }
         });
         fixture.detectChanges();
+        dialog = fixture.debugElement.query(By.css('dot-dialog'));
     });
 
     it('should create DotLargeMessageDisplayComponent', () => {
+        const bodyElem = fixture.debugElement.query(By.css('.dialog-message__body'));
+        const codeElem = fixture.debugElement.query(By.css('.dialog-message__code'));
         expect(component).toBeTruthy();
+        expect(dialog.componentInstance.visible).toBeTruthy();
+        expect(dialog.componentInstance.header).toBe('title Test');
+        expect(dialog.componentInstance.width).toBe('1000');
+        expect(bodyElem.nativeElement.innerHTML.trim()).toBe('bodyTest');
+        expect(codeElem.nativeElement.innerHTML.trim()).toBe('codeTest');
         expect(dotLargeMessageDisplayServiceMock.sub).toHaveBeenCalled();
         expect(component.data$).not.toBe(null);
     });
 
     it('should close DotLargeMessageDisplayComponent', () => {
-        spyOn(component, 'close').and.callThrough();
-        fixture.detectChanges();
-        const dialog = fixture.debugElement.query(By.css('dot-dialog'));
         dialog.triggerEventHandler('hide', {});
         fixture.detectChanges();
-        expect(component.close).toHaveBeenCalled();
         expect(dotLargeMessageDisplayServiceMock.clear).toHaveBeenCalled();
     });
 });

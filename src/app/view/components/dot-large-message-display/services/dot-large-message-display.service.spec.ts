@@ -1,7 +1,7 @@
 import { DotLargeMessageDisplayService } from './dot-large-message-display.service';
 import { DotcmsEventsServiceMock } from '@tests/dotcms-events-service.mock';
 import { DOTTestBed } from '@tests/dot-test-bed';
-import { DotcmsEventsService } from 'dotcms-js';
+import { DotcmsEventsService, DotEventData } from 'dotcms-js';
 
 describe('DotLargeMessageDisplayService', () => {
     const mockDotcmsEventsService: DotcmsEventsServiceMock = new DotcmsEventsServiceMock();
@@ -13,7 +13,6 @@ describe('DotLargeMessageDisplayService', () => {
             width: '100',
             body: 'Body Test',
             title: 'testTitle',
-            lang: 'eng',
             height: '200'
         }
     };
@@ -23,24 +22,22 @@ describe('DotLargeMessageDisplayService', () => {
             { provide: DotcmsEventsService, useValue: mockDotcmsEventsService },
             DotLargeMessageDisplayService
         ]);
-
         dotLargeMessageDisplayService = injector.get(DotLargeMessageDisplayService);
     });
 
     it('should emit a message', (done) => {
-        mockDotcmsEventsService.triggerSubscribeTo('LARGE_MESSAGE', message);
-        dotLargeMessageDisplayService.sub().subscribe((msg) => {
-            const { code, width, body, title, lang, height } = message.data;
-            const emittedMsg = {
-                title,
-                height,
-                width,
-                body,
-                code: { lang, content: code }
-            };
-
-            expect(msg).toEqual(emittedMsg);
+        dotLargeMessageDisplayService.sub().subscribe((msg: DotEventData) => {
+            expect(msg).toEqual(message.data);
             done();
         });
+        mockDotcmsEventsService.triggerSubscribeTo('LARGE_MESSAGE', message);
     });
+
+    it('should clear message content', () => {
+        dotLargeMessageDisplayService.sub().subscribe((msg: DotEventData) => {
+            expect(msg).toEqual(null);
+        });
+        dotLargeMessageDisplayService.clear();
+    });
+
 });

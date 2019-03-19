@@ -5,7 +5,7 @@
     [width]="data.width"
     (hide)="close()"
 >
-    <div [innerHTML]="data.body" *ngIf="data.body"></div>
+    <div class="dialog-message__body" [innerHTML]="data.body" *ngIf="data.body"></div>
     <div *ngIf="data.code">
         <pre class="dialog-message__code">
             {{ data.code.content }}
