@@ -9,7 +9,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.cluster.ClusterUtils;
 import com.dotcms.cluster.bean.Server;
@@ -36,7 +35,6 @@ import com.dotmarketing.util.WebKeys;
 public class ChainableCacheAdministratorImpl implements DotCacheAdministrator {
 
 	CacheTransport cacheTransport;
-
 
 	private CacheProviderAPI cacheProviderAPI;
 	private boolean useTransportChannel = false;
@@ -74,6 +72,7 @@ public class ChainableCacheAdministratorImpl implements DotCacheAdministrator {
 			useTransportChannel = false;
 		}
 
+		APILocator.getDistributedJournalAPI();
 	}
 
 	public void initProviders () {
