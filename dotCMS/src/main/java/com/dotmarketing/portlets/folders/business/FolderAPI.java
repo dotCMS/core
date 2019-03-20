@@ -434,14 +434,14 @@ import java.util.function.Predicate;
 	/**
 	 * Move a folder identify by identifier, to new path
 	 * @param folderId       {@link String} current folder id
-	 * @param newFolderPath  {@link String} new folder path to move the inode
+	 * @param newFolderId    {@link String} new folder id path to move
 	 * @param user			 {@link User}   current user
 	 * @param respectFrontendRoles {@link Boolean}
 	 * @return boolean true if the move is successfully
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
-	boolean move (final String folderId, final String newFolderPath,
+	boolean move (final String folderId, final String newFolderId,
 							   final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
 	/**
