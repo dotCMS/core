@@ -77,9 +77,12 @@ public class UserAPIImpl implements UserAPI {
 		if(!UtilMethods.isSet(userId)){
 			throw new DotDataException("You must specifiy an userId to search for");
 		}
-		User u = userFactory.loadUserById(userId);
+		final User u = userFactory.loadUserById(userId);
 		if(!UtilMethods.isSet(u)){
 			throw new com.dotmarketing.business.NoSuchUserException("No user found with passed in email");
+		}
+		if(user!=null && user.getUserId().equals(u.getUserId())) {
+		    return user;
 		}
 		if(permissionAPI.doesUserHavePermission(userProxyAPI.getUserProxy(u,APILocator.getUserAPI().getSystemUser(), false), PermissionAPI.PERMISSION_READ, user, respectFrontEndRoles)){
 			return u;

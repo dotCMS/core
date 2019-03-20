@@ -1,20 +1,11 @@
 package com.dotcms.rest;
 
-import static com.dotmarketing.util.NumberUtil.toInt;
-import static com.dotmarketing.util.NumberUtil.toLong;
-
 import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
-import com.dotcms.repackage.javax.ws.rs.Consumes;
-import com.dotcms.repackage.javax.ws.rs.GET;
-import com.dotcms.repackage.javax.ws.rs.POST;
-import com.dotcms.repackage.javax.ws.rs.PUT;
-import com.dotcms.repackage.javax.ws.rs.Path;
-import com.dotcms.repackage.javax.ws.rs.PathParam;
-import com.dotcms.repackage.javax.ws.rs.Produces;
+import com.dotcms.repackage.javax.ws.rs.*;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
@@ -33,7 +24,7 @@ import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.uuid.shorty.ShortyId;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.db.HibernateUtil;
@@ -54,12 +45,7 @@ import com.dotmarketing.portlets.structure.model.Field.FieldType;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.transform.ContentletRelationshipsTransformer;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.InodeUtils;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.SecurityLogger;
-import com.dotmarketing.util.UUIDUtil;
-import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.*;
 import com.liferay.portal.model.User;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.converters.Converter;
@@ -68,29 +54,23 @@ import com.thoughtworks.xstream.converters.UnmarshallingContext;
 import com.thoughtworks.xstream.io.HierarchicalStreamReader;
 import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
 import com.thoughtworks.xstream.io.xml.DomDriver;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.Part;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
-import java.util.AbstractMap;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.Part;
+
+import static com.dotmarketing.util.NumberUtil.toInt;
+import static com.dotmarketing.util.NumberUtil.toLong;
 
 @Path("/content")
 public class ContentResource {
@@ -105,6 +85,7 @@ public class ContentResource {
     private static final String REFERER = "referer";
     private static final String REQUEST_METHOD = "requestMethod";
     private static final String ACCEPT_LANGUAGE = "acceptLanguage";
+    private static final MediaType MEDIA_TYPE_GENERIC_TEXT = new MediaType("text","*");
 
     private final WebResource webResource = new WebResource();
     private final ContentHelper contentHelper = ContentHelper.getInstance();
@@ -505,7 +486,7 @@ public class ContentResource {
         } catch (DotSecurityException e) {
 
             Logger.debug(this, "Permission error: " + e.getMessage(), e);
-            throw new ForbiddenException(e);
+            return ExceptionMapperUtil.createResponse(new DotStateException("No Permissions"), Response.Status.FORBIDDEN);
         } catch (Exception e) {
             if (idPassed) {
                 Logger.warn(this, "Can't find Content with Identifier: " + id);
@@ -1149,49 +1130,26 @@ public class ContentResource {
                     responseBuilder.entity(e.getMessage());
                     return responseBuilder.build();
                 }
-            } else if (part.getMediaType().equals(MediaType.TEXT_PLAIN_TYPE)) {
+            } else if (part.getMediaType().equals(MEDIA_TYPE_GENERIC_TEXT)) {
                 try {
-                    map.put(name, part.getEntityAs(String.class));
-                    processMap(contentlet, map);
-                } catch (Exception e) {
-                    Logger.error(this.getClass(), "Error processing Plain Tex", e);
+
+                    this.processFile(contentlet, usedBinaryFields, binaryFields, part);
+                } catch (IOException e) {
+
+                    Logger.error(this.getClass(), "Error processing Stream", e);
 
                     Response.ResponseBuilder responseBuilder = Response
                             .status(HttpStatus.SC_INTERNAL_SERVER_ERROR);
                     responseBuilder.entity(e.getMessage());
                     return responseBuilder.build();
+                } catch (DotSecurityException e) {
+                    throw new ForbiddenException(e);
                 }
             } else if (part.getContentDisposition() != null) {
-                InputStream input = part.getEntityAs(InputStream.class);
-                String filename = part.getContentDisposition().getFileName();
-                java.io.File tmpFolder = new File(
-                        APILocator.getFileAssetAPI().getRealAssetPathTmpBinary() + UUIDUtil.uuid());
-                tmpFolder.mkdirs();
-                java.io.File tmp = new File(
-                        tmpFolder.getAbsolutePath() + File.separator + filename);
-                if (tmp.exists()) {
-                    tmp.delete();
-                }
+
                 try {
-                    FileUtils.copyInputStreamToFile(input, tmp);
-                    List<Field> fields = new LegacyFieldTransformer(
-                            APILocator.getContentTypeAPI(APILocator.systemUser()).
-                                    find(contentlet.getContentType().inode()).fields())
-                            .asOldFieldList();
-                    for (Field ff : fields) {
-                        // filling binariess in order. as they come / as field order says
-                        String fieldName = ff.getFieldContentlet();
-                        if (fieldName.startsWith("binary")
-                                && !usedBinaryFields.contains(fieldName)) {
-                            String fieldVarName = ff.getVelocityVarName();
-                            if (binaryFields.size() > 0) {
-                                fieldVarName = binaryFields.remove(0);
-                            }
-                            contentlet.setBinary(fieldVarName, tmp);
-                            usedBinaryFields.add(fieldName);
-                            break;
-                        }
-                    }
+
+                    this.processFile(contentlet, usedBinaryFields, binaryFields, part);
                 } catch (IOException e) {
 
                     Logger.error(this.getClass(), "Error processing Stream", e);
@@ -1207,6 +1165,43 @@ public class ContentResource {
         }
 
         return saveContent(contentlet, init);
+    }
+
+    private void processFile(final Contentlet contentlet,
+                             final List<String> usedBinaryFields,
+                             final List<String> binaryFields,
+                             final BodyPart part) throws IOException, DotSecurityException, DotDataException {
+
+        final InputStream input = part.getEntityAs(InputStream.class);
+        final String filename = part.getContentDisposition().getFileName();
+        final File tmpFolder = new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary() + UUIDUtil.uuid());
+        tmpFolder.mkdirs();
+        final File tmp = new File(
+                tmpFolder.getAbsolutePath() + File.separator + filename);
+        if (tmp.exists()) {
+            tmp.delete();
+        }
+
+        FileUtils.copyInputStreamToFile(input, tmp);
+        final List<Field> fields = new LegacyFieldTransformer(
+                APILocator.getContentTypeAPI(APILocator.systemUser()).
+                        find(contentlet.getContentType().inode()).fields())
+                .asOldFieldList();
+        for (final Field ff : fields) {
+            // filling binaries in order. as they come / as field order says
+            final String fieldName = ff.getFieldContentlet();
+            if (fieldName.startsWith("binary")
+                    && !usedBinaryFields.contains(fieldName)) {
+
+                String fieldVarName = ff.getVelocityVarName();
+                if (binaryFields.size() > 0) {
+                    fieldVarName = binaryFields.remove(0);
+                }
+                contentlet.setBinary(fieldVarName, tmp);
+                usedBinaryFields.add(fieldName);
+                break;
+            }
+        }
     }
 
     @PUT

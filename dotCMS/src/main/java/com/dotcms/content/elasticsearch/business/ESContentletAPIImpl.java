@@ -1386,8 +1386,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
         try{
             return permissionAPI.filterCollection(searchByIdentifier(q, -1, 0, rel.getRelationTypeValue() + "-" + contentlet.getIdentifier() + "-order" , user, respectFrontendRoles, PermissionAPI.PERMISSION_READ, true), PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
         }catch (Exception e) {
-            final String errorMessage = "Unable to look up related content for contentlet with identifier "
-                    + contentlet.getIdentifier();
+            final String errorMessage =
+                    "Unable to look up related content for contentlet with identifier "
+                            + contentlet.getIdentifier() + " and title " + contentlet.getTitle()
+                            + ". Relationship Name: " + rel.getRelationTypeValue();
             if(e.getMessage() != null && e.getMessage().contains("[query_fetch]")){
                 try{
                     APILocator.getContentletIndexAPI().addContentToIndex(contentlet,false,false);
@@ -1396,7 +1398,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     throw new DotDataException(errorMessage, ex);
                 }
             } else if (e.getCause() instanceof SearchPhaseExecutionException){
-                Logger.warn(this, errorMessage + ". An empty list will be returned", e);
+                Logger.warn(this, errorMessage + ". An empty list will be returned");
+                Logger.debug(this, errorMessage + ". An empty list will be returned", e);
                 return Collections.emptyList();
             }
             throw new DotDataException(errorMessage, e);
@@ -3102,7 +3105,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 contentlet.setFolder(FolderAPI.SYSTEM_FOLDER);
             }
 
-            Contentlet contentletRaw=contentlet;
+            Contentlet contentletRaw = populateHost(contentlet);
 
             if ( contentlet.getMap().get( "_use_mod_date" ) != null ) {
                     /*
@@ -3157,7 +3160,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                     if ( UtilMethods.isSet(value) ) {
 
-                        if ( structureHasAHostField ) {
+                        if ( structureHasAHostField || UtilMethods.isSet(contentlet.getHost())) {
                             Host host = null;
                             try {
                                 host = APILocator.getHostAPI().find(contentlet.getHost(), user, true);
@@ -6579,4 +6582,38 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return contentlet;
     }
 
+    /**
+     * sets the host / folder if it is not set
+     * to either a sibling's host/folder or 
+     * the content type's host folder
+     * @param contentlet
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    protected Contentlet populateHost(final Contentlet contentlet) throws DotDataException, DotSecurityException {
+        // check contentlet Host
+        // If host and folder are not set yet
+        if (!UtilMethods.isSet(contentlet.getHost()) && !UtilMethods.isSet(contentlet.getFolder())) {
+            // Try to get host from sibling
+            final Contentlet crownPrince = findContentletByIdentifierAnyLanguage(contentlet.getIdentifier());
+            // if has a viable sibling, take siblings host/folder
+            if (UtilMethods.isSet(crownPrince) && UtilMethods.isSet(crownPrince.getHost()) && UtilMethods.isSet(crownPrince.getFolder())) {
+                contentlet.setHost(crownPrince.getHost());
+                contentlet.setFolder(crownPrince.getFolder());
+            } else { // Try to get host from Content Type
+                contentlet.setHost(contentlet.getContentType().host());
+                contentlet.setFolder(contentlet.getContentType().folder());
+            }
+        }
+        if (!UtilMethods.isSet(contentlet.getHost())) {
+            contentlet.setHost(APILocator.systemHost().getIdentifier());
+        }
+        if (!UtilMethods.isSet(contentlet.getFolder())) {
+            contentlet.setFolder(FolderAPI.SYSTEM_FOLDER);
+        }
+        return contentlet;
+    }
+
+    
 }

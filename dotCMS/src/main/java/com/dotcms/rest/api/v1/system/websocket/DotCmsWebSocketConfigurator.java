@@ -12,6 +12,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import com.liferay.portal.util.PortalUtil;
 
 import javax.servlet.http.HttpSession;
 import javax.websocket.HandshakeResponse;
@@ -77,7 +78,7 @@ public class DotCmsWebSocketConfigurator extends Configurator {
 
 				httpSession = HttpSession.class.cast(session);
 				sessionId   = httpSession.getId();
-				user = (User) httpSession.getAttribute(com.liferay.portal.util.WebKeys.USER);
+				user = (User) PortalUtil.getUser(httpSession);
 
 				if (!UtilMethods.isSet(user)) {
 
@@ -97,8 +98,8 @@ public class DotCmsWebSocketConfigurator extends Configurator {
 			if (!UtilMethods.isSet(user) && ((null != headers) && (headers.size() > 0))) {
 
 				authorizationHeader = headers.get(0);
-				user = this.authCredentialProcessor.processAuthCredentialsFromJWT
-						(authorizationHeader, httpSession);
+				user = this.authCredentialProcessor.processAuthHeaderFromJWT
+						(authorizationHeader, httpSession, "websocket");
 			}
 
 			if (UtilMethods.isSet(user)) {

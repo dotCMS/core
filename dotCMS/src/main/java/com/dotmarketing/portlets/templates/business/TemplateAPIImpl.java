@@ -343,6 +343,17 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 		return containerUUIDS;
 	}
 
+	@Override
+	public List<ContainerUUID> getContainersUUIDFromDrawTemplateBody(final String drawTemplateBody) {
+
+		if (!UtilMethods.isSet(drawTemplateBody)) {
+
+			return Collections.emptyList();
+		}
+
+		return templateFactory.getContainerUUIDFromHTML(drawTemplateBody);
+	}
+
 	private List<String> getContainersId(TemplateLayout layout) {
 
 		return this.getContainersUUID(layout).stream()

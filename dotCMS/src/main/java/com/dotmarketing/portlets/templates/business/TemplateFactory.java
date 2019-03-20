@@ -5,10 +5,12 @@ import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.liferay.portal.model.User;
+
 import java.util.List;
 import java.util.Map;
-import com.liferay.portal.model.User;
 
 public interface TemplateFactory {
 
@@ -43,6 +45,14 @@ public interface TemplateFactory {
 	Template find(String inode) throws DotStateException, DotDataException;
 	
 	List<Container> getContainersInTemplate(Template template, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+
+	/**
+	 * Parse a html with #parseContainer(id, uuid)
+	 * The id could be an identifier or path
+	 * @param templateBody String
+	 * @return List
+	 */
+	List<ContainerUUID> getContainerUUIDFromHTML(final String templateBody);
 
 	Template copyTemplate(Template currentTemplate, Host host) throws DotDataException, DotSecurityException;
 	

@@ -189,10 +189,7 @@ public class ContentletAjax {
 
 		} catch (DotDataException e) {
 			Logger.error(this, "Error trying to obtain the contentlets from the relationship.", e);
-		} catch (PortalException e) {
-			Logger.error(this, "Portal exception.", e);
-		} catch (SystemException e) {
-			Logger.error(this, "System exception.", e);
+
 		} catch (DotSecurityException e) {
 			Logger.error(this, "Security exception.", e);
 		}
@@ -351,10 +348,7 @@ public class ContentletAjax {
 
 		} catch (DotDataException e) {
 			Logger.error(this, "Error trying to obtain the contentlets from the relationship.", e);
-		} catch (PortalException e) {
-			Logger.error(this, "Portal exception.", e);
-		} catch (SystemException e) {
-			Logger.error(this, "System exception.", e);
+
 		} catch (DotSecurityException e) {
 			Logger.error(this, "Security exception.", e);
 		}
@@ -1341,10 +1335,7 @@ public class ContentletAjax {
 
 			} catch (DotDataException e) {
 				Logger.error(this, "Error trying to obtain the contentlets from the relationship.", e);
-			} catch (PortalException e) {
-				Logger.error(this, "Portal exception.", e);
-			} catch (SystemException e) {
-				Logger.error(this, "System exception.", e);
+
 			}catch (DotSecurityException e) {
 				Logger.error(this, "Security exception.", e);
 			}

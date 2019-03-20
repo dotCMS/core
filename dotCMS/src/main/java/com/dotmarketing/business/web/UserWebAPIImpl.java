@@ -7,10 +7,7 @@ import com.dotcms.business.CloseDBIfOpened;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.UserAPIImpl;
-import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.WebKeys;
-import com.liferay.portal.PortalException;
-import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
 
@@ -27,10 +24,7 @@ public class UserWebAPIImpl extends UserAPIImpl implements UserWebAPI {
     @Override
     public User getUser(HttpServletRequest request) {
       try{
-        User user = PortalUtil.getUser(request);
-        if(user == null){
-          user = this.getLoggedInUser(request.getSession(false));
-        }
+        User user = this.getLoggedInUser(request);
         if(user==null){
           user =  APILocator.getUserAPI().getAnonymousUser();
         }
@@ -41,8 +35,7 @@ public class UserWebAPIImpl extends UserAPIImpl implements UserWebAPI {
     }
     
 	@Override
-	public User getLoggedInUser(HttpServletRequest request)
-			throws DotRuntimeException, PortalException, SystemException {
+	public User getLoggedInUser(HttpServletRequest request) {
 		User user = PortalUtil.getUser(request);
 		return (user == null)?
 				//Assuming is a front-end access
@@ -52,18 +45,16 @@ public class UserWebAPIImpl extends UserAPIImpl implements UserWebAPI {
 	@Override
 	public User getLoggedInUser(final HttpSession session) {
 
-		return  (session != null)?
-					(User)session.getAttribute(WebKeys.CMS_USER):null;
+		return  PortalUtil.getUser(session);
 	}
 
 	@Override
-	public boolean isLoggedToBackend(HttpServletRequest request)
-			throws DotRuntimeException, PortalException, SystemException {
+	public boolean isLoggedToBackend(HttpServletRequest request) {
 		return PortalUtil.getUser(request) != null;
 	}
 
 	@Override
-	public User getLoggedInFrontendUser(HttpServletRequest request) throws DotRuntimeException, PortalException, SystemException {
+	public User getLoggedInFrontendUser(HttpServletRequest request)  {
 		HttpSession session = request.getSession(false);
 		if(session != null)
 			return (User) session.getAttribute(WebKeys.CMS_USER);
@@ -71,7 +62,7 @@ public class UserWebAPIImpl extends UserAPIImpl implements UserWebAPI {
 	}
 
 	@Override
-	public boolean isLoggedToFrontend(HttpServletRequest req) throws DotRuntimeException, PortalException, SystemException {
+	public boolean isLoggedToFrontend(HttpServletRequest req)  {
 		return !isLoggedToBackend(req);
 	}
 

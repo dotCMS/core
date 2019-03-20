@@ -1,6 +1,20 @@
 package com.dotcms.rest.api.v1.authentication;
 
+import static com.dotcms.util.CollectionsUtils.map;
+import static java.util.Collections.EMPTY_MAP;
+
+import java.io.Serializable;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.Locale;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 import com.dotcms.auth.providers.jwt.JsonWebTokenUtils;
+import com.dotcms.auth.providers.jwt.beans.ApiToken;
 import com.dotcms.cms.login.LoginServiceAPI;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.ws.rs.POST;
@@ -22,7 +36,13 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
-import com.liferay.portal.*;
+import com.liferay.portal.NoSuchUserException;
+import com.liferay.portal.PortalException;
+import com.liferay.portal.RequiredLayoutException;
+import com.liferay.portal.SystemException;
+import com.liferay.portal.UserActiveException;
+import com.liferay.portal.UserEmailAddressException;
+import com.liferay.portal.UserPasswordException;
 import com.liferay.portal.auth.AuthException;
 import com.liferay.portal.ejb.UserLocalManager;
 import com.liferay.portal.ejb.UserLocalManagerFactory;
@@ -30,18 +50,8 @@ import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.language.LanguageWrapper;
 import com.liferay.portal.model.User;
-import com.liferay.portal.util.WebKeys;
+import com.liferay.portal.util.PortalUtil;
 import com.liferay.util.LocaleUtil;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-import java.io.Serializable;
-import java.util.Arrays;
-import java.util.Locale;
-
-import static com.dotcms.util.CollectionsUtils.map;
-import static java.util.Collections.EMPTY_MAP;
 
 /**
  * Create a new Json Web Token
@@ -93,7 +103,7 @@ public class CreateJsonWebTokenResource implements Serializable {
                                          @Context final HttpServletResponse response,
                                          final CreateTokenForm createTokenForm) {
 
-        final String userId = createTokenForm.getUser();
+        final String userId = createTokenForm.user;
         Response res = null;
         boolean authenticated = false;
         Locale locale = LocaleUtil.getLocale(request);
@@ -102,24 +112,28 @@ public class CreateJsonWebTokenResource implements Serializable {
 
             authenticated =
                     this.loginService.doActionLogin(userId,
-                            createTokenForm.getPassword(),
+                            createTokenForm.password,
                             false, request, response);
 
             if (authenticated) {
 
-                final HttpSession ses = request.getSession();
-                final User user = this.userLocalManager.getUserById((String) ses.getAttribute(WebKeys.USER_ID));
-                final int jwtMaxAge = createTokenForm.getExpirationDays() > 0 ?
-                        this.getExpirationDays (createTokenForm.getExpirationDays()):
+
+                final User user = this.userLocalManager.getUserById(PortalUtil.getUserId(request));
+                
+                
+                
+                
+                final int jwtMaxAgeDays = createTokenForm.expirationDays > 0 ?
+                        this.getExpirationDays (createTokenForm.expirationDays):
                         Config.getIntProperty(
                             LoginServiceAPI.JSON_WEB_TOKEN_DAYS_MAX_AGE,
                             LoginServiceAPI.JSON_WEB_TOKEN_DAYS_MAX_AGE_DEFAULT);
 
                 this.securityLoggerServiceAPI.logInfo(this.getClass(),
-                        "A Json Web Token " + userId.toLowerCase() + " has been created from IP: " +
+                        "A Json Web Token " + userId.toLowerCase() + " is being created from IP: " +
                                 HttpRequestDataUtil.getRemoteAddress(request));
                 res = Response.ok(new ResponseEntityView(map("token",
-                        createJsonWebToken(user, jwtMaxAge)), EMPTY_MAP)).build(); // 200
+                        createJsonWebToken(user, jwtMaxAgeDays, request.getRemoteAddr(), createTokenForm.label)), EMPTY_MAP)).build(); // 200
             } else {
 
                 res = this.responseUtil.getErrorResponse(request, Response.Status.UNAUTHORIZED,
@@ -157,8 +171,9 @@ public class CreateJsonWebTokenResource implements Serializable {
 
         } catch (Exception e) { // this is an unknown error, so we report as a 500.
 
-            SecurityLogger.logInfo(this.getClass(),"An invalid attempt to login as "
+            SecurityLogger.logInfo(this.getClass(),"Possible invalid attempt to login as "
                     + userId.toLowerCase() + " has been made from IP: " + request.getRemoteAddr());
+            SecurityLogger.logInfo(this.getClass(),"Error was:" + e);
             res = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
         }
 
@@ -199,8 +214,15 @@ public class CreateJsonWebTokenResource implements Serializable {
      * @throws PortalException
      * @throws SystemException
      */
-    protected String createJsonWebToken (final User user, final int jwtMaxAge) throws PortalException, SystemException {
+    protected String createJsonWebToken (final User user, final int jwtMaxAgeDays, final String ipAddress, final String label) throws PortalException, SystemException {
+        
+        Date expireDate =   Date.from(Instant.now().plus(jwtMaxAgeDays, ChronoUnit.DAYS));
 
-        return this.jsonWebTokenUtils.createToken(user, jwtMaxAge);
+        
+
+        ApiToken token  = APILocator.getApiTokenAPI().persistApiToken(user.getUserId(), expireDate, user.getUserId(), ipAddress, label);
+        
+        
+        return APILocator.getApiTokenAPI().getJWT(token, user);
     }
 } // E:O:F:CreateJsonWebTokenResource.
