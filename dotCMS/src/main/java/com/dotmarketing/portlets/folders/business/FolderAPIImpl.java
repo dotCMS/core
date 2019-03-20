@@ -782,7 +782,7 @@ public class FolderAPIImpl implements FolderAPI  {
 
 	@Override
 	@WrapInTransaction
-    public boolean move (final String folderId, final String newFolder,
+    public boolean move (final String folderId, final String newFolderId,
 							  final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 
 
@@ -790,11 +790,11 @@ public class FolderAPIImpl implements FolderAPI  {
 		final Folder folder = this.find( folderId, user, false );
 
 		return
-				!this.exists(newFolder)?
+				!this.exists(newFolderId)?
 						this.moveWhenDestinationDoesNotExists
-							(newFolder, folder, user, respectFrontendRoles):
+							(newFolderId, folder, user, respectFrontendRoles):
 						this.moveToExistingDestination
-							(newFolder, folder, user, respectFrontendRoles);
+							(newFolderId, folder, user, respectFrontendRoles);
 
     }
 
