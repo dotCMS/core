@@ -86,8 +86,8 @@ public class HibernateUtil {
 	static final ThreadLocal<Map<String, Runnable>> syncCommitListeners = ThreadLocal
 			.withInitial(LinkedHashMap::new);
 
-	private static final ThreadLocal< List<Runnable> > rollbackListeners= ThreadLocal
-			.withInitial(ArrayList::new);
+    static final ThreadLocal<Map<String, Runnable>> rollbackListeners= ThreadLocal
+            .withInitial(LinkedHashMap::new);
 
 	public HibernateUtil(Class c) {
 		setClass(c);
@@ -960,19 +960,22 @@ public class HibernateUtil {
 	}
 
 	public static void addRollbackListener(Runnable listener) throws DotHibernateException{
-		if (getTransactionListenersStatus() != TransactionListenerStatus.DISABLED) {
-	        try {
-	            if(getSession().connection().getAutoCommit())
-	                listener.run();
-	            else
-	                rollbackListeners.get().add(listener);
-	        }
-	        catch(Exception ex) {
-	            throw new DotHibernateException(ex.getMessage(),ex);
-	        }
-		}
+	    addRollbackListener(UUIDGenerator.generateUuid(), listener);
     }
-
+    public static void addRollbackListener(final String key, Runnable listener) throws DotHibernateException{
+        if (getTransactionListenersStatus() != TransactionListenerStatus.DISABLED) {
+            try {
+                if(getSession().connection().getAutoCommit())
+                    listener.run();
+                else
+                    rollbackListeners.get().put(key, listener);
+            }
+            catch(Exception ex) {
+                throw new DotHibernateException(ex.getMessage(),ex);
+            }
+        }
+    }
+    
 	public static void closeSessionSilently() {
 
 		try {
@@ -1216,7 +1219,7 @@ public class HibernateUtil {
 		}
 
 		if(rollbackListeners.get().size()>0) {
-            List<Runnable> r = new ArrayList<>(rollbackListeners.get());
+            List<Runnable> r = new ArrayList<>(rollbackListeners.get().values());
             rollbackListeners.get().clear();
             for(Runnable runnable :r){
             	runnable.run();

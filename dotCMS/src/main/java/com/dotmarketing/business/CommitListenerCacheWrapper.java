@@ -106,8 +106,17 @@ class CommitListenerCacheWrapper implements DotCacheAdministrator {
     // only put when we are not in a transaction
     @Override
     public void put(final String key, final Object content, final String group) {
-        if (!DbConnectionFactory.inTransaction()) {
-            dotcache.put(key, content, group);
+        dotcache.put(key, content, group);
+        if (DbConnectionFactory.inTransaction()) {
+            try {
+                HibernateUtil.addRollbackListener(group+key+content.hashCode(),new FlushCacheRunnable() {
+                    public void run() {
+                        dotcache.remove(key, group);
+                    }
+                });
+            } catch (DotHibernateException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 

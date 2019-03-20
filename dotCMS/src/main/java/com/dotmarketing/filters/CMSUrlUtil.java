@@ -232,7 +232,7 @@ public class CMSUrlUtil {
 									false);
 					return (c.getContentType().baseType() == BaseContentType.FILEASSET);
 				}
-			} catch (DotDataException | DotSecurityException e) {
+			} catch (Exception e) {
 				Logger.debug(this.getClass(), UNABLE_TO_FIND + uri);
 				return false;
 			}
