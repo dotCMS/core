@@ -69,6 +69,7 @@ import static com.dotcms.graphql.InterfaceType.PAGE_INTERFACE_NAME;
 import static com.dotcms.graphql.InterfaceType.PERSONA_INTERFACE_NAME;
 import static com.dotcms.graphql.InterfaceType.VANITY_URL_INTERFACE_NAME;
 import static com.dotcms.graphql.InterfaceType.WIDGET_INTERFACE_NAME;
+import static com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY.MANY_TO_MANY;
 import static com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY.MANY_TO_ONE;
 import static com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY.ONE_TO_MANY;
 import static com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY.ONE_TO_ONE;
@@ -584,11 +585,10 @@ public class GraphqlAPITest {
         return RELATIONSHIP_CARDINALITY.values();
     }
 
-
     @UseDataProvider("relationshipFieldTestCases")
     @Test
-    public void testGetSchema_RelationshipField(final RELATIONSHIP_CARDINALITY cardinality) throws DotDataException,
-        DotSecurityException {
+    public void testGetSchema_BothSidedRelationshipFields(final RELATIONSHIP_CARDINALITY cardinality) throws DotDataException,
+            DotSecurityException {
 
         ContentType parentContentType = null;
         ContentType childContentType = null;
@@ -596,25 +596,49 @@ public class GraphqlAPITest {
             parentContentType = createAndSaveSimpleContentType("parentContentTypeGraphQL");
             childContentType = createAndSaveSimpleContentType("childContentTypeGraphQL");
 
-            final Field parentTypeRelationshipField = createAndSaveManyToManyRelationshipField(
-                "newRelGraphQL",
-                parentContentType.id(), childContentType.variable(),
-                String.valueOf(cardinality.ordinal()));
+            final Field relFieldFromParentToChild = createAndSaveRelationshipField(
+                    "newRelGraphQL",
+                    parentContentType.id(), childContentType.variable(),
+                    String.valueOf(cardinality.ordinal()));
+
+
+            final String fullFieldVar =
+                    parentContentType.variable() + StringPool.PERIOD + relFieldFromParentToChild.variable();
+
+            //Adding a RelationshipField to the child
+
+            final Field relFieldFromChildToParent = createAndSaveRelationshipField("otherSideNewRelGraphQL",
+                    childContentType.id(), fullFieldVar, String.valueOf(cardinality.ordinal()));
 
             final GraphQLSchema schema = APILocator.getGraphqlAPI().getSchema();
 
-            final GraphQLFieldDefinition fieldDefinition =
-                schema.getObjectType(parentContentType.variable())
-                    .getFieldDefinition(parentTypeRelationshipField.variable());
+            final GraphQLFieldDefinition fieldDefinitionFromParentToChild =
+                    schema.getObjectType(parentContentType.variable())
+                            .getFieldDefinition(relFieldFromParentToChild.variable());
 
-            final GraphQLOutputType graphQLFieldType = fieldDefinition.getType();
+            final GraphQLOutputType outputTypeFromParentToChild = fieldDefinitionFromParentToChild.getType();
 
             if(isOneEndingCardinality(cardinality)) {
-                assertFalse(graphQLFieldType instanceof GraphQLList);
-                assertEquals(childContentType.variable(), graphQLFieldType.getName());
+                assertFalse(outputTypeFromParentToChild instanceof GraphQLList);
+                assertEquals(childContentType.variable(), outputTypeFromParentToChild.getName());
             } else {
-                assertTrue(graphQLFieldType instanceof GraphQLList);
-                assertEquals(childContentType.variable(), ((GraphQLList)graphQLFieldType).getWrappedType().getName());
+                assertTrue(outputTypeFromParentToChild instanceof GraphQLList);
+                assertEquals(childContentType.variable(), ((GraphQLList)outputTypeFromParentToChild).getWrappedType().getName());
+            }
+
+
+            final GraphQLFieldDefinition fieldDefinitionFromChildToParent =
+                    schema.getObjectType(childContentType.variable())
+                            .getFieldDefinition(relFieldFromChildToParent.variable());
+
+            final GraphQLOutputType outputTypeFromChildToParent = fieldDefinitionFromChildToParent.getType();
+
+            if(isManyStartingCardinality(cardinality)) {
+                assertTrue(outputTypeFromChildToParent instanceof GraphQLList);
+                assertEquals(parentContentType.variable(), ((GraphQLList)outputTypeFromChildToParent).getWrappedType().getName());
+            } else {
+                assertFalse(outputTypeFromChildToParent instanceof GraphQLList);
+                assertEquals(parentContentType.variable(), outputTypeFromChildToParent.getName());
             }
 
 
@@ -637,7 +661,7 @@ public class GraphqlAPITest {
             .owner(APILocator.systemUser().getUserId()).build());
     }
 
-    private Field createAndSaveManyToManyRelationshipField(final String relationshipName, final String parentTypeId,
+    private Field createAndSaveRelationshipField(final String relationshipName, final String parentTypeId,
                                                            final String childTypeVar, final String cardinality)
         throws DotSecurityException, DotDataException {
 
@@ -725,6 +749,10 @@ public class GraphqlAPITest {
 
     private boolean isOneEndingCardinality(final RELATIONSHIP_CARDINALITY cardinality) {
         return cardinality.equals(ONE_TO_ONE) || cardinality.equals(MANY_TO_ONE);
+    }
+
+    private boolean isManyStartingCardinality(final RELATIONSHIP_CARDINALITY cardinality) {
+        return cardinality.equals(MANY_TO_ONE) || cardinality.equals(MANY_TO_MANY);
     }
 
 }
