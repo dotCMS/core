@@ -318,18 +318,20 @@ export class DotEditContentHtmlService {
         try {
             const containersLayoutIds = this.getContainersLayoutIds(pageLayout);
             const containerDomElements = this.getContainerDomElements(containersLayoutIds);
-
-            containerDomElements.forEach((containerRow: Array<HTMLElement>, index: number) => {
+            containerDomElements.forEach((containerRow: Array<HTMLElement>) => {
                 if (containerRow.length > 1) {
+                    let maxHeight = 0;
                     containerRow.forEach((container: HTMLElement) => {
-                        container.style.height = `${this.rowsMaxHeight[index]}px`;
+                        maxHeight = maxHeight < container.offsetHeight ? container.offsetHeight : maxHeight;
+                    });
+                    containerRow.forEach((container: HTMLElement) => {
+                        container.style.height = `${maxHeight}px`;
                     });
                 }
             });
         } catch (err) {
             console.error(err);
         }
-
 
         const body = this.getEditPageDocument().querySelector('body');
         body.style.display = 'none';
@@ -455,20 +457,7 @@ export class DotEditContentHtmlService {
                     `[data-dot-identifier="${container.identifier}"]`,
                     `[data-dot-uuid="${container.uuid}"]`
                 ].join('');
-                const containerElement: HTMLElement = doc.querySelector(querySelector);
-
-
-                try {
-                    containerElement.style.height = 'auto';
-                } catch (error) {
-                    console.error(error);
-                }
-
-                this.rowsMaxHeight[index] =
-                    containerElement.offsetHeight > this.rowsMaxHeight[index]
-                        ? containerElement.offsetHeight
-                        : this.rowsMaxHeight[index];
-                return containerElement;
+                return doc.querySelector(querySelector);
             });
         });
     }

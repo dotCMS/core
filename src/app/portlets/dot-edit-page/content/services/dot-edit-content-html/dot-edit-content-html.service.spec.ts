@@ -171,6 +171,21 @@ describe('DotEditContentHtmlService', () => {
 
     describe('same height containers', () => {
         let mockLayout;
+        const querySelector1 = [
+            `div[data-dot-object="container"]`,
+            `[data-dot-identifier="123"]`,
+            `[data-dot-uuid="456"]`
+        ].join('');
+        const querySelector2 = [
+            `div[data-dot-object="container"]`,
+            `[data-dot-identifier="321"]`,
+            `[data-dot-uuid="654"]`
+        ].join('');
+        const querySelector3 = [
+            `div[data-dot-object="container"]`,
+            `[data-dot-identifier="976"]`,
+            `[data-dot-uuid="156"]`
+        ].join('');
 
         beforeEach(() => {
             mockLayout = JSON.parse(JSON.stringify(mockDotLayout));
@@ -217,22 +232,6 @@ describe('DotEditContentHtmlService', () => {
         });
 
         it('should set same height to containers when more than one per row', () => {
-            const querySelector1 = [
-                `div[data-dot-object="container"]`,
-                `[data-dot-identifier="123"]`,
-                `[data-dot-uuid="456"]`
-            ].join('');
-            const querySelector2 = [
-                `div[data-dot-object="container"]`,
-                `[data-dot-identifier="321"]`,
-                `[data-dot-uuid="654"]`
-            ].join('');
-            const querySelector3 = [
-                `div[data-dot-object="container"]`,
-                `[data-dot-identifier="976"]`,
-                `[data-dot-uuid="156"]`
-            ].join('');
-
             this.dotEditContentHtmlService.setContaintersSameHeight(mockLayout);
 
             const firstContainer = this.dotEditContentHtmlService
@@ -244,9 +243,23 @@ describe('DotEditContentHtmlService', () => {
             const thirdContainer = this.dotEditContentHtmlService
                 .getEditPageDocument()
                 .querySelector(querySelector3);
-
+            expect(firstContainer.style.height).not.toBe('');
             expect(firstContainer.offsetHeight).toEqual(secondContainer.offsetHeight);
-            expect(thirdContainer.style.height).toEqual('auto');
+            expect(thirdContainer.style.height).toEqual('');
+        });
+
+        it('should not set same height to containers when only one row of containers', () => {
+            mockLayout.body.rows[0].columns.pop();
+            this.dotEditContentHtmlService.setContaintersSameHeight(mockLayout);
+
+            const firstContainer = this.dotEditContentHtmlService
+                .getEditPageDocument()
+                .querySelector(querySelector1);
+            const secondContainer = this.dotEditContentHtmlService
+                .getEditPageDocument()
+                .querySelector(querySelector2);
+            expect(firstContainer.style.height).toBe('');
+            expect(secondContainer.style.height).toBe('');
         });
 
         xit('should redraw the body', () => {
@@ -313,7 +326,9 @@ describe('DotEditContentHtmlService', () => {
 
     it('should show and hide loading indicator on relocate contentlet', () => {
         const dotContainerContentletService = this.injector.get(DotContainerContentletService);
-        spyOn(dotContainerContentletService, 'getContentletToContainer').and.returnValue(observableOf('<div></div>'));
+        spyOn(dotContainerContentletService, 'getContentletToContainer').and.returnValue(
+            observableOf('<div></div>')
+        );
 
         const contentlet = this.dotEditContentHtmlService.iframe.nativeElement.contentDocument.querySelector(
             'div[data-dot-object="contentlet"][data-dot-inode="456"]'
@@ -341,7 +356,10 @@ describe('DotEditContentHtmlService', () => {
         });
 
         expect(contentlet.insertAdjacentElement).toHaveBeenCalledTimes(1);
-        expect(contentlet.insertAdjacentElement).toHaveBeenCalledWith('afterbegin', jasmine.any(HTMLElement));
+        expect(contentlet.insertAdjacentElement).toHaveBeenCalledWith(
+            'afterbegin',
+            jasmine.any(HTMLElement)
+        );
         expect(contentlet.querySelector).toHaveBeenCalledWith('.loader__overlay');
         expect(removeSpy).toHaveBeenCalledTimes(1);
     });
