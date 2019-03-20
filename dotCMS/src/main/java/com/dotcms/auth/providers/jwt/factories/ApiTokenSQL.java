@@ -20,7 +20,7 @@ public class ApiTokenSQL {
             instance = DbConnectionFactory.isH2() ? new ApiTokenSQL() :
                 DbConnectionFactory.isMySql() ? new ApiTokenSQLMySQL() :
                     DbConnectionFactory.isPostgres() ? new ApiTokenSQL()
-                        : DbConnectionFactory.isMsSql() ? new ApiTokenSQL() :
+                        : DbConnectionFactory.isMsSql() ? new ApiTokenSQLMSSQL() :
                             new ApiTokenSQL();
         }
         return instance;

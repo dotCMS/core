@@ -2661,7 +2661,7 @@ CREATE TABLE api_token_issued(
     revoke_date datetime DEFAULT NULL, 
     allowed_from  NVARCHAR(255) , 
     issuer  NVARCHAR(255) , 
-    claims  NVARCHAR(5000) , 
+    claims  NVARCHAR(MAX) , 
     mod_date  datetime NOT NULL, 
     PRIMARY KEY (token_id)
  );
