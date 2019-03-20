@@ -236,7 +236,8 @@ public class GraphqlAPIImpl implements GraphqlAPI {
         );
     }
 
-    private GraphQLOutputType getGraphqlTypeForFieldClass(final Class<Field> fieldClass, final Field field) {
+    @Override
+    public GraphQLOutputType getGraphqlTypeForFieldClass(final Class<? extends Field> fieldClass, final Field field) {
         return fieldClassGraphqlTypeMap.get(fieldClass)!= null
             ? fieldClassGraphqlTypeMap.get(fieldClass)
             : fieldClass.equals(TextField.class) && field.dataType().equals(DataTypes.INTEGER) ? GraphQLInt
