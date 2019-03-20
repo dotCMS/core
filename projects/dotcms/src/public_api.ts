@@ -20,6 +20,7 @@ export interface DotCMSApp {
     widget: DotApiWidget;
     config: DotApiConfiguration;
     language: DotApiLanguage;
+    httpClient: DotCMSHttpClient;
 }
 
 export const initDotCMS = (config: DotCMSConfigurationParams): DotCMSApp => {
@@ -36,6 +37,7 @@ export const initDotCMS = (config: DotCMSConfigurationParams): DotCMSApp => {
         nav: new DotApiNavigation(httpClient),
         page: new DotApiPage(httpClient, apiLanguage),
         site: new DotApiSite(httpClient),
-        widget: new DotApiWidget(httpClient)
+        widget: new DotApiWidget(httpClient),
+        httpClient: httpClient
     };
 };
