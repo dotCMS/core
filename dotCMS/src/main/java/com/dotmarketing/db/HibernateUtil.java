@@ -962,17 +962,11 @@ public class HibernateUtil {
 	public static void addRollbackListener(Runnable listener) throws DotHibernateException{
 	    addRollbackListener(UUIDGenerator.generateUuid(), listener);
     }
+	
+	
     public static void addRollbackListener(final String key, Runnable listener) throws DotHibernateException{
-        if (getTransactionListenersStatus() != TransactionListenerStatus.DISABLED) {
-            try {
-                if(getSession().connection().getAutoCommit())
-                    listener.run();
-                else
-                    rollbackListeners.get().put(key, listener);
-            }
-            catch(Exception ex) {
-                throw new DotHibernateException(ex.getMessage(),ex);
-            }
+        if (getTransactionListenersStatus() != TransactionListenerStatus.DISABLED && DbConnectionFactory.inTransaction()) {
+            rollbackListeners.get().put(key, listener);
         }
     }
     
