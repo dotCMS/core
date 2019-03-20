@@ -109,7 +109,7 @@ class CommitListenerCacheWrapper implements DotCacheAdministrator {
     public void put(final String key, final Object content, final String group) {
         if (DbConnectionFactory.inTransaction()) {
             try {
-                HibernateUtil.addCommitListener(new Runnable() {
+                HibernateUtil.addCommitListener(String.valueOf(key+group+content.hashCode()).toLowerCase(),new Runnable() {
                     public void run() {
                         dotcache.put(key, content, group);
                     }
