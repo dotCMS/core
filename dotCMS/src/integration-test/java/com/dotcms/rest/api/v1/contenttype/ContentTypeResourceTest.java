@@ -39,6 +39,7 @@ import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
@@ -517,9 +518,11 @@ public class ContentTypeResourceTest {
 			final ContentTypeResource resource = new ContentTypeResource();
 			final ContentTypeForm.ContentTypeFormDeserialize contentTypeFormDeserialize = new ContentTypeForm.ContentTypeFormDeserialize();
 			final HttpServletRequest request = getHttpRequest();
+			String contentTypeId = null;
 		try {
 			final Response response = resource.createType(request,
 					contentTypeFormDeserialize.buildForm(JSON_CONTENT_TYPE_CREATE));
+			contentTypeId = ((List<Map<String, Object>>)((ResponseEntityView) response.getEntity()).getEntity()).get(0).get("id").toString();
 			RestUtilTest.verifySuccessResponse(response);
 			final HttpSession session = request.getSession();
 			assertNotNull(session);
@@ -532,9 +535,9 @@ public class ContentTypeResourceTest {
 			assertNotNull(value);
 
 		}finally{
-			if(null != value){
+			if(UtilMethods.isSet(contentTypeId)){
 				resource.deleteType(
-						value.toString(), getHttpRequest()
+						contentTypeId, getHttpRequest()
 				);
 			}
 		}
