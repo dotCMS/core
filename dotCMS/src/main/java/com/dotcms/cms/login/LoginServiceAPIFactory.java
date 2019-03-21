@@ -15,6 +15,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import com.dotcms.enterprise.LicenseUtil;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -278,6 +279,7 @@ public class LoginServiceAPIFactory implements Serializable {
 
                 this.doAuthentication(userId, rememberMe, req, res);
                 authenticated = true;
+                LicenseUtil.licenseExpiresMessage(APILocator.getUserAPI().loadUserById(userId));
             }
 
             if (authResult != Authenticator.SUCCESS) {
