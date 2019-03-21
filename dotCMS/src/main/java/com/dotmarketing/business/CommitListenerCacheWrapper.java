@@ -9,6 +9,7 @@ import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.FlushCacheRunnable;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotHibernateException;
+import com.dotmarketing.util.Logger;
 
 /**
  * this class wraps our cache administrator and will automatically make cache removes and puts
@@ -106,35 +107,31 @@ class CommitListenerCacheWrapper implements DotCacheAdministrator {
     // only put when we are not in a transaction
     @Override
     public void put(final String key, final Object content, final String group) {
-        dotcache.put(key, content, group);
         if (DbConnectionFactory.inTransaction()) {
-            try {
-                HibernateUtil.addRollbackListener(group+key+content.hashCode(),new FlushCacheRunnable() {
-                    public void run() {
-                        dotcache.remove(key, group);
-                    }
-                });
-            } catch (DotHibernateException e) {
-                throw new RuntimeException(e);
-            }
+            HibernateUtil.addCommitListener(String.valueOf(key + group + content.hashCode()).toLowerCase(), new Runnable() {
+                public void run() {
+                    dotcache.put(key, content, group);
+                }
+            });
+        } else {
+            dotcache.put(key, content, group);
         }
     }
 
     @Override
     public void remove(final String key, final String group) {
         if (DbConnectionFactory.inTransaction()) {
-            try {
-                HibernateUtil.addCommitListener(new FlushCacheRunnable() {
+
+                final Runnable runner = new FlushCacheRunnable() {
                     public void run() {
                         dotcache.remove(key, group);
                     }
-                });
-            } catch (DotHibernateException e) {
-                throw new RuntimeException(e);
-            }
+                };
+                HibernateUtil.addRollbackListener(String.valueOf(key+group).toLowerCase(),runner);
+                HibernateUtil.addCommitListener(String.valueOf(key+group).toLowerCase(), runner);
+
         }
         dotcache.remove(key, group);
-
     }
 
     public DotCacheAdministrator getImplementationObject() {

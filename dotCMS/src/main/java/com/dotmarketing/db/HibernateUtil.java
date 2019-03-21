@@ -910,61 +910,51 @@ public class HibernateUtil {
 
 
 
-	/**
-	 * Adds a commit listener to the current database transaction/session. There are several
-	 * types of commit listeners, namely:
-	 * <ul>
-	 * <li>{@link DotSyncRunnable}</li>
-	 * <li>{@link DotOrderedRunnable}</li>
-	 * <li>{@link FlushCacheRunnable}</li>
-	 * <li>{@link ReindexRunnable}</li>
-	 * <li>Among others.</li>
-	 * </ul>
-	 * Commit listeners allow developers to execute code after a transaction has been committed
-	 * or the session has ended. For listeners that are not instances of {@link DotSyncRunnable}
-	 * or {@link DotOrderedRunnable} a configuration property called {@code
-	 * REINDEX_ON_SAVE_IN_SEPARATE_THREAD} determines whether listeners are executed in a
-	 * separate thread, or in the same dotCMS thread. By default, they run in a brand new thread.
-	 *
-	 * @param tag      A unique ID for the specified listener.
-	 * @param listener The commit listener wrapped as a {@link Runnable} object.
-	 *
-	 * @throws DotHibernateException An error occurred when registering the commit listener.
-	 */
-	public static void addCommitListener(final String tag, final Runnable listener) throws
-			DotHibernateException {
-		if (getTransactionListenersStatus() != TransactionListenerStatus.DISABLED) {
-			try {
-				if(getSession().connection().getAutoCommit()) {
-					listener.run();
-				} else {
+    /**
+     * Adds a commit listener to the current database transaction/session. There are several types of
+     * commit listeners, namely:
+     * <ul>
+     * <li>{@link DotSyncRunnable}</li>
+     * <li>{@link DotOrderedRunnable}</li>
+     * <li>{@link FlushCacheRunnable}</li>
+     * <li>{@link ReindexRunnable}</li>
+     * <li>Among others.</li>
+     * </ul>
+     * Commit listeners allow developers to execute code after a transaction has been committed or the
+     * session has ended. For listeners that are not instances of {@link DotSyncRunnable} or
+     * {@link DotOrderedRunnable} a configuration property called {@code
+     * REINDEX_ON_SAVE_IN_SEPARATE_THREAD} determines whether listeners are executed in a separate
+     * thread, or in the same dotCMS thread. By default, they run in a brand new thread.
+     *
+     * @param tag A unique ID for the specified listener.
+     * @param listener The commit listener wrapped as a {@link Runnable} object.
+     *
+     * @throws DotHibernateException An error occurred when registering the commit listener.
+     */
+    public static void addCommitListener(final String tag, final Runnable listener) {
+        if (DbConnectionFactory.inTransaction() && getTransactionListenersStatus() != TransactionListenerStatus.DISABLED) {
+            if (listener instanceof DotSyncRunnable) {
+                syncCommitListeners.get().put(tag, listener);
+            } else if (listener instanceof ReindexRunnable && asyncReindexCommitListeners()) {
+                asyncCommitListeners.get().put(tag, listener);
+            } else if (listener instanceof ReindexRunnable) {
+                syncCommitListeners.get().put(tag, listener);
+            } else if (getAsyncCommitListenersFinalization() && asyncCommitListeners()) {
+                asyncCommitListeners.get().put(tag, listener);
+            } else {
+                syncCommitListeners.get().put(tag, listener);
+            }
+        } else {
+            listener.run();
+        }
+    }
 
-					if (listener instanceof DotSyncRunnable) {
-						syncCommitListeners.get().put(tag, listener);
-					} else if(listener instanceof ReindexRunnable && asyncReindexCommitListeners()) {
-						asyncCommitListeners.get().put(tag, listener);
-					} else if(listener instanceof ReindexRunnable) {
-						syncCommitListeners.get().put(tag, listener);
-					} else {
-						if (getAsyncCommitListenersFinalization() && asyncCommitListeners()) {
-							asyncCommitListeners.get().put(tag, listener);
-						} else {
-							syncCommitListeners.get().put(tag, listener);
-						}
-					}
-				}
-			} catch(Exception ex) {
-				throw new DotHibernateException(ex.getMessage(),ex);
-			}
-		}
-	}
-
-	public static void addRollbackListener(Runnable listener) throws DotHibernateException{
+	public static void addRollbackListener(Runnable listener) {
 	    addRollbackListener(UUIDGenerator.generateUuid(), listener);
     }
 	
 	
-    public static void addRollbackListener(final String key, Runnable listener) throws DotHibernateException{
+    public static void addRollbackListener(final String key, Runnable listener) {
         if (getTransactionListenersStatus() != TransactionListenerStatus.DISABLED && DbConnectionFactory.inTransaction()) {
             rollbackListeners.get().put(key, listener);
         }
