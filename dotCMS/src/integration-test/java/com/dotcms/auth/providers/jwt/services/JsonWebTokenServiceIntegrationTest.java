@@ -38,12 +38,12 @@ import static org.mockito.Mockito.when;
 @RunWith(PowerMockRunner.class)
 public class JsonWebTokenServiceIntegrationTest {
 
-    private static String clusterId = "CLUSTER-123";;
+    private static final String clusterId = "CLUSTER-123";;
     private static JsonWebTokenService jsonWebTokenService;
-    final String userId = "dotcms.org.1";
+    private static final String userId = "dotcms.org.1";
     final String jwtId = "jwt1";
-    final static String tempPath = "/tmp";
-    final static String assetsPath = "/tmp/assets";
+    private static final String tempPath = "/tmp";
+    private static final String assetsPath = "/tmp/assets";
 
     @BeforeClass
     public static void prepare() throws Exception {

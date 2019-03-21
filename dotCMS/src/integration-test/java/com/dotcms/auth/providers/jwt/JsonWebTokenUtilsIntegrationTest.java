@@ -14,9 +14,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
-import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
-import io.vavr.API;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -28,7 +26,6 @@ import org.powermock.modules.junit4.PowerMockRunner;
 import javax.servlet.ServletContext;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
 
