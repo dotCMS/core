@@ -57,7 +57,7 @@ public abstract class RestUtilTest extends UnitTestBase {
 
     public static void verifySuccessResponse(final Response response) {
         assertNotNull(response);
-        assertEquals(response.getStatus(), 200);
+        assertEquals(200,response.getStatus() );
         assertNotNull(response.getEntity());
         assertTrue(response.getEntity() instanceof ResponseEntityView);
 
