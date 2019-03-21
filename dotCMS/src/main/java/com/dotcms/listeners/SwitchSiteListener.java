@@ -20,6 +20,9 @@ import javax.servlet.http.HttpSessionAttributeListener;
 import javax.servlet.http.HttpSessionBindingEvent;
 import java.util.Objects;
 
+/**
+ * Trigger a {@link SystemEventType#SWITCH_SITE} when the current site is set in the {@link HttpSession}
+ */
 public class SwitchSiteListener implements HttpSessionAttributeListener {
     @Override
     public void attributeAdded(final HttpSessionBindingEvent httpSessionBindingEvent) {
