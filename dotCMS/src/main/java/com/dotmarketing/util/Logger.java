@@ -148,7 +148,28 @@ public class Logger{
     	    ex.printStackTrace();
     	}
     }
-
+    /**
+     * this method will print the message if at the WARN level
+     * and print the message + whole stack trace if at the DEGUG LEVEL
+     * @param cl
+     * @param message
+     * @param ex
+     */
+    public static void warnAndDebug(Class cl, String message, Throwable ex) {
+        org.apache.logging.log4j.Logger logger = map.get(cl);
+        if(logger == null){
+            logger = loadLogger(cl);    
+        }
+        try{
+            logger.warn(message);
+            logger.debug(message, ex);
+        }
+        catch(java.lang.IllegalStateException e){
+            ex.printStackTrace();
+        }
+    }
+    
+    
     public static void fatal(Object ob, String message) {
     	fatal(ob.getClass(), message);
     }

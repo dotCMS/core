@@ -343,11 +343,12 @@ public class ChainableCacheAdministratorImpl implements DotCacheAdministrator {
                     try {
                         getTransport().send(k + ":" + g);
                     } catch (Exception e) {
-                        Logger.error(ChainableCacheAdministratorImpl.class, "Unable to send invalidation to cluster : " + e.getMessage(),
-                                e);
+                        Logger.warnAndDebug(ChainableCacheAdministratorImpl.class,
+                                "Unable to send invalidation to cluster : " + e.getMessage(), e);
                     }
                 } else {
-                    throw new CacheTransportException("No Cache transport implementation is defined");
+                    Logger.warn(ChainableCacheAdministratorImpl.class,
+                            "No Cache transport implementation is defined - clustered dotcms will not work properly without a valid cache transport");
                 }
             }
         }
