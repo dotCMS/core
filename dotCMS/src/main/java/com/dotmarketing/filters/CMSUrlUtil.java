@@ -233,7 +233,7 @@ public class CMSUrlUtil {
 					return (c.getContentType().baseType() == BaseContentType.FILEASSET);
 				}
 			} catch (Exception e) {
-				Logger.debug(this.getClass(), UNABLE_TO_FIND + uri);
+				Logger.warnAndDebug(this.getClass(), UNABLE_TO_FIND + uri +":"+e.getMessage(),e);
 				return false;
 			}
 		}
