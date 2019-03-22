@@ -160,11 +160,12 @@ public class ReindexIndexAPITest{
             ReindexThread.getInstance().unpause();
         }
         // let any expected reindex finish
-        DateUtil.sleep(5000);
+        DateUtil.sleep(10000);
 
         // make sure that the index is in the same state as before the failed transaction
         for(Contentlet c : origCons){
-            assertTrue(contentletAPI.indexCount("+live:true +identifier:" +c.getIdentifier() + " +inode:" + c.getInode() , user, respectFrontendRoles)>0);
+            final long indexCount = contentletAPI.indexCount("+live:true +identifier:" +c.getIdentifier() + " +inode:" + c.getInode() , user, respectFrontendRoles);
+            assertTrue("IndexCount is : " + indexCount + " , Identifier : " + c.getIdentifier(),indexCount>0);
         }
 
         for(Contentlet c : origCons){
