@@ -1,9 +1,12 @@
 package com.dotcms.cms.login;
 
+import static com.dotmarketing.util.CookieUtil.createJsonWebTokenCookie;
+
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.auth.providers.jwt.JsonWebTokenUtils;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.util.ReflectionUtils;
 import com.dotcms.util.security.EncryptorFactory;
@@ -12,14 +15,15 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.web.UserWebAPI;
-import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.dotmarketing.cms.login.factories.LoginFactory;
 import com.dotmarketing.cms.login.struts.LoginForm;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.factories.PreviewFactory;
-import com.dotmarketing.util.*;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.SecurityLogger;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.NoSuchUserException;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
@@ -37,21 +41,19 @@ import com.liferay.portal.util.PortalUtil;
 import com.liferay.portal.util.PropsUtil;
 import com.liferay.portal.util.WebKeys;
 import com.liferay.util.InstancePool;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 import java.io.Serializable;
+import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
-
-import static com.dotmarketing.util.CookieUtil.createJsonWebTokenCookie;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 /**
  * Login Service Factory that allows developers to inject custom login services.
@@ -273,6 +275,7 @@ public class LoginServiceAPIFactory implements Serializable {
 
                 this.doAuthentication(userId, rememberMe, req, res);
                 authenticated = true;
+                LicenseUtil.licenseExpiresMessage(APILocator.getUserAPI().loadUserById(userId));
             }
 
             if (authResult != Authenticator.SUCCESS) {
@@ -287,21 +290,27 @@ public class LoginServiceAPIFactory implements Serializable {
         }
 
         @WrapInTransaction
-        private void doAuthentication(String userId, boolean rememberMe, HttpServletRequest req, HttpServletResponse res) throws PortalException, SystemException, DotDataException, DotSecurityException {
+        private void doAuthentication(final String userId, final boolean rememberMe, final HttpServletRequest req, final HttpServletResponse res) throws PortalException, SystemException, DotDataException, DotSecurityException {
 
             final HttpSession ses = req.getSession();
             final User user = UserLocalManagerUtil.getUserById(userId);
 
             //DOTCMS-4943
             final UserAPI userAPI = APILocator.getUserAPI();
-            final boolean respectFrontend = WebAPILocator.getUserWebAPI().isLoggedToBackend(req);
+
             final Locale userSelectedLocale = LanguageUtil.getDefaultLocale(req);
             if (null != userSelectedLocale) {
 
                 user.setLanguageId(userSelectedLocale.toString());
             }
 
-            userAPI.save(user, userAPI.getSystemUser(), respectFrontend);
+            user.setLastLoginDate(new Date());
+            user.setFailedLoginAttempts(0);
+            user.setLastLoginIP(req.getRemoteAddr());
+
+
+
+            userAPI.save(user, userAPI.getSystemUser(), true);
 
             ses.setAttribute(WebKeys.USER_ID, userId);
 
@@ -394,7 +403,7 @@ public class LoginServiceAPIFactory implements Serializable {
                                          final User user,
                                          final int maxAge) throws PortalException, SystemException {
 
-            final String jwtAccessToken = this.jsonWebTokenUtils.createToken(user, maxAge);
+            final String jwtAccessToken = this.jsonWebTokenUtils.createUserToken(user, Math.abs(maxAge));
             createJsonWebTokenCookie(req, res, jwtAccessToken, Optional.of(maxAge));
         }
 
@@ -445,6 +454,7 @@ public class LoginServiceAPIFactory implements Serializable {
             if (doCookieLogin) {
 
                 final String decryptedId = PublicEncryptionFactory.decryptString(encryptedId);
+                request.setAttribute(WebKeys.USER_ID, decryptedId);
                 final HttpSession session = request.getSession(false);
                 if (null != session && null != decryptedId) {
                     // this is what the PortalRequestProcessor needs to check the login.
