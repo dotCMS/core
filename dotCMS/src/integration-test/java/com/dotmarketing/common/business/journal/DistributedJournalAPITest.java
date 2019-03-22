@@ -50,7 +50,7 @@ public class DistributedJournalAPITest extends IntegrationTestBase {
     @Test
     public void test_highestpriority_reindex_vrs_normal_reindex() throws DotDataException {
 
-        final DistributedJournalAPI<String> distributedJournalAPI = APILocator.getDistributedJournalAPI();
+        final DistributedJournalAPI distributedJournalAPI = APILocator.getDistributedJournalAPI();
         final List<Contentlet>   contentlets = APILocator.getContentletAPI().findAllContent(0, 500);
 
         if (null != contentlets && contentlets.size() >= 100) {
@@ -75,7 +75,7 @@ public class DistributedJournalAPITest extends IntegrationTestBase {
         distributedJournalAPI.addReindexHighPriority(highIdentifiers);
 
         // fetch 50
-        final List<IndexJournal<String>> indexJournals =
+        final List<IndexJournal> indexJournals =
                 distributedJournalAPI.findContentReindexEntriesToReindex(false);
 
         assertNotNull(indexJournals);
@@ -89,7 +89,7 @@ public class DistributedJournalAPITest extends IntegrationTestBase {
         assertTrue(indexJournals.size() > 40);
         assertTrue(highIdentifiers.contains(indexJournals.get(39).getIdentToIndex()));
 
-        final List<IndexJournal<String>> restOfIndexJournals =
+        final List<IndexJournal> restOfIndexJournals =
                 distributedJournalAPI.findContentReindexEntriesToReindex(false);
 
         assertNotNull(restOfIndexJournals);

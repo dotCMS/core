@@ -42,6 +42,7 @@ import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
@@ -3022,7 +3023,8 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 			BulkRequestBuilder bulk=new ESClient().getClient().prepareBulk();
 			for(Contentlet cont : contentlets) {
 			    permissionCache.remove(cont.getPermissionId());
-			    indexAPI.addContentToIndex(cont, false, true, true, bulk);
+			    cont.setIndexPolicy(IndexPolicy.DEFER);
+			    indexAPI.addContentToIndex(cont, false);
 			}
 			if(bulk.numberOfActions()>0)
 			    bulk.execute().actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS);

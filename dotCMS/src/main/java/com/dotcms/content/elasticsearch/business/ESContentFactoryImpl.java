@@ -1608,9 +1608,8 @@ public class ESContentFactoryImpl extends ContentletFactory {
                     identifierCache.removeFromCacheByIdentifier(content.getIdentifier());
 
                     contentToIndex.add(content);
-                    contentToIndex.addAll(indexAPI.loadDeps(content));
                     if (counter % batchSize == 0) {
-                        indexAPI.indexContentList(contentToIndex, null, false);
+                        indexAPI.addContentToIndex(contentToIndex);
                         completed += batchSize;
                         contentToIndex = new ArrayList<>();
                         Logger.info(this, String.format("Reindexing related content after " +
@@ -1622,7 +1621,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
                 }
                 // index remaining records if any
                 if (!contentToIndex.isEmpty()) {
-                    indexAPI.indexContentList(contentToIndex, null, false);
+                    indexAPI.addContentToIndex(contentToIndex);
                 }
 
                 Logger.info(this, String.format("Reindexing of updated related content after " +

@@ -46,7 +46,7 @@ public class ReindexThreadTest extends UnitTestBase {
         final RoleAPI roleAPI = mock(RoleAPI.class);
         final UserAPI userAPI = mock(UserAPI.class);
         final ServletContext context = mock(ServletContext.class);
-        final DistributedJournalAPI<String> jAPI = mock(DistributedJournalAPI.class);
+        final DistributedJournalAPI jAPI = mock(DistributedJournalAPI.class);
         final Locale locale = new Locale.Builder().setLanguage("en").setRegion("US").build();
 
         String cmsAdminRoleId = UUID.randomUUID().toString();

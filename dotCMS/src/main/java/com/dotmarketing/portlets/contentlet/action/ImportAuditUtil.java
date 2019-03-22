@@ -4,6 +4,7 @@ import com.dotcms.business.CloseDBIfOpened;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import org.apache.commons.collections.map.LRUMap;
@@ -26,7 +27,7 @@ public class ImportAuditUtil {
 		DotConnect dc = new DotConnect();
 		dc.setSQL("DELETE FROM import_audit WHERE serverid=? AND (last_inode is null OR last_inode = '')");
 		try {
-			dc.addParam(APILocator.getDistributedJournalAPI().getServerId());
+			dc.addParam(ConfigUtils.getServerId());
 			dc.loadResult();
 		} catch (DotDataException e) {
 			Logger.error(ImportAuditUtil.class,e.getMessage(),e);
@@ -34,7 +35,7 @@ public class ImportAuditUtil {
 		try {
 			dc.setSQL("UPDATE import_audit SET status=? where serverid=?");
 			dc.addParam(STATUS_COMPLETED);
-			dc.addParam(APILocator.getDistributedJournalAPI().getServerId());
+			dc.addParam(ConfigUtils.getServerId());
 		}catch (Exception e) {
 			Logger.error(ImportAuditUtil.class,e.getMessage(),e);
 		}

@@ -426,8 +426,8 @@ public class APILocator extends Locator<APIIndex>{
 	 * @return The {@link DistributedJournalAPI} class.
 	 */
 	@SuppressWarnings("unchecked")
-	public static DistributedJournalAPI<String> getDistributedJournalAPI(){
-		return (DistributedJournalAPI<String>) getInstance(APIIndex.DISTRIBUTED_JOURNAL_API);
+	public static DistributedJournalAPI getDistributedJournalAPI(){
+		return (DistributedJournalAPI) getInstance(APIIndex.DISTRIBUTED_JOURNAL_API);
 	}
 
 	/**
@@ -1096,7 +1096,7 @@ enum APIIndex
     		case CALENDAR_REMINDER_API: return new CalendarReminderAPIImpl();
     		case PLUGIN_API: return new PluginAPIImpl();
     		case LANGUAGE_API: return new LanguageAPIImpl();
-    		case DISTRIBUTED_JOURNAL_API : return new DistributedJournalAPIImpl<String>();
+    		case DISTRIBUTED_JOURNAL_API : return new DistributedJournalAPIImpl();
     		case TEMPLATE_API : return new TemplateAPIImpl();
     		case FOLDER_API: return new FolderAPIImpl();
     		case CONTAINER_API: return new ContainerAPIImpl();

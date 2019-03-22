@@ -3179,7 +3179,8 @@ public class ContentletAPITest extends ContentletBaseTest {
         w.setLanguageId(def.getId());
         w = contentletAPI.checkin(w, user, false);
         APILocator.getVersionableAPI().setLive(w);
-        APILocator.getContentletIndexAPI().addContentToIndex(w,false,true);
+        w.setIndexPolicy(IndexPolicy.FORCE);
+        APILocator.getContentletIndexAPI().addContentToIndex(w, false);
         contentletAPI.isInodeIndexed(w.getInode(),true);
 
 

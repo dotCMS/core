@@ -40,7 +40,7 @@ public class ESReindexationProcessStatus implements Serializable {
     }
 
     public synchronized static int getLastIndexationProgress (int countToIndex) throws DotDataException {
-        long left = APILocator.getDistributedJournalAPI().recordsLeftToIndexForServer();
+        long left = APILocator.getDistributedJournalAPI().recordsInQueue();
         int x = (int) (countToIndex-left);
 
         return (x<0) ? 0 : x;

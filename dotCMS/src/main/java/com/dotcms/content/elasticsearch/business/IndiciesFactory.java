@@ -27,7 +27,6 @@ public interface IndiciesFactory {
      * 
      * @param info
      */
-    public void point(IndiciesInfo info) throws DotDataException;
-    public void point(Connection conn,IndiciesInfo info) throws DotDataException;
+    void point(IndiciesInfo newInfo) throws DotDataException;
     
 }

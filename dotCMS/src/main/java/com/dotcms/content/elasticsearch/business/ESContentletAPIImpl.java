@@ -195,7 +195,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     private final RelationshipAPI       relationshipAPI;
     private final FieldAPI              fieldAPI;
     private final LanguageAPI           languageAPI;
-    private final DistributedJournalAPI<String> distributedJournalAPI;
+    private final DistributedJournalAPI distributedJournalAPI;
     private final TagAPI                tagAPI;
     private final IdentifierStripedLock lockManager;
 
@@ -614,7 +614,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if (!contentlet.isWorking())
             throw new DotContentletStateException("Only the working version can be published");
 
-        indexAPI.addContentToIndex(contentlet, true, true);
+        indexAPI.addContentToIndex(contentlet, true, false);
 
         // Publishes the files associated with the Contentlet
         List<Field> fields = FieldsCache.getFieldsByStructureInode(contentlet.getStructureInode());
@@ -2320,11 +2320,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
             HibernateUtil.startTransaction();
 
             // we lock the table dist_reindex_journal until we
-            ReindexThread.getInstance().lockCluster();
+
 
             if(indexAPI.isInFullReindex()){
                 try{
-                    ReindexThread.getInstance().unlockCluster();
+
                     HibernateUtil.closeAndCommitTransaction();
                 }catch (Exception e) {
                     try {
@@ -2339,10 +2339,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
             indexAPI.setUpFullReindex();
 
             // new records to index
-            distributedJournalAPI.addBuildNewIndexEntries();
+            distributedJournalAPI.addAllToReindexQueue();
 
             // then we let the reindexThread start working
-            ReindexThread.getInstance().unlockCluster();
+
             //Make sure all the flags are on and the thread is ready
             ReindexThread.startThread(Config.getIntProperty("REINDEX_THREAD_SLEEP", 500), Config.getIntProperty("REINDEX_THREAD_INIT_DELAY", 5000));
 

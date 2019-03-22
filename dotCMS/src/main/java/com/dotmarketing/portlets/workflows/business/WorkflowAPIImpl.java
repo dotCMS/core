@@ -32,6 +32,7 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.contentlet.util.ActionletUtil;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.structure.model.Structure;
@@ -87,7 +88,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	private final SystemMessageEventUtil systemMessageEventUtil =
 			SystemMessageEventUtil.getInstance();
 
-	private final DistributedJournalAPI<String> distributedJournalAPI =
+	private final DistributedJournalAPI distributedJournalAPI =
 			APILocator.getDistributedJournalAPI();
 
 	private final ContentletIndexAPI contentletIndexAPI =
@@ -2010,9 +2011,9 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				this.saveWorkflowTask(processor);
 
 				if (UtilMethods.isSet(processor.getContentlet()) && processor.getContentlet().needsReindex()) {
-
-					this.contentletIndexAPI.indexContentListWaitFor
-							(Arrays.asList(processor.getContentlet()), null, true);
+				    Contentlet content = processor.getContentlet();
+				    content.setIndexPolicy(IndexPolicy.WAIT_FOR);
+					this.contentletIndexAPI.addContentToIndex(content);
 				}
 			}
 		} catch(Exception e) {

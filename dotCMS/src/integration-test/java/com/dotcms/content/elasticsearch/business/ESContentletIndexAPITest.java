@@ -142,7 +142,7 @@ public class ESContentletIndexAPITest extends IntegrationTestBase {
             final List<Contentlet> contentlets = new ArrayList<>();
             contentlets.add(contentlet);
 
-            APILocator.getContentletIndexAPI().indexContentList(contentlets, null, false);
+            APILocator.getContentletIndexAPI().addContentToIndex(contentlets);
 
             assertTrue(APILocator.getContentletAPI()
                     .indexCount("+identifier:" + contentlet.getIdentifier(), user, false) > 0);
@@ -181,7 +181,7 @@ public class ESContentletIndexAPITest extends IntegrationTestBase {
         contentletsWaitForRefresh.stream().forEach(contentlet -> contentlet.setIndexPolicy(IndexPolicy.WAIT_FOR));
 
 
-        APILocator.getContentletIndexAPI().indexContentList(contentlets, null, false);
+        APILocator.getContentletIndexAPI().addContentToIndex(contentlets);
 
         for (final Contentlet contentlet : contentletsDefaultRefresh) {
 

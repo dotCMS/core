@@ -507,7 +507,7 @@ public class ContentFileAssetIntegrityChecker extends AbstractIntegrityChecker {
      * @throws DotHibernateException
      */
     private void cleanIndex(final Contentlet existingWorkingContentlet,
-            final Contentlet existingLiveContentlet) throws DotHibernateException {
+            final Contentlet existingLiveContentlet) throws DotDataException {
         ContentletIndexAPI indexAPI = APILocator.getContentletIndexAPI();
         indexAPI.removeContentFromIndex(existingWorkingContentlet);
 
