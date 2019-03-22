@@ -5,29 +5,20 @@ import com.google.common.base.CharMatcher;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.lucene.queryparser.classic.QueryParser;
 
 
 public class ESUtils {
 
-	// Query util methods
-	@VisibleForTesting
-	static final String[] SPECIAL_CHARS = new String[] { "+", "-", "&&", "||", "!", "(", ")", "{", "}", "[", "]", "^", "\"", "?",
-			":", "\\" };
-
-
 	public static String escape(final String text) {
 
-		String escapedText;
+		StringBuilder escapedText = new StringBuilder(QueryParser.escape(text));
 
-		if(CharMatcher.WHITESPACE.matchesAnyOf(text)) {
-			escapedText = "\"" +text + "\"";
-		} else {
-			escapedText = text;
-			for (int i = SPECIAL_CHARS.length - 1; i >= 0; i--) {
-				escapedText = StringUtils.replace(escapedText, SPECIAL_CHARS[i], "\\" + SPECIAL_CHARS[i]);
-			}
+		if(CharMatcher.whitespace().matchesAnyOf(text)) {
+			escapedText.insert(0,"\"").append("\"");
 		}
 
-		return escapedText;
+		return escapedText.toString();
 	}
+
 }
