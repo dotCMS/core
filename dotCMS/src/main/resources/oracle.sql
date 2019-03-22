@@ -1882,10 +1882,10 @@ DECLARE
 BEGIN
    for i in 1 .. check_parent_path_pkg.newRows.count LOOP
       select id,parent_path,host_inode into assetIdentifier,parentPath,hostInode from identifier where rowid = check_parent_path_pkg.newRows(i);
-      IF(parentPath='/' OR parentPath='/System folder') THEN
+      IF(parentPath='/' OR LOWER(parentPath)='/system folder') THEN
         return;
       ELSE
-        select count(*) into rowcount from identifier where asset_type='folder' and host_inode = hostInode and parent_path||asset_name||'/' = parentPath and id <> assetIdentifier;
+        select count(*) into rowcount from identifier where asset_type='folder' and host_inode = hostInode and LOWER(parent_path||asset_name||'/') = LOWER(parentPath) and id <> assetIdentifier;
         IF (rowcount = 0) THEN
            RAISE_APPLICATION_ERROR(-20000, 'Cannot insert/update for this path does not exist for the given host');
         END IF;
@@ -2116,7 +2116,7 @@ DECLARE
 BEGIN
   for i in 1 .. child_assets_pkg.oldvals.count LOOP
     IF(child_assets_pkg.oldvals(i).asset_type='folder')THEN
-      select count(*) into pathCount from identifier where parent_path = child_assets_pkg.oldvals(i).parent_path||child_assets_pkg.oldvals(i).asset_name||'/' and host_inode = child_assets_pkg.oldvals(i).host_inode;
+      select count(*) into pathCount from identifier where lower(parent_path) = lower(child_assets_pkg.oldvals(i).parent_path||child_assets_pkg.oldvals(i).asset_name||'/') and host_inode = child_assets_pkg.oldvals(i).host_inode;
     END IF;
     IF(child_assets_pkg.oldvals(i).asset_type='contentlet')THEN
       select count(*) into pathCount from identifier where host_inode = child_assets_pkg.oldvals(i).id;
@@ -2157,7 +2157,7 @@ END;
 /
 CREATE OR REPLACE FUNCTION dotFolderPath(parent_path IN varchar2, asset_name IN varchar2) RETURN varchar2 IS
 BEGIN
-  IF parent_path='/System folder' THEN
+  IF LOWER (parent_path)='/system folder' THEN
     RETURN '/';
   ELSE
     RETURN parent_path || asset_name || '/';
@@ -2510,3 +2510,6 @@ CREATE INDEX idx_system_event ON system_event (created);
 
 --Content Types improvement
 CREATE INDEX idx_lower_structure_name ON structure (LOWER(velocity_var_name));
+
+-- Case sensitive unique asset-name,parent_path for a given host
+CREATE UNIQUE INDEX idx_ident_uniq_asset_name on identifier (LOWER(asset_name),LOWER(parent_path),host_inode);
