@@ -1,12 +1,7 @@
 package com.dotcms.content.elasticsearch.util;
 
 import com.google.common.base.CharMatcher;
-
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-
-import org.apache.commons.lang.StringUtils;
 import org.apache.lucene.queryparser.classic.QueryParser;
-
 
 public class ESUtils {
 
