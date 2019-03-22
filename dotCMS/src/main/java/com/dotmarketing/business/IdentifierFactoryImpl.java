@@ -430,6 +430,10 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 
 	@Override
 	protected Identifier find(final String identifier) throws DotStateException, DotDataException {
+        if (DbConnectionFactory.inTransaction()) {
+            final Identifier id = loadFromDb(identifier);
+            return id == null ? new Identifier() : id;
+        }
 		Identifier id = ic.getIdentifier(identifier);
 		if (id != null && UtilMethods.isSet(id.getId())) {
 			return check404(id);

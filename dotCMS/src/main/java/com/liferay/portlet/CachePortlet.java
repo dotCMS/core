@@ -144,14 +144,7 @@ public class CachePortlet implements Portlet {
 			Thread.currentThread().setContextClassLoader(classLoader);
 		}
 
-		String userId = "";
-		try {
-			userId = PortalUtil.getUser(req) == null?"":PortalUtil.getUser(req).getUserId();
-		} catch (PortalException e) {
-			throw new PortletException(e);
-		} catch (SystemException e) {
-			throw new PortletException(e);
-		}
+		String userId = PortalUtil.getUserId(req) ;
 
 		if ((userId == null) || (_expCache == null) ||
 			(_expCache.intValue() == 0)) {

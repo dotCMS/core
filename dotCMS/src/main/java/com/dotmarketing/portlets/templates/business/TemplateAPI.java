@@ -120,6 +120,13 @@ public interface TemplateAPI {
 	public List<ContainerUUID> getContainersUUID(TemplateLayout layout);
 
 	/**
+	 * Gets the {@link ContainerUUID} from a draw template body
+	 * @param drawTemplateBody {@link String}
+	 * @return List of ContainerUUID, empty if nothing
+	 */
+	public List<ContainerUUID> getContainersUUIDFromDrawTemplateBody(String drawTemplateBody);
+
+	/**
 	 * Retrieves the template associated to a host
 	 * @param template
 	 * @return

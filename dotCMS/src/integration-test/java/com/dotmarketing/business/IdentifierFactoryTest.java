@@ -181,7 +181,7 @@ public class IdentifierFactoryTest {
             Assert.assertFalse(newFolder.getVersionId().isEmpty());
             Assert.assertEquals(parentFolder.getPath(), identifier.getParentPath());
             Assert.assertEquals(Identifier.ASSET_TYPE_FOLDER, identifier.getAssetType());
-            Assert.assertEquals(newFolder.getName().toLowerCase(), identifier.getAssetName());
+            Assert.assertEquals(newFolder.getName(), identifier.getAssetName());
         } finally {
             if (identifier != null) {
                 //Deletes the created identifier
@@ -223,7 +223,7 @@ public class IdentifierFactoryTest {
             Assert.assertEquals(parentFolder.getPath(), identifier.getParentPath());
             Assert.assertEquals(Identifier.ASSET_TYPE_CONTENTLET, identifier.getAssetType());
             Assert.assertEquals(
-                    newContentlet.getStringProperty(FileAssetAPI.FILE_NAME_FIELD).toLowerCase(),
+                    newContentlet.getStringProperty(FileAssetAPI.FILE_NAME_FIELD),
                     identifier.getAssetName());
         } finally {
             //Deletes the created identifier
@@ -261,7 +261,7 @@ public class IdentifierFactoryTest {
             Assert.assertFalse(newContentlet.getVersionId().isEmpty());
             Assert.assertEquals(parentFolder.getPath(), identifier.getParentPath());
             Assert.assertEquals(Identifier.ASSET_TYPE_CONTENTLET, identifier.getAssetType());
-            Assert.assertEquals(pageName.toLowerCase(), identifier.getAssetName());
+            Assert.assertEquals(pageName, identifier.getAssetName());
         } finally {
             //Deletes the created identifier
             if (identifier != null) {
@@ -358,7 +358,7 @@ public class IdentifierFactoryTest {
             Assert.assertNotNull(newFolder.getVersionId());
             Assert.assertFalse(newFolder.getVersionId().isEmpty());
             Assert.assertEquals(Identifier.ASSET_TYPE_FOLDER, identifier.getAssetType());
-            Assert.assertEquals(newFolder.getName().toLowerCase(), identifier.getAssetName());
+            Assert.assertEquals(newFolder.getName(), identifier.getAssetName());
         } finally {
             if (identifier != null) {
                 //Deletes the created identifier
@@ -396,7 +396,7 @@ public class IdentifierFactoryTest {
             Assert.assertFalse(newContentlet.getVersionId().isEmpty());
             Assert.assertEquals(Identifier.ASSET_TYPE_CONTENTLET, identifier.getAssetType());
             Assert.assertEquals(
-                    newContentlet.getStringProperty(FileAssetAPI.FILE_NAME_FIELD).toLowerCase(),
+                    newContentlet.getStringProperty(FileAssetAPI.FILE_NAME_FIELD),
                     identifier.getAssetName());
         } finally {
             //Deletes the created identifier
@@ -431,7 +431,7 @@ public class IdentifierFactoryTest {
             Assert.assertNotNull(newContentlet.getVersionId());
             Assert.assertFalse(newContentlet.getVersionId().isEmpty());
             Assert.assertEquals(Identifier.ASSET_TYPE_CONTENTLET, identifier.getAssetType());
-            Assert.assertEquals(pageName.toLowerCase(), identifier.getAssetName());
+            Assert.assertEquals(pageName, identifier.getAssetName());
         } finally {
             //Deletes the created identifier
             if (identifier != null) {

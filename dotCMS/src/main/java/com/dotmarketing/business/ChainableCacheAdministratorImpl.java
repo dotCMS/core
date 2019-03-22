@@ -15,7 +15,6 @@ import com.dotcms.repackage.com.google.common.cache.RemovalNotification;
 import com.dotmarketing.business.cache.provider.CacheProviderStats;
 import com.dotmarketing.business.cache.transport.CacheTransport;
 import com.dotmarketing.business.cache.transport.CacheTransportException;
-import com.dotmarketing.common.business.journal.DistributedJournalAPI;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.FlushCacheRunnable;
 import com.dotmarketing.db.HibernateUtil;
@@ -41,7 +40,6 @@ public class ChainableCacheAdministratorImpl implements DotCacheAdministrator {
 
 	CacheTransport cacheTransport;
 
-	private DistributedJournalAPI journalAPI;
 	private CacheProviderAPI cacheProviderAPI;
 	private boolean useTransportChannel = false;
 
@@ -78,7 +76,7 @@ public class ChainableCacheAdministratorImpl implements DotCacheAdministrator {
 			useTransportChannel = false;
 		}
 
-		journalAPI = APILocator.getDistributedJournalAPI();
+		APILocator.getDistributedJournalAPI();
 	}
 
 	public void initProviders () {
@@ -474,13 +472,7 @@ public class ChainableCacheAdministratorImpl implements DotCacheAdministrator {
 
 	}
 
-	private class DotRemoval implements RemovalListener {
 
-		public void onRemoval(RemovalNotification removalEvent) {
-
-		}
-
-	}
 
 	public void invalidateCacheMesageFromCluster ( String message ) {
 		if(message==null){return;};

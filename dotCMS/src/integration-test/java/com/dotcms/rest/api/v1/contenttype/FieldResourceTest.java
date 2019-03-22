@@ -54,6 +54,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.UUIDUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 
 import org.junit.AfterClass;
@@ -2372,6 +2373,8 @@ public class FieldResourceTest {
 	private static Field convertMapToField(Map<String, Object> fieldMap) {
 		try {
 			fieldMap.remove("fieldVariables");
+			fieldMap.remove("fieldTypeLabel");
+			fieldMap.remove("fieldType");
 
 			return mapper.readValue(
 				mapper.writeValueAsString(fieldMap),

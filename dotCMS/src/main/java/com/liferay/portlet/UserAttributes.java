@@ -114,18 +114,7 @@ public class UserAttributes {
 	public UserAttributes(User user) throws PortalException, SystemException {
 		_user = user;
 
-		List addresses = user.getAddresses();
 
-		for (int i = 0; i < addresses.size(); i++) {
-			Address address = (Address)addresses.get(i);
-
-			if (address.getDescription().equalsIgnoreCase("home")) {
-				_homeAddress = address;
-			}
-			else if (address.getDescription().equalsIgnoreCase("business")) {
-				_bizAddress = address;
-			}
-		}
 	}
 
 	public String getValue(String name) {

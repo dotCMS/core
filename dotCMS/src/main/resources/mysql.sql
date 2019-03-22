@@ -2318,3 +2318,20 @@ CREATE TABLE system_event (
 ALTER TABLE system_event ADD CONSTRAINT PK_system_event PRIMARY KEY (identifier);
 CREATE INDEX idx_system_event ON system_event (created);
 
+CREATE TABLE api_token_issued(
+    token_id varchar(255) NOT NULL, 
+    token_userid varchar(255) NOT NULL, 
+    issue_date TIMESTAMP NOT NULL, 
+    expire_date TIMESTAMP NOT NULL, 
+    requested_by_userid  varchar(255) NOT NULL, 
+    requested_by_ip  varchar(255) NOT NULL, 
+    revoke_date TIMESTAMP NULL DEFAULT NULL, 
+    allowed_from  varchar(255) , 
+    issuer  varchar(255) , 
+    claims  text , 
+    mod_date  TIMESTAMP NOT NULL, 
+    PRIMARY KEY (token_id)
+ );
+
+create index idx_api_token_issued_user ON api_token_issued (token_userid);
+

@@ -5,7 +5,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import com.dotcms.auth.providers.jwt.beans.JWTBean;
+import com.dotcms.auth.providers.jwt.beans.UserToken;
 import com.dotcms.auth.providers.jwt.services.JsonWebTokenService;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.rest.RestUtilTest;
@@ -58,7 +58,7 @@ public class ResetPasswordResourceIntegrationTest{
     public void testNoSuchUserException() throws DotSecurityException, NoSuchUserException, DotInvalidTokenException, SystemException, PortalException {
         UserManager userManager = getUserManagerThrowingException( new NoSuchUserException("") );
         final JsonWebTokenService jsonWebTokenService = mock(JsonWebTokenService.class);
-        final JWTBean jwtBean = new JWTBean(UUID.randomUUID().toString(),
+        final UserToken jwtBean = new UserToken(UUID.randomUUID().toString(),
                 "dotcms.org.1",
                 new Date(), 100000);
 
@@ -73,7 +73,7 @@ public class ResetPasswordResourceIntegrationTest{
     public void testTokenInvalidException() throws DotSecurityException, NoSuchUserException, DotInvalidTokenException {
         UserManager userManager = getUserManagerThrowingException( new DotInvalidTokenException("") );
         final JsonWebTokenService jsonWebTokenService = mock(JsonWebTokenService.class);
-        final JWTBean jwtBean = new JWTBean(UUID.randomUUID().toString(),
+        final UserToken jwtBean = new UserToken(UUID.randomUUID().toString(),
                 "dotcms.org.1",
                 new Date(), 100000);
         when(jsonWebTokenService.parseToken(eq("token1"))).thenReturn(jwtBean);
@@ -87,7 +87,7 @@ public class ResetPasswordResourceIntegrationTest{
     public void testTokenExpiredException() throws DotSecurityException, NoSuchUserException, DotInvalidTokenException {
         UserManager userManager = getUserManagerThrowingException( new DotInvalidTokenException("", true) );
         final JsonWebTokenService jsonWebTokenService = mock(JsonWebTokenService.class);
-        final JWTBean jwtBean = new JWTBean(UUID.randomUUID().toString(),
+        final UserToken jwtBean = new UserToken(UUID.randomUUID().toString(),
                 "dotcms.org.1",
                 new Date(), 100000);
 

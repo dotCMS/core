@@ -35,6 +35,7 @@ import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
+import com.dotmarketing.portlets.structure.model.ContentletRelationships.ContentletRelationshipRecords;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Field.FieldType;
 import com.dotmarketing.portlets.structure.model.Relationship;
@@ -835,24 +836,29 @@ public class ImportUtil {
             }
 
             //Find the relationships and their related contents
-            HashMap<Relationship, List<Contentlet>> csvRelationshipRecordsParentOnly = new HashMap<>();
-            HashMap<Relationship, List<Contentlet>> csvRelationshipRecordsChildOnly = new HashMap<>();
-            HashMap<Relationship, List<Contentlet>> csvRelationshipRecords = new HashMap<>();
+            final HashMap<Relationship, List<Contentlet>> csvRelationshipRecordsParentOnly = new HashMap<>();
+            final HashMap<Relationship, List<Contentlet>> csvRelationshipRecordsChildOnly = new HashMap<>();
+            final HashMap<Relationship, List<Contentlet>> csvRelationshipRecords = new HashMap<>();
             for (Integer column : relationships.keySet()) {
-                Relationship relationship = relationships.get(column);
-                String relatedQuery = line[column];
-                List<Contentlet> relatedContentlets;
+                final Relationship relationship = relationships.get(column);
+                final String relatedQuery = line[column];
+                List<Contentlet> relatedContentlets = null;
                 try{
-                    relatedContentlets = RelationshipUtil
-                            .getRelatedContentFromQuery(relationship, new StructureTransformer(contentType).from(), language,
-                                    relatedQuery, user);
+                    if(relatedQuery !=null && !relatedQuery.trim().isEmpty()) {
+                        relatedContentlets = RelationshipUtil
+                                .getRelatedContentFromQuery(relationship,
+                                        new StructureTransformer(contentType).from(), language,
+                                        relatedQuery, user);
 
-                    //If no error add the relatedContentlets
-                    if(onlyChild.get(column)) {
-                        csvRelationshipRecordsChildOnly.put(relationship, relatedContentlets);
-                    } else if(onlyParent.get(column)) {
-                        csvRelationshipRecordsParentOnly.put(relationship, relatedContentlets);
-                    } else {
+                        //If no error add the relatedContentlets
+                        if (onlyChild.get(column)) {
+                            csvRelationshipRecordsChildOnly.put(relationship, relatedContentlets);
+                        } else if (onlyParent.get(column)) {
+                            csvRelationshipRecordsParentOnly.put(relationship, relatedContentlets);
+                        } else {
+                            csvRelationshipRecords.put(relationship, relatedContentlets);
+                        }
+                    } else{
                         csvRelationshipRecords.put(relationship, relatedContentlets);
                     }
                 } catch(DotDataValidationException e){
@@ -1481,22 +1487,42 @@ public class ImportUtil {
         for (ContentletRelationships.ContentletRelationshipRecords relationshipRecord : relationshipRecords) {
             List<Contentlet> csvRelatedContentlet = csvRelationshipRecords
                     .get(relationshipRecord.getRelationship());
+
+            //Relationship must be wiped out when the relationship field is sent as empty
+            if (csvRelationshipRecords.containsKey(relationshipRecord.getRelationship())
+                    && csvRelatedContentlet == null) {
+                relationshipRecord.setRecords(new ArrayList<>());
+            }
+
             if (UtilMethods.isSet(csvRelatedContentlet)) {
-                relationshipRecord.getRecords().addAll(csvRelatedContentlet);
+                addRelatedContent(relationshipRecord, csvRelatedContentlet);
             }
             csvRelatedContentlet = csvRelationshipRecordsChildOnly
                     .get(relationshipRecord.getRelationship());
             if (UtilMethods.isSet(csvRelatedContentlet) && relationshipRecord.isHasParent()) {
-                relationshipRecord.getRecords().addAll(csvRelatedContentlet);
+                addRelatedContent(relationshipRecord, csvRelatedContentlet);
             }
             csvRelatedContentlet = csvRelationshipRecordsParentOnly
                     .get(relationshipRecord.getRelationship());
             if (UtilMethods.isSet(csvRelatedContentlet) && !relationshipRecord.isHasParent()) {
-                relationshipRecord.getRecords().addAll(csvRelatedContentlet);
+                addRelatedContent(relationshipRecord, csvRelatedContentlet);
             }
         }
         //END Load the old relationShips and add the new ones
         return contentletRelationships;
+    }
+
+    /**
+     *
+     * @param relationshipRecord
+     * @param csvRelatedContentlet
+     */
+    private static void addRelatedContent(final ContentletRelationshipRecords relationshipRecord,
+            final List<Contentlet> csvRelatedContentlet) {
+        relationshipRecord.getRecords().addAll(csvRelatedContentlet.stream()
+                .filter(related -> relationshipRecord.getRecords().stream().noneMatch(
+                        record -> record.getIdentifier().equals(related.getIdentifier())))
+                .collect(Collectors.toList()));
     }
 
     /**

@@ -253,6 +253,13 @@
 		dijit.byId('firstName').attr('value', user.firstName);
 		dijit.byId('lastName').attr('value', user.lastName);
 		dijit.byId('emailAddress').attr('value', user.emailaddress);
+		var lastLoginStr = (user.lastLoginDate==null) ? "" : user.lastLoginDate.toLocaleString();
+		lastLoginStr+= (user.lastLoginIP==null) ? "" : " @ " + user.lastLoginIP;
+		
+		
+		dojo.byId('lastLogin').innerHTML = lastLoginStr;
+		dojo.byId('loginAttempts').innerHTML = (user.failedLoginAttempts==0) ? "n/a" : user.failedLoginAttempts;
+		
 		dijit.byId('password').attr('value', '********');
 		dijit.byId('passwordCheck').attr('value', '********');
 		dojo.query(".fullUserName").forEach(function (elem) { elem.innerHTML = user.name; });
@@ -303,6 +310,9 @@
 			case 'marketingInfoTab':
 				loadMarketingInfo(userId);
 				break;
+            case 'apiKeysTab':
+                loadApiKeys();
+                break;
 		}
 	}
 
@@ -1307,6 +1317,261 @@
 				}
 	}
 
+	
+	function revokeKey(keyId){
+
+		    var xhrArgs = {
+		        url : "/api/v1/apitoken/" + keyId + "/revoke" ,
+		        handleAs : "json",
+		        load : function(data){
+		        	loadApiKeys()
+		        },
+		        error : function(error) {
+		            console.error("Error revoking APIKey data for keyId [" + keyId + "]", error);
+
+		        }
+		    };
+		
+		    dojo.xhrPut(xhrArgs);
+
+	}
+	
+	function requestNewJwt() {
+		  var howLong = prompt("How Many Days?", "3560");
+		  howLong =  (howLong != null && parseInt(howLong)!=NaN ) ? parseInt(howLong) : 60;
+		  howLong = howLong<0 ? 60 : howLong > 1000000 ? 1000000 : howLong;
+          var ipRange = prompt("CICR Network (e.g. 192.168.1.0/24)?", "0.0.0.0/0");
+          ipRange =  (ipRange != null ) ? ipRange : "0.0.0.0/0";
+          
+          var data = {};
+          data.howLong=howLong;
+          data.ipRange=ipRange;
+          
+          
+          
+          
+          var xhrArgs = {
+                  url : "/api/v1/apitoken",
+                  handleAs : "json",
+                  load : function(data){
+                      confirm( data.entity.jwt);
+                  },
+                  error : function(error) {
+                      console.error("Error deleting APIKey data for keyId [" + keyId + "]", error);
+
+                  }
+              };
+          
+              dojo.xhrPost(xhrArgs);
+          
+          
+		}
+	
+	
+	
+	function revealJWT(jwt){
+
+        
+        dijit.byId('tokenFormDialog').hide();
+        dijit.byId('revealJwtDialog').show();
+        
+        var myDiv = dojo.byId("revealTokenDiv");
+
+        myDiv.value =  jwt;
+
+		
+	}
+	
+	
+	
+	
+	
+	
+	
+    function getJwt(keyId){
+
+    	
+        var xhrArgs = {
+            url : "/api/v1/apitoken/" + keyId +"/jwt",
+            handleAs : "json",
+            load : function(data){
+    
+            	revealJWT(data.entity.jwt);
+            	
+            },
+            error : function(error) {
+                console.error("Error getting JWT data for keyId [" + keyId + "]", error);
+
+            }
+        };
+    
+        dojo.xhrGet(xhrArgs);
+    }
+	
+	
+	   function deleteKey(keyId){
+
+           var xhrArgs = {
+               url : "/api/v1/apitoken/" + keyId ,
+               handleAs : "json",
+               load : function(data){
+                   loadApiKeys()
+               },
+               error : function(error) {
+                   console.error("Error deleting APIKey data for keyId [" + keyId + "]", error);
+
+               }
+           };
+       
+           dojo.xhrDelete(xhrArgs);
+           }
+	
+	
+  function loadApiKeys() {
+	  var showRevokedApiTokens = document.getElementById("showRevokedApiTokens").checked;
+	  var parent=document.getElementById("apiKeysDiv")
+        var xhrArgs = {
+            url : "/api/v1/apitoken/" + currentUser.id + "/tokens?showRevoked=" + showRevokedApiTokens,
+            handleAs : "json",
+            load : function(data){
+            	writeApiKeys(data);
+            },
+            error : function(error) {
+                console.error("Error returning APIKey data for user id [" + currentUser.id + "]", error);
+                parent.innerHTML = "An unexpected error occurred: " + error;
+            }
+        };
+
+	    dojo.xhrGet(xhrArgs);
+
+   }
+	
+  
+  function toDate(millis){
+	  if(millis==null){
+		  return "";
+	  }
+     return new Date(millis).toLocaleString();
+  }
+  
+  function showRequestTokenDialog() {
+
+
+	  dijit.byId('tokenFormDialog').show();
+
+  }
+  
+  function requestNewAPIToken(formData) {
+      var nowsers = new Date();
+      var expires = formData.expiresDate;
+
+      var timeDiff = expires.getTime() - nowsers.getTime();
+      
+      if(timeDiff<1000){
+    	  alert("you cannot request a key in the past");
+    	  return;
+      }
+      var data={};
+      data.expirationSeconds = Math.ceil(timeDiff / 1000 ); 
+      data.userId = currentUser.id;
+      data.network=formData.network; 
+      if(formData.nameLabel!=null && formData.nameLabel.length>0){
+          data.claims={"label" : formData.nameLabel};
+      }
+        var xhrArgs = {
+            url : "/api/v1/apitoken",
+            handleAs: "json",
+            postData : dojo.toJson(data),
+            headers: {
+            	"Content-Type": "application/json"
+            	},
+            load : function(data){
+            	console.log("jwt", data);
+            	loadApiKeys() ;
+                revealJWT(data.entity.jwt);
+            },
+            error : function(error) {
+                console.error("Error requesting a new APIKey", error);
+
+            }
+        };
+    
+        dojo.xhrPost(xhrArgs);
+	  
+	  
+  }
+
+  
+  function toggleTokens(){
+
+      if(document.getElementsByClassName('tokenLong')[0].style.display!="none") return;
+
+      var all = document.getElementsByClassName('tokenShort');
+      for (var i = 0; i < all.length; i++) {
+        all[i].style.display = (all[i].style.display=="none") ? "" : "none";
+      }
+      var all = document.getElementsByClassName('tokenLong');
+      for (var i = 0; i < all.length; i++) {
+        all[i].style.display = (all[i].style.display=="none") ? "" : "none";
+      }
+      
+      
+  }
+	
+  function writeApiKeys(data) {
+      var parent=document.getElementById("apiKeysDiv")
+      var tokens = data.entity.tokens;
+   
+      var myTable= `<table class="listingTable">
+    	  <tr>
+	    	  <th style='width: 200px;'><%=LanguageUtil.get(pageContext, "api.token.id") %></th>
+	    	  <th style='width: 200px;'><%=LanguageUtil.get(pageContext, "Label") %></th>
+	    	  <th style='width: 200px;'><%=LanguageUtil.get(pageContext, "api.token.issued") %></th>
+	    	  <th style='width: 200px;'><%=LanguageUtil.get(pageContext, "api.token.expires") %></th>
+	    	  <th style='width: 200px;'><%=LanguageUtil.get(pageContext, "api.token.revoke") %></th>
+	    	  <th style='width: 150px;'><%=LanguageUtil.get(pageContext, "api.token.requested.by") %></th>
+	    	  <th style='width: 150px;'><%=LanguageUtil.get(pageContext, "api.token.ip.range") %></th>
+	    	  <th></th>
+    	  </tr>`;
+      for (var i=0; i<tokens.length; i++) {
+    	  
+    	  var token=tokens[i];
+    	  var myRow=(token.valid) ? `<tr >` : `<tr style="background: rgb(250,250,250)">`;
+    	  myRow +=((token.expired || token.revoked)   ? `<td style="text-decoration:line-through;cursor:pointer;" ` : `<td style="cursor:pointer;" `) + ` onclick="toggleTokens()"><span class="tokenShort">{token.idShort}</span><span style="display:none;" class="tokenLong">{token.id}</span></td>`;
+          myRow +=(token.expired || token.revoked)   ? `<td style="text-decoration:line-through;">{token.label}</td>` : `<td >{token.label}</td>`   ;
+    	  myRow +=(token.valid)   ? `<td >{token.issueDate}</td>`:`<td>{token.issueDate}</td>`;
+          myRow +=(!token.expired)? `<td >{token.expiresDate}</td>` : `<td style="text-decoration:line-through;">{token.expiresDate}</td>` ;
+          myRow +=(!token.revoked)? `<td >{token.revokedDate}</td>` : `<td style="text-decoration:line-through;">{token.revokedDate}</td>` ;
+          myRow +=(token.valid)   ? `<td >{token.requestingUserId}</td>`: `<td>{token.requestingUserId}</td>`;
+          myRow +=(token.valid)   ? `<td >{token.allowNetwork}</td>`:`<td>{token.allowNetwork}</td>`;
+          myRow +=(token.expired || token.revoked) 
+                ? `<td style="text-align:center"><a style="text-decoration:underline" href='javascript:deleteKey(\"{token.id}\")'><%=LanguageUtil.get(pageContext, "api.token.delete") %></a> </td>`
+                : `<td style="text-align:center"><a style="text-decoration:underline" href='javascript:revokeKey(\"{token.id}\")'><%=LanguageUtil.get(pageContext, "api.token.revoke") %></a> | <a style="text-decoration:underline" href='javascript:getJwt("{token.id}")'><%=LanguageUtil.get(pageContext, "api.token.get.token") %></a></td>`;
+          myRow+=`</tr>`;
+	    	   
+
+    	  myRow=myRow
+    	  .replace(new RegExp("{token.id}", 'g'), token.id)
+    	  .replace(new RegExp("{token.idShort}", 'g'), token.id.substring(0, token.id.indexOf('-'))+"...")
+          .replace(new RegExp("{token.label}", 'g'), (token.claims.label==null) ?"-" : token.claims.label)
+    	  .replace(new RegExp("{token.expiresDate}", 'g'), toDate(token.expiresDate))
+    	  .replace(new RegExp("{token.revokedDate}", 'g'), toDate(token.revokedDate))
+    	  .replace(new RegExp("{token.requestingUserId}", 'g'), token.requestingUserId)
+    	  .replace(new RegExp("{token.allowNetwork}", 'g'), (token.allowNetwork==null) ? "any" : token.allowNetwork)
+    	  .replace(new RegExp("{token.issueDate}", 'g'), toDate(token.issueDate ))
+    	  .replace(new RegExp("{token.requestingUserId}", 'g'), toDate(token.requestingUserId ))
+    	  .replace(new RegExp("{token.revoked}", 'g'), token.revoked) 
+          .replace(new RegExp("{validClass}", 'g'), (!token.valid) ? "text-decoration:line-through;" : "")
+    	   myTable+=   myRow; 
+
+
+    	  
+      }
+      myTable+="</table>";
+      parent.innerHTML=myTable;
+  }
+	
+	
 	function saveUserAdditionalInfo(){
 		if(currentUser == null)
 			return;

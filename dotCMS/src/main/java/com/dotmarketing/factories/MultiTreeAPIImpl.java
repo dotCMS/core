@@ -574,6 +574,12 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
         return pageContents;
     }
 
+    private List<ContainerUUID> getDrawedLayoutContainerUUIDs (final IHTMLPage page) throws DotSecurityException, DotDataException {
+
+        final TemplateLayout layout =
+                DotTemplateTool.themeLayout(page.getTemplateId(), APILocator.systemUser(), false);
+        return APILocator.getTemplateAPI().getContainersUUID(layout);
+    }
 
     private void addEmptyContainers(final IHTMLPage page,
                                     final Table<String, String, Set<String>> pageContents,
@@ -582,14 +588,17 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
         try {
 
+            final List<ContainerUUID> containersUUID;
             final Template template =
                     APILocator.getTemplateAPI().findWorkingTemplate(page.getTemplateId(), APILocator.getUserAPI().getSystemUser(), false);
-            if (!template.isDrawed()) {
+            try {
+                containersUUID = template.isDrawed()?
+                        this.getDrawedLayoutContainerUUIDs(page):
+                        APILocator.getTemplateAPI().getContainersUUIDFromDrawTemplateBody(template.getBody());
+            } catch (Exception e) {
+                Logger.error(this, e.getMessage(), e);
                 return;
             }
-
-            final TemplateLayout layout = DotTemplateTool.themeLayout(page.getTemplateId(), APILocator.getUserAPI().getSystemUser(), false);
-            final List<ContainerUUID> containersUUID = APILocator.getTemplateAPI().getContainersUUID(layout);
 
             for (final ContainerUUID containerUUID : containersUUID) {
 

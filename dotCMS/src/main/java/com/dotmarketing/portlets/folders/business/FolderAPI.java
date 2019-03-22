@@ -429,7 +429,20 @@ import java.util.function.Predicate;
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
-	boolean move(Folder folderToMove, Host newParentHost,User user,boolean respectFrontEndPermissions)throws DotDataException, DotSecurityException;
+	boolean move(Folder folderToMove, Host newParentHost,User user,boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException;
+
+	/**
+	 * Move a folder identify by identifier, to new path
+	 * @param folderId       {@link String} current folder id
+	 * @param newFolderId    {@link String} new folder id path to move
+	 * @param user			 {@link User}   current user
+	 * @param respectFrontendRoles {@link Boolean}
+	 * @return boolean true if the move is successfully
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	boolean move (final String folderId, final String newFolderId,
+							   final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
 	/**
 	 *
