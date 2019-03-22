@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html dir="ltr" lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=5.0"
+        />
+        <title>Stencil Component Starter</title>
+        <script src="/build/mycomponent.js"></script>
+        <script>
+            window.onload = function () {
+              let rating = document.querySelector("dot-textfield");
+              rating.addEventListener("onCallback", function (event) {
+                console.log('--onCallback', event.detail.value);
+              })
+            };
+          </script>
+    </head>
+    <body>
+        <my-component first="Stencil" last="'Don't call me a framework' JS"></my-component>
+        <hr />
+        <dot-textfield label="Name:" value="John" hint="this is a hint" placeholder="Enter Name" regexCheck="[A-Za-z]" readOnly="false" required></dot-textfield>
+    </body>
+</html>
