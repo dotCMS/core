@@ -25,9 +25,6 @@ import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.business.UserAPI;
-import com.dotmarketing.common.business.journal.DistributedJournalAPI;
-import com.dotmarketing.common.business.journal.DistributedJournalFactory;
-import com.dotmarketing.common.business.journal.IndexJournal;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
@@ -50,16 +47,16 @@ import com.liferay.portal.model.User;
  * record in the table and will add its information to the Elastic index.
  * <p>
  * The records added to the table will have a priority level set by the
- * {@link DistributedJournalFactory#REINDEX_JOURNAL_PRIORITY_NEWINDEX} constant. During the process,
+ * {@link ReindexQueueFactory#REINDEX_JOURNAL_PRIORITY_NEWINDEX} constant. During the process,
  * all the "correct" contents will be processed and re-indexed first. All the "bad" records
  * (contents that could not be re-indexed) will be set a different priority level specified by the
- * {@link DistributedJournalFactory#REINDEX_JOURNAL_PRIORITY_FAILED_FIRST_ATTEMPT} constant and will
+ * {@link ReindexQueueFactory#REINDEX_JOURNAL_PRIORITY_FAILED_FIRST_ATTEMPT} constant and will
  * be given more opportunities to be re-indexed after all of the correct contents have already been
  * processed.
  * </p>
  * <p>
  * The number of times the bad contents can re-try the re-index process is specified by the
- * {@link DistributedJournalFactory#RETRY_FAILED_INDEX_TIMES} property, which can be customized
+ * {@link ReindexQueueFactory#RETRY_FAILED_INDEX_TIMES} property, which can be customized
  * through the {@code dotmarketing-config.properties} file. If a content cannot be re-indexed after
  * all the specified attempts, a notification will be sent to the Notification Bar indicating the
  * Identifier of the bad contentlet. This way users can keep track of the failed records and check
@@ -84,7 +81,7 @@ import com.liferay.portal.model.User;
 public class ReindexThread extends Thread {
 
     private static final ContentletIndexAPI indexAPI = APILocator.getContentletIndexAPI();
-    private final DistributedJournalAPI jAPI;
+    private final ReindexQueueAPI jAPI;
     private final NotificationAPI notificationAPI;
     private final RoleAPI roleAPI;
     private final UserAPI userAPI;
@@ -106,7 +103,7 @@ public class ReindexThread extends Thread {
     }
 
     @VisibleForTesting
-    public ReindexThread(final DistributedJournalAPI jAPI, final NotificationAPI notificationAPI, final UserAPI userAPI,
+    public ReindexThread(final ReindexQueueAPI jAPI, final NotificationAPI notificationAPI, final UserAPI userAPI,
             final RoleAPI roleAPI) {
         super("ReindexThread");
         this.jAPI = jAPI;
@@ -186,7 +183,7 @@ public class ReindexThread extends Thread {
         unpause();
         BulkRequestBuilder bulk = indexAPI.createBulkRequest();
         while (isWorking() && !die) {
-            final Map<String, IndexJournal> workingRecords = new HashMap<>();
+            final Map<String, ReindexEntry> workingRecords = new HashMap<>();
             int recordCount = 0;
             try {
                 while (recordCount < ELASTICSEARCH_BULK_SIZE) {
@@ -305,16 +302,16 @@ public class ReindexThread extends Thread {
         return FactoryLocator.getContentletFactory().convertFatContentletToContentlet(fattyContentlet);
     }
 
-    private BulkRequestBuilder writeRequestsToBulk(final BulkRequestBuilder bulk, final Collection<IndexJournal> idxs)
+    private BulkRequestBuilder writeRequestsToBulk(final BulkRequestBuilder bulk, final Collection<ReindexEntry> idxs)
             throws DotDataException, DotSecurityException {
 
-        for (IndexJournal idx : idxs) {
+        for (ReindexEntry idx : idxs) {
             writeRequestsToBulk(bulk, idx);
         }
         return bulk;
     }
 
-    private BulkRequestBuilder writeRequestsToBulk(BulkRequestBuilder bulk, IndexJournal idx)
+    private BulkRequestBuilder writeRequestsToBulk(BulkRequestBuilder bulk, ReindexEntry idx)
             throws DotDataException, DotSecurityException {
 
         Logger.debug(this, "Indexing document " + idx.getIdentToIndex());

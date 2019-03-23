@@ -54,9 +54,9 @@ import com.dotmarketing.business.query.GenericQueryFactory.Query;
 import com.dotmarketing.business.query.QueryUtil;
 import com.dotmarketing.business.query.ValidationException;
 import com.dotmarketing.cache.FieldsCache;
-import com.dotmarketing.common.business.journal.DistributedJournalAPI;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.model.ContentletSearch;
+import com.dotmarketing.common.reindex.ReindexQueueAPI;
 import com.dotmarketing.common.reindex.ReindexThread;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.FlushCacheRunnable;
@@ -195,7 +195,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     private final RelationshipAPI       relationshipAPI;
     private final FieldAPI              fieldAPI;
     private final LanguageAPI           languageAPI;
-    private final DistributedJournalAPI distributedJournalAPI;
+    private final ReindexQueueAPI reindexQueueAPI;
     private final TagAPI                tagAPI;
     private final IdentifierStripedLock lockManager;
 
@@ -221,7 +221,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         categoryAPI = APILocator.getCategoryAPI();
         relationshipAPI = APILocator.getRelationshipAPI();
         languageAPI = APILocator.getLanguageAPI();
-        distributedJournalAPI = APILocator.getDistributedJournalAPI();
+        reindexQueueAPI = APILocator.getDistributedJournalAPI();
         tagAPI = APILocator.getTagAPI();
         contentletSystemEventUtil = ContentletSystemEventUtil.getInstance();
         localSystemEventsAPI      = APILocator.getLocalSystemEventsAPI();
@@ -2270,7 +2270,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     @Override
     public void reindex(Structure structure)throws DotReindexStateException {
         try {
-            distributedJournalAPI.addStructureReindexEntries(structure.getInode());
+            reindexQueueAPI.addStructureReindexEntries(structure.getInode());
         } catch (DotDataException e) {
             Logger.error(this, e.getMessage(), e);
             throw new DotReindexStateException("Unable to complete reindex",e);
@@ -2286,7 +2286,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     @Override
     public void refresh(Structure structure) throws DotReindexStateException {
         try {
-            distributedJournalAPI.addStructureReindexEntries(structure.getInode());
+            reindexQueueAPI.addStructureReindexEntries(structure.getInode());
             //CacheLocator.getContentletCache().clearCache();
         } catch (DotDataException e) {
             Logger.error(this, e.getMessage(), e);
@@ -2339,7 +2339,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             indexAPI.fullReindexStart();
 
             // new records to index
-            distributedJournalAPI.addAllToReindexQueue();
+            reindexQueueAPI.addAllToReindexQueue();
 
             // then we let the reindexThread start working
 
@@ -2364,7 +2364,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     @Override
     public void refreshContentUnderHost(Host host) throws DotReindexStateException {
         try {
-            distributedJournalAPI.refreshContentUnderHost(host);
+            reindexQueueAPI.refreshContentUnderHost(host);
         } catch (DotDataException e) {
             Logger.error(this, e.getMessage(), e);
             throw new DotReindexStateException("Unable to complete reindex",e);
@@ -2376,7 +2376,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     @Override
     public void refreshContentUnderFolder(Folder folder) throws DotReindexStateException {
         try {
-            distributedJournalAPI.refreshContentUnderFolder(folder);
+            reindexQueueAPI.refreshContentUnderFolder(folder);
         } catch (DotDataException e) {
             Logger.error(this, e.getMessage(), e);
             throw new DotReindexStateException("Unable to complete reindex",e);
@@ -2388,7 +2388,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     @Override
     public void refreshContentUnderFolderPath ( String hostId, String folderPath ) throws DotReindexStateException {
         try {
-            distributedJournalAPI.refreshContentUnderFolderPath(hostId, folderPath);
+            reindexQueueAPI.refreshContentUnderFolderPath(hostId, folderPath);
         } catch ( DotDataException e ) {
             Logger.error(this, e.getMessage(), e);
             throw new DotReindexStateException("Unable to complete reindex", e);

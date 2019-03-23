@@ -14,7 +14,6 @@ import com.dotcms.util.I18NMessage;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.business.UserAPI;
-import com.dotmarketing.common.business.journal.DistributedJournalAPI;
 import com.dotmarketing.util.Config;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
@@ -46,7 +45,7 @@ public class ReindexThreadTest extends UnitTestBase {
         final RoleAPI roleAPI = mock(RoleAPI.class);
         final UserAPI userAPI = mock(UserAPI.class);
         final ServletContext context = mock(ServletContext.class);
-        final DistributedJournalAPI jAPI = mock(DistributedJournalAPI.class);
+        final ReindexQueueAPI jAPI = mock(ReindexQueueAPI.class);
         final Locale locale = new Locale.Builder().setLanguage("en").setRegion("US").build();
 
         String cmsAdminRoleId = UUID.randomUUID().toString();

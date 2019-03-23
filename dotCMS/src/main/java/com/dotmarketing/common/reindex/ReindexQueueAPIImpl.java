@@ -1,7 +1,7 @@
 /**
  * 
  */
-package com.dotmarketing.common.business.journal;
+package com.dotmarketing.common.reindex;
 
 import java.sql.Connection;
 import java.util.Collection;
@@ -26,42 +26,42 @@ import com.dotmarketing.util.UtilMethods;
  * @since 1.6.5c
  *
  */
-public class DistributedJournalAPIImpl implements DistributedJournalAPI {
+public class ReindexQueueAPIImpl implements ReindexQueueAPI {
 
-    private final DistributedJournalFactory distributedJournalFactory;
+    private final ReindexQueueFactory reindexQueueFactory;
 
-    public DistributedJournalAPIImpl() {
-        this.distributedJournalFactory = (DistributedJournalFactory) FactoryLocator.getDistributedJournalFactory();
+    public ReindexQueueAPIImpl() {
+        this.reindexQueueFactory = (ReindexQueueFactory) FactoryLocator.getDistributedJournalFactory();
     }
 
     @WrapInTransaction
     public void addStructureReindexEntries(String structureInode) throws DotDataException {
-        distributedJournalFactory.addStructureReindexEntries(structureInode);
+        reindexQueueFactory.addStructureReindexEntries(structureInode);
     }
 
     @WrapInTransaction
     public synchronized void addAllToReindexQueue() throws DotDataException {
-        distributedJournalFactory.addAllToReindexQueue();
+        reindexQueueFactory.addAllToReindexQueue();
     }
 
     @CloseDBIfOpened
-    public Map<String,IndexJournal> findContentToReindex() throws DotDataException {
-        return this.findContentToReindex(this.distributedJournalFactory.REINDEX_RECORDS_TO_FETCH);
+    public Map<String,ReindexEntry> findContentToReindex() throws DotDataException {
+        return this.findContentToReindex(this.reindexQueueFactory.REINDEX_RECORDS_TO_FETCH);
     }
 
     @CloseDBIfOpened
-    public Map<String,IndexJournal> findContentToReindex(final int recordsToReture) throws DotDataException {
-        return distributedJournalFactory.findContentToReindex(recordsToReture);
+    public Map<String,ReindexEntry> findContentToReindex(final int recordsToReture) throws DotDataException {
+        return reindexQueueFactory.findContentToReindex(recordsToReture);
     }
 
     @WrapInTransaction
-    public void deleteReindexEntry(IndexJournal iJournal) throws DotDataException {
-        distributedJournalFactory.deleteReindexEntry(iJournal);
+    public void deleteReindexEntry(ReindexEntry iJournal) throws DotDataException {
+        reindexQueueFactory.deleteReindexEntry(iJournal);
     }
 
     @CloseDBIfOpened
     public boolean areRecordsLeftToIndex() throws DotDataException {
-        return distributedJournalFactory.areRecordsLeftToIndex();
+        return reindexQueueFactory.areRecordsLeftToIndex();
     }
 
     @CloseDBIfOpened
@@ -70,7 +70,7 @@ public class DistributedJournalAPIImpl implements DistributedJournalAPI {
     }
 
     public long recordsInQueue(Connection conn) throws DotDataException {
-        return distributedJournalFactory.recordsInQueue(conn);
+        return reindexQueueFactory.recordsInQueue(conn);
     }
 
     long lastTimeIRequedRecords = 0;
@@ -78,76 +78,76 @@ public class DistributedJournalAPIImpl implements DistributedJournalAPI {
     @Override
     public void requeStaleReindexRecords(final int secondsOld) throws DotDataException {
         if(lastTimeIRequedRecords+(secondsOld*1000)<System.currentTimeMillis()) {
-            distributedJournalFactory.requeStaleReindexRecords(secondsOld);
+            reindexQueueFactory.requeStaleReindexRecords(secondsOld);
         }
     }
 
     @WrapInTransaction
     public void distReindexJournalCleanup(int time, boolean add, boolean includeInodeCheck, DateType type) throws DotDataException {
-        distributedJournalFactory.distReindexJournalCleanup(time, add, includeInodeCheck, type);
+        reindexQueueFactory.distReindexJournalCleanup(time, add, includeInodeCheck, type);
 
     }
 
     @WrapInTransaction
     public void cleanDistReindexJournal() throws DotDataException {
-        distributedJournalFactory.cleanDistReindexJournal();
+        reindexQueueFactory.cleanDistReindexJournal();
     }
 
     @WrapInTransaction
     public void refreshContentUnderHost(Host host) throws DotDataException {
-        distributedJournalFactory.refreshContentUnderHost(host);
+        reindexQueueFactory.refreshContentUnderHost(host);
     }
 
     @WrapInTransaction
     public void refreshContentUnderFolder(Folder folder) throws DotDataException {
-        distributedJournalFactory.refreshContentUnderFolder(folder);
+        reindexQueueFactory.refreshContentUnderFolder(folder);
     }
 
     @WrapInTransaction
     public void refreshContentUnderFolderPath(String hostId, String folderPath) throws DotDataException {
-        distributedJournalFactory.refreshContentUnderFolderPath(hostId, folderPath);
+        reindexQueueFactory.refreshContentUnderFolderPath(hostId, folderPath);
     }
 
     @WrapInTransaction
     @Override
     public void addIdentifierReindex(final String id) throws DotDataException {
 
-        this.distributedJournalFactory.addIdentifierReindex(id);
+        this.reindexQueueFactory.addIdentifierReindex(id);
     }
     
     @WrapInTransaction
     @Override
     public void addIdentifierReindex(final String id, int priority) throws DotDataException {
 
-        this.distributedJournalFactory.addIdentifierReindex(id, priority);
+        this.reindexQueueFactory.addIdentifierReindex(id, priority);
     }
 
     @WrapInTransaction
     @Override
     public void addReindexHighPriority(final String identifier) throws DotDataException {
 
-        this.distributedJournalFactory.addReindexHighPriority(identifier);
+        this.reindexQueueFactory.addReindexHighPriority(identifier);
     }
 
     @WrapInTransaction
     @Override
     public int addIdentifierReindex(final Collection<String> ids) throws DotDataException {
 
-        return this.distributedJournalFactory.addIdentifierReindex(ids);
+        return this.reindexQueueFactory.addIdentifierReindex(ids);
     }
 
     @WrapInTransaction
     @Override
     public int addReindexHighPriority(final Collection<String> ids) throws DotDataException {
 
-        return this.distributedJournalFactory.addReindexHighPriority(ids);
+        return this.reindexQueueFactory.addReindexHighPriority(ids);
     }
 
     @WrapInTransaction
     @Override
     public void addContentletReindex(final Contentlet contentlet) throws DotDataException {
 
-        this.distributedJournalFactory.addIdentifierReindex(contentlet.getIdentifier());
+        this.reindexQueueFactory.addIdentifierReindex(contentlet.getIdentifier());
     }
 
     @WrapInTransaction
@@ -168,17 +168,17 @@ public class DistributedJournalAPIImpl implements DistributedJournalAPI {
     @Override
     public void addIdentifierReindex(final Identifier identifier) throws DotDataException {
 
-        this.distributedJournalFactory.addIdentifierReindex(identifier.getId());
+        this.reindexQueueFactory.addIdentifierReindex(identifier.getId());
     }
 
     @WrapInTransaction
-    public void deleteReindexEntry(Collection<IndexJournal> recordsToDelete) throws DotDataException {
-        distributedJournalFactory.deleteReindexEntry(recordsToDelete);
+    public void deleteReindexEntry(Collection<ReindexEntry> recordsToDelete) throws DotDataException {
+        reindexQueueFactory.deleteReindexEntry(recordsToDelete);
     }
 
     @WrapInTransaction
-    public void resetServerForReindexEntry(Collection<IndexJournal> recordsToModify) throws DotDataException {
-        distributedJournalFactory.resetServerForReindexEntry(recordsToModify);
+    public void resetServerForReindexEntry(Collection<ReindexEntry> recordsToModify) throws DotDataException {
+        reindexQueueFactory.resetServerForReindexEntry(recordsToModify);
     }
 
     @Override
@@ -193,15 +193,15 @@ public class DistributedJournalAPIImpl implements DistributedJournalAPI {
     @Override
     @WrapInTransaction
     public void updateIndexJournalPriority(long id, int priority) throws DotDataException{
-        distributedJournalFactory.updateIndexJournalPriority(id,  priority);
+        reindexQueueFactory.updateIndexJournalPriority(id,  priority);
     
     }
 
     @Override
     @WrapInTransaction
-    public void markAsFailed(final IndexJournal idx, final String cause) throws DotDataException{
+    public void markAsFailed(final ReindexEntry idx, final String cause) throws DotDataException{
         Logger.warn(this.getClass(), "Reindex failed for :" +idx + " because " + cause);
-        distributedJournalFactory.markAsFailed(idx, UtilMethods.shortenString(cause, 300));
+        reindexQueueFactory.markAsFailed(idx, UtilMethods.shortenString(cause, 300));
     
     }
     

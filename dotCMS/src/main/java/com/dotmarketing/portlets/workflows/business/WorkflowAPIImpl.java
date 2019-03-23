@@ -22,8 +22,8 @@ import com.dotcms.workflow.form.PushPublishBean;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.*;
-import com.dotmarketing.common.business.journal.DistributedJournalAPI;
 import com.dotmarketing.common.model.ContentletSearch;
+import com.dotmarketing.common.reindex.ReindexQueueAPI;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.*;
@@ -88,7 +88,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	private final SystemMessageEventUtil systemMessageEventUtil =
 			SystemMessageEventUtil.getInstance();
 
-	private final DistributedJournalAPI distributedJournalAPI =
+	private final ReindexQueueAPI reindexQueueAPI =
 			APILocator.getDistributedJournalAPI();
 
 	private final ContentletIndexAPI contentletIndexAPI =
@@ -587,7 +587,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		//We should only be considering Working content.
 		final List<ContentletSearch> searchResults = contentletAPI.searchIndex(luceneQuery, -1, 0, null, user, RESPECT_FRONTEND_ROLES);
 		final Set<String> identifiers = searchResults.stream().map(ContentletSearch::getIdentifier).collect(Collectors.toSet());
-		return distributedJournalAPI.addIdentifierReindex(identifiers);
+		return reindexQueueAPI.addIdentifierReindex(identifiers);
 	}
 
 	@Override
@@ -879,7 +879,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		try {
 			HibernateUtil.addCommitListener( () -> {
 				try {
-					this.distributedJournalAPI.addIdentifierReindex(workflowTask.getWebasset());
+					this.reindexQueueAPI.addIdentifierReindex(workflowTask.getWebasset());
 				} catch (DotDataException e) {
 					Logger.error(WorkflowAPIImpl.class, e.getMessage(), e);
 				}
@@ -1005,7 +1005,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	@CloseDBIfOpened
 	private int pushIndexUpdateOnReorder(final String schemeId) throws DotDataException {
        final Set<String> identifiers = workFlowFactory.findNullTaskContentletIdentifiersForScheme(schemeId);
-       return distributedJournalAPI.addIdentifierReindex(identifiers);
+       return reindexQueueAPI.addIdentifierReindex(identifiers);
 	}
 
 	@Override
@@ -1071,7 +1071,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			if (UtilMethods.isSet(task.getWebasset())) {
 				HibernateUtil.addCommitListener(() -> {
 					try {
-						this.distributedJournalAPI.addIdentifierReindex(task.getWebasset());
+						this.reindexQueueAPI.addIdentifierReindex(task.getWebasset());
 					} catch (DotDataException e) {
 						Logger.error(WorkflowAPIImpl.class, e.getMessage(), e);
 					}
@@ -1114,7 +1114,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			if (UtilMethods.isSet(task.getWebasset())) {
 				HibernateUtil.addCommitListener(() -> {
 					try {
-						this.distributedJournalAPI.addIdentifierReindex(task.getWebasset());
+						this.reindexQueueAPI.addIdentifierReindex(task.getWebasset());
 					} catch (DotDataException e) {
 						Logger.error(WorkflowAPIImpl.class, e.getMessage(), e);
 					}
@@ -2029,7 +2029,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 					UtilMethods.isSet(processor.getContentlet().getIdentifier())) {
 
 				try {
-					this.distributedJournalAPI.addIdentifierReindex(processor.getContentlet().getIdentifier());
+					this.reindexQueueAPI.addIdentifierReindex(processor.getContentlet().getIdentifier());
 				} catch (DotDataException e) {
 					Logger.error(WorkflowAPIImpl.class, e.getMessage(), e);
 				}

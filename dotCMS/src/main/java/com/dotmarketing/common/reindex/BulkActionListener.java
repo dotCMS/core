@@ -10,21 +10,19 @@ import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkResponse;
 
 import com.dotmarketing.business.APILocator;
-
-import com.dotmarketing.common.business.journal.IndexJournal;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Logger;
 import com.liferay.util.StringPool;
 
 class BulkActionListener implements ActionListener<BulkResponse> {
 
-    BulkActionListener(final Map<String, IndexJournal> workingRecords) {
+    BulkActionListener(final Map<String, ReindexEntry> workingRecords) {
         this.workingRecords = workingRecords;
     }
 
-    final Map<String, IndexJournal> workingRecords;
+    final Map<String, ReindexEntry> workingRecords;
 
-    private void handleSuccess(final List<IndexJournal> successful) {
+    private void handleSuccess(final List<ReindexEntry> successful) {
 
         try {
             APILocator.getDistributedJournalAPI().deleteReindexEntry(successful);
@@ -33,7 +31,7 @@ class BulkActionListener implements ActionListener<BulkResponse> {
         }
     }
 
-    private void handleFailure(final IndexJournal idx, String cause) {
+    private void handleFailure(final ReindexEntry idx, String cause) {
 
         try {
             APILocator.getDistributedJournalAPI().markAsFailed(idx, cause);
@@ -45,11 +43,11 @@ class BulkActionListener implements ActionListener<BulkResponse> {
     @Override
     public void onResponse(final BulkResponse bulkResponse) {
 
-        List<IndexJournal> successful = new ArrayList<>(workingRecords.size());
+        List<ReindexEntry> successful = new ArrayList<>(workingRecords.size());
         for (BulkItemResponse bulkItemResponse : bulkResponse) {
             DocWriteResponse itemResponse = bulkItemResponse.getResponse();
             String id = itemResponse.getId().substring(0, itemResponse.getId().lastIndexOf(StringPool.UNDERLINE));
-            IndexJournal idx = workingRecords.get(id);
+            ReindexEntry idx = workingRecords.get(id);
             if (idx == null)
                 continue;
             if (bulkItemResponse.isFailed()) {

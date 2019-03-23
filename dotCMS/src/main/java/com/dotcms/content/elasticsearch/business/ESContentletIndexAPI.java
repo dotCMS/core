@@ -46,8 +46,8 @@ import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.FactoryLocator;
-import com.dotmarketing.common.business.journal.DistributedJournalAPI;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.common.reindex.ReindexQueueAPI;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.db.ReindexRunnable;
@@ -74,7 +74,7 @@ public class ESContentletIndexAPI implements ContentletIndexAPI {
 
     private static final String SELECT_CONTENTLET_VERSION_INFO =
             "select working_inode,live_inode from contentlet_version_info where identifier=?";
-    private static DistributedJournalAPI journalAPI = null;
+    private static ReindexQueueAPI journalAPI = null;
     private static final ESIndexAPI esIndexApi = new ESIndexAPI();
     private static final ESMappingAPIImpl mappingAPI = new ESMappingAPIImpl();
 

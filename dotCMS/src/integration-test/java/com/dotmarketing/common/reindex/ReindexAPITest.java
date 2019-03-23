@@ -1,4 +1,4 @@
-package com.dotmarketing.common.business.journal;
+package com.dotmarketing.common.reindex;
 
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -22,13 +22,16 @@ import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.common.reindex.ReindexEntry;
+import com.dotmarketing.common.reindex.ReindexQueueAPI;
+import com.dotmarketing.common.reindex.ReindexQueueFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 
 /**
- * Test for {@link DistributedJournalAPI}
+ * Test for {@link ReindexQueueAPI}
  */
-public class DistributedJournalAPITest extends IntegrationTestBase {
+public class ReindexAPITest extends IntegrationTestBase {
 
     int numberToTest = 20;
 
@@ -50,7 +53,7 @@ public class DistributedJournalAPITest extends IntegrationTestBase {
             contentlets.add(new ContentletDataGen(type.id()).nextPersisted());
         }
 
-        final DistributedJournalAPI distributedJournalAPI = APILocator.getDistributedJournalAPI();
+        final ReindexQueueAPI reindexQueueAPI = APILocator.getDistributedJournalAPI();
 
         new DotConnect().setSQL("delete from dist_reindex_journal").loadResult();
 
@@ -68,21 +71,21 @@ public class DistributedJournalAPITest extends IntegrationTestBase {
         final Set<String> lowIdentifiers =
                 contentletsLowPriority.stream().filter(Objects::nonNull).map(Contentlet::getIdentifier).collect(Collectors.toSet());
 
-        distributedJournalAPI.addIdentifierReindex(lowIdentifiers);
-        distributedJournalAPI.addReindexHighPriority(highIdentifiers);
+        reindexQueueAPI.addIdentifierReindex(lowIdentifiers);
+        reindexQueueAPI.addReindexHighPriority(highIdentifiers);
 
         // fetch 50
-        Map<String, IndexJournal> indexJournals = distributedJournalAPI.findContentToReindex(numberToTest / 2);
+        Map<String, ReindexEntry> reindexEntries = reindexQueueAPI.findContentToReindex(numberToTest / 2);
 
-        assertNotNull(indexJournals);
-        assertTrue(indexJournals.size() == numberToTest / 2);
-        assertTrue(indexJournals.keySet().containsAll(highIdentifiers));
+        assertNotNull(reindexEntries);
+        assertTrue(reindexEntries.size() == numberToTest / 2);
+        assertTrue(reindexEntries.keySet().containsAll(highIdentifiers));
 
-        indexJournals = distributedJournalAPI.findContentToReindex(numberToTest / 2);
+        reindexEntries = reindexQueueAPI.findContentToReindex(numberToTest / 2);
 
-        assertNotNull(indexJournals);
-        assertTrue(indexJournals.size() == numberToTest / 2);
-        assertTrue(indexJournals.keySet().containsAll(lowIdentifiers));
+        assertNotNull(reindexEntries);
+        assertTrue(reindexEntries.size() == numberToTest / 2);
+        assertTrue(reindexEntries.keySet().containsAll(lowIdentifiers));
 
     }
 
@@ -95,13 +98,13 @@ public class DistributedJournalAPITest extends IntegrationTestBase {
             new ContentletDataGen(type.id()).nextPersisted();
         }
 
-        final DistributedJournalAPI distributedJournalAPI = APILocator.getDistributedJournalAPI();
+        final ReindexQueueAPI reindexQueueAPI = APILocator.getDistributedJournalAPI();
 
         new DotConnect().setSQL("delete from dist_reindex_journal").loadResult();
 
-        Map<String, IndexJournal> indexJournals = distributedJournalAPI.findContentToReindex(numberToTest / 2);
+        Map<String, ReindexEntry> reindexEntries = reindexQueueAPI.findContentToReindex(numberToTest / 2);
 
-        assertTrue(indexJournals.size() == 0);
+        assertTrue(reindexEntries.size() == 0);
         List<Field> origFields = new ArrayList<>();
         List<Field> newFields = new ArrayList<>();
         origFields.addAll(type.fields());
@@ -112,9 +115,9 @@ public class DistributedJournalAPITest extends IntegrationTestBase {
         
         APILocator.getContentTypeAPI(APILocator.systemUser()).save(type, newFields);
         APILocator.getContentTypeAPI(APILocator.systemUser()).save(type, origFields);
-        indexJournals = distributedJournalAPI.findContentToReindex(numberToTest);
-        assertTrue(indexJournals.size() == numberToTest);
-        assertTrue(indexJournals.values().iterator().next().getPriority() == DistributedJournalFactory.Priority.STRUCTURE.dbValue());
+        reindexEntries = reindexQueueAPI.findContentToReindex(numberToTest);
+        assertTrue(reindexEntries.size() == numberToTest);
+        assertTrue(reindexEntries.values().iterator().next().getPriority() == ReindexQueueFactory.Priority.STRUCTURE.dbValue());
 
     }
 

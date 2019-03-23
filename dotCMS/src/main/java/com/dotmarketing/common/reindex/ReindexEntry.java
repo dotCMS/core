@@ -1,6 +1,6 @@
-package com.dotmarketing.common.business.journal;
+package com.dotmarketing.common.reindex;
 
-public class IndexJournal {
+public class ReindexEntry {
 
     private long id;
     private String identToIndex;
@@ -9,15 +9,15 @@ public class IndexJournal {
     private String serverId;
 
 
-    public IndexJournal() {}
+    public ReindexEntry() {}
 
-    public IndexJournal(long id, String objectToIndex, int priority) {
+    public ReindexEntry(long id, String objectToIndex, int priority) {
         this.id = id;
         this.identToIndex = objectToIndex;
         this.priority = priority;
     }
 
-    public IndexJournal(String serverId, int count, int priority) {
+    public ReindexEntry(String serverId, int count, int priority) {
         this.serverId = serverId;
 
         this.priority = priority;
@@ -74,7 +74,7 @@ public class IndexJournal {
     }
 
     public boolean isReindex() {
-        return getPriority() > DistributedJournalFactory.Priority.REINDEX.dbValue();
+        return getPriority() > ReindexQueueFactory.Priority.REINDEX.dbValue();
     }
 
     /**
@@ -125,7 +125,7 @@ public class IndexJournal {
             return false;
         if (getClass() != obj.getClass())
             return false;
-        IndexJournal other = (IndexJournal) obj;
+        ReindexEntry other = (ReindexEntry) obj;
         if (delete != other.delete)
             return false;
         if (identToIndex == null) {

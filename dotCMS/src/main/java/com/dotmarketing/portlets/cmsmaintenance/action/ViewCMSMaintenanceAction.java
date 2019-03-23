@@ -22,8 +22,8 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.NoSuchUserException;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
-import com.dotmarketing.common.business.journal.DistributedJournalFactory;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.common.reindex.ReindexQueueFactory;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -980,7 +980,7 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 			StringBuilder sql = new StringBuilder();
 			sql.append("SELECT drj.id, drj.ident_to_index, drj.inode_to_index, drj.priority, drj.index_val ")
 					.append("FROM dist_reindex_journal drj WHERE drj.priority >= ")
-					.append(DistributedJournalFactory.Priority.REINDEX.dbValue());
+					.append(ReindexQueueFactory.Priority.REINDEX.dbValue());
 			dc.setSQL(sql.toString());
 			List<Map<String, Object>> failedRecords = dc.loadObjectResults();
 			if (!failedRecords.isEmpty()) {

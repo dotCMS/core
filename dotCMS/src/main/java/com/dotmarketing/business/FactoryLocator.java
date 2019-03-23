@@ -28,7 +28,7 @@ import com.dotcms.publisher.endpoint.business.PublishingEndPointFactory;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointFactoryImpl;
 import com.dotcms.publisher.environment.business.EnvironmentFactory;
 import com.dotcms.publisher.environment.business.EnvironmentFactoryImpl;
-import com.dotmarketing.common.business.journal.DistributedJournalFactory;
+import com.dotmarketing.common.reindex.ReindexQueueFactory;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.plugin.business.PluginFactory;
 import com.dotmarketing.plugin.business.PluginFactoryDBImpl;
@@ -112,8 +112,8 @@ public class FactoryLocator extends Locator<FactoryIndex>{
     	return (LanguageFactory)getInstance(FactoryIndex.LANGUAGE_FACTORY);
     }
 
-    public static DistributedJournalFactory getDistributedJournalFactory() {
-        return (DistributedJournalFactory) getInstance(FactoryIndex.DISTRIBUTED_JOURNAL_FACTORY);
+    public static ReindexQueueFactory getDistributedJournalFactory() {
+        return (ReindexQueueFactory) getInstance(FactoryIndex.DISTRIBUTED_JOURNAL_FACTORY);
     }
 
     public static UserFactory getUserFactory(){
@@ -306,7 +306,7 @@ enum FactoryIndex
             case CONTENTLET_FACTORY: return new ESContentFactoryImpl();
             case PLUGIN_FACTORY: return new PluginFactoryDBImpl();
             case LANGUAGE_FACTORY: return new LanguageFactoryImpl();
-            case DISTRIBUTED_JOURNAL_FACTORY: return new DistributedJournalFactory();
+            case DISTRIBUTED_JOURNAL_FACTORY: return new ReindexQueueFactory();
             case USER_FACTORY : return new UserFactoryLiferayImpl();
             case CALENDAR_REMINDER_FACTORY: return new CalendarReminderFactoryImpl();
             case TEMPLATE_FACTORY: return new TemplateFactoryImpl();

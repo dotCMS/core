@@ -77,8 +77,8 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.portal.PortletAPI;
 import com.dotmarketing.business.portal.PortletAPIImpl;
 import com.dotmarketing.cms.urlmap.URLMapAPIImpl;
-import com.dotmarketing.common.business.journal.DistributedJournalAPI;
-import com.dotmarketing.common.business.journal.DistributedJournalAPIImpl;
+import com.dotmarketing.common.reindex.ReindexQueueAPI;
+import com.dotmarketing.common.reindex.ReindexQueueAPIImpl;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.factories.MultiTreeAPI;
@@ -421,13 +421,13 @@ public class APILocator extends Locator<APIIndex>{
 	}
 
 	/**
-	 * Creates a single instance of the {@link DistributedJournalAPI} class.
+	 * Creates a single instance of the {@link ReindexQueueAPI} class.
 	 *
-	 * @return The {@link DistributedJournalAPI} class.
+	 * @return The {@link ReindexQueueAPI} class.
 	 */
 	@SuppressWarnings("unchecked")
-	public static DistributedJournalAPI getDistributedJournalAPI(){
-		return (DistributedJournalAPI) getInstance(APIIndex.DISTRIBUTED_JOURNAL_API);
+	public static ReindexQueueAPI getDistributedJournalAPI(){
+		return (ReindexQueueAPI) getInstance(APIIndex.DISTRIBUTED_JOURNAL_API);
 	}
 
 	/**
@@ -1096,7 +1096,7 @@ enum APIIndex
     		case CALENDAR_REMINDER_API: return new CalendarReminderAPIImpl();
     		case PLUGIN_API: return new PluginAPIImpl();
     		case LANGUAGE_API: return new LanguageAPIImpl();
-    		case DISTRIBUTED_JOURNAL_API : return new DistributedJournalAPIImpl();
+    		case DISTRIBUTED_JOURNAL_API : return new ReindexQueueAPIImpl();
     		case TEMPLATE_API : return new TemplateAPIImpl();
     		case FOLDER_API: return new FolderAPIImpl();
     		case CONTAINER_API: return new ContainerAPIImpl();

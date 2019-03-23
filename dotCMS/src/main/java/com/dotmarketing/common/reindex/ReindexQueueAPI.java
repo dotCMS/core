@@ -1,4 +1,4 @@
-package com.dotmarketing.common.business.journal;
+package com.dotmarketing.common.reindex;
 
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -18,7 +18,7 @@ import java.util.Set;
  * @since 1.7
  *
  */
-public interface DistributedJournalAPI {
+public interface ReindexQueueAPI {
 
     /**
      * Will return only the reindex entries for the specific server the code is executed on This method
@@ -27,9 +27,9 @@ public interface DistributedJournalAPI {
      * @return
      * @throws DotDataException
      */
-    public Map<String,IndexJournal>  findContentToReindex() throws DotDataException;
+    public Map<String,ReindexEntry>  findContentToReindex() throws DotDataException;
 
-    public Map<String,IndexJournal>  findContentToReindex(int numberOfRecords) throws DotDataException;
+    public Map<String,ReindexEntry>  findContentToReindex(int numberOfRecords) throws DotDataException;
 
 
     /**
@@ -54,9 +54,9 @@ public interface DistributedJournalAPI {
      * 
      * @throws DotDataException
      */
-    public void deleteReindexEntry(IndexJournal ijournal) throws DotDataException;
+    public void deleteReindexEntry(ReindexEntry ijournal) throws DotDataException;
 
-    public void deleteReindexEntry(Collection<IndexJournal> recordsToDelete) throws DotDataException;
+    public void deleteReindexEntry(Collection<ReindexEntry> recordsToDelete) throws DotDataException;
 
     /**
      * Resets the server id to NULL to a list of failed records, setting the server id to NULL for a
@@ -66,7 +66,7 @@ public interface DistributedJournalAPI {
      * @param recordsToModify
      * @throws DotDataException
      */
-    public void resetServerForReindexEntry(Collection<IndexJournal> recordsToModify) throws DotDataException;
+    public void resetServerForReindexEntry(Collection<ReindexEntry> recordsToModify) throws DotDataException;
 
     /**
      * Will find the number of records left to index
@@ -203,6 +203,6 @@ public interface DistributedJournalAPI {
 
     void updateIndexJournalPriority(long id, int priority) throws DotDataException;
 
-    void markAsFailed(IndexJournal idx, String cause) throws DotDataException;
+    void markAsFailed(ReindexEntry idx, String cause) throws DotDataException;
 
 }

@@ -1,4 +1,4 @@
-package com.dotmarketing.common.business.journal;
+package com.dotmarketing.common.reindex;
 
 import java.sql.CallableStatement;
 import java.sql.Connection;
@@ -15,9 +15,9 @@ import java.util.Map;
 import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.common.business.journal.DistributedJournalAPI.DateType;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.db.Params;
+import com.dotmarketing.common.reindex.ReindexQueueAPI.DateType;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -37,7 +37,7 @@ import oracle.jdbc.OracleTypes;
  * @since Mar 22, 2012
  *
  */
-public class DistributedJournalFactory {
+public class ReindexQueueFactory {
 
     private String REINDEX_JOURNAL_INSERT =
             "insert into dist_reindex_journal(inode_to_index,ident_to_index,priority,dist_action, time_entered) values (?, ?, ?, ?, ?)";
@@ -65,7 +65,7 @@ public class DistributedJournalFactory {
     public static final int REINDEX_ACTION_REINDEX_OBJECT = 1;
     public static final int REINDEX_ACTION_DELETE_OBJECT = 2;
 
-    public DistributedJournalFactory() {
+    public ReindexQueueFactory() {
 
     }
 
@@ -135,7 +135,7 @@ public class DistributedJournalFactory {
         dc.loadResult();
     }
 
-    protected void deleteReindexEntry(IndexJournal iJournal) throws DotDataException {
+    protected void deleteReindexEntry(ReindexEntry iJournal) throws DotDataException {
         DotConnect dc = new DotConnect();
         dc.setSQL("DELETE FROM dist_reindex_journal where ident_to_index = ? or id= ?");
         dc.addParam(iJournal.getIdentToIndex());
@@ -143,17 +143,17 @@ public class DistributedJournalFactory {
         dc.loadResult();
     }
 
-    protected void resetServerForReindexEntry(Collection<IndexJournal> recordsToModify) throws DotDataException {
+    protected void resetServerForReindexEntry(Collection<ReindexEntry> recordsToModify) throws DotDataException {
 
     }
 
-    protected void deleteReindexEntry(final Collection<IndexJournal> recordsToDelete) throws DotDataException {
+    protected void deleteReindexEntry(final Collection<ReindexEntry> recordsToDelete) throws DotDataException {
 
         final DotConnect dotConnect = new DotConnect();
         final StringBuilder sql = new StringBuilder().append("DELETE FROM dist_reindex_journal where ident_to_index in (");
         boolean first = true;
 
-        for (IndexJournal idx : recordsToDelete) {
+        for (ReindexEntry idx : recordsToDelete) {
             if (!first)
                 sql.append(',');
             else
@@ -208,7 +208,7 @@ public class DistributedJournalFactory {
         dc.loadResult();
     }
 
-    protected void markAsFailed(IndexJournal idx, String cause) throws DotDataException {
+    protected void markAsFailed(ReindexEntry idx, String cause) throws DotDataException {
         final int newPriority =
                 (idx.errorCount() >= RETRY_FAILED_INDEX_TIMES) ? Priority.ERROR.dbValue() + idx.getPriority() : (1 + idx.getPriority());
 
@@ -221,8 +221,8 @@ public class DistributedJournalFactory {
     }
 
     @WrapInTransaction
-    protected Map<String, IndexJournal> findContentToReindex(final int recordsToReturn) throws DotDataException {
-        Map<String, IndexJournal> contentToIndex = loadReindexRecordsFromDb(recordsToReturn);
+    protected Map<String, ReindexEntry> findContentToReindex(final int recordsToReturn) throws DotDataException {
+        Map<String, ReindexEntry> contentToIndex = loadReindexRecordsFromDb(recordsToReturn);
         if (contentToIndex.size() < recordsToReturn && recordsInQueue() > 0) {
             requeStaleReindexRecords(REQUE_REINDEX_RECORDS_OLDER_THAN_SEC);
             contentToIndex.putAll(loadReindexRecordsFromDb(recordsToReturn));
@@ -230,9 +230,9 @@ public class DistributedJournalFactory {
         return contentToIndex;
     }
 
-    private Map<String, IndexJournal> loadReindexRecordsFromDb(final int recordsToReturn) throws DotDataException {
+    private Map<String, ReindexEntry> loadReindexRecordsFromDb(final int recordsToReturn) throws DotDataException {
         DotConnect dc = new DotConnect();
-        Map<String, IndexJournal> contentList = new LinkedHashMap<String, IndexJournal>();
+        Map<String, ReindexEntry> contentList = new LinkedHashMap<String, ReindexEntry>();
         List<Map<String, Object>> results;
         Connection con = null;
         String serverId = ConfigUtils.getServerId();
@@ -288,7 +288,7 @@ public class DistributedJournalFactory {
             }
 
             for (Map<String, Object> r : results) {
-                IndexJournal ij = new IndexJournal();
+                ReindexEntry ij = new ReindexEntry();
                 ij.setId(((Number) r.get("id")).longValue());
                 String identifier = (String) r.get("ident_to_index");
                 ij.setIdentToIndex(identifier);
