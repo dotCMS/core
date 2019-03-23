@@ -1,6 +1,9 @@
 package com.dotcms.rest.api.v1.workflow;
 
+import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
+import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
 import com.dotcms.repackage.javax.ws.rs.*;
@@ -9,17 +12,21 @@ import com.dotcms.repackage.javax.ws.rs.container.Suspended;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
+import com.dotcms.repackage.org.codehaus.jettison.json.JSONArray;
+import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
+import com.dotcms.repackage.org.glassfish.jersey.media.multipart.FormDataMultiPart;
 import com.dotcms.repackage.org.glassfish.jersey.server.JSONP;
-import com.dotcms.rest.ContentHelper;
-import com.dotcms.rest.InitDataObject;
-import com.dotcms.rest.ResponseEntityView;
-import com.dotcms.rest.WebResource;
+import com.dotcms.rest.*;
 import com.dotcms.rest.annotation.IncludePermissions;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.api.MultiPartUtils;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
+import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.util.CollectionsUtils;
+import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.DotPreconditions;
+import com.dotcms.util.JsonArrayToLinkedSetConverter;
 import com.dotcms.workflow.form.*;
 import com.dotcms.workflow.helper.WorkflowHelper;
 import com.dotmarketing.beans.Permission;
@@ -29,6 +36,7 @@ import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicyProvider;
@@ -47,14 +55,16 @@ import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
+import com.rainerhahnekamp.sneakythrow.Sneaky;
+import io.vavr.Tuple2;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.io.File;
+import java.io.IOException;
+import java.util.*;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import static com.dotcms.rest.ResponseEntityView.OK;
 import static com.dotcms.util.CollectionsUtils.map;
@@ -77,9 +87,21 @@ import static com.dotcms.util.DotLambdas.not;
 @Path("/v1/workflow")
 public class WorkflowResource {
 
-    public  final static String VERSION = "1.0";
-    private static final String LISTING = "listing";
-    private static final String EDITING = "editing";
+    public  final static String VERSION       = "1.0";
+    private static final String LISTING       = "listing";
+    private static final String EDITING       = "editing";
+    private static final String ASSIGN        = "assign";
+    private static final String COMMENTS      = "comments";
+    private static final String PUBLISH_DATE  = "publishDate";
+    private static final String PUBLISH_TIME  = "publishTime";
+    private static final String EXPIRE_DATE   = "expireDate";
+    private static final String EXPIRE_TIME   = "expireTime";
+    private static final String NEVER_EXPIRE  = "neverExpire";
+    private static final String WHERE_TO_SEND = "whereToSend";
+    private static final String FORCE_PUSH    = "forcePush";
+    public static final String BINARY_FIELDS  = "binaryFields";
+    public static final String PREFIX_BINARY  = "binary";
+
 
     private final WorkflowHelper   workflowHelper;
     private final ContentHelper    contentHelper;
@@ -89,6 +111,7 @@ public class WorkflowResource {
     private final ContentletAPI    contentletAPI;
     private final PermissionAPI    permissionAPI;
     private final WorkflowImportExportUtil workflowImportExportUtil;
+    private final MultiPartUtils   multiPartUtils;
     private final Set<String> validRenderModeSet = ImmutableSet.of(LISTING, EDITING);
 
 
@@ -103,6 +126,7 @@ public class WorkflowResource {
                 ResponseUtil.INSTANCE,
                 APILocator.getPermissionAPI(),
                 WorkflowImportExportUtil.getInstance(),
+                new MultiPartUtils(),
                 new WebResource());
     }
 
@@ -114,6 +138,7 @@ public class WorkflowResource {
                                final ResponseUtil     responseUtil,
                                final PermissionAPI    permissionAPI,
                                final WorkflowImportExportUtil workflowImportExportUtil,
+                               final MultiPartUtils   multiPartUtils,
                                final WebResource webResource) {
 
         this.workflowHelper           = workflowHelper;
@@ -123,6 +148,7 @@ public class WorkflowResource {
         this.workflowAPI              = workflowAPI;
         this.permissionAPI            = permissionAPI;
         this.contentletAPI            = contentletAPI;
+        this.multiPartUtils           = multiPartUtils;
         this.workflowImportExportUtil = workflowImportExportUtil;
 
     }
@@ -929,13 +955,96 @@ public class WorkflowResource {
         }
     }
 
+    /**
+     * Fires a workflow action by name
+     * @param request    {@link HttpServletRequest}
+     * @param inode      {@link String} (Optional) to fire an action over the existing inode.
+     * @param identifier {@link String} (Optional) to fire an action over the existing identifier (in combination of language).
+     * @param language   {@link Long}   (Optional) to fire an action over the existing language (in combination of identifier).
+     * @param fireActionForm {@link FireActionByNameForm} Fire Action by Name Form
+     * (if an inode is set, this param is not ignored).
+     * @return Response
+     */
+    @PUT
+    @Path("/actions/fire")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response fireAction(@Context final HttpServletRequest request,
+                                     @QueryParam("inode")            final String inode,
+                                     @QueryParam("identifier")       final String identifier,
+                                     @QueryParam("language")         final long   language,
+                                     final FireActionByNameForm fireActionForm) {
+
+        final InitDataObject initDataObject = this.webResource.init
+                (null, true, request, true, null);
+        String actionId = null;
+
+        try {
+
+            final PageMode mode = PageMode.get(request);
+            //if inode is set we use it to look up a contentlet
+            final Contentlet contentlet = this.getContentlet
+                    (inode, identifier, language, fireActionForm, initDataObject, mode);
+
+            actionId = this.workflowHelper.getActionIdByName
+                    (fireActionForm.getActionName(), contentlet, initDataObject.getUser());
+
+            DotPreconditions.notNull(actionId, Sneaky.sneaked(()-> LanguageUtil.get(initDataObject.getUser().getLocale(),
+                    "Unable-to-execute-workflows-InvalidActionName", fireActionForm.getActionName())),
+                    DotContentletValidationException.class);
+
+            return fireAction(request, fireActionForm, initDataObject.getUser(), contentlet, actionId);
+        } catch (Exception e) {
+
+            Logger.error(this.getClass(),
+                    "Exception on firing, workflow action: " + actionId +
+                            ", inode: " + inode, e);
+
+            return ResponseUtil.mapExceptionResponse(e);
+        }
+    }
+
+    private Response fireAction(final HttpServletRequest request,
+                                final FireActionForm fireActionForm,
+                                final User user,
+                                final Contentlet contentlet,
+                                final String actionId) throws DotDataException, DotSecurityException {
+
+        Logger.debug(this, ()-> "Firing workflow action: " + actionId);
+
+        if(null == contentlet || contentlet.getMap().isEmpty()) {
+
+            throw new DoesNotExistException("contentlet-was-not-found");
+        }
+
+        final ContentletDependencies.Builder formBuilder = new ContentletDependencies.Builder();
+        formBuilder.respectAnonymousPermissions(PageMode.get(request).respectAnonPerms).
+                workflowActionId(actionId).modUser(user)
+                .indexPolicy(IndexPolicyProvider.getInstance().forSingleContent());
+
+        if(fireActionForm != null) {
+
+            formBuilder.workflowActionComments(fireActionForm.getComments())
+                    .workflowAssignKey(fireActionForm.getAssign());
+        }
+
+        return Response.ok(
+                new ResponseEntityView(
+                        this.workflowAPI.fireContentWorkflow(contentlet, formBuilder.build())
+                )
+        ).build(); // 200
+    }
+
 
     /**
      * Fires a workflow action
-     * @param request HttpServletRequest
-     * @param inode String
-     * @param actionId String
-     * @param fireActionForm FireActionForm This param is mandatory only is the inode isn't sent
+     * @param request    {@link HttpServletRequest}
+     * @param inode      {@link String} (Optional) to fire an action over the existing inode.
+     * @param identifier {@link String} (Optional) to fire an action over the existing identifier (in combination of language).
+     * @param language   {@link Long}   (Optional) to fire an action over the existing language (in combination of identifier).
+     * @param actionId   {@link String} (Required) action id to fire
+     * @param fireActionForm {@link FireActionForm} Fire Action Form
      * (if an inode is set, this param is not ignored).
      * @return Response
      */
@@ -945,8 +1054,10 @@ public class WorkflowResource {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response fireAction(@Context final HttpServletRequest request,
+                               @PathParam ("actionId")         final String actionId,
                                @QueryParam("inode")            final String inode,
-                               @NotNull @PathParam("actionId") final String actionId,
+                               @QueryParam("identifier")       final String identifier,
+                               @QueryParam("language")         final long   language,
                                final FireActionForm fireActionForm) {
 
         final InitDataObject initDataObject = this.webResource.init
@@ -954,51 +1065,12 @@ public class WorkflowResource {
 
         try {
 
-            Contentlet contentlet = null;
+            final PageMode mode = PageMode.get(request);
             //if inode is set we use it to look up a contentlet
-            if(UtilMethods.isSet(inode)) {
+            final Contentlet contentlet = this.getContentlet
+                    (inode, identifier, language, fireActionForm, initDataObject, mode);
 
-                final Contentlet currentContentlet = this.contentletAPI.find
-                        (inode, initDataObject.getUser(), false);
-
-                DotPreconditions.notNull(currentContentlet,
-                        ()-> "contentlet-was-not-found",
-                        DoesNotExistException.class);
-
-                contentlet = new Contentlet();
-                contentlet.getMap().putAll(currentContentlet.getMap());
-
-                if (null != fireActionForm && null != contentlet) {
-
-                    contentlet = this.populateContentlet(fireActionForm, contentlet, initDataObject.getUser());
-                }
-            } else {
-                //otherwise the information must be grabbed from the request body.
-                DotPreconditions.notNull(fireActionForm, ()-> "When no inode is sent the info on the Request body becomes mandatory.");
-                contentlet = this.populateContentlet(fireActionForm, initDataObject.getUser());
-            }
-
-            Logger.debug(this, ()-> "Firing workflow action: " + actionId + ", inode: " + inode);
-
-            if(null == contentlet || contentlet.getMap().isEmpty()){
-                throw new DoesNotExistException("contentlet-was-not-found");
-            }
-
-            final ContentletDependencies.Builder formBuilder = new ContentletDependencies.Builder();
-            formBuilder.respectAnonymousPermissions(PageMode.get(request).respectAnonPerms).
-                    workflowActionId(actionId).modUser(initDataObject.getUser())
-                    .indexPolicy(IndexPolicyProvider.getInstance().forSingleContent());
-
-            if(fireActionForm != null) {
-                formBuilder.workflowActionComments(fireActionForm.getComments())
-                        .workflowAssignKey(fireActionForm.getAssign());
-            }
-
-            return Response.ok(
-                    new ResponseEntityView(
-                       this.workflowAPI.fireContentWorkflow(contentlet, formBuilder.build())
-                    )
-            ).build(); // 200
+            return fireAction(request, fireActionForm, initDataObject.getUser(), contentlet, actionId);
         } catch (Exception e) {
 
             Logger.error(this.getClass(),
@@ -1008,6 +1080,251 @@ public class WorkflowResource {
             return ResponseUtil.mapExceptionResponse(e);
         }
     } // fire.
+
+
+    /**
+     * Fires a workflow action with multi part body
+     * @param request    {@link HttpServletRequest}
+     * @param inode      {@link String} (Optional) to fire an action over the existing inode.
+     * @param identifier {@link String} (Optional) to fire an action over the existing identifier (in combination of language).
+     * @param language   {@link Long}   (Optional) to fire an action over the existing language (in combination of identifier).
+     * @param actionId   {@link String} (Required) action id to fire
+     * (if an inode is set, this param is not ignored).
+     * @return Response
+     */
+    @PUT
+    @Path("/actions/{actionId}/fire")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    public final Response fireActionMultipart(@Context               final HttpServletRequest request,
+                                     @PathParam ("actionId")         final String actionId,
+                                     @QueryParam("inode")            final String inode,
+                                     @QueryParam("identifier")       final String identifier,
+                                     @QueryParam("language")         final long   language,
+                                     final FormDataMultiPart multipart) {
+
+        final InitDataObject initDataObject = this.webResource.init
+                (null, true, request, true, null);
+
+        try {
+
+            final PageMode mode = PageMode.get(request);
+            final FireActionForm fireActionForm = this.processForm (multipart);
+            //if inode is set we use it to look up a contentlet
+            final Contentlet contentlet = this.getContentlet
+                    (inode, identifier, language, fireActionForm, initDataObject, mode);
+
+            return fireAction(request, fireActionForm, initDataObject.getUser(), contentlet, actionId);
+        } catch (Exception e) {
+
+            Logger.error(this.getClass(),
+                    "Exception on firing, workflow action: " + actionId +
+                            ", inode: " + inode, e);
+
+            return ResponseUtil.mapExceptionResponse(e);
+        }
+    } // fire.
+
+    private LinkedHashSet<String> getBinaryFields(final Map<String,Object> mapContent) {
+
+        return mapContent.containsKey(BINARY_FIELDS)?
+                ConversionUtils.INSTANCE.convert((JSONArray)mapContent.get(BINARY_FIELDS),
+                            new JsonArrayToLinkedSetConverter<>(Object::toString)):
+                JsonArrayToLinkedSetConverter.EMPTY_LINKED_SET;
+    }
+
+    private FireActionForm processForm(final FormDataMultiPart multipart)
+            throws IOException, JSONException, DotSecurityException, DotDataException {
+
+        final FireActionForm.Builder fireActionFormBuilder = new FireActionForm.Builder();
+        final Tuple2<Map<String,Object>, List<File>> multiPartContent =
+                this.multiPartUtils.getBodyMapAndBinariesFromMultipart(multipart);
+        final LinkedHashSet<String> binaryFields     = this.getBinaryFields(multiPartContent._1);
+
+        this.validateMultiPartContent (multiPartContent._1, binaryFields);
+        this.processFireActionFormValues (fireActionFormBuilder, multiPartContent._1);
+        this.processFiles                (multiPartContent, binaryFields);
+
+        fireActionFormBuilder.contentlet(multiPartContent._1);
+
+        return fireActionFormBuilder.build();
+    }
+
+    private void validateMultiPartContent (final Map<String, Object> contentMap,
+                                           final LinkedHashSet<String> binaryFields) {
+
+        for (final String binaryField : binaryFields) {
+
+            if (contentMap.containsKey(binaryField)) {
+
+                throw new BadRequestException("The binary field: " + binaryField
+                        + " can not be part of the " + BINARY_FIELDS + " and part of the request body");
+            }
+        }
+    }
+
+    private List<String> getBinaryFields (final List<Field> fields, final Map<String, Object> contentMap,
+                                          final int binaryFileSize) {
+
+        // if not any binaryField set, all fields that starts with "binary" will be used.
+        final List<String> binaryFields = fields.stream()
+                .filter(field -> LegacyFieldTransformer.buildLegacyFieldContent(field).startsWith(PREFIX_BINARY))
+                .map(Field::variable)
+                .filter(variable -> !contentMap.containsKey(variable)) // if it is not already set, probably to remove
+                .collect(Collectors.toList());
+
+        // the binary fields when the user does not set, should be the same or more than the binary fields, to avoid to delete non-desired binary fields
+        return binaryFields.size() <= binaryFileSize? binaryFields: binaryFields.subList(0, binaryFields.size());
+    }
+
+    private void processFiles(final Tuple2<Map<String, Object>, List<File>> multiPartContent,
+                              final LinkedHashSet<String> argBinaryFields) throws DotDataException, DotSecurityException {
+
+        final Map<String, Object> contentMap     = multiPartContent._1;
+        final List<File>          binaryFiles    = multiPartContent._2;
+        final ContentTypeAPI contentTypeAPI      = APILocator.getContentTypeAPI(APILocator.systemUser());
+        final String         contentTypeInode    = MapToContentletPopulator.INSTANCE.getContentTypeInode(contentMap);
+        final List<Field>    fields              = contentTypeAPI.find(contentTypeInode).fields();
+        final List<String>   binaryFields        = argBinaryFields.size() > 0?
+                new ArrayList<>(argBinaryFields) : this.getBinaryFields (fields, contentMap, binaryFiles.size());
+
+        if (UtilMethods.isSet(contentTypeInode) && binaryFields.size() > 0) {
+
+            final Map<String, Field> fieldsMap =
+                    fields.stream().collect(Collectors.toMap(Field::variable, field -> field));
+            //final int size                     =
+            //        Math.min(binaryFiles.size(), binaryFields.size()); // if the user sent more files than fields, we took the min of them.
+
+            for (int i = 0; i < binaryFields.size(); ++i) {
+
+                final String fieldName = binaryFields.get(i);
+                if (fieldsMap.containsKey(fieldName)) {
+
+                    final Field field = fieldsMap.get(fieldName);
+                    // if more fields than files passed, set them to null.
+                    final File binary = i < binaryFields.size()? binaryFiles.get(i): null;
+                    contentMap.put(field.variable(), binary);
+                }
+            }
+        }
+    }
+
+    private void processFireActionFormValues(final FireActionForm.Builder fireActionFormBuilder,
+                                             final Map<String, Object> contentMap) {
+
+        if (contentMap.containsKey(ASSIGN)) {
+
+            fireActionFormBuilder.assign((String)contentMap.get(ASSIGN));
+            contentMap.remove(ASSIGN);
+        }
+
+        if (contentMap.containsKey(COMMENTS)) {
+
+            fireActionFormBuilder.comments((String)contentMap.get(COMMENTS));
+            contentMap.remove(COMMENTS);
+        }
+
+        if (contentMap.containsKey(PUBLISH_DATE)) {
+
+            fireActionFormBuilder.publishDate((String)contentMap.get(PUBLISH_DATE));
+            contentMap.remove(PUBLISH_DATE);
+        }
+
+        if (contentMap.containsKey(PUBLISH_TIME)) {
+
+            fireActionFormBuilder.publishTime((String)contentMap.get(PUBLISH_TIME));
+            contentMap.remove(PUBLISH_TIME);
+        }
+
+        if (contentMap.containsKey(EXPIRE_DATE)) {
+
+            fireActionFormBuilder.expireDate((String)contentMap.get(EXPIRE_DATE));
+            contentMap.remove(EXPIRE_DATE);
+        }
+
+        if (contentMap.containsKey(EXPIRE_TIME)) {
+
+            fireActionFormBuilder.expireTime((String)contentMap.get(EXPIRE_TIME));
+            contentMap.remove(EXPIRE_TIME);
+        }
+
+        if (contentMap.containsKey(NEVER_EXPIRE)) {
+
+            fireActionFormBuilder.neverExpire((String)contentMap.get(NEVER_EXPIRE));
+            contentMap.remove(NEVER_EXPIRE);
+        }
+
+        if (contentMap.containsKey(WHERE_TO_SEND)) {
+
+            fireActionFormBuilder.whereToSend((String)contentMap.get(WHERE_TO_SEND));
+            contentMap.remove(WHERE_TO_SEND);
+        }
+
+        if (contentMap.containsKey(FORCE_PUSH)) {
+
+            fireActionFormBuilder.forcePush((String)contentMap.get(FORCE_PUSH));
+            contentMap.remove(FORCE_PUSH);
+        }
+    }
+
+    private Contentlet getContentlet(final String inode,
+                                     final String identifier,
+                                     final long language,
+                                     final FireActionForm fireActionForm,
+                                     final InitDataObject initDataObject,
+                                     final PageMode mode) throws DotDataException, DotSecurityException {
+
+        Contentlet contentlet = null;
+
+        if(UtilMethods.isSet(inode)) {
+
+            Logger.debug(this, ()-> "Fire Action, looking for content by inode: " + inode);
+
+            final Contentlet currentContentlet = this.contentletAPI.find
+                    (inode, initDataObject.getUser(), mode.respectAnonPerms);
+
+            DotPreconditions.notNull(currentContentlet, ()-> "contentlet-was-not-found", DoesNotExistException.class);
+
+            contentlet = createContentlet(fireActionForm, initDataObject, currentContentlet);
+        } else if (UtilMethods.isSet(identifier)) {
+
+            Logger.debug(this, ()-> "Fire Action, looking for content by identifier: " + identifier
+                                            + " and language id: " + language);
+
+            final Optional<Contentlet> currentContentlet =  language < 0?
+                    Optional.ofNullable(this.contentletAPI.findContentletByIdentifierAnyLanguage(identifier)):
+                    this.contentletAPI.findContentletByIdentifierOrFallback
+                            (identifier, mode.showLive, language, initDataObject.getUser(), mode.respectAnonPerms);
+
+            this.contentletAPI.findContentletByIdentifierAnyLanguage(identifier);
+
+            DotPreconditions.isTrue(currentContentlet.isPresent(), ()-> "contentlet-was-not-found", DoesNotExistException.class);
+
+            contentlet = createContentlet(fireActionForm, initDataObject, currentContentlet.get());
+        } else {
+            //otherwise the information must be grabbed from the request body.
+            DotPreconditions.notNull(fireActionForm, ()-> "When no inode is sent the info on the Request body becomes mandatory.");
+            contentlet = this.populateContentlet(fireActionForm, initDataObject.getUser());
+        }
+
+        return contentlet;
+    }
+
+    private Contentlet createContentlet(final FireActionForm fireActionForm,
+                                        final InitDataObject initDataObject,
+                                        final Contentlet currentContentlet) throws DotSecurityException {
+
+        Contentlet contentlet = new Contentlet();
+        contentlet.getMap().putAll(currentContentlet.getMap());
+
+        if (null != fireActionForm && null != fireActionForm.getContentletFormData() && null != contentlet) {
+
+            contentlet = this.populateContentlet(fireActionForm, contentlet, initDataObject.getUser());
+        }
+        return contentlet;
+    }
 
     /**
      * Internal utility to populate a contentlet from a given form object
@@ -1050,6 +1367,11 @@ public class WorkflowResource {
             return message;
         };
 
+        if (null == contentlet || null == contentlet.getContentType()) {
+
+            throw new DotContentletValidationException("Workflow-does-not-exists-content-type");
+        }
+
         try {
             if (!this.permissionAPI.doesUserHavePermission(contentlet.getContentType(),
                     PermissionAPI.PERMISSION_READ, user, false)) {
@@ -1061,11 +1383,11 @@ public class WorkflowResource {
 
         contentlet.setStringProperty("wfPublishDate", fireActionForm.getPublishDate());
         contentlet.setStringProperty("wfPublishTime", fireActionForm.getPublishTime());
-        contentlet.setStringProperty("wfExpireDate", fireActionForm.getExpireDate());
-        contentlet.setStringProperty("wfExpireTime", fireActionForm.getExpireTime());
+        contentlet.setStringProperty("wfExpireDate",  fireActionForm.getExpireDate());
+        contentlet.setStringProperty("wfExpireTime",  fireActionForm.getExpireTime());
         contentlet.setStringProperty("wfNeverExpire", fireActionForm.getNeverExpire());
-        contentlet.setStringProperty("whereToSend", fireActionForm.getWhereToSend());
-        contentlet.setStringProperty("forcePush", fireActionForm.getForcePush());
+        contentlet.setStringProperty(WHERE_TO_SEND,   fireActionForm.getWhereToSend());
+        contentlet.setStringProperty(FORCE_PUSH,     fireActionForm.getForcePush());
 
         return contentlet;
     } // populateContentlet.

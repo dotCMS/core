@@ -6,9 +6,6 @@ package com.dotmarketing.business.web;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.RenderRequest;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
-
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
@@ -23,6 +20,9 @@ import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
 import com.liferay.portlet.ActionRequestImpl;
 import com.liferay.portlet.RenderRequestImpl;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 
 /**
  * 
@@ -49,7 +49,22 @@ public class HostWebAPIImpl extends HostAPIImpl implements HostWebAPI {
 	  
 	  
 	}
-	
+
+	public Host findHostOnRequest (final HttpServletRequest request) {
+
+        Host host = null;
+        final HttpSession session = request.getSession(false);
+
+        if (session != null && session.getAttribute(WebKeys.CURRENT_HOST) != null) {
+
+            host = (Host) session.getAttribute(WebKeys.CURRENT_HOST);
+        } else if (request.getAttribute(WebKeys.CURRENT_HOST) != null) {
+
+            host = (Host) request.getAttribute(WebKeys.CURRENT_HOST);
+        }
+
+        return host;
+    }
 	
     @CloseDBIfOpened
     public Host getCurrentHost(HttpServletRequest request)

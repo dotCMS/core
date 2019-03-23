@@ -48,6 +48,7 @@ import java.io.StringWriter;
 import java.util.*;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.dotcms.rest.api.v1.authentication.ResponseUtil.getFormattedMessage;
 import static com.dotmarketing.db.HibernateUtil.addSyncCommitListener;
@@ -283,6 +284,33 @@ public class WorkflowHelper {
         }
 
         return bulkActions;
+    }
+
+    /**
+     * Try to find an action by name
+     * @param actionName {@link String}
+     * @param contentlet {@link Contentlet}
+     * @param user       {@link User}
+     * @return String
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    @CloseDBIfOpened
+    public String getActionIdByName(final String actionName,
+                                    final Contentlet contentlet,
+                                    final User user) throws DotSecurityException, DotDataException {
+
+        final List<WorkflowAction> availableActionsOnListing =
+                APILocator.getWorkflowAPI().findAvailableActionsListing(contentlet, user);
+
+        final List<WorkflowAction> availableActionsOnEditing =
+                APILocator.getWorkflowAPI().findAvailableActionsEditing(contentlet, user);
+
+        final Optional<WorkflowAction> foundAction =
+                Stream.concat(availableActionsOnListing.stream(), availableActionsOnEditing.stream())
+                        .filter(action -> action.getName().equalsIgnoreCase(actionName)).findFirst();
+
+        return foundAction.isPresent()?foundAction.get().getId():null;
     }
 
     /**

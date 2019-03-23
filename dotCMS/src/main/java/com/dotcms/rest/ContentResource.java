@@ -64,6 +64,7 @@ import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
+import java.nio.file.Files;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
@@ -1175,14 +1176,16 @@ public class ContentResource {
         final InputStream input = part.getEntityAs(InputStream.class);
         final String filename = part.getContentDisposition().getFileName();
         final File tmpFolder = new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary() + UUIDUtil.uuid());
-        tmpFolder.mkdirs();
-        final File tmp = new File(
-                tmpFolder.getAbsolutePath() + File.separator + filename);
-        if (tmp.exists()) {
-            tmp.delete();
+
+        if(!tmpFolder.mkdirs()) {
+            throw new IOException("Unable to create temp folder to save binaries");
         }
 
-        FileUtils.copyInputStreamToFile(input, tmp);
+        final File tempFile = new File(
+                tmpFolder.getAbsolutePath() + File.separator + filename);
+        Files.deleteIfExists(tempFile.toPath());
+
+        FileUtils.copyInputStreamToFile(input, tempFile);
         final List<Field> fields = new LegacyFieldTransformer(
                 APILocator.getContentTypeAPI(APILocator.systemUser()).
                         find(contentlet.getContentType().inode()).fields())
@@ -1197,7 +1200,7 @@ public class ContentResource {
                 if (binaryFields.size() > 0) {
                     fieldVarName = binaryFields.remove(0);
                 }
-                contentlet.setBinary(fieldVarName, tmp);
+                contentlet.setBinary(fieldVarName, tempFile);
                 usedBinaryFields.add(fieldName);
                 break;
             }

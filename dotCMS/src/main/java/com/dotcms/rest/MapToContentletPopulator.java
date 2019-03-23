@@ -58,6 +58,11 @@ public class MapToContentletPopulator  {
 
     protected String getStInode (final Map<String, Object> map) {
 
+        return getContentTypeInode(map);
+    }
+
+    public String getContentTypeInode (final Map<String, Object> map) {
+
         String stInode = (String) map.get(Contentlet.STRUCTURE_INODE_KEY);
 
         if (!UtilMethods.isSet(stInode)) {
