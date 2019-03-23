@@ -2336,15 +2336,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 return;
             }
             // we prepare the new index and aliases to point both old and new
-            indexAPI.setUpFullReindex();
+            indexAPI.fullReindexStart();
 
             // new records to index
             distributedJournalAPI.addAllToReindexQueue();
 
             // then we let the reindexThread start working
 
-            //Make sure all the flags are on and the thread is ready
-            ReindexThread.startThread(Config.getIntProperty("REINDEX_THREAD_SLEEP", 500), Config.getIntProperty("REINDEX_THREAD_INIT_DELAY", 5000));
 
             HibernateUtil.closeAndCommitTransaction();
 

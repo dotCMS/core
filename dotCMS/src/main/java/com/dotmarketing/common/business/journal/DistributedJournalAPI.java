@@ -9,6 +9,7 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import java.sql.Connection;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -25,21 +26,8 @@ public interface DistributedJournalAPI {
      * @return
      * @throws DotDataException
      */
-    public List<IndexJournal> findContentReindexEntriesToReindex() throws DotDataException;
+    public Map<String,IndexJournal>  findContentToReindex() throws DotDataException;
 
-    /**
-     * Will return only the re-index entries for the specific server the code is executed on. This
-     * method will also delete all entries from the table that are returned in the select. Also, this
-     * method will allow to retrieve records with a priority that indicates they could not be
-     * re-indexed.
-     * 
-     * @param includeFailedRecords - If {@code true}, this method will only retrieve records that tried
-     *        to be re-indexed at least once and failed. If {@code false}, ONLY the records that haven't
-     *        been processed will be returned.
-     * @return The list of records that will be re-indexed.
-     * @throws DotDataException An error occurred when interacting with the database.
-     */
-    public List<IndexJournal> findContentReindexEntriesToReindex(boolean includeFailedRecords) throws DotDataException;
 
     /**
      * This method will add all content identifier for a structure to the index
@@ -204,5 +192,11 @@ public interface DistributedJournalAPI {
     void resetServersRecords() throws DotDataException;
 
     void requeStaleReindexRecords(int secondsOld) throws DotDataException;
+
+    void addIdentifierReindex(String id, int prority) throws DotDataException;
+
+    void updateIndexJournalPriority(long id, int priority) throws DotDataException;
+
+    void markAsFailed(IndexJournal idx, String cause) throws DotDataException;
 
 }

@@ -4,22 +4,22 @@ public class IndexJournal {
 
     private long id;
     private String identToIndex;
-    private long priority;
+    private int priority;
     private boolean delete;
     private String serverId;
-    private int count;
+
 
     public IndexJournal() {}
 
-    public IndexJournal(long id, String objectToIndex, long priority) {
+    public IndexJournal(long id, String objectToIndex, int priority) {
         this.id = id;
         this.identToIndex = objectToIndex;
         this.priority = priority;
     }
 
-    public IndexJournal(String serverId, int count, long priority) {
+    public IndexJournal(String serverId, int count, int priority) {
         this.serverId = serverId;
-        this.count = count;
+
         this.priority = priority;
     }
 
@@ -40,14 +40,14 @@ public class IndexJournal {
     /**
      * @return the priority
      */
-    public long getPriority() {
+    public int getPriority() {
         return priority;
     }
 
     /**
      * @param priority the priority to set
      */
-    public void setPriority(long priority) {
+    public void setPriority(int priority) {
         this.priority = priority;
     }
 
@@ -74,7 +74,7 @@ public class IndexJournal {
     }
 
     public boolean isReindex() {
-        return getPriority() == DistributedJournalFactory.REINDEX_JOURNAL_PRIORITY_NEWINDEX;
+        return getPriority() > DistributedJournalFactory.Priority.REINDEX.dbValue();
     }
 
     /**
@@ -98,19 +98,13 @@ public class IndexJournal {
         this.serverId = serverId;
     }
 
-    /**
-     * @return the count
-     */
-    public int getCount() {
-        return count;
-    }
 
-    /**
-     * @param count the count to set
-     */
-    public void setCount(int count) {
-        this.count = count;
+    public int errorCount() {
+        return this.getPriority() % 100;
     }
+    
+    
+    
 
     @Override
     public int hashCode() {
@@ -149,4 +143,14 @@ public class IndexJournal {
         return true;
     }
 
+    @Override
+    public String toString() {
+        return "IndexJournal [id=" + id + ", identToIndex=" + identToIndex + ", priority=" + priority + ", delete=" + delete + ", serverId="
+                + serverId + "]";
+    }
+
+    
+    
+    
+    
 }

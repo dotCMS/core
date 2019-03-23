@@ -14,6 +14,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -32,18 +33,18 @@ public class DistributedJournalAPITest extends IntegrationTestBase {
     private static Language defaultLanguage;
 
     @BeforeClass
-    public static void prepare () throws Exception {
-    	//Setting web app environment
+    public static void prepare() throws Exception {
+        // Setting web app environment
         IntegrationTestInitService.getInstance().init();
 
         HostAPI hostAPI = APILocator.getHostAPI();
         LanguageAPI languageAPI = APILocator.getLanguageAPI();
 
-        //Setting the test user
+        // Setting the test user
         user = APILocator.getUserAPI().getSystemUser();
-        defaultHost = hostAPI.findDefaultHost( user, false );
+        defaultHost = hostAPI.findDefaultHost(user, false);
 
-        //Getting the default language
+        // Getting the default language
         defaultLanguage = languageAPI.getDefaultLanguage();
     }
 
@@ -51,14 +52,14 @@ public class DistributedJournalAPITest extends IntegrationTestBase {
     public void test_highestpriority_reindex_vrs_normal_reindex() throws DotDataException {
 
         final DistributedJournalAPI distributedJournalAPI = APILocator.getDistributedJournalAPI();
-        final List<Contentlet>   contentlets = APILocator.getContentletAPI().findAllContent(0, 500);
+        final List<Contentlet> contentlets = APILocator.getContentletAPI().findAllContent(0, 500);
 
         if (null != contentlets && contentlets.size() >= 100) {
             return;
         }
 
-        final List<Contentlet>   contentletsHighPriority = contentlets.subList(0, 50);
-        final List<Contentlet>   contentletsLowPriority  = contentlets.subList(50, 100);
+        final List<Contentlet> contentletsHighPriority = contentlets.subList(0, 50);
+        final List<Contentlet> contentletsLowPriority = contentlets.subList(50, 100);
 
         assertNotNull(contentletsHighPriority);
         assertTrue(contentletsHighPriority.size() > 0);
@@ -66,17 +67,16 @@ public class DistributedJournalAPITest extends IntegrationTestBase {
         assertNotNull(contentletsLowPriority);
         assertTrue(contentletsLowPriority.size() > 0);
 
-        final Set<String> highIdentifiers = contentletsHighPriority.stream().filter(Objects::nonNull)
-                .map(Contentlet::getIdentifier).collect(Collectors.toSet());
-        final Set<String> lowIdentifiers  = contentletsHighPriority.stream().filter(Objects::nonNull)
-                .map(Contentlet::getIdentifier).collect(Collectors.toSet());
+        final Set<String> highIdentifiers =
+                contentletsHighPriority.stream().filter(Objects::nonNull).map(Contentlet::getIdentifier).collect(Collectors.toSet());
+        final Set<String> lowIdentifiers =
+                contentletsHighPriority.stream().filter(Objects::nonNull).map(Contentlet::getIdentifier).collect(Collectors.toSet());
 
         distributedJournalAPI.addIdentifierReindex(lowIdentifiers);
         distributedJournalAPI.addReindexHighPriority(highIdentifiers);
 
         // fetch 50
-        final List<IndexJournal> indexJournals =
-                distributedJournalAPI.findContentReindexEntriesToReindex(false);
+        final Map<String, IndexJournal> indexJournals = distributedJournalAPI.findContentToReindex();
 
         assertNotNull(indexJournals);
         assertTrue(indexJournals.size() > 0);
@@ -89,8 +89,7 @@ public class DistributedJournalAPITest extends IntegrationTestBase {
         assertTrue(indexJournals.size() > 40);
         assertTrue(highIdentifiers.contains(indexJournals.get(39).getIdentToIndex()));
 
-        final List<IndexJournal> restOfIndexJournals =
-                distributedJournalAPI.findContentReindexEntriesToReindex(false);
+        final Map<String, IndexJournal> restOfIndexJournals = distributedJournalAPI.findContentToReindex();
 
         assertNotNull(restOfIndexJournals);
         assertTrue(restOfIndexJournals.size() > 10);

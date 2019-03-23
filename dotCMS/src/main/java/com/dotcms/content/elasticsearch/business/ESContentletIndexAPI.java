@@ -198,6 +198,17 @@ public class ESContentletIndexAPI implements ContentletIndexAPI {
 
     }
 
+    
+    public long getReindexStartTime() {
+        return fullReindexStartTime;
+    }
+    public long getReindexCompleteTime() {
+        return fullReindexCompleteTime;
+    }
+    
+    
+    private long fullReindexStartTime=0;
+    private long fullReindexCompleteTime=0;
     /**
      * creates new working and live indexes with reading aliases pointing to old index and write aliases
      * pointing to both old and new indexes
@@ -206,10 +217,11 @@ public class ESContentletIndexAPI implements ContentletIndexAPI {
      * @throws DotDataException
      * @throws ElasticsearchException
      */
-    public synchronized String setUpFullReindex() throws ElasticsearchException, DotDataException {
+    public synchronized String fullReindexStart() throws ElasticsearchException, DotDataException {
         if (indexReady()) {
             try {
-
+                this.fullReindexStartTime=System.currentTimeMillis();
+                this.fullReindexCompleteTime=0;
                 final String timeStamp = timestampFormatter.format(new Date());
 
                 // index names for new index
@@ -250,6 +262,7 @@ public class ESContentletIndexAPI implements ContentletIndexAPI {
     @WrapInTransaction
     public void fullReindexSwitchover() {
         fullReindexSwitchover(DbConnectionFactory.getConnection());
+        this.fullReindexCompleteTime=System.currentTimeMillis();
     }
 
     /**
@@ -387,7 +400,7 @@ public class ESContentletIndexAPI implements ContentletIndexAPI {
 
     @Override
     public BulkRequestBuilder createBulkRequest(List<Contentlet> contentToIndex) {
-        return this.addToBulkRequest(createBulkRequest(), contentToIndex);
+        return this.appendBulkRequest(createBulkRequest(), contentToIndex);
     }
 
     @Override
@@ -396,18 +409,18 @@ public class ESContentletIndexAPI implements ContentletIndexAPI {
     }
 
     @Override
-    public BulkRequestBuilder addToReindexBulkRequest(BulkRequestBuilder bulk, List<Contentlet> contentToIndex) {
+    public BulkRequestBuilder appendReindexRequest(final BulkRequestBuilder bulk, final List<Contentlet> contentToIndex) {
 
         return this.addToBulkRequest(bulk, contentToIndex, true);
     }
 
     @Override
-    public BulkRequestBuilder addToBulkRequest(BulkRequestBuilder bulk, List<Contentlet> contentToIndex) {
+    public BulkRequestBuilder appendBulkRequest(final BulkRequestBuilder bulk, final List<Contentlet> contentToIndex) {
 
         return this.addToBulkRequest(bulk, contentToIndex, false);
     }
 
-    private BulkRequestBuilder addToBulkRequest(BulkRequestBuilder bulk, List<Contentlet> contentToIndex, final boolean forReindex) {
+    private BulkRequestBuilder addToBulkRequest(final BulkRequestBuilder bulk, final List<Contentlet> contentToIndex, final boolean forReindex) {
         if (contentToIndex != null && !contentToIndex.isEmpty()) {
             Logger.debug(this.getClass(), "Indexing " + contentToIndex.size() + " contents, starting with identifier [ "
                     + contentToIndex.get(0).getMap().get("identifier") + "]");
@@ -454,8 +467,8 @@ public class ESContentletIndexAPI implements ContentletIndexAPI {
                 }
 
                 contentlet.markAsReindexed();
-            } catch (DotMappingException ex) {
-                Logger.error(this, "Can't get a mapping for contentlet with id_lang:" + id + " Content data: " + contentlet.getMap(), ex);
+            } catch (Exception ex) {
+                Logger.error(this, "Can't get a mapping for contentlet with id_lang:" + id + " Content data: " + contentlet.getMap());
                 throw ex;
             }
         }
@@ -627,7 +640,7 @@ public class ESContentletIndexAPI implements ContentletIndexAPI {
                     indexContentListNow(related);
                     break;
                 default: // DEFER
-                    putToIndex(addToBulkRequest(bulk, related));
+                    putToIndex(appendBulkRequest(bulk, related));
                     break;
             }
         }

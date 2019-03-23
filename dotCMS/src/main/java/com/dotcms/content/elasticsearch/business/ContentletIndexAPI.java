@@ -38,7 +38,7 @@ public interface ContentletIndexAPI {
      * @throws DotDataException
      * @throws DotIndexException
      */
-    public String setUpFullReindex() throws DotIndexException, DotDataException;
+    public String fullReindexStart() throws DotIndexException, DotDataException;
 
     public boolean isInFullReindex() throws DotDataException;
 
@@ -87,9 +87,9 @@ public interface ContentletIndexAPI {
 
     public String getActiveIndexName(String type) throws DotDataException;
     
-    BulkRequestBuilder addToBulkRequest(BulkRequestBuilder bulk, List<Contentlet> contentToIndex);
+    BulkRequestBuilder appendBulkRequest(BulkRequestBuilder bulk, List<Contentlet> contentToIndex);
 
-    BulkRequestBuilder addToReindexBulkRequest(BulkRequestBuilder bulk, List<Contentlet> contentToIndex);
+    BulkRequestBuilder appendReindexRequest(BulkRequestBuilder bulk, List<Contentlet> contentToIndex);
 
 
     BulkRequestBuilder createBulkRequest(List<Contentlet> contentToIndex) throws DotDataException, DotSecurityException, DotMappingException;

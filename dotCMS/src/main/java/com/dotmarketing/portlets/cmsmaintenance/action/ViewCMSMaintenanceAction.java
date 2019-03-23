@@ -968,7 +968,7 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 	 */
 	private void downloadRemainingRecordsAsCsv(HttpServletResponse response) {
 		String fileName = "failed_reindex_records" + new java.util.Date().getTime();
-		String[] fileColumns = new String[] { "ID", "Identifier To Index", "Inode To Index", "Priority" };
+		String[] fileColumns = new String[] { "ID", "Identifier To Index", "Priority", "Cause" };
 		PrintWriter pr = null;
 		try {
 			response.setContentType("application/octet-stream; charset=UTF-8");
@@ -978,9 +978,9 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 			pr.print("\r\n");
 			DotConnect dc = new DotConnect();
 			StringBuilder sql = new StringBuilder();
-			sql.append("SELECT drj.id, drj.ident_to_index, drj.inode_to_index, drj.priority ")
+			sql.append("SELECT drj.id, drj.ident_to_index, drj.inode_to_index, drj.priority, drj.index_val ")
 					.append("FROM dist_reindex_journal drj WHERE drj.priority >= ")
-					.append(DistributedJournalFactory.REINDEX_JOURNAL_PRIORITY_FAILED_FIRST_ATTEMPT);
+					.append(DistributedJournalFactory.Priority.REINDEX.dbValue());
 			dc.setSQL(sql.toString());
 			List<Map<String, Object>> failedRecords = dc.loadObjectResults();
 			if (!failedRecords.isEmpty()) {
@@ -1000,8 +1000,10 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 					}
 					entry.append(id).append(", ");
 					entry.append(row.get("ident_to_index").toString()).append(", ");
-					entry.append(row.get("inode_to_index").toString()).append(", ");
-					entry.append(priority);
+
+					
+					entry.append(priority).append(",");
+					entry.append(row.get("index_val").toString());
 					pr.print(entry.toString());
 					pr.print("\r\n");
 				}

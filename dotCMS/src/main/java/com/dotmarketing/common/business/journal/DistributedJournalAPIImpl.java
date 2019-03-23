@@ -5,8 +5,7 @@ package com.dotmarketing.common.business.journal;
 
 import java.sql.Connection;
 import java.util.Collection;
-import java.util.List;
-import java.util.Set;
+import java.util.Map;
 
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
@@ -45,14 +44,10 @@ public class DistributedJournalAPIImpl implements DistributedJournalAPI {
     }
 
     @CloseDBIfOpened
-    public List<IndexJournal> findContentReindexEntriesToReindex() throws DotDataException {
-        return distributedJournalFactory.findContentReindexEntriesToReindex();
+    public Map<String,IndexJournal> findContentToReindex() throws DotDataException {
+        return distributedJournalFactory.findContentToReindex();
     }
 
-    @CloseDBIfOpened
-    public List<IndexJournal> findContentReindexEntriesToReindex(boolean includeFailedRecords) throws DotDataException {
-        return distributedJournalFactory.findContentReindexEntriesToReindex(includeFailedRecords);
-    }
 
     @WrapInTransaction
     public void deleteReindexEntry(IndexJournal iJournal) throws DotDataException {
@@ -117,6 +112,13 @@ public class DistributedJournalAPIImpl implements DistributedJournalAPI {
     public void addIdentifierReindex(final String id) throws DotDataException {
 
         this.distributedJournalFactory.addIdentifierReindex(id);
+    }
+    
+    @WrapInTransaction
+    @Override
+    public void addIdentifierReindex(final String id, int priority) throws DotDataException {
+
+        this.distributedJournalFactory.addIdentifierReindex(id, priority);
     }
 
     @WrapInTransaction
@@ -186,5 +188,22 @@ public class DistributedJournalAPIImpl implements DistributedJournalAPI {
                 .loadResult();
 
     }
+    
+    @Override
+    @WrapInTransaction
+    public void updateIndexJournalPriority(long id, int priority) throws DotDataException{
+        distributedJournalFactory.updateIndexJournalPriority(id,  priority);
+    
+    }
 
+    @Override
+    @WrapInTransaction
+    public void markAsFailed(final IndexJournal idx, final String cause) throws DotDataException{
+        Logger.warn(this.getClass(), "Reindex failed for :" +idx + " because " + cause);
+        distributedJournalFactory.markAsFailed(idx, cause);
+    
+    }
+    
+    
+    
 }
