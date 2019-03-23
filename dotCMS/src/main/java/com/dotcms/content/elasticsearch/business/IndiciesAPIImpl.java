@@ -21,7 +21,7 @@ public class IndiciesAPIImpl implements IndiciesAPI {
     }
 
     @WrapInTransaction
-    public void point(IndiciesInfo newInfo) throws DotDataException {
+    public synchronized void point(IndiciesInfo newInfo) throws DotDataException {
         ifac.point(newInfo);
     }
     

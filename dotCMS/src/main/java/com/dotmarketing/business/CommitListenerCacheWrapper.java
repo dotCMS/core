@@ -38,11 +38,32 @@ class CommitListenerCacheWrapper implements DotCacheAdministrator {
 
     @Override
     public void flushAll() {
+        if (DbConnectionFactory.inTransaction()) {
+            final Runnable runner = new FlushCacheRunnable() {
+                public void run() {
+                    dotcache.flushAll();
+                }
+            };
+            HibernateUtil.addRollbackListener("flushAll" ,runner);
+            HibernateUtil.addCommitListener("flushAll" , runner);
+        }
+        
         dotcache.flushAll();
     }
 
     @Override
     public void flushGroup(String group) {
+        
+        if (DbConnectionFactory.inTransaction()) {
+            final Runnable runner = new FlushCacheRunnable() {
+                public void run() {
+                    dotcache.flushGroup(group);
+                }
+            };
+            HibernateUtil.addRollbackListener("flushGroup" + group,runner);
+            HibernateUtil.addCommitListener("flushGroup" + group, runner);
+    }
+        
         dotcache.flushGroup(group);
     }
 

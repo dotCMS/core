@@ -82,7 +82,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
 
     public static final SimpleDateFormat timestampFormatter = new SimpleDateFormat("yyyyMMddHHmmss");
 
-    private long fullReindexStartTime = 0;
+    private static long fullReindexStartTime = 0;
 
     public ContentletIndexAPIImpl() {
         journalAPI = APILocator.getReindexQueueAPI();
@@ -214,6 +214,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
      * @throws DotDataException
      * @throws ElasticsearchException
      */
+    @WrapInTransaction
     public synchronized String fullReindexStart() throws ElasticsearchException, DotDataException {
         if (indexReady()) {
             try {
@@ -251,12 +252,13 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         return isInFullReindex(DbConnectionFactory.getConnection());
     }
 
+    @CloseDBIfOpened
     public boolean isInFullReindex(Connection conn) throws DotDataException {
         IndiciesInfo info = APILocator.getIndiciesAPI().loadIndicies(conn);
         return info.reindex_working != null && info.reindex_live != null;
     }
 
-    @WrapInTransaction
+    @CloseDBIfOpened
     public void fullReindexSwitchover() {
         fullReindexSwitchover(DbConnectionFactory.getConnection());
     }
@@ -267,6 +269,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
      * 
      * @return
      */
+    @WrapInTransaction
     public void fullReindexSwitchover(Connection conn) {
         try {
             if (!isInFullReindex())
@@ -274,12 +277,15 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
 
             final IndiciesInfo oldInfo = APILocator.getIndiciesAPI().loadIndicies();
             final IndiciesInfo newInfo = new IndiciesInfo();
+            String dateStr = oldInfo.reindex_working.replace("working_", "");
+
+            Date startTime = timestampFormatter.parse(dateStr);
 
             Logger.info(this, "-------------------------------");
-            Logger.info(this, "Executing switchover from old index [" + oldInfo.working + "," + oldInfo.live + "] and new index ["
+            Logger.info(this, "Executing switchover from old index [" + oldInfo.working + "," + oldInfo.live + "] to new index ["
                     + oldInfo.reindex_working + "," + oldInfo.reindex_live + "]");
 
-            long timeTook = (this.fullReindexStartTime > 0) ? System.currentTimeMillis() - this.fullReindexStartTime : 0;
+            long timeTook = System.currentTimeMillis() - startTime.getTime();
             if (timeTook > 0) {
                 String duration = Duration.ofMillis(timeTook).toString().substring(2).replaceAll("(\\d[HMS])(?!$)", "$1 ").toLowerCase();
 
@@ -287,9 +293,6 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
 
             }
             Logger.info(this, "-------------------------------");
-
-            newInfo.working = oldInfo.reindex_working;
-            newInfo.live = oldInfo.reindex_live;
 
             APILocator.getIndiciesAPI().point(newInfo);
 

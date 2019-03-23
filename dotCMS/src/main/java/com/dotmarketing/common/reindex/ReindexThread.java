@@ -209,6 +209,11 @@ public class ReindexThread extends Thread {
                 }
             } catch (Exception ex) {
                 Logger.error(this, "ReindexThread Exception", ex);
+                try {
+                    Thread.sleep(SLEEP_ON_ERROR);
+                } catch (InterruptedException e) {
+                    Logger.error(this, "ReindexThread Exception", ex);
+                }
             } finally {
                 DbConnectionFactory.closeSilently();
             }
@@ -438,7 +443,7 @@ public class ReindexThread extends Thread {
      * @throws DotDataException The process to switch to the new failed.
      * @throws InterruptedException The established pauses to switch to the new index failed.
      */
-    @WrapInTransaction
+    @CloseDBIfOpened
     private void reindexSwitchover(boolean forceSwitch) throws SQLException, DotDataException, InterruptedException {
 
         // We double check again. Only one node will enter this critical
