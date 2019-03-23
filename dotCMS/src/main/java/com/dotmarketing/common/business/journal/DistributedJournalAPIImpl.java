@@ -19,6 +19,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 
 /**
  * @author Jason Tesser
@@ -200,7 +201,7 @@ public class DistributedJournalAPIImpl implements DistributedJournalAPI {
     @WrapInTransaction
     public void markAsFailed(final IndexJournal idx, final String cause) throws DotDataException{
         Logger.warn(this.getClass(), "Reindex failed for :" +idx + " because " + cause);
-        distributedJournalFactory.markAsFailed(idx, cause);
+        distributedJournalFactory.markAsFailed(idx, UtilMethods.shortenString(cause, 300));
     
     }
     
