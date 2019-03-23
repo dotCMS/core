@@ -24,6 +24,7 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
+import com.google.common.collect.ImmutableList;
 import com.google.common.primitives.Ints;
 
 import oracle.jdbc.OracleTypes;
@@ -38,10 +39,6 @@ import oracle.jdbc.OracleTypes;
  */
 public class DistributedJournalFactory {
 
-    private String TIMESTAMPSQL = "NOW()";
-    private String REINDEXENTRIESSELECTSQL = "SELECT * FROM load_records_to_index(?, ?, ?)";
-    private String ORACLEREINDEXENTRIESSELECTSQL = "SELECT * FROM table(load_records_to_index(?, ?, ?))";
-    private String MYSQLREINDEXENTRIESSELECTSQL = "{call load_records_to_index(?,?,?)}";
     private String REINDEX_JOURNAL_INSERT =
             "insert into dist_reindex_journal(inode_to_index,ident_to_index,priority,dist_action, time_entered) values (?, ?, ?, ?, ?)";
 
@@ -51,22 +48,18 @@ public class DistributedJournalFactory {
     // running, tee them back up
     private static final int REQUE_REINDEX_RECORDS_OLDER_THAN_SEC =
             Config.getIntProperty("REINDEX_THREAD_REQUE_RECORDS_OLDER_THAN_SEC", 120);
-    
-    int REINDEX_RECORDS_TO_FETCH = Config.getIntProperty("REINDEX_RECORDS_TO_FETCH", 100);
-    
+
+    public int REINDEX_RECORDS_TO_FETCH = Config.getIntProperty("REINDEX_RECORDS_TO_FETCH", 100);
+
     public static final int REINDEX_MAX_FAILURE_ATTEMPTS = 5;
-    
-    
-    public enum Priority{
-        ASAP, NORMAL, STRUCTURE, REINDEX, ERROR; 
+
+    public enum Priority {
+        ASAP, NORMAL, STRUCTURE, REINDEX, ERROR;
         public int dbValue() {
-           return this.ordinal()*100;
+            return this.ordinal() * 100;
         }
     }
-    
-    
-    
-    
+
     public static final int RETRY_FAILED_INDEX_TIMES = Config.getIntProperty("RETRY_FAILED_INDEX_TIMES", 5);
 
     public static final int REINDEX_ACTION_REINDEX_OBJECT = 1;
@@ -74,26 +67,35 @@ public class DistributedJournalFactory {
 
     public DistributedJournalFactory() {
 
-        if (DbConnectionFactory.isMsSql()) {
-            TIMESTAMPSQL = "GETDATE()";
-        } else if (DbConnectionFactory.isOracle()) {
-            if (DbConnectionFactory.getDbVersion() >= 10)
-                REINDEXENTRIESSELECTSQL = ORACLEREINDEXENTRIESSELECTSQL;
-            else
-                REINDEXENTRIESSELECTSQL = "SELECT * FROM table(CAST(load_records_to_index(?, ?, ?)))";
-            TIMESTAMPSQL = "CAST(SYSTIMESTAMP AS TIMESTAMP)";
-        } else if (DbConnectionFactory.isMySql()) {
-            REINDEXENTRIESSELECTSQL = MYSQLREINDEXENTRIESSELECTSQL;
+    }
 
+    private String timestampSQL() {
+        if (DbConnectionFactory.isMsSql()) {
+            return "GETDATE()";
+        } else if (DbConnectionFactory.isOracle()) {
+            return "CAST(SYSTIMESTAMP AS TIMESTAMP)";
+        } else {
+            return "NOW()";
         }
+    }
+
+    private String reindexSelectSQL() {
+        if (DbConnectionFactory.isOracle()) {
+            return "SELECT * FROM table(load_records_to_index(?, ?, ?))";
+        } else if (DbConnectionFactory.isMySql()) {
+            return "{call load_records_to_index(?,?,?)}";
+        } else {
+            return "SELECT * FROM load_records_to_index(?, ?, ?)";
+        }
+
     }
 
     protected void addAllToReindexQueue() throws DotDataException {
         DotConnect dc = new DotConnect();
         try {
             String sql = "insert into dist_reindex_journal(inode_to_index,ident_to_index, priority, dist_action, time_entered) "
-                    + " select distinct identifier,identifier," + Priority.REINDEX.dbValue() + "," + REINDEX_ACTION_REINDEX_OBJECT
-                    + ", " + TIMESTAMPSQL + " from contentlet_version_info where identifier is not null";
+                    + " select distinct identifier,identifier," + Priority.REINDEX.dbValue() + "," + REINDEX_ACTION_REINDEX_OBJECT + ", "
+                    + timestampSQL() + " from contentlet_version_info where identifier is not null";
             dc.setSQL(sql);
             dc.loadResult();
         } catch (Exception e) {
@@ -105,9 +107,8 @@ public class DistributedJournalFactory {
         DotConnect dc = new DotConnect();
         try {
             String sql = "insert into dist_reindex_journal(inode_to_index,ident_to_index,priority,dist_action, time_entered) "
-                    + " select distinct c.identifier,c.identifier," + Priority.STRUCTURE.dbValue() + ","
-                    + REINDEX_ACTION_REINDEX_OBJECT + "," + TIMESTAMPSQL + " from contentlet c "
-                    + " where c.structure_inode = ? and c.identifier is not null";
+                    + " select distinct c.identifier,c.identifier," + Priority.STRUCTURE.dbValue() + "," + REINDEX_ACTION_REINDEX_OBJECT
+                    + "," + timestampSQL() + " from contentlet c " + " where c.structure_inode = ? and c.identifier is not null";
             dc.setSQL(sql);
             dc.addParam(structureInode);
             dc.loadResult();
@@ -130,10 +131,9 @@ public class DistributedJournalFactory {
     protected void cleanDistReindexJournal() throws DotDataException {
         DotConnect dc = new DotConnect();
         dc.setSQL("DELETE From dist_reindex_journal where priority >= ?");
-        dc.addParam( Priority.REINDEX.dbValue());
+        dc.addParam(Priority.REINDEX.dbValue());
         dc.loadResult();
     }
-
 
     protected void deleteReindexEntry(IndexJournal iJournal) throws DotDataException {
         DotConnect dc = new DotConnect();
@@ -144,8 +144,6 @@ public class DistributedJournalFactory {
     }
 
     protected void resetServerForReindexEntry(Collection<IndexJournal> recordsToModify) throws DotDataException {
-
-
 
     }
 
@@ -202,20 +200,17 @@ public class DistributedJournalFactory {
         dc.loadResult();
     }
 
-
-    protected void updateIndexJournalPriority(long id, int priority) throws DotDataException{
+    protected void updateIndexJournalPriority(long id, int priority) throws DotDataException {
         DotConnect dc = new DotConnect();
         dc.setSQL("UPDATE dist_reindex_journal set  priority = ? where id= ?");
         dc.addParam(priority);
         dc.addParam(id);
         dc.loadResult();
     }
-    
-    
-    protected void markAsFailed(IndexJournal idx, String cause) throws DotDataException{
-        final int newPriority = (idx.errorCount() >= RETRY_FAILED_INDEX_TIMES)
-                ? Priority.ERROR.dbValue() + idx.getPriority()
-                : (1 + idx.getPriority());
+
+    protected void markAsFailed(IndexJournal idx, String cause) throws DotDataException {
+        final int newPriority =
+                (idx.errorCount() >= RETRY_FAILED_INDEX_TIMES) ? Priority.ERROR.dbValue() + idx.getPriority() : (1 + idx.getPriority());
 
         DotConnect dc = new DotConnect();
         dc.setSQL("UPDATE dist_reindex_journal set serverid=null, priority = ? , index_val = ? where id= ?");
@@ -224,22 +219,20 @@ public class DistributedJournalFactory {
         dc.addParam(idx.getId());
         dc.loadResult();
     }
-    
-    
+
     @WrapInTransaction
-    protected Map<String, IndexJournal> findContentToReindex() throws DotDataException{
-        Map<String, IndexJournal> contentToIndex = loadReindexRecordsFromDb();
-        if (contentToIndex.size() < REINDEX_RECORDS_TO_FETCH && recordsInQueue() > 0) {
+    protected Map<String, IndexJournal> findContentToReindex(final int recordsToReturn) throws DotDataException {
+        Map<String, IndexJournal> contentToIndex = loadReindexRecordsFromDb(recordsToReturn);
+        if (contentToIndex.size() < recordsToReturn && recordsInQueue() > 0) {
             requeStaleReindexRecords(REQUE_REINDEX_RECORDS_OLDER_THAN_SEC);
-            contentToIndex.putAll(loadReindexRecordsFromDb());
+            contentToIndex.putAll(loadReindexRecordsFromDb(recordsToReturn));
         }
         return contentToIndex;
     }
 
-    
-    protected Map<String, IndexJournal> loadReindexRecordsFromDb() throws DotDataException {
+    private Map<String, IndexJournal> loadReindexRecordsFromDb(final int recordsToReturn) throws DotDataException {
         DotConnect dc = new DotConnect();
-        Map<String, IndexJournal> contentList = new LinkedHashMap<String,IndexJournal>();
+        Map<String, IndexJournal> contentList = new LinkedHashMap<String, IndexJournal>();
         List<Map<String, Object>> results;
         Connection con = null;
         String serverId = ConfigUtils.getServerId();
@@ -255,7 +248,7 @@ public class DistributedJournalFactory {
                 CallableStatement call = con.prepareCall("{ ? = call load_records_to_index(?,?,?) }");
                 call.registerOutParameter(1, OracleTypes.CURSOR);
                 call.setString(2, serverId);
-                call.setInt(3, REINDEX_RECORDS_TO_FETCH);
+                call.setInt(3, recordsToReturn);
                 call.setInt(4, priorityLevel);
                 call.execute();
                 ResultSet r = (ResultSet) call.getObject(1);
@@ -276,7 +269,7 @@ public class DistributedJournalFactory {
                 dc.setSQL("SET TRANSACTION ISOLATION LEVEL READ COMMITTED;");
                 dc.loadResult();
 
-                dc.setSQL("load_records_to_index @server_id='" + serverId + "', @records_to_fetch=" + String.valueOf(REINDEX_RECORDS_TO_FETCH)
+                dc.setSQL("load_records_to_index @server_id='" + serverId + "', @records_to_fetch=" + String.valueOf(recordsToReturn)
                         + ", @priority_level=" + String.valueOf(priorityLevel));
                 dc.setForceQuery(true);
                 results = dc.loadObjectResults(con);
@@ -287,9 +280,9 @@ public class DistributedJournalFactory {
                 dc.addParam(priorityLevel);
                 results = dc.loadObjectResults();
             } else {
-                dc.setSQL(REINDEXENTRIESSELECTSQL);
+                dc.setSQL(reindexSelectSQL());
                 dc.addParam(serverId);
-                dc.addParam(REINDEX_RECORDS_TO_FETCH);
+                dc.addParam(recordsToReturn);
                 dc.addParam(priorityLevel);
                 results = dc.loadObjectResults(con);
             }
@@ -304,7 +297,7 @@ public class DistributedJournalFactory {
             }
         } catch (SQLException e1) {
             throw new DotDataException(e1.getMessage(), e1);
-        } 
+        }
         return contentList;
     }
 
@@ -355,14 +348,9 @@ public class DistributedJournalFactory {
 
     protected void addIdentifierReindex(final String identifier, final int priority) throws DotDataException {
 
-        new DotConnect().setSQL(REINDEX_JOURNAL_INSERT).addParam(identifier).addParam(identifier)
-                .addParam(priority).addParam(REINDEX_ACTION_REINDEX_OBJECT).addParam(new Date())
-                .loadResult();
+        addIdentifierReindex(ImmutableList.of(identifier), priority);
     } // addIdentifierReindex.
-    
-    
-    
-    
+
     protected void addIdentifierReindex(final String identifier) throws DotDataException {
         addIdentifierReindex(identifier, Priority.NORMAL.dbValue());
 
@@ -384,7 +372,7 @@ public class DistributedJournalFactory {
 
     private int addIdentifierReindex(final Collection<String> identifiers, final int prority) throws DotDataException {
 
-        if (identifiers.isEmpty()) {
+        if (identifiers==null || identifiers.isEmpty()) {
             return 0;
         }
 

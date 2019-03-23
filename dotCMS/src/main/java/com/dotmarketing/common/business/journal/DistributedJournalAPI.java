@@ -5,6 +5,7 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.util.ConfigUtils;
 
 import java.sql.Connection;
 import java.util.Collection;
@@ -27,6 +28,8 @@ public interface DistributedJournalAPI {
      * @throws DotDataException
      */
     public Map<String,IndexJournal>  findContentToReindex() throws DotDataException;
+
+    public Map<String,IndexJournal>  findContentToReindex(int numberOfRecords) throws DotDataException;
 
 
     /**
@@ -87,7 +90,10 @@ public interface DistributedJournalAPI {
     /**
      * @return the serverId
      */
-    public String getServerId();
+    default String getServerId() {
+        return ConfigUtils.getServerId();
+    }
+    
 
     public enum DateType {
         DAY("DAY"), MINUTE("MINUTE");

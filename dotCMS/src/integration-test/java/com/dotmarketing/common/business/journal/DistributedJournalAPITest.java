@@ -1,105 +1,120 @@
 package com.dotmarketing.common.business.journal;
 
-import com.dotcms.IntegrationTestBase;
-import com.dotcms.util.IntegrationTestInitService;
-import com.dotmarketing.beans.Host;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.portlets.contentlet.business.HostAPI;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
-import com.dotmarketing.portlets.languagesmanager.model.Language;
-import com.liferay.portal.model.User;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+import com.dotcms.IntegrationTestBase;
+import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.ImmutableTextField;
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.datagen.ContentTypeDataGen;
+import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.util.IntegrationTestInitService;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 
 /**
  * Test for {@link DistributedJournalAPI}
  */
 public class DistributedJournalAPITest extends IntegrationTestBase {
 
-    private static User user;
-    private static Host defaultHost;
-
-    private static Language defaultLanguage;
+    int numberToTest = 20;
 
     @BeforeClass
     public static void prepare() throws Exception {
         // Setting web app environment
         IntegrationTestInitService.getInstance().init();
 
-        HostAPI hostAPI = APILocator.getHostAPI();
-        LanguageAPI languageAPI = APILocator.getLanguageAPI();
-
-        // Setting the test user
-        user = APILocator.getUserAPI().getSystemUser();
-        defaultHost = hostAPI.findDefaultHost(user, false);
-
-        // Getting the default language
-        defaultLanguage = languageAPI.getDefaultLanguage();
     }
 
     @Test
     public void test_highestpriority_reindex_vrs_normal_reindex() throws DotDataException {
 
-        final DistributedJournalAPI distributedJournalAPI = APILocator.getDistributedJournalAPI();
-        final List<Contentlet> contentlets = APILocator.getContentletAPI().findAllContent(0, 500);
+        final List<Contentlet> contentlets = new ArrayList<>();
 
-        if (null != contentlets && contentlets.size() >= 100) {
-            return;
+        ContentType type = new ContentTypeDataGen().nextPersisted();
+
+        for (int i = 0; i < numberToTest; i++) {
+            contentlets.add(new ContentletDataGen(type.id()).nextPersisted());
         }
 
-        final List<Contentlet> contentletsHighPriority = contentlets.subList(0, 50);
-        final List<Contentlet> contentletsLowPriority = contentlets.subList(50, 100);
+        final DistributedJournalAPI distributedJournalAPI = APILocator.getDistributedJournalAPI();
+
+        new DotConnect().setSQL("delete from dist_reindex_journal").loadResult();
+
+        final List<Contentlet> contentletsHighPriority = contentlets.subList(0, numberToTest / 2);
+        final List<Contentlet> contentletsLowPriority = contentlets.subList(numberToTest / 2, contentlets.size());
 
         assertNotNull(contentletsHighPriority);
-        assertTrue(contentletsHighPriority.size() > 0);
+        assertTrue(contentletsHighPriority.size() == numberToTest / 2);
 
         assertNotNull(contentletsLowPriority);
-        assertTrue(contentletsLowPriority.size() > 0);
+        assertTrue(contentletsLowPriority.size() == numberToTest / 2);
 
         final Set<String> highIdentifiers =
                 contentletsHighPriority.stream().filter(Objects::nonNull).map(Contentlet::getIdentifier).collect(Collectors.toSet());
         final Set<String> lowIdentifiers =
-                contentletsHighPriority.stream().filter(Objects::nonNull).map(Contentlet::getIdentifier).collect(Collectors.toSet());
+                contentletsLowPriority.stream().filter(Objects::nonNull).map(Contentlet::getIdentifier).collect(Collectors.toSet());
 
         distributedJournalAPI.addIdentifierReindex(lowIdentifiers);
         distributedJournalAPI.addReindexHighPriority(highIdentifiers);
 
         // fetch 50
-        final Map<String, IndexJournal> indexJournals = distributedJournalAPI.findContentToReindex();
+        Map<String, IndexJournal> indexJournals = distributedJournalAPI.findContentToReindex(numberToTest / 2);
 
         assertNotNull(indexJournals);
-        assertTrue(indexJournals.size() > 0);
-        assertTrue(highIdentifiers.contains(indexJournals.get(0).getIdentToIndex()));
-        assertTrue(indexJournals.size() > 10);
-        assertTrue(highIdentifiers.contains(indexJournals.get(9).getIdentToIndex()));
-        assertTrue(indexJournals.size() > 20);
-        assertTrue(highIdentifiers.contains(indexJournals.get(19).getIdentToIndex()));
+        assertTrue(indexJournals.size() == numberToTest / 2);
+        assertTrue(indexJournals.keySet().containsAll(highIdentifiers));
 
-        assertTrue(indexJournals.size() > 40);
-        assertTrue(highIdentifiers.contains(indexJournals.get(39).getIdentToIndex()));
+        indexJournals = distributedJournalAPI.findContentToReindex(numberToTest / 2);
 
-        final Map<String, IndexJournal> restOfIndexJournals = distributedJournalAPI.findContentToReindex();
+        assertNotNull(indexJournals);
+        assertTrue(indexJournals.size() == numberToTest / 2);
+        assertTrue(indexJournals.keySet().containsAll(lowIdentifiers));
 
-        assertNotNull(restOfIndexJournals);
-        assertTrue(restOfIndexJournals.size() > 10);
-        assertTrue(lowIdentifiers.contains(restOfIndexJournals.get(9).getIdentToIndex()));
-        assertTrue(restOfIndexJournals.size() > 20);
-        assertTrue(highIdentifiers.contains(restOfIndexJournals.get(19).getIdentToIndex()));
-        assertTrue(restOfIndexJournals.size() > 30);
-        assertTrue(highIdentifiers.contains(restOfIndexJournals.get(39).getIdentToIndex()));
-        assertTrue(restOfIndexJournals.size() > 40);
-        assertTrue(highIdentifiers.contains(restOfIndexJournals.get(39).getIdentToIndex()));
+    }
+
+    @Test
+    public void test_content_type_reindex() throws Exception {
+
+        ContentType type = new ContentTypeDataGen().nextPersisted();
+
+        for (int i = 0; i < numberToTest; i++) {
+            new ContentletDataGen(type.id()).nextPersisted();
+        }
+
+        final DistributedJournalAPI distributedJournalAPI = APILocator.getDistributedJournalAPI();
+
+        new DotConnect().setSQL("delete from dist_reindex_journal").loadResult();
+
+        Map<String, IndexJournal> indexJournals = distributedJournalAPI.findContentToReindex(numberToTest / 2);
+
+        assertTrue(indexJournals.size() == 0);
+        List<Field> origFields = new ArrayList<>();
+        List<Field> newFields = new ArrayList<>();
+        origFields.addAll(type.fields());
+        newFields.addAll(type.fields());
+
+        newFields.add(
+                ImmutableTextField.builder().name("asdasdasd").variable("asdasdasd").searchable(true).contentTypeId(type.id()).build());
+        
+        APILocator.getContentTypeAPI(APILocator.systemUser()).save(type, newFields);
+        APILocator.getContentTypeAPI(APILocator.systemUser()).save(type, origFields);
+        indexJournals = distributedJournalAPI.findContentToReindex(numberToTest);
+        assertTrue(indexJournals.size() == numberToTest);
+        assertTrue(indexJournals.values().iterator().next().getPriority() == DistributedJournalFactory.Priority.STRUCTURE.dbValue());
 
     }
 

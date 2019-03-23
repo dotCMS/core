@@ -46,9 +46,13 @@ public class DistributedJournalAPIImpl implements DistributedJournalAPI {
 
     @CloseDBIfOpened
     public Map<String,IndexJournal> findContentToReindex() throws DotDataException {
-        return distributedJournalFactory.findContentToReindex();
+        return this.findContentToReindex(this.distributedJournalFactory.REINDEX_RECORDS_TO_FETCH);
     }
 
+    @CloseDBIfOpened
+    public Map<String,IndexJournal> findContentToReindex(final int recordsToReture) throws DotDataException {
+        return distributedJournalFactory.findContentToReindex(recordsToReture);
+    }
 
     @WrapInTransaction
     public void deleteReindexEntry(IndexJournal iJournal) throws DotDataException {
@@ -76,10 +80,6 @@ public class DistributedJournalAPIImpl implements DistributedJournalAPI {
         if(lastTimeIRequedRecords+(secondsOld*1000)<System.currentTimeMillis()) {
             distributedJournalFactory.requeStaleReindexRecords(secondsOld);
         }
-    }
-
-    public String getServerId() {
-        return distributedJournalFactory.getServerId();
     }
 
     @WrapInTransaction
