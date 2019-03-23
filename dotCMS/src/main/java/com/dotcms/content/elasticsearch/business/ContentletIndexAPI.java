@@ -86,13 +86,13 @@ public interface ContentletIndexAPI {
     public List<String> listDotCMSClosedIndices();
 
     public String getActiveIndexName(String type) throws DotDataException;
-    
+
     BulkRequestBuilder appendBulkRequest(BulkRequestBuilder bulk, List<Contentlet> contentToIndex);
 
     BulkRequestBuilder appendReindexRequest(BulkRequestBuilder bulk, List<Contentlet> contentToIndex);
 
-
-    BulkRequestBuilder createBulkRequest(List<Contentlet> contentToIndex) throws DotDataException, DotSecurityException, DotMappingException;
+    BulkRequestBuilder createBulkRequest(List<Contentlet> contentToIndex)
+            throws DotDataException, DotSecurityException, DotMappingException;
 
     void putToIndex(BulkRequestBuilder bulk, ActionListener<BulkResponse> listener);
 
@@ -106,10 +106,6 @@ public interface ContentletIndexAPI {
 
     void addContentToIndex(Contentlet parentContenlet, boolean includeDependencies, boolean indexBeforeCommit) throws DotDataException;
 
-    void indexContentListDefer(List<Contentlet> contentToIndex);
-
     BulkRequestBuilder createBulkRequest();
-
-
 
 }

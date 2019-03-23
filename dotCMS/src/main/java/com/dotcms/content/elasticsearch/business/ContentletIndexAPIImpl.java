@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.sql.Connection;
 import java.text.SimpleDateFormat;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -58,6 +59,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableList;
@@ -65,7 +67,7 @@ import com.google.gson.Gson;
 import com.liferay.util.StringPool;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 
-public class ESContentletIndexAPI implements ContentletIndexAPI {
+public class ContentletIndexAPIImpl implements ContentletIndexAPI {
 
     private static final int TIMEOUT_INDEX_WAIT_FOR_DEFAULT = 30000;
     private static final String TIMEOUT_INDEX_WAIT_FOR = "TIMEOUT_INDEX_WAIT_FOR";
@@ -80,8 +82,10 @@ public class ESContentletIndexAPI implements ContentletIndexAPI {
 
     public static final SimpleDateFormat timestampFormatter = new SimpleDateFormat("yyyyMMddHHmmss");
 
-    public ESContentletIndexAPI() {
-        journalAPI = APILocator.getDistributedJournalAPI();
+    private long fullReindexStartTime = 0;
+
+    public ContentletIndexAPIImpl() {
+        journalAPI = APILocator.getReindexQueueAPI();
     }
 
     public synchronized void getRidOfOldIndex() throws DotDataException {
@@ -198,17 +202,10 @@ public class ESContentletIndexAPI implements ContentletIndexAPI {
 
     }
 
-    
     public long getReindexStartTime() {
         return fullReindexStartTime;
     }
-    public long getReindexCompleteTime() {
-        return fullReindexCompleteTime;
-    }
-    
-    
-    private long fullReindexStartTime=0;
-    private long fullReindexCompleteTime=0;
+
     /**
      * creates new working and live indexes with reading aliases pointing to old index and write aliases
      * pointing to both old and new indexes
@@ -220,8 +217,8 @@ public class ESContentletIndexAPI implements ContentletIndexAPI {
     public synchronized String fullReindexStart() throws ElasticsearchException, DotDataException {
         if (indexReady()) {
             try {
-                this.fullReindexStartTime=System.currentTimeMillis();
-                this.fullReindexCompleteTime=0;
+                this.fullReindexStartTime = System.currentTimeMillis();
+
                 final String timeStamp = timestampFormatter.format(new Date());
 
                 // index names for new index
@@ -262,7 +259,6 @@ public class ESContentletIndexAPI implements ContentletIndexAPI {
     @WrapInTransaction
     public void fullReindexSwitchover() {
         fullReindexSwitchover(DbConnectionFactory.getConnection());
-        this.fullReindexCompleteTime=System.currentTimeMillis();
     }
 
     /**
@@ -278,8 +274,19 @@ public class ESContentletIndexAPI implements ContentletIndexAPI {
 
             final IndiciesInfo oldInfo = APILocator.getIndiciesAPI().loadIndicies();
             final IndiciesInfo newInfo = new IndiciesInfo();
+
+            Logger.info(this, "-------------------------------");
             Logger.info(this, "Executing switchover from old index [" + oldInfo.working + "," + oldInfo.live + "] and new index ["
                     + oldInfo.reindex_working + "," + oldInfo.reindex_live + "]");
+
+            long timeTook = (this.fullReindexStartTime > 0) ? System.currentTimeMillis() - this.fullReindexStartTime : 0;
+            if (timeTook > 0) {
+                String duration = Duration.ofMillis(timeTook).toString().substring(2).replaceAll("(\\d[HMS])(?!$)", "$1 ").toLowerCase();
+
+                Logger.info(this, "Reindex took [" + duration + "]");
+
+            }
+            Logger.info(this, "-------------------------------");
 
             newInfo.working = oldInfo.reindex_working;
             newInfo.live = oldInfo.reindex_live;
@@ -361,21 +368,21 @@ public class ESContentletIndexAPI implements ContentletIndexAPI {
 
     }
 
-    public void indexContentListNow(final List<Contentlet> contentToIndex) {
+    private void indexContentListNow(final List<Contentlet> contentToIndex) {
         final BulkRequestBuilder bulk = createBulkRequest(contentToIndex);
         bulk.setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
 
         putToIndex(bulk);
     } // indexContentListNow.
 
-    public void indexContentListWaitFor(final List<Contentlet> contentToIndex) {
+    private void indexContentListWaitFor(final List<Contentlet> contentToIndex) {
 
         final BulkRequestBuilder bulk = createBulkRequest(contentToIndex);
         bulk.setRefreshPolicy(WriteRequest.RefreshPolicy.WAIT_UNTIL);
         putToIndex(bulk);
     } // indexContentListWaitFor.
 
-    public void indexContentListDefer(final List<Contentlet> contentToIndex) {
+    private void indexContentListDefer(final List<Contentlet> contentToIndex) {
         final BulkRequestBuilder bulk = createBulkRequest(contentToIndex);
         bulk.setRefreshPolicy(WriteRequest.RefreshPolicy.NONE);
         putToIndex(bulk);
@@ -420,7 +427,8 @@ public class ESContentletIndexAPI implements ContentletIndexAPI {
         return this.addToBulkRequest(bulk, contentToIndex, false);
     }
 
-    private BulkRequestBuilder addToBulkRequest(final BulkRequestBuilder bulk, final List<Contentlet> contentToIndex, final boolean forReindex) {
+    private BulkRequestBuilder addToBulkRequest(final BulkRequestBuilder bulk, final List<Contentlet> contentToIndex,
+            final boolean forReindex) {
         if (contentToIndex != null && !contentToIndex.isEmpty()) {
             Logger.debug(this.getClass(), "Indexing " + contentToIndex.size() + " contents, starting with identifier [ "
                     + contentToIndex.get(0).getMap().get("identifier") + "]");

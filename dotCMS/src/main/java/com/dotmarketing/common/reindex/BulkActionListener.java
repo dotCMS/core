@@ -25,7 +25,7 @@ class BulkActionListener implements ActionListener<BulkResponse> {
     private void handleSuccess(final List<ReindexEntry> successful) {
 
         try {
-            APILocator.getDistributedJournalAPI().deleteReindexEntry(successful);
+            APILocator.getReindexQueueAPI().deleteReindexEntry(successful);
         } catch (DotDataException e) {
             Logger.warnAndDebug(this.getClass(), "unable to delete indexjournal:" + e.getMessage(), e);
         }
@@ -34,7 +34,7 @@ class BulkActionListener implements ActionListener<BulkResponse> {
     private void handleFailure(final ReindexEntry idx, String cause) {
 
         try {
-            APILocator.getDistributedJournalAPI().markAsFailed(idx, cause);
+            APILocator.getReindexQueueAPI().markAsFailed(idx, cause);
         } catch (DotDataException e) {
             Logger.warnAndDebug(this.getClass(), "unable to reque indexjournal:" + idx, e);
         }

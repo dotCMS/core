@@ -4,7 +4,7 @@
 <%@page import="com.dotcms.listeners.SessionMonitor"%>
 <%@page import="com.dotcms.content.elasticsearch.business.ContentletIndexAPI"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
-<%@page import="com.dotcms.content.elasticsearch.business.ESContentletIndexAPI"%>
+<%@page import="com.dotcms.content.elasticsearch.business.ContentletIndexAPIImpl"%>
 <%@page import="com.dotmarketing.portlets.structure.factories.StructureFactory"%>
 <%@page import="com.dotmarketing.util.Config"%>
 <%@page import="com.dotcms.content.elasticsearch.business.ESIndexAPI"%>

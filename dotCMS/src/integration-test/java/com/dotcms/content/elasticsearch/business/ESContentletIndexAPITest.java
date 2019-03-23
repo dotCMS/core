@@ -217,7 +217,7 @@ public class ESContentletIndexAPITest extends IntegrationTestBase {
      *
      * @throws Exception
      * @see ContentletIndexAPI
-     * @see ESContentletIndexAPI
+     * @see ContentletIndexAPIImpl
      */
     @Test
     public void createContentIndexAndDelete () throws Exception {
@@ -226,8 +226,8 @@ public class ESContentletIndexAPITest extends IntegrationTestBase {
 
         //Build the index names
         String timeStamp = String.valueOf( new Date().getTime() );
-        String workingIndex = ESContentletIndexAPI.ES_WORKING_INDEX_NAME + "_" + timeStamp;
-        String liveIndex = ESContentletIndexAPI.ES_LIVE_INDEX_NAME + "_" + timeStamp;
+        String workingIndex = ContentletIndexAPIImpl.ES_WORKING_INDEX_NAME + "_" + timeStamp;
+        String liveIndex = ContentletIndexAPIImpl.ES_LIVE_INDEX_NAME + "_" + timeStamp;
 
         //Get all the indices
         List<String> indices = indexAPI.listDotCMSIndices();
@@ -310,7 +310,7 @@ public class ESContentletIndexAPITest extends IntegrationTestBase {
      *
      * @throws Exception
      * @see ContentletIndexAPI
-     * @see ESContentletIndexAPI
+     * @see ContentletIndexAPIImpl
      */
     @Test
     @Ignore
@@ -320,8 +320,8 @@ public class ESContentletIndexAPITest extends IntegrationTestBase {
 
         //Build the index names
         String timeStamp = String.valueOf( new Date().getTime() );
-        String workingIndex = ESContentletIndexAPI.ES_WORKING_INDEX_NAME + "_" + timeStamp;
-        String liveIndex = ESContentletIndexAPI.ES_LIVE_INDEX_NAME + "_" + timeStamp;
+        String workingIndex = ContentletIndexAPIImpl.ES_WORKING_INDEX_NAME + "_" + timeStamp;
+        String liveIndex = ContentletIndexAPIImpl.ES_LIVE_INDEX_NAME + "_" + timeStamp;
 
         String oldActiveLive = indexAPI.getActiveIndexName(ContentletIndexAPI.ES_LIVE_INDEX_NAME);
         String oldActiveWorking = indexAPI.getActiveIndexName(ContentletIndexAPI.ES_WORKING_INDEX_NAME);
@@ -363,7 +363,7 @@ public class ESContentletIndexAPITest extends IntegrationTestBase {
      *
      * @throws Exception
      * @see ContentletIndexAPI
-     * @see ESContentletIndexAPI
+     * @see ContentletIndexAPIImpl
      */
     @Test
     public void isDotCMSIndexName () throws Exception {
@@ -372,7 +372,7 @@ public class ESContentletIndexAPITest extends IntegrationTestBase {
 
         //Build the index names
         String timeStamp = String.valueOf( new Date().getTime() );
-        String workingIndex = ESContentletIndexAPI.ES_WORKING_INDEX_NAME + "_" + timeStamp;
+        String workingIndex = ContentletIndexAPIImpl.ES_WORKING_INDEX_NAME + "_" + timeStamp;
 
         //Verify with a proper name
         boolean isIndexName = indexAPI.isDotCMSIndexName( workingIndex );
@@ -389,7 +389,7 @@ public class ESContentletIndexAPITest extends IntegrationTestBase {
      *
      * @throws Exception
      * @see ContentletIndexAPI
-     * @see ESContentletIndexAPI
+     * @see ContentletIndexAPIImpl
      */
     @Test
     public void optimize () throws Exception {
@@ -398,8 +398,8 @@ public class ESContentletIndexAPITest extends IntegrationTestBase {
 
         //Build the index names
         String timeStamp = String.valueOf( new Date().getTime() );
-        String workingIndex = ESContentletIndexAPI.ES_WORKING_INDEX_NAME + "_" + timeStamp;
-        String liveIndex = ESContentletIndexAPI.ES_LIVE_INDEX_NAME + "_" + timeStamp;
+        String workingIndex = ContentletIndexAPIImpl.ES_WORKING_INDEX_NAME + "_" + timeStamp;
+        String liveIndex = ContentletIndexAPIImpl.ES_LIVE_INDEX_NAME + "_" + timeStamp;
 
         //Creates the working index
         Boolean result = indexAPI.createContentIndex( workingIndex );
@@ -427,7 +427,7 @@ public class ESContentletIndexAPITest extends IntegrationTestBase {
      * @throws Exception
      * @see ContentletAPI
      * @see ContentletIndexAPI
-     * @see ESContentletIndexAPI
+     * @see ContentletIndexAPIImpl
      */
     @Test
     public void addRemoveContentToIndex () throws Exception {
@@ -481,7 +481,7 @@ public class ESContentletIndexAPITest extends IntegrationTestBase {
      * @throws Exception
      * @see ContentletAPI
      * @see ContentletIndexAPI
-     * @see ESContentletIndexAPI
+     * @see ContentletIndexAPIImpl
      */
     @Test
     public void removeContentFromIndexByStructureInode () throws Exception {
@@ -532,7 +532,7 @@ public class ESContentletIndexAPITest extends IntegrationTestBase {
      * @throws Exception
      * @see ContentletAPI
      * @see ContentletIndexAPI
-     * @see ESContentletIndexAPI
+     * @see ContentletIndexAPIImpl
      */
     @Test
     public void testSearch () throws Exception {
@@ -545,7 +545,7 @@ public class ESContentletIndexAPITest extends IntegrationTestBase {
         String currentSiteSearchIndex = indiciesInfo.site_search;
         String indexName = currentSiteSearchIndex;
         if ( currentSiteSearchIndex == null ) {
-            indexName = SiteSearchAPI.ES_SITE_SEARCH_NAME + "_" + ESContentletIndexAPI.timestampFormatter.format( new Date() );
+            indexName = SiteSearchAPI.ES_SITE_SEARCH_NAME + "_" + ContentletIndexAPIImpl.timestampFormatter.format( new Date() );
             APILocator.getSiteSearchAPI().createSiteSearchIndex( indexName, null, 1 );
             APILocator.getSiteSearchAPI().activateIndex( indexName );
         }
@@ -912,7 +912,7 @@ public class ESContentletIndexAPITest extends IntegrationTestBase {
         indexToHit = info.site_search;
         String indexName = indexToHit;
         if ( indexName == null ) {
-            indexName = SiteSearchAPI.ES_SITE_SEARCH_NAME + "_" + ESContentletIndexAPI.timestampFormatter.format( new Date() );
+            indexName = SiteSearchAPI.ES_SITE_SEARCH_NAME + "_" + ContentletIndexAPIImpl.timestampFormatter.format( new Date() );
             APILocator.getSiteSearchAPI().createSiteSearchIndex( indexName, null, 1 );
             APILocator.getSiteSearchAPI().activateIndex( indexName );
         }

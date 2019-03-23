@@ -5,14 +5,14 @@ import java.util.Hashtable;
 import java.util.Map;
 
 import com.dotcms.business.CloseDBIfOpened;
-import com.dotcms.content.elasticsearch.business.ESContentletIndexAPI;
+import com.dotcms.content.elasticsearch.business.ContentletIndexAPIImpl;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 
 public class ESReindexationProcessStatus implements Serializable {
-    private static final ESContentletIndexAPI indexAPI = new ESContentletIndexAPI();
+    private static final ContentletIndexAPIImpl indexAPI = new ContentletIndexAPIImpl();
 
     public synchronized static boolean inFullReindexation() throws DotDataException {
         return indexAPI.isInFullReindex();
@@ -33,7 +33,7 @@ public class ESReindexationProcessStatus implements Serializable {
 
     @CloseDBIfOpened
     public static int getLastIndexationProgress(int countToIndex) throws DotDataException {
-        long left = APILocator.getDistributedJournalAPI().recordsInQueue();
+        long left = APILocator.getReindexQueueAPI().recordsInQueue();
         int x = (int) (countToIndex - left);
 
         return (x < 0) ? 0 : x;

@@ -53,7 +53,7 @@ public class ReindexAPITest extends IntegrationTestBase {
             contentlets.add(new ContentletDataGen(type.id()).nextPersisted());
         }
 
-        final ReindexQueueAPI reindexQueueAPI = APILocator.getDistributedJournalAPI();
+        final ReindexQueueAPI reindexQueueAPI = APILocator.getReindexQueueAPI();
 
         new DotConnect().setSQL("delete from dist_reindex_journal").loadResult();
 
@@ -98,7 +98,7 @@ public class ReindexAPITest extends IntegrationTestBase {
             new ContentletDataGen(type.id()).nextPersisted();
         }
 
-        final ReindexQueueAPI reindexQueueAPI = APILocator.getDistributedJournalAPI();
+        final ReindexQueueAPI reindexQueueAPI = APILocator.getReindexQueueAPI();
 
         new DotConnect().setSQL("delete from dist_reindex_journal").loadResult();
 

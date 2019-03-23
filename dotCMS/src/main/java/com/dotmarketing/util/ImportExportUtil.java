@@ -872,7 +872,7 @@ public class ImportExportUtil {
         conAPI.refreshAllContent();
         long recordsToIndex = 0;
         try {
-            recordsToIndex = APILocator.getDistributedJournalAPI().recordsInQueue();
+            recordsToIndex = APILocator.getReindexQueueAPI().recordsInQueue();
             Logger.info(this, "Records left to index : " + recordsToIndex);
         } catch (DotDataException e) {
             Logger.error(ImportExportUtil.class,e.getMessage() + " while trying to get the number of records left to index",e);
@@ -882,7 +882,7 @@ public class ImportExportUtil {
         while(recordsToIndex > 0){
             if(counter > 600){
                 try {
-                    Logger.info(this, "Records left to index : " + APILocator.getDistributedJournalAPI().recordsInQueue());
+                    Logger.info(this, "Records left to index : " + APILocator.getReindexQueueAPI().recordsInQueue());
                 } catch (DotDataException e) {
                     Logger.error(ImportExportUtil.class,e.getMessage() + " while trying to get the number of records left to index",e);
                 }
@@ -890,7 +890,7 @@ public class ImportExportUtil {
             }
             if(counter % 100 == 0){
                 try{
-                    recordsToIndex = APILocator.getDistributedJournalAPI().recordsInQueue();
+                    recordsToIndex = APILocator.getReindexQueueAPI().recordsInQueue();
                 } catch (DotDataException e) {
                     Logger.error(ImportExportUtil.class,e.getMessage() + " while trying to get the number of records left to index",e);
                 }

@@ -241,7 +241,7 @@ public class ImportAuditUtil {
 		db.addParam(userId);
 		db.addParam(filename);
 		db.addParam(STATUS_PENDING);
-		db.addParam(APILocator.getDistributedJournalAPI().getServerId());
+		db.addParam(APILocator.getReindexQueueAPI().getServerId());
 		try {
 			db.loadResult();
 		} catch (DotDataException e) {

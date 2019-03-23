@@ -89,7 +89,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			SystemMessageEventUtil.getInstance();
 
 	private final ReindexQueueAPI reindexQueueAPI =
-			APILocator.getDistributedJournalAPI();
+			APILocator.getReindexQueueAPI();
 
 	private final ContentletIndexAPI contentletIndexAPI =
 			APILocator.getContentletIndexAPI();

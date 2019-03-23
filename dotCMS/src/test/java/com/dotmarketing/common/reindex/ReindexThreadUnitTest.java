@@ -33,7 +33,7 @@ import static org.mockito.Mockito.*;
  * Test for {@link ReindexThread}
  * @author jsanca
  */
-public class ReindexThreadTest extends UnitTestBase {
+public class ReindexThreadUnitTest extends UnitTestBase {
 
     private boolean testGenerateNotification = false;
     private PayloadVerifier originalRoleVerifier;
@@ -120,5 +120,8 @@ public class ReindexThreadTest extends UnitTestBase {
         payloadVerifierFactory.register(Visibility.ROLE, this.originalRoleVerifier);
 
     }
+    
+    
+    
 
 }

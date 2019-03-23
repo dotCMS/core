@@ -118,7 +118,7 @@ public class ESIndexAPI {
 			Config.getLongProperty("ES_INDEX_OPERATIONS_TIMEOUT", 15000);
 
 	final private ESClient esclient;
-	final private ESContentletIndexAPI iapi;
+	final private ContentletIndexAPIImpl iapi;
 	final private ESIndexHelper esIndexHelper;
 	private final ServerAPI serverAPI;
 	private final ClusterAPI clusterAPI;
@@ -137,14 +137,14 @@ public class ESIndexAPI {
 
 	public ESIndexAPI(){
 		this.esclient = new ESClient();
-		this.iapi = new ESContentletIndexAPI();
+		this.iapi = new ContentletIndexAPIImpl();
 		this.esIndexHelper = ESIndexHelper.INSTANCE;
 		this.serverAPI = APILocator.getServerAPI();
 		this.clusterAPI = APILocator.getClusterAPI();
 	}
 
 	@VisibleForTesting
-	protected ESIndexAPI(final ESClient esclient, final ESContentletIndexAPI iapi, final ESIndexHelper esIndexHelper,
+	protected ESIndexAPI(final ESClient esclient, final ContentletIndexAPIImpl iapi, final ESIndexHelper esIndexHelper,
 						 final ServerAPI serverAPI, final ClusterAPI clusterAPI){
 		this.esclient = esclient;
 		this.iapi = iapi;

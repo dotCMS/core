@@ -1591,7 +1591,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
             long totalCount;
 
             if (UtilMethods.isSet(contentlets)) {
-                final ESContentletIndexAPI indexAPI = new ESContentletIndexAPI();
+                final ContentletIndexAPIImpl indexAPI = new ContentletIndexAPIImpl();
                 List<Contentlet> contentToIndex = new ArrayList<>();
                 totalCount = contentlets.size();
                 final int batchSize = 100;
@@ -1756,7 +1756,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
              String inode = ident.get("inode");
              contentletCache.remove(inode);
              Contentlet content = find(inode);
-             new ESContentletIndexAPI().addContentToIndex(content);
+             new ContentletIndexAPIImpl().addContentToIndex(content);
         }
 	}
 

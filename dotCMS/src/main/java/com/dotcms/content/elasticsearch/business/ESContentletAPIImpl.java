@@ -188,7 +188,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     private static final String NEVER_EXPIRE                              = "NeverExpire";
     private static final String CHECKIN_IN_PROGRESS                      = "__checkin_in_progress__";
 
-    private final ESContentletIndexAPI  indexAPI;
+    private final ContentletIndexAPIImpl  indexAPI;
     private final ESContentFactoryImpl  contentFactory;
     private final PermissionAPI         permissionAPI;
     private final CategoryAPI           categoryAPI;
@@ -214,14 +214,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * Default class constructor.
      */
     public ESContentletAPIImpl () {
-        indexAPI = new ESContentletIndexAPI();
+        indexAPI = new ContentletIndexAPIImpl();
         fieldAPI = APILocator.getFieldAPI();
         contentFactory = new ESContentFactoryImpl();
         permissionAPI = APILocator.getPermissionAPI();
         categoryAPI = APILocator.getCategoryAPI();
         relationshipAPI = APILocator.getRelationshipAPI();
         languageAPI = APILocator.getLanguageAPI();
-        reindexQueueAPI = APILocator.getDistributedJournalAPI();
+        reindexQueueAPI = APILocator.getReindexQueueAPI();
         tagAPI = APILocator.getTagAPI();
         contentletSystemEventUtil = ContentletSystemEventUtil.getInstance();
         localSystemEventsAPI      = APILocator.getLocalSystemEventsAPI();

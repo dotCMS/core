@@ -7,7 +7,7 @@ import com.dotcms.business.WrapInTransaction;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.lock.IdentifierStripedLock;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
-import com.dotcms.content.elasticsearch.business.ESContentletIndexAPI;
+import com.dotcms.content.elasticsearch.business.ContentletIndexAPIImpl;
 import com.dotcms.content.elasticsearch.util.ESClient;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -3002,7 +3002,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	@Override
 	void resetChildrenPermissionReferences(Structure structure) throws DotDataException {
 	    ContentletAPI contAPI = APILocator.getContentletAPI();
-	    ContentletIndexAPI indexAPI=new ESContentletIndexAPI();
+	    ContentletIndexAPI indexAPI=new ContentletIndexAPIImpl();
 
 	    DotConnect dc = new DotConnect();
 		dc.setSQL(DELETE_CONTENT_REFERENCES_BY_CONTENTTYPE_SQL);

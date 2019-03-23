@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
@@ -47,20 +48,20 @@ import com.liferay.portal.model.User;
  * record in the table and will add its information to the Elastic index.
  * <p>
  * The records added to the table will have a priority level set by the
- * {@link ReindexQueueFactory#REINDEX_JOURNAL_PRIORITY_NEWINDEX} constant. During the process,
- * all the "correct" contents will be processed and re-indexed first. All the "bad" records
- * (contents that could not be re-indexed) will be set a different priority level specified by the
- * {@link ReindexQueueFactory#REINDEX_JOURNAL_PRIORITY_FAILED_FIRST_ATTEMPT} constant and will
- * be given more opportunities to be re-indexed after all of the correct contents have already been
+ * {@link ReindexQueueFactory#REINDEX_JOURNAL_PRIORITY_NEWINDEX} constant. During the process, all
+ * the "correct" contents will be processed and re-indexed first. All the "bad" records (contents
+ * that could not be re-indexed) will be set a different priority level specified by the
+ * {@link ReindexQueueFactory#REINDEX_JOURNAL_PRIORITY_FAILED_FIRST_ATTEMPT} constant and will be
+ * given more opportunities to be re-indexed after all of the correct contents have already been
  * processed.
  * </p>
  * <p>
  * The number of times the bad contents can re-try the re-index process is specified by the
- * {@link ReindexQueueFactory#RETRY_FAILED_INDEX_TIMES} property, which can be customized
- * through the {@code dotmarketing-config.properties} file. If a content cannot be re-indexed after
- * all the specified attempts, a notification will be sent to the Notification Bar indicating the
- * Identifier of the bad contentlet. This way users can keep track of the failed records and check
- * the logs to get more information about the failure.
+ * {@link ReindexQueueFactory#RETRY_FAILED_INDEX_TIMES} property, which can be customized through
+ * the {@code dotmarketing-config.properties} file. If a content cannot be re-indexed after all the
+ * specified attempts, a notification will be sent to the Notification Bar indicating the Identifier
+ * of the bad contentlet. This way users can keep track of the failed records and check the logs to
+ * get more information about the failure.
  * </p>
  * <p>
  * The reasons why a content cannot be re-indexed can be, for example:
@@ -99,12 +100,11 @@ public class ReindexThread extends Thread {
 
     private ReindexThread() {
 
-        this(APILocator.getDistributedJournalAPI(), APILocator.getNotificationAPI(), APILocator.getUserAPI(), APILocator.getRoleAPI());
+        this(APILocator.getReindexQueueAPI(), APILocator.getNotificationAPI(), APILocator.getUserAPI(), APILocator.getRoleAPI());
     }
 
     @VisibleForTesting
-    public ReindexThread(final ReindexQueueAPI jAPI, final NotificationAPI notificationAPI, final UserAPI userAPI,
-            final RoleAPI roleAPI) {
+    public ReindexThread(final ReindexQueueAPI jAPI, final NotificationAPI notificationAPI, final UserAPI userAPI, final RoleAPI roleAPI) {
         super("ReindexThread");
         this.jAPI = jAPI;
         this.notificationAPI = notificationAPI;
@@ -168,9 +168,7 @@ public class ReindexThread extends Thread {
     public long contentsIndexed() {
         return contentletsIndexed;
     }
-    
-    
-    
+
     /**
      * This method is constantly verifying the existence of records in the {@code dist_reindex_journal}
      * table. If a record is found, then it must be added to the Elastic index. If that's not possible,
@@ -178,7 +176,6 @@ public class ReindexThread extends Thread {
      * API to take care of the problem as soon as possible.
      */
     public void runReindexLoop() {
-
 
         unpause();
         BulkRequestBuilder bulk = indexAPI.createBulkRequest();
@@ -289,16 +286,10 @@ public class ReindexThread extends Thread {
     }
 
     @CloseDBIfOpened
-    private com.dotmarketing.portlets.contentlet.business.Contentlet getContentletByINode(final String inode) throws DotHibernateException {
-
-        return (com.dotmarketing.portlets.contentlet.business.Contentlet) HibernateUtil
-                .load(com.dotmarketing.portlets.contentlet.business.Contentlet.class, inode);
-    }
-
-    @CloseDBIfOpened
-    private Contentlet convertFatContentletToContentlet(final com.dotmarketing.portlets.contentlet.business.Contentlet fattyContentlet)
-            throws DotDataException, DotSecurityException {
-
+    private Contentlet loadContentletFromDb(final String inode) throws DotDataException, DotSecurityException {
+        final com.dotmarketing.portlets.contentlet.business.Contentlet fattyContentlet =
+                (com.dotmarketing.portlets.contentlet.business.Contentlet) HibernateUtil
+                        .load(com.dotmarketing.portlets.contentlet.business.Contentlet.class, inode);
         return FactoryLocator.getContentletFactory().convertFatContentletToContentlet(fattyContentlet);
     }
 
@@ -318,21 +309,19 @@ public class ReindexThread extends Thread {
 
         final List<ContentletVersionInfo> versions = APILocator.getVersionableAPI().findContentletVersionInfos(idx.getIdentToIndex());
 
-        final Set<String> inodes = new HashSet<>();
+        final Map<String, Contentlet> inodes = new HashMap<>();
 
         for (ContentletVersionInfo cvi : versions) {
-            String workingInode = cvi.getWorkingInode();
+            final String workingInode = cvi.getWorkingInode();
             String liveInode = cvi.getLiveInode();
-            inodes.add(workingInode);
-            if (UtilMethods.isSet(liveInode) && !workingInode.equals(liveInode)) {
-                inodes.add(liveInode);
+            inodes.put(workingInode, this.loadContentletFromDb(workingInode));
+            if (UtilMethods.isSet(liveInode) && !inodes.containsKey(liveInode)) {
+                inodes.put(liveInode, this.loadContentletFromDb(liveInode));
             }
         }
-
-        for (String inode : inodes) {
-            Logger.debug(this, "indexing: id:" + inode + " priority: " + idx.getPriority());
-            final com.dotmarketing.portlets.contentlet.business.Contentlet fattyContentlet = this.getContentletByINode(inode);
-            final Contentlet contentlet = this.convertFatContentletToContentlet(fattyContentlet);
+        inodes.values().removeIf(Objects::isNull);
+        for (Contentlet contentlet : inodes.values()) {
+            Logger.debug(this, "indexing: id:" + contentlet.getInode() + " priority: " + idx.getPriority());
             contentlet.setIndexPolicy(IndexPolicy.DEFER);
             if (idx.isDelete() && idx.getIdentToIndex().equals(contentlet.getIdentifier())) {
                 // we delete contentlets from the identifier pointed on index journal record
@@ -346,7 +335,7 @@ public class ReindexThread extends Thread {
                         bulk = indexAPI.appendBulkRequest(bulk, ImmutableList.of(contentlet));
                     }
                 } catch (Exception e) {
-                    APILocator.getDistributedJournalAPI().markAsFailed(idx, e.getMessage());
+                    APILocator.getReindexQueueAPI().markAsFailed(idx, e.getMessage());
 
                 }
 

@@ -72,7 +72,7 @@ public class ChainableCacheAdministratorImpl implements DotCacheAdministrator {
             useTransportChannel = false;
         }
 
-        APILocator.getDistributedJournalAPI();
+        APILocator.getReindexQueueAPI();
     }
 
     public void initProviders() {
