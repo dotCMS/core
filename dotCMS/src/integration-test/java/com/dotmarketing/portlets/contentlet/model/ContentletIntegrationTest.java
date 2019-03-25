@@ -452,8 +452,7 @@ public class ContentletIntegrationTest {
         final Contentlet savedContentlet = contentletAPI.checkin(parentContentlet, user, false);
 
         //Get cached value
-        final List<Contentlet> result = contentletAPI.getRelatedContent(savedContentlet, relationshipAPI.getRelationshipFromField(field, user),
-                user, false);//parentContentlet.getRelated(field.variable(), user, false);
+        final List<Contentlet> result = parentContentlet.getRelated(field.variable(), user, false);
 
         if (childContentletList != null) {
             assertEquals(childContentletList.size(), result.size());
