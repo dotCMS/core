@@ -11,6 +11,7 @@ import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.com.google.common.collect.Maps;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.ConversionUtils;
+import com.dotcms.util.RelationshipUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -1565,4 +1566,96 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 
 		return relatedList;
 	}
+
+    /**
+     * Set related content for a content given a relationship field
+     * @param field Relationship {@link com.dotcms.contenttype.model.field.Field}
+     * @param contentlets {@link List} of contentlets to be related
+     */
+    public void setRelated(final com.dotcms.contenttype.model.field.Field field,
+            final List<Contentlet> contentlets) {
+        setRelated(field.variable(), contentlets);
+    }
+
+    /**
+     * Set related content for a content given a relationship field variable
+     * @param fieldVarName Relationship field variable
+     * @param contentlets {@link List} of contentlets to be related
+     */
+    public void setRelated(final String fieldVarName, final List<Contentlet> contentlets) {
+        map.put(fieldVarName, contentlets);
+
+        if (!UtilMethods.isSet(this.relatedIds)){
+            relatedIds = Maps.newConcurrentMap();
+        }
+
+        if (contentlets != null){
+            this.relatedIds.put(fieldVarName,
+                    contentlets.stream().map(contentlet -> contentlet.getIdentifier())
+                            .collect(
+                                    CollectionsUtils.toImmutableList()));
+        }
+    }
+
+    /**
+     * Set related content for a content given their IDs and a relationship field
+     * @param field Relationship {@link com.dotcms.contenttype.model.field.Field}
+     * @param ids {@link List} of contentlets identifiers to be related
+     * @param user User to execute search (respect permissions)
+     * @param respectFrontendRoles
+     */
+    public void setRelatedById(final com.dotcms.contenttype.model.field.Field field,
+            final List<String> ids, final User user, final boolean respectFrontendRoles) {
+        setRelatedById(field.variable(), ids, user, respectFrontendRoles);
+    }
+
+    /**
+     * Set related content for a content given their IDs and a relationship field variable
+     * @param fieldVarName Relationship field variable
+     * @param ids {@link List} of contentlets identifiers to be related
+     * @param user User to execute search (respect permissions)
+     * @param respectFrontendRoles
+     */
+    public void setRelatedById(String fieldVarName, List<String> ids, final User user,
+            final boolean respectFrontendRoles) {
+
+        setRelatedByQuery(fieldVarName, ids != null ? String.join(",", ids) : null, null, user,
+                respectFrontendRoles);
+    }
+
+    /**
+     * Set related content for a content given a relationship field filtering by lucene query
+     * @param field Relationship {@link com.dotcms.contenttype.model.field.Field}
+     * @param luceneQuery Query to filter related content
+     * @param sortBy Field to sort by query results
+     * @param user User to execute search (respect permissions)
+     * @param respectFrontendRoles
+     */
+    public void setRelatedByQuery(final com.dotcms.contenttype.model.field.Field field,
+            final String luceneQuery, final String sortBy, final User user,
+            final boolean respectFrontendRoles) {
+
+        setRelatedByQuery(field.variable(), luceneQuery, sortBy, user, respectFrontendRoles);
+    }
+
+    /**
+     * Set related content for a content given a relationship field variable filtering by lucene query
+     * @param fieldVarName Relationship field variable
+     * @param luceneQuery Query to filter related content
+     * @param sortBy Field to sort by query results
+     * @param user User to execute search (respect permissions)
+     * @param respectFrontendRoles
+     */
+    public void setRelatedByQuery(final String fieldVarName, final String luceneQuery,
+            final String sortBy, final User user, final boolean respectFrontendRoles) {
+        try {
+            setRelated(fieldVarName, luceneQuery != null ? RelationshipUtil
+                    .filterContentlet(this.getLanguageId(), luceneQuery, sortBy, user,
+                            respectFrontendRoles, false): null);
+        } catch (DotDataException | DotSecurityException e) {
+            Logger.error(this, "Error setting related content for field " + fieldVarName
+                    + ". Content identifier: " + this.getIdentifier(), e);
+            throw new DotStateException(e);
+        }
+    }
 }
