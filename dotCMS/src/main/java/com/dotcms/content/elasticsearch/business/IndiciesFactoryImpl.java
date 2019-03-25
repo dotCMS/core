@@ -66,8 +66,12 @@ public class IndiciesFactoryImpl implements IndiciesFactory {
 
     @WrapInTransaction
     @Override
-    public void point(IndiciesInfo newInfo) throws DotDataException {
+    public void point(final IndiciesInfo newInfo) throws DotDataException {
 
+
+        if(newInfo==null || newInfo.equals(loadIndicies())) {
+            return;
+        }
         DotConnect dc = new DotConnect();
         final String insertSQL = "INSERT INTO indicies VALUES(?,?)";
         final String deleteSQL = "DELETE from indicies where index_type=? or index_name=?";
@@ -81,7 +85,6 @@ public class IndiciesFactoryImpl implements IndiciesFactory {
             }
 
         }
-
         cache.clearCache();
 
     }

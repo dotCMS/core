@@ -71,6 +71,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.ThreadUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
@@ -281,7 +282,8 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                     return false;
                 }
                 if(!luckyServer.equals(ConfigUtils.getServerId())) {
-                    Logger.info(this.getClass(), "fullReindexSwitchover: I am not the lucky server.  My id : " +ConfigUtils.getServerId()+ ", luckyServer: " +  luckyServer);
+                    Logger.info(this.getClass(), "fullReindexSwitchover: Letting server [" +  luckyServer + "] make the switch. My id : [" +ConfigUtils.getServerId()+"]");
+                    ThreadUtils.sleep(4000);
                     return false;
                 }
             }
@@ -313,7 +315,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
 
     private void logSwitchover(IndiciesInfo oldInfo) {
         Logger.info(this, "-------------------------------");
-        Logger.info(this, "Executing switchover from old index [" + oldInfo.working + "," + oldInfo.live + "] to new index ["
+        Logger.info(this, "Server Id: [" +ConfigUtils.getServerId()+"] executing switchover from old index [" + oldInfo.working + "," + oldInfo.live + "] to new index ["
                 + oldInfo.reindex_working + "," + oldInfo.reindex_live + "]");
         try {
 
