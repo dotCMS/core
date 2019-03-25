@@ -3,6 +3,7 @@ package com.dotmarketing.portlets.contentlet.model;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.ImageField;
+import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
@@ -686,17 +687,30 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 * @throws DotRuntimeException
 	 */
 	public void setProperty( String fieldVarName, Object objValue) throws DotRuntimeException {
-		map.put(fieldVarName, objValue);
-		if (!NULL_PROPERTIES.equals(fieldVarName)) { // No need to keep track of the null property it self.
-			if (null == objValue) {
-				addNullProperty(fieldVarName);
-			} else {
-				removeNullProperty(fieldVarName);
-			}
-		}
+	    if (fieldVarName!= null && isRelationshipField(fieldVarName)){
+	        setRelated(fieldVarName, (List<Contentlet>) objValue);
+        } else{
+            map.put(fieldVarName, objValue);
+            if (!NULL_PROPERTIES.equals(fieldVarName)) { // No need to keep track of the null property it self.
+                if (null == objValue) {
+                    addNullProperty(fieldVarName);
+                } else {
+                    removeNullProperty(fieldVarName);
+                }
+            }
+        }
 	}
 
-	/**
+    /**
+     * @param fieldVarName
+     * @return
+     */
+    private boolean isRelationshipField(String fieldVarName) {
+        return this.getContentType().fieldMap().containsKey(fieldVarName) && this.getContentType()
+                .fieldMap().get(fieldVarName) instanceof RelationshipField;
+    }
+
+    /**
 	 * Returns a map of the contentlet properties based on the fields of the structure
 	 * The keys used in the map will be the velocity variables names
 	 */
