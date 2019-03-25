@@ -4,16 +4,20 @@ import com.dotcms.auth.providers.jwt.beans.JWToken;
 import com.dotcms.auth.providers.jwt.beans.UserToken;
 import com.dotcms.auth.providers.jwt.factories.JsonWebTokenFactory;
 import com.dotcms.auth.providers.jwt.factories.KeyFactoryUtils;
+import com.dotcms.datagen.UserDataGen;
 import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
 import com.google.common.collect.ImmutableMap;
+import com.liferay.portal.model.User;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.IncorrectClaimException;
+import io.vavr.API;
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -30,7 +34,7 @@ import static org.mockito.Mockito.mock;
 public class JsonWebTokenServiceIntegrationTest {
 
     private static JsonWebTokenService jsonWebTokenService;
-    private static final String userId = "dotcms.org.1";
+    private static String userId;
     final String jwtId = "jwt1";
     private static String clusterId;
 
@@ -42,14 +46,17 @@ public class JsonWebTokenServiceIntegrationTest {
 
         //Mocking data
         clusterId = ClusterFactory.getClusterId();
-        Config.CONTEXT = mock(ServletContext.class);
-        final FileAssetAPI fileAssetAPI = mock(FileAssetAPI.class);
-        KeyFactoryUtils.getInstance(fileAssetAPI);
 
         //Generate the token service
         jsonWebTokenService =
                 JsonWebTokenFactory.getInstance().getJsonWebTokenService();
         assertNotNull(jsonWebTokenService);
+
+        //Create User
+        final User newUser = new UserDataGen().nextPersisted();
+        APILocator.getRoleAPI().addRoleToUser(APILocator.getRoleAPI().loadCMSAdminRole(), newUser);
+        assertTrue(APILocator.getUserAPI().isCMSAdmin(newUser));
+        userId = newUser.getUserId();
     }
 
     /**
