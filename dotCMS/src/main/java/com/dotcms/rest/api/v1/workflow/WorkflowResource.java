@@ -1057,7 +1057,7 @@ public class WorkflowResource {
                                @PathParam ("actionId")         final String actionId,
                                @QueryParam("inode")            final String inode,
                                @QueryParam("identifier")       final String identifier,
-                               @QueryParam("language")         final long   language,
+                               @DefaultValue("-1") @QueryParam("language")         final long   language,
                                final FireActionForm fireActionForm) {
 
         final InitDataObject initDataObject = this.webResource.init
@@ -1175,7 +1175,8 @@ public class WorkflowResource {
                 .filter(variable -> !contentMap.containsKey(variable)) // if it is not already set, probably to remove
                 .collect(Collectors.toList());
 
-        // the binary fields when the user does not set, should be the same or more than the binary fields, to avoid to delete non-desired binary fields
+        // the binary fields are not set by the user on the body request
+        // the size of the binary field should be the same of the
         return binaryFields.size() <= binaryFileSize? binaryFields: binaryFields.subList(0, binaryFields.size());
     }
 

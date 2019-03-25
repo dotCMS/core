@@ -35,7 +35,7 @@ public class MultiPartUtils {
 
     private static final String NAME = "name";
     private static final String JSON = "json";
-    public static final String FILE = "file";
+    private static final String FILE = "file";
 
     private final FileAssetAPI fileAssetAPI;
 
