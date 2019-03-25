@@ -5737,10 +5737,16 @@ public class ContentletAPITest extends ContentletBaseTest {
                         .of(ImmutableTextField.builder().name("Title").variable("title").searchable(true).listed(true).build()))
                 .nextPersisted();
 
-        Optional<Contentlet> conOpt= contentletAPI.findInDb("not-here");
+        
+        // test null value
+        Optional<Contentlet> conOpt= contentletAPI.findInDb(null);
         assert(conOpt.isPresent()==false);
         
-
+        
+        // test non-existing
+        conOpt= contentletAPI.findInDb("not-here");
+        assert(conOpt.isPresent()==false);
+        
         final Contentlet contentlet = new ContentletDataGen(type.id()).setProperty("title", "contentTest " + System.currentTimeMillis()).nextPersisted();
         contentlet.setStringProperty("title", "nope");
         
