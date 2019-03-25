@@ -19,6 +19,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 
 import org.apache.commons.beanutils.BeanUtils;
@@ -276,18 +277,19 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     public boolean fullReindexSwitchover(Connection conn, final boolean forceSwitch) {
         try {
             final IndiciesInfo oldInfo = APILocator.getIndiciesAPI().loadIndicies();
-            final String luckyServer=Try.of(()->APILocator.getServerAPI().getAliveServersIds()[0]).getOrElse(ConfigUtils.getServerId());
-            if(!forceSwitch) {
+            final String luckyServer = Try.of(() -> APILocator.getServerAPI().getAliveServersIds()[0]).getOrElse(ConfigUtils.getServerId());
+            if (!forceSwitch) {
                 if (!isInFullReindex()) {
                     return false;
                 }
-                if(!luckyServer.equals(ConfigUtils.getServerId())) {
-                    Logger.info(this.getClass(), "fullReindexSwitchover: Letting server [" +  luckyServer + "] make the switch. My id : [" +ConfigUtils.getServerId()+"]");
+                if (!luckyServer.equals(ConfigUtils.getServerId())) {
+                    Logger.info(this.getClass(), "fullReindexSwitchover: Letting server [" + luckyServer + "] make the switch. My id : ["
+                            + ConfigUtils.getServerId() + "]");
                     ThreadUtils.sleep(4000);
                     return false;
                 }
             }
-            
+
             final IndiciesInfo newInfo = new IndiciesInfo();
             newInfo.live = oldInfo.reindex_live;
             newInfo.working = oldInfo.reindex_working;
@@ -295,7 +297,8 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             logSwitchover(oldInfo);
             APILocator.getIndiciesAPI().point(newInfo);
 
-            DotConcurrentFactory.getInstance().getSubmitter().submit(()->{;
+            DotConcurrentFactory.getInstance().getSubmitter().submit(() -> {
+                ;
                 try {
                     Logger.info(this.getClass(), "Updating and optimizing ElasticSearch Indexes");
                     esIndexApi.moveIndexBackToCluster(newInfo.working);
@@ -306,29 +309,39 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                 }
             });
 
-
         } catch (Exception e) {
             throw new DotRuntimeException(e.getMessage(), e);
         }
         return true;
     }
 
-    private void logSwitchover(IndiciesInfo oldInfo) {
-        Logger.info(this, "-------------------------------");
-        Logger.info(this, "Server Id: [" +ConfigUtils.getServerId()+"] executing switchover from old index [" + oldInfo.working + "," + oldInfo.live + "] to new index ["
-                + oldInfo.reindex_working + "," + oldInfo.reindex_live + "]");
+    @Override
+    public Optional<String> reindexTimeElapsed() {
         try {
+            final IndiciesInfo oldInfo = APILocator.getIndiciesAPI().loadIndicies();
+            if (oldInfo.reindex_working != null) {
 
-            Date startTime = timestampFormatter.parse(oldInfo.reindex_working.replace("working_", ""));
-            long timeTook = System.currentTimeMillis() - startTime.getTime();
-            String duration = Duration.ofMillis(timeTook).toString().substring(2).replaceAll("(\\d[HMS])(?!$)", "$1 ").toLowerCase();
-            if (timeTook > 0) {
-                Logger.info(this, "Reindex took [" + duration + "]");
-
+                Date startTime = timestampFormatter.parse(oldInfo.reindex_working.replace("working_", ""));
+                long timeTook = System.currentTimeMillis() - startTime.getTime();
+                return Optional
+                        .ofNullable(Duration.ofMillis(timeTook).toString().substring(2).replaceAll("(\\d[HMS])(?!$)", "$1 ").toLowerCase());
             }
         } catch (Exception e) {
             Logger.debug(this, "unable to parse time:" + e, e);
         }
+
+        return Optional.empty();
+    }
+
+    private void logSwitchover(IndiciesInfo oldInfo) {
+        Logger.info(this, "-------------------------------");
+        Optional<String> duration = reindexTimeElapsed();
+        if (duration.isPresent()) {
+            Logger.info(this, "Reindex took        : [" + duration.get() + "]");
+        }
+        Logger.info(this, "Server Id           : [" + ConfigUtils.getServerId() + "] ");
+        Logger.info(this, "Switching old index : [" + oldInfo.working + "," + oldInfo.live + "] to new index [" + oldInfo.reindex_working
+                + "," + oldInfo.reindex_live + "]");
         Logger.info(this, "-------------------------------");
 
     }
@@ -471,7 +484,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             }
         }
         inodes.values().removeIf(Objects::isNull);
-        if(inodes.isEmpty()) {
+        if (inodes.isEmpty()) {
             APILocator.getReindexQueueAPI().markAsFailed(idx, "unable to find any versions of content");
 
         }

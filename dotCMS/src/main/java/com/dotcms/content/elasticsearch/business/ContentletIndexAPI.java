@@ -5,6 +5,7 @@ import java.sql.Connection;
 import java.text.SimpleDateFormat;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
@@ -124,5 +125,7 @@ public interface ContentletIndexAPI {
     BulkRequestBuilder appendBulkRequest(BulkRequestBuilder bulk, ReindexEntry idx) throws DotDataException;
 
     BulkRequestBuilder appendBulkRequest(BulkRequestBuilder bulk, List<Contentlet> contentToIndex);
+
+    Optional<String> reindexTimeElapsed();
 
 }
