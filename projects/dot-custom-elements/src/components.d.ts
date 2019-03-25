@@ -17,7 +17,7 @@ export namespace Components {
     'label': string;
     'placeholder': string;
     'readOnly': string;
-    'regexCheck': string;
+    'regexcheck': string;
     'required': boolean;
     'value': string;
   }
@@ -27,7 +27,7 @@ export namespace Components {
     'onOnCallback'?: (event: CustomEvent) => void;
     'placeholder'?: string;
     'readOnly'?: string;
-    'regexCheck'?: string;
+    'regexcheck'?: string;
     'required'?: boolean;
     'value'?: string;
   }

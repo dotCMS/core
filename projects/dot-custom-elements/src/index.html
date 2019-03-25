@@ -12,7 +12,7 @@
             window.onload = function () {
               let rating = document.querySelector("dot-textfield");
               rating.addEventListener("onCallback", function (event) {
-                console.log('--onCallback', event.detail.value);
+                console.log('--onCallback', event.detail);
               })
             };
           </script>
@@ -20,6 +20,6 @@
     <body>
         <my-component first="Stencil" last="'Don't call me a framework' JS"></my-component>
         <hr />
-        <dot-textfield label="Name:" value="John" hint="this is a hint" placeholder="Enter Name" regexCheck="[A-Za-z]" readOnly="false" required></dot-textfield>
+        <dot-textfield label="Name:" value="John" hint="this is a hint" placeholder="Enter Name" regexcheck="^[A-Za-z ]+$" readOnly="false" required></dot-textfield>
     </body>
 </html>

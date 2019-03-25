@@ -8,7 +8,7 @@ import Fragment from 'stencil-fragment';
 })
 export class DotTextfieldComponent {
     @Prop() value: string;
-    @Prop() regexCheck: string;
+    @Prop() regexcheck: string;
     @Prop() readOnly: string;
     @Prop() label: string;
     @Prop() hint: string;
@@ -17,27 +17,42 @@ export class DotTextfieldComponent {
     @Event() onCallback: EventEmitter;
 
     @State() _value: string;
+    @State() _error = false;
 
-    setValue(event: Event) {
-        const value = event.target.value.toString();
-        // todo: make regex work!
-        const re1 = new RegExp(this.regexCheck);
-        console.log(re1.test(value));
-        this.onCallback.emit({ value });
+    // tslint:disable-next-line:cyclomatic-complexity
+    validate(value: string): boolean {
+        if (this.required && value.length === 0) {
+            return true;
+        } else if (this.regexcheck) {
+            const regex = new RegExp(this.regexcheck, 'ig');
+            return !regex.test(value);
+        }
+        return false;
     }
 
-    render() {
-        this._value = this.value;
-        const _label = `dotTextfield_${generateId()}`;
+    setValue(event): void {
+        this._value = event.target.value.toString();
+        this._error = this.validate(this._value);
+        this.onCallback.emit({ error: this._error, value: this._value });
+    }
 
+    componentWillLoad() {
+        this._value = this._value && this._value.length > -1 ? this._value : this.value;
+    }
+
+    // tslint:disable-next-line:cyclomatic-complexity
+    render() {
+        const _label = `dotTextfield_${generateId()}`;
         return (
             <Fragment>
                 <label htmlFor={_label}>{this.label}</label>
                 <input
+                    class={this._error ? 'dot-textfield__input--error' : ''}
                     name={_label}
                     type='text'
                     value={this._value}
                     placeholder={this.placeholder}
+                    required={this.required ? true : null}
                     onInput={(event: Event) => this.setValue(event)}
                 />
                 {this.hint ? <span class='hint'>{this.hint}</span> : ''}
