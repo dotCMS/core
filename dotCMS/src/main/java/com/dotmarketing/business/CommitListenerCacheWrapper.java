@@ -9,6 +9,7 @@ import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.FlushCacheRunnable;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotHibernateException;
+import com.dotmarketing.util.Logger;
 
 /**
  * this class wraps our cache administrator and will automatically make cache removes and puts
@@ -106,26 +107,30 @@ class CommitListenerCacheWrapper implements DotCacheAdministrator {
     // only put when we are not in a transaction
     @Override
     public void put(final String key, final Object content, final String group) {
-        if (!DbConnectionFactory.inTransaction()) {
-            dotcache.put(key, content, group);
+        dotcache.put(key, content, group);
+        if (DbConnectionFactory.inTransaction()) {
+            HibernateUtil.addRollbackListener(group+key,new FlushCacheRunnable() {
+                public void run() {
+                    dotcache.remove(key, group);
+                }
+            });
         }
     }
 
     @Override
     public void remove(final String key, final String group) {
         if (DbConnectionFactory.inTransaction()) {
-            try {
-                HibernateUtil.addCommitListener(new FlushCacheRunnable() {
+                final String flushKey=String.valueOf(key+group).toLowerCase();
+                final Runnable runner = new FlushCacheRunnable() {
                     public void run() {
                         dotcache.remove(key, group);
                     }
-                });
-            } catch (DotHibernateException e) {
-                throw new RuntimeException(e);
-            }
+                };
+                HibernateUtil.addRollbackListener(flushKey,runner);
+                HibernateUtil.addCommitListener(flushKey, runner);
+
         }
         dotcache.remove(key, group);
-
     }
 
     public DotCacheAdministrator getImplementationObject() {
