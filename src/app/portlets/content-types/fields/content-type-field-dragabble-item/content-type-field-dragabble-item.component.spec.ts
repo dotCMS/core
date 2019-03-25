@@ -56,7 +56,7 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
         expect(container.nativeElement.textContent.trim().replace('  ', ' ')).toEqual('Field name');
     });
 
-    fit('should have copy variable button', () => {
+    it('should have copy variable button', () => {
         const field = {
             fieldType: 'fieldType',
             fixed: true,

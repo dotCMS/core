@@ -162,10 +162,10 @@ describe('LoginAsComponent', () => {
         spyOn(paginatorService, 'getWithOffset').and.returnValue(observableOf([...users]));
     }));
 
-    afterAll(() => {
-        comp.visible = false;
-        fixture.detectChanges();
-    });
+    // afterAll(() => {
+    //     comp.visible = false;
+    //     fixture.detectChanges();
+    // });
 
     it('should load the first page', () => {
         fixture.detectChanges();
