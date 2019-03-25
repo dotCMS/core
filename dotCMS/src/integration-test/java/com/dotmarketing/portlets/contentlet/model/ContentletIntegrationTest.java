@@ -457,14 +457,14 @@ public class ContentletIntegrationTest {
         if (childContentletList != null) {
             assertEquals(childContentletList.size(), result.size());
 
-            if (childContentletList.size() > 0) {
+            if (!childContentletList.isEmpty()) {
                 assertEquals(childContentletList.get(0).getIdentifier(),
                         result.get(0).getIdentifier());
             }
 
         } else {
             //when null, related content should keep the same
-            assertTrue(result.size() > 0);
+            assertFalse(result.isEmpty());
         }
 
         return savedContentlet;
