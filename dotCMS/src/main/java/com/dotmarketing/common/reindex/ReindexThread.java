@@ -191,7 +191,7 @@ public class ReindexThread extends Thread {
 
                 if (!workingRecords.isEmpty()) {
 
-                    bulk = writeRequestsToBulk(bulk, workingRecords.values());
+                    bulk = indexAPI.appendBulkRequest(bulk, workingRecords.values());
 
                     contentletsIndexed += bulk.numberOfActions();
                     Logger.info(this.getClass(), "-----------");
@@ -278,75 +278,8 @@ public class ReindexThread extends Thread {
         return instance;
     }
 
-    @CloseDBIfOpened
-    private List<Map<String, String>> getContentletVersionInfoByIdentifier(final String id) throws DotDataException {
 
-        final String sql = "select working_inode,live_inode from contentlet_version_info where identifier=?";
-        final DotConnect dc = new DotConnect();
-        dc.setSQL(sql);
-        dc.addParam(id);
-        return dc.loadResults();
-    }
 
-    @CloseDBIfOpened
-    private Contentlet loadContentletFromDb(final String inode) throws DotDataException, DotSecurityException {
-        final com.dotmarketing.portlets.contentlet.business.Contentlet fattyContentlet =
-                (com.dotmarketing.portlets.contentlet.business.Contentlet) HibernateUtil
-                        .load(com.dotmarketing.portlets.contentlet.business.Contentlet.class, inode);
-        return FactoryLocator.getContentletFactory().convertFatContentletToContentlet(fattyContentlet);
-    }
-
-    @VisibleForTesting
-    BulkRequestBuilder writeRequestsToBulk(final BulkRequestBuilder bulk, final Collection<ReindexEntry> idxs)
-            throws DotDataException, DotSecurityException {
-
-        for (ReindexEntry idx : idxs) {
-            writeRequestsToBulk(bulk, idx);
-        }
-        return bulk;
-    }
-    @VisibleForTesting
-    BulkRequestBuilder writeRequestsToBulk(BulkRequestBuilder bulk, ReindexEntry idx)
-            throws DotDataException, DotSecurityException {
-
-        Logger.debug(this, "Indexing document " + idx.getIdentToIndex());
-
-        final List<ContentletVersionInfo> versions = APILocator.getVersionableAPI().findContentletVersionInfos(idx.getIdentToIndex());
-
-        final Map<String, Contentlet> inodes = new HashMap<>();
-
-        for (ContentletVersionInfo cvi : versions) {
-            final String workingInode = cvi.getWorkingInode();
-            String liveInode = cvi.getLiveInode();
-            inodes.put(workingInode, this.loadContentletFromDb(workingInode));
-            if (UtilMethods.isSet(liveInode) && !inodes.containsKey(liveInode)) {
-                inodes.put(liveInode, this.loadContentletFromDb(liveInode));
-            }
-        }
-        inodes.values().removeIf(Objects::isNull);
-        for (Contentlet contentlet : inodes.values()) {
-            Logger.debug(this, "indexing: id:" + contentlet.getInode() + " priority: " + idx.getPriority());
-            contentlet.setIndexPolicy(IndexPolicy.DEFER);
-            if (idx.isDelete() && idx.getIdentToIndex().equals(contentlet.getIdentifier())) {
-                // we delete contentlets from the identifier pointed on index journal record
-                // its dependencies are reindexed in order to update its relationships fields
-                indexAPI.removeContentFromIndex(contentlet);
-            } else {
-                try {
-                    if (idx.isReindex()) {
-                        bulk = indexAPI.appendReindexRequest(bulk, ImmutableList.of(contentlet));
-                    } else {
-                        bulk = indexAPI.appendBulkRequest(bulk, ImmutableList.of(contentlet));
-                    }
-                } catch (Exception e) {
-                    APILocator.getReindexQueueAPI().markAsFailed(idx, e.getMessage());
-
-                }
-
-            }
-        }
-        return bulk;
-    }
 
     public synchronized void pause() {
         work = false;

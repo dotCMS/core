@@ -91,7 +91,7 @@ public class ReindexEntry {
     }
 
     public boolean isReindex() {
-        return getPriority() > ReindexQueueFactory.Priority.REINDEX.dbValue();
+        return getPriority() >= ReindexQueueFactory.Priority.REINDEX.dbValue();
     }
 
     /**

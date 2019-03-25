@@ -3,6 +3,7 @@ package com.dotcms.content.elasticsearch.business;
 import java.io.IOException;
 import java.sql.Connection;
 import java.text.SimpleDateFormat;
+import java.util.Collection;
 import java.util.List;
 
 import org.elasticsearch.action.ActionListener;
@@ -10,6 +11,7 @@ import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
 
 import com.dotcms.content.business.DotMappingException;
+import com.dotmarketing.common.reindex.ReindexEntry;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -52,8 +54,20 @@ public interface ContentletIndexAPI {
 
     public void fullReindexSwitchover(Connection conn);
 
+    /**
+     * deletes an elasticsearch index by name
+     * 
+     * @param indexName
+     * @return
+     */
     boolean delete(String indexName);
 
+    /**
+     * optimizes shards for a list of elasticsearch indicies
+     * 
+     * @param indexName
+     * @return
+     */
     boolean optimize(List<String> indexNames);
 
     public void removeContentFromIndex(final Contentlet content) throws DotDataException;
@@ -87,13 +101,6 @@ public interface ContentletIndexAPI {
 
     public String getActiveIndexName(String type) throws DotDataException;
 
-    BulkRequestBuilder appendBulkRequest(BulkRequestBuilder bulk, List<Contentlet> contentToIndex);
-
-    BulkRequestBuilder appendReindexRequest(BulkRequestBuilder bulk, List<Contentlet> contentToIndex);
-
-    BulkRequestBuilder createBulkRequest(List<Contentlet> contentToIndex)
-            throws DotDataException, DotSecurityException, DotMappingException;
-
     void putToIndex(BulkRequestBuilder bulk, ActionListener<BulkResponse> listener);
 
     void putToIndex(BulkRequestBuilder bulk);
@@ -106,6 +113,14 @@ public interface ContentletIndexAPI {
 
     void addContentToIndex(Contentlet parentContenlet, boolean includeDependencies, boolean indexBeforeCommit) throws DotDataException;
 
+    BulkRequestBuilder createBulkRequest(List<Contentlet> contentToIndex) throws DotDataException;
+
     BulkRequestBuilder createBulkRequest();
+
+    BulkRequestBuilder appendBulkRequest(BulkRequestBuilder bulk, Collection<ReindexEntry> idxs) throws DotDataException;
+
+    BulkRequestBuilder appendBulkRequest(BulkRequestBuilder bulk, ReindexEntry idx) throws DotDataException;
+
+    BulkRequestBuilder appendBulkRequest(BulkRequestBuilder bulk, List<Contentlet> contentToIndex);
 
 }

@@ -1499,7 +1499,9 @@ public interface ContentletAPIPostHook {
 	 */
 	public default void updateModDate(final Set<String> inodes, final User user) throws DotDataException {}
 
-    public default void findContentletByIdentifierOrFallback(String identifier, boolean live, long incomingLangId, User user, boolean respectFrontendRoles) {};
+    public default void findContentletByIdentifierOrFallback(String identifier, boolean live, long incomingLangId, User user, boolean respectFrontendRoles) {}
+
+    public default void findInDb(String inode) {};
 
 
 }

@@ -10,12 +10,15 @@ import java.sql.Connection;
 import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import org.apache.commons.beanutils.BeanUtils;
@@ -48,6 +51,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.common.reindex.ReindexEntry;
 import com.dotmarketing.common.reindex.ReindexQueueAPI;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
@@ -57,16 +61,20 @@ import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.gson.Gson;
 import com.liferay.util.StringPool;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
+
+import io.vavr.API;
 
 public class ContentletIndexAPIImpl implements ContentletIndexAPI {
 
@@ -183,9 +191,6 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             final String workingIndex = ES_WORKING_INDEX_NAME + "_" + timeStamp;
             final String liveIndex = ES_LIVE_INDEX_NAME + "_" + timeStamp;
 
-            ESClient esClient = new ESClient();
-            final IndicesAdminClient iac = esClient.getClient().admin().indices();
-
             createContentIndex(workingIndex, 0);
             createContentIndex(liveIndex, 0);
 
@@ -211,7 +216,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
      */
     @WrapInTransaction
     public synchronized String fullReindexStart() throws ElasticsearchException, DotDataException {
-        if (indexReady()) {
+        if (indexReady() && !isInFullReindex()) {
             try {
 
                 final String timeStamp = timestampFormatter.format(new Date());
@@ -219,8 +224,6 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                 // index names for new index
                 final String workingIndex = ES_WORKING_INDEX_NAME + "_" + timeStamp;
                 final String liveIndex = ES_LIVE_INDEX_NAME + "_" + timeStamp;
-
-                final IndicesAdminClient iac = new ESClient().getClient().admin().indices();
 
                 createContentIndex(workingIndex);
                 createContentIndex(liveIndex);
@@ -424,9 +427,54 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     }
 
     @Override
-    public BulkRequestBuilder appendReindexRequest(final BulkRequestBuilder bulk, final List<Contentlet> contentToIndex) {
+    public BulkRequestBuilder appendBulkRequest(final BulkRequestBuilder bulk, final Collection<ReindexEntry> idxs)
+            throws DotDataException {
 
-        return this.addToBulkRequest(bulk, contentToIndex, true);
+        for (ReindexEntry idx : idxs) {
+            appendBulkRequest(bulk, idx);
+        }
+        return bulk;
+    }
+
+    @CloseDBIfOpened
+    @Override
+    public BulkRequestBuilder appendBulkRequest(BulkRequestBuilder bulk, final ReindexEntry idx) throws DotDataException {
+        bulk = (bulk == null) ? createBulkRequest() : bulk;
+        Logger.debug(this, "Indexing document " + idx.getIdentToIndex());
+
+        final List<ContentletVersionInfo> versions = APILocator.getVersionableAPI().findContentletVersionInfos(idx.getIdentToIndex());
+
+        final Map<String, Contentlet> inodes = new HashMap<>();
+
+        for (ContentletVersionInfo cvi : versions) {
+            final String workingInode = cvi.getWorkingInode();
+            String liveInode = cvi.getLiveInode();
+            inodes.put(workingInode, APILocator.getContentletAPI().findInDb(workingInode).orElse(null));
+            if (UtilMethods.isSet(liveInode) && !inodes.containsKey(liveInode)) {
+                inodes.put(liveInode, APILocator.getContentletAPI().findInDb(workingInode).orElse(null));
+            }
+        }
+        inodes.values().removeIf(Objects::isNull);
+        for (Contentlet contentlet : inodes.values()) {
+            Logger.debug(this, "indexing: id:" + contentlet.getInode() + " priority: " + idx.getPriority());
+            contentlet.setIndexPolicy(IndexPolicy.DEFER);
+            if (idx.isDelete() && idx.getIdentToIndex().equals(contentlet.getIdentifier())) {
+                // we delete contentlets from the identifier pointed on index journal record
+                // its dependencies are reindexed in order to update its relationships fields
+                removeContentFromIndex(contentlet);
+            } else {
+                try {
+
+                    bulk = addToBulkRequest(bulk, ImmutableList.of(contentlet), idx.isReindex());
+
+                } catch (Exception e) {
+                    APILocator.getReindexQueueAPI().markAsFailed(idx, e.getMessage());
+
+                }
+
+            }
+        }
+        return bulk;
     }
 
     @Override

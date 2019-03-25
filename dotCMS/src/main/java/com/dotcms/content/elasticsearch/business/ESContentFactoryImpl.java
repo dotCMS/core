@@ -727,31 +727,46 @@ public class ESContentFactoryImpl extends ContentletFactory {
         }
 	}
 
-	@Override
-	protected Contentlet find(String inode) throws ElasticsearchException, DotStateException, DotDataException, DotSecurityException {
-		Contentlet con = contentletCache.get(inode);
-		if (con != null && InodeUtils.isSet(con.getInode())) {
-			if(CACHE_404_CONTENTLET.equals(con.getInode())){
-				return null;
-			}
-			return con;
-		}
-		com.dotmarketing.portlets.contentlet.business.Contentlet fatty = null;
-        try{
-            fatty = (com.dotmarketing.portlets.contentlet.business.Contentlet)HibernateUtil.load(com.dotmarketing.portlets.contentlet.business.Contentlet.class, inode);
-        } catch (DotHibernateException e) {
-            if(!(e.getCause() instanceof ObjectNotFoundException))
-                throw e;
+	
+    @Override
+    public Optional<Contentlet> findInDb(final String inode) {
+
+
+        try {
+            com.dotmarketing.portlets.contentlet.business.Contentlet fatty = (com.dotmarketing.portlets.contentlet.business.Contentlet) HibernateUtil
+                    .load(com.dotmarketing.portlets.contentlet.business.Contentlet.class, inode);
+            return Optional.ofNullable(convertFatContentletToContentlet(fatty));
+        } catch (DotDataException | DotSecurityException e) {
+            if (!(e.getCause() instanceof ObjectNotFoundException)) {
+                throw new DotRuntimeException(e);
+            }
         }
-        if(fatty == null){
-        	contentletCache.add(inode, cache404Content);
+
+        return Optional.empty();
+
+    }
+	
+	
+	
+    @Override
+    protected Contentlet find(String inode) throws ElasticsearchException, DotStateException, DotDataException, DotSecurityException {
+        Contentlet con = contentletCache.get(inode);
+        if (con != null && InodeUtils.isSet(con.getInode())) {
+            if (CACHE_404_CONTENTLET.equals(con.getInode())) {
+                return null;
+            }
+            return con;
+        }
+        Optional<Contentlet> dbContentlet = this.findInDb(inode);
+        if (dbContentlet.isPresent()) {
+            con = dbContentlet.get();
+            contentletCache.add(con.getInode(), con);
+            return con;
+        } else {
             return null;
-        }else{
-            Contentlet c = convertFatContentletToContentlet(fatty);
-            contentletCache.add(c.getInode(), c);
-            return c;
         }
-	}
+
+    }
 
 	@Override
 	protected List<Contentlet> findAllCurrent() throws DotDataException {

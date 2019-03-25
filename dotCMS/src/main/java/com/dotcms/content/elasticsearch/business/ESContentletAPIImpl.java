@@ -289,7 +289,15 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     .toShortString(contentlet));
         }
     }
+    
+    @CloseDBIfOpened
+    @Override
+    public Optional<Contentlet> findInDb(final String inode) {
 
+        return contentFactory.findInDb(inode);
+
+    }
+    
     @CloseDBIfOpened
     @Override
     public List<Contentlet> findByStructure(String structureInode, User user,   boolean respectFrontendRoles, int limit, int offset) throws DotDataException,DotSecurityException {

@@ -9,6 +9,7 @@ import org.elasticsearch.action.DocWriteResponse;
 import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkResponse;
 
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Logger;
@@ -22,6 +23,7 @@ class BulkActionListener implements ActionListener<BulkResponse> {
 
     final Map<String, ReindexEntry> workingRecords;
 
+    
     private void handleSuccess(final List<ReindexEntry> successful) {
 
         try {
@@ -41,6 +43,7 @@ class BulkActionListener implements ActionListener<BulkResponse> {
     }
 
     @Override
+    @CloseDBIfOpened
     public void onResponse(final BulkResponse bulkResponse) {
 
         List<ReindexEntry> successful = new ArrayList<>(workingRecords.size());

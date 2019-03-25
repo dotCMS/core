@@ -229,31 +229,27 @@ public class ReindexAPITest extends IntegrationTestBase {
 
         Contentlet con = new ContentletDataGen(type.id()).setProperty("title", "contentTest " + System.currentTimeMillis()).nextPersisted();
 
-
         Map<String, ReindexEntry> reindexEntries = null;
         ReindexEntry entry = null;
-        int i=0;
-        
+        int i = 0;
+
         // we need to fail 1 time more than the REINDEX_MAX_FAILURE_ATTEMPTS
-        while(i<(ReindexQueueFactory.REINDEX_MAX_FAILURE_ATTEMPTS +1) ) {
+        while (i <= ReindexQueueFactory.REINDEX_MAX_FAILURE_ATTEMPTS) {
             // it has been marked as failed and is available again for reindex
             reindexEntries = reindexQueueAPI.findContentToReindex();
             assertTrue(reindexEntries.containsKey(con.getIdentifier()));
             entry = reindexEntries.values().stream().findFirst().orElse(null);
             assertNotNull(entry);
-            assertTrue(entry.errorCount()==i);
-            reindexQueueAPI.markAsFailed(entry, "failure:"+i);
+            assertTrue(entry.errorCount() == i);
+            reindexQueueAPI.markAsFailed(entry, "failure:" + i);
             i++;
         }
         // entry has errored out and is no longer in queue
         reindexEntries = reindexQueueAPI.findContentToReindex();
         entry = reindexEntries.values().stream().findFirst().orElse(null);
-        
-       
-        assertTrue(entry==null);
-        
-        
-        
+
+        assertTrue(entry == null);
+
     }
 
 }

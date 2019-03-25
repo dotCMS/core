@@ -86,7 +86,11 @@ public class ReindexIndexAPITest{
     @Test
     public void addRemoveContentFromIndex () throws DotDataException, DotSecurityException {
         // respect CMS Anonymous permissions
-
+        
+        
+        // stop the reindex thread
+        ReindexThread.getInstance().pause();
+        
         Host host = APILocator.getHostAPI().findDefaultHost(user, respectFrontendRoles);
         Folder folder = APILocator.getFolderAPI().findSystemFolder();
 
