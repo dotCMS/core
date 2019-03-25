@@ -1517,15 +1517,18 @@ public class ESContentFactoryImpl extends ContentletFactory {
 			}
             
             
-        } catch (IndexNotFoundException infe) {
-            Logger.error(this.getClass(), "----------------------------------------------");
-            Logger.error(this.getClass(), "Elasticsearch Index Not Found : " + indexToHit);
-            Logger.error(this.getClass(), "----------------------------------------------");
+        } catch (IndexNotFoundException | SearchPhaseExecutionException infe ) {
+            Logger.warn(this.getClass(), "----------------------------------------------");
+            Logger.warn(this.getClass(), "Elasticsearch Index Error : " + indexToHit);
+            Logger.warnAndDebug(this.getClass(), infe.getMessage(), infe);
+            Logger.warn(this.getClass(), "----------------------------------------------");
+            
             return new SearchHits(new SearchHit[] {}, 0, 0);
-                    
+
+
         } catch (Exception e) {
             Logger.debug(this, e.getMessage(), e); 
-            throw new RuntimeException(e);
+            throw new DotRuntimeException(e);
         }
 	    return resp.getHits();
 	}

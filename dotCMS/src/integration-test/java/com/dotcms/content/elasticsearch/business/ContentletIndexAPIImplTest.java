@@ -72,7 +72,7 @@ import static org.junit.Assert.*;
  * @author Jonathan Gamba
  *         Date: 4/18/13
  */
-public class ESContentletIndexAPITest extends IntegrationTestBase {
+public class ContentletIndexAPIImplTest extends IntegrationTestBase {
 
     private static String stemmerText;
     private static User user;

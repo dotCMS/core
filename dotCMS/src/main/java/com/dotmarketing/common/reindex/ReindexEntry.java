@@ -1,5 +1,7 @@
 package com.dotmarketing.common.reindex;
 
+import java.util.Date;
+
 public class ReindexEntry {
 
     private long id;
@@ -7,7 +9,17 @@ public class ReindexEntry {
     private int priority;
     private boolean delete;
     private String serverId;
+    private String lastResult;
+    private Date timeEntered;
+    
+    public Date getTimeEntered() {
+        return timeEntered;
+    }
 
+    public ReindexEntry setTimeEntered(Date timeEntered) {
+        this.timeEntered = timeEntered;
+        return this;
+    }
 
     public ReindexEntry() {}
 
@@ -17,10 +29,13 @@ public class ReindexEntry {
         this.priority = priority;
     }
 
-    public ReindexEntry(String serverId, int count, int priority) {
-        this.serverId = serverId;
+    public String getLastResult() {
+        return lastResult;
+    }
 
-        this.priority = priority;
+    public ReindexEntry setLastResult(String lastResult) {
+        this.lastResult = lastResult;
+        return this;
     }
 
     /**
@@ -33,8 +48,9 @@ public class ReindexEntry {
     /**
      * @param id the id to set
      */
-    public void setId(long id) {
+    public ReindexEntry setId(long id) {
         this.id = id;
+        return this;
     }
 
     /**
@@ -47,8 +63,9 @@ public class ReindexEntry {
     /**
      * @param priority the priority to set
      */
-    public void setPriority(int priority) {
+    public ReindexEntry setPriority(int priority) {
         this.priority = priority;
+        return this;
     }
 
     /**
@@ -61,10 +78,10 @@ public class ReindexEntry {
     /**
      * @param delete the delete to set
      */
-    public void setDelete(boolean delete) {
+    public ReindexEntry setDelete(boolean delete) {
         this.delete = delete;
+        return this;
     }
-
 
     /**
      * @return the identToIndex
@@ -80,8 +97,9 @@ public class ReindexEntry {
     /**
      * @param identToIndex the identToIndex to set
      */
-    public void setIdentToIndex(String identToIndex) {
+    public ReindexEntry setIdentToIndex(String identToIndex) {
         this.identToIndex = identToIndex;
+        return this;
     }
 
     /**
@@ -94,17 +112,14 @@ public class ReindexEntry {
     /**
      * @param serverId the serverId to set
      */
-    public void setServerId(String serverId) {
+    public ReindexEntry setServerId(String serverId) {
         this.serverId = serverId;
+        return this;
     }
-
 
     public int errorCount() {
         return this.getPriority() % 100;
     }
-    
-    
-    
 
     @Override
     public int hashCode() {
@@ -149,8 +164,4 @@ public class ReindexEntry {
                 + serverId + "]";
     }
 
-    
-    
-    
-    
 }

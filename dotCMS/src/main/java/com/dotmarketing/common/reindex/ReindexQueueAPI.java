@@ -27,10 +27,9 @@ public interface ReindexQueueAPI {
      * @return
      * @throws DotDataException
      */
-    public Map<String,ReindexEntry>  findContentToReindex() throws DotDataException;
+    public Map<String, ReindexEntry> findContentToReindex() throws DotDataException;
 
-    public Map<String,ReindexEntry>  findContentToReindex(int numberOfRecords) throws DotDataException;
-
+    public Map<String, ReindexEntry> findContentToReindex(int numberOfRecords) throws DotDataException;
 
     /**
      * This method will add all content identifier for a structure to the index
@@ -59,16 +58,6 @@ public interface ReindexQueueAPI {
     public void deleteReindexEntry(Collection<ReindexEntry> recordsToDelete) throws DotDataException;
 
     /**
-     * Resets the server id to NULL to a list of failed records, setting the server id to NULL for a
-     * record in the dist_reindex_journal means the record will be added back to the queue of record to
-     * process.
-     *
-     * @param recordsToModify
-     * @throws DotDataException
-     */
-    public void resetServerForReindexEntry(Collection<ReindexEntry> recordsToModify) throws DotDataException;
-
-    /**
      * Will find the number of records left to index
      * 
      * @return
@@ -93,7 +82,6 @@ public interface ReindexQueueAPI {
     default String getServerId() {
         return ConfigUtils.getServerId();
     }
-    
 
     public enum DateType {
         DAY("DAY"), MINUTE("MINUTE");
@@ -118,7 +106,7 @@ public interface ReindexQueueAPI {
         }
     };
 
-    public void cleanDistReindexJournal() throws DotDataException;
+    public void deleteReindexAndFailedRecords() throws DotDataException;
 
     /**
      * Reindexes content under a given host
@@ -197,12 +185,12 @@ public interface ReindexQueueAPI {
 
     void resetServersRecords() throws DotDataException;
 
-    void requeStaleReindexRecords(int secondsOld) throws DotDataException;
-
     void addIdentifierReindex(String id, int prority) throws DotDataException;
 
     void updateIndexJournalPriority(long id, int priority) throws DotDataException;
 
     void markAsFailed(ReindexEntry idx, String cause) throws DotDataException;
+
+    List<ReindexEntry> getFailedReindexRecords() throws DotDataException;
 
 }

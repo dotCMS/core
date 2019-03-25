@@ -556,7 +556,7 @@ public class ESIndexAPI {
 	 * @param index
 	 * @throws IOException
 	 */
-    public  void moveIndexBackToCluster(final String index) throws IOException {
+    public void moveIndexBackToCluster(final String index) throws IOException {
         final Client client=new ESClient().getClient();
         final ReplicasMode replicasMode = clusterAPI.getReplicasMode();
 

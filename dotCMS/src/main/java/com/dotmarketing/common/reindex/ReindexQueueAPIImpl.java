@@ -5,6 +5,7 @@ package com.dotmarketing.common.reindex;
 
 import java.sql.Connection;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 import com.dotcms.business.CloseDBIfOpened;
@@ -31,81 +32,88 @@ public class ReindexQueueAPIImpl implements ReindexQueueAPI {
     private final ReindexQueueFactory reindexQueueFactory;
 
     public ReindexQueueAPIImpl() {
-        this.reindexQueueFactory = (ReindexQueueFactory) FactoryLocator.getDistributedJournalFactory();
+        this((ReindexQueueFactory) FactoryLocator.getReindexQueueFactory());
     }
 
+    public ReindexQueueAPIImpl(ReindexQueueFactory reindexQueueFactory) {
+        this.reindexQueueFactory = reindexQueueFactory;
+    }
+
+    @Override
     @WrapInTransaction
     public void addStructureReindexEntries(String structureInode) throws DotDataException {
         reindexQueueFactory.addStructureReindexEntries(structureInode);
     }
 
+    @Override
     @WrapInTransaction
     public synchronized void addAllToReindexQueue() throws DotDataException {
         reindexQueueFactory.addAllToReindexQueue();
     }
 
+    @Override
     @CloseDBIfOpened
-    public Map<String,ReindexEntry> findContentToReindex() throws DotDataException {
+    public Map<String, ReindexEntry> findContentToReindex() throws DotDataException {
         return this.findContentToReindex(this.reindexQueueFactory.REINDEX_RECORDS_TO_FETCH);
     }
 
+    @Override
     @CloseDBIfOpened
-    public Map<String,ReindexEntry> findContentToReindex(final int recordsToReture) throws DotDataException {
+    public Map<String, ReindexEntry> findContentToReindex(final int recordsToReture) throws DotDataException {
         return reindexQueueFactory.findContentToReindex(recordsToReture);
     }
 
+    @Override
     @WrapInTransaction
     public void deleteReindexEntry(ReindexEntry iJournal) throws DotDataException {
         reindexQueueFactory.deleteReindexEntry(iJournal);
     }
 
+    @Override
     @CloseDBIfOpened
     public boolean areRecordsLeftToIndex() throws DotDataException {
         return reindexQueueFactory.areRecordsLeftToIndex();
     }
 
+    @Override
     @CloseDBIfOpened
     public long recordsInQueue() throws DotDataException {
         return recordsInQueue(DbConnectionFactory.getConnection());
     }
 
+    @Override
     public long recordsInQueue(Connection conn) throws DotDataException {
         return reindexQueueFactory.recordsInQueue(conn);
     }
 
-    long lastTimeIRequedRecords = 0;
+    @Override
+    @WrapInTransaction
+    public void deleteReindexAndFailedRecords() throws DotDataException {
+        reindexQueueFactory.deleteReindexAndFailedRecords();
+    }
 
     @Override
-    public void requeStaleReindexRecords(final int secondsOld) throws DotDataException {
-        if(lastTimeIRequedRecords+(secondsOld*1000)<System.currentTimeMillis()) {
-            reindexQueueFactory.requeStaleReindexRecords(secondsOld);
-        }
-    }
-
-    @WrapInTransaction
-    public void distReindexJournalCleanup(int time, boolean add, boolean includeInodeCheck, DateType type) throws DotDataException {
-        reindexQueueFactory.distReindexJournalCleanup(time, add, includeInodeCheck, type);
-
-    }
-
-    @WrapInTransaction
-    public void cleanDistReindexJournal() throws DotDataException {
-        reindexQueueFactory.cleanDistReindexJournal();
-    }
-
     @WrapInTransaction
     public void refreshContentUnderHost(Host host) throws DotDataException {
         reindexQueueFactory.refreshContentUnderHost(host);
     }
 
+    @Override
     @WrapInTransaction
     public void refreshContentUnderFolder(Folder folder) throws DotDataException {
         reindexQueueFactory.refreshContentUnderFolder(folder);
     }
 
+    @Override
     @WrapInTransaction
     public void refreshContentUnderFolderPath(String hostId, String folderPath) throws DotDataException {
         reindexQueueFactory.refreshContentUnderFolderPath(hostId, folderPath);
+    }
+
+    @Override
+    @CloseDBIfOpened
+    public List<ReindexEntry> getFailedReindexRecords() throws DotDataException {
+        return reindexQueueFactory.getFailedReindexRecords();
     }
 
     @WrapInTransaction
@@ -114,7 +122,7 @@ public class ReindexQueueAPIImpl implements ReindexQueueAPI {
 
         this.reindexQueueFactory.addIdentifierReindex(id);
     }
-    
+
     @WrapInTransaction
     @Override
     public void addIdentifierReindex(final String id, int priority) throws DotDataException {
@@ -171,14 +179,10 @@ public class ReindexQueueAPIImpl implements ReindexQueueAPI {
         this.reindexQueueFactory.addIdentifierReindex(identifier.getId());
     }
 
+    @Override
     @WrapInTransaction
     public void deleteReindexEntry(Collection<ReindexEntry> recordsToDelete) throws DotDataException {
         reindexQueueFactory.deleteReindexEntry(recordsToDelete);
-    }
-
-    @WrapInTransaction
-    public void resetServerForReindexEntry(Collection<ReindexEntry> recordsToModify) throws DotDataException {
-        reindexQueueFactory.resetServerForReindexEntry(recordsToModify);
     }
 
     @Override
@@ -189,22 +193,20 @@ public class ReindexQueueAPIImpl implements ReindexQueueAPI {
                 .loadResult();
 
     }
-    
+
     @Override
     @WrapInTransaction
-    public void updateIndexJournalPriority(long id, int priority) throws DotDataException{
-        reindexQueueFactory.updateIndexJournalPriority(id,  priority);
-    
+    public void updateIndexJournalPriority(long id, int priority) throws DotDataException {
+        reindexQueueFactory.updateIndexJournalPriority(id, priority);
+
     }
 
     @Override
     @WrapInTransaction
-    public void markAsFailed(final ReindexEntry idx, final String cause) throws DotDataException{
-        Logger.warn(this.getClass(), "Reindex failed for :" +idx + " because " + cause);
+    public void markAsFailed(final ReindexEntry idx, final String cause) throws DotDataException {
+        Logger.warn(this.getClass(), "Reindex failed for :" + idx + " because " + cause);
         reindexQueueFactory.markAsFailed(idx, UtilMethods.shortenString(cause, 300));
-    
+
     }
-    
-    
-    
+
 }

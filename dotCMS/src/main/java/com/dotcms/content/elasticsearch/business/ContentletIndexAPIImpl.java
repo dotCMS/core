@@ -54,6 +54,7 @@ import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.db.ReindexRunnable;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
@@ -81,8 +82,6 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     private static final ESMappingAPIImpl mappingAPI = new ESMappingAPIImpl();
 
     public static final SimpleDateFormat timestampFormatter = new SimpleDateFormat("yyyyMMddHHmmss");
-
-    private static long fullReindexStartTime = 0;
 
     public ContentletIndexAPIImpl() {
         journalAPI = APILocator.getReindexQueueAPI();
@@ -202,10 +201,6 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
 
     }
 
-    public long getReindexStartTime() {
-        return fullReindexStartTime;
-    }
-
     /**
      * creates new working and live indexes with reading aliases pointing to old index and write aliases
      * pointing to both old and new indexes
@@ -218,7 +213,6 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     public synchronized String fullReindexStart() throws ElasticsearchException, DotDataException {
         if (indexReady()) {
             try {
-                this.fullReindexStartTime = System.currentTimeMillis();
 
                 final String timeStamp = timestampFormatter.format(new Date());
 
@@ -272,41 +266,52 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     @WrapInTransaction
     public void fullReindexSwitchover(Connection conn) {
         try {
-            if (!isInFullReindex())
-                return;
-
             final IndiciesInfo oldInfo = APILocator.getIndiciesAPI().loadIndicies();
-            final IndiciesInfo newInfo = new IndiciesInfo();
-            String dateStr = oldInfo.reindex_working.replace("working_", "");
-
-            Date startTime = timestampFormatter.parse(dateStr);
-
-            Logger.info(this, "-------------------------------");
-            Logger.info(this, "Executing switchover from old index [" + oldInfo.working + "," + oldInfo.live + "] to new index ["
-                    + oldInfo.reindex_working + "," + oldInfo.reindex_live + "]");
-
-            long timeTook = System.currentTimeMillis() - startTime.getTime();
-            if (timeTook > 0) {
-                String duration = Duration.ofMillis(timeTook).toString().substring(2).replaceAll("(\\d[HMS])(?!$)", "$1 ").toLowerCase();
-
-                Logger.info(this, "Reindex took [" + duration + "]");
-
+            if (!isInFullReindex()) {
+                return;
             }
-            Logger.info(this, "-------------------------------");
-
+            final IndiciesInfo newInfo = new IndiciesInfo();
+            newInfo.live = oldInfo.reindex_live;
+            newInfo.working = oldInfo.reindex_working;
+            newInfo.site_search = oldInfo.site_search;
+            logSwitchover(oldInfo);
             APILocator.getIndiciesAPI().point(newInfo);
 
-            esIndexApi.moveIndexBackToCluster(newInfo.working);
-            esIndexApi.moveIndexBackToCluster(newInfo.live);
+            try {
+                esIndexApi.moveIndexBackToCluster(newInfo.working);
 
+                esIndexApi.moveIndexBackToCluster(newInfo.live);
+            } catch (Exception e) {
+                Logger.warnAndDebug(this.getClass(), "unable to expand ES replicas:" + e.getMessage(), e);
+            }
             ArrayList<String> list = new ArrayList<String>();
             list.add(newInfo.working);
             list.add(newInfo.live);
             optimize(list);
 
         } catch (Exception e) {
-            throw new ElasticsearchException(e.getMessage(), e);
+            throw new DotRuntimeException(e.getMessage(), e);
         }
+    }
+
+    private void logSwitchover(IndiciesInfo oldInfo) {
+        Logger.info(this, "-------------------------------");
+        Logger.info(this, "Executing switchover from old index [" + oldInfo.working + "," + oldInfo.live + "] to new index ["
+                + oldInfo.reindex_working + "," + oldInfo.reindex_live + "]");
+        try {
+
+            Date startTime = timestampFormatter.parse(oldInfo.reindex_working.replace("working_", ""));
+            long timeTook = System.currentTimeMillis() - startTime.getTime();
+            String duration = Duration.ofMillis(timeTook).toString().substring(2).replaceAll("(\\d[HMS])(?!$)", "$1 ").toLowerCase();
+            if (timeTook > 0) {
+                Logger.info(this, "Reindex took [" + duration + "]");
+
+            }
+        } catch (Exception e) {
+            Logger.debug(this, "unable to parse time:" + e, e);
+        }
+        Logger.info(this, "-------------------------------");
+
     }
 
     public boolean delete(String indexName) {

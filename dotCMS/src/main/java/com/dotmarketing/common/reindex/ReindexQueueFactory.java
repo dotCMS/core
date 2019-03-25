@@ -12,11 +12,11 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
-import com.dotmarketing.common.db.Params;
 import com.dotmarketing.common.reindex.ReindexQueueAPI.DateType;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
@@ -25,7 +25,6 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.google.common.collect.ImmutableList;
-import com.google.common.primitives.Ints;
 
 import oracle.jdbc.OracleTypes;
 
@@ -39,19 +38,16 @@ import oracle.jdbc.OracleTypes;
  */
 public class ReindexQueueFactory {
 
-    private String REINDEX_JOURNAL_INSERT =
+    private final String REINDEX_JOURNAL_INSERT =
             "insert into dist_reindex_journal(inode_to_index,ident_to_index,priority,dist_action, time_entered) values (?, ?, ?, ?, ?)";
 
-    public static final int JOURNAL_TYPE_CONTENTENTINDEX = 1;
-    public static final int JOURNAL_TYPE_CACHE = 2;
     // if there are old records in the reindexQueue that have been claimed by a server that is no longer
     // running, tee them back up
-    private static final int REQUE_REINDEX_RECORDS_OLDER_THAN_SEC =
-            Config.getIntProperty("REINDEX_THREAD_REQUE_RECORDS_OLDER_THAN_SEC", 120);
+    private static final int REQUEUE_REINDEX_RECORDS_OLDER_THAN_SEC = Config.getIntProperty("REQUEUE_REINDEX_RECORDS_OLDER_THAN_SEC", 120);
 
     public int REINDEX_RECORDS_TO_FETCH = Config.getIntProperty("REINDEX_RECORDS_TO_FETCH", 100);
 
-    public static final int REINDEX_MAX_FAILURE_ATTEMPTS = 5;
+    public static final int REINDEX_MAX_FAILURE_ATTEMPTS = Config.getIntProperty("RETRY_FAILED_INDEX_TIMES", 5);
 
     public enum Priority {
         ASAP, NORMAL, STRUCTURE, REINDEX, ERROR;
@@ -59,8 +55,6 @@ public class ReindexQueueFactory {
             return this.ordinal() * 100;
         }
     }
-
-    public static final int RETRY_FAILED_INDEX_TIMES = Config.getIntProperty("RETRY_FAILED_INDEX_TIMES", 5);
 
     public static final int REINDEX_ACTION_REINDEX_OBJECT = 1;
     public static final int REINDEX_ACTION_DELETE_OBJECT = 2;
@@ -123,16 +117,38 @@ public class ReindexQueueFactory {
         try {
             return recordsInQueue() > 0;
         } catch (Exception ex) {
-            Logger.fatal(this, "Error unlocking the reindex journal table" + ex);
+            Logger.warn(this, "Error unlocking the reindex journal table" + ex);
         }
         return false;
     }
 
-    protected void cleanDistReindexJournal() throws DotDataException {
+    protected void deleteReindexAndFailedRecords() throws DotDataException {
         DotConnect dc = new DotConnect();
         dc.setSQL("DELETE From dist_reindex_journal where priority >= ?");
         dc.addParam(Priority.REINDEX.dbValue());
         dc.loadResult();
+    }
+
+    @CloseDBIfOpened
+    protected List<ReindexEntry> getFailedReindexRecords() throws DotDataException {
+        DotConnect dc = new DotConnect();
+
+        dc.setSQL("SELECT id, ident_to_index, priority, index_val, time_entered FROM dist_reindex_journal WHERE priority >= ?");
+        dc.addParam(ReindexQueueFactory.Priority.REINDEX.dbValue());
+        List<Map<String, Object>> failedRecords = dc.loadObjectResults();
+        List<ReindexEntry> failed = new ArrayList<>();
+        for (Map<String, Object> map : failedRecords) {
+            ReindexEntry ridx = new ReindexEntry()
+                    .setId(Long.parseLong((String) map.get("id")))
+                    .setIdentToIndex((String) map.get("ident_to_index"))
+                    .setPriority(Integer.parseInt((String) map.get("priority")))
+                    .setTimeEntered((Date) map.get("time_entered"))
+                    .setLastResult((String) map.get("index_val"));
+            failed.add(ridx);
+
+        }
+        return failed;
+
     }
 
     protected void deleteReindexEntry(ReindexEntry iJournal) throws DotDataException {
@@ -141,10 +157,6 @@ public class ReindexQueueFactory {
         dc.addParam(iJournal.getIdentToIndex());
         dc.addParam(iJournal.getId());
         dc.loadResult();
-    }
-
-    protected void resetServerForReindexEntry(Collection<ReindexEntry> recordsToModify) throws DotDataException {
-
     }
 
     protected void deleteReindexEntry(final Collection<ReindexEntry> recordsToDelete) throws DotDataException {
@@ -166,40 +178,6 @@ public class ReindexQueueFactory {
         dotConnect.loadResult();
     }
 
-    protected void distReindexJournalCleanup(int time, boolean add, boolean includeInodeCheck, DateType type) throws DotDataException {
-        StringBuilder reindexJournalCleanupSql = new StringBuilder();
-
-        String sign = "+";
-        if (!add)
-            sign = "-";
-
-        if (DbConnectionFactory.isMsSql() || DbConnectionFactory.isH2())
-            reindexJournalCleanupSql.append("DELETE FROM dist_reindex_journal " + " WHERE time_entered < DATEADD(" + type.toString() + ", "
-                    + sign + "" + time + ", " + DbConnectionFactory.getDBDateTimeFunction() + ") ");
-        else if (DbConnectionFactory.isMySql())
-            reindexJournalCleanupSql.append("DELETE FROM dist_reindex_journal " + " WHERE time_entered < DATE_ADD(NOW(), INTERVAL " + sign
-                    + "" + time + " " + type.toString() + ") ");
-        else if (DbConnectionFactory.isPostgres())
-            reindexJournalCleanupSql.append("DELETE FROM dist_reindex_journal " + " WHERE time_entered < NOW() " + sign + " INTERVAL '"
-                    + time + " " + type.toString() + "' ");
-        else if (DbConnectionFactory.isOracle())
-            reindexJournalCleanupSql
-                    .append("DELETE FROM dist_reindex_journal " + " WHERE CAST(time_entered AS TIMESTAMP) <  CAST(SYSTIMESTAMP " + sign
-                            + "  INTERVAL '" + time + "' " + type.toString() + " AS TIMESTAMP)");
-
-        if (includeInodeCheck)
-            reindexJournalCleanupSql.append(" AND inode_to_index NOT IN " + " (SELECT i.inode FROM inode i,contentlet c "
-                    + "  WHERE type = 'contentlet' AND i.inode=c.inode AND c.identifier = ident_to_index)");
-
-        reindexJournalCleanupSql.append(" AND serverid = ?");
-
-        DotConnect dc = new DotConnect();
-        String serverId = ConfigUtils.getServerId();
-        dc.setSQL(reindexJournalCleanupSql.toString());
-        dc.addParam(serverId);
-        dc.loadResult();
-    }
-
     protected void updateIndexJournalPriority(long id, int priority) throws DotDataException {
         DotConnect dc = new DotConnect();
         dc.setSQL("UPDATE dist_reindex_journal set  priority = ? where id= ?");
@@ -210,7 +188,7 @@ public class ReindexQueueFactory {
 
     protected void markAsFailed(ReindexEntry idx, String cause) throws DotDataException {
         final int newPriority =
-                (idx.errorCount() >= RETRY_FAILED_INDEX_TIMES) ? Priority.ERROR.dbValue() + idx.getPriority() : (1 + idx.getPriority());
+                (idx.errorCount() >= REINDEX_MAX_FAILURE_ATTEMPTS) ? Priority.ERROR.dbValue() + idx.getPriority() : (1 + idx.getPriority());
 
         DotConnect dc = new DotConnect();
         dc.setSQL("UPDATE dist_reindex_journal set serverid=null, priority = ? , index_val = ? where id= ?");
@@ -223,9 +201,10 @@ public class ReindexQueueFactory {
     @WrapInTransaction
     protected Map<String, ReindexEntry> findContentToReindex(final int recordsToReturn) throws DotDataException {
         Map<String, ReindexEntry> contentToIndex = loadReindexRecordsFromDb(recordsToReturn);
-        if (contentToIndex.size() < recordsToReturn && recordsInQueue() > 0) {
-            requeStaleReindexRecords(REQUE_REINDEX_RECORDS_OLDER_THAN_SEC);
-            contentToIndex.putAll(loadReindexRecordsFromDb(recordsToReturn));
+        if (contentToIndex.size() < recordsToReturn) {
+            if (requeueStaleReindexRecordsTimer()) {
+                contentToIndex.putAll(loadReindexRecordsFromDb(recordsToReturn));
+            }
         }
         return contentToIndex;
     }
@@ -372,28 +351,20 @@ public class ReindexQueueFactory {
 
     private int addIdentifierReindex(final Collection<String> identifiers, final int prority) throws DotDataException {
 
-        if (identifiers==null || identifiers.isEmpty()) {
+        if (identifiers == null || identifiers.isEmpty()) {
             return 0;
         }
 
-        final List<Params> insertParams = new ArrayList<>(identifiers.size());
         final Date date = DbConnectionFactory.now();
         for (final String identifier : identifiers) {
-            insertParams.add(new Params(identifier, identifier, prority, REINDEX_ACTION_REINDEX_OBJECT, date));
+
+            new DotConnect().setSQL(REINDEX_JOURNAL_INSERT).addParam(identifier).addParam(identifier).addParam(prority)
+                    .addParam(REINDEX_ACTION_REINDEX_OBJECT).addParam(date).loadResult();
+
         }
 
-        final List<Integer> batchResult =
-                Ints.asList(new DotConnect().executeBatch(REINDEX_JOURNAL_INSERT, insertParams, (preparedStatement, params) -> {
-                    preparedStatement.setString(1, String.class.cast(params.get(0)));
-                    preparedStatement.setString(2, String.class.cast(params.get(1)));
-                    preparedStatement.setInt(3, Integer.class.cast(params.get(2)));
-                    preparedStatement.setInt(4, Integer.class.cast(params.get(3)));
-                    preparedStatement.setObject(5, Date.class.cast(params.get(4)));
-                }));
-
-        final int rowsAffected = batchResult.stream().reduce(0, Integer::sum);
-        Logger.info(this, "Batch rows inserted for reindex: " + rowsAffected);
-        return rowsAffected;
+        Logger.info(this, "Batch rows inserted for reindex: " + identifiers.size());
+        return identifiers.size();
     }
 
     protected void refreshContentUnderHost(Host host) throws DotDataException {
@@ -416,13 +387,26 @@ public class ReindexQueueFactory {
         dc.loadResult();
     }
 
+    static long lastTimeIRequedRecords = 0;
+
     @WrapInTransaction
-    public void requeStaleReindexRecords(final int secondsOld) throws DotDataException {
+    public boolean requeueStaleReindexRecordsTimer() throws DotDataException {
+        if (lastTimeIRequedRecords + (REQUEUE_REINDEX_RECORDS_OLDER_THAN_SEC / 2 * 1000) < System.currentTimeMillis()) {
+            lastTimeIRequedRecords = System.currentTimeMillis();
+            requeueStaleReindexRecords();
+            return true;
+        }
+        return false;
+    }
 
-        final Date olderThan = new Date(System.currentTimeMillis() - (1000 * secondsOld));
+    @WrapInTransaction
+    public void requeueStaleReindexRecords() throws DotDataException {
+        final Date olderThan = new Date(System.currentTimeMillis() - (1000 * REQUEUE_REINDEX_RECORDS_OLDER_THAN_SEC));
 
-        new DotConnect().setSQL("UPDATE dist_reindex_journal SET serverid=NULL where time_entered<? and serverid is not null")
-                .addParam(olderThan).loadResult();
+        DotConnect dc = new DotConnect()
+                .setSQL("UPDATE dist_reindex_journal SET serverid=NULL where time_entered<? and serverid is not null").addParam(olderThan);
+
+        dc.loadResult();
 
     }
 

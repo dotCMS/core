@@ -3,11 +3,9 @@ package com.dotmarketing.common.reindex;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 
@@ -19,7 +17,6 @@ import com.dotcms.content.elasticsearch.util.ESReindexationProcessStatus;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.notifications.bean.NotificationType;
 import com.dotcms.notifications.business.NotificationAPI;
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.util.I18NMessage;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.FactoryLocator;
@@ -30,7 +27,6 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
@@ -38,6 +34,7 @@ import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.model.User;
@@ -164,8 +161,9 @@ public class ReindexThread extends Thread {
         }
 
     }
-
-    public long contentsIndexed() {
+    
+    @VisibleForTesting
+    long contentsIndexed() {
         return contentletsIndexed;
     }
 
@@ -197,10 +195,10 @@ public class ReindexThread extends Thread {
 
                     contentletsIndexed += bulk.numberOfActions();
                     Logger.info(this.getClass(), "-----------");
-                    Logger.info(this.getClass(), "total:" + contentletsIndexed);
-                    Logger.info(this.getClass(), "IndexJournals found: " + workingRecords.size());
+                    Logger.info(this.getClass(), "Total Reindexed:" + contentletsIndexed);
+                    Logger.info(this.getClass(), "ReindexEntries found: " + workingRecords.size());
                     Logger.info(this.getClass(), "BulkRequests created:" + bulk.numberOfActions());
-
+                    Logger.info(this.getClass(), "-----------");
                     indexAPI.putToIndex(bulk, new BulkActionListener(workingRecords));
                     bulk = indexAPI.createBulkRequest();
                 } else {
@@ -212,7 +210,7 @@ public class ReindexThread extends Thread {
                 try {
                     Thread.sleep(SLEEP_ON_ERROR);
                 } catch (InterruptedException e) {
-                    Logger.error(this, "ReindexThread Exception", ex);
+                    Logger.warn(this, "ReindexThread Sleep InterruptedException: "+e);
                 }
             } finally {
                 DbConnectionFactory.closeSilently();
@@ -220,7 +218,7 @@ public class ReindexThread extends Thread {
         }
     }
 
-    private boolean switchOverIfNeeded() throws LanguageException, DotDataException, SQLException, InterruptedException {
+    boolean switchOverIfNeeded() throws LanguageException, DotDataException, SQLException, InterruptedException {
         if (ESReindexationProcessStatus.inFullReindexation() && jAPI.recordsInQueue() == 0) {
             // The re-indexation process has finished successfully
             reindexSwitchover(false);
@@ -298,7 +296,8 @@ public class ReindexThread extends Thread {
         return FactoryLocator.getContentletFactory().convertFatContentletToContentlet(fattyContentlet);
     }
 
-    private BulkRequestBuilder writeRequestsToBulk(final BulkRequestBuilder bulk, final Collection<ReindexEntry> idxs)
+    @VisibleForTesting
+    BulkRequestBuilder writeRequestsToBulk(final BulkRequestBuilder bulk, final Collection<ReindexEntry> idxs)
             throws DotDataException, DotSecurityException {
 
         for (ReindexEntry idx : idxs) {
@@ -306,8 +305,8 @@ public class ReindexThread extends Thread {
         }
         return bulk;
     }
-
-    private BulkRequestBuilder writeRequestsToBulk(BulkRequestBuilder bulk, ReindexEntry idx)
+    @VisibleForTesting
+    BulkRequestBuilder writeRequestsToBulk(BulkRequestBuilder bulk, ReindexEntry idx)
             throws DotDataException, DotSecurityException {
 
         Logger.debug(this, "Indexing document " + idx.getIdentToIndex());
@@ -371,7 +370,7 @@ public class ReindexThread extends Thread {
     public void stopFullReindexation() throws DotDataException {
         try {
             pause();
-            this.jAPI.cleanDistReindexJournal();
+            this.jAPI.deleteReindexAndFailedRecords();
             indexAPI.fullReindexAbort();
         } finally {
             unpause();
@@ -395,7 +394,7 @@ public class ReindexThread extends Thread {
     public void stopFullReindexationAndSwitchover() throws SQLException, DotDataException, InterruptedException {
         try {
             pause();
-            this.jAPI.cleanDistReindexJournal();
+            this.jAPI.deleteReindexAndFailedRecords();
             reindexSwitchover(true);
         } finally {
             unpause();

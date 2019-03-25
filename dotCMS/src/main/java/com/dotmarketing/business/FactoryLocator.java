@@ -112,7 +112,7 @@ public class FactoryLocator extends Locator<FactoryIndex>{
     	return (LanguageFactory)getInstance(FactoryIndex.LANGUAGE_FACTORY);
     }
 
-    public static ReindexQueueFactory getDistributedJournalFactory() {
+    public static ReindexQueueFactory getReindexQueueFactory() {
         return (ReindexQueueFactory) getInstance(FactoryIndex.DISTRIBUTED_JOURNAL_FACTORY);
     }
 
