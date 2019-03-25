@@ -17,11 +17,6 @@ import io.jsonwebtoken.IncorrectClaimException;
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 import javax.servlet.ServletContext;
 import java.lang.reflect.Field;
@@ -31,19 +26,14 @@ import java.util.Date;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
-@PowerMockIgnore({"javax.management.*", "javax.crypto.*"})
-@PrepareForTest({ClusterFactory.class})
-@RunWith(PowerMockRunner.class)
 public class JsonWebTokenServiceIntegrationTest {
 
-    private static final String clusterId = "CLUSTER-123";;
     private static JsonWebTokenService jsonWebTokenService;
     private static final String userId = "dotcms.org.1";
     final String jwtId = "jwt1";
-    private static final String tempPath = "/tmp";
-    private static final String assetsPath = "/tmp/assets";
+    private static String clusterId;
+
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -51,13 +41,10 @@ public class JsonWebTokenServiceIntegrationTest {
         IntegrationTestInitService.getInstance().init();
 
         //Mocking data
-        PowerMockito.mockStatic(ClusterFactory.class);
-        PowerMockito.when(ClusterFactory.getClusterId()).thenReturn(clusterId);
+        clusterId = ClusterFactory.getClusterId();
         Config.CONTEXT = mock(ServletContext.class);
-        Config.CONTEXT_PATH = tempPath;
         final FileAssetAPI fileAssetAPI = mock(FileAssetAPI.class);
         KeyFactoryUtils.getInstance(fileAssetAPI);
-        when(fileAssetAPI.getRealAssetsRootPath()).thenReturn(assetsPath);
 
         //Generate the token service
         jsonWebTokenService =
