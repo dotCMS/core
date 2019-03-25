@@ -5728,5 +5728,29 @@ public class ContentletAPITest extends ContentletBaseTest {
         }
     }
     
+    @Test
+    public void test_findInDb_returns_properly() throws Exception {
+        
+        
+        ContentType type = new ContentTypeDataGen()
+                .fields(ImmutableList
+                        .of(ImmutableTextField.builder().name("Title").variable("title").searchable(true).listed(true).build()))
+                .nextPersisted();
+
+        Optional<Contentlet> conOpt= contentletAPI.findInDb("not-here");
+        assert(conOpt.isPresent()==false);
+        
+
+        final Contentlet contentlet = new ContentletDataGen(type.id()).setProperty("title", "contentTest " + System.currentTimeMillis()).nextPersisted();
+        contentlet.setStringProperty("title", "nope");
+        
+        conOpt= contentletAPI.findInDb(contentlet.getInode());
+        assert(conOpt.isPresent());
+        
+        assertNotEquals(conOpt.get().getTitle(), contentlet.getTitle());
+        
+    
+    
+    }
 
 }
