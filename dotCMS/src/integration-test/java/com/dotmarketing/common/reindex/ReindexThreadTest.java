@@ -90,7 +90,6 @@ public class ReindexThreadTest {
         // stop the reindex thread
         ReindexThread.getInstance().pause();
 
-
         int num = 2;
         List<Contentlet> origCons = new ArrayList<>();
 
@@ -151,14 +150,15 @@ public class ReindexThreadTest {
         ReindexThread.getInstance().unpause();
 
         // let any expected reindex finish
-        DateUtil.sleep(5000);
+        DateUtil.sleep(10000);
 
         // make sure that the index is in the same state as before the failed transaction
+
         for (Contentlet c : origCons) {
             assertTrue(contentletAPI.indexCount("+live:true +identifier:" + c.getIdentifier() + " +inode:" + c.getInode(), user,
                     respectFrontendRoles) > 0);
-        }
 
+        }
 
     }
 

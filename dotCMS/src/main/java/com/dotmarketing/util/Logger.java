@@ -168,6 +168,7 @@ public class Logger{
             ex.printStackTrace();
         }
     }
+
     /**
      * this method will print the message if at the WARN level
      * and print the message + whole stack trace if at the DEGUG LEVEL
@@ -178,6 +179,7 @@ public class Logger{
     public static void warnAndDebug(Class cl, Throwable ex) {
         warnAndDebug(cl, ex.getMessage(), ex);
     }
+
     
     public static void fatal(Object ob, String message) {
     	fatal(ob.getClass(), message);

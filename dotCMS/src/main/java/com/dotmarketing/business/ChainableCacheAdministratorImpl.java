@@ -9,6 +9,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.cluster.ClusterUtils;
 import com.dotcms.cluster.bean.Server;
@@ -354,13 +355,9 @@ public class ChainableCacheAdministratorImpl implements DotCacheAdministrator {
             return;
         }
 
-        Runnable cacheRemoveRunnable = new Runnable() {
-            public void run() {
-                // Invalidates from Cache a key from a given group
-                cacheProviderAPI.remove(group, key, ignoreDistributed);
-            }
-        };
-        cacheRemoveRunnable.run();
+        // Invalidates from Cache a key from a given group
+        cacheProviderAPI.remove(group, key, ignoreDistributed);
+
     }
 
     public Set<String> getGroups() {
