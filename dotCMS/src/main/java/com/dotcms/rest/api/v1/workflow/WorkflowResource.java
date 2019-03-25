@@ -1205,7 +1205,7 @@ public class WorkflowResource {
 
                     final Field field = fieldsMap.get(fieldName);
                     // if more fields than files passed, set them to null.
-                    final File binary = i < binaryFields.size()? binaryFiles.get(i): null;
+                    final File binary = i < binaryFiles.size()? binaryFiles.get(i): null;
                     contentMap.put(field.variable(), binary);
                 }
             }

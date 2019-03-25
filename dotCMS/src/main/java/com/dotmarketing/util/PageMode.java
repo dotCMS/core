@@ -115,14 +115,14 @@ public enum PageMode {
 
                 if (null != user && APILocator.getUserAPI().getAnonymousUser().equals(user)) {
 
-                    final Host host = WebAPILocator.getHostWebAPI().findHostOnRequest(req);
+                    final Host host = WebAPILocator.getHostWebAPI().getCurrentHost(req, pageMode);
                     if (null == host || !APILocator.getPermissionAPI().doesUserHavePermission
                             (host, PermissionLevel.READ.getType(), user)) {
 
                         pageMode = DEFAULT_PAGE_MODE;
                     }
                 }
-            } catch (DotDataException e) {
+            } catch (Exception e) {
 
                 Logger.debug(PageMode.class, e.getMessage(), e);
             }
