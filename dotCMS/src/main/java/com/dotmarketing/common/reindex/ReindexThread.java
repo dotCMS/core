@@ -153,11 +153,12 @@ public class ReindexThread extends Thread {
         } catch (DotDataException e) {
             Logger.error(this.getClass(), e.getMessage(), e);
         }
-
-        try {
-            runReindexLoop();
-        } catch (Exception e) {
-            Logger.fatal(this.getClass(), e.getMessage(), e);
+        while(!die) {
+            try {
+                runReindexLoop();
+            } catch (Exception e) {
+                Logger.error(this.getClass(), e.getMessage(), e);
+            }
         }
 
     }
@@ -385,7 +386,7 @@ public class ReindexThread extends Thread {
         if (forceSwitch || jAPI.recordsInQueue() == 0) {
             Logger.info(this, "Running Reindex Switchover");
             // Wait a bit while all records gets flushed to index
-            indexAPI.fullReindexSwitchover();
+            indexAPI.fullReindexSwitchover(forceSwitch);
             failedAttemptsCount = 0;
             // Wait a bit while elasticsearch flushes it state
         }

@@ -362,8 +362,6 @@ public class ReindexQueueFactory {
                     .addParam(REINDEX_ACTION_REINDEX_OBJECT).addParam(date).loadResult();
 
         }
-
-        Logger.info(this, "Batch rows inserted for reindex: " + identifiers.size());
         return identifiers.size();
     }
 

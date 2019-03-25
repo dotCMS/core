@@ -42,6 +42,9 @@ import org.elasticsearch.index.reindex.DeleteByQueryAction;
 
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.cluster.bean.Server;
+import com.dotcms.concurrent.DotConcurrentFactory;
+import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
 import com.dotcms.content.elasticsearch.util.ESClient;
@@ -65,6 +68,7 @@ import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -75,6 +79,7 @@ import com.liferay.util.StringPool;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 
 import io.vavr.API;
+import io.vavr.control.Try;
 
 public class ContentletIndexAPIImpl implements ContentletIndexAPI {
 
@@ -256,8 +261,8 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     }
 
     @CloseDBIfOpened
-    public void fullReindexSwitchover() {
-        fullReindexSwitchover(DbConnectionFactory.getConnection());
+    public boolean fullReindexSwitchover(final boolean forceSwitch) {
+        return fullReindexSwitchover(DbConnectionFactory.getConnection(), forceSwitch);
     }
 
     /**
@@ -266,13 +271,21 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
      * 
      * @return
      */
-    @WrapInTransaction
-    public void fullReindexSwitchover(Connection conn) {
+    @CloseDBIfOpened
+    public boolean fullReindexSwitchover(Connection conn, final boolean forceSwitch) {
         try {
             final IndiciesInfo oldInfo = APILocator.getIndiciesAPI().loadIndicies();
-            if (!isInFullReindex()) {
-                return;
+            final String luckyServer=Try.of(()->APILocator.getServerAPI().getAliveServersIds()[0]).getOrElse(ConfigUtils.getServerId());
+            if(!forceSwitch) {
+                if (!isInFullReindex()) {
+                    return false;
+                }
+                if(!luckyServer.equals(ConfigUtils.getServerId())) {
+                    Logger.info(this.getClass(), "fullReindexSwitchover: I am not the lucky server.  My id : " +ConfigUtils.getServerId()+ ", luckyServer: " +  luckyServer);
+                    return false;
+                }
             }
+            
             final IndiciesInfo newInfo = new IndiciesInfo();
             newInfo.live = oldInfo.reindex_live;
             newInfo.working = oldInfo.reindex_working;
@@ -280,21 +293,22 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             logSwitchover(oldInfo);
             APILocator.getIndiciesAPI().point(newInfo);
 
-            try {
-                esIndexApi.moveIndexBackToCluster(newInfo.working);
+            DotConcurrentFactory.getInstance().getSubmitter().submit(()->{;
+                try {
+                    Logger.info(this.getClass(), "Updating and optimizing ElasticSearch Indexes");
+                    esIndexApi.moveIndexBackToCluster(newInfo.working);
+                    esIndexApi.moveIndexBackToCluster(newInfo.live);
+                    optimize(ImmutableList.of(newInfo.working, newInfo.live));
+                } catch (Exception e) {
+                    Logger.warnAndDebug(this.getClass(), "unable to expand ES replicas:" + e.getMessage(), e);
+                }
+            });
 
-                esIndexApi.moveIndexBackToCluster(newInfo.live);
-            } catch (Exception e) {
-                Logger.warnAndDebug(this.getClass(), "unable to expand ES replicas:" + e.getMessage(), e);
-            }
-            ArrayList<String> list = new ArrayList<String>();
-            list.add(newInfo.working);
-            list.add(newInfo.live);
-            optimize(list);
 
         } catch (Exception e) {
             throw new DotRuntimeException(e.getMessage(), e);
         }
+        return true;
     }
 
     private void logSwitchover(IndiciesInfo oldInfo) {
@@ -455,6 +469,10 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             }
         }
         inodes.values().removeIf(Objects::isNull);
+        if(inodes.isEmpty()) {
+            APILocator.getReindexQueueAPI().markAsFailed(idx, "unable to find any versions of content");
+
+        }
         for (Contentlet contentlet : inodes.values()) {
             Logger.debug(this, "indexing: id:" + contentlet.getInode() + " priority: " + idx.getPriority());
             contentlet.setIndexPolicy(IndexPolicy.DEFER);

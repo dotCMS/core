@@ -45,14 +45,16 @@ public interface ContentletIndexAPI {
     public boolean isInFullReindex() throws DotDataException;
 
     /**
-     * This will drop old index and will point read aliases to new index. This method should be called
+     * This will drop old index and will point read aliases to new index. If you pass forceSwitch=true
+     * then this method will force a switch, otherwise, it will check to make sure that we are in a 
+     * reindex and that it is the lucky server in the cluster to switch
      * after call to {@link #setUpFullReindex()}
      *
      * @return
      */
-    public void fullReindexSwitchover();
+    public boolean fullReindexSwitchover(final boolean forceSwitch);
 
-    public void fullReindexSwitchover(Connection conn);
+    public boolean fullReindexSwitchover(Connection conn, final boolean forceSwitch);
 
     /**
      * deletes an elasticsearch index by name
