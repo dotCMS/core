@@ -68,7 +68,7 @@ describe('ContentTypeEditResolver', () => {
         expect(crudService.getDataById).toHaveBeenCalledWith('v1/contenttype', '123');
     });
 
-    it("should redirect to content-types if content type it's not found", () => {
+    it('should redirect to content-types if content type it\'s not found', () => {
         activatedRouteSnapshotMock.paramMap.get = () => 'invalid-id';
 
         spyOn(dotHttpErrorManagerService, 'handle').and.returnValue(

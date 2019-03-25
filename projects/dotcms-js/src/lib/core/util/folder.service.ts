@@ -40,7 +40,6 @@ export class FolderService {
                 ? `${error.status} - ${error.statusText}`
                 : 'Server error';
         if (errMsg) {
-            console.log(errMsg);
             this.notificationService.displayErrorMessage(
                 'There was an error; please try again : ' + errMsg
             );

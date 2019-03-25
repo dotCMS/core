@@ -143,7 +143,6 @@ export class HttpClient {
                     'Bearer ' + this.settingsStorageService.getSettings().jwt
                 );
             }
-            console.log('FormData is ' + formData);
             xhr.send(formData);
         });
     }
