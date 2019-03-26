@@ -1,0 +1,31 @@
+:host {
+    display: block;
+  }
+  :host([hidden]) {
+    display: none;
+  }
+  
+  .dropdown-toggle ::slotted(*) {
+    cursor: pointer;
+  }
+  
+  .dropdown-content {
+    background-color: #f9f9f9;
+    max-width: 160px;
+    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+    visibility: hidden; /* hides sub-menu */
+    opacity: 0;
+    position: absolute;
+    transform: translateY(-2em);
+    z-index: -1;
+    transition: all 0.3s ease-in-out 0s, visibility 0s linear 0.3s, z-index 0s linear 0.01s;
+  }
+  
+  .dropdown-content.show {
+    visibility: visible; /* shows sub-menu */
+    opacity: 1;
+    z-index: 1;
+    transform: translateY(0%);
+    transition-delay: 0s, 0s, 0.3s; /* this removes the transition delay so the menu will be visible while the other styles transition */
+  }
+  
