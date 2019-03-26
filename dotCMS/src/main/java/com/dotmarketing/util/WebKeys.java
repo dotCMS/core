@@ -267,7 +267,6 @@ public final class WebKeys {
     
     public static final String API_EDIT_MODE="API_EDIT_MODE";
     public static final String PAGE_MODE_SESSION = "com.dotmarketing.PAGE_MODE_SESSION";
-    public static final String PAGE_MODE_REQUEST = "PAGE_MODE";
     public static final String LAST_RATED_CONTENTLET = "last.rated.contentlet";
 	public static final String CMSFILTER_REDIRECTING = "com.dotmarketing.filters.CMSFilter";
 	public static final String CMSFILTER_URI = "com.dotmarketing.filters.CMSFilter.URI";

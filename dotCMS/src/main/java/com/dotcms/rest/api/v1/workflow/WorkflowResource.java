@@ -14,12 +14,14 @@ import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONArray;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
+import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
 import com.dotcms.repackage.org.glassfish.jersey.media.multipart.FormDataMultiPart;
 import com.dotcms.repackage.org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.*;
 import com.dotcms.rest.annotation.IncludePermissions;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.MultiPartUtils;
+import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ForbiddenException;
@@ -40,6 +42,7 @@ import com.dotmarketing.portlets.contentlet.business.DotContentletValidationExce
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicyProvider;
+import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
@@ -99,8 +102,10 @@ public class WorkflowResource {
     private static final String NEVER_EXPIRE  = "neverExpire";
     private static final String WHERE_TO_SEND = "whereToSend";
     private static final String FORCE_PUSH    = "forcePush";
-    public static final String BINARY_FIELDS  = "binaryFields";
-    public static final String PREFIX_BINARY  = "binary";
+    private static final String BINARY_FIELDS = "binaryFields";
+    private static final String PREFIX_BINARY = "binary";
+    private static final String ACTION_NAME   = "actionName";
+    private static final String CONTENTLET    = "contentlet";
 
 
     private final WorkflowHelper   workflowHelper;
@@ -961,6 +966,53 @@ public class WorkflowResource {
      * @param inode      {@link String} (Optional) to fire an action over the existing inode.
      * @param identifier {@link String} (Optional) to fire an action over the existing identifier (in combination of language).
      * @param language   {@link Long}   (Optional) to fire an action over the existing language (in combination of identifier).
+     * @param multipart {@link FormDataMultiPart} Multipart form
+     * (if an inode is set, this param is not ignored).
+     * @return Response
+     */
+    @PUT
+    @Path("/actions/fire")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    public final Response fireActionMultipart(@Context final HttpServletRequest request,
+                                     @QueryParam("inode")            final String inode,
+                                     @QueryParam("identifier")       final String identifier,
+                                     @QueryParam("language")         final long   language,
+                                     final FormDataMultiPart multipart) {
+
+        final InitDataObject initDataObject = this.webResource.init
+                (null, true, request, true, null);
+        String actionId = null;
+
+        try {
+
+            final PageMode mode = PageMode.get(request);
+            final FireActionByNameForm fireActionForm = this.processForm (multipart);
+            //if inode is set we use it to look up a contentlet
+            final Contentlet contentlet = this.getContentlet
+                    (inode, identifier, language, fireActionForm, initDataObject, mode);
+
+            actionId = this.workflowHelper.getActionIdByName
+                    (fireActionForm.getActionName(), contentlet, initDataObject.getUser());
+
+            return fireAction(request, fireActionForm, initDataObject.getUser(), contentlet, actionId);
+        } catch (Exception e) {
+
+            Logger.error(this.getClass(),
+                    "Exception on firing, workflow action: " + actionId +
+                            ", inode: " + inode, e);
+
+            return ResponseUtil.mapExceptionResponse(e);
+        }
+    }
+    /**
+     * Fires a workflow action by name
+     * @param request    {@link HttpServletRequest}
+     * @param inode      {@link String} (Optional) to fire an action over the existing inode.
+     * @param identifier {@link String} (Optional) to fire an action over the existing identifier (in combination of language).
+     * @param language   {@link Long}   (Optional) to fire an action over the existing language (in combination of identifier).
      * @param fireActionForm {@link FireActionByNameForm} Fire Action by Name Form
      * (if an inode is set, this param is not ignored).
      * @return Response
@@ -1028,6 +1080,15 @@ public class WorkflowResource {
             formBuilder.workflowActionComments(fireActionForm.getComments())
                     .workflowAssignKey(fireActionForm.getAssign());
         }
+
+        if (contentlet.getMap().containsKey(Contentlet.RELATIONSHIP_KEY)) {
+
+            final  Map<Relationship, List<Contentlet>> relationshipListMap =
+                    (Map<Relationship, List<Contentlet>>) contentlet.getMap().get(Contentlet.RELATIONSHIP_KEY);
+            formBuilder.relationships(MapToContentletPopulator.INSTANCE.getContentletRelationshipsFromMap(contentlet, relationshipListMap));
+        }
+
+        // todo: missing categories too
 
         return Response.ok(
                 new ResponseEntityView(
@@ -1135,21 +1196,32 @@ public class WorkflowResource {
                 JsonArrayToLinkedSetConverter.EMPTY_LINKED_SET;
     }
 
-    private FireActionForm processForm(final FormDataMultiPart multipart)
+    private FireActionByNameForm processForm(final FormDataMultiPart multipart)
             throws IOException, JSONException, DotSecurityException, DotDataException {
 
-        final FireActionForm.Builder fireActionFormBuilder = new FireActionForm.Builder();
+        Map<String, Object> contentletMap = Collections.emptyMap();
+        final FireActionByNameForm.Builder fireActionFormBuilder = new FireActionByNameForm.Builder();
         final Tuple2<Map<String,Object>, List<File>> multiPartContent =
                 this.multiPartUtils.getBodyMapAndBinariesFromMultipart(multipart);
-        final LinkedHashSet<String> binaryFields     = this.getBinaryFields(multiPartContent._1);
+        final LinkedHashSet<String> binaryFields = this.getBinaryFields(multiPartContent._1);
 
-        this.validateMultiPartContent (multiPartContent._1, binaryFields);
+        if (multiPartContent._1.containsKey(CONTENTLET)) {
+
+            contentletMap = this.convertoToContentletMap((JSONObject)multiPartContent._1.get(CONTENTLET));
+        }
+
+        this.validateMultiPartContent    (contentletMap, binaryFields);
         this.processFireActionFormValues (fireActionFormBuilder, multiPartContent._1);
-        this.processFiles                (multiPartContent, binaryFields);
-
-        fireActionFormBuilder.contentlet(multiPartContent._1);
+        this.processFiles                (contentletMap, multiPartContent._2, binaryFields);
+        fireActionFormBuilder.contentlet (contentletMap);
 
         return fireActionFormBuilder.build();
+    }
+
+    private Map<String, Object> convertoToContentletMap(final JSONObject contentletJson) throws IOException {
+
+        return DotObjectMapperProvider.getInstance().getDefaultObjectMapper().
+                readValue(contentletJson.toString(), Map.class);
     }
 
     private void validateMultiPartContent (final Map<String, Object> contentMap,
@@ -1180,11 +1252,9 @@ public class WorkflowResource {
         return binaryFields.size() <= binaryFileSize? binaryFields: binaryFields.subList(0, binaryFields.size());
     }
 
-    private void processFiles(final Tuple2<Map<String, Object>, List<File>> multiPartContent,
+    private void processFiles(final Map<String, Object> contentMap, final List<File> binaryFiles,
                               final LinkedHashSet<String> argBinaryFields) throws DotDataException, DotSecurityException {
 
-        final Map<String, Object> contentMap     = multiPartContent._1;
-        final List<File>          binaryFiles    = multiPartContent._2;
         final ContentTypeAPI contentTypeAPI      = APILocator.getContentTypeAPI(APILocator.systemUser());
         final String         contentTypeInode    = MapToContentletPopulator.INSTANCE.getContentTypeInode(contentMap);
         final List<Field>    fields              = contentTypeAPI.find(contentTypeInode).fields();
@@ -1212,7 +1282,7 @@ public class WorkflowResource {
         }
     }
 
-    private void processFireActionFormValues(final FireActionForm.Builder fireActionFormBuilder,
+    private void processFireActionFormValues(final FireActionByNameForm.Builder fireActionFormBuilder,
                                              final Map<String, Object> contentMap) {
 
         if (contentMap.containsKey(ASSIGN)) {
@@ -1267,6 +1337,12 @@ public class WorkflowResource {
 
             fireActionFormBuilder.forcePush((String)contentMap.get(FORCE_PUSH));
             contentMap.remove(FORCE_PUSH);
+        }
+
+        if (contentMap.containsKey(ACTION_NAME)) {
+
+            fireActionFormBuilder.actionName((String)contentMap.get(ACTION_NAME));
+            contentMap.remove(ACTION_NAME);
         }
     }
 

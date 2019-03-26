@@ -14,14 +14,17 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Field.FieldType;
 import com.dotmarketing.portlets.structure.model.Relationship;
+import com.dotmarketing.portlets.structure.transform.ContentletRelationshipsTransformer;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -38,7 +41,7 @@ import static com.dotmarketing.portlets.contentlet.model.Contentlet.WORKFLOW_COM
 public class MapToContentletPopulator  {
 
     public  static final MapToContentletPopulator INSTANCE = new MapToContentletPopulator();
-    private static final String RELATIONSHIP_KEY           = "__##relationships##__";
+    private static final String RELATIONSHIP_KEY           = Contentlet.RELATIONSHIP_KEY;
     private static final String LANGUAGE_ID                = "languageId";
     private static final String IDENTIFIER                 = "identifier";
 
@@ -273,6 +276,12 @@ public class MapToContentletPopulator  {
             }
         }
     } // processSeveralHostsOrFolders.
+
+    public ContentletRelationships getContentletRelationshipsFromMap(final Contentlet contentlet,
+                                                                      final Map<Relationship, List<Contentlet>> contentRelationships) {
+
+        return new ContentletRelationshipsTransformer(contentlet, contentRelationships).findFirst();
+    }
 
     private Map<Relationship, List<Contentlet>> getRelationshipListMap(final Map<String, Object> map,
                                                                        final Contentlet contentlet) throws DotDataException {

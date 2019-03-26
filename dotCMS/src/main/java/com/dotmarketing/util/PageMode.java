@@ -5,7 +5,6 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionLevel;
 import com.dotmarketing.business.web.WebAPILocator;
-import com.dotmarketing.exception.DotDataException;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
 
@@ -86,15 +85,15 @@ public enum PageMode {
 
         PageMode pageMode = null;
 
-        if (null != req.getParameter(WebKeys.PAGE_MODE_REQUEST)) {
+        if (null != req.getParameter(WebKeys.PAGE_MODE_PARAMETER)) {
 
-            pageMode = PageMode.get(req.getParameter(WebKeys.PAGE_MODE_REQUEST));
-            req.setAttribute(WebKeys.PAGE_MODE_REQUEST, pageMode);
+            pageMode = PageMode.get(req.getParameter(WebKeys.PAGE_MODE_PARAMETER));
+            req.setAttribute(WebKeys.PAGE_MODE_PARAMETER, pageMode);
         }
 
-        if (null == pageMode && null != req.getAttribute(WebKeys.PAGE_MODE_REQUEST)) {
+        if (null == pageMode && null != req.getAttribute(WebKeys.PAGE_MODE_PARAMETER)) {
 
-            pageMode = (PageMode)req.getAttribute(WebKeys.PAGE_MODE_REQUEST);
+            pageMode = (PageMode)req.getAttribute(WebKeys.PAGE_MODE_PARAMETER);
         }
 
         final HttpSession session = req.getSession(false);

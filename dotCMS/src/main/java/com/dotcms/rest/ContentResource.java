@@ -43,7 +43,6 @@ import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Field.FieldType;
 import com.dotmarketing.portlets.structure.model.Relationship;
-import com.dotmarketing.portlets.structure.transform.ContentletRelationshipsTransformer;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.util.*;
 import com.liferay.portal.model.User;
@@ -1355,7 +1354,7 @@ public class ContentResource {
                         new ContentletDependencies.Builder()
                         .respectAnonymousPermissions(ALLOW_FRONT_END_SAVING)
                         .modUser(init.getUser()).categories(cats)
-                        .relationships(this.getContentletRelationshipsFromMap(contentlet, relationships))
+                        .relationships(MapToContentletPopulator.INSTANCE.getContentletRelationshipsFromMap(contentlet, relationships))
                         .indexPolicy(IndexPolicyProvider.getInstance().forSingleContent())
                         .build());
             }
@@ -1468,11 +1467,7 @@ public class ContentResource {
         }
     }
 
-    private ContentletRelationships getContentletRelationshipsFromMap(final Contentlet contentlet,
-                                                                      final Map<Relationship, List<Contentlet>> contentRelationships) {
 
-        return new ContentletRelationshipsTransformer(contentlet, contentRelationships).findFirst();
-    }
 
     private ContentWorkflowResult processWorkflowAction(final Contentlet contentlet,
                                           final InitDataObject init,

@@ -480,7 +480,7 @@ public  class WebResource {
 
             final String key   = keys.next();
             final Object value = obj.get(key);
-            map.put(key, value); // todo: double check this toString
+            map.put(key, value);
         }
 
         return map;
