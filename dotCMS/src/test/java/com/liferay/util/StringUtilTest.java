@@ -1,187 +1,178 @@
 package com.liferay.util;
 
-import com.dotcms.UnitTestBase;
-import org.junit.Test;
-
 import static com.liferay.util.StringUtil.replaceAll;
 import static com.liferay.util.StringUtil.replaceAllGroups;
 import static com.liferay.util.StringUtil.replaceOnce;
 import static org.junit.Assert.assertEquals;
 
-public class StringUtilTest  extends UnitTestBase {
+import com.dotcms.UnitTestBase;
+import org.junit.Test;
 
-    @Test
-    public void testReplaceOnceNull(){
+public class StringUtilTest extends UnitTestBase {
 
-        final StringBuilder builder =
-                new StringBuilder("somethingtochange$1");
+  @Test
+  public void testReplaceOnceNull() {
 
-        replaceOnce(builder, "$1", null);
+    final StringBuilder builder = new StringBuilder("somethingtochange$1");
 
-        assertEquals( "somethingtochange$1", builder.toString() );
+    replaceOnce(builder, "$1", null);
 
-        replaceOnce(builder, null, "this");
+    assertEquals("somethingtochange$1", builder.toString());
 
-        assertEquals( "somethingtochange$1", builder.toString() );
+    replaceOnce(builder, null, "this");
 
-        replaceOnce(null, "$1", "this");
+    assertEquals("somethingtochange$1", builder.toString());
 
-        assertEquals( "somethingtochange$1", builder.toString() );
-    }
+    replaceOnce(null, "$1", "this");
 
-    @Test
-    public void testReplaceOnce(){
+    assertEquals("somethingtochange$1", builder.toString());
+  }
 
-        final StringBuilder builder =
-                new StringBuilder("somethingtochange$1");
+  @Test
+  public void testReplaceOnce() {
 
-        replaceOnce(builder, "$1", "this");
+    final StringBuilder builder = new StringBuilder("somethingtochange$1");
 
-        assertEquals( "somethingtochangethis", builder.toString() );
-    }
+    replaceOnce(builder, "$1", "this");
 
-    @Test
-    public void testReplaceOnce2(){
+    assertEquals("somethingtochangethis", builder.toString());
+  }
 
-        final StringBuilder builder =
-                new StringBuilder("somethingtochange$2$1");
+  @Test
+  public void testReplaceOnce2() {
 
-        replaceOnce(builder, "$1", "this");
-        replaceOnce(builder, "$2", "these");
+    final StringBuilder builder = new StringBuilder("somethingtochange$2$1");
 
-        assertEquals( "somethingtochangethesethis", builder.toString() );
-    }
+    replaceOnce(builder, "$1", "this");
+    replaceOnce(builder, "$2", "these");
 
-    @Test
-    public void testReplaceOnceNothing(){
+    assertEquals("somethingtochangethesethis", builder.toString());
+  }
 
-        final StringBuilder builder =
-                new StringBuilder("somethingtochange");
+  @Test
+  public void testReplaceOnceNothing() {
 
-        replaceOnce(builder, "$1", "this");
+    final StringBuilder builder = new StringBuilder("somethingtochange");
 
-        assertEquals( "somethingtochange", builder.toString() );
-    }
+    replaceOnce(builder, "$1", "this");
 
+    assertEquals("somethingtochange", builder.toString());
+  }
 
+  @Test
+  public void testReplaceAllNull() {
 
-    @Test
-    public void testReplaceAllNull(){
+    final StringBuilder builder = new StringBuilder("somethingtochange$1");
 
-        final StringBuilder builder =
-                new StringBuilder("somethingtochange$1");
+    replaceAll(builder, new String[] {"$1"}, null);
 
-        replaceAll(builder, new String [] {"$1"}, null);
+    assertEquals("somethingtochange$1", builder.toString());
 
-        assertEquals( "somethingtochange$1", builder.toString() );
+    replaceAll(builder, null, new String[] {"this"});
 
-        replaceAll(builder, null, new String [] {"this"});
+    assertEquals("somethingtochange$1", builder.toString());
 
-        assertEquals( "somethingtochange$1", builder.toString() );
+    replaceAll(null, new String[] {"$1"}, new String[] {"this"});
 
-        replaceAll(null, new String [] {"$1"}, new String [] {"this"});
+    assertEquals("somethingtochange$1", builder.toString());
+  }
 
-        assertEquals( "somethingtochange$1", builder.toString() );
-    }
+  @Test
+  public void testReplaceAll() {
 
-    @Test
-    public void testReplaceAll(){
+    final StringBuilder builder = new StringBuilder("somethingtochange$1");
 
-        final StringBuilder builder =
-                new StringBuilder("somethingtochange$1");
+    replaceAll(builder, new String[] {"$1"}, new String[] {"this"});
 
-        replaceAll(builder, new String [] {"$1"}, new String [] {"this"});
+    assertEquals("somethingtochangethis", builder.toString());
+  }
 
-        assertEquals( "somethingtochangethis", builder.toString() );
-    }
+  @Test
+  public void testReplaceAll2() {
 
-    @Test
-    public void testReplaceAll2(){
+    final StringBuilder builder = new StringBuilder("somethingtochange$2$1");
 
-        final StringBuilder builder =
-                new StringBuilder("somethingtochange$2$1");
+    replaceAll(builder, new String[] {"$1", "$2"}, new String[] {"this", "these"});
 
-        replaceAll(builder, new String [] {"$1","$2"}, new String [] {"this", "these"});
+    assertEquals("somethingtochangethesethis", builder.toString());
+  }
 
-        assertEquals( "somethingtochangethesethis", builder.toString() );
-    }
+  @Test
+  public void testReplaceAllNothing() {
 
-    @Test
-    public void testReplaceAllNothing(){
+    final StringBuilder builder = new StringBuilder("somethingtochange");
 
-        final StringBuilder builder =
-                new StringBuilder("somethingtochange");
+    replaceAll(builder, new String[] {"$1", "$2"}, new String[] {"this", "these"});
 
-        replaceAll(builder, new String [] {"$1","$2"}, new String [] {"this", "these"});
+    assertEquals("somethingtochange", builder.toString());
+  }
 
-        assertEquals( "somethingtochange", builder.toString() );
-    }
+  @Test
+  public void testReplaceAllInvalidLength() {
 
+    final StringBuilder builder = new StringBuilder("somethingtochange$1$2");
 
-    @Test
-    public void testReplaceAllInvalidLength(){
+    replaceAll(builder, new String[] {"$1", "$2"}, new String[] {"this", "these", "those"});
 
-        final StringBuilder builder =
-                new StringBuilder("somethingtochange$1$2");
+    assertEquals("somethingtochange$1$2", builder.toString());
+  }
 
-        replaceAll(builder, new String [] {"$1","$2"}, new String [] {"this", "these","those"});
+  @Test
+  public void testReplaceAllInvalidLength2() {
 
-        assertEquals( "somethingtochange$1$2", builder.toString() );
-    }
+    final StringBuilder builder = new StringBuilder("somethingtochange$1$2");
 
-    @Test
-    public void testReplaceAllInvalidLength2(){
+    replaceAll(builder, new String[] {"$1", "$2", "$3"}, new String[] {"this", "these"});
 
-        final StringBuilder builder =
-                new StringBuilder("somethingtochange$1$2");
+    assertEquals("somethingtochange$1$2", builder.toString());
+  }
 
-        replaceAll(builder, new String [] {"$1","$2","$3"}, new String [] {"this", "these"});
+  @Test
+  public void testReplaceAllSingle() {
 
-        assertEquals( "somethingtochange$1$2", builder.toString() );
-    }
+    final StringBuilder builder =
+        new StringBuilder("$1$1 is a test, and $1 is another test, $1 this is a great test");
 
-    @Test
-    public void testReplaceAllSingle(){
+    replaceAll(builder, "$1", "this");
 
-        final StringBuilder builder =
-                new StringBuilder("$1$1 is a test, and $1 is another test, $1 this is a great test");
+    assertEquals(
+        "thisthis is a test, and this is another test, this this is a great test",
+        builder.toString());
+  }
 
-        replaceAll(builder, "$1", "this");
+  @Test
+  public void testReplaceAll3() {
 
-        assertEquals( "thisthis is a test, and this is another test, this this is a great test", builder.toString() );
-    }
+    final StringBuilder builder =
+        new StringBuilder("$1 is a test, and $1 is another test, $2 are great, are not $2");
 
-    @Test
-    public void testReplaceAll3(){
+    replaceAll(builder, new String[] {"$1", "$2"}, new String[] {"this", "these"});
 
-        final StringBuilder builder =
-                new StringBuilder("$1 is a test, and $1 is another test, $2 are great, are not $2");
+    assertEquals(
+        "this is a test, and this is another test, these are great, are not these",
+        builder.toString());
+  }
 
-        replaceAll(builder, new String []{"$1", "$2"}, new String[] {"this", "these"});
+  @Test
+  public void testReplaceAllExtraNotMatchReplacements() {
 
-        assertEquals( "this is a test, and this is another test, these are great, are not these", builder.toString() );
-    }
+    final StringBuilder builder = new StringBuilder("somethingtochange$1$2");
 
-    @Test
-    public void testReplaceAllExtraNotMatchReplacements(){
+    replaceAll(builder, new String[] {"$1", "$2", "$3"}, new String[] {"this", "these", "those"});
 
-        final StringBuilder builder =
-                new StringBuilder("somethingtochange$1$2");
+    assertEquals("somethingtochangethisthese", builder.toString());
+  }
 
-        replaceAll(builder, new String [] {"$1","$2","$3"}, new String [] {"this", "these","those"});
+  @Test
+  public void testReplaceAllGroup() {
 
-        assertEquals( "somethingtochangethisthese", builder.toString() );
-    }
+    final StringBuilder builder =
+        new StringBuilder("$1 is a test, and $1 is another test, $2 are great, are not $2");
 
-    @Test
-    public void testReplaceAllGroup(){
+    replaceAllGroups(builder, new String[] {"this", "these"});
 
-        final StringBuilder builder =
-                new StringBuilder("$1 is a test, and $1 is another test, $2 are great, are not $2");
-
-        replaceAllGroups(builder, new String[] {"this", "these"});
-
-        assertEquals( "this is a test, and this is another test, these are great, are not these", builder.toString() );
-    }
-
+    assertEquals(
+        "this is a test, and this is another test, these are great, are not these",
+        builder.toString());
+  }
 }

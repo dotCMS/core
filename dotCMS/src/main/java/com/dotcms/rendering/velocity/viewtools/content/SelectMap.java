@@ -8,55 +8,48 @@ import java.util.List;
 import org.apache.commons.lang.builder.ToStringBuilder;
 
 /**
- * The class helps get at the values and options of a Select Field belonging to a piece of content. 
- * 
+ * The class helps get at the values and options of a Select Field belonging to a piece of content.
+ *
  * @author Jason Tesser
  * @since 1.9.1.3
  */
 public class SelectMap {
 
-	/**
-	 * All the possible options
-	 */
-	private List<String> options = new ArrayList<String>();
-	private List<String> values = new ArrayList<String>();
-	private Object selectValue;
-	
-	public SelectMap(Field field, Contentlet content) {
-		String[] pairs = (field.getValues()!=null?field.getValues():"").split("\r\n");
-		for (int j = 0; j < pairs.length; j++) {
-		    String pair = pairs[j];
-		    String[] tokens = pair.split("\\|");
-		    String name = tokens.length > 0 ? tokens[0] : "";
-		    options.add(name);
-		    values.add(tokens.length > 1 ? tokens[1].trim() : name.trim());
-		}
-		selectValue = APILocator.getContentletAPI().getFieldValue(content, field);
-	}
+  /** All the possible options */
+  private List<String> options = new ArrayList<String>();
 
-	/**
-	 * @return the options
-	 */
-	public List<String> getOptions() {
-		return options;
-	}
+  private List<String> values = new ArrayList<String>();
+  private Object selectValue;
 
-	/**
-	 * @return the value
-	 */
-	public List<String> getValues() {
-		return values;
-	}
+  public SelectMap(Field field, Contentlet content) {
+    String[] pairs = (field.getValues() != null ? field.getValues() : "").split("\r\n");
+    for (int j = 0; j < pairs.length; j++) {
+      String pair = pairs[j];
+      String[] tokens = pair.split("\\|");
+      String name = tokens.length > 0 ? tokens[0] : "";
+      options.add(name);
+      values.add(tokens.length > 1 ? tokens[1].trim() : name.trim());
+    }
+    selectValue = APILocator.getContentletAPI().getFieldValue(content, field);
+  }
 
-	@Override
-	public String toString() {
-		return ToStringBuilder.reflectionToString(this);
-	}
+  /** @return the options */
+  public List<String> getOptions() {
+    return options;
+  }
 
-	/**
-	 * @return the selectValue
-	 */
-	public Object getSelectValue() {
-		return selectValue;
-	}
+  /** @return the value */
+  public List<String> getValues() {
+    return values;
+  }
+
+  @Override
+  public String toString() {
+    return ToStringBuilder.reflectionToString(this);
+  }
+
+  /** @return the selectValue */
+  public Object getSelectValue() {
+    return selectValue;
+  }
 }

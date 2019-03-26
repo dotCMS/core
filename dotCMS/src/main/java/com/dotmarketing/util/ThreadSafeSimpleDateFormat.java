@@ -13,137 +13,135 @@ import java.util.TimeZone;
 
 public class ThreadSafeSimpleDateFormat extends DateFormat {
 
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 7876073678435717012L;
-	private DateFormat df = new SimpleDateFormat();
+  /** */
+  private static final long serialVersionUID = 7876073678435717012L;
 
-	@Override
-	public StringBuffer format(Date date, StringBuffer toAppendTo, FieldPosition fieldPosition) {
-		synchronized (this)  {
-			return df.format(date, toAppendTo, fieldPosition);
-		}
-	}
+  private DateFormat df = new SimpleDateFormat();
 
-	@Override
-	public Date parse(String source, ParsePosition pos) {
-		synchronized (this)  {
-			return df.parse(source, pos);
-		}
-	}
+  @Override
+  public StringBuffer format(Date date, StringBuffer toAppendTo, FieldPosition fieldPosition) {
+    synchronized (this) {
+      return df.format(date, toAppendTo, fieldPosition);
+    }
+  }
 
-	public ThreadSafeSimpleDateFormat() {
-		synchronized (this) {
-			df = new SimpleDateFormat();
-		}
-	}
+  @Override
+  public Date parse(String source, ParsePosition pos) {
+    synchronized (this) {
+      return df.parse(source, pos);
+    }
+  }
 
-	public ThreadSafeSimpleDateFormat(String format) {
-		synchronized (this) {
-			this.df = new SimpleDateFormat(format);
-		}
-	}
+  public ThreadSafeSimpleDateFormat() {
+    synchronized (this) {
+      df = new SimpleDateFormat();
+    }
+  }
 
-	@Override
-	public Object clone() {
+  public ThreadSafeSimpleDateFormat(String format) {
+    synchronized (this) {
+      this.df = new SimpleDateFormat(format);
+    }
+  }
 
-		return df.clone();
-	}
+  @Override
+  public Object clone() {
 
-	@Override
-	public boolean equals(Object obj) {
-		return df.equals(obj);
-	}
+    return df.clone();
+  }
 
-	@Override
-	public Calendar getCalendar() {
+  @Override
+  public boolean equals(Object obj) {
+    return df.equals(obj);
+  }
 
-		return df.getCalendar();
-	}
+  @Override
+  public Calendar getCalendar() {
 
-	@Override
-	public NumberFormat getNumberFormat() {
-		return df.getNumberFormat();
-	}
+    return df.getCalendar();
+  }
 
-	@Override
-	public TimeZone getTimeZone() {
+  @Override
+  public NumberFormat getNumberFormat() {
+    return df.getNumberFormat();
+  }
 
-		return df.getTimeZone();
-	}
+  @Override
+  public TimeZone getTimeZone() {
 
-	@Override
-	public int hashCode() {
+    return df.getTimeZone();
+  }
 
-		return df.hashCode();
-	}
+  @Override
+  public int hashCode() {
 
-	@Override
-	public boolean isLenient() {
+    return df.hashCode();
+  }
 
-		return df.isLenient();
-	}
+  @Override
+  public boolean isLenient() {
 
-	@Override
-	public Date parse(String source) throws ParseException {
-		synchronized (this)  {
-			return df.parse(source);
-		}
-	}
+    return df.isLenient();
+  }
 
-	@Override
-	public Object parseObject(String source, ParsePosition pos) {
-		synchronized (this)  {
-			return df.parseObject(source, pos);
-		}
-	}
+  @Override
+  public Date parse(String source) throws ParseException {
+    synchronized (this) {
+      return df.parse(source);
+    }
+  }
 
-	@Override
-	public void setCalendar(Calendar newCalendar) {
-		synchronized (this)  {
-			df.setCalendar(newCalendar);
-		}
-	}
+  @Override
+  public Object parseObject(String source, ParsePosition pos) {
+    synchronized (this) {
+      return df.parseObject(source, pos);
+    }
+  }
 
-	@Override
-	public void setLenient(boolean lenient) {
-		synchronized (this)  {
-			df.setLenient(lenient);
-		}
-	}
+  @Override
+  public void setCalendar(Calendar newCalendar) {
+    synchronized (this) {
+      df.setCalendar(newCalendar);
+    }
+  }
 
-	@Override
-	public void setNumberFormat(NumberFormat newNumberFormat) {
-		synchronized (this)  {
-			df.setNumberFormat(newNumberFormat);
-		}
-	}
+  @Override
+  public void setLenient(boolean lenient) {
+    synchronized (this) {
+      df.setLenient(lenient);
+    }
+  }
 
-	@Override
-	public void setTimeZone(TimeZone zone) {
-		synchronized (this)  {
-			df.setTimeZone(zone);
-		}
-	}
+  @Override
+  public void setNumberFormat(NumberFormat newNumberFormat) {
+    synchronized (this) {
+      df.setNumberFormat(newNumberFormat);
+    }
+  }
 
-	@Override
-	public AttributedCharacterIterator formatToCharacterIterator(Object obj) {
-		synchronized (this)  {
-			return df.formatToCharacterIterator(obj);
-		}
-	}
+  @Override
+  public void setTimeZone(TimeZone zone) {
+    synchronized (this) {
+      df.setTimeZone(zone);
+    }
+  }
 
-	@Override
-	public Object parseObject(String source) throws ParseException {
-		synchronized (this)  {
-			return df.parseObject(source);
-		}
-	}
+  @Override
+  public AttributedCharacterIterator formatToCharacterIterator(Object obj) {
+    synchronized (this) {
+      return df.formatToCharacterIterator(obj);
+    }
+  }
 
-	@Override
-	public String toString() {
-		return df.toString();
-	}
+  @Override
+  public Object parseObject(String source) throws ParseException {
+    synchronized (this) {
+      return df.parseObject(source);
+    }
+  }
 
+  @Override
+  public String toString() {
+    return df.toString();
+  }
 }

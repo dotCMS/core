@@ -12,296 +12,289 @@ import org.apache.struts.action.ActionMessage;
 import org.apache.struts.validator.ValidatorForm;
 
 public class FieldForm extends ValidatorForm {
-	
-	
-	private static final long serialVersionUID = 1L;
-	private String inode;
-	private String structureInode;
-	private String fieldName;
-	private String fieldType;
-	private String fieldRelationType;
-	private String fieldContentlet;
-	private boolean required;
-	private String velocityVarName;
-	private int sortOrder;
-	private String values;
-	private String regexCheck;
-	private List freeContentletFieldsName;
-	private List freeContentletFieldsValue;
-	private String validation;
-	private String hint;
-	private String defaultValue;
-	private String dataType;
-	private boolean indexed = false;
-    private boolean listed = false;
-    private boolean readOnly = false;
-    private boolean fixed = false;
-    private boolean searchable = false;
-    private boolean unique = false;
-    private String element;
-    		
-    
-    
-    public FieldForm(){ }
-	public boolean isSearchable() {
-		return searchable;
-	}
 
-	public void setSearchable(boolean searchable) {
-		this.searchable = searchable;
-	}
+  private static final long serialVersionUID = 1L;
+  private String inode;
+  private String structureInode;
+  private String fieldName;
+  private String fieldType;
+  private String fieldRelationType;
+  private String fieldContentlet;
+  private boolean required;
+  private String velocityVarName;
+  private int sortOrder;
+  private String values;
+  private String regexCheck;
+  private List freeContentletFieldsName;
+  private List freeContentletFieldsValue;
+  private String validation;
+  private String hint;
+  private String defaultValue;
+  private String dataType;
+  private boolean indexed = false;
+  private boolean listed = false;
+  private boolean readOnly = false;
+  private boolean fixed = false;
+  private boolean searchable = false;
+  private boolean unique = false;
+  private String element;
 
-	public String getFieldContentlet() {
-		return fieldContentlet;
-	}
+  public FieldForm() {}
 
-	public void setFieldContentlet(String fieldContentlet) {
-		this.fieldContentlet = fieldContentlet;
-	}
+  public boolean isSearchable() {
+    return searchable;
+  }
 
-	public String getFieldName() {
-		return fieldName;
-	}
+  public void setSearchable(boolean searchable) {
+    this.searchable = searchable;
+  }
 
-	public void setFieldName(String fieldName) {
-		this.fieldName = fieldName;
-	}
+  public String getFieldContentlet() {
+    return fieldContentlet;
+  }
 
-	public String getFieldRelationType() {
-		return fieldRelationType;
-	}
+  public void setFieldContentlet(String fieldContentlet) {
+    this.fieldContentlet = fieldContentlet;
+  }
 
-	public void setFieldRelationType(String fieldRelationType) {
-		this.fieldRelationType = fieldRelationType;
-	}
+  public String getFieldName() {
+    return fieldName;
+  }
 
-	public String getFieldType() {
-		return fieldType;
-	}
+  public void setFieldName(String fieldName) {
+    this.fieldName = fieldName;
+  }
 
-	public void setFieldType(String fieldType) {
-		this.fieldType = fieldType;
-	}
+  public String getFieldRelationType() {
+    return fieldRelationType;
+  }
 
-	public String getInode() {
-		if(InodeUtils.isSet(inode))
-			return inode;
-		
-		return "";
-	}
+  public void setFieldRelationType(String fieldRelationType) {
+    this.fieldRelationType = fieldRelationType;
+  }
 
-	public void setInode(String inode) {
-		this.inode = inode;
-	}
+  public String getFieldType() {
+    return fieldType;
+  }
 
-	public String getRegexCheck() {
-		return regexCheck;
-	}
+  public void setFieldType(String fieldType) {
+    this.fieldType = fieldType;
+  }
 
-	public void setRegexCheck(String regexCheck) {
-		this.regexCheck = regexCheck;
-	}
+  public String getInode() {
+    if (InodeUtils.isSet(inode)) return inode;
 
-	public boolean isRequired() {
-		return required;
-	}
-	
-	public void setRequired(boolean required) {
-		this.required = required;
-	}
+    return "";
+  }
 
-	public int getSortOrder() {
-		return sortOrder;
-	}
+  public void setInode(String inode) {
+    this.inode = inode;
+  }
 
-	public void setSortOrder(int sortOrder) {
-		this.sortOrder = sortOrder;
-	}
+  public String getRegexCheck() {
+    return regexCheck;
+  }
 
-	public String getStructureInode() {
-		return structureInode;
-	}
+  public void setRegexCheck(String regexCheck) {
+    this.regexCheck = regexCheck;
+  }
 
-	public void setStructureInode(String structureInode) {
-		this.structureInode = structureInode;
-	}
+  public boolean isRequired() {
+    return required;
+  }
 
-	public String getValues() {
-		return values;
-	}
+  public void setRequired(boolean required) {
+    this.required = required;
+  }
 
-	public void setValues(String values) {
-		this.values = values;
-	}
+  public int getSortOrder() {
+    return sortOrder;
+  }
 
-	public String getVelocityVarName() {
-		return velocityVarName;
-	}
+  public void setSortOrder(int sortOrder) {
+    this.sortOrder = sortOrder;
+  }
 
-	public void setVelocityVarName(String velocityVarName) {
-		this.velocityVarName = velocityVarName;
-	}
-	
-	public List getFreeContentletFieldsName() {
-		return freeContentletFieldsName;
-	}
+  public String getStructureInode() {
+    return structureInode;
+  }
 
-	public void setFreeContentletFieldsName(List freeContentletFieldsName) {
-		this.freeContentletFieldsName = freeContentletFieldsName;
-	}
+  public void setStructureInode(String structureInode) {
+    this.structureInode = structureInode;
+  }
 
-	public List getFreeContentletFieldsValue() {
-		return freeContentletFieldsValue;
-	}
+  public String getValues() {
+    return values;
+  }
 
-	public void setFreeContentletFieldsValue(List freeContentletFieldsvalue) {
-		this.freeContentletFieldsValue = freeContentletFieldsvalue;
-	}
-	
-	/**
-	 * @return Returns the defaultValue.
-	 */
-	public String getDefaultValue() {
-		return defaultValue;
-	}
+  public void setValues(String values) {
+    this.values = values;
+  }
 
-	/**
-	 * @param defaultValue The defaultValue to set.
-	 */
-	public void setDefaultValue(String defaultValue) {
-		this.defaultValue = UtilMethods.isSet(defaultValue) ? defaultValue.trim() : defaultValue;
-	}
+  public String getVelocityVarName() {
+    return velocityVarName;
+  }
 
-	/**
-	 * @return Returns the hint.
-	 */
-	public String getHint() {
-		return hint;
-	}
+  public void setVelocityVarName(String velocityVarName) {
+    this.velocityVarName = velocityVarName;
+  }
 
-	/**
-	 * @param hint The hint to set.
-	 */
-	public void setHint(String hint) {
-		this.hint = hint;
-	}
+  public List getFreeContentletFieldsName() {
+    return freeContentletFieldsName;
+  }
 
-	/**
-	 * @return Returns the dataType.
-	 */
-	public String getDataType() {
-		return dataType;
-	}
+  public void setFreeContentletFieldsName(List freeContentletFieldsName) {
+    this.freeContentletFieldsName = freeContentletFieldsName;
+  }
 
-	/**
-	 * @param dataType The dataType to set.
-	 */
-	public void setDataType(String dataType) {
-		this.dataType = dataType;
-	}
+  public List getFreeContentletFieldsValue() {
+    return freeContentletFieldsValue;
+  }
 
-	/**
-	 * @return Returns the validation.
-	 */
-	public String getValidation() {
-		if (!UtilMethods.isSet(validation)) {
-			return regexCheck;
-		}
-		return validation;
-	}
+  public void setFreeContentletFieldsValue(List freeContentletFieldsvalue) {
+    this.freeContentletFieldsValue = freeContentletFieldsvalue;
+  }
 
-	/**
-	 * @param validation The validation to set.
-	 */
-	public void setValidation(String validation) {
-		this.validation = validation;
-	}
+  /** @return Returns the defaultValue. */
+  public String getDefaultValue() {
+    return defaultValue;
+  }
 
-	public boolean isIndexed() {
-		return indexed;
-	}
+  /** @param defaultValue The defaultValue to set. */
+  public void setDefaultValue(String defaultValue) {
+    this.defaultValue = UtilMethods.isSet(defaultValue) ? defaultValue.trim() : defaultValue;
+  }
 
-	public void setIndexed(boolean indexed) {
-		this.indexed = indexed;
-	}
+  /** @return Returns the hint. */
+  public String getHint() {
+    return hint;
+  }
 
-    public boolean isListed() {
-        return listed;
+  /** @param hint The hint to set. */
+  public void setHint(String hint) {
+    this.hint = hint;
+  }
+
+  /** @return Returns the dataType. */
+  public String getDataType() {
+    return dataType;
+  }
+
+  /** @param dataType The dataType to set. */
+  public void setDataType(String dataType) {
+    this.dataType = dataType;
+  }
+
+  /** @return Returns the validation. */
+  public String getValidation() {
+    if (!UtilMethods.isSet(validation)) {
+      return regexCheck;
     }
+    return validation;
+  }
 
-    public void setListed(boolean listed) {
-        this.listed = listed;
+  /** @param validation The validation to set. */
+  public void setValidation(String validation) {
+    this.validation = validation;
+  }
+
+  public boolean isIndexed() {
+    return indexed;
+  }
+
+  public void setIndexed(boolean indexed) {
+    this.indexed = indexed;
+  }
+
+  public boolean isListed() {
+    return listed;
+  }
+
+  public void setListed(boolean listed) {
+    this.listed = listed;
+  }
+
+  public boolean isReadOnly() {
+    return readOnly;
+  }
+
+  public void setReadOnly(boolean readOnly) {
+    this.readOnly = readOnly;
+  }
+
+  public boolean isFixed() {
+    return fixed;
+  }
+
+  public void setFixed(boolean fixed) {
+    this.fixed = fixed;
+  }
+
+  public boolean isUnique() {
+    return unique;
+  }
+
+  public void setUnique(boolean unique) {
+    this.unique = unique;
+  }
+
+  public ActionErrors validate(ActionMapping arg0, HttpServletRequest arg1) {
+    ActionErrors ae = new ActionErrors();
+    ae = super.validate(arg0, arg1);
+    if (!isFixed()
+        && !isReadOnly()
+        && !(fieldType == null)
+        && !(fieldType.equals("line_divider") || fieldType.equals("tab_divider"))) {
+      if (fieldType.equals("select")
+          || fieldType.equals("radio")
+          || fieldType.equals("checkbox")
+          || fieldType.equals("javascript")) {
+        if (!UtilMethods.isSet(values)) {
+          ae.add(Globals.ERROR_KEY, new ActionMessage("message.field.values"));
+        }
+      }
+      if (!fieldType.equals("host or folder")
+          && !fieldType.equals("relationships_tab")
+          && !fieldType.equals("permissions_tab")
+          && !fieldType.equals("categories_tab")
+          && !fieldType.equals("image")
+          && !fieldType.equals("link")
+          && !fieldType.equals("file")
+          && !element.equals(FieldAPI.ELEMENT_CONSTANT)
+          && !fieldType.equals("hidden")) {
+        if (!UtilMethods.isSet(dataType)) {
+          // ae.add(Globals.ERROR_KEY,new ActionMessage("message.field.dataType"));
+        }
+      }
     }
-    
-    
-	public boolean isReadOnly() {
-		return readOnly;
-	}
+    /*
+     * Logic Moved to Field
 
-	public void setReadOnly(boolean readOnly) {
-		this.readOnly = readOnly;
-	}
+    if(dataType!=null && dataType.equals(Field.DataType.DATE.toString()) && !defaultValue.isEmpty() && !defaultValue.equals("now")) {
+        DateFormat df=null;
+        if(fieldType.equals(Field.FieldType.DATE.toString()))
+            df=new SimpleDateFormat("yyyy-MM-dd");
+        else if(fieldType.equals(Field.FieldType.DATE_TIME.toString()))
+            df=new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        else if(fieldType.equals(Field.FieldType.TIME.toString()))
+            df=new SimpleDateFormat("HH:mm:ss");
+        if(df!=null) {
+            try {
+                      df.parse(defaultValue);
+                  } catch (ParseException e) {
+                      ae.add(Globals.ERROR_KEY,new ActionMessage("message.field.defaultValue"));
+                  }
+        }
+    }
+     */
+    return ae;
+  }
 
-	public boolean isFixed() {
-		return fixed;
-	}
+  public String getElement() {
+    return element;
+  }
 
-	public void setFixed(boolean fixed) {
-		this.fixed = fixed;
-	}
-	
-	public boolean isUnique() {
-		return unique;
-	}
-
-	public void setUnique(boolean unique) {
-		this.unique = unique;
-	}
-
-    public ActionErrors validate(ActionMapping arg0, HttpServletRequest arg1) {
-		ActionErrors ae = new ActionErrors();	
-		ae = super.validate(arg0,arg1);
-		if(!isFixed() && !isReadOnly() && !(fieldType == null) && !(fieldType.equals("line_divider") || fieldType.equals("tab_divider"))){
-		    if(fieldType.equals("select") || fieldType.equals("radio") || fieldType.equals("checkbox") || fieldType.equals("javascript")) {
-		        if (!UtilMethods.isSet(values)) {
-		            ae.add(Globals.ERROR_KEY,new ActionMessage("message.field.values"));
-		        }
-		    }
-		    if( !fieldType.equals("host or folder" )&& !fieldType.equals("relationships_tab") && !fieldType.equals("permissions_tab") && !fieldType.equals("categories_tab") && !fieldType.equals("image") && !fieldType.equals("link") && !fieldType.equals("file") && !element.equals(FieldAPI.ELEMENT_CONSTANT) && !fieldType.equals("hidden")) {
-		        if (!UtilMethods.isSet(dataType)) {
-		           // ae.add(Globals.ERROR_KEY,new ActionMessage("message.field.dataType"));
-		        }
-		    }
-		}
-		/*
-		 * Logic Moved to Field
-		
-		if(dataType!=null && dataType.equals(Field.DataType.DATE.toString()) && !defaultValue.isEmpty() && !defaultValue.equals("now")) {
-		    DateFormat df=null;
-		    if(fieldType.equals(Field.FieldType.DATE.toString()))
-		        df=new SimpleDateFormat("yyyy-MM-dd");
-		    else if(fieldType.equals(Field.FieldType.DATE_TIME.toString()))
-		        df=new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-		    else if(fieldType.equals(Field.FieldType.TIME.toString()))
-		        df=new SimpleDateFormat("HH:mm:ss");
-		    if(df!=null) {
-		        try {
-                    df.parse(defaultValue);
-                } catch (ParseException e) {
-                    ae.add(Globals.ERROR_KEY,new ActionMessage("message.field.defaultValue"));
-                }
-		    }
-		}
-		 */
-		return ae;
-	}
-
-	public String getElement() {
-		return element;
-	}
-
-	public void setElement(String element) {
-		this.element = element;
-	}
-	
+  public void setElement(String element) {
+    this.element = element;
+  }
 }

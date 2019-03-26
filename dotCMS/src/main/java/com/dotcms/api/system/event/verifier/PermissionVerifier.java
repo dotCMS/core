@@ -1,6 +1,5 @@
 package com.dotcms.api.system.event.verifier;
 
-
 import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.PayloadVerifier;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
@@ -12,30 +11,32 @@ import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.exception.DotDataException;
 
 /**
- * Verifies if the sessionUser has read permission (against the payload visibilityValue) and over the payload data.
+ * Verifies if the sessionUser has read permission (against the payload visibilityValue) and over
+ * the payload data.
  */
-public class PermissionVerifier implements PayloadVerifier{
+public class PermissionVerifier implements PayloadVerifier {
 
-    private final PermissionAPI permissionAPI;
+  private final PermissionAPI permissionAPI;
 
-    @VisibleForTesting
-    public PermissionVerifier(PermissionAPI permissionAPI){
-        this.permissionAPI = permissionAPI;
+  @VisibleForTesting
+  public PermissionVerifier(PermissionAPI permissionAPI) {
+    this.permissionAPI = permissionAPI;
+  }
+
+  public PermissionVerifier() {
+    permissionAPI = APILocator.getPermissionAPI();
+  }
+
+  @Override
+  public boolean verified(final Payload payload, final WebSocketUserSessionData userSessionData) {
+    try {
+      return permissionAPI.doesUserHavePermission(
+          (Permissionable) payload.getData(),
+          ConversionUtils.toInt(payload.getVisibilityValue(), PermissionAPI.PERMISSION_READ),
+          userSessionData.getUser(),
+          false);
+    } catch (DotDataException e) {
+      throw new VerifierException(e);
     }
-
-    public PermissionVerifier(){
-        permissionAPI = APILocator.getPermissionAPI();
-    }
-
-    @Override
-    public boolean verified(final Payload payload, final WebSocketUserSessionData userSessionData) {
-        try {
-            return permissionAPI.doesUserHavePermission((Permissionable) payload.getData(),
-                    ConversionUtils.toInt(payload.getVisibilityValue(), PermissionAPI.PERMISSION_READ),
-                    userSessionData.getUser(), false);
-        } catch (DotDataException e) {
-            throw new VerifierException(e);
-        }
-    }
-
+  }
 }

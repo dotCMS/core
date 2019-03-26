@@ -3,7 +3,6 @@ package com.dotmarketing.filters.compression;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
-
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpServletResponseWrapper;
@@ -31,7 +30,8 @@ public class GZIPResponseWrapper extends HttpServletResponseWrapper {
           stream.close();
         }
       }
-    } catch (IOException e) {}
+    } catch (IOException e) {
+    }
   }
 
   public void flushBuffer() throws IOException {
@@ -43,8 +43,7 @@ public class GZIPResponseWrapper extends HttpServletResponseWrapper {
       throw new IllegalStateException("getWriter() has already been called!");
     }
 
-    if (stream == null)
-      stream = createOutputStream();
+    if (stream == null) stream = createOutputStream();
     return (stream);
   }
 
@@ -57,9 +56,9 @@ public class GZIPResponseWrapper extends HttpServletResponseWrapper {
       throw new IllegalStateException("getOutputStream() has already been called!");
     }
 
-   stream = createOutputStream();
-   writer = new PrintWriter(new OutputStreamWriter(stream, "UTF-8"));
-   return (writer);
+    stream = createOutputStream();
+    writer = new PrintWriter(new OutputStreamWriter(stream, "UTF-8"));
+    return (writer);
   }
 
   public void setContentLength(int length) {}

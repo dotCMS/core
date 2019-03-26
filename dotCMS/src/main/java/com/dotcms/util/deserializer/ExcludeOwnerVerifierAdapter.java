@@ -1,87 +1,93 @@
 package com.dotcms.util.deserializer;
 
+import static com.dotcms.util.ReflectionUtils.getClassFor;
 
 import com.dotcms.api.system.event.Visibility;
 import com.dotcms.api.system.event.verifier.ExcludeOwnerVerifierBean;
-import com.google.gson.*;
-
+import com.google.gson.JsonDeserializationContext;
+import com.google.gson.JsonDeserializer;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonSerializationContext;
+import com.google.gson.JsonSerializer;
 import java.lang.reflect.Type;
 
-import static com.dotcms.util.ReflectionUtils.getClassFor;
-
 /**
- * Json deserializer and serializer for {@link com.dotcms.api.system.event.verifier.ExcludeOwnerVerifierBean} objects.
- * Basically the visibility value needs to add a type
- * </code>
+ * Json deserializer and serializer for {@link
+ * com.dotcms.api.system.event.verifier.ExcludeOwnerVerifierBean} objects. Basically the visibility
+ * value needs to add a type </code>
  */
-public class ExcludeOwnerVerifierAdapter implements JsonDeserializer<ExcludeOwnerVerifierBean>,JsonSerializer<ExcludeOwnerVerifierBean> {
+public class ExcludeOwnerVerifierAdapter
+    implements JsonDeserializer<ExcludeOwnerVerifierBean>,
+        JsonSerializer<ExcludeOwnerVerifierBean> {
 
-    public static final String USER_ID = "userId";
-    public static final String VISIBILITY = "visibility";
-    public static final String VISIBILITY_VALUE = "visibilityValue";
-    public static final String VISIBILITY_TYPE = "visibilityType";
+  public static final String USER_ID = "userId";
+  public static final String VISIBILITY = "visibility";
+  public static final String VISIBILITY_VALUE = "visibilityValue";
+  public static final String VISIBILITY_TYPE = "visibilityType";
 
-    @Override
-    public ExcludeOwnerVerifierBean deserialize(JsonElement json, Type type, JsonDeserializationContext context) throws JsonParseException {
+  @Override
+  public ExcludeOwnerVerifierBean deserialize(
+      JsonElement json, Type type, JsonDeserializationContext context) throws JsonParseException {
 
-        JsonObject jsonObject = null;
-        Visibility visibility = null;
-        String visibilityName = null;
-        String userId = null;
-        Object visibilityValue = null;
-        String visibilityType  = null;
-        ExcludeOwnerVerifierBean excludeOwnerVerifierBean = null;
+    JsonObject jsonObject = null;
+    Visibility visibility = null;
+    String visibilityName = null;
+    String userId = null;
+    Object visibilityValue = null;
+    String visibilityType = null;
+    ExcludeOwnerVerifierBean excludeOwnerVerifierBean = null;
 
-        if (null != json) {
+    if (null != json) {
 
-            jsonObject = json.getAsJsonObject();
+      jsonObject = json.getAsJsonObject();
 
-            if(jsonObject.has(VISIBILITY)) {
+      if (jsonObject.has(VISIBILITY)) {
 
-                visibilityName = jsonObject.getAsJsonPrimitive
-                        (VISIBILITY).getAsString();
-            }
+        visibilityName = jsonObject.getAsJsonPrimitive(VISIBILITY).getAsString();
+      }
 
-            if(jsonObject.has(USER_ID)) {
+      if (jsonObject.has(USER_ID)) {
 
-                userId = jsonObject.getAsJsonPrimitive
-                        (USER_ID).getAsString();
-            }
+        userId = jsonObject.getAsJsonPrimitive(USER_ID).getAsString();
+      }
 
-            if(jsonObject.has(VISIBILITY_VALUE)) {
+      if (jsonObject.has(VISIBILITY_VALUE)) {
 
-                visibilityType  = jsonObject.getAsJsonPrimitive
-                        (VISIBILITY_TYPE).getAsString();
-                visibilityValue = context.deserialize(jsonObject.get(VISIBILITY_VALUE),
-                        getClassFor(visibilityType));
-            }
+        visibilityType = jsonObject.getAsJsonPrimitive(VISIBILITY_TYPE).getAsString();
+        visibilityValue =
+            context.deserialize(jsonObject.get(VISIBILITY_VALUE), getClassFor(visibilityType));
+      }
 
-            if (null != visibilityName) {
+      if (null != visibilityName) {
 
-                visibility =
-                        Visibility.valueOf(visibilityName);
-            }
+        visibility = Visibility.valueOf(visibilityName);
+      }
 
-            excludeOwnerVerifierBean = new ExcludeOwnerVerifierBean(userId, visibilityValue, visibility);
-        }
-
-        return excludeOwnerVerifierBean;
+      excludeOwnerVerifierBean = new ExcludeOwnerVerifierBean(userId, visibilityValue, visibility);
     }
 
-    @Override
-    public JsonElement serialize(ExcludeOwnerVerifierBean excludeOwnerVerifierBean, Type type, JsonSerializationContext jsonSerializationContext) {
+    return excludeOwnerVerifierBean;
+  }
 
-        final JsonObject jsonElement = new JsonObject();
-        final Object visibilityValue = excludeOwnerVerifierBean.getVisibilityValue();
+  @Override
+  public JsonElement serialize(
+      ExcludeOwnerVerifierBean excludeOwnerVerifierBean,
+      Type type,
+      JsonSerializationContext jsonSerializationContext) {
 
-        jsonElement.addProperty(USER_ID, excludeOwnerVerifierBean.getUserId());
-        jsonElement.addProperty(VISIBILITY, excludeOwnerVerifierBean.getVisibility().name());
+    final JsonObject jsonElement = new JsonObject();
+    final Object visibilityValue = excludeOwnerVerifierBean.getVisibilityValue();
 
-        if (visibilityValue != null) {
-            jsonElement.add(VISIBILITY_VALUE,  jsonSerializationContext.serialize(visibilityValue));
-            jsonElement.addProperty(VISIBILITY_TYPE, visibilityValue.getClass().getName());
-        }
+    jsonElement.addProperty(USER_ID, excludeOwnerVerifierBean.getUserId());
+    jsonElement.addProperty(VISIBILITY, excludeOwnerVerifierBean.getVisibility().name());
 
-        return jsonElement;
+    if (visibilityValue != null) {
+      jsonElement.add(VISIBILITY_VALUE, jsonSerializationContext.serialize(visibilityValue));
+      jsonElement.addProperty(VISIBILITY_TYPE, visibilityValue.getClass().getName());
     }
+
+    return jsonElement;
+  }
 }

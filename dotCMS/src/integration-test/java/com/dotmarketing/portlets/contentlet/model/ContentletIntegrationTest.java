@@ -1,5 +1,9 @@
 package com.dotmarketing.portlets.contentlet.model;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.model.field.DataTypes;
@@ -31,332 +35,355 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.liferay.portal.model.User;
-import static org.junit.Assert.*;
-
 import java.util.List;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-/**
- * @author nollymar
- */
+/** @author nollymar */
 public class ContentletIntegrationTest {
 
-    private static ContentletAPI contentletAPI;
-    private static ContentTypeAPI contentTypeAPI;
-    private static FieldAPI fieldAPI;
-    private static HostAPI hostAPI;
-    private static Language defaultLanguage;
-    private static LanguageAPI languageAPI;
-    private static RelationshipAPI relationshipAPI;
-    private static RoleAPI roleAPI;
-    private static UserAPI userAPI;
-    private static User user;
-    private static Host defaultHost;
+  private static ContentletAPI contentletAPI;
+  private static ContentTypeAPI contentTypeAPI;
+  private static FieldAPI fieldAPI;
+  private static HostAPI hostAPI;
+  private static Language defaultLanguage;
+  private static LanguageAPI languageAPI;
+  private static RelationshipAPI relationshipAPI;
+  private static RoleAPI roleAPI;
+  private static UserAPI userAPI;
+  private static User user;
+  private static Host defaultHost;
 
-    private final static String CARDINALITY = String.valueOf(RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal());
+  private static final String CARDINALITY =
+      String.valueOf(RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal());
 
+  @BeforeClass
+  public static void prepare() throws Exception {
 
-    @BeforeClass
-    public static void prepare () throws Exception {
+    // Setting web app environment
+    IntegrationTestInitService.getInstance().init();
 
-        //Setting web app environment
-        IntegrationTestInitService.getInstance().init();
+    fieldAPI = APILocator.getContentTypeFieldAPI();
+    hostAPI = APILocator.getHostAPI();
+    languageAPI = APILocator.getLanguageAPI();
 
-        fieldAPI    = APILocator.getContentTypeFieldAPI();
-        hostAPI     = APILocator.getHostAPI();
-        languageAPI = APILocator.getLanguageAPI();
+    userAPI = APILocator.getUserAPI();
+    roleAPI = APILocator.getRoleAPI();
+    user = userAPI.getSystemUser();
 
-        userAPI = APILocator.getUserAPI();
-        roleAPI = APILocator.getRoleAPI();
-        user    = userAPI.getSystemUser();
+    contentletAPI = APILocator.getContentletAPI();
+    contentTypeAPI = APILocator.getContentTypeAPI(user);
+    relationshipAPI = APILocator.getRelationshipAPI();
+    defaultHost = hostAPI.findDefaultHost(user, false);
+    defaultLanguage = languageAPI.getDefaultLanguage();
+  }
 
-        contentletAPI   = APILocator.getContentletAPI();
-        contentTypeAPI  = APILocator.getContentTypeAPI(user);
-        relationshipAPI = APILocator.getRelationshipAPI();
-        defaultHost     = hostAPI.findDefaultHost(user, false);
-        defaultLanguage = languageAPI.getDefaultLanguage();
+  @Test
+  public void testGetContentTypeAlwaysReturnsTheLatestCachedVersion()
+      throws DotSecurityException, DotDataException {
+
+    Field field;
+
+    // Create Content Type.
+    final ContentType contentType = getNewContentType();
+
+    try {
+      // Creating new Text Field.
+      field =
+          ImmutableTextField.builder()
+              .name("Title")
+              .variable("title")
+              .contentTypeId(contentType.id())
+              .dataType(DataTypes.TEXT)
+              .build();
+
+      fieldAPI.save(field, user);
+
+      ContentletDataGen contentletDataGen = new ContentletDataGen(contentType.id());
+
+      final Contentlet contentlet =
+          contentletDataGen.languageId(defaultLanguage.getId()).nextPersisted();
+
+      assertNotNull(contentlet.getContentType());
+
+      // Adding a new field in the content type
+      field =
+          ImmutableTextField.builder()
+              .name("Description")
+              .variable("Description")
+              .contentTypeId(contentType.id())
+              .dataType(DataTypes.LONG_TEXT)
+              .build();
+
+      fieldAPI.save(field, user);
+
+      final ContentType cachedContentType = contentTypeAPI.find(contentType.inode());
+
+      // Both content types (the one contained in the contentlet and the cached one) must be the
+      // same
+      assertEquals(cachedContentType.fields().size(), contentlet.getContentType().fields().size());
+
+      assertEquals(cachedContentType.inode(), contentlet.getContentType().inode());
+
+      assertEquals(cachedContentType.modDate(), contentlet.getContentType().modDate());
+
+    } finally {
+      contentTypeAPI.delete(contentType);
     }
+  }
 
-    @Test
-    public void testGetContentTypeAlwaysReturnsTheLatestCachedVersion()
-            throws DotSecurityException, DotDataException {
+  @Test
+  public void testGetRelatedForOneSidedRelationship()
+      throws DotDataException, DotSecurityException {
 
-        Field field;
+    ContentType parentContentType = null;
+    ContentType childContentType = null;
 
-        //Create Content Type.
-        final ContentType contentType = getNewContentType();
+    try {
 
-        try {
-            //Creating new Text Field.
-            field = ImmutableTextField.builder()
-                    .name("Title")
-                    .variable("title")
-                    .contentTypeId(contentType.id())
-                    .dataType(DataTypes.TEXT)
-                    .build();
+      // Create Content Types
+      parentContentType = getNewContentType();
+      childContentType = getNewContentType();
 
-            fieldAPI.save(field, user);
+      // Create Content
+      Contentlet parentContentlet =
+          new ContentletDataGen(parentContentType.id()).languageId(defaultLanguage.getId()).next();
 
-            ContentletDataGen contentletDataGen = new ContentletDataGen(contentType.id());
+      final Contentlet childContentlet =
+          new ContentletDataGen(childContentType.id())
+              .languageId(defaultLanguage.getId())
+              .nextPersisted();
 
-            final Contentlet contentlet = contentletDataGen.languageId(defaultLanguage.getId())
-                    .nextPersisted();
+      // Create Relationship
+      final Field field =
+          createAndSaveRelationshipField(
+              "myChild", parentContentType.id(), childContentType.variable(), CARDINALITY);
 
-            assertNotNull(contentlet.getContentType());
+      final Relationship relationship = relationshipAPI.getRelationshipFromField(field, user);
 
-            //Adding a new field in the content type
-            field = ImmutableTextField.builder()
-                    .name("Description")
-                    .variable("Description")
-                    .contentTypeId(contentType.id())
-                    .dataType(DataTypes.LONG_TEXT)
-                    .build();
+      // Save related content
+      parentContentlet =
+          contentletAPI.checkin(
+              parentContentlet,
+              CollectionsUtils.map(relationship, CollectionsUtils.list(childContentlet)),
+              user,
+              false);
 
-            fieldAPI.save(field, user);
+      // No cached value
+      List<Contentlet> result = parentContentlet.getRelated(field.variable(), user, false);
 
-            final ContentType cachedContentType = contentTypeAPI.find(contentType.inode());
+      assertEquals(1, result.size());
+      assertEquals(childContentlet.getIdentifier(), result.get(0).getIdentifier());
 
-            //Both content types (the one contained in the contentlet and the cached one) must be the same
-            assertEquals(cachedContentType.fields().size(),
-                    contentlet.getContentType().fields().size());
+      // Cached value
+      result = parentContentlet.getRelated(field.variable(), user, false);
 
-            assertEquals(cachedContentType.inode(), contentlet.getContentType().inode());
+      assertEquals(1, result.size());
+      assertEquals(childContentlet.getIdentifier(), result.get(0).getIdentifier());
 
-            assertEquals(cachedContentType.modDate(), contentlet.getContentType().modDate());
+    } finally {
 
-        }finally{
-            contentTypeAPI.delete(contentType);
-        }
+      if (parentContentType != null && parentContentType.id() != null) {
+        contentTypeAPI.delete(parentContentType);
+      }
+
+      if (childContentType != null && childContentType.id() != null) {
+        contentTypeAPI.delete(childContentType);
+      }
     }
+  }
 
-    @Test
-    public void testGetRelatedForOneSidedRelationship()
-            throws DotDataException, DotSecurityException {
+  @Test
+  public void testGetRelatedForOneSidedRelationshipWhenLimitedUserShouldReturnEmptyList()
+      throws DotDataException, DotSecurityException {
 
-        ContentType parentContentType = null;
-        ContentType childContentType  = null;
+    ContentType parentContentType = null;
+    ContentType childContentType = null;
+    Role newRole = null;
 
-        try{
+    try {
 
-            //Create Content Types
-            parentContentType = getNewContentType();
-            childContentType = getNewContentType();
+      // Create Content Types
+      parentContentType = getNewContentType();
+      childContentType = getNewContentType();
 
-            //Create Content
-            Contentlet parentContentlet = new ContentletDataGen(parentContentType.id())
-                    .languageId(defaultLanguage.getId()).next();
+      // Create Content
+      Contentlet parentContentlet =
+          new ContentletDataGen(parentContentType.id()).languageId(defaultLanguage.getId()).next();
 
-            final Contentlet childContentlet = new ContentletDataGen(childContentType.id())
-                    .languageId(defaultLanguage.getId()).nextPersisted();
+      final ContentletDataGen childContentletDataGen = new ContentletDataGen(childContentType.id());
 
-            //Create Relationship
-            final Field field = createAndSaveRelationshipField("myChild", parentContentType.id(),
-                    childContentType.variable(), CARDINALITY);
+      final Contentlet childContentlet1 =
+          childContentletDataGen.languageId(defaultLanguage.getId()).nextPersisted();
 
-            final Relationship relationship = relationshipAPI.getRelationshipFromField(field, user);
+      final Contentlet childContentlet2 =
+          childContentletDataGen.languageId(defaultLanguage.getId()).nextPersisted();
 
-            //Save related content
-            parentContentlet = contentletAPI.checkin(parentContentlet,
-                    CollectionsUtils.map(relationship, CollectionsUtils.list(childContentlet)), user,
-                    false);
+      // Create Relationship
+      final Field field =
+          createAndSaveRelationshipField(
+              "myChild", parentContentType.id(), childContentType.variable(), CARDINALITY);
 
-            //No cached value
-            List<Contentlet> result = parentContentlet.getRelated(field.variable(), user, false);
+      final Relationship relationship = relationshipAPI.getRelationshipFromField(field, user);
 
-            assertEquals(1, result.size());
-            assertEquals(childContentlet.getIdentifier(), result.get(0).getIdentifier());
+      // Save related content
+      parentContentlet =
+          contentletAPI.checkin(
+              parentContentlet,
+              CollectionsUtils.map(
+                  relationship, CollectionsUtils.list(childContentlet1, childContentlet2)),
+              user,
+              false);
 
-            //Cached value
-            result = parentContentlet.getRelated(field.variable(), user, false);
+      newRole = createRole();
 
-            assertEquals(1, result.size());
-            assertEquals(childContentlet.getIdentifier(), result.get(0).getIdentifier());
+      // set individual permissions to the child
+      APILocator.getPermissionAPI()
+          .save(
+              new Permission(
+                  PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+                  childContentlet1.getPermissionId(),
+                  newRole.getId(),
+                  PermissionAPI.PERMISSION_READ,
+                  true),
+              childContentlet1,
+              user,
+              false);
 
-        }finally{
+      // Get related content with anonymous user
+      List<Contentlet> result = parentContentlet.getRelated(field.variable(), null, false);
 
-            if (parentContentType !=null && parentContentType.id() != null){
-                contentTypeAPI.delete(parentContentType);
-            }
+      assertEquals(1, result.size());
+      assertEquals(childContentlet2.getIdentifier(), result.get(0).getIdentifier());
 
-            if (childContentType !=null && childContentType.id() != null){
-                contentTypeAPI.delete(childContentType);
-            }
-        }
+      // Get related content with system user
+      result = parentContentlet.getRelated(field.variable(), user, false);
+
+      assertEquals(2, result.size());
+      assertEquals(childContentlet1.getIdentifier(), result.get(0).getIdentifier());
+      assertEquals(childContentlet2.getIdentifier(), result.get(1).getIdentifier());
+
+    } finally {
+
+      if (parentContentType != null && parentContentType.id() != null) {
+        contentTypeAPI.delete(parentContentType);
+      }
+
+      if (childContentType != null && childContentType.id() != null) {
+        contentTypeAPI.delete(childContentType);
+      }
+
+      if (newRole != null) {
+        roleAPI.delete(newRole);
+      }
     }
+  }
 
-    @Test
-    public void testGetRelatedForOneSidedRelationshipWhenLimitedUserShouldReturnEmptyList()
-            throws DotDataException, DotSecurityException {
+  private Role createRole() throws DotDataException {
+    final long millis = System.currentTimeMillis();
 
-        ContentType parentContentType = null;
-        ContentType childContentType = null;
-        Role newRole = null;
+    // Create Role.
+    Role newRole = new Role();
+    newRole.setName("Role" + millis);
+    newRole.setEditUsers(true);
+    newRole.setEditPermissions(true);
+    newRole.setSystem(false);
+    newRole.setEditLayouts(true);
+    newRole.setParent(newRole.getId());
+    newRole = roleAPI.save(newRole);
 
-        try {
+    return newRole;
+  }
 
-            //Create Content Types
-            parentContentType = getNewContentType();
-            childContentType = getNewContentType();
+  @Test
+  public void testGetRelatedWhenNoRelatedContentShouldReturnEmptyList()
+      throws DotDataException, DotSecurityException {
 
-            //Create Content
-            Contentlet parentContentlet = new ContentletDataGen(parentContentType.id())
-                    .languageId(defaultLanguage.getId()).next();
+    ContentType parentContentType = null;
+    ContentType childContentType = null;
 
-            final ContentletDataGen childContentletDataGen = new ContentletDataGen(childContentType.id());
+    try {
+      // Create Content Types
+      parentContentType = getNewContentType();
+      childContentType = getNewContentType();
 
-            final Contentlet childContentlet1 = childContentletDataGen
-                    .languageId(defaultLanguage.getId()).nextPersisted();
+      // Create Content
+      final Contentlet contentlet =
+          new ContentletDataGen(parentContentType.id())
+              .languageId(defaultLanguage.getId())
+              .nextPersisted();
 
-            final Contentlet childContentlet2 = childContentletDataGen
-                    .languageId(defaultLanguage.getId()).nextPersisted();
+      // Create Relationship
+      final Field field =
+          createAndSaveRelationshipField(
+              "myChild", parentContentType.id(), childContentType.variable(), CARDINALITY);
 
+      final List<Contentlet> result = contentlet.getRelated(field.variable(), user, false);
 
-            //Create Relationship
-            final Field field = createAndSaveRelationshipField("myChild", parentContentType.id(),
-                    childContentType.variable(), CARDINALITY);
+      assertTrue(result.isEmpty());
 
-            final Relationship relationship = relationshipAPI.getRelationshipFromField(field, user);
+    } finally {
 
-            //Save related content
-            parentContentlet = contentletAPI.checkin(parentContentlet,
-                    CollectionsUtils.map(relationship, CollectionsUtils.list(childContentlet1, childContentlet2)),
-                    user,
-                    false);
+      if (parentContentType != null && parentContentType.id() != null) {
+        contentTypeAPI.delete(parentContentType);
+      }
 
-            newRole = createRole();
-
-            //set individual permissions to the child
-            APILocator.getPermissionAPI()
-                    .save(new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
-                            childContentlet1.getPermissionId(), newRole.getId(),
-                            PermissionAPI.PERMISSION_READ, true), childContentlet1, user, false);
-
-            //Get related content with anonymous user
-            List<Contentlet> result = parentContentlet.getRelated(field.variable(), null, false);
-
-            assertEquals(1, result.size());
-            assertEquals(childContentlet2.getIdentifier(), result.get(0).getIdentifier());
-
-            //Get related content with system user
-            result = parentContentlet.getRelated(field.variable(), user, false);
-
-            assertEquals(2, result.size());
-            assertEquals(childContentlet1.getIdentifier(), result.get(0).getIdentifier());
-            assertEquals(childContentlet2.getIdentifier(), result.get(1).getIdentifier());
-
-
-
-        } finally {
-
-            if (parentContentType != null && parentContentType.id() != null) {
-                contentTypeAPI.delete(parentContentType);
-            }
-
-            if (childContentType != null && childContentType.id() != null) {
-                contentTypeAPI.delete(childContentType);
-            }
-
-            if (newRole != null){
-                roleAPI.delete(newRole);
-            }
-        }
+      if (childContentType != null && childContentType.id() != null) {
+        contentTypeAPI.delete(childContentType);
+      }
     }
+  }
 
-    private Role createRole() throws DotDataException {
-        final long millis =  System.currentTimeMillis();
+  @Test(expected = DotStateException.class)
+  public void testGetRelatedWhenInvalidVarFieldShouldThrowAnException()
+      throws DotDataException, DotSecurityException {
 
-        // Create Role.
-        Role newRole = new Role();
-        newRole.setName("Role" +  millis);
-        newRole.setEditUsers(true);
-        newRole.setEditPermissions(true);
-        newRole.setSystem(false);
-        newRole.setEditLayouts(true);
-        newRole.setParent(newRole.getId());
-        newRole = roleAPI.save(newRole);
+    // Create Content Type.
+    final ContentType contentType = getNewContentType();
 
-        return newRole;
+    try {
+      // Create Content
+      final Contentlet contentlet =
+          new ContentletDataGen(contentType.id())
+              .languageId(defaultLanguage.getId())
+              .nextPersisted();
+
+      contentlet.getRelated("AnyField", user, false);
+
+    } finally {
+      contentTypeAPI.delete(contentType);
     }
+  }
 
+  private ContentType getNewContentType() throws DotSecurityException, DotDataException {
+    final long time = System.currentTimeMillis();
 
-    @Test
-    public void testGetRelatedWhenNoRelatedContentShouldReturnEmptyList()
-            throws DotDataException, DotSecurityException {
+    return contentTypeAPI.save(
+        ContentTypeBuilder.builder(BaseContentType.CONTENT.immutableClass())
+            .description("Test ContentType " + time)
+            .host(defaultHost.getIdentifier())
+            .name("Test ContentType " + time)
+            .owner("owner")
+            .variable("testContentType" + time)
+            .build());
+  }
 
-        ContentType parentContentType = null;
-        ContentType childContentType  = null;
+  private Field createAndSaveRelationshipField(
+      final String relationshipName,
+      final String parentTypeId,
+      final String childTypeVar,
+      final String cardinality)
+      throws DotSecurityException, DotDataException {
 
-        try {
-            //Create Content Types
-            parentContentType = getNewContentType();
-            childContentType = getNewContentType();
+    final Field field =
+        FieldBuilder.builder(RelationshipField.class)
+            .name(relationshipName)
+            .contentTypeId(parentTypeId)
+            .values(cardinality)
+            .relationType(childTypeVar)
+            .build();
 
-            //Create Content
-            final Contentlet contentlet = new ContentletDataGen(parentContentType.id())
-                    .languageId(defaultLanguage.getId()).nextPersisted();
-
-            //Create Relationship
-            final Field field = createAndSaveRelationshipField("myChild", parentContentType.id(),
-                    childContentType.variable(), CARDINALITY);
-
-            final List<Contentlet> result = contentlet.getRelated(field.variable(), user, false);
-
-            assertTrue(result.isEmpty());
-
-        }finally {
-
-            if (parentContentType !=null && parentContentType.id() != null){
-                contentTypeAPI.delete(parentContentType);
-            }
-
-            if (childContentType !=null && childContentType.id() != null){
-                contentTypeAPI.delete(childContentType);
-            }
-        }
-    }
-
-    @Test(expected = DotStateException.class)
-    public void testGetRelatedWhenInvalidVarFieldShouldThrowAnException()
-            throws DotDataException, DotSecurityException {
-
-        //Create Content Type.
-        final ContentType contentType = getNewContentType();
-
-        try {
-            //Create Content
-            final Contentlet contentlet = new ContentletDataGen(contentType.id())
-                    .languageId(defaultLanguage.getId()).nextPersisted();
-
-            contentlet.getRelated("AnyField", user, false);
-
-        }finally{
-            contentTypeAPI.delete(contentType);
-        }
-    }
-
-    private ContentType getNewContentType() throws DotSecurityException, DotDataException {
-        final long time = System.currentTimeMillis();
-
-        return contentTypeAPI.save(ContentTypeBuilder.builder(BaseContentType.CONTENT.immutableClass())
-                .description("Test ContentType " + time)
-                .host(defaultHost.getIdentifier())
-                .name("Test ContentType "+ time)
-                .owner("owner")
-                .variable("testContentType" + time)
-                .build());
-    }
-
-    private Field createAndSaveRelationshipField(final String relationshipName, final String parentTypeId,
-            final String childTypeVar, final String cardinality)
-            throws DotSecurityException, DotDataException {
-
-        final Field field = FieldBuilder.builder(RelationshipField.class).name(relationshipName)
-                .contentTypeId(parentTypeId).values(cardinality)
-                .relationType(childTypeVar).build();
-
-        //One side of the relationship is set parentContentType --> childContentType
-        return fieldAPI.save(field, user);
-    }
-
+    // One side of the relationship is set parentContentType --> childContentType
+    return fieldAPI.save(field, user);
+  }
 }

@@ -17,18 +17,17 @@
 package com.dotcms.system.event.local.model;
 
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
-
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * This class is used by the {@link LocalSystemEventsAPI} in order to annotated methods that
- * want to be subscribed to particular event.
+ * This class is used by the {@link LocalSystemEventsAPI} in order to annotated methods that want to
+ * be subscribed to particular event.
+ *
  * @author jsanca
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
-public @interface Subscriber {
-} // Subscriber.
+public @interface Subscriber {} // Subscriber.

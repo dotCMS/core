@@ -18,15 +18,14 @@ package com.dotmarketing.util.diff.tag;
 import com.dotcms.repackage.org.eclipse.compare.rangedifferencer.IRangeComparator;
 
 /**
- * Extens the IRangeComparator interface with functionality to recreate parts of
- * the original document.
+ * Extens the IRangeComparator interface with functionality to recreate parts of the original
+ * document.
  */
 public interface IAtomSplitter extends IRangeComparator {
 
-    public Atom getAtom(int i);
+  public Atom getAtom(int i);
 
-    public String substring(int startAtom, int endAtom);
+  public String substring(int startAtom, int endAtom);
 
-    public String substring(int startAtom);
-
+  public String substring(int startAtom);
 }

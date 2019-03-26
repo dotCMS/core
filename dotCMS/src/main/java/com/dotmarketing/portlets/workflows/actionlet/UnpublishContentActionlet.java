@@ -12,47 +12,45 @@ import java.util.Map;
 
 public class UnpublishContentActionlet extends WorkFlowActionlet {
 
+  /** */
+  private static final long serialVersionUID = 1L;
 
+  public String getName() {
+    return "Unpublish content";
+  }
 
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 1L;
+  public String getHowTo() {
 
-	public String getName() {
-		return "Unpublish content";
-	}
+    return "This actionlet will unpublish the content.";
+  }
 
-	public String getHowTo() {
+  public void executeAction(
+      WorkflowProcessor processor, Map<String, WorkflowActionClassParameter> params)
+      throws WorkflowActionFailureException {
+    try {
 
-		return "This actionlet will unpublish the content.";
-	}
+      // Verify if there is something to unpublish
+      boolean hasLiveVersion =
+          APILocator.getVersionableAPI().hasLiveVersion(processor.getContentlet());
+      if (hasLiveVersion) {
+        APILocator.getContentletAPI()
+            .unpublish(processor.getContentlet(), processor.getUser(), false);
+      }
 
-	public void executeAction(WorkflowProcessor processor,Map<String,WorkflowActionClassParameter>  params) throws WorkflowActionFailureException {
-		try {
+    } catch (Exception e) {
+      Logger.error(this.getClass(), e.getMessage(), e);
+      throw new WorkflowActionFailureException(e.getMessage(), e);
+    }
+  }
 
-			//Verify if there is something to unpublish
-			boolean hasLiveVersion = APILocator.getVersionableAPI()
-					.hasLiveVersion(processor.getContentlet());
-			if (hasLiveVersion) {
-				APILocator.getContentletAPI().unpublish(processor.getContentlet(), processor.getUser(), false);
-			}
+  public WorkflowStep getNextStep() {
 
-		} catch (Exception e) {
-			Logger.error(this.getClass(),e.getMessage(),e);
-			throw new  WorkflowActionFailureException(e.getMessage(),e);
-		}
+    return null;
+  }
 
-	}
+  @Override
+  public List<WorkflowActionletParameter> getParameters() {
 
-	public WorkflowStep getNextStep() {
-
-		return null;
-	}
-
-	@Override
-	public  List<WorkflowActionletParameter> getParameters() {
-
-		return null;
-	}
+    return null;
+  }
 }

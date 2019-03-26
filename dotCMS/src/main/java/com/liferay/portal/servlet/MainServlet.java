@@ -1,25 +1,21 @@
 /**
  * Copyright (c) 2000-2005 Liferay, LLC. All rights reserved.
  *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
+ * <p>Permission is hereby granted, free of charge, to any person obtaining a copy of this software
+ * and associated documentation files (the "Software"), to deal in the Software without restriction,
+ * including without limitation the rights to use, copy, modify, merge, publish, distribute,
+ * sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
  *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
+ * <p>The above copyright notice and this permission notice shall be included in all copies or
+ * substantial portions of the Software.
  *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
+ * <p>THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
+ * BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+ * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-
 package com.liferay.portal.servlet;
 
 import com.dotcms.config.DotInitializationService;
@@ -61,8 +57,6 @@ import com.liferay.util.servlet.UploadServletRequest;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
-import java.lang.reflect.InvocationTargetException;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
@@ -75,7 +69,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import javax.servlet.jsp.PageContext;
-
 import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.commons.beanutils.SuppressPropertiesBeanIntrospector;
 import org.apache.commons.logging.Log;
@@ -94,453 +87,467 @@ import org.dom4j.io.SAXReader;
  * @author Brian Wing Shun Chan
  * @author Jorge Ferrer
  * @version $Revision: 1.41 $
- *
  */
 public class MainServlet extends ActionServlet {
 
-	public void init(ServletConfig config) throws ServletException {
-		synchronized (MainServlet.class) {
-			super.init(config);
-			Config.initializeConfig();
-			com.dotmarketing.util.Config.setMyApp(config.getServletContext());
-			// Need the plugin root dir before Hibernate comes up
-			try {
-				APILocator.getPluginAPI().setPluginJarDir(new File(config.getServletContext().getRealPath("/WEB-INF/lib")));
-			} catch (IOException e1) {
-				Logger.debug(InitServlet.class, "IOException: " + e1.getMessage(), e1);
-			}
+  public void init(ServletConfig config) throws ServletException {
+    synchronized (MainServlet.class) {
+      super.init(config);
+      Config.initializeConfig();
+      com.dotmarketing.util.Config.setMyApp(config.getServletContext());
+      // Need the plugin root dir before Hibernate comes up
+      try {
+        APILocator.getPluginAPI()
+            .setPluginJarDir(new File(config.getServletContext().getRealPath("/WEB-INF/lib")));
+      } catch (IOException e1) {
+        Logger.debug(InitServlet.class, "IOException: " + e1.getMessage(), e1);
+      }
+
+      // Checking for execute upgrades
+      try {
+        StartupTasksExecutor.getInstance()
+            .executeUpgrades(config.getServletContext().getRealPath("/"));
+      } catch (DotRuntimeException e1) {
+        throw new ServletException(e1);
+      } catch (DotDataException e1) {
+        throw new ServletException(e1);
+      } finally {
+        DbConnectionFactory.closeSilently();
+      }
+
+      HashSet<String> suppressProperties = new HashSet<>();
+      suppressProperties.add("class");
+      suppressProperties.add("multipartRequestHandler");
+      suppressProperties.add("resultValueMap");
+      PropertyUtils.addBeanIntrospector(new SuppressPropertiesBeanIntrospector(suppressProperties));
+      PropertyUtils.clearDescriptors();
+      Logger.info(
+          this.getClass(),
+          "SuppressPropertiesBeanIntrospector enabled for legacy Struts applications");
+
+      // Context path
+      ServletConfig sc = getServletConfig();
+      ServletContext ctx = getServletContext();
+
+      String ctxPath = GetterUtil.get(sc.getInitParameter("ctx_path"), "/");
+
+      ctx.setAttribute(WebKeys.CTX_PATH, StringUtil.replace(ctxPath + "/c", "//", "/"));
+
+      ctx.setAttribute(WebKeys.CAPTCHA_PATH, StringUtil.replace(ctxPath + "/captcha", "//", "/"));
+
+      ctx.setAttribute(WebKeys.IMAGE_PATH, StringUtil.replace(ctxPath + "/image", "//", "/"));
+
+      // Company id
+
+      _companyId = ctx.getInitParameter("company_id");
+
+      ctx.setAttribute(WebKeys.COMPANY_ID, _companyId);
+
+      // Initialize portlets
+
+      try {
+        String[] xmls =
+            new String[] {
+              Http.URLtoString(ctx.getResource("/WEB-INF/portlet.xml")),
+              Http.URLtoString(ctx.getResource("/WEB-INF/portlet-ext.xml")),
+              Http.URLtoString(ctx.getResource("/WEB-INF/liferay-portlet.xml")),
+              Http.URLtoString(ctx.getResource("/WEB-INF/liferay-portlet-ext.xml"))
+            };
+
+        PortletManagerUtil.initEAR(xmls);
+      } catch (Exception e) {
+        Logger.error(this, e.getMessage(), e);
+      }
+
+      // Initialize portlets display
+
+      try {
+        String xml = Http.URLtoString(ctx.getResource("/WEB-INF/liferay-display.xml"));
+
+        Map oldCategories = (Map) WebAppPool.get(_companyId, WebKeys.PORTLET_DISPLAY);
+
+        Map newCategories = PortletManagerUtil.getEARDisplay(xml);
+
+        Map mergedCategories = PortalUtil.mergeCategories(oldCategories, newCategories);
+
+        WebAppPool.put(_companyId, WebKeys.PORTLET_DISPLAY, mergedCategories);
+      } catch (Exception e) {
+        Logger.error(this, e.getMessage(), e);
+      }
+
+      // Initialize skins
+      //
+      //			try {
+      //				String[] xmls = new String[] {
+      // Http.URLtoString(ctx.getResource("/WEB-INF/liferay-skin.xml")),
+      //						Http.URLtoString(ctx.getResource("/WEB-INF/liferay-skin-ext.xml")) };
+      //
+      //				SkinManagerUtil.init(xmls);
+      //			} catch (Exception e) {
+      //				Logger.error(this, e.getMessage(), e);
+      //			}
+
+      // Check company
+
+      try {
+        CompanyLocalManagerUtil.checkCompany(_companyId);
+      } catch (Exception e) {
+        Logger.error(this, e.getMessage(), e);
+      }
 
-			// Checking for execute upgrades
-			try {
-				StartupTasksExecutor.getInstance().executeUpgrades(config.getServletContext().getRealPath("/"));
-			} catch (DotRuntimeException e1) {
-				throw new ServletException(e1);
-			} catch (DotDataException e1) {
-				throw new ServletException(e1);
-			} finally {
-				DbConnectionFactory.closeSilently();
-			}
-
-            HashSet<String> suppressProperties = new HashSet<>();
-            suppressProperties.add("class");
-            suppressProperties.add("multipartRequestHandler");
-            suppressProperties.add("resultValueMap");
-            PropertyUtils.addBeanIntrospector(new SuppressPropertiesBeanIntrospector(suppressProperties));
-            PropertyUtils.clearDescriptors();
-            Logger.info(this.getClass(), "SuppressPropertiesBeanIntrospector enabled for legacy Struts applications");
-
-
-			// Context path
-			ServletConfig sc = getServletConfig();
-			ServletContext ctx = getServletContext();
-
-			String ctxPath = GetterUtil.get(sc.getInitParameter("ctx_path"), "/");
-
-			ctx.setAttribute(WebKeys.CTX_PATH, StringUtil.replace(ctxPath + "/c", "//", "/"));
-
-			ctx.setAttribute(WebKeys.CAPTCHA_PATH, StringUtil.replace(ctxPath + "/captcha", "//", "/"));
-
-			ctx.setAttribute(WebKeys.IMAGE_PATH, StringUtil.replace(ctxPath + "/image", "//", "/"));
-
-			// Company id
-
-			_companyId = ctx.getInitParameter("company_id");
-
-			ctx.setAttribute(WebKeys.COMPANY_ID, _companyId);
-
-			// Initialize portlets
-
-			try {
-				String[] xmls = new String[] { Http.URLtoString(ctx.getResource("/WEB-INF/portlet.xml")),
-						Http.URLtoString(ctx.getResource("/WEB-INF/portlet-ext.xml")), Http.URLtoString(ctx.getResource("/WEB-INF/liferay-portlet.xml")),
-						Http.URLtoString(ctx.getResource("/WEB-INF/liferay-portlet-ext.xml")) };
-
-				PortletManagerUtil.initEAR(xmls);
-			} catch (Exception e) {
-				Logger.error(this, e.getMessage(), e);
-			}
-
-			// Initialize portlets display
-
-			try {
-				String xml = Http.URLtoString(ctx.getResource("/WEB-INF/liferay-display.xml"));
-
-				Map oldCategories = (Map) WebAppPool.get(_companyId, WebKeys.PORTLET_DISPLAY);
-
-				Map newCategories = PortletManagerUtil.getEARDisplay(xml);
-
-				Map mergedCategories = PortalUtil.mergeCategories(oldCategories, newCategories);
+      // Check web settings
 
-				WebAppPool.put(_companyId, WebKeys.PORTLET_DISPLAY, mergedCategories);
-			} catch (Exception e) {
-				Logger.error(this, e.getMessage(), e);
-			}
+      try {
+        String xml = Http.URLtoString(ctx.getResource("/WEB-INF/web.xml"));
 
-			// Initialize skins
-//
-//			try {
-//				String[] xmls = new String[] { Http.URLtoString(ctx.getResource("/WEB-INF/liferay-skin.xml")),
-//						Http.URLtoString(ctx.getResource("/WEB-INF/liferay-skin-ext.xml")) };
-//
-//				SkinManagerUtil.init(xmls);
-//			} catch (Exception e) {
-//				Logger.error(this, e.getMessage(), e);
-//			}
+        _checkWebSettings(xml);
+      } catch (Exception e) {
+        Logger.error(this, e.getMessage(), e);
+      }
 
-			// Check company
+      // Scheduler
 
-			try {
-				CompanyLocalManagerUtil.checkCompany(_companyId);
-			} catch (Exception e) {
-				Logger.error(this, e.getMessage(), e);
-			}
+      // try {
+      // Iterator itr =
+      // PortletManagerUtil.getPortlets(_companyId).iterator();
+      //
+      // while (itr.hasNext()) {
+      // Portlet portlet = (Portlet)itr.next();
+      //
+      // String className = portlet.getSchedulerClass();
+      //
+      // if (portlet.isActive() && className != null) {
+      // Scheduler scheduler =
+      // (Scheduler)InstancePool.get(className);
+      //
+      // scheduler.schedule();
+      // }
+      // }
+      // }
+      // catch (ObjectAlreadyExistsException oaee) {
+      // }
+      // catch (Exception e) {
+      // Logger.error(this,e.getMessage(),e);
+      // }
 
-			// Check web settings
+      // Message Resources
 
-			try {
-				String xml = Http.URLtoString(ctx.getResource("/WEB-INF/web.xml"));
+      MultiMessageResources messageResources =
+          (MultiMessageResources) ctx.getAttribute(Globals.MESSAGES_KEY);
 
-				_checkWebSettings(xml);
-			} catch (Exception e) {
-				Logger.error(this, e.getMessage(), e);
-			}
+      messageResources.setServletContext(ctx);
 
-			// Scheduler
+      WebAppPool.put(_companyId, Globals.MESSAGES_KEY, messageResources);
 
-			// try {
-			// Iterator itr =
-			// PortletManagerUtil.getPortlets(_companyId).iterator();
-			//
-			// while (itr.hasNext()) {
-			// Portlet portlet = (Portlet)itr.next();
-			//
-			// String className = portlet.getSchedulerClass();
-			//
-			// if (portlet.isActive() && className != null) {
-			// Scheduler scheduler =
-			// (Scheduler)InstancePool.get(className);
-			//
-			// scheduler.schedule();
-			// }
-			// }
-			// }
-			// catch (ObjectAlreadyExistsException oaee) {
-			// }
-			// catch (Exception e) {
-			// Logger.error(this,e.getMessage(),e);
-			// }
+      // Current users
 
-			// Message Resources
+      WebAppPool.put(_companyId, WebKeys.CURRENT_USERS, new TreeMap());
 
-			MultiMessageResources messageResources = (MultiMessageResources) ctx.getAttribute(Globals.MESSAGES_KEY);
+      // HttpBridge
 
-			messageResources.setServletContext(ctx);
+      TaskController.bridgeUserServicePath = "/httpbridge/home";
+      TaskController.bridgeHttpServicePath = "/httpbridge/http";
+      TaskController.bridgeGotoTag = "(goto)";
+      TaskController.bridgeThenTag = "(then)";
+      TaskController.bridgePostTag = "(post)";
 
-			WebAppPool.put(_companyId, Globals.MESSAGES_KEY, messageResources);
+      // Process startup events
 
-			// Current users
+      try {
+        EventsProcessor.process(PropsUtil.getArray(PropsUtil.GLOBAL_STARTUP_EVENTS), true);
 
-			WebAppPool.put(_companyId, WebKeys.CURRENT_USERS, new TreeMap());
+        EventsProcessor.process(
+            PropsUtil.getArray(PropsUtil.APPLICATION_STARTUP_EVENTS), new String[] {_companyId});
+      } catch (Exception e) {
+        Logger.error(this, e.getMessage(), e);
+      }
 
-			// HttpBridge
+      PortalInstances.init(_companyId);
 
-			TaskController.bridgeUserServicePath = "/httpbridge/home";
-			TaskController.bridgeHttpServicePath = "/httpbridge/http";
-			TaskController.bridgeGotoTag = "(goto)";
-			TaskController.bridgeThenTag = "(then)";
-			TaskController.bridgePostTag = "(post)";
+      // Init other dotCMS services.
+      DotInitializationService.getInstance().initialize();
+    }
+  }
 
-			// Process startup events
+  public void callParentService(HttpServletRequest req, HttpServletResponse res)
+      throws IOException, ServletException {
 
-			try {
-				EventsProcessor.process(PropsUtil.getArray(PropsUtil.GLOBAL_STARTUP_EVENTS), true);
+    super.service(req, res);
+  }
 
-				EventsProcessor.process(PropsUtil.getArray(PropsUtil.APPLICATION_STARTUP_EVENTS), new String[] { _companyId });
-			} catch (Exception e) {
-				Logger.error(this, e.getMessage(), e);
-			}
+  public void service(HttpServletRequest req, HttpServletResponse res)
+      throws IOException, ServletException {
 
-			PortalInstances.init(_companyId);
+    if (!PortalInstances.matches()) {
+      String html = ContentUtil.get("messages/en_US/init.html");
 
-			// Init other dotCMS services.
-			DotInitializationService.getInstance().initialize();
-		}
-	}
+      res.getOutputStream().print(html);
 
-	public void callParentService(HttpServletRequest req, HttpServletResponse res) throws IOException, ServletException {
+      return;
+    }
 
-		super.service(req, res);
-	}
+    if (ShutdownUtil.isShutdown()) {
+      String html = ContentUtil.get("messages/en_US/shutdown.html");
 
-	public void service(HttpServletRequest req, HttpServletResponse res) throws IOException, ServletException {
+      res.getOutputStream().print(html);
 
-		if (!PortalInstances.matches()) {
-			String html = ContentUtil.get("messages/en_US/init.html");
+      return;
+    }
+    req.setAttribute("dotcache", "no");
+    // Shared session
 
-			res.getOutputStream().print(html);
+    HttpSession ses = req.getSession();
 
-			return;
-		}
+    /*
+     * ses.setAttribute(
+     * com.liferay.portal.auth.CASAutoLogin.CAS_FILTER_USER,
+     * "liferay.com.1");
+     */
 
-		if (ShutdownUtil.isShutdown()) {
-			String html = ContentUtil.get("messages/en_US/shutdown.html");
+    // CTX
 
-			res.getOutputStream().print(html);
+    ServletContext ctx = getServletContext();
+    ServletContext portalCtx = ctx.getContext(PropsUtil.get(PropsUtil.PORTAL_CTX));
+    if (portalCtx == null) {
+      portalCtx = ctx;
+    }
 
-			return;
-		}
-		req.setAttribute("dotcache", "no");
-		// Shared session
+    req.setAttribute(WebKeys.CTX, portalCtx);
 
-		HttpSession ses = req.getSession();
-		
+    // CTX_PATH variable
 
-		/*
-		 * ses.setAttribute(
-		 * com.liferay.portal.auth.CASAutoLogin.CAS_FILTER_USER,
-		 * "liferay.com.1");
-		 */
+    String ctxPath = (String) ctx.getAttribute(WebKeys.CTX_PATH);
 
-		// CTX
+    if (portalCtx.getAttribute(WebKeys.CTX_PATH) == null) {
+      portalCtx.setAttribute(WebKeys.CTX_PATH, ctxPath);
+    }
 
-		ServletContext ctx = getServletContext();
-		ServletContext portalCtx = ctx.getContext(PropsUtil.get(PropsUtil.PORTAL_CTX));
-		if (portalCtx == null) {
-			portalCtx = ctx;
-		}
+    if (ses.getAttribute(WebKeys.CTX_PATH) == null) {
+      ses.setAttribute(WebKeys.CTX_PATH, ctxPath);
+    }
 
-		req.setAttribute(WebKeys.CTX, portalCtx);
+    req.setAttribute(WebKeys.CTX_PATH, ctxPath);
 
-		// CTX_PATH variable
+    // CAPTCHA_PATH variable
 
-		String ctxPath = (String) ctx.getAttribute(WebKeys.CTX_PATH);
+    String captchaPath = (String) ctx.getAttribute(WebKeys.CAPTCHA_PATH);
 
-		if (portalCtx.getAttribute(WebKeys.CTX_PATH) == null) {
-			portalCtx.setAttribute(WebKeys.CTX_PATH, ctxPath);
-		}
+    if (portalCtx.getAttribute(WebKeys.CAPTCHA_PATH) == null) {
+      portalCtx.setAttribute(WebKeys.CAPTCHA_PATH, captchaPath);
+    }
 
-		if (ses.getAttribute(WebKeys.CTX_PATH) == null) {
-			ses.setAttribute(WebKeys.CTX_PATH, ctxPath);
-		}
+    if (ses.getAttribute(WebKeys.CAPTCHA_PATH) == null) {
+      ses.setAttribute(WebKeys.CAPTCHA_PATH, captchaPath);
+    }
 
-		req.setAttribute(WebKeys.CTX_PATH, ctxPath);
+    req.setAttribute(WebKeys.CAPTCHA_PATH, captchaPath);
 
-		// CAPTCHA_PATH variable
+    // IMAGE_PATH variable
 
-		String captchaPath = (String) ctx.getAttribute(WebKeys.CAPTCHA_PATH);
+    String imagePath = (String) ctx.getAttribute(WebKeys.IMAGE_PATH);
 
-		if (portalCtx.getAttribute(WebKeys.CAPTCHA_PATH) == null) {
-			portalCtx.setAttribute(WebKeys.CAPTCHA_PATH, captchaPath);
-		}
+    if (portalCtx.getAttribute(WebKeys.IMAGE_PATH) == null) {
+      portalCtx.setAttribute(WebKeys.IMAGE_PATH, imagePath);
+    }
 
-		if (ses.getAttribute(WebKeys.CAPTCHA_PATH) == null) {
-			ses.setAttribute(WebKeys.CAPTCHA_PATH, captchaPath);
-		}
+    if (ses.getAttribute(WebKeys.IMAGE_PATH) == null) {
+      ses.setAttribute(WebKeys.IMAGE_PATH, imagePath);
+    }
 
-		req.setAttribute(WebKeys.CAPTCHA_PATH, captchaPath);
+    req.setAttribute(WebKeys.IMAGE_PATH, imagePath);
 
-		// IMAGE_PATH variable
+    // WebKeys.COMPANY_ID variable
 
-		String imagePath = (String) ctx.getAttribute(WebKeys.IMAGE_PATH);
+    String companyId = (String) ctx.getAttribute(WebKeys.COMPANY_ID);
 
-		if (portalCtx.getAttribute(WebKeys.IMAGE_PATH) == null) {
-			portalCtx.setAttribute(WebKeys.IMAGE_PATH, imagePath);
-		}
+    if (portalCtx.getAttribute(WebKeys.COMPANY_ID) == null) {
+      portalCtx.setAttribute(WebKeys.COMPANY_ID, companyId);
+    }
 
-		if (ses.getAttribute(WebKeys.IMAGE_PATH) == null) {
-			ses.setAttribute(WebKeys.IMAGE_PATH, imagePath);
-		}
+    if (ses.getAttribute(WebKeys.COMPANY_ID) == null) {
+      ses.setAttribute(WebKeys.COMPANY_ID, companyId);
+    }
 
-		req.setAttribute(WebKeys.IMAGE_PATH, imagePath);
+    req.setAttribute(WebKeys.COMPANY_ID, companyId);
 
-		// WebKeys.COMPANY_ID variable
+    // Portlet Request Processor
 
-		String companyId = (String) ctx.getAttribute(WebKeys.COMPANY_ID);
+    PortletRequestProcessor portletReqProcessor =
+        (PortletRequestProcessor) portalCtx.getAttribute(WebKeys.PORTLET_STRUTS_PROCESSOR);
 
-		if (portalCtx.getAttribute(WebKeys.COMPANY_ID) == null) {
-			portalCtx.setAttribute(WebKeys.COMPANY_ID, companyId);
-		}
+    if (portletReqProcessor == null) {
+      portletReqProcessor = new PortletRequestProcessor(this, getModuleConfig(req));
 
-		if (ses.getAttribute(WebKeys.COMPANY_ID) == null) {
-			ses.setAttribute(WebKeys.COMPANY_ID, companyId);
-		}
+      portalCtx.setAttribute(WebKeys.PORTLET_STRUTS_PROCESSOR, portletReqProcessor);
+    }
 
-		req.setAttribute(WebKeys.COMPANY_ID, companyId);
+    // Tiles definitions factory
 
-		// Portlet Request Processor
+    if (portalCtx.getAttribute(TilesUtilImpl.DEFINITIONS_FACTORY) == null) {
+      portalCtx.setAttribute(
+          TilesUtilImpl.DEFINITIONS_FACTORY, ctx.getAttribute(TilesUtilImpl.DEFINITIONS_FACTORY));
+    }
 
-		PortletRequestProcessor portletReqProcessor = (PortletRequestProcessor) portalCtx.getAttribute(WebKeys.PORTLET_STRUTS_PROCESSOR);
+    // Set character encoding
 
-		if (portletReqProcessor == null) {
-			portletReqProcessor = new PortletRequestProcessor(this, getModuleConfig(req));
+    String strutsCharEncoding = PropsUtil.get(PropsUtil.STRUTS_CHAR_ENCODING);
 
-			portalCtx.setAttribute(WebKeys.PORTLET_STRUTS_PROCESSOR, portletReqProcessor);
-		}
+    req.setCharacterEncoding(strutsCharEncoding);
 
-		// Tiles definitions factory
+    /*
+     * if (!BrowserSniffer.is_wml(req)) { res.setContentType(
+     * Constants.TEXT_HTML + "; charset=" + strutsCharEncoding); }
+     */
 
-		if (portalCtx.getAttribute(TilesUtilImpl.DEFINITIONS_FACTORY) == null) {
-			portalCtx.setAttribute(TilesUtilImpl.DEFINITIONS_FACTORY, ctx.getAttribute(TilesUtilImpl.DEFINITIONS_FACTORY));
-		}
+    // Determine content type
 
-		// Set character encoding
+    String contentType = req.getHeader("Content-Type");
 
-		String strutsCharEncoding = PropsUtil.get(PropsUtil.STRUTS_CHAR_ENCODING);
+    if ((contentType != null) && (contentType.startsWith("multipart/form-data"))) {
 
-		req.setCharacterEncoding(strutsCharEncoding);
+      req = new UploadServletRequest(req);
+    } else if (ParamUtil.get(req, WebKeys.ENCRYPT, false)) {
+      try {
+        Company company = CompanyLocalManagerUtil.getCompany(companyId);
 
-		/*
-		 * if (!BrowserSniffer.is_wml(req)) { res.setContentType(
-		 * Constants.TEXT_HTML + "; charset=" + strutsCharEncoding); }
-		 */
+        req = new EncryptedServletRequest(req, company.getKeyObj());
+      } catch (Exception e) {
+      }
+    }
 
-		// Determine content type
+    // Current URL
 
-		String contentType = req.getHeader("Content-Type");
+    String completeURL = Http.getCompleteURL(req);
+    if (completeURL.indexOf("j_security_check") != -1) {
+      completeURL = ctxPath;
+    } else {
+      completeURL = completeURL.substring(completeURL.indexOf("://") + 3, completeURL.length());
 
-		if ((contentType != null) && (contentType.startsWith("multipart/form-data"))) {
+      completeURL = completeURL.substring(completeURL.indexOf("/"), completeURL.length());
+    }
 
-			req = new UploadServletRequest(req);
-		} else if (ParamUtil.get(req, WebKeys.ENCRYPT, false)) {
-			try {
-				Company company = CompanyLocalManagerUtil.getCompany(companyId);
+    req.setAttribute(WebKeys.CURRENT_URL, completeURL);
 
-				req = new EncryptedServletRequest(req, company.getKeyObj());
-			} catch (Exception e) {
-			}
-		}
+    // Chat server
 
-		// Current URL
+    // Login
 
-		String completeURL = Http.getCompleteURL(req);
-		if (completeURL.indexOf("j_security_check") != -1) {
-			completeURL = ctxPath;
-		} else {
-			completeURL = completeURL.substring(completeURL.indexOf("://") + 3, completeURL.length());
+    String userId = PortalUtil.getUserId(req);
 
-			completeURL = completeURL.substring(completeURL.indexOf("/"), completeURL.length());
-		}
+    if ((userId != null)) {
+      PrincipalThreadLocal.setName(userId);
+    }
 
-		req.setAttribute(WebKeys.CURRENT_URL, completeURL);
+    if (userId == null) {
+      try {
+        User user = UserManagerUtil.getDefaultUser(companyId);
+        if (ses.getAttribute(Globals.LOCALE_KEY) == null)
+          ses.setAttribute(Globals.LOCALE_KEY, user.getLocale());
 
-		// Chat server
+      } catch (Exception e) {
+        Logger.error(this, e.getMessage(), e);
+      }
+    }
 
-		// Login
+    Optional<String> badProp =
+        req.getParameterMap().keySet().stream().filter(k -> k.startsWith("class.")).findFirst();
+    if (badProp.isPresent()) {
+      SecurityLogger.logInfo(
+          this.getClass(),
+          "Possible exploit probe from "
+              + req.getRemoteAddr()
+              + ".  See: CVE-2014-0114 -  class parameter found in request: "
+              + badProp.get());
+      try {
+        PropertyUtils.getNestedProperty(this, "class");
+        Logger.error(
+            this,
+            "SECURITY ISSUE- `class` attribute NOT DISABLED for BeanUtil introspection, See: CVE-2014-0114 ");
+      } catch (java.lang.NoSuchMethodException nse) {
+        Logger.info(
+            this, "`class` is disabled as a property for introspection in struts for security");
+      } catch (Exception e) {
+        Logger.warn(this, e.getMessage(), e);
+      }
+    }
 
-		String userId = PortalUtil.getUserId(req);
+    // Process pre service events
 
-		if ((userId != null)) {
-			PrincipalThreadLocal.setName(userId);
-		}
+    try {
+      EventsProcessor.process(PropsUtil.getArray(PropsUtil.SERVLET_SERVICE_EVENTS_PRE), req, res);
+    } catch (Exception e) {
+      Logger.error(this, e.getMessage(), e);
 
-		if (userId == null) {
-			try {
-				User user = UserManagerUtil.getDefaultUser(companyId);
-				if(ses.getAttribute(Globals.LOCALE_KEY)==null)
-					ses.setAttribute(Globals.LOCALE_KEY, user.getLocale());
+      req.setAttribute(PageContext.EXCEPTION, e);
 
-			} catch (Exception e) {
-				Logger.error(this, e.getMessage(), e);
-			}
-		}
+      StrutsUtil.forward(
+          PropsUtil.get(PropsUtil.SERVLET_SERVICE_EVENTS_PRE_ERROR_PAGE), portalCtx, req, res);
+    }
 
-        Optional<String> badProp = req.getParameterMap().keySet().stream().filter(k -> k.startsWith("class.")).findFirst();
-        if (badProp.isPresent()) {
-          SecurityLogger.logInfo(this.getClass(), "Possible exploit probe from " + req.getRemoteAddr()
-              + ".  See: CVE-2014-0114 -  class parameter found in request: " + badProp.get());
-          try {
-            PropertyUtils.getNestedProperty(this, "class");
-            Logger.error(this, "SECURITY ISSUE- `class` attribute NOT DISABLED for BeanUtil introspection, See: CVE-2014-0114 ");
-          } catch (java.lang.NoSuchMethodException nse) {
-            Logger.info(this, "`class` is disabled as a property for introspection in struts for security");
-          } catch (Exception e) {
-            Logger.warn(this, e.getMessage(), e);
-          }
-        }
-    
+    // Struts service
 
-		// Process pre service events
+    callParentService(req, res);
 
-		try {
-			EventsProcessor.process(PropsUtil.getArray(PropsUtil.SERVLET_SERVICE_EVENTS_PRE), req, res);
-		} catch (Exception e) {
-			Logger.error(this, e.getMessage(), e);
+    // Process post service events
 
-			req.setAttribute(PageContext.EXCEPTION, e);
+    try {
+      EventsProcessor.process(PropsUtil.getArray(PropsUtil.SERVLET_SERVICE_EVENTS_POST), req, res);
+    } catch (Exception e) {
+      Logger.error(this, e.getMessage(), e);
+    }
 
-			StrutsUtil.forward(PropsUtil.get(PropsUtil.SERVLET_SERVICE_EVENTS_PRE_ERROR_PAGE), portalCtx, req, res);
-		}
+    // Clear the principal associated with this thread
 
-		
+    PrincipalThreadLocal.setName(null);
+  }
 
-		
-		
-		
-		// Struts service
+  public void destroy() {
 
-		callParentService(req, res);
+    // Destroy portlets
 
-		// Process post service events
+    try {
+      Iterator itr = PortletManagerUtil.getPortlets(_companyId).iterator();
 
-		try {
-			EventsProcessor.process(PropsUtil.getArray(PropsUtil.SERVLET_SERVICE_EVENTS_POST), req, res);
-		} catch (Exception e) {
-			Logger.error(this, e.getMessage(), e);
-		}
+      while (itr.hasNext()) {
+        Portlet portlet = (Portlet) itr.next();
 
-		// Clear the principal associated with this thread
+        PortalUtil.destroyPortletInstance(portlet);
+      }
+    } catch (Exception e) {
+      Logger.error(this, e.getMessage(), e);
+    }
 
-		PrincipalThreadLocal.setName(null);
-	}
+    // Scheduler
 
-	public void destroy() {
+    JobScheduler.shutdown();
 
-		// Destroy portlets
+    // Parent
 
-		try {
-			Iterator itr = PortletManagerUtil.getPortlets(_companyId).iterator();
+    super.destroy();
+  }
 
-			while (itr.hasNext()) {
-				Portlet portlet = (Portlet) itr.next();
+  private void _checkWebSettings(String xml) throws DocumentException {
+    SAXReader reader = new SAXReader();
+    reader.setEntityResolver(null);
 
-				PortalUtil.destroyPortletInstance(portlet);
-			}
-		} catch (Exception e) {
-			Logger.error(this, e.getMessage(), e);
-		}
+    Document doc = reader.read(new StringReader(xml));
 
-		// Scheduler
+    Element root = doc.getRootElement();
 
-		JobScheduler.shutdown();
+    int timeout = GetterUtil.getInteger(PropsUtil.get(PropsUtil.SESSION_TIMEOUT));
 
-		// Parent
+    Element sessionConfig = root.element("session-config");
 
-		super.destroy();
-	}
+    if (sessionConfig != null) {
+      String sessionTimeout = sessionConfig.elementText("session-timeout");
 
-	private void _checkWebSettings(String xml) throws DocumentException {
-		SAXReader reader = new SAXReader();
-		reader.setEntityResolver(null);
+      timeout = GetterUtil.get(sessionConfig.elementText("session-timeout"), timeout);
+    }
 
-		Document doc = reader.read(new StringReader(xml));
+    PropsUtil.set(PropsUtil.SESSION_TIMEOUT, Integer.toString(timeout));
+  }
 
-		Element root = doc.getRootElement();
+  private static final Log _log = LogFactory.getLog(MainServlet.class);
 
-		int timeout = GetterUtil.getInteger(PropsUtil.get(PropsUtil.SESSION_TIMEOUT));
-
-		Element sessionConfig = root.element("session-config");
-
-		if (sessionConfig != null) {
-			String sessionTimeout = sessionConfig.elementText("session-timeout");
-
-			timeout = GetterUtil.get(sessionConfig.elementText("session-timeout"), timeout);
-		}
-
-		PropsUtil.set(PropsUtil.SESSION_TIMEOUT, Integer.toString(timeout));
-	}
-
-	private static final Log _log = LogFactory.getLog(MainServlet.class);
-
-	private String _companyId;
-
+  private String _companyId;
 }

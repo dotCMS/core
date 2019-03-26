@@ -11,9 +11,8 @@ import java.util.List;
  */
 public class AddedToQueueEvent extends PublishEvent {
 
-    public AddedToQueueEvent(List<PublishQueueElement> publishQueueElements){
+  public AddedToQueueEvent(List<PublishQueueElement> publishQueueElements) {
 
-        super(AddedToQueueEvent.class.getCanonicalName(), publishQueueElements,
-                LocalDateTime.now());
-    }
+    super(AddedToQueueEvent.class.getCanonicalName(), publishQueueElements, LocalDateTime.now());
+  }
 }

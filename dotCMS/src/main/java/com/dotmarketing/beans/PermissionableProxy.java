@@ -1,124 +1,120 @@
 package com.dotmarketing.beans;
 
-import java.util.List;
-
 import com.dotmarketing.business.PermissionAPI.PermissionableType;
 import com.dotmarketing.business.PermissionSummary;
 import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.RelatedPermissionableGroup;
 import com.dotmarketing.exception.DotDataException;
+import java.util.List;
 
-public  class PermissionableProxy implements Permissionable {
-	
-	public String getType() {
-		return type;
-	}
+public class PermissionableProxy implements Permissionable {
 
-	public void setType(String type) {
-		this.type = type;
-		if(type ==null) return;
-		if(type.equals("contentlet") || type.equals("host")) {
-			this.type = PermissionableType.CONTENTLETS.getCanonicalName();
-			setPermissionByIdentifier(true);
-		} else if (type.equals("htmlpage")) {
-			this.type = PermissionableType.HTMLPAGES.getCanonicalName();
-			setPermissionByIdentifier(true);
-		} else if (type.equals("template")) {
-			this.type = PermissionableType.TEMPLATES.getCanonicalName();
-			setPermissionByIdentifier(true);
-		} else if (type.equals("containers")) {
-			this.type = PermissionableType.CONTAINERS.getCanonicalName();
-			setPermissionByIdentifier(true);
-		} else if (type.equals("folder")) {
-			this.type = PermissionableType.FOLDERS.getCanonicalName();
-			setPermissionByIdentifier(false);
-		} else if (type.equals("structure")) {
-			this.type = PermissionableType.STRUCTURES.getCanonicalName();
-			setPermissionByIdentifier(false);
-		} else if (type.equals("category")) {
-			this.type = PermissionableType.CATEGORY.getCanonicalName();
-			setPermissionByIdentifier(false);
-		} 
-	}
+  public String getType() {
+    return type;
+  }
 
-	private static final long serialVersionUID = 1L;
-	
-	public String Inode =null;
-	
-	public String Identifier =null;
-	
-	public Boolean permissionByIdentifier =true;
-	
-	public String type =null;
-	
-	public String owner =null;
-	
-	public Boolean getPermissionByIdentifier() {
-		return permissionByIdentifier;
-	}
+  public void setType(String type) {
+    this.type = type;
+    if (type == null) return;
+    if (type.equals("contentlet") || type.equals("host")) {
+      this.type = PermissionableType.CONTENTLETS.getCanonicalName();
+      setPermissionByIdentifier(true);
+    } else if (type.equals("htmlpage")) {
+      this.type = PermissionableType.HTMLPAGES.getCanonicalName();
+      setPermissionByIdentifier(true);
+    } else if (type.equals("template")) {
+      this.type = PermissionableType.TEMPLATES.getCanonicalName();
+      setPermissionByIdentifier(true);
+    } else if (type.equals("containers")) {
+      this.type = PermissionableType.CONTAINERS.getCanonicalName();
+      setPermissionByIdentifier(true);
+    } else if (type.equals("folder")) {
+      this.type = PermissionableType.FOLDERS.getCanonicalName();
+      setPermissionByIdentifier(false);
+    } else if (type.equals("structure")) {
+      this.type = PermissionableType.STRUCTURES.getCanonicalName();
+      setPermissionByIdentifier(false);
+    } else if (type.equals("category")) {
+      this.type = PermissionableType.CATEGORY.getCanonicalName();
+      setPermissionByIdentifier(false);
+    }
+  }
 
-	public void setPermissionByIdentifier(Boolean permissionByIdentifier) {
-		this.permissionByIdentifier = permissionByIdentifier;
-	}
+  private static final long serialVersionUID = 1L;
 
-	public String getInode() {
-		return Inode;
-	}
+  public String Inode = null;
 
-	public String getIdentifier() {
-		return Identifier;
-	}
+  public String Identifier = null;
 
-	public void setInode(String inode) {
-		Inode = inode;
-	}
+  public Boolean permissionByIdentifier = true;
 
-	public void setIdentifier(String identifier) {
-		Identifier = identifier;
-	}
-	
-	public String getPermissionId() {
-		String idReturn=null;
-		if(permissionByIdentifier){
-			idReturn=getIdentifier();
-		}
-		else{
-			idReturn=getInode();
-		}
-		return idReturn;
-	}
+  public String type = null;
 
-	public List<PermissionSummary> acceptedPermissions() {
-		return null;
-	}
+  public String owner = null;
 
-	public String getOwner() {
-		return owner;
-	}
+  public Boolean getPermissionByIdentifier() {
+    return permissionByIdentifier;
+  }
 
-	public Permissionable getParentPermissionable() throws DotDataException {
-		return null;
-	}
+  public void setPermissionByIdentifier(Boolean permissionByIdentifier) {
+    this.permissionByIdentifier = permissionByIdentifier;
+  }
 
-	public String getPermissionType() {
-		return type;
-	}
+  public String getInode() {
+    return Inode;
+  }
 
-	public List<RelatedPermissionableGroup> permissionDependencies(
-			int requiredPermission) {
-		return null;
-	}
+  public String getIdentifier() {
+    return Identifier;
+  }
 
-	public void setOwner(String owner) {
-		this.owner=owner;
-	}
+  public void setInode(String inode) {
+    Inode = inode;
+  }
 
-	public List<? extends Permissionable> getChildrenPermissionable() throws DotDataException {
-		return null;
-	}
+  public void setIdentifier(String identifier) {
+    Identifier = identifier;
+  }
 
-	public boolean isParentPermissionable() {
-		return false;
-	}
+  public String getPermissionId() {
+    String idReturn = null;
+    if (permissionByIdentifier) {
+      idReturn = getIdentifier();
+    } else {
+      idReturn = getInode();
+    }
+    return idReturn;
+  }
 
+  public List<PermissionSummary> acceptedPermissions() {
+    return null;
+  }
+
+  public String getOwner() {
+    return owner;
+  }
+
+  public Permissionable getParentPermissionable() throws DotDataException {
+    return null;
+  }
+
+  public String getPermissionType() {
+    return type;
+  }
+
+  public List<RelatedPermissionableGroup> permissionDependencies(int requiredPermission) {
+    return null;
+  }
+
+  public void setOwner(String owner) {
+    this.owner = owner;
+  }
+
+  public List<? extends Permissionable> getChildrenPermissionable() throws DotDataException {
+    return null;
+  }
+
+  public boolean isParentPermissionable() {
+    return false;
+  }
 }

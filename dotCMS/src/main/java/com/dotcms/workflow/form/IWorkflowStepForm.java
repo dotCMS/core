@@ -2,14 +2,13 @@ package com.dotcms.workflow.form;
 
 public interface IWorkflowStepForm {
 
-    String getStepName();
+  String getStepName();
 
-    boolean isEnableEscalation();
+  boolean isEnableEscalation();
 
-    String getEscalationAction();
+  String getEscalationAction();
 
-    String getEscalationTime();
+  String getEscalationTime();
 
-    boolean isStepResolved();
-
+  boolean isStepResolved();
 }

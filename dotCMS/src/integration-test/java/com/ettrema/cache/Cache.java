@@ -1,29 +1,26 @@
 package com.ettrema.cache;
 
-/**
-*
-* @author brad
-*/
+/** @author brad */
 public interface Cache<K, T> {
 
-   String getName();
+  String getName();
 
-   void flush();
+  void flush();
 
-   T get( K key );
+  T get(K key);
 
-   void put( K key, T val );
+  void put(K key, T val);
 
-   void remove( K key );
+  void remove(K key);
 
-   long getHits();
+  long getHits();
 
-   long getMisses();
+  long getMisses();
 
-   /**
-    * Number of objects in cache if known, otherwise null
-    *
-    * @return
-    */
-   Long getSize();
+  /**
+   * Number of objects in cache if known, otherwise null
+   *
+   * @return
+   */
+  Long getSize();
 }

@@ -3,70 +3,67 @@ package com.dotmarketing.business;
 import java.io.Serializable;
 import java.util.List;
 
-public abstract class RoleCache implements Cachable{
+public abstract class RoleCache implements Cachable {
 
-	/**
-	 * Will add to key and roleid cache
-	 * @param role
-	 * @return
-	 */
-	abstract protected Role add(Role role);
+  /**
+   * Will add to key and roleid cache
+   *
+   * @param role
+   * @return
+   */
+  protected abstract Role add(Role role);
 
-	/**
-	 * Can retrieve by id or key
-	 * @param key
-	 * @return
-	 */
-	abstract protected Role get(String key);
+  /**
+   * Can retrieve by id or key
+   *
+   * @param key
+   * @return
+   */
+  protected abstract Role get(String key);
 
-	abstract protected List<String> addLayoutsToRole(List<String> layouts,String roleId);
+  protected abstract List<String> addLayoutsToRole(List<String> layouts, String roleId);
 
-	abstract protected List<UserRoleCacheHelper> addRoleListForUser(List<UserRoleCacheHelper> roles, String userId);
+  protected abstract List<UserRoleCacheHelper> addRoleListForUser(
+      List<UserRoleCacheHelper> roles, String userId);
 
-	abstract protected List<UserRoleCacheHelper> getRoleIdsForUser(String userId);
+  protected abstract List<UserRoleCacheHelper> getRoleIdsForUser(String userId);
 
-	abstract protected List<String> getLayoutsForRole(String roleId);
+  protected abstract List<String> getLayoutsForRole(String roleId);
 
-	abstract protected List<Role> getRootRoles();
+  protected abstract List<Role> getRootRoles();
 
-	abstract protected List<Role> addRootRoles(List<Role> roles);
+  protected abstract List<Role> addRootRoles(List<Role> roles);
 
-	/**
-	 * FLushes both key and roleid cache
-	 */
-	abstract public void clearCache();
+  /** FLushes both key and roleid cache */
+  public abstract void clearCache();
 
-	abstract public void clearRootRoleCache();
+  public abstract void clearRootRoleCache();
 
-	abstract protected void clearRoleCache();
+  protected abstract void clearRoleCache();
 
-	abstract protected void clearUserRoleCache();
+  protected abstract void clearUserRoleCache();
 
-	abstract protected void remove(String key);
+  protected abstract void remove(String key);
 
-	abstract protected void removeLayoutsOnRole(String roleId);
+  protected abstract void removeLayoutsOnRole(String roleId);
 
-	protected static class UserRoleCacheHelper implements Serializable {
-        private static final long serialVersionUID = 6600085101661951648L;
-        private String roleId;
-		private boolean inherited;
+  protected static class UserRoleCacheHelper implements Serializable {
+    private static final long serialVersionUID = 6600085101661951648L;
+    private String roleId;
+    private boolean inherited;
 
-		protected UserRoleCacheHelper(String roleId, boolean inherited){
-			this.roleId = roleId;
-			this.inherited = inherited;
-		}
+    protected UserRoleCacheHelper(String roleId, boolean inherited) {
+      this.roleId = roleId;
+      this.inherited = inherited;
+    }
 
-		/**
-		 * @return the roleId
-		 */
-		protected String getRoleId() {
-			return roleId;
-		}
-		/**
-		 * @return the inherited
-		 */
-		protected boolean isInherited() {
-			return inherited;
-		}
-	}
+    /** @return the roleId */
+    protected String getRoleId() {
+      return roleId;
+    }
+    /** @return the inherited */
+    protected boolean isInherited() {
+      return inherited;
+    }
+  }
 }

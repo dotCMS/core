@@ -14,50 +14,34 @@
  * limitations under the License.
  */
 
-
 package org.apache.velocity.tools.view;
-
 
 /**
  * Interface to simplify and abstract tool handling.
  *
- * Implementations of this class should hold both the context
- * key for the tool and sufficient information to return 
- * an instance of the tool.
+ * <p>Implementations of this class should hold both the context key for the tool and sufficient
+ * information to return an instance of the tool.
  *
  * @author <a href="mailto:nathan@esha.com">Nathan Bubna</a>
- *
  * @version $Id: ToolInfo.java 71982 2004-02-18 20:11:07Z nbubna $
  */
-public interface ToolInfo
-{
+public interface ToolInfo {
 
+  /** @return the context key for the tool */
+  String getKey();
 
-    /**
-     * @return the context key for the tool
-     */
-    String getKey();
+  /** @return the fully qualified classname for the tool */
+  String getClassname();
 
-
-    /**
-     * @return the fully qualified classname for the tool
-     */
-    String getClassname();
-
-
-    /**
-     * Returns an instance of the tool.
-     *
-     * Instances returned may be new on each call, pooled, or 
-     * the be same instance every time depending on the
-     * implementation.  The object passed to this method may
-     * be used to initialize or create the tool that is returned,
-     * or it may be null if no such data is required.
-     *
-     * @param initData an object that may be used to initialize the instance
-     * @return an instance of the tool
-     */
-    Object getInstance(Object initData);
-
-
+  /**
+   * Returns an instance of the tool.
+   *
+   * <p>Instances returned may be new on each call, pooled, or the be same instance every time
+   * depending on the implementation. The object passed to this method may be used to initialize or
+   * create the tool that is returned, or it may be null if no such data is required.
+   *
+   * @param initData an object that may be used to initialize the instance
+   * @return an instance of the tool
+   */
+  Object getInstance(Object initData);
 }

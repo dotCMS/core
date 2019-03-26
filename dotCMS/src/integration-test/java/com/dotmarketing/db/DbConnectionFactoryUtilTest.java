@@ -1,49 +1,43 @@
 package com.dotmarketing.db;
 
+import com.dotcms.util.IntegrationTestInitService;
 import junit.framework.Assert;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import com.dotcms.util.IntegrationTestInitService;
-
 public class DbConnectionFactoryUtilTest {
-    
 
-    
-	@BeforeClass
-    public static void prepare() throws Exception {
-        //Setting web app environment
-        IntegrationTestInitService.getInstance().init();
-	}
-    
-    @After
-    @Before
-    public void prep() throws Exception {
-        HibernateUtil.closeSession();
-    }
-    
-    /**
-     * This test is for the inTransaction method
-     * of the DBConnectionFacotry - and returns if we are in a session or not
-     */
-    @Test
-    public void testInTransaction() throws Exception {
-    	
-    	
-    	
-    	
-        Assert.assertFalse(DbConnectionFactory.inTransaction() );
+  @BeforeClass
+  public static void prepare() throws Exception {
+    // Setting web app environment
+    IntegrationTestInitService.getInstance().init();
+  }
 
-    	HibernateUtil.startTransaction();
-        Assert.assertTrue( DbConnectionFactory.inTransaction());
-    	HibernateUtil.closeAndCommitTransaction();
-        Assert.assertFalse(DbConnectionFactory.inTransaction() );
+  @After
+  @Before
+  public void prep() throws Exception {
+    HibernateUtil.closeSession();
+  }
 
-    	DbConnectionFactory.getConnection();
+  /**
+   * This test is for the inTransaction method of the DBConnectionFacotry - and returns if we are in
+   * a session or not
+   */
+  @Test
+  public void testInTransaction() throws Exception {
 
-        Assert.assertFalse(DbConnectionFactory.inTransaction() );
-        HibernateUtil.closeSession();
-    }
+    Assert.assertFalse(DbConnectionFactory.inTransaction());
+
+    HibernateUtil.startTransaction();
+    Assert.assertTrue(DbConnectionFactory.inTransaction());
+    HibernateUtil.closeAndCommitTransaction();
+    Assert.assertFalse(DbConnectionFactory.inTransaction());
+
+    DbConnectionFactory.getConnection();
+
+    Assert.assertFalse(DbConnectionFactory.inTransaction());
+    HibernateUtil.closeSession();
+  }
 }

@@ -31,98 +31,99 @@ import javax.servlet.http.HttpServletRequest;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-/**
- * @author nollymar
- */
+/** @author nollymar */
 public class RelationshipsResourceTest {
 
-    private static ContentTypeAPI contentTypeAPI;
-    private static RelationshipAPI relationshipAPI;
-    private static User user;
+  private static ContentTypeAPI contentTypeAPI;
+  private static RelationshipAPI relationshipAPI;
+  private static User user;
 
-    @BeforeClass
-    public static void prepare() throws Exception {
-        IntegrationTestInitService.getInstance().init();
-        user = APILocator.systemUser();
-        contentTypeAPI = APILocator.getContentTypeAPI(user);
-        relationshipAPI = APILocator.getRelationshipAPI();
+  @BeforeClass
+  public static void prepare() throws Exception {
+    IntegrationTestInitService.getInstance().init();
+    user = APILocator.systemUser();
+    contentTypeAPI = APILocator.getContentTypeAPI(user);
+    relationshipAPI = APILocator.getRelationshipAPI();
+  }
+
+  @Test
+  public void testGetOneSidedRelationships() throws Throwable {
+
+    final RelationshipsResource relationshipsResource = new RelationshipsResource();
+
+    final long time = System.currentTimeMillis();
+    final ContentType contentType =
+        contentTypeAPI.save(
+            ContentTypeBuilder.builder(BaseContentType.CONTENT.immutableClass())
+                .description("description" + time)
+                .folder(FolderAPI.SYSTEM_FOLDER)
+                .host(Host.SYSTEM_HOST)
+                .name("ContentType" + time)
+                .owner("owner")
+                .variable("velocityVarName" + time)
+                .build());
+    try {
+      final Relationship relationship = new Relationship();
+      relationship.setParentRelationName("Parent");
+      relationship.setRelationTypeValue("IT-Parent-Child" + System.currentTimeMillis());
+      relationship.setParentStructureInode(contentType.inode());
+      relationship.setChildStructureInode(contentType.inode());
+      relationshipAPI.create(relationship);
+
+      final Response response =
+          relationshipsResource.getOneSidedRelationships(
+              contentType.id(), -1, 100, getHttpRequest());
+
+      // Validate response
+      assertEquals(Status.OK.getStatusCode(), response.getStatus());
+
+      final Collection entities =
+          (Collection) ((ResponseEntityView) response.getEntity()).getEntity();
+
+      final List<Map> responseList = CollectionsUtils.asList(entities.iterator());
+
+      assertTrue(UtilMethods.isSet(entities));
+
+      assertEquals(1, responseList.size());
+    } finally {
+      contentTypeAPI.delete(contentType);
     }
+  }
 
-    @Test
-    public void testGetOneSidedRelationships() throws Throwable {
+  @Test
+  public void testGetOneSidedRelationshipsWithoutContentTypeReturnsBadRequest() throws Throwable {
+    final RelationshipsResource relationshipsResource = new RelationshipsResource();
 
-        final RelationshipsResource relationshipsResource = new RelationshipsResource();
+    final Response response =
+        relationshipsResource.getOneSidedRelationships(null, -1, 100, getHttpRequest());
 
-        final long time = System.currentTimeMillis();
-        final ContentType contentType = contentTypeAPI.save(
-                ContentTypeBuilder.builder(BaseContentType.CONTENT.immutableClass())
-                        .description("description" + time).folder(FolderAPI.SYSTEM_FOLDER)
-                        .host(Host.SYSTEM_HOST)
-                        .name("ContentType" + time).owner("owner")
-                        .variable("velocityVarName" + time).build());
-        try {
-            final Relationship relationship = new Relationship();
-            relationship.setParentRelationName("Parent");
-            relationship.setRelationTypeValue("IT-Parent-Child" + System.currentTimeMillis());
-            relationship.setParentStructureInode(contentType.inode());
-            relationship.setChildStructureInode(contentType.inode());
-            relationshipAPI.create(relationship);
+    // Validate response
+    assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+  }
 
-            final Response response = relationshipsResource
-                    .getOneSidedRelationships(contentType.id(), -1, 100, getHttpRequest());
+  @Test
+  public void testGetOneSidedRelationshipsWithInvalidContentTypeReturnsBadRequest()
+      throws Throwable {
+    final RelationshipsResource relationshipsResource = new RelationshipsResource();
 
-            //Validate response
-            assertEquals(Status.OK.getStatusCode(), response.getStatus());
+    final Response response =
+        relationshipsResource.getOneSidedRelationships(null, -1, 0, getHttpRequest());
 
-            final Collection entities = (Collection) ((ResponseEntityView) response.getEntity())
-                    .getEntity();
+    // Validate response
+    assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+  }
 
-            final List<Map> responseList = CollectionsUtils
-                    .asList(entities.iterator());
+  private static HttpServletRequest getHttpRequest() {
+    final MockHeaderRequest request =
+        new MockHeaderRequest(
+            (new MockSessionRequest(
+                    new MockAttributeRequest(new MockHttpRequest("localhost", "/").request())
+                        .request()))
+                .request());
 
-            assertTrue(UtilMethods.isSet(entities));
+    request.setHeader(
+        "Authorization", "Basic " + new String(Base64.encode("admin@dotcms.com:admin".getBytes())));
 
-            assertEquals(1, responseList.size());
-        } finally {
-            contentTypeAPI.delete(contentType);
-        }
-    }
-
-    @Test
-    public void testGetOneSidedRelationshipsWithoutContentTypeReturnsBadRequest() throws Throwable {
-        final RelationshipsResource relationshipsResource = new RelationshipsResource();
-
-        final Response response = relationshipsResource
-                .getOneSidedRelationships(null, -1, 100, getHttpRequest());
-
-        //Validate response
-        assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
-    }
-
-    @Test
-    public void testGetOneSidedRelationshipsWithInvalidContentTypeReturnsBadRequest()
-            throws Throwable {
-        final RelationshipsResource relationshipsResource = new RelationshipsResource();
-
-        final Response response = relationshipsResource
-                .getOneSidedRelationships(null, -1, 0, getHttpRequest());
-
-        //Validate response
-        assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
-    }
-
-    private static HttpServletRequest getHttpRequest() {
-        final MockHeaderRequest request = new MockHeaderRequest(
-                (
-                        new MockSessionRequest(new MockAttributeRequest(
-                                new MockHttpRequest("localhost", "/").request()).request())
-                ).request()
-        );
-
-        request.setHeader("Authorization",
-                "Basic " + new String(Base64.encode("admin@dotcms.com:admin".getBytes())));
-
-        return request;
-    }
-
+    return request;
+  }
 }

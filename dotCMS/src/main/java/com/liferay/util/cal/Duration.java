@@ -35,423 +35,337 @@ import java.io.Serializable;
 /**
  * <a href="Duration.java.html"><b><i>View Source</i></b></a>
  *
- * @author  Jonathan Lennox
+ * @author Jonathan Lennox
  * @version $Revision: 1.2 $
- *
  */
 public class Duration implements Cloneable, Serializable {
 
-	/**
-	 * Field weeks
-	 */
-	private int weeks;
+  /** Field weeks */
+  private int weeks;
 
-	/**
-	 * Field days
-	 */
-	private int days;
+  /** Field days */
+  private int days;
 
-	/**
-	 * Field hours
-	 */
-	private int hours;
+  /** Field hours */
+  private int hours;
 
-	/**
-	 * Field minutes
-	 */
-	private int minutes;
+  /** Field minutes */
+  private int minutes;
 
-	/**
-	 * Field seconds
-	 */
-	private int seconds;
+  /** Field seconds */
+  private int seconds;
 
-	/**
-	 * Field SECONDS_PER_MINUTE
-	 */
-	private final static int SECONDS_PER_MINUTE = 60;
+  /** Field SECONDS_PER_MINUTE */
+  private static final int SECONDS_PER_MINUTE = 60;
 
-	/**
-	 * Field MINUTES_PER_HOUR
-	 */
-	private final static int MINUTES_PER_HOUR = 60;
+  /** Field MINUTES_PER_HOUR */
+  private static final int MINUTES_PER_HOUR = 60;
 
-	/**
-	 * Field HOURS_PER_DAY
-	 */
-	private final static int HOURS_PER_DAY = 24;
+  /** Field HOURS_PER_DAY */
+  private static final int HOURS_PER_DAY = 24;
 
-	/**
-	 * Field DAYS_PER_WEEK
-	 */
-	private final static int DAYS_PER_WEEK = 7;
+  /** Field DAYS_PER_WEEK */
+  private static final int DAYS_PER_WEEK = 7;
 
-	/**
-	 * Field MILLIS_PER_SECOND
-	 */
-	private final static int MILLIS_PER_SECOND = 1000;
+  /** Field MILLIS_PER_SECOND */
+  private static final int MILLIS_PER_SECOND = 1000;
 
-	/**
-	 * Field MILLIS_PER_MINUTE
-	 */
-	private final static int MILLIS_PER_MINUTE = SECONDS_PER_MINUTE
-												 * MILLIS_PER_SECOND;
+  /** Field MILLIS_PER_MINUTE */
+  private static final int MILLIS_PER_MINUTE = SECONDS_PER_MINUTE * MILLIS_PER_SECOND;
 
-	/**
-	 * Field MILLIS_PER_HOUR
-	 */
-	private final static int MILLIS_PER_HOUR = MINUTES_PER_HOUR
-											   * MILLIS_PER_MINUTE;
+  /** Field MILLIS_PER_HOUR */
+  private static final int MILLIS_PER_HOUR = MINUTES_PER_HOUR * MILLIS_PER_MINUTE;
 
-	/**
-	 * Field MILLIS_PER_DAY
-	 */
-	private final static int MILLIS_PER_DAY = HOURS_PER_DAY * MILLIS_PER_HOUR;
+  /** Field MILLIS_PER_DAY */
+  private static final int MILLIS_PER_DAY = HOURS_PER_DAY * MILLIS_PER_HOUR;
 
-	/**
-	 * Field MILLIS_PER_WEEK
-	 */
-	private final static int MILLIS_PER_WEEK = DAYS_PER_WEEK * MILLIS_PER_DAY;
+  /** Field MILLIS_PER_WEEK */
+  private static final int MILLIS_PER_WEEK = DAYS_PER_WEEK * MILLIS_PER_DAY;
 
-	/**
-	 * Constructor Duration
-	 *
-	 *
-	 */
-	public Duration() {
+  /** Constructor Duration */
+  public Duration() {
 
-		/* Zero-initialization of all fields happens by default */
+    /* Zero-initialization of all fields happens by default */
 
-	}
+  }
 
-	/**
-	 * Constructor Duration
-	 *
-	 *
-	 * @param	d
-	 * @param	h
-	 * @param	m
-	 * @param	s
-	 *
-	 */
-	public Duration(int d, int h, int m, int s) {
-		days = d;
-		hours = h;
-		minutes = m;
-		seconds = s;
-	}
+  /**
+   * Constructor Duration
+   *
+   * @param d
+   * @param h
+   * @param m
+   * @param s
+   */
+  public Duration(int d, int h, int m, int s) {
+    days = d;
+    hours = h;
+    minutes = m;
+    seconds = s;
+  }
 
-	/**
-	 * Constructor Duration
-	 *
-	 *
-	 * @param	h
-	 * @param	m
-	 * @param	s
-	 *
-	 */
-	public Duration(int h, int m, int s) {
-		this(0, h, m, s);
-	}
+  /**
+   * Constructor Duration
+   *
+   * @param h
+   * @param m
+   * @param s
+   */
+  public Duration(int h, int m, int s) {
+    this(0, h, m, s);
+  }
 
-	/**
-	 * Constructor Duration
-	 *
-	 *
-	 * @param	w
-	 *
-	 */
-	public Duration(int w) {
-		weeks = w;
-	}
+  /**
+   * Constructor Duration
+   *
+   * @param w
+   */
+  public Duration(int w) {
+    weeks = w;
+  }
 
-	/**
-	 * Method clear
-	 *
-	 *
-	 */
-	public void clear() {
-		weeks = 0;
-		days = 0;
-		hours = 0;
-		minutes = 0;
-		seconds = 0;
-	}
-	;
+  /** Method clear */
+  public void clear() {
+    weeks = 0;
+    days = 0;
+    hours = 0;
+    minutes = 0;
+    seconds = 0;
+  };
 
-	/**
-	 * Method getWeeks
-	 *
-	 *
-	 * @return	int
-	 *
-	 */
-	public int getWeeks() {
-		return weeks;
-	}
+  /**
+   * Method getWeeks
+   *
+   * @return int
+   */
+  public int getWeeks() {
+    return weeks;
+  }
 
-	/**
-	 * Method setWeeks
-	 *
-	 *
-	 * @param	w
-	 *
-	 */
-	public void setWeeks(int w) {
-		if (w < 0) {
-			throw new IllegalArgumentException("Week value out of range");
-		}
+  /**
+   * Method setWeeks
+   *
+   * @param w
+   */
+  public void setWeeks(int w) {
+    if (w < 0) {
+      throw new IllegalArgumentException("Week value out of range");
+    }
 
-		checkWeeksOkay(w);
+    checkWeeksOkay(w);
 
-		weeks = w;
-	}
+    weeks = w;
+  }
 
-	/**
-	 * Method getDays
-	 *
-	 *
-	 * @return	int
-	 *
-	 */
-	public int getDays() {
-		return days;
-	}
+  /**
+   * Method getDays
+   *
+   * @return int
+   */
+  public int getDays() {
+    return days;
+  }
 
-	/**
-	 * Method setDays
-	 *
-	 *
-	 * @param	d
-	 *
-	 */
-	public void setDays(int d) {
-		if (d < 0) {
-			throw new IllegalArgumentException("Day value out of range");
-		}
+  /**
+   * Method setDays
+   *
+   * @param d
+   */
+  public void setDays(int d) {
+    if (d < 0) {
+      throw new IllegalArgumentException("Day value out of range");
+    }
 
-		checkNonWeeksOkay(d);
+    checkNonWeeksOkay(d);
 
-		days = d;
+    days = d;
 
-		normalize();
-	}
+    normalize();
+  }
 
-	/**
-	 * Method getHours
-	 *
-	 *
-	 * @return	int
-	 *
-	 */
-	public int getHours() {
-		return hours;
-	}
+  /**
+   * Method getHours
+   *
+   * @return int
+   */
+  public int getHours() {
+    return hours;
+  }
 
-	/**
-	 * Method setHours
-	 *
-	 *
-	 * @param	h
-	 *
-	 */
-	public void setHours(int h) {
-		if (h < 0) {
-			throw new IllegalArgumentException("Hour value out of range");
-		}
+  /**
+   * Method setHours
+   *
+   * @param h
+   */
+  public void setHours(int h) {
+    if (h < 0) {
+      throw new IllegalArgumentException("Hour value out of range");
+    }
 
-		checkNonWeeksOkay(h);
+    checkNonWeeksOkay(h);
 
-		hours = h;
+    hours = h;
 
-		normalize();
-	}
+    normalize();
+  }
 
-	/**
-	 * Method getMinutes
-	 *
-	 *
-	 * @return	int
-	 *
-	 */
-	public int getMinutes() {
-		return minutes;
-	}
+  /**
+   * Method getMinutes
+   *
+   * @return int
+   */
+  public int getMinutes() {
+    return minutes;
+  }
 
-	/**
-	 * Method setMinutes
-	 *
-	 *
-	 * @param	m
-	 *
-	 */
-	public void setMinutes(int m) {
-		if (m < 0) {
-			throw new IllegalArgumentException("Minute value out of range");
-		}
+  /**
+   * Method setMinutes
+   *
+   * @param m
+   */
+  public void setMinutes(int m) {
+    if (m < 0) {
+      throw new IllegalArgumentException("Minute value out of range");
+    }
 
-		checkNonWeeksOkay(m);
+    checkNonWeeksOkay(m);
 
-		minutes = m;
+    minutes = m;
 
-		normalize();
-	}
+    normalize();
+  }
 
-	/**
-	 * Method getSeconds
-	 *
-	 *
-	 * @return	int
-	 *
-	 */
-	public int getSeconds() {
-		return seconds;
-	}
+  /**
+   * Method getSeconds
+   *
+   * @return int
+   */
+  public int getSeconds() {
+    return seconds;
+  }
 
-	/**
-	 * Method setSeconds
-	 *
-	 *
-	 * @param	s
-	 *
-	 */
-	public void setSeconds(int s) {
-		if (s < 0) {
-			throw new IllegalArgumentException("Second value out of range");
-		}
+  /**
+   * Method setSeconds
+   *
+   * @param s
+   */
+  public void setSeconds(int s) {
+    if (s < 0) {
+      throw new IllegalArgumentException("Second value out of range");
+    }
 
-		checkNonWeeksOkay(s);
+    checkNonWeeksOkay(s);
 
-		seconds = s;
+    seconds = s;
 
-		normalize();
-	}
+    normalize();
+  }
 
-	/**
-	 * Method getInterval
-	 *
-	 *
-	 * @return	long
-	 *
-	 */
-	public long getInterval() {
-		return seconds * MILLIS_PER_SECOND + minutes * MILLIS_PER_MINUTE
-			   + hours * MILLIS_PER_HOUR + days * MILLIS_PER_DAY
-			   + weeks * MILLIS_PER_WEEK;
-	}
+  /**
+   * Method getInterval
+   *
+   * @return long
+   */
+  public long getInterval() {
+    return seconds * MILLIS_PER_SECOND
+        + minutes * MILLIS_PER_MINUTE
+        + hours * MILLIS_PER_HOUR
+        + days * MILLIS_PER_DAY
+        + weeks * MILLIS_PER_WEEK;
+  }
 
-	/**
-	 * Method setInterval
-	 *
-	 *
-	 * @param	millis
-	 *
-	 */
-	public void setInterval(long millis) {
-		if (millis < 0) {
-			throw new IllegalArgumentException("Negative-length interval");
-		}
+  /**
+   * Method setInterval
+   *
+   * @param millis
+   */
+  public void setInterval(long millis) {
+    if (millis < 0) {
+      throw new IllegalArgumentException("Negative-length interval");
+    }
 
-		clear();
+    clear();
 
-		days = (int)(millis / MILLIS_PER_DAY);
-		seconds = (int)((millis % MILLIS_PER_DAY) / MILLIS_PER_SECOND);
+    days = (int) (millis / MILLIS_PER_DAY);
+    seconds = (int) ((millis % MILLIS_PER_DAY) / MILLIS_PER_SECOND);
 
-		normalize();
-	}
+    normalize();
+  }
 
-	/**
-	 * Method normalize
-	 *
-	 *
-	 */
-	protected void normalize() {
-		minutes += seconds / SECONDS_PER_MINUTE;
-		seconds %= SECONDS_PER_MINUTE;
-		hours += minutes / MINUTES_PER_HOUR;
-		minutes %= MINUTES_PER_HOUR;
-		days += hours / HOURS_PER_DAY;
-		hours %= HOURS_PER_DAY;
-	}
+  /** Method normalize */
+  protected void normalize() {
+    minutes += seconds / SECONDS_PER_MINUTE;
+    seconds %= SECONDS_PER_MINUTE;
+    hours += minutes / MINUTES_PER_HOUR;
+    minutes %= MINUTES_PER_HOUR;
+    days += hours / HOURS_PER_DAY;
+    hours %= HOURS_PER_DAY;
+  }
 
-	/**
-	 * Method checkWeeksOkay
-	 *
-	 *
-	 * @param	f
-	 *
-	 */
-	protected void checkWeeksOkay(int f) {
-		if ((f != 0)
-			&& ((days != 0) || (hours != 0) || (minutes != 0)
-				|| (seconds != 0))) {
-			throw new IllegalStateException(
-				"Weeks and non-weeks are incompatible");
-		}
-	}
+  /**
+   * Method checkWeeksOkay
+   *
+   * @param f
+   */
+  protected void checkWeeksOkay(int f) {
+    if ((f != 0) && ((days != 0) || (hours != 0) || (minutes != 0) || (seconds != 0))) {
+      throw new IllegalStateException("Weeks and non-weeks are incompatible");
+    }
+  }
 
-	/**
-	 * Method checkNonWeeksOkay
-	 *
-	 *
-	 * @param	f
-	 *
-	 */
-	protected void checkNonWeeksOkay(int f) {
-		if ((f != 0) && (weeks != 0)) {
-			throw new IllegalStateException(
-				"Weeks and non-weeks are incompatible");
-		}
-	}
+  /**
+   * Method checkNonWeeksOkay
+   *
+   * @param f
+   */
+  protected void checkNonWeeksOkay(int f) {
+    if ((f != 0) && (weeks != 0)) {
+      throw new IllegalStateException("Weeks and non-weeks are incompatible");
+    }
+  }
 
-	/**
-	 * Method clone
-	 *
-	 *
-	 * @return	Object
-	 *
-	 */
-	public Object clone() {
-		try {
-			Duration other = (Duration)super.clone();
+  /**
+   * Method clone
+   *
+   * @return Object
+   */
+  public Object clone() {
+    try {
+      Duration other = (Duration) super.clone();
 
-			other.weeks = weeks;
-			other.days = days;
-			other.hours = hours;
-			other.minutes = minutes;
-			other.seconds = seconds;
+      other.weeks = weeks;
+      other.days = days;
+      other.hours = hours;
+      other.minutes = minutes;
+      other.seconds = seconds;
 
-			return other;
-		}
-		catch (CloneNotSupportedException e) {
-			throw new InternalError();
-		}
-	}
+      return other;
+    } catch (CloneNotSupportedException e) {
+      throw new InternalError();
+    }
+  }
 
-	/**
-	 * Method toString
-	 *
-	 *
-	 * @return	String
-	 *
-	 */
-	public String toString() {
-		StringBuffer buffer = new StringBuffer();
+  /**
+   * Method toString
+   *
+   * @return String
+   */
+  public String toString() {
+    StringBuffer buffer = new StringBuffer();
 
-		buffer.append(getClass().getName());
-		buffer.append("[weeks=");
-		buffer.append(weeks);
-		buffer.append(",days=");
-		buffer.append(days);
-		buffer.append(",hours=");
-		buffer.append(hours);
-		buffer.append(",minutes=");
-		buffer.append(minutes);
-		buffer.append(",seconds=");
-		buffer.append(seconds);
-		buffer.append("]");
+    buffer.append(getClass().getName());
+    buffer.append("[weeks=");
+    buffer.append(weeks);
+    buffer.append(",days=");
+    buffer.append(days);
+    buffer.append(",hours=");
+    buffer.append(hours);
+    buffer.append(",minutes=");
+    buffer.append(minutes);
+    buffer.append(",seconds=");
+    buffer.append(seconds);
+    buffer.append("]");
 
-		return buffer.toString();
-	}
-
+    return buffer.toString();
+  }
 }

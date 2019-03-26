@@ -1,13 +1,19 @@
 package com.dotcms.rest.api.v1.container;
 
-
 import com.beust.jcommander.internal.Maps;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.rendering.velocity.services.ContainerLoader;
 import com.dotcms.rendering.velocity.services.VelocityResourceKey;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.repackage.javax.ws.rs.*;
+import com.dotcms.repackage.javax.ws.rs.Consumes;
+import com.dotcms.repackage.javax.ws.rs.DELETE;
+import com.dotcms.repackage.javax.ws.rs.DefaultValue;
+import com.dotcms.repackage.javax.ws.rs.GET;
+import com.dotcms.repackage.javax.ws.rs.Path;
+import com.dotcms.repackage.javax.ws.rs.PathParam;
+import com.dotcms.repackage.javax.ws.rs.Produces;
+import com.dotcms.repackage.javax.ws.rs.QueryParam;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
@@ -44,12 +50,6 @@ import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.liferay.portal.model.User;
-import org.apache.commons.io.IOUtils;
-import org.apache.velocity.exception.MethodInvocationException;
-import org.apache.velocity.exception.ResourceNotFoundException;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.Serializable;
 import java.io.StringWriter;
@@ -57,388 +57,428 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import org.apache.commons.io.IOUtils;
+import org.apache.velocity.exception.MethodInvocationException;
+import org.apache.velocity.exception.ResourceNotFoundException;
 
 /**
  * This resource provides all the different end-points associated to information and actions that
  * the front-end can perform on the {@link com.dotmarketing.portlets.containers.model.Container}.
- *
  */
 @Path("/v1/containers")
 public class ContainerResource implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+  private static final long serialVersionUID = 1L;
 
-    private final PaginationUtil paginationUtil;
-    private final WebResource    webResource;
-    private final FormAPI        formAPI;
-    private final ContainerAPI   containerAPI;
-    private final VersionableAPI versionableAPI;
-    private final VelocityUtil   velocityUtil;
-    private final ShortyIdAPI    shortyAPI;
-    private final ContentletAPI  contentletAPI;
+  private final PaginationUtil paginationUtil;
+  private final WebResource webResource;
+  private final FormAPI formAPI;
+  private final ContainerAPI containerAPI;
+  private final VersionableAPI versionableAPI;
+  private final VelocityUtil velocityUtil;
+  private final ShortyIdAPI shortyAPI;
+  private final ContentletAPI contentletAPI;
 
-    public ContainerResource() {
-        this(new WebResource(),
-                new PaginationUtil(new ContainerPaginator()),
-                APILocator.getFormAPI(),
-                APILocator.getContainerAPI(),
-                APILocator.getVersionableAPI(),
-                VelocityUtil.getInstance(),
-                APILocator.getShortyAPI(),
-                APILocator.getContentletAPI());
+  public ContainerResource() {
+    this(
+        new WebResource(),
+        new PaginationUtil(new ContainerPaginator()),
+        APILocator.getFormAPI(),
+        APILocator.getContainerAPI(),
+        APILocator.getVersionableAPI(),
+        VelocityUtil.getInstance(),
+        APILocator.getShortyAPI(),
+        APILocator.getContentletAPI());
+  }
+
+  @VisibleForTesting
+  public ContainerResource(
+      final WebResource webResource,
+      final PaginationUtil paginationUtil,
+      final FormAPI formAPI,
+      final ContainerAPI containerAPI,
+      final VersionableAPI versionableAPI,
+      final VelocityUtil velocityUtil,
+      final ShortyIdAPI shortyAPI,
+      final ContentletAPI contentletAPI) {
+
+    this.webResource = webResource;
+    this.paginationUtil = paginationUtil;
+    this.formAPI = formAPI;
+    this.containerAPI = containerAPI;
+    this.versionableAPI = versionableAPI;
+    this.velocityUtil = velocityUtil;
+    this.shortyAPI = shortyAPI;
+    this.contentletAPI = contentletAPI;
+  }
+
+  /**
+   * Return a list of {@link com.dotmarketing.portlets.containers.model.Container}, entity
+   * response syntax:.
+   *
+   * <code> { contentTypes: array of Container total: total number of Containers } <code/>
+   *
+   * Url sintax:
+   * api/v1/container?filter=filter-string&page=page-number&per_page=per-page&ordeby=order-field-name&direction=order-direction&host=host-id
+   *
+   * where:
+   *
+   * <ul>
+   * <li>filter-string: just return Container who content this pattern into its title</li>
+   * <li>page: page to return</li>
+   * <li>per_page: limit of items to return</li>
+   * <li>ordeby: field to order by</li>
+   * <li>direction: asc for upward order and desc for downward order</li>
+   * <li>host: filter by host's id</li>
+   * </ul>
+   *
+   * Url example: v1/container?filter=test&page=2&orderby=title
+   *
+   * @param request
+   * @return
+   */
+  @GET
+  @JSONP
+  @NoCache
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+  public final Response getContainers(
+      @Context final HttpServletRequest request,
+      @QueryParam(PaginationUtil.FILTER) final String filter,
+      @QueryParam(PaginationUtil.PAGE) final int page,
+      @QueryParam(PaginationUtil.PER_PAGE) final int perPage,
+      @DefaultValue("title") @QueryParam(PaginationUtil.ORDER_BY) final String orderBy,
+      @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION) final String direction,
+      @QueryParam(ContainerPaginator.HOST_PARAMETER_ID) final String hostId) {
+
+    final InitDataObject initData = webResource.init(null, true, request, true, null);
+    final User user = initData.getUser();
+
+    final Optional<String> checkedHostId = this.checkHost(request, hostId, user);
+
+    try {
+
+      final Map<String, Object> extraParams = Maps.newHashMap();
+      if (checkedHostId.isPresent()) {
+        extraParams.put(ContainerPaginator.HOST_PARAMETER_ID, checkedHostId.get());
+      }
+      return this.paginationUtil.getPage(
+          request,
+          user,
+          filter,
+          page,
+          perPage,
+          orderBy,
+          OrderDirection.valueOf(direction),
+          extraParams);
+    } catch (Exception e) {
+      Logger.error(this, e.getMessage(), e);
+      return ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  private Optional<String> checkHost(
+      final HttpServletRequest request, final String hostId, final User user) {
+
+    String checkedHostId = null;
+
+    try {
+
+      if (UtilMethods.isSet(hostId) && null != APILocator.getHostAPI().find(hostId, user, false)) {
+
+        checkedHostId = hostId;
+      }
+    } catch (DotDataException | DotSecurityException e) {
+
+      checkedHostId = null;
     }
 
-    @VisibleForTesting
-    public ContainerResource(final WebResource    webResource,
-                             final PaginationUtil paginationUtil,
-                             final FormAPI        formAPI,
-                             final ContainerAPI   containerAPI,
-                             final VersionableAPI versionableAPI,
-                             final VelocityUtil   velocityUtil,
-                             final ShortyIdAPI    shortyAPI,
-                             final ContentletAPI  contentletAPI) {
+    return (null == checkedHostId) ? Optional.empty() : Optional.of(checkedHostId);
+  }
 
-        this.webResource    = webResource;
-        this.paginationUtil = paginationUtil;
-        this.formAPI        = formAPI;
-        this.containerAPI   = containerAPI;
-        this.versionableAPI = versionableAPI;
-        this.velocityUtil   = velocityUtil;
-        this.shortyAPI      = shortyAPI;
-        this.contentletAPI  = contentletAPI;
-    }
+  @GET
+  @JSONP
+  @NoCache
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+  @Path("/{containerId}/content/{contentletId}")
+  public final Response containerContent(
+      @Context final HttpServletRequest req,
+      @Context final HttpServletResponse res,
+      @PathParam("containerId") final String containerId,
+      @PathParam("contentletId") final String contentletId)
+      throws DotDataException, DotSecurityException {
 
-    /**
-     * Return a list of {@link com.dotmarketing.portlets.containers.model.Container}, entity
-     * response syntax:.
-     *
-     * <code> { contentTypes: array of Container total: total number of Containers } <code/>
-     *
-     * Url sintax:
-     * api/v1/container?filter=filter-string&page=page-number&per_page=per-page&ordeby=order-field-name&direction=order-direction&host=host-id
-     *
-     * where:
-     *
-     * <ul>
-     * <li>filter-string: just return Container who content this pattern into its title</li>
-     * <li>page: page to return</li>
-     * <li>per_page: limit of items to return</li>
-     * <li>ordeby: field to order by</li>
-     * <li>direction: asc for upward order and desc for downward order</li>
-     * <li>host: filter by host's id</li>
-     * </ul>
-     *
-     * Url example: v1/container?filter=test&page=2&orderby=title
-     *
-     * @param request
-     * @return
-     */
-    @GET
-    @JSONP
-    @NoCache
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final Response getContainers(@Context final HttpServletRequest request,
-            @QueryParam(PaginationUtil.FILTER)   final String filter,
-            @QueryParam(PaginationUtil.PAGE)     final int page,
-            @QueryParam(PaginationUtil.PER_PAGE) final int perPage,
-            @DefaultValue("title") @QueryParam(PaginationUtil.ORDER_BY) final String orderBy,
-            @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION)  final String direction,
-            @QueryParam(ContainerPaginator.HOST_PARAMETER_ID)           final String hostId) {
+    final InitDataObject initData = this.webResource.init(true, req, true);
+    final User user = initData.getUser();
+    final PageMode mode = PageMode.EDIT_MODE;
 
-        final InitDataObject initData = webResource.init(null, true, request, true, null);
-        final User user = initData.getUser();
+    PageMode.setPageMode(req, PageMode.EDIT_MODE);
 
-        final Optional<String> checkedHostId = this.checkHost(request, hostId, user);
-
-        try {
-
-            final Map<String, Object> extraParams = Maps.newHashMap();
-            if (checkedHostId.isPresent()) {
-                extraParams.put(ContainerPaginator.HOST_PARAMETER_ID, checkedHostId.get());
-            }
-            return this.paginationUtil.getPage(request, user, filter, page, perPage, orderBy, OrderDirection.valueOf(direction),
-                    extraParams);
-        } catch (Exception e) {
-            Logger.error(this, e.getMessage(), e);
-            return ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
-
-        }
-    }
-
-    private Optional<String> checkHost(final HttpServletRequest request, final String hostId, final User user) {
-
-        String checkedHostId = null;
-
-        try {
-
-            if (UtilMethods.isSet(hostId) && null != APILocator.getHostAPI().find(hostId, user, false)) {
-
-                checkedHostId = hostId;
-            }
-        } catch (DotDataException | DotSecurityException e) {
-
-            checkedHostId = null;
-        }
-
-        return (null == checkedHostId)?
-                Optional.empty():
-                Optional.of(checkedHostId);
-    }
-
-    @GET
-    @JSONP
-    @NoCache
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    @Path("/{containerId}/content/{contentletId}")
-    public final Response containerContent(@Context final HttpServletRequest req,
-                                           @Context final HttpServletResponse res,
-                                           @PathParam("containerId")  final String containerId,
-                                           @PathParam("contentletId") final String contentletId)
-            throws DotDataException, DotSecurityException {
-
-        final InitDataObject initData = this.webResource.init(true, req, true);
-        final User user               = initData.getUser();
-        final PageMode mode           = PageMode.EDIT_MODE;
-
-        PageMode.setPageMode(req, PageMode.EDIT_MODE);
-
-        final ShortyId contentShorty = this.shortyAPI
+    final ShortyId contentShorty =
+        this.shortyAPI
             .getShorty(contentletId)
-            .orElseGet(() -> {
-                throw new ResourceNotFoundException("Can't find contentlet:" + contentletId);
-            });
+            .orElseGet(
+                () -> {
+                  throw new ResourceNotFoundException("Can't find contentlet:" + contentletId);
+                });
 
-        try {
+    try {
 
-            final Contentlet contentlet =
-                    (contentShorty.type == ShortType.IDENTIFIER) ?
-                            this.contentletAPI.findContentletByIdentifierAnyLanguage(contentShorty.longId):
-                            this.contentletAPI.find(contentShorty.longId, user, mode.respectAnonPerms);
+      final Contentlet contentlet =
+          (contentShorty.type == ShortType.IDENTIFIER)
+              ? this.contentletAPI.findContentletByIdentifierAnyLanguage(contentShorty.longId)
+              : this.contentletAPI.find(contentShorty.longId, user, mode.respectAnonPerms);
 
-            final String html = this.getHTML(req, res, containerId, user, contentlet);
+      final String html = this.getHTML(req, res, containerId, user, contentlet);
 
-            final Map<String, String> response = ImmutableMap.<String, String> builder().put("render", html).build();
+      final Map<String, String> response =
+          ImmutableMap.<String, String>builder().put("render", html).build();
 
-            return Response.ok(new ResponseEntityView(response)).build();
-        } catch (DotSecurityException e) {
-            throw new ForbiddenException(e);
-        }
+      return Response.ok(new ResponseEntityView(response)).build();
+    } catch (DotSecurityException e) {
+      throw new ForbiddenException(e);
+    }
+  }
+
+  /**
+   * Return a form render into a specific container
+   *
+   * @param req
+   * @param res
+   * @param containerId
+   * @param formId
+   * @return
+   * @throws DotDataException
+   * @throws DotSecurityException
+   */
+  @GET
+  @JSONP
+  @NoCache
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+  @Path("/{containerId}/form/{formId}")
+  public final Response containerForm(
+      @Context final HttpServletRequest req,
+      @Context final HttpServletResponse res,
+      @PathParam("containerId") final String containerId,
+      @PathParam("formId") final String formId)
+      throws DotDataException, DotSecurityException {
+
+    final InitDataObject initData = webResource.init(true, req, true);
+    final User user = initData.getUser();
+
+    PageMode.setPageMode(req, PageMode.EDIT_MODE);
+    Contentlet formContent = formAPI.getFormContent(formId);
+
+    if (formContent == null) {
+      formContent = formAPI.createDefaultFormContent(formId);
     }
 
-    /**
-     * Return a form render into a specific container
-     *
-     * @param req
-     * @param res
-     * @param containerId
-     * @param formId
-     * @return
-     * @throws DotDataException
-     * @throws DotSecurityException
-     */
-    @GET
-    @JSONP
-    @NoCache
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    @Path("/{containerId}/form/{formId}")
-    public final Response containerForm(@Context final HttpServletRequest req, @Context final HttpServletResponse res,
-                                           @PathParam("containerId") final String containerId,
-                                           @PathParam("formId") final String formId)
-            throws DotDataException, DotSecurityException {
+    final String html = getHTML(req, res, containerId, user, formContent);
 
-        final InitDataObject initData = webResource.init(true, req, true);
-        final User user = initData.getUser();
-
-        PageMode.setPageMode(req, PageMode.EDIT_MODE);
-        Contentlet formContent = formAPI.getFormContent(formId);
-
-        if (formContent == null) {
-            formContent = formAPI.createDefaultFormContent(formId);
-        }
-
-        final String html = getHTML(req, res, containerId, user, formContent);
-
-        final Map<String, Object> response = ImmutableMap.<String, Object> builder()
+    final Map<String, Object> response =
+        ImmutableMap.<String, Object>builder()
             .put("render", html)
             .put("content", formContent.getMap())
             .build();
 
-        return Response.ok(new ResponseEntityView(response))
-                .build();
+    return Response.ok(new ResponseEntityView(response)).build();
+  }
 
-    }
+  private String getHTML(
+      final HttpServletRequest req,
+      final HttpServletResponse res,
+      final String containerId,
+      final User user,
+      final Contentlet contentlet)
+      throws DotDataException, DotSecurityException {
 
+    final PageMode mode = PageMode.EDIT_MODE;
+    final Container container = getContainer(containerId, user);
+    ContainerResourceHelper.getInstance().setContainerLanguage(container, req);
 
-    private String getHTML(final HttpServletRequest req,
-                           final HttpServletResponse res,
-                           final String containerId,
-                           final User user,
-                           final Contentlet contentlet) throws DotDataException, DotSecurityException {
+    final org.apache.velocity.context.Context context = velocityUtil.getContext(req, res);
 
-        final PageMode mode = PageMode.EDIT_MODE;
-        final Container container = getContainer(containerId, user);
-        ContainerResourceHelper.getInstance().setContainerLanguage(container, req);
+    context.put(ContainerLoader.SHOW_PRE_POST_LOOP, false);
+    context.put(
+        "contentletList" + container.getIdentifier() + Container.LEGACY_RELATION_TYPE,
+        Lists.newArrayList(contentlet.getIdentifier()));
+    context.put(mode.name(), Boolean.TRUE);
 
-        final org.apache.velocity.context.Context context = velocityUtil.getContext(req, res);
+    final VelocityResourceKey key =
+        new VelocityResourceKey(container, Container.LEGACY_RELATION_TYPE, mode);
 
-        context.put(ContainerLoader.SHOW_PRE_POST_LOOP, false);
-        context.put("contentletList" + container.getIdentifier() + Container.LEGACY_RELATION_TYPE,
-                Lists.newArrayList(contentlet.getIdentifier()));
-        context.put(mode.name(), Boolean.TRUE);
+    return velocityUtil.merge(key.path, context);
+  }
 
-        final VelocityResourceKey key = new VelocityResourceKey(container, Container.LEGACY_RELATION_TYPE, mode);
-
-        return velocityUtil.merge(key.path, context);
-    }
-
-
-    private Container getContainer(final String containerId, final User user) throws DotDataException, DotSecurityException {
-        final PageMode mode = PageMode.EDIT_MODE; // todo: ask for this, does not make sense ask for mode.showLive
-        final ShortyId containerShorty = this.shortyAPI.getShorty(containerId)
-                .orElseGet(() -> {
-                    throw new ResourceNotFoundException("Can't find Container:" + containerId);
+  private Container getContainer(final String containerId, final User user)
+      throws DotDataException, DotSecurityException {
+    final PageMode mode =
+        PageMode.EDIT_MODE; // todo: ask for this, does not make sense ask for mode.showLive
+    final ShortyId containerShorty =
+        this.shortyAPI
+            .getShorty(containerId)
+            .orElseGet(
+                () -> {
+                  throw new ResourceNotFoundException("Can't find Container:" + containerId);
                 });
 
-        return (containerShorty.type != ShortType.IDENTIFIER)
-                    ? this.containerAPI.find(containerId, user, mode.showLive)
-                    : (mode.showLive) ?
-                            this.containerAPI.getLiveContainerById(containerShorty.longId, user, mode.respectAnonPerms) :
-                            this.containerAPI.getWorkingContainerById(containerShorty.longId, user, mode.respectAnonPerms);
+    return (containerShorty.type != ShortType.IDENTIFIER)
+        ? this.containerAPI.find(containerId, user, mode.showLive)
+        : (mode.showLive)
+            ? this.containerAPI.getLiveContainerById(
+                containerShorty.longId, user, mode.respectAnonPerms)
+            : this.containerAPI.getWorkingContainerById(
+                containerShorty.longId, user, mode.respectAnonPerms);
+  }
+
+  @DELETE
+  @JSONP
+  @NoCache
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+  @Path("delete/{containerId}/content/{contentletId}/uid/{uid}")
+  public final Response removeContentletFromContainer(
+      @Context final HttpServletRequest req,
+      @Context final HttpServletResponse res,
+      @PathParam("containerId") final String containerId,
+      @PathParam("contentletId") final String contentletId,
+      @QueryParam("order") final long order,
+      @PathParam("uid") final String uid)
+      throws DotDataException, MethodInvocationException, ResourceNotFoundException, IOException,
+          IllegalAccessException, InstantiationException, InvocationTargetException,
+          NoSuchMethodException {
+
+    final InitDataObject initData = webResource.init(true, req, true);
+    final User user = initData.getUser();
+    final PageMode mode = PageMode.get(req);
+    try {
+      final Language id = WebAPILocator.getLanguageWebAPI().getLanguage(req);
+
+      return removeContentletFromContainer(id, containerId, contentletId, uid, user, mode);
+    } catch (DotSecurityException e) {
+      throw new ForbiddenException(e);
     }
+  }
 
-    @DELETE
-    @JSONP
-    @NoCache
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    @Path("delete/{containerId}/content/{contentletId}/uid/{uid}")
-    public final Response removeContentletFromContainer(@Context final HttpServletRequest req,
-            @Context final HttpServletResponse res, @PathParam("containerId") final String containerId,
-            @PathParam("contentletId") final String contentletId, @QueryParam("order") final long order,
-            @PathParam("uid") final String uid) throws DotDataException,
-            MethodInvocationException, ResourceNotFoundException, IOException, IllegalAccessException, InstantiationException,
-            InvocationTargetException, NoSuchMethodException {
+  @WrapInTransaction
+  private Response removeContentletFromContainer(
+      final Language id,
+      final String containerId,
+      final String contentletId,
+      final String uid,
+      final User user,
+      final PageMode mode)
+      throws DotDataException, DotSecurityException {
 
-        final InitDataObject initData = webResource.init(true, req, true);
-        final User user = initData.getUser();
-        final PageMode mode = PageMode.get(req);
-        try {
-            final Language id = WebAPILocator.getLanguageWebAPI()
-                .getLanguage(req);
-
-            return removeContentletFromContainer(id, containerId, contentletId, uid, user, mode);
-        } catch (DotSecurityException e) {
-            throw new ForbiddenException(e);
-        }
-    }
-
-    @WrapInTransaction
-    private Response removeContentletFromContainer(final Language id, final String containerId,
-                                                   final String contentletId, final String uid,
-                                                   final User user, final PageMode mode) throws DotDataException, DotSecurityException {
-
-
-        final ShortyId contentShorty = APILocator.getShortyAPI()
-                .getShorty(contentletId)
-                .orElseGet(() -> {
-                    throw new ResourceNotFoundException(
-                            "Can't find contentlet:" + contentletId);
+    final ShortyId contentShorty =
+        APILocator.getShortyAPI()
+            .getShorty(contentletId)
+            .orElseGet(
+                () -> {
+                  throw new ResourceNotFoundException("Can't find contentlet:" + contentletId);
                 });
 
-        final Contentlet contentlet =
-                (contentShorty.subType == ShortType.CONTENTLET) ? APILocator.getContentletAPI()
-                        .find(contentShorty.longId, user, !mode.isAdmin)
-                        : APILocator.getContentletAPI()
-                                .findContentletByIdentifier(contentShorty.longId, mode.showLive,
-                                        id.getId(), user, !mode.isAdmin);
+    final Contentlet contentlet =
+        (contentShorty.subType == ShortType.CONTENTLET)
+            ? APILocator.getContentletAPI().find(contentShorty.longId, user, !mode.isAdmin)
+            : APILocator.getContentletAPI()
+                .findContentletByIdentifier(
+                    contentShorty.longId, mode.showLive, id.getId(), user, !mode.isAdmin);
 
-        final ShortyId containerShorty = APILocator.getShortyAPI()
-                .getShorty(containerId)
-                .orElseGet(() -> {
-                    throw new ResourceNotFoundException("Can't find Container:" + containerId);
+    final ShortyId containerShorty =
+        APILocator.getShortyAPI()
+            .getShorty(containerId)
+            .orElseGet(
+                () -> {
+                  throw new ResourceNotFoundException("Can't find Container:" + containerId);
                 });
 
-        final Container container =
-                (containerShorty.subType == ShortType.CONTAINER) ? this.containerAPI
-                        .find(containerId, user, !mode.isAdmin)
-                        : (mode.showLive) ?
-                                this.containerAPI.getLiveContainerById(containerShorty.longId, user, !mode.isAdmin) :
-                                this.containerAPI.getWorkingContainerById(containerShorty.longId, user, !mode.isAdmin);
+    final Container container =
+        (containerShorty.subType == ShortType.CONTAINER)
+            ? this.containerAPI.find(containerId, user, !mode.isAdmin)
+            : (mode.showLive)
+                ? this.containerAPI.getLiveContainerById(
+                    containerShorty.longId, user, !mode.isAdmin)
+                : this.containerAPI.getWorkingContainerById(
+                    containerShorty.longId, user, !mode.isAdmin);
 
-        APILocator.getPermissionAPI()
-                .checkPermission(contentlet, PermissionLevel.READ, user);
-        APILocator.getPermissionAPI()
-                .checkPermission(container, PermissionLevel.EDIT, user);
+    APILocator.getPermissionAPI().checkPermission(contentlet, PermissionLevel.READ, user);
+    APILocator.getPermissionAPI().checkPermission(container, PermissionLevel.EDIT, user);
 
-        final MultiTree mt = new MultiTree().setContainer(containerId)
-                .setContentlet(contentletId)
-                .setRelationType(uid);
+    final MultiTree mt =
+        new MultiTree().setContainer(containerId).setContentlet(contentletId).setRelationType(uid);
 
-        APILocator.getMultiTreeAPI().deleteMultiTree(mt);
+    APILocator.getMultiTreeAPI().deleteMultiTree(mt);
 
-        return Response.ok("ok").build();
+    return Response.ok("ok").build();
+  }
+
+  @Path("/containerContent/{params:.*}")
+  public final Response containerContents(
+      @Context final HttpServletRequest req,
+      @Context final HttpServletResponse res,
+      @QueryParam("containerId") final String containerId,
+      @QueryParam("contentInode") final String contentInode)
+      throws DotDataException, IOException {
+
+    final InitDataObject initData = webResource.init(true, req, true);
+    final User user = initData.getUser();
+
+    try {
+      final Language id = WebAPILocator.getLanguageWebAPI().getLanguage(req);
+
+      final PageMode mode = PageMode.get(req);
+
+      final Container container =
+          APILocator.getContainerAPI().find(containerId, user, !mode.isAdmin);
+
+      final org.apache.velocity.context.Context context = VelocityUtil.getWebContext(req, res);
+      final Contentlet contentlet =
+          APILocator.getContentletAPI().find(contentInode, user, !mode.isAdmin);
+      final ContainerStructure cStruct =
+          APILocator.getContainerAPI() // todo: this is not used.
+              .getContainerStructures(container)
+              .stream()
+              .filter(cs -> contentlet.getStructureInode().equals(cs.getStructureId()))
+              .findFirst()
+              .orElse(null);
+
+      final StringWriter inputWriter = new StringWriter();
+      final StringWriter outputWriter = new StringWriter();
+      inputWriter
+          .append("#set ($contentletList")
+          .append(container.getIdentifier())
+          .append(" = [")
+          .append(contentlet.getIdentifier())
+          .append("] )")
+          .append("#set ($totalSize")
+          .append(container.getIdentifier())
+          .append("=")
+          .append("1")
+          .append(")")
+          .append("#parseContainer(\"")
+          .append(container.getIdentifier())
+          .append("\")");
+
+      VelocityUtil.getEngine()
+          .evaluate(
+              context,
+              outputWriter,
+              this.getClass().getName(),
+              IOUtils.toInputStream(inputWriter.toString()));
+
+      final Map<String, String> response = new HashMap<>();
+      response.put("render", outputWriter.toString());
+
+      final Response.ResponseBuilder responseBuilder = Response.ok(response);
+
+      return responseBuilder.build();
+    } catch (DotSecurityException e) {
+      throw new ForbiddenException(e);
     }
-
-
-    @Path("/containerContent/{params:.*}")
-    public final Response containerContents(@Context final HttpServletRequest req, @Context final HttpServletResponse res,
-            @QueryParam("containerId") final String containerId, @QueryParam("contentInode") final String contentInode)
-            throws DotDataException, IOException {
-
-        final InitDataObject initData = webResource.init(true, req, true);
-        final User user = initData.getUser();
-
-        try {
-            final Language id = WebAPILocator.getLanguageWebAPI()
-                    .getLanguage(req);
-
-            final PageMode mode = PageMode.get(req);
-
-            final Container container = APILocator.getContainerAPI()
-                    .find(containerId, user, !mode.isAdmin);
-
-            final org.apache.velocity.context.Context context = VelocityUtil.getWebContext(req, res);
-            final Contentlet contentlet = APILocator.getContentletAPI()
-                    .find(contentInode, user, !mode.isAdmin);
-            final ContainerStructure cStruct = APILocator.getContainerAPI() // todo: this is not used.
-                    .getContainerStructures(container)
-                    .stream()
-                    .filter(cs -> contentlet.getStructureInode()
-                            .equals(cs.getStructureId()))
-                    .findFirst()
-                    .orElse(null);
-
-            final StringWriter inputWriter  = new StringWriter();
-            final StringWriter outputWriter = new StringWriter();
-            inputWriter.append("#set ($contentletList")
-                    .append(container.getIdentifier())
-                    .append(" = [")
-                    .append(contentlet.getIdentifier())
-                    .append("] )")
-                    .append("#set ($totalSize")
-                    .append(container.getIdentifier())
-                    .append("=")
-                    .append("1")
-                    .append(")")
-                    .append("#parseContainer(\"")
-                    .append(container.getIdentifier())
-                    .append("\")");
-
-            VelocityUtil.getEngine()
-                    .evaluate(context, outputWriter, this.getClass()
-                            .getName(), IOUtils.toInputStream(inputWriter.toString()));
-
-            final Map<String, String> response = new HashMap<>();
-            response.put("render", outputWriter.toString());
-
-            final Response.ResponseBuilder responseBuilder = Response.ok(response);
-
-            return responseBuilder.build();
-        } catch (DotSecurityException e) {
-            throw new ForbiddenException(e);
-        }
-    }
+  }
 }

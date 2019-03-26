@@ -12,8 +12,8 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.lang.StringUtils;
 
 /**
- * Actionlet to add Key/Value to the Response header.
- * The exact names that had to be set in params are: headerKey and headerValue.
+ * Actionlet to add Key/Value to the Response header. The exact names that had to be set in params
+ * are: headerKey and headerValue.
  *
  * @author Geoff M. Granum
  * @version 1.0
@@ -21,38 +21,41 @@ import org.apache.commons.lang.StringUtils;
  */
 public class SetResponseHeaderActionlet extends RuleActionlet<SetResponseHeaderActionlet.Instance> {
 
-    private static final String I18N_BASE = "api.system.ruleengine.actionlet.SetResponseHeader";
+  private static final String I18N_BASE = "api.system.ruleengine.actionlet.SetResponseHeader";
 
-    public static final String HEADER_KEY = "headerKey";
-    public static final String HEADER_VALUE = "headerValue";
+  public static final String HEADER_KEY = "headerKey";
+  public static final String HEADER_VALUE = "headerValue";
 
-    public SetResponseHeaderActionlet() {
-        super(I18N_BASE,
-              new ParameterDefinition<>(1, HEADER_KEY, new TextInput<>(new TextType().required())),
-              new ParameterDefinition<>(2, HEADER_VALUE, new TextInput<>(new TextType())));
+  public SetResponseHeaderActionlet() {
+    super(
+        I18N_BASE,
+        new ParameterDefinition<>(1, HEADER_KEY, new TextInput<>(new TextType().required())),
+        new ParameterDefinition<>(2, HEADER_VALUE, new TextInput<>(new TextType())));
+  }
+
+  @Override
+  public Instance instanceFrom(Map<String, ParameterModel> parameters) {
+    return new Instance(parameters);
+  }
+
+  @Override
+  public boolean evaluate(
+      HttpServletRequest request, HttpServletResponse response, Instance instance) {
+    response.setHeader(instance.key, instance.value);
+    return true;
+  }
+
+  static class Instance implements RuleComponentInstance {
+
+    private final String key;
+    private final String value;
+
+    public Instance(Map<String, ParameterModel> parameters) {
+      key = parameters.get(HEADER_KEY).getValue();
+      String v = parameters.get(HEADER_VALUE).getValue();
+      value = v != null ? v : "";
+      Preconditions.checkArgument(
+          StringUtils.isNotBlank(key), "SetResponseHeaderActionlet requires valid key.");
     }
-
-    @Override
-    public Instance instanceFrom(Map<String, ParameterModel> parameters) {
-        return new Instance(parameters);
-    }
-
-    @Override
-    public boolean evaluate(HttpServletRequest request, HttpServletResponse response, Instance instance) {
-        response.setHeader(instance.key, instance.value);
-        return true;
-    }
-
-    static class Instance implements RuleComponentInstance {
-
-        private final String key;
-        private final String value;
-
-        public Instance(Map<String, ParameterModel> parameters) {
-            key = parameters.get(HEADER_KEY).getValue();
-            String v = parameters.get(HEADER_VALUE).getValue();
-            value = v != null ? v : "";
-            Preconditions.checkArgument(StringUtils.isNotBlank(key), "SetResponseHeaderActionlet requires valid key.");
-        }
-    }
+  }
 }

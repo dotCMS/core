@@ -1,28 +1,22 @@
 /**
  * Copyright (c) 2000-2005 Liferay, LLC. All rights reserved.
  *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
+ * <p>Permission is hereby granted, free of charge, to any person obtaining a copy of this software
+ * and associated documentation files (the "Software"), to deal in the Software without restriction,
+ * including without limitation the rights to use, copy, modify, merge, publish, distribute,
+ * sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
  *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
+ * <p>The above copyright notice and this permission notice shall be included in all copies or
+ * substantial portions of the Software.
  *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
+ * <p>THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
+ * BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+ * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-
 package com.liferay.portal.ejb;
-
-import java.util.Map;
 
 import com.liferay.portal.NoSuchPortletPreferencesException;
 import com.liferay.portal.PortalException;
@@ -31,126 +25,110 @@ import com.liferay.portal.model.Portlet;
 import com.liferay.portal.model.PortletPreferences;
 import com.liferay.portlet.PortletPreferencesImpl;
 import com.liferay.portlet.PortletPreferencesSerializer;
+import java.util.Map;
 
 /**
- * <a href="PortletPreferencesLocalManagerImpl.java.html"><b><i>View Source</i>
- * </b></a>
+ * <a href="PortletPreferencesLocalManagerImpl.java.html"><b><i>View Source</i> </b></a>
  *
- * @author  Brian Wing Shun Chan
+ * @author Brian Wing Shun Chan
  * @version $Revision: 1.2 $
- *
  */
-public class PortletPreferencesLocalManagerImpl
-	implements PortletPreferencesLocalManager {
+public class PortletPreferencesLocalManagerImpl implements PortletPreferencesLocalManager {
 
-//	public void deleteAllByLayout(LayoutPK pk) throws SystemException {
-//		if (Layout.isGroup(pk.layoutId)) {
-//			PortletPreferencesUtil.removeByLayoutId(pk.layoutId);
-//
-//			PortletPreferencesLocalUtil.clearPreferencesPool();
-//		}
-//		else {
-//			PortletPreferencesUtil.removeByL_U(pk.layoutId, pk.userId);
-//
-//			PortletPreferencesLocalUtil.clearPreferencesPool(pk.userId);
-//		}
-//	}
+  //	public void deleteAllByLayout(LayoutPK pk) throws SystemException {
+  //		if (Layout.isGroup(pk.layoutId)) {
+  //			PortletPreferencesUtil.removeByLayoutId(pk.layoutId);
+  //
+  //			PortletPreferencesLocalUtil.clearPreferencesPool();
+  //		}
+  //		else {
+  //			PortletPreferencesUtil.removeByL_U(pk.layoutId, pk.userId);
+  //
+  //			PortletPreferencesLocalUtil.clearPreferencesPool(pk.userId);
+  //		}
+  //	}
 
-	public void deleteAllByUser(String userId) throws SystemException {
-		PortletPreferencesUtil.removeByUserId(userId);
+  public void deleteAllByUser(String userId) throws SystemException {
+    PortletPreferencesUtil.removeByUserId(userId);
 
-		PortletPreferencesLocalUtil.clearPreferencesPool(userId);
-	}
+    PortletPreferencesLocalUtil.clearPreferencesPool(userId);
+  }
 
-	public com.dotcms.repackage.javax.portlet.PortletPreferences getDefaultPreferences(
-			String companyId, String portletId)
-		throws PortalException, SystemException {
+  public com.dotcms.repackage.javax.portlet.PortletPreferences getDefaultPreferences(
+      String companyId, String portletId) throws PortalException, SystemException {
 
-		Portlet portlet = PortletManagerUtil.getPortletById(
-			companyId, portletId);
+    Portlet portlet = PortletManagerUtil.getPortletById(companyId, portletId);
 
-		return PortletPreferencesSerializer.fromDefaultXML(
-			portlet.getDefaultPreferences());
-	}
-	
-	public java.util.List<PortletPreferencesImpl> getPreferences()
-		throws PortalException, SystemException{
-			
-		return PortletPreferencesUtil.findAll();
-	}
-	
-	public com.dotcms.repackage.javax.portlet.PortletPreferences getPreferences(
-			String companyId, PortletPreferencesPK pk)
-		throws PortalException, SystemException {
+    return PortletPreferencesSerializer.fromDefaultXML(portlet.getDefaultPreferences());
+  }
 
-//		String groupId = Layout.getGroupId(pk.layoutId);
+  public java.util.List<PortletPreferencesImpl> getPreferences()
+      throws PortalException, SystemException {
 
-//		if (groupId != null) {
-//			if (!GetterUtil.getBoolean(
-//					PropsUtil.get(PropsUtil.GROUP_PAGES_PERSONALIZATION))) {
-//
-//				pk.userId = Layout.GROUP + groupId;
-//			}
-//		}
+    return PortletPreferencesUtil.findAll();
+  }
 
-		Map prefsPool = PortletPreferencesLocalUtil.getPreferencesPool(
-			pk.userId);
+  public com.dotcms.repackage.javax.portlet.PortletPreferences getPreferences(
+      String companyId, PortletPreferencesPK pk) throws PortalException, SystemException {
 
-		PortletPreferencesImpl prefs =
-			(PortletPreferencesImpl)prefsPool.get(pk);
+    //		String groupId = Layout.getGroupId(pk.layoutId);
 
-		if (prefs == null) {
-			PortletPreferences portletPreferences = null;
+    //		if (groupId != null) {
+    //			if (!GetterUtil.getBoolean(
+    //					PropsUtil.get(PropsUtil.GROUP_PAGES_PERSONALIZATION))) {
+    //
+    //				pk.userId = Layout.GROUP + groupId;
+    //			}
+    //		}
 
-			Portlet portlet = null;
-//			if (groupId != null) {
-//				portlet = PortletManagerUtil.getPortletById(
-//					companyId, groupId, pk.portletId);
-//			}
-//			else {
-				portlet = PortletManagerUtil.getPortletById(
-					companyId, pk.portletId);
-//			}
+    Map prefsPool = PortletPreferencesLocalUtil.getPreferencesPool(pk.userId);
 
-			try {
-				portletPreferences =
-					PortletPreferencesUtil.findByPrimaryKey(pk);
-			}
-			catch (NoSuchPortletPreferencesException nsppe) {
-				portletPreferences = PortletPreferencesUtil.create(pk);
+    PortletPreferencesImpl prefs = (PortletPreferencesImpl) prefsPool.get(pk);
 
-				portletPreferences.setPreferences(
-					portlet.getDefaultPreferences());
+    if (prefs == null) {
+      PortletPreferences portletPreferences = null;
 
-				PortletPreferencesUtil.update(portletPreferences);
-			}
+      Portlet portlet = null;
+      //			if (groupId != null) {
+      //				portlet = PortletManagerUtil.getPortletById(
+      //					companyId, groupId, pk.portletId);
+      //			}
+      //			else {
+      portlet = PortletManagerUtil.getPortletById(companyId, pk.portletId);
+      //			}
 
-			prefs = PortletPreferencesSerializer.fromXML(
-				companyId, pk, portletPreferences.getPreferences());
+      try {
+        portletPreferences = PortletPreferencesUtil.findByPrimaryKey(pk);
+      } catch (NoSuchPortletPreferencesException nsppe) {
+        portletPreferences = PortletPreferencesUtil.create(pk);
 
-			prefsPool.put(pk, prefs);
-		}
+        portletPreferences.setPreferences(portlet.getDefaultPreferences());
 
-		return (PortletPreferencesImpl)prefs.clone();
-	}
+        PortletPreferencesUtil.update(portletPreferences);
+      }
 
-	public PortletPreferences updatePreferences(
-			PortletPreferencesPK pk, PortletPreferencesImpl prefs)
-		throws PortalException, SystemException {
+      prefs =
+          PortletPreferencesSerializer.fromXML(companyId, pk, portletPreferences.getPreferences());
 
-		PortletPreferences portletPrefences =
-			PortletPreferencesUtil.findByPrimaryKey(pk);
+      prefsPool.put(pk, prefs);
+    }
 
-		String xml = PortletPreferencesSerializer.toXML(prefs);
+    return (PortletPreferencesImpl) prefs.clone();
+  }
 
-		PortletPreferencesLocalUtil.getPreferencesPool(
-			pk.userId).put(pk, prefs);
+  public PortletPreferences updatePreferences(PortletPreferencesPK pk, PortletPreferencesImpl prefs)
+      throws PortalException, SystemException {
 
-		portletPrefences.setPreferences(xml);
+    PortletPreferences portletPrefences = PortletPreferencesUtil.findByPrimaryKey(pk);
 
-		PortletPreferencesUtil.update(portletPrefences);
+    String xml = PortletPreferencesSerializer.toXML(prefs);
 
-		return portletPrefences;
-	}
+    PortletPreferencesLocalUtil.getPreferencesPool(pk.userId).put(pk, prefs);
 
+    portletPrefences.setPreferences(xml);
+
+    PortletPreferencesUtil.update(portletPrefences);
+
+    return portletPrefences;
+  }
 }

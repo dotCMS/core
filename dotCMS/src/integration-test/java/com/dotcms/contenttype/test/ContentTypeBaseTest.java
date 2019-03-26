@@ -1,10 +1,19 @@
 package com.dotcms.contenttype.test;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
-import com.dotcms.contenttype.business.*;
+import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.contenttype.business.ContentTypeAPIImpl;
+import com.dotcms.contenttype.business.ContentTypeFactory;
+import com.dotcms.contenttype.business.ContentTypeFactoryImpl;
+import com.dotcms.contenttype.business.FieldAPIImpl;
+import com.dotcms.contenttype.business.FieldFactoryImpl;
 import com.dotcms.contenttype.model.field.Field;
-import com.dotcms.contenttype.model.type.*;
+import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHttpRequest;
 import com.dotcms.mock.request.MockSessionRequest;
@@ -14,166 +23,169 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.liferay.portal.model.User;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
-import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-
-import static org.hamcrest.MatcherAssert.assertThat;
+import javax.servlet.http.HttpServletRequest;
+import org.junit.BeforeClass;
 
 public class ContentTypeBaseTest extends IntegrationTestBase {
 
-	protected static User user;
-	protected static ContentTypeFactory contentTypeFactory;
-	protected static ContentTypeAPIImpl contentTypeApi;
-	protected static FieldFactoryImpl fieldFactory;
-	protected static FieldAPIImpl fieldApi;
+  protected static User user;
+  protected static ContentTypeFactory contentTypeFactory;
+  protected static ContentTypeAPIImpl contentTypeApi;
+  protected static FieldFactoryImpl fieldFactory;
+  protected static FieldAPIImpl fieldApi;
 
-	@BeforeClass
-	public static void prepare () throws Exception {
-		//Setting web app environment
-		IntegrationTestInitService.getInstance().init();
+  @BeforeClass
+  public static void prepare() throws Exception {
+    // Setting web app environment
+    IntegrationTestInitService.getInstance().init();
 
-		user = APILocator.systemUser();
-		contentTypeApi = (ContentTypeAPIImpl) APILocator.getContentTypeAPI(user);
-		contentTypeFactory = new ContentTypeFactoryImpl();
-		fieldFactory = new FieldFactoryImpl();
-		fieldApi = new FieldAPIImpl();
+    user = APILocator.systemUser();
+    contentTypeApi = (ContentTypeAPIImpl) APILocator.getContentTypeAPI(user);
+    contentTypeFactory = new ContentTypeFactoryImpl();
+    fieldFactory = new FieldFactoryImpl();
+    fieldApi = new FieldAPIImpl();
 
+    HttpServletRequest pageRequest =
+        new MockSessionRequest(
+                new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
+            .request();
+    HttpServletRequestThreadLocal.INSTANCE.setRequest(pageRequest);
 
-		HttpServletRequest pageRequest = new MockSessionRequest(
-				new MockAttributeRequest(
-						new MockHttpRequest("localhost", "/").request()
-						).request())
-				.request();
-		HttpServletRequestThreadLocal.INSTANCE.setRequest(pageRequest);
+    DotConnect dc = new DotConnect();
+    String structsToDelete =
+        "(select inode from structure where structure.velocity_var_name like 'velocityVarNameTesting%' )";
 
+    dc.setSQL("delete from field where structure_inode in " + structsToDelete);
+    dc.loadResult();
 
-		DotConnect dc = new DotConnect();
-		String structsToDelete = "(select inode from structure where structure.velocity_var_name like 'velocityVarNameTesting%' )";
+    dc.setSQL("delete from inode where type='field' and inode not in  (select inode from field)");
+    dc.loadResult();
 
-		dc.setSQL("delete from field where structure_inode in " + structsToDelete);
-		dc.loadResult();
+    dc.setSQL(
+        "delete from contentlet_version_info where identifier in (select identifier from contentlet where structure_inode in "
+            + structsToDelete
+            + ")");
+    dc.loadResult();
 
-		dc.setSQL("delete from inode where type='field' and inode not in  (select inode from field)");
-		dc.loadResult();
+    dc.setSQL("delete from contentlet where structure_inode in " + structsToDelete);
+    dc.loadResult();
 
-		dc.setSQL("delete from contentlet_version_info where identifier in (select identifier from contentlet where structure_inode in "
-				+ structsToDelete + ")");
-		dc.loadResult();
+    dc.setSQL(
+        "delete from inode where type='contentlet' and inode not in  (select inode from contentlet)");
+    dc.loadResult();
 
-		dc.setSQL("delete from contentlet where structure_inode in " + structsToDelete);
-		dc.loadResult();
+    dc.setSQL(
+        "delete from structure where  structure.velocity_var_name like 'velocityVarNameTesting%' ");
+    dc.loadResult();
 
-		dc.setSQL("delete from inode where type='contentlet' and inode not in  (select inode from contentlet)");
-		dc.loadResult();
+    dc.loadResult();
+    dc.setSQL(
+        "delete from inode where type='structure' and inode not in  (select inode from structure)");
+    dc.loadResult();
 
-		dc.setSQL("delete from structure where  structure.velocity_var_name like 'velocityVarNameTesting%' ");
-		dc.loadResult();
+    dc.setSQL("delete from field where structure_inode not in (select inode from structure)");
+    dc.loadResult();
 
-		dc.loadResult();
-		dc.setSQL("delete from inode where type='structure' and inode not in  (select inode from structure)");
-		dc.loadResult();
+    dc.setSQL("delete from inode where type='field' and inode not in  (select inode from field)");
+    dc.loadResult();
 
-		dc.setSQL("delete from field where structure_inode not in (select inode from structure)");
-		dc.loadResult();
+    dc.setSQL(
+        "update structure set url_map_pattern =null, page_detail=null where structuretype =3");
+    dc.loadResult();
+  }
 
-		dc.setSQL("delete from inode where type='field' and inode not in  (select inode from field)");
-		dc.loadResult();
+  protected void insert(BaseContentType baseType) throws Exception {
 
-		dc.setSQL("update structure set url_map_pattern =null, page_detail=null where structuretype =3");
-		dc.loadResult();
-	}
+    ContentTypeAPI contentTypeApi = APILocator.getContentTypeAPI(APILocator.systemUser());
 
-	protected void insert(BaseContentType baseType) throws Exception {
+    long i = System.currentTimeMillis();
 
-		ContentTypeAPI contentTypeApi = APILocator.getContentTypeAPI(APILocator.systemUser());
+    // Create a new content type
+    ContentTypeBuilder builder =
+        ContentTypeBuilder.builder(baseType.immutableClass())
+            .description("description" + i)
+            .expireDateVar(null)
+            .folder(FolderAPI.SYSTEM_FOLDER)
+            .host(Host.SYSTEM_HOST)
+            .name(baseType.name() + "Testing" + i)
+            .owner("owner")
+            .variable("velocityVarNameTesting" + i);
 
-		long i = System.currentTimeMillis();
+    ContentType type = builder.build();
+    type = contentTypeApi.save(type);
 
-		//Create a new content type
-		ContentTypeBuilder builder = ContentTypeBuilder.builder(baseType.immutableClass())
-				.description("description" + i)
-				.expireDateVar(null).folder(FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST)
-				.name(baseType.name() + "Testing" + i).owner("owner")
-				.variable("velocityVarNameTesting" + i);
+    // Search for the new content type
+    ContentType type2 = contentTypeApi.find(type.id());
+    try {
+      assertThat("Type saved correctly", type2.equals(type));
+    } catch (Throwable t) {
+      System.out.println("Old and New Content Types are NOT the same");
+      System.out.println(type);
+      System.out.println(type2);
+      throw t;
+    }
 
-		ContentType type = builder.build();
-		type = contentTypeApi.save(type);
+    // Getting the fields of the just saved content type
+    List<Field> fields = new FieldFactoryImpl().byContentTypeId(type.id());
+    List<Field> baseTypeFields =
+        ContentTypeBuilder.builder(baseType.immutableClass())
+            .name("test")
+            .variable("rewarwa")
+            .build()
+            .requiredFields();
 
-		//Search for the new content type
-		ContentType type2 = contentTypeApi.find(type.id());
-		try {
-			assertThat("Type saved correctly", type2.equals(type));
-		} catch (Throwable t) {
-			System.out.println("Old and New Content Types are NOT the same");
-			System.out.println(type);
-			System.out.println(type2);
-			throw t;
-		}
+    fields = sortListByVariable(fields);
+    baseTypeFields = sortListByVariable(baseTypeFields);
 
-		//Getting the fields of the just saved content type
-		List<Field> fields = new FieldFactoryImpl().byContentTypeId(type.id());
-		List<Field> baseTypeFields = ContentTypeBuilder.builder(baseType.immutableClass())
-				.name("test").variable("rewarwa").build().requiredFields();
+    try {
+      assertThat(
+          "fields are all added:\n" + fields + "\n" + baseTypeFields,
+          fields.size() == baseTypeFields.size());
+    } catch (Throwable e) {
+      System.out.println(e.getMessage());
+      System.out.println("Saved  db: " + fields);
+      System.out.println("not saved: " + baseTypeFields);
+      System.out.println("\n");
+      throw e;
+    }
 
-		fields = sortListByVariable(fields);
-		baseTypeFields = sortListByVariable(baseTypeFields);
+    for (int j = 0; j < fields.size(); j++) {
+      Field field = fields.get(j);
+      Field baseField = null;
+      try {
+        baseField = baseTypeFields.get(j);
+        assertThat(
+            "field datatypes are not correct:", field.dataType().equals(baseField.dataType()));
+        assertThat(
+            "fields variable is not correct:", field.variable().equals(baseField.variable()));
+        assertThat("field class is not correct:", field.getClass().equals(baseField.getClass()));
+        assertThat("field name is  not correct:", field.name().equals(baseField.name()));
 
-		try {
-			assertThat("fields are all added:\n" + fields + "\n" + baseTypeFields,
-					fields.size() == baseTypeFields.size());
-		} catch (Throwable e) {
-			System.out.println(e.getMessage());
-			System.out.println("Saved  db: " + fields);
-			System.out.println("not saved: " + baseTypeFields);
-			System.out.println("\n");
-			throw e;
-		}
+        assertThat("field sort order is not correct", field.sortOrder() == baseField.sortOrder());
+      } catch (Throwable e) {
+        System.out.println(e.getMessage());
+        System.out.println("Saved  db: " + field);
+        System.out.println("not saved: " + baseField);
+        System.out.println("\n");
+        throw e;
+      }
+    }
+  }
 
-		for (int j = 0; j < fields.size(); j++) {
-			Field field = fields.get(j);
-			Field baseField = null;
-			try {
-				baseField = baseTypeFields.get(j);
-				assertThat("field datatypes are not correct:",
-						field.dataType().equals(baseField.dataType()));
-				assertThat("fields variable is not correct:",
-						field.variable().equals(baseField.variable()));
-				assertThat("field class is not correct:",
-						field.getClass().equals(baseField.getClass()));
-				assertThat("field name is  not correct:", field.name().equals(baseField.name()));
-
-				assertThat("field sort order is not correct",
-						field.sortOrder() == baseField.sortOrder());
-			} catch (Throwable e) {
-				System.out.println(e.getMessage());
-				System.out.println("Saved  db: " + field);
-				System.out.println("not saved: " + baseField);
-				System.out.println("\n");
-				throw e;
-
-			}
-		}
-	}
-
-	/**
-	 * Sorts an unmodifiable list by variable name
-	 *
-	 * @param list The list to be sorted
-	 * @return Sorted List of Field
-	 */
-	protected List<Field> sortListByVariable(List<Field> list) {
-	    List<Field> sortedList = new ArrayList<>();
-	    sortedList.addAll(list);
-	    sortedList.sort(Comparator.comparing(Field::variable));
-		return Collections.unmodifiableList(sortedList);
-	}
-
-
+  /**
+   * Sorts an unmodifiable list by variable name
+   *
+   * @param list The list to be sorted
+   * @return Sorted List of Field
+   */
+  protected List<Field> sortListByVariable(List<Field> list) {
+    List<Field> sortedList = new ArrayList<>();
+    sortedList.addAll(list);
+    sortedList.sort(Comparator.comparing(Field::variable));
+    return Collections.unmodifiableList(sortedList);
+  }
 }

@@ -1,26 +1,26 @@
-//package com.dotmarketing.portlets.rules.conditionlet;
+// package com.dotmarketing.portlets.rules.conditionlet;
 //
-//import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
-//import com.dotmarketing.portlets.rules.RuleComponentInstance;
-//import com.dotmarketing.portlets.rules.ValidationResult;
-//import com.dotmarketing.portlets.rules.model.ParameterModel;
-//import java.util.Collection;
-//import java.util.LinkedHashMap;
-//import java.util.LinkedHashSet;
-//import java.util.List;
-//import java.util.Map;
-//import java.util.regex.Pattern;
-//import java.util.regex.PatternSyntaxException;
+// import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
+// import com.dotmarketing.portlets.rules.RuleComponentInstance;
+// import com.dotmarketing.portlets.rules.ValidationResult;
+// import com.dotmarketing.portlets.rules.model.ParameterModel;
+// import java.util.Collection;
+// import java.util.LinkedHashMap;
+// import java.util.LinkedHashSet;
+// import java.util.List;
+// import java.util.Map;
+// import java.util.regex.Pattern;
+// import java.util.regex.PatternSyntaxException;
 //
-//import javax.servlet.http.HttpServletRequest;
-//import javax.servlet.http.HttpServletResponse;
+// import javax.servlet.http.HttpServletRequest;
+// import javax.servlet.http.HttpServletResponse;
 //
-//import com.dotmarketing.util.Logger;
-//import com.dotmarketing.util.UtilMethods;
+// import com.dotmarketing.util.Logger;
+// import com.dotmarketing.util.UtilMethods;
 //
-//import static com.dotmarketing.portlets.rules.conditionlet.Comparison.IS;
+// import static com.dotmarketing.portlets.rules.conditionlet.Comparison.IS;
 //
-///**
+/// **
 // * This conditionlet will allow CMS users to check the Operating System of the
 // * user that issued the request. The information is obtained by reading the
 // * {@code User-Agent} header in the {@link HttpServletRequest} object. The
@@ -51,7 +51,8 @@
 // * @since 04-21-2015
 // *
 // */
-//public class UsersOperatingSystemConditionlet extends Conditionlet<UsersOperatingSystemConditionlet.Instance> {
+// public class UsersOperatingSystemConditionlet extends
+// Conditionlet<UsersOperatingSystemConditionlet.Instance> {
 //
 //	private static final long serialVersionUID = 1L;
 //
@@ -70,11 +71,16 @@
 //
 //	public UsersOperatingSystemConditionlet() {
 //        super("api.ruleengine.system.conditionlet.HasVisitedUrl", ImmutableSet.<Comparison>of(IS,
-//                                                                                              Comparison.IS_NOT,
-//                                                                                              Comparison.STARTS_WITH,
-//                                                                                              Comparison.ENDS_WITH,
-//                                                                                              Comparison.CONTAINS,
-//                                                                                              Comparison.REGEX), parameters);
+//
+// Comparison.IS_NOT,
+//
+// Comparison.STARTS_WITH,
+//
+// Comparison.ENDS_WITH,
+//
+// Comparison.CONTAINS,
+//
+// Comparison.REGEX), parameters);
 //	}
 //
 //	protected ValidationResult validate(Comparison comparison,
@@ -123,7 +129,8 @@
 //	}
 //
 //	@Override
-//    public boolean evaluate(HttpServletRequest request, HttpServletResponse response, Instance instance) {
+//    public boolean evaluate(HttpServletRequest request, HttpServletResponse response, Instance
+// instance) {
 //
 ////        String userAgentInfo = request.getHeader("User-Agent");
 ////		UserAgent agent = UserAgent.parseUserAgentString(userAgentInfo);
@@ -186,4 +193,4 @@
 //        }
 //    }
 //
-//}
+// }

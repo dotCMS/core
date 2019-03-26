@@ -16,19 +16,16 @@
 
 package org.apache.velocity.tools.view.tools;
 
-import java.io.StringWriter;
 import java.util.Map;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.tools.generic.RenderTool;
 import org.apache.velocity.tools.generic.ValueParser;
 import org.apache.velocity.tools.view.context.ViewContext;
-import org.apache.velocity.tools.view.tools.ViewTool;
 
 /**
- * This tool expose methods to evaluate the given
- * strings as VTL (Velocity Template Language)
- * and automatically using the current context.
- * <br />
+ * This tool expose methods to evaluate the given strings as VTL (Velocity Template Language) and
+ * automatically using the current context. <br>
+ *
  * <pre>
  * Example of eval():
  *      Input
@@ -41,7 +38,7 @@ import org.apache.velocity.tools.view.tools.ViewTool;
  *      Output
  *      ------
  *      3
- * 
+ *
  * Example of recurse():
  *      Input
  *      -----
@@ -64,82 +61,65 @@ import org.apache.velocity.tools.view.tools.ViewTool;
  * &lt;/tool&gt;
  * </pre>
  *
- * <p>Ok, so these examples are really lame.  But, it seems like
- * someone out there is always asking how to do stuff like this
- * and we always tell them to write a tool.  Now we can just tell
- * them to use this tool.</p>
+ * <p>Ok, so these examples are really lame. But, it seems like someone out there is always asking
+ * how to do stuff like this and we always tell them to write a tool. Now we can just tell them to
+ * use this tool.
  *
- * <p>This tool is NOT meant to be used in either application or
- * session scopes of a servlet environment.</p>
- * 
+ * <p>This tool is NOT meant to be used in either application or session scopes of a servlet
+ * environment.
+ *
  * @author <a href="mailto:nathan@esha.com">Nathan Bubna</a>
  * @version $Revision: 321235 $ $Date: 2005-10-14 15:29:43 -0700 (Fri, 14 Oct 2005) $
  */
-public class ViewRenderTool extends RenderTool implements ViewTool, Configurable
-{
-    public static final String KEY_PARSE_DEPTH = "parse.depth";
+public class ViewRenderTool extends RenderTool implements ViewTool, Configurable {
+  public static final String KEY_PARSE_DEPTH = "parse.depth";
 
-    private Context context;
+  private Context context;
 
-    /**
-     * Constructs a new instance
-     */
-    public ViewRenderTool()
-    {}
-    
-    
-    /**
-     * Initializes this instance.
-     *
-     * @param obj the current Context
-     */
-    public void init(Object obj)
-    {
-        context = (Context)obj;
+  /** Constructs a new instance */
+  public ViewRenderTool() {}
 
-        // if ViewContext, try to retrieve a VelocityEngine for use
-        if (obj instanceof ViewContext)
-        {
-            setVelocityEngine(((ViewContext)obj).getVelocityEngine());
-        }
+  /**
+   * Initializes this instance.
+   *
+   * @param obj the current Context
+   */
+  public void init(Object obj) {
+    context = (Context) obj;
+
+    // if ViewContext, try to retrieve a VelocityEngine for use
+    if (obj instanceof ViewContext) {
+      setVelocityEngine(((ViewContext) obj).getVelocityEngine());
     }
+  }
 
-    public void configure(Map params)
-    {
-        ValueParser parser = new ValueParser(params);
-        int depth = parser.getInt(KEY_PARSE_DEPTH, DEFAULT_PARSE_DEPTH);
-        setParseDepth(depth);
-    }
+  public void configure(Map params) {
+    ValueParser parser = new ValueParser(params);
+    int depth = parser.getInt(KEY_PARSE_DEPTH, DEFAULT_PARSE_DEPTH);
+    setParseDepth(depth);
+  }
 
-    /**
-     * <p>Evaluates a String containing VTL using the current context,
-     * and returns the result as a String.  If this fails, then 
-     * <code>null</code> will be returned.  This evaluation is not
-     * recursive.</p>
-     * 
-     * @param vtl the code to be evaluated
-     * @return the evaluated code as a String
-     */
-    public String eval(String vtl) throws Exception
-    {
-        return eval(context, vtl);
-    }
+  /**
+   * Evaluates a String containing VTL using the current context, and returns the result as a
+   * String. If this fails, then <code>null</code> will be returned. This evaluation is not
+   * recursive.
+   *
+   * @param vtl the code to be evaluated
+   * @return the evaluated code as a String
+   */
+  public String eval(String vtl) throws Exception {
+    return eval(context, vtl);
+  }
 
-
-    /**
-     * <p>Recursively evaluates a String containing VTL using the
-     * current context, and returns the result as a String. It
-     * will continue to re-evaluate the output of the last
-     * evaluation until an evaluation returns the same code
-     * that was fed into it.</p>
-     * 
-     * @param vtl the code to be evaluated
-     * @return the evaluated code as a String
-     */
-    public String recurse(String vtl) throws Exception
-    {
-        return recurse(context, vtl);
-    }
-
-
+  /**
+   * Recursively evaluates a String containing VTL using the current context, and returns the result
+   * as a String. It will continue to re-evaluate the output of the last evaluation until an
+   * evaluation returns the same code that was fed into it.
+   *
+   * @param vtl the code to be evaluated
+   * @return the evaluated code as a String
+   */
+  public String recurse(String vtl) throws Exception {
+    return recurse(context, vtl);
+  }
 }

@@ -1,15 +1,13 @@
 package com.dotmarketing.util;
 
 import java.util.UUID;
-
 import org.apache.logging.log4j.core.util.UuidUtil;
 
 public final class UUIDUtil {
 
   public static boolean isUUID(final String uuid) {
-    return uuid!=null && unUidIfy(uuid).matches("[a-fA-F0-9]{32}");
+    return uuid != null && unUidIfy(uuid).matches("[a-fA-F0-9]{32}");
   }
-
 
   public static String uuidIfy(String shorty) {
     StringBuilder newShorty = new StringBuilder();
@@ -39,7 +37,4 @@ public final class UUIDUtil {
   public static String uuidTimeBased() {
     return UuidUtil.getTimeBasedUuid().toString();
   }
-
-
-
 }

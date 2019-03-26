@@ -12,39 +12,46 @@ import org.immutables.value.Value;
 
 /**
  * Content type's field to use relationships
+ *
  * @author nollymar
  */
 @JsonSerialize(as = ImmutableRelationshipField.class)
 @JsonDeserialize(as = ImmutableRelationshipField.class)
 @Value.Immutable
-public abstract class RelationshipField extends Field{
+public abstract class RelationshipField extends Field {
 
-    private static final long serialVersionUID = 1L;
+  private static final long serialVersionUID = 1L;
 
-    @Override
-    public Class type() {
-        return RelationshipField.class;
-    }
+  @Override
+  public Class type() {
+    return RelationshipField.class;
+  }
 
-    @Value.Default
-    @Override
-    public boolean indexed() {
-        return true;
-    };
-    @Value.Default
-    @Override
-    public DataTypes dataType(){
-        return DataTypes.SYSTEM;
-    }
-    @Override
-    public final List<DataTypes> acceptedDataTypes() {
-        return ImmutableList.of(DataTypes.SYSTEM);
-    }
-    public abstract static class Builder implements FieldBuilder {}
+  @Value.Default
+  @Override
+  public boolean indexed() {
+    return true;
+  };
 
-    @JsonIgnore
-    public Collection<ContentTypeFieldProperties> getFieldContentTypeProperties(){
-        return list(ContentTypeFieldProperties.REQUIRED, ContentTypeFieldProperties.NAME,
-                ContentTypeFieldProperties.RELATIONSHIPS, ContentTypeFieldProperties.SEARCHABLE);
-    }
+  @Value.Default
+  @Override
+  public DataTypes dataType() {
+    return DataTypes.SYSTEM;
+  }
+
+  @Override
+  public final List<DataTypes> acceptedDataTypes() {
+    return ImmutableList.of(DataTypes.SYSTEM);
+  }
+
+  public abstract static class Builder implements FieldBuilder {}
+
+  @JsonIgnore
+  public Collection<ContentTypeFieldProperties> getFieldContentTypeProperties() {
+    return list(
+        ContentTypeFieldProperties.REQUIRED,
+        ContentTypeFieldProperties.NAME,
+        ContentTypeFieldProperties.RELATIONSHIPS,
+        ContentTypeFieldProperties.SEARCHABLE);
+  }
 }

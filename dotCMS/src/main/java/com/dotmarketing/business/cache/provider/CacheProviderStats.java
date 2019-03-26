@@ -1,71 +1,60 @@
 package com.dotmarketing.business.cache.provider;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.LinkedHashSet;
+import java.util.List;
 
-/**
- * Created by jasontesser on 3/21/17.
- */
+/** Created by jasontesser on 3/21/17. */
 public class CacheProviderStats {
 
-    private LinkedHashSet<String> statColumns = new LinkedHashSet<String>();
-    private List<CacheStats> stats = new ArrayList<CacheStats>();
+  private LinkedHashSet<String> statColumns = new LinkedHashSet<String>();
+  private List<CacheStats> stats = new ArrayList<CacheStats>();
 
-    private CacheStats providerStats;
-    private String providerName;
+  private CacheStats providerStats;
+  private String providerName;
 
-    /**
-     * CacheProviderStats is a class to help return the stats for different cache providers in dotCMS
-     *
-     * @param providerStats a single row for summary data ie... Total Memory: 20MG, Another property: Something ....
-     */
-    public CacheProviderStats(CacheStats providerStats, String providerName) {
-        this.providerStats = providerStats;
-        this.providerName = providerName;
-    }
+  /**
+   * CacheProviderStats is a class to help return the stats for different cache providers in dotCMS
+   *
+   * @param providerStats a single row for summary data ie... Total Memory: 20MG, Another property:
+   *     Something ....
+   */
+  public CacheProviderStats(CacheStats providerStats, String providerName) {
+    this.providerStats = providerStats;
+    this.providerName = providerName;
+  }
 
-    public void addStatRecord(CacheStats stats) {
-        statColumns.addAll(stats.getStatColumns());
-        this.stats.add(stats);
-    }
+  public void addStatRecord(CacheStats stats) {
+    statColumns.addAll(stats.getStatColumns());
+    this.stats.add(stats);
+  }
 
-    public LinkedHashSet<String> getStatColumns() {
-        return statColumns;
-    }
+  public LinkedHashSet<String> getStatColumns() {
+    return statColumns;
+  }
 
-    public List<CacheStats> getStats(){
-        Collections.sort(stats, new CacheStatComparator());
-        return this.stats;
-    }
+  public List<CacheStats> getStats() {
+    Collections.sort(stats, new CacheStatComparator());
+    return this.stats;
+  }
 
-    public String getProviderName(){
-        return providerName;
-    }
+  public String getProviderName() {
+    return providerName;
+  }
 
-    
-    
+  class CacheStatComparator implements Comparator<CacheStats> {
+    @Override
+    public int compare(CacheStats x, CacheStats y) {
 
-    
-    
-    class CacheStatComparator implements Comparator<CacheStats> {
-      @Override
-      public int compare(CacheStats x, CacheStats y) {
-
-        try{
-          return x.getStatValue(CacheStats.REGION).toString().compareToIgnoreCase(y.getStatValue(CacheStats.REGION).toString());
-        }
-        catch(Exception e){
-          return 0;
-        }
-        
-        
+      try {
+        return x.getStatValue(CacheStats.REGION)
+            .toString()
+            .compareToIgnoreCase(y.getStatValue(CacheStats.REGION).toString());
+      } catch (Exception e) {
+        return 0;
       }
-
-
     }
-    
-    
-    
-    
+  }
 }
-
-

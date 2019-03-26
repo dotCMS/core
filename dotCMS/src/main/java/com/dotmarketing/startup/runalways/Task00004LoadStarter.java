@@ -8,19 +8,17 @@ import com.dotmarketing.startup.StartupTask;
 
 public class Task00004LoadStarter implements StartupTask {
 
-	
-	public void executeUpgrade() throws DotDataException, DotRuntimeException {
+  public void executeUpgrade() throws DotDataException, DotRuntimeException {
 
-		DotCMSInitDb.InitializeDb();
-	}
+    DotCMSInitDb.InitializeDb();
+  }
 
-	public boolean forceRun() {
+  public boolean forceRun() {
 
-		DotConnect db = new DotConnect();
-		db.setSQL("select count(*) as test from inode");
+    DotConnect db = new DotConnect();
+    db.setSQL("select count(*) as test from inode");
 
-		int test = db.getInt("test");
-		return (test < 1);
-	}
-
+    int test = db.getInt("test");
+    return (test < 1);
+  }
 }

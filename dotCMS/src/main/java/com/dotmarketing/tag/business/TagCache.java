@@ -2,43 +2,38 @@ package com.dotmarketing.tag.business;
 
 import com.dotmarketing.business.Cachable;
 import com.dotmarketing.tag.model.Tag;
-
 import java.util.List;
 
-/**
- * @author Jonathan Gamba
- *         Date: 1/28/16
- */
+/** @author Jonathan Gamba Date: 1/28/16 */
 public abstract class TagCache implements Cachable {
 
-    abstract protected void remove ( Tag object );
+  protected abstract void remove(Tag object);
 
-    abstract protected void removeByInode ( String inode );
+  protected abstract void removeByInode(String inode);
 
-    abstract protected Tag get ( String tagId );
+  protected abstract Tag get(String tagId);
 
-    abstract protected Tag get ( String name, String hostId );
+  protected abstract Tag get(String name, String hostId);
 
-    abstract protected List<Tag> getByName ( String name );
+  protected abstract List<Tag> getByName(String name);
 
-    abstract protected List<Tag> getByHost ( String hostId );
+  protected abstract List<Tag> getByHost(String hostId);
 
-    abstract protected List<Tag> getByInode ( String inode );
+  protected abstract List<Tag> getByInode(String inode);
 
-    abstract protected void putForInode ( String inode, List<Tag> tags );
+  protected abstract void putForInode(String inode, List<Tag> tags);
 
-    abstract protected void putForName ( String name, List<Tag> tags );
+  protected abstract void putForName(String name, List<Tag> tags);
 
-    abstract protected void putForHost ( String hostId, List<Tag> tags );
+  protected abstract void putForHost(String hostId, List<Tag> tags);
 
-    abstract protected void put ( Tag object );
+  protected abstract void put(Tag object);
 
-    abstract public String getTagsByNameGroup ();
+  public abstract String getTagsByNameGroup();
 
-    abstract public String getTagsByHostGroup ();
+  public abstract String getTagsByHostGroup();
 
-    abstract public String getTagsByInodeGroup ();
+  public abstract String getTagsByInodeGroup();
 
-    abstract public String getTagByNameHostGroup ();
-
+  public abstract String getTagByNameHostGroup();
 }

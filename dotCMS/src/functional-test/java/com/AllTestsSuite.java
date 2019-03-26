@@ -30,55 +30,47 @@ import com.dotmarketing.portlets.rules.conditionlet.VisitorsCurrentUrlConditionl
 import com.dotmarketing.portlets.structure.business.URLMapTest;
 import com.dotmarketing.sitesearch.ajax.SiteSearchAjaxActionTest;
 import com.dotmarketing.webdav.WebDavTest;
-
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
-/**
- * @author Jonathan Gamba.
- *         Date: 3/7/12
- */
-@RunWith (Suite.class)
-@Suite.SuiteClasses ({
+/** @author Jonathan Gamba. Date: 3/7/12 */
+@RunWith(Suite.class)
+@Suite.SuiteClasses({
 
-    /**************************
-     *      e2e tests         *
-     **************************/
-    CSSPreProcessServletTest.class, //Needs Enterprise License
+    /** ************************ e2e tests * ************************ */
+    CSSPreProcessServletTest.class, // Needs Enterprise License
     LessCompilerTest.class,
     SassCompilerTest.class,
-    RemotePublishAjaxActionTest.class, //Needs Enterprise License
+    RemotePublishAjaxActionTest.class, // Needs Enterprise License
     ActionResourceFTest.class,
     ConditionGroupResourceFTest.class,
     RuleResourceFTest.class,
     I8NResourceFTest.class,
 
-    //Rules:Conditionlets.
-    ActionletResourceFTest.class, //Needs Enterprise License.
-    CurrentSessionLanguageConditionletFTest.class, //Needs Enterprise License.
-    NumberOfTimesPreviouslyVisitedConditionletFTest.class, //Needs Enterprise License.
-    PagesViewedConditionletFTest.class, //Needs Enterprise License.
-    UsersBrowserLanguageConditionletFTest.class, //Needs Enterprise License.
-    UsersSiteVisitsConditionletFTest.class, //Needs Enterprise License.
-    VisitedUrlConditionletFTest.class, //Needs Enterprise License.
-    VisitorOperatingSystemConditionletFTest.class, //Needs Enterprise License.
-    VisitorsCurrentUrlConditionletFTest.class, //Needs Enterprise License.
-
-    ContentResourceTest.class, //Needs Enterprise License
+    // Rules:Conditionlets.
+    ActionletResourceFTest.class, // Needs Enterprise License.
+    CurrentSessionLanguageConditionletFTest.class, // Needs Enterprise License.
+    NumberOfTimesPreviouslyVisitedConditionletFTest.class, // Needs Enterprise License.
+    PagesViewedConditionletFTest.class, // Needs Enterprise License.
+    UsersBrowserLanguageConditionletFTest.class, // Needs Enterprise License.
+    UsersSiteVisitsConditionletFTest.class, // Needs Enterprise License.
+    VisitedUrlConditionletFTest.class, // Needs Enterprise License.
+    VisitorOperatingSystemConditionletFTest.class, // Needs Enterprise License.
+    VisitorsCurrentUrlConditionletFTest.class, // Needs Enterprise License.
+    ContentResourceTest.class, // Needs Enterprise License
     RoleResourceTest.class,
     WebResourceTest.class,
     FileAssetTest.class,
-    //Ignored PersonaActionletFTest, see: https://github.com/dotCMS/core/issues/10746
-    //PersonaActionletFTest.class, //Needs Enterprise License.
-    SetResponseHeaderActionletFTest.class, //Needs Enterprise License.
-    SetSessionAttributeActionletFTest.class, //Needs Enterprise License.
-    //Ignored VisitorsTagsActionletFTest, see: https://github.com/dotCMS/core/issues/10746
-    //VisitorsTagsActionletFTest.class, //Needs Enterprise License.
+    // Ignored PersonaActionletFTest, see: https://github.com/dotCMS/core/issues/10746
+    // PersonaActionletFTest.class, //Needs Enterprise License.
+    SetResponseHeaderActionletFTest.class, // Needs Enterprise License.
+    SetSessionAttributeActionletFTest.class, // Needs Enterprise License.
+    // Ignored VisitorsTagsActionletFTest, see: https://github.com/dotCMS/core/issues/10746
+    // VisitorsTagsActionletFTest.class, //Needs Enterprise License.
 
-    //Rules.
-    RulesAPIFTest.class, //Needs Enterprise License.
-    RulesUnderPageAssetsFTest.class, //Needs Enterprise License.
-
+    // Rules.
+    RulesAPIFTest.class, // Needs Enterprise License.
+    RulesUnderPageAssetsFTest.class, // Needs Enterprise License.
     URLMapTest.class,
     SiteSearchAjaxActionTest.class,
     WebDavTest.class,

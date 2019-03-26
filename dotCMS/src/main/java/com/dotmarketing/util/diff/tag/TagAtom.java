@@ -15,65 +15,58 @@
  */
 package com.dotmarketing.util.diff.tag;
 
-/**
- * An atom that represents a closing or opening tag.
- */
+/** An atom that represents a closing or opening tag. */
 public class TagAtom implements Atom {
 
-    private String identifier;
+  private String identifier;
 
-    private String internalIdentifiers = "";
+  private String internalIdentifiers = "";
 
-    public TagAtom(String s) {
-        if (!isValidAtom(s))
-            throw new IllegalArgumentException(
-                    "The given string is not a valid tag");
-        s = s.substring(1, s.length() - 1);
+  public TagAtom(String s) {
+    if (!isValidAtom(s)) throw new IllegalArgumentException("The given string is not a valid tag");
+    s = s.substring(1, s.length() - 1);
 
-        if (s.indexOf(' ') > 0) {
-            identifier = s.substring(0, s.indexOf(' '));
-            // TODO check if the +1 is ok!
-            internalIdentifiers = s.substring(s.indexOf(' ') + 1);
-        } else {
-            identifier = s;
-        }
+    if (s.indexOf(' ') > 0) {
+      identifier = s.substring(0, s.indexOf(' '));
+      // TODO check if the +1 is ok!
+      internalIdentifiers = s.substring(s.indexOf(' ') + 1);
+    } else {
+      identifier = s;
     }
+  }
 
-    public String getIdentifier() {
-        return identifier;
-    }
+  public String getIdentifier() {
+    return identifier;
+  }
 
-    public String getInternalIdentifiers() {
-        return internalIdentifiers;
-    }
+  public String getInternalIdentifiers() {
+    return internalIdentifiers;
+  }
 
-    public boolean hasInternalIdentifiers() {
-        return internalIdentifiers.length() > 0;
-    }
+  public boolean hasInternalIdentifiers() {
+    return internalIdentifiers.length() > 0;
+  }
 
-    public static boolean isValidTag(String s) {
-        return s.lastIndexOf('<') == 0 && s.indexOf('>') == s.length() - 1
-                && s.length() >= 3;
-    }
+  public static boolean isValidTag(String s) {
+    return s.lastIndexOf('<') == 0 && s.indexOf('>') == s.length() - 1 && s.length() >= 3;
+  }
 
-    public String getFullText() {
-        String s = "<" + identifier;
-        if (hasInternalIdentifiers())
-            s += " " + internalIdentifiers;
-        return s += ">";
-    }
+  public String getFullText() {
+    String s = "<" + identifier;
+    if (hasInternalIdentifiers()) s += " " + internalIdentifiers;
+    return s += ">";
+  }
 
-    public boolean isValidAtom(String s) {
-        return isValidTag(s);
-    }
+  public boolean isValidAtom(String s) {
+    return isValidTag(s);
+  }
 
-    @Override
-    public String toString() {
-        return "TagAtom: " + getFullText();
-    }
+  @Override
+  public String toString() {
+    return "TagAtom: " + getFullText();
+  }
 
-    public boolean equalsIdentifier(Atom other) {
-        return other.getIdentifier().equals(getIdentifier());
-    }
-
+  public boolean equalsIdentifier(Atom other) {
+    return other.getIdentifier().equals(getIdentifier());
+  }
 }

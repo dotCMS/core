@@ -5,9 +5,9 @@
  * The ASF licenses this file to You under the Apache License, Version 2.0
  * (the "License"); you may not use this file except in compliance with
  * the License.  You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -21,129 +21,112 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.util.BitSet;
 
-
-
 /**
+ * This class is very similar to the java.net.URLEncoder class. Unfortunately, with
+ * java.net.URLEncoder there is no way to specify to the java.net.URLEncoder which characters should
+ * NOT be encoded. This code was moved from DefaultServlet.java
  *
- * This class is very similar to the java.net.URLEncoder class.
- * Unfortunately, with java.net.URLEncoder there is no way to specify to the 
- * java.net.URLEncoder which characters should NOT be encoded.
- * This code was moved from DefaultServlet.java
  * @author Craig R. McClanahan
  * @author Remy Maucherat
  */
-
 public class URLEncoder {
 
-    protected static final char[] hexadecimal = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
-    //Array containing the safe characters set.
-    protected BitSet safeCharacters = new BitSet(256);
+  protected static final char[] hexadecimal = {
+    '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'
+  };
+  // Array containing the safe characters set.
+  protected BitSet safeCharacters = new BitSet(256);
 
-    public URLEncoder() {
-        for (char i = 'a'; i <= 'z'; i++) {
-            addSafeCharacter(i);
-        }
-
-        for (char i = 'A'; i <= 'Z'; i++) {
-            addSafeCharacter(i);
-        }
-
-        for (char i = '0'; i <= '9'; i++) {
-            addSafeCharacter(i);
-        }
+  public URLEncoder() {
+    for (char i = 'a'; i <= 'z'; i++) {
+      addSafeCharacter(i);
     }
 
-
-
-    public void addSafeCharacter( char c ) {
-
-	safeCharacters.set( c );
-
+    for (char i = 'A'; i <= 'Z'; i++) {
+      addSafeCharacter(i);
     }
 
+    for (char i = '0'; i <= '9'; i++) {
+      addSafeCharacter(i);
+    }
+  }
 
+  public void addSafeCharacter(char c) {
 
-    public String encode( String path ) {
+    safeCharacters.set(c);
+  }
 
-        int maxBytesPerChar = 10;
+  public String encode(String path) {
 
-        int caseDiff = ('a' - 'A');
+    int maxBytesPerChar = 10;
 
-        StringBuffer rewrittenPath = new StringBuffer(path.length());
+    int caseDiff = ('a' - 'A');
 
-        ByteArrayOutputStream buf = new ByteArrayOutputStream(maxBytesPerChar);
+    StringBuffer rewrittenPath = new StringBuffer(path.length());
 
-        OutputStreamWriter writer = null;
+    ByteArrayOutputStream buf = new ByteArrayOutputStream(maxBytesPerChar);
+
+    OutputStreamWriter writer = null;
+
+    try {
+
+      writer = new OutputStreamWriter(buf, "UTF8");
+
+    } catch (Exception e) {
+
+      e.printStackTrace();
+
+      writer = new OutputStreamWriter(buf);
+    }
+
+    for (int i = 0; i < path.length(); i++) {
+
+      int c = (int) path.charAt(i);
+
+      if (safeCharacters.get(c)) {
+
+        rewrittenPath.append((char) c);
+
+      } else {
+
+        // convert to external encoding before hex conversion
 
         try {
 
-            writer = new OutputStreamWriter(buf, "UTF8");
+          writer.write((char) c);
 
-        } catch (Exception e) {
+          writer.flush();
 
-            e.printStackTrace();
+        } catch (IOException e) {
 
-            writer = new OutputStreamWriter(buf);
+          buf.reset();
 
+          continue;
         }
 
+        byte[] ba = buf.toByteArray();
 
+        for (int j = 0; j < ba.length; j++) {
 
-        for (int i = 0; i < path.length(); i++) {
+          // Converting each byte in the buffer
 
-            int c = (int) path.charAt(i);
+          byte toEncode = ba[j];
 
-            if (safeCharacters.get(c)) {
+          rewrittenPath.append('%');
 
-                rewrittenPath.append((char)c);
+          int low = (int) (toEncode & 0x0f);
 
-            } else {
+          int high = (int) ((toEncode & 0xf0) >> 4);
 
-                // convert to external encoding before hex conversion
+          rewrittenPath.append(hexadecimal[high]);
 
-                try {
-
-                    writer.write((char)c);
-
-                    writer.flush();
-
-                } catch(IOException e) {
-
-                    buf.reset();
-
-                    continue;
-
-                }
-
-                byte[] ba = buf.toByteArray();
-
-                for (int j = 0; j < ba.length; j++) {
-
-                    // Converting each byte in the buffer
-
-                    byte toEncode = ba[j];
-
-                    rewrittenPath.append('%');
-
-                    int low = (int) (toEncode & 0x0f);
-
-                    int high = (int) ((toEncode & 0xf0) >> 4);
-
-                    rewrittenPath.append(hexadecimal[high]);
-
-                    rewrittenPath.append(hexadecimal[low]);
-
-                }
-
-                buf.reset();
-
-            }
-
+          rewrittenPath.append(hexadecimal[low]);
         }
 
-        return rewrittenPath.toString();
-
+        buf.reset();
+      }
     }
 
+    return rewrittenPath.toString();
+  }
 }
-

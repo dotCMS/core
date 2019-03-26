@@ -2,22 +2,18 @@ package com.dotmarketing.business;
 
 import java.util.List;
 
-/**
- * 
- * @author Jason Tesser
- *
- */
+/** @author Jason Tesser */
 public abstract class LayoutCache implements Cachable {
 
-	abstract protected Layout add(String key,Layout layout);
+  protected abstract Layout add(String key, Layout layout);
 
-	abstract protected Layout get(String key);
-	
-	abstract public void clearCache();
+  protected abstract Layout get(String key);
 
+  public abstract void clearCache();
 
-	abstract protected void remove(Layout layout) ;
-	abstract protected List<String> getPortlets(Layout layout) ;
-	abstract protected List<String> addPortlets(Layout layout, List<String> portletIds) ;
+  protected abstract void remove(Layout layout);
 
+  protected abstract List<String> getPortlets(Layout layout);
+
+  protected abstract List<String> addPortlets(Layout layout, List<String> portletIds);
 }

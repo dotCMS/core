@@ -1,11 +1,20 @@
 package com.dotcms.rest;
 
+import static com.dotmarketing.util.NumberUtil.toInt;
+import static com.dotmarketing.util.NumberUtil.toLong;
+
 import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
-import com.dotcms.repackage.javax.ws.rs.*;
+import com.dotcms.repackage.javax.ws.rs.Consumes;
+import com.dotcms.repackage.javax.ws.rs.GET;
+import com.dotcms.repackage.javax.ws.rs.POST;
+import com.dotcms.repackage.javax.ws.rs.PUT;
+import com.dotcms.repackage.javax.ws.rs.Path;
+import com.dotcms.repackage.javax.ws.rs.PathParam;
+import com.dotcms.repackage.javax.ws.rs.Produces;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
@@ -45,7 +54,12 @@ import com.dotmarketing.portlets.structure.model.Field.FieldType;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.transform.ContentletRelationshipsTransformer;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
-import com.dotmarketing.util.*;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.InodeUtils;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.SecurityLogger;
+import com.dotmarketing.util.UUIDUtil;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.converters.Converter;
@@ -54,1670 +68,1793 @@ import com.thoughtworks.xstream.converters.UnmarshallingContext;
 import com.thoughtworks.xstream.io.HierarchicalStreamReader;
 import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
 import com.thoughtworks.xstream.io.xml.DomDriver;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.Part;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
-import java.util.*;
+import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import static com.dotmarketing.util.NumberUtil.toInt;
-import static com.dotmarketing.util.NumberUtil.toLong;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.Part;
 
 @Path("/content")
 public class ContentResource {
 
-    public static final String[] ignoreFields = {"disabledWYSIWYG", "lowIndexPriority"};
+  public static final String[] ignoreFields = {"disabledWYSIWYG", "lowIndexPriority"};
 
-    private static final String RELATIONSHIP_KEY = "__##relationships##__";
-    private static final String IP_ADDRESS = "ipAddress";
-    private static final String HOST_HEADER = "hostHeader";
-    private static final String COOKIES = "cookies";
-    private static final String USER_AGENT = "userAgent";
-    private static final String REFERER = "referer";
-    private static final String REQUEST_METHOD = "requestMethod";
-    private static final String ACCEPT_LANGUAGE = "acceptLanguage";
-    private static final MediaType MEDIA_TYPE_GENERIC_TEXT = new MediaType("text","*");
+  private static final String RELATIONSHIP_KEY = "__##relationships##__";
+  private static final String IP_ADDRESS = "ipAddress";
+  private static final String HOST_HEADER = "hostHeader";
+  private static final String COOKIES = "cookies";
+  private static final String USER_AGENT = "userAgent";
+  private static final String REFERER = "referer";
+  private static final String REQUEST_METHOD = "requestMethod";
+  private static final String ACCEPT_LANGUAGE = "acceptLanguage";
+  private static final MediaType MEDIA_TYPE_GENERIC_TEXT = new MediaType("text", "*");
 
-    private final WebResource webResource = new WebResource();
-    private final ContentHelper contentHelper = ContentHelper.getInstance();
+  private final WebResource webResource = new WebResource();
+  private final ContentHelper contentHelper = ContentHelper.getInstance();
 
-    /**
-     * performs a call to APILocator.getContentletAPI().searchIndex() with the specified parameters.
-     * Example call using curl: curl -XGET http://localhost:8080/api/content/indexsearch/+structurename:webpagecontent/sortby/modDate/limit/20/offset/0
-     *
-     * @param request request object
-     * @param query lucene query
-     * @param sortBy field to sortby
-     * @param limit how many results return
-     * @param offset how many results skip
-     * @return json array of objects. each object with inode and identifier
-     */
-    @GET
-    @Path("/indexsearch/{query}/sortby/{sortby}/limit/{limit}/offset/{offset}")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response indexSearch(@Context HttpServletRequest request,
-            @PathParam("query") String query,
-            @PathParam("sortby") String sortBy, @PathParam("limit") int limit,
-            @PathParam("offset") int offset,
-            @PathParam("type") String type,
-            @PathParam("callback") String callback)
-            throws DotDataException, JSONException {
+  /**
+   * performs a call to APILocator.getContentletAPI().searchIndex() with the specified parameters.
+   * Example call using curl: curl -XGET
+   * http://localhost:8080/api/content/indexsearch/+structurename:webpagecontent/sortby/modDate/limit/20/offset/0
+   *
+   * @param request request object
+   * @param query lucene query
+   * @param sortBy field to sortby
+   * @param limit how many results return
+   * @param offset how many results skip
+   * @return json array of objects. each object with inode and identifier
+   */
+  @GET
+  @Path("/indexsearch/{query}/sortby/{sortby}/limit/{limit}/offset/{offset}")
+  @Produces(MediaType.APPLICATION_JSON)
+  public Response indexSearch(
+      @Context HttpServletRequest request,
+      @PathParam("query") String query,
+      @PathParam("sortby") String sortBy,
+      @PathParam("limit") int limit,
+      @PathParam("offset") int offset,
+      @PathParam("type") String type,
+      @PathParam("callback") String callback)
+      throws DotDataException, JSONException {
 
-        InitDataObject initData = webResource.init(null, true, request, false, null);
+    InitDataObject initData = webResource.init(null, true, request, false, null);
 
-        Map<String, String> paramsMap = new HashMap<String, String>();
-        paramsMap.put("type", type);
-        paramsMap.put("callback", callback);
-        //Creating an utility response object
-        ResourceResponse responseResource = new ResourceResponse(paramsMap);
+    Map<String, String> paramsMap = new HashMap<String, String>();
+    paramsMap.put("type", type);
+    paramsMap.put("callback", callback);
+    // Creating an utility response object
+    ResourceResponse responseResource = new ResourceResponse(paramsMap);
 
-        try {
-            List<ContentletSearch> searchIndex = APILocator.getContentletAPI()
-                    .searchIndex(query, limit, offset, sortBy, initData.getUser(), true);
-            JSONArray array = new JSONArray();
-            for (ContentletSearch cs : searchIndex) {
-                array.put(new JSONObject()
-                        .put("inode", cs.getInode())
-                        .put("identifier", cs.getIdentifier()));
-            }
+    try {
+      List<ContentletSearch> searchIndex =
+          APILocator.getContentletAPI()
+              .searchIndex(query, limit, offset, sortBy, initData.getUser(), true);
+      JSONArray array = new JSONArray();
+      for (ContentletSearch cs : searchIndex) {
+        array.put(
+            new JSONObject().put("inode", cs.getInode()).put("identifier", cs.getIdentifier()));
+      }
 
-            return responseResource.response(array.toString());
-        } catch (DotSecurityException e) {
-            throw new ForbiddenException(e);
-        }
+      return responseResource.response(array.toString());
+    } catch (DotSecurityException e) {
+      throw new ForbiddenException(e);
+    }
+  }
+
+  /**
+   * Performs a call to APILocator.getContentletAPI().indexCount() using the specified parameters.
+   *
+   * <p>Example call using curl: curl -XGET
+   * http://localhost:8080/api/content/indexcount/+structurename:webpagecontent
+   *
+   * @param request request obejct
+   * @param query lucene query to count on
+   * @return a string with the count
+   */
+  @GET
+  @Path("/indexcount/{query}")
+  @Produces(MediaType.TEXT_PLAIN)
+  public Response indexCount(
+      @Context HttpServletRequest request,
+      @PathParam("query") String query,
+      @PathParam("type") String type,
+      @PathParam("callback") String callback)
+      throws DotDataException {
+
+    InitDataObject initData = webResource.init(null, true, request, false, null);
+
+    Map<String, String> paramsMap = new HashMap<String, String>();
+    paramsMap.put("type", type);
+    paramsMap.put("callback", callback);
+    // Creating an utility response object
+    ResourceResponse responseResource = new ResourceResponse(paramsMap);
+
+    try {
+      return responseResource.response(
+          Long.toString(APILocator.getContentletAPI().indexCount(query, initData.getUser(), true)));
+    } catch (DotSecurityException e) {
+      throw new ForbiddenException(e);
+    }
+  }
+
+  @PUT
+  @Path("/lock/{params:.*}")
+  @Produces(MediaType.APPLICATION_JSON)
+  public Response lockContent(
+      @Context HttpServletRequest request,
+      @Context HttpServletResponse response,
+      @PathParam("params") String params)
+      throws DotDataException, JSONException {
+
+    InitDataObject initData = webResource.init(params, true, request, false, null);
+    Map<String, String> paramsMap = initData.getParamsMap();
+    String callback = paramsMap.get(RESTParams.CALLBACK.getValue());
+    String language = paramsMap.get(RESTParams.LANGUAGE.getValue());
+
+    String id = paramsMap.get(RESTParams.ID.getValue());
+
+    String inode = paramsMap.get(RESTParams.INODE.getValue());
+
+    ResourceResponse responseResource = new ResourceResponse(paramsMap);
+    JSONObject jo = new JSONObject();
+    User user = initData.getUser();
+
+    long lang = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+    boolean live =
+        (paramsMap.get(RESTParams.LIVE.getValue()) == null
+            || !"false".equals(paramsMap.get(RESTParams.LIVE.getValue())));
+
+    if (paramsMap.get(RESTParams.LANGUAGE.getValue()) != null) {
+      try {
+        lang = Long.parseLong(language);
+      } catch (Exception e) {
+        Logger.warn(this.getClass(), "Invald language passed in, defaulting to, well, the default");
+      }
     }
 
-    /**
-     * Performs a call to APILocator.getContentletAPI().indexCount()
-     * using the specified parameters.
-     * <p/>
-     * Example call using curl:
-     * curl -XGET http://localhost:8080/api/content/indexcount/+structurename:webpagecontent
-     *
-     * @param request request obejct
-     * @param query lucene query to count on
-     * @return a string with the count
-     */
-    @GET
-    @Path("/indexcount/{query}")
-    @Produces(MediaType.TEXT_PLAIN)
-    public Response indexCount(@Context HttpServletRequest request,
-            @PathParam("query") String query,
-            @PathParam("type") String type,
-            @PathParam("callback") String callback) throws DotDataException {
+    try {
+      Contentlet contentlet =
+          (inode != null)
+              ? APILocator.getContentletAPI().find(inode, user, live)
+              : APILocator.getContentletAPI()
+                  .findContentletByIdentifier(id, live, lang, user, live);
+      if (contentlet == null || contentlet.getIdentifier() == null) {
+        jo.append("message", "contentlet not found");
+        jo.append("return", 404);
 
-        InitDataObject initData = webResource.init(null, true, request, false, null);
-
-        Map<String, String> paramsMap = new HashMap<String, String>();
-        paramsMap.put("type", type);
-        paramsMap.put("callback", callback);
-        //Creating an utility response object
-        ResourceResponse responseResource = new ResourceResponse(paramsMap);
-
-        try {
-            return responseResource.response(Long.toString(
-                    APILocator.getContentletAPI().indexCount(query, initData.getUser(), true)));
-        } catch (DotSecurityException e) {
-            throw new ForbiddenException(e);
+        Response.ResponseBuilder responseBuilder = Response.status(HttpStatus.SC_NOT_FOUND);
+        return responseBuilder.entity(jo).build();
+      } else {
+        if (!UtilMethods.isSet(inode)) {
+          inode = contentlet.getInode();
         }
+        if (!UtilMethods.isSet(id)) {
+          id = contentlet.getIdentifier();
+        }
+
+        APILocator.getContentletAPI().lock(contentlet, user, live);
+
+        if (UtilMethods.isSet(callback)) {
+          jo.put("callback", callback);
+        }
+        jo.put("inode", inode);
+        jo.put("id", id);
+        jo.put("message", "locked");
+        jo.put("return", 200);
+        // Creating an utility response object
+      }
+
+      return responseResource.response(jo.toString());
+    } catch (DotSecurityException e) {
+      throw new ForbiddenException(e);
+    }
+  }
+
+  @PUT
+  @Path("/canLock/{params:.*}")
+  @Produces(MediaType.APPLICATION_JSON)
+  public Response canLockContent(
+      @Context HttpServletRequest request, @PathParam("params") String params)
+      throws DotDataException, JSONException {
+
+    InitDataObject initData = webResource.init(params, true, request, false, null);
+    Map<String, String> paramsMap = initData.getParamsMap();
+    String callback = paramsMap.get(RESTParams.CALLBACK.getValue());
+    String language = paramsMap.get(RESTParams.LANGUAGE.getValue());
+
+    String id = paramsMap.get(RESTParams.ID.getValue());
+
+    String inode = paramsMap.get(RESTParams.INODE.getValue());
+
+    ResourceResponse responseResource = new ResourceResponse(paramsMap);
+    JSONObject jo = new JSONObject();
+    User user = initData.getUser();
+
+    long lang = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+    boolean live =
+        (paramsMap.get(RESTParams.LIVE.getValue()) == null
+            || !"false".equals(paramsMap.get(RESTParams.LIVE.getValue())));
+
+    if (paramsMap.get(RESTParams.LANGUAGE.getValue()) != null) {
+      try {
+        lang = Long.parseLong(language);
+      } catch (Exception e) {
+        Logger.warn(this.getClass(), "Invald language passed in, defaulting to, well, the default");
+      }
     }
 
+    try {
+      Contentlet contentlet =
+          (inode != null)
+              ? APILocator.getContentletAPI().find(inode, user, live)
+              : APILocator.getContentletAPI()
+                  .findContentletByIdentifier(id, live, lang, user, live);
+      if (contentlet == null || contentlet.getIdentifier() == null) {
+        jo.append("message", "contentlet not found");
+        jo.append("return", 404);
 
-    @PUT
-    @Path("/lock/{params:.*}")
-    @Produces(MediaType.APPLICATION_JSON)
-
-    public Response lockContent(@Context HttpServletRequest request,
-            @Context HttpServletResponse response, @PathParam("params") String params)
-            throws DotDataException, JSONException {
-
-        InitDataObject initData = webResource.init(params, true, request, false, null);
-        Map<String, String> paramsMap = initData.getParamsMap();
-        String callback = paramsMap.get(RESTParams.CALLBACK.getValue());
-        String language = paramsMap.get(RESTParams.LANGUAGE.getValue());
-
-        String id = paramsMap.get(RESTParams.ID.getValue());
-
-        String inode = paramsMap.get(RESTParams.INODE.getValue());
-
-        ResourceResponse responseResource = new ResourceResponse(paramsMap);
-        JSONObject jo = new JSONObject();
-        User user = initData.getUser();
-
-        long lang = APILocator.getLanguageAPI().getDefaultLanguage().getId();
-        boolean live = (paramsMap.get(RESTParams.LIVE.getValue()) == null || !"false"
-                .equals(paramsMap.get(RESTParams.LIVE.getValue())));
-
-        if (paramsMap.get(RESTParams.LANGUAGE.getValue()) != null) {
-            try {
-                lang = Long.parseLong(language);
-            } catch (Exception e) {
-                Logger.warn(this.getClass(),
-                        "Invald language passed in, defaulting to, well, the default");
-            }
+        Response.ResponseBuilder responseBuilder = Response.status(HttpStatus.SC_NOT_FOUND);
+        return responseBuilder.entity(jo).build();
+      } else {
+        if (!UtilMethods.isSet(inode)) {
+          inode = contentlet.getInode();
+        }
+        if (!UtilMethods.isSet(id)) {
+          id = contentlet.getIdentifier();
         }
 
+        boolean canLock = false;
         try {
-            Contentlet contentlet = (inode != null)
-                    ? APILocator.getContentletAPI().find(inode, user, live)
-                    : APILocator.getContentletAPI()
-                            .findContentletByIdentifier(id, live, lang, user, live);
-            if (contentlet == null || contentlet.getIdentifier() == null) {
-                jo.append("message", "contentlet not found");
-                jo.append("return", 404);
+          canLock = APILocator.getContentletAPI().canLock(contentlet, user);
+        } catch (DotLockException e) {
+          canLock = false;
+        }
+        jo.put("canLock", canLock);
+        jo.put("locked", contentlet.isLocked());
+        ContentletVersionInfo cvi =
+            APILocator.getVersionableAPI().getContentletVersionInfo(id, contentlet.getLanguageId());
+        if (contentlet.isLocked()) {
+          jo.put("lockedBy", cvi.getLockedBy());
+          jo.put("lockedOn", cvi.getLockedOn());
+          jo.put("lockedByName", APILocator.getUserAPI().loadUserById(cvi.getLockedBy()));
+        }
 
-                Response.ResponseBuilder responseBuilder = Response.status(HttpStatus.SC_NOT_FOUND);
-                return responseBuilder.entity(jo).build();
+        if (UtilMethods.isSet(callback)) {
+          jo.put("callback", callback);
+        }
+        jo.put("inode", inode);
+        jo.put("id", id);
+        jo.put("return", 200);
+        // Creating an utility response object
+      }
+
+      return responseResource.response(jo.toString());
+    } catch (DotSecurityException e) {
+      throw new ForbiddenException(e);
+    }
+  }
+
+  @PUT
+  @Path("/unlock/{params:.*}")
+  @Produces(MediaType.APPLICATION_JSON)
+  public Response unlockContent(
+      @Context HttpServletRequest request,
+      @Context HttpServletResponse response,
+      @PathParam("params") String params)
+      throws DotDataException, JSONException {
+
+    InitDataObject initData = webResource.init(params, true, request, false, null);
+
+    Map<String, String> paramsMap = initData.getParamsMap();
+    String callback = paramsMap.get(RESTParams.CALLBACK.getValue());
+    String language = paramsMap.get(RESTParams.LANGUAGE.getValue());
+    String id = paramsMap.get(RESTParams.ID.getValue());
+    String inode = paramsMap.get(RESTParams.INODE.getValue());
+
+    ResourceResponse responseResource = new ResourceResponse(paramsMap);
+    JSONObject jo = new JSONObject();
+    User user = initData.getUser();
+
+    long lang = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+    boolean live =
+        (paramsMap.get(RESTParams.LIVE.getValue()) == null
+            || !"false".equals(paramsMap.get(RESTParams.LIVE.getValue())));
+
+    if (paramsMap.get(RESTParams.LANGUAGE.getValue()) != null) {
+      try {
+        lang = Long.parseLong(language);
+      } catch (Exception e) {
+        Logger.warn(this.getClass(), "Invald language passed in, defaulting to, well, the default");
+      }
+    }
+
+    try {
+      Contentlet contentlet =
+          (inode != null)
+              ? APILocator.getContentletAPI().find(inode, user, live)
+              : APILocator.getContentletAPI()
+                  .findContentletByIdentifier(id, live, lang, user, live);
+      if (contentlet == null || contentlet.getIdentifier() == null) {
+        jo.append("message", "contentlet not found");
+        jo.append("return", 404);
+
+      } else {
+        if (!UtilMethods.isSet(inode)) {
+          inode = contentlet.getInode();
+        }
+        if (!UtilMethods.isSet(id)) {
+          id = contentlet.getIdentifier();
+        }
+
+        APILocator.getContentletAPI().unlock(contentlet, user, live);
+
+        if (UtilMethods.isSet(callback)) {
+          jo.put("callback", callback);
+        }
+        jo.put("inode", inode);
+        jo.put("id", id);
+        jo.put("message", "unlocked");
+        jo.put("return", 200);
+        // Creating an utility response object
+      }
+
+      return responseResource.response(jo.toString());
+    } catch (DotSecurityException e) {
+      throw new ForbiddenException(e);
+    }
+  }
+
+  /**
+   * @param request
+   * @param response
+   * @param params
+   * @return Contentlets that match the search criteria in json or xml format. When `depth` param is
+   *     set to: 0 --> The contentlet object will contain the identifiers of the related contentlets
+   *     1 --> The contentlet object will contain the related contentlets 2 --> The contentlet
+   *     object will contain the related contentlets, which in turn will contain the identifiers of
+   *     their related contentlets 3 --> The contentlet object will contain the related contentlets,
+   *     which in turn will contain a list of their related contentlets null --> Relationships will
+   *     not be sent in the response
+   */
+  @GET
+  @Path("/{params:.*}")
+  @Produces(MediaType.APPLICATION_JSON)
+  public Response getContent(
+      @Context HttpServletRequest request,
+      @Context HttpServletResponse response,
+      @PathParam("params") String params) {
+
+    final InitDataObject initData = this.webResource.init(params, true, request, false, null);
+    // Creating an utility response object
+    final ResourceResponse responseResource = new ResourceResponse(initData.getParamsMap());
+    final Map<String, String> paramsMap = initData.getParamsMap();
+    final User user = initData.getUser();
+    final String render = paramsMap.get(RESTParams.RENDER.getValue());
+    final String query = paramsMap.get(RESTParams.QUERY.getValue());
+    final String id = paramsMap.get(RESTParams.ID.getValue());
+    final String limitStr = paramsMap.get(RESTParams.LIMIT.getValue());
+    final String offsetStr = paramsMap.get(RESTParams.OFFSET.getValue());
+    final String inode = paramsMap.get(RESTParams.INODE.getValue());
+    final String respectFrontEndRolesKey =
+        RESTParams.RESPECT_FRONT_END_ROLES.getValue().toLowerCase();
+    final boolean respectFrontendRoles =
+        UtilMethods.isSet(paramsMap.get(respectFrontEndRolesKey))
+            ? Boolean.valueOf(paramsMap.get(respectFrontEndRolesKey))
+            : true;
+    final long language =
+        toLong(
+            paramsMap.get(RESTParams.LANGUAGE.getValue()),
+            () -> APILocator.getLanguageAPI().getDefaultLanguage().getId());
+    /* Limit and Offset Parameters Handling, if not passed, using default */
+    final int limit = toInt(limitStr, () -> 10);
+    final int offset = toInt(offsetStr, () -> 0);
+    final boolean live =
+        (paramsMap.get(RESTParams.LIVE.getValue()) == null
+            || !"false".equals(paramsMap.get(RESTParams.LIVE.getValue())));
+
+    final String depthParam = paramsMap.get(RESTParams.DEPTH.getValue());
+    final int depth = toInt(depthParam, () -> -1);
+
+    if ((depth < 0 || depth > 3) && depthParam != null) {
+      final String errorMsg =
+          "Error searching content " + id + ". Reason: Invalid depth: " + depthParam;
+      Logger.error(this, errorMsg);
+      return ExceptionMapperUtil.createResponse(null, errorMsg);
+    }
+
+    /* Fetching the content using a query if passed or an id */
+    List<Contentlet> contentlets = new ArrayList<>();
+    Boolean idPassed = false;
+    Boolean inodePassed = false;
+    Boolean queryPassed = false;
+    String result = null;
+    Optional<Status> status = Optional.empty();
+    String type = paramsMap.get(RESTParams.TYPE.getValue());
+    String orderBy = paramsMap.get(RESTParams.ORDERBY.getValue());
+
+    type = UtilMethods.isSet(type) ? type : "json";
+    orderBy = UtilMethods.isSet(orderBy) ? orderBy : "modDate desc";
+
+    try {
+
+      if (idPassed = UtilMethods.isSet(id)) {
+        Optional.ofNullable(
+                this.contentHelper.hydrateContentlet(
+                    APILocator.getContentletAPI()
+                        .findContentletByIdentifier(
+                            id, live, language, user, respectFrontendRoles)))
+            .ifPresent(contentlets::add);
+      } else if (inodePassed = UtilMethods.isSet(inode)) {
+        Optional.ofNullable(
+                this.contentHelper.hydrateContentlet(
+                    APILocator.getContentletAPI().find(inode, user, respectFrontendRoles)))
+            .ifPresent(contentlets::add);
+      } else if (queryPassed = UtilMethods.isSet(query)) {
+        String tmDate = (String) request.getSession().getAttribute("tm_date");
+        String luceneQuery = processQuery(query);
+        contentlets = ContentUtils.pull(luceneQuery, offset, limit, orderBy, user, tmDate);
+      }
+
+    } catch (DotSecurityException e) {
+
+      Logger.debug(this, "Permission error: " + e.getMessage(), e);
+      return ExceptionMapperUtil.createResponse(
+          new DotStateException("No Permissions"), Response.Status.FORBIDDEN);
+    } catch (Exception e) {
+      if (idPassed) {
+        Logger.warn(this, "Can't find Content with Identifier: " + id);
+      } else if (queryPassed) {
+        Logger.warn(this, "Can't find Content with Inode: " + inode);
+      } else if (inodePassed) {
+        Logger.warn(this, "Error searching Content : " + e.getMessage());
+      }
+      status = Optional.of(Status.INTERNAL_SERVER_ERROR);
+    }
+
+    /* Converting the Contentlet list to XML or JSON */
+    try {
+      if ("xml".equals(type)) {
+        result = getXML(contentlets, request, response, render, user, depth, respectFrontendRoles);
+      } else {
+        result = getJSON(contentlets, request, response, render, user, depth, respectFrontendRoles);
+      }
+    } catch (Exception e) {
+      Logger.warn(this, "Error converting result to XML/JSON");
+    }
+
+    return responseResource.response(result, null, status);
+  }
+
+  /**
+   * This methods receives a Lucene query. It processes the query looking for special scenarios like
+   * structure fields (i.e: stInode, stName) and replace them with valid Content fields
+   *
+   * @param luceneQuery
+   * @return luceneQuery
+   */
+  private String processQuery(String luceneQuery) throws DotDataException, DotSecurityException {
+    if (luceneQuery == null) {
+      return null;
+    }
+
+    // Look for stName
+    if (luceneQuery.contains(Contentlet.STRUCTURE_NAME_KEY + ":")) {
+      // Parameter is in the FORMAT  stName:variableName
+      // Replace to FORMAT  ContentType:variableName
+      luceneQuery = luceneQuery.replaceAll(Contentlet.STRUCTURE_NAME_KEY + ":", "ContentType:");
+    }
+
+    // Look for stInode
+    String stInodeKey = Contentlet.STRUCTURE_INODE_KEY + ":";
+    if (luceneQuery.contains(stInodeKey)) {
+      // Parameter is in the FORMAT  stInode:inode
+
+      // Lucene parameters are separated by blankSpace
+      int startIndex = luceneQuery.indexOf(stInodeKey) + stInodeKey.length();
+      int endIndex = luceneQuery.indexOf(' ', startIndex);
+      String inode =
+          (endIndex < 0)
+              ? luceneQuery.substring(startIndex)
+              : luceneQuery.substring(startIndex, endIndex);
+
+      ContentType type = APILocator.getContentTypeAPI(APILocator.systemUser()).find(inode);
+      if (type != null && InodeUtils.isSet(type.inode())) {
+        // Replace to FORMAT   ContentType:variableName
+        luceneQuery = luceneQuery.replace(Contentlet.STRUCTURE_INODE_KEY + ":", "ContentType:");
+        luceneQuery = luceneQuery.replace(inode, type.variable());
+      }
+    }
+
+    return luceneQuery;
+  }
+
+  /**
+   * Creates an xml (as string) from a list of contentlets
+   *
+   * @param cons
+   * @param request
+   * @param response
+   * @param render
+   * @param user
+   * @param depth
+   * @param respectFrontendRoles
+   * @return
+   * @throws DotDataException
+   * @throws IOException
+   * @throws DotSecurityException
+   */
+  private String getXML(
+      final List<Contentlet> cons,
+      final HttpServletRequest request,
+      final HttpServletResponse response,
+      final String render,
+      final User user,
+      final int depth,
+      final boolean respectFrontendRoles) {
+
+    final StringBuilder sb = new StringBuilder();
+    final XStream xstream = new XStream(new DomDriver());
+    xstream.alias("content", Map.class);
+    xstream.registerConverter(new MapEntryConverter());
+    sb.append("<?xml version=\"1.0\" encoding='UTF-8'?>");
+    sb.append("<contentlets>");
+
+    cons.forEach(
+        contentlet -> {
+          try {
+            // we need to add relationships
+            if (depth != -1) {
+              sb.append(
+                  xstream.toXML(
+                      addRelationshipsToXML(
+                          request,
+                          response,
+                          render,
+                          user,
+                          depth,
+                          respectFrontendRoles,
+                          contentlet,
+                          getContentXML(contentlet, request, response, render, user),
+                          null)));
             } else {
-                if (!UtilMethods.isSet(inode)) {
-                    inode = contentlet.getInode();
-                }
-                if (!UtilMethods.isSet(id)) {
-                    id = contentlet.getIdentifier();
-                }
-
-                APILocator.getContentletAPI().lock(contentlet, user, live);
-
-                if (UtilMethods.isSet(callback)) {
-                    jo.put("callback", callback);
-                }
-                jo.put("inode", inode);
-                jo.put("id", id);
-                jo.put("message", "locked");
-                jo.put("return", 200);
-                //Creating an utility response object
+              sb.append(xstream.toXML(getContentXML(contentlet, request, response, render, user)));
             }
-
-            return responseResource.response(jo.toString());
-        } catch (DotSecurityException e) {
-            throw new ForbiddenException(e);
-        }
-    }
-
-
-    @PUT
-    @Path("/canLock/{params:.*}")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response canLockContent(@Context HttpServletRequest request,
-            @PathParam("params") String params)
-            throws DotDataException, JSONException {
-
-        InitDataObject initData = webResource.init(params, true, request, false, null);
-        Map<String, String> paramsMap = initData.getParamsMap();
-        String callback = paramsMap.get(RESTParams.CALLBACK.getValue());
-        String language = paramsMap.get(RESTParams.LANGUAGE.getValue());
-
-        String id = paramsMap.get(RESTParams.ID.getValue());
-
-        String inode = paramsMap.get(RESTParams.INODE.getValue());
-
-        ResourceResponse responseResource = new ResourceResponse(paramsMap);
-        JSONObject jo = new JSONObject();
-        User user = initData.getUser();
-
-        long lang = APILocator.getLanguageAPI().getDefaultLanguage().getId();
-        boolean live = (paramsMap.get(RESTParams.LIVE.getValue()) == null || !"false"
-                .equals(paramsMap.get(RESTParams.LIVE.getValue())));
-
-        if (paramsMap.get(RESTParams.LANGUAGE.getValue()) != null) {
-            try {
-                lang = Long.parseLong(language);
-            } catch (Exception e) {
-                Logger.warn(this.getClass(),
-                        "Invald language passed in, defaulting to, well, the default");
-            }
-        }
-
-        try {
-            Contentlet contentlet = (inode != null)
-                    ? APILocator.getContentletAPI().find(inode, user, live)
-                    : APILocator.getContentletAPI()
-                            .findContentletByIdentifier(id, live, lang, user, live);
-            if (contentlet == null || contentlet.getIdentifier() == null) {
-                jo.append("message", "contentlet not found");
-                jo.append("return", 404);
-
-                Response.ResponseBuilder responseBuilder = Response.status(HttpStatus.SC_NOT_FOUND);
-                return responseBuilder.entity(jo).build();
-            } else {
-                if (!UtilMethods.isSet(inode)) {
-                    inode = contentlet.getInode();
-                }
-                if (!UtilMethods.isSet(id)) {
-                    id = contentlet.getIdentifier();
-                }
-
-                boolean canLock = false;
-                try {
-                    canLock = APILocator.getContentletAPI().canLock(contentlet, user);
-                } catch (DotLockException e) {
-                    canLock = false;
-                }
-                jo.put("canLock", canLock);
-                jo.put("locked", contentlet.isLocked());
-                ContentletVersionInfo cvi = APILocator.getVersionableAPI()
-                        .getContentletVersionInfo(id, contentlet.getLanguageId());
-                if (contentlet.isLocked()) {
-                    jo.put("lockedBy", cvi.getLockedBy());
-                    jo.put("lockedOn", cvi.getLockedOn());
-                    jo.put("lockedByName", APILocator.getUserAPI().loadUserById(cvi.getLockedBy()));
-
-
-                }
-
-                if (UtilMethods.isSet(callback)) {
-                    jo.put("callback", callback);
-                }
-                jo.put("inode", inode);
-                jo.put("id", id);
-                jo.put("return", 200);
-                //Creating an utility response object
-            }
-
-            return responseResource.response(jo.toString());
-        } catch (DotSecurityException e) {
-            throw new ForbiddenException(e);
-        }
-    }
-
-    @PUT
-    @Path("/unlock/{params:.*}")
-    @Produces(MediaType.APPLICATION_JSON)
-
-    public Response unlockContent(@Context HttpServletRequest request,
-            @Context HttpServletResponse response, @PathParam("params") String params)
-            throws DotDataException, JSONException {
-
-        InitDataObject initData = webResource.init(params, true, request, false, null);
-
-        Map<String, String> paramsMap = initData.getParamsMap();
-        String callback = paramsMap.get(RESTParams.CALLBACK.getValue());
-        String language = paramsMap.get(RESTParams.LANGUAGE.getValue());
-        String id = paramsMap.get(RESTParams.ID.getValue());
-        String inode = paramsMap.get(RESTParams.INODE.getValue());
-
-        ResourceResponse responseResource = new ResourceResponse(paramsMap);
-        JSONObject jo = new JSONObject();
-        User user = initData.getUser();
-
-        long lang = APILocator.getLanguageAPI().getDefaultLanguage().getId();
-        boolean live = (paramsMap.get(RESTParams.LIVE.getValue()) == null || !"false"
-                .equals(paramsMap.get(RESTParams.LIVE.getValue())));
-
-        if (paramsMap.get(RESTParams.LANGUAGE.getValue()) != null) {
-            try {
-                lang = Long.parseLong(language);
-            } catch (Exception e) {
-                Logger.warn(this.getClass(),
-                        "Invald language passed in, defaulting to, well, the default");
-            }
-        }
-
-        try {
-            Contentlet contentlet = (inode != null)
-                    ? APILocator.getContentletAPI().find(inode, user, live)
-                    : APILocator.getContentletAPI()
-                            .findContentletByIdentifier(id, live, lang, user, live);
-            if (contentlet == null || contentlet.getIdentifier() == null) {
-                jo.append("message", "contentlet not found");
-                jo.append("return", 404);
-
-
-            } else {
-                if (!UtilMethods.isSet(inode)) {
-                    inode = contentlet.getInode();
-                }
-                if (!UtilMethods.isSet(id)) {
-                    id = contentlet.getIdentifier();
-                }
-
-                APILocator.getContentletAPI().unlock(contentlet, user, live);
-
-                if (UtilMethods.isSet(callback)) {
-                    jo.put("callback", callback);
-                }
-                jo.put("inode", inode);
-                jo.put("id", id);
-                jo.put("message", "unlocked");
-                jo.put("return", 200);
-                //Creating an utility response object
-            }
-
-            return responseResource.response(jo.toString());
-        } catch (DotSecurityException e) {
-            throw new ForbiddenException(e);
-        }
-    }
-
-
-    /**
-     *
-     * @param request
-     * @param response
-     * @param params
-     * @return Contentlets that match the search criteria in json or xml format.
-     *         When `depth` param is set to:
-     *         0 --> The contentlet object will contain the identifiers of the related contentlets
-     *         1 --> The contentlet object will contain the related contentlets
-     *         2 --> The contentlet object will contain the related contentlets, which in turn will contain the identifiers of their related contentlets
-     *         3 --> The contentlet object will contain the related contentlets, which in turn will contain a list of their related contentlets
-     *         null --> Relationships will not be sent in the response
-     */
-    @GET
-    @Path("/{params:.*}")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response getContent(@Context HttpServletRequest request,
-            @Context HttpServletResponse response, @PathParam("params") String params) {
-
-        final InitDataObject initData = this.webResource.init
-                (params, true, request, false, null);
-        //Creating an utility response object
-        final ResourceResponse responseResource = new ResourceResponse(initData.getParamsMap());
-        final Map<String, String> paramsMap = initData.getParamsMap();
-        final User user = initData.getUser();
-        final String render = paramsMap.get(RESTParams.RENDER.getValue());
-        final String query = paramsMap.get(RESTParams.QUERY.getValue());
-        final String id = paramsMap.get(RESTParams.ID.getValue());
-        final String limitStr = paramsMap.get(RESTParams.LIMIT.getValue());
-        final String offsetStr = paramsMap.get(RESTParams.OFFSET.getValue());
-        final String inode = paramsMap.get(RESTParams.INODE.getValue());
-        final String respectFrontEndRolesKey = RESTParams.RESPECT_FRONT_END_ROLES.getValue().toLowerCase();
-        final boolean respectFrontendRoles = UtilMethods.isSet(paramsMap.get(respectFrontEndRolesKey))
-                ? Boolean.valueOf(paramsMap.get(respectFrontEndRolesKey))
-                : true;
-        final long language = toLong(paramsMap.get(RESTParams.LANGUAGE.getValue()),
-                () -> APILocator.getLanguageAPI().getDefaultLanguage().getId());
-        /* Limit and Offset Parameters Handling, if not passed, using default */
-        final int limit = toInt(limitStr, () -> 10);
-        final int offset = toInt(offsetStr, () -> 0);
-        final boolean live = (paramsMap.get(RESTParams.LIVE.getValue()) == null ||
-                !"false".equals(paramsMap.get(RESTParams.LIVE.getValue())));
-
-        final String depthParam = paramsMap.get(RESTParams.DEPTH.getValue());
-        final int depth = toInt(depthParam, () -> -1);
-
-        if ((depth < 0 || depth > 3) && depthParam != null){
-            final String errorMsg =
-                    "Error searching content " + id + ". Reason: Invalid depth: " + depthParam;
-            Logger.error(this, errorMsg);
-            return ExceptionMapperUtil.createResponse(null, errorMsg);
-        }
-
-        /* Fetching the content using a query if passed or an id */
-        List<Contentlet> contentlets = new ArrayList<>();
-        Boolean idPassed = false;
-        Boolean inodePassed = false;
-        Boolean queryPassed = false;
-        String result = null;
-        Optional<Status> status = Optional.empty();
-        String type = paramsMap.get(RESTParams.TYPE.getValue());
-        String orderBy = paramsMap.get(RESTParams.ORDERBY.getValue());
-
-        type = UtilMethods.isSet(type) ? type : "json";
-        orderBy = UtilMethods.isSet(orderBy) ? orderBy : "modDate desc";
-
-        try {
-
-            if (idPassed = UtilMethods.isSet(id)) {
-                Optional.ofNullable(
-                        this.contentHelper.hydrateContentlet(APILocator.getContentletAPI()
-                                .findContentletByIdentifier(id, live, language, user, respectFrontendRoles)))
-                        .ifPresent(contentlets::add);
-            } else if (inodePassed = UtilMethods.isSet(inode)) {
-                Optional.ofNullable(
-                        this.contentHelper.hydrateContentlet(APILocator.getContentletAPI()
-                                .find(inode, user, respectFrontendRoles)))
-                        .ifPresent(contentlets::add);
-            } else if (queryPassed = UtilMethods.isSet(query)) {
-                String tmDate = (String) request.getSession().getAttribute("tm_date");
-                String luceneQuery = processQuery(query);
-                contentlets = ContentUtils.pull(luceneQuery, offset, limit, orderBy, user, tmDate);
-            }
-
-        } catch (DotSecurityException e) {
-
-            Logger.debug(this, "Permission error: " + e.getMessage(), e);
-            return ExceptionMapperUtil.createResponse(new DotStateException("No Permissions"), Response.Status.FORBIDDEN);
-        } catch (Exception e) {
-            if (idPassed) {
-                Logger.warn(this, "Can't find Content with Identifier: " + id);
-            } else if (queryPassed) {
-                Logger.warn(this, "Can't find Content with Inode: " + inode);
-            } else if (inodePassed) {
-                Logger.warn(this, "Error searching Content : " + e.getMessage());
-            }
-            status = Optional.of(Status.INTERNAL_SERVER_ERROR);
-        }
-
-        /* Converting the Contentlet list to XML or JSON */
-        try {
-            if ("xml".equals(type)) {
-                result = getXML(contentlets, request, response, render, user, depth, respectFrontendRoles);
-            } else {
-                result = getJSON(contentlets, request, response, render, user, depth, respectFrontendRoles);
-            }
-        } catch (Exception e) {
-            Logger.warn(this, "Error converting result to XML/JSON");
-        }
-
-        return responseResource.response(result, null, status);
-    }
-
-    /**
-     * This methods receives a Lucene query.
-     * It processes the query looking for special scenarios like structure fields (i.e: stInode, stName) and replace them with valid Content fields
-     * @param luceneQuery
-     * @return luceneQuery
-     */
-    private String processQuery(String luceneQuery) throws DotDataException, DotSecurityException {
-        if (luceneQuery == null) {
-            return null;
-        }
-
-        //Look for stName
-        if (luceneQuery.contains(Contentlet.STRUCTURE_NAME_KEY + ":")) {
-            //Parameter is in the FORMAT  stName:variableName
-            //Replace to FORMAT  ContentType:variableName
-            luceneQuery = luceneQuery.replaceAll(Contentlet.STRUCTURE_NAME_KEY + ":", "ContentType:");
-        }
-
-        //Look for stInode
-        String stInodeKey = Contentlet.STRUCTURE_INODE_KEY + ":";
-        if (luceneQuery.contains(stInodeKey)) {
-            //Parameter is in the FORMAT  stInode:inode
-
-            //Lucene parameters are separated by blankSpace
-            int startIndex = luceneQuery.indexOf(stInodeKey) + stInodeKey.length();
-            int endIndex = luceneQuery.indexOf(' ', startIndex);
-            String inode = (endIndex < 0) ? luceneQuery.substring(startIndex) : luceneQuery.substring(startIndex, endIndex);
-
-            ContentType type = APILocator.getContentTypeAPI(APILocator.systemUser()).find(inode);
-            if (type != null && InodeUtils.isSet(type.inode())) {
-                //Replace to FORMAT   ContentType:variableName
-                luceneQuery = luceneQuery.replace(Contentlet.STRUCTURE_INODE_KEY + ":", "ContentType:");
-                luceneQuery = luceneQuery.replace(inode, type.variable());
-            }
-        }
-
-        return luceneQuery;
-    }
-
-    /**
-     * Creates an xml (as string) from a list of contentlets
-     * @param cons
-     * @param request
-     * @param response
-     * @param render
-     * @param user
-     * @param depth
-     * @param respectFrontendRoles
-     * @return
-     * @throws DotDataException
-     * @throws IOException
-     * @throws DotSecurityException
-     */
-    private String getXML(final List<Contentlet> cons, final HttpServletRequest request,
-            final HttpServletResponse response, final String render, final User user,
-            final int depth, final boolean respectFrontendRoles){
-
-        final StringBuilder sb = new StringBuilder();
-        final XStream xstream = new XStream(new DomDriver());
-        xstream.alias("content", Map.class);
-        xstream.registerConverter(new MapEntryConverter());
-        sb.append("<?xml version=\"1.0\" encoding='UTF-8'?>");
-        sb.append("<contentlets>");
-
-        cons.forEach(contentlet -> {
-            try {
-                //we need to add relationships
-                if (depth != -1){
-                    sb.append(xstream.toXML(
-                            addRelationshipsToXML(request, response, render, user, depth, respectFrontendRoles, contentlet,
-                                    getContentXML(contentlet, request, response, render, user), null)));
-                } else{
-                    sb.append(xstream.toXML(
-                                    getContentXML(contentlet, request, response, render, user)));
-                }
-            } catch (Exception e) {
-                Logger.error(this, "Error generating content xml: " + e.getMessage(), e);
-            }
+          } catch (Exception e) {
+            Logger.error(this, "Error generating content xml: " + e.getMessage(), e);
+          }
         });
 
-        sb.append("</contentlets>");
-        return sb.toString();
+    sb.append("</contentlets>");
+    return sb.toString();
+  }
+
+  private Map<String, Object> getContentXML(
+      final Contentlet contentlet,
+      final HttpServletRequest request,
+      final HttpServletResponse response,
+      final String render,
+      final User user)
+      throws DotDataException, IOException, DotSecurityException {
+
+    final Map<String, Object> m = new HashMap<>();
+    final ContentType type = contentlet.getContentType();
+
+    m.putAll(ContentletUtil.getContentPrintableMap(user, contentlet));
+
+    if (BaseContentType.WIDGET.equals(type.baseType())
+        && Boolean.toString(true).equalsIgnoreCase(render)) {
+      m.put("parsedCode", WidgetResource.parseWidget(request, response, contentlet));
     }
 
-
-    private Map<String, Object> getContentXML(final Contentlet contentlet, final HttpServletRequest request,
-            final HttpServletResponse response, final String render, final User user)
-            throws DotDataException, IOException, DotSecurityException {
-
-        final Map<String, Object> m = new HashMap<>();
-        final ContentType type = contentlet.getContentType();
-
-        m.putAll(ContentletUtil.getContentPrintableMap(user, contentlet));
-
-        if (BaseContentType.WIDGET.equals(type.baseType()) && Boolean.toString(true)
-                .equalsIgnoreCase(render)) {
-            m.put("parsedCode", WidgetResource.parseWidget(request, response, contentlet));
-        }
-
-        if (BaseContentType.HTMLPAGE.equals(type.baseType())) {
-            m.put(HTMLPageAssetAPI.URL_FIELD, this.contentHelper.getUrl(contentlet));
-        }
-
-        final Set<String> jsonFields = getJSONFields(type);
-        for (String key : m.keySet()) {
-            if (jsonFields.contains(key)) {
-                m.put(key, contentlet.getKeyValueProperty(key));
-            }
-        }
-
-        return m;
+    if (BaseContentType.HTMLPAGE.equals(type.baseType())) {
+      m.put(HTMLPageAssetAPI.URL_FIELD, this.contentHelper.getUrl(contentlet));
     }
 
-    /**
-     * Add relationships records to a contentlet xml
-     * @param request
-     * @param response
-     * @param render
-     * @param user
-     * @param depth
-     * @param contentlet
-     * @param objectMap
-     * @param addedRelationships
-     * @return
-     * @throws DotDataException
-     * @throws JSONException
-     * @throws IOException
-     * @throws DotSecurityException
-     */
-    private Map<String, Object> addRelationshipsToXML(final HttpServletRequest request,
-            final HttpServletResponse response,
-            final String render, final User user, final int depth, final boolean respectFrontendRoles,
-            final Contentlet contentlet, final Map<String, Object> objectMap, Set<Relationship> addedRelationships)
-            throws DotDataException, IOException, DotSecurityException {
-
-        Relationship relationship;
-        final RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
-
-        //filter relationships fields
-        final List<com.dotcms.contenttype.model.field.Field> fields = contentlet.getContentType()
-                .fields()
-                .stream().filter(field -> field instanceof RelationshipField).collect(
-                        Collectors.toList());
-
-        final ContentletRelationships contentletRelationships = new ContentletRelationships(
-                contentlet);
-
-        if (addedRelationships == null) {
-            addedRelationships = new HashSet<>();
-        }
-
-        for (com.dotcms.contenttype.model.field.Field field : fields) {
-
-            try{
-                relationship = relationshipAPI.getRelationshipFromField(field, user);
-            }catch(DotDataException | DotSecurityException e){
-                Logger.warn("Error getting relationship for field " + field, e.getMessage(), e);
-                continue;
-            }
-
-            final List records = new ArrayList();
-
-            if (addedRelationships.contains(relationship)) {
-                continue;
-            }
-            addedRelationships.add(relationship);
-            final ContentletRelationships.ContentletRelationshipRecords relationshipRecords = contentletRelationships.new ContentletRelationshipRecords(
-                    relationship,
-                    relationshipAPI.isParent(relationship, contentlet.getContentType()));
-
-            for (Contentlet relatedContent : contentlet.getRelated(field.variable(), user, respectFrontendRoles)) {
-                switch (depth) {
-                    //returns a list of identifiers
-                    case 0:
-                        records.add(relatedContent.getIdentifier());
-                        break;
-
-                    //returns a list of related content objects
-                    case 1:
-                        records.add(
-                                getContentXML(relatedContent, request, response, render, user));
-                        break;
-
-                    //returns a list of related content identifiers for each of the related content
-                    case 2:
-                        records.add(addRelationshipsToXML(request, response, render, user, 0,
-                                respectFrontendRoles, relatedContent,
-                                getContentXML(relatedContent, request, response, render, user),
-                                new HashSet<>(addedRelationships)));
-                        break;
-
-                    //returns a list of hydrated related content for each of the related content
-                    case 3:
-                        records.add(addRelationshipsToXML(request, response, render, user, 1,
-                                respectFrontendRoles, relatedContent,
-                                getContentXML(relatedContent, request, response, render, user),
-                                new HashSet<>(addedRelationships)));
-                        break;
-                }
-            }
-
-            objectMap.put(field.variable(),
-                    relationshipRecords.doesAllowOnlyOne() && records.size() > 0 ? records.get(0)
-                            : records);
-        }
-        return objectMap;
+    final Set<String> jsonFields = getJSONFields(type);
+    for (String key : m.keySet()) {
+      if (jsonFields.contains(key)) {
+        m.put(key, contentlet.getKeyValueProperty(key));
+      }
     }
 
+    return m;
+  }
 
-    private String getXMLContentIds(Contentlet con) {
-        XStream xstream = new XStream(new DomDriver());
-        xstream.alias("content", Map.class);
-        xstream.registerConverter(new MapEntryConverter());
-        StringBuilder sb = new StringBuilder();
-        sb.append("<?xml version=\"1.0\" encoding='UTF-8'?>");
-        sb.append("<contentlet>");
-        Map<String, Object> m = new HashMap<String, Object>();
-        m.put("inode", con.getInode());
-        m.put("identifier", con.getIdentifier());
-        sb.append(xstream.toXML(m));
-        sb.append("</contentlet>");
-        return sb.toString();
+  /**
+   * Add relationships records to a contentlet xml
+   *
+   * @param request
+   * @param response
+   * @param render
+   * @param user
+   * @param depth
+   * @param contentlet
+   * @param objectMap
+   * @param addedRelationships
+   * @return
+   * @throws DotDataException
+   * @throws JSONException
+   * @throws IOException
+   * @throws DotSecurityException
+   */
+  private Map<String, Object> addRelationshipsToXML(
+      final HttpServletRequest request,
+      final HttpServletResponse response,
+      final String render,
+      final User user,
+      final int depth,
+      final boolean respectFrontendRoles,
+      final Contentlet contentlet,
+      final Map<String, Object> objectMap,
+      Set<Relationship> addedRelationships)
+      throws DotDataException, IOException, DotSecurityException {
+
+    Relationship relationship;
+    final RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
+
+    // filter relationships fields
+    final List<com.dotcms.contenttype.model.field.Field> fields =
+        contentlet
+            .getContentType()
+            .fields()
+            .stream()
+            .filter(field -> field instanceof RelationshipField)
+            .collect(Collectors.toList());
+
+    final ContentletRelationships contentletRelationships = new ContentletRelationships(contentlet);
+
+    if (addedRelationships == null) {
+      addedRelationships = new HashSet<>();
     }
 
-    private String getJSONContentIds(Contentlet con){
-        JSONObject json = new JSONObject();
-        try {
-            json.put("inode", con.getInode());
-            json.put("identifier", con.getIdentifier());
-        } catch (JSONException e) {
-            Logger.warn(this.getClass(), "unable JSON contentlet " + con.getIdentifier());
-            Logger.debug(this.getClass(), "unable to find contentlet", e);
+    for (com.dotcms.contenttype.model.field.Field field : fields) {
+
+      try {
+        relationship = relationshipAPI.getRelationshipFromField(field, user);
+      } catch (DotDataException | DotSecurityException e) {
+        Logger.warn("Error getting relationship for field " + field, e.getMessage(), e);
+        continue;
+      }
+
+      final List records = new ArrayList();
+
+      if (addedRelationships.contains(relationship)) {
+        continue;
+      }
+      addedRelationships.add(relationship);
+      final ContentletRelationships.ContentletRelationshipRecords relationshipRecords =
+          contentletRelationships
+          .new ContentletRelationshipRecords(
+              relationship, relationshipAPI.isParent(relationship, contentlet.getContentType()));
+
+      for (Contentlet relatedContent :
+          contentlet.getRelated(field.variable(), user, respectFrontendRoles)) {
+        switch (depth) {
+            // returns a list of identifiers
+          case 0:
+            records.add(relatedContent.getIdentifier());
+            break;
+
+            // returns a list of related content objects
+          case 1:
+            records.add(getContentXML(relatedContent, request, response, render, user));
+            break;
+
+            // returns a list of related content identifiers for each of the related content
+          case 2:
+            records.add(
+                addRelationshipsToXML(
+                    request,
+                    response,
+                    render,
+                    user,
+                    0,
+                    respectFrontendRoles,
+                    relatedContent,
+                    getContentXML(relatedContent, request, response, render, user),
+                    new HashSet<>(addedRelationships)));
+            break;
+
+            // returns a list of hydrated related content for each of the related content
+          case 3:
+            records.add(
+                addRelationshipsToXML(
+                    request,
+                    response,
+                    render,
+                    user,
+                    1,
+                    respectFrontendRoles,
+                    relatedContent,
+                    getContentXML(relatedContent, request, response, render, user),
+                    new HashSet<>(addedRelationships)));
+            break;
         }
-        return json.toString();
+      }
+
+      objectMap.put(
+          field.variable(),
+          relationshipRecords.doesAllowOnlyOne() && records.size() > 0 ? records.get(0) : records);
+    }
+    return objectMap;
+  }
+
+  private String getXMLContentIds(Contentlet con) {
+    XStream xstream = new XStream(new DomDriver());
+    xstream.alias("content", Map.class);
+    xstream.registerConverter(new MapEntryConverter());
+    StringBuilder sb = new StringBuilder();
+    sb.append("<?xml version=\"1.0\" encoding='UTF-8'?>");
+    sb.append("<contentlet>");
+    Map<String, Object> m = new HashMap<String, Object>();
+    m.put("inode", con.getInode());
+    m.put("identifier", con.getIdentifier());
+    sb.append(xstream.toXML(m));
+    sb.append("</contentlet>");
+    return sb.toString();
+  }
+
+  private String getJSONContentIds(Contentlet con) {
+    JSONObject json = new JSONObject();
+    try {
+      json.put("inode", con.getInode());
+      json.put("identifier", con.getIdentifier());
+    } catch (JSONException e) {
+      Logger.warn(this.getClass(), "unable JSON contentlet " + con.getIdentifier());
+      Logger.debug(this.getClass(), "unable to find contentlet", e);
+    }
+    return json.toString();
+  }
+
+  /**
+   * Creates a json object (as string) of a list of contentlets
+   *
+   * @param cons
+   * @param request
+   * @param response
+   * @param render
+   * @param user
+   * @param depth
+   * @param respectFrontendRoles
+   * @return
+   * @throws IOException
+   * @throws DotDataException
+   */
+  private String getJSON(
+      final List<Contentlet> cons,
+      final HttpServletRequest request,
+      final HttpServletResponse response,
+      final String render,
+      final User user,
+      final int depth,
+      boolean respectFrontendRoles) {
+    final JSONObject json = new JSONObject();
+    final JSONArray jsonCons = new JSONArray();
+
+    for (Contentlet c : cons) {
+      try {
+        final JSONObject jo = contentletToJSON(c, request, response, render, user);
+
+        jsonCons.put(jo);
+        // we need to add relationships fields
+        if (depth != -1) {
+          addRelationshipsToJSON(
+              request, response, render, user, depth, respectFrontendRoles, c, jo, null);
+        }
+      } catch (Exception e) {
+        Logger.warn(this.getClass(), "unable to get JSON contentlet " + c.getIdentifier());
+        Logger.debug(this.getClass(), "unable to find contentlet", e);
+      }
     }
 
-    /**
-     * Creates a json object (as string) of a list of contentlets
-     * @param cons
-     * @param request
-     * @param response
-     * @param render
-     * @param user
-     * @param depth
-     * @param respectFrontendRoles
-     * @return
-     * @throws IOException
-     * @throws DotDataException
-     */
-    private String getJSON(final List<Contentlet> cons, final HttpServletRequest request,
-            final HttpServletResponse response, final String render, final User user,
-            final int depth, boolean respectFrontendRoles){
-        final JSONObject json = new JSONObject();
-        final JSONArray jsonCons = new JSONArray();
-
-        for (Contentlet c : cons) {
-            try {
-                final JSONObject jo = contentletToJSON(c, request, response, render, user);
-
-                jsonCons.put(jo);
-                //we need to add relationships fields
-                if (depth != -1){
-                    addRelationshipsToJSON(request, response, render, user, depth,
-                            respectFrontendRoles, c, jo, null);
-                }
-            } catch (Exception e) {
-                Logger.warn(this.getClass(), "unable to get JSON contentlet " + c.getIdentifier());
-                Logger.debug(this.getClass(), "unable to find contentlet", e);
-            }
-        }
-
-        try {
-            json.put("contentlets", jsonCons);
-        } catch (JSONException e) {
-            Logger.warn(this.getClass(), "unable to create JSONObject");
-            Logger.debug(this.getClass(), "unable to create JSONObject", e);
-        }
-
-        return json.toString();
+    try {
+      json.put("contentlets", jsonCons);
+    } catch (JSONException e) {
+      Logger.warn(this.getClass(), "unable to create JSONObject");
+      Logger.debug(this.getClass(), "unable to create JSONObject", e);
     }
 
-    /**
-     * Add relationships fields records to the json contentlet
-     * @param request
-     * @param response
-     * @param render
-     * @param user
-     * @param depth
-     * @param contentlet
-     * @param jsonObject
-     * @param addedRelationships
-     * @return
-     * @throws DotDataException
-     * @throws JSONException
-     * @throws IOException
-     * @throws DotSecurityException
-     */
-    public static JSONObject addRelationshipsToJSON(final HttpServletRequest request,
-            final HttpServletResponse response,
-            final String render, final User user, final int depth, final boolean respectFrontendRoles,
-            final Contentlet contentlet,
-            final JSONObject jsonObject, Set<Relationship> addedRelationships)
-            throws DotDataException, JSONException, IOException, DotSecurityException {
+    return json.toString();
+  }
 
-        Relationship relationship;
+  /**
+   * Add relationships fields records to the json contentlet
+   *
+   * @param request
+   * @param response
+   * @param render
+   * @param user
+   * @param depth
+   * @param contentlet
+   * @param jsonObject
+   * @param addedRelationships
+   * @return
+   * @throws DotDataException
+   * @throws JSONException
+   * @throws IOException
+   * @throws DotSecurityException
+   */
+  public static JSONObject addRelationshipsToJSON(
+      final HttpServletRequest request,
+      final HttpServletResponse response,
+      final String render,
+      final User user,
+      final int depth,
+      final boolean respectFrontendRoles,
+      final Contentlet contentlet,
+      final JSONObject jsonObject,
+      Set<Relationship> addedRelationships)
+      throws DotDataException, JSONException, IOException, DotSecurityException {
 
-        final RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
+    Relationship relationship;
 
-        //filter relationships fields
-        final List<com.dotcms.contenttype.model.field.Field> fields = contentlet.getContentType().fields()
-                .stream().filter(field -> field instanceof RelationshipField).collect(
-                        Collectors.toList());
+    final RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
 
-        final ContentletRelationships contentletRelationships = new ContentletRelationships(contentlet);
+    // filter relationships fields
+    final List<com.dotcms.contenttype.model.field.Field> fields =
+        contentlet
+            .getContentType()
+            .fields()
+            .stream()
+            .filter(field -> field instanceof RelationshipField)
+            .collect(Collectors.toList());
 
-        if (addedRelationships == null){
-            addedRelationships = new HashSet<>();
-        }
+    final ContentletRelationships contentletRelationships = new ContentletRelationships(contentlet);
 
-        for (com.dotcms.contenttype.model.field.Field field:fields) {
-
-            try {
-                relationship = relationshipAPI.getRelationshipFromField(field, user);
-            }catch(DotDataException | DotSecurityException e){
-                Logger.warn("Error getting relationship for field " + field, e.getMessage(), e);
-                continue;
-            }
-
-            if (addedRelationships.contains(relationship)){
-                continue;
-            }
-            addedRelationships.add(relationship);
-
-            final ContentletRelationships.ContentletRelationshipRecords records = contentletRelationships.new ContentletRelationshipRecords(
-                    relationship,
-                    relationshipAPI.isParent(relationship, contentlet.getContentType()));
-
-            final JSONArray jsonArray = new JSONArray();
-
-            for (Contentlet relatedContent : contentlet.getRelated(field.variable(), user, respectFrontendRoles)) {
-                switch (depth) {
-                    //returns a list of identifiers
-                    case 0:
-                        jsonArray.put(relatedContent.getIdentifier());
-                        break;
-
-                    //returns a list of related content objects
-                    case 1:
-                        jsonArray
-                                .put(contentletToJSON(relatedContent, request, response, render,
-                                        user));
-                        break;
-
-                    //returns a list of related content identifiers for each of the related content
-                    case 2:
-                        jsonArray.put(addRelationshipsToJSON(request, response, render, user, 0,
-                                respectFrontendRoles, relatedContent,
-                                contentletToJSON(relatedContent, request, response, render,
-                                        user),
-                                new HashSet<>(addedRelationships)));
-                        break;
-
-                    //returns a list of hydrated related content for each of the related content
-                    case 3:
-                        jsonArray.put(addRelationshipsToJSON(request, response, render, user, 1,
-                                respectFrontendRoles, relatedContent,
-                                contentletToJSON(relatedContent, request, response, render,
-                                        user),
-                                new HashSet<>(addedRelationships)));
-                        break;
-                }
-
-            }
-
-            jsonObject.put(field.variable(), getJSONArrayValue(jsonArray, records.doesAllowOnlyOne()));
-
-        }
-
-        return jsonObject;
+    if (addedRelationships == null) {
+      addedRelationships = new HashSet<>();
     }
 
-    /**
-     * Returns a jsonArray of related contentlets if depth = 2. If depth = 1 returns the related
-     * object, otherwise it will return a comma-separated list of identifiers
-     * @param jsonArray
-     * @return
-     * @throws JSONException
-     */
-    private static Object getJSONArrayValue(final JSONArray jsonArray, final boolean allowOnlyOne)
-            throws JSONException {
-        if (allowOnlyOne && jsonArray.length() > 0) {
-            return jsonArray.get(0);
+    for (com.dotcms.contenttype.model.field.Field field : fields) {
+
+      try {
+        relationship = relationshipAPI.getRelationshipFromField(field, user);
+      } catch (DotDataException | DotSecurityException e) {
+        Logger.warn("Error getting relationship for field " + field, e.getMessage(), e);
+        continue;
+      }
+
+      if (addedRelationships.contains(relationship)) {
+        continue;
+      }
+      addedRelationships.add(relationship);
+
+      final ContentletRelationships.ContentletRelationshipRecords records =
+          contentletRelationships
+          .new ContentletRelationshipRecords(
+              relationship, relationshipAPI.isParent(relationship, contentlet.getContentType()));
+
+      final JSONArray jsonArray = new JSONArray();
+
+      for (Contentlet relatedContent :
+          contentlet.getRelated(field.variable(), user, respectFrontendRoles)) {
+        switch (depth) {
+            // returns a list of identifiers
+          case 0:
+            jsonArray.put(relatedContent.getIdentifier());
+            break;
+
+            // returns a list of related content objects
+          case 1:
+            jsonArray.put(contentletToJSON(relatedContent, request, response, render, user));
+            break;
+
+            // returns a list of related content identifiers for each of the related content
+          case 2:
+            jsonArray.put(
+                addRelationshipsToJSON(
+                    request,
+                    response,
+                    render,
+                    user,
+                    0,
+                    respectFrontendRoles,
+                    relatedContent,
+                    contentletToJSON(relatedContent, request, response, render, user),
+                    new HashSet<>(addedRelationships)));
+            break;
+
+            // returns a list of hydrated related content for each of the related content
+          case 3:
+            jsonArray.put(
+                addRelationshipsToJSON(
+                    request,
+                    response,
+                    render,
+                    user,
+                    1,
+                    respectFrontendRoles,
+                    relatedContent,
+                    contentletToJSON(relatedContent, request, response, render, user),
+                    new HashSet<>(addedRelationships)));
+            break;
+        }
+      }
+
+      jsonObject.put(field.variable(), getJSONArrayValue(jsonArray, records.doesAllowOnlyOne()));
+    }
+
+    return jsonObject;
+  }
+
+  /**
+   * Returns a jsonArray of related contentlets if depth = 2. If depth = 1 returns the related
+   * object, otherwise it will return a comma-separated list of identifiers
+   *
+   * @param jsonArray
+   * @return
+   * @throws JSONException
+   */
+  private static Object getJSONArrayValue(final JSONArray jsonArray, final boolean allowOnlyOne)
+      throws JSONException {
+    if (allowOnlyOne && jsonArray.length() > 0) {
+      return jsonArray.get(0);
+    } else {
+      return jsonArray;
+    }
+  }
+
+  public static Set<String> getJSONFields(ContentType type)
+      throws DotDataException, DotSecurityException {
+    Set<String> jsonFields = new HashSet<String>();
+    List<Field> fields =
+        new LegacyFieldTransformer(
+                APILocator.getContentTypeAPI(APILocator.systemUser()).find(type.inode()).fields())
+            .asOldFieldList();
+    for (Field f : fields) {
+      if (f.getFieldType().equals(Field.FieldType.KEY_VALUE.toString())) {
+        jsonFields.add(f.getVelocityVarName());
+      }
+    }
+
+    return jsonFields;
+  }
+
+  public static JSONObject contentletToJSON(
+      Contentlet con,
+      HttpServletRequest request,
+      HttpServletResponse response,
+      String render,
+      User user)
+      throws JSONException, IOException, DotDataException, DotSecurityException {
+    JSONObject jo = new JSONObject();
+    ContentType type = con.getContentType();
+    Map<String, Object> map = ContentletUtil.getContentPrintableMap(user, con);
+
+    Set<String> jsonFields = getJSONFields(type);
+
+    for (String key : map.keySet()) {
+      if (Arrays.binarySearch(ignoreFields, key) < 0) {
+        if (jsonFields.contains(key)) {
+          Logger.info(ContentResource.class, key + " is a json field: " + map.get(key).toString());
+          jo.put(key, new JSONObject(con.getKeyValueProperty(key)));
         } else {
-            return jsonArray;
+          jo.put(key, map.get(key));
         }
+      }
     }
 
-    public static Set<String> getJSONFields(ContentType type)
-            throws DotDataException, DotSecurityException {
-        Set<String> jsonFields = new HashSet<String>();
-        List<Field> fields = new LegacyFieldTransformer(
-                APILocator.getContentTypeAPI(APILocator.systemUser()).
-                        find(type.inode()).fields()).asOldFieldList();
-        for (Field f : fields) {
-            if (f.getFieldType().equals(Field.FieldType.KEY_VALUE.toString())) {
-                jsonFields.add(f.getVelocityVarName());
+    if (BaseContentType.WIDGET.equals(type.baseType())
+        && Boolean.toString(true).equalsIgnoreCase(render)) {
+      jo.put("parsedCode", WidgetResource.parseWidget(request, response, con));
+    }
+
+    if (BaseContentType.HTMLPAGE.equals(type.baseType())) {
+      jo.put(HTMLPageAssetAPI.URL_FIELD, ContentHelper.getInstance().getUrl(con));
+    }
+
+    return jo;
+  }
+
+  public class MapEntryConverter implements Converter {
+
+    public boolean canConvert(@SuppressWarnings("rawtypes") Class clazz) {
+      return AbstractMap.class.isAssignableFrom(clazz);
+    }
+
+    public void marshal(
+        final Object value,
+        final HierarchicalStreamWriter writer,
+        final MarshallingContext context) {
+      @SuppressWarnings("unchecked")
+      final Map<String, Object> map = (Map<String, Object>) value;
+      for (Entry<String, Object> entry : map.entrySet()) {
+        writer.startNode(entry.getKey().toString());
+        if (entry.getValue() instanceof List) {
+          final List itemsList = ((List) entry.getValue());
+          if (!((List) entry.getValue()).isEmpty()) {
+            // list of more than one object
+            marshalInternalNode(writer, context, itemsList);
+          }
+        } else if (entry.getValue() instanceof Map) {
+          // one object saved as a map
+          marshal(entry.getValue(), writer, context);
+        } else {
+          // simple string
+          writer.setValue(entry.getValue() != null ? entry.getValue().toString() : "");
+        }
+        writer.endNode();
+      }
+    }
+
+    /**
+     * Build xml node for all elements in a list. Each element is saved as a map
+     *
+     * @param writer
+     * @param context
+     * @param itemsList
+     */
+    private void marshalInternalNode(
+        final HierarchicalStreamWriter writer,
+        final MarshallingContext context,
+        final List itemsList) {
+      itemsList.forEach(
+          item -> {
+            writer.startNode("item");
+            if (item instanceof Map) {
+              marshal(item, writer, context);
+            } else {
+              // simple string
+              writer.setValue(item != null ? item.toString() : "");
             }
-        }
 
-        return jsonFields;
+            writer.endNode();
+          });
     }
 
-    public static JSONObject contentletToJSON(Contentlet con, HttpServletRequest request,
-            HttpServletResponse response, String render, User user)
-            throws JSONException, IOException, DotDataException, DotSecurityException {
-        JSONObject jo = new JSONObject();
-        ContentType type = con.getContentType();
-        Map<String, Object> map = ContentletUtil.getContentPrintableMap(user, con);
+    public Object unmarshal(HierarchicalStreamReader reader, UnmarshallingContext context) {
+      Map<String, String> map = new HashMap<String, String>();
 
-        Set<String> jsonFields = getJSONFields(type);
-
-        for (String key : map.keySet()) {
-            if (Arrays.binarySearch(ignoreFields, key) < 0) {
-                if (jsonFields.contains(key)) {
-                    Logger.info(ContentResource.class,
-                            key + " is a json field: " + map.get(key).toString());
-                    jo.put(key, new JSONObject(con.getKeyValueProperty(key)));
-                } else {
-                    jo.put(key, map.get(key));
-                }
-            }
-        }
-
-        if (BaseContentType.WIDGET.equals(type.baseType()) && Boolean.toString(true)
-                .equalsIgnoreCase(render)) {
-            jo.put("parsedCode", WidgetResource.parseWidget(request, response, con));
-        }
-
-        if (BaseContentType.HTMLPAGE.equals(type.baseType())) {
-            jo.put(HTMLPageAssetAPI.URL_FIELD, ContentHelper.getInstance().getUrl(con));
-        }
-
-        return jo;
+      while (reader.hasMoreChildren()) {
+        reader.moveDown();
+        map.put(reader.getNodeName(), reader.getValue());
+        reader.moveUp();
+      }
+      return map;
     }
+  }
 
-    public class MapEntryConverter implements Converter {
+  @PUT
+  @Path("/{params:.*}")
+  @Produces(MediaType.TEXT_PLAIN)
+  @Consumes(MediaType.MULTIPART_FORM_DATA)
+  public Response multipartPUT(
+      @Context HttpServletRequest request,
+      @Context HttpServletResponse response,
+      FormDataMultiPart multipart,
+      @PathParam("params") String params)
+      throws URISyntaxException, DotDataException {
+    return multipartPUTandPOST(request, response, multipart, params, "PUT");
+  }
 
-        public boolean canConvert(@SuppressWarnings("rawtypes") Class clazz) {
-            return AbstractMap.class.isAssignableFrom(clazz);
-        }
+  @POST
+  @Path("/{params:.*}")
+  @Produces(MediaType.TEXT_PLAIN)
+  @Consumes(MediaType.MULTIPART_FORM_DATA)
+  public Response multipartPOST(
+      @Context HttpServletRequest request,
+      @Context HttpServletResponse response,
+      FormDataMultiPart multipart,
+      @PathParam("params") String params)
+      throws URISyntaxException, DotDataException {
+    return multipartPUTandPOST(request, response, multipart, params, "POST");
+  }
 
-        public void marshal(final Object value, final HierarchicalStreamWriter writer,
-                final MarshallingContext context) {
-            @SuppressWarnings("unchecked")
-            final Map<String, Object> map = (Map<String, Object>) value;
-            for (Entry<String, Object> entry : map.entrySet()) {
-                writer.startNode(entry.getKey().toString());
-                if (entry.getValue() instanceof List){
-                    final List itemsList = ((List)entry.getValue());
-                    if (!((List)entry.getValue()).isEmpty()){
-                        //list of more than one object
-                        marshalInternalNode(writer, context, itemsList);
-                    }
-                } else if(entry.getValue() instanceof Map) {
-                    //one object saved as a map
-                    marshal(entry.getValue(), writer, context);
-                }else{
-                    //simple string
-                    writer.setValue(entry.getValue() != null ? entry.getValue().toString() : "");
-                }
-                writer.endNode();
-            }
-        }
+  private Response multipartPUTandPOST(
+      HttpServletRequest request,
+      HttpServletResponse response,
+      FormDataMultiPart multipart,
+      String params,
+      String method)
+      throws URISyntaxException, DotDataException {
 
-        /**
-         * Build xml node for all elements in a list. Each element is saved as a map
-         * @param writer
-         * @param context
-         * @param itemsList
-         */
-        private void marshalInternalNode(final HierarchicalStreamWriter writer,
-                final MarshallingContext context,
-                final List itemsList) {
-            itemsList.forEach(item -> {
-                writer.startNode("item");
-                if (item instanceof Map){
-                    marshal(item, writer, context);
-                } else {
-                    //simple string
-                    writer.setValue(item!= null ? item.toString() : "");
-                }
+    InitDataObject init = webResource.init(params, true, request, false, null);
+    Contentlet contentlet = new Contentlet();
+    setRequestMetadata(contentlet, request);
 
-                writer.endNode();
-            });
-        }
+    Map<String, Object> map = new HashMap<String, Object>();
+    List<String> usedBinaryFields = new ArrayList<String>();
+    String binaryFieldsInput = null;
+    List<String> binaryFields = new ArrayList<>();
 
-        public Object unmarshal(HierarchicalStreamReader reader, UnmarshallingContext context) {
-            Map<String, String> map = new HashMap<String, String>();
+    for (BodyPart part : multipart.getBodyParts()) {
+      ContentDisposition cd = part.getContentDisposition();
+      String name =
+          cd != null && cd.getParameters().containsKey("name")
+              ? cd.getParameters().get("name")
+              : "";
 
-            while (reader.hasMoreChildren()) {
-                reader.moveDown();
-                map.put(reader.getNodeName(), reader.getValue());
-                reader.moveUp();
-            }
-            return map;
-        }
-
-
-
-    }
-
-    @PUT
-    @Path("/{params:.*}")
-    @Produces(MediaType.TEXT_PLAIN)
-    @Consumes(MediaType.MULTIPART_FORM_DATA)
-    public Response multipartPUT(@Context HttpServletRequest request,
-            @Context HttpServletResponse response,
-            FormDataMultiPart multipart, @PathParam("params") String params)
-            throws URISyntaxException, DotDataException {
-        return multipartPUTandPOST(request, response, multipart, params, "PUT");
-    }
-
-    @POST
-    @Path("/{params:.*}")
-    @Produces(MediaType.TEXT_PLAIN)
-    @Consumes(MediaType.MULTIPART_FORM_DATA)
-    public Response multipartPOST(@Context HttpServletRequest request,
-            @Context HttpServletResponse response,
-            FormDataMultiPart multipart, @PathParam("params") String params)
-            throws URISyntaxException, DotDataException {
-        return multipartPUTandPOST(request, response, multipart, params, "POST");
-    }
-
-    private Response multipartPUTandPOST(HttpServletRequest request, HttpServletResponse response,
-            FormDataMultiPart multipart, String params, String method)
-            throws URISyntaxException, DotDataException {
-
-        InitDataObject init = webResource.init(params, true, request, false, null);
-        Contentlet contentlet = new Contentlet();
-        setRequestMetadata(contentlet, request);
-
-        Map<String, Object> map = new HashMap<String, Object>();
-        List<String> usedBinaryFields = new ArrayList<String>();
-        String binaryFieldsInput = null;
-        List<String> binaryFields = new ArrayList<>();
-
-        for (BodyPart part : multipart.getBodyParts()) {
-            ContentDisposition cd = part.getContentDisposition();
-            String name = cd != null && cd.getParameters().containsKey("name") ? cd.getParameters()
-                    .get("name") : "";
-
-            if (part.getMediaType().equals(MediaType.APPLICATION_JSON_TYPE) || name
-                    .equals("json")) {
-                try {
-                    processJSON(contentlet, part.getEntityAs(InputStream.class));
-                    try {
-                        binaryFieldsInput =
-                            webResource.processJSON(part.getEntityAs(InputStream.class)).get("binary_fields")
-                                .toString();
-                    } catch (NullPointerException npe) {
-                    }
-                    if (UtilMethods.isSet(binaryFieldsInput)) {
-                        if (!binaryFieldsInput.contains(",")) {
-                            binaryFields.add(binaryFieldsInput);
-                        } else {
-                            for (String binaryFieldSplit : binaryFieldsInput.split(",")) {
-                                binaryFields.add(binaryFieldSplit.trim());
-                            }
-                        }
-                    }
-                } catch (JSONException e) {
-
-                    Logger.error(this.getClass(), "Error processing JSON for Stream", e);
-
-                    Response.ResponseBuilder responseBuilder = Response
-                            .status(HttpStatus.SC_BAD_REQUEST);
-                    responseBuilder.entity(e.getMessage());
-                    return responseBuilder.build();
-                } catch (IOException e) {
-
-                    Logger.error(this.getClass(), "Error processing Stream", e);
-
-                    Response.ResponseBuilder responseBuilder = Response
-                            .status(HttpStatus.SC_INTERNAL_SERVER_ERROR);
-                    responseBuilder.entity(e.getMessage());
-                    return responseBuilder.build();
-                } catch (DotSecurityException e) {
-                    throw new ForbiddenException(e);
-                }
-            } else if (part.getMediaType().equals(MediaType.APPLICATION_XML_TYPE) || name
-                    .equals("xml")) {
-                try {
-                    processXML(contentlet, part.getEntityAs(InputStream.class));
-                } catch (Exception e) {
-                    if (e instanceof DotSecurityException) {
-                        SecurityLogger.logInfo(this.getClass(),
-                                "Invalid XML POSTED to ContentTypeResource from " + request
-                                        .getRemoteAddr());
-                    }
-                    Logger.error(this.getClass(), "Error processing Stream", e);
-
-                    Response.ResponseBuilder responseBuilder = Response
-                            .status(HttpStatus.SC_INTERNAL_SERVER_ERROR);
-                    responseBuilder.entity(e.getMessage());
-                    return responseBuilder.build();
-                }
-            } else if (part.getMediaType().equals(MediaType.APPLICATION_FORM_URLENCODED_TYPE)
-                    || name.equals("urlencoded")) {
-                try {
-                    processForm(contentlet, part.getEntityAs(InputStream.class));
-                } catch (Exception e) {
-                    Logger.error(this.getClass(), "Error processing Stream", e);
-
-                    Response.ResponseBuilder responseBuilder = Response
-                            .status(HttpStatus.SC_INTERNAL_SERVER_ERROR);
-                    responseBuilder.entity(e.getMessage());
-                    return responseBuilder.build();
-                }
-            } else if (part.getMediaType().equals(MEDIA_TYPE_GENERIC_TEXT)) {
-                try {
-
-                    this.processFile(contentlet, usedBinaryFields, binaryFields, part);
-                } catch (IOException e) {
-
-                    Logger.error(this.getClass(), "Error processing Stream", e);
-
-                    Response.ResponseBuilder responseBuilder = Response
-                            .status(HttpStatus.SC_INTERNAL_SERVER_ERROR);
-                    responseBuilder.entity(e.getMessage());
-                    return responseBuilder.build();
-                } catch (DotSecurityException e) {
-                    throw new ForbiddenException(e);
-                }
-            } else if (part.getContentDisposition() != null) {
-
-                try {
-
-                    this.processFile(contentlet, usedBinaryFields, binaryFields, part);
-                } catch (IOException e) {
-
-                    Logger.error(this.getClass(), "Error processing Stream", e);
-
-                    Response.ResponseBuilder responseBuilder = Response
-                            .status(HttpStatus.SC_INTERNAL_SERVER_ERROR);
-                    responseBuilder.entity(e.getMessage());
-                    return responseBuilder.build();
-                } catch (DotSecurityException e) {
-                    throw new ForbiddenException(e);
-                }
-            }
-        }
-
-        return saveContent(contentlet, init);
-    }
-
-    private void processFile(final Contentlet contentlet,
-                             final List<String> usedBinaryFields,
-                             final List<String> binaryFields,
-                             final BodyPart part) throws IOException, DotSecurityException, DotDataException {
-
-        final InputStream input = part.getEntityAs(InputStream.class);
-        final String filename = part.getContentDisposition().getFileName();
-        final File tmpFolder = new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary() + UUIDUtil.uuid());
-        tmpFolder.mkdirs();
-        final File tmp = new File(
-                tmpFolder.getAbsolutePath() + File.separator + filename);
-        if (tmp.exists()) {
-            tmp.delete();
-        }
-
-        FileUtils.copyInputStreamToFile(input, tmp);
-        final List<Field> fields = new LegacyFieldTransformer(
-                APILocator.getContentTypeAPI(APILocator.systemUser()).
-                        find(contentlet.getContentType().inode()).fields())
-                .asOldFieldList();
-        for (final Field ff : fields) {
-            // filling binaries in order. as they come / as field order says
-            final String fieldName = ff.getFieldContentlet();
-            if (fieldName.startsWith("binary")
-                    && !usedBinaryFields.contains(fieldName)) {
-
-                String fieldVarName = ff.getVelocityVarName();
-                if (binaryFields.size() > 0) {
-                    fieldVarName = binaryFields.remove(0);
-                }
-                contentlet.setBinary(fieldVarName, tmp);
-                usedBinaryFields.add(fieldName);
-                break;
-            }
-        }
-    }
-
-    @PUT
-    @Path("/{params:.*}")
-    @Produces(MediaType.TEXT_PLAIN)
-    @Consumes({MediaType.APPLICATION_JSON, MediaType.APPLICATION_FORM_URLENCODED,
-            MediaType.APPLICATION_XML})
-    public Response singlePUT(@Context HttpServletRequest request,
-            @Context HttpServletResponse response, @PathParam("params") String params)
-            throws URISyntaxException {
-        return singlePUTandPOST(request, response, params, "PUT");
-    }
-
-    @POST
-    @Path("/{params:.*}")
-    @Produces(MediaType.TEXT_PLAIN)
-    @Consumes({MediaType.APPLICATION_JSON, MediaType.APPLICATION_FORM_URLENCODED,
-            MediaType.APPLICATION_XML})
-    public Response singlePOST(@Context HttpServletRequest request,
-            @Context HttpServletResponse response, @PathParam("params") String params)
-            throws URISyntaxException {
-        return singlePUTandPOST(request, response, params, "POST");
-    }
-
-    private Response singlePUTandPOST(HttpServletRequest request, HttpServletResponse response,
-            String params, String method)
-            throws URISyntaxException {
-        InitDataObject init = webResource.init(params, true, request, false, null);
-
-        Contentlet contentlet = new Contentlet();
-        setRequestMetadata(contentlet, request);
-
+      if (part.getMediaType().equals(MediaType.APPLICATION_JSON_TYPE) || name.equals("json")) {
         try {
-            if (request.getContentType().startsWith(MediaType.APPLICATION_JSON)) {
-                processJSON(contentlet, request.getInputStream());
-            } else if (request.getContentType().startsWith(MediaType.APPLICATION_XML)) {
-                try {
-                    processXML(contentlet, request.getInputStream());
-                } catch (DotSecurityException se) {
-                    SecurityLogger.logInfo(this.getClass(),
-                            "Invalid XML POSTED to ContentTypeResource from " + request
-                                    .getRemoteAddr());
-                    throw new ForbiddenException(se);
-                }
-            } else if (request.getContentType().startsWith(MediaType.APPLICATION_FORM_URLENCODED)) {
-                if (method.equals("PUT")) {
-                    processForm(contentlet, request.getInputStream());
-                } else if (method.equals("POST")) {
-                    processFormPost(contentlet, request, false);
-                }
-
+          processJSON(contentlet, part.getEntityAs(InputStream.class));
+          try {
+            binaryFieldsInput =
+                webResource
+                    .processJSON(part.getEntityAs(InputStream.class))
+                    .get("binary_fields")
+                    .toString();
+          } catch (NullPointerException npe) {
+          }
+          if (UtilMethods.isSet(binaryFieldsInput)) {
+            if (!binaryFieldsInput.contains(",")) {
+              binaryFields.add(binaryFieldsInput);
+            } else {
+              for (String binaryFieldSplit : binaryFieldsInput.split(",")) {
+                binaryFields.add(binaryFieldSplit.trim());
+              }
             }
+          }
         } catch (JSONException e) {
 
-            Logger.error(this.getClass(), "Error processing JSON for Stream", e);
+          Logger.error(this.getClass(), "Error processing JSON for Stream", e);
 
-            Response.ResponseBuilder responseBuilder = Response.status(HttpStatus.SC_BAD_REQUEST);
-            responseBuilder.entity(e.getMessage());
-            return responseBuilder.build();
-        } catch (Exception e) {
+          Response.ResponseBuilder responseBuilder = Response.status(HttpStatus.SC_BAD_REQUEST);
+          responseBuilder.entity(e.getMessage());
+          return responseBuilder.build();
+        } catch (IOException e) {
 
-            Logger.error(this.getClass(), "Error processing Stream", e);
+          Logger.error(this.getClass(), "Error processing Stream", e);
 
-            Response.ResponseBuilder responseBuilder = Response
-                    .status(HttpStatus.SC_INTERNAL_SERVER_ERROR);
-            responseBuilder.entity(e.getMessage());
-            return responseBuilder.build();
+          Response.ResponseBuilder responseBuilder =
+              Response.status(HttpStatus.SC_INTERNAL_SERVER_ERROR);
+          responseBuilder.entity(e.getMessage());
+          return responseBuilder.build();
+        } catch (DotSecurityException e) {
+          throw new ForbiddenException(e);
         }
+      } else if (part.getMediaType().equals(MediaType.APPLICATION_XML_TYPE) || name.equals("xml")) {
+        try {
+          processXML(contentlet, part.getEntityAs(InputStream.class));
+        } catch (Exception e) {
+          if (e instanceof DotSecurityException) {
+            SecurityLogger.logInfo(
+                this.getClass(),
+                "Invalid XML POSTED to ContentTypeResource from " + request.getRemoteAddr());
+          }
+          Logger.error(this.getClass(), "Error processing Stream", e);
 
-        return saveContent(contentlet, init);
-    }
+          Response.ResponseBuilder responseBuilder =
+              Response.status(HttpStatus.SC_INTERNAL_SERVER_ERROR);
+          responseBuilder.entity(e.getMessage());
+          return responseBuilder.build();
+        }
+      } else if (part.getMediaType().equals(MediaType.APPLICATION_FORM_URLENCODED_TYPE)
+          || name.equals("urlencoded")) {
+        try {
+          processForm(contentlet, part.getEntityAs(InputStream.class));
+        } catch (Exception e) {
+          Logger.error(this.getClass(), "Error processing Stream", e);
 
-    protected Response saveContent(Contentlet contentlet, InitDataObject init)
-            throws URISyntaxException {
-        boolean live = init.getParamsMap().containsKey("publish");
-        boolean clean = false;
-        final boolean ALLOW_FRONT_END_SAVING = Config
-            .getBooleanProperty("REST_API_CONTENT_ALLOW_FRONT_END_SAVING", false);
+          Response.ResponseBuilder responseBuilder =
+              Response.status(HttpStatus.SC_INTERNAL_SERVER_ERROR);
+          responseBuilder.entity(e.getMessage());
+          return responseBuilder.build();
+        }
+      } else if (part.getMediaType().equals(MEDIA_TYPE_GENERIC_TEXT)) {
+        try {
+
+          this.processFile(contentlet, usedBinaryFields, binaryFields, part);
+        } catch (IOException e) {
+
+          Logger.error(this.getClass(), "Error processing Stream", e);
+
+          Response.ResponseBuilder responseBuilder =
+              Response.status(HttpStatus.SC_INTERNAL_SERVER_ERROR);
+          responseBuilder.entity(e.getMessage());
+          return responseBuilder.build();
+        } catch (DotSecurityException e) {
+          throw new ForbiddenException(e);
+        }
+      } else if (part.getContentDisposition() != null) {
 
         try {
 
-            // preparing categories
-            List<Category> cats = new ArrayList<>();
-            List<Field> fields = new LegacyFieldTransformer(
-                    APILocator.getContentTypeAPI(APILocator.systemUser()).
-                            find(contentlet.getContentType().inode()).fields()).asOldFieldList();
-            for (Field field : fields) {
-                if (field.getFieldType().equals(FieldType.CATEGORY.toString())) {
-                    String catValue = contentlet.getStringProperty(field.getVelocityVarName());
-                    if (UtilMethods.isSet(catValue)) {
-                        for (String cat : catValue.split("\\s*,\\s*")) {
-                            // take it as catId
-                            Category category = APILocator.getCategoryAPI()
-                                    .find(cat, init.getUser(), ALLOW_FRONT_END_SAVING);
-                            if (category != null && InodeUtils.isSet(category.getCategoryId())) {
-                                cats.add(category);
-                            } else {
-                                // try it as catKey
-                                category = APILocator.getCategoryAPI()
-                                        .findByKey(cat, init.getUser(), ALLOW_FRONT_END_SAVING);
-                                if (category != null && InodeUtils
-                                        .isSet(category.getCategoryId())) {
-                                    cats.add(category);
-                                } else {
-                                    // try it as variable
-                                    // FIXME: https://github.com/dotCMS/dotCMS/issues/2847
-                                    HibernateUtil hu = new HibernateUtil(Category.class);
-                                    hu.setQuery("from " + Category.class.getCanonicalName()
-                                            + " WHERE category_velocity_var_name=?");
-                                    hu.setParam(cat);
-                                    category = (Category) hu.load();
-                                    if (category != null && InodeUtils
-                                            .isSet(category.getCategoryId())) {
-                                        cats.add(category);
-                                    }
-                                }
-                            }
+          this.processFile(contentlet, usedBinaryFields, binaryFields, part);
+        } catch (IOException e) {
 
-                        }
-                    }
+          Logger.error(this.getClass(), "Error processing Stream", e);
+
+          Response.ResponseBuilder responseBuilder =
+              Response.status(HttpStatus.SC_INTERNAL_SERVER_ERROR);
+          responseBuilder.entity(e.getMessage());
+          return responseBuilder.build();
+        } catch (DotSecurityException e) {
+          throw new ForbiddenException(e);
+        }
+      }
+    }
+
+    return saveContent(contentlet, init);
+  }
+
+  private void processFile(
+      final Contentlet contentlet,
+      final List<String> usedBinaryFields,
+      final List<String> binaryFields,
+      final BodyPart part)
+      throws IOException, DotSecurityException, DotDataException {
+
+    final InputStream input = part.getEntityAs(InputStream.class);
+    final String filename = part.getContentDisposition().getFileName();
+    final File tmpFolder =
+        new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary() + UUIDUtil.uuid());
+    tmpFolder.mkdirs();
+    final File tmp = new File(tmpFolder.getAbsolutePath() + File.separator + filename);
+    if (tmp.exists()) {
+      tmp.delete();
+    }
+
+    FileUtils.copyInputStreamToFile(input, tmp);
+    final List<Field> fields =
+        new LegacyFieldTransformer(
+                APILocator.getContentTypeAPI(APILocator.systemUser())
+                    .find(contentlet.getContentType().inode())
+                    .fields())
+            .asOldFieldList();
+    for (final Field ff : fields) {
+      // filling binaries in order. as they come / as field order says
+      final String fieldName = ff.getFieldContentlet();
+      if (fieldName.startsWith("binary") && !usedBinaryFields.contains(fieldName)) {
+
+        String fieldVarName = ff.getVelocityVarName();
+        if (binaryFields.size() > 0) {
+          fieldVarName = binaryFields.remove(0);
+        }
+        contentlet.setBinary(fieldVarName, tmp);
+        usedBinaryFields.add(fieldName);
+        break;
+      }
+    }
+  }
+
+  @PUT
+  @Path("/{params:.*}")
+  @Produces(MediaType.TEXT_PLAIN)
+  @Consumes({
+      MediaType.APPLICATION_JSON,
+      MediaType.APPLICATION_FORM_URLENCODED,
+      MediaType.APPLICATION_XML
+  })
+  public Response singlePUT(
+      @Context HttpServletRequest request,
+      @Context HttpServletResponse response,
+      @PathParam("params") String params)
+      throws URISyntaxException {
+    return singlePUTandPOST(request, response, params, "PUT");
+  }
+
+  @POST
+  @Path("/{params:.*}")
+  @Produces(MediaType.TEXT_PLAIN)
+  @Consumes({
+      MediaType.APPLICATION_JSON,
+      MediaType.APPLICATION_FORM_URLENCODED,
+      MediaType.APPLICATION_XML
+  })
+  public Response singlePOST(
+      @Context HttpServletRequest request,
+      @Context HttpServletResponse response,
+      @PathParam("params") String params)
+      throws URISyntaxException {
+    return singlePUTandPOST(request, response, params, "POST");
+  }
+
+  private Response singlePUTandPOST(
+      HttpServletRequest request, HttpServletResponse response, String params, String method)
+      throws URISyntaxException {
+    InitDataObject init = webResource.init(params, true, request, false, null);
+
+    Contentlet contentlet = new Contentlet();
+    setRequestMetadata(contentlet, request);
+
+    try {
+      if (request.getContentType().startsWith(MediaType.APPLICATION_JSON)) {
+        processJSON(contentlet, request.getInputStream());
+      } else if (request.getContentType().startsWith(MediaType.APPLICATION_XML)) {
+        try {
+          processXML(contentlet, request.getInputStream());
+        } catch (DotSecurityException se) {
+          SecurityLogger.logInfo(
+              this.getClass(),
+              "Invalid XML POSTED to ContentTypeResource from " + request.getRemoteAddr());
+          throw new ForbiddenException(se);
+        }
+      } else if (request.getContentType().startsWith(MediaType.APPLICATION_FORM_URLENCODED)) {
+        if (method.equals("PUT")) {
+          processForm(contentlet, request.getInputStream());
+        } else if (method.equals("POST")) {
+          processFormPost(contentlet, request, false);
+        }
+      }
+    } catch (JSONException e) {
+
+      Logger.error(this.getClass(), "Error processing JSON for Stream", e);
+
+      Response.ResponseBuilder responseBuilder = Response.status(HttpStatus.SC_BAD_REQUEST);
+      responseBuilder.entity(e.getMessage());
+      return responseBuilder.build();
+    } catch (Exception e) {
+
+      Logger.error(this.getClass(), "Error processing Stream", e);
+
+      Response.ResponseBuilder responseBuilder =
+          Response.status(HttpStatus.SC_INTERNAL_SERVER_ERROR);
+      responseBuilder.entity(e.getMessage());
+      return responseBuilder.build();
+    }
+
+    return saveContent(contentlet, init);
+  }
+
+  protected Response saveContent(Contentlet contentlet, InitDataObject init)
+      throws URISyntaxException {
+    boolean live = init.getParamsMap().containsKey("publish");
+    boolean clean = false;
+    final boolean ALLOW_FRONT_END_SAVING =
+        Config.getBooleanProperty("REST_API_CONTENT_ALLOW_FRONT_END_SAVING", false);
+
+    try {
+
+      // preparing categories
+      List<Category> cats = new ArrayList<>();
+      List<Field> fields =
+          new LegacyFieldTransformer(
+                  APILocator.getContentTypeAPI(APILocator.systemUser())
+                      .find(contentlet.getContentType().inode())
+                      .fields())
+              .asOldFieldList();
+      for (Field field : fields) {
+        if (field.getFieldType().equals(FieldType.CATEGORY.toString())) {
+          String catValue = contentlet.getStringProperty(field.getVelocityVarName());
+          if (UtilMethods.isSet(catValue)) {
+            for (String cat : catValue.split("\\s*,\\s*")) {
+              // take it as catId
+              Category category =
+                  APILocator.getCategoryAPI().find(cat, init.getUser(), ALLOW_FRONT_END_SAVING);
+              if (category != null && InodeUtils.isSet(category.getCategoryId())) {
+                cats.add(category);
+              } else {
+                // try it as catKey
+                category =
+                    APILocator.getCategoryAPI()
+                        .findByKey(cat, init.getUser(), ALLOW_FRONT_END_SAVING);
+                if (category != null && InodeUtils.isSet(category.getCategoryId())) {
+                  cats.add(category);
+                } else {
+                  // try it as variable
+                  // FIXME: https://github.com/dotCMS/dotCMS/issues/2847
+                  HibernateUtil hu = new HibernateUtil(Category.class);
+                  hu.setQuery(
+                      "from "
+                          + Category.class.getCanonicalName()
+                          + " WHERE category_velocity_var_name=?");
+                  hu.setParam(cat);
+                  category = (Category) hu.load();
+                  if (category != null && InodeUtils.isSet(category.getCategoryId())) {
+                    cats.add(category);
+                  }
                 }
+              }
             }
+          }
+        }
+      }
 
-            // running a workflow action?
-            final ContentWorkflowResult contentWorkflowResult = processWorkflowAction(contentlet, init, live);
+      // running a workflow action?
+      final ContentWorkflowResult contentWorkflowResult =
+          processWorkflowAction(contentlet, init, live);
 
-            live = contentWorkflowResult.publish;
-            Map<Relationship, List<Contentlet>> relationships = (Map<Relationship, List<Contentlet>>) contentlet
-                    .get(RELATIONSHIP_KEY);
+      live = contentWorkflowResult.publish;
+      Map<Relationship, List<Contentlet>> relationships =
+          (Map<Relationship, List<Contentlet>>) contentlet.get(RELATIONSHIP_KEY);
 
-            HibernateUtil.startTransaction();
+      HibernateUtil.startTransaction();
 
-            cats = UtilMethods.isSet(cats)?cats:null;
+      cats = UtilMethods.isSet(cats) ? cats : null;
 
-            // if one of the actions does not have save, so call the checkin
-            if (!contentWorkflowResult.save) {
+      // if one of the actions does not have save, so call the checkin
+      if (!contentWorkflowResult.save) {
 
-                contentlet.setIndexPolicy(IndexPolicyProvider.getInstance().forSingleContent());
-                contentlet = APILocator.getContentletAPI()
-                        .checkin(contentlet, relationships, cats, init.getUser(), ALLOW_FRONT_END_SAVING);
-                if (live) {
-                    APILocator.getContentletAPI()
-                            .publish(contentlet, init.getUser(), ALLOW_FRONT_END_SAVING);
-                }
-            } else {
+        contentlet.setIndexPolicy(IndexPolicyProvider.getInstance().forSingleContent());
+        contentlet =
+            APILocator.getContentletAPI()
+                .checkin(contentlet, relationships, cats, init.getUser(), ALLOW_FRONT_END_SAVING);
+        if (live) {
+          APILocator.getContentletAPI().publish(contentlet, init.getUser(), ALLOW_FRONT_END_SAVING);
+        }
+      } else {
 
-                contentlet = APILocator.getWorkflowAPI().fireContentWorkflow(contentlet,
-                        new ContentletDependencies.Builder()
+        contentlet =
+            APILocator.getWorkflowAPI()
+                .fireContentWorkflow(
+                    contentlet,
+                    new ContentletDependencies.Builder()
                         .respectAnonymousPermissions(ALLOW_FRONT_END_SAVING)
-                        .modUser(init.getUser()).categories(cats)
-                        .relationships(this.getContentletRelationshipsFromMap(contentlet, relationships))
+                        .modUser(init.getUser())
+                        .categories(cats)
+                        .relationships(
+                            this.getContentletRelationshipsFromMap(contentlet, relationships))
                         .indexPolicy(IndexPolicyProvider.getInstance().forSingleContent())
                         .build());
-            }
+      }
 
-            HibernateUtil.closeAndCommitTransaction();
-            clean = true;
-        } catch (DotContentletStateException e) {
+      HibernateUtil.closeAndCommitTransaction();
+      clean = true;
+    } catch (DotContentletStateException e) {
 
-            Logger.error(this.getClass(), "Error saving Contentlet" + e);
+      Logger.error(this.getClass(), "Error saving Contentlet" + e);
 
-            Response.ResponseBuilder responseBuilder = Response.status(HttpStatus.SC_CONFLICT);
-            responseBuilder.entity(e.getMessage());
-            return responseBuilder.build();
-        } catch (IllegalArgumentException e) {
+      Response.ResponseBuilder responseBuilder = Response.status(HttpStatus.SC_CONFLICT);
+      responseBuilder.entity(e.getMessage());
+      return responseBuilder.build();
+    } catch (IllegalArgumentException e) {
 
-            Logger.error(this.getClass(), "Error saving Contentlet" + e);
+      Logger.error(this.getClass(), "Error saving Contentlet" + e);
 
-            Response.ResponseBuilder responseBuilder = Response.status(HttpStatus.SC_CONFLICT);
-            responseBuilder.entity(e.getMessage());
-            return responseBuilder.build();
-        } catch (DotSecurityException e) {
+      Response.ResponseBuilder responseBuilder = Response.status(HttpStatus.SC_CONFLICT);
+      responseBuilder.entity(e.getMessage());
+      return responseBuilder.build();
+    } catch (DotSecurityException e) {
 
-            Logger.error(this.getClass(), "Error saving Contentlet" + e);
-            throw new ForbiddenException(e);
-        } catch (Exception e) {
-            Logger.warn(this, e.getMessage(), e);
-            return Response.serverError().build();
-        } finally {
-            try {
-                if (!clean) {
-                    HibernateUtil.rollbackTransaction();
-                }
-                HibernateUtil.closeSession();
-            } catch (Exception e) {
-                Logger.warn(this, e.getMessage(), e);
-            }
+      Logger.error(this.getClass(), "Error saving Contentlet" + e);
+      throw new ForbiddenException(e);
+    } catch (Exception e) {
+      Logger.warn(this, e.getMessage(), e);
+      return Response.serverError().build();
+    } finally {
+      try {
+        if (!clean) {
+          HibernateUtil.rollbackTransaction();
         }
+        HibernateUtil.closeSession();
+      } catch (Exception e) {
+        Logger.warn(this, e.getMessage(), e);
+      }
+    }
 
-        // waiting for the index
-        try {
-            APILocator.getContentletAPI()
-                    .isInodeIndexed(contentlet.getInode(), contentlet.isLive()); // not sure about this one.
-        } catch (Exception ex) {
-            return Response.serverError().build();
-        }
+    // waiting for the index
+    try {
+      APILocator.getContentletAPI()
+          .isInodeIndexed(contentlet.getInode(), contentlet.isLive()); // not sure about this one.
+    } catch (Exception ex) {
+      return Response.serverError().build();
+    }
 
-        if (init.getParamsMap().containsKey("type") || init.getParamsMap()
-                .containsKey("callback")) {
-            if (init.getParamsMap().containsKey("callback") && !init.getParamsMap()
-                    .containsKey("type")) {
-                Map<String, String> map = init.getParamsMap();
-                map.put("type", "jsonp");
-                init.setParamsMap(map);
-            }
+    if (init.getParamsMap().containsKey("type") || init.getParamsMap().containsKey("callback")) {
+      if (init.getParamsMap().containsKey("callback") && !init.getParamsMap().containsKey("type")) {
+        Map<String, String> map = init.getParamsMap();
+        map.put("type", "jsonp");
+        init.setParamsMap(map);
+      }
 
-            String type = init.getParamsMap().get(RESTParams.TYPE.getValue());
-            String result = "";
-            try {
-                if ("xml".equals(type)) {
+      String type = init.getParamsMap().get(RESTParams.TYPE.getValue());
+      String result = "";
+      try {
+        if ("xml".equals(type)) {
 
-                    result = getXMLContentIds(contentlet);
-                    return Response.ok(result, MediaType.APPLICATION_XML)
-                            .location(
-                                    new URI("content/inode/" + contentlet.getInode() + "/type/xml"))
-                            .header("inode", contentlet.getInode())
-                            .header("identifier", contentlet.getIdentifier())
-                            .status(Status.OK).build();
-                } else if ("text".equals(type)) {
+          result = getXMLContentIds(contentlet);
+          return Response.ok(result, MediaType.APPLICATION_XML)
+              .location(new URI("content/inode/" + contentlet.getInode() + "/type/xml"))
+              .header("inode", contentlet.getInode())
+              .header("identifier", contentlet.getIdentifier())
+              .status(Status.OK)
+              .build();
+        } else if ("text".equals(type)) {
 
-                    return Response
-                            .ok("inode:" + contentlet.getInode() + ",identifier:" + contentlet
-                                    .getIdentifier(), MediaType.TEXT_PLAIN)
-                            .location(new URI("content/inode/" + contentlet.getInode()
-                                    + "/type/text"))
-                            .header("inode", contentlet.getInode())
-                            .header("identifier", contentlet.getIdentifier())
-                            .status(Status.OK).build();
-                } else {
-
-                    result = getJSONContentIds(contentlet);
-
-                    if (type.equals("jsonp")) {
-
-                        String callback = init.getParamsMap().get(RESTParams.CALLBACK.getValue());
-                        return Response.ok(callback + "(" + result + ")", "application/javascript")
-                                .location(new URI("content/inode/" + contentlet.getInode()
-                                        + "/type/jsonp/callback/" + callback))
-                                .header("inode", contentlet.getInode())
-                                .header("identifier", contentlet.getIdentifier())
-                                .status(Status.OK).build();
-                    } else {
-
-                        return Response.ok(result, MediaType.APPLICATION_JSON)
-                                .location(new URI("content/inode/" + contentlet.getInode()
-                                        + "/type/json"))
-                                .header("inode", contentlet.getInode())
-                                .header("identifier", contentlet.getIdentifier())
-                                .status(Status.OK).build();
-                    }
-                }
-            } catch (Exception e) {
-                Logger.warn(this, "Error converting result to XML/JSON");
-                return Response.serverError().build();
-            }
+          return Response.ok(
+                  "inode:" + contentlet.getInode() + ",identifier:" + contentlet.getIdentifier(),
+                  MediaType.TEXT_PLAIN)
+              .location(new URI("content/inode/" + contentlet.getInode() + "/type/text"))
+              .header("inode", contentlet.getInode())
+              .header("identifier", contentlet.getIdentifier())
+              .status(Status.OK)
+              .build();
         } else {
-            return Response.seeOther(new URI("content/inode/" + contentlet.getInode()))
-                    .header("inode", contentlet.getInode())
-                    .header("identifier", contentlet.getIdentifier())
-                    .status(Status.OK).build();
+
+          result = getJSONContentIds(contentlet);
+
+          if (type.equals("jsonp")) {
+
+            String callback = init.getParamsMap().get(RESTParams.CALLBACK.getValue());
+            return Response.ok(callback + "(" + result + ")", "application/javascript")
+                .location(
+                    new URI(
+                        "content/inode/"
+                            + contentlet.getInode()
+                            + "/type/jsonp/callback/"
+                            + callback))
+                .header("inode", contentlet.getInode())
+                .header("identifier", contentlet.getIdentifier())
+                .status(Status.OK)
+                .build();
+          } else {
+
+            return Response.ok(result, MediaType.APPLICATION_JSON)
+                .location(new URI("content/inode/" + contentlet.getInode() + "/type/json"))
+                .header("inode", contentlet.getInode())
+                .header("identifier", contentlet.getIdentifier())
+                .status(Status.OK)
+                .build();
+          }
         }
+      } catch (Exception e) {
+        Logger.warn(this, "Error converting result to XML/JSON");
+        return Response.serverError().build();
+      }
+    } else {
+      return Response.seeOther(new URI("content/inode/" + contentlet.getInode()))
+          .header("inode", contentlet.getInode())
+          .header("identifier", contentlet.getIdentifier())
+          .status(Status.OK)
+          .build();
+    }
+  }
+
+  private ContentletRelationships getContentletRelationshipsFromMap(
+      final Contentlet contentlet, final Map<Relationship, List<Contentlet>> contentRelationships) {
+
+    return new ContentletRelationshipsTransformer(contentlet, contentRelationships).findFirst();
+  }
+
+  private ContentWorkflowResult processWorkflowAction(
+      final Contentlet contentlet, final InitDataObject init, boolean live)
+      throws DotDataException, DotSecurityException {
+
+    boolean save = false;
+    final Optional<WorkflowAction> foundWorkflowAction =
+        init.getParamsMap().containsKey(Contentlet.WORKFLOW_ACTION_KEY.toLowerCase())
+            ? this.findWorkflowActionById(
+                contentlet,
+                init,
+                this.getLongActionId(
+                    init.getParamsMap().get(Contentlet.WORKFLOW_ACTION_KEY.toLowerCase())))
+            : this.findWorkflowActionByName(contentlet, init);
+
+    if (foundWorkflowAction.isPresent()) {
+
+      contentlet.setActionId(foundWorkflowAction.get().getId());
+
+      if (foundWorkflowAction.get().isCommentable()) {
+        final String comment =
+            init.getParamsMap().get(Contentlet.WORKFLOW_COMMENTS_KEY.toLowerCase());
+        if (UtilMethods.isSet(comment)) {
+          contentlet.setStringProperty(Contentlet.WORKFLOW_COMMENTS_KEY, comment);
+        }
+      }
+
+      if (foundWorkflowAction.get().isAssignable()) {
+        final String assignTo =
+            init.getParamsMap().get(Contentlet.WORKFLOW_ASSIGN_KEY.toLowerCase());
+        if (UtilMethods.isSet(assignTo)) {
+          contentlet.setStringProperty(Contentlet.WORKFLOW_ASSIGN_KEY, assignTo);
+        }
+      }
+
+      save = foundWorkflowAction.get().hasSaveActionlet(); // avoid manually saving
+      live = false; // avoid manually publishing
     }
 
-    private ContentletRelationships getContentletRelationshipsFromMap(final Contentlet contentlet,
-                                                                      final Map<Relationship, List<Contentlet>> contentRelationships) {
+    return new ContentWorkflowResult(save, live);
+  } // processWorkflowAction.
 
-        return new ContentletRelationshipsTransformer(contentlet, contentRelationships).findFirst();
+  private Optional<WorkflowAction> findWorkflowActionByName(
+      final Contentlet contentlet, final InitDataObject init)
+      throws DotSecurityException, DotDataException {
+
+    final List<WorkflowAction> availableActionsOnListing =
+        APILocator.getWorkflowAPI().findAvailableActionsListing(contentlet, init.getUser());
+
+    final List<WorkflowAction> availableActionsOnEditing =
+        APILocator.getWorkflowAPI().findAvailableActionsEditing(contentlet, init.getUser());
+
+    final Stream<WorkflowAction> combinedStream =
+        Stream.concat(availableActionsOnListing.stream(), availableActionsOnEditing.stream());
+
+    final Set<WorkflowAction> availableActions =
+        combinedStream.collect(Collectors.toCollection(LinkedHashSet::new));
+
+    for (final WorkflowAction action : availableActions) {
+
+      if (init.getParamsMap().containsKey(action.getName().toLowerCase())) {
+
+        return Optional.of(action);
+      }
     }
 
-    private ContentWorkflowResult processWorkflowAction(final Contentlet contentlet,
-                                          final InitDataObject init,
-                                          boolean live) throws DotDataException, DotSecurityException {
+    return Optional.empty();
+  }
 
-        boolean save = false;
-        final Optional<WorkflowAction> foundWorkflowAction =
-                init.getParamsMap().containsKey(Contentlet.WORKFLOW_ACTION_KEY.toLowerCase())?
-                    this.findWorkflowActionById  (contentlet, init, this.getLongActionId(init.getParamsMap().get(Contentlet.WORKFLOW_ACTION_KEY.toLowerCase()))):
-                    this.findWorkflowActionByName(contentlet, init);
+  private Optional<WorkflowAction> findWorkflowActionById(
+      final Contentlet contentlet, final InitDataObject init, final String workflowActionId)
+      throws DotSecurityException, DotDataException {
 
-        if (foundWorkflowAction.isPresent()) {
+    final List<WorkflowAction> availableActionsOnListing =
+        APILocator.getWorkflowAPI().findAvailableActionsListing(contentlet, init.getUser());
 
-            contentlet.setActionId(foundWorkflowAction.get().getId());
+    final List<WorkflowAction> availableActionsOnEditing =
+        APILocator.getWorkflowAPI().findAvailableActionsEditing(contentlet, init.getUser());
 
-            if (foundWorkflowAction.get().isCommentable()) {
-                final String comment = init.getParamsMap()
-                        .get(Contentlet.WORKFLOW_COMMENTS_KEY.toLowerCase());
-                if (UtilMethods.isSet(comment)) {
-                    contentlet.setStringProperty(Contentlet.WORKFLOW_COMMENTS_KEY, comment);
-                }
-            }
+    final Stream<WorkflowAction> combinedStream =
+        Stream.concat(availableActionsOnListing.stream(), availableActionsOnEditing.stream());
 
-            if (foundWorkflowAction.get().isAssignable()) {
-                final String assignTo = init.getParamsMap()
-                        .get(Contentlet.WORKFLOW_ASSIGN_KEY.toLowerCase());
-                if (UtilMethods.isSet(assignTo)) {
-                    contentlet.setStringProperty(Contentlet.WORKFLOW_ASSIGN_KEY, assignTo);
-                }
-            }
+    final Set<WorkflowAction> availableActions =
+        combinedStream.collect(Collectors.toCollection(LinkedHashSet::new));
 
-            save = foundWorkflowAction.get().hasSaveActionlet(); // avoid manually saving
-            live = false; // avoid manually publishing
-        }
+    for (final WorkflowAction action : availableActions) {
 
-        return new ContentWorkflowResult(save, live);
-    } // processWorkflowAction.
+      if (action.getId().equals(workflowActionId)) {
 
-    private Optional<WorkflowAction> findWorkflowActionByName(final Contentlet contentlet,
-                                                              final InitDataObject init) throws DotSecurityException, DotDataException {
-
-        final List<WorkflowAction> availableActionsOnListing =
-                APILocator.getWorkflowAPI().findAvailableActionsListing(contentlet, init.getUser());
-
-        final List<WorkflowAction> availableActionsOnEditing =
-                APILocator.getWorkflowAPI().findAvailableActionsEditing(contentlet, init.getUser());
-
-        final Stream<WorkflowAction> combinedStream = Stream.concat(
-                availableActionsOnListing.stream(),
-                availableActionsOnEditing.stream()
-        );
-
-        final Set<WorkflowAction> availableActions = combinedStream.collect(Collectors.toCollection(LinkedHashSet::new));
-
-        for (final WorkflowAction action : availableActions) {
-
-            if (init.getParamsMap().containsKey(action.getName().toLowerCase())) {
-
-                return Optional.of(action);
-            }
-        }
-
-        return Optional.empty();
+        return Optional.of(action);
+      }
     }
 
-    private Optional<WorkflowAction> findWorkflowActionById(final Contentlet contentlet,
-                                                            final InitDataObject init,
-                                                            final String workflowActionId) throws DotSecurityException, DotDataException {
+    return Optional.empty();
+  }
 
-        final List<WorkflowAction> availableActionsOnListing =
-                APILocator.getWorkflowAPI().findAvailableActionsListing(contentlet, init.getUser());
+  /**
+   * Converts the shortyId to long id
+   *
+   * @param shortyId String
+   * @return String id
+   */
+  private String getLongActionId(final String shortyId) {
 
-        final List<WorkflowAction> availableActionsOnEditing =
-                APILocator.getWorkflowAPI().findAvailableActionsEditing(contentlet, init.getUser());
+    final Optional<ShortyId> shortyIdOptional =
+        APILocator.getShortyAPI().getShorty(shortyId, ShortyIdAPI.ShortyInputType.WORKFLOW_ACTION);
 
-        final Stream<WorkflowAction> combinedStream = Stream.concat(
-                availableActionsOnListing.stream(),
-                availableActionsOnEditing.stream()
-        );
+    return shortyIdOptional.isPresent() ? shortyIdOptional.get().longId : shortyId;
+  } // getLongId.
 
-        final Set<WorkflowAction> availableActions = combinedStream.collect(Collectors.toCollection(LinkedHashSet::new));
+  @SuppressWarnings("unchecked")
+  protected void processXML(Contentlet contentlet, InputStream inputStream)
+      throws IOException, DotSecurityException, DotDataException {
 
-        for (final WorkflowAction action : availableActions) {
+    String input = IOUtils.toString(inputStream, "UTF-8");
+    // deal with XXE or SSRF security vunerabilities in XML docs
+    // besides, we do not expect a fully formed xml doc - only an xml doc that can be transformed
+    // into a java.util.Map
+    // Mingle Card 512
+    String upper = input.trim().toUpperCase();
+    if (upper.contains("<!DOCTYPE") || upper.contains("<!ENTITY") || upper.startsWith("<?XML")) {
+      throw new DotSecurityException("Invalid XML");
+    }
+    XStream xstream = new XStream(new DomDriver());
+    xstream.alias("content", Map.class);
+    xstream.registerConverter(new MapEntryConverter());
+    Map<String, Object> root = (Map<String, Object>) xstream.fromXML(input);
+    processMap(contentlet, root);
+  }
 
-            if (action.getId().equals(workflowActionId)) {
+  protected void processForm(Contentlet contentlet, InputStream input) throws Exception {
 
-                return Optional.of(action);
-            }
-        }
+    Map<String, Object> map = new HashMap<String, Object>();
+    for (String param : IOUtils.toString(input).split("&")) {
 
-        return Optional.empty();
+      int index = param.indexOf("=");
+
+      // Verify if we have a value
+      if (index != -1) {
+        String key = URLDecoder.decode(param.substring(0, index), "UTF-8");
+        String value = URLDecoder.decode(param.substring(index + 1, param.length()), "UTF-8");
+        map.put(key, value);
+      }
+    }
+    processMap(contentlet, map);
+  }
+
+  protected void processFormPost(
+      Contentlet contentlet, HttpServletRequest request, boolean multiPart) throws Exception {
+
+    Map<String, Object> map = new HashMap<String, Object>();
+
+    if (multiPart) {
+      ArrayList<Part> partList = new ArrayList<Part>(request.getParts());
+
+      for (Part part : partList) {
+        String partName = part.getName();
+        String partValue = part.getHeader(partName);
+        map.put(partName, partValue);
+      }
+
+    } else {
+      Enumeration<String> parameterNames = request.getParameterNames();
+
+      while (parameterNames.hasMoreElements()) {
+        String paramName = parameterNames.nextElement();
+        String paramValue = request.getParameter(paramName);
+        map.put(paramName, paramValue);
+      }
     }
 
-    /**
-     * Converts the shortyId to long id
-     * @param shortyId String
-     * @return String id
-     */
-    private String getLongActionId (final String shortyId) {
+    processMap(contentlet, map);
+  }
 
-        final Optional<ShortyId> shortyIdOptional =
-                APILocator.getShortyAPI().getShorty(shortyId, ShortyIdAPI.ShortyInputType.WORKFLOW_ACTION);
+  protected void processMap(final Contentlet contentlet, final Map<String, Object> map)
+      throws DotDataException, DotSecurityException {
 
-        return shortyIdOptional.isPresent()?
-                shortyIdOptional.get().longId:shortyId;
-    } // getLongId.
+    this.contentHelper.populateContentletFromMap(contentlet, map);
+  }
 
-    @SuppressWarnings("unchecked")
-    protected void processXML(Contentlet contentlet, InputStream inputStream)
-            throws IOException, DotSecurityException, DotDataException {
+  @SuppressWarnings("unchecked")
+  protected void processJSON(final Contentlet contentlet, final InputStream input)
+      throws JSONException, IOException, DotDataException, DotSecurityException {
 
-        String input = IOUtils.toString(inputStream, "UTF-8");
-        // deal with XXE or SSRF security vunerabilities in XML docs
-        // besides, we do not expect a fully formed xml doc - only an xml doc that can be transformed into a java.util.Map
-        // Mingle Card 512
-        String upper = input.trim().toUpperCase();
-        if (upper.contains("<!DOCTYPE") || upper.contains("<!ENTITY") || upper
-                .startsWith("<?XML")) {
-            throw new DotSecurityException("Invalid XML");
-        }
-        XStream xstream = new XStream(new DomDriver());
-        xstream.alias("content", Map.class);
-        xstream.registerConverter(new MapEntryConverter());
-        Map<String, Object> root = (Map<String, Object>) xstream.fromXML(input);
-        processMap(contentlet, root);
+    processMap(contentlet, webResource.processJSON(input));
+  }
+
+  private void setRequestMetadata(Contentlet contentlet, HttpServletRequest request) {
+    try {
+      contentlet.setStringProperty(HOST_HEADER, request.getHeader("Host"));
+    } catch (Exception e) {
+      Logger.error(this.getClass(), "Cannot set HOST_HEADER" + HOST_HEADER + e);
     }
 
-    protected void processForm(Contentlet contentlet, InputStream input) throws Exception {
-
-        Map<String, Object> map = new HashMap<String, Object>();
-        for (String param : IOUtils.toString(input).split("&")) {
-
-            int index = param.indexOf("=");
-
-            //Verify if we have a value
-            if (index != -1) {
-                String key = URLDecoder.decode(param.substring(0, index), "UTF-8");
-                String value = URLDecoder
-                        .decode(param.substring(index + 1, param.length()), "UTF-8");
-                map.put(key, value);
-            }
-        }
-        processMap(contentlet, map);
+    try {
+      // request.getCookies() could return null.
+      if (UtilMethods.isSet(request.getCookies())) {
+        contentlet.setStringProperty(COOKIES, request.getCookies().toString());
+      } else {
+        // There are some cases where the cookies are not in the request, for example using curl
+        // without -b or --cookie.
+        Logger.warn(this.getClass(), "COOKIES are not in the REQUEST");
+      }
+    } catch (Exception e) {
+      Logger.error(this.getClass(), "Cannot set COOKIES " + e);
+    }
+    try {
+      contentlet.setStringProperty(REQUEST_METHOD, request.getMethod());
+    } catch (Exception e) {
+      Logger.error(this.getClass(), "Cannot set REQUEST_METHOD" + e);
+    }
+    try {
+      contentlet.setStringProperty(REFERER, request.getHeader("Referer"));
+    } catch (Exception e) {
+      Logger.error(this.getClass(), "Cannot set REFERER" + e);
+    }
+    try {
+      contentlet.setStringProperty(USER_AGENT, request.getHeader("User-Agent"));
+    } catch (Exception e) {
+      Logger.error(this.getClass(), "Cannot set USER_AGENT" + e);
+    }
+    try {
+      contentlet.setStringProperty(IP_ADDRESS, request.getRemoteHost());
+    } catch (Exception e) {
+      Logger.error(this.getClass(), "Cannot set IP_ADDRESS" + e);
     }
 
-    protected void processFormPost(Contentlet contentlet, HttpServletRequest request,
-            boolean multiPart) throws Exception {
-
-        Map<String, Object> map = new HashMap<String, Object>();
-
-        if (multiPart) {
-            ArrayList<Part> partList = new ArrayList<Part>(request.getParts());
-
-            for (Part part : partList) {
-                String partName = part.getName();
-                String partValue = part.getHeader(partName);
-                map.put(partName, partValue);
-            }
-
-        } else {
-            Enumeration<String> parameterNames = request.getParameterNames();
-
-            while (parameterNames.hasMoreElements()) {
-                String paramName = parameterNames.nextElement();
-                String paramValue = request.getParameter(paramName);
-                map.put(paramName, paramValue);
-            }
-        }
-
-        processMap(contentlet, map);
+    try {
+      contentlet.setStringProperty(ACCEPT_LANGUAGE, request.getHeader("Accept-Language"));
+    } catch (Exception e) {
+      Logger.error(this.getClass(), "Cannot set ACCEPT_LANGUAGE" + e);
     }
+  }
 
-    protected void processMap(final Contentlet contentlet, final Map<String, Object> map)
-            throws DotDataException, DotSecurityException {
+  private class ContentWorkflowResult {
 
-        this.contentHelper.populateContentletFromMap(contentlet, map);
+    private final boolean save;
+    private final boolean publish;
+
+    public ContentWorkflowResult(boolean save, boolean publish) {
+      this.save = save;
+      this.publish = publish;
     }
-
-    @SuppressWarnings("unchecked")
-    protected void processJSON(final Contentlet contentlet, final InputStream input)
-            throws JSONException, IOException, DotDataException, DotSecurityException {
-
-        processMap(contentlet, webResource.processJSON(input));
-    }
-
-    private void setRequestMetadata(Contentlet contentlet, HttpServletRequest request) {
-        try {
-            contentlet.setStringProperty(HOST_HEADER, request.getHeader("Host"));
-        } catch (Exception e) {
-            Logger.error(this.getClass(), "Cannot set HOST_HEADER" + HOST_HEADER + e);
-
-        }
-
-        try {
-            //request.getCookies() could return null.
-            if (UtilMethods.isSet(request.getCookies())) {
-                contentlet.setStringProperty(COOKIES, request.getCookies().toString());
-            } else {
-                //There are some cases where the cookies are not in the request, for example using curl without -b or --cookie.
-                Logger.warn(this.getClass(), "COOKIES are not in the REQUEST");
-            }
-        } catch (Exception e) {
-            Logger.error(this.getClass(), "Cannot set COOKIES " + e);
-
-        }
-        try {
-            contentlet.setStringProperty(REQUEST_METHOD, request.getMethod());
-        } catch (Exception e) {
-            Logger.error(this.getClass(), "Cannot set REQUEST_METHOD" + e);
-
-        }
-        try {
-            contentlet.setStringProperty(REFERER, request.getHeader("Referer"));
-        } catch (Exception e) {
-            Logger.error(this.getClass(), "Cannot set REFERER" + e);
-
-        }
-        try {
-            contentlet.setStringProperty(USER_AGENT, request.getHeader("User-Agent"));
-        } catch (Exception e) {
-            Logger.error(this.getClass(), "Cannot set USER_AGENT" + e);
-
-        }
-        try {
-            contentlet.setStringProperty(IP_ADDRESS, request.getRemoteHost());
-        } catch (Exception e) {
-            Logger.error(this.getClass(), "Cannot set IP_ADDRESS" + e);
-
-        }
-
-        try {
-            contentlet.setStringProperty(ACCEPT_LANGUAGE, request.getHeader("Accept-Language"));
-        } catch (Exception e) {
-            Logger.error(this.getClass(), "Cannot set ACCEPT_LANGUAGE" + e);
-
-        }
-    }
-
-    private class ContentWorkflowResult {
-
-        private final boolean save;
-        private final boolean publish;
-
-        public ContentWorkflowResult(boolean save, boolean publish) {
-            this.save = save;
-            this.publish = publish;
-        }
-
-
-    }
+  }
 }

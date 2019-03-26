@@ -16,250 +16,200 @@ package org.apache.velocity.runtime.resource;
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
- * under the License.    
+ * under the License.
  */
 
 import java.io.IOException;
 import java.io.Serializable;
-
 import org.apache.velocity.exception.ParseErrorException;
 import org.apache.velocity.exception.ResourceNotFoundException;
 import org.apache.velocity.runtime.RuntimeConstants;
-import org.apache.velocity.runtime.RuntimeServices;
-import org.apache.velocity.runtime.resource.loader.ResourceLoader;
-
-import com.dotmarketing.util.VelocityUtil;
-
 
 /**
- * This class represent a general text resource that
- * may have been retrieved from any number of possible
- * sources.
+ * This class represent a general text resource that may have been retrieved from any number of
+ * possible sources.
  *
  * @author <a href="mailto:jvanzyl@apache.org">Jason van Zyl</a>
  * @author <a href="mailto:geirm@optonline.net">Geir Magnusson Jr.</a>
  * @version $Id: Resource.java 729843 2008-12-29 09:06:57Z byron $
  */
-public abstract class Resource implements Serializable
-{
-    
-    private static final long serialVersionUID = 8359481009919491228L;
+public abstract class Resource implements Serializable {
 
-    /**
-     * The number of milliseconds in a minute, used to calculate the
-     * check interval.
-     */
-    protected static final long MILLIS_PER_SECOND =  1000;
+  private static final long serialVersionUID = 8359481009919491228L;
 
-    /**
-     * How often the file modification time is checked (in seconds).
-     */
-    protected long modificationCheckInterval = 0;
+  /** The number of milliseconds in a minute, used to calculate the check interval. */
+  protected static final long MILLIS_PER_SECOND = 1000;
 
-    /**
-     * The file modification time (in milliseconds) for the cached template.
-     */
-    protected long lastModified = 0;
+  /** How often the file modification time is checked (in seconds). */
+  protected long modificationCheckInterval = 0;
 
-    /**
-     * The next time the file modification time will be checked (in
-     * milliseconds).
-     */
-    protected long nextCheck = 0;
+  /** The file modification time (in milliseconds) for the cached template. */
+  protected long lastModified = 0;
 
-    /**
-     *  Name of the resource
-     */
-    protected String name;
+  /** The next time the file modification time will be checked (in milliseconds). */
+  protected long nextCheck = 0;
 
-    /**
-     *  Character encoding of this resource
-     */
-    protected String encoding = RuntimeConstants.ENCODING_DEFAULT;
+  /** Name of the resource */
+  protected String name;
 
-    /**
-     *  Resource might require ancillary storage of some kind
-     */
-    protected Object data = null;
+  /** Character encoding of this resource */
+  protected String encoding = RuntimeConstants.ENCODING_DEFAULT;
 
-    /**
-     *  Resource type (RESOURCE_TEMPLATE or RESOURCE_CONTENT)
-     */
-    protected int type;
+  /** Resource might require ancillary storage of some kind */
+  protected Object data = null;
 
-    /**
-     *  Default constructor
+  /** Resource type (RESOURCE_TEMPLATE or RESOURCE_CONTENT) */
+  protected int type;
+
+  /** Default constructor */
+  public Resource() {}
+
+  /**
+   * Perform any subsequent processing that might need to be done by a resource. In the case of a
+   * template the actual parsing of the input stream needs to be performed.
+   *
+   * @return Whether the resource could be processed successfully. For a {@link
+   *     org.apache.velocity.Template} or {@link
+   *     org.apache.velocity.runtime.resource.ContentResource}, this indicates whether the resource
+   *     could be read.
+   * @exception ResourceNotFoundException Similar in semantics as returning <code>false</code>.
+   * @throws ParseErrorException
+   */
+  public abstract boolean process() throws ResourceNotFoundException, ParseErrorException;
+
+  /** @return True if source has been modified. */
+  public boolean isSourceModified() {
+    return com.dotcms.rendering.velocity.services.DotResourceLoader.getInstance()
+        .isSourceModified(this);
+  }
+
+  /**
+   * Set the modification check interval.
+   *
+   * @param modificationCheckInterval The interval (in seconds).
+   */
+  public void setModificationCheckInterval(long modificationCheckInterval) {
+    this.modificationCheckInterval = modificationCheckInterval;
+  }
+
+  /**
+   * Is it time to check to see if the resource source has been updated?
+   *
+   * @return True if resource must be checked.
+   */
+  public boolean requiresChecking() {
+    /*
+     *  short circuit this if modificationCheckInterval == 0
+     *  as this means "don't check"
      */
-    public Resource()
-    {
+
+    if (modificationCheckInterval <= 0) {
+      return false;
     }
 
-    /**
-     * Perform any subsequent processing that might need
-     * to be done by a resource. In the case of a template
-     * the actual parsing of the input stream needs to be
-     * performed.
-     *
-     * @return Whether the resource could be processed successfully.
-     * For a {@link org.apache.velocity.Template} or {@link
-     * org.apache.velocity.runtime.resource.ContentResource}, this
-     * indicates whether the resource could be read.
-     * @exception ResourceNotFoundException Similar in semantics as
-     * returning <code>false</code>.
-     * @throws ParseErrorException
+    /*
+     *  see if we need to check now
      */
-    public abstract boolean process()
-        throws ResourceNotFoundException, ParseErrorException;
 
-    /**
-     * @return True if source has been modified.
-     */
-    public boolean isSourceModified()
-    {
-        return com.dotcms.rendering.velocity.services.DotResourceLoader.getInstance().isSourceModified(this);
-    }
+    return (System.currentTimeMillis() >= nextCheck);
+  }
 
-    /**
-     * Set the modification check interval.
-     * @param modificationCheckInterval The interval (in seconds).
-     */
-    public void setModificationCheckInterval(long modificationCheckInterval)
-    {
-        this.modificationCheckInterval = modificationCheckInterval;
-    }
+  /** 'Touch' this template and thereby resetting the nextCheck field. */
+  public void touch() {
+    nextCheck = System.currentTimeMillis() + (MILLIS_PER_SECOND * modificationCheckInterval);
+  }
 
-    /**
-     * Is it time to check to see if the resource
-     * source has been updated?
-     * @return True if resource must be checked.
-     */
-    public boolean requiresChecking()
-    {
-        /*
-         *  short circuit this if modificationCheckInterval == 0
-         *  as this means "don't check"
-         */
+  /**
+   * Set the name of this resource, for example test.vm.
+   *
+   * @param name
+   */
+  public void setName(String name) {
+    this.name = name;
+  }
 
-        if (modificationCheckInterval <= 0 )
-        {
-           return false;
-        }
+  /**
+   * Get the name of this template.
+   *
+   * @return The name of this template.
+   */
+  public String getName() {
+    return name;
+  }
 
-        /*
-         *  see if we need to check now
-         */
+  /**
+   * set the encoding of this resource for example, "ISO-8859-1"
+   *
+   * @param encoding
+   */
+  public void setEncoding(String encoding) {
+    this.encoding = encoding;
+  }
 
-        return ( System.currentTimeMillis() >= nextCheck );
-    }
+  /**
+   * get the encoding of this resource for example, "ISO-8859-1"
+   *
+   * @return The encoding of this resource.
+   */
+  public String getEncoding() {
+    return encoding;
+  }
 
-    /**
-     * 'Touch' this template and thereby resetting
-     * the nextCheck field.
-     */
-    public void touch()
-    {
-        nextCheck = System.currentTimeMillis() + ( MILLIS_PER_SECOND *  modificationCheckInterval);
-    }
+  /**
+   * Return the lastModifed time of this resource.
+   *
+   * @return The lastModifed time of this resource.
+   */
+  public long getLastModified() {
+    return lastModified;
+  }
 
-    /**
-     * Set the name of this resource, for example
-     * test.vm.
-     * @param name
-     */
-    public void setName(String name)
-    {
-        this.name = name;
-    }
+  /**
+   * Set the last modified time for this resource.
+   *
+   * @param lastModified
+   */
+  public void setLastModified(long lastModified) {
+    this.lastModified = lastModified;
+  }
 
-    /**
-     * Get the name of this template.
-     * @return The name of this template.
-     */
-    public String getName()
-    {
-        return name;
-    }
+  /**
+   * Set arbitrary data object that might be used by the resource.
+   *
+   * @param data
+   */
+  public void setData(Object data) {
+    this.data = data;
+  }
 
-    /**
-     *  set the encoding of this resource
-     *  for example, "ISO-8859-1"
-     * @param encoding
-     */
-    public void setEncoding( String encoding )
-    {
-        this.encoding = encoding;
-    }
+  /**
+   * Get arbitrary data object that might be used by the resource.
+   *
+   * @return The data object for this resource.
+   */
+  public Object getData() {
+    return data;
+  }
 
-    /**
-     *  get the encoding of this resource
-     *  for example, "ISO-8859-1"
-     * @return The encoding of this resource.
-     */
-    public String getEncoding()
-    {
-        return encoding;
-    }
+  /**
+   * Sets the type of this Resource (RESOURCE_TEMPLATE or RESOURCE_CONTENT)
+   *
+   * @since 1.6
+   */
+  public void setType(int type) {
+    this.type = type;
+  }
 
+  /**
+   * @return type code of the Resource
+   * @since 1.6
+   */
+  public int getType() {
+    return type;
+  }
 
-    /**
-     * Return the lastModifed time of this
-     * resource.
-     * @return The lastModifed time of this resource.
-     */
-    public long getLastModified()
-    {
-        return lastModified;
-    }
-
-    /**
-     * Set the last modified time for this
-     * resource.
-     * @param lastModified
-     */
-    public void setLastModified(long lastModified)
-    {
-        this.lastModified = lastModified;
-    }
-
-    /**
-     * Set arbitrary data object that might be used
-     * by the resource.
-     * @param data
-     */
-    public void setData(Object data)
-    {
-        this.data = data;
-    }
-
-    /**
-     * Get arbitrary data object that might be used
-     * by the resource.
-     * @return The data object for this resource.
-     */
-    public Object getData()
-    {
-        return data;
-    }
-    
-    /**
-     * Sets the type of this Resource (RESOURCE_TEMPLATE or RESOURCE_CONTENT)
-     * @since 1.6
-     */
-    public void setType(int type)
-    {
-        this.type = type;
-    }
-    
-    /**
-     * @return type code of the Resource
-     * @since 1.6
-     */
-    public int getType()
-    {
-        return type;
-    }
-    
-    private void readObject(java.io.ObjectInputStream ois) throws IOException, ClassNotFoundException{ 
-        ois.defaultReadObject();
-    }
+  private void readObject(java.io.ObjectInputStream ois)
+      throws IOException, ClassNotFoundException {
+    ois.defaultReadObject();
+  }
 }

@@ -7,41 +7,41 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 
 public class FireBulkActionsForm {
 
-    private final String       query;
-    private final List<String> contentletIds;
-    private final String       workflowActionId;
-    private final AdditionalParamsBean additionalParams;
+  private final String query;
+  private final List<String> contentletIds;
+  private final String workflowActionId;
+  private final AdditionalParamsBean additionalParams;
 
-    @JsonCreator
-    public FireBulkActionsForm(
-            @JsonProperty("query") final String  query,
-            @JsonProperty("contentletIds") final List<String> contentletIds,
-            @JsonProperty("workflowActionId") final String workflowActionId,
-            @JsonProperty("additionalParams") final AdditionalParamsBean additionalParams) {
-        this.query = query;
-        this.contentletIds = contentletIds;
-        this.workflowActionId = workflowActionId;
-        this.additionalParams = additionalParams;
-    }
+  @JsonCreator
+  public FireBulkActionsForm(
+      @JsonProperty("query") final String query,
+      @JsonProperty("contentletIds") final List<String> contentletIds,
+      @JsonProperty("workflowActionId") final String workflowActionId,
+      @JsonProperty("additionalParams") final AdditionalParamsBean additionalParams) {
+    this.query = query;
+    this.contentletIds = contentletIds;
+    this.workflowActionId = workflowActionId;
+    this.additionalParams = additionalParams;
+  }
 
-    public String getQuery() {
-        return query;
-    }
+  public String getQuery() {
+    return query;
+  }
 
-    public List<String> getContentletIds() {
-        return contentletIds;
-    }
+  public List<String> getContentletIds() {
+    return contentletIds;
+  }
 
-    public String getWorkflowActionId() {
-        return workflowActionId;
-    }
+  public String getWorkflowActionId() {
+    return workflowActionId;
+  }
 
-    public AdditionalParamsBean getPopupParamsBean() {
-        return additionalParams;
-    }
+  public AdditionalParamsBean getPopupParamsBean() {
+    return additionalParams;
+  }
 
-    @Override
-    public String toString() {
-        return new ToStringBuilder(this).toString();
-    }
+  @Override
+  public String toString() {
+    return new ToStringBuilder(this).toString();
+  }
 }

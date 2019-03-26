@@ -19,51 +19,50 @@ import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
 import javax.servlet.http.HttpServletRequest;
 
-
 @Path("/util")
 public class UtilResource {
 
-    private final WebResource webResource = new WebResource();
+  private final WebResource webResource = new WebResource();
 
-    /**
-	 * <p>Returns a JSON representation of the logged in User object
-	 * <br>The user node contains: userId, firstName, lastName, roleId.
-	 *
-	 * Usage: /getloggedinuser
-	 * @throws JSONException 
-	 *
-	 */
+  /**
+   * Returns a JSON representation of the logged in User object <br>
+   * The user node contains: userId, firstName, lastName, roleId.
+   *
+   * <p>Usage: /getloggedinuser
+   *
+   * @throws JSONException
+   */
+  @GET
+  @Path("/encodeQueryParamValue/{params:.*}")
+  @Produces("application/json")
+  public Response getLoggedInUser(
+      @Context HttpServletRequest request, @PathParam("params") String params)
+      throws DotDataException, DotRuntimeException, PortalException, SystemException,
+          JSONException {
 
-	@GET
-	@Path("/encodeQueryParamValue/{params:.*}")
-	@Produces("application/json")
-	public Response getLoggedInUser(@Context HttpServletRequest request, @PathParam("params") String params) throws DotDataException,
-			DotRuntimeException, PortalException, SystemException, JSONException {
+    InitDataObject initData = webResource.init(params, true, request, true, null);
 
-        InitDataObject initData = webResource.init(params, true, request, true, null);
+    // Creating an utility response object
+    ResourceResponse responseResource = new ResourceResponse(initData.getParamsMap());
 
-        //Creating an utility response object
-        ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
+    User user = WebAPILocator.getUserWebAPI().getLoggedInUser(request);
 
-		User user = WebAPILocator.getUserWebAPI().getLoggedInUser(request);
+    // Using JSONObject instead of manually creating the json object
+    JSONObject jsonLoggedUserObject = new JSONObject();
 
-		//Using JSONObject instead of manually creating the json object
-		JSONObject jsonLoggedUserObject = new JSONObject();
-		
-		if ( user == null ) {
-            //return responseResource.response( "{}" );
-			return responseResource.response(jsonLoggedUserObject.toString());
-        }
+    if (user == null) {
+      // return responseResource.response( "{}" );
+      return responseResource.response(jsonLoggedUserObject.toString());
+    }
 
-		Role myRole  = APILocator.getRoleAPI().getUserRole(user);
+    Role myRole = APILocator.getRoleAPI().getUserRole(user);
 
-		//Adding logged user information to the object
-		jsonLoggedUserObject.put("userId", user.getUserId());
-		jsonLoggedUserObject.put("firstName", UtilMethods.escapeSingleQuotes(user.getFirstName()));
-		jsonLoggedUserObject.put("lastName", UtilMethods.escapeSingleQuotes(user.getLastName()));
-		jsonLoggedUserObject.put("roleId", myRole.getId());
+    // Adding logged user information to the object
+    jsonLoggedUserObject.put("userId", user.getUserId());
+    jsonLoggedUserObject.put("firstName", UtilMethods.escapeSingleQuotes(user.getFirstName()));
+    jsonLoggedUserObject.put("lastName", UtilMethods.escapeSingleQuotes(user.getLastName()));
+    jsonLoggedUserObject.put("roleId", myRole.getId());
 
-        return responseResource.response(jsonLoggedUserObject.toString());
-	}
-
+    return responseResource.response(jsonLoggedUserObject.toString());
+  }
 }

@@ -16,28 +16,22 @@ package org.apache.velocity.util.introspection;
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
- * under the License.    
+ * under the License.
  */
 
 /**
- *  Holds information for node-local context data introspection
- *  information.
+ * Holds information for node-local context data introspection information.
  *
  * @author <a href="mailto:geirm@optonline.net">Geir Magnusson Jr.</a>
  * @version $Id: IntrospectionCacheData.java 463298 2006-10-12 16:10:32Z henning $
  */
-public class IntrospectionCacheData
-{
-    /**
-     *  Object to pair with class - currently either a Method or
-     *  AbstractExecutor. It can be used in any way the using node
-     *  wishes.
-     */
-    public Object thingy;
+public class IntrospectionCacheData {
+  /**
+   * Object to pair with class - currently either a Method or AbstractExecutor. It can be used in
+   * any way the using node wishes.
+   */
+  public Object thingy;
 
-    /**
-     *  Class of context data object associated with the introspection
-     *  information
-     */
-    public Class  contextData;
+  /** Class of context data object associated with the introspection information */
+  public Class contextData;
 }

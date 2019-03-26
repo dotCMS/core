@@ -10,7 +10,6 @@ import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
 import com.fasterxml.jackson.core.JsonProcessingException;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -23,7 +22,6 @@ public class JsonContentTypeTransformer implements ContentTypeTransformer, JsonT
     this.list = ImmutableList.of(type);
   }
 
-
   public JsonContentTypeTransformer(String json) {
     List<ContentType> types = new ArrayList<>();
     // are we an array?
@@ -35,11 +33,9 @@ public class JsonContentTypeTransformer implements ContentTypeTransformer, JsonT
       }
     } catch (JSONException arrEx) {
       throw new DotStateException(arrEx);
-
     }
     this.list = ImmutableList.copyOf(types);
   }
-
 
   public JsonContentTypeTransformer(List<ContentType> list) {
     this.list = ImmutableList.copyOf(list);
@@ -50,9 +46,7 @@ public class JsonContentTypeTransformer implements ContentTypeTransformer, JsonT
     ContentType type = from();
     JSONObject jsonObject;
     try {
-      jsonObject =
-          new JSONObject(mapper.writeValueAsString(type));
-
+      jsonObject = new JSONObject(mapper.writeValueAsString(type));
 
       jsonObject.remove("permissionType");
       jsonObject.remove("permissionId");
@@ -67,18 +61,17 @@ public class JsonContentTypeTransformer implements ContentTypeTransformer, JsonT
     }
   }
 
-
   private ContentType fromJsonObject(JSONObject jo) {
     try {
-      
+
       if (jo.has("inode") && !jo.has("id")) {
         jo.put("id", jo.get("inode"));
       }
       ContentType type = (ContentType) mapper.readValue(jo.toString(), ContentType.class);
 
-
       if (jo.has("fields")) {
-        List<Field> fields = new JsonFieldTransformer(jo.getJSONArray("fields").toString()).asList();
+        List<Field> fields =
+            new JsonFieldTransformer(jo.getJSONArray("fields").toString()).asList();
         type.constructWithFields(fields);
       }
       return type;
@@ -87,17 +80,14 @@ public class JsonContentTypeTransformer implements ContentTypeTransformer, JsonT
     }
   }
 
-
   private List<ContentType> fromJsonArrayStr(String input) throws JSONException {
     List<ContentType> types = new ArrayList<>();
     JSONArray jarr = new JSONArray(input);
     for (int i = 0; i < jarr.length(); i++) {
       types.add(fromJsonObject(jarr.getJSONObject(i)));
-
     }
     return types;
   }
-
 
   @Override
   public ContentType from() throws DotStateException {
@@ -110,12 +100,9 @@ public class JsonContentTypeTransformer implements ContentTypeTransformer, JsonT
       for (Field f : type.fields()) {
         f.fieldVariables();
       }
-
     }
     return this.list;
   }
-
-
 
   @Override
   public JSONArray jsonArray() {
@@ -148,6 +135,4 @@ public class JsonContentTypeTransformer implements ContentTypeTransformer, JsonT
       throw new DotStateException(e);
     }
   }
-
 }
-

@@ -16,7 +16,6 @@ package org.apache.velocity.tools.view;
  * limitations under the License.
  */
 
-
 /**
  * Common interface for toolbox manager implementations.
  *
@@ -26,17 +25,11 @@ package org.apache.velocity.tools.view;
  * @author <a href="mailto:henning@schmiedehausen.org">Henning P. Schmiedehausen</a>
  * @version $Id: ToolboxManager.java 290235 2005-09-19 18:52:47Z nbubna $
  */
-public interface PrimitiveToolboxManager
-{
+public interface PrimitiveToolboxManager {
 
-    /**
-     * Adds a tool to be managed
-     */
-    void addTool(ToolInfo info);
-    
-    /**
-     * Remove a tool to be managed
-     */
-    void removeTool(ToolInfo info);
+  /** Adds a tool to be managed */
+  void addTool(ToolInfo info);
 
+  /** Remove a tool to be managed */
+  void removeTool(ToolInfo info);
 }

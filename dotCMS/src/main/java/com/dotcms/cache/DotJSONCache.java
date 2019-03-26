@@ -10,119 +10,118 @@ import com.dotmarketing.portlets.personas.model.IPersona;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import java.util.Optional;
+import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.lang.StringUtils;
 
-import javax.servlet.http.HttpServletRequest;
-import java.util.Optional;
-
 /**
- * This cache will keep a set of different {@link com.dotcms.api.vtl.model.DotJSON} objects and their
- * different versions, i.e., the specific user ID, language, etc., used when
- * they were requested.
- *
- *
+ * This cache will keep a set of different {@link com.dotcms.api.vtl.model.DotJSON} objects and
+ * their different versions, i.e., the specific user ID, language, etc., used when they were
+ * requested.
  */
 public abstract class DotJSONCache implements Cachable {
 
+  /** Utility class used to keep the parameters used to identify a DotJSON Object cache. */
+  public static class DotJSONCacheKey {
+    private final User user;
+    private final Language language;
+    private final String queryString;
+    private final IPersona persona;
     /**
-     * Utility class used to keep the parameters used to identify a DotJSON Object cache.
+     * Creates an object with a series of DotJSON-specific parameters to try to uniquely identify a
+     * DotJSON request.
      *
+     * @param user - Current user.
+     * @param language - The language.
+     * @param queryString - The current query String in the page URL.
      */
-    public static class DotJSONCacheKey {
-        private final User user;
-        private final Language language;
-        private final String queryString;
-        private final IPersona persona;
-        /**
-         * Creates an object with a series of DotJSON-specific parameters to try
-         * to uniquely identify a DotJSON request.
-         *
-         * @param user
-         *            - Current user.
-         * @param language
-         *            - The language.
-         * @param queryString
-         *            - The current query String in the page URL.
-         */
-        public DotJSONCacheKey(final User user, final Language language, final String queryString, final IPersona persona) {
-            this.user = user;
-            this.language = language;
-            this.queryString = queryString;
-            this.persona = persona;
-        }
-
-        /**
-         * Generates the DotJSON subkey that will be used in the DotJSON cache. This
-         * key will represent a specific version of the DotJSON object.
-         *
-         * @return The subkey which is specific for a DotJSON object.
-         */
-        public String getKey() {
-            StringBuilder sb = new StringBuilder();
-            sb.append(this.user.getUserId());
-            sb.append(StringPool.UNDERLINE).append(this.language.getId());
-            if (StringUtils.isNotBlank(this.queryString)) {
-                sb.append(StringPool.UNDERLINE).append(this.queryString);
-            }
-            if (UtilMethods.isSet(persona) && StringUtils.isNotBlank(this.persona.getKeyTag())) {
-                sb.append(StringPool.UNDERLINE).append(this.persona);
-            }
-            return sb.toString();
-        }
-
+    public DotJSONCacheKey(
+        final User user,
+        final Language language,
+        final String queryString,
+        final IPersona persona) {
+      this.user = user;
+      this.language = language;
+      this.queryString = queryString;
+      this.persona = persona;
     }
 
-    @Override
-    public abstract String getPrimaryGroup();
-
-    @Override
-    public abstract String[] getGroups();
-
-    @Override
-    public abstract void clearCache();
-
     /**
-     * Adds a {@link DotJSON} to the cache using info obtained from the provided request and user.
-     * A {@link DotJSONCacheKey} is built out of the provided objects and used as cache key.
+     * Generates the DotJSON subkey that will be used in the DotJSON cache. This key will represent
+     * a specific version of the DotJSON object.
      *
-     * @param request - The {@link HttpServletRequest} to grab info from to build a {@link DotJSONCacheKey}.
-     * @param user - The {@link User} to include as part of the {@link DotJSONCacheKey}.
-     * @param dotJSON - The {@link DotJSON} object to add to cache.
+     * @return The subkey which is specific for a DotJSON object.
      */
-    abstract public void add(final HttpServletRequest request, final User user, final DotJSON dotJSON);
+    public String getKey() {
+      StringBuilder sb = new StringBuilder();
+      sb.append(this.user.getUserId());
+      sb.append(StringPool.UNDERLINE).append(this.language.getId());
+      if (StringUtils.isNotBlank(this.queryString)) {
+        sb.append(StringPool.UNDERLINE).append(this.queryString);
+      }
+      if (UtilMethods.isSet(persona) && StringUtils.isNotBlank(this.persona.getKeyTag())) {
+        sb.append(StringPool.UNDERLINE).append(this.persona);
+      }
+      return sb.toString();
+    }
+  }
 
-    /**
-     * Returns an {@link Optional<DotJSON>} object, with the value present or not depending on
-     * whether the object is found in cache or not, or if object is expired according to {@link DotJSON#getCacheTTL()}
-     *
-     * A {@link DotJSONCacheKey} is built out of the provided objects (request and user) and used as cache key to
-     * retrieve the entry
-     *
-     * @param request - The {@link HttpServletRequest} to grab info from to build a {@link DotJSONCacheKey}.
-     * @param user - The {@link User} to include as part of the {@link DotJSONCacheKey}.
-     * @return
-     */
-    abstract public Optional<DotJSON> get(final HttpServletRequest request, final User user);
+  @Override
+  public abstract String getPrimaryGroup();
 
-    /**
-     * Removes a page from the cache, along with all of its versions.
-     *
-     * @param dotJSONCacheKey The {@link DotJSONCacheKey} key to remove.
-     */
-    abstract public void remove(DotJSONCacheKey dotJSONCacheKey);
+  @Override
+  public abstract String[] getGroups();
 
-    DotJSONCache.DotJSONCacheKey getDotJSONCacheKey(final HttpServletRequest request, final User user) {
-        final Language language = WebAPILocator.getLanguageWebAPI().getLanguage(request);
-        IPersona persona = null;
-        final Optional<Visitor> visitor = APILocator.getVisitorAPI().getVisitor(request, false);
+  @Override
+  public abstract void clearCache();
 
-        if (visitor.isPresent() && visitor.get().getPersona() != null) {
-            persona = visitor.get().getPersona();
-        }
+  /**
+   * Adds a {@link DotJSON} to the cache using info obtained from the provided request and user. A
+   * {@link DotJSONCacheKey} is built out of the provided objects and used as cache key.
+   *
+   * @param request - The {@link HttpServletRequest} to grab info from to build a {@link
+   *     DotJSONCacheKey}.
+   * @param user - The {@link User} to include as part of the {@link DotJSONCacheKey}.
+   * @param dotJSON - The {@link DotJSON} object to add to cache.
+   */
+  public abstract void add(
+      final HttpServletRequest request, final User user, final DotJSON dotJSON);
 
-        final String requestURI = request.getRequestURI() + StringPool.QUESTION + request.getQueryString();
+  /**
+   * Returns an {@link Optional<DotJSON>} object, with the value present or not depending on whether
+   * the object is found in cache or not, or if object is expired according to {@link
+   * DotJSON#getCacheTTL()}
+   *
+   * <p>A {@link DotJSONCacheKey} is built out of the provided objects (request and user) and used
+   * as cache key to retrieve the entry
+   *
+   * @param request - The {@link HttpServletRequest} to grab info from to build a {@link
+   *     DotJSONCacheKey}.
+   * @param user - The {@link User} to include as part of the {@link DotJSONCacheKey}.
+   * @return
+   */
+  public abstract Optional<DotJSON> get(final HttpServletRequest request, final User user);
 
-        return new DotJSONCache.DotJSONCacheKey(user, language, requestURI, persona);
+  /**
+   * Removes a page from the cache, along with all of its versions.
+   *
+   * @param dotJSONCacheKey The {@link DotJSONCacheKey} key to remove.
+   */
+  public abstract void remove(DotJSONCacheKey dotJSONCacheKey);
+
+  DotJSONCache.DotJSONCacheKey getDotJSONCacheKey(
+      final HttpServletRequest request, final User user) {
+    final Language language = WebAPILocator.getLanguageWebAPI().getLanguage(request);
+    IPersona persona = null;
+    final Optional<Visitor> visitor = APILocator.getVisitorAPI().getVisitor(request, false);
+
+    if (visitor.isPresent() && visitor.get().getPersona() != null) {
+      persona = visitor.get().getPersona();
     }
 
+    final String requestURI =
+        request.getRequestURI() + StringPool.QUESTION + request.getQueryString();
+
+    return new DotJSONCache.DotJSONCacheKey(user, language, requestURI, persona);
+  }
 }

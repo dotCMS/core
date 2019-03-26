@@ -20,143 +20,149 @@ import javax.servlet.http.HttpServletResponse;
 @Deprecated
 public class WfTaskAjax extends WfBaseAction {
 
-	public void action(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-	};
+  public void action(HttpServletRequest request, HttpServletResponse response)
+      throws ServletException, IOException {};
 
-	/**
-	 * @param request
-	 * @param response
-	 * @throws ServletException
-	 * @throws IOException
-	 */
-	public void executeAction(final HttpServletRequest request,
-							  final HttpServletResponse response) throws ServletException, IOException {
+  /**
+   * @param request
+   * @param response
+   * @throws ServletException
+   * @throws IOException
+   */
+  public void executeAction(final HttpServletRequest request, final HttpServletResponse response)
+      throws ServletException, IOException {
 
-		final String wfContentletId   = request.getParameter("wfContentletId");
-		final String wfActionAssign   = request.getParameter("wfActionAssign");
-		final String wfActionComments = request.getParameter("wfActionComments");
-		final String wfActionId       = request.getParameter("wfActionId");
-		final String wfPublishDate    = request.getParameter("wfPublishDate");
-		final String wfPublishTime    = request.getParameter("wfPublishTime");
-		final String wfExpireDate     = request.getParameter("wfExpireDate");
-		final String wfExpireTime     = request.getParameter("wfExpireTime");
-		final String wfNeverExpire    = request.getParameter("wfNeverExpire");
-		final String whereToSend      = request.getParameter("whereToSend");
-		final WorkflowAPI workflowAPI = APILocator.getWorkflowAPI();
+    final String wfContentletId = request.getParameter("wfContentletId");
+    final String wfActionAssign = request.getParameter("wfActionAssign");
+    final String wfActionComments = request.getParameter("wfActionComments");
+    final String wfActionId = request.getParameter("wfActionId");
+    final String wfPublishDate = request.getParameter("wfPublishDate");
+    final String wfPublishTime = request.getParameter("wfPublishTime");
+    final String wfExpireDate = request.getParameter("wfExpireDate");
+    final String wfExpireTime = request.getParameter("wfExpireTime");
+    final String wfNeverExpire = request.getParameter("wfNeverExpire");
+    final String whereToSend = request.getParameter("whereToSend");
+    final WorkflowAPI workflowAPI = APILocator.getWorkflowAPI();
 
-		Contentlet contentlet = null;
-		// execute workflow
-		try {
+    Contentlet contentlet = null;
+    // execute workflow
+    try {
 
-			final WorkflowAction action = workflowAPI.findAction(wfActionId, getUser());
-			if (action == null) {
+      final WorkflowAction action = workflowAPI.findAction(wfActionId, getUser());
+      if (action == null) {
 
-				throw new ServletException("No such workflow action");
-			}
+        throw new ServletException("No such workflow action");
+      }
 
-			contentlet = APILocator.getContentletAPI().find(wfContentletId, getUser(), false);
-			contentlet.setStringProperty("wfActionId", action.getId());
-			contentlet.setStringProperty("wfActionComments", wfActionComments);
-			contentlet.setStringProperty("wfActionAssign", wfActionAssign);
-			contentlet.setStringProperty("wfPublishDate", wfPublishDate);
-			contentlet.setStringProperty("wfPublishTime", wfPublishTime);
-			contentlet.setStringProperty("wfExpireDate", wfExpireDate);
-			contentlet.setStringProperty("wfExpireTime", wfExpireTime);
-			contentlet.setStringProperty("wfNeverExpire", wfNeverExpire);
-			contentlet.setStringProperty("whereToSend", whereToSend);
-			APILocator.getWorkflowAPI().fireContentWorkflow(contentlet,
-					new ContentletDependencies.Builder()
-							.respectAnonymousPermissions(PageMode.get(request).respectAnonPerms)
-							.modUser(getUser()).build());
-		} catch (Exception e) {
+      contentlet = APILocator.getContentletAPI().find(wfContentletId, getUser(), false);
+      contentlet.setStringProperty("wfActionId", action.getId());
+      contentlet.setStringProperty("wfActionComments", wfActionComments);
+      contentlet.setStringProperty("wfActionAssign", wfActionAssign);
+      contentlet.setStringProperty("wfPublishDate", wfPublishDate);
+      contentlet.setStringProperty("wfPublishTime", wfPublishTime);
+      contentlet.setStringProperty("wfExpireDate", wfExpireDate);
+      contentlet.setStringProperty("wfExpireTime", wfExpireTime);
+      contentlet.setStringProperty("wfNeverExpire", wfNeverExpire);
+      contentlet.setStringProperty("whereToSend", whereToSend);
+      APILocator.getWorkflowAPI()
+          .fireContentWorkflow(
+              contentlet,
+              new ContentletDependencies.Builder()
+                  .respectAnonymousPermissions(PageMode.get(request).respectAnonPerms)
+                  .modUser(getUser())
+                  .build());
+    } catch (Exception e) {
 
-			Logger.error(WfTaskAjax.class, e.getMessage(), e);
-			writeError(response, e.getMessage()); 
-			throw new ServletException(e.getMessage(),e);
-		}
+      Logger.error(WfTaskAjax.class, e.getMessage(), e);
+      writeError(response, e.getMessage());
+      throw new ServletException(e.getMessage(), e);
+    }
 
-		response.getWriter().println("SUCCESS:" + contentlet.getInode());
-	}
+    response.getWriter().println("SUCCESS:" + contentlet.getInode());
+  }
 
-	
-	
-	
-	
-	
-	
-	public void executeActions(final HttpServletRequest request,
-							   final HttpServletResponse response) throws ServletException, IOException {
+  public void executeActions(final HttpServletRequest request, final HttpServletResponse response)
+      throws ServletException, IOException {
 
-		final String wfActionAssign   = request.getParameter(Contentlet.WORKFLOW_ASSIGN_KEY);
-		final String wfActionComments = request.getParameter(Contentlet.WORKFLOW_COMMENTS_KEY);
-		final String wfActionId 	  = request.getParameter(Contentlet.WORKFLOW_ACTION_KEY);
-		final String wfCons 		  = request.getParameter("wfCons");
-		final WorkflowAPI workflowAPI = APILocator.getWorkflowAPI();
-		WorkflowAction action = null;
+    final String wfActionAssign = request.getParameter(Contentlet.WORKFLOW_ASSIGN_KEY);
+    final String wfActionComments = request.getParameter(Contentlet.WORKFLOW_COMMENTS_KEY);
+    final String wfActionId = request.getParameter(Contentlet.WORKFLOW_ACTION_KEY);
+    final String wfCons = request.getParameter("wfCons");
+    final WorkflowAPI workflowAPI = APILocator.getWorkflowAPI();
+    WorkflowAction action = null;
 
-		try {
-			action = workflowAPI.findAction(wfActionId, getUser());
-			if (action == null) {
-				throw new ServletException("No such workflow action");
-			}
-		} catch(Exception e) {
+    try {
+      action = workflowAPI.findAction(wfActionId, getUser());
+      if (action == null) {
+        throw new ServletException("No such workflow action");
+      }
+    } catch (Exception e) {
 
-			Logger.error(this.getClass(), e.getMessage(), e);
-			writeError(response, e.getMessage());
-			return;
-		}
+      Logger.error(this.getClass(), e.getMessage(), e);
+      writeError(response, e.getMessage());
+      return;
+    }
 
-		final StringTokenizer stringTokenizer =
-				new StringTokenizer(wfCons, ",");
-		String token = null;
+    final StringTokenizer stringTokenizer = new StringTokenizer(wfCons, ",");
+    String token = null;
 
-		while(stringTokenizer.hasMoreTokens()) {
+    while (stringTokenizer.hasMoreTokens()) {
 
-			try {
+      try {
 
-				token = stringTokenizer.nextToken();
-				if (!UtilMethods.isSet(token)){
-					continue;
-				}
+        token = stringTokenizer.nextToken();
+        if (!UtilMethods.isSet(token)) {
+          continue;
+        }
 
-				final Identifier id = APILocator.getIdentifierAPI().find(token);
-				Contentlet contentlet = null;
+        final Identifier id = APILocator.getIdentifierAPI().find(token);
+        Contentlet contentlet = null;
 
-				try {
-					contentlet = APILocator.getContentletAPI().findContentletByIdentifier
-							(id.getId(), false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), getUser(), false);
-				} catch(Exception e) { /* Quiet */}
-				
-				if (contentlet == null || ! UtilMethods.isSet(contentlet.getInode())) {
+        try {
+          contentlet =
+              APILocator.getContentletAPI()
+                  .findContentletByIdentifier(
+                      id.getId(),
+                      false,
+                      APILocator.getLanguageAPI().getDefaultLanguage().getId(),
+                      getUser(),
+                      false);
+        } catch (Exception e) {
+          /* Quiet */
+        }
 
-					final List<Language> languages = APILocator.getLanguageAPI().getLanguages();
-					for(final Language language : languages) {
+        if (contentlet == null || !UtilMethods.isSet(contentlet.getInode())) {
 
-						contentlet = APILocator.getContentletAPI().findContentletByIdentifier
-								(id.getId(), false, language.getId(), getUser(), false);
-						if(contentlet != null && UtilMethods.isSet(contentlet.getInode())){
-							break;
-						}
-					}
-				}
+          final List<Language> languages = APILocator.getLanguageAPI().getLanguages();
+          for (final Language language : languages) {
 
-				if (null != contentlet) {
-					APILocator.getWorkflowAPI().fireContentWorkflow(contentlet,
-							new ContentletDependencies.Builder()
-									.respectAnonymousPermissions(false)
-									.modUser(APILocator.getUserAPI().getSystemUser())
-									.workflowActionId(action.getId())
-									.workflowActionComments(wfActionComments)
-									.workflowAssignKey(wfActionAssign).build());
-				}
-			} catch(Exception e) {
+            contentlet =
+                APILocator.getContentletAPI()
+                    .findContentletByIdentifier(
+                        id.getId(), false, language.getId(), getUser(), false);
+            if (contentlet != null && UtilMethods.isSet(contentlet.getInode())) {
+              break;
+            }
+          }
+        }
 
-				writeError(response, "cannot find execute task " + e.getMessage());
-				Logger.warn(this.getClass(), "cannot find task " + token + " :" + e.getMessage(), e);
-			}
-		}
-	} // executeActions.
+        if (null != contentlet) {
+          APILocator.getWorkflowAPI()
+              .fireContentWorkflow(
+                  contentlet,
+                  new ContentletDependencies.Builder()
+                      .respectAnonymousPermissions(false)
+                      .modUser(APILocator.getUserAPI().getSystemUser())
+                      .workflowActionId(action.getId())
+                      .workflowActionComments(wfActionComments)
+                      .workflowAssignKey(wfActionAssign)
+                      .build());
+        }
+      } catch (Exception e) {
 
-	
-	
+        writeError(response, "cannot find execute task " + e.getMessage());
+        Logger.warn(this.getClass(), "cannot find task " + token + " :" + e.getMessage(), e);
+      }
+    }
+  } // executeActions.
 }

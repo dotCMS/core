@@ -6,128 +6,123 @@ import java.io.File;
 import java.util.UUID;
 
 /**
- * Generic class to get return configuration parameters, and any logic required
- * for those paramenters. This is different from the Config class, which only
- * reads from the config file.
+ * Generic class to get return configuration parameters, and any logic required for those
+ * paramenters. This is different from the Config class, which only reads from the config file.
  *
  * @author andres
- *
  */
 public class ConfigUtils {
 
+  /*
+   * This property determine if the app is running on dev mode.
+   */
+  public static final String DEV_MODE_KEY = "dotcms.dev.mode";
 
-    /*
-     * This property determine if the app is running on dev mode.
-     */
-    public static final String DEV_MODE_KEY = "dotcms.dev.mode";
+  /**
+   * Returns true if app is running on dev mode.
+   *
+   * @return boolean
+   */
+  public static boolean isDevMode() {
 
-	/**
-	 * Returns true if app is running on dev mode.
-	 * @return boolean
-     */
-	public static boolean isDevMode () {
+    // by default if the vars does not exists, we assume is not
+    // running on dev mode, so it is false.
+    return Config.getBooleanProperty(DEV_MODE_KEY, false);
+  }
 
-        // by default if the vars does not exists, we assume is not
-        // running on dev mode, so it is false.
-        return Config.getBooleanProperty(DEV_MODE_KEY, false);
-	}
+  public static String getDynamicContentPath() {
+    String realPath = Config.getStringProperty("DYNAMIC_CONTENT_PATH");
+    if (!UtilMethods.isSet(realPath)) {
+      realPath = com.liferay.util.FileUtil.getRealPath("/dotsecure");
+    }
+    return (realPath.endsWith(File.separator))
+        ? realPath.substring(0, realPath.length() - 1)
+        : realPath;
+  }
 
-	public static String getDynamicContentPath() {
-		String realPath = Config.getStringProperty("DYNAMIC_CONTENT_PATH");
-		if (!UtilMethods.isSet(realPath)) {
-			realPath = com.liferay.util.FileUtil.getRealPath("/dotsecure");
-		}
-		return (realPath.endsWith(File.separator)) ?
-		                realPath.substring(0, realPath.length()-1)
-		                :realPath;
+  public static String getDynamicVelocityPath() {
+    return getDynamicContentPath() + File.separator + "velocity" + File.separator + "dynamic";
+  }
 
-	}
+  public static String getGraphqlPath() {
+    return getDynamicContentPath() + File.separator + "graphql";
+  }
 
-	public static String getDynamicVelocityPath() {
-		return getDynamicContentPath() + File.separator + "velocity"
-				+ File.separator + "dynamic";
-	}
+  public static String getACheckerPath() {
+    return com.liferay.util.FileUtil.getRealPath("/WEB-INF/achecker_sql");
+  }
 
-	public static String getGraphqlPath() {
-		return getDynamicContentPath() + File.separator + "graphql";
-	}
+  public static String getLucenePath() {
+    return getDynamicContentPath() + File.separator + "dotlucene";
+  }
 
-	public static String getACheckerPath() {
-		return com.liferay.util.FileUtil.getRealPath("/WEB-INF/achecker_sql");
-	}
+  public static String getBackupPath() {
+    return getDynamicContentPath() + File.separator + "backup";
+  }
 
-	public static String getLucenePath() {
-		return getDynamicContentPath() + File.separator + "dotlucene";
-	}
+  public static String getBundlePath() {
+    String path = APILocator.getFileAssetAPI().getRealAssetsRootPath() + File.separator + "bundles";
+    File pathDir = new File(path);
+    if (!pathDir.exists()) pathDir.mkdirs();
+    return path;
+  }
 
-	public static String getBackupPath() {
-		return getDynamicContentPath() + File.separator + "backup";
-	}
+  public static String getIntegrityPath() {
+    String path =
+        APILocator.getFileAssetAPI().getRealAssetsRootPath() + File.separator + "integrity";
+    File pathDir = new File(path);
+    if (!pathDir.exists()) pathDir.mkdirs();
+    return path;
+  }
 
-	public static String getBundlePath() {
-		String path=APILocator.getFileAssetAPI().getRealAssetsRootPath() + File.separator + "bundles";
-		File pathDir=new File(path);
-		if(!pathDir.exists())
-		    pathDir.mkdirs();
-		return path;
-	}
+  public static String getTimeMachinePath() {
 
-	public static String getIntegrityPath() {
-		String path=APILocator.getFileAssetAPI().getRealAssetsRootPath() + File.separator + "integrity";
-		File pathDir=new File(path);
-		if(!pathDir.exists())
-		    pathDir.mkdirs();
-		return path;
-	}
+    String path = Config.getStringProperty("TIMEMACHINE_PATH", null);
 
-	public static String getTimeMachinePath(){
+    if (path == null || (path != null && path.equals("null"))) {
+      path = APILocator.getFileAssetAPI().getRealAssetsRootPath() + File.separator + "timemachine";
+      File pathDir = new File(path);
+      if (!pathDir.exists()) pathDir.mkdirs();
+    }
 
-		String path = Config.getStringProperty("TIMEMACHINE_PATH", null);
+    return path;
+  }
 
-		if(path == null || (path != null && path.equals("null")) ){
-			path=APILocator.getFileAssetAPI().getRealAssetsRootPath() + File.separator + "timemachine";
-			File pathDir=new File(path);
-			if(!pathDir.exists())
-			    pathDir.mkdirs();
-		}
+  /**
+   * Builds the path using STATIC_PUBLISHING_ROOT_PATH values or default /assets/static_publishing,
+   * created the fodler if it doesn't exist.
+   *
+   * @return {@link} String with the path of Static Publish folder where bundles are going to be
+   *     stored.
+   */
+  public static String getStaticPublishPath() {
 
-		return path;
-	}
+    final String path =
+        Config.getStringProperty(
+            "STATIC_PUBLISHING_ROOT_PATH",
+            APILocator.getFileAssetAPI().getRealAssetsRootPath()
+                + File.separator
+                + "static_publishing");
 
-    /**
-     * Builds the path using STATIC_PUBLISHING_ROOT_PATH values or default
-     * /assets/static_publishing, created the fodler if it doesn't exist.
-     *
-     * @return {@link} String with the path of Static Publish folder where bundles are going to be
-     * stored.
-     */
-    public static String getStaticPublishPath() {
+    final File folder = FileUtil.mkDirsIfNeeded(path);
 
-        final String path = Config.getStringProperty("STATIC_PUBLISHING_ROOT_PATH",
-                APILocator.getFileAssetAPI().getRealAssetsRootPath() + File.separator
-                        + "static_publishing");
+    return folder.getPath();
+  } // getStaticPublishPath.
 
-        final File folder = FileUtil.mkDirsIfNeeded(path);
+  public static String getServerId() {
+    String serverId;
+    if (Config.getStringProperty("DIST_INDEXATION_SERVER_ID") == null
+        || Config.getStringProperty("DIST_INDEXATION_SERVER_ID").equalsIgnoreCase("")) {
+      serverId = APILocator.getServerAPI().readServerId();
 
-        return folder.getPath();
-    } //getStaticPublishPath.
+      if (!UtilMethods.isSet(serverId)) {
+        serverId = UUID.randomUUID().toString();
+      }
 
-	public static String getServerId(){
-		String serverId;
-		if (Config.getStringProperty("DIST_INDEXATION_SERVER_ID")==null || Config.getStringProperty("DIST_INDEXATION_SERVER_ID").equalsIgnoreCase("")) {
-			serverId = APILocator.getServerAPI().readServerId();
-
-			if(!UtilMethods.isSet(serverId)) {
-				serverId = UUID.randomUUID().toString();
-
-			}
-
-			Config.setProperty("DIST_INDEXATION_SERVER_ID", serverId);
-		} else {
-			serverId= Config.getStringProperty("DIST_INDEXATION_SERVER_ID");
-		}
-		return serverId;
-	}
-
-
+      Config.setProperty("DIST_INDEXATION_SERVER_ID", serverId);
+    } else {
+      serverId = Config.getStringProperty("DIST_INDEXATION_SERVER_ID");
+    }
+    return serverId;
+  }
 }

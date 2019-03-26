@@ -1,5 +1,3 @@
 package com.dotmarketing.sitesearch.business;
 
-class PgAuditSQL extends SiteSearchAuditSQL {
-    
-}
+class PgAuditSQL extends SiteSearchAuditSQL {}

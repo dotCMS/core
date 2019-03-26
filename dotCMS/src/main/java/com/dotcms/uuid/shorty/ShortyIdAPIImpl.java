@@ -1,5 +1,7 @@
 package com.dotcms.uuid.shorty;
 
+import static com.dotcms.util.CollectionsUtils.map;
+
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
@@ -8,12 +10,9 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UUIDUtil;
-
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-
-import static com.dotcms.util.CollectionsUtils.map;
 
 public class ShortyIdAPIImpl implements ShortyIdAPI {
 
@@ -22,21 +21,36 @@ public class ShortyIdAPIImpl implements ShortyIdAPI {
   }
 
   private final Map<ShortyInputType, DBEqualsStrategy> dbEqualsStrategyMap =
-          map(
-                  ShortyInputType.CONTENT,         (final DotConnect db, final String shorty) ->  db.setSQL(ShortyIdSql.SELECT_SHORTY_SQL_EQUALS).addParam(shorty).addParam(shorty),
-                  ShortyInputType.WORKFLOW_SCHEME, (final DotConnect db, final String shorty) ->  db.setSQL(ShortyIdSql.SELECT_WF_SCHEME_SHORTY_SQL_EQUALS).addParam(shorty),
-                  ShortyInputType.WORKFLOW_STEP,   (final DotConnect db, final String shorty) ->  db.setSQL(ShortyIdSql.SELECT_WF_STEP_SHORTY_SQL_EQUALS).addParam(shorty),
-                  ShortyInputType.WORKFLOW_ACTION, (final DotConnect db, final String shorty) ->  db.setSQL(ShortyIdSql.SELECT_WF_ACTION_SHORTY_SQL_EQUALS).addParam(shorty)
-             );
+      map(
+          ShortyInputType.CONTENT,
+          (final DotConnect db, final String shorty) ->
+              db.setSQL(ShortyIdSql.SELECT_SHORTY_SQL_EQUALS).addParam(shorty).addParam(shorty),
+          ShortyInputType.WORKFLOW_SCHEME,
+          (final DotConnect db, final String shorty) ->
+              db.setSQL(ShortyIdSql.SELECT_WF_SCHEME_SHORTY_SQL_EQUALS).addParam(shorty),
+          ShortyInputType.WORKFLOW_STEP,
+          (final DotConnect db, final String shorty) ->
+              db.setSQL(ShortyIdSql.SELECT_WF_STEP_SHORTY_SQL_EQUALS).addParam(shorty),
+          ShortyInputType.WORKFLOW_ACTION,
+          (final DotConnect db, final String shorty) ->
+              db.setSQL(ShortyIdSql.SELECT_WF_ACTION_SHORTY_SQL_EQUALS).addParam(shorty));
 
   private final Map<ShortyInputType, DBLikeStrategy> dbLikeStrategyMap =
-          map(
-                  ShortyInputType.CONTENT,         (final DotConnect db, final String uuidIfy) -> db.setSQL(ShortyIdSql.SELECT_SHORTY_SQL_LIKE).addParam(uuidIfy + "%").addParam(uuidIfy + "%"),
-                  ShortyInputType.WORKFLOW_SCHEME, (final DotConnect db, final String uuidIfy) -> db.setSQL(ShortyIdSql.SELECT_WF_SCHEME_SHORTY_SQL_LIKE).addParam(uuidIfy + "%"),
-                  ShortyInputType.WORKFLOW_STEP,   (final DotConnect db, final String uuidIfy) -> db.setSQL(ShortyIdSql.SELECT_WF_STEP_SHORTY_SQL_LIKE).addParam(uuidIfy + "%"),
-                  ShortyInputType.WORKFLOW_ACTION, (final DotConnect db, final String uuidIfy) -> db.setSQL(ShortyIdSql.SELECT_WF_ACTION_SHORTY_SQL_LIKE).addParam(uuidIfy + "%")
-          );
-
+      map(
+          ShortyInputType.CONTENT,
+          (final DotConnect db, final String uuidIfy) ->
+              db.setSQL(ShortyIdSql.SELECT_SHORTY_SQL_LIKE)
+                  .addParam(uuidIfy + "%")
+                  .addParam(uuidIfy + "%"),
+          ShortyInputType.WORKFLOW_SCHEME,
+          (final DotConnect db, final String uuidIfy) ->
+              db.setSQL(ShortyIdSql.SELECT_WF_SCHEME_SHORTY_SQL_LIKE).addParam(uuidIfy + "%"),
+          ShortyInputType.WORKFLOW_STEP,
+          (final DotConnect db, final String uuidIfy) ->
+              db.setSQL(ShortyIdSql.SELECT_WF_STEP_SHORTY_SQL_LIKE).addParam(uuidIfy + "%"),
+          ShortyInputType.WORKFLOW_ACTION,
+          (final DotConnect db, final String uuidIfy) ->
+              db.setSQL(ShortyIdSql.SELECT_WF_ACTION_SHORTY_SQL_LIKE).addParam(uuidIfy + "%"));
 
   long dbHits = 0;
   public static final int MINIMUM_SHORTY_ID_LENGTH =
@@ -71,19 +85,17 @@ public class ShortyIdAPIImpl implements ShortyIdAPI {
     }
   }
 
-
-
   @Override
   public ShortyId noShorty(String shorty) {
-    return new ShortyId(shorty, ShortType.CACHE_MISS.toString(), ShortType.CACHE_MISS,
-        ShortType.CACHE_MISS);
+    return new ShortyId(
+        shorty, ShortType.CACHE_MISS.toString(), ShortType.CACHE_MISS, ShortType.CACHE_MISS);
   }
-  
+
   @Override
   public String randomShorty() {
-      return shortify(UUIDGenerator.generateUuid());
+    return shortify(UUIDGenerator.generateUuid());
   }
-  
+
   @Override
   public String shortify(final String shortStr) {
     try {
@@ -96,19 +108,19 @@ public class ShortyIdAPIImpl implements ShortyIdAPI {
 
   /*
    * ShortyId viaIndex(final String shorty) {
-   * 
-   * 
+   *
+   *
    * ContentletAPI capi = APILocator.getContentletAPI(); ContentletSearch con = null; ShortyId
    * shortyId = new ShortyId(shorty, "CACHE_MISS", ShortType.CACHE_MISS);
-   * 
+   *
    * // if we have a shorty, use the index
-   * 
+   *
    * StringBuilder query = new StringBuilder("+(identifier:").append(shorty).append("* inode:")
    * .append(shorty).append("*) ");
-   * 
-   * 
+   *
+   *
    * query.append("+working:true ");
-   * 
+   *
    * List<ContentletSearch> cons; try { cons = capi.searchIndex(query.toString(), 1, 0, "score",
    * APILocator.getUserAPI().getSystemUser(), false); if (cons.size() > 0) { con = cons.get(0);
    * ShortType type = (con.getIdentifier().startsWith(shorty)) ? ShortType.IDENTIFIER :
@@ -116,7 +128,7 @@ public class ShortyIdAPIImpl implements ShortyIdAPI {
    * con.getIdentifier() : con.getInode(); shortyId = new ShortyId(shorty, id, type); } } catch
    * (Exception e) { // we should not add to the cache if something went wrong throw new
    * ShortyException("somthing went wrong in the index", e); }
-   * 
+   *
    * return shortyId; }
    */
 
@@ -131,7 +143,7 @@ public class ShortyIdAPIImpl implements ShortyIdAPI {
   @FunctionalInterface
   interface DBEqualsStrategy {
     // applies the equals strategy
-    void apply (final DotConnect dotConnect, final String shorty);
+    void apply(final DotConnect dotConnect, final String shorty);
   }
 
   @CloseDBIfOpened
@@ -150,7 +162,7 @@ public class ShortyIdAPIImpl implements ShortyIdAPI {
   @FunctionalInterface
   interface DBLikeStrategy {
     // applies the equals strategy
-    void apply (final DotConnect dotConnect, final String uuidIfy);
+    void apply(final DotConnect dotConnect, final String uuidIfy);
   }
 
   @CloseDBIfOpened
@@ -165,14 +177,8 @@ public class ShortyIdAPIImpl implements ShortyIdAPI {
       Logger.warn(this.getClass(), "db exception:" + e.getMessage());
       return noShorty(shorty);
     }
-
   }
 
-  
-  
-  
-  
-  
   private ShortyId transformMap(final String shorty, final List<Map<String, Object>> results) {
     if (results == null || results.size() < 1) {
       return noShorty(shorty);
@@ -184,7 +190,6 @@ public class ShortyIdAPIImpl implements ShortyIdAPI {
       String subType = (String) results.get(0).get("subtype");
       return new ShortyId(shorty, id, ShortType.fromString(type), ShortType.fromString(subType));
     }
-
   }
 
   public String shortUri(Contentlet c) {
@@ -199,16 +204,25 @@ public class ShortyIdAPIImpl implements ShortyIdAPI {
 
   public void validShorty(final String test) {
     if (test == null || test.length() < MINIMUM_SHORTY_ID_LENGTH || test.length() > 36) {
-      throw new ShortyException("shorty " + test + " is not a short id.  Short Ids should be "
-          + MINIMUM_SHORTY_ID_LENGTH + " chars in length");
+      throw new ShortyException(
+          "shorty "
+              + test
+              + " is not a short id.  Short Ids should be "
+              + MINIMUM_SHORTY_ID_LENGTH
+              + " chars in length");
     }
 
     for (char c : test.toCharArray()) {
-      if (!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9')
+      if (!((c >= 'a' && c <= 'z')
+          || (c >= 'A' && c <= 'Z')
+          || (c >= '0' && c <= '9')
           || c == '-')) {
         throw new ShortyException(
-            "shorty " + test + " is not an alpha numeric id.  Short Ids should be "
-                + MINIMUM_SHORTY_ID_LENGTH + " alpha/numeric chars in length");
+            "shorty "
+                + test
+                + " is not an alpha numeric id.  Short Ids should be "
+                + MINIMUM_SHORTY_ID_LENGTH
+                + " alpha/numeric chars in length");
       }
     }
   }

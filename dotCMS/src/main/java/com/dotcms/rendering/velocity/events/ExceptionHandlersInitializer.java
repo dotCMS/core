@@ -5,9 +5,10 @@ import org.apache.velocity.exception.ParseErrorException;
 
 public class ExceptionHandlersInitializer implements DotInitializer {
 
-    @Override
-    public void init() {
+  @Override
+  public void init() {
 
-        DotVelocityExceptionHandlerFactory.register(ParseErrorException.class, new ExceptionHandlerParseErrorException());
-    }
+    DotVelocityExceptionHandlerFactory.register(
+        ParseErrorException.class, new ExceptionHandlerParseErrorException());
+  }
 }

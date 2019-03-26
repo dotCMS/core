@@ -9,9 +9,9 @@ import com.dotmarketing.exception.DotSecurityException;
 @VisibleForTesting
 public class ReadOnlyTester {
 
-    @VisibleForTesting
-    @CloseDBIfOpened
-    public void test (final VoidDelegate voidDelegate) throws DotDataException, DotSecurityException {
-        voidDelegate.execute();
-    }
+  @VisibleForTesting
+  @CloseDBIfOpened
+  public void test(final VoidDelegate voidDelegate) throws DotDataException, DotSecurityException {
+    voidDelegate.execute();
+  }
 }

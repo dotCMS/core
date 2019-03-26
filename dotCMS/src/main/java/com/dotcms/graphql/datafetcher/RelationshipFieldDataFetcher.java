@@ -13,63 +13,66 @@ import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-
+import graphql.schema.DataFetcher;
+import graphql.schema.DataFetchingEnvironment;
 import java.util.Collections;
 import java.util.List;
 
-import graphql.schema.DataFetcher;
-import graphql.schema.DataFetchingEnvironment;
-
 public class RelationshipFieldDataFetcher implements DataFetcher<Object> {
-    @Override
-    public Object get(final DataFetchingEnvironment environment) throws Exception {
-        try {
-            final Contentlet nonCachedContentlet = environment.getSource();
+  @Override
+  public Object get(final DataFetchingEnvironment environment) throws Exception {
+    try {
+      final Contentlet nonCachedContentlet = environment.getSource();
 
-            // let's use the cache content so relationships are also cached
-            final Contentlet contentlet = APILocator.getContentletAPI()
-                .findContentletByIdentifier(nonCachedContentlet.getIdentifier(), nonCachedContentlet.isLive(),
-                nonCachedContentlet.getLanguageId(), APILocator.systemUser(), true);
+      // let's use the cache content so relationships are also cached
+      final Contentlet contentlet =
+          APILocator.getContentletAPI()
+              .findContentletByIdentifier(
+                  nonCachedContentlet.getIdentifier(),
+                  nonCachedContentlet.isLive(),
+                  nonCachedContentlet.getLanguageId(),
+                  APILocator.systemUser(),
+                  true);
 
-            final String fieldVar = environment.getField().getName();
+      final String fieldVar = environment.getField().getName();
 
-            final Field
-                field =
-                APILocator.getContentTypeFieldAPI().byContentTypeIdAndVar(contentlet.getContentTypeId(), fieldVar);
+      final Field field =
+          APILocator.getContentTypeFieldAPI()
+              .byContentTypeIdAndVar(contentlet.getContentTypeId(), fieldVar);
 
-            Relationship relationship;
-            User user;
+      Relationship relationship;
+      User user;
 
-            try {
-                user = ((DotGraphQLContext) environment.getContext()).getUser();
-                relationship = APILocator.getRelationshipAPI().getRelationshipFromField(field,
-                    user);
-            } catch (DotDataException | DotSecurityException e) {
-                throw new DotRuntimeException(e);
-            }
+      try {
+        user = ((DotGraphQLContext) environment.getContext()).getUser();
+        relationship = APILocator.getRelationshipAPI().getRelationshipFromField(field, user);
+      } catch (DotDataException | DotSecurityException e) {
+        throw new DotRuntimeException(e);
+      }
 
-            final ContentletRelationships contentletRelationships = new ContentletRelationships(null);
-            final ContentletRelationships.ContentletRelationshipRecords
-                records = contentletRelationships.new ContentletRelationshipRecords(
-                relationship,
-                APILocator.getRelationshipAPI().isParent(relationship, contentlet.getContentType()));
+      final ContentletRelationships contentletRelationships = new ContentletRelationships(null);
+      final ContentletRelationships.ContentletRelationshipRecords records =
+          contentletRelationships
+          .new ContentletRelationshipRecords(
+              relationship,
+              APILocator.getRelationshipAPI().isParent(relationship, contentlet.getContentType()));
 
-            Object objectToReturn = records.doesAllowOnlyOne() ? null : Collections.emptyList();
+      Object objectToReturn = records.doesAllowOnlyOne() ? null : Collections.emptyList();
 
-            if (UtilMethods.isSet(contentlet.getRelated(fieldVar, user))) {
+      if (UtilMethods.isSet(contentlet.getRelated(fieldVar, user))) {
 
-                final List<Contentlet> relatedContent = contentlet.getRelated(fieldVar, user);
+        final List<Contentlet> relatedContent = contentlet.getRelated(fieldVar, user);
 
-                objectToReturn = records.doesAllowOnlyOne()
-                    ? new ContentletToMapTransformer(relatedContent).hydrate().get(0)
-                    : new ContentletToMapTransformer(relatedContent).hydrate();
-            }
+        objectToReturn =
+            records.doesAllowOnlyOne()
+                ? new ContentletToMapTransformer(relatedContent).hydrate().get(0)
+                : new ContentletToMapTransformer(relatedContent).hydrate();
+      }
 
-            return objectToReturn;
-        } catch (Exception e) {
-            Logger.error(this, e.getMessage(), e);
-            throw e;
-        }
-
+      return objectToReturn;
+    } catch (Exception e) {
+      Logger.error(this, e.getMessage(), e);
+      throw e;
     }
+  }
 }

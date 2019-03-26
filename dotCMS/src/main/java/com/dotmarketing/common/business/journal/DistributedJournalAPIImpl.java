@@ -1,6 +1,4 @@
-/**
- * 
- */
+/** */
 package com.dotmarketing.common.business.journal;
 
 import com.dotcms.business.CloseDBIfOpened;
@@ -12,7 +10,6 @@ import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
-
 import java.sql.Connection;
 import java.util.List;
 import java.util.Set;
@@ -20,176 +17,179 @@ import java.util.Set;
 /**
  * @author Jason Tesser
  * @since 1.6.5c
- *
  */
 public class DistributedJournalAPIImpl<T> implements DistributedJournalAPI<T> {
 
-	private final DistributedJournalFactory<T> distributedJournalFactory;
-	
-	public DistributedJournalAPIImpl() {
-		this.distributedJournalFactory = (DistributedJournalFactory<T>)FactoryLocator.getDistributedJournalFactory();
-	}
-	
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.business.DistributedJournalAPI#addCacheEntry(java.lang.String)
-	 */
-	@WrapInTransaction
-	public void addCacheEntry(String key, String group) throws DotDataException {
-		distributedJournalFactory.addCacheEntry(key, group);
-	}
+  private final DistributedJournalFactory<T> distributedJournalFactory;
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.business.DistributedJournalAPI#findCacheEntriesToRemove()
-	 */
-	@WrapInTransaction
-	public List<String> findCacheEntriesToRemove() throws DotDataException {
-		return distributedJournalFactory.findCacheEntriesToRemove();
-	}
+  public DistributedJournalAPIImpl() {
+    this.distributedJournalFactory =
+        (DistributedJournalFactory<T>) FactoryLocator.getDistributedJournalFactory();
+  }
 
-	@WrapInTransaction
-	public void addStructureReindexEntries(T structureInode) throws DotDataException {
-		distributedJournalFactory.addStructureReindexEntries(structureInode);
-	}
+  /* (non-Javadoc)
+   * @see com.dotmarketing.business.DistributedJournalAPI#addCacheEntry(java.lang.String)
+   */
+  @WrapInTransaction
+  public void addCacheEntry(String key, String group) throws DotDataException {
+    distributedJournalFactory.addCacheEntry(key, group);
+  }
 
-	@WrapInTransaction
-	public synchronized void addBuildNewIndexEntries() throws DotDataException {
-		distributedJournalFactory.addBuildNewIndexEntries();
-	}
+  /* (non-Javadoc)
+   * @see com.dotmarketing.business.DistributedJournalAPI#findCacheEntriesToRemove()
+   */
+  @WrapInTransaction
+  public List<String> findCacheEntriesToRemove() throws DotDataException {
+    return distributedJournalFactory.findCacheEntriesToRemove();
+  }
 
-	@CloseDBIfOpened
-	public List<IndexJournal<T>> findContentReindexEntriesToReindex() throws DotDataException {
-		return distributedJournalFactory.findContentReindexEntriesToReindex();
-	}
+  @WrapInTransaction
+  public void addStructureReindexEntries(T structureInode) throws DotDataException {
+    distributedJournalFactory.addStructureReindexEntries(structureInode);
+  }
 
-	@CloseDBIfOpened
-	public List<IndexJournal<T>> findContentReindexEntriesToReindex(boolean includeFailedRecords) throws DotDataException {
-		return distributedJournalFactory.findContentReindexEntriesToReindex(includeFailedRecords);
-	}
+  @WrapInTransaction
+  public synchronized void addBuildNewIndexEntries() throws DotDataException {
+    distributedJournalFactory.addBuildNewIndexEntries();
+  }
 
-	@CloseDBIfOpened
-	public void processJournalEntries() throws DotDataException {
-		distributedJournalFactory.processJournalEntries();
-	}
+  @CloseDBIfOpened
+  public List<IndexJournal<T>> findContentReindexEntriesToReindex() throws DotDataException {
+    return distributedJournalFactory.findContentReindexEntriesToReindex();
+  }
 
-	@WrapInTransaction
-	public void deleteReindexEntryForServer(IndexJournal<T> iJournal) throws DotDataException {
-		distributedJournalFactory.deleteReindexEntryForServer(iJournal);
-	}
+  @CloseDBIfOpened
+  public List<IndexJournal<T>> findContentReindexEntriesToReindex(boolean includeFailedRecords)
+      throws DotDataException {
+    return distributedJournalFactory.findContentReindexEntriesToReindex(includeFailedRecords);
+  }
 
-	@CloseDBIfOpened
-	public boolean areRecordsLeftToIndex() throws DotDataException {
-		return distributedJournalFactory.areRecordsLeftToIndex();
-	}
+  @CloseDBIfOpened
+  public void processJournalEntries() throws DotDataException {
+    distributedJournalFactory.processJournalEntries();
+  }
 
-	@Override
-	public boolean isIndexationEnabled() {
-		return false; // todo: should it exists
-	}
+  @WrapInTransaction
+  public void deleteReindexEntryForServer(IndexJournal<T> iJournal) throws DotDataException {
+    distributedJournalFactory.deleteReindexEntryForServer(iJournal);
+  }
 
-	@CloseDBIfOpened
-	public long recordsLeftToIndexForServer() throws DotDataException {
-	    return recordsLeftToIndexForServer(DbConnectionFactory.getConnection());
-	}
-	
-	public long recordsLeftToIndexForServer(Connection conn) throws DotDataException {
-		return distributedJournalFactory.recordsLeftToIndexForServer(conn);
-	}
+  @CloseDBIfOpened
+  public boolean areRecordsLeftToIndex() throws DotDataException {
+    return distributedJournalFactory.areRecordsLeftToIndex();
+  }
 
-	@WrapInTransaction
-	public void deleteLikeJournalRecords(IndexJournal<T> ijournal) throws DotDataException {
-		distributedJournalFactory.deleteLikeJournalRecords(ijournal);
-	}
+  @Override
+  public boolean isIndexationEnabled() {
+    return false; // todo: should it exists
+  }
 
-	@Override
-	public void setIndexationEnabled(boolean indexationEnabled) {
-		// todo: should it exists
-	}
+  @CloseDBIfOpened
+  public long recordsLeftToIndexForServer() throws DotDataException {
+    return recordsLeftToIndexForServer(DbConnectionFactory.getConnection());
+  }
 
-	public String getServerId(){
-		return distributedJournalFactory.getServerId();
-	}
+  public long recordsLeftToIndexForServer(Connection conn) throws DotDataException {
+    return distributedJournalFactory.recordsLeftToIndexForServer(conn);
+  }
 
-	@WrapInTransaction
-	public void distReindexJournalCleanup(int time, boolean add, boolean includeInodeCheck, DateType type) throws DotDataException {
-		distributedJournalFactory.distReindexJournalCleanup(time, add, includeInodeCheck, type);
-		
-	}
+  @WrapInTransaction
+  public void deleteLikeJournalRecords(IndexJournal<T> ijournal) throws DotDataException {
+    distributedJournalFactory.deleteLikeJournalRecords(ijournal);
+  }
 
-	@WrapInTransaction
-	public void cleanDistReindexJournal() throws DotDataException {
-		distributedJournalFactory.cleanDistReindexJournal();
-	}
+  @Override
+  public void setIndexationEnabled(boolean indexationEnabled) {
+    // todo: should it exists
+  }
 
-	@CloseDBIfOpened
-	public List<IndexJournal> viewReindexJournalData() throws DotDataException {
-		return distributedJournalFactory.viewReindexJournalData();
-	}
+  public String getServerId() {
+    return distributedJournalFactory.getServerId();
+  }
 
-	@WrapInTransaction
-	public void refreshContentUnderHost(Host host) throws DotDataException {
-		distributedJournalFactory.refreshContentUnderHost(host);
-	}	
+  @WrapInTransaction
+  public void distReindexJournalCleanup(
+      int time, boolean add, boolean includeInodeCheck, DateType type) throws DotDataException {
+    distributedJournalFactory.distReindexJournalCleanup(time, add, includeInodeCheck, type);
+  }
 
-	@WrapInTransaction
-	public void refreshContentUnderFolder(Folder folder) throws DotDataException {
-		distributedJournalFactory.refreshContentUnderFolder(folder);
-	}
+  @WrapInTransaction
+  public void cleanDistReindexJournal() throws DotDataException {
+    distributedJournalFactory.cleanDistReindexJournal();
+  }
 
-	@WrapInTransaction
-	public void refreshContentUnderFolderPath ( String hostId, String folderPath ) throws DotDataException {
-		distributedJournalFactory.refreshContentUnderFolderPath(hostId, folderPath);
-	}
+  @CloseDBIfOpened
+  public List<IndexJournal> viewReindexJournalData() throws DotDataException {
+    return distributedJournalFactory.viewReindexJournalData();
+  }
 
-	@WrapInTransaction
-	@Override
-	public void addIdentifierReindex(final String id) throws DotDataException {
+  @WrapInTransaction
+  public void refreshContentUnderHost(Host host) throws DotDataException {
+    distributedJournalFactory.refreshContentUnderHost(host);
+  }
 
-		this.distributedJournalFactory.addIdentifierReindex(id);
-	}
+  @WrapInTransaction
+  public void refreshContentUnderFolder(Folder folder) throws DotDataException {
+    distributedJournalFactory.refreshContentUnderFolder(folder);
+  }
 
-	@WrapInTransaction
-	@Override
-	public void addReindexHighPriority(final String identifier) throws DotDataException {
+  @WrapInTransaction
+  public void refreshContentUnderFolderPath(String hostId, String folderPath)
+      throws DotDataException {
+    distributedJournalFactory.refreshContentUnderFolderPath(hostId, folderPath);
+  }
 
-		this.distributedJournalFactory.addReindexHighPriority(identifier);
-	}
+  @WrapInTransaction
+  @Override
+  public void addIdentifierReindex(final String id) throws DotDataException {
 
-	@WrapInTransaction
-	@Override
-	public int addIdentifierReindex(final Set<String> ids) throws DotDataException {
+    this.distributedJournalFactory.addIdentifierReindex(id);
+  }
 
-		return this.distributedJournalFactory.addIdentifierReindex(ids);
-	}
+  @WrapInTransaction
+  @Override
+  public void addReindexHighPriority(final String identifier) throws DotDataException {
 
-	@WrapInTransaction
-	@Override
-	public int addReindexHighPriority(final Set<String> ids) throws DotDataException {
+    this.distributedJournalFactory.addReindexHighPriority(identifier);
+  }
 
-		return this.distributedJournalFactory.addReindexHighPriority(ids);
-	}
+  @WrapInTransaction
+  @Override
+  public int addIdentifierReindex(final Set<String> ids) throws DotDataException {
 
-	@WrapInTransaction
-	@Override
-	public void addContentletReindex(final Contentlet contentlet) throws DotDataException {
+    return this.distributedJournalFactory.addIdentifierReindex(ids);
+  }
 
-		this.distributedJournalFactory.addIdentifierReindex(contentlet.getIdentifier());
-	}
+  @WrapInTransaction
+  @Override
+  public int addReindexHighPriority(final Set<String> ids) throws DotDataException {
 
-	@WrapInTransaction
-	@Override
-	public void addIdentifierReindex(final Identifier identifier) throws DotDataException {
+    return this.distributedJournalFactory.addReindexHighPriority(ids);
+  }
 
-		this.distributedJournalFactory.addIdentifierReindex(identifier.getId());
-	}
+  @WrapInTransaction
+  @Override
+  public void addContentletReindex(final Contentlet contentlet) throws DotDataException {
 
-	@WrapInTransaction
-    public void deleteReindexEntryForServer(List<IndexJournal<T>> recordsToDelete) throws DotDataException {
-        distributedJournalFactory.deleteReindexEntryForServer(recordsToDelete);
-    }
+    this.distributedJournalFactory.addIdentifierReindex(contentlet.getIdentifier());
+  }
 
-	@WrapInTransaction
-	public void resetServerForReindexEntry ( List<IndexJournal<T>> recordsToModify ) throws DotDataException {
-		distributedJournalFactory.resetServerForReindexEntry(recordsToModify);
-	}
+  @WrapInTransaction
+  @Override
+  public void addIdentifierReindex(final Identifier identifier) throws DotDataException {
 
+    this.distributedJournalFactory.addIdentifierReindex(identifier.getId());
+  }
+
+  @WrapInTransaction
+  public void deleteReindexEntryForServer(List<IndexJournal<T>> recordsToDelete)
+      throws DotDataException {
+    distributedJournalFactory.deleteReindexEntryForServer(recordsToDelete);
+  }
+
+  @WrapInTransaction
+  public void resetServerForReindexEntry(List<IndexJournal<T>> recordsToModify)
+      throws DotDataException {
+    distributedJournalFactory.resetServerForReindexEntry(recordsToModify);
+  }
 }

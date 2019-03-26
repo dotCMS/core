@@ -2,20 +2,19 @@ package com.dotmarketing.portlets.structure.model;
 
 public class SimpleStructureURLMap {
 
-	private final String inode;
-	private final String URLMapPattern;
-	
-	public SimpleStructureURLMap(String inode,String URLMapPattern) {
-		this.inode = inode;
-		this.URLMapPattern = URLMapPattern;
-	}
-	
+  private final String inode;
+  private final String URLMapPattern;
 
-	public String getInode() {
-		return inode;
-	}
+  public SimpleStructureURLMap(String inode, String URLMapPattern) {
+    this.inode = inode;
+    this.URLMapPattern = URLMapPattern;
+  }
 
-	public String getURLMapPattern() {
-		return URLMapPattern;
-	}
+  public String getInode() {
+    return inode;
+  }
+
+  public String getURLMapPattern() {
+    return URLMapPattern;
+  }
 }

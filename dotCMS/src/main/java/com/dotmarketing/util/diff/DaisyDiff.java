@@ -33,62 +33,59 @@ import org.xml.sax.helpers.XMLReaderFactory;
 
 public class DaisyDiff {
 
-    /**
-     * Diffs two html files, outputting the result to the specified consumer.
-     */
-    public static void diffHTML(InputSource oldSource, InputSource newSource,
-            ContentHandler consumer, String prefix, Locale locale)
-            throws SAXException, IOException {
+  /** Diffs two html files, outputting the result to the specified consumer. */
+  public static void diffHTML(
+      InputSource oldSource,
+      InputSource newSource,
+      ContentHandler consumer,
+      String prefix,
+      Locale locale)
+      throws SAXException, IOException {
 
-        DomTreeBuilder oldHandler = new DomTreeBuilder();
-        XMLReader xr1 = XMLReaderFactory.createXMLReader();
-        xr1.setContentHandler(oldHandler);
-        xr1.parse(oldSource);
-        TextNodeComparator leftComparator = new TextNodeComparator(oldHandler,
-                locale);
+    DomTreeBuilder oldHandler = new DomTreeBuilder();
+    XMLReader xr1 = XMLReaderFactory.createXMLReader();
+    xr1.setContentHandler(oldHandler);
+    xr1.parse(oldSource);
+    TextNodeComparator leftComparator = new TextNodeComparator(oldHandler, locale);
 
-        DomTreeBuilder newHandler = new DomTreeBuilder();
-        XMLReader xr2 = XMLReaderFactory.createXMLReader();
-        xr2.setContentHandler(newHandler);
-        xr2.parse(newSource);
+    DomTreeBuilder newHandler = new DomTreeBuilder();
+    XMLReader xr2 = XMLReaderFactory.createXMLReader();
+    xr2.setContentHandler(newHandler);
+    xr2.parse(newSource);
 
-        TextNodeComparator rightComparator = new TextNodeComparator(newHandler,
-                locale);
+    TextNodeComparator rightComparator = new TextNodeComparator(newHandler, locale);
 
-        HtmlSaxDiffOutput output = new HtmlSaxDiffOutput(consumer, prefix);
-        HTMLDiffer differ = new HTMLDiffer(output);
-        differ.diff(leftComparator, rightComparator);
-    }
+    HtmlSaxDiffOutput output = new HtmlSaxDiffOutput(consumer, prefix);
+    HTMLDiffer differ = new HTMLDiffer(output);
+    differ.diff(leftComparator, rightComparator);
+  }
 
-    /**
-     * Diffs two html files word for word as source, outputting the result to
-     * the specified consumer.
-     */
-    public static void diffTag(String oldText, String newText,
-            ContentHandler consumer) throws Exception {
-        consumer.startDocument();
-        TagComparator oldComp = new TagComparator(oldText);
-        TagComparator newComp = new TagComparator(newText);
+  /**
+   * Diffs two html files word for word as source, outputting the result to the specified consumer.
+   */
+  public static void diffTag(String oldText, String newText, ContentHandler consumer)
+      throws Exception {
+    consumer.startDocument();
+    TagComparator oldComp = new TagComparator(oldText);
+    TagComparator newComp = new TagComparator(newText);
 
-        TagSaxDiffOutput output = new TagSaxDiffOutput(consumer);
-        TagDiffer differ = new TagDiffer(output);
-        differ.diff(oldComp, newComp);
-        consumer.endDocument();
-    }
+    TagSaxDiffOutput output = new TagSaxDiffOutput(consumer);
+    TagDiffer differ = new TagDiffer(output);
+    differ.diff(oldComp, newComp);
+    consumer.endDocument();
+  }
 
-    /**
-     * Diffs two html files word for word as source, outputting the result to
-     * the specified consumer.
-     */
-    public static void diffTag(BufferedReader oldText, BufferedReader newText,
-            ContentHandler consumer) throws Exception {
+  /**
+   * Diffs two html files word for word as source, outputting the result to the specified consumer.
+   */
+  public static void diffTag(
+      BufferedReader oldText, BufferedReader newText, ContentHandler consumer) throws Exception {
 
-        TagComparator oldComp = new TagComparator(oldText);
-        TagComparator newComp = new TagComparator(newText);
+    TagComparator oldComp = new TagComparator(oldText);
+    TagComparator newComp = new TagComparator(newText);
 
-        TagSaxDiffOutput output = new TagSaxDiffOutput(consumer);
-        TagDiffer differ = new TagDiffer(output);
-        differ.diff(oldComp, newComp);
-    }
-
+    TagSaxDiffOutput output = new TagSaxDiffOutput(consumer);
+    TagDiffer differ = new TagDiffer(output);
+    differ.diff(oldComp, newComp);
+  }
 }

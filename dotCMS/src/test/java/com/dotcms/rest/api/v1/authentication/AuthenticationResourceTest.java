@@ -1,5 +1,13 @@
 package com.dotcms.rest.api.v1.authentication;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import com.dotcms.UnitTestBase;
 import com.dotcms.api.web.WebSessionContext;
 import com.dotcms.cms.login.LoginServiceAPI;
@@ -12,404 +20,460 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.json.JSONException;
-import com.liferay.portal.*;
+import com.liferay.portal.NoSuchUserException;
+import com.liferay.portal.RequiredLayoutException;
+import com.liferay.portal.UserActiveException;
+import com.liferay.portal.UserEmailAddressException;
+import com.liferay.portal.UserPasswordException;
 import com.liferay.portal.auth.AuthException;
 import com.liferay.portal.ejb.UserLocalManager;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.model.User;
-import org.junit.Test;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
-
+import java.lang.reflect.InvocationTargetException;
+import java.util.Map;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-
-import java.lang.reflect.InvocationTargetException;
-
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-import java.util.Map;
+import org.junit.Test;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 
 public class AuthenticationResourceTest extends UnitTestBase {
 
+  public AuthenticationResourceTest() {}
 
-    public AuthenticationResourceTest() {
+  @Test
+  public void testEmptyParameter() throws JSONException {
 
-	}
+    try {
+      final AuthenticationForm authenticationForm = new AuthenticationForm.Builder().build();
 
-    @Test
-    public void testEmptyParameter() throws JSONException{
+      fail("Should throw a ValidationException");
+    } catch (Exception e) {
+      // quiet
+    }
+  }
 
-        try {
-            final AuthenticationForm authenticationForm =
-                    new AuthenticationForm.Builder().build();
+  @Test
+  public void testWrongParameter() throws JSONException {
 
-            fail ("Should throw a ValidationException");
-        } catch (Exception e) {
-            // quiet
-        }
+    try {
+      final AuthenticationForm authenticationForm =
+          new AuthenticationForm.Builder().userId("").build();
+
+      fail("Should throw a ValidationException");
+    } catch (Exception e) {
+      // quiet
     }
 
-    @Test
-    public void testWrongParameter() throws JSONException{
+    try {
+      final AuthenticationForm authenticationForm =
+          new AuthenticationForm.Builder().userId("").password("").build();
 
-        try {
-            final AuthenticationForm authenticationForm =
-                    new AuthenticationForm.Builder().userId("").build();
-
-            fail ("Should throw a ValidationException");
-        } catch (Exception e) {
-            // quiet
-        }
-
-        try {
-            final AuthenticationForm authenticationForm =
-                    new AuthenticationForm.Builder().userId("").password("").build();
-
-            fail ("Should throw a ValidationException");
-        } catch (Exception e) {
-            // quiet
-        }
+      fail("Should throw a ValidationException");
+    } catch (Exception e) {
+      // quiet
     }
+  }
 
-    @Test
-    public void testNoSuchUserException() throws Exception {
+  @Test
+  public void testNoSuchUserException() throws Exception {
 
-        final HttpServletRequest request  = mock(HttpServletRequest.class);
-        final HttpServletResponse response = mock(HttpServletResponse.class);
-        final HttpSession session  = mock(HttpSession.class);
-        final LoginServiceAPI loginService     = mock(LoginServiceAPI.class);
-        final UserLocalManager userLocalManager = mock(UserLocalManager.class);
-        final ResponseUtil responseUtil = ResponseUtil.INSTANCE;
-        final LoginAsAPI loginAsAPI = mock(LoginAsAPI.class);
-        final AuthenticationHelper authenticationHelper = new AuthenticationHelper(loginAsAPI, loginService);
-        final String userId = "admin@dotcms.com";
-        final String pass   = "pass";
-        final ServletContext context = mock(ServletContext.class);
+    final HttpServletRequest request = mock(HttpServletRequest.class);
+    final HttpServletResponse response = mock(HttpServletResponse.class);
+    final HttpSession session = mock(HttpSession.class);
+    final LoginServiceAPI loginService = mock(LoginServiceAPI.class);
+    final UserLocalManager userLocalManager = mock(UserLocalManager.class);
+    final ResponseUtil responseUtil = ResponseUtil.INSTANCE;
+    final LoginAsAPI loginAsAPI = mock(LoginAsAPI.class);
+    final AuthenticationHelper authenticationHelper =
+        new AuthenticationHelper(loginAsAPI, loginService);
+    final String userId = "admin@dotcms.com";
+    final String pass = "pass";
+    final ServletContext context = mock(ServletContext.class);
 
-        Config.CONTEXT = context;
+    Config.CONTEXT = context;
 
-        when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
-        when(request.getSession()).thenReturn(session); //
-        when(loginService.doActionLogin(
-                userId,
-                pass,
-                false,
-                request,
-                response))
-                .thenAnswer(new Answer<Boolean>() { // if this method is called, should fail
+    when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
+    when(request.getSession()).thenReturn(session); //
+    when(loginService.doActionLogin(userId, pass, false, request, response))
+        .thenAnswer(
+            new Answer<Boolean>() { // if this method is called, should fail
 
-            @Override
-            public Boolean answer(InvocationOnMock invocation) throws Throwable {
+              @Override
+              public Boolean answer(InvocationOnMock invocation) throws Throwable {
 
                 throw new NoSuchUserException();
-            }
-        });
+              }
+            });
 
+    final AuthenticationResource authenticationResource =
+        new AuthenticationResource(
+            loginService, userLocalManager, responseUtil, authenticationHelper);
+    final AuthenticationForm authenticationForm =
+        new AuthenticationForm.Builder().userId(userId).password(pass).build();
 
-        final AuthenticationResource authenticationResource =
-                new AuthenticationResource(loginService, userLocalManager, responseUtil, authenticationHelper);
-        final AuthenticationForm authenticationForm =
-                new AuthenticationForm.Builder().userId(userId).password(pass).build();
+    final Response response1 =
+        authenticationResource.authentication(request, response, authenticationForm);
 
-        final Response response1 = authenticationResource.authentication(request, response, authenticationForm);
+    assertNotNull(response1);
+    assertEquals(response1.getStatus(), 401);
+    assertNotNull(response1.getEntity());
+    assertTrue(response1.getEntity() instanceof ResponseEntityView);
+    assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors());
+    assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getErrors().size() > 0);
+    assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0));
+    assertTrue(
+        ResponseEntityView.class
+            .cast(response1.getEntity())
+            .getErrors()
+            .get(0)
+            .getErrorCode()
+            .equals("authentication-failed"));
+  }
 
-        assertNotNull(response1);
-        assertEquals(response1.getStatus(), 401);
-        assertNotNull(response1.getEntity());
-        assertTrue(response1.getEntity() instanceof ResponseEntityView);
-        assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors());
-        assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getErrors().size() > 0);
-        assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0));
-        assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0).getErrorCode().equals("authentication-failed"));
-    }
+  @Test
+  public void testUserEmailAddressException() throws Exception {
 
-    @Test
-    public void testUserEmailAddressException() throws Exception {
+    final HttpServletRequest request = mock(HttpServletRequest.class);
+    final HttpServletResponse response = mock(HttpServletResponse.class);
+    final HttpSession session = mock(HttpSession.class);
+    final LoginServiceAPI loginService = mock(LoginServiceAPI.class);
+    final UserLocalManager userLocalManager = mock(UserLocalManager.class);
+    final ResponseUtil responseUtil = ResponseUtil.INSTANCE;
+    final LoginAsAPI loginAsAPI = mock(LoginAsAPI.class);
+    final AuthenticationHelper authenticationHelper =
+        new AuthenticationHelper(loginAsAPI, loginService);
+    final String userId = "admin@dotcms.com";
+    final String pass = "pass";
+    final ServletContext context = mock(ServletContext.class);
 
-        final HttpServletRequest request  = mock(HttpServletRequest.class);
-        final HttpServletResponse response = mock(HttpServletResponse.class);
-        final HttpSession session  = mock(HttpSession.class);
-        final LoginServiceAPI loginService     = mock(LoginServiceAPI.class);
-        final UserLocalManager userLocalManager = mock(UserLocalManager.class);
-        final ResponseUtil responseUtil = ResponseUtil.INSTANCE;
-        final LoginAsAPI loginAsAPI = mock(LoginAsAPI.class);
-        final AuthenticationHelper authenticationHelper = new AuthenticationHelper(loginAsAPI, loginService);
-        final String userId = "admin@dotcms.com";
-        final String pass   = "pass";
-        final ServletContext context = mock(ServletContext.class);
+    Config.CONTEXT = context;
 
-        Config.CONTEXT = context;
+    when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
+    when(request.getSession()).thenReturn(session); //
+    when(loginService.doActionLogin(userId, pass, false, request, response))
+        .thenAnswer(
+            new Answer<Boolean>() { // if this method is called, should fail
 
-        when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
-        when(request.getSession()).thenReturn(session); //
-        when(loginService.doActionLogin(userId, pass, false, request, response)).thenAnswer(new Answer<Boolean>() { // if this method is called, should fail
-
-            @Override
-            public Boolean answer(InvocationOnMock invocation) throws Throwable {
+              @Override
+              public Boolean answer(InvocationOnMock invocation) throws Throwable {
 
                 throw new UserEmailAddressException();
-            }
-        });
+              }
+            });
 
+    final AuthenticationResource authenticationResource =
+        new AuthenticationResource(
+            loginService, userLocalManager, responseUtil, authenticationHelper);
+    final AuthenticationForm authenticationForm =
+        new AuthenticationForm.Builder().userId(userId).password(pass).build();
 
-        final AuthenticationResource authenticationResource =
-                new AuthenticationResource(loginService, userLocalManager, responseUtil, authenticationHelper);
-        final AuthenticationForm authenticationForm =
-                new AuthenticationForm.Builder().userId(userId).password(pass).build();
+    final Response response1 =
+        authenticationResource.authentication(request, response, authenticationForm);
 
-        final Response response1 = authenticationResource.authentication(request, response, authenticationForm);
+    assertNotNull(response1);
+    assertEquals(response1.getStatus(), 401);
+    assertNotNull(response1.getEntity());
+    assertTrue(response1.getEntity() instanceof ResponseEntityView);
+    assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors());
+    assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getErrors().size() > 0);
+    assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0));
+    assertTrue(
+        ResponseEntityView.class
+            .cast(response1.getEntity())
+            .getErrors()
+            .get(0)
+            .getErrorCode()
+            .equals("authentication-failed"));
+  }
 
-        assertNotNull(response1);
-        assertEquals(response1.getStatus(), 401);
-        assertNotNull(response1.getEntity());
-        assertTrue(response1.getEntity() instanceof ResponseEntityView);
-        assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors());
-        assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getErrors().size() > 0);
-        assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0));
-        assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0).getErrorCode().equals("authentication-failed"));
-    }
+  @Test
+  public void testAuthException() throws Exception {
 
-    @Test
-    public void testAuthException() throws Exception {
+    final HttpServletRequest request = mock(HttpServletRequest.class);
+    final HttpServletResponse response = mock(HttpServletResponse.class);
+    final HttpSession session = mock(HttpSession.class);
+    final LoginServiceAPI loginService = mock(LoginServiceAPI.class);
+    final UserLocalManager userLocalManager = mock(UserLocalManager.class);
+    final LoginAsAPI loginAsAPI = mock(LoginAsAPI.class);
+    final AuthenticationHelper authenticationHelper =
+        new AuthenticationHelper(loginAsAPI, loginService);
+    final String userId = "admin@dotcms.com";
+    final String pass = "pass";
+    final ServletContext context = mock(ServletContext.class);
 
-        final HttpServletRequest request  = mock(HttpServletRequest.class);
-        final HttpServletResponse response = mock(HttpServletResponse.class);
-        final HttpSession session  = mock(HttpSession.class);
-        final LoginServiceAPI loginService     = mock(LoginServiceAPI.class);
-        final UserLocalManager userLocalManager = mock(UserLocalManager.class);
-        final LoginAsAPI loginAsAPI = mock(LoginAsAPI.class);
-        final AuthenticationHelper authenticationHelper = new AuthenticationHelper(loginAsAPI, loginService);
-        final String userId = "admin@dotcms.com";
-        final String pass   = "pass";
-        final ServletContext context = mock(ServletContext.class);
+    Config.CONTEXT = context;
 
-        Config.CONTEXT = context;
+    when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
+    when(request.getSession()).thenReturn(session); //
+    when(loginService.doActionLogin(userId, pass, false, request, response))
+        .thenAnswer(
+            new Answer<Boolean>() { // if this method is called, should fail
 
-        when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
-        when(request.getSession()).thenReturn(session); //
-        when(loginService.doActionLogin(userId, pass, false, request, response)).thenAnswer(new Answer<Boolean>() { // if this method is called, should fail
-
-            @Override
-            public Boolean answer(InvocationOnMock invocation) throws Throwable {
+              @Override
+              public Boolean answer(InvocationOnMock invocation) throws Throwable {
 
                 throw new AuthException();
-            }
-        });
+              }
+            });
 
+    final AuthenticationResource authenticationResource =
+        new AuthenticationResource(
+            loginService, userLocalManager, ResponseUtil.INSTANCE, authenticationHelper);
+    final AuthenticationForm authenticationForm =
+        new AuthenticationForm.Builder().userId(userId).password(pass).build();
 
-        final AuthenticationResource authenticationResource =
-                new AuthenticationResource(loginService, userLocalManager, ResponseUtil.INSTANCE,  authenticationHelper);
-        final AuthenticationForm authenticationForm =
-                new AuthenticationForm.Builder().userId(userId).password(pass).build();
+    final Response response1 =
+        authenticationResource.authentication(request, response, authenticationForm);
 
-        final Response response1 = authenticationResource.authentication(request, response, authenticationForm);
+    assertNotNull(response1);
+    assertEquals(response1.getStatus(), 401);
+    assertNotNull(response1.getEntity());
+    assertTrue(response1.getEntity() instanceof ResponseEntityView);
+    assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors());
+    assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getErrors().size() > 0);
+    assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0));
+    assertTrue(
+        ResponseEntityView.class
+            .cast(response1.getEntity())
+            .getErrors()
+            .get(0)
+            .getErrorCode()
+            .equals("authentication-failed"));
+  }
 
-        assertNotNull(response1);
-        assertEquals(response1.getStatus(), 401);
-        assertNotNull(response1.getEntity());
-        assertTrue(response1.getEntity() instanceof ResponseEntityView);
-        assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors());
-        assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getErrors().size() > 0);
-        assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0));
-        assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0).getErrorCode().equals("authentication-failed"));
-    }
+  @Test
+  public void testUserPasswordException() throws Exception {
 
-    @Test
-    public void testUserPasswordException() throws Exception {
+    final HttpServletRequest request = mock(HttpServletRequest.class);
+    final HttpServletResponse response = mock(HttpServletResponse.class);
+    final HttpSession session = mock(HttpSession.class);
+    final LoginServiceAPI loginService = mock(LoginServiceAPI.class);
+    final UserLocalManager userLocalManager = mock(UserLocalManager.class);
+    final LoginAsAPI loginAsAPI = mock(LoginAsAPI.class);
+    final AuthenticationHelper authenticationHelper =
+        new AuthenticationHelper(loginAsAPI, loginService);
+    final String userId = "admin@dotcms.com";
+    final String pass = "pass";
+    final ServletContext context = mock(ServletContext.class);
 
-        final HttpServletRequest request  = mock(HttpServletRequest.class);
-        final HttpServletResponse response = mock(HttpServletResponse.class);
-        final HttpSession session  = mock(HttpSession.class);
-        final LoginServiceAPI loginService     = mock(LoginServiceAPI.class);
-        final UserLocalManager userLocalManager = mock(UserLocalManager.class);
-        final LoginAsAPI loginAsAPI = mock(LoginAsAPI.class);
-        final AuthenticationHelper authenticationHelper = new AuthenticationHelper(loginAsAPI, loginService);
-        final String userId = "admin@dotcms.com";
-        final String pass   = "pass";
-        final ServletContext context = mock(ServletContext.class);
+    Config.CONTEXT = context;
 
-        Config.CONTEXT = context;
+    when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
+    when(request.getSession()).thenReturn(session); //
+    when(loginService.doActionLogin(userId, pass, false, request, response))
+        .thenAnswer(
+            new Answer<Boolean>() { // if this method is called, should fail
 
-        when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
-        when(request.getSession()).thenReturn(session); //
-        when(loginService.doActionLogin(userId, pass, false, request, response)).thenAnswer(new Answer<Boolean>() { // if this method is called, should fail
-
-            @Override
-            public Boolean answer(InvocationOnMock invocation) throws Throwable {
+              @Override
+              public Boolean answer(InvocationOnMock invocation) throws Throwable {
 
                 throw new UserPasswordException(UserPasswordException.PASSWORD_ALREADY_USED);
-            }
-        });
+              }
+            });
 
+    final AuthenticationResource authenticationResource =
+        new AuthenticationResource(
+            loginService, userLocalManager, ResponseUtil.INSTANCE, authenticationHelper);
+    final AuthenticationForm authenticationForm =
+        new AuthenticationForm.Builder().userId(userId).password(pass).build();
 
-        final AuthenticationResource authenticationResource =
-                new AuthenticationResource(loginService, userLocalManager, ResponseUtil.INSTANCE,  authenticationHelper);
-        final AuthenticationForm authenticationForm =
-                new AuthenticationForm.Builder().userId(userId).password(pass).build();
+    final Response response1 =
+        authenticationResource.authentication(request, response, authenticationForm);
 
-        final Response response1 = authenticationResource.authentication(request, response, authenticationForm);
+    assertNotNull(response1);
+    assertEquals(response1.getStatus(), 401);
+    assertNotNull(response1.getEntity());
+    assertTrue(response1.getEntity() instanceof ResponseEntityView);
+    assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors());
+    assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getErrors().size() > 0);
+    assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0));
+    assertTrue(
+        ResponseEntityView.class
+            .cast(response1.getEntity())
+            .getErrors()
+            .get(0)
+            .getErrorCode()
+            .equals("authentication-failed"));
+  }
 
-        assertNotNull(response1);
-        assertEquals(response1.getStatus(), 401);
-        assertNotNull(response1.getEntity());
-        assertTrue(response1.getEntity() instanceof ResponseEntityView);
-        assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors());
-        assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getErrors().size() > 0);
-        assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0));
-        assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0).getErrorCode().equals("authentication-failed"));
-    }
+  @Test
+  public void testRequiredLayoutException() throws Exception {
 
-    @Test
-    public void testRequiredLayoutException() throws Exception {
+    final HttpServletRequest request = mock(HttpServletRequest.class);
+    final HttpServletResponse response = mock(HttpServletResponse.class);
+    final HttpSession session = mock(HttpSession.class);
+    final LoginServiceAPI loginService = mock(LoginServiceAPI.class);
+    final UserLocalManager userLocalManager = mock(UserLocalManager.class);
+    final LoginAsAPI loginAsAPI = mock(LoginAsAPI.class);
+    final AuthenticationHelper authenticationHelper =
+        new AuthenticationHelper(loginAsAPI, loginService);
+    final String userId = "admin@dotcms.com";
+    final String pass = "pass";
+    final ServletContext context = mock(ServletContext.class);
 
-        final HttpServletRequest request  = mock(HttpServletRequest.class);
-        final HttpServletResponse response = mock(HttpServletResponse.class);
-        final HttpSession session  = mock(HttpSession.class);
-        final LoginServiceAPI loginService     = mock(LoginServiceAPI.class);
-        final UserLocalManager userLocalManager = mock(UserLocalManager.class);
-        final LoginAsAPI loginAsAPI = mock(LoginAsAPI.class);
-        final AuthenticationHelper authenticationHelper = new AuthenticationHelper(loginAsAPI, loginService);
-        final String userId = "admin@dotcms.com";
-        final String pass   = "pass";
-        final ServletContext context = mock(ServletContext.class);
+    Config.CONTEXT = context;
 
-        Config.CONTEXT = context;
+    when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
+    when(request.getSession()).thenReturn(session); //
+    when(loginService.doActionLogin(userId, pass, false, request, response))
+        .thenAnswer(
+            new Answer<Boolean>() { // if this method is called, should fail
 
-        when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
-        when(request.getSession()).thenReturn(session); //
-        when(loginService.doActionLogin(userId, pass, false, request, response)).thenAnswer(new Answer<Boolean>() { // if this method is called, should fail
-
-            @Override
-            public Boolean answer(InvocationOnMock invocation) throws Throwable {
+              @Override
+              public Boolean answer(InvocationOnMock invocation) throws Throwable {
 
                 throw new RequiredLayoutException();
-            }
-        });
+              }
+            });
 
+    final AuthenticationResource authenticationResource =
+        new AuthenticationResource(
+            loginService, userLocalManager, ResponseUtil.INSTANCE, authenticationHelper);
+    final AuthenticationForm authenticationForm =
+        new AuthenticationForm.Builder().userId(userId).password(pass).build();
 
-        final AuthenticationResource authenticationResource =
-                new AuthenticationResource(loginService, userLocalManager, ResponseUtil.INSTANCE,  authenticationHelper);
-        final AuthenticationForm authenticationForm =
-                new AuthenticationForm.Builder().userId(userId).password(pass).build();
+    final Response response1 =
+        authenticationResource.authentication(request, response, authenticationForm);
 
-        final Response response1 = authenticationResource.authentication(request, response, authenticationForm);
+    assertNotNull(response1);
+    assertEquals(response1.getStatus(), 500);
+    assertNotNull(response1.getEntity());
+    assertTrue(response1.getEntity() instanceof ResponseEntityView);
+    assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors());
+    assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getErrors().size() > 0);
+    assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0));
+    assertTrue(
+        ResponseEntityView.class
+            .cast(response1.getEntity())
+            .getErrors()
+            .get(0)
+            .getErrorCode()
+            .equals("user-without-portlet"));
+  }
 
-        assertNotNull(response1);
-        assertEquals(response1.getStatus(), 500);
-        assertNotNull(response1.getEntity());
-        assertTrue(response1.getEntity() instanceof ResponseEntityView);
-        assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors());
-        assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getErrors().size() > 0);
-        assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0));
-        assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0).getErrorCode().equals("user-without-portlet"));
+  @Test
+  public void testUserActiveException() throws Exception {
 
-    }
+    final HttpServletRequest request = mock(HttpServletRequest.class);
+    final HttpServletResponse response = mock(HttpServletResponse.class);
+    final HttpSession session = mock(HttpSession.class);
+    final LoginServiceAPI loginService = mock(LoginServiceAPI.class);
+    final UserLocalManager userLocalManager = mock(UserLocalManager.class);
+    final LoginAsAPI loginAsAPI = mock(LoginAsAPI.class);
+    final AuthenticationHelper authenticationHelper =
+        new AuthenticationHelper(loginAsAPI, loginService);
+    final String userId = "admin@dotcms.com";
+    final String pass = "pass";
+    final ServletContext context = mock(ServletContext.class);
 
-    @Test
-    public void testUserActiveException() throws Exception {
+    Config.CONTEXT = context;
 
-        final HttpServletRequest request  = mock(HttpServletRequest.class);
-        final HttpServletResponse response = mock(HttpServletResponse.class);
-        final HttpSession session  = mock(HttpSession.class);
-        final LoginServiceAPI loginService     = mock(LoginServiceAPI.class);
-        final UserLocalManager userLocalManager = mock(UserLocalManager.class);
-        final LoginAsAPI loginAsAPI = mock(LoginAsAPI.class);
-        final AuthenticationHelper authenticationHelper = new AuthenticationHelper(loginAsAPI, loginService);
-        final String userId = "admin@dotcms.com";
-        final String pass   = "pass";
-        final ServletContext context = mock(ServletContext.class);
+    when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
+    when(request.getSession()).thenReturn(session); //
+    when(loginService.doActionLogin(userId, pass, false, request, response))
+        .thenAnswer(
+            new Answer<Boolean>() { // if this method is called, should fail
 
-        Config.CONTEXT = context;
-
-        when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
-        when(request.getSession()).thenReturn(session); //
-        when(loginService.doActionLogin(userId, pass, false, request, response)).thenAnswer(new Answer<Boolean>() { // if this method is called, should fail
-
-            @Override
-            public Boolean answer(InvocationOnMock invocation) throws Throwable {
+              @Override
+              public Boolean answer(InvocationOnMock invocation) throws Throwable {
 
                 throw new UserActiveException();
-            }
-        });
+              }
+            });
 
+    final AuthenticationResource authenticationResource =
+        new AuthenticationResource(
+            loginService, userLocalManager, ResponseUtil.INSTANCE, authenticationHelper);
+    final AuthenticationForm authenticationForm =
+        new AuthenticationForm.Builder()
+            .userId(userId)
+            .password(pass)
+            .language("en")
+            .country("US")
+            .build();
 
-        final AuthenticationResource authenticationResource =
-                new AuthenticationResource(loginService, userLocalManager, ResponseUtil.INSTANCE,  authenticationHelper);
-        final AuthenticationForm authenticationForm =
-                new AuthenticationForm.Builder().userId(userId).password(pass).language("en").country("US").build();
+    final Response response1 =
+        authenticationResource.authentication(request, response, authenticationForm);
 
-        final Response response1 = authenticationResource.authentication(request, response, authenticationForm);
+    assertNotNull(response1);
+    assertEquals(response1.getStatus(), 401);
+    assertNotNull(response1.getEntity());
+    assertTrue(response1.getEntity() instanceof ResponseEntityView);
+    assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors());
+    assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getErrors().size() > 0);
+    assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0));
+    assertTrue(
+        ResponseEntityView.class
+            .cast(response1.getEntity())
+            .getErrors()
+            .get(0)
+            .getErrorCode()
+            .equals("your-account-is-not-active"));
+    System.out.println(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0));
+  }
 
-        assertNotNull(response1);
-        assertEquals(response1.getStatus(), 401);
-        assertNotNull(response1.getEntity());
-        assertTrue(response1.getEntity() instanceof ResponseEntityView);
-        assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors());
-        assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getErrors().size() > 0);
-        assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0));
-        assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0).getErrorCode().equals("your-account-is-not-active"));
-        System.out.println(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0));
-    }
+  @Test
+  public void testgetUsersWithoutLoginAs()
+      throws DotSecurityException, DotDataException, IllegalAccessException, NoSuchMethodException,
+          InvocationTargetException, LanguageException, ClassNotFoundException {
 
-    @Test
-    public void testgetUsersWithoutLoginAs() throws DotSecurityException, DotDataException, IllegalAccessException,
-            NoSuchMethodException, InvocationTargetException, LanguageException, ClassNotFoundException {
+    final UserLocalManager userLocalManager = mock(UserLocalManager.class);
+    HttpServletRequest mockHttpRequest = RestUtilTest.getMockHttpRequest();
 
-        final UserLocalManager userLocalManager = mock(UserLocalManager.class);
-        HttpServletRequest mockHttpRequest = RestUtilTest.getMockHttpRequest();
+    LoginAsAPI loginAsAPI = mock(LoginAsAPI.class);
+    LoginServiceAPI loginService = mock(LoginServiceAPI.class);
 
-        LoginAsAPI loginAsAPI = mock( LoginAsAPI.class );
-        LoginServiceAPI loginService = mock( LoginServiceAPI.class );
+    User user = UserUtilTest.createUser();
+    when(loginService.getLoggedInUser(mockHttpRequest)).thenReturn(user);
 
-        User user = UserUtilTest.createUser();
-        when( loginService.getLoggedInUser( mockHttpRequest ) ).thenReturn( user );
+    AuthenticationHelper helper = new AuthenticationHelper(loginAsAPI, loginService);
 
-        AuthenticationHelper helper = new AuthenticationHelper(loginAsAPI, loginService);
+    final AuthenticationResource resource =
+        new AuthenticationResource(loginService, userLocalManager, ResponseUtil.INSTANCE, helper);
+    Response responseEntityView = resource.getLoginUser(mockHttpRequest);
 
-        final AuthenticationResource resource = new AuthenticationResource( loginService, userLocalManager, ResponseUtil.INSTANCE, helper );
-        Response responseEntityView = resource.getLoginUser(mockHttpRequest);
+    RestUtilTest.verifySuccessResponse(responseEntityView);
+    Object entity = ((ResponseEntityView) responseEntityView.getEntity()).getEntity();
+    assertTrue(entity instanceof Map);
 
-        RestUtilTest.verifySuccessResponse( responseEntityView );
-        Object entity = ((ResponseEntityView) responseEntityView.getEntity()).getEntity();
-        assertTrue(entity instanceof Map);
+    Map map = (Map) entity;
+    assertEquals(user.toMap(), map.get("user"));
+    assertNull(map.get("loginAsUser"));
+  }
 
-        Map map = ( Map ) entity;
-        assertEquals(user.toMap(), map.get( "user" ));
-        assertNull(map.get( "loginAsUser" ));
-    }
+  @Test
+  public void testgetUsersWithLoginAs()
+      throws DotSecurityException, DotDataException, IllegalAccessException, NoSuchMethodException,
+          InvocationTargetException, LanguageException, ClassNotFoundException {
 
-    @Test
-    public void testgetUsersWithLoginAs() throws DotSecurityException, DotDataException, IllegalAccessException,
-            NoSuchMethodException, InvocationTargetException, LanguageException, ClassNotFoundException {
+    final UserLocalManager userLocalManager = mock(UserLocalManager.class);
+    HttpServletRequest mockHttpRequest = RestUtilTest.getMockHttpRequest();
+    LoginAsAPI loginAsAPI = mock(LoginAsAPI.class);
 
-        final UserLocalManager userLocalManager = mock(UserLocalManager.class);
-        HttpServletRequest mockHttpRequest = RestUtilTest.getMockHttpRequest();
-        LoginAsAPI loginAsAPI = mock( LoginAsAPI.class );
+    LoginServiceAPI loginService = mock(LoginServiceAPI.class);
 
-        LoginServiceAPI loginService = mock( LoginServiceAPI.class );
+    User user = UserUtilTest.createUser();
+    User loginAsUser = UserUtilTest.createUser();
 
-        User user = UserUtilTest.createUser();
-        User loginAsUser = UserUtilTest.createUser();
+    when(loginService.getLoggedInUser(mockHttpRequest)).thenReturn(loginAsUser);
+    when(loginAsAPI.getPrincipalUser(WebSessionContext.getInstance(mockHttpRequest)))
+        .thenReturn(user);
 
-        when( loginService.getLoggedInUser( mockHttpRequest ) ).thenReturn( loginAsUser );
-        when(loginAsAPI.getPrincipalUser(WebSessionContext.getInstance(mockHttpRequest))).thenReturn(user);
+    AuthenticationHelper helper = new AuthenticationHelper(loginAsAPI, loginService);
 
-        AuthenticationHelper helper = new AuthenticationHelper(loginAsAPI, loginService);
+    final AuthenticationResource resource =
+        new AuthenticationResource(loginService, userLocalManager, ResponseUtil.INSTANCE, helper);
+    Response responseEntityView = resource.getLoginUser(mockHttpRequest);
 
-        final AuthenticationResource resource = new AuthenticationResource( loginService, userLocalManager, ResponseUtil.INSTANCE, helper );
-        Response responseEntityView = resource.getLoginUser(mockHttpRequest);
+    RestUtilTest.verifySuccessResponse(responseEntityView);
+    Object entity = ((ResponseEntityView) responseEntityView.getEntity()).getEntity();
+    assertTrue(entity instanceof Map);
 
-        RestUtilTest.verifySuccessResponse( responseEntityView );
-        Object entity = ((ResponseEntityView) responseEntityView.getEntity()).getEntity();
-        assertTrue(entity instanceof Map);
-
-        Map map = ( Map ) entity;
-        assertEquals(user.toMap(), map.get( "user" ));
-        assertEquals(loginAsUser.toMap(), map.get( "loginAsUser" ));
-    }
-
+    Map map = (Map) entity;
+    assertEquals(user.toMap(), map.get("user"));
+    assertEquals(loginAsUser.toMap(), map.get("loginAsUser"));
+  }
 }

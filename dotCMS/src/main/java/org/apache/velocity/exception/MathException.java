@@ -16,22 +16,20 @@ package org.apache.velocity.exception;
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
- * under the License.    
+ * under the License.
  */
 
 /**
- * Separate exception class to distinguish math problems.   
+ * Separate exception class to distinguish math problems.
  *
  * @author Nathan Bubna
  * @since 1.6
  * @version $Id: MathException.java 685685 2008-08-13 21:43:27Z nbubna $
  */
-public class MathException extends VelocityException
-{
-    private static final long serialVersionUID = -7966507088645215583L;
+public class MathException extends VelocityException {
+  private static final long serialVersionUID = -7966507088645215583L;
 
-    public MathException(final String exceptionMessage)
-    {
-        super(exceptionMessage);
-    }
+  public MathException(final String exceptionMessage) {
+    super(exceptionMessage);
+  }
 }

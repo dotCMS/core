@@ -1,14 +1,7 @@
 package com.dotmarketing.portlets.osgi.AJAX;
 
-import org.apache.commons.fileupload.FileItemFactory;
-import org.apache.commons.fileupload.FileItemIterator;
-import org.apache.commons.fileupload.FileItemStream;
-import org.apache.commons.fileupload.FileUploadException;
-import org.apache.commons.fileupload.disk.DiskFileItemFactory;
-import org.apache.commons.fileupload.servlet.ServletFileUpload;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotmarketing.util.Logger;
-import org.apache.felix.framework.OSGIUtil;
 import com.dotmarketing.util.SecurityLogger;
 import com.liferay.util.FileUtil;
 import java.io.BufferedWriter;
@@ -21,202 +14,224 @@ import java.nio.file.Files;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import org.apache.commons.fileupload.FileItemFactory;
+import org.apache.commons.fileupload.FileItemIterator;
+import org.apache.commons.fileupload.FileItemStream;
+import org.apache.commons.fileupload.FileUploadException;
+import org.apache.commons.fileupload.disk.DiskFileItemFactory;
+import org.apache.commons.fileupload.servlet.ServletFileUpload;
+import org.apache.felix.framework.OSGIUtil;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleException;
 
 public class OSGIAJAX extends OSGIBaseAJAX {
 
-    @Override
-    public void action ( HttpServletRequest request, HttpServletResponse response ) throws ServletException, IOException {
+  @Override
+  public void action(HttpServletRequest request, HttpServletResponse response)
+      throws ServletException, IOException {}
+
+  public void undeploy(HttpServletRequest request, HttpServletResponse response)
+      throws ServletException, IOException, InterruptedException {
+
+    String jar = request.getParameter("jar");
+    String bundleId = request.getParameter("bundleId");
+
+    // First uninstall the bundle
+    Bundle bundle;
+    try {
+      try {
+        bundle = OSGIUtil.getInstance().getBundle(new Long(bundleId));
+      } catch (NumberFormatException e) {
+        bundle = OSGIUtil.getInstance().getBundle(bundleId);
+      }
+
+      bundle.uninstall();
+    } catch (BundleException e) {
+      Logger.error(OSGIAJAX.class, "Unable to undeploy bundle [" + e.getMessage() + "]", e);
     }
 
-    public void undeploy ( HttpServletRequest request, HttpServletResponse response ) throws ServletException, IOException, InterruptedException {
+    // Then move the bundle from the load folder to the undeployed folder
 
-        String jar = request.getParameter( "jar" );
-        String bundleId = request.getParameter( "bundleId" );
+    String loadPath = OSGIUtil.getInstance().getFelixDeployPath();
+    String undeployedPath = OSGIUtil.getInstance().getFelixUndeployPath();
 
-        //First uninstall the bundle
-        Bundle bundle;
-        try {
-            try {
-                bundle = OSGIUtil.getInstance().getBundle(new Long(bundleId));
-            } catch ( NumberFormatException e ) {
-                bundle = OSGIUtil.getInstance().getBundle(bundleId);
-            }
+    File from = new File(loadPath + File.separator + jar);
+    File to = new File(undeployedPath + File.separator + jar);
 
-            bundle.uninstall();
-          } catch ( BundleException e ) {
-            Logger.error( OSGIAJAX.class, "Unable to undeploy bundle [" + e.getMessage() + "]", e );
+    if (to.exists()) {
+      to.delete();
+    }
+
+    Boolean success = FileUtil.move(from, to);
+    if (success) {
+      Logger.info(OSGIAJAX.class, "OSGI Bundle " + jar + " Undeployed");
+      writeSuccess(response, "OSGI Bundle " + jar + " Undeployed");
+    } else {
+      Logger.error(OSGIAJAX.class, "Error undeploying OSGI Bundle " + jar);
+      writeError(response, "Error undeploying OSGI Bundle " + jar);
+    }
+  }
+
+  public void deploy(HttpServletRequest request, HttpServletResponse response)
+      throws ServletException, IOException {
+    String loadPath = OSGIUtil.getInstance().getFelixDeployPath();
+    String undeployedPath = OSGIUtil.getInstance().getFelixUndeployPath();
+
+    String jar = request.getParameter("jar");
+    File from = new File(undeployedPath + File.separator + jar);
+    File to = new File(loadPath + File.separator + jar);
+
+    Boolean success = from.renameTo(to);
+    if (success) {
+      Logger.info(OSGIAJAX.class, "OSGI Bundle " + jar + " Loaded");
+      writeSuccess(response, "OSGI Bundle  " + jar + " Loaded");
+    } else {
+      Logger.error(OSGIAJAX.class, "Error Loading OSGI Bundle " + jar);
+      writeError(response, "Error Loading OSGI Bundle" + jar);
+    }
+  }
+
+  public void stop(HttpServletRequest request, HttpServletResponse response)
+      throws ServletException, IOException {
+
+    String bundleID = request.getParameter("bundleId");
+    String jar = request.getParameter("jar");
+    try {
+      try {
+        OSGIUtil.getInstance().getBundle(new Long(bundleID)).stop();
+      } catch (NumberFormatException e) {
+        OSGIUtil.getInstance().getBundle(bundleID).stop();
+      }
+      Logger.info(OSGIAJAX.class, "OSGI Bundle " + jar + " Stopped");
+    } catch (BundleException e) {
+      Logger.error(OSGIAJAX.class, e.getMessage(), e);
+      throw new ServletException(e.getMessage() + " Unable to stop bundle", e);
+    }
+  }
+
+  public void start(HttpServletRequest request, HttpServletResponse response)
+      throws ServletException, IOException {
+
+    String bundleID = request.getParameter("bundleId");
+    String jar = request.getParameter("jar");
+    try {
+      try {
+        OSGIUtil.getInstance().getBundle(new Long(bundleID)).start();
+      } catch (NumberFormatException e) {
+        OSGIUtil.getInstance().getBundle(bundleID).start();
+      }
+      Logger.info(OSGIAJAX.class, "OSGI Bundle " + jar + " Started");
+    } catch (BundleException e) {
+      Logger.error(OSGIAJAX.class, e.getMessage(), e);
+      throw new ServletException(e.getMessage() + " Unable to start bundle", e);
+    }
+  }
+
+  public void add(HttpServletRequest request, HttpServletResponse response)
+      throws ServletException, IOException {
+
+    FileItemFactory factory = new DiskFileItemFactory();
+    ServletFileUpload upload = new ServletFileUpload(factory);
+    FileItemIterator iterator = null;
+    String jar = request.getParameter("jar");
+    try {
+      iterator = upload.getItemIterator(request);
+      while (iterator.hasNext()) {
+        FileItemStream item = iterator.next();
+        InputStream in = item.openStream();
+        if (item.getFieldName().equals("bundleUpload")) {
+          String fname = item.getName();
+          if (!fname.endsWith(".jar")) {
+            Logger.warn(this, "Cannot deploy bundle as it is not a JAR");
+            writeError(response, "Cannot deploy bundle as it is not a JAR");
+            break;
+          }
+
+          String felixDeployFolder = OSGIUtil.getInstance().getFelixDeployPath();
+
+          File felixFolder = new File(felixDeployFolder);
+          File osgiJar = new File(felixDeployFolder + File.separator + fname);
+
+          if (!felixFolder.exists()
+              || !osgiJar.getCanonicalPath().startsWith(felixFolder.getCanonicalPath())) {
+            response.sendError(403);
+            SecurityLogger.logInfo(
+                this.getClass(),
+                "Invalid OSGI Upload request:"
+                    + osgiJar.getCanonicalPath()
+                    + " from:"
+                    + request.getRemoteHost()
+                    + " ");
+            return;
+          }
+
+          final OutputStream out = Files.newOutputStream(osgiJar.toPath());
+          IOUtils.copyLarge(in, out);
+          IOUtils.closeQuietly(out);
+          IOUtils.closeQuietly(in);
         }
-
-        //Then move the bundle from the load folder to the undeployed folder
-
-        String loadPath = OSGIUtil.getInstance().getFelixDeployPath();
-        String undeployedPath = OSGIUtil.getInstance().getFelixUndeployPath();
-
-        File from = new File(loadPath + File.separator + jar);
-        File to = new File(undeployedPath + File.separator + jar);
-
-        if(to.exists()) {
-            to.delete();
-        }
-
-        Boolean success = FileUtil.move( from, to );
-        if ( success ) {
-        	Logger.info( OSGIAJAX.class, "OSGI Bundle "+jar+ " Undeployed");
-            writeSuccess( response, "OSGI Bundle "+jar+ " Undeployed" );
-        } else {
-            Logger.error( OSGIAJAX.class, "Error undeploying OSGI Bundle "+jar );
-            writeError( response, "Error undeploying OSGI Bundle "+jar );
-        }
+      }
+      Logger.info(OSGIAJAX.class, "OSGI Bundle " + jar + " Uploaded");
+    } catch (FileUploadException e) {
+      Logger.error(OSGIBaseAJAX.class, e.getMessage(), e);
+      throw new IOException(e.getMessage(), e);
     }
+  }
 
-    public void deploy ( HttpServletRequest request, HttpServletResponse response ) throws ServletException, IOException {
-        String loadPath = OSGIUtil.getInstance().getFelixDeployPath();
-        String undeployedPath = OSGIUtil.getInstance().getFelixUndeployPath();
+  /**
+   * Returns the packages inside the <strong>osgi-extra.conf</strong> file, those packages are the
+   * value for the OSGI configuration property
+   * <strong>org.osgi.framework.system.packages.extra</strong>.
+   *
+   * @param request
+   * @param response
+   * @throws ServletException
+   * @throws IOException
+   */
+  public void getExtraPackages(HttpServletRequest request, HttpServletResponse response)
+      throws ServletException, IOException {
 
-        String jar = request.getParameter( "jar" );
-        File from = new File(undeployedPath + File.separator + jar);
-        File to = new File(loadPath + File.separator + jar);
+    // Read the list of the dotCMS exposed packages to the OSGI context
+    String extraPackages = OSGIUtil.getInstance().getExtraOSGIPackages();
 
-        Boolean success = from.renameTo( to );
-        if ( success ) {
-        	Logger.info( OSGIAJAX.class, "OSGI Bundle "+jar+ " Loaded");
-            writeSuccess( response, "OSGI Bundle  "+jar+ " Loaded" );
-        } else {
-            Logger.error( OSGIAJAX.class, "Error Loading OSGI Bundle " + jar );
-            writeError( response, "Error Loading OSGI Bundle" + jar );
-        }
-    }
+    // Send a respose
+    writeSuccess(response, extraPackages);
+  }
 
-    public void stop ( HttpServletRequest request, HttpServletResponse response ) throws ServletException, IOException {
+  /**
+   * Overrides the content of the <strong>osgi-extra.conf</strong> file
+   *
+   * @param request
+   * @param response
+   * @throws ServletException
+   * @throws IOException
+   */
+  public void modifyExtraPackages(HttpServletRequest request, HttpServletResponse response)
+      throws ServletException, IOException {
 
-        String bundleID = request.getParameter( "bundleId" );
-        String jar = request.getParameter( "jar" );
-        try {
-            try {
-                OSGIUtil.getInstance().getBundle(new Long(bundleID)).stop();
-            } catch ( NumberFormatException e ) {
-                OSGIUtil.getInstance().getBundle(bundleID).stop();
-            }
-            Logger.info( OSGIAJAX.class, "OSGI Bundle "+jar+ " Stopped");
-        } catch ( BundleException e ) {
-            Logger.error( OSGIAJAX.class, e.getMessage(), e );
-            throw new ServletException( e.getMessage() + " Unable to stop bundle", e );
-        }
-    }
+    // Get the packages from the form
+    String extraPackages = request.getParameter("packages");
 
-    public void start ( HttpServletRequest request, HttpServletResponse response ) throws ServletException, IOException {
+    // Override the file with the values we just read
+    BufferedWriter writer =
+        new BufferedWriter(new FileWriter(OSGIUtil.getInstance().FELIX_EXTRA_PACKAGES_FILE));
+    writer.write(extraPackages);
+    writer.close();
+    Logger.info(OSGIAJAX.class, "OSGI Extra Packages Saved");
+    // Send a response
+    writeSuccess(response, "OSGI Extra Packages Saved");
+  }
 
-        String bundleID = request.getParameter( "bundleId" );
-        String jar = request.getParameter( "jar" );
-        try {
-            try {
-                OSGIUtil.getInstance().getBundle(new Long(bundleID)).start();
-            } catch ( NumberFormatException e ) {
-                OSGIUtil.getInstance().getBundle(bundleID).start();
-            }
-            Logger.info( OSGIAJAX.class, "OSGI Bundle "+jar+ " Started");
-        } catch ( BundleException e ) {
-            Logger.error( OSGIAJAX.class, e.getMessage(), e );
-            throw new ServletException( e.getMessage() + " Unable to start bundle", e );
-        }
-    }
+  public void restart(HttpServletRequest request, HttpServletResponse response)
+      throws ServletException, IOException {
 
-    public void add ( HttpServletRequest request, HttpServletResponse response ) throws ServletException, IOException {
+    // First we need to stop the framework
+    OSGIUtil.getInstance().stopFramework();
 
-        FileItemFactory factory = new DiskFileItemFactory();
-        ServletFileUpload upload = new ServletFileUpload( factory );
-        FileItemIterator iterator = null;
-        String jar = request.getParameter( "jar" );
-        try {
-            iterator = upload.getItemIterator( request );
-            while ( iterator.hasNext() ) {
-                FileItemStream item = iterator.next();
-                InputStream in = item.openStream();
-                if ( item.getFieldName().equals( "bundleUpload" ) ) {
-                    String fname = item.getName();
-                    if ( !fname.endsWith( ".jar" ) ) {
-                        Logger.warn( this, "Cannot deploy bundle as it is not a JAR" );
-                        writeError( response, "Cannot deploy bundle as it is not a JAR" );
-                        break;
-                    }
+    // Now we need to initialize it
+    OSGIUtil.getInstance().initializeFramework();
 
-                    String felixDeployFolder = OSGIUtil.getInstance().getFelixDeployPath();
-
-                    File felixFolder = new File(felixDeployFolder);
-                    File osgiJar = new File(felixDeployFolder + File.separator + fname);
-
-                    if ( !felixFolder.exists() 
-                            ||   !osgiJar.getCanonicalPath().startsWith(felixFolder.getCanonicalPath())) {
-                        response.sendError(403);
-                        SecurityLogger.logInfo(this.getClass(),  "Invalid OSGI Upload request:" + osgiJar.getCanonicalPath() + " from:" +request.getRemoteHost() + " " );
-                        return;
-                    }
-
-                    final OutputStream out = Files.newOutputStream(osgiJar.toPath());
-                    IOUtils.copyLarge( in, out );
-                    IOUtils.closeQuietly( out );
-                    IOUtils.closeQuietly( in );
-                }
-            }
-          Logger.info( OSGIAJAX.class, "OSGI Bundle "+jar+ " Uploaded");
-        } catch ( FileUploadException e ) {
-            Logger.error( OSGIBaseAJAX.class, e.getMessage(), e );
-            throw new IOException( e.getMessage(), e );
-        }
-    }
-
-    /**
-     * Returns the packages inside the <strong>osgi-extra.conf</strong> file, those packages are the value
-     * for the OSGI configuration property <strong>org.osgi.framework.system.packages.extra</strong>.
-     *
-     * @param request
-     * @param response
-     * @throws ServletException
-     * @throws IOException
-     */
-    public void getExtraPackages ( HttpServletRequest request, HttpServletResponse response ) throws ServletException, IOException {
-
-        //Read the list of the dotCMS exposed packages to the OSGI context
-        String extraPackages = OSGIUtil.getInstance().getExtraOSGIPackages();
-
-        //Send a respose
-        writeSuccess( response, extraPackages );
-    }
-
-    /**
-     * Overrides the content of the <strong>osgi-extra.conf</strong> file
-     *
-     * @param request
-     * @param response
-     * @throws ServletException
-     * @throws IOException
-     */
-    public void modifyExtraPackages ( HttpServletRequest request, HttpServletResponse response ) throws ServletException, IOException {
-
-        //Get the packages from the form
-        String extraPackages = request.getParameter( "packages" );
-
-        //Override the file with the values we just read
-        BufferedWriter writer = new BufferedWriter( new FileWriter( OSGIUtil.getInstance().FELIX_EXTRA_PACKAGES_FILE ) );
-        writer.write( extraPackages );
-        writer.close();
-        Logger.info( OSGIAJAX.class, "OSGI Extra Packages Saved");
-        //Send a response
-        writeSuccess( response, "OSGI Extra Packages Saved" );
-    }
-
-    public void restart ( HttpServletRequest request, HttpServletResponse response ) throws ServletException, IOException {
-
-        //First we need to stop the framework
-        OSGIUtil.getInstance().stopFramework();
-
-        //Now we need to initialize it
-        OSGIUtil.getInstance().initializeFramework();
-        
-        //Send a respose
-        writeSuccess( response, "OSGI Framework Restarted" );
-    }
-
+    // Send a respose
+    writeSuccess(response, "OSGI Framework Restarted");
+  }
 }

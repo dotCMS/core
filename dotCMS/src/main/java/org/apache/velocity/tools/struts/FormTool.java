@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 package org.apache.velocity.tools.struts;
 
 import javax.servlet.http.HttpServletRequest;
@@ -23,10 +22,12 @@ import org.apache.struts.action.ActionForm;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
 
-
 /**
- * <p>View tool to work with HTML forms in Struts.</p>
- * <p><pre>
+ * View tool to work with HTML forms in Struts.
+ *
+ * <p>
+ *
+ * <pre>
  * Template example(s):
  *  &lt;input type="hidden" name="$form.tokenName" value="$form.token"&gt;
  *  &lt;input type="submit" name="$form.cancelName" value="Cancel"&gt;
@@ -38,134 +39,101 @@ import org.apache.velocity.tools.view.tools.ViewTool;
  *   &lt;scope&gt;request&lt;/scope&gt;
  *   &lt;class&gt;org.apache.velocity.tools.struts.FormTool&lt;/class&gt;
  * &lt;/tool&gt;
- * </pre></p>
+ * </pre>
  *
- * <p>This tool should only be used in the request scope.</p>
+ * <p>This tool should only be used in the request scope.
  *
  * @author <a href="mailto:sidler@teamup.com">Gabe Sidler</a>
  * @since VelocityTools 1.0
  * @version $Id: FormTool.java 154929 2005-02-23 02:04:46Z marino $
  */
-public class FormTool implements ViewTool
-{
+public class FormTool implements ViewTool {
 
-    // --------------------------------------------- Properties ---------------
+  // --------------------------------------------- Properties ---------------
 
+  /** A reference to the HtttpServletRequest. */
+  protected HttpServletRequest request;
 
-    /**
-     * A reference to the HtttpServletRequest.
-     */
-    protected HttpServletRequest request;
+  /** A reference to the HtttpSession. */
+  protected HttpSession session;
 
+  // --------------------------------------------- Constructors -------------
 
-    /**
-     * A reference to the HtttpSession.
-     */
-    protected HttpSession session;
+  /** Default constructor. Tool must be initialized before use. */
+  public FormTool() {}
 
-
-
-    // --------------------------------------------- Constructors -------------
-
-    /**
-     * Default constructor. Tool must be initialized before use.
-     */
-    public FormTool()
-    {
+  /**
+   * Initializes this tool.
+   *
+   * @param obj the current ViewContext
+   * @throws IllegalArgumentException if the param is not a ViewContext
+   */
+  public void init(Object obj) {
+    if (!(obj instanceof ViewContext)) {
+      throw new IllegalArgumentException("Tool can only be initialized with a ViewContext");
     }
 
+    ViewContext context = (ViewContext) obj;
+    this.request = context.getRequest();
+    this.session = request.getSession(false);
+  }
 
-    /**
-     * Initializes this tool.
-     *
-     * @param obj the current ViewContext
-     * @throws IllegalArgumentException if the param is not a ViewContext
-     */
-    public void init(Object obj)
-    {
-        if (!(obj instanceof ViewContext))
-        {
-            throw new IllegalArgumentException("Tool can only be initialized with a ViewContext");
-        }
+  // --------------------------------------------- View Helpers -------------
 
-        ViewContext context = (ViewContext)obj;
-        this.request = context.getRequest();
-        this.session = request.getSession(false);
-    }
+  /**
+   * Returns the form bean associated with this action mapping.
+   *
+   * <p>This is a convenience method. The form bean is automatically available in the Velocity
+   * context under the name defined in the Struts configuration.
+   *
+   * <p>If the form bean is used repeatedly, it is recommended to create a local variable
+   * referencing the bean rather than calling getBean() multiple times.
+   *
+   * <pre>
+   * Example:
+   * #set ($defaults = $form.bean)
+   * &lt;input type="text" name="username" value="$defaults.username"&gt;
+   * </pre>
+   *
+   * @return the {@link ActionForm} associated with this request or <code>null</code> if there is no
+   *     form bean associated with this mapping
+   */
+  public ActionForm getBean() {
+    return StrutsUtils.getActionForm(request, session);
+  }
 
+  /**
+   * Returns the form bean name associated with this action mapping.
+   *
+   * @return the name of the ActionForm associated with this request or <code>null</code> if there
+   *     is no form bean associated with this mapping
+   */
+  public String getName() {
+    return StrutsUtils.getActionFormName(request, session);
+  }
 
+  /**
+   * Returns the query parameter name under which a cancel button press must be reported if form
+   * validation is to be skipped.
+   *
+   * <p>This is the value of <code>org.apache.struts.taglib.html.Constants.CANCEL_PROPERTY</code>
+   */
+  public String getCancelName() {
+    return org.apache.struts.taglib.html.Constants.CANCEL_PROPERTY;
+  }
 
-    // --------------------------------------------- View Helpers -------------
+  /**
+   * Returns the transaction control token for this session or <code>null</code> if no token exists.
+   */
+  public String getToken() {
+    return StrutsUtils.getToken(session);
+  }
 
-    /**
-     * <p>Returns the form bean associated with this action mapping.</p>
-     *
-     * <p>This is a convenience method. The form bean is automatically
-     * available in the Velocity context under the name defined in the
-     * Struts configuration.</p>
-     *
-     * <p>If the form bean is used repeatedly, it is recommended to create a
-     * local variable referencing the bean rather than calling getBean()
-     * multiple times.</p>
-     *
-     * <pre>
-     * Example:
-     * #set ($defaults = $form.bean)
-     * &lt;input type="text" name="username" value="$defaults.username"&gt;
-     * </pre>
-     *
-     * @return the {@link ActionForm} associated with this request or
-     * <code>null</code> if there is no form bean associated with this mapping
-     */
-    public ActionForm getBean()
-    {
-        return StrutsUtils.getActionForm(request, session);
-    }
-
-    /**
-     * <p>Returns the form bean name associated with this action mapping.</p>
-     *
-     * @return the name of the ActionForm associated with this request or
-     * <code>null</code> if there is no form bean associated with this mapping
-     */
-    public String getName()
-    {
-        return StrutsUtils.getActionFormName(request, session);
-    }
-
-
-
-    /**
-     * <p>Returns the query parameter name under which a cancel button press
-     * must be reported if form validation is to be skipped.</p>
-     *
-     * <p>This is the value of
-     * <code>org.apache.struts.taglib.html.Constants.CANCEL_PROPERTY</code></p>
-     */
-    public String getCancelName()
-    {
-        return org.apache.struts.taglib.html.Constants.CANCEL_PROPERTY;
-    }
-
-
-    /**
-     * Returns the transaction control token for this session or
-     * <code>null</code> if no token exists.
-     */
-    public String getToken()
-    {
-        return StrutsUtils.getToken(session);
-    }
-
-
-    /**
-     * <p>Returns the query parameter name under which a transaction token
-     * must be reported. This is the value of
-     * <code>org.apache.struts.taglib.html.Constants.TOKEN_KEY</code></p>
-     */
-    public String getTokenName()
-    {
-        return org.apache.struts.taglib.html.Constants.TOKEN_KEY;
-    }
-
+  /**
+   * Returns the query parameter name under which a transaction token must be reported. This is the
+   * value of <code>org.apache.struts.taglib.html.Constants.TOKEN_KEY</code>
+   */
+  public String getTokenName() {
+    return org.apache.struts.taglib.html.Constants.TOKEN_KEY;
+  }
 }

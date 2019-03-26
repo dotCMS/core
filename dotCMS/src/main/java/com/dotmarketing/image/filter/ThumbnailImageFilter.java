@@ -18,111 +18,120 @@ import java.util.Map;
 import javax.imageio.ImageIO;
 
 public class ThumbnailImageFilter extends ImageFilter {
-	public String[] getAcceptedParameters() {
-		return new String[] { "w (int) specifies width", "h (int) specifies height",
-				"bg (int) must be 9 digits of rgb (000000000=black, 255255255=white) for background color"
+  public String[] getAcceptedParameters() {
+    return new String[] {
+      "w (int) specifies width",
+      "h (int) specifies height",
+      "bg (int) must be 9 digits of rgb (000000000=black, 255255255=white) for background color"
+    };
+  }
 
-		};
-	}
-    public static final int DEFAULT_HEIGHT = Config.getIntProperty("DEFAULT_HEIGHT",100);
-    public static final int DEFAULT_WIDTH = Config.getIntProperty("DEFAULT_WIDTH",100);
-    public static final Color DEFAULT_BG_COLOR = new Color(Config.getIntProperty("DEFAULT_BG_R_COLOR"), Config.getIntProperty("DEFAULT_BG_G_COLOR"), Config.getIntProperty("DEFAULT_BG_B_COLOR"));
+  public static final int DEFAULT_HEIGHT = Config.getIntProperty("DEFAULT_HEIGHT", 100);
+  public static final int DEFAULT_WIDTH = Config.getIntProperty("DEFAULT_WIDTH", 100);
+  public static final Color DEFAULT_BG_COLOR =
+      new Color(
+          Config.getIntProperty("DEFAULT_BG_R_COLOR"),
+          Config.getIntProperty("DEFAULT_BG_G_COLOR"),
+          Config.getIntProperty("DEFAULT_BG_B_COLOR"));
 
-	public File runFilter(File file,  Map<String, String[]> parameters) {
+  public File runFilter(File file, Map<String, String[]> parameters) {
 
-		int height = parameters.get(getPrefix() + "h") != null ? Integer.parseInt(parameters.get(getPrefix() + "h")[0])
-				: 0;
-		int width = parameters.get(getPrefix() + "w") != null ? Integer.parseInt(parameters.get(getPrefix() + "w")[0])
-				: 0;
-		String rgb = parameters.get(getPrefix() + "bg") != null ? parameters.get(getPrefix() + "bg")[0] : "255255255";
-		Color color = new Color(Integer.parseInt(rgb.substring(0, 3)), Integer.parseInt(rgb.substring(3, 6)),
-				Integer.parseInt(rgb.substring(6)));
+    int height =
+        parameters.get(getPrefix() + "h") != null
+            ? Integer.parseInt(parameters.get(getPrefix() + "h")[0])
+            : 0;
+    int width =
+        parameters.get(getPrefix() + "w") != null
+            ? Integer.parseInt(parameters.get(getPrefix() + "w")[0])
+            : 0;
+    String rgb =
+        parameters.get(getPrefix() + "bg") != null
+            ? parameters.get(getPrefix() + "bg")[0]
+            : "255255255";
+    Color color =
+        new Color(
+            Integer.parseInt(rgb.substring(0, 3)),
+            Integer.parseInt(rgb.substring(3, 6)),
+            Integer.parseInt(rgb.substring(6)));
 
-		File resultFile = getResultsFile(file, parameters);
+    File resultFile = getResultsFile(file, parameters);
 
-		if (!overwrite(resultFile, parameters)) {
-			return resultFile;
-		}
+    if (!overwrite(resultFile, parameters)) {
+      return resultFile;
+    }
 
-		try {
-			resultFile.delete();
-	        if (height <= 0 && width <= 0) {
-	            height = DEFAULT_HEIGHT;
-	            width = DEFAULT_WIDTH;
-	        }
+    try {
+      resultFile.delete();
+      if (height <= 0 && width <= 0) {
+        height = DEFAULT_HEIGHT;
+        width = DEFAULT_WIDTH;
+      }
 
-	        if (color == null){
-	            color = DEFAULT_BG_COLOR;
-	        }
-	        
+      if (color == null) {
+        color = DEFAULT_BG_COLOR;
+      }
 
-	        Image image = ImageIO.read(file);
+      Image image = ImageIO.read(file);
 
+      // determine thumbnail size from WIDTH and HEIGHT
+      int imageWidth = image.getWidth(null);
+      int imageHeight = image.getHeight(null);
+      double imageRatio = (double) imageWidth / (double) imageHeight;
 
+      int thumbWidth = width;
+      int thumbHeight = height;
+      if (thumbWidth <= 0) thumbWidth = (int) (thumbHeight * imageRatio);
+      if (thumbHeight <= 0) thumbHeight = (int) (thumbWidth / imageRatio);
+      double thumbRatio = (double) thumbWidth / (double) thumbHeight;
 
-	        // determine thumbnail size from WIDTH and HEIGHT
-	        int imageWidth = image.getWidth(null);
-	        int imageHeight = image.getHeight(null);
-	        double imageRatio = (double) imageWidth / (double) imageHeight;
+      if (thumbRatio < imageRatio) {
+        thumbHeight = (int) Math.ceil((thumbWidth / imageRatio));
+      } else {
+        thumbWidth = (int) Math.ceil((thumbHeight * imageRatio));
+      }
 
-	        int thumbWidth = width;
-	        int thumbHeight = height;
-	        if (thumbWidth <= 0)
-	            thumbWidth = (int) (thumbHeight * imageRatio);
-	        if (thumbHeight <= 0)
-	            thumbHeight = (int) (thumbWidth / imageRatio);
-	        double thumbRatio = (double) thumbWidth / (double) thumbHeight;
+      if (thumbWidth == 0) thumbWidth = 1;
+      if (thumbHeight == 0) thumbHeight = 1;
 
-	        if (thumbRatio < imageRatio) {
-	            thumbHeight = (int) Math.ceil((thumbWidth / imageRatio));
-	        } else {
-	            thumbWidth = (int) Math.ceil((thumbHeight * imageRatio));
-	        }
+      if (width <= 0) width = (int) Math.ceil(height * imageRatio);
+      if (height <= 0) height = (int) Math.ceil(width / imageRatio);
 
-	        if (thumbWidth == 0)
-	            thumbWidth = 1;
-	        if (thumbHeight == 0)
-	            thumbHeight = 1;
+      // draw original image to thumbnail image object and
+      // scale it to the new size on-the-fly
+      BufferedImage bgImage =
+          new BufferedImage(width, height, java.awt.image.BufferedImage.TYPE_INT_RGB);
+      Graphics2D resultGraphics = bgImage.createGraphics();
+      resultGraphics.setColor(color);
+      resultGraphics.fillRect(0, 0, width, height);
 
-	        if (width <= 0)
-	            width = (int) Math.ceil(height * imageRatio);
-	        if (height <= 0)
-	            height = (int) Math.ceil(width / imageRatio);
+      BufferedImageOp resampler =
+          new ResampleOp(
+              thumbWidth,
+              thumbHeight,
+              ResampleOp
+                  .FILTER_LANCZOS); // A good default filter, see class documentation for more info
+      BufferedImage thumbImage = resampler.filter(ImageIO.read(file), null);
 
-	        // draw original image to thumbnail image object and
-	        // scale it to the new size on-the-fly
-	        BufferedImage bgImage = new BufferedImage(width, height, java.awt.image.BufferedImage.TYPE_INT_RGB);
-	        Graphics2D resultGraphics = bgImage.createGraphics();
-	        resultGraphics.setColor(color);
-	        resultGraphics.fillRect(0, 0, width, height);
+      // compute offsets to center image in its space
+      int offsetX = (width - thumbImage.getWidth()) / 2;
+      int offsetY = (height - thumbImage.getHeight()) / 2;
 
-	        
-	        
-	        BufferedImageOp resampler = new ResampleOp(thumbWidth, thumbHeight, ResampleOp.FILTER_LANCZOS); // A good default filter, see class documentation for more info
-	        BufferedImage thumbImage = resampler.filter(ImageIO.read(file), null);
+      resultGraphics.drawImage(thumbImage, null, offsetX, offsetY);
+      resultGraphics.dispose();
 
+      // save thumbnail image to OUTFILE
+      final BufferedOutputStream out =
+          new BufferedOutputStream(Files.newOutputStream(resultFile.toPath()));
+      ImageIO.write(bgImage, "png", out);
+      out.close();
 
-	        // compute offsets to center image in its space
-	        int offsetX = (width - thumbImage.getWidth()) / 2;
-	        int offsetY = (height - thumbImage.getHeight()) / 2;
+      Logger.debug(ImageResizeUtils.class, "Done.");
+    } catch (FileNotFoundException e) {
+      Logger.error(this.getClass(), e.getMessage());
+    } catch (IOException e) {
+      Logger.error(this.getClass(), e.getMessage());
+    }
 
-	        resultGraphics.drawImage(thumbImage, null, offsetX, offsetY);
-	        resultGraphics.dispose();
-
-	        // save thumbnail image to OUTFILE
-	        final BufferedOutputStream out = new BufferedOutputStream(Files.newOutputStream(resultFile.toPath()));
-	        ImageIO.write(bgImage, "png", out);
-	        out.close();
-
-	        Logger.debug(ImageResizeUtils.class, "Done.");
-		} catch (FileNotFoundException e) {
-			Logger.error(this.getClass(), e.getMessage());
-		} catch (IOException e) {
-			Logger.error(this.getClass(), e.getMessage());
-		}
-
-		return resultFile;
-
-	}
-
+    return resultFile;
+  }
 }

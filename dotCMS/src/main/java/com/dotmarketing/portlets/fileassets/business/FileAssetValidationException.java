@@ -4,20 +4,16 @@ import com.dotmarketing.portlets.contentlet.business.DotContentletValidationExce
 
 public class FileAssetValidationException extends DotContentletValidationException {
 
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 1L;
+  /** */
+  private static final long serialVersionUID = 1L;
 
+  public FileAssetValidationException(String x) {
+    super(x);
+    // TODO Auto-generated constructor stub
+  }
 
-	public FileAssetValidationException(String x) {
-		super(x);
-		// TODO Auto-generated constructor stub
-	}
-	
-	public FileAssetValidationException(String x, Exception cause) {
-        super(x,cause);
-        // TODO Auto-generated constructor stub
-    }
-
+  public FileAssetValidationException(String x, Exception cause) {
+    super(x, cause);
+    // TODO Auto-generated constructor stub
+  }
 }

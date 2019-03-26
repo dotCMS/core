@@ -21,304 +21,337 @@ import java.util.List;
 import java.util.Map;
 import org.apache.commons.lang.StringUtils;
 
-/**
- *
- * @author mcevoyb
- */
+/** @author mcevoyb */
 public abstract class Resource {
 
-    private static final Logger log = LoggerFactory.getLogger(Resource.class);
+  private static final Logger log = LoggerFactory.getLogger(Resource.class);
 
-    static Resource fromResponse(Folder parent, Response resp, Cache<Folder, List<Resource>> cache) {
-        if (resp.isCollection) {
-            return new Folder(parent, resp, cache);
+  static Resource fromResponse(Folder parent, Response resp, Cache<Folder, List<Resource>> cache) {
+    if (resp.isCollection) {
+      return new Folder(parent, resp, cache);
+    } else {
+      return new com.ettrema.httpclient.File(parent, resp);
+    }
+  }
+
+  /**
+   * does percentage decoding on a path portion of a url
+   *
+   * <p>E.g. /foo > /foo /with%20space -> /with space
+   *
+   * @param href
+   */
+  public static String decodePath(String href) {
+    // For IPv6
+    href = href.replace("[", "%5B").replace("]", "%5D");
+
+    // Seems that some client apps send spaces.. maybe..
+    href = href.replace(" ", "%20");
+    // ok, this is milton's bad. Older versions don't encode curly braces
+    href = href.replace("{", "%7B").replace("}", "%7D");
+    try {
+      if (href.startsWith("/")) {
+        URI uri = new URI("http://anything.com" + href);
+        return uri.getPath();
+      } else {
+        URI uri = new URI("http://anything.com/" + href);
+        String s = uri.getPath();
+        return s.substring(1);
+      }
+    } catch (URISyntaxException ex) {
+      throw new RuntimeException(ex);
+    }
+  }
+
+  public Folder parent;
+  public String name;
+  public String displayName;
+  private Date modifiedDate;
+  private Date createdDate;
+  private final Long quotaAvailableBytes;
+  private final Long quotaUsedBytes;
+  private final Long crc;
+  final List<ResourceListener> listeners = new ArrayList<ResourceListener>();
+  private String lockOwner;
+  private String lockToken;
+
+  public abstract java.io.File downloadTo(java.io.File destFolder, ProgressListener listener)
+      throws FileNotFoundException, IOException, HttpException, Utils.CancelledException,
+          NotAuthorizedException, BadRequestException;
+
+  private static long count = 0;
+
+  public static long getCount() {
+    return count;
+  }
+
+  public abstract String encodedUrl();
+
+  /** Special constructor for Host */
+  Resource() {
+    this.parent = null;
+    this.name = "";
+    this.displayName = "";
+    this.createdDate = null;
+    this.modifiedDate = null;
+    quotaAvailableBytes = null;
+    quotaUsedBytes = null;
+    crc = null;
+    count++;
+  }
+
+  public Resource(Folder parent, Response resp) {
+    count++;
+    try {
+      if (parent == null) {
+        throw new NullPointerException("parent");
+      }
+      this.parent = parent;
+      name = Resource.decodePath(resp.name);
+      displayName = Resource.decodePath(resp.displayName);
+      if (resp.createdDate != null && resp.createdDate.length() > 0) {
+        createdDate = DateUtils.parseWebDavDate(resp.createdDate);
+      }
+      quotaAvailableBytes = resp.quotaAvailableBytes;
+      quotaUsedBytes = resp.quotaUsedBytes;
+      crc = resp.crc;
+
+      if (StringUtils.isEmpty(resp.modifiedDate)) {
+        modifiedDate = null;
+      } else if (resp.modifiedDate.endsWith("Z")) {
+        modifiedDate = DateUtils.parseWebDavDate(resp.modifiedDate);
+        if (resp.serverDate != null) {
+          // calc difference and use that as delta on local time
+          Date serverDate = DateUtils.parseDate(resp.serverDate);
+          long delta = serverDate.getTime() - modifiedDate.getTime();
+          modifiedDate = new Date(System.currentTimeMillis() - delta);
         } else {
-            return new com.ettrema.httpclient.File(parent, resp);
+          log.debug("no server date");
         }
+      } else {
+        modifiedDate = DateUtils.parseDate(resp.modifiedDate);
+      }
+      lockToken = resp.lockToken;
+      lockOwner = resp.lockOwner;
+
+      // log.debug( "parsed mod date: " + modifiedDate);
+    } catch (DateParseException ex) {
+      throw new RuntimeException(ex);
     }
+  }
 
-    /**
-     * does percentage decoding on a path portion of a url
-     *
-     * E.g. /foo > /foo /with%20space -> /with space
-     *
-     * @param href
-     */
-    public static String decodePath(String href) {
-        // For IPv6
-        href = href.replace("[", "%5B").replace("]", "%5D");
-
-        // Seems that some client apps send spaces.. maybe..
-        href = href.replace(" ", "%20");
-        // ok, this is milton's bad. Older versions don't encode curly braces
-        href = href.replace("{", "%7B").replace("}", "%7D");
-        try {
-            if (href.startsWith("/")) {
-                URI uri = new URI("http://anything.com" + href);
-                return uri.getPath();
-            } else {
-                URI uri = new URI("http://anything.com/" + href);
-                String s = uri.getPath();
-                return s.substring(1);
-            }
-        } catch (URISyntaxException ex) {
-            throw new RuntimeException(ex);
-        }
+  public Resource(
+      Folder parent,
+      String name,
+      String displayName,
+      String href,
+      Date modifiedDate,
+      Date createdDate) {
+    count++;
+    if (parent == null) {
+      throw new NullPointerException("parent");
     }
-    public Folder parent;
-    public String name;
-    public String displayName;
-    private Date modifiedDate;
-    private Date createdDate;
-    private final Long quotaAvailableBytes;
-    private final Long quotaUsedBytes;
-    private final Long crc;
-    final List<ResourceListener> listeners = new ArrayList<ResourceListener>();
-    private String lockOwner;
-    private String lockToken;
+    this.parent = parent;
+    this.name = name;
+    this.displayName = displayName;
+    this.modifiedDate = modifiedDate;
+    this.createdDate = createdDate;
+    quotaAvailableBytes = null;
+    quotaUsedBytes = null;
+    crc = null;
+  }
 
-    public abstract java.io.File downloadTo(java.io.File destFolder, ProgressListener listener) throws FileNotFoundException, IOException, HttpException, Utils.CancelledException, NotAuthorizedException, BadRequestException;
-    
-    private static long count = 0;
-
-    public static long getCount() {
-        return count;
+  public Resource(Folder parent, String name) {
+    count++;
+    if (parent == null) {
+      throw new NullPointerException("parent");
     }
+    this.parent = parent;
+    this.name = name;
+    this.displayName = name;
+    this.modifiedDate = null;
+    this.createdDate = null;
+    quotaAvailableBytes = null;
+    quotaUsedBytes = null;
+    crc = null;
+  }
 
-    public abstract String encodedUrl();
+  @Override
+  protected void finalize() throws Throwable {
+    count--;
+    super.finalize();
+  }
 
-    /**
-     * Special constructor for Host
-     */
-    Resource() {
-        this.parent = null;
-        this.name = "";
-        this.displayName = "";
-        this.createdDate = null;
-        this.modifiedDate = null;
-        quotaAvailableBytes = null;
-        quotaUsedBytes = null;
-        crc = null;
-        count++;
+  public void addListener(ResourceListener l) {
+    listeners.add(l);
+  }
+
+  public String post(Map<String, String> params)
+      throws HttpException, NotAuthorizedException, ConflictException, BadRequestException,
+          NotFoundException {
+    return host().doPost(encodedUrl(), params);
+  }
+
+  public void lock()
+      throws HttpException, NotAuthorizedException, ConflictException, BadRequestException,
+          NotFoundException {
+    if (lockToken != null) {
+      log.warn("already locked: " + href() + " token: " + lockToken);
     }
+    lockToken = host().doLock(encodedUrl());
+  }
 
-    public Resource(Folder parent, Response resp) {
-        count++;
-        try {
-            if (parent == null) {
-                throw new NullPointerException("parent");
-            }
-            this.parent = parent;
-            name = Resource.decodePath(resp.name);
-            displayName = Resource.decodePath(resp.displayName);
-            if (resp.createdDate != null && resp.createdDate.length() > 0) {
-                createdDate = DateUtils.parseWebDavDate(resp.createdDate);
-            }
-            quotaAvailableBytes = resp.quotaAvailableBytes;
-            quotaUsedBytes = resp.quotaUsedBytes;
-            crc = resp.crc;
+  public int unlock()
+      throws HttpException, NotAuthorizedException, ConflictException, BadRequestException,
+          NotFoundException {
+    if (lockToken == null) {
+      throw new IllegalStateException(
+          "Can't unlock, is not currently locked (no lock token) - " + href());
+    }
+    return host().doUnLock(encodedUrl(), lockToken);
+  }
 
-            if (StringUtils.isEmpty(resp.modifiedDate)) {
-                modifiedDate = null;
-            } else if (resp.modifiedDate.endsWith("Z")) {
-                modifiedDate = DateUtils.parseWebDavDate(resp.modifiedDate);
-                if (resp.serverDate != null) {
-                    // calc difference and use that as delta on local time
-                    Date serverDate = DateUtils.parseDate(resp.serverDate);
-                    long delta = serverDate.getTime() - modifiedDate.getTime();
-                    modifiedDate = new Date(System.currentTimeMillis() - delta);
-                } else {
-                    log.debug("no server date");
-                }
-            } else {
-                modifiedDate = DateUtils.parseDate(resp.modifiedDate);
-            }
-            lockToken = resp.lockToken;
-            lockOwner = resp.lockOwner;
+  public void copyTo(Folder folder)
+      throws IOException, HttpException, NotAuthorizedException, ConflictException,
+          BadRequestException, NotFoundException {
+    copyTo(folder, name);
+  }
 
-            //log.debug( "parsed mod date: " + modifiedDate);
-        } catch (DateParseException ex) {
-            throw new RuntimeException(ex);
-        }
-    }
+  public void copyTo(Folder folder, String destName)
+      throws IOException, HttpException, NotAuthorizedException, ConflictException,
+          BadRequestException, NotFoundException {
+    host()
+        .doCopy(
+            encodedUrl(),
+            folder.encodedUrl()
+                + com.dotcms.repackage.com.bradmcevoy.http.Utils.percentEncode(destName));
+    folder.flush();
+  }
 
-    public Resource(Folder parent, String name, String displayName, String href, Date modifiedDate, Date createdDate) {
-        count++;
-        if (parent == null) {
-            throw new NullPointerException("parent");
-        }
-        this.parent = parent;
-        this.name = name;
-        this.displayName = displayName;
-        this.modifiedDate = modifiedDate;
-        this.createdDate = createdDate;
-        quotaAvailableBytes = null;
-        quotaUsedBytes = null;
-        crc = null;
+  public void rename(String newName)
+      throws IOException, HttpException, NotAuthorizedException, ConflictException,
+          BadRequestException, NotFoundException {
+    String dest = "";
+    if (parent != null) {
+      dest = parent.encodedUrl();
     }
+    dest = dest + com.dotcms.repackage.com.bradmcevoy.http.Utils.percentEncode(newName);
+    int res = host().doMove(encodedUrl(), dest);
+    if (res == 201) {
+      this.name = newName;
+    }
+  }
 
-    public Resource(Folder parent, String name) {
-        count++;
-        if (parent == null) {
-            throw new NullPointerException("parent");
-        }
-        this.parent = parent;
-        this.name = name;
-        this.displayName = name;
-        this.modifiedDate = null;
-        this.createdDate = null;
-        quotaAvailableBytes = null;
-        quotaUsedBytes = null;
-        crc = null;
-    }
+  public void moveTo(Folder folder)
+      throws IOException, HttpException, NotAuthorizedException, ConflictException,
+          BadRequestException, NotFoundException {
+    moveTo(folder, name);
+  }
 
-    @Override
-    protected void finalize() throws Throwable {
-        count--;
-        super.finalize();
+  public void moveTo(Folder folder, String destName)
+      throws IOException, HttpException, NotAuthorizedException, ConflictException,
+          BadRequestException, NotFoundException {
+    log.info("Move: " + this.href() + " to " + folder.href());
+    int res =
+        host()
+            .doMove(
+                encodedUrl(),
+                folder.href()
+                    + com.dotcms.repackage.com.bradmcevoy.http.Utils.percentEncode(destName));
+    if (res == 201) {
+      this.parent.flush();
+      folder.flush();
     }
+  }
 
-    public void addListener(ResourceListener l) {
-        listeners.add(l);
-    }
+  public void removeListener(ResourceListener l) {
+    listeners.remove(l);
+  }
 
-    public String post(Map<String, String> params) throws HttpException, NotAuthorizedException, ConflictException, BadRequestException, NotFoundException {
-        return host().doPost(encodedUrl(), params);
-    }
+  @Override
+  public String toString() {
+    return href() + "(" + displayName + ")";
+  }
 
-    public void lock() throws HttpException, NotAuthorizedException, ConflictException, BadRequestException, NotFoundException  {
-        if (lockToken != null) {
-            log.warn("already locked: " + href() + " token: " + lockToken);
-        }
-        lockToken = host().doLock(encodedUrl());
-    }
+  public void delete()
+      throws IOException, HttpException, NotAuthorizedException, ConflictException,
+          BadRequestException, NotFoundException {
+    host().doDelete(encodedUrl());
+    notifyOnDelete();
+  }
 
-    public int unlock() throws HttpException , NotAuthorizedException, ConflictException, BadRequestException, NotFoundException {
-        if (lockToken == null) {
-            throw new IllegalStateException("Can't unlock, is not currently locked (no lock token) - " + href());
-        }
-        return host().doUnLock(encodedUrl(), lockToken);
+  void notifyOnDelete() {
+    if (this.parent != null) {
+      this.parent.notifyOnChildRemoved(this);
     }
+    List<ResourceListener> l2 = new ArrayList<ResourceListener>(listeners);
+    for (ResourceListener l : l2) {
+      l.onDeleted(this);
+    }
+  }
 
-    public void copyTo(Folder folder) throws IOException, HttpException, NotAuthorizedException, ConflictException, BadRequestException, NotFoundException  {
-        copyTo(folder, name);
+  public Host host() {
+    Host h = parent.host();
+    if (h == null) {
+      throw new NullPointerException("no host");
     }
+    return h;
+  }
 
-    public void copyTo(Folder folder, String destName) throws IOException, HttpException, NotAuthorizedException, ConflictException, BadRequestException, NotFoundException  {
-        host().doCopy(encodedUrl(), folder.encodedUrl() + com.dotcms.repackage.com.bradmcevoy.http.Utils.percentEncode(destName));
-        folder.flush();
-    }
-    
-    public void rename(String newName) throws IOException, HttpException, NotAuthorizedException, ConflictException, BadRequestException, NotFoundException  {
-        String dest = "";
-        if (parent != null) {
-            dest = parent.encodedUrl();
-        }
-        dest = dest + com.dotcms.repackage.com.bradmcevoy.http.Utils.percentEncode(newName);
-        int res = host().doMove(encodedUrl(), dest);
-        if (res == 201) {
-            this.name = newName;
-        }
-    }
+  public String encodedName() {
+    return com.dotcms.repackage.com.bradmcevoy.http.Utils.percentEncode(name);
+  }
 
-    public void moveTo(Folder folder) throws IOException, HttpException, NotAuthorizedException, ConflictException, BadRequestException, NotFoundException  {
-        moveTo(folder, name);
+  /**
+   * Returns the UN-encoded url
+   *
+   * @return
+   */
+  public String href() {
+    if (parent == null) {
+      return name;
+      // return encodedName();
+    } else {
+      // return parent.href() + encodedName();
+      return parent.href() + name;
     }
-    public void moveTo(Folder folder, String destName) throws IOException, HttpException, NotAuthorizedException, ConflictException, BadRequestException, NotFoundException  {
-        log.info("Move: " + this.href() + " to " + folder.href());
-        int res = host().doMove(encodedUrl(), folder.href() + com.dotcms.repackage.com.bradmcevoy.http.Utils.percentEncode(destName));
-        if (res == 201) {
-            this.parent.flush();
-            folder.flush();
-        }
-    }
+  }
 
-    public void removeListener(ResourceListener l) {
-        listeners.remove(l);
+  public Path path() {
+    if (parent == null) {
+      return Path.root;
+      // return encodedName();
+    } else {
+      // return parent.href() + encodedName();
+      return parent.path().child(name);
     }
+  }
 
-    @Override
-    public String toString() {
-        return href() + "(" + displayName + ")";
-    }
+  public Date getModifiedDate() {
+    return modifiedDate;
+  }
 
-    public void delete() throws IOException, HttpException, NotAuthorizedException, ConflictException, BadRequestException, NotFoundException  {
-        host().doDelete(encodedUrl());
-        notifyOnDelete();
-    }
+  public Date getCreatedDate() {
+    return createdDate;
+  }
 
-    void notifyOnDelete() {
-        if (this.parent != null) {
-            this.parent.notifyOnChildRemoved(this);
-        }
-        List<ResourceListener> l2 = new ArrayList<ResourceListener>(listeners);
-        for (ResourceListener l : l2) {
-            l.onDeleted(this);
-        }
-    }
+  public Long getQuotaAvailableBytes() {
+    return quotaAvailableBytes;
+  }
 
-    public Host host() {
-        Host h = parent.host();
-        if (h == null) {
-            throw new NullPointerException("no host");
-        }
-        return h;
-    }
+  public Long getQuotaUsedBytes() {
+    return quotaUsedBytes;
+  }
 
-    public String encodedName() {
-        return com.dotcms.repackage.com.bradmcevoy.http.Utils.percentEncode(name);
-    }
+  public Long getCrc() {
+    return crc;
+  }
 
-    /**
-     * Returns the UN-encoded url
-     *
-     * @return
-     */
-    public String href() {
-        if (parent == null) {
-            return name;
-            //return encodedName();
-        } else {
-            //return parent.href() + encodedName();
-            return parent.href() + name;
-        }
-    }
+  public String getLockToken() {
+    return lockToken;
+  }
 
-    public Path path() {
-        if (parent == null) {
-            return Path.root;
-            //return encodedName();
-        } else {
-            //return parent.href() + encodedName();
-            return parent.path().child(name);
-        }
-    }
-
-    public Date getModifiedDate() {
-        return modifiedDate;
-    }
-
-    public Date getCreatedDate() {
-        return createdDate;
-    }
-
-    public Long getQuotaAvailableBytes() {
-        return quotaAvailableBytes;
-    }
-
-    public Long getQuotaUsedBytes() {
-        return quotaUsedBytes;
-    }
-
-    public Long getCrc() {
-        return crc;
-    }
-
-    public String getLockToken() {
-        return lockToken;
-    }
-
-    public String getLockOwner() {
-        return lockOwner;
-    }
+  public String getLockOwner() {
+    return lockOwner;
+  }
 }

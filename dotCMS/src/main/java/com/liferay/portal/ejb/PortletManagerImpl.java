@@ -1,25 +1,21 @@
 /**
  * Copyright (c) 2000-2005 Liferay, LLC. All rights reserved.
  *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
+ * <p>Permission is hereby granted, free of charge, to any person obtaining a copy of this software
+ * and associated documentation files (the "Software"), to deal in the Software without restriction,
+ * including without limitation the rights to use, copy, modify, merge, publish, distribute,
+ * sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
  *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
+ * <p>The above copyright notice and this permission notice shall be included in all copies or
+ * substantial portions of the Software.
  *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
+ * <p>THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
+ * BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+ * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-
 package com.liferay.portal.ejb;
 
 import com.dotcms.repackage.javax.portlet.PreferencesValidator;
@@ -67,820 +63,785 @@ import org.dom4j.io.XMLWriter;
 /**
  * <a href="PortletManagerImpl.java.html"><b><i>View Source</i></b></a>
  *
- * @author  Brian Wing Shun Chan
+ * @author Brian Wing Shun Chan
  * @version $Revision: 1.6 $
- *
  */
-public class PortletManagerImpl
-	extends PrincipalBean implements PortletManager {
+public class PortletManagerImpl extends PrincipalBean implements PortletManager {
 
-	// Business methods
+  // Business methods
 
-	public Map getEARDisplay(String xml) throws DocumentException, IOException {
-		return _readLiferayDisplayXML(xml);
-	}
+  public Map getEARDisplay(String xml) throws DocumentException, IOException {
+    return _readLiferayDisplayXML(xml);
+  }
 
-	public Map getWARDisplay(String servletContextName, String xml)
-		throws DocumentException, IOException {
+  public Map getWARDisplay(String servletContextName, String xml)
+      throws DocumentException, IOException {
 
-		return _readLiferayDisplayXML(servletContextName, xml);
-	}
+    return _readLiferayDisplayXML(servletContextName, xml);
+  }
 
-	public Portlet getPortletById(String companyId, String portletId)
-		throws SystemException {
+  public Portlet getPortletById(String companyId, String portletId) throws SystemException {
 
-		if (companyId.equals(User.DEFAULT)) {
-			throw new SystemException();
-		}
-
-		return (Portlet)_getPortletsPool(companyId).get(portletId);
-	}
-
-	public Portlet getPortletById(
-			String companyId, String groupId, String portletId)
-		throws SystemException {
-
-		return (Portlet)_getPortletsPool(companyId, groupId).get(portletId);
-	}
-
-	public Portlet getPortletByStrutsPath(String companyId, String strutsPath)
-		throws SystemException {
-
-		return getPortletById(companyId, _getPortletId(strutsPath));
-	}
-
-	public Portlet getPortletByStrutsPath(
-			String companyId, String groupId, String strutsPath)
-		throws SystemException {
-
-		return getPortletById(companyId, groupId, _getPortletId(strutsPath));
-	}
-
-	public List getPortlets(String companyId) throws SystemException {
-		List list = ListUtil.fromCollection(
-			_getPortletsPool(companyId).values());
-
-		Collections.sort(list);
-
-		return list;
-	}
-
-	public void initEAR(String[] xmls) {
-		String scpId = PortletManagerImpl.class.getName() + "." + _SHARED_KEY;
-
-		Map portletsPool = (Map)SimpleCachePool.get(scpId);
-
-		if (portletsPool == null) {
-			portletsPool = CollectionFactory.getSyncHashMap();
-
-			SimpleCachePool.put(scpId, portletsPool);
-		}
-
-		try {
-			Set portletIds = _readPortletXML(xmls[0], portletsPool);
-			portletIds.addAll(_readPortletXML(xmls[1], portletsPool));
-
-			Set liferayPortletIds =
-				_readLiferayPortletXML(xmls[2], portletsPool);
-
-			liferayPortletIds.addAll(
-				_readLiferayPortletXML(xmls[3], portletsPool));
-
-			// Check for missing entries in liferay-portlet.xml
-
-			Iterator itr = portletIds.iterator();
-
-			while (itr.hasNext()) {
-				String portletId = (String)itr.next();
-
-				if (!liferayPortletIds.contains(portletId)) {
-					_log.warn(
-						"Portlet with the name " + portletId +
-							" is described in portlet.xml but does not " +
-								"have a matching entry in liferay-portlet.xml");
-				}
-			}
-
-			// Check for missing entries in portlet.xml
-
-			itr = liferayPortletIds.iterator();
-
-			while (itr.hasNext()) {
-				String portletId = (String)itr.next();
-
-				if (!portletIds.contains(portletId)) {
-					_log.warn(
-						"Portlet with the name " + portletId +
-							" is described in liferay-portlet.xml but does " +
-								"not have a matching entry in portlet.xml");
-				}
-			}
-
-			// Remove portlets that should not be included
-
-			itr = portletsPool.entrySet().iterator();
-
-			while (itr.hasNext()) {
-				Map.Entry entry = (Map.Entry)itr.next();
-
-				Portlet portletModel = (Portlet)entry.getValue();
-
-				if (!portletModel.getPortletId().equals(PortletKeys.ADMIN) &&
-					!portletModel.getPortletId().equals(
-						PortletKeys.MY_ACCOUNT) &&
-					!portletModel.isInclude()) {
-
-					itr.remove();
-				}
-			}
-		}
-		catch (Exception e) {
-			Logger.error(this,e.getMessage(),e);
-		}
-	}
-
-	public List initWAR(String servletContextName, String[] xmls) {
-		List portlets = new ArrayList();
-
-		String scpId = PortletManagerImpl.class.getName() + "." + _SHARED_KEY;
-
-		Map portletsPool = (Map)SimpleCachePool.get(scpId);
-
-		if (portletsPool == null) {
-			portletsPool = CollectionFactory.getSyncHashMap();
-
-			SimpleCachePool.put(scpId, portletsPool);
-		}
-
-		try {
-			Set portletIds = _readPortletXML(
-				servletContextName, xmls[0], portletsPool);
-
-			Set liferayPortletIds = _readLiferayPortletXML(
-				servletContextName, xmls[1], portletsPool);
-
-			// Check for missing entries in liferay-portlet.xml
-
-			Iterator itr = portletIds.iterator();
-
-			while (itr.hasNext()) {
-				String portletId = (String)itr.next();
-
-				if (!liferayPortletIds.contains(portletId)) {
-					_log.warn(
-						"Portlet with the name " + portletId +
-							" is described in portlet.xml but does not " +
-								"have a matching entry in liferay-portlet.xml");
-				}
-			}
-
-			// Check for missing entries in portlet.xml
-
-			itr = liferayPortletIds.iterator();
-
-			while (itr.hasNext()) {
-				String portletId = (String)itr.next();
-
-				if (!portletIds.contains(portletId)) {
-					_log.warn(
-						"Portlet with the name " + portletId +
-							" is described in liferay-portlet.xml but does " +
-								"not have a matching entry in portlet.xml");
-				}
-			}
-
-			// Return the new portlets
-
-			itr = portletIds.iterator();
-
-			while (itr.hasNext()) {
-				String portletId = (String)itr.next();
-
-				Portlet portlet = (Portlet)_getPortletsPool().get(portletId);
-
-				portlets.add(portlet);
-			}
-		}
-		catch (Exception e) {
-			Logger.error(this,e.getMessage(),e);
-		}
-
-		// Refresh security path to portlet id mapping for all portlets
-
-		SimpleCachePool.remove(PortletManagerImpl.class.getName());
-
-		// Refresh company portlets
-
-		SimpleCachePool.remove(
-			PortletManagerImpl.class.getName() + ".companyPortletsPool");
-
-		return portlets;
-	}
-
-    public Portlet removePortletFromPool ( String companyId, String portletId ) throws SystemException, PortalException {
-
-        if ( companyId.equals( User.DEFAULT ) ) {
-            throw new SystemException();
-        }
-
-        return (Portlet) _getPortletsPool( companyId ).remove( portletId );
+    if (companyId.equals(User.DEFAULT)) {
+      throw new SystemException();
     }
 
-	public Portlet updatePortlet(
-			String portletId, String groupId, String defaultPreferences,
-			boolean narrow, String roles, boolean active)
-		throws PortalException, SystemException {
+    return (Portlet) _getPortletsPool(companyId).get(portletId);
+  }
 
-//		PortletPreferencesManagerUtil.deleteAllByGroup(groupId);
+  public Portlet getPortletById(String companyId, String groupId, String portletId)
+      throws SystemException {
 
-		String companyId = getUser().getCompanyId();
+    return (Portlet) _getPortletsPool(companyId, groupId).get(portletId);
+  }
 
-		if (!hasAdministrator(companyId)) {
-			throw new PrincipalException();
-		}
-
-		groupId = _SHARED_KEY;
-
-//		try {
-//			Group group = GroupUtil.findByPrimaryKey(groupId);
-//
-//			if (!group.getCompanyId().equals(companyId)) {
-//				groupId = _SHARED_KEY;
-//			}
-//			else {
-//				Group generalGuestGroup = GroupLocalManagerUtil.getGroupByName(
-//					companyId, Group.GENERAL_GUEST);
-//
-//				Group generalUserGroup = GroupLocalManagerUtil.getGroupByName(
-//					companyId, Group.GENERAL_USER);
-//
-//				if (groupId.equals(generalGuestGroup.getGroupId()) ||
-//					groupId.equals(generalUserGroup.getGroupId())) {
-//
-//					groupId = _SHARED_KEY;
-//				}
-//			}
-//		}
-//		catch (NoSuchGroupException nsge) {
-//			groupId = _SHARED_KEY;
-//		}
-
-		PortletPK pk = new PortletPK(portletId, groupId, companyId);
-
-		Portlet portlet = null;
-
-		try {
-			portlet = PortletUtil.findByPrimaryKey(pk);
-		}
-		catch (NoSuchPortletException nspe) {
-			portlet = PortletUtil.create(pk);
-		}
-
-		portlet.setDefaultPreferences(defaultPreferences);
-		portlet.setNarrow(narrow);
-		portlet.setRoles(roles);
-		portlet.setActive(active);
-
-		PortletUtil.update(portlet);
-
-		portlet = getPortletById(companyId, groupId, portletId);
-
-		portlet.setDefaultPreferences(defaultPreferences);
-		portlet.setNarrow(narrow);
-		portlet.setRoles(roles);
-		portlet.setActive(active);
-
-		return portlet;
-	}
-
-	// Private methods
+  public Portlet getPortletByStrutsPath(String companyId, String strutsPath)
+      throws SystemException {
 
-	private String _getPortletId(String securityPath) throws SystemException {
-		String scpId = PortletManagerImpl.class.getName();
+    return getPortletById(companyId, _getPortletId(strutsPath));
+  }
 
-		Map portletIds = (Map)SimpleCachePool.get(scpId);
-
-		if (portletIds == null) {
-			portletIds = CollectionFactory.getHashMap();
+  public Portlet getPortletByStrutsPath(String companyId, String groupId, String strutsPath)
+      throws SystemException {
 
-			Iterator itr = _getPortletsPool().values().iterator();
+    return getPortletById(companyId, groupId, _getPortletId(strutsPath));
+  }
 
-			while (itr.hasNext()) {
-				Portlet portlet = (Portlet)itr.next();
-
-				portletIds.put(portlet.getStrutsPath(), portlet.getPortletId());
-			}
-
-			SimpleCachePool.put(scpId, portletIds);
-		}
-
-		return (String)portletIds.get(securityPath);
-	}
-
-	private Map _getPortletsPool() {
-		String scpId = PortletManagerImpl.class.getName() + "." + _SHARED_KEY;
-
-		return (Map)SimpleCachePool.get(scpId);
-	}
+  public List getPortlets(String companyId) throws SystemException {
+    List list = ListUtil.fromCollection(_getPortletsPool(companyId).values());
 
-	private Map _getPortletsPool(String companyId) throws SystemException {
-		return _getPortletsPool(companyId, null);
-	}
+    Collections.sort(list);
 
-	private Map _getPortletsPool(String companyId, String groupId)
-		throws SystemException {
+    return list;
+  }
 
-//		if (Validator.isNull(groupId)) {
-			groupId = _SHARED_KEY;
-//		}
-//		else {
-//			try {
-//				Group generalGuestGroup = GroupLocalManagerUtil.getGroupByName(
-//					companyId, Group.GENERAL_GUEST);
-//
-//				Group generalUserGroup = GroupLocalManagerUtil.getGroupByName(
-//					companyId, Group.GENERAL_USER);
-//
-//				if (groupId.equals(generalGuestGroup.getGroupId()) ||
-//					groupId.equals(generalUserGroup.getGroupId())) {
-//
-//					groupId = _SHARED_KEY;
-//				}
-//			}
-//			catch (PortalException pe) {
-//				Logger.error(this,pe.getMessage(),pe);
-//			}
-//		}
+  public void initEAR(String[] xmls) {
+    String scpId = PortletManagerImpl.class.getName() + "." + _SHARED_KEY;
 
-		String scpId =
-			PortletManagerImpl.class.getName() + ".companyPortletsPool";
+    Map portletsPool = (Map) SimpleCachePool.get(scpId);
 
-		Map companyPortletsPool = (Map)SimpleCachePool.get(scpId);
+    if (portletsPool == null) {
+      portletsPool = CollectionFactory.getSyncHashMap();
 
-		if (companyPortletsPool == null) {
-			companyPortletsPool = CollectionFactory.getSyncHashMap();
+      SimpleCachePool.put(scpId, portletsPool);
+    }
 
-			SimpleCachePool.put(scpId, companyPortletsPool);
-		}
+    try {
+      Set portletIds = _readPortletXML(xmls[0], portletsPool);
+      portletIds.addAll(_readPortletXML(xmls[1], portletsPool));
 
-		String cppId = companyId + "." + groupId;
+      Set liferayPortletIds = _readLiferayPortletXML(xmls[2], portletsPool);
 
-		Map portletsPool = (Map)companyPortletsPool.get(cppId);
+      liferayPortletIds.addAll(_readLiferayPortletXML(xmls[3], portletsPool));
 
-		if (portletsPool == null) {
-			portletsPool = CollectionFactory.getSyncHashMap();
+      // Check for missing entries in liferay-portlet.xml
 
-			Map parentPortletsPool = null;
-			if (groupId.equals(_SHARED_KEY)) {
-				parentPortletsPool = _getPortletsPool();
-			}
-			else {
-				parentPortletsPool = _getPortletsPool(companyId, _SHARED_KEY);
-			}
+      Iterator itr = portletIds.iterator();
 
-			Iterator itr = parentPortletsPool.values().iterator();
+      while (itr.hasNext()) {
+        String portletId = (String) itr.next();
 
-			if (null != itr) {
+        if (!liferayPortletIds.contains(portletId)) {
+          _log.warn(
+              "Portlet with the name "
+                  + portletId
+                  + " is described in portlet.xml but does not "
+                  + "have a matching entry in liferay-portlet.xml");
+        }
+      }
 
-				while (itr.hasNext()) {
-					Portlet portlet = (Portlet) ((Portlet) itr.next()).clone();
+      // Check for missing entries in portlet.xml
 
-					portlet.setGroupId(groupId);
-					portlet.setCompanyId(companyId);
+      itr = liferayPortletIds.iterator();
 
-					portletsPool.put(portlet.getPortletId(), portlet);
-				}
-			}
+      while (itr.hasNext()) {
+        String portletId = (String) itr.next();
 
-			itr = PortletUtil.findByG_C(groupId, companyId).iterator();
+        if (!portletIds.contains(portletId)) {
+          _log.warn(
+              "Portlet with the name "
+                  + portletId
+                  + " is described in liferay-portlet.xml but does "
+                  + "not have a matching entry in portlet.xml");
+        }
+      }
 
-			while (itr.hasNext()) {
-				Portlet portlet = (Portlet)itr.next();
+      // Remove portlets that should not be included
 
-				Portlet portletModel =
-					(Portlet)portletsPool.get(portlet.getPortletId());
+      itr = portletsPool.entrySet().iterator();
 
-				// Portlet may be null if it exists in the database but its
-				// portlet WAR is not yet loaded
+      while (itr.hasNext()) {
+        Map.Entry entry = (Map.Entry) itr.next();
 
-				if (portletModel != null) {
-					portletModel.setDefaultPreferences(
-						portlet.getDefaultPreferences());
-					portletModel.setNarrow(portlet.getNarrow());
-					portletModel.setRoles(portlet.getRoles());
-					portletModel.setActive(portlet.getActive());
-				}
-			}
+        Portlet portletModel = (Portlet) entry.getValue();
 
-			companyPortletsPool.put(cppId, portletsPool);
-		}
+        if (!portletModel.getPortletId().equals(PortletKeys.ADMIN)
+            && !portletModel.getPortletId().equals(PortletKeys.MY_ACCOUNT)
+            && !portletModel.isInclude()) {
 
-		return portletsPool;
-	}
+          itr.remove();
+        }
+      }
+    } catch (Exception e) {
+      Logger.error(this, e.getMessage(), e);
+    }
+  }
 
-	private Set _readPortletXML(String xml, Map portletsPool)
-		throws DocumentException, IOException {
+  public List initWAR(String servletContextName, String[] xmls) {
+    List portlets = new ArrayList();
 
-		return _readPortletXML(null, xml, portletsPool);
-	}
+    String scpId = PortletManagerImpl.class.getName() + "." + _SHARED_KEY;
 
-	private Set _readPortletXML(
-			String servletContextName, String xml, Map portletsPool)
-		throws DocumentException, IOException {
+    Map portletsPool = (Map) SimpleCachePool.get(scpId);
 
-		Set portletIds = new HashSet();
+    if (portletsPool == null) {
+      portletsPool = CollectionFactory.getSyncHashMap();
 
-		if (xml == null) {
-			return portletIds;
-		}
+      SimpleCachePool.put(scpId, portletsPool);
+    }
 
-		/*EntityResolver resolver = new EntityResolver() {
-			public InputSource resolveEntity(String publicId, String systemId) {
-				InputStream is =
-					getClass().getClassLoader().getResourceAsStream(
-						"com/liferay/portal/resources/portlet-app_1_0.xsd");
+    try {
+      Set portletIds = _readPortletXML(servletContextName, xmls[0], portletsPool);
 
-				return new InputSource(is);
-			}
-		};*/
+      Set liferayPortletIds = _readLiferayPortletXML(servletContextName, xmls[1], portletsPool);
 
-		SAXReader reader = new SAXReader();
-		//reader.setEntityResolver(resolver);
+      // Check for missing entries in liferay-portlet.xml
 
-		Document doc = reader.read(new StringReader(xml));
+      Iterator itr = portletIds.iterator();
 
-		Element root = doc.getRootElement();
+      while (itr.hasNext()) {
+        String portletId = (String) itr.next();
 
-		Set userAttributes = new HashSet();
+        if (!liferayPortletIds.contains(portletId)) {
+          _log.warn(
+              "Portlet with the name "
+                  + portletId
+                  + " is described in portlet.xml but does not "
+                  + "have a matching entry in liferay-portlet.xml");
+        }
+      }
 
-		Iterator itr1 = root.elements("user-attribute").iterator();
+      // Check for missing entries in portlet.xml
 
-		while (itr1.hasNext()) {
-			Element userAttribute = (Element)itr1.next();
+      itr = liferayPortletIds.iterator();
 
-			String name = userAttribute.elementText("name");
+      while (itr.hasNext()) {
+        String portletId = (String) itr.next();
 
-			userAttributes.add(name);
-		}
+        if (!portletIds.contains(portletId)) {
+          _log.warn(
+              "Portlet with the name "
+                  + portletId
+                  + " is described in liferay-portlet.xml but does "
+                  + "not have a matching entry in portlet.xml");
+        }
+      }
 
-		itr1 = root.elements("portlet").iterator();
+      // Return the new portlets
 
-		while (itr1.hasNext()) {
-			Element portlet = (Element)itr1.next();
+      itr = portletIds.iterator();
 
-			String portletId = portlet.elementText("portlet-name");
-			if (servletContextName != null) {
-				portletId =
-					servletContextName + PortletConfigImpl.WAR_SEPARATOR +
-					portletId;
-			}
+      while (itr.hasNext()) {
+        String portletId = (String) itr.next();
 
-			portletIds.add(portletId);
+        Portlet portlet = (Portlet) _getPortletsPool().get(portletId);
 
-			Portlet portletModel = (Portlet)portletsPool.get(portletId);
-			if (portletModel == null) {
-				portletModel = new Portlet(
-					new PortletPK(portletId, _SHARED_KEY, _SHARED_KEY));
+        portlets.add(portlet);
+      }
+    } catch (Exception e) {
+      Logger.error(this, e.getMessage(), e);
+    }
 
-				portletsPool.put(portletId, portletModel);
-			}
+    // Refresh security path to portlet id mapping for all portlets
 
-			if (servletContextName != null) {
-				portletModel.setWARFile(true);
-			}
+    SimpleCachePool.remove(PortletManagerImpl.class.getName());
 
-			portletModel.setPortletClass(portlet.elementText("portlet-class"));
+    // Refresh company portlets
 
-			Iterator itr2 = portlet.elements("init-param").iterator();
+    SimpleCachePool.remove(PortletManagerImpl.class.getName() + ".companyPortletsPool");
 
-			while (itr2.hasNext()) {
-				Element initParam = (Element)itr2.next();
+    return portlets;
+  }
 
-				portletModel.getInitParams().put(
-					initParam.elementText("name"),
-					initParam.elementText("value"));
-			}
+  public Portlet removePortletFromPool(String companyId, String portletId)
+      throws SystemException, PortalException {
 
-			Element expirationCache = portlet.element("expiration-cache");
-			if (expirationCache != null) {
-				portletModel.setExpCache(new Integer(GetterUtil.getInteger(
-					expirationCache.getText())));
-			}
+    if (companyId.equals(User.DEFAULT)) {
+      throw new SystemException();
+    }
 
-			itr2 = portlet.elements("supports").iterator();
+    return (Portlet) _getPortletsPool(companyId).remove(portletId);
+  }
 
-			while (itr2.hasNext()) {
-				Element supports = (Element)itr2.next();
+  public Portlet updatePortlet(
+      String portletId,
+      String groupId,
+      String defaultPreferences,
+      boolean narrow,
+      String roles,
+      boolean active)
+      throws PortalException, SystemException {
 
-				String mimeType = supports.elementText("mime-type");
+    //		PortletPreferencesManagerUtil.deleteAllByGroup(groupId);
 
-				Iterator itr3 = supports.elements("portlet-mode").iterator();
+    String companyId = getUser().getCompanyId();
 
-				while (itr3.hasNext()) {
-					Element portletMode = (Element)itr3.next();
+    if (!hasAdministrator(companyId)) {
+      throw new PrincipalException();
+    }
 
-					Set mimeTypeModes =
-						(Set)portletModel.getPortletModes().get(mimeType);
+    groupId = _SHARED_KEY;
 
-					if (mimeTypeModes == null) {
-						mimeTypeModes = new HashSet();
+    //		try {
+    //			Group group = GroupUtil.findByPrimaryKey(groupId);
+    //
+    //			if (!group.getCompanyId().equals(companyId)) {
+    //				groupId = _SHARED_KEY;
+    //			}
+    //			else {
+    //				Group generalGuestGroup = GroupLocalManagerUtil.getGroupByName(
+    //					companyId, Group.GENERAL_GUEST);
+    //
+    //				Group generalUserGroup = GroupLocalManagerUtil.getGroupByName(
+    //					companyId, Group.GENERAL_USER);
+    //
+    //				if (groupId.equals(generalGuestGroup.getGroupId()) ||
+    //					groupId.equals(generalUserGroup.getGroupId())) {
+    //
+    //					groupId = _SHARED_KEY;
+    //				}
+    //			}
+    //		}
+    //		catch (NoSuchGroupException nsge) {
+    //			groupId = _SHARED_KEY;
+    //		}
 
-						portletModel.getPortletModes().put(
-							mimeType, mimeTypeModes);
-					}
+    PortletPK pk = new PortletPK(portletId, groupId, companyId);
 
-					mimeTypeModes.add(portletMode.getTextTrim().toLowerCase());
-				}
-			}
+    Portlet portlet = null;
 
-			Set supportedLocales = portletModel.getSupportedLocales();
+    try {
+      portlet = PortletUtil.findByPrimaryKey(pk);
+    } catch (NoSuchPortletException nspe) {
+      portlet = PortletUtil.create(pk);
+    }
 
-			supportedLocales.add(Locale.getDefault().getLanguage());
+    portlet.setDefaultPreferences(defaultPreferences);
+    portlet.setNarrow(narrow);
+    portlet.setRoles(roles);
+    portlet.setActive(active);
 
-			itr2 = portlet.elements("supported-locale").iterator();
+    PortletUtil.update(portlet);
 
-			while (itr2.hasNext()) {
-				Element supportedLocaleEl = (Element)itr2.next();
+    portlet = getPortletById(companyId, groupId, portletId);
 
-				String supportedLocale = supportedLocaleEl.getText();
+    portlet.setDefaultPreferences(defaultPreferences);
+    portlet.setNarrow(narrow);
+    portlet.setRoles(roles);
+    portlet.setActive(active);
 
-				supportedLocales.add(supportedLocale);
-			}
+    return portlet;
+  }
 
-			portletModel.setResourceBundle(
-				portlet.elementText("resource-bundle"));
+  // Private methods
 
-			Element portletInfo = portlet.element("portlet-info");
+  private String _getPortletId(String securityPath) throws SystemException {
+    String scpId = PortletManagerImpl.class.getName();
 
-			String portletInfoTitle = null;
-			String portletInfoShortTitle = null;
-			String portletInfoKeyWords = null;
+    Map portletIds = (Map) SimpleCachePool.get(scpId);
 
-			if (portletInfo != null) {
-				portletInfoTitle = portletInfo.elementText("title");
-				portletInfoShortTitle = portletInfo.elementText("short-title");
-				portletInfoKeyWords = portletInfo.elementText("keywords");
-			}
+    if (portletIds == null) {
+      portletIds = CollectionFactory.getHashMap();
 
-			portletModel.setPortletInfo(new PortletInfo(
-				portletInfoTitle, portletInfoShortTitle, portletInfoKeyWords));
+      Iterator itr = _getPortletsPool().values().iterator();
 
-			Element portletPreferences = portlet.element("portlet-preferences");
+      while (itr.hasNext()) {
+        Portlet portlet = (Portlet) itr.next();
 
-			String defaultPreferences = null;
-			String prefsValidator = null;
+        portletIds.put(portlet.getStrutsPath(), portlet.getPortletId());
+      }
 
-			if (portletPreferences != null) {
-				Element prefsValidatorEl =
-					portletPreferences.element("preferences-validator");
+      SimpleCachePool.put(scpId, portletIds);
+    }
 
-				String prefsValidatorName = null;
+    return (String) portletIds.get(securityPath);
+  }
 
-				if (prefsValidatorEl != null) {
-					prefsValidator = prefsValidatorEl.getText();
+  private Map _getPortletsPool() {
+    String scpId = PortletManagerImpl.class.getName() + "." + _SHARED_KEY;
 
-					portletPreferences.remove(prefsValidatorEl);
-				}
+    return (Map) SimpleCachePool.get(scpId);
+  }
 
-				ByteArrayOutputStream baos = new ByteArrayOutputStream();
+  private Map _getPortletsPool(String companyId) throws SystemException {
+    return _getPortletsPool(companyId, null);
+  }
 
-				XMLWriter writer = new XMLWriter(
-					baos, OutputFormat.createCompactFormat());
+  private Map _getPortletsPool(String companyId, String groupId) throws SystemException {
 
-				writer.write(portletPreferences);
+    //		if (Validator.isNull(groupId)) {
+    groupId = _SHARED_KEY;
+    //		}
+    //		else {
+    //			try {
+    //				Group generalGuestGroup = GroupLocalManagerUtil.getGroupByName(
+    //					companyId, Group.GENERAL_GUEST);
+    //
+    //				Group generalUserGroup = GroupLocalManagerUtil.getGroupByName(
+    //					companyId, Group.GENERAL_USER);
+    //
+    //				if (groupId.equals(generalGuestGroup.getGroupId()) ||
+    //					groupId.equals(generalUserGroup.getGroupId())) {
+    //
+    //					groupId = _SHARED_KEY;
+    //				}
+    //			}
+    //			catch (PortalException pe) {
+    //				Logger.error(this,pe.getMessage(),pe);
+    //			}
+    //		}
 
-				defaultPreferences = baos.toString();
-			}
+    String scpId = PortletManagerImpl.class.getName() + ".companyPortletsPool";
 
-			portletModel.setDefaultPreferences(defaultPreferences);
-			portletModel.setPreferencesValidator(prefsValidator);
+    Map companyPortletsPool = (Map) SimpleCachePool.get(scpId);
 
-			if (!portletModel.isWARFile() &&
-				Validator.isNotNull(prefsValidator) &&
-				GetterUtil.getBoolean(PropsUtil.get(
-					PropsUtil.PREFERENCE_VALIDATE_ON_STARTUP))) {
+    if (companyPortletsPool == null) {
+      companyPortletsPool = CollectionFactory.getSyncHashMap();
 
-				try {
-					PreferencesValidator prefsValidatorObj =
-						PortalUtil.getPreferencesValidator(portletModel);
+      SimpleCachePool.put(scpId, companyPortletsPool);
+    }
 
-					prefsValidatorObj.validate(
-						PortletPreferencesSerializer.fromDefaultXML(
-							defaultPreferences));
-				}
-				catch (Exception e) {
-					_log.warn(
-						"Portlet with the name " + portletId +
-							" does not have valid default preferences");
-				}
-			}
+    String cppId = companyId + "." + groupId;
 
-			List roles = new ArrayList();
+    Map portletsPool = (Map) companyPortletsPool.get(cppId);
 
-			itr2 = portlet.elements("security-role-ref").iterator();
+    if (portletsPool == null) {
+      portletsPool = CollectionFactory.getSyncHashMap();
 
-			while (itr2.hasNext()) {
-				Element role = (Element)itr2.next();
+      Map parentPortletsPool = null;
+      if (groupId.equals(_SHARED_KEY)) {
+        parentPortletsPool = _getPortletsPool();
+      } else {
+        parentPortletsPool = _getPortletsPool(companyId, _SHARED_KEY);
+      }
 
-				roles.add(role.elementText("role-name"));
-			}
+      Iterator itr = parentPortletsPool.values().iterator();
 
-			portletModel.setRolesArray((String[])roles.toArray(new String[0]));
+      if (null != itr) {
 
-			portletModel.getUserAttributes().addAll(userAttributes);
-		}
+        while (itr.hasNext()) {
+          Portlet portlet = (Portlet) ((Portlet) itr.next()).clone();
 
-		return portletIds;
-	}
+          portlet.setGroupId(groupId);
+          portlet.setCompanyId(companyId);
 
-	private Map _readLiferayDisplayXML(String xml)
-		throws DocumentException, IOException {
+          portletsPool.put(portlet.getPortletId(), portlet);
+        }
+      }
 
-		return _readLiferayDisplayXML(null, xml);
-	}
+      itr = PortletUtil.findByG_C(groupId, companyId).iterator();
 
-	private Map _readLiferayDisplayXML(String servletContextName, String xml)
-		throws DocumentException, IOException {
+      while (itr.hasNext()) {
+        Portlet portlet = (Portlet) itr.next();
 
-		Map categories = new LinkedHashMap();
+        Portlet portletModel = (Portlet) portletsPool.get(portlet.getPortletId());
 
-		if (xml == null) {
-			return categories;
-		}
+        // Portlet may be null if it exists in the database but its
+        // portlet WAR is not yet loaded
 
-		SAXReader reader = new SAXReader();
-		reader.setEntityResolver(null);
+        if (portletModel != null) {
+          portletModel.setDefaultPreferences(portlet.getDefaultPreferences());
+          portletModel.setNarrow(portlet.getNarrow());
+          portletModel.setRoles(portlet.getRoles());
+          portletModel.setActive(portlet.getActive());
+        }
+      }
 
-		Document doc = reader.read(new StringReader(xml));
+      companyPortletsPool.put(cppId, portletsPool);
+    }
 
-		Set portletIds = new HashSet();
+    return portletsPool;
+  }
 
-		Iterator itr1 = doc.getRootElement().elements("category").iterator();
+  private Set _readPortletXML(String xml, Map portletsPool) throws DocumentException, IOException {
 
-		while (itr1.hasNext()) {
-			Element category = (Element)itr1.next();
+    return _readPortletXML(null, xml, portletsPool);
+  }
 
-			String name = category.attributeValue("name");
+  private Set _readPortletXML(String servletContextName, String xml, Map portletsPool)
+      throws DocumentException, IOException {
 
-			List portlets = new ArrayList();
+    Set portletIds = new HashSet();
 
-			Iterator itr2 = category.elements("portlet").iterator();
+    if (xml == null) {
+      return portletIds;
+    }
 
-			while (itr2.hasNext()) {
-				Element portlet = (Element)itr2.next();
+    /*EntityResolver resolver = new EntityResolver() {
+    	public InputSource resolveEntity(String publicId, String systemId) {
+    		InputStream is =
+    			getClass().getClassLoader().getResourceAsStream(
+    				"com/liferay/portal/resources/portlet-app_1_0.xsd");
 
-				String portletId = portlet.attributeValue("id");
-				if (servletContextName != null) {
-					portletId =
-						servletContextName + PortletConfigImpl.WAR_SEPARATOR +
-						portletId;
-				}
+    		return new InputSource(is);
+    	}
+    };*/
 
-				portletIds.add(portletId);
+    SAXReader reader = new SAXReader();
+    // reader.setEntityResolver(resolver);
 
-				String status = portlet.attributeValue("status");
+    Document doc = reader.read(new StringReader(xml));
 
-				portlets.add(new KeyValuePair(portletId, status));
-			}
+    Element root = doc.getRootElement();
 
-			if (portlets.size() > 0) {
-				categories.put(name, portlets);
-			}
-		}
+    Set userAttributes = new HashSet();
 
-		// Portlets that do not belong to any categories should default to the
-		// Undefined category
+    Iterator itr1 = root.elements("user-attribute").iterator();
 
-		List undefinedPortlets = new ArrayList();
+    while (itr1.hasNext()) {
+      Element userAttribute = (Element) itr1.next();
 
-		itr1 = _getPortletsPool().values().iterator();
+      String name = userAttribute.elementText("name");
 
-		while (itr1.hasNext()) {
-			Portlet portlet = (Portlet)itr1.next();
+      userAttributes.add(name);
+    }
 
-			String portletId = portlet.getPortletId();
+    itr1 = root.elements("portlet").iterator();
 
-			if ((servletContextName != null) && (portlet.isWARFile()) &&
-				(portletId.startsWith(servletContextName) &&
-				(!portletIds.contains(portletId)))) {
+    while (itr1.hasNext()) {
+      Element portlet = (Element) itr1.next();
 
-				undefinedPortlets.add(new KeyValuePair(portletId, null));
-			}
-			else if ((servletContextName == null) && (!portlet.isWARFile()) &&
-					 (!portletIds.contains(portletId))) {
+      String portletId = portlet.elementText("portlet-name");
+      if (servletContextName != null) {
+        portletId = servletContextName + PortletConfigImpl.WAR_SEPARATOR + portletId;
+      }
 
-				undefinedPortlets.add(new KeyValuePair(portletId, null));
-			}
-		}
+      portletIds.add(portletId);
 
-		if (undefinedPortlets.size() > 0) {
-			categories.put("category.undefined", undefinedPortlets);
-		}
+      Portlet portletModel = (Portlet) portletsPool.get(portletId);
+      if (portletModel == null) {
+        portletModel = new Portlet(new PortletPK(portletId, _SHARED_KEY, _SHARED_KEY));
 
-		return categories;
-	}
+        portletsPool.put(portletId, portletModel);
+      }
 
-	private Set _readLiferayPortletXML(String xml, Map portletsPool)
-		throws DocumentException, IOException {
+      if (servletContextName != null) {
+        portletModel.setWARFile(true);
+      }
 
-		return _readLiferayPortletXML(null, xml, portletsPool);
-	}
+      portletModel.setPortletClass(portlet.elementText("portlet-class"));
 
-	private Set _readLiferayPortletXML(
-			String servletContextName, String xml, Map portletsPool)
-		throws DocumentException, IOException {
+      Iterator itr2 = portlet.elements("init-param").iterator();
 
-		Set liferayPortletIds = new HashSet();
+      while (itr2.hasNext()) {
+        Element initParam = (Element) itr2.next();
 
-		if (xml == null) {
-			return liferayPortletIds;
-		}
+        portletModel
+            .getInitParams()
+            .put(initParam.elementText("name"), initParam.elementText("value"));
+      }
 
-		SAXReader reader = new SAXReader();
-		reader.setEntityResolver( null );
+      Element expirationCache = portlet.element("expiration-cache");
+      if (expirationCache != null) {
+        portletModel.setExpCache(new Integer(GetterUtil.getInteger(expirationCache.getText())));
+      }
 
-		Document doc = reader.read(new StringReader(xml));
+      itr2 = portlet.elements("supports").iterator();
 
-		Element root = doc.getRootElement();
+      while (itr2.hasNext()) {
+        Element supports = (Element) itr2.next();
 
-		Map customUserAttributes = new HashMap();
+        String mimeType = supports.elementText("mime-type");
 
-		Iterator itr = root.elements("custom-user-attribute").iterator();
+        Iterator itr3 = supports.elements("portlet-mode").iterator();
 
-		while (itr.hasNext()) {
-			Element customUserAttribute = (Element)itr.next();
+        while (itr3.hasNext()) {
+          Element portletMode = (Element) itr3.next();
 
-			String name = customUserAttribute.attributeValue("name");
-			String customClass = customUserAttribute.attributeValue(
-				"custom-class");
+          Set mimeTypeModes = (Set) portletModel.getPortletModes().get(mimeType);
 
-			customUserAttributes.put(name, customClass);
-		}
+          if (mimeTypeModes == null) {
+            mimeTypeModes = new HashSet();
 
-		itr = root.elements("portlet").iterator();
+            portletModel.getPortletModes().put(mimeType, mimeTypeModes);
+          }
 
-		while (itr.hasNext()) {
-			Element portlet = (Element)itr.next();
+          mimeTypeModes.add(portletMode.getTextTrim().toLowerCase());
+        }
+      }
 
-			String portletId = portlet.attributeValue("id");
-			if (servletContextName != null) {
-				portletId =
-					servletContextName + PortletConfigImpl.WAR_SEPARATOR +
-					portletId;
-			}
+      Set supportedLocales = portletModel.getSupportedLocales();
 
-			liferayPortletIds.add(portletId);
+      supportedLocales.add(Locale.getDefault().getLanguage());
 
-			Portlet portletModel = (Portlet)portletsPool.get(portletId);
+      itr2 = portlet.elements("supported-locale").iterator();
 
-			if (portletModel != null) {
-				portletModel.setStrutsPath(GetterUtil.get(
-					portlet.attributeValue("struts-path"),
-					portletModel.getStrutsPath()));
-				portletModel.setIndexerClass(GetterUtil.get(
-					portlet.attributeValue("indexer-class"),
-					portletModel.getIndexerClass()));
-				portletModel.setSchedulerClass(GetterUtil.get(
-					portlet.attributeValue("scheduler-class"),
-					portletModel.getSchedulerClass()));
-				portletModel.setPreferencesSharingType(GetterUtil.get(
-					portlet.attributeValue("preferences-sharing-type"),
-					portletModel.getPreferencesSharingType()));
-				portletModel.setUseDefaultTemplate(GetterUtil.get(
-					portlet.attributeValue("use-default-template"),
-					portletModel.isUseDefaultTemplate()));
-				portletModel.setShowPortletAccessDenied(GetterUtil.get(
-					portlet.attributeValue("show-portlet-access-denied"),
-					portletModel.isShowPortletAccessDenied()));
-				portletModel.setShowPortletInactive(GetterUtil.get(
-					portlet.attributeValue("show-portlet-inactive"),
-					portletModel.isShowPortletInactive()));
-				portletModel.setRestoreCurrentView(GetterUtil.get(
-					portlet.attributeValue("restore-current-view"),
-					portletModel.isRestoreCurrentView()));
-				portletModel.setNs4Compatible(GetterUtil.get(
-					portlet.attributeValue("ns-4-compatible"),
-					portletModel.isNs4Compatible()));
-				portletModel.setNarrow(GetterUtil.get(
-					portlet.attributeValue("narrow"),
-					portletModel.isNarrow()));
-				portletModel.setActive(GetterUtil.get(
-					portlet.attributeValue("active"),
-					portletModel.isActive()));
-				portletModel.setInclude(GetterUtil.get(
-					portlet.attributeValue("include"),
-					portletModel.isInclude()));
+      while (itr2.hasNext()) {
+        Element supportedLocaleEl = (Element) itr2.next();
 
-				portletModel.getCustomUserAttributes().putAll(
-					customUserAttributes);
-			}
-		}
+        String supportedLocale = supportedLocaleEl.getText();
 
-		return liferayPortletIds;
-	}
+        supportedLocales.add(supportedLocale);
+      }
 
-	private static final Log _log = LogFactory.getLog(PortletManagerImpl.class);
+      portletModel.setResourceBundle(portlet.elementText("resource-bundle"));
 
-	private static final String _SHARED_KEY = "SHARED_KEY";
+      Element portletInfo = portlet.element("portlet-info");
 
+      String portletInfoTitle = null;
+      String portletInfoShortTitle = null;
+      String portletInfoKeyWords = null;
+
+      if (portletInfo != null) {
+        portletInfoTitle = portletInfo.elementText("title");
+        portletInfoShortTitle = portletInfo.elementText("short-title");
+        portletInfoKeyWords = portletInfo.elementText("keywords");
+      }
+
+      portletModel.setPortletInfo(
+          new PortletInfo(portletInfoTitle, portletInfoShortTitle, portletInfoKeyWords));
+
+      Element portletPreferences = portlet.element("portlet-preferences");
+
+      String defaultPreferences = null;
+      String prefsValidator = null;
+
+      if (portletPreferences != null) {
+        Element prefsValidatorEl = portletPreferences.element("preferences-validator");
+
+        String prefsValidatorName = null;
+
+        if (prefsValidatorEl != null) {
+          prefsValidator = prefsValidatorEl.getText();
+
+          portletPreferences.remove(prefsValidatorEl);
+        }
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+
+        XMLWriter writer = new XMLWriter(baos, OutputFormat.createCompactFormat());
+
+        writer.write(portletPreferences);
+
+        defaultPreferences = baos.toString();
+      }
+
+      portletModel.setDefaultPreferences(defaultPreferences);
+      portletModel.setPreferencesValidator(prefsValidator);
+
+      if (!portletModel.isWARFile()
+          && Validator.isNotNull(prefsValidator)
+          && GetterUtil.getBoolean(PropsUtil.get(PropsUtil.PREFERENCE_VALIDATE_ON_STARTUP))) {
+
+        try {
+          PreferencesValidator prefsValidatorObj = PortalUtil.getPreferencesValidator(portletModel);
+
+          prefsValidatorObj.validate(
+              PortletPreferencesSerializer.fromDefaultXML(defaultPreferences));
+        } catch (Exception e) {
+          _log.warn(
+              "Portlet with the name " + portletId + " does not have valid default preferences");
+        }
+      }
+
+      List roles = new ArrayList();
+
+      itr2 = portlet.elements("security-role-ref").iterator();
+
+      while (itr2.hasNext()) {
+        Element role = (Element) itr2.next();
+
+        roles.add(role.elementText("role-name"));
+      }
+
+      portletModel.setRolesArray((String[]) roles.toArray(new String[0]));
+
+      portletModel.getUserAttributes().addAll(userAttributes);
+    }
+
+    return portletIds;
+  }
+
+  private Map _readLiferayDisplayXML(String xml) throws DocumentException, IOException {
+
+    return _readLiferayDisplayXML(null, xml);
+  }
+
+  private Map _readLiferayDisplayXML(String servletContextName, String xml)
+      throws DocumentException, IOException {
+
+    Map categories = new LinkedHashMap();
+
+    if (xml == null) {
+      return categories;
+    }
+
+    SAXReader reader = new SAXReader();
+    reader.setEntityResolver(null);
+
+    Document doc = reader.read(new StringReader(xml));
+
+    Set portletIds = new HashSet();
+
+    Iterator itr1 = doc.getRootElement().elements("category").iterator();
+
+    while (itr1.hasNext()) {
+      Element category = (Element) itr1.next();
+
+      String name = category.attributeValue("name");
+
+      List portlets = new ArrayList();
+
+      Iterator itr2 = category.elements("portlet").iterator();
+
+      while (itr2.hasNext()) {
+        Element portlet = (Element) itr2.next();
+
+        String portletId = portlet.attributeValue("id");
+        if (servletContextName != null) {
+          portletId = servletContextName + PortletConfigImpl.WAR_SEPARATOR + portletId;
+        }
+
+        portletIds.add(portletId);
+
+        String status = portlet.attributeValue("status");
+
+        portlets.add(new KeyValuePair(portletId, status));
+      }
+
+      if (portlets.size() > 0) {
+        categories.put(name, portlets);
+      }
+    }
+
+    // Portlets that do not belong to any categories should default to the
+    // Undefined category
+
+    List undefinedPortlets = new ArrayList();
+
+    itr1 = _getPortletsPool().values().iterator();
+
+    while (itr1.hasNext()) {
+      Portlet portlet = (Portlet) itr1.next();
+
+      String portletId = portlet.getPortletId();
+
+      if ((servletContextName != null)
+          && (portlet.isWARFile())
+          && (portletId.startsWith(servletContextName) && (!portletIds.contains(portletId)))) {
+
+        undefinedPortlets.add(new KeyValuePair(portletId, null));
+      } else if ((servletContextName == null)
+          && (!portlet.isWARFile())
+          && (!portletIds.contains(portletId))) {
+
+        undefinedPortlets.add(new KeyValuePair(portletId, null));
+      }
+    }
+
+    if (undefinedPortlets.size() > 0) {
+      categories.put("category.undefined", undefinedPortlets);
+    }
+
+    return categories;
+  }
+
+  private Set _readLiferayPortletXML(String xml, Map portletsPool)
+      throws DocumentException, IOException {
+
+    return _readLiferayPortletXML(null, xml, portletsPool);
+  }
+
+  private Set _readLiferayPortletXML(String servletContextName, String xml, Map portletsPool)
+      throws DocumentException, IOException {
+
+    Set liferayPortletIds = new HashSet();
+
+    if (xml == null) {
+      return liferayPortletIds;
+    }
+
+    SAXReader reader = new SAXReader();
+    reader.setEntityResolver(null);
+
+    Document doc = reader.read(new StringReader(xml));
+
+    Element root = doc.getRootElement();
+
+    Map customUserAttributes = new HashMap();
+
+    Iterator itr = root.elements("custom-user-attribute").iterator();
+
+    while (itr.hasNext()) {
+      Element customUserAttribute = (Element) itr.next();
+
+      String name = customUserAttribute.attributeValue("name");
+      String customClass = customUserAttribute.attributeValue("custom-class");
+
+      customUserAttributes.put(name, customClass);
+    }
+
+    itr = root.elements("portlet").iterator();
+
+    while (itr.hasNext()) {
+      Element portlet = (Element) itr.next();
+
+      String portletId = portlet.attributeValue("id");
+      if (servletContextName != null) {
+        portletId = servletContextName + PortletConfigImpl.WAR_SEPARATOR + portletId;
+      }
+
+      liferayPortletIds.add(portletId);
+
+      Portlet portletModel = (Portlet) portletsPool.get(portletId);
+
+      if (portletModel != null) {
+        portletModel.setStrutsPath(
+            GetterUtil.get(portlet.attributeValue("struts-path"), portletModel.getStrutsPath()));
+        portletModel.setIndexerClass(
+            GetterUtil.get(
+                portlet.attributeValue("indexer-class"), portletModel.getIndexerClass()));
+        portletModel.setSchedulerClass(
+            GetterUtil.get(
+                portlet.attributeValue("scheduler-class"), portletModel.getSchedulerClass()));
+        portletModel.setPreferencesSharingType(
+            GetterUtil.get(
+                portlet.attributeValue("preferences-sharing-type"),
+                portletModel.getPreferencesSharingType()));
+        portletModel.setUseDefaultTemplate(
+            GetterUtil.get(
+                portlet.attributeValue("use-default-template"),
+                portletModel.isUseDefaultTemplate()));
+        portletModel.setShowPortletAccessDenied(
+            GetterUtil.get(
+                portlet.attributeValue("show-portlet-access-denied"),
+                portletModel.isShowPortletAccessDenied()));
+        portletModel.setShowPortletInactive(
+            GetterUtil.get(
+                portlet.attributeValue("show-portlet-inactive"),
+                portletModel.isShowPortletInactive()));
+        portletModel.setRestoreCurrentView(
+            GetterUtil.get(
+                portlet.attributeValue("restore-current-view"),
+                portletModel.isRestoreCurrentView()));
+        portletModel.setNs4Compatible(
+            GetterUtil.get(
+                portlet.attributeValue("ns-4-compatible"), portletModel.isNs4Compatible()));
+        portletModel.setNarrow(
+            GetterUtil.get(portlet.attributeValue("narrow"), portletModel.isNarrow()));
+        portletModel.setActive(
+            GetterUtil.get(portlet.attributeValue("active"), portletModel.isActive()));
+        portletModel.setInclude(
+            GetterUtil.get(portlet.attributeValue("include"), portletModel.isInclude()));
+
+        portletModel.getCustomUserAttributes().putAll(customUserAttributes);
+      }
+    }
+
+    return liferayPortletIds;
+  }
+
+  private static final Log _log = LogFactory.getLog(PortletManagerImpl.class);
+
+  private static final String _SHARED_KEY = "SHARED_KEY";
 }

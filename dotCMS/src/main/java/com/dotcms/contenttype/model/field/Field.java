@@ -27,39 +27,34 @@ import org.elasticsearch.common.Nullable;
 import org.immutables.value.Value;
 import org.immutables.value.Value.Derived;
 
-
-@JsonTypeInfo(
-	use = Id.CLASS,
-	include = JsonTypeInfo.As.PROPERTY,
-	property = "clazz"
-)
+@JsonTypeInfo(use = Id.CLASS, include = JsonTypeInfo.As.PROPERTY, property = "clazz")
 @JsonSubTypes({
-	@Type(value = BinaryField.class),
-	@Type(value = CategoryField.class),
-	@Type(value = CheckboxField.class),
-	@Type(value = ConstantField.class),
-	@Type(value = CustomField.class),
-	@Type(value = DateField.class),
-	@Type(value = DateTimeField.class),
-	@Type(value = EmptyField.class),
-	@Type(value = FileField.class),
-	@Type(value = HiddenField.class),
-	@Type(value = HostFolderField.class),
-	@Type(value = ImageField.class),
-	@Type(value = KeyValueField.class),
-	@Type(value = LineDividerField.class),
-	@Type(value = MultiSelectField.class),
-	@Type(value = PermissionTabField.class),
-	@Type(value = RadioField.class),
+    @Type(value = BinaryField.class),
+    @Type(value = CategoryField.class),
+    @Type(value = CheckboxField.class),
+    @Type(value = ConstantField.class),
+    @Type(value = CustomField.class),
+    @Type(value = DateField.class),
+    @Type(value = DateTimeField.class),
+    @Type(value = EmptyField.class),
+    @Type(value = FileField.class),
+    @Type(value = HiddenField.class),
+    @Type(value = HostFolderField.class),
+    @Type(value = ImageField.class),
+    @Type(value = KeyValueField.class),
+    @Type(value = LineDividerField.class),
+    @Type(value = MultiSelectField.class),
+    @Type(value = PermissionTabField.class),
+    @Type(value = RadioField.class),
     @Type(value = RelationshipField.class),
-	@Type(value = RelationshipsTabField.class),
-	@Type(value = SelectField.class),
-	@Type(value = TabDividerField.class),
-	@Type(value = TagField.class),
-	@Type(value = TextAreaField.class),
-	@Type(value = TextField.class),
-	@Type(value = TimeField.class),
-	@Type(value = WysiwygField.class),
+    @Type(value = RelationshipsTabField.class),
+    @Type(value = SelectField.class),
+    @Type(value = TabDividerField.class),
+    @Type(value = TagField.class),
+    @Type(value = TextAreaField.class),
+    @Type(value = TextField.class),
+    @Type(value = TimeField.class),
+    @Type(value = WysiwygField.class),
     @Type(value = RowField.class),
     @Type(value = ColumnField.class),
 })
@@ -67,7 +62,8 @@ public abstract class Field implements FieldIf, Serializable {
 
   @Value.Check
   public void check() {
-	Preconditions.checkArgument(StringUtils.isNotEmpty(name()), "Name cannot be empty for " + this.getClass());
+    Preconditions.checkArgument(
+        StringUtils.isNotEmpty(name()), "Name cannot be empty for " + this.getClass());
 
     /*if (iDate().after(legacyFieldDate)) {
       Preconditions.checkArgument(acceptedDataTypes().contains(dataType()),
@@ -75,9 +71,8 @@ public abstract class Field implements FieldIf, Serializable {
     }*/
   }
 
-
   private static final long serialVersionUID = 5640078738113157867L;
-  final static Date legacyFieldDate = new Date(1470845479000L); // 08/10/2016 @ 4:11pm (UTC)
+  static final Date legacyFieldDate = new Date(1470845479000L); // 08/10/2016 @ 4:11pm (UTC)
 
   @Value.Default
   public boolean searchable() {
@@ -110,7 +105,6 @@ public abstract class Field implements FieldIf, Serializable {
   @Nullable
   public abstract String id();
 
-
   @Value.Lazy
   public String inode() {
     return id();
@@ -120,7 +114,6 @@ public abstract class Field implements FieldIf, Serializable {
   public Date modDate() {
     return DateUtils.round(new Date(), Calendar.SECOND);
   }
-
 
   public abstract String name();
 
@@ -157,7 +150,6 @@ public abstract class Field implements FieldIf, Serializable {
     return ImmutableList.of();
   };
 
-
   @Nullable
   public abstract String values();
 
@@ -169,7 +161,6 @@ public abstract class Field implements FieldIf, Serializable {
 
   @Nullable
   public abstract String defaultValue();
-
 
   @Value.Default
   public boolean fixed() {
@@ -185,7 +176,8 @@ public abstract class Field implements FieldIf, Serializable {
   public List<FieldVariable> fieldVariables() {
     if (innerFieldVariables == null) {
       try {
-        //System.err.println("loading field.variables:" + this.variable() + ":"+ System.identityHashCode(this));
+        // System.err.println("loading field.variables:" + this.variable() + ":"+
+        // System.identityHashCode(this));
         innerFieldVariables = FactoryLocator.getFieldFactory().loadVariables(this);
       } catch (DotDataException e) {
         throw new DotStateException("unable to load field variables:" + e.getMessage(), e);
@@ -193,7 +185,6 @@ public abstract class Field implements FieldIf, Serializable {
     }
 
     return innerFieldVariables;
-
   }
 
   @JsonIgnore
@@ -221,18 +212,15 @@ public abstract class Field implements FieldIf, Serializable {
 
   @Nullable
   public abstract String contentTypeId();
-  
+
   @Nullable
-  @Value.Auxiliary 
+  @Value.Auxiliary
   public abstract String dbColumn();
 
   @Value.Default
   public Date iDate() {
     return DateUtils.round(new Date(), Calendar.SECOND);
-
   }
-
-
 
   @Value.Lazy
   public FieldFormRenderer formRenderer() {
@@ -244,7 +232,6 @@ public abstract class Field implements FieldIf, Serializable {
     return new FieldValueRenderer() {};
   }
 
-
   @Value.Lazy
   public FieldValueRenderer listRenderer() {
     return new FieldValueRenderer() {};
@@ -252,28 +239,31 @@ public abstract class Field implements FieldIf, Serializable {
 
   /**
    * Field' properties to be set by the UI
+   *
    * @return
    */
-  public Collection<ContentTypeFieldProperties> getFieldContentTypeProperties(){
+  public Collection<ContentTypeFieldProperties> getFieldContentTypeProperties() {
     return Collections.emptyList();
   }
 
   /**
    * Key for the Field' help text
+   *
    * @return
    */
   @JsonIgnore
-  public String getContentTypeFieldHelpTextKey(){
+  public String getContentTypeFieldHelpTextKey() {
     String legacyName = LegacyFieldTypes.getLegacyName(this.getClass());
     return "field.type.help." + legacyName;
   }
 
   /**
    * Key for the Field'label
+   *
    * @return
    */
   @JsonIgnore
-  public String getContentTypeFieldLabelKey(){
+  public String getContentTypeFieldLabelKey() {
     String legacyName = LegacyFieldTypes.getLegacyName(this.getClass());
     return legacyName.substring(0, 1).toUpperCase() + legacyName.substring(1);
   }

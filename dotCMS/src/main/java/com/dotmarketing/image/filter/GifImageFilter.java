@@ -1,5 +1,6 @@
 package com.dotmarketing.image.filter;
 
+import com.dotmarketing.util.Logger;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
@@ -8,71 +9,61 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.Map;
-
 import javax.imageio.IIOImage;
 import javax.imageio.ImageIO;
 import javax.imageio.ImageWriteParam;
 import javax.imageio.ImageWriter;
-import javax.imageio.stream.FileImageOutputStream;
 import javax.imageio.stream.ImageOutputStream;
 
-import com.dotmarketing.util.Logger;
-
 public class GifImageFilter extends ImageFilter {
-	public String[] getAcceptedParameters(){
-		return  new String[] {
-				"q (int) specifies quality",
+  public String[] getAcceptedParameters() {
+    return new String[] {
+      "q (int) specifies quality",
+    };
+  }
 
-		};
-	}
-	public File runFilter(File file,   Map<String, String[]> parameters) {
+  public File runFilter(File file, Map<String, String[]> parameters) {
 
-		File resultFile = getResultsFile(file, parameters, "gif");
+    File resultFile = getResultsFile(file, parameters, "gif");
 
-		if(!overwrite(resultFile,parameters)){
-			return resultFile;
-		}
-		
-		resultFile.delete();
+    if (!overwrite(resultFile, parameters)) {
+      return resultFile;
+    }
 
-		try {
-			Iterator<ImageWriter> iter = ImageIO.getImageWritersByFormatName("gif");
-			ImageWriter writer = iter.next();
-			ImageWriteParam iwp = writer.getDefaultWriteParam();
+    resultFile.delete();
 
-			BufferedImage src = ImageIO.read(file);
-			BufferedImage dst = new BufferedImage(src.getWidth(), src.getHeight(), BufferedImage.TYPE_4BYTE_ABGR);
-			Graphics2D graphics = dst.createGraphics();  
+    try {
+      Iterator<ImageWriter> iter = ImageIO.getImageWritersByFormatName("gif");
+      ImageWriter writer = iter.next();
+      ImageWriteParam iwp = writer.getDefaultWriteParam();
 
-			graphics.setPaint ( new Color ( 255, 255, 255 ) );
+      BufferedImage src = ImageIO.read(file);
+      BufferedImage dst =
+          new BufferedImage(src.getWidth(), src.getHeight(), BufferedImage.TYPE_4BYTE_ABGR);
+      Graphics2D graphics = dst.createGraphics();
 
-			graphics.fillRect(0, 0, src.getWidth(), src.getHeight());
-			graphics.drawImage(src, 0, 0, src.getWidth(), src.getHeight(),null);
-			ImageOutputStream ios = ImageIO.createImageOutputStream(resultFile);
-			writer.setOutput(ios);
-			writer.write(null,new IIOImage(dst,null,null),iwp);
-			ios.flush();
-			writer.dispose();
-			ios.close();
-			//writer.setOutput(output);
+      graphics.setPaint(new Color(255, 255, 255));
 
-		//	IIOImage image = new IIOImage(src, null, null);
-		//	writer.write(null, image, iwp);
-		//	writer.dispose();
-			
+      graphics.fillRect(0, 0, src.getWidth(), src.getHeight());
+      graphics.drawImage(src, 0, 0, src.getWidth(), src.getHeight(), null);
+      ImageOutputStream ios = ImageIO.createImageOutputStream(resultFile);
+      writer.setOutput(ios);
+      writer.write(null, new IIOImage(dst, null, null), iwp);
+      ios.flush();
+      writer.dispose();
+      ios.close();
+      // writer.setOutput(output);
 
-		} catch (FileNotFoundException e) {
-			Logger.error(this.getClass(), e.getMessage());
-		} catch (IOException e) {
-			Logger.error(this.getClass(), e.getMessage());
-		}
-		
-		
-		
-		
-		
-		return resultFile;
-	}
-	
+      //	IIOImage image = new IIOImage(src, null, null);
+      //	writer.write(null, image, iwp);
+      //	writer.dispose();
 
+    } catch (FileNotFoundException e) {
+      Logger.error(this.getClass(), e.getMessage());
+    } catch (IOException e) {
+      Logger.error(this.getClass(), e.getMessage());
+    }
+
+    return resultFile;
+  }
 }

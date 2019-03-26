@@ -15,47 +15,44 @@
  */
 package com.dotmarketing.util.diff.html.ancestor.tagtostring;
 
-import java.util.ResourceBundle;
-
 import com.dotmarketing.util.diff.html.ancestor.ChangeText;
 import com.dotmarketing.util.diff.html.ancestor.TagChangeSematic;
 import com.dotmarketing.util.diff.html.dom.TagNode;
+import java.util.ResourceBundle;
 
 public class NoContentTagToString extends TagToString {
 
-    protected NoContentTagToString(TagNode node, TagChangeSematic sem,
-            ResourceBundle bundle) {
-        super(node, sem, bundle);
-    }
+  protected NoContentTagToString(TagNode node, TagChangeSematic sem, ResourceBundle bundle) {
+    super(node, sem, bundle);
+  }
 
-    @Override
-    public void getAddedDescription(ChangeText txt) {
-        txt.addText(getChangedTo() + " " + getArticle().toLowerCase() + " ");
-        txt.addHtml("<b>");
-        txt.addText(getDescription().toLowerCase());
-        txt.addHtml("</b>");
+  @Override
+  public void getAddedDescription(ChangeText txt) {
+    txt.addText(getChangedTo() + " " + getArticle().toLowerCase() + " ");
+    txt.addHtml("<b>");
+    txt.addText(getDescription().toLowerCase());
+    txt.addHtml("</b>");
 
-        addAttributes(txt, node.getAttributes());
-        txt.addText(".");
-    }
+    addAttributes(txt, node.getAttributes());
+    txt.addText(".");
+  }
 
-    private String getChangedTo() {
-        return getString("diff-changedto");
-    }
+  private String getChangedTo() {
+    return getString("diff-changedto");
+  }
 
-    @Override
-    public void getRemovedDescription(ChangeText txt) {
-        txt.addText(getChangedFrom() + " " + getArticle().toLowerCase() + " ");
-        txt.addHtml("<b>");
-        txt.addText(getDescription().toLowerCase());
-        txt.addHtml("</b>");
+  @Override
+  public void getRemovedDescription(ChangeText txt) {
+    txt.addText(getChangedFrom() + " " + getArticle().toLowerCase() + " ");
+    txt.addHtml("<b>");
+    txt.addText(getDescription().toLowerCase());
+    txt.addHtml("</b>");
 
-        addAttributes(txt, node.getAttributes());
-        txt.addText(".");
-    }
+    addAttributes(txt, node.getAttributes());
+    txt.addText(".");
+  }
 
-    private String getChangedFrom() {
-        return getString("diff-changedfrom");
-    }
-
+  private String getChangedFrom() {
+    return getString("diff-changedfrom");
+  }
 }

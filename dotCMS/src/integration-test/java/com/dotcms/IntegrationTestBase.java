@@ -21,194 +21,200 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.BaseMessageResources;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-import org.apache.commons.io.FileUtils;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 import java.sql.SQLException;
 import java.util.List;
+import org.apache.commons.io.FileUtils;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.BeforeClass;
 
 /**
- * Created by Jonathan Gamba.
- * Date: 3/6/12
- * Time: 4:36 PM
- * <p/>
- * Annotations that can be use: {@link org.junit.BeforeClass @BeforeClass}, {@link org.junit.Before @Before},
- * {@link org.junit.Test @Test}, {@link org.junit.AfterClass @AfterClass},
- * {@link org.junit.After @After}, {@link org.junit.Ignore @Ignore}
- * <br>For managing the assertions use the static class {@link org.junit.Assert Assert}
+ * Created by Jonathan Gamba. Date: 3/6/12 Time: 4:36 PM
+ *
+ * <p>Annotations that can be use: {@link org.junit.BeforeClass @BeforeClass}, {@link
+ * org.junit.Before @Before}, {@link org.junit.Test @Test}, {@link
+ * org.junit.AfterClass @AfterClass}, {@link org.junit.After @After}, {@link
+ * org.junit.Ignore @Ignore} <br>
+ * For managing the assertions use the static class {@link org.junit.Assert Assert}
  */
 public abstract class IntegrationTestBase extends BaseMessageResources {
 
-    private static Boolean debugMode = Boolean.FALSE;
-    private final static PrintStream stdout = System.out;
-    private final static ByteArrayOutputStream output = new ByteArrayOutputStream();
+  private static Boolean debugMode = Boolean.FALSE;
+  private static final PrintStream stdout = System.out;
+  private static final ByteArrayOutputStream output = new ByteArrayOutputStream();
 
-    @BeforeClass
-    public static void beforeInit() throws Exception {
-        HibernateUtil.setAsyncCommitListenersFinalization(true);
+  @BeforeClass
+  public static void beforeInit() throws Exception {
+    HibernateUtil.setAsyncCommitListenersFinalization(true);
+  }
+
+  protected static void setDebugMode(final boolean mode) throws UnsupportedEncodingException {
+
+    debugMode = mode;
+    if (debugMode) {
+
+      System.setOut(new PrintStream(output, true, "UTF-8"));
     }
+  }
 
-    protected static void setDebugMode (final boolean mode) throws UnsupportedEncodingException {
+  protected static void cleanupDebug(Class clazz) {
 
-        debugMode = mode;
-        if (debugMode) {
+    if (debugMode) {
+      try {
+        final String fileName = clazz.getName() + System.currentTimeMillis() + ".out";
+        FileUtils.writeByteArrayToFile(new File(fileName), output.toByteArray());
+      } catch (Exception e) {
+        e.printStackTrace();
+      } finally {
+        System.setOut(stdout);
+      }
+    }
+  }
 
-            System.setOut(new PrintStream(output, true, "UTF-8"));
+  /**
+   * Runs a delegate on non-license mode
+   *
+   * @param delegate
+   * @throws Exception
+   */
+  protected static void runNoLicense(final VoidDelegate delegate) throws Exception {
+
+    final String licenseSerial = LicenseUtil.getSerial();
+
+    try {
+
+      LicenseUtil.freeLicenseOnRepo();
+      Assert.assertFalse(LicenseUtil.getLevel() > LicenseLevel.STANDARD.level);
+
+      delegate.execute();
+    } finally {
+      try {
+        LicenseUtil.pickLicense(licenseSerial);
+        Assert.assertTrue(LicenseUtil.getLevel() > LicenseLevel.STANDARD.level);
+      } catch (Exception e) {
+        Assert.fail(e.getMessage());
+      }
+    }
+  } // runNoLicense.
+
+  @After
+  public void after() throws SQLException, DotHibernateException, HibernateException {
+
+    // Closing the session
+    HibernateUtil.getSession().connection().close();
+    HibernateUtil.getSession().close();
+  }
+
+  /** Util method to delete all the roles. */
+  public void cleanRoles(final List<Role> rolesToDelete) {
+    RoleAPI roleAPI = APILocator.getRoleAPI();
+
+    for (Role role : rolesToDelete) {
+      try {
+        if (role != null && UtilMethods.isSet(role.getId())) {
+          roleAPI.delete(role);
         }
+      } catch (DotDataException e) {
+        Assert.fail(
+            "Can't delete role: "
+                + role.getName()
+                + ", with id:"
+                + role.getId()
+                + ", Exception: "
+                + e.getMessage());
+      }
     }
+  }
 
-    protected static void cleanupDebug (Class clazz) {
+  /** Util method to delete all the folders. */
+  public void cleanFolders(final List<Folder> foldersToDelete) {
+    final FolderAPI folderAPI = APILocator.getFolderAPI();
+    final User systemUser = APILocator.systemUser();
 
-        if (debugMode) {
-            try {
-                final String fileName = clazz.getName() + System.currentTimeMillis() + ".out";
-                FileUtils.writeByteArrayToFile(new File(fileName), output.toByteArray());
-            } catch (Exception e) {
-                e.printStackTrace();
-            } finally {
-                System.setOut(stdout);
-            }
+    for (Folder folder : foldersToDelete) {
+      try {
+        if (folder != null && UtilMethods.isSet(folder.getIdentifier())) {
+          folderAPI.delete(folder, systemUser, false);
         }
-
+      } catch (DotSecurityException | DotDataException e) {
+        Assert.fail(
+            "Can't delete Folder: "
+                + folder.getName()
+                + ", with id:"
+                + folder.getIdentifier()
+                + ", Exception: "
+                + e.getMessage());
+      }
     }
+  }
 
-    /**
-     * Runs a delegate on non-license mode
-     * @param delegate
-     * @throws Exception
-     */
-    protected static void runNoLicense(final VoidDelegate delegate) throws Exception {
+  /** Util method to delete all the users. */
+  public void cleanUsers(final List<User> usersToDelete) {
+    UserAPI userAPI = APILocator.getUserAPI();
 
+    for (final User user : usersToDelete) {
+      try {
+        if (user != null && UtilMethods.isSet(user.getUserId())) {
+          userAPI.delete(user, userAPI.getSystemUser(), false);
+        }
+      } catch (DotSecurityException | DotDataException e) {
+        Assert.fail(
+            "Can't delete User: "
+                + user.getFullName()
+                + ", with id:"
+                + user.getUserId()
+                + ", Exception: "
+                + e.getMessage());
+      }
+    }
+  }
 
-        final String licenseSerial = LicenseUtil.getSerial();
+  /** Util method to delete all the hosts. */
+  public void cleanHosts(List<Host> hostsToDelete) {
+    HostAPI hostAPI = APILocator.getHostAPI();
+    User systemUser = APILocator.systemUser();
 
+    for (Host host : hostsToDelete) {
+      if (host != null && UtilMethods.isSet(host.getIdentifier())) {
         try {
-
-            LicenseUtil.freeLicenseOnRepo();
-            Assert.assertFalse(LicenseUtil.getLevel() > LicenseLevel.STANDARD.level);
-
-            delegate.execute();
-        } finally {
-            try {
-                LicenseUtil.pickLicense(licenseSerial);
-                Assert.assertTrue(LicenseUtil.getLevel() > LicenseLevel.STANDARD.level);
-            } catch (Exception e) {
-                Assert.fail(e.getMessage());
-            }
+          hostAPI.archive(host, systemUser, false);
+          hostAPI.delete(host, systemUser, false);
+        } catch (DotDataException | DotSecurityException e) {
+          Assert.fail(
+              "Can't delete Host: "
+                  + host.getName()
+                  + ", with id:"
+                  + host.getIdentifier()
+                  + ", Exception: "
+                  + e.getMessage());
         }
-
-    } // runNoLicense.
-
-
-    @After
-    public void after () throws SQLException, DotHibernateException, HibernateException {
-
-        //Closing the session
-        HibernateUtil.getSession().connection().close();
-        HibernateUtil.getSession().close();
+      }
     }
+  }
 
-    /**
-     * Util method to delete all the roles.
-     */
-    public void cleanRoles(final List<Role> rolesToDelete) {
-        RoleAPI roleAPI = APILocator.getRoleAPI();
+  /** Util method to delete all the categories. */
+  public void cleanCategories(List<Category> categoriesToDelete) {
+    final CategoryAPI categoryAPI = APILocator.getCategoryAPI();
+    final User systemUser = APILocator.systemUser();
 
-        for (Role role : rolesToDelete) {
-            try {
-                if (role != null && UtilMethods.isSet(role.getId())) {
-                    roleAPI.delete(role);
-                }
-            } catch (DotDataException e) {
-                Assert.fail("Can't delete role: " + role.getName() + ", with id:" + role.getId()
-                        + ", Exception: " + e.getMessage());
-            }
+    for (Category category : categoriesToDelete) {
+      if (category != null && UtilMethods.isSet(category.getInode())) {
+        try {
+          categoryAPI.delete(category, systemUser, false);
+        } catch (DotDataException | DotSecurityException e) {
+          Assert.fail(
+              "Can't delete Category: "
+                  + category.getCategoryName()
+                  + ", with id:"
+                  + category.getInode()
+                  + ", Exception: "
+                  + e.getMessage());
         }
+      }
     }
-
-    /**
-     * Util method to delete all the folders.
-     */
-    public void cleanFolders(final List<Folder> foldersToDelete) {
-        final FolderAPI folderAPI = APILocator.getFolderAPI();
-        final User systemUser = APILocator.systemUser();
-
-        for (Folder folder : foldersToDelete) {
-            try {
-                if (folder != null && UtilMethods.isSet(folder.getIdentifier())) {
-                    folderAPI.delete(folder, systemUser, false);
-                }
-            } catch (DotSecurityException | DotDataException e) {
-                Assert.fail("Can't delete Folder: " + folder.getName() + ", with id:" + folder
-                        .getIdentifier()
-                        + ", Exception: " + e.getMessage());
-            }
-        }
-    }
-
-    /**
-     * Util method to delete all the users.
-     */
-    public void cleanUsers(final List<User> usersToDelete) {
-        UserAPI userAPI = APILocator.getUserAPI();
-
-        for (final User user : usersToDelete) {
-            try {
-                if (user != null && UtilMethods.isSet(user.getUserId())) {
-                    userAPI.delete(user, userAPI.getSystemUser(), false);
-                }
-            } catch (DotSecurityException | DotDataException e) {
-                Assert.fail("Can't delete User: " + user.getFullName() + ", with id:" + user
-                        .getUserId()
-                        + ", Exception: " + e.getMessage());
-            }
-        }
-    }
-
-    /**
-     * Util method to delete all the hosts.
-     */
-    public void cleanHosts(List<Host> hostsToDelete) {
-        HostAPI hostAPI = APILocator.getHostAPI();
-        User systemUser = APILocator.systemUser();
-
-        for (Host host : hostsToDelete) {
-            if (host != null && UtilMethods.isSet(host.getIdentifier())) {
-                try {
-                    hostAPI.archive(host, systemUser, false);
-                    hostAPI.delete(host, systemUser, false);
-                } catch (DotDataException | DotSecurityException e) {
-                    Assert.fail("Can't delete Host: " + host.getName() + ", with id:" + host
-                            .getIdentifier()
-                            + ", Exception: " + e.getMessage());
-                }
-            }
-        }
-    }
-
-    /**
-     * Util method to delete all the categories.
-     */
-    public void cleanCategories(List<Category> categoriesToDelete) {
-        final CategoryAPI categoryAPI = APILocator.getCategoryAPI();
-        final User systemUser = APILocator.systemUser();
-
-        for (Category category : categoriesToDelete) {
-            if (category != null && UtilMethods.isSet(category.getInode())) {
-                try {
-                    categoryAPI.delete(category, systemUser, false);
-                } catch (DotDataException | DotSecurityException e) {
-                    Assert.fail("Can't delete Category: " + category.getCategoryName() + ", with id:"
-                                + category.getInode() + ", Exception: " + e.getMessage());
-                }
-            }
-        }
-    }
-
+  }
 }

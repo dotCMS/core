@@ -7,24 +7,19 @@ import java.lang.annotation.Target;
 
 /**
  * Encapsulates configuration for an Actionlet
+ *
  * @author jsanca
  */
-@Target({ ElementType.TYPE})
+@Target({ElementType.TYPE})
 @Retention(value = RetentionPolicy.RUNTIME)
 public @interface Actionlet {
 
-    /**
-     * Set this to true if the actionlet saves a content
-     */
-    boolean save()    default false;
+  /** Set this to true if the actionlet saves a content */
+  boolean save() default false;
 
-    /**
-     * Set this to true if the actionlet publish a content
-     */
-    boolean publish() default false;
+  /** Set this to true if the actionlet publish a content */
+  boolean publish() default false;
 
-    /**
-     * Set this to true if the actionlet push publish a content
-     */
-    boolean pushPublish() default false;
+  /** Set this to true if the actionlet push publish a content */
+  boolean pushPublish() default false;
 }

@@ -16,20 +16,18 @@ package org.apache.velocity.runtime.parser.node;
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
- * under the License.    
+ * under the License.
  */
 
+import com.dotmarketing.util.Logger;
 import org.apache.velocity.context.InternalContextAdapter;
 import org.apache.velocity.exception.MathException;
 import org.apache.velocity.runtime.parser.Parser;
 
-import com.dotmarketing.util.Logger;
-
 /**
- * Handles number division of nodes<br><br>
- *
- * Please look at the Parser.jjt file which is
- * what controls the generation of this class.
+ * Handles number division of nodes<br>
+ * <br>
+ * Please look at the Parser.jjt file which is what controls the generation of this class.
  *
  * @author <a href="mailto:wglass@forio.com">Will Glass-Husain</a>
  * @author <a href="mailto:pero@antaramusic.de">Peter Romianowski</a>
@@ -37,45 +35,35 @@ import com.dotmarketing.util.Logger;
  * @author <a href="mailto:geirm@optonline.net">Geir Magnusson Jr.</a>
  * @version $Id: ASTDivNode.java 691048 2008-09-01 20:26:11Z nbubna $
  */
-public class ASTDivNode extends ASTMathNode
-{
-    /**
-     * @param id
-     */
-    public ASTDivNode(int id)
-    {
-        super(id);
-    }
+public class ASTDivNode extends ASTMathNode {
+  /** @param id */
+  public ASTDivNode(int id) {
+    super(id);
+  }
 
-    /**
-     * @param p
-     * @param id
-     */
-    public ASTDivNode(Parser p, int id)
-    {
-        super(p, id);
-    }
+  /**
+   * @param p
+   * @param id
+   */
+  public ASTDivNode(Parser p, int id) {
+    super(p, id);
+  }
 
-    public Number perform(Number left, Number right, InternalContextAdapter context)
-    {
-        /*
-         * check for divide by 0
-         */
-        if (MathUtils.isZero(right))
-        {
-            String msg = "Right side of division operation is zero. Must be non-zero. "
-                          + getLocation(context);
-            if (strictMode)
-            {
-                Logger.error(this,msg);
-                throw new MathException(msg);
-            }
-            else
-            {
-                Logger.debug(this,msg);
-                return null;
-            }
-        }
-        return MathUtils.divide(left, right);
+  public Number perform(Number left, Number right, InternalContextAdapter context) {
+    /*
+     * check for divide by 0
+     */
+    if (MathUtils.isZero(right)) {
+      String msg =
+          "Right side of division operation is zero. Must be non-zero. " + getLocation(context);
+      if (strictMode) {
+        Logger.error(this, msg);
+        throw new MathException(msg);
+      } else {
+        Logger.debug(this, msg);
+        return null;
+      }
     }
+    return MathUtils.divide(left, right);
+  }
 }

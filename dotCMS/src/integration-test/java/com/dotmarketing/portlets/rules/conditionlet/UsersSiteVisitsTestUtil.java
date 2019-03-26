@@ -2,103 +2,102 @@ package com.dotmarketing.portlets.rules.conditionlet;
 
 import com.dotcms.util.CookieTestUtil;
 import com.dotmarketing.util.WebKeys;
-
-import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.net.HttpCookie;
 import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.List;
+import javax.servlet.http.HttpServletRequest;
 
-/**
- * Created by freddyrodriguez on 15/3/16.
- */
+/** Created by freddyrodriguez on 15/3/16. */
 class UsersSiteVisitsTestUtil {
 
-    private List<HttpCookie> historyCookiesAsString;
-    private HttpServletRequest request;
+  private List<HttpCookie> historyCookiesAsString;
+  private HttpServletRequest request;
 
-    UsersSiteVisitsTestUtil(HttpServletRequest request){
+  UsersSiteVisitsTestUtil(HttpServletRequest request) {
 
-        this.request = request;
+    this.request = request;
+  }
+
+  public URLConnection makeNewSessionRequest(String url) throws IOException {
+    return this.makeRequest(url, true);
+  }
+
+  public URLConnection makeRequest(String url) throws IOException {
+    return this.makeRequest(url, false);
+  }
+
+  private URLConnection makeRequest(String url, boolean deleteOncePerVisitCookie)
+      throws IOException {
+
+    if (deleteOncePerVisitCookie && historyCookiesAsString != null) {
+      historyCookiesAsString = deleteOncePerVisitCookie(historyCookiesAsString);
     }
 
-    public URLConnection makeNewSessionRequest(String url) throws IOException {
-        return this.makeRequest(url, true);
+    // Execute some requests and validate the responses
+    ApiRequest apiRequest = new ApiRequest(request);
+
+    URLConnection conn =
+        apiRequest.makeRequest(
+            url, null, CookieTestUtil.getCookiesAsString(historyCookiesAsString));
+    List<HttpCookie> cookies = CookieTestUtil.getCookies(conn);
+
+    if (historyCookiesAsString != null && cookies != null) {
+      historyCookiesAsString = joinCookies(cookies);
+    } else if (cookies != null) {
+      historyCookiesAsString = cookies;
     }
 
-    public URLConnection makeRequest(String url) throws IOException {
-        return this.makeRequest(url, false);
-    }
+    return conn;
+  }
 
-    private URLConnection makeRequest(String url, boolean deleteOncePerVisitCookie) throws IOException {
+  private List<HttpCookie> joinCookies(List<HttpCookie> cookies) {
 
-        if ( deleteOncePerVisitCookie && historyCookiesAsString != null){
-            historyCookiesAsString = deleteOncePerVisitCookie( historyCookiesAsString );
+    List<HttpCookie> aux = new ArrayList<>();
+
+    for (HttpCookie historyCookie : historyCookiesAsString) {
+
+      HttpCookie toAdd = historyCookie;
+      boolean remove = false;
+
+      for (HttpCookie newCookie : cookies) {
+        if (historyCookie.getName().equals(newCookie.getName())) {
+          toAdd = newCookie;
+          remove = true;
+          break;
         }
+      }
 
-        //Execute some requests and validate the responses
-        ApiRequest apiRequest = new ApiRequest(request);
+      aux.add(toAdd);
 
-        URLConnection conn = apiRequest.makeRequest(url, null, CookieTestUtil.getCookiesAsString(historyCookiesAsString));
-        List<HttpCookie> cookies = CookieTestUtil.getCookies(conn);
-
-        if ( historyCookiesAsString != null && cookies != null) {
-            historyCookiesAsString = joinCookies(cookies);
-        }else if (cookies != null){
-            historyCookiesAsString = cookies;
+      if (remove) {
+        try {
+          cookies.remove(toAdd);
+        } catch (Exception e) {
+          System.out.println();
         }
-
-        return conn;
+      }
     }
 
-    private List<HttpCookie> joinCookies(List<HttpCookie> cookies) {
+    aux.addAll(cookies);
+    return aux;
+  }
 
-        List<HttpCookie> aux = new ArrayList<>();
+  private List<HttpCookie> deleteOncePerVisitCookie(List<HttpCookie> cookies) {
 
-        for (HttpCookie historyCookie : historyCookiesAsString) {
+    List<HttpCookie> result = new ArrayList<>();
 
-            HttpCookie toAdd = historyCookie;
-            boolean remove = false;
-
-            for (HttpCookie newCookie : cookies) {
-                if (historyCookie.getName().equals( newCookie.getName() )){
-                    toAdd = newCookie;
-                    remove = true;
-                    break;
-                }
-            }
-
-            aux.add( toAdd );
-
-            if (remove){
-                try {
-                    cookies.remove(toAdd);
-                }catch(Exception e){
-                    System.out.println();
-                }
-            }
-        }
-
-        aux.addAll(cookies);
-        return aux;
+    for (HttpCookie httpCookie : cookies) {
+      if (!httpCookie.getName().equals(WebKeys.ONCE_PER_VISIT_COOKIE)) {
+        result.add(httpCookie);
+      }
     }
 
-    private List<HttpCookie> deleteOncePerVisitCookie(List<HttpCookie> cookies) {
+    return result;
+  }
 
-        List<HttpCookie> result = new ArrayList<>();
-
-        for (HttpCookie httpCookie : cookies) {
-            if (!httpCookie.getName().equals( WebKeys.ONCE_PER_VISIT_COOKIE )){
-                result.add( httpCookie );
-            }
-        }
-
-
-        return result;
-    }
-
-    public void clean() {
-        historyCookiesAsString = null;
-    }
+  public void clean() {
+    historyCookiesAsString = null;
+  }
 }

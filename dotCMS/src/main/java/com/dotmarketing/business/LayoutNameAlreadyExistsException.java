@@ -2,13 +2,10 @@ package com.dotmarketing.business;
 
 public class LayoutNameAlreadyExistsException extends DotStateException {
 
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 1L;
+  /** */
+  private static final long serialVersionUID = 1L;
 
-	public LayoutNameAlreadyExistsException(String x) {
-		super(x);
-	}
-
+  public LayoutNameAlreadyExistsException(String x) {
+    super(x);
+  }
 }

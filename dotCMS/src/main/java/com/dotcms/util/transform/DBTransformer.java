@@ -5,16 +5,15 @@ import java.util.List;
 /**
  * Interface that contains the definition that a transformer needs to implement in order to convert
  * DB objects into entities(eg. Folder, Template, Containers)
+ *
  * @param <T>
  */
 public interface DBTransformer<T> {
 
-    /**
-     * @return List of converted objects
-     */
-    List<T> asList();
+  /** @return List of converted objects */
+  List<T> asList();
 
-    default T findFirst() {
-        return this.asList().stream().findFirst().orElse(null);
-    }
+  default T findFirst() {
+    return this.asList().stream().findFirst().orElse(null);
+  }
 }

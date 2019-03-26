@@ -1,5 +1,3 @@
 package com.dotcms.contenttype.model.type;
 
-public interface Expireable {
-
-}
+public interface Expireable {}

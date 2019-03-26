@@ -3,77 +3,78 @@ package com.dotcms.util;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import org.junit.Assert;
-import org.junit.Test;
-
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
+import org.junit.Assert;
+import org.junit.Test;
 
 public class TestExceptionUtil {
 
-    @Test
-    public void TestExceptionIsCausedBy () {
-        DotSecurityException sec = new DotSecurityException("Root cause");
+  @Test
+  public void TestExceptionIsCausedBy() {
+    DotSecurityException sec = new DotSecurityException("Root cause");
 
-        Assert.assertTrue(ExceptionUtil.causedBy(sec, DotSecurityException.class));
+    Assert.assertTrue(ExceptionUtil.causedBy(sec, DotSecurityException.class));
 
-        Exception wrapException = new Exception(sec);
+    Exception wrapException = new Exception(sec);
 
-        Assert.assertTrue(ExceptionUtil.causedBy(wrapException, DotSecurityException.class));
+    Assert.assertTrue(ExceptionUtil.causedBy(wrapException, DotSecurityException.class));
+  }
+
+  @Test
+  public void TestExceptionIsNotCausedBy() {
+    DotSecurityException sec = new DotSecurityException("Root cause");
+
+    Assert.assertFalse(ExceptionUtil.causedBy(sec, DotDataException.class));
+
+    Exception wrapException = new Exception(sec);
+
+    Assert.assertFalse(ExceptionUtil.causedBy(wrapException, DotDataException.class));
+  }
+
+  @Test
+  public void TestExceptionIsCausedByMany() {
+
+    try {
+      throwTimeoutException();
+    } catch (IOException e) {
+
+      Assert.assertTrue(
+          ExceptionUtil.causedBy(e, TimeoutException.class, ExecutionException.class));
     }
 
-    @Test
-    public void TestExceptionIsNotCausedBy () {
-        DotSecurityException sec = new DotSecurityException("Root cause");
+    try {
+      throwExecutionException();
+    } catch (IOException e) {
 
-        Assert.assertFalse(ExceptionUtil.causedBy(sec, DotDataException.class));
-
-        Exception wrapException = new Exception(sec);
-
-        Assert.assertFalse(ExceptionUtil.causedBy(wrapException, DotDataException.class));
+      Assert.assertTrue(
+          ExceptionUtil.causedBy(e, TimeoutException.class, ExecutionException.class));
+      Assert.assertTrue(ExceptionUtil.causedBy(e, Exception.class));
+      Assert.assertFalse(
+          ExceptionUtil.causedBy(e, IllegalArgumentException.class, NumberFormatException.class));
     }
+  }
 
-    @Test
-    public void TestExceptionIsCausedByMany () {
+  private void throwTimeoutException() throws IOException {
 
-        try {
-            throwTimeoutException();
-        } catch (IOException e) {
+    try {
 
-            Assert.assertTrue(ExceptionUtil.causedBy(e, TimeoutException.class, ExecutionException.class));
-        }
+      throw new TimeoutException("Error");
+    } catch (TimeoutException e) {
 
-        try {
-            throwExecutionException();
-        } catch (IOException e) {
-
-            Assert.assertTrue(ExceptionUtil.causedBy(e,  TimeoutException.class, ExecutionException.class));
-            Assert.assertTrue(ExceptionUtil.causedBy(e,  Exception.class));
-            Assert.assertFalse(ExceptionUtil.causedBy(e, IllegalArgumentException.class, NumberFormatException.class));
-        }
+      throw new IOException(e.getMessage(), e);
     }
+  }
 
+  private void throwExecutionException() throws IOException {
 
-    private void throwTimeoutException () throws IOException {
+    try {
 
-        try {
+      throw new ExecutionException(new Exception("error"));
+    } catch (ExecutionException e) {
 
-            throw new TimeoutException("Error");
-        } catch (TimeoutException e) {
-
-            throw new IOException(e.getMessage(), e);
-        }
+      throw new IOException(e.getMessage(), e);
     }
-
-    private void throwExecutionException () throws IOException {
-
-        try {
-
-            throw new ExecutionException(new Exception("error"));
-        } catch (ExecutionException e) {
-
-            throw new IOException(e.getMessage(), e);
-        }
-    }
+  }
 }

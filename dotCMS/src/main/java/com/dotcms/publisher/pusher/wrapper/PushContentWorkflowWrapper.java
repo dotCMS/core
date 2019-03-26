@@ -1,39 +1,37 @@
 package com.dotcms.publisher.pusher.wrapper;
 
-import java.util.List;
-
 import com.dotmarketing.portlets.workflows.model.WorkflowComment;
 import com.dotmarketing.portlets.workflows.model.WorkflowHistory;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
+import java.util.List;
 
 public class PushContentWorkflowWrapper {
-    
-    private WorkflowTask task;
-    private List<WorkflowHistory> history;
-    private List<WorkflowComment> comments;
 
-    public WorkflowTask getTask() {
-        return task;
-    }
+  private WorkflowTask task;
+  private List<WorkflowHistory> history;
+  private List<WorkflowComment> comments;
 
-    public void setTask(WorkflowTask task) {
-        this.task = task;
-    }
+  public WorkflowTask getTask() {
+    return task;
+  }
 
-    public List<WorkflowHistory> getHistory() {
-        return history;
-    }
+  public void setTask(WorkflowTask task) {
+    this.task = task;
+  }
 
-    public void setHistory(List<WorkflowHistory> history) {
-        this.history = history;
-    }
+  public List<WorkflowHistory> getHistory() {
+    return history;
+  }
 
-    public List<WorkflowComment> getComments() {
-        return comments;
-    }
+  public void setHistory(List<WorkflowHistory> history) {
+    this.history = history;
+  }
 
-    public void setComments(List<WorkflowComment> comments) {
-        this.comments = comments;
-    }
-    
+  public List<WorkflowComment> getComments() {
+    return comments;
+  }
+
+  public void setComments(List<WorkflowComment> comments) {
+    this.comments = comments;
+  }
 }

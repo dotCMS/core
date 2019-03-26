@@ -9,7 +9,6 @@ import com.dotcms.repackage.javax.portlet.PortletConfig;
 import com.dotcms.util.I18NMessage;
 import com.dotcms.uuid.shorty.ShortType;
 import com.dotcms.uuid.shorty.ShortyId;
-
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
@@ -36,7 +35,11 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
-
+import com.liferay.portal.language.LanguageUtil;
+import com.liferay.portal.model.User;
+import com.liferay.portal.struts.ActionException;
+import com.liferay.portlet.ActionRequestImpl;
+import com.liferay.util.servlet.SessionMessages;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -45,800 +48,883 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
-
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionMapping;
 
-import com.liferay.portal.language.LanguageUtil;
-import com.liferay.portal.model.User;
-import com.liferay.portal.struts.ActionException;
-import com.liferay.portlet.ActionRequestImpl;
-import com.liferay.util.servlet.SessionMessages;
-/**
- * @author Maria
- */
-
+/** @author Maria */
 public class OrderMenuAction extends DotPortletAction {
 
-	public static boolean debug = false;
+  public static boolean debug = false;
 
-	private PermissionAPI perAPI= null;
-	User user = null;
-	FolderAPI fapi = APILocator.getFolderAPI();
-	ActionRequestImpl actionRequest = null;
+  private PermissionAPI perAPI = null;
+  User user = null;
+  FolderAPI fapi = APILocator.getFolderAPI();
+  ActionRequestImpl actionRequest = null;
 
+  public void processAction(
+      ActionMapping mapping,
+      ActionForm form,
+      PortletConfig config,
+      ActionRequest req,
+      ActionResponse res)
+      throws Exception {
 
-	public void processAction(ActionMapping mapping, ActionForm form, PortletConfig config, ActionRequest req, ActionResponse res) throws Exception {
+    perAPI = APILocator.getPermissionAPI();
+    user = _getUser(req);
+    actionRequest = (ActionRequestImpl) req;
+    final String orderReturnPath = (req.getParameter("pagePath"));
+    if (orderReturnPath != null) {
+      actionRequest
+          .getHttpServletRequest()
+          .getSession()
+          .setAttribute("orderReturnPath", orderReturnPath);
+    }
+    try {
+      String cmd = req.getParameter("cmd");
 
-		perAPI = APILocator.getPermissionAPI();
-		user = _getUser(req);
-		actionRequest = (ActionRequestImpl) req;
-		final String orderReturnPath = (req.getParameter("pagePath"));
-		if(orderReturnPath!=null) {
-		    actionRequest.getHttpServletRequest().getSession().setAttribute("orderReturnPath", orderReturnPath);
-		}
-		try {
-			String cmd = req.getParameter("cmd");
+      int startLevel = Integer.parseInt(req.getParameter("startLevel"));
+      int depth = Integer.parseInt(req.getParameter("depth"));
 
-			int startLevel = Integer.parseInt(req.getParameter("startLevel"));
-			int depth = Integer.parseInt(req.getParameter("depth"));
+      req.setAttribute("depth", new Integer(depth));
+      Hashtable h = _getMenuItems(req, res, config, form, startLevel);
 
-			req.setAttribute("depth", new Integer(depth));
-			Hashtable h = _getMenuItems(req,res,config,form, startLevel);
+      List<Object> items = (List) h.get("menuItems");
+      boolean show = ((Boolean) h.get("showSaveButton")).booleanValue();
 
-			List<Object> items = (List)h.get("menuItems");
-			boolean show = ((Boolean)h.get("showSaveButton")).booleanValue();
+      List<Object> l = _getHtmlTreeList(items, show, depth);
 
-			List<Object> l = _getHtmlTreeList(items, show, depth);
+      if (!((Boolean) l.get(1)).booleanValue()) {
+        SessionMessages.add(req, "error", "error.menu.reorder.user_has_not_permission");
+      }
 
-			if(!((Boolean)l.get(1)).booleanValue()){
-				SessionMessages.add(req, "error", "error.menu.reorder.user_has_not_permission");
-			}
+      req.setAttribute("htmlTreeList", l.get(0));
+      req.setAttribute("showSaveButton", l.get(1));
+      List<Treeable> navs = new ArrayList<Treeable>();
+      // This condition works while saving the reordered menu
+      if (((cmd != null) && cmd.equals("generatemenu"))) {
 
-			req.setAttribute("htmlTreeList", l.get(0));
-			req.setAttribute("showSaveButton", l.get(1));
-			List<Treeable> navs = new ArrayList<Treeable>();
-			//This condition works while saving the reordered menu
-			if (((cmd != null) && cmd.equals("generatemenu"))) {
+        // regenerates menu files
+        boolean doReorderMenu = false;
+        if (l != null && (List) l.get(0) != null) {
+          doReorderMenu = ((Boolean) l.get(1)).booleanValue();
+        }
+        if (doReorderMenu) {
 
-				//regenerates menu files
-				boolean doReorderMenu = false;
-				if(l != null && (List)l.get(0) != null){
-					doReorderMenu = ((Boolean)l.get(1)).booleanValue();
-				}
-				if(doReorderMenu){
+          navs = _orderMenuItemsDragAndDrop(getOrderedElements(req));
+        } else {
+          Logger.warn(
+              this,
+              "Possible hack attack: User submitting menu post of which they have no permissions to");
+          _sendToReferral(req, res, req.getParameter("referer"));
+          return;
+        }
 
-					navs = _orderMenuItemsDragAndDrop(getOrderedElements(req));
-				}else{
-					Logger.warn(this, "Possible hack attack: User submitting menu post of which they have no permissions to");
-					_sendToReferral(req,res,req.getParameter("referer"));
-					return;
-				}
+        // we have to clear navs after db commit
+        for (Treeable treeable : navs) {
+          Identifier id = APILocator.getIdentifierAPI().find(treeable.getIdentifier());
+          if ("folder".equals(id.getAssetType())) {
+            CacheLocator.getNavToolCache().removeNavByPath(id.getHostId(), id.getPath());
+          }
 
-				// we have to clear navs after db commit
-				for(Treeable treeable : navs){
-					Identifier id = APILocator.getIdentifierAPI().find(treeable.getIdentifier());
-					if("folder".equals(id.getAssetType())){
-						CacheLocator.getNavToolCache().removeNavByPath(id.getHostId(), id.getPath());
-					}
+          Folder folder = APILocator.getFolderAPI().findParentFolder(treeable, user, false);
+          String folderInode = (folder == null) ? FolderAPI.SYSTEM_FOLDER : folder.getInode();
+          CacheLocator.getNavToolCache().removeNav(id.getHostId(), folderInode);
+          CacheLocator.getHTMLPageCache().remove(id.getId());
+          CacheLocator.getNavToolCache().removeNav(id.getHostId(), FolderAPI.SYSTEM_FOLDER);
+        }
 
-					Folder folder = APILocator.getFolderAPI().findParentFolder(treeable, user, false);
-					String folderInode = (folder==null) ? FolderAPI.SYSTEM_FOLDER : folder.getInode();
-					CacheLocator.getNavToolCache().removeNav(id.getHostId(), folderInode);
-					CacheLocator.getHTMLPageCache().remove(id.getId());
-					CacheLocator.getNavToolCache().removeNav(id.getHostId(), FolderAPI.SYSTEM_FOLDER);
-				}
+        DateUtil.sleep(1500L);
+      } else {
 
-				DateUtil.sleep(1500L);
-			} else {
+        if (((cmd != null) && cmd.equals(com.dotmarketing.util.Constants.REORDER))) {
+          // prepublish
+          _orderMenuItems(req, res, config, form);
+        }
 
-				if (((cmd != null) && cmd.equals(com.dotmarketing.util.Constants.REORDER))) {
-					//prepublish
-					_orderMenuItems(req, res, config, form);
-				}
+        // This part is executed while listing
 
-				//This part is executed while listing
+        req.setAttribute("startLevel", new Integer(startLevel));
+        req.setAttribute("depth", new Integer(depth));
 
+        setForward(req, "portlet.ext.folders.order_menu");
+      }
+    } catch (ActionException ae) {
+      _handleException(ae, req);
+    }
+  }
 
-				req.setAttribute("startLevel", new Integer(startLevel));
-				req.setAttribute("depth", new Integer(depth));
+  /**
+   * Splits the parameter reorder_result and creates a map that contains the arranged list of items
+   *
+   * @param req
+   * @return
+   */
+  private Map<String, String> getOrderedElements(ActionRequest req) {
 
-				setForward(req, "portlet.ext.folders.order_menu");
-			}
-		} catch (ActionException ae) {
-			_handleException(ae,req);
-		}
-	}
+    String reorderResult;
+    Map<String, String> orderedItems;
 
-	/**
-	 * Splits the parameter reorder_result and creates a map that contains the arranged list of items
-	 * @param req
-	 * @return
-	 */
-	private Map<String, String> getOrderedElements(ActionRequest req){
+    orderedItems = new HashMap<>();
+    reorderResult = req.getParameter("reorder_result");
 
-		String reorderResult;
-		Map<String, String> orderedItems;
+    if (reorderResult != null) {
+      for (String listItem : reorderResult.split("&")) {
+        orderedItems.put(listItem.split("=")[0], listItem.split("=")[1]);
+      }
+    }
 
-		orderedItems  = new HashMap<>();
-		reorderResult = req.getParameter("reorder_result");
+    return orderedItems;
+  }
 
-		if (reorderResult != null){
-			for(String listItem:reorderResult.split("&")){
-				orderedItems.put(listItem.split("=")[0], listItem.split("=")[1]);
-			}
-		}
+  private Hashtable _getMenuItems(
+      ActionRequest req, ActionResponse res, PortletConfig config, ActionForm form, int startLevel)
+      throws Exception {
 
-		return orderedItems;
-	}
+    Hashtable h = new Hashtable();
+    User user = _getUser(req);
+    String pagePath = req.getParameter("pagePath");
+    String hostId = req.getParameter("hostId");
+    String path = null;
 
-	private Hashtable _getMenuItems(ActionRequest req, ActionResponse res,PortletConfig config,ActionForm form, int startLevel)
-	throws Exception {
+    String[] pathTokens = pagePath.split("/");
+    if (startLevel <= 1) {
+      path = "/";
+    } else {
+      path = "";
+      for (int i = 1; i < startLevel; i++) {
+        path += "/" + pathTokens[i];
+      }
+    }
 
-		Hashtable h = new Hashtable();
-		User user = _getUser(req);
-		String pagePath = req.getParameter("pagePath");
-		String hostId = req.getParameter("hostId");
-		String path = null;
+    boolean userHasPublishPermission = true;
+    Host host = APILocator.getHostAPI().find(hostId, user, true);
+    if (!path.equals("/")) {
 
-		String [] pathTokens = pagePath.split("/");
-		if(startLevel <= 1){
-			path = "/";
-		}else{
-			path = "";
-			for(int i = 1; i < startLevel; i++){
-				path += "/" + pathTokens[i];
-			}
-		}
+      Folder folder = fapi.findFolderByPath(path, host, user, false);
 
-		boolean userHasPublishPermission = true;
-		Host host = APILocator.getHostAPI().find(hostId, user, true);
-		if (!path.equals("/")) {
+      // gets menu items for this folder
+      java.util.List<Inode> itemsList = fapi.findMenuItems(folder, user, false);
 
-			Folder folder = fapi.findFolderByPath(path, host, user, false);
+      // Cleaning the results to only display the ones under the current language.
+      long currentLanguageId =
+          WebAPILocator.getLanguageWebAPI()
+              .getLanguage(((ActionRequestImpl) actionRequest).getHttpServletRequest())
+              .getId();
 
-			//gets menu items for this folder
-			java.util.List<Inode> itemsList = fapi.findMenuItems(folder, user, false);
+      // If we have the current language we can proceed to clean the HTML pages.
+      if (UtilMethods.isSet(currentLanguageId)) {
+        Iterator<Inode> itemsIter = itemsList.iterator();
 
-			//Cleaning the results to only display the ones under the current language.
-			long currentLanguageId = WebAPILocator.getLanguageWebAPI().getLanguage(((ActionRequestImpl) actionRequest).getHttpServletRequest()).getId();
+        while (itemsIter.hasNext()) {
+          Object item = itemsIter.next();
 
-			//If we have the current language we can proceed to clean the HTML pages.
-			if(UtilMethods.isSet(currentLanguageId)) {
-				Iterator<Inode> itemsIter = itemsList.iterator();
+          // Make sure the object is HTMLPage.
+          if (item instanceof HTMLPageAsset) {
+            // We need to make sure that the HTMLPage has the languageId. If not we leave in the
+            // results.
+            if (UtilMethods.isSet(((HTMLPageAsset) item).getLanguageId())) {
+              // If the values do not match, we remove the result from the list.
+              if (currentLanguageId != ((HTMLPageAsset) item).getLanguageId()) {
+                itemsIter.remove();
+              }
+            }
+          }
+        }
+      }
 
-				while(itemsIter.hasNext()) {
-					Object item = itemsIter.next();
+      userHasPublishPermission = _findPublishPermissionExists(itemsList);
+      h.put("menuItems", itemsList);
+      req.setAttribute(WebKeys.MENU_MAIN_FOLDER, folder);
+    } else {
+      java.util.List<Folder> itemsList = fapi.findSubFolders(host, true);
+      h.put("menuItems", itemsList);
+      userHasPublishPermission = _findPublishPermissionExists(itemsList);
+      req.setAttribute(WebKeys.MENU_ITEMS, itemsList);
+    }
 
-					//Make sure the object is HTMLPage.
-					if(item instanceof HTMLPageAsset){
-						//We need to make sure that the HTMLPage has the languageId. If not we leave in the results.
-						if (UtilMethods.isSet(((HTMLPageAsset) item).getLanguageId())) {
-							//If the values do not match, we remove the result from the list.
-							if(currentLanguageId != ((HTMLPageAsset) item).getLanguageId()){
-								itemsIter.remove();
-							}
-						}
-					}
-				}
-			}
+    h.put("showSaveButton", new Boolean(userHasPublishPermission));
+    return h;
+  }
 
-			userHasPublishPermission = _findPublishPermissionExists(itemsList);
-			h.put("menuItems", itemsList);
-			req.setAttribute(WebKeys.MENU_MAIN_FOLDER,folder);
-		}
-		else {
-			java.util.List<Folder> itemsList = fapi.findSubFolders(host, true);
-			h.put("menuItems", itemsList);
-			userHasPublishPermission = _findPublishPermissionExists(itemsList);
-			req.setAttribute(WebKeys.MENU_ITEMS,itemsList);
-		}
+  /**
+   * Receives the updated order of the items in the menu list and saves the changes. Note that XSS
+   * validation is performed on the query String, so it's important to avoid using dangerous
+   * characters for parameter names.
+   *
+   * @param items - List of sorted elements.
+   * @return
+   * @throws Exception An error occurred during the save process or the query String parameters may
+   *     be incorrect.
+   */
+  @WrapInTransaction
+  private List<Treeable> _orderMenuItemsDragAndDrop(Map<String, String> items) throws Exception {
+    List<Treeable> ret = new ArrayList<Treeable>();
+    try {
 
-		h.put("showSaveButton", new Boolean(userHasPublishPermission));
-		return h;
-	}
+      HashMap<String, HashMap<Integer, String>> hashMap =
+          new HashMap<String, HashMap<Integer, String>>();
+      for (String parameterName : items.keySet()) {
 
-	/**
-	 * Receives the updated order of the items in the menu list and saves the
-	 * changes. Note that XSS validation is performed on the query String, so
-	 * it's important to avoid using dangerous characters for parameter names.
-	 * 
-	 * @param items
-	 *            - List of sorted elements.
-	 * @return
-	 * @throws Exception
-	 *             An error occurred during the save process or the query String
-	 *             parameters may be incorrect.
-	 */
-	@WrapInTransaction
-	private List<Treeable> _orderMenuItemsDragAndDrop(Map<String, String> items)
-			throws Exception {
-		List<Treeable> ret = new ArrayList<Treeable>();
-        try {
+        if (parameterName.startsWith("list")) {
+          String value = items.get(parameterName);
+          // Restore square brackets which are NOT allowed in URLs
+          parameterName = parameterName.replaceAll("__", "[");
+          parameterName = parameterName.replaceAll("---", "]");
+          String smallParameterName = parameterName.substring(0, parameterName.indexOf("["));
+          String indexString =
+              parameterName.substring(parameterName.indexOf("[") + 1, parameterName.indexOf("]"));
+          int index = Integer.parseInt(indexString);
+          if (hashMap.get(smallParameterName) == null) {
+            HashMap<Integer, String> hashInodes = new HashMap<Integer, String>();
+            hashInodes.put(index, value);
+            hashMap.put(smallParameterName, hashInodes);
+          } else {
+            HashMap<Integer, String> hashInodes = hashMap.get(smallParameterName);
+            hashInodes.put(index, value);
+          }
+        }
+      }
 
-            HashMap<String, HashMap<Integer, String>> hashMap = new HashMap<String, HashMap<Integer, String>>();
-            for (String parameterName : items.keySet()) {
+      try {
+        for (String key : hashMap.keySet()) {
+          HashMap<Integer, String> hashInodes = hashMap.get(key);
+          for (int i = 0; i < hashInodes.size(); i++) {
+            final String inode = hashInodes.get(i);
+            ShortyId shorty = APILocator.getShortyAPI().getShorty(inode).orElse(null);
+            if (shorty == null) {
+              continue;
+            } else if (ShortType.FOLDER.equals(shorty.subType)) {
+              final Folder folder = APILocator.getFolderAPI().find(inode, user, false);
+              folder.setSortOrder(i);
+              APILocator.getFolderAPI().save(folder, user, false);
+              ret.add(folder);
+            } else if (ShortType.LINKS.equals(shorty.subType)) {
+              final Link link = APILocator.getMenuLinkAPI().find(inode, user, false);
+              link.setSortOrder(i);
+              APILocator.getMenuLinkAPI().save(link, user, false);
+              ret.add(link);
+            } else if (ShortType.CONTENTLET.equals(shorty.subType)) {
+              final Contentlet contentlet = APILocator.getContentletAPI().find(inode, user, false);
 
-                if (parameterName.startsWith("list")) {
-                    String value = items.get(parameterName);
-                    // Restore square brackets which are NOT allowed in URLs
-                    parameterName = parameterName.replaceAll("__", "[");
-                    parameterName = parameterName.replaceAll("---", "]");
-                    String smallParameterName = parameterName.substring(0, parameterName.indexOf("["));
-                    String indexString = parameterName.substring(parameterName.indexOf("[") + 1, parameterName.indexOf("]"));
-                    int index = Integer.parseInt(indexString);
-                    if (hashMap.get(smallParameterName) == null) {
-                        HashMap<Integer, String> hashInodes = new HashMap<Integer, String>();
-                        hashInodes.put(index, value);
-                        hashMap.put(smallParameterName, hashInodes);
-                    } else {
-                        HashMap<Integer, String> hashInodes = hashMap.get(smallParameterName);
-                        hashInodes.put(index, value);
-                    }
+              // User must have publish on the pages in order to reorder them
+              APILocator.getPermissionAPI()
+                  .checkPermission(contentlet, PermissionLevel.PUBLISH, user);
+
+              contentlet.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
+              contentlet.setSortOrder(i);
+              contentlet.setModDate(new Date());
+              final Contentlet in =
+                  APILocator.getContentletAPI()
+                      .checkinWithoutVersioning(
+                          contentlet, null, null, null, APILocator.systemUser(), false);
+
+              ret.add(in);
+            }
+          }
+        }
+      } catch (DotSecurityException dse) {
+        APILocator.getNotificationAPI()
+            .generateNotification(
+                new I18NMessage("no-permissions-message"),
+                new I18NMessage(dse.getMessage()),
+                null, // no actions
+                NotificationLevel.ERROR,
+                NotificationType.GENERIC,
+                user.getUserId(),
+                user.getLocale());
+
+      } catch (Exception e) {
+        APILocator.getNotificationAPI()
+            .generateNotification(
+                new I18NMessage("error"),
+                new I18NMessage(e.getMessage()),
+                null, // no
+                // actions
+                NotificationLevel.ERROR,
+                NotificationType.GENERIC,
+                user.getUserId(),
+                user.getLocale());
+      }
+
+      /*
+
+      List<Language> languagesList = APILocator.getLanguageAPI().getLanguages();
+
+      for (Language language : languagesList) {
+
+      try {
+        List<Contentlet> contentlets = APILocator.getContentletAPI()
+            .findContentletsByIdentifiers(listOfJustOne, true, language.getId(),
+                APILocator.getUserAPI().getSystemUser(), false);
+
+        for (Contentlet contentlet : contentlets) {
+          Inode assetContent = InodeFactory.getInode(contentlet.getInode(), Inode.class);
+          ((WebAsset) assetContent).setSortOrder(i);
+          HibernateUtil.saveOrUpdate(assetContent);
+
+          CacheLocator.getContentletCache().remove(contentlet.getInode());
+          CacheLocator.getHTMLPageCache().remove(contentlet.getInode());
+          CacheLocator.getHTMLPageCache().remove(contentlet.getIdentifier());
+        }
+      } catch (DotContentletStateException e){
+      //This exception in case we don't have identifiers for that content.
+        Logger.debug(this.getClass(),
+            "No contents with identifier: " + asset.getIdentifier()
+                + " for language: " + language.getId());
+      }
+      }*/
+
+    } catch (Exception ex) {
+      Logger.warn(this, "MenuItemsDragAndDrop: Exception ocurred." + ex.getMessage());
+      throw ex;
+    }
+    return ret;
+  }
+
+  private void _orderMenuItems(
+      ActionRequest req, ActionResponse res, PortletConfig config, ActionForm form)
+      throws Exception {
+
+    // gets item inode that's being moved
+    String itemInode = req.getParameter("item");
+
+    // gets folder object from folderParent inode
+    Folder folder =
+        APILocator.getFolderAPI().find(req.getParameter("folderParent"), _getUser(req), false);
+
+    java.util.List itemsList = new ArrayList();
+
+    if (InodeUtils.isSet(folder.getInode())) {
+      // gets menu items for this folder parent
+      itemsList = fapi.findMenuItems(folder, user, false);
+    } else {
+      // if i dont have a parent folder im ordering all the folder on the root for this folder
+      String hostId = req.getParameter("hostId");
+      Host host = APILocator.getHostAPI().find(hostId, user, false);
+      itemsList = fapi.findSubFolders(host, true);
+    }
+
+    int increment = 0;
+
+    if (req.getParameter("move").equals("up")) {
+      // if it's up
+      increment = -3;
+    } else {
+      // if it's down
+      increment = 3;
+    }
+
+    Iterator i = itemsList.iterator();
+    int x = 0;
+    while (i.hasNext()) {
+
+      Inode item = (Inode) i.next();
+      Contentlet c = null;
+      try {
+        c = APILocator.getContentletAPI().find(item.getInode(), user, false);
+      } catch (ClassCastException cce) {
+      }
+
+      if (item.getInode().equalsIgnoreCase(itemInode)) {
+        // this is the item to move
+        if (item instanceof Folder) {
+          ((Folder) item).setSortOrder(x + increment);
+        } else if (item instanceof WebAsset) {
+          ((WebAsset) item).setSortOrder(x + increment);
+        }
+        if (APILocator.getFileAssetAPI().isFileAsset(c)) {
+          c.setSortOrder(x + increment);
+          APILocator.getContentletAPI().refresh(c);
+        }
+      } else {
+        // all other items
+        if (item instanceof Folder) {
+          ((Folder) item).setSortOrder(x);
+        } else if (item instanceof WebAsset) {
+          ((WebAsset) item).setSortOrder(x);
+        }
+        if (APILocator.getFileAssetAPI().isFileAsset(c)) {
+          c.setSortOrder(x);
+          APILocator.getContentletAPI().refresh(c);
+        }
+      }
+      x = x + 2;
+    }
+
+    SessionMessages.add(req, "message", "message.menu.reordered");
+  }
+
+  /**
+   * This is a utility method that checks for the type of each permissionable object in a list and
+   * if at least one of them fails to have the permission, returns false
+   *
+   * @param itemsList
+   * @return
+   * @throws DotDataException
+   */
+  private boolean _findPublishPermissionExists(List itemsList) throws DotDataException {
+    boolean userHasPublishPermission = true;
+    for (int i = 0; i < itemsList.size(); i++) {
+      if ((itemsList.get(i) instanceof IHTMLPage
+          && !(perAPI.doesUserHavePermission(
+              (IHTMLPage) itemsList.get(i), PermissionAPI.PERMISSION_PUBLISH, user)))) {
+        userHasPublishPermission = false;
+      }
+    }
+    return userHasPublishPermission;
+  }
+  /**
+   * This method returns a List object which contains two elements. The first one is the String
+   * representing the HTML tree and the other one is a boolean indicating if the Save button will be
+   * shown to the user depending on the permissions
+   *
+   * @param items
+   * @param show
+   * @param depth
+   * @return
+   * @throws DotDataException
+   */
+  private List _getHtmlTreeList(List items, boolean show, int depth) throws DotDataException {
+    boolean userHasEditPermission = true;
+    boolean hasMenuPubPer = show;
+
+    // boolean showSaveButton = ((Boolean)request.getAttribute("editPermission")).booleanValue();
+
+    // Iterator iterator = items.iterator();
+
+    Object o = null;
+    List<Object> v = new ArrayList();
+
+    if (items != null) {
+      for (int i = 0; i < items.size(); i++) {
+        v.add(items.get(i));
+      }
+      items.clear();
+      for (int i = 0; i < v.size(); i++) {
+        o = v.get(i);
+
+        if (!perAPI.doesUserHavePermission(
+            (com.dotmarketing.business.Permissionable) o,
+            PermissionAPI.PERMISSION_READ,
+            user,
+            false)) {
+          userHasEditPermission = false;
+        } else {
+          userHasEditPermission = true;
+        }
+
+        if (!userHasEditPermission) {
+          o = null;
+        } else {
+          if (o instanceof Folder && !((Folder) (o)).isShowOnMenu()) {
+            o = null;
+          }
+          if ((o instanceof Link && !((Link) (o)).isShowOnMenu())) {
+            o = null;
+          }
+        }
+        if (o != null) {
+          items.add(o);
+        }
+      }
+    }
+
+    List<Object> l = new ArrayList();
+    l.add(buildNavigationTree(items, depth, user));
+    l.add(new Boolean(hasMenuPubPer));
+    return l;
+  }
+
+  /**
+   * Builds the navigation tree containing all the items in the list and the files, HTML pages,
+   * links, folders contained recursively by those items until the specified depth. This method will
+   * change later
+   *
+   * @param items
+   * @param depth
+   * @throws DotDataException
+   */
+  protected List<Object> buildNavigationTree(List items, int depth, User user)
+      throws DotDataException {
+    depth = depth - 1;
+    int level = 0;
+    List<Object> v = new ArrayList<Object>();
+    InternalCounter counter = new OrderMenuAction().new InternalCounter();
+    counter.setCounter(0);
+    List<Integer> ids = new ArrayList<Integer>();
+    List l = buildNavigationTree(items, ids, level, counter, depth, user);
+    StringBuffer sb = new StringBuffer("");
+    if (l != null && l.size() > 0) {
+      sb = (StringBuffer) l.get(0);
+      sb.append("<script language='javascript'>\n");
+      for (int i = ids.size() - 1; i >= 0; i--) {
+        int internalCounter = (Integer) ids.get(i);
+        String id = "list" + internalCounter;
+        String className = "class" + internalCounter;
+        String sortCreate =
+            "Sortable.create(\""
+                + id
+                + "\",{dropOnEmpty:true,tree:true,constraint:false,only:\""
+                + className
+                + "\"});\n";
+        sb.append(sortCreate);
+      }
+
+      sb.append("\n");
+      sb.append("function serialize(){\n");
+      sb.append("var values = \"\";\n");
+      String sortCreate = "";
+      for (int i = 0; i < ids.size(); i++) {
+        int internalCounter = (Integer) ids.get(i);
+        String id = "list" + internalCounter;
+        if (i > 0) {
+          sortCreate = "values += \"&\";\n";
+        }
+        sortCreate += "values += Sortable.serialize('" + id + "');\n";
+        sb.append(sortCreate);
+      }
+      sb.append("values = values.replace(/\\[/g, '__');\n");
+      sb.append("values = values.replace(/\\]/g, '---');\n");
+      sb.append("return values;\n");
+      sb.append("}\n");
+
+      sb.append("</script>\n");
+
+      sb.append("<style>\n");
+      for (int i = 0; i < ids.size(); i++) {
+        int internalCounter = (Integer) ids.get(i);
+        String className = "class" + internalCounter;
+        String style = "li." + className + " { cursor: move;}\n";
+        sb.append(style);
+      }
+      sb.append("</style>\n");
+    }
+    v.add(sb.toString());
+    if (l != null && l.size() > 0) {
+      v.add(l.get(1));
+    } else {
+      v.add(new Boolean(false));
+    }
+
+    return v;
+  }
+
+  /**
+   * Builds the navigation tree containing all the items and the files, HTML pages, links, folders
+   * contained recursively by those items in the list until the specified depth. This method will
+   * change later
+   *
+   * @param items
+   * @param ids
+   * @param level
+   * @param counter
+   * @param depth
+   * @throws DotDataException
+   */
+  protected List buildNavigationTree(
+      List items, List<Integer> ids, int level, InternalCounter counter, int depth, User user)
+      throws DotDataException {
+    boolean show = true;
+    StringBuffer sb = new StringBuffer();
+    List v = new ArrayList<Object>();
+    int internalCounter = counter.getCounter();
+    String className = "class" + internalCounter;
+    String id = "list" + internalCounter;
+    ids.add(internalCounter);
+    counter.setCounter(++internalCounter);
+
+    sb.append("<ul id='" + id + "' >\n");
+    if (items != null) {
+      Iterator itemsIter = items.iterator();
+      while (itemsIter.hasNext()) {
+        Permissionable item = (Permissionable) itemsIter.next();
+        String title = "";
+        String inode = "";
+        if (item instanceof Folder) {
+          Folder folder = ((Folder) item);
+          title = folder.getTitle();
+          title = retrieveTitle(title, user);
+          inode = folder.getInode();
+          if (folder.isShowOnMenu()) {
+            if (!APILocator.getPermissionAPI()
+                .doesUserHavePermission(folder, PermissionAPI.PERMISSION_PUBLISH, user, false)) {
+              show = false;
+            }
+            if (APILocator.getPermissionAPI()
+                .doesUserHavePermission(folder, PermissionAPI.PERMISSION_READ, user, false)) {
+
+              sb.append(
+                  "<li class=\"" + className + "\" id=\"inode_" + inode + "\" >\n" + title + "\n");
+              List childs = fapi.findMenuItems(folder, user, false);
+              if (childs.size() > 0) {
+                int nextLevel = level + 1;
+                if (depth > 0) {
+                  List<Object> l = getNavigationTree(childs, ids, nextLevel, counter, depth, user);
+                  if (show) {
+                    show = ((Boolean) l.get(1)).booleanValue();
+                  }
+                  sb.append((StringBuffer) (l.get(0)));
                 }
+              }
+              sb.append("</li>\n");
+            }
+          }
+        } else {
+          if (item instanceof FileAsset) {
+            FileAsset fa = (FileAsset) item;
+            title = fa.getTitle();
+            title = retrieveTitle(title, user);
+            inode = fa.getInode();
+            if (fa.isShowOnMenu()) {
+              if (!APILocator.getPermissionAPI()
+                  .doesUserHavePermission(fa, PermissionAPI.PERMISSION_PUBLISH, user, false)) {
+                show = false;
+              }
+              if (APILocator.getPermissionAPI()
+                  .doesUserHavePermission(fa, PermissionAPI.PERMISSION_READ, user, false)) {
+                sb.append(
+                    "<li class=\""
+                        + className
+                        + "\" id=\"inode_"
+                        + inode
+                        + "\" >"
+                        + title
+                        + "</li>\n");
+              }
+            }
+          } else if (item instanceof IHTMLPage) {
+            IHTMLPage asset = ((IHTMLPage) item);
+            title = asset.getTitle();
+            title = retrieveTitle(title, user);
+            inode = asset.getInode();
+            if (asset.isShowOnMenu()) {
+              if (!APILocator.getPermissionAPI()
+                  .doesUserHavePermission(asset, PermissionAPI.PERMISSION_PUBLISH, user, false)) {
+                show = false;
+              }
+              if (APILocator.getPermissionAPI()
+                  .doesUserHavePermission(asset, PermissionAPI.PERMISSION_READ, user, false)) {
+                sb.append(
+                    "<li class=\""
+                        + className
+                        + "\" id=\"inode_"
+                        + inode
+                        + "\" >"
+                        + title
+                        + "</li>\n");
+              }
+            }
+          } else {
+            WebAsset asset = ((WebAsset) item);
+            title = asset.getTitle();
+            title = retrieveTitle(title, user);
+            inode = asset.getInode();
+            if (asset.isShowOnMenu()) {
+              if (!APILocator.getPermissionAPI()
+                  .doesUserHavePermission(asset, PermissionAPI.PERMISSION_PUBLISH, user, false)) {
+                show = false;
+              }
+              if (APILocator.getPermissionAPI()
+                  .doesUserHavePermission(asset, PermissionAPI.PERMISSION_READ, user, false)) {
+                sb.append(
+                    "<li class=\""
+                        + className
+                        + "\" id=\"inode_"
+                        + inode
+                        + "\" >"
+                        + title
+                        + "</li>\n");
+              }
+            }
+          }
+        }
+      }
+    }
+
+    sb.append("</ul>\n");
+    v.add(sb);
+    v.add(new Boolean(show));
+
+    return v;
+  }
+
+  private String retrieveTitle(String title, User user) {
+    try {
+      String regularExpressionString = "(.*)\\$glossary.get\\('(.*)'\\)(.*)";
+      java.util.regex.Pattern pattern = java.util.regex.Pattern.compile(regularExpressionString);
+      Matcher matcher = pattern.matcher(title);
+      if (matcher.matches()) {
+        String tempTitle = matcher.group(2);
+        tempTitle = matcher.group(1) + LanguageUtil.get(user, tempTitle) + matcher.group(3);
+        title = tempTitle;
+      }
+    } catch (Exception ex) {
+      Logger.warn(this.getClass(), "retrieveTitle failed:" + ex);
+    }
+    return title;
+  }
+
+  /**
+   * Gets the tree containing all the items in the list. If the item is a folder, gets the files and
+   * folders contained by the folder. It is executed recursively until reaching the depth specified.
+   * This method will change later
+   *
+   * @param items
+   * @param ids
+   * @param level
+   * @param counter
+   * @param depth
+   * @throws DotDataException
+   */
+  protected List getNavigationTree(
+      List items, List<Integer> ids, int level, InternalCounter counter, int depth, User user)
+      throws DotDataException {
+    boolean show = true;
+    StringBuffer sb = new StringBuffer();
+    List v = new ArrayList<Object>();
+    int internalCounter = counter.getCounter();
+    String className = "class" + internalCounter;
+    String id = "list" + internalCounter;
+    ids.add(internalCounter);
+    counter.setCounter(++internalCounter);
+
+    sb.append("<ul id='" + id + "' >\n");
+    Iterator itemsIter = items.iterator();
+    while (itemsIter.hasNext()) {
+      Permissionable item = (Permissionable) itemsIter.next();
+      String title = "";
+      String inode = "";
+      if (item instanceof Folder) {
+        Folder folder = ((Folder) item);
+        title = folder.getTitle();
+        title = retrieveTitle(title, user);
+        inode = folder.getInode();
+        if (folder.isShowOnMenu()) {
+          if (!APILocator.getPermissionAPI()
+              .doesUserHavePermission(folder, PermissionAPI.PERMISSION_PUBLISH, user, false)) {
+            show = false;
+          }
+          if (APILocator.getPermissionAPI()
+              .doesUserHavePermission(folder, PermissionAPI.PERMISSION_READ, user, false)) {
+
+            sb.append(
+                "<li class=\"" + className + "\" id=\"inode_" + inode + "\" >\n" + title + "\n");
+            List childs = fapi.findMenuItems(folder, user, false);
+            if (childs.size() > 0) {
+
+              int nextLevel = level + 1;
+
+              if (depth > 1) {
+                sb.append(
+                    getNavigationTree(childs, ids, nextLevel, counter, depth - 1, user).get(0));
+              }
+            }
+            sb.append("</li>\n");
+          }
+        }
+      } else {
+        if (item instanceof FileAsset) {
+          FileAsset fa = (FileAsset) item;
+          title = fa.getTitle();
+          title = retrieveTitle(title, user);
+          inode = fa.getInode();
+          if (fa.isShowOnMenu()) {
+            if (!APILocator.getPermissionAPI()
+                .doesUserHavePermission(fa, PermissionAPI.PERMISSION_PUBLISH, user, false)) {
+              show = false;
+            }
+            if (APILocator.getPermissionAPI()
+                .doesUserHavePermission(fa, PermissionAPI.PERMISSION_READ, user, false)) {
+              sb.append(
+                  "<li class=\""
+                      + className
+                      + "\" id=\"inode_"
+                      + inode
+                      + "\" >"
+                      + title
+                      + "</li>\n");
+            }
+          }
+        } else if (item instanceof IHTMLPage) {
+          IHTMLPage asset = ((IHTMLPage) item);
+          title = asset.getTitle();
+          title = retrieveTitle(title, user);
+          inode = asset.getInode();
+          if (asset.isShowOnMenu()) {
+            if (!APILocator.getPermissionAPI()
+                .doesUserHavePermission(asset, PermissionAPI.PERMISSION_PUBLISH, user, false)) {
+              show = false;
             }
 
-            try {
-                for (String key : hashMap.keySet()) {
-                    HashMap<Integer, String> hashInodes = hashMap.get(key);
-                    for (int i = 0; i < hashInodes.size(); i++) {
-                        final String inode = hashInodes.get(i);
-                        ShortyId shorty = APILocator.getShortyAPI().getShorty(inode).orElse(null);
-                        if (shorty == null) {
-                            continue;
-                        } else if (ShortType.FOLDER.equals(shorty.subType)) {
-                            final Folder folder = APILocator.getFolderAPI().find(inode, user, false);
-                            folder.setSortOrder(i);
-                            APILocator.getFolderAPI().save(folder, user, false);
-                            ret.add(folder);
-                        } else if (ShortType.LINKS.equals(shorty.subType)) {
-                            final Link link = APILocator.getMenuLinkAPI().find(inode, user, false);
-                            link.setSortOrder(i);
-                            APILocator.getMenuLinkAPI().save(link, user, false);
-                            ret.add(link);
-                        } else if (ShortType.CONTENTLET.equals(shorty.subType)) {
-                            final Contentlet contentlet = APILocator.getContentletAPI().find(inode, user, false);
+            // Cleaning the results to only display the ones under the current language.
+            long currentLanguageId =
+                WebAPILocator.getLanguageWebAPI()
+                    .getLanguage(((ActionRequestImpl) actionRequest).getHttpServletRequest())
+                    .getId();
 
-                            // User must have publish on the pages in order to reorder them
-                            APILocator.getPermissionAPI().checkPermission(contentlet, PermissionLevel.PUBLISH, user);
-
-
-                            contentlet.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
-                            contentlet.setSortOrder(i);
-                            contentlet.setModDate(new Date());
-                            final Contentlet in = APILocator.getContentletAPI().checkinWithoutVersioning(contentlet, null, null, null,
-                                    APILocator.systemUser(), false);
-
-                            ret.add(in);
-
-                        }
-                    }
+            // If we have the current language we can proceed to clean the HTML pages.
+            if (UtilMethods.isSet(currentLanguageId)) {
+              // We need to make sure that the HTMLPage has the languageId. If not we leave in the
+              // results.
+              if (UtilMethods.isSet(asset.getLanguageId())) {
+                // If the values match we include the page in the list.
+                if (currentLanguageId == asset.getLanguageId()) {
+                  if (APILocator.getPermissionAPI()
+                      .doesUserHavePermission(asset, PermissionAPI.PERMISSION_READ, user, false)) {
+                    sb.append(
+                        "<li class=\""
+                            + className
+                            + "\" id=\"inode_"
+                            + inode
+                            + "\" >"
+                            + title
+                            + "</li>\n");
+                  }
                 }
-            } catch (DotSecurityException dse) {
-                APILocator.getNotificationAPI().generateNotification(new I18NMessage("no-permissions-message"),
-                        new I18NMessage(dse.getMessage()), null, // no actions
-                        NotificationLevel.ERROR, NotificationType.GENERIC, user.getUserId(), user.getLocale());
-
-            } catch (Exception e) {
-                APILocator.getNotificationAPI().generateNotification(new I18NMessage("error"), new I18NMessage(e.getMessage()), null, // no
-                                                                                                                                      // actions
-                        NotificationLevel.ERROR, NotificationType.GENERIC, user.getUserId(), user.getLocale());
+              }
             }
-			
-			
+          }
+        } else {
+          WebAsset asset = ((WebAsset) item);
+          title = asset.getTitle();
+          title = retrieveTitle(title, user);
+          inode = asset.getInode();
+          if (asset.isShowOnMenu()) {
+            if (!APILocator.getPermissionAPI()
+                .doesUserHavePermission(asset, PermissionAPI.PERMISSION_PUBLISH, user, false)) {
+              show = false;
+            }
+            if (APILocator.getPermissionAPI()
+                .doesUserHavePermission(asset, PermissionAPI.PERMISSION_READ, user, false)) {
+              sb.append(
+                  "<li class=\""
+                      + className
+                      + "\" id=\"inode_"
+                      + inode
+                      + "\" >"
+                      + title
+                      + "</li>\n");
+            }
+          }
+        }
+      }
+    }
+    sb.append("</ul>\n");
+    v.add(sb);
+    v.add(new Boolean(show));
 
-/*
+    return v;
+  }
 
-						List<Language> languagesList = APILocator.getLanguageAPI().getLanguages();
+  private class InternalCounter {
+    private int counter;
 
-						for (Language language : languagesList) {
+    public int getCounter() {
+      return counter;
+    }
 
-							try {
-								List<Contentlet> contentlets = APILocator.getContentletAPI()
-										.findContentletsByIdentifiers(listOfJustOne, true, language.getId(),
-												APILocator.getUserAPI().getSystemUser(), false);
-
-								for (Contentlet contentlet : contentlets) {
-									Inode assetContent = InodeFactory.getInode(contentlet.getInode(), Inode.class);
-									((WebAsset) assetContent).setSortOrder(i);
-									HibernateUtil.saveOrUpdate(assetContent);
-
-									CacheLocator.getContentletCache().remove(contentlet.getInode());
-									CacheLocator.getHTMLPageCache().remove(contentlet.getInode());
-									CacheLocator.getHTMLPageCache().remove(contentlet.getIdentifier());
-								}
-							} catch (DotContentletStateException e){ //This exception in case we don't have identifiers for that content.
-								Logger.debug(this.getClass(),
-										"No contents with identifier: " + asset.getIdentifier()
-												+ " for language: " + language.getId());
-							}
-						}*/
-					
-				
-
-		} catch (Exception ex) {
-			Logger.warn(this,
-					"MenuItemsDragAndDrop: Exception ocurred." + ex.getMessage());
-			throw ex;
-		}
-		return ret;
-	}
-
-	private void _orderMenuItems(ActionRequest req, ActionResponse res,PortletConfig config,ActionForm form)
-	throws Exception {
-
-		//gets item inode that's being moved
-		String itemInode = req.getParameter("item");
-
-		//gets folder object from folderParent inode
-		Folder folder = APILocator.getFolderAPI().find(req.getParameter("folderParent"), _getUser(req),false);
-
-		java.util.List itemsList = new ArrayList();
-
-		if (InodeUtils.isSet(folder.getInode())) {
-			//gets menu items for this folder parent
-			itemsList = fapi.findMenuItems(folder,user,false);
-		}
-		else {
-			//if i dont have a parent folder im ordering all the folder on the root for this folder
-			String hostId = req.getParameter("hostId");
-			Host host = APILocator.getHostAPI().find(hostId, user, false);
-			itemsList = fapi.findSubFolders(host,true);
-		}
-
-		int increment = 0;
-
-		if (req.getParameter("move").equals("up")) {
-			//if it's up
-			increment = -3;
-		}
-		else {
-			//if it's down
-			increment = 3;
-		}
-
-		Iterator i = itemsList.iterator();
-		int x = 0;
-		while (i.hasNext()) {
-
-			Inode item = (Inode) i.next();
-			Contentlet c = null;
-			try {
-				c = APILocator.getContentletAPI().find(item.getInode(), user, false);
-			} catch(ClassCastException cce) {
-			}
-
-			if (item.getInode().equalsIgnoreCase( itemInode)) {
-				//this is the item to move
-				if (item instanceof Folder) {
-					((Folder)item).setSortOrder(x + increment);
-				}
-				else if(item instanceof WebAsset) {
-					((WebAsset)item).setSortOrder(x + increment);
-				} if (APILocator.getFileAssetAPI().isFileAsset(c))  {
-					c.setSortOrder(x + increment);
-					APILocator.getContentletAPI().refresh(c);
-				}
-			}
-			else {
-				//all other items
-				if (item instanceof Folder) {
-					((Folder)item).setSortOrder(x);
-				}
-				else if(item instanceof WebAsset) {
-					((WebAsset)item).setSortOrder(x);
-				}  if (APILocator.getFileAssetAPI().isFileAsset(c))  {
-					c.setSortOrder(x);
-					APILocator.getContentletAPI().refresh(c);
-				}
-			}
-			x = x + 2;
-		}
-
-		SessionMessages.add(req, "message", "message.menu.reordered");
-
-	}
-
-	/**
-	 * This is a utility method that checks for the type of each permissionable object in a list and if at least one of them fails to have the permission,
-	 * returns false
-	 *
-	 * @param itemsList
-	 * @return
-	 * @throws DotDataException
-	 */
-	private boolean _findPublishPermissionExists(List itemsList) throws DotDataException{
-		boolean userHasPublishPermission = true;
-		for(int i = 0; i < itemsList.size(); i++){
-			if((itemsList.get(i) instanceof IHTMLPage && !(perAPI.doesUserHavePermission((IHTMLPage)itemsList.get(i), PermissionAPI.PERMISSION_PUBLISH, user)))){
-				userHasPublishPermission = false;
-			}
-		}
-		return userHasPublishPermission;
-	}
-	/**
-	 * This method returns a List object which contains two elements. The first one is the String representing the HTML tree and the other one is
-	 * a boolean indicating if the Save button will be shown to the user depending on the permissions
-	 *
-	 * @param items
-	 * @param show
-	 * @param depth
-	 * @return
-	 * @throws DotDataException
-	 */
-	private List _getHtmlTreeList(List items, boolean show, int depth) throws DotDataException{
-		boolean userHasEditPermission = true;
-		boolean hasMenuPubPer = show;
-
-		//boolean showSaveButton = ((Boolean)request.getAttribute("editPermission")).booleanValue();
-
-		//Iterator iterator = items.iterator();
-
-		Object o= null;
-		List<Object> v = new ArrayList();
-
-		if(items != null){
-			for(int i = 0; i < items.size(); i++){
-				v.add(items.get(i));
-			}
-			items.clear();
-			for(int i = 0; i < v.size(); i++){
-				o = v.get(i);
-
-				if(!perAPI.doesUserHavePermission((com.dotmarketing.business.Permissionable)o, PermissionAPI.PERMISSION_READ, user, false)){
-					userHasEditPermission = false;
-				}else{
-					userHasEditPermission = true;
-				}
-
-
-				if(!userHasEditPermission){
-					o =  null;
-				}else{
-					if(o instanceof Folder && !((Folder)(o)).isShowOnMenu()){
-						o = null;
-					}
-					if((o instanceof Link && !((Link)(o)).isShowOnMenu())){
-						o = null;
-					}
-				}
-				if (o != null){
-					items.add(o);
-				}
-			}
-		}
-
-
-
-		List<Object> l = new ArrayList();
-		l.add(buildNavigationTree(items, depth, user));
-		l.add(new Boolean(hasMenuPubPer));
-		return l;
-	}
-
-	/**
-	 * Builds the navigation tree containing all the items in the list and the
-	 * files, HTML pages, links, folders contained recursively by those items
-	 * until the specified depth. This method will change later
-	 *
-	 * @param items
-	 * @param depth
-	 * @throws DotDataException
-	 */
-	protected List<Object> buildNavigationTree(List items, int depth, User user) throws DotDataException {
-		depth = depth - 1;
-		int level = 0;
-		List<Object> v = new ArrayList<Object>();
-		InternalCounter counter = new OrderMenuAction().new InternalCounter();
-		counter.setCounter(0);
-		List<Integer> ids = new ArrayList<Integer>();
-		List l = buildNavigationTree(items, ids, level, counter, depth, user);
-		StringBuffer sb = new StringBuffer("");
-		if (l != null && l.size() > 0) {
-			sb = (StringBuffer) l.get(0);
-			sb.append("<script language='javascript'>\n");
-			for (int i = ids.size() - 1; i >= 0; i--) {
-				int internalCounter = (Integer) ids.get(i);
-				String id = "list" + internalCounter;
-				String className = "class" + internalCounter;
-				String sortCreate = "Sortable.create(\"" + id + "\",{dropOnEmpty:true,tree:true,constraint:false,only:\"" + className
-						+ "\"});\n";
-				sb.append(sortCreate);
-			}
-
-			sb.append("\n");
-			sb.append("function serialize(){\n");
-			sb.append("var values = \"\";\n");
-			String sortCreate = "";
-			for (int i = 0; i < ids.size(); i++) {
-				int internalCounter = (Integer) ids.get(i);
-				String id = "list" + internalCounter;
-				if (i>0){
-					sortCreate = "values += \"&\";\n";
-				}
-				sortCreate += "values += Sortable.serialize('" + id + "');\n";
-				sb.append(sortCreate);
-			}
-			sb.append("values = values.replace(/\\[/g, '__');\n");
-			sb.append("values = values.replace(/\\]/g, '---');\n");
-			sb.append("return values;\n");
-			sb.append("}\n");
-
-			sb.append("</script>\n");
-
-			sb.append("<style>\n");
-			for (int i = 0; i < ids.size(); i++) {
-				int internalCounter = (Integer) ids.get(i);
-				String className = "class" + internalCounter;
-				String style = "li." + className + " { cursor: move;}\n";
-				sb.append(style);
-			}
-			sb.append("</style>\n");
-		}
-		v.add(sb.toString());
-		if (l != null && l.size() > 0) {
-			v.add(l.get(1));
-		} else {
-			v.add(new Boolean(false));
-		}
-
-		return v;
-	}
-
-	/**
-	 * Builds the navigation tree containing all the items and the files, HTML
-	 * pages, links, folders contained recursively by those items in the list
-	 * until the specified depth. This method will change later
-	 *
-	 * @param items
-	 * @param ids
-	 * @param level
-	 * @param counter
-	 * @param depth
-	 * @throws DotDataException
-	 */
-	protected List buildNavigationTree(List items, List<Integer> ids, int level, InternalCounter counter, int depth, User user)
-			throws DotDataException {
-		boolean show = true;
-		StringBuffer sb = new StringBuffer();
-		List v = new ArrayList<Object>();
-		int internalCounter = counter.getCounter();
-		String className = "class" + internalCounter;
-		String id = "list" + internalCounter;
-		ids.add(internalCounter);
-		counter.setCounter(++internalCounter);
-
-		sb.append("<ul id='" + id + "' >\n");
-		if (items != null) {
-			Iterator itemsIter = items.iterator();
-			while (itemsIter.hasNext()) {
-				Permissionable item = (Permissionable) itemsIter.next();
-				String title = "";
-				String inode = "";
-				if (item instanceof Folder) {
-					Folder folder = ((Folder) item);
-					title = folder.getTitle();
-					title = retrieveTitle(title, user);
-					inode = folder.getInode();
-					if (folder.isShowOnMenu()) {
-						if (!APILocator.getPermissionAPI().doesUserHavePermission(folder, PermissionAPI.PERMISSION_PUBLISH, user, false)) {
-							show = false;
-						}
-						if (APILocator.getPermissionAPI().doesUserHavePermission(folder, PermissionAPI.PERMISSION_READ, user, false)) {
-
-							sb.append("<li class=\"" + className + "\" id=\"inode_" + inode + "\" >\n" + title + "\n");
-							List childs = fapi.findMenuItems(folder, user, false);
-							if (childs.size() > 0) {
-								int nextLevel = level + 1;
-								if (depth > 0) {
-									List<Object> l = getNavigationTree(childs, ids, nextLevel, counter, depth, user);
-									if (show) {
-										show = ((Boolean) l.get(1)).booleanValue();
-									}
-									sb.append((StringBuffer) (l.get(0)));
-								}
-							}
-							sb.append("</li>\n");
-						}
-					}
-				} else {
-					if(item instanceof FileAsset){
-						FileAsset fa =(FileAsset)item;
-						title = fa.getTitle();
-						title = retrieveTitle(title, user);
-						inode = fa.getInode();
-						if (fa.isShowOnMenu()) {
-							if (!APILocator.getPermissionAPI().doesUserHavePermission(fa, PermissionAPI.PERMISSION_PUBLISH, user, false)) {
-								show = false;
-							}
-							if (APILocator.getPermissionAPI().doesUserHavePermission(fa, PermissionAPI.PERMISSION_READ, user, false)) {
-								sb.append("<li class=\"" + className + "\" id=\"inode_" + inode + "\" >" + title + "</li>\n");
-							}
-						}
-					}else if(item instanceof IHTMLPage){
-						IHTMLPage asset = ((IHTMLPage) item);
-						title = asset.getTitle();
-						title = retrieveTitle(title, user);
-						inode = asset.getInode();
-						if (asset.isShowOnMenu()) {
-							if (!APILocator.getPermissionAPI().doesUserHavePermission(asset, PermissionAPI.PERMISSION_PUBLISH, user, false)) {
-								show = false;
-							}
-							if (APILocator.getPermissionAPI().doesUserHavePermission(asset, PermissionAPI.PERMISSION_READ, user, false)) {
-								sb.append("<li class=\"" + className + "\" id=\"inode_" + inode + "\" >" + title + "</li>\n");
-							}
-						}
-					}else{
-						WebAsset asset = ((WebAsset) item);
-						title = asset.getTitle();
-						title = retrieveTitle(title, user);
-						inode = asset.getInode();
-						if (asset.isShowOnMenu()) {
-							if (!APILocator.getPermissionAPI().doesUserHavePermission(asset, PermissionAPI.PERMISSION_PUBLISH, user, false)) {
-								show = false;
-							}
-							if (APILocator.getPermissionAPI().doesUserHavePermission(asset, PermissionAPI.PERMISSION_READ, user, false)) {
-								sb.append("<li class=\"" + className + "\" id=\"inode_" + inode + "\" >" + title + "</li>\n");
-							}
-						}
-					}
-				}
-			}
-		}
-
-		sb.append("</ul>\n");
-		v.add(sb);
-		v.add(new Boolean(show));
-
-		return v;
-	}
-
-	private String retrieveTitle(String title, User user) {
-		try {
-			String regularExpressionString = "(.*)\\$glossary.get\\('(.*)'\\)(.*)";
-			java.util.regex.Pattern pattern = java.util.regex.Pattern.compile(regularExpressionString);
-			Matcher matcher = pattern.matcher(title);
-			if (matcher.matches()) {
-				String tempTitle = matcher.group(2);
-				tempTitle = matcher.group(1) + LanguageUtil.get(user, tempTitle) + matcher.group(3);
-				title = tempTitle;
-			}
-		} catch (Exception ex) {
-			Logger.warn(this.getClass(), "retrieveTitle failed:" + ex);
-		}
-		return title;
-	}
-
-	/**
-	 * Gets the tree containing all the items in the list. If the item is a
-	 * folder, gets the files and folders contained by the folder. It is
-	 * executed recursively until reaching the depth specified. This method will
-	 * change later
-	 *
-	 * @param items
-	 * @param ids
-	 * @param level
-	 * @param counter
-	 * @param depth
-	 * @throws DotDataException
-	 */
-	protected List getNavigationTree(List items, List<Integer> ids, int level, InternalCounter counter, int depth, User user)
-			throws DotDataException {
-		boolean show = true;
-		StringBuffer sb = new StringBuffer();
-		List v = new ArrayList<Object>();
-		int internalCounter = counter.getCounter();
-		String className = "class" + internalCounter;
-		String id = "list" + internalCounter;
-		ids.add(internalCounter);
-		counter.setCounter(++internalCounter);
-
-		sb.append("<ul id='" + id + "' >\n");
-		Iterator itemsIter = items.iterator();
-		while (itemsIter.hasNext()) {
-			Permissionable item = (Permissionable) itemsIter.next();
-			String title = "";
-			String inode = "";
-			if (item instanceof Folder) {
-				Folder folder = ((Folder) item);
-				title = folder.getTitle();
-				title = retrieveTitle(title, user);
-				inode = folder.getInode();
-				if (folder.isShowOnMenu()) {
-					if (!APILocator.getPermissionAPI().doesUserHavePermission(folder, PermissionAPI.PERMISSION_PUBLISH, user, false)) {
-						show = false;
-					}
-					if (APILocator.getPermissionAPI().doesUserHavePermission(folder, PermissionAPI.PERMISSION_READ, user, false)) {
-
-						sb.append("<li class=\"" + className + "\" id=\"inode_" + inode + "\" >\n" + title + "\n");
-						List childs = fapi.findMenuItems(folder, user, false);
-						if (childs.size() > 0) {
-
-							int nextLevel = level + 1;
-
-							if (depth > 1) {
-								sb.append(getNavigationTree(childs, ids, nextLevel, counter, depth-1, user).get(0));
-							}
-						}
-						sb.append("</li>\n");
-					}
-				}
-			} else {
-				if(item instanceof FileAsset){
-					FileAsset fa =(FileAsset)item;
-					title = fa.getTitle();
-					title = retrieveTitle(title, user);
-					inode = fa.getInode();
-					if (fa.isShowOnMenu()) {
-						if (!APILocator.getPermissionAPI().doesUserHavePermission(fa, PermissionAPI.PERMISSION_PUBLISH, user, false)) {
-							show = false;
-						}
-						if (APILocator.getPermissionAPI().doesUserHavePermission(fa, PermissionAPI.PERMISSION_READ, user, false)) {
-							sb.append("<li class=\"" + className + "\" id=\"inode_" + inode + "\" >" + title + "</li>\n");
-						}
-					}
-				}else if(item instanceof IHTMLPage){
-					IHTMLPage asset = ((IHTMLPage) item);
-					title = asset.getTitle();
-					title = retrieveTitle(title, user);
-					inode = asset.getInode();
-					if (asset.isShowOnMenu()) {
-						if (!APILocator.getPermissionAPI().doesUserHavePermission(asset, PermissionAPI.PERMISSION_PUBLISH, user, false)) {
-							show = false;
-						}
-
-						//Cleaning the results to only display the ones under the current language.
-						long currentLanguageId = WebAPILocator.getLanguageWebAPI().getLanguage(((ActionRequestImpl) actionRequest).getHttpServletRequest()).getId();
-
-						//If we have the current language we can proceed to clean the HTML pages.
-						if(UtilMethods.isSet(currentLanguageId)) {
-							//We need to make sure that the HTMLPage has the languageId. If not we leave in the results.
-							if (UtilMethods.isSet(asset.getLanguageId())) {
-								//If the values match we include the page in the list.
-								if(currentLanguageId == asset.getLanguageId()){
-									if (APILocator.getPermissionAPI().doesUserHavePermission(asset, PermissionAPI.PERMISSION_READ, user, false)) {
-										sb.append("<li class=\"" + className + "\" id=\"inode_" + inode + "\" >" + title + "</li>\n");
-									}
-								}
-							}
-						}
-					}
-				}else{
-					WebAsset asset = ((WebAsset) item);
-					title = asset.getTitle();
-					title = retrieveTitle(title, user);
-					inode = asset.getInode();
-					if (asset.isShowOnMenu()) {
-						if (!APILocator.getPermissionAPI().doesUserHavePermission(asset, PermissionAPI.PERMISSION_PUBLISH, user, false)) {
-							show = false;
-						}
-						if (APILocator.getPermissionAPI().doesUserHavePermission(asset, PermissionAPI.PERMISSION_READ, user, false)) {
-							sb.append("<li class=\"" + className + "\" id=\"inode_" + inode + "\" >" + title + "</li>\n");
-						}
-					}
-				}
-			}
-		}
-		sb.append("</ul>\n");
-		v.add(sb);
-		v.add(new Boolean(show));
-
-		return v;
-	}
-
-	private class InternalCounter
-	{
-		private int counter;
-
-		public int getCounter()
-		{
-			return counter;
-		}
-
-		public void setCounter(int counter)
-		{
-			this.counter = counter;
-		}
-	}
-
+    public void setCounter(int counter) {
+      this.counter = counter;
+    }
+  }
 }

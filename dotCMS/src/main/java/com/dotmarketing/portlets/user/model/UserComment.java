@@ -1,117 +1,114 @@
 package com.dotmarketing.portlets.user.model;
 
+import com.dotmarketing.beans.Inode;
 import java.io.Serializable;
 import java.util.Date;
-
-import com.dotmarketing.beans.Inode;
 
 /** @author Hibernate CodeGenerator */
 public class UserComment extends Inode implements Serializable {
 
-    private static final long serialVersionUID = 1L;
-    
-    public final static String METHOD_EMAIL_CONFIRMATION="email confirmation";
-    public final static String METHOD_PHONE="phone";
-    public final static  String METHOD_WALKIN="Walk-in";
-    public final static  String METHOD_EMAIL="Walk-in";
-    public final static String METHOD_REGULAR="Regular";
-    public final static  String METHOD_WEB="From Web";
-    public final static  String METHOD_MARKETING_LIST="Marketing List";
-    public final static String METHOD_OTHER="Other";
-    public final static String[] ALL_METHODS={METHOD_PHONE, METHOD_EMAIL, METHOD_REGULAR, METHOD_WEB, METHOD_MARKETING_LIST, METHOD_OTHER};
+  private static final long serialVersionUID = 1L;
 
-    public final static String TYPE_INCOMING="incoming";
-    public final static  String TYPE_OUTGOING="outgoing";
-    public final static  String TYPE_NA="n/a";
-    public final static String[] ALL_TYPES={TYPE_INCOMING, TYPE_OUTGOING, TYPE_NA};
-        
-	/** persistent field */    
-    private String userId;
-    private String typeComment;
-    private String method;
-    private String subject;
-    private String comment;
-    private String commentUserId;
-    private Date date;    
+  public static final String METHOD_EMAIL_CONFIRMATION = "email confirmation";
+  public static final String METHOD_PHONE = "phone";
+  public static final String METHOD_WALKIN = "Walk-in";
+  public static final String METHOD_EMAIL = "Walk-in";
+  public static final String METHOD_REGULAR = "Regular";
+  public static final String METHOD_WEB = "From Web";
+  public static final String METHOD_MARKETING_LIST = "Marketing List";
+  public static final String METHOD_OTHER = "Other";
+  public static final String[] ALL_METHODS = {
+    METHOD_PHONE, METHOD_EMAIL, METHOD_REGULAR, METHOD_WEB, METHOD_MARKETING_LIST, METHOD_OTHER
+  };
 
-    private String communicationId;
+  public static final String TYPE_INCOMING = "incoming";
+  public static final String TYPE_OUTGOING = "outgoing";
+  public static final String TYPE_NA = "n/a";
+  public static final String[] ALL_TYPES = {TYPE_INCOMING, TYPE_OUTGOING, TYPE_NA};
 
-    /** default constructor */
-    public UserComment() 
-    {
-    	super.setType("user_comments");
-    }
+  /** persistent field */
+  private String userId;
 
-	public String getCommentUserId() {
-		return commentUserId;
-	}
+  private String typeComment;
+  private String method;
+  private String subject;
+  private String comment;
+  private String commentUserId;
+  private Date date;
 
-	public void setCommentUserId(String commentUserId) {
-		this.commentUserId = commentUserId;
-	}
+  private String communicationId;
 
-	public String getComment() {
-		return comment;
-	}
+  /** default constructor */
+  public UserComment() {
+    super.setType("user_comments");
+  }
 
-	public void setComment(String comment) {
-		this.comment = comment;
-	}
+  public String getCommentUserId() {
+    return commentUserId;
+  }
 
-	public Date getDate() {
-		return date;
-	}
+  public void setCommentUserId(String commentUserId) {
+    this.commentUserId = commentUserId;
+  }
 
-	public void setDate(Date date) {
-		this.date = date;
-	}
+  public String getComment() {
+    return comment;
+  }
 
-	public String getMethod() {
-		return method;
-	}
+  public void setComment(String comment) {
+    this.comment = comment;
+  }
 
-	public void setMethod(String method) {
-		this.method = method;
-	}
+  public Date getDate() {
+    return date;
+  }
 
-	public String getSubject() {
-		return subject;
-	}
+  public void setDate(Date date) {
+    this.date = date;
+  }
 
-	public void setSubject(String subject) {
-		this.subject = subject;
-	}
+  public String getMethod() {
+    return method;
+  }
 
-	public String getUserId() {
-		return userId;
-	}
+  public void setMethod(String method) {
+    this.method = method;
+  }
 
-	public void setUserId(String userId) {
-		this.userId = userId;
-	}
+  public String getSubject() {
+    return subject;
+  }
 
-	public String getTypeComment() {
-		return typeComment;
-	}
+  public void setSubject(String subject) {
+    this.subject = subject;
+  }
 
-	public void setTypeComment(String typeComment) {
-		this.typeComment = typeComment;
-	}
+  public String getUserId() {
+    return userId;
+  }
 
-	/**
-	 * @return Returns the communicationId.
-	 */
-	public String getCommunicationId() {
-		return communicationId;
-	}
+  public void setUserId(String userId) {
+    this.userId = userId;
+  }
 
-	/**
-	 * @param communicationId The communicationId to set.
-	 */
-	/*public void setCommunicationId(Long communicationId) {
-		this.communicationId = communicationId;
-	}*/	
-	public void setCommunicationId(String communicationId) {
-		this.communicationId = communicationId;
-	}
+  public String getTypeComment() {
+    return typeComment;
+  }
+
+  public void setTypeComment(String typeComment) {
+    this.typeComment = typeComment;
+  }
+
+  /** @return Returns the communicationId. */
+  public String getCommunicationId() {
+    return communicationId;
+  }
+
+  /** @param communicationId The communicationId to set. */
+  /*public void setCommunicationId(Long communicationId) {
+  	this.communicationId = communicationId;
+  }*/
+  public void setCommunicationId(String communicationId) {
+    this.communicationId = communicationId;
+  }
 }

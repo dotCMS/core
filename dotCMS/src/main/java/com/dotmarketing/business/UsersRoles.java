@@ -1,45 +1,44 @@
 package com.dotmarketing.business;
 
-
 public class UsersRoles {
 
-	private String id;
-	private String userId;
-	private String roleId;
-	
-	public UsersRoles() {}
+  private String id;
+  private String userId;
+  private String roleId;
 
-	public String getId() {
-		return id;
-	}
+  public UsersRoles() {}
 
-	public void setId(String id) {
-		this.id = id;
-	}
+  public String getId() {
+    return id;
+  }
 
-	public String getUserId() {
-		return userId;
-	}
+  public void setId(String id) {
+    this.id = id;
+  }
 
-	public void setUserId(String userId) {
-		this.userId = userId;
-	}
+  public String getUserId() {
+    return userId;
+  }
 
-	public String getRoleId() {
-		return roleId;
-	}
+  public void setUserId(String userId) {
+    this.userId = userId;
+  }
 
-	public void setRoleId(String roleId) {
-		this.roleId = roleId;
-	}
-	
-	public boolean equals(Object other) {
-		if (!(other instanceof UsersRoles)) {
-			return false;
-		}
+  public String getRoleId() {
+    return roleId;
+  }
 
-		UsersRoles castOther = (UsersRoles) other;
+  public void setRoleId(String roleId) {
+    this.roleId = roleId;
+  }
 
-		return (this.getId().equalsIgnoreCase(castOther.getId()));
-	}
+  public boolean equals(Object other) {
+    if (!(other instanceof UsersRoles)) {
+      return false;
+    }
+
+    UsersRoles castOther = (UsersRoles) other;
+
+    return (this.getId().equalsIgnoreCase(castOther.getId()));
+  }
 }

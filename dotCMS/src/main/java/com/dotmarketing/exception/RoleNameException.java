@@ -2,14 +2,13 @@ package com.dotmarketing.exception;
 
 public class RoleNameException extends DotDataException {
 
-	public RoleNameException() {
-		super("");
-	}
-	
-	public RoleNameException(String message) {
-		super(message);
-	}
+  public RoleNameException() {
+    super("");
+  }
 
-	private static final long serialVersionUID = 1L;
-	
+  public RoleNameException(String message) {
+    super(message);
+  }
+
+  private static final long serialVersionUID = 1L;
 }

@@ -22,170 +22,173 @@ import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.lang.StringEscapeUtils;
 
-
 @Path("/bundle")
 public class BundleResource {
 
-    private final WebResource webResource = new WebResource();
+  private final WebResource webResource = new WebResource();
 
-    /**
-     * Returns a list of un-send bundles (haven't been sent to any Environment) filtered by owner and name
-     *
-     * @param request
-     * @param params
-     * @return
-     * @throws DotStateException
-     * @throws DotDataException
-     * @throws JSONException
-     */
-    @GET
-    @Path ("/getunsendbundles/{params:.*}")
-    @Produces ("application/json")
-    public Response getUnsendBundles ( @Context HttpServletRequest request, @PathParam ("params") String params )
-            throws DotDataException, JSONException {
+  /**
+   * Returns a list of un-send bundles (haven't been sent to any Environment) filtered by owner and
+   * name
+   *
+   * @param request
+   * @param params
+   * @return
+   * @throws DotStateException
+   * @throws DotDataException
+   * @throws JSONException
+   */
+  @GET
+  @Path("/getunsendbundles/{params:.*}")
+  @Produces("application/json")
+  public Response getUnsendBundles(
+      @Context HttpServletRequest request, @PathParam("params") String params)
+      throws DotDataException, JSONException {
 
+    InitDataObject initData = webResource.init(params, true, request, true, null);
+    // Creating an utility response object
+    ResourceResponse responseResource = new ResourceResponse(initData.getParamsMap());
 
-        InitDataObject initData = webResource.init(params, true, request, true, null);
-        //Creating an utility response object
-        ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
+    // Reading the parameters
+    String userId = initData.getParamsMap().get("userid");
+    String bundleName = request.getParameter("name");
+    String startParam = request.getParameter("start");
+    String countParam = request.getParameter("count");
 
-        //Reading the parameters
-        String userId = initData.getParamsMap().get( "userid" );
-        String bundleName = request.getParameter( "name" );
-        String startParam = request.getParameter( "start" );
-        String countParam = request.getParameter( "count" );
-
-        int start = 0;
-        if ( UtilMethods.isSet( startParam ) ) {
-            start = Integer.valueOf( startParam );
-        }
-
-        int offset = -1;
-        if ( UtilMethods.isSet( countParam ) ) {
-            offset = Integer.valueOf( countParam );
-        }
-
-        if ( UtilMethods.isSet( bundleName ) ) {
-            if ( bundleName.equals( "*" ) ) {
-                bundleName = null;
-            } else {
-                bundleName = bundleName.replaceAll( "\\*", "" );
-            }
-        }
-
-        JSONArray jsonBundles = new JSONArray();
-
-        //Find the unsend bundles
-        List<Bundle> bundles;
-        if ( bundleName == null ) {
-            //Find all the bundles for this user
-            bundles = APILocator.getBundleAPI().getUnsendBundles( userId, offset, start );
-        } else {
-            //Filter by name
-            bundles = APILocator.getBundleAPI().getUnsendBundlesByName( userId, bundleName, offset, start );
-        }
-        for ( Bundle b : bundles ) {
-
-            JSONObject jsonBundle = new JSONObject();
-            jsonBundle.put( "id", b.getId() );
-            jsonBundle.put( "name", StringEscapeUtils.unescapeJava(b.getName()));
-            //Added to the response list
-            jsonBundles.add( jsonBundle );
-        }
-
-        //Prepare the response
-        JSONObject jsonResponse = new JSONObject();
-        jsonResponse.put( "identifier", "id" );
-        jsonResponse.put( "label", "name" );
-        jsonResponse.put( "items", jsonBundles.toArray() );
-        jsonResponse.put( "numRows", bundles.size() );
-
-        CacheControl nocache=new CacheControl();
-        nocache.setNoCache(true);
-        return Response.ok(jsonResponse.toString()).cacheControl(nocache).build();
+    int start = 0;
+    if (UtilMethods.isSet(startParam)) {
+      start = Integer.valueOf(startParam);
     }
 
-	@GET
-	@Path("/updatebundle/{params:.*}")
-	@Produces("application/json")
-	public Response updateBundle(@Context HttpServletRequest request, @PathParam("params") String params) throws IOException {
+    int offset = -1;
+    if (UtilMethods.isSet(countParam)) {
+      offset = Integer.valueOf(countParam);
+    }
 
-        InitDataObject initData = webResource.init(params, true, request, true, null);
-	    //Creating an utility response object
-	    ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
-	
-		String bundleId = initData.getParamsMap().get("bundleid");
-		String bundleName = URLDecoder.decode(request.getParameter("bundleName"), "UTF-8");
-		try {
-	
-			if(!UtilMethods.isSet(bundleId)) {
-	            return responseResource.response( "false" );
-			}
-	
-			Bundle bundle = APILocator.getBundleAPI().getBundleById(bundleId);
-			bundle.setName(bundleName);
-			APILocator.getBundleAPI().updateBundle(bundle);
-	
-		} catch (DotDataException e) {
-			Logger.error(getClass(), "Error trying to update Bundle. Bundle ID: " + bundleId);
-	        return responseResource.response( "false" );
-		}
-	
-	    return responseResource.response("true");
-	}
+    if (UtilMethods.isSet(bundleName)) {
+      if (bundleName.equals("*")) {
+        bundleName = null;
+      } else {
+        bundleName = bundleName.replaceAll("\\*", "");
+      }
+    }
 
-	@GET
-	@Path("/deletepushhistory/{params:.*}")
-	@Produces("application/json")
-	public Response deletePushHistory(@Context HttpServletRequest request, @PathParam("params") String params) {
+    JSONArray jsonBundles = new JSONArray();
 
-        InitDataObject initData = webResource.init(params, true, request, true, null);
-        //Creating an utility response object
-        ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
+    // Find the unsend bundles
+    List<Bundle> bundles;
+    if (bundleName == null) {
+      // Find all the bundles for this user
+      bundles = APILocator.getBundleAPI().getUnsendBundles(userId, offset, start);
+    } else {
+      // Filter by name
+      bundles = APILocator.getBundleAPI().getUnsendBundlesByName(userId, bundleName, offset, start);
+    }
+    for (Bundle b : bundles) {
 
-        String assetId = initData.getParamsMap().get("assetid");
+      JSONObject jsonBundle = new JSONObject();
+      jsonBundle.put("id", b.getId());
+      jsonBundle.put("name", StringEscapeUtils.unescapeJava(b.getName()));
+      // Added to the response list
+      jsonBundles.add(jsonBundle);
+    }
 
-		try {
+    // Prepare the response
+    JSONObject jsonResponse = new JSONObject();
+    jsonResponse.put("identifier", "id");
+    jsonResponse.put("label", "name");
+    jsonResponse.put("items", jsonBundles.toArray());
+    jsonResponse.put("numRows", bundles.size());
 
-			if(!UtilMethods.isSet(assetId)) {
-                return responseResource.response( "false" );
-			}
+    CacheControl nocache = new CacheControl();
+    nocache.setNoCache(true);
+    return Response.ok(jsonResponse.toString()).cacheControl(nocache).build();
+  }
 
-			APILocator.getPushedAssetsAPI().deletePushedAssets(assetId);
+  @GET
+  @Path("/updatebundle/{params:.*}")
+  @Produces("application/json")
+  public Response updateBundle(
+      @Context HttpServletRequest request, @PathParam("params") String params) throws IOException {
 
-		} catch (DotDataException e) {
-			Logger.error(getClass(), "Error trying to delete Pushed Assets for asset Id: " + assetId);
-            return responseResource.response( "false" );
-		}
+    InitDataObject initData = webResource.init(params, true, request, true, null);
+    // Creating an utility response object
+    ResourceResponse responseResource = new ResourceResponse(initData.getParamsMap());
 
-        return responseResource.response( "true" );
-	}
+    String bundleId = initData.getParamsMap().get("bundleid");
+    String bundleName = URLDecoder.decode(request.getParameter("bundleName"), "UTF-8");
+    try {
 
-	@GET
-	@Path("/deleteenvironmentpushhistory/{params:.*}")
-	@Produces("application/json")
-	public Response deleteEnvironmentPushHistory(@Context HttpServletRequest request, @PathParam("params") String params) {
+      if (!UtilMethods.isSet(bundleId)) {
+        return responseResource.response("false");
+      }
 
-        InitDataObject initData = webResource.init(params, true, request, true, null);
-        //Creating an utility response object
-        ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
+      Bundle bundle = APILocator.getBundleAPI().getBundleById(bundleId);
+      bundle.setName(bundleName);
+      APILocator.getBundleAPI().updateBundle(bundle);
 
-		String environmentId = initData.getParamsMap().get("environmentid");
+    } catch (DotDataException e) {
+      Logger.error(getClass(), "Error trying to update Bundle. Bundle ID: " + bundleId);
+      return responseResource.response("false");
+    }
 
-		try {
+    return responseResource.response("true");
+  }
 
-			if(!UtilMethods.isSet(environmentId)) {
-                return responseResource.response( "false" );
-			}
+  @GET
+  @Path("/deletepushhistory/{params:.*}")
+  @Produces("application/json")
+  public Response deletePushHistory(
+      @Context HttpServletRequest request, @PathParam("params") String params) {
 
-			APILocator.getPushedAssetsAPI().deletePushedAssetsByEnvironment(environmentId);
+    InitDataObject initData = webResource.init(params, true, request, true, null);
+    // Creating an utility response object
+    ResourceResponse responseResource = new ResourceResponse(initData.getParamsMap());
 
-		} catch (DotDataException e) {
-			Logger.error(getClass(), "Error trying to delete Pushed Assets for environment Id: " + environmentId);
-            return responseResource.response( "false" );
-		}
+    String assetId = initData.getParamsMap().get("assetid");
 
-        return responseResource.response( "true" );
-	}
+    try {
 
+      if (!UtilMethods.isSet(assetId)) {
+        return responseResource.response("false");
+      }
+
+      APILocator.getPushedAssetsAPI().deletePushedAssets(assetId);
+
+    } catch (DotDataException e) {
+      Logger.error(getClass(), "Error trying to delete Pushed Assets for asset Id: " + assetId);
+      return responseResource.response("false");
+    }
+
+    return responseResource.response("true");
+  }
+
+  @GET
+  @Path("/deleteenvironmentpushhistory/{params:.*}")
+  @Produces("application/json")
+  public Response deleteEnvironmentPushHistory(
+      @Context HttpServletRequest request, @PathParam("params") String params) {
+
+    InitDataObject initData = webResource.init(params, true, request, true, null);
+    // Creating an utility response object
+    ResourceResponse responseResource = new ResourceResponse(initData.getParamsMap());
+
+    String environmentId = initData.getParamsMap().get("environmentid");
+
+    try {
+
+      if (!UtilMethods.isSet(environmentId)) {
+        return responseResource.response("false");
+      }
+
+      APILocator.getPushedAssetsAPI().deletePushedAssetsByEnvironment(environmentId);
+
+    } catch (DotDataException e) {
+      Logger.error(
+          getClass(), "Error trying to delete Pushed Assets for environment Id: " + environmentId);
+      return responseResource.response("false");
+    }
+
+    return responseResource.response("true");
+  }
 }

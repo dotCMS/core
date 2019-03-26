@@ -2,47 +2,45 @@ package com.dotmarketing.business.cache.provider.h22;
 
 import com.dotmarketing.business.DotStateException;
 
+public class Fqn {
+  final String group, key, id;
 
+  public Fqn(String group, String key) {
+    if (group == null) {
+      throw new DotStateException("cache group is null");
+    }
+    if (key == null) {
+      throw new DotStateException("cache key is null");
+    }
+    this.group = group.toLowerCase();
+    this.key = key.toLowerCase();
 
-	public class Fqn {
-		final String group, key, id;
+    this.id = betterHash(this.group + " | " + this.key);
+  }
 
-		public Fqn(String group, String key) {
-			if (group == null) {
-				throw new DotStateException("cache group is null");
-			}
-			if (key == null) {
-				throw new DotStateException("cache key is null");
-			}
-			this.group = group.toLowerCase();
-			this.key = key.toLowerCase();
+  public Fqn(String group) {
+    this(group, "");
+  }
 
-			this.id = betterHash(this.group + " | " + this.key);
-		}
+  @Override
+  public String toString() {
+    return (group + " | " + key);
+  }
 
-		public Fqn(String group) {
-			this(group, "");
-		}
+  @Override
+  public boolean equals(Object obj) {
 
-		@Override
-		public String toString() {
-			return (group + " | " + key);
-		}
+    return id.equals(((Fqn) obj).id);
+  }
 
-		@Override
-		public boolean equals(Object obj) {
+  private String betterHash(String s) {
+    long h = 1125899906842597L; // prime
+    int len = s.length();
 
-			return id.equals(((Fqn) obj).id);
-		}
+    for (int i = 0; i < len; i++) {
+      h = 31 * h + s.charAt(i);
+    }
 
-		private String betterHash(String s) {
-			long h = 1125899906842597L; // prime
-			int len = s.length();
-
-			for (int i = 0; i < len; i++) {
-				h = 31 * h + s.charAt(i);
-			}
-
-			return String.valueOf(h);
-		}
+    return String.valueOf(h);
+  }
 }

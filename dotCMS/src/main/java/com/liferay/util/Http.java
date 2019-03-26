@@ -1,42 +1,25 @@
 /**
  * Copyright (c) 2000-2005 Liferay, LLC. All rights reserved.
  *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
+ * <p>Permission is hereby granted, free of charge, to any person obtaining a copy of this software
+ * and associated documentation files (the "Software"), to deal in the Software without restriction,
+ * including without limitation the rights to use, copy, modify, merge, publish, distribute,
+ * sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
  *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
+ * <p>The above copyright notice and this permission notice shall be included in all copies or
+ * substantial portions of the Software.
  *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
+ * <p>THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
+ * BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+ * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-
 package com.liferay.util;
-
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
-import java.net.URL;
-import java.net.URLConnection;
-import java.net.URLDecoder;
-import java.net.URLEncoder;
-import java.util.Iterator;
-import java.util.Map;
 
 import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.RenderRequest;
-import javax.servlet.http.HttpServletRequest;
-
 import com.dotcms.repackage.org.apache.commons.httpclient.Cookie;
 import com.dotcms.repackage.org.apache.commons.httpclient.Header;
 import com.dotcms.repackage.org.apache.commons.httpclient.HostConfiguration;
@@ -48,353 +31,335 @@ import com.dotcms.repackage.org.apache.commons.httpclient.URI;
 import com.dotcms.repackage.org.apache.commons.httpclient.cookie.CookiePolicy;
 import com.dotcms.repackage.org.apache.commons.httpclient.methods.GetMethod;
 import com.dotcms.repackage.org.apache.commons.httpclient.methods.PostMethod;
-
 import com.dotmarketing.util.Logger;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
+import java.net.URL;
+import java.net.URLConnection;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
+import java.util.Iterator;
+import java.util.Map;
+import javax.servlet.http.HttpServletRequest;
 
 /**
  * <a href="Http.java.html"><b><i>View Source</i></b></a>
  *
- * @author  Brian Wing Shun Chan
+ * @author Brian Wing Shun Chan
  * @version $Revision: 1.33 $
- *
  */
 public class Http {
 
-	public static final String FILE_ENCODING = "file.encoding";
+  public static final String FILE_ENCODING = "file.encoding";
 
-	public static final String HTTP = "http";
+  public static final String HTTP = "http";
 
-	public static final String HTTPS = "https";
+  public static final String HTTPS = "https";
 
-	public static final String HTTP_WITH_SLASH = "http://";
+  public static final String HTTP_WITH_SLASH = "http://";
 
-	public static final String HTTPS_WITH_SLASH = "https://";
+  public static final String HTTPS_WITH_SLASH = "https://";
 
-	public static final int HTTP_PORT = 80;
+  public static final int HTTP_PORT = 80;
 
-	public static final int HTTPS_PORT = 443;
+  public static final int HTTPS_PORT = 443;
 
-	public static final String PROXY_HOST = GetterUtil.getString(
-		SystemProperties.get(Http.class.getName() + ".proxy.host"));
+  public static final String PROXY_HOST =
+      GetterUtil.getString(SystemProperties.get(Http.class.getName() + ".proxy.host"));
 
-	public static final int PROXY_PORT = GetterUtil.getInteger(
-		SystemProperties.get(Http.class.getName() + ".proxy.port"));
+  public static final int PROXY_PORT =
+      GetterUtil.getInteger(SystemProperties.get(Http.class.getName() + ".proxy.port"));
 
-	public static String decodeURL(String url) {
-		try {
-			return URLDecoder.decode(url, SystemProperties.get(FILE_ENCODING));
-		}
-		catch (UnsupportedEncodingException uee) {
-			Logger.error(Http.class,uee.getMessage(),uee);
+  public static String decodeURL(String url) {
+    try {
+      return URLDecoder.decode(url, SystemProperties.get(FILE_ENCODING));
+    } catch (UnsupportedEncodingException uee) {
+      Logger.error(Http.class, uee.getMessage(), uee);
 
-			return StringPool.BLANK;
-		}
-	}
+      return StringPool.BLANK;
+    }
+  }
 
-	public static String encodeURL(String url) {
-		try {
-			return (null == url)?StringPool.BLANK:
-					URLEncoder.encode(url, SystemProperties.get(FILE_ENCODING));
-		}
-		catch (UnsupportedEncodingException uee) {
-			Logger.error(Http.class,uee.getMessage(),uee);
-			return StringPool.BLANK;
-		}
-	}
-
-	public static String getCompleteURL(HttpServletRequest req) {
-		StringBuffer completeURL = req.getRequestURL();
+  public static String encodeURL(String url) {
+    try {
+      return (null == url)
+          ? StringPool.BLANK
+          : URLEncoder.encode(url, SystemProperties.get(FILE_ENCODING));
+    } catch (UnsupportedEncodingException uee) {
+      Logger.error(Http.class, uee.getMessage(), uee);
+      return StringPool.BLANK;
+    }
+  }
 
-		if (completeURL == null) {
-			completeURL = new StringBuffer();
-		}
+  public static String getCompleteURL(HttpServletRequest req) {
+    StringBuffer completeURL = req.getRequestURL();
 
-		if (req.getQueryString() != null) {
-			completeURL.append(StringPool.QUESTION);
-			completeURL.append(req.getQueryString());
-		}
+    if (completeURL == null) {
+      completeURL = new StringBuffer();
+    }
 
-		return completeURL.toString();
-	}
+    if (req.getQueryString() != null) {
+      completeURL.append(StringPool.QUESTION);
+      completeURL.append(req.getQueryString());
+    }
 
-	public static String getProtocol(boolean secure) {
-		if (!secure) {
-			return HTTP;
-		}
-		else {
-			return HTTPS;
-		}
-	}
+    return completeURL.toString();
+  }
 
-	public static String getProtocol(HttpServletRequest req) {
-		return getProtocol(req.isSecure());
-	}
+  public static String getProtocol(boolean secure) {
+    if (!secure) {
+      return HTTP;
+    } else {
+      return HTTPS;
+    }
+  }
 
-	public static String getProtocol(ActionRequest req) {
-		return getProtocol(req.isSecure());
-	}
+  public static String getProtocol(HttpServletRequest req) {
+    return getProtocol(req.isSecure());
+  }
 
-	public static String getProtocol(RenderRequest req) {
-		return getProtocol(req.isSecure());
-	}
+  public static String getProtocol(ActionRequest req) {
+    return getProtocol(req.isSecure());
+  }
 
-	public static String getRequestURL(HttpServletRequest req) {
-		return req.getRequestURL().toString();
-	}
+  public static String getProtocol(RenderRequest req) {
+    return getProtocol(req.isSecure());
+  }
 
-	public static String parameterMapToString(Map parameterMap) {
-		return parameterMapToString(parameterMap, true);
-	}
+  public static String getRequestURL(HttpServletRequest req) {
+    return req.getRequestURL().toString();
+  }
 
-	public static String parameterMapToString(
-		Map parameterMap, boolean addQuestion) {
+  public static String parameterMapToString(Map parameterMap) {
+    return parameterMapToString(parameterMap, true);
+  }
 
-		StringBuffer sb = new StringBuffer();
+  public static String parameterMapToString(Map parameterMap, boolean addQuestion) {
 
-		if (parameterMap.size() > 0) {
-			if (addQuestion) {
-				sb.append(StringPool.QUESTION);
-			}
+    StringBuffer sb = new StringBuffer();
 
-			Iterator itr = parameterMap.entrySet().iterator();
+    if (parameterMap.size() > 0) {
+      if (addQuestion) {
+        sb.append(StringPool.QUESTION);
+      }
 
-			while (itr.hasNext()) {
-				Map.Entry entry = (Map.Entry)itr.next();
+      Iterator itr = parameterMap.entrySet().iterator();
 
-				String name = (String)entry.getKey();
-				String[] values = (String[])entry.getValue();
+      while (itr.hasNext()) {
+        Map.Entry entry = (Map.Entry) itr.next();
 
-				for (int i = 0; i < values.length; i++) {
-					sb.append(name);
-					sb.append(StringPool.EQUAL);
-					sb.append(Http.encodeURL(values[i]));
-					sb.append(StringPool.AMPERSAND);
-				}
-			}
+        String name = (String) entry.getKey();
+        String[] values = (String[]) entry.getValue();
 
-			sb.deleteCharAt(sb.length() - 1);
-		}
+        for (int i = 0; i < values.length; i++) {
+          sb.append(name);
+          sb.append(StringPool.EQUAL);
+          sb.append(Http.encodeURL(values[i]));
+          sb.append(StringPool.AMPERSAND);
+        }
+      }
 
-		return sb.toString();
-	}
-	
-	public static String parameterMapToStringNoEncode(Map parameterMap) {
+      sb.deleteCharAt(sb.length() - 1);
+    }
 
-			StringBuffer sb = new StringBuffer();
+    return sb.toString();
+  }
 
-			if (parameterMap.size() > 0) {
-				
-				sb.append(StringPool.QUESTION);
-				
-				Iterator itr = parameterMap.entrySet().iterator();
+  public static String parameterMapToStringNoEncode(Map parameterMap) {
 
-				while (itr.hasNext()) {
-					Map.Entry entry = (Map.Entry)itr.next();
+    StringBuffer sb = new StringBuffer();
 
-					String name = (String)entry.getKey();
-					String[] values = (String[])entry.getValue();
+    if (parameterMap.size() > 0) {
 
-					for (int i = 0; i < values.length; i++) {
-						sb.append(name);
-						sb.append(StringPool.EQUAL);
-						sb.append(values[i]);
-						sb.append(StringPool.AMPERSAND);
-					}
-				}
+      sb.append(StringPool.QUESTION);
 
-				sb.deleteCharAt(sb.length() - 1);
-			}
+      Iterator itr = parameterMap.entrySet().iterator();
 
-			return sb.toString();
-		}
+      while (itr.hasNext()) {
+        Map.Entry entry = (Map.Entry) itr.next();
 
-	public static void submit(String location) throws IOException {
-		submit(location, null);
-	}
+        String name = (String) entry.getKey();
+        String[] values = (String[]) entry.getValue();
 
-	public static void submit(String location, Cookie[] cookies)
-		throws IOException {
+        for (int i = 0; i < values.length; i++) {
+          sb.append(name);
+          sb.append(StringPool.EQUAL);
+          sb.append(values[i]);
+          sb.append(StringPool.AMPERSAND);
+        }
+      }
 
-		submit(location, cookies, false);
-	}
+      sb.deleteCharAt(sb.length() - 1);
+    }
 
-	public static void submit(String location, boolean post)
-		throws IOException {
+    return sb.toString();
+  }
 
-		submit(location, null, post);
-	}
+  public static void submit(String location) throws IOException {
+    submit(location, null);
+  }
 
-	public static void submit(
-			String location, Cookie[] cookies, boolean post)
-		throws IOException {
+  public static void submit(String location, Cookie[] cookies) throws IOException {
 
-		URLtoByteArray(location, cookies, post);
-	}
+    submit(location, cookies, false);
+  }
 
-	public static byte[] URLtoByteArray(String location)
-		throws IOException {
+  public static void submit(String location, boolean post) throws IOException {
 
-		return URLtoByteArray(location, null);
-	}
+    submit(location, null, post);
+  }
 
-	public static byte[] URLtoByteArray(String location, Cookie[] cookies)
-		throws IOException {
+  public static void submit(String location, Cookie[] cookies, boolean post) throws IOException {
 
-		return URLtoByteArray(location, cookies, false);
-	}
+    URLtoByteArray(location, cookies, post);
+  }
 
-	public static byte[] URLtoByteArray(String location, boolean post)
-		throws IOException {
+  public static byte[] URLtoByteArray(String location) throws IOException {
 
-		return URLtoByteArray(location, null, post);
-	}
+    return URLtoByteArray(location, null);
+  }
 
-	public static byte[] URLtoByteArray(
-			String location, Cookie[] cookies, boolean post)
-		throws IOException {
+  public static byte[] URLtoByteArray(String location, Cookie[] cookies) throws IOException {
 
-		byte[] byteArray = null;
+    return URLtoByteArray(location, cookies, false);
+  }
 
-		HttpMethod method = null;
+  public static byte[] URLtoByteArray(String location, boolean post) throws IOException {
 
-		try {
-			HttpClient client =
-				new HttpClient(new SimpleHttpConnectionManager());
+    return URLtoByteArray(location, null, post);
+  }
 
-			if (location == null) {
-				return byteArray;
-			}
-			else if (!location.startsWith(HTTP_WITH_SLASH) &&
-					 !location.startsWith(HTTPS_WITH_SLASH)) {
+  public static byte[] URLtoByteArray(String location, Cookie[] cookies, boolean post)
+      throws IOException {
 
-				location = HTTP_WITH_SLASH + location;
-			}
+    byte[] byteArray = null;
 
-			HostConfiguration hostConfig = new HostConfiguration();
+    HttpMethod method = null;
 
-			hostConfig.setHost(new URI(location));
+    try {
+      HttpClient client = new HttpClient(new SimpleHttpConnectionManager());
 
-			if (Validator.isNotNull(PROXY_HOST) && PROXY_PORT > 0) {
-				hostConfig.setProxy(PROXY_HOST, PROXY_PORT);
-			}
+      if (location == null) {
+        return byteArray;
+      } else if (!location.startsWith(HTTP_WITH_SLASH) && !location.startsWith(HTTPS_WITH_SLASH)) {
 
-			client.setHostConfiguration(hostConfig);
-			client.setConnectionTimeout(5000);
-			client.setTimeout(5000);
+        location = HTTP_WITH_SLASH + location;
+      }
 
-			if (cookies != null && cookies.length > 0) {
-				HttpState state = new HttpState();
+      HostConfiguration hostConfig = new HostConfiguration();
 
-				state.addCookies(cookies);
-				state.setCookiePolicy(CookiePolicy.COMPATIBILITY);
+      hostConfig.setHost(new URI(location));
 
-				client.setState(state);
-			}
+      if (Validator.isNotNull(PROXY_HOST) && PROXY_PORT > 0) {
+        hostConfig.setProxy(PROXY_HOST, PROXY_PORT);
+      }
 
-			if (post) {
-				method = new PostMethod(location);
-			}
-			else {
-				method = new GetMethod(location);
-			}
+      client.setHostConfiguration(hostConfig);
+      client.setConnectionTimeout(5000);
+      client.setTimeout(5000);
 
-			method.setFollowRedirects(true);
+      if (cookies != null && cookies.length > 0) {
+        HttpState state = new HttpState();
 
-			client.executeMethod(method);
+        state.addCookies(cookies);
+        state.setCookiePolicy(CookiePolicy.COMPATIBILITY);
 
-			Header locationHeader = method.getResponseHeader("location");
-			if (locationHeader != null) {
-				return URLtoByteArray(locationHeader.getValue(), cookies, post);
-			}
+        client.setState(state);
+      }
 
-			InputStream is = method.getResponseBodyAsStream();
+      if (post) {
+        method = new PostMethod(location);
+      } else {
+        method = new GetMethod(location);
+      }
 
-			if (is != null) {
-				ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-				byte[] bytes = new byte[512];
+      method.setFollowRedirects(true);
 
-				for (int i = is.read(bytes, 0, 512); i != -1;
-						i = is.read(bytes, 0, 512)) {
+      client.executeMethod(method);
 
-					buffer.write(bytes, 0, i);
-				}
+      Header locationHeader = method.getResponseHeader("location");
+      if (locationHeader != null) {
+        return URLtoByteArray(locationHeader.getValue(), cookies, post);
+      }
 
-				byteArray = buffer.toByteArray();
+      InputStream is = method.getResponseBodyAsStream();
 
-				is.close();
-				buffer.close();
-			}
+      if (is != null) {
+        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+        byte[] bytes = new byte[512];
 
-			return byteArray;
-		}
-		finally {
-			try {
-				if (method != null) {
-					method.releaseConnection();
-				}
-			}
-			catch (Exception e) {
-				Logger.error(Http.class,e.getMessage(),e);
-			}
-		}
-	}
+        for (int i = is.read(bytes, 0, 512); i != -1; i = is.read(bytes, 0, 512)) {
 
-	public static String URLtoString(String location)
-		throws IOException {
+          buffer.write(bytes, 0, i);
+        }
 
-		return URLtoString(location, null);
-	}
+        byteArray = buffer.toByteArray();
 
-	public static String URLtoString(String location, Cookie[] cookies)
-		throws IOException {
+        is.close();
+        buffer.close();
+      }
 
-		return URLtoString(location, cookies, false);
-	}
+      return byteArray;
+    } finally {
+      try {
+        if (method != null) {
+          method.releaseConnection();
+        }
+      } catch (Exception e) {
+        Logger.error(Http.class, e.getMessage(), e);
+      }
+    }
+  }
 
-	public static String URLtoString(String location, boolean post)
-		throws IOException {
+  public static String URLtoString(String location) throws IOException {
 
-		return URLtoString(location, null, post);
-	}
+    return URLtoString(location, null);
+  }
 
-	public static String URLtoString(String location, Cookie[] cookies,
-									 boolean post)
-		throws IOException {
+  public static String URLtoString(String location, Cookie[] cookies) throws IOException {
 
-		return new String(URLtoByteArray(location, cookies, post));
-	}
+    return URLtoString(location, cookies, false);
+  }
 
-	public static String URLtoString(URL url) throws IOException {
-		String xml = null;
+  public static String URLtoString(String location, boolean post) throws IOException {
 
-		if (url != null) {
-			URLConnection con = url.openConnection();
+    return URLtoString(location, null, post);
+  }
 
-			con.setRequestProperty(
-				"Content-Type", "application/x-www-form-urlencoded");
+  public static String URLtoString(String location, Cookie[] cookies, boolean post)
+      throws IOException {
 
-			con.setRequestProperty(
-				"User-agent",
-				"Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1)");
+    return new String(URLtoByteArray(location, cookies, post));
+  }
 
-			InputStream is = con.getInputStream();
+  public static String URLtoString(URL url) throws IOException {
+    String xml = null;
 
-			ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-			byte[] bytes = new byte[512];
+    if (url != null) {
+      URLConnection con = url.openConnection();
 
-			for (int i = is.read(bytes, 0, 512); i != -1;
-					i = is.read(bytes, 0, 512)) {
+      con.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
 
-				buffer.write(bytes, 0, i);
-			}
+      con.setRequestProperty("User-agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1)");
 
-			xml = new String(buffer.toByteArray());
+      InputStream is = con.getInputStream();
 
-			is.close();
-			buffer.close();
-		}
+      ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+      byte[] bytes = new byte[512];
 
-		return xml;
-	}
+      for (int i = is.read(bytes, 0, 512); i != -1; i = is.read(bytes, 0, 512)) {
 
+        buffer.write(bytes, 0, i);
+      }
+
+      xml = new String(buffer.toByteArray());
+
+      is.close();
+      buffer.close();
+    }
+
+    return xml;
+  }
 }

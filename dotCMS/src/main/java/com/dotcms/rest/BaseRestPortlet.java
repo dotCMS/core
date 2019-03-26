@@ -32,234 +32,233 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Proxy;
-import java.util.HashMap;
-import javax.servlet.*;
+import javax.servlet.ServletException;
+import javax.servlet.ServletOutputStream;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletRequestWrapper;
+import javax.servlet.WriteListener;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpServletResponseWrapper;
 
 public abstract class BaseRestPortlet implements Portlet, Cloneable {
 
-	public static final String PORTLET_ID = "PORTLET_ID";
-	public static final String VIEW_JSP = "VIEW_JSP";
+  public static final String PORTLET_ID = "PORTLET_ID";
+  public static final String VIEW_JSP = "VIEW_JSP";
 
-    @Override
-	public void destroy() {
+  @Override
+  public void destroy() {}
 
-	}
+  @Override
+  public void init(PortletConfig config) throws PortletException {}
 
-	@Override
-	public void init(PortletConfig config) throws PortletException {
+  @Override
+  public void processAction(ActionRequest arg0, ActionResponse arg1)
+      throws PortletException, IOException {}
 
-	}
+  /**
+   * The render request will always be handled by the "render.jsp" located under the
+   * /WEB-INF/{classname}/ directory: the folder is based on the class name, lowercased, so this
+   * portlets jsp would be: /WEB-INF/jsp/restportlet/render.jsp
+   */
+  @Override
+  public void render(RenderRequest req, RenderResponse res) throws PortletException, IOException {
 
-	@Override
-	public void processAction(ActionRequest arg0, ActionResponse arg1) throws PortletException, IOException {
+    HttpServletRequest request = ((RenderRequestImpl) req).getHttpServletRequest();
+    HttpServletResponse response = ((RenderResponseImpl) res).getHttpServletResponse();
 
-	}
+    try {
+      response
+          .getWriter()
+          .write(getJspResponse(request, response, this.getClass().getSimpleName(), "render"));
+    } catch (ServletException e) {
 
-	/**
-	 * The render request will always be handled by the "render.jsp" located
-	 * under the /WEB-INF/{classname}/ directory: the folder is based on the
-	 * class name, lowercased, so this portlets jsp would be:
-	 * /WEB-INF/jsp/restportlet/render.jsp
-	 */
-	@Override
-	public void render(RenderRequest req, RenderResponse res)
+      e.printStackTrace();
+    }
+  }
 
-	throws PortletException, IOException {
-		HttpServletRequest request = ((RenderRequestImpl) req).getHttpServletRequest();
-		HttpServletResponse response = ((RenderResponseImpl) res).getHttpServletResponse();
+  private String getJspResponse(
+      HttpServletRequest request, HttpServletResponse response, String portletId, String jspName)
+      throws ServletException, IOException {
 
-		try {
-			response.getWriter().write( getJspResponse( request, response, this.getClass().getSimpleName(), "render" ) );
-		} catch (ServletException e) {
+    jspName = (!UtilMethods.isSet(jspName)) ? "render" : jspName;
 
-			e.printStackTrace();
-		}
+    String path = "/WEB-INF/jsp/" + portletId.toLowerCase() + "/" + jspName + ".jsp";
 
-	}
+    HttpServletResponseWrapper responseWrapper = new ResponseWrapper(response);
 
-	private String getJspResponse ( HttpServletRequest request, HttpServletResponse response, String portletId, String jspName ) throws ServletException,
-			IOException {
+    Logger.debug(this.getClass(), "trying: " + path);
 
-		jspName = (!UtilMethods.isSet(jspName)) ? "render" : jspName;
+    try {
 
-		String path = "/WEB-INF/jsp/" + portletId.toLowerCase() + "/" + jspName + ".jsp";
+      try {
+        request.getRequestDispatcher(path).include(request, responseWrapper);
 
-		HttpServletResponseWrapper responseWrapper = new ResponseWrapper(response);
+      } catch (ClassCastException e) { // Fallback if the normal flow does not work, posible on
+        // app servers like
+        // weblogic
+        Logger.debug(this.getClass(), "ClassCastException: ", e);
 
-		Logger.debug(this.getClass(), "trying: " + path);
+        // Read the request proxy sent to jersey and look for its handler to get the object behind
+        // that proxy
+        ThreadLocalInvoker localInvoker = (ThreadLocalInvoker) Proxy.getInvocationHandler(request);
+        Object proxiedObject = localInvoker.get();
 
-		try {
+        if (proxiedObject instanceof ServletRequestWrapper) {
+          ServletRequestWrapper servletRequestWrapper = (ServletRequestWrapper) proxiedObject;
+          request.getRequestDispatcher(path).include(servletRequestWrapper, responseWrapper);
+        } else if (proxiedObject instanceof ServletRequest) {
+          ServletRequest servletRequest = (ServletRequest) proxiedObject;
+          request.getRequestDispatcher(path).include(servletRequest, responseWrapper);
+        }
+      }
 
-			try {
-				request.getRequestDispatcher( path ).include( request, responseWrapper );
+      String responseString = ((ResponseWrapper) responseWrapper).getResponseString();
+      return responseString;
 
-			} catch ( ClassCastException e ) {//Fallback if the normal flow does not work, posible on app servers like weblogic
-				Logger.debug(this.getClass(), "ClassCastException: ", e);
+    } catch (Exception e) {
+      Logger.debug(this.getClass(), "unable to parse: " + path);
+      Logger.error(this.getClass(), e.toString(), e);
+      StringWriter sw = new StringWriter();
+      sw.append("<div style='padding:30px;'>");
+      sw.append("unable to parse: <a href='" + path + "' target='debug'>" + path + "</a>");
+      sw.append("<hr>");
+      sw.append("<pre style='width:90%;overflow:hidden;white-space:pre-wrap'>");
+      sw.append(e.toString());
 
-				//Read the request proxy sent to jersey and look for its handler to get the object behind that proxy
-				ThreadLocalInvoker localInvoker = (ThreadLocalInvoker) Proxy.getInvocationHandler( request );
-				Object proxiedObject = localInvoker.get();
+      sw.append("</pre>");
+      sw.append("</div>");
+      return sw.toString();
+    }
+  }
 
-				if ( proxiedObject instanceof ServletRequestWrapper ) {
-					ServletRequestWrapper servletRequestWrapper = (ServletRequestWrapper) proxiedObject;
-					request.getRequestDispatcher( path ).include( servletRequestWrapper, responseWrapper );
-				} else if ( proxiedObject instanceof ServletRequest ) {
-					ServletRequest servletRequest = (ServletRequest) proxiedObject;
-					request.getRequestDispatcher( path ).include( servletRequest, responseWrapper );
-				}
-			}
+  @GET
+  @Path("/layout/{params:.*}")
+  @Produces("text/html")
+  public Response getLayout(
+      @Context HttpServletRequest request,
+      @Context HttpServletResponse response,
+      @PathParam("params") String params)
+      throws DotDataException, ServletException, IOException, PortalException, SystemException {
 
-			String responseString = ((ResponseWrapper) responseWrapper).getResponseString();
-			return responseString;
+    User user = WebAPILocator.getUserWebAPI().getLoggedInUser(request);
 
-		} catch (Exception e) {
-			Logger.debug(this.getClass(), "unable to parse: " + path);
-			Logger.error( this.getClass(), e.toString(), e );
-			StringWriter sw = new StringWriter();
-			sw.append("<div style='padding:30px;'>");
-			sw.append("unable to parse: <a href='" + path + "' target='debug'>" + path + "</a>");
-			sw.append("<hr>");
-			sw.append("<pre style='width:90%;overflow:hidden;white-space:pre-wrap'>");
-			sw.append(e.toString());
+    com.liferay.portal.model.Portlet portlet = null;
+    String jspName = null;
+    request.setAttribute(VIEW_JSP, "render");
+    try {
+      String[] x = params.split("/");
+      portlet = APILocator.getPortletAPI().findPortlet(x[0]);
+      request.setAttribute(PORTLET_ID, portlet.getPortletId());
+      jspName = x[1];
+      request.setAttribute(VIEW_JSP, jspName);
+    } catch (ArrayIndexOutOfBoundsException aiob) {
 
-			sw.append("</pre>");
-			sw.append("</div>");
-			return sw.toString();
+      Logger.debug(this.getClass(), aiob.getMessage());
+    } catch (Exception e) {
+      com.dotmarketing.util.Logger.error(this.getClass(), e.getMessage(), e);
+      ResponseBuilder builder = Response.status(500);
+      return builder.build();
+    }
 
-		}
+    try {
+      if (user == null
+          || !com.dotmarketing.business.APILocator.getLayoutAPI()
+              .doesUserHaveAccessToPortlet(portlet.getPortletId(), user)) {
+        Logger.error(
+            this.getClass(), "Invalid User  " + user + "  attempting to access this portlet");
+        ResponseBuilder builder = Response.status(403);
+        return builder.build();
+      }
+    } catch (Exception e2) {
+      com.dotmarketing.util.Logger.error(this.getClass(), e2.getMessage(), e2);
+      ResponseBuilder builder = Response.status(500);
+      return builder.build();
+    }
 
-	}
+    ResponseBuilder builder =
+        Response.ok(
+            getJspResponse(request, response, portlet.getPortletId(), jspName), "text/html");
+    CacheControl cc = new CacheControl();
+    cc.setNoCache(true);
 
-	@GET
-	@Path("/layout/{params:.*}")
-	@Produces("text/html")
-	public Response getLayout ( @Context HttpServletRequest request, @Context HttpServletResponse response, @PathParam( "params" ) String params )
-			throws DotDataException, ServletException, IOException,
-			PortalException, SystemException {
+    return builder.cacheControl(cc).build();
+  }
 
-		User user = WebAPILocator.getUserWebAPI().getLoggedInUser(request);
+  public class ResponseWrapper extends HttpServletResponseWrapper {
+    private ByteArrayOutputStream output;
+    private StringWriter writer;
+    private int contentLength;
+    private String contentType;
 
-		com.liferay.portal.model.Portlet portlet = null;
-		String jspName = null;
-		request.setAttribute(VIEW_JSP, "render");
-		try {
-			String[] x = params.split("/");
-			portlet = APILocator.getPortletAPI().findPortlet(x[0]);
-			request.setAttribute(PORTLET_ID, portlet.getPortletId());
-			jspName = x[1];
-			request.setAttribute(VIEW_JSP, jspName);
-		} catch (ArrayIndexOutOfBoundsException aiob) {
+    public ResponseWrapper(HttpServletResponse response) {
+      super(response);
+      output = new ByteArrayOutputStream();
+      writer = new StringWriter();
+    }
 
-			Logger.debug(this.getClass(), aiob.getMessage());
-		} catch (Exception e) {
-			com.dotmarketing.util.Logger.error(this.getClass(), e.getMessage(), e);
-			ResponseBuilder builder = Response.status(500);
-			return builder.build();
-		}
+    public ServletOutputStream getOutputStream() {
+      return new FilterServletOutputStream(output);
+    }
 
-		try {
-			if (user == null
-					|| !com.dotmarketing.business.APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(
-							portlet.getPortletId(), user)) {
-				Logger.error(this.getClass(), "Invalid User  " + user + "  attempting to access this portlet");
-				ResponseBuilder builder = Response.status(403);
-				return builder.build();
-			}
-		} catch (Exception e2) {
-			com.dotmarketing.util.Logger.error(this.getClass(), e2.getMessage(), e2);
-			ResponseBuilder builder = Response.status(500);
-			return builder.build();
-		}
+    public byte[] getData() {
+      return output.toByteArray();
+    }
 
-		ResponseBuilder builder = Response.ok( getJspResponse( request, response, portlet.getPortletId(), jspName ), "text/html" );
-		CacheControl cc = new CacheControl();
-		cc.setNoCache(true);
+    public String getResponseString() {
+      return UtilMethods.isSet(writer.toString()) ? writer.toString() : output.toString();
+    }
 
-		return builder.cacheControl(cc).build();
+    public PrintWriter getWriter() throws IOException {
+      PrintWriter pw = new PrintWriter(writer);
+      return pw;
+    }
 
-	}
+    public void setContentType(String type) {
+      this.contentType = type;
+      super.setContentType(type);
+    }
 
-	public class ResponseWrapper extends HttpServletResponseWrapper{
-		private ByteArrayOutputStream output;
-		private StringWriter writer;
-		private int contentLength;
-		private String contentType;
+    public String getContentType() {
+      return this.contentType;
+    }
 
-		public ResponseWrapper(HttpServletResponse response) {
-			super(response);
-			output = new ByteArrayOutputStream();
-			writer = new StringWriter();
-		}
+    public int getContentLength() {
+      return contentLength;
+    }
 
-		public ServletOutputStream getOutputStream() {
-			return new FilterServletOutputStream(output);
-		}
+    public void setContentLength(int length) {
+      this.contentLength = length;
+      super.setContentLength(length);
+    }
+  }
 
-		public byte[] getData() {
-			return output.toByteArray();
-		}
+  // This class is used by the wrapper for getOutputStream() method
+  // to return a ServletOutputStream object.
+  public class FilterServletOutputStream extends ServletOutputStream {
+    private DataOutputStream stream;
 
-		public String getResponseString() {
-			return UtilMethods.isSet(writer.toString()) ? writer.toString() : output.toString();
-		}
+    public FilterServletOutputStream(OutputStream output) {
+      stream = new DataOutputStream(output);
+    }
 
-		public PrintWriter getWriter() throws IOException {
-			PrintWriter pw = new PrintWriter(writer);
-			return pw;
-		}
+    public void write(int b) throws IOException {
+      stream.write(b);
+    }
 
-		public void setContentType(String type) {
-			this.contentType = type;
-			super.setContentType(type);
-		}
+    public void write(byte[] b) throws IOException {
+      stream.write(b);
+    }
 
-		public String getContentType() {
-			return this.contentType;
-		}
+    public void write(byte[] b, int off, int len) throws IOException {
+      stream.write(b, off, len);
+    }
 
-		public int getContentLength() {
-			return contentLength;
-		}
+    public boolean isReady() {
+      return false;
+    }
 
-		public void setContentLength(int length) {
-			this.contentLength=length;
-			super.setContentLength(length);
-		}
-	}
-
-	// This class is used by the wrapper for getOutputStream() method
-	// to return a ServletOutputStream object.
-	public class FilterServletOutputStream extends ServletOutputStream {
-		private DataOutputStream stream;
-
-		public FilterServletOutputStream(OutputStream output) {
-			stream = new DataOutputStream(output);
-		}
-
-		public void write(int b) throws IOException {
-			stream.write(b);
-		}
-
-		public void write(byte[] b) throws IOException {
-			stream.write(b);
-		}
-
-		public void write(byte[] b, int off, int len) throws IOException {
-			stream.write(b, off, len);
-		}
-
-		public boolean isReady() {
-			return false;
-		}
-
-		public void setWriteListener(WriteListener writeListener) {
-
-		}
-	}
-
+    public void setWriteListener(WriteListener writeListener) {}
+  }
 }

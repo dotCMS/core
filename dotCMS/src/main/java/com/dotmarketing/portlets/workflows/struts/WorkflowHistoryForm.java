@@ -8,63 +8,57 @@ import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.validator.ValidatorForm;
 
+public class WorkflowHistoryForm extends ValidatorForm {
 
+  private static final long serialVersionUID = 1L;
 
-public class WorkflowHistoryForm extends ValidatorForm 
-{
-	
-	private static final long serialVersionUID = 1L;
-	
-    String inode;
-    Date creationDate;
-    String madeBy;
-    String changeDescription;
-    
-    
-    public String getInode() {
-    	if(InodeUtils.isSet(inode))
-			return inode;
-		
-		return "";
-    }
+  String inode;
+  Date creationDate;
+  String madeBy;
+  String changeDescription;
 
-    public void setInode(String inode) {
-        this.inode = inode;
-    }
+  public String getInode() {
+    if (InodeUtils.isSet(inode)) return inode;
 
-    public Date getCreationDate() {
-        return creationDate;
-    }
+    return "";
+  }
 
-    public void setCreationDate(Date creationDate) {
-        this.creationDate = creationDate;
-    }
+  public void setInode(String inode) {
+    this.inode = inode;
+  }
 
-    public String getChangeDescription() {
-        return changeDescription;
-    }
+  public Date getCreationDate() {
+    return creationDate;
+  }
 
-    public void setChangeDescription(String changeDescription) {
-        this.changeDescription = changeDescription;
-    }
+  public void setCreationDate(Date creationDate) {
+    this.creationDate = creationDate;
+  }
 
-    public String getMadeBy() {
-        return madeBy;
-    }
+  public String getChangeDescription() {
+    return changeDescription;
+  }
 
-    public void setMadeBy(String madeBy) {
-        this.madeBy = madeBy;
-    }
+  public void setChangeDescription(String changeDescription) {
+    this.changeDescription = changeDescription;
+  }
 
-    @Override
-    public String toString() {
-        return ToStringBuilder.reflectionToString(this);
-    }
+  public String getMadeBy() {
+    return madeBy;
+  }
 
+  public void setMadeBy(String madeBy) {
+    this.madeBy = madeBy;
+  }
 
-    public ActionErrors validate(ActionMapping arg0, HttpServletRequest arg1) {
-        ActionErrors ae = new ActionErrors();   
-        ae = super.validate(arg0,arg1);
-        return ae;
-    }
+  @Override
+  public String toString() {
+    return ToStringBuilder.reflectionToString(this);
+  }
+
+  public ActionErrors validate(ActionMapping arg0, HttpServletRequest arg1) {
+    ActionErrors ae = new ActionErrors();
+    ae = super.validate(arg0, arg1);
+    return ae;
+  }
 }

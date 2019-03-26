@@ -8,30 +8,27 @@ import com.dotmarketing.util.UtilMethods;
 import java.lang.reflect.InvocationTargetException;
 import org.apache.commons.beanutils.BeanUtils;
 
-public class TemplateWrapper extends Template{
-	
+public class TemplateWrapper extends Template {
 
-	private static final long serialVersionUID = 1L;
+  private static final long serialVersionUID = 1L;
 
-	private Host host;
-	
+  private Host host;
 
-	public TemplateWrapper(Template template, String hostInode) throws IllegalAccessException, InvocationTargetException, DotDataException, DotSecurityException {
-		BeanUtils.copyProperties(this, template);
-		if(UtilMethods.isSet(hostInode)){
-			this.host = APILocator.getHostAPI().find(hostInode, APILocator.getUserAPI().getSystemUser(), false);
-		}
+  public TemplateWrapper(Template template, String hostInode)
+      throws IllegalAccessException, InvocationTargetException, DotDataException,
+          DotSecurityException {
+    BeanUtils.copyProperties(this, template);
+    if (UtilMethods.isSet(hostInode)) {
+      this.host =
+          APILocator.getHostAPI().find(hostInode, APILocator.getUserAPI().getSystemUser(), false);
+    }
+  }
 
-	}
+  public Host getHost() {
+    return host;
+  }
 
-	public Host getHost() {
-		return host;
-	}
-
-	public void setHost(Host host) {
-		this.host = host;
-	}
-   
-	
-	
+  public void setHost(Host host) {
+    this.host = host;
+  }
 }

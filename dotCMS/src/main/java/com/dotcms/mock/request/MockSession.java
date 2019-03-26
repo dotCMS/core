@@ -4,120 +4,112 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Vector;
-
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpSession;
 import javax.servlet.http.HttpSessionContext;
 
 @SuppressWarnings("deprecation")
-public class MockSession implements  HttpSession {
-	
-	final String id;
-	final long createionTime;
-	public MockSession(final String id) {
-		super();
-		this.id=id;
-		createionTime = System.currentTimeMillis();
-	}
+public class MockSession implements HttpSession {
 
-	Map<String, Object> valmap = new HashMap<>();
+  final String id;
+  final long createionTime;
 
-	@Override
-	public void setMaxInactiveInterval(int arg0) {
+  public MockSession(final String id) {
+    super();
+    this.id = id;
+    createionTime = System.currentTimeMillis();
+  }
 
+  Map<String, Object> valmap = new HashMap<>();
 
-	}
+  @Override
+  public void setMaxInactiveInterval(int arg0) {}
 
-	@Override
-	public void setAttribute(String arg0, Object arg1) {
-		valmap.put(arg0, arg1);
+  @Override
+  public void setAttribute(String arg0, Object arg1) {
+    valmap.put(arg0, arg1);
+  }
 
-	}
+  @Override
+  public void removeValue(String arg0) {
+    valmap.remove(arg0);
+  }
 
-	@Override
-	public void removeValue(String arg0) {
-		valmap.remove(arg0);
+  @Override
+  public void removeAttribute(String arg0) {
+    valmap.remove(arg0);
+  }
 
-	}
+  @Override
+  public void putValue(String arg0, Object arg1) {
+    valmap.put(arg0, arg1);
+  }
 
-	@Override
-	public void removeAttribute(String arg0) {
-		valmap.remove(arg0);
+  @Override
+  public boolean isNew() {
 
-	}
+    return true;
+  }
 
-	@Override
-	public void putValue(String arg0, Object arg1) {
-		valmap.put(arg0, arg1);
+  @Override
+  public void invalidate() {
+    valmap = new HashMap<>();
+  }
 
-	}
+  @Override
+  public String[] getValueNames() {
 
-	@Override
-	public boolean isNew() {
+    return valmap.keySet().toArray(new String[valmap.size()]);
+  }
 
-		return true;
-	}
+  @Override
+  public Object getValue(String arg0) {
+    return valmap.get(arg0);
+  }
 
-	@Override
-	public void invalidate() {
-		valmap = new HashMap<>();
+  @Override
+  public ServletContext getServletContext() {
 
-	}
+    return null;
+  }
 
-	@Override
-	public String[] getValueNames() {
+  @Override
+  public int getMaxInactiveInterval() {
 
-		return valmap.keySet().toArray(new String[valmap.size()]);
-	}
+    return 0;
+  }
 
-	@Override
-	public Object getValue(String arg0) {
-		return valmap.get(arg0);
-	}
+  @Override
+  public long getLastAccessedTime() {
 
-	@Override
-	public ServletContext getServletContext() {
+    return 0;
+  }
 
-		return null;
-	}
+  @Override
+  public String getId() {
 
-	@Override
-	public int getMaxInactiveInterval() {
+    return id;
+  }
 
-		return 0;
-	}
+  @Override
+  public long getCreationTime() {
 
-	@Override
-	public long getLastAccessedTime() {
+    return createionTime;
+  }
 
-		return 0;
-	}
+  @Override
+  public Enumeration<String> getAttributeNames() {
+    return new Vector<String>(valmap.keySet()).elements();
+  }
 
-	@Override
-	public String getId() {
+  @Override
+  public Object getAttribute(String arg0) {
+    return valmap.get(arg0);
+  }
 
-		return id;
-	}
-
-	@Override
-	public long getCreationTime() {
-
-		return createionTime;
-	}
-
-	@Override
-	public Enumeration<String> getAttributeNames() {
-		return new Vector<String>(valmap.keySet()).elements();
-	}
-
-	@Override
-	public Object getAttribute(String arg0) {
-		return valmap.get(arg0);
-	}
-
-	@Override
-	public HttpSessionContext getSessionContext() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+  @Override
+  public HttpSessionContext getSessionContext() {
+    // TODO Auto-generated method stub
+    return null;
+  }
 }

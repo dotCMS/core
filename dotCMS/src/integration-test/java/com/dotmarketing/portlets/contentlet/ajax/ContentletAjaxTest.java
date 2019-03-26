@@ -27,175 +27,206 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-/**
- *
- * @author oswaldogallango
- *
- */
+/** @author oswaldogallango */
 public class ContentletAjaxTest {
-	
-	private Language language;
-	private Contentlet contentlet;
-	private User systemUser = APILocator.systemUser();
-	
-	@BeforeClass
-    public static void prepare() throws Exception {
-        //Setting web app environment
-        IntegrationTestInitService.getInstance().init();
+
+  private Language language;
+  private Contentlet contentlet;
+  private User systemUser = APILocator.systemUser();
+
+  @BeforeClass
+  public static void prepare() throws Exception {
+    // Setting web app environment
+    IntegrationTestInitService.getInstance().init();
+  }
+
+  /**
+   * Test problem on "Content Search" when switching on one language show all the contentlets
+   *
+   * @throws DotDataException
+   * @throws DotSecurityException
+   */
+  @Test
+  public void issue5330() throws DotDataException, DotSecurityException {
+    /*
+     * Creating language
+     */
+    Language defaultLang = APILocator.getLanguageAPI().getDefaultLanguage();
+    language = APILocator.getLanguageAPI().getLanguage(102);
+    if (!UtilMethods.isSet(language) || language.getId() == 0) {
+      if (DbConnectionFactory.getDBType().equals("Microsoft SQL Server")) {
+        DotConnect dc = new DotConnect();
+        String sql =
+            "insert into language(id,language_code,country_code,language,country) values(102,'it','IT','Italian','Italy');";
+        dc.setSQL(sql);
+        dc.loadResult();
+      } else {
+        language = new Language();
+        language.setCountry("Italy");
+        language.setCountryCode("IT");
+        language.setLanguageCode("it");
+        language.setLanguage("Italian");
+        APILocator.getLanguageAPI().saveLanguage(language);
+        /*
+         * changing id to recreate possible match between languages
+         */
+        DotConnect dc = new DotConnect();
+        dc.setSQL("update language set id=" + defaultLang.getId() + "02 where language_code='it'");
+        dc.loadResult();
+      }
+      language = APILocator.getLanguageAPI().getLanguage("it", "IT");
     }
 
-	/**
-	 * Test problem on "Content Search" when switching on one language 
-	 * show all the contentlets 
-	 * @throws DotDataException 
-	 * @throws DotSecurityException 
-	 */
-	@Test
-	public void issue5330() throws DotDataException, DotSecurityException{
-		/*
-		 * Creating language
-		 */
-		Language defaultLang = APILocator.getLanguageAPI().getDefaultLanguage();
-		language = APILocator.getLanguageAPI().getLanguage(102);
-		if(!UtilMethods.isSet(language) || language.getId() == 0){
-			if(DbConnectionFactory.getDBType().equals("Microsoft SQL Server")){
-				DotConnect dc = new DotConnect();
-				String sql = "insert into language(id,language_code,country_code,language,country) values(102,'it','IT','Italian','Italy');";
-				dc.setSQL(sql);
-				dc.loadResult();
-			}else{
-				language = new Language();
-				language.setCountry("Italy");
-				language.setCountryCode("IT");
-				language.setLanguageCode("it");
-				language.setLanguage("Italian");
-				APILocator.getLanguageAPI().saveLanguage(language);
-				/*
-				 * changing id to recreate possible match between languages
-				 */
-				DotConnect dc = new DotConnect();
-				dc.setSQL("update language set id="+defaultLang.getId()+"02 where language_code='it'");
-				dc.loadResult();
-			}
-			language = APILocator.getLanguageAPI().getLanguage("it", "IT");
-		}
+    /*
+     * Creating multilanguage contententlet
+     */
+    Host host = APILocator.getHostAPI().findDefaultHost(systemUser, false);
 
-		/*
-		 * Creating multilanguage contententlet
-		 */
-		Host host = APILocator.getHostAPI().findDefaultHost(systemUser, false);
+    Structure structure =
+        CacheLocator.getContentTypeCache().getStructureByVelocityVarName("webPageContent");
+    contentlet = new Contentlet();
+    contentlet.setContentTypeId(structure.getInode());
+    contentlet.setHost(host.getIdentifier());
+    contentlet.setLanguageId(defaultLang.getId());
+    String title = "testIssue5330" + UtilMethods.dateToHTMLDate(new Date(), "MMddyyyyHHmmss");
+    contentlet.setStringProperty("title", title);
+    contentlet.setStringProperty("body", "testIssue5330");
+    contentlet.setHost(host.getIdentifier());
+    contentlet.setIndexPolicy(IndexPolicy.FORCE);
+    contentlet.setIndexPolicyDependencies(IndexPolicy.FORCE);
 
-		Structure structure = CacheLocator.getContentTypeCache().getStructureByVelocityVarName("webPageContent");
-		contentlet = new Contentlet();
-		contentlet.setContentTypeId(structure.getInode());
-		contentlet.setHost(host.getIdentifier());
-		contentlet.setLanguageId(defaultLang.getId());
-		String title = "testIssue5330"+UtilMethods.dateToHTMLDate(new Date(),"MMddyyyyHHmmss");
-		contentlet.setStringProperty("title", title);
-		contentlet.setStringProperty("body", "testIssue5330");
-		contentlet.setHost(host.getIdentifier());
-		contentlet.setIndexPolicy(IndexPolicy.FORCE);
-        contentlet.setIndexPolicyDependencies(IndexPolicy.FORCE);
+    contentlet = APILocator.getContentletAPI().checkin(contentlet, systemUser, false);
+    contentlet.setIndexPolicy(IndexPolicy.FORCE);
+    contentlet.setIndexPolicyDependencies(IndexPolicy.FORCE);
+    APILocator.getVersionableAPI().setLive(contentlet);
+    APILocator.getContentletAPI().isInodeIndexed(contentlet.getInode(), true);
 
-		contentlet = APILocator.getContentletAPI().checkin(contentlet, systemUser,false);
-        contentlet.setIndexPolicy(IndexPolicy.FORCE);
-        contentlet.setIndexPolicyDependencies(IndexPolicy.FORCE);
-		APILocator.getVersionableAPI().setLive(contentlet);
-		APILocator.getContentletAPI().isInodeIndexed(contentlet.getInode(),true);
-		
-		String ident = contentlet.getIdentifier();
-		contentlet = APILocator.getContentletAPI().findContentletByIdentifier(ident, true, defaultLang.getId(), systemUser, false);
-		contentlet.setLanguageId(language.getId());
-		contentlet.setStringProperty("body", "italianTestIssue5330");
-		contentlet.setInode("");
-        contentlet.setIndexPolicy(IndexPolicy.FORCE);
-        contentlet.setIndexPolicyDependencies(IndexPolicy.FORCE);
+    String ident = contentlet.getIdentifier();
+    contentlet =
+        APILocator.getContentletAPI()
+            .findContentletByIdentifier(ident, true, defaultLang.getId(), systemUser, false);
+    contentlet.setLanguageId(language.getId());
+    contentlet.setStringProperty("body", "italianTestIssue5330");
+    contentlet.setInode("");
+    contentlet.setIndexPolicy(IndexPolicy.FORCE);
+    contentlet.setIndexPolicyDependencies(IndexPolicy.FORCE);
 
-		contentlet = APILocator.getContentletAPI().checkin(contentlet, systemUser,false);
-        contentlet.setIndexPolicy(IndexPolicy.FORCE);
-        contentlet.setIndexPolicyDependencies(IndexPolicy.FORCE);
-		APILocator.getVersionableAPI().setLive(contentlet);
-		APILocator.getContentletAPI().isInodeIndexed(contentlet.getInode(),true);
-		/*
-		 * Validate that there are two contentlets associated to the same identifier wit different languages
-		 */
-		List<Contentlet> contList = APILocator.getContentletAPI().getSiblings(ident);
-		Assert.assertEquals(2, contList.size());
+    contentlet = APILocator.getContentletAPI().checkin(contentlet, systemUser, false);
+    contentlet.setIndexPolicy(IndexPolicy.FORCE);
+    contentlet.setIndexPolicyDependencies(IndexPolicy.FORCE);
+    APILocator.getVersionableAPI().setLive(contentlet);
+    APILocator.getContentletAPI().isInodeIndexed(contentlet.getInode(), true);
+    /*
+     * Validate that there are two contentlets associated to the same identifier wit different languages
+     */
+    List<Contentlet> contList = APILocator.getContentletAPI().getSiblings(ident);
+    Assert.assertEquals(2, contList.size());
 
-		/*
-		 * Get english version
-		 */
-		List<String> fieldsValues = new ArrayList<String>();
-		fieldsValues.add("conHost");
-		fieldsValues.add(host.getIdentifier());
-		fieldsValues.add("webPageContent.title");
-		fieldsValues.add(title);
-		fieldsValues.add("languageId");
-		fieldsValues.add(String.valueOf(defaultLang.getId()));
-		List<String> categories = new ArrayList<String>();
-		
-		List<Object> results=new ContentletAjax().searchContentletsByUser(structure.getInode(), fieldsValues, categories, false, false, false, false,1, "modDate Desc", 10,systemUser, null, null, null);
-		Map<String,Object> result = (Map<String,Object>)results.get(0);
-		Assert.assertEquals((Long)result.get("total"), new Long(1));
-		result = (Map<String,Object>)results.get(3);
-		Assert.assertTrue(Long.parseLong(String.valueOf(result.get("languageId")))==defaultLang.getId());
-		contentlet = APILocator.getContentletAPI().find(String.valueOf(result.get("inode")),systemUser,false);
-		APILocator.getContentletAPI().archive(contentlet,systemUser,false);
-		APILocator.getContentletAPI().delete(contentlet,systemUser,false);
+    /*
+     * Get english version
+     */
+    List<String> fieldsValues = new ArrayList<String>();
+    fieldsValues.add("conHost");
+    fieldsValues.add(host.getIdentifier());
+    fieldsValues.add("webPageContent.title");
+    fieldsValues.add(title);
+    fieldsValues.add("languageId");
+    fieldsValues.add(String.valueOf(defaultLang.getId()));
+    List<String> categories = new ArrayList<String>();
 
-		/*
-		 * Get italian version
-		 */
-		fieldsValues = new ArrayList<String>();
-		fieldsValues.add("conHost");
-		fieldsValues.add(host.getIdentifier());
-		fieldsValues.add("webPageContent.title");
-		fieldsValues.add(title);
-		fieldsValues.add("languageId");
-		fieldsValues.add(String.valueOf(language.getId()));
+    List<Object> results =
+        new ContentletAjax()
+            .searchContentletsByUser(
+                structure.getInode(),
+                fieldsValues,
+                categories,
+                false,
+                false,
+                false,
+                false,
+                1,
+                "modDate Desc",
+                10,
+                systemUser,
+                null,
+                null,
+                null);
+    Map<String, Object> result = (Map<String, Object>) results.get(0);
+    Assert.assertEquals((Long) result.get("total"), new Long(1));
+    result = (Map<String, Object>) results.get(3);
+    Assert.assertTrue(
+        Long.parseLong(String.valueOf(result.get("languageId"))) == defaultLang.getId());
+    contentlet =
+        APILocator.getContentletAPI().find(String.valueOf(result.get("inode")), systemUser, false);
+    APILocator.getContentletAPI().archive(contentlet, systemUser, false);
+    APILocator.getContentletAPI().delete(contentlet, systemUser, false);
 
-		results=new ContentletAjax().searchContentletsByUser(structure.getInode(), fieldsValues, categories, false, false, false, false,1, "modDate Desc", 10,systemUser, null, null, null);
-		result = (Map<String,Object>)results.get(0);
-		Assert.assertEquals(new Long(1L), (Long)result.get("total"));
-		result = (Map<String,Object>)results.get(3);
-		Assert.assertTrue(Long.parseLong(String.valueOf(result.get("languageId")))==language.getId());
-		contentlet = APILocator.getContentletAPI().find(String.valueOf(result.get("inode")),systemUser,false);
-		APILocator.getContentletAPI().archive(contentlet,systemUser,false);
-		APILocator.getContentletAPI().delete(contentlet,systemUser,false);
-	}
+    /*
+     * Get italian version
+     */
+    fieldsValues = new ArrayList<String>();
+    fieldsValues.add("conHost");
+    fieldsValues.add(host.getIdentifier());
+    fieldsValues.add("webPageContent.title");
+    fieldsValues.add(title);
+    fieldsValues.add("languageId");
+    fieldsValues.add(String.valueOf(language.getId()));
 
-	@Test
-	public void test_doSearchGlossaryTerm_ReturnsListLanguageVariables()
-			throws Exception {
-		Contentlet languageVariable1 = null;
-		Contentlet languageVariable2 = null;
-		try {
-			final ContentType languageVariableContentType = APILocator.getContentTypeAPI(systemUser)
-					.find(LanguageVariableAPI.LANGUAGEVARIABLE);
-			languageVariable1 = createTestKeyValueContent(
-					"test1", "test1", 1,
-					languageVariableContentType, systemUser);
-			languageVariable2 = createTestKeyValueContent(
-					"powered.by.IT", "hello world", 1,
-					languageVariableContentType, systemUser);
+    results =
+        new ContentletAjax()
+            .searchContentletsByUser(
+                structure.getInode(),
+                fieldsValues,
+                categories,
+                false,
+                false,
+                false,
+                false,
+                1,
+                "modDate Desc",
+                10,
+                systemUser,
+                null,
+                null,
+                null);
+    result = (Map<String, Object>) results.get(0);
+    Assert.assertEquals(new Long(1L), (Long) result.get("total"));
+    result = (Map<String, Object>) results.get(3);
+    Assert.assertTrue(Long.parseLong(String.valueOf(result.get("languageId"))) == language.getId());
+    contentlet =
+        APILocator.getContentletAPI().find(String.valueOf(result.get("inode")), systemUser, false);
+    APILocator.getContentletAPI().archive(contentlet, systemUser, false);
+    APILocator.getContentletAPI().delete(contentlet, systemUser, false);
+  }
 
-			final ContentletAjax contentletAjax = new ContentletAjax();
-			List<String[]> languageVariablesList = contentletAjax.doSearchGlossaryTerm("test","1");
-			Assert.assertEquals(1,languageVariablesList.size());
-			languageVariablesList = contentletAjax.doSearchGlossaryTerm("powered.by.dot","1");
-			Assert.assertEquals(1,languageVariablesList.size());
-			languageVariablesList = contentletAjax.doSearchGlossaryTerm("powered.by","1");
-			Assert.assertEquals(2,languageVariablesList.size());
+  @Test
+  public void test_doSearchGlossaryTerm_ReturnsListLanguageVariables() throws Exception {
+    Contentlet languageVariable1 = null;
+    Contentlet languageVariable2 = null;
+    try {
+      final ContentType languageVariableContentType =
+          APILocator.getContentTypeAPI(systemUser).find(LanguageVariableAPI.LANGUAGEVARIABLE);
+      languageVariable1 =
+          createTestKeyValueContent("test1", "test1", 1, languageVariableContentType, systemUser);
+      languageVariable2 =
+          createTestKeyValueContent(
+              "powered.by.IT", "hello world", 1, languageVariableContentType, systemUser);
 
-		}finally {
-			if(languageVariable1 != null){
-				deleteContentlets(systemUser,languageVariable1);
-			}
-			if(languageVariable2 != null){
-				deleteContentlets(systemUser,languageVariable2);
-			}
-		}
+      final ContentletAjax contentletAjax = new ContentletAjax();
+      List<String[]> languageVariablesList = contentletAjax.doSearchGlossaryTerm("test", "1");
+      Assert.assertEquals(1, languageVariablesList.size());
+      languageVariablesList = contentletAjax.doSearchGlossaryTerm("powered.by.dot", "1");
+      Assert.assertEquals(1, languageVariablesList.size());
+      languageVariablesList = contentletAjax.doSearchGlossaryTerm("powered.by", "1");
+      Assert.assertEquals(2, languageVariablesList.size());
 
-	}
-
+    } finally {
+      if (languageVariable1 != null) {
+        deleteContentlets(systemUser, languageVariable1);
+      }
+      if (languageVariable2 != null) {
+        deleteContentlets(systemUser, languageVariable2);
+      }
+    }
+  }
 }

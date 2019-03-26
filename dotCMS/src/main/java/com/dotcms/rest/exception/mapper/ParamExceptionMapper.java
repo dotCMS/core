@@ -7,26 +7,23 @@ import com.dotcms.repackage.javax.ws.rs.ext.Provider;
 import com.dotcms.repackage.org.glassfish.jersey.server.ParamException;
 import com.dotmarketing.util.Logger;
 
-/**
- *
- * Instead of returning 404 error, on {@link ParamException} we want to return 400
- */
+/** Instead of returning 404 error, on {@link ParamException} we want to return 400 */
 @Provider
 public class ParamExceptionMapper implements ExceptionMapper<ParamException> {
 
-    @Override
-    public Response toResponse(final ParamException exception)
-    {
-        //Log into our logs first.
-        Logger.warn(this.getClass(), exception.getMessage(), exception);
+  @Override
+  public Response toResponse(final ParamException exception) {
+    // Log into our logs first.
+    Logger.warn(this.getClass(), exception.getMessage(), exception);
 
-        //Create the message.
-        final String message = ExceptionUtil.getRootCause(exception).getMessage();
+    // Create the message.
+    final String message = ExceptionUtil.getRootCause(exception).getMessage();
 
-        //Creating the message in JSON format.
-        final String entity = ExceptionMapperUtil.getJsonErrorAsString(exception.getParameterName(), message);
+    // Creating the message in JSON format.
+    final String entity =
+        ExceptionMapperUtil.getJsonErrorAsString(exception.getParameterName(), message);
 
-        //Return 4xx message to the client.
-        return ExceptionMapperUtil.createResponse(entity, message);
-    }
+    // Return 4xx message to the client.
+    return ExceptionMapperUtil.createResponse(entity, message);
+  }
 }

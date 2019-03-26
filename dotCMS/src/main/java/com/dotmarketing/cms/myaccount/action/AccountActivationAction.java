@@ -28,148 +28,166 @@ import org.apache.struts.action.ActionMessages;
 @Deprecated
 public class AccountActivationAction extends SecureAction {
 
-	@SuppressWarnings("unchecked")
-	public ActionForward unspecified(ActionMapping mapping, ActionForm lf,
-			HttpServletRequest request, HttpServletResponse response)
-	throws Exception {
-		String userId = request.getParameter("userId");
-		if (!UtilMethods.isSet(userId)) {
-			userId = (String) request.getSession().getAttribute("userId");
-		}
+  @SuppressWarnings("unchecked")
+  public ActionForward unspecified(
+      ActionMapping mapping,
+      ActionForm lf,
+      HttpServletRequest request,
+      HttpServletResponse response)
+      throws Exception {
+    String userId = request.getParameter("userId");
+    if (!UtilMethods.isSet(userId)) {
+      userId = (String) request.getSession().getAttribute("userId");
+    }
 
-		if(UtilMethods.isSet(userId)) {
-			// resending activation account link
-			request.setAttribute("userId", userId);
-			return mapping.findForward("resendPage");
-		}
-		
-		return activateAccount(mapping, lf, request, response);
-	}
+    if (UtilMethods.isSet(userId)) {
+      // resending activation account link
+      request.setAttribute("userId", userId);
+      return mapping.findForward("resendPage");
+    }
 
-	/**
-	 * activates a lightweight user account after the activation link has been clicked
-	 * @param mapping
-	 * @param lf
-	 * @param request
-	 * @param response
-	 * @return
-	 * @throws Exception
-	 */
-	@SuppressWarnings("unchecked")
-	public ActionForward activateAccount(ActionMapping mapping, ActionForm lf,
-			HttpServletRequest request, HttpServletResponse response)
-	throws Exception {
-		String acckeyCrypted = request.getParameter("acckey");
-    	Logger.debug(AccountActivationAction.class, "acckeyCrypted="+acckeyCrypted);
-		String acckey = PublicEncryptionFactory.decryptString(acckeyCrypted);
-    	Logger.debug(AccountActivationAction.class, "acckey="+acckey);
-		StringTokenizer strTok = new StringTokenizer(acckey, "##");
+    return activateAccount(mapping, lf, request, response);
+  }
 
-		String userId = strTok.nextToken();
-		String linkExpirationDateStr = strTok.nextToken();
+  /**
+   * activates a lightweight user account after the activation link has been clicked
+   *
+   * @param mapping
+   * @param lf
+   * @param request
+   * @param response
+   * @return
+   * @throws Exception
+   */
+  @SuppressWarnings("unchecked")
+  public ActionForward activateAccount(
+      ActionMapping mapping,
+      ActionForm lf,
+      HttpServletRequest request,
+      HttpServletResponse response)
+      throws Exception {
+    String acckeyCrypted = request.getParameter("acckey");
+    Logger.debug(AccountActivationAction.class, "acckeyCrypted=" + acckeyCrypted);
+    String acckey = PublicEncryptionFactory.decryptString(acckeyCrypted);
+    Logger.debug(AccountActivationAction.class, "acckey=" + acckey);
+    StringTokenizer strTok = new StringTokenizer(acckey, "##");
 
-		Date linkExpirationDate = UtilMethods.jdbcToDate(linkExpirationDateStr);
-		User user = APILocator.getUserAPI().loadUserById(userId,APILocator.getUserAPI().getSystemUser(),false);
-		ActionMessages am = new ActionMessages();
+    String userId = strTok.nextToken();
+    String linkExpirationDateStr = strTok.nextToken();
 
-		if (!user.isNew()) {
+    Date linkExpirationDate = UtilMethods.jdbcToDate(linkExpirationDateStr);
+    User user =
+        APILocator.getUserAPI()
+            .loadUserById(userId, APILocator.getUserAPI().getSystemUser(), false);
+    ActionMessages am = new ActionMessages();
 
-			// the user exists
-			if (!user.isActive()) {
-	
-				if (linkExpirationDate.after(new Date())) {
-					user.setActive(true);
-					APILocator.getUserAPI().save(user, APILocator.getUserAPI().getSystemUser(), false);
-		
-					//Logging in the user
-			        Company comp = com.dotmarketing.cms.factories.PublicCompanyFactory.getDefaultCompany();
-			        if (comp.getAuthType().equals(Company.AUTH_TYPE_EA)) {
-			        	LoginFactory.doLogin(user.getEmailAddress(), user.getPassword(), false, request, response);
-			        } else {
-			        	LoginFactory.doLogin(user.getUserId(), user.getPassword(), false, request, response);
-			        }
-					
-					am.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("message.account.user.activated"));
-					saveMessages(request.getSession(), am);
-					ActionForward forward = mapping.findForward("confirmation");
-					return forward;
-				}
-				else {
-					// resending activation account link
-					request.setAttribute("userId", user.getUserId());
-					return mapping.findForward("resendPage");
-				}
-			}
-			else {
-				am.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("message.account.user.already.active"));
-				saveMessages(request.getSession(), am);
-				ActionForward forward = mapping.findForward("confirmation");
-				return forward;
-			}
-		}
+    if (!user.isNew()) {
 
-		// the user does not exists
-		am.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("errors.user.not.exist"));
-		saveMessages(request.getSession(), am);
-		return mapping.findForward("loginPage");
-	}
+      // the user exists
+      if (!user.isActive()) {
 
-	/**
-	 * resends a new account activation email to the user registered email inbox
-	 * @param mapping
-	 * @param lf
-	 * @param request
-	 * @param response
-	 * @return
-	 * @throws Exception
-	 */
-	@SuppressWarnings("unchecked")
-	public ActionForward resendActivationEmail(ActionMapping mapping, ActionForm lf, HttpServletRequest request,
-			HttpServletResponse response) throws Exception {
+        if (linkExpirationDate.after(new Date())) {
+          user.setActive(true);
+          APILocator.getUserAPI().save(user, APILocator.getUserAPI().getSystemUser(), false);
 
-		String userId = request.getParameter("userId");
-		User user = APILocator.getUserAPI().loadUserById(userId,APILocator.getUserAPI().getSystemUser(),false);
+          // Logging in the user
+          Company comp = com.dotmarketing.cms.factories.PublicCompanyFactory.getDefaultCompany();
+          if (comp.getAuthType().equals(Company.AUTH_TYPE_EA)) {
+            LoginFactory.doLogin(
+                user.getEmailAddress(), user.getPassword(), false, request, response);
+          } else {
+            LoginFactory.doLogin(user.getUserId(), user.getPassword(), false, request, response);
+          }
 
-		// sending Account Activation Email
-		sendActivationAccountEmail(user, request);
+          am.add(
+              ActionMessages.GLOBAL_MESSAGE, new ActionMessage("message.account.user.activated"));
+          saveMessages(request.getSession(), am);
+          ActionForward forward = mapping.findForward("confirmation");
+          return forward;
+        } else {
+          // resending activation account link
+          request.setAttribute("userId", user.getUserId());
+          return mapping.findForward("resendPage");
+        }
+      } else {
+        am.add(
+            ActionMessages.GLOBAL_MESSAGE,
+            new ActionMessage("message.account.user.already.active"));
+        saveMessages(request.getSession(), am);
+        ActionForward forward = mapping.findForward("confirmation");
+        return forward;
+      }
+    }
 
-		//make the redirect
-		ActionMessages am = new ActionMessages();
-		am.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("message.account.activation.email.sent"));
-		saveMessages(request.getSession(), am);
-		return mapping.findForward("confirmation");
-	}
+    // the user does not exists
+    am.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("errors.user.not.exist"));
+    saveMessages(request.getSession(), am);
+    return mapping.findForward("loginPage");
+  }
 
-	/**
-	 * sends an account activation email to the user registered email inbox 
-	 * @param user user to activate
-	 * @param request
-	 */
-	public static void sendActivationAccountEmail(User user, HttpServletRequest request) {
-		try {
-			HostWebAPI hostWebAPI = WebAPILocator.getHostWebAPI();
-	
-			Host host = hostWebAPI.getCurrentHost(request);
-	    	Company company = PublicCompanyFactory.getDefaultCompany();
-	    	Date date = UtilMethods.addDays(new Date(), 7);
-	    	String linkparam = user.getUserId() + "##" + UtilMethods.dateToJDBC(date);
-	    	Logger.debug(AccountActivationAction.class, "linkparam="+linkparam);
-	    	String linkparamEncrypted = PublicEncryptionFactory.encryptString(linkparam);
-	    	Logger.debug(AccountActivationAction.class, "linkparamEncrypted="+linkparamEncrypted);
-	
-			HashMap<String, Object> parameters = new HashMap<String, Object> ();
-			parameters.put("subject", company.getName() + " Activation Account Link");
-			parameters.put("linkurl", UtilMethods.encodeURL(linkparamEncrypted));
-			parameters.put("emailTemplate", Config.getStringProperty("ACTIVATION_LINK_EMAIL_TEMPLATE"));
-			parameters.put("to", user.getEmailAddress());
-			parameters.put("from", company.getEmailAddress());
-			parameters.put("company", company.getName());
+  /**
+   * resends a new account activation email to the user registered email inbox
+   *
+   * @param mapping
+   * @param lf
+   * @param request
+   * @param response
+   * @return
+   * @throws Exception
+   */
+  @SuppressWarnings("unchecked")
+  public ActionForward resendActivationEmail(
+      ActionMapping mapping,
+      ActionForm lf,
+      HttpServletRequest request,
+      HttpServletResponse response)
+      throws Exception {
 
-			EmailFactory.sendParameterizedEmail(parameters, null, host, user);
-		}
-		catch (Exception e) {
-			Logger.error(AccountActivationAction.class, "Error sending Activation Account Email");
-		}
-	}
+    String userId = request.getParameter("userId");
+    User user =
+        APILocator.getUserAPI()
+            .loadUserById(userId, APILocator.getUserAPI().getSystemUser(), false);
 
+    // sending Account Activation Email
+    sendActivationAccountEmail(user, request);
+
+    // make the redirect
+    ActionMessages am = new ActionMessages();
+    am.add(
+        ActionMessages.GLOBAL_MESSAGE, new ActionMessage("message.account.activation.email.sent"));
+    saveMessages(request.getSession(), am);
+    return mapping.findForward("confirmation");
+  }
+
+  /**
+   * sends an account activation email to the user registered email inbox
+   *
+   * @param user user to activate
+   * @param request
+   */
+  public static void sendActivationAccountEmail(User user, HttpServletRequest request) {
+    try {
+      HostWebAPI hostWebAPI = WebAPILocator.getHostWebAPI();
+
+      Host host = hostWebAPI.getCurrentHost(request);
+      Company company = PublicCompanyFactory.getDefaultCompany();
+      Date date = UtilMethods.addDays(new Date(), 7);
+      String linkparam = user.getUserId() + "##" + UtilMethods.dateToJDBC(date);
+      Logger.debug(AccountActivationAction.class, "linkparam=" + linkparam);
+      String linkparamEncrypted = PublicEncryptionFactory.encryptString(linkparam);
+      Logger.debug(AccountActivationAction.class, "linkparamEncrypted=" + linkparamEncrypted);
+
+      HashMap<String, Object> parameters = new HashMap<String, Object>();
+      parameters.put("subject", company.getName() + " Activation Account Link");
+      parameters.put("linkurl", UtilMethods.encodeURL(linkparamEncrypted));
+      parameters.put("emailTemplate", Config.getStringProperty("ACTIVATION_LINK_EMAIL_TEMPLATE"));
+      parameters.put("to", user.getEmailAddress());
+      parameters.put("from", company.getEmailAddress());
+      parameters.put("company", company.getName());
+
+      EmailFactory.sendParameterizedEmail(parameters, null, host, user);
+    } catch (Exception e) {
+      Logger.error(AccountActivationAction.class, "Error sending Activation Account Email");
+    }
+  }
 }

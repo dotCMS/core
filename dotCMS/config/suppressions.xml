@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+
+<!DOCTYPE suppressions PUBLIC
+    "-//Checkstyle//DTD SuppressionFilter Configuration 1.2//EN"
+    "https://checkstyle.org/dtds/suppressions_1_2.dtd">
+
+<suppressions>
+    <suppress files="[/\\]generated[/\\]" checks=".*"/>
+    <suppress files="[/\\]org[\\/]apache[\\/]velocity[\\/]" checks=".*" />
+    <suppress files="[/\\]integration-test[\\/]" checks="LineLength" />
+    <suppress files="[/\\]integration-test[\\/]java[\\/]com[\\/]ettrema[\\/]" checks=".*" />
+    <suppress files="[/\\]functional-test[\\/]" checks="LineLength" />
+    <suppress files="[/\\]test[\\/]" checks="LineLength" />
+</suppressions>

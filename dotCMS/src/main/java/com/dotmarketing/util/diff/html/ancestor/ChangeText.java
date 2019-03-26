@@ -17,95 +17,94 @@ package com.dotmarketing.util.diff.html.ancestor;
 
 public class ChangeText {
 
-    private int maxNbCharsPerLine;
+  private int maxNbCharsPerLine;
 
-    private StringBuilder txt = new StringBuilder();
+  private StringBuilder txt = new StringBuilder();
 
-    public final static String newLine = "<br/>";
+  public static final String newLine = "<br/>";
 
-    private int charsThisLine = 0;
+  private int charsThisLine = 0;
 
-    public ChangeText(int maxNbCharsPerLine) {
-        this.maxNbCharsPerLine = maxNbCharsPerLine;
+  public ChangeText(int maxNbCharsPerLine) {
+    this.maxNbCharsPerLine = maxNbCharsPerLine;
+  }
+
+  public synchronized void addText(String s) {
+    s = clean(s);
+
+    if (s.length() + charsThisLine > maxNbCharsPerLine) {
+      addTextCarefully(s);
+    } else {
+      addToLine(s);
     }
+  }
 
-    public synchronized void addText(String s) {
-        s = clean(s);
+  private void addToLine(String s) {
+    txt.append(s);
+    charsThisLine += s.length();
+  }
 
-        if (s.length() + charsThisLine > maxNbCharsPerLine) {
-            addTextCarefully(s);
-        } else {
-            addToLine(s);
-        }
+  public synchronized void addHtml(String s) {
+    txt.append(s);
+    if (s.contains("</li>") || s.contains("</ol>") || s.contains("</ul>")) {
+      charsThisLine = 0;
     }
+  }
 
-    private void addToLine(String s) {
-      txt.append(s);
-      charsThisLine += s.length();
-    }
+  private synchronized void addTextCarefully(String s) {
 
-    public synchronized void addHtml(String s) {
-        txt.append(s);
-        if (s.contains("</li>") || s.contains("</ol>") || s.contains("</ul>")) {
-            charsThisLine = 0;
-        }
-    }
-
-    private synchronized void addTextCarefully(String s) {
-
-        int firstSpace = s.indexOf(" ");
-        if (firstSpace < 0) { //  Next word is the whole string.
-            if (s.length() < maxNbCharsPerLine) {
-              //  If the word will fit on a standard output line, by itself, get a new line and put it out.
-              if (charsThisLine > 0)
-                addNewLine();
-              addText(s);
-            } else {
-              addNewLine();
-              addTextBrokenAcrossLines(s);
-            }
-        } else if (firstSpace + 1 >= maxNbCharsPerLine){
-          //  The first word in s won't fit on a line, break it across several lines
-          if (charsThisLine > 0)
-            addNewLine();
-          addTextBrokenAcrossLines(s.substring(0, firstSpace + 1));
-          if (firstSpace + 1 < s.length())
-            addText(s.substring(firstSpace + 1, s.length()));
-        } else if (firstSpace + 1 + charsThisLine > maxNbCharsPerLine) {
-          //  The new word won't fit on the current line.
-          addNewLine();
-          addText(s);
-        } else {
-            addText(s.substring(0, firstSpace + 1));
-            if (firstSpace + 1 < s.length())
-                addTextCarefully(s.substring(firstSpace + 1, s.length()));
-        }
-    }
-
-    private void addTextBrokenAcrossLines(String s) {
-      assert (s.indexOf(' ') < 0 && s.length() > maxNbCharsPerLine);
-      int firstPart = Math.min(s.length(), maxNbCharsPerLine
-              - charsThisLine);
-
-      addText(s.substring(0, firstPart));
-
+    int firstSpace = s.indexOf(" ");
+    if (firstSpace < 0) { //  Next word is the whole string.
+      if (s.length() < maxNbCharsPerLine) {
+        //  If the word will fit on a standard output line, by itself, get a new line and put it
+        // out.
+        if (charsThisLine > 0) addNewLine();
+        addText(s);
+      } else {
+        addNewLine();
+        addTextBrokenAcrossLines(s);
+      }
+    } else if (firstSpace + 1 >= maxNbCharsPerLine) {
+      //  The first word in s won't fit on a line, break it across several lines
+      if (charsThisLine > 0) addNewLine();
+      addTextBrokenAcrossLines(s.substring(0, firstSpace + 1));
+      if (firstSpace + 1 < s.length()) addText(s.substring(firstSpace + 1, s.length()));
+    } else if (firstSpace + 1 + charsThisLine > maxNbCharsPerLine) {
+      //  The new word won't fit on the current line.
       addNewLine();
-      addText(s.substring(firstPart, s.length()));
+      addText(s);
+    } else {
+      addText(s.substring(0, firstSpace + 1));
+      if (firstSpace + 1 < s.length()) addTextCarefully(s.substring(firstSpace + 1, s.length()));
     }
+  }
 
-    public synchronized void addNewLine() {
-        addHtml(newLine);
-        charsThisLine = 0;
-    }
+  private void addTextBrokenAcrossLines(String s) {
+    assert (s.indexOf(' ') < 0 && s.length() > maxNbCharsPerLine);
+    int firstPart = Math.min(s.length(), maxNbCharsPerLine - charsThisLine);
 
-    @Override
-    public String toString() {
-        return txt.toString();
-    }
+    addText(s.substring(0, firstPart));
 
-    private String clean(String s) {
-        return s.replaceAll("\n", "").replaceAll("\r", "").replaceAll("<",
-                "&lt;").replaceAll(">", "&gt;").replaceAll("'", "&#39;")
-                .replaceAll("\"", "&#34;");
-    }
+    addNewLine();
+    addText(s.substring(firstPart, s.length()));
+  }
+
+  public synchronized void addNewLine() {
+    addHtml(newLine);
+    charsThisLine = 0;
+  }
+
+  @Override
+  public String toString() {
+    return txt.toString();
+  }
+
+  private String clean(String s) {
+    return s.replaceAll("\n", "")
+        .replaceAll("\r", "")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll("'", "&#39;")
+        .replaceAll("\"", "&#34;");
+  }
 }

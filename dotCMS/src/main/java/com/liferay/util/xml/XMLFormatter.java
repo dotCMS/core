@@ -1,25 +1,21 @@
 /**
  * Copyright (c) 2000-2005 Liferay, LLC. All rights reserved.
  *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
+ * <p>Permission is hereby granted, free of charge, to any person obtaining a copy of this software
+ * and associated documentation files (the "Software"), to deal in the Software without restriction,
+ * including without limitation the rights to use, copy, modify, merge, publish, distribute,
+ * sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
  *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
+ * <p>The above copyright notice and this permission notice shall be included in all copies or
+ * substantial portions of the Software.
  *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
+ * <p>THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
+ * BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+ * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-
 package com.liferay.util.xml;
 
 import com.liferay.util.StringUtil;
@@ -35,74 +31,67 @@ import org.dom4j.io.XMLWriter;
 /**
  * <a href="XMLFormatter.java.html"><b><i>View Source</i></b></a>
  *
- * @author  Brian Wing Shun Chan
- * @author  Alan Zimmerman
+ * @author Brian Wing Shun Chan
+ * @author Alan Zimmerman
  * @version $Revision: 1.9 $
- *
  */
 public class XMLFormatter {
 
-	public static final String INDENT = "\t";
+  public static final String INDENT = "\t";
 
-	public static String toString(String xml)
-		throws DocumentException, IOException {
+  public static String toString(String xml) throws DocumentException, IOException {
 
-		return toString(xml, INDENT);
-	}
+    return toString(xml, INDENT);
+  }
 
-	public static String toString(String xml, String indent)
-		throws DocumentException, IOException {
+  public static String toString(String xml, String indent) throws DocumentException, IOException {
 
-		SAXReader reader = new SAXReader();
+    SAXReader reader = new SAXReader();
 
-		Document doc = reader.read(new StringReader(xml));
+    Document doc = reader.read(new StringReader(xml));
 
-		return toString(doc, indent);
-	}
+    return toString(doc, indent);
+  }
 
-	public static String toString(Document doc) throws IOException {
-		return toString(doc, INDENT);
-	}
+  public static String toString(Document doc) throws IOException {
+    return toString(doc, INDENT);
+  }
 
-	public static String toString(Document doc, String indent)
-		throws IOException {
+  public static String toString(Document doc, String indent) throws IOException {
 
-		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
-		OutputFormat format = OutputFormat.createPrettyPrint();
+    OutputFormat format = OutputFormat.createPrettyPrint();
 
-		format.setIndent(indent);
-		format.setLineSeparator("\n");
+    format.setIndent(indent);
+    format.setLineSeparator("\n");
 
-		XMLWriter writer = new XMLWriter(baos, format);
+    XMLWriter writer = new XMLWriter(baos, format);
 
-		writer.write(doc);
+    writer.write(doc);
 
-		String content = baos.toString();
+    String content = baos.toString();
 
-		content = StringUtil.replace(
-			content,
-			"<?xml version=\"1.0\" encoding=\"UTF-8\"?>",
-			"<?xml version=\"1.0\"?>");
+    content =
+        StringUtil.replace(
+            content, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>", "<?xml version=\"1.0\"?>");
 
-		int x = content.indexOf("<!DOCTYPE");
-		if (x != -1) {
-			x = content.indexOf(">", x) + 1;
-			content = content.substring(0, x) + "\n" +
-				content.substring(x, content.length());
-		}
+    int x = content.indexOf("<!DOCTYPE");
+    if (x != -1) {
+      x = content.indexOf(">", x) + 1;
+      content = content.substring(0, x) + "\n" + content.substring(x, content.length());
+    }
 
-		content = StringUtil.replace(content, "\n\n\n", "\n\n");
+    content = StringUtil.replace(content, "\n\n\n", "\n\n");
 
-		if (content.endsWith("\n\n")) {
-			content = content.substring(0, content.length() - 2);
-		}
+    if (content.endsWith("\n\n")) {
+      content = content.substring(0, content.length() - 2);
+    }
 
-		if (content.endsWith("\n")) {
-			content = content.substring(0, content.length() - 1);
-		}
+    if (content.endsWith("\n")) {
+      content = content.substring(0, content.length() - 1);
+    }
 
-		return content;
-	}
-
+    return content;
+  }
 }

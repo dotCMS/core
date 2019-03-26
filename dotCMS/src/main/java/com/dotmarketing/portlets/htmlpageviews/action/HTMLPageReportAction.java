@@ -31,136 +31,141 @@ import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 
 /**
- * <a href="ViewQuestionsAction.java.html"> <b><i>View Source </i> </b> </a>
- * 
+ * <a href="ViewQuestionsAction.java.html"><b><i>View Source </i> </b> </a>
+ *
  * @author Maria Ahues
  * @version $Revision: 1.3 $
- *  
  */
 public class HTMLPageReportAction extends DotPortletAction {
 
-	protected HostAPI hostAPI = APILocator.getHostAPI();
-    
-	public void processAction(
-			 ActionMapping mapping, ActionForm form, PortletConfig config,
-			 ActionRequest req, ActionResponse res)
-		 throws Exception {
+  protected HostAPI hostAPI = APILocator.getHostAPI();
 
-		//wraps request to get session object
-		ActionResponseImpl resImpl = (ActionResponseImpl)res;
-		HttpServletResponse httpRes = resImpl.getHttpServletResponse();
+  public void processAction(
+      ActionMapping mapping,
+      ActionForm form,
+      PortletConfig config,
+      ActionRequest req,
+      ActionResponse res)
+      throws Exception {
 
-		if(! "userReport".equals(req.getParameter(Constants.CMD))){
-		    return;
-		}
-		_writeCSV(httpRes,req,res,form);
-			return;
-    
-	}
-	
-    public ActionForward render(ActionMapping mapping, ActionForm form, PortletConfig config, RenderRequest req,
-            RenderResponse res) throws Exception {
-        return mapping.findForward("portlet.ext.htmlpageviews.html_page_report");
-	
+    // wraps request to get session object
+    ActionResponseImpl resImpl = (ActionResponseImpl) res;
+    HttpServletResponse httpRes = resImpl.getHttpServletResponse();
+
+    if (!"userReport".equals(req.getParameter(Constants.CMD))) {
+      return;
     }
-	private void _writeCSV(HttpServletResponse httpRes,ActionRequest req, ActionResponse res,ActionForm form) throws Exception {
+    _writeCSV(httpRes, req, res, form);
+    return;
+  }
 
-		User systemUser = APILocator.getUserAPI().getSystemUser();
+  public ActionForward render(
+      ActionMapping mapping,
+      ActionForm form,
+      PortletConfig config,
+      RenderRequest req,
+      RenderResponse res)
+      throws Exception {
+    return mapping.findForward("portlet.ext.htmlpageviews.html_page_report");
+  }
 
-		ServletOutputStream out = httpRes.getOutputStream();
-		httpRes.setContentType("application/octet-stream");
-		httpRes.setHeader("Content-Disposition", "attachment; filename=\"report" + System.currentTimeMillis() +".csv\"");
+  private void _writeCSV(
+      HttpServletResponse httpRes, ActionRequest req, ActionResponse res, ActionForm form)
+      throws Exception {
 
-		//httpRes.setContentType("text/csv");
-		//httpRes.setHeader("Content-Disposition", "attachment; filename=\"report" + System.currentTimeMillis() +".csv\"");
-	 
-		//print the header
-		
-        com.liferay.portlet.RenderRequestImpl reqImpl = (com.liferay.portlet.RenderRequestImpl) req;
-        HttpServletRequest httpReq = reqImpl.getHttpServletRequest();
-        //gets the session object for the messages
-        HttpSession session = httpReq.getSession();
-        Logger.debug(this, "########## req.getParameter(\"searchStartDate\") " + req.getParameter("searchStartDate"));
+    User systemUser = APILocator.getUserAPI().getSystemUser();
 
-        java.util.Date startDate = null;
-        if (req.getParameter("searchStartDate") != null) {
-            Logger.debug(this, "searchStartDate" + req.getParameter("searchStartDate"));
-            startDate = UtilMethods.htmlToDate(req.getParameter("searchStartDate"));
-        } else {
-            GregorianCalendar gcal = new GregorianCalendar();
-            gcal.set(Calendar.DAY_OF_MONTH, 1);
-            gcal.set(Calendar.HOUR, 0);
-            gcal.set(Calendar.MINUTE, 0);
-            gcal.set(Calendar.SECOND, 0);
-            startDate = gcal.getTime();
+    ServletOutputStream out = httpRes.getOutputStream();
+    httpRes.setContentType("application/octet-stream");
+    httpRes.setHeader(
+        "Content-Disposition",
+        "attachment; filename=\"report" + System.currentTimeMillis() + ".csv\"");
 
-        }
-        Logger.debug(this, "startDate" + startDate);
-        req.setAttribute("startDate", startDate);
+    // httpRes.setContentType("text/csv");
+    // httpRes.setHeader("Content-Disposition", "attachment; filename=\"report" +
+    // System.currentTimeMillis() +".csv\"");
 
-        java.util.Date endDate = null;
-        if (req.getParameter("searchEndDate") != null) {
-            Logger.debug(this, "searchEndDate" + req.getParameter("searchEndDate"));
-            endDate = UtilMethods.htmlToDate(req.getParameter("searchEndDate"));
-        } else {
-            GregorianCalendar gcal = new GregorianCalendar();
-            gcal.add(Calendar.MONTH, 1);
-            gcal.set(Calendar.DAY_OF_MONTH, 1);
-            gcal.set(Calendar.HOUR, 0);
-            gcal.set(Calendar.MINUTE, 0);
-            gcal.set(Calendar.SECOND, 0);
-            endDate = gcal.getTime();
+    // print the header
 
-        }
-        Logger.debug(this, "endDate" + endDate);
-        req.setAttribute("endDate", endDate);
+    com.liferay.portlet.RenderRequestImpl reqImpl = (com.liferay.portlet.RenderRequestImpl) req;
+    HttpServletRequest httpReq = reqImpl.getHttpServletRequest();
+    // gets the session object for the messages
+    HttpSession session = httpReq.getSession();
+    Logger.debug(
+        this,
+        "########## req.getParameter(\"searchStartDate\") " + req.getParameter("searchStartDate"));
 
-        String uri = null;
-        Host host = null;
-        if (req.getParameter("htmlpage") != null) {
-        	IHTMLPage myHTMLPage = (IHTMLPage) InodeFactory.getInode(req.getParameter("htmlpage"), IHTMLPage.class);
-			host = hostAPI.findParentHost(myHTMLPage, systemUser, false);
-            uri = APILocator.getIdentifierAPI().find(myHTMLPage).getURI();
-            req.setAttribute("htmlPage", myHTMLPage);
-        } else if (req.getParameter("pageIdentifier") != null) {
-            //Identifier id = (Identifier) InodeFactory.getInode(req.getParameter("pageIdentifier"), Identifier.class);
-        	Identifier id = APILocator.getIdentifierAPI().find(req.getParameter("pageIdentifier"));
-            uri = id.getURI();
-            HTMLPageAsset myHTMLPage = (HTMLPageAsset) APILocator.getVersionableAPI().findLiveVersion(id,APILocator.getUserAPI().getSystemUser(),false);
-			host = hostAPI.findParentHost(myHTMLPage, systemUser, false);
-            req.setAttribute("htmlPage", myHTMLPage);
-        }
-        
-        String hostIdentifier = host.getIdentifier();
-        java.util.List allUsers = HTMLPageViewFactory.getAllUsers(uri, startDate, endDate, hostIdentifier);
+    java.util.Date startDate = null;
+    if (req.getParameter("searchStartDate") != null) {
+      Logger.debug(this, "searchStartDate" + req.getParameter("searchStartDate"));
+      startDate = UtilMethods.htmlToDate(req.getParameter("searchStartDate"));
+    } else {
+      GregorianCalendar gcal = new GregorianCalendar();
+      gcal.set(Calendar.DAY_OF_MONTH, 1);
+      gcal.set(Calendar.HOUR, 0);
+      gcal.set(Calendar.MINUTE, 0);
+      gcal.set(Calendar.SECOND, 0);
+      startDate = gcal.getTime();
+    }
+    Logger.debug(this, "startDate" + startDate);
+    req.setAttribute("startDate", startDate);
 
-		
-		
-		
-		out.print("Name, eMail");
-		out.print("\n");
-		java.util.Iterator i = allUsers.iterator();
-		int x = 1;
-		while(i.hasNext()){
-		    Map map = (Map) i.next();
-		    out.print("'" + ( map.get("firstname") + " " + map.get("lastname")).replace('\'', '`') + "','" + map.get("emailaddress") + "'");
-			out.print("\n");
-		}
+    java.util.Date endDate = null;
+    if (req.getParameter("searchEndDate") != null) {
+      Logger.debug(this, "searchEndDate" + req.getParameter("searchEndDate"));
+      endDate = UtilMethods.htmlToDate(req.getParameter("searchEndDate"));
+    } else {
+      GregorianCalendar gcal = new GregorianCalendar();
+      gcal.add(Calendar.MONTH, 1);
+      gcal.set(Calendar.DAY_OF_MONTH, 1);
+      gcal.set(Calendar.HOUR, 0);
+      gcal.set(Calendar.MINUTE, 0);
+      gcal.set(Calendar.SECOND, 0);
+      endDate = gcal.getTime();
+    }
+    Logger.debug(this, "endDate" + endDate);
+    req.setAttribute("endDate", endDate);
 
+    String uri = null;
+    Host host = null;
+    if (req.getParameter("htmlpage") != null) {
+      IHTMLPage myHTMLPage =
+          (IHTMLPage) InodeFactory.getInode(req.getParameter("htmlpage"), IHTMLPage.class);
+      host = hostAPI.findParentHost(myHTMLPage, systemUser, false);
+      uri = APILocator.getIdentifierAPI().find(myHTMLPage).getURI();
+      req.setAttribute("htmlPage", myHTMLPage);
+    } else if (req.getParameter("pageIdentifier") != null) {
+      // Identifier id = (Identifier) InodeFactory.getInode(req.getParameter("pageIdentifier"),
+      // Identifier.class);
+      Identifier id = APILocator.getIdentifierAPI().find(req.getParameter("pageIdentifier"));
+      uri = id.getURI();
+      HTMLPageAsset myHTMLPage =
+          (HTMLPageAsset)
+              APILocator.getVersionableAPI()
+                  .findLiveVersion(id, APILocator.getUserAPI().getSystemUser(), false);
+      host = hostAPI.findParentHost(myHTMLPage, systemUser, false);
+      req.setAttribute("htmlPage", myHTMLPage);
+    }
 
-		
-		out.close();
-		
-	}
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
+    String hostIdentifier = host.getIdentifier();
+    java.util.List allUsers =
+        HTMLPageViewFactory.getAllUsers(uri, startDate, endDate, hostIdentifier);
+
+    out.print("Name, eMail");
+    out.print("\n");
+    java.util.Iterator i = allUsers.iterator();
+    int x = 1;
+    while (i.hasNext()) {
+      Map map = (Map) i.next();
+      out.print(
+          "'"
+              + (map.get("firstname") + " " + map.get("lastname")).replace('\'', '`')
+              + "','"
+              + map.get("emailaddress")
+              + "'");
+      out.print("\n");
+    }
+
+    out.close();
+  }
 }

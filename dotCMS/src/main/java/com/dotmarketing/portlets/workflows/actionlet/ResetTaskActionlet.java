@@ -1,4 +1,3 @@
-
 package com.dotmarketing.portlets.workflows.actionlet;
 
 import com.dotmarketing.business.APILocator;
@@ -18,66 +17,63 @@ import java.util.stream.Stream;
 
 public class ResetTaskActionlet extends WorkFlowActionlet {
 
+  /** */
+  private static final long serialVersionUID = -3399186955215452961L;
 
+  @Override
+  public String getName() {
+    return "Reset Workflow";
+  }
 
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = -3399186955215452961L;
+  @Override
+  public String getHowTo() {
 
+    return "This actionlet will reset workflow task state, but keeping the comments and history.  It will also STOP all further subaction processing";
+  }
 
-	@Override
-	public String getName() {
-		return "Reset Workflow";
-	}
+  @Override
+  public void executeAction(
+      final WorkflowProcessor processor, final Map<String, WorkflowActionClassParameter> params)
+      throws WorkflowActionFailureException {
 
-	@Override
-	public String getHowTo() {
+    final WorkflowTask task = processor.getTask();
 
-		return "This actionlet will reset workflow task state, but keeping the comments and history.  It will also STOP all further subaction processing";
-	}
+    try {
 
-	@Override
-	public void executeAction(final WorkflowProcessor processor,
-							  final Map<String,WorkflowActionClassParameter>  params) throws WorkflowActionFailureException {
+      if (null != task) {
+        task.setStatus(null);
+        APILocator.getWorkflowAPI().saveWorkflowTask(task);
+        processor.setTask(null);
+      }
 
-		final WorkflowTask task = processor.getTask();
-		
-		try {
+      final Contentlet contentlet = processor.getContentlet();
+      if (null != contentlet && null != processor.getUser()) {
+        // this will mark  the contentlet that is being reset as recently updated. Product of this
+        // Reset Action
+        final Set<String> inodes =
+            Stream.of(contentlet).map(Contentlet::getInode).collect(Collectors.toSet());
+        final int rows = APILocator.getContentletAPI().updateModDate(inodes, processor.getUser());
+        Logger.debug(getClass(), () -> String.format("%s rows updated by updateModDate. ", rows));
+      } else {
+        Logger.error(getClass(), "Unable to set modification date on the reset workflow.");
+      }
 
-			if (null != task) {
-				task.setStatus(null);
-				APILocator.getWorkflowAPI().saveWorkflowTask(task);
-				processor.setTask(null);
-			}
+      processor.setContentlet(null);
+      processor.abortProcessor();
+    } catch (DotDataException e) {
+      Logger.error(ResetTaskActionlet.class, e.getMessage(), e);
+    }
+  }
 
-			final Contentlet contentlet = processor.getContentlet();
-			if(null != contentlet && null != processor.getUser()){
-				// this will mark  the contentlet that is being reset as recently updated. Product of this Reset Action
-				final Set<String> inodes = Stream.of(contentlet).map(Contentlet::getInode).collect(Collectors.toSet());
-				final int rows = APILocator.getContentletAPI().updateModDate(inodes, processor.getUser());
-				Logger.debug(getClass(),()->String.format("%s rows updated by updateModDate. ", rows));
-			} else {
-				Logger.error(getClass(), "Unable to set modification date on the reset workflow.");
-			}
+  @Override
+  public boolean stopProcessing() {
 
-			processor.setContentlet(null);
-			processor.abortProcessor();
-		} catch (DotDataException e) {
-			Logger.error(ResetTaskActionlet.class,e.getMessage(),e);
-		}
-	}
+    return true;
+  }
 
-	@Override
-	public boolean stopProcessing() {
+  @Override
+  public List<WorkflowActionletParameter> getParameters() {
 
-		return true;
-	}
-
-	
-	@Override
-	public  List<WorkflowActionletParameter> getParameters() {
-
-		return null;
-	}
+    return null;
+  }
 }

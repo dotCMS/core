@@ -1,15 +1,7 @@
 package com.dotmarketing.portlets.hostvariable.ajax;
 
-import java.util.Date;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-
-import javax.servlet.http.HttpServletRequest;
-
 import com.dotcms.repackage.org.directwebremoting.WebContext;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
-
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
@@ -25,105 +17,111 @@ import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
+import java.util.Date;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import javax.servlet.http.HttpServletRequest;
 
 public class HostVariableAjax {
 
-	protected HostAPI hostAPI = APILocator.getHostAPI();
+  protected HostAPI hostAPI = APILocator.getHostAPI();
 
-	public String saveHostVariable(String id, String hostId, String name, String key, String value) throws DotRuntimeException, PortalException, 
-		SystemException, DotDataException, DotSecurityException {
+  public String saveHostVariable(String id, String hostId, String name, String key, String value)
+      throws DotRuntimeException, PortalException, SystemException, DotDataException,
+          DotSecurityException {
 
-		WebContext ctx = WebContextFactory.get();
-		HttpServletRequest req = ctx.getHttpServletRequest();
-		UserWebAPI userWebAPI = WebAPILocator.getUserWebAPI();
-		User user = userWebAPI.getLoggedInUser(req);
-		boolean respectFrontendRoles = userWebAPI.isLoggedToFrontend(req);
-		
-		key = key.trim();
-		value = value.trim();
-		name = name.trim();
-		name = UtilMethods.escapeDoubleQuotes(name);
-		value = UtilMethods.escapeDoubleQuotes(value);
+    WebContext ctx = WebContextFactory.get();
+    HttpServletRequest req = ctx.getHttpServletRequest();
+    UserWebAPI userWebAPI = WebAPILocator.getUserWebAPI();
+    User user = userWebAPI.getLoggedInUser(req);
+    boolean respectFrontendRoles = userWebAPI.isLoggedToFrontend(req);
 
-		if (key.equals("")) {
-			return LanguageUtil.get(user, "message.hostvariables.key.required");
-		}
+    key = key.trim();
+    value = value.trim();
+    name = name.trim();
+    name = UtilMethods.escapeDoubleQuotes(name);
+    value = UtilMethods.escapeDoubleQuotes(value);
 
-		if (RegEX.contains(key, "[^A-Za-z0-9]")) {
-			return LanguageUtil.get(user, "message.hostvariables.exist.error.regex");
-		}
+    if (key.equals("")) {
+      return LanguageUtil.get(user, "message.hostvariables.key.required");
+    }
 
-		HostVariableAPI hostVariableAPI = APILocator.getHostVariableAPI();
+    if (RegEX.contains(key, "[^A-Za-z0-9]")) {
+      return LanguageUtil.get(user, "message.hostvariables.exist.error.regex");
+    }
 
-		List<HostVariable> variables = hostVariableAPI.getVariablesForHost(hostId, user, false);
+    HostVariableAPI hostVariableAPI = APILocator.getHostVariableAPI();
 
-		HostVariable hostVariable = null;
-		for (HostVariable next : variables) {
-			if (next.getKey().equals(key) && !next.getId().equals(id)) {
-				return LanguageUtil.get(user, "message.hostvariables.exist.error.key");
-			}
-			if(UtilMethods.isSet(id) && next.getId().equals(id)) {
-				hostVariable = next;
-			}
-		}
-		
-		if(hostVariable == null) {
-			hostVariable = new HostVariable();
-		}
+    List<HostVariable> variables = hostVariableAPI.getVariablesForHost(hostId, user, false);
 
-		hostVariable.setId(id);
-		hostVariable.setHostId(hostId);
-		hostVariable.setName(name);
-		hostVariable.setKey(key);
-		hostVariable.setValue(value);
-		hostVariable.setLastModifierId(user.getUserId());
-		hostVariable.setLastModDate(new Date());
-		try {
-			hostVariableAPI.save(hostVariable, user, respectFrontendRoles);
-		} catch (DotSecurityException e) {
-			return LanguageUtil.get(user, "message.hostvariables.permission.error.save");
-		}
-		
-		return null;
+    HostVariable hostVariable = null;
+    for (HostVariable next : variables) {
+      if (next.getKey().equals(key) && !next.getId().equals(id)) {
+        return LanguageUtil.get(user, "message.hostvariables.exist.error.key");
+      }
+      if (UtilMethods.isSet(id) && next.getId().equals(id)) {
+        hostVariable = next;
+      }
+    }
 
-	}
+    if (hostVariable == null) {
+      hostVariable = new HostVariable();
+    }
 
-	public void deleteHostVariable(String hvarId) throws DotDataException, DotSecurityException, DotRuntimeException, PortalException, SystemException {
+    hostVariable.setId(id);
+    hostVariable.setHostId(hostId);
+    hostVariable.setName(name);
+    hostVariable.setKey(key);
+    hostVariable.setValue(value);
+    hostVariable.setLastModifierId(user.getUserId());
+    hostVariable.setLastModDate(new Date());
+    try {
+      hostVariableAPI.save(hostVariable, user, respectFrontendRoles);
+    } catch (DotSecurityException e) {
+      return LanguageUtil.get(user, "message.hostvariables.permission.error.save");
+    }
 
-		WebContext ctx = WebContextFactory.get();
-		HttpServletRequest req = ctx.getHttpServletRequest();
-		UserWebAPI userWebAPI = WebAPILocator.getUserWebAPI();
-		User user = userWebAPI.getLoggedInUser(req);
-		boolean respectFrontendRoles = userWebAPI.isLoggedToFrontend(req);
+    return null;
+  }
 
-		HostVariableAPI hostVariableAPI = APILocator.getHostVariableAPI();
-		HostVariable hvar = hostVariableAPI.find(hvarId, user, respectFrontendRoles);
-		hostVariableAPI.delete(hvar, user, respectFrontendRoles);
+  public void deleteHostVariable(String hvarId)
+      throws DotDataException, DotSecurityException, DotRuntimeException, PortalException,
+          SystemException {
 
-	}
+    WebContext ctx = WebContextFactory.get();
+    HttpServletRequest req = ctx.getHttpServletRequest();
+    UserWebAPI userWebAPI = WebAPILocator.getUserWebAPI();
+    User user = userWebAPI.getLoggedInUser(req);
+    boolean respectFrontendRoles = userWebAPI.isLoggedToFrontend(req);
 
-	public List<Map<String, Object>> getHostVariables(String hostId) throws Exception {
-		
-		WebContext ctx = WebContextFactory.get();
-		HttpServletRequest req = ctx.getHttpServletRequest();
-		UserWebAPI userWebAPI = WebAPILocator.getUserWebAPI();
-		User user = userWebAPI.getLoggedInUser(req);
-		boolean respectFrontendRoles = userWebAPI.isLoggedToFrontend(req);
-		HostVariableAPI hostVariableAPI = APILocator.getHostVariableAPI();
-		
-		List<Map<String, Object>> resultList = new LinkedList<Map<String,Object>>();
-		List<HostVariable> hvars = hostVariableAPI.getVariablesForHost(hostId, user, respectFrontendRoles);
-		for(HostVariable variable : hvars) {
-			Map<String, Object> variableMap = variable.getMap();
-			User variableLastModifier = userWebAPI.loadUserById(variable.getLastModifierId(), userWebAPI.getSystemUser(), false);
-			String lastModifierFullName = "Unknown";
-			if(variableLastModifier != null)
-				lastModifierFullName = variableLastModifier.getFullName();
-			variableMap.put("lastModifierFullName", lastModifierFullName);
-			resultList.add(variableMap);
-		}
-		
-		return resultList;
+    HostVariableAPI hostVariableAPI = APILocator.getHostVariableAPI();
+    HostVariable hvar = hostVariableAPI.find(hvarId, user, respectFrontendRoles);
+    hostVariableAPI.delete(hvar, user, respectFrontendRoles);
+  }
 
-	}
+  public List<Map<String, Object>> getHostVariables(String hostId) throws Exception {
+
+    WebContext ctx = WebContextFactory.get();
+    HttpServletRequest req = ctx.getHttpServletRequest();
+    UserWebAPI userWebAPI = WebAPILocator.getUserWebAPI();
+    User user = userWebAPI.getLoggedInUser(req);
+    boolean respectFrontendRoles = userWebAPI.isLoggedToFrontend(req);
+    HostVariableAPI hostVariableAPI = APILocator.getHostVariableAPI();
+
+    List<Map<String, Object>> resultList = new LinkedList<Map<String, Object>>();
+    List<HostVariable> hvars =
+        hostVariableAPI.getVariablesForHost(hostId, user, respectFrontendRoles);
+    for (HostVariable variable : hvars) {
+      Map<String, Object> variableMap = variable.getMap();
+      User variableLastModifier =
+          userWebAPI.loadUserById(variable.getLastModifierId(), userWebAPI.getSystemUser(), false);
+      String lastModifierFullName = "Unknown";
+      if (variableLastModifier != null) lastModifierFullName = variableLastModifier.getFullName();
+      variableMap.put("lastModifierFullName", lastModifierFullName);
+      resultList.add(variableMap);
+    }
+
+    return resultList;
+  }
 }

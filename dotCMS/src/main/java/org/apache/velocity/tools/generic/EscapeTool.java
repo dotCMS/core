@@ -19,11 +19,13 @@ package org.apache.velocity.tools.generic;
 import org.apache.commons.lang.StringEscapeUtils;
 
 /**
- * Tool for working with escaping in Velocity templates.
- * It provides methods to escape outputs for Java, JavaScript, HTML, XML and SQL.
- * Also provides methods to render VTL characters that otherwise needs escaping.
+ * Tool for working with escaping in Velocity templates. It provides methods to escape outputs for
+ * Java, JavaScript, HTML, XML and SQL. Also provides methods to render VTL characters that
+ * otherwise needs escaping.
  *
- * <p><pre>
+ * <p>
+ *
+ * <pre>
  * Example uses:
  *  $java                        -> He didn't say, "Stop!"
  *  $esc.java($java)             -> He didn't say, \"Stop!\"
@@ -64,240 +66,213 @@ import org.apache.commons.lang.StringEscapeUtils;
  *   &lt;scope&gt;application&lt;/scope&gt;
  *   &lt;class&gt;org.apache.velocity.tools.generic.EscapeTool&lt;/class&gt;
  * &lt;/tool&gt;
- * </pre></p>
+ * </pre>
  *
- * <p>This tool is entirely threadsafe, and has no instance members.
- * It may be used in any scope (request, session, or application).
- * </p>
+ * <p>This tool is entirely threadsafe, and has no instance members. It may be used in any scope
+ * (request, session, or application).
  *
  * @author <a href="mailto:shinobu@ieee.org">Shinobu Kawai</a>
  * @version $Id: $
  * @since VelocityTools 1.2
  * @see StringEscapeUtils
  */
-public class EscapeTool
-{
+public class EscapeTool {
 
-    /**
-     * Default constructor.
-     */
-    public EscapeTool()
-    {
+  /** Default constructor. */
+  public EscapeTool() {}
+
+  /**
+   * Escapes the characters in a <code>String</code> using Java String rules. <br>
+   * Delegates the process to {@link StringEscapeUtils#escapeJava(String)}.
+   *
+   * @param string the string to escape values, may be null
+   * @return String with escaped values, <code>null</code> if null string input
+   * @see StringEscapeUtils#escapeJava(String)
+   */
+  public String java(Object string) {
+    if (string == null) {
+      return null;
     }
+    return StringEscapeUtils.escapeJava(String.valueOf(string));
+  }
 
-    /**
-     * Escapes the characters in a <code>String</code> using Java String rules.
-     * <br />
-     * Delegates the process to {@link StringEscapeUtils#escapeJava(String)}.
-     *
-     * @param string the string to escape values, may be null
-     * @return String with escaped values, <code>null</code> if null string input
-     *
-     * @see StringEscapeUtils#escapeJava(String)
-     */
-    public String java(Object string)
-    {
-        if (string == null)
-        {
-            return null;
-        }
-        return StringEscapeUtils.escapeJava(String.valueOf(string));
+  /**
+   * Escapes the characters in a <code>String</code> using JavaScript String rules. <br>
+   * Delegates the process to {@link StringEscapeUtils#escapeJavaScript(String)}.
+   *
+   * @param string the string to escape values, may be null
+   * @return String with escaped values, <code>null</code> if null string input
+   * @see StringEscapeUtils#escapeJavaScript(String)
+   */
+  public String javascript(Object string) {
+    if (string == null) {
+      return null;
     }
+    return StringEscapeUtils.escapeJavaScript(String.valueOf(string));
+  }
 
-    /**
-     * Escapes the characters in a <code>String</code> using JavaScript String rules.
-     * <br />
-     * Delegates the process to {@link StringEscapeUtils#escapeJavaScript(String)}.
-     *
-     * @param string the string to escape values, may be null
-     * @return String with escaped values, <code>null</code> if null string input
-     *
-     * @see StringEscapeUtils#escapeJavaScript(String)
-     */
-    public String javascript(Object string)
-    {
-        if (string == null)
-        {
-            return null;
-        }
-        return StringEscapeUtils.escapeJavaScript(String.valueOf(string));
+  /**
+   * Escapes the characters in a <code>String</code> using HTML entities. <br>
+   * Delegates the process to {@link StringEscapeUtils#escapeHtml(String)}.
+   *
+   * @param string the string to escape, may be null
+   * @return a new escaped <code>String</code>, <code>null</code> if null string input
+   * @see StringEscapeUtils#escapeHtml(String)
+   */
+  public String html(Object string) {
+    if (string == null) {
+      return null;
     }
+    return StringEscapeUtils.escapeHtml(String.valueOf(string));
+  }
 
-    /**
-     * Escapes the characters in a <code>String</code> using HTML entities.
-     * <br />
-     * Delegates the process to {@link StringEscapeUtils#escapeHtml(String)}.
-     *
-     * @param string the string to escape, may be null
-     * @return a new escaped <code>String</code>, <code>null</code> if null string input
-     *
-     * @see StringEscapeUtils#escapeHtml(String)
-     */
-    public String html(Object string)
-    {
-        if (string == null)
-        {
-            return null;
-        }
-        return StringEscapeUtils.escapeHtml(String.valueOf(string));
+  /**
+   * Escapes the characters in a <code>String</code> using XML entities. <br>
+   * Delegates the process to {@link StringEscapeUtils#escapeXml(String)}.
+   *
+   * @param string the string to escape, may be null
+   * @return a new escaped <code>String</code>, <code>null</code> if null string input
+   * @see StringEscapeUtils#escapeXml(String)
+   */
+  public String xml(Object string) {
+    if (string == null) {
+      return null;
     }
+    return StringEscapeUtils.escapeXml(String.valueOf(string));
+  }
 
-    /**
-     * Escapes the characters in a <code>String</code> using XML entities.
-     * <br />
-     * Delegates the process to {@link StringEscapeUtils#escapeXml(String)}.
-     *
-     * @param string the string to escape, may be null
-     * @return a new escaped <code>String</code>, <code>null</code> if null string input
-     *
-     * @see StringEscapeUtils#escapeXml(String)
-     */
-    public String xml(Object string)
-    {
-        if (string == null)
-        {
-            return null;
-        }
-        return StringEscapeUtils.escapeXml(String.valueOf(string));
+  /**
+   * Escapes the characters in a <code>String</code> to be suitable to pass to an SQL query. <br>
+   * Delegates the process to {@link StringEscapeUtils#escapeSql(String)}.
+   *
+   * @param string the string to escape, may be null
+   * @return a new String, escaped for SQL, <code>null</code> if null string input
+   * @see StringEscapeUtils#escapeSql(String)
+   */
+  public String sql(Object string) {
+    if (string == null) {
+      return null;
     }
+    return StringEscapeUtils.escapeSql(String.valueOf(string));
+  }
 
-    /**
-     * Escapes the characters in a <code>String</code> to be suitable to pass to an SQL query.
-     * <br />
-     * Delegates the process to {@link StringEscapeUtils#escapeSql(String)}.
-     *
-     * @param string the string to escape, may be null
-     * @return a new String, escaped for SQL, <code>null</code> if null string input
-     *
-     * @see StringEscapeUtils#escapeSql(String)
-     */
-    public String sql(Object string)
-    {
-        if (string == null)
-        {
-            return null;
-        }
-        return StringEscapeUtils.escapeSql(String.valueOf(string));
-    }
+  /**
+   * Renders a dollar sign ($).
+   *
+   * @return a dollar sign ($).
+   * @see #getD()
+   */
+  public String getDollar() {
+    return "$";
+  }
 
-    /**
-     * Renders a dollar sign ($).
-     * @return a dollar sign ($).
-     * @see #getD()
-     */
-    public String getDollar()
-    {
-        return "$";
-    }
+  /**
+   * Renders a dollar sign ($).
+   *
+   * @return a dollar sign ($).
+   * @see #getDollar()
+   */
+  public String getD() {
+    return this.getDollar();
+  }
 
-    /**
-     * Renders a dollar sign ($).
-     * @return a dollar sign ($).
-     * @see #getDollar()
-     */
-    public String getD()
-    {
-        return this.getDollar();
-    }
+  /**
+   * Renders a hash (#).
+   *
+   * @return a hash (#).
+   * @see #getH()
+   */
+  public String getHash() {
+    return "#";
+  }
 
-    /**
-     * Renders a hash (#).
-     * @return a hash (#).
-     * @see #getH()
-     */
-    public String getHash()
-    {
-        return "#";
-    }
+  /**
+   * Renders a hash (#).
+   *
+   * @return a hash (#).
+   * @see #getHash()
+   */
+  public String getH() {
+    return this.getHash();
+  }
 
-    /**
-     * Renders a hash (#).
-     * @return a hash (#).
-     * @see #getHash()
-     */
-    public String getH()
-    {
-        return this.getHash();
-    }
+  /**
+   * Renders a backslash (\).
+   *
+   * @return a backslash (\).
+   * @see #getB()
+   */
+  public String getBackslash() {
+    return "\\";
+  }
 
-    /**
-     * Renders a backslash (\).
-     * @return a backslash (\).
-     * @see #getB()
-     */
-    public String getBackslash()
-    {
-        return "\\";
-    }
+  /**
+   * Renders a backslash (\).
+   *
+   * @return a backslash (\).
+   * @see #getBackslash()
+   */
+  public String getB() {
+    return this.getBackslash();
+  }
 
-    /**
-     * Renders a backslash (\).
-     * @return a backslash (\).
-     * @see #getBackslash()
-     */
-    public String getB()
-    {
-        return this.getBackslash();
-    }
+  /**
+   * Renders a double quotation mark (").
+   *
+   * @return a double quotation mark (").
+   * @see #getQ()
+   */
+  public String getQuote() {
+    return "\"";
+  }
 
-    /**
-     * Renders a double quotation mark (").
-     * @return a double quotation mark (").
-     * @see #getQ()
-     */
-    public String getQuote()
-    {
-        return "\"";
-    }
+  /**
+   * Renders a double quotation mark (").
+   *
+   * @return a double quotation mark (").
+   * @see #getQuote()
+   */
+  public String getQ() {
+    return this.getQuote();
+  }
 
-    /**
-     * Renders a double quotation mark (").
-     * @return a double quotation mark (").
-     * @see #getQuote()
-     */
-    public String getQ()
-    {
-        return this.getQuote();
-    }
+  /**
+   * Renders a single quotation mark (').
+   *
+   * @return a single quotation mark (').
+   * @see #getS()
+   */
+  public String getSingleQuote() {
+    return "'";
+  }
 
-    /**
-     * Renders a single quotation mark (').
-     * @return a single quotation mark (').
-     * @see #getS()
-     */
-    public String getSingleQuote()
-    {
-        return "'";
-    }
+  /**
+   * Renders a single quotation mark (').
+   *
+   * @return a single quotation mark (').
+   * @see #getSingleQuote()
+   */
+  public String getS() {
+    return this.getSingleQuote();
+  }
 
-    /**
-     * Renders a single quotation mark (').
-     * @return a single quotation mark (').
-     * @see #getSingleQuote()
-     */
-    public String getS()
-    {
-        return this.getSingleQuote();
-    }
+  /**
+   * Renders an exclamation mark (!).
+   *
+   * @return an exclamation mark (!).
+   * @see #getE()
+   */
+  public String getExclamation() {
+    return "!";
+  }
 
-    /**
-     * Renders an exclamation mark (!).
-     * @return an exclamation mark (!).
-     * @see #getE()
-     */
-    public String getExclamation()
-    {
-        return "!";
-    }
-
-    /**
-     * Renders an exclamation mark (!).
-     * @return an exclamation mark (!).
-     * @see #getExclamation()
-     */
-    public String getE()
-    {
-        return this.getExclamation();
-    }
-
+  /**
+   * Renders an exclamation mark (!).
+   *
+   * @return an exclamation mark (!).
+   * @see #getExclamation()
+   */
+  public String getE() {
+    return this.getExclamation();
+  }
 }

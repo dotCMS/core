@@ -16,7 +16,7 @@ package org.apache.velocity.util.introspection;
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
- * under the License.    
+ * under the License.
  */
 
 /**
@@ -26,17 +26,15 @@ package org.apache.velocity.util.introspection;
  * @version $Id: SecureIntrospectorControl.java 685685 2008-08-13 21:43:27Z nbubna $
  * @since 1.5
  */
-public interface SecureIntrospectorControl
-{
+public interface SecureIntrospectorControl {
 
-    /**
-     * Determine which methods and classes to prevent from executing.  
-     * 
-     * @param clazz Class for which method is being called
-     * @param method method being called.  This may be null in the case of a call to iterator, get, or set method
-     *
-     * @return true if method may be called on object
-     */
-    public boolean checkObjectExecutePermission(Class clazz, String method);
-
+  /**
+   * Determine which methods and classes to prevent from executing.
+   *
+   * @param clazz Class for which method is being called
+   * @param method method being called. This may be null in the case of a call to iterator, get, or
+   *     set method
+   * @return true if method may be called on object
+   */
+  public boolean checkObjectExecutePermission(Class clazz, String method);
 }

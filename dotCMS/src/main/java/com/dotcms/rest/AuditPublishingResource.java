@@ -13,25 +13,22 @@ import com.dotmarketing.util.Logger;
 
 @Path("/auditPublishing")
 public class AuditPublishingResource {
-    private PublishAuditAPI auditAPI = PublishAuditAPI.getInstance();
+  private PublishAuditAPI auditAPI = PublishAuditAPI.getInstance();
 
-    @GET
-    @Path("/get/{bundleId:.*}")
-    @Produces(MediaType.TEXT_XML)
-    public Response get(@PathParam("bundleId") String bundleId) {
-        PublishAuditStatus status = null;
+  @GET
+  @Path("/get/{bundleId:.*}")
+  @Produces(MediaType.TEXT_XML)
+  public Response get(@PathParam("bundleId") String bundleId) {
+    PublishAuditStatus status = null;
 
-        try {
-            status = auditAPI.getPublishAuditStatus(bundleId);
+    try {
+      status = auditAPI.getPublishAuditStatus(bundleId);
 
-            if(status != null)
-                return Response.ok( status.getStatusPojo().getSerialized()).build();
-        } catch (DotPublisherException e) {
-            Logger.warn(this, "error trying to get status for bundle "+bundleId,e);
-        }
-
-        return Response.status(404).build();
+      if (status != null) return Response.ok(status.getStatusPojo().getSerialized()).build();
+    } catch (DotPublisherException e) {
+      Logger.warn(this, "error trying to get status for bundle " + bundleId, e);
     }
 
-
+    return Response.status(404).build();
+  }
 }
