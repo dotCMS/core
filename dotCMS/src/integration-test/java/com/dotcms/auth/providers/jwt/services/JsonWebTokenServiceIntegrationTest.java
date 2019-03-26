@@ -3,33 +3,26 @@ package com.dotcms.auth.providers.jwt.services;
 import com.dotcms.auth.providers.jwt.beans.JWToken;
 import com.dotcms.auth.providers.jwt.beans.UserToken;
 import com.dotcms.auth.providers.jwt.factories.JsonWebTokenFactory;
-import com.dotcms.auth.providers.jwt.factories.KeyFactoryUtils;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.IncorrectClaimException;
-import io.vavr.API;
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
-
-import javax.servlet.ServletContext;
 import java.lang.reflect.Field;
 import java.text.ParseException;
 import java.util.Calendar;
 import java.util.Date;
 
 import static org.junit.Assert.*;
-import static org.mockito.Mockito.mock;
 
 public class JsonWebTokenServiceIntegrationTest {
 
