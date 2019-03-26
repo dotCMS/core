@@ -274,14 +274,26 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 
 				if (UtilMethods.isSet(lowerCaseValue) && (lowerCaseValue instanceof String || (
 						//filters relationships
-						lowerCaseValue instanceof List && !lowerCaseKey
+						 !lowerCaseKey
 								.endsWith(ESMappingConstants.TAGS) && !lowerCaseKey
 								.endsWith(ESMappingConstants.SUFFIX_ORDER)))) {
 
 					if (lowerCaseValue instanceof String){
 						lowerCaseValue = ((String) lowerCaseValue).toLowerCase();
 					}
-
+					// add relationships to catchall
+                    if (lowerCaseValue instanceof List){
+                        List<Object> valList = (List<Object>) lowerCaseValue;
+                        for(Object listVal : valList) {
+                            if (listVal!=null && listVal instanceof String){
+                                sw.append(((String) listVal).toLowerCase().toString()).append(' ');
+                            }
+                        }
+                    }
+					
+					
+					
+					
 					if (!lowerCaseKey.endsWith(TEXT)){
 						//for example: when lowerCaseValue=moddate, moddate_dotraw must be created from its moddate_text if exists
 						//when the moddate_text is evaluated.
