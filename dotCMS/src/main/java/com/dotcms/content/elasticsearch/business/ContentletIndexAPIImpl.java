@@ -335,8 +335,8 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             Logger.info(this, "Reindex took        : " + duration.get() );
         }
         Logger.info(this, "Switching Server Id : " + ConfigUtils.getServerId() );
-        Logger.info(this, "Old indicies           : [" + oldInfo.working + "," + oldInfo.live + "]");
-        Logger.info(this, "New indicies           : [" + oldInfo.reindex_working + "," + oldInfo.reindex_live + "]");
+        Logger.info(this, "Old indicies        : [" + oldInfo.working + "," + oldInfo.live + "]");
+        Logger.info(this, "New indicies        : [" + oldInfo.reindex_working + "," + oldInfo.reindex_live + "]");
         Logger.info(this, "-------------------------------");
 
     }
