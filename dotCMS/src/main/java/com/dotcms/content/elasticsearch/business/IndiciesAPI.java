@@ -1,9 +1,14 @@
 package com.dotcms.content.elasticsearch.business;
 
-import com.dotmarketing.exception.DotDataException;
-
 import java.io.Serializable;
 import java.sql.Connection;
+import java.util.HashMap;
+import java.util.Map;
+
+
+import com.dotmarketing.exception.DotDataException;
+
+import io.vavr.control.Try;
 
 /**
  * An API to store and retrieve information about current Elastic Search Indicies
@@ -13,6 +18,22 @@ import java.sql.Connection;
 public interface IndiciesAPI {
     public static class IndiciesInfo implements Serializable {
         public String live, working, reindex_live, reindex_working, site_search;
+        public static enum IndexTypes {
+            WORKING, LIVE, REINDEX_WORKING, REINDEX_LIVE, SITE_SEARCH
+        };
+
+        public Map<IndexTypes, String> asMap() {
+            Map<IndexTypes, String> actives = new HashMap<>();
+            for (IndexTypes type : IndexTypes.values()) {
+                final String indexType = type.toString().toLowerCase();
+                final String newValue = Try.of(() -> (String) IndiciesInfo.class.getDeclaredField(indexType).get(this)).getOrNull();
+                if (newValue != null) {
+                    actives.put(type, newValue);
+                }
+
+            }
+            return actives;
+        }
 
         @Override
         public int hashCode() {

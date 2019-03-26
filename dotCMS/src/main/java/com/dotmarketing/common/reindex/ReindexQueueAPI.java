@@ -83,28 +83,7 @@ public interface ReindexQueueAPI {
         return ConfigUtils.getServerId();
     }
 
-    public enum DateType {
-        DAY("DAY"), MINUTE("MINUTE");
 
-        private String value;
-
-        DateType(String value) {
-            this.value = value;
-        }
-
-        public String toString() {
-            return value;
-        }
-
-        public static DateType getObject(String value) {
-            DateType[] ojs = DateType.values();
-            for (DateType oj : ojs) {
-                if (oj.value.equals(value))
-                    return oj;
-            }
-            return null;
-        }
-    };
 
     public void deleteReindexAndFailedRecords() throws DotDataException;
 
@@ -174,7 +153,7 @@ public interface ReindexQueueAPI {
     void addContentletReindex(Contentlet contentlet) throws DotDataException;
 
     /**
-     * Adds an {@link Identifier} to be reindex
+     * Adds an {@link Identifier} to be reindexed
      * 
      * @param identifier {@link Identifier}
      * @throws DotDataException
@@ -187,10 +166,42 @@ public interface ReindexQueueAPI {
 
     void addIdentifierReindex(String id, int prority) throws DotDataException;
 
-    void updateIndexJournalPriority(long id, int priority) throws DotDataException;
 
+    /**
+     * marks a ReindexEntry attempt as failed, increments the number of failures and records the cause
+     * 
+     * @param idx
+     * @param cause
+     * @throws DotDataException
+     */
     void markAsFailed(ReindexEntry idx, String cause) throws DotDataException;
 
+    /**
+     * returns the list of all failed reindex records
+     * 
+     * @return
+     * @throws DotDataException
+     */
     List<ReindexEntry> getFailedReindexRecords() throws DotDataException;
+
+    /**
+     * Adds identifiers to be wiped from all indexes by the ReindexThread Queue. All matching
+     * identifiers will be wiped out regardless of langauge
+     * 
+     * @param ids
+     * @return
+     * @throws DotDataException
+     */
+    int addIdentifierDelete(Collection<String> ids) throws DotDataException;
+
+    /**
+     * Adds identifiers to be wiped from all indexes by the ReindexThread Queue. All matching
+     * identifiers will be wiped out regardless of langauge
+     * 
+     * @param ids
+     * @return
+     * @throws DotDataException
+     */
+    int addIdentifierDelete(String id) throws DotDataException;
 
 }

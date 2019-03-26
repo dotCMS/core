@@ -7,14 +7,16 @@ import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.exception.DotDataException;
 
+
 public class IndiciesAPIImpl implements IndiciesAPI {
-    
-    protected final IndiciesFactory ifac=FactoryLocator.getIndiciesFactory();
+
+    protected final IndiciesFactory ifac = FactoryLocator.getIndiciesFactory();
 
     @CloseDBIfOpened
     public IndiciesInfo loadIndicies() throws DotDataException {
         return loadIndicies(null);
     }
+
     @CloseDBIfOpened
     public IndiciesInfo loadIndicies(Connection conn) throws DotDataException {
         return ifac.loadIndicies(conn);
@@ -24,6 +26,5 @@ public class IndiciesAPIImpl implements IndiciesAPI {
     public synchronized void point(IndiciesInfo newInfo) throws DotDataException {
         ifac.point(newInfo);
     }
-    
-    
+
 }

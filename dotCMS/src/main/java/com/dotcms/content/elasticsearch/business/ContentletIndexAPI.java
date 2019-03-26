@@ -43,6 +43,12 @@ public interface ContentletIndexAPI {
      */
     public String fullReindexStart() throws DotIndexException, DotDataException;
 
+    /**
+     * returns if the system is in a full reindex
+     * 
+     * @return
+     * @throws DotDataException
+     */
     public boolean isInFullReindex() throws DotDataException;
 
     /**
@@ -123,8 +129,6 @@ public interface ContentletIndexAPI {
     BulkRequestBuilder appendBulkRequest(BulkRequestBuilder bulk, Collection<ReindexEntry> idxs) throws DotDataException;
 
     BulkRequestBuilder appendBulkRequest(BulkRequestBuilder bulk, ReindexEntry idx) throws DotDataException;
-
-    BulkRequestBuilder appendBulkRequest(BulkRequestBuilder bulk, List<Contentlet> contentToIndex);
 
     Optional<String> reindexTimeElapsed();
 

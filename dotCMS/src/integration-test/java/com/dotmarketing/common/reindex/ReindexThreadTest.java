@@ -28,6 +28,7 @@ import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -38,6 +39,7 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
+import com.dotmarketing.util.ThreadUtils;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
 
@@ -48,10 +50,7 @@ public class ReindexThreadTest {
 
     private static boolean respectFrontendRoles = false;
     protected static User user;
-    protected static ContentTypeFactory contentTypeFactory;
-    protected static ContentTypeAPIImpl contentTypeApi;
-    protected static FieldFactoryImpl fieldFactory;
-    protected static FieldAPIImpl fieldApi;
+
     protected static Host defaultHost;
     protected static Language lang;
     protected static Folder folder;
@@ -64,10 +63,7 @@ public class ReindexThreadTest {
         OSGIUtil.getInstance().initializeFramework(Config.CONTEXT);
         contentletAPI = APILocator.getContentletAPI();
         user = APILocator.systemUser();
-        contentTypeApi = (ContentTypeAPIImpl) APILocator.getContentTypeAPI(user);
-        contentTypeFactory = new ContentTypeFactoryImpl();
-        fieldFactory = new FieldFactoryImpl();
-        fieldApi = new FieldAPIImpl();
+
         defaultHost = APILocator.getHostAPI().findDefaultHost(user, respectFrontendRoles);
         folder = APILocator.getFolderAPI().findSystemFolder();
         lang = APILocator.getLanguageAPI().getDefaultLanguage();
@@ -160,6 +156,118 @@ public class ReindexThreadTest {
 
         }
 
+    }
+
+    /**
+     * https://github.com/dotCMS/core/issues/11716
+     * 
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+
+    @Test
+    public void test_reindex_queue_puts_to_the_index() throws DotDataException, DotSecurityException {
+
+        new DotConnect().setSQL("delete from dist_reindex_journal").loadResult();
+        ReindexThread.startThread();
+
+        long startCount = ReindexThread.getInstance().totalESPuts();
+        ContentType type = new ContentTypeDataGen()
+                .fields(ImmutableList
+                        .of(ImmutableTextField.builder().name("Title").variable("title").searchable(true).listed(true).build()))
+                .nextPersisted();
+
+        String title = "contentTest " + System.currentTimeMillis();
+        Contentlet content = new ContentletDataGen(type.id()).setProperty("title", title).nextPersisted();
+
+        ThreadUtils.sleep(4000);
+        contentletAPI.publish(content, user, respectFrontendRoles);
+
+        ThreadUtils.sleep(4000);
+        long latestCount = ReindexThread.getInstance().totalESPuts() - startCount;
+        // 1 for check in (only working index) 2 more for publish (live & working indexes)
+        assert (latestCount == 3);
+
+        contentletAPI.unpublish(content, user, respectFrontendRoles);
+        ThreadUtils.sleep(4000);
+
+        // 1 more reindex working (publish was deleted)
+        latestCount = ReindexThread.getInstance().totalESPuts() - startCount;
+        assert (latestCount == 4);
+    }
+
+    /**
+     * https://github.com/dotCMS/core/issues/11716
+     * 
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+
+    @Test
+    public void test_reindex_thread_removing_from_index() throws DotDataException, DotSecurityException {
+        // respect CMS Anonymous permissions
+
+        // stop the reindex thread
+        ReindexThread.startThread();
+
+        ContentType type = new ContentTypeDataGen()
+                .fields(ImmutableList
+                        .of(ImmutableTextField.builder().name("Title").variable("title").searchable(true).listed(true).build()))
+                .nextPersisted();
+        final String conTitle = "contentTest " + System.currentTimeMillis();
+
+        Contentlet content = new ContentletDataGen(type.id()).setProperty("title", conTitle).next();
+
+        content.setStringProperty("title", conTitle);
+
+        content.setIndexPolicy(IndexPolicy.FORCE);
+
+        // check in the content
+        content = contentletAPI.checkin(content, user, respectFrontendRoles);
+
+        assertTrue(content.getIdentifier() != null);
+        assertTrue(content.isWorking());
+        assertFalse(content.isLive());
+        assertTrue(contentletAPI.indexCount("+live:false +identifier:" + content.getIdentifier() + " +inode:" + content.getInode() + " +languageId:"+ content.getLanguageId(), user,
+                respectFrontendRoles) > 0);
+        assertTrue(contentletAPI.indexCount("+live:true +identifier:" + content.getIdentifier() + " +inode:" + content.getInode() + " +languageId:"+ content.getLanguageId(), user,
+                respectFrontendRoles) == 0);
+
+        content.setIndexPolicy(IndexPolicy.FORCE);
+        contentletAPI.publish(content, user, respectFrontendRoles);
+        assertTrue(content.isWorking());
+        assertTrue(content.isLive());
+        assertTrue(contentletAPI.indexCount("+live:true +identifier:" + content.getIdentifier() + " +inode:" + content.getInode() + " +languageId:"+ content.getLanguageId(), user,
+                respectFrontendRoles) > 0);
+        
+        // create a spanish content
+        content.setLanguageId(2);
+        content.setInode(null);
+        content = contentletAPI.checkin(content, user, respectFrontendRoles);
+        
+        assertTrue(contentletAPI.indexCount("+live:false +identifier:" + content.getIdentifier() + " +inode:" + content.getInode() + " +languageId:"+ content.getLanguageId(), user,
+                respectFrontendRoles) > 0);
+        assertTrue(contentletAPI.indexCount("+live:true +identifier:" + content.getIdentifier() + " +inode:" + content.getInode() + " +languageId:"+ content.getLanguageId(), user,
+                respectFrontendRoles) == 0);
+        
+        content.setIndexPolicy(IndexPolicy.FORCE);
+        contentletAPI.publish(content, user, respectFrontendRoles);
+        assertTrue(content.isWorking());
+        assertTrue(content.isLive());
+        assertTrue(contentletAPI.indexCount("+live:true +identifier:" + content.getIdentifier() + " +inode:" + content.getInode() + " +languageId:"+ content.getLanguageId(), user,
+                respectFrontendRoles) > 0);
+        
+        ReindexThread.startThread();
+        ThreadUtils.sleep(4000);
+        APILocator.getReindexQueueAPI().addIdentifierDelete(content.getIdentifier());
+        ThreadUtils.sleep(4000);
+        assertTrue(contentletAPI.indexCount("+live:false +identifier:" + content.getIdentifier() , user,
+                respectFrontendRoles) == 0);
+        assertTrue(contentletAPI.indexCount("+live:true +identifier:" + content.getIdentifier() , user,
+                respectFrontendRoles) == 0);
+        
+        
+        
     }
 
 }

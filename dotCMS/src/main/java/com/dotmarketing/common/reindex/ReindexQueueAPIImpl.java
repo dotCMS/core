@@ -14,6 +14,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.common.reindex.ReindexQueueFactory.Priority;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -21,6 +22,7 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.collect.ImmutableList;
 
 /**
  * @author Jason Tesser
@@ -143,7 +145,24 @@ public class ReindexQueueAPIImpl implements ReindexQueueAPI {
 
         return this.reindexQueueFactory.addIdentifierReindex(ids);
     }
+    
+    @WrapInTransaction
+    @Override
+    public int addIdentifierDelete(final Collection<String> ids) throws DotDataException {
 
+
+        
+        return this.reindexQueueFactory.addIdentifierDelete(ids,Priority.NORMAL.dbValue());
+        
+    }
+    
+
+    @Override
+    public int addIdentifierDelete(final String id) throws DotDataException {
+
+        return this.addIdentifierDelete(ImmutableList.of(id));
+        
+    }
     @WrapInTransaction
     @Override
     public int addReindexHighPriority(final Collection<String> ids) throws DotDataException {
@@ -194,12 +213,6 @@ public class ReindexQueueAPIImpl implements ReindexQueueAPI {
 
     }
 
-    @Override
-    @WrapInTransaction
-    public void updateIndexJournalPriority(long id, int priority) throws DotDataException {
-        reindexQueueFactory.updateIndexJournalPriority(id, priority);
-
-    }
 
     @Override
     @WrapInTransaction

@@ -34,6 +34,7 @@ import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.ThreadUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
@@ -96,6 +97,8 @@ public class ReindexThread extends Thread {
     // bulk up to this many requests
     private static final int ELASTICSEARCH_BULK_SIZE = Config.getIntProperty("REINDEX_THREAD_ELASTICSEARCH_BULK_SIZE", 500);
 
+    private static final String THREAD_NAME = "ReindexThread";
+
     private ReindexThread() {
 
         this(APILocator.getReindexQueueAPI(), APILocator.getNotificationAPI(), APILocator.getUserAPI(), APILocator.getRoleAPI());
@@ -103,7 +106,7 @@ public class ReindexThread extends Thread {
 
     @VisibleForTesting
     public ReindexThread(final ReindexQueueAPI jAPI, final NotificationAPI notificationAPI, final UserAPI userAPI, final RoleAPI roleAPI) {
-        super("ReindexThread");
+        super(THREAD_NAME);
         this.jAPI = jAPI;
         this.notificationAPI = notificationAPI;
         this.userAPI = userAPI;
@@ -139,6 +142,7 @@ public class ReindexThread extends Thread {
 
     private boolean die = false;
 
+    @Override
     public void run() {
 
         try {
@@ -154,7 +158,7 @@ public class ReindexThread extends Thread {
         } catch (DotDataException e) {
             Logger.error(this.getClass(), e.getMessage(), e);
         }
-        while(!die) {
+        while (!die) {
             try {
                 runReindexLoop();
             } catch (Exception e) {
@@ -163,9 +167,9 @@ public class ReindexThread extends Thread {
         }
 
     }
-    
+
     @VisibleForTesting
-    long contentsIndexed() {
+    long totalESPuts() {
         return contentletsIndexed;
     }
 
@@ -216,7 +220,7 @@ public class ReindexThread extends Thread {
                 try {
                     Thread.sleep(SLEEP_ON_ERROR);
                 } catch (InterruptedException e) {
-                    Logger.warn(this, "ReindexThread Sleep InterruptedException: "+e);
+                    Logger.warn(this, "ReindexThread Sleep InterruptedException: " + e);
                 }
             } finally {
                 DbConnectionFactory.closeSilently();
@@ -239,7 +243,7 @@ public class ReindexThread extends Thread {
     /**
      * Tells the thread to start processing. Starts the thread
      */
-    public synchronized static void startThread() {
+    public static void startThread() {
 
         Logger.info(ReindexThread.class, "ReindexThread ordered to start processing");
 
@@ -248,10 +252,11 @@ public class ReindexThread extends Thread {
 
     }
 
+
     /**
      * Tells the thread to stop processing. Doesn't shut down the thread.
      */
-    public synchronized static void stopThread() {
+    public static void stopThread() {
         if (instance != null && instance.isAlive()) {
             Logger.info(ReindexThread.class, "ReindexThread ordered to stop processing");
             instance.finish();
@@ -264,12 +269,10 @@ public class ReindexThread extends Thread {
      * Creates and starts a thread that doesn't process anything yet
      */
     private static void createThread() {
-        if (instance == null) {
-            instance = new ReindexThread();
-            instance.setName("ReindexThread");
-            instance.start();
-            int i = Config.getIntProperty("REINDEX_SLEEP_DURING_INDEX", 0);
 
+        if (instance == null) {
+            instance =  new ReindexThread();
+            instance.start();
         }
     }
 
@@ -284,14 +287,12 @@ public class ReindexThread extends Thread {
         return instance;
     }
 
-
-
-
-    public synchronized void pause() {
+    public void pause() {
         work = false;
     }
 
-    public synchronized void unpause() {
+    public void unpause() {
+        die = false;
         work = true;
     }
 

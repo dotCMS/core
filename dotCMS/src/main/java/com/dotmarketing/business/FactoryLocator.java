@@ -3,7 +3,6 @@ package com.dotmarketing.business;
 import com.dotcms.cluster.business.ServerFactory;
 import com.dotcms.content.elasticsearch.business.ESContentFactoryImpl;
 import com.dotcms.content.elasticsearch.business.IndiciesFactory;
-import com.dotcms.content.elasticsearch.business.IndiciesFactoryImpl;
 import com.dotcms.contenttype.business.ContentTypeFactory;
 import com.dotcms.contenttype.business.ContentTypeFactoryImpl;
 import com.dotcms.contenttype.business.FieldFactory;
@@ -17,7 +16,6 @@ import com.dotcms.enterprise.cluster.ServerFactoryImpl;
 import com.dotcms.enterprise.cluster.action.business.ServerActionFactory;
 import com.dotcms.enterprise.linkchecker.LinkCheckerFactoryImpl;
 import com.dotcms.enterprise.rules.RulesFactory;
-
 import com.dotcms.notifications.business.NotificationFactory;
 import com.dotcms.notifications.business.NotificationFactoryImpl;
 import com.dotcms.publisher.assets.business.PushedAssetsFactory;
@@ -321,7 +319,7 @@ enum FactoryIndex
             case VERSIONABLE_FACTORY : return new VersionableFactoryImpl();
             case FOLDER_FACTORY : return new FolderFactoryImpl();
             case WORKFLOWS_FACTORY :return new WorkflowFactoryImpl();
-            case INDICIES_FACTORY: return new IndiciesFactoryImpl();
+            case INDICIES_FACTORY: return new IndiciesFactory();
             case LINKCHECKER_FACTORY: return new LinkCheckerFactoryImpl();
             case PUBLISHER_END_POINT_FACTORY: return new PublishingEndPointFactoryImpl();
             case ENVIRONMENT_FACTORY: return new EnvironmentFactoryImpl();

@@ -17,7 +17,6 @@ import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
-import com.dotmarketing.common.reindex.ReindexQueueAPI.DateType;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -178,14 +177,6 @@ public class ReindexQueueFactory {
         dotConnect.loadResult();
     }
 
-    protected void updateIndexJournalPriority(long id, int priority) throws DotDataException {
-        DotConnect dc = new DotConnect();
-        dc.setSQL("UPDATE dist_reindex_journal set  priority = ? where id= ?");
-        dc.addParam(priority);
-        dc.addParam(id);
-        dc.loadResult();
-    }
-
     protected void markAsFailed(ReindexEntry idx, String cause) throws DotDataException {
         final int newPriority =
                 (idx.errorCount() >= REINDEX_MAX_FAILURE_ATTEMPTS) ? Priority.ERROR.dbValue() + idx.getPriority() : (1 + idx.getPriority());
@@ -238,6 +229,7 @@ public class ReindexQueueFactory {
                     m.put("inode_to_index", r.getString("inode_to_index"));
                     m.put("ident_to_index", r.getString("ident_to_index"));
                     m.put("priority", r.getInt("priority"));
+                    m.put("action", r.getInt("dist_action"));
                     results.add(m);
                 }
                 r.close();
@@ -267,12 +259,13 @@ public class ReindexQueueFactory {
             }
 
             for (Map<String, Object> r : results) {
-                ReindexEntry ij = new ReindexEntry();
-                ij.setId(((Number) r.get("id")).longValue());
+                ReindexEntry entry = new ReindexEntry();
+                entry.setId(((Number) r.get("id")).longValue());
                 String identifier = (String) r.get("ident_to_index");
-                ij.setIdentToIndex(identifier);
-                ij.setPriority(((Number) (r.get("priority"))).intValue());
-                contentList.put(identifier, ij);
+                entry.setIdentToIndex(identifier);
+                entry.setPriority(((Number) (r.get("priority"))).intValue());
+                entry.setDelete(((Number) (r.get("priority"))).intValue()==REINDEX_ACTION_DELETE_OBJECT);
+                contentList.put(identifier, entry);
             }
         } catch (SQLException e1) {
             throw new DotDataException(e1.getMessage(), e1);
@@ -364,7 +357,26 @@ public class ReindexQueueFactory {
         }
         return identifiers.size();
     }
+    protected int addIdentifierDelete(final Collection<String> identifiers, final int prority) throws DotDataException {
 
+        if (identifiers == null || identifiers.isEmpty()) {
+            return 0;
+        }
+
+        final Date date = DbConnectionFactory.now();
+        for (final String identifier : identifiers) {
+
+            new DotConnect().setSQL(REINDEX_JOURNAL_INSERT).addParam(identifier).addParam(identifier).addParam(prority)
+                    .addParam(REINDEX_ACTION_DELETE_OBJECT).addParam(date).loadResult();
+
+        }
+        return identifiers.size();
+    }
+    
+    
+    
+    
+    
     protected void refreshContentUnderHost(Host host) throws DotDataException {
         String sql = " INSERT INTO dist_reindex_journal(inode_to_index,ident_to_index,priority,dist_action) " + " SELECT id, id, ?, ? "
                 + " FROM identifier " + " WHERE asset_type='contentlet' and identifier.host_inode=?";

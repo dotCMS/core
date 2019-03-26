@@ -54,7 +54,7 @@ class BulkActionListener implements ActionListener<BulkResponse> {
             if (idx == null)
                 continue;
             if (bulkItemResponse.isFailed()) {
-                handleFailure(idx, bulkItemResponse.getFailureMessage());
+                handleFailure(idx, "bulk index failure:" + bulkItemResponse.getFailure().getMessage());
             } else {
                 successful.add(idx);
             }

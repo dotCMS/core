@@ -7,6 +7,7 @@ import java.util.Map;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
+import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo.IndexTypes;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -14,11 +15,8 @@ import com.dotmarketing.exception.DotDataException;
 
 import io.vavr.control.Try;
 
-public class IndiciesFactoryImpl implements IndiciesFactory {
+public class IndiciesFactory {
 
-    protected static enum IndexTypes {
-        WORKING, LIVE, REINDEX_WORKING, REINDEX_LIVE, SITE_SEARCH
-    };
 
     protected static IndiciesCache cache = CacheLocator.getIndiciesCache();
 
@@ -65,9 +63,7 @@ public class IndiciesFactoryImpl implements IndiciesFactory {
     }
 
     @WrapInTransaction
-    @Override
     public void point(final IndiciesInfo newInfo) throws DotDataException {
-
 
         if(newInfo==null || newInfo.equals(loadIndicies())) {
             return;
