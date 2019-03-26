@@ -18,7 +18,6 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
-
 import java.util.Map;
 
 /**
@@ -27,211 +26,212 @@ import java.util.Map;
  * @author Nollymar Longa
  */
 public class HTMLPageDataGen extends ContentletDataGen {
-    private long currentTime = System.currentTimeMillis();
-    private long cacheTTL;
-    private String seoKeywords;
-    private String seoDescription;
-    private boolean httpsRequired;
-    private String metaData;
-    private String pageURL = "test-page-url-" + currentTime;
-    private String redirect;
-    private String friendlyName = "test-page-friendly-name-" + currentTime;
-    private String title = "test-page-title-" + currentTime;
-    private boolean showOnMenu;
-    private Template template;
-    private long sortOrder = 1;
-    private ContentletWebAPI contentletWebAPI;
-    private HTMLPageAssetAPI pageAssetAPI;
-    private String inode;
-    private String identifier;
+  private long currentTime = System.currentTimeMillis();
+  private long cacheTTL;
+  private String seoKeywords;
+  private String seoDescription;
+  private boolean httpsRequired;
+  private String metaData;
+  private String pageURL = "test-page-url-" + currentTime;
+  private String redirect;
+  private String friendlyName = "test-page-friendly-name-" + currentTime;
+  private String title = "test-page-title-" + currentTime;
+  private boolean showOnMenu;
+  private Template template;
+  private long sortOrder = 1;
+  private ContentletWebAPI contentletWebAPI;
+  private HTMLPageAssetAPI pageAssetAPI;
+  private String inode;
+  private String identifier;
 
-    /**
-     * Constructs a data-gen for building {@link HTMLPageAsset} objects.
-     * <p>Created pages using the {@link #nextPersisted()} will live under the given host.
-     *
-     * @param host the host object
-     */
-    public HTMLPageDataGen(Host host, Template template) {
-        this();
-        this.host = host;
-        this.template = template;
-     }
+  /**
+   * Constructs a data-gen for building {@link HTMLPageAsset} objects.
+   *
+   * <p>Created pages using the {@link #nextPersisted()} will live under the given host.
+   *
+   * @param host the host object
+   */
+  public HTMLPageDataGen(Host host, Template template) {
+    this();
+    this.host = host;
+    this.template = template;
+  }
 
-    /**
-     * Constructs a data-gen for building {@link HTMLPageAsset} objects.
-     * <p>Created pages using the {@link #nextPersisted()} will live under the given folder.
-     *
-     * @param folder the folder object
-     */
-    public HTMLPageDataGen(Folder folder, Template template) {
-        this();
-        this.folder = folder;
-        try {
-            this.host = APILocator.getHostAPI().find(folder.getHostId(), user , false);
-        } catch (DotDataException | DotSecurityException e) {
-            throw new DotRuntimeException(e);
-        }
-
-        this.template = template;
+  /**
+   * Constructs a data-gen for building {@link HTMLPageAsset} objects.
+   *
+   * <p>Created pages using the {@link #nextPersisted()} will live under the given folder.
+   *
+   * @param folder the folder object
+   */
+  public HTMLPageDataGen(Folder folder, Template template) {
+    this();
+    this.folder = folder;
+    try {
+      this.host = APILocator.getHostAPI().find(folder.getHostId(), user, false);
+    } catch (DotDataException | DotSecurityException e) {
+      throw new DotRuntimeException(e);
     }
 
-    private HTMLPageDataGen() {
-        super(HTMLPageAssetAPIImpl.DEFAULT_HTMLPAGE_ASSET_STRUCTURE_INODE);
-        contentletWebAPI = WebAPILocator.getContentletWebAPI();
-        pageAssetAPI = APILocator.getHTMLPageAssetAPI();
+    this.template = template;
+  }
+
+  private HTMLPageDataGen() {
+    super(HTMLPageAssetAPIImpl.DEFAULT_HTMLPAGE_ASSET_STRUCTURE_INODE);
+    contentletWebAPI = WebAPILocator.getContentletWebAPI();
+    pageAssetAPI = APILocator.getHTMLPageAssetAPI();
+  }
+
+  @SuppressWarnings("unused")
+  public HTMLPageDataGen cacheTTL(long cacheTTL) {
+    this.cacheTTL = cacheTTL;
+    return this;
+  }
+
+  @SuppressWarnings("unused")
+  public HTMLPageDataGen seoKeywords(String seoKeywords) {
+    this.seoKeywords = seoKeywords;
+    return this;
+  }
+
+  @SuppressWarnings("unused")
+  public HTMLPageDataGen seoDescription(String seoDescription) {
+    this.seoDescription = seoDescription;
+    return this;
+  }
+
+  @SuppressWarnings("unused")
+  public HTMLPageDataGen httpsRequired(boolean httpsRequired) {
+    this.httpsRequired = httpsRequired;
+    return this;
+  }
+
+  @SuppressWarnings("unused")
+  public HTMLPageDataGen metaData(String metaData) {
+    this.metaData = metaData;
+    return this;
+  }
+
+  @SuppressWarnings("unused")
+  public HTMLPageDataGen pageURL(String pageURL) {
+    this.pageURL = pageURL;
+    return this;
+  }
+
+  @SuppressWarnings("unused")
+  public HTMLPageDataGen redirect(String redirect) {
+    this.redirect = redirect;
+    return this;
+  }
+
+  public HTMLPageDataGen template(Template template) {
+    this.template = template;
+    return this;
+  }
+
+  @SuppressWarnings("unused")
+  public HTMLPageDataGen friendlyName(String friendlyName) {
+    this.friendlyName = friendlyName;
+    return this;
+  }
+
+  public HTMLPageDataGen title(String title) {
+    this.title = title;
+    return this;
+  }
+
+  @SuppressWarnings("unused")
+  public HTMLPageDataGen showOnMenu(boolean showOnMenu) {
+    this.showOnMenu = showOnMenu;
+    return this;
+  }
+
+  public HTMLPageDataGen languageId(long languageId) {
+    this.languageId = languageId;
+    return this;
+  }
+
+  @SuppressWarnings("unused")
+  public HTMLPageDataGen sortOrder(long sortOrder) {
+    this.sortOrder = sortOrder;
+    return this;
+  }
+
+  public HTMLPageDataGen folder(Folder folder) {
+    this.folder = folder;
+    return this;
+  }
+
+  @Override
+  public HTMLPageAsset next() {
+    HTMLPageAsset htmlPageAsset = new HTMLPageAsset();
+    htmlPageAsset.setFolder(folder.getInode());
+    htmlPageAsset.setHost(host.getIdentifier());
+    htmlPageAsset.setLanguageId(languageId);
+    htmlPageAsset.setStructureInode(structureId);
+    htmlPageAsset.setCacheTTL(cacheTTL);
+    htmlPageAsset.setSeoKeywords(seoKeywords);
+    htmlPageAsset.setSeoDescription(seoDescription);
+    htmlPageAsset.setHttpsRequired(httpsRequired);
+    htmlPageAsset.setMetadata(metaData);
+    htmlPageAsset.setPageUrl(pageURL);
+    htmlPageAsset.setRedirect(redirect);
+    htmlPageAsset.setTemplateId(template.getIdentifier());
+    htmlPageAsset.setFriendlyName(friendlyName);
+    htmlPageAsset.setTitle(title);
+    htmlPageAsset.setShowOnMenu(showOnMenu);
+    htmlPageAsset.setSortOrder(sortOrder);
+    htmlPageAsset.setModUser(modUser);
+    htmlPageAsset.setInode(inode);
+    htmlPageAsset.setIdentifier(identifier);
+    htmlPageAsset.setIndexPolicy(IndexPolicy.FORCE);
+    htmlPageAsset.setBoolProperty(Contentlet.IS_TEST_MODE, true);
+
+    for (Map.Entry<String, Object> element : properties.entrySet()) {
+      htmlPageAsset.setProperty(element.getKey(), element.getValue());
     }
 
-    @SuppressWarnings("unused")
-    public HTMLPageDataGen cacheTTL(long cacheTTL) {
-        this.cacheTTL = cacheTTL;
-        return this;
+    return htmlPageAsset;
+  }
+
+  @Override
+  public HTMLPageAsset nextPersisted() {
+    HTMLPageAsset pageAsset = next();
+
+    String status = contentletWebAPI.validateNewContentPage(pageAsset);
+
+    if (UtilMethods.isSet(status)) {
+      String msg = "Error validating htmlpage";
+      try {
+        msg = LanguageUtil.get(user, status);
+      } catch (LanguageException e) {
+        Logger.debug(this, "Error getting property from LanguageUtil.get", e);
+      }
+      throw new DotRuntimeException(msg);
     }
 
-    @SuppressWarnings("unused")
-    public HTMLPageDataGen seoKeywords(String seoKeywords) {
-        this.seoKeywords = seoKeywords;
-        return this;
-    }
+    pageAsset.setIndexPolicy(IndexPolicy.FORCE);
+    pageAsset.setIndexPolicyDependencies(IndexPolicy.FORCE);
+    pageAsset.setBoolProperty(Contentlet.IS_TEST_MODE, true);
+    Contentlet contentlet = persist(pageAsset);
+    HTMLPageAsset htmlPageAsset = pageAssetAPI.fromContentlet(contentlet);
 
-    @SuppressWarnings("unused")
-    public HTMLPageDataGen seoDescription(String seoDescription) {
-        this.seoDescription = seoDescription;
-        return this;
-    }
+    htmlPageAsset.setIndexPolicy(IndexPolicy.FORCE);
+    htmlPageAsset.setIndexPolicyDependencies(IndexPolicy.FORCE);
+    htmlPageAsset.setBoolProperty(Contentlet.IS_TEST_MODE, true);
 
-    @SuppressWarnings("unused")
-    public HTMLPageDataGen httpsRequired(boolean httpsRequired) {
-        this.httpsRequired = httpsRequired;
-        return this;
-    }
+    return htmlPageAsset;
+  }
 
-    @SuppressWarnings("unused")
-    public HTMLPageDataGen metaData(String metaData) {
-        this.metaData = metaData;
-        return this;
-    }
+  @SuppressWarnings("unused")
+  public HTMLPageDataGen inode(String inode) {
+    this.inode = inode;
+    return this;
+  }
 
-    @SuppressWarnings("unused")
-    public HTMLPageDataGen pageURL(String pageURL) {
-        this.pageURL = pageURL;
-        return this;
-    }
-
-    @SuppressWarnings("unused")
-    public HTMLPageDataGen redirect(String redirect) {
-        this.redirect = redirect;
-        return this;
-    }
-
-    public HTMLPageDataGen template(Template template) {
-        this.template = template;
-        return this;
-    }
-
-    @SuppressWarnings("unused")
-    public HTMLPageDataGen friendlyName(String friendlyName) {
-        this.friendlyName = friendlyName;
-        return this;
-    }
-
-    public HTMLPageDataGen title(String title) {
-        this.title = title;
-        return this;
-    }
-
-    @SuppressWarnings("unused")
-    public HTMLPageDataGen showOnMenu(boolean showOnMenu) {
-        this.showOnMenu = showOnMenu;
-        return this;
-    }
-
-    public HTMLPageDataGen languageId(long languageId){
-        this.languageId = languageId;
-        return this;
-    }
-
-    @SuppressWarnings("unused")
-    public HTMLPageDataGen sortOrder(long sortOrder){
-        this.sortOrder = sortOrder;
-        return this;
-    }
-
-    public HTMLPageDataGen folder(Folder folder) {
-        this.folder = folder;
-        return this;
-    }
-
-    @Override
-    public HTMLPageAsset next() {
-        HTMLPageAsset htmlPageAsset = new HTMLPageAsset();
-        htmlPageAsset.setFolder(folder.getInode());
-        htmlPageAsset.setHost(host.getIdentifier());
-        htmlPageAsset.setLanguageId(languageId);
-        htmlPageAsset.setStructureInode(structureId);
-        htmlPageAsset.setCacheTTL(cacheTTL);
-        htmlPageAsset.setSeoKeywords(seoKeywords);
-        htmlPageAsset.setSeoDescription(seoDescription);
-        htmlPageAsset.setHttpsRequired(httpsRequired);
-        htmlPageAsset.setMetadata(metaData);
-        htmlPageAsset.setPageUrl(pageURL);
-        htmlPageAsset.setRedirect(redirect);
-        htmlPageAsset.setTemplateId(template.getIdentifier());
-        htmlPageAsset.setFriendlyName(friendlyName);
-        htmlPageAsset.setTitle(title);
-        htmlPageAsset.setShowOnMenu(showOnMenu);
-        htmlPageAsset.setSortOrder(sortOrder);
-        htmlPageAsset.setModUser(modUser);
-        htmlPageAsset.setInode(inode);
-        htmlPageAsset.setIdentifier(identifier);
-        htmlPageAsset.setIndexPolicy(IndexPolicy.FORCE);
-        htmlPageAsset.setBoolProperty(Contentlet.IS_TEST_MODE, true);
-
-        for (Map.Entry<String, Object> element : properties.entrySet()) {
-            htmlPageAsset.setProperty(element.getKey(), element.getValue());
-        }
-
-        return htmlPageAsset;
-    }
-
-    @Override
-    public HTMLPageAsset nextPersisted() {
-        HTMLPageAsset pageAsset = next();
-
-        String status = contentletWebAPI.validateNewContentPage(pageAsset);
-
-        if (UtilMethods.isSet(status)) {
-            String msg = "Error validating htmlpage";
-            try {
-                msg = LanguageUtil.get(user, status);
-            } catch (LanguageException e) {
-                Logger.debug(this, "Error getting property from LanguageUtil.get", e);
-            }
-            throw new DotRuntimeException(msg);
-        }
-
-        pageAsset.setIndexPolicy(IndexPolicy.FORCE);
-        pageAsset.setIndexPolicyDependencies(IndexPolicy.FORCE);
-        pageAsset.setBoolProperty(Contentlet.IS_TEST_MODE, true);
-        Contentlet contentlet = persist(pageAsset);
-        HTMLPageAsset htmlPageAsset = pageAssetAPI.fromContentlet(contentlet);
-
-        htmlPageAsset.setIndexPolicy(IndexPolicy.FORCE);
-        htmlPageAsset.setIndexPolicyDependencies(IndexPolicy.FORCE);
-        htmlPageAsset.setBoolProperty(Contentlet.IS_TEST_MODE, true);
-
-        return htmlPageAsset;
-    }
-    
-    @SuppressWarnings("unused")
-    public HTMLPageDataGen inode(String inode) {
-        this.inode = inode;
-        return this;
-    }
-    
-    @SuppressWarnings("unused")
-    public HTMLPageDataGen identifier(String identifier) {
-        this.identifier = identifier;
-        return this;
-    }
-
+  @SuppressWarnings("unused")
+  public HTMLPageDataGen identifier(String identifier) {
+    this.identifier = identifier;
+    return this;
+  }
 }

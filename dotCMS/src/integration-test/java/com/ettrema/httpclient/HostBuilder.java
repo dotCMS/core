@@ -4,126 +4,102 @@ import com.ettrema.cache.Cache;
 import com.ettrema.httpclient.zsyncclient.FileSyncer;
 import java.util.List;
 
-/**
- *
- * @author brad
- */
+/** @author brad */
 public class HostBuilder {
-    private String server;
-    private int port;
-    private String user;
-    private String password;
-    private String rootPath;
-    private ProxyDetails proxy;
-    private Cache<Folder, List<Resource>> cache;
-    private int timeoutMillis;
-    private FileSyncer fileSyncer;
-    
-    public Host buildHost() {
-        return new Host(server, rootPath, port, user, password, proxy, timeoutMillis, cache, fileSyncer);
-    }
+  private String server;
+  private int port;
+  private String user;
+  private String password;
+  private String rootPath;
+  private ProxyDetails proxy;
+  private Cache<Folder, List<Resource>> cache;
+  private int timeoutMillis;
+  private FileSyncer fileSyncer;
 
-    /**
-     * @return the server
-     */
-    public String getServer() {
-        return server;
-    }
+  public Host buildHost() {
+    return new Host(
+        server, rootPath, port, user, password, proxy, timeoutMillis, cache, fileSyncer);
+  }
 
-    /**
-     * @param server the server to set
-     */
-    public void setServer(String server) {
-        this.server = server;
-    }
+  /** @return the server */
+  public String getServer() {
+    return server;
+  }
 
-    /**
-     * @return the port
-     */
-    public int getPort() {
-        return port;
-    }
+  /** @param server the server to set */
+  public void setServer(String server) {
+    this.server = server;
+  }
 
-    /**
-     * @param port the port to set
-     */
-    public void setPort(int port) {
-        this.port = port;
-    }
+  /** @return the port */
+  public int getPort() {
+    return port;
+  }
 
-    /**
-     * @return the user
-     */
-    public String getUser() {
-        return user;
-    }
+  /** @param port the port to set */
+  public void setPort(int port) {
+    this.port = port;
+  }
 
-    /**
-     * @param user the user to set
-     */
-    public void setUser(String user) {
-        this.user = user;
-    }
+  /** @return the user */
+  public String getUser() {
+    return user;
+  }
 
-    /**
-     * @return the password
-     */
-    public String getPassword() {
-        return password;
-    }
+  /** @param user the user to set */
+  public void setUser(String user) {
+    this.user = user;
+  }
 
-    /**
-     * @param password the password to set
-     */
-    public void setPassword(String password) {
-        this.password = password;
-    }
+  /** @return the password */
+  public String getPassword() {
+    return password;
+  }
 
-    /**
-     * @return the rootPath
-     */
-    public String getRootPath() {
-        return rootPath;
-    }
+  /** @param password the password to set */
+  public void setPassword(String password) {
+    this.password = password;
+  }
 
-    /**
-     * @param rootPath the rootPath to set
-     */
-    public void setRootPath(String rootPath) {
-        this.rootPath = rootPath;
-    }
+  /** @return the rootPath */
+  public String getRootPath() {
+    return rootPath;
+  }
 
-    public ProxyDetails getProxy() {
-        return proxy;
-    }
+  /** @param rootPath the rootPath to set */
+  public void setRootPath(String rootPath) {
+    this.rootPath = rootPath;
+  }
 
-    public void setProxy(ProxyDetails proxy) {
-        this.proxy = proxy;
-    }
+  public ProxyDetails getProxy() {
+    return proxy;
+  }
 
-    public Cache<Folder, List<Resource>> getCache() {
-        return cache;
-    }
+  public void setProxy(ProxyDetails proxy) {
+    this.proxy = proxy;
+  }
 
-    public void setCache(Cache<Folder, List<Resource>> cache) {
-        this.cache = cache;
-    }
+  public Cache<Folder, List<Resource>> getCache() {
+    return cache;
+  }
 
-    public int getTimeoutMillis() {
-        return timeoutMillis;
-    }
+  public void setCache(Cache<Folder, List<Resource>> cache) {
+    this.cache = cache;
+  }
 
-    public void setTimeoutMillis(int timeoutMillis) {
-        this.timeoutMillis = timeoutMillis;
-    }
+  public int getTimeoutMillis() {
+    return timeoutMillis;
+  }
 
-    public FileSyncer getFileSyncer() {
-        return fileSyncer;
-    }
+  public void setTimeoutMillis(int timeoutMillis) {
+    this.timeoutMillis = timeoutMillis;
+  }
 
-    public void setFileSyncer(FileSyncer fileSyncer) {
-        this.fileSyncer = fileSyncer;
-    }
+  public FileSyncer getFileSyncer() {
+    return fileSyncer;
+  }
 
-    
+  public void setFileSyncer(FileSyncer fileSyncer) {
+    this.fileSyncer = fileSyncer;
+  }
 }

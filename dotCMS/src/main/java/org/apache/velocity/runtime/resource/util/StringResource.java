@@ -20,88 +20,85 @@ package org.apache.velocity.runtime.resource.util;
  */
 
 /**
- * Wrapper for Strings containing templates, allowing to add additional meta
- * data like timestamps.
+ * Wrapper for Strings containing templates, allowing to add additional meta data like timestamps.
  *
  * @author <a href="mailto:eelco.hillenius@openedge.nl">Eelco Hillenius</a>
  * @author <a href="mailto:henning@apache.org">Henning P. Schmiedehausen</a>
  * @version $Id: StringResource.java 685685 2008-08-13 21:43:27Z nbubna $
  * @since 1.5
  */
-public final class StringResource
-{
-    /** template body */
-    private String body;
-    
-    /** encoding */
-    private String encoding;
+public final class StringResource {
+  /** template body */
+  private String body;
 
-    /** last modified ts */
-    private long lastModified;
+  /** encoding */
+  private String encoding;
 
-    /**
-     * convenience constructor; sets body to 'body' and sets lastModified to now
-     * @param body
-     */
-    public StringResource(final String body, final String encoding)
-    {
-        setBody(body);
-        setEncoding(encoding);
-    }
+  /** last modified ts */
+  private long lastModified;
 
-    /**
-     * Sets the template body.
-     * @return String containing the template body.
-     */
-    public String getBody()
-    {
-        return body;
-    }
+  /**
+   * convenience constructor; sets body to 'body' and sets lastModified to now
+   *
+   * @param body
+   */
+  public StringResource(final String body, final String encoding) {
+    setBody(body);
+    setEncoding(encoding);
+  }
 
-    /**
-     * Returns the modification date of the template.
-     * @return Modification date in milliseconds.
-     */
-    public long getLastModified()
-    {
-        return lastModified;
-    }
+  /**
+   * Sets the template body.
+   *
+   * @return String containing the template body.
+   */
+  public String getBody() {
+    return body;
+  }
 
-    /**
-     * Sets a new  value for the template body.
-     * @param body New body value
-     */
-    public void setBody(final String body)
-    {
-        this.body = body;
-        this.lastModified = System.currentTimeMillis();
-    }
+  /**
+   * Returns the modification date of the template.
+   *
+   * @return Modification date in milliseconds.
+   */
+  public long getLastModified() {
+    return lastModified;
+  }
 
-    /**
-     * Changes the last modified parameter.
-     * @param lastModified The modification time in millis.
-     */
-    public void setLastModified(final long lastModified)
-    {
-        this.lastModified = lastModified;
-    }
+  /**
+   * Sets a new value for the template body.
+   *
+   * @param body New body value
+   */
+  public void setBody(final String body) {
+    this.body = body;
+    this.lastModified = System.currentTimeMillis();
+  }
 
-    /**
-     * Returns the encoding of this String resource.
-     * 
-     * @return The encoding of this String resource.
-     */
-    public String getEncoding() {
-        return this.encoding;
-    }
+  /**
+   * Changes the last modified parameter.
+   *
+   * @param lastModified The modification time in millis.
+   */
+  public void setLastModified(final long lastModified) {
+    this.lastModified = lastModified;
+  }
 
-    /**
-     * Sets the encoding of this string resource.
-     * 
-     * @param encoding The new encoding of this resource.
-     */
-    public void setEncoding(final String encoding)
-    {
-        this.encoding = encoding;
-    }
+  /**
+   * Returns the encoding of this String resource.
+   *
+   * @return The encoding of this String resource.
+   */
+  public String getEncoding() {
+    return this.encoding;
+  }
+
+  /**
+   * Sets the encoding of this string resource.
+   *
+   * @param encoding The new encoding of this resource.
+   */
+  public void setEncoding(final String encoding) {
+    this.encoding = encoding;
+  }
 }

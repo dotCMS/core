@@ -1,48 +1,24 @@
 /**
  * Copyright (c) 2000-2005 Liferay, LLC. All rights reserved.
  *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
+ * <p>Permission is hereby granted, free of charge, to any person obtaining a copy of this software
+ * and associated documentation files (the "Software"), to deal in the Software without restriction,
+ * including without limitation the rights to use, copy, modify, merge, publish, distribute,
+ * sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
  *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
+ * <p>The above copyright notice and this permission notice shall be included in all copies or
+ * substantial portions of the Software.
  *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
+ * <p>THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
+ * BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+ * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-
 package com.liferay.portal.servlet;
 
-import java.io.File;
-import java.net.URL;
-import java.net.URLClassLoader;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.MissingResourceException;
-import java.util.ResourceBundle;
-import java.util.Set;
-
 import com.dotcms.repackage.javax.portlet.PreferencesValidator;
-import javax.servlet.ServletContext;
-import javax.servlet.ServletContextEvent;
-import javax.servlet.ServletContextListener;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.ejb.PortletManagerUtil;
 import com.liferay.portal.job.Scheduler;
@@ -60,252 +36,250 @@ import com.liferay.util.KeyValuePair;
 import com.liferay.util.StringPool;
 import com.liferay.util.StringUtil;
 import com.liferay.util.Validator;
-
+import java.io.File;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.MissingResourceException;
+import java.util.ResourceBundle;
+import java.util.Set;
+import javax.servlet.ServletContext;
+import javax.servlet.ServletContextEvent;
+import javax.servlet.ServletContextListener;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 /**
  * <a href="PortletContextListener.java.html"><b><i>View Source </i></b></a>
  *
- * @author  Brian Wing Shun Chan
+ * @author Brian Wing Shun Chan
  * @version $Revision: 1.27 $
- *
  */
 public class PortletContextListener implements ServletContextListener {
 
-	public void contextInitialized(ServletContextEvent sce) {
-		try {
+  public void contextInitialized(ServletContextEvent sce) {
+    try {
 
-			// Servlet context
+      // Servlet context
 
-			ServletContext ctx = sce.getServletContext();
+      ServletContext ctx = sce.getServletContext();
 
-			_servletContextName = StringUtil.replace(
-				ctx.getServletContextName(), StringPool.SPACE,
-				StringPool.UNDERLINE);
+      _servletContextName =
+          StringUtil.replace(ctx.getServletContextName(), StringPool.SPACE, StringPool.UNDERLINE);
 
-			// Company ids
+      // Company ids
 
-			_companyIds = StringUtil.split(ctx.getInitParameter("company_id"));
+      _companyIds = StringUtil.split(ctx.getInitParameter("company_id"));
 
-			// Class loader
+      // Class loader
 
-			ClassLoader contextClassLoader =
-				Thread.currentThread().getContextClassLoader();
+      ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
 
-			// Initialize portlets
+      // Initialize portlets
 
-			String[] xmls = new String[] {
-				Http.URLtoString(ctx.getResource("/WEB-INF/portlet.xml")),
-				Http.URLtoString(ctx.getResource(
-					"/WEB-INF/liferay-portlet.xml"))
-			};
+      String[] xmls =
+          new String[] {
+            Http.URLtoString(ctx.getResource("/WEB-INF/portlet.xml")),
+            Http.URLtoString(ctx.getResource("/WEB-INF/liferay-portlet.xml"))
+          };
 
-			_portlets = PortletManagerUtil.initWAR(_servletContextName, xmls);
+      _portlets = PortletManagerUtil.initWAR(_servletContextName, xmls);
 
-			// Portlet context wrapper
+      // Portlet context wrapper
 
-			Iterator itr1 = _portlets.iterator();
+      Iterator itr1 = _portlets.iterator();
 
-			while (itr1.hasNext()) {
-				Portlet portlet = (Portlet)itr1.next();
+      while (itr1.hasNext()) {
+        Portlet portlet = (Portlet) itr1.next();
 
-				com.dotcms.repackage.javax.portlet.Portlet portletInstance =
-					(com.dotcms.repackage.javax.portlet.Portlet)contextClassLoader.loadClass(
-						portlet.getPortletClass()).newInstance();
+        com.dotcms.repackage.javax.portlet.Portlet portletInstance =
+            (com.dotcms.repackage.javax.portlet.Portlet)
+                contextClassLoader.loadClass(portlet.getPortletClass()).newInstance();
 
+        Scheduler schedulerInstance = null;
+        if (Validator.isNotNull(portlet.getSchedulerClass())) {
+          schedulerInstance =
+              (Scheduler) contextClassLoader.loadClass(portlet.getSchedulerClass()).newInstance();
+        }
 
+        PreferencesValidator prefsValidator = null;
+        if (Validator.isNotNull(portlet.getPreferencesValidator())) {
+          prefsValidator =
+              (PreferencesValidator)
+                  contextClassLoader.loadClass(portlet.getPreferencesValidator()).newInstance();
 
-				Scheduler schedulerInstance = null;
-				if (Validator.isNotNull(portlet.getSchedulerClass())) {
-					schedulerInstance = (Scheduler)contextClassLoader.loadClass(
-						portlet.getSchedulerClass()).newInstance();
-				}
+          try {
+            if (GetterUtil.getBoolean(PropsUtil.get(PropsUtil.PREFERENCE_VALIDATE_ON_STARTUP))) {
 
-				PreferencesValidator prefsValidator = null;
-				if (Validator.isNotNull(portlet.getPreferencesValidator())) {
-					prefsValidator =
-						(PreferencesValidator)contextClassLoader.loadClass(
-							portlet.getPreferencesValidator()).newInstance();
+              prefsValidator.validate(
+                  PortletPreferencesSerializer.fromDefaultXML(portlet.getDefaultPreferences()));
+            }
+          } catch (Exception e1) {
+            _log.warn(
+                "Portlet with the name "
+                    + portlet.getPortletId()
+                    + " does not have valid default preferences");
+          }
+        }
 
-					try {
-						if (GetterUtil.getBoolean(PropsUtil.get(
-								PropsUtil.PREFERENCE_VALIDATE_ON_STARTUP))) {
+        Map resourceBundles = null;
 
-							prefsValidator.validate(
-								PortletPreferencesSerializer.fromDefaultXML(
-									portlet.getDefaultPreferences()));
-						}
-					}
-					catch (Exception e1) {
-						_log.warn(
-							"Portlet with the name " + portlet.getPortletId() +
-								" does not have valid default preferences");
-					}
-				}
+        if (Validator.isNotNull(portlet.getResourceBundle())) {
+          resourceBundles = CollectionFactory.getHashMap();
 
-				Map resourceBundles = null;
+          Iterator itr2 = portlet.getSupportedLocales().iterator();
 
-				if (Validator.isNotNull(portlet.getResourceBundle())) {
-					resourceBundles = CollectionFactory.getHashMap();
+          while (itr2.hasNext()) {
+            String supportedLocale = (String) itr2.next();
 
-					Iterator itr2 = portlet.getSupportedLocales().iterator();
+            Locale locale = new Locale(supportedLocale);
 
-					while (itr2.hasNext()) {
-						String supportedLocale = (String)itr2.next();
+            try {
+              ResourceBundle resourceBundle =
+                  ResourceBundle.getBundle(portlet.getResourceBundle(), locale, contextClassLoader);
 
-						Locale locale = new Locale(supportedLocale);
+              resourceBundles.put(locale.getLanguage(), resourceBundle);
+            } catch (MissingResourceException mre) {
+              _log.warn(mre.getMessage());
+            }
+          }
+        }
 
-						try {
-							ResourceBundle resourceBundle =
-								ResourceBundle.getBundle(
-									portlet.getResourceBundle(), locale,
-									contextClassLoader);
+        Map customUserAttributes = CollectionFactory.getHashMap();
 
-							resourceBundles.put(
-								locale.getLanguage(), resourceBundle);
-						}
-						catch (MissingResourceException mre) {
-							_log.warn(mre.getMessage());
-						}
-					}
-				}
+        Iterator itr2 = portlet.getCustomUserAttributes().entrySet().iterator();
 
-				Map customUserAttributes = CollectionFactory.getHashMap();
+        while (itr2.hasNext()) {
+          Map.Entry entry = (Map.Entry) itr2.next();
 
-				Iterator itr2 =
-					portlet.getCustomUserAttributes().entrySet().iterator();
+          String attrName = (String) entry.getKey();
+          String attrCustomClass = (String) entry.getValue();
 
-				while (itr2.hasNext()) {
-					Map.Entry entry = (Map.Entry)itr2.next();
+          customUserAttributes.put(
+              attrCustomClass, contextClassLoader.loadClass(attrCustomClass).newInstance());
+        }
 
-					String attrName = (String)entry.getKey();
-					String attrCustomClass = (String)entry.getValue();
+        PortletContextWrapper pcw =
+            new PortletContextWrapper(
+                portlet.getPortletId(),
+                ctx,
+                portletInstance,
+                schedulerInstance,
+                prefsValidator,
+                resourceBundles,
+                customUserAttributes);
 
-					customUserAttributes.put(
-						attrCustomClass,
-						contextClassLoader.loadClass(
-							attrCustomClass).newInstance());
-				}
+        PortletContextPool.put(portlet.getPortletId(), pcw);
+      }
 
-				PortletContextWrapper pcw = new PortletContextWrapper(
-					portlet.getPortletId(), ctx, portletInstance,
-					schedulerInstance, prefsValidator,
-					resourceBundles, customUserAttributes);
+      // Portlet class loader
 
-				PortletContextPool.put(portlet.getPortletId(), pcw);
-			}
+      String servletPath = ctx.getRealPath("/");
+      if (!servletPath.endsWith("/") && !servletPath.endsWith("\\")) {
+        servletPath += "/";
+      }
 
-			// Portlet class loader
+      File servletClasses = new File(servletPath + "WEB-INF/classes");
+      File servletLib = new File(servletPath + "WEB-INF/lib");
 
-			String servletPath = ctx.getRealPath("/");
-			if (!servletPath.endsWith("/") && !servletPath.endsWith("\\")) {
-				servletPath += "/";
-			}
+      List urls = new ArrayList();
 
-			File servletClasses = new File(servletPath + "WEB-INF/classes");
-			File servletLib = new File(servletPath + "WEB-INF/lib");
+      if (servletClasses.exists()) {
+        urls.add(new URL("file:" + servletClasses + "/"));
+      }
 
-			List urls = new ArrayList();
+      if (servletLib.exists()) {
+        String[] jars = FileUtil.listFiles(servletLib);
 
-			if (servletClasses.exists()) {
-				urls.add(new URL("file:" + servletClasses + "/"));
-			}
+        for (int i = 0; i < jars.length; i++) {
+          urls.add(new URL("file:" + servletLib + "/" + jars[i]));
+        }
+      }
 
-			if (servletLib.exists()) {
-				String[] jars = FileUtil.listFiles(servletLib);
+      URLClassLoader portletClassLoader =
+          new URLClassLoader((URL[]) urls.toArray(new URL[0]), contextClassLoader);
 
-				for (int i = 0; i < jars.length; i++) {
-					urls.add(new URL("file:" + servletLib + "/" + jars[i]));
-				}
-			}
+      ctx.setAttribute(WebKeys.PORTLET_CLASS_LOADER, portletClassLoader);
 
-			URLClassLoader portletClassLoader = new URLClassLoader(
-				(URL[])urls.toArray(new URL[0]), contextClassLoader);
+      // Portlet display
 
-			ctx.setAttribute(WebKeys.PORTLET_CLASS_LOADER, portletClassLoader);
+      String xml = Http.URLtoString(ctx.getResource("/WEB-INF/liferay-display.xml"));
 
-			// Portlet display
+      Map newCategories = PortletManagerUtil.getWARDisplay(_servletContextName, xml);
 
-			String xml = Http.URLtoString(ctx.getResource(
-				"/WEB-INF/liferay-display.xml"));
+      for (int i = 0; i < _companyIds.length; i++) {
+        String companyId = _companyIds[i];
 
-			Map newCategories = PortletManagerUtil.getWARDisplay(
-				_servletContextName, xml);
+        Map oldCategories = (Map) WebAppPool.get(companyId, WebKeys.PORTLET_DISPLAY);
 
-			for (int i = 0; i < _companyIds.length; i++) {
-				String companyId = _companyIds[i];
+        Map mergedCategories = PortalUtil.mergeCategories(oldCategories, newCategories);
 
-				Map oldCategories = (Map)WebAppPool.get(
-					companyId, WebKeys.PORTLET_DISPLAY);
+        WebAppPool.put(companyId, WebKeys.PORTLET_DISPLAY, mergedCategories);
+      }
 
-				Map mergedCategories =
-					PortalUtil.mergeCategories(oldCategories, newCategories);
+      // Reinitialize portal properties
 
-				WebAppPool.put(
-					companyId, WebKeys.PORTLET_DISPLAY, mergedCategories);
-			}
+      PropsUtil.init();
+    } catch (Exception e2) {
+      Logger.error(this, e2.getMessage(), e2);
+    }
+  }
 
-			// Reinitialize portal properties
+  public void contextDestroyed(ServletContextEvent sce) {
+    Set portletIds = new HashSet();
 
-			PropsUtil.init();
-		}
-		catch (Exception e2) {
-			Logger.error(this,e2.getMessage(),e2);
-		}
-	}
+    if (_portlets != null) {
+      Iterator itr = _portlets.iterator();
 
-	public void contextDestroyed(ServletContextEvent sce) {
-		Set portletIds = new HashSet();
+      while (itr.hasNext()) {
+        Portlet portlet = (Portlet) itr.next();
 
-		if (_portlets != null) {
-			Iterator itr = _portlets.iterator();
+        PortalUtil.destroyPortletInstance(portlet);
 
-			while (itr.hasNext()) {
-				Portlet portlet = (Portlet)itr.next();
+        portletIds.add(portlet.getPortletId());
+      }
 
-				PortalUtil.destroyPortletInstance(portlet);
+      _portlets = null;
+    }
 
-				portletIds.add(portlet.getPortletId());
-			}
+    if (portletIds.size() > 0) {
+      for (int i = 0; i < _companyIds.length; i++) {
+        String companyId = _companyIds[i];
 
-			_portlets = null;
-		}
+        Map oldCategories = (Map) WebAppPool.get(companyId, WebKeys.PORTLET_DISPLAY);
 
-		if (portletIds.size() > 0) {
-			for (int i = 0; i < _companyIds.length; i++) {
-				String companyId = _companyIds[i];
+        Iterator itr1 = oldCategories.entrySet().iterator();
 
-				Map oldCategories = (Map)WebAppPool.get(
-					companyId, WebKeys.PORTLET_DISPLAY);
+        while (itr1.hasNext()) {
+          Map.Entry entry = (Map.Entry) itr1.next();
 
-				Iterator itr1 = oldCategories.entrySet().iterator();
+          String categoryName = (String) entry.getKey();
+          List oldKvps = (List) entry.getValue();
 
-				while (itr1.hasNext()) {
-					Map.Entry entry = (Map.Entry)itr1.next();
+          Iterator itr2 = oldKvps.iterator();
 
-					String categoryName = (String)entry.getKey();
-					List oldKvps = (List)entry.getValue();
+          while (itr2.hasNext()) {
+            KeyValuePair kvp = (KeyValuePair) itr2.next();
 
-					Iterator itr2 = oldKvps.iterator();
+            String portletId = (String) kvp.getKey();
 
-					while (itr2.hasNext()) {
-						KeyValuePair kvp = (KeyValuePair)itr2.next();
+            if (portletIds.contains(portletId)) {
+              itr2.remove();
+            }
+          }
+        }
+      }
+    }
+  }
 
-						String portletId = (String)kvp.getKey();
+  private static final Log _log = LogFactory.getLog(PortletContextListener.class);
 
-						if (portletIds.contains(portletId)) {
-							itr2.remove();
-						}
-					}
-				}
-			}
-		}
-	}
-
-	private static final Log _log =
-		LogFactory.getLog(PortletContextListener.class);
-
-	private String _servletContextName;
-	private String[] _companyIds;
-	private List _portlets;
-
+  private String _servletContextName;
+  private String[] _companyIds;
+  private List _portlets;
 }

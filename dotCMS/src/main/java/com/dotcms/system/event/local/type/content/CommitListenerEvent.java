@@ -9,14 +9,13 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
  */
 public class CommitListenerEvent {
 
-    private final Contentlet contentlet;
+  private final Contentlet contentlet;
 
-    public CommitListenerEvent(Contentlet contentlet) {
-        this.contentlet = contentlet;
-    }
+  public CommitListenerEvent(Contentlet contentlet) {
+    this.contentlet = contentlet;
+  }
 
-    public Contentlet getContentlet() {
-        return contentlet;
-    }
-
+  public Contentlet getContentlet() {
+    return contentlet;
+  }
 }

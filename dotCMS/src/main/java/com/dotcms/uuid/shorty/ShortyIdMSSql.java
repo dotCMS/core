@@ -1,8 +1,3 @@
 package com.dotcms.uuid.shorty;
 
-public class ShortyIdMSSql extends ShortyIdSql {
-
-
-
-
-}
+public class ShortyIdMSSql extends ShortyIdSql {}

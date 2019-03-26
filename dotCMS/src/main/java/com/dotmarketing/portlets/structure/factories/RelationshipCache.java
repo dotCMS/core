@@ -1,54 +1,53 @@
 package com.dotmarketing.portlets.structure.factories;
 
-import java.util.List;
-
 import com.dotcms.contenttype.model.type.ContentTypeIf;
 import com.dotmarketing.business.Cachable;
 import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.portlets.structure.model.Relationship;
-
+import java.util.List;
 
 public abstract class RelationshipCache implements Cachable {
-	
-	// ### READ ###
-	public abstract Relationship getRelationshipByInode(String inode) throws DotCacheException;
 
-	public abstract Relationship getRelationshipByName(String name) throws DotCacheException;
+  // ### READ ###
+  public abstract Relationship getRelationshipByInode(String inode) throws DotCacheException;
 
-	public abstract void putRelationshipByInode(Relationship rel);
+  public abstract Relationship getRelationshipByName(String name) throws DotCacheException;
 
-	public abstract void removeRelationshipByInode(Relationship rel);
-	
-	abstract public void clearCache();
+  public abstract void putRelationshipByInode(Relationship rel);
 
-	public List<Relationship> getRelationshipsByStruct(ContentTypeIf struct) throws DotCacheException {
-		// TODO Auto-generated method stub
-		return null;
-	}
+  public abstract void removeRelationshipByInode(Relationship rel);
 
-	public void putRelationshipsByStruct(ContentTypeIf struct, List<Relationship> rels) throws DotCacheException {
-		// TODO Auto-generated method stub
-		
-	}
+  public abstract void clearCache();
 
-	public void removeRelationshipsByStruct(ContentTypeIf struct) throws DotCacheException {
-		// TODO Auto-generated method stub
-		
-	}
+  public List<Relationship> getRelationshipsByStruct(ContentTypeIf struct)
+      throws DotCacheException {
+    // TODO Auto-generated method stub
+    return null;
+  }
 
-	public void putRelationshipsByType(ContentTypeIf type, List<Relationship> rels) {
-		// TODO Auto-generated method stub
-		
-	}
+  public void putRelationshipsByStruct(ContentTypeIf struct, List<Relationship> rels)
+      throws DotCacheException {
+    // TODO Auto-generated method stub
 
-	public void removeRelationshipsByType(ContentTypeIf type) {
-		// TODO Auto-generated method stub
-		
-	}
+  }
 
-	public List<Relationship> getRelationshipsByType(ContentTypeIf type) throws DotCacheException {
-		// TODO Auto-generated method stub
-		return null;
-	}
-	
+  public void removeRelationshipsByStruct(ContentTypeIf struct) throws DotCacheException {
+    // TODO Auto-generated method stub
+
+  }
+
+  public void putRelationshipsByType(ContentTypeIf type, List<Relationship> rels) {
+    // TODO Auto-generated method stub
+
+  }
+
+  public void removeRelationshipsByType(ContentTypeIf type) {
+    // TODO Auto-generated method stub
+
+  }
+
+  public List<Relationship> getRelationshipsByType(ContentTypeIf type) throws DotCacheException {
+    // TODO Auto-generated method stub
+    return null;
+  }
 }

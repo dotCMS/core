@@ -1,12 +1,9 @@
 package com.ettrema.httpclient;
 
-/**
- *
- * @author mcevoyb
- */
+/** @author mcevoyb */
 public interface ConnectionListener {
 
-    void onStartRequest();
+  void onStartRequest();
 
-    void onFinishRequest();
+  void onFinishRequest();
 }

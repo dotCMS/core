@@ -1,15 +1,5 @@
 package com.dotcms.cluster.business;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.nio.file.Files;
-import java.util.Date;
-import java.util.List;
-
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.cluster.bean.Server;
@@ -25,221 +15,225 @@ import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.nio.file.Files;
+import java.util.Date;
+import java.util.List;
 
 public class ServerAPIImpl implements ServerAPI {
 
-    private static volatile String SERVER_ID=null;
-	private final ServerFactory serverFactory;
+  private static volatile String SERVER_ID = null;
+  private final ServerFactory serverFactory;
 
-	public ServerAPIImpl() {
-		serverFactory = FactoryLocator.getServerFactory();
-	}
+  public ServerAPIImpl() {
+    serverFactory = FactoryLocator.getServerFactory();
+  }
 
-	@CloseDBIfOpened
-	public void saveServer(Server server) throws DotDataException {
-		serverFactory.saveServer(server);
-	}
+  @CloseDBIfOpened
+  public void saveServer(Server server) throws DotDataException {
+    serverFactory.saveServer(server);
+  }
 
-	@CloseDBIfOpened
-	public Server getServer(String serverId) throws DotDataException{
-		return serverFactory.getServer(serverId);
-	}
+  @CloseDBIfOpened
+  public Server getServer(String serverId) throws DotDataException {
+    return serverFactory.getServer(serverId);
+  }
 
+  @Override
+  public Server getOrCreateMyServer() throws DotDataException {
+    final Server tryServer = getServer(readServerId());
 
-	@Override
-    public Server getOrCreateMyServer() throws DotDataException {
-	    final Server tryServer = getServer(readServerId());
+    if (tryServer == null || tryServer.getServerId() == null) {
 
-        if(tryServer == null || tryServer.getServerId() == null)  {
-
-        	createMyServer();
-
-        }
-
-        return getServer(readServerId());
+      createMyServer();
     }
 
+    return getServer(readServerId());
+  }
 
-	private void createMyServer() throws DotDataException {
+  private void createMyServer() throws DotDataException {
 
-		Server.Builder serverBuilder =  Server.builder()
-				.withServerId(readServerId());
+    Server.Builder serverBuilder = Server.builder().withServerId(readServerId());
 
-		String hostName = "localhost";
-		try {
-            hostName = InetAddress.getLocalHost().getHostName();
+    String hostName = "localhost";
+    try {
+      hostName = InetAddress.getLocalHost().getHostName();
 
-        } catch (UnknownHostException e) {
-            Logger.error(ClusterFactory.class, "Error trying to get the host name. ", e);
+    } catch (UnknownHostException e) {
+      Logger.error(ClusterFactory.class, "Error trying to get the host name. ", e);
+    }
+
+    final String ipAddress = ClusterFactory.getIPAdress();
+    serverBuilder.withIpAddress(ipAddress);
+
+    serverBuilder.withName(hostName);
+    serverBuilder.withClusterId(ClusterFactory.getClusterId());
+
+    // set up ports
+
+    String port = ClusterFactory.getNextAvailablePort(readServerId(), ServerPort.CACHE_PORT);
+    Config.setProperty(ServerPort.CACHE_PORT.getPropertyName(), port);
+    serverBuilder.withCachePort(Integer.parseInt(port));
+
+    port = new ESClient().getNextAvailableESPort(readServerId(), ipAddress, null, null);
+    serverBuilder.withEsTransportTcpPort(Integer.parseInt(port));
+
+    port = ClusterFactory.getNextAvailablePort(readServerId(), ServerPort.ES_HTTP_PORT);
+    serverBuilder.withEsHttpPort(Integer.parseInt(port));
+    saveServer(serverBuilder.build());
+
+    try {
+      writeHeartBeatToDisk();
+    } catch (IOException e) {
+      Logger.error(ClusterFactory.class, "Could not write Server ID to file system", e);
+    }
+  }
+
+  private File serverIdFile() {
+
+    String realPath =
+        ConfigUtils.getDynamicContentPath()
+            + File.separator
+            + "license"
+            + File.separator
+            + "server_id.dat";
+
+    Logger.debug(ServerAPIImpl.class, "Server Id " + realPath);
+
+    return new File(realPath);
+  }
+
+  @Override
+  public String readServerId() {
+    // once set this should never change
+
+    if (SERVER_ID == null) {
+
+      synchronized (this) {
+        if (SERVER_ID == null) {
+
+          try {
+
+            final File serverFile = serverIdFile();
+            if (!serverFile.exists()) {
+              writeServerIdToDisk(UUIDUtil.uuid());
+            }
+
+            try (BufferedReader br = Files.newBufferedReader(serverFile.toPath())) {
+              SERVER_ID = br.readLine();
+              Logger.debug(ServerAPIImpl.class, "ServerID: " + SERVER_ID);
+            }
+          } catch (IOException ioe) {
+            throw new DotStateException(
+                "Unable to read server id at "
+                    + serverIdFile()
+                    + " please make sure that the directory exists and is readable and writeable. If problems"
+                    + " persist, try deleting the file.  The system will recreate a new one on startup",
+                ioe);
+          }
         }
+      }
+    }
 
-		final String ipAddress=ClusterFactory.getIPAdress();
-		serverBuilder.withIpAddress(ipAddress);
-		
-		serverBuilder.withName(hostName);
-		serverBuilder.withClusterId(ClusterFactory.getClusterId());
+    return SERVER_ID;
+  }
 
-		// set up ports
+  private void writeServerIdToDisk(String serverId) throws IOException {
 
-		String port=ClusterFactory.getNextAvailablePort(readServerId(), ServerPort.CACHE_PORT);
-		Config.setProperty(ServerPort.CACHE_PORT.getPropertyName(), port);
-		serverBuilder.withCachePort(Integer.parseInt(port));
+    File serverFile = serverIdFile();
+    serverFile.mkdirs();
+    serverFile.delete();
 
-		port=new ESClient().getNextAvailableESPort(readServerId(), ipAddress,null, null);
-		serverBuilder.withEsTransportTcpPort(Integer.parseInt(port));
+    try (OutputStream os = Files.newOutputStream(serverFile.toPath())) {
+      os.write(serverId.getBytes());
+    }
+  }
 
-		port=ClusterFactory.getNextAvailablePort(readServerId(), ServerPort.ES_HTTP_PORT);
-		serverBuilder.withEsHttpPort(Integer.parseInt(port));
-		saveServer(serverBuilder.build());
+  public void writeHeartBeatToDisk() throws IOException {
+    String serverId = readServerId();
+    // First We need to check if the heartbeat job is enable.
+    if (Config.getBooleanProperty("ENABLE_SERVER_HEARTBEAT", true)) {
+      String realPath =
+          APILocator.getFileAssetAPI().getRealAssetsRootPath()
+              + java.io.File.separator
+              + "server"
+              + java.io.File.separator
+              + serverId;
 
-		try {
-            writeHeartBeatToDisk();
-        } catch (IOException e) {
-            Logger.error(ClusterFactory.class, "Could not write Server ID to file system" , e);
-        }
-	}
+      File serverDir = new File(realPath);
+      if (!serverDir.exists()) {
+        serverDir.mkdirs();
+      }
 
-	private File serverIdFile(){
-	    
-	    String realPath = ConfigUtils.getDynamicContentPath() 
-	                    + File.separator 
-	                    + "license"  
-	                     + File.separator 
-	                    + "server_id.dat";
-        
-        Logger.debug(ServerAPIImpl.class, "Server Id " + realPath);
+      File heartBeat = new File(realPath + java.io.File.separator + "heartbeat.dat");
 
-        return new File(realPath);
-	}
-	
+      try (OutputStream os = Files.newOutputStream(heartBeat.toPath())) {
+        os.write(UtilMethods.dateToHTMLDate(new Date(), "yyyy-MM-dd H:mm:ss").getBytes());
+      }
+    } else {
+      Logger.warn(
+          ServerAPIImpl.class,
+          "ENABLE_SERVER_HEARTBEAT is set to false to we do not need to write to Disk ");
+    }
+  }
 
-	@Override
-	public String readServerId()  {
-	    // once set this should never change
+  @CloseDBIfOpened
+  @Override
+  public List<Server> getAliveServers() throws DotDataException {
+    return serverFactory.getAliveServers();
+  }
 
-	    if(SERVER_ID == null) {
+  @CloseDBIfOpened
+  @Override
+  public List<Server> getAliveServers(List<String> toExclude) throws DotDataException {
+    return serverFactory.getAliveServers(toExclude);
+  }
 
-	    	synchronized (this) {
+  @WrapInTransaction
+  @Override
+  public void updateServer(Server server) throws DotDataException {
+    serverFactory.updateServer(server);
+  }
 
-				if (SERVER_ID == null) {
+  @CloseDBIfOpened
+  @Override
+  public String[] getAliveServersIds() throws DotDataException {
+    return serverFactory.getAliveServersIds();
+  }
 
-					try {
+  @CloseDBIfOpened
+  @Override
+  public List<Server> getAllServers() throws DotDataException {
+    return serverFactory.getAllServers();
+  }
 
-						final File serverFile = serverIdFile();
-						if (!serverFile.exists()) {
-							writeServerIdToDisk(UUIDUtil.uuid());
-						}
+  @WrapInTransaction
+  @Override
+  public void updateServerName(String serverId, String name) throws DotDataException {
+    serverFactory.updateServerName(serverId, name);
+  }
 
-						try (BufferedReader br = Files.newBufferedReader(serverFile.toPath())) {
-							SERVER_ID = br.readLine();
-							Logger.debug(ServerAPIImpl.class, "ServerID: " + SERVER_ID);
-						}
-					} catch (IOException ioe) {
-						throw new DotStateException("Unable to read server id at " + serverIdFile() +
-								" please make sure that the directory exists and is readable and writeable. If problems" +
-								" persist, try deleting the file.  The system will recreate a new one on startup", ioe);
-					}
-				}
-			}
-	    }
+  @WrapInTransaction
+  @Override
+  public void removeServerFromClusterTable(String serverId) throws DotDataException {
+    serverFactory.removeServerFromClusterTable(serverId);
+  }
 
-	    return SERVER_ID;
-	}
+  @WrapInTransaction
+  @Override
+  public List<Server> getInactiveServers() throws DotDataException {
+    return serverFactory.getInactiveServers();
+  }
 
-	private  void writeServerIdToDisk(String serverId) throws IOException {
+  @WrapInTransaction
+  @Override
+  public Server getCurrentServer() throws DotDataException {
 
-        File serverFile = serverIdFile();
-        serverFile.mkdirs();
-        serverFile.delete();
-
-        try(OutputStream os = Files.newOutputStream(serverFile.toPath())){
-            os.write(serverId.getBytes());
-        }
-	}
-
-	public  void writeHeartBeatToDisk() throws IOException {
-		String serverId = readServerId();
-		//First We need to check if the heartbeat job is enable.
-		if ( Config.getBooleanProperty("ENABLE_SERVER_HEARTBEAT", true) ) {
-			String realPath = APILocator.getFileAssetAPI().getRealAssetsRootPath()
-					+ java.io.File.separator
-					+ "server"
-					+ java.io.File.separator
-					+ serverId;
-
-			File serverDir = new File(realPath);
-			if(!serverDir.exists()) {
-				serverDir.mkdirs();
-			}
-
-			File heartBeat = new File(realPath + java.io.File.separator + "heartbeat.dat");
-
-			try(OutputStream os = Files.newOutputStream(heartBeat.toPath())){
-			    os.write(UtilMethods.dateToHTMLDate(new Date(), "yyyy-MM-dd H:mm:ss").getBytes());
-			}
-		} else {
-			Logger.warn(ServerAPIImpl.class, "ENABLE_SERVER_HEARTBEAT is set to false to we do not need to write to Disk " );
-		}
-
-	}
-
-	@CloseDBIfOpened
-	@Override
-	public List<Server> getAliveServers() throws DotDataException {
-		return serverFactory.getAliveServers();
-	}
-	
-
-	
-	@CloseDBIfOpened
-	@Override
-	public List<Server> getAliveServers(List<String> toExclude) throws DotDataException {
-		return serverFactory.getAliveServers(toExclude);
-	}
-
-
-
-
-	@WrapInTransaction
-	@Override
-	public void updateServer(Server server) throws DotDataException{
-		serverFactory.updateServer(server);
-	}
-
-	@CloseDBIfOpened
-	@Override
-	public String[] getAliveServersIds() throws DotDataException {
-		return serverFactory.getAliveServersIds();
-	}
-
-	@CloseDBIfOpened
-	@Override
-	public List<Server> getAllServers() throws DotDataException {
-		return serverFactory.getAllServers();
-	}
-
-	@WrapInTransaction
-	@Override
-	public void updateServerName(String serverId, String name) throws DotDataException {
-		serverFactory.updateServerName(serverId, name);
-	}
-
-	@WrapInTransaction
-	@Override
-	public void removeServerFromClusterTable(String serverId) throws DotDataException{
-		serverFactory.removeServerFromClusterTable(serverId);
-	}
-	
-	@WrapInTransaction
-	@Override
-	public List<Server> getInactiveServers() throws DotDataException{
-		return serverFactory.getInactiveServers();
-	}
-
-	@WrapInTransaction
-	@Override
-	public Server getCurrentServer() throws DotDataException {
-
-	    return getOrCreateMyServer();
-	}
+    return getOrCreateMyServer();
+  }
 }

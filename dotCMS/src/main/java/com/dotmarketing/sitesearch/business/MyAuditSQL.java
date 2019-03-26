@@ -1,5 +1,3 @@
 package com.dotmarketing.sitesearch.business;
 
-class MyAuditSQL extends SiteSearchAuditSQL {
-    
-}
+class MyAuditSQL extends SiteSearchAuditSQL {}

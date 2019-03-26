@@ -16,7 +16,7 @@ package org.apache.velocity.runtime.parser.node;
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
- * under the License.    
+ * under the License.
  */
 
 import com.dotmarketing.util.Logger;
@@ -38,331 +38,286 @@ import org.apache.velocity.util.introspection.Info;
 import org.apache.velocity.util.introspection.VelMethod;
 
 /**
- *  ASTMethod.java
+ * ASTMethod.java
  *
- *  Method support for references :  $foo.method()
+ * <p>Method support for references : $foo.method()
  *
- *  NOTE :
+ * <p>NOTE :
  *
- *  introspection is now done at render time.
+ * <p>introspection is now done at render time.
  *
- *  Please look at the Parser.jjt file which is
- *  what controls the generation of this class.
+ * <p>Please look at the Parser.jjt file which is what controls the generation of this class.
  *
  * @author <a href="mailto:jvanzyl@apache.org">Jason van Zyl</a>
  * @author <a href="mailto:geirm@optonline.net">Geir Magnusson Jr.</a>
  * @version $Id: ASTMethod.java 898032 2010-01-11 19:51:03Z nbubna $
  */
-public class ASTMethod extends SimpleNode
-{
-    private String methodName = "";
-    private int paramCount = 0;
+public class ASTMethod extends SimpleNode {
+  private String methodName = "";
+  private int paramCount = 0;
 
-    protected Info uberInfo;
+  protected Info uberInfo;
 
-    /**
-     * Indicates if we are running in strict reference mode.
+  /** Indicates if we are running in strict reference mode. */
+  protected boolean strictRef = false;
+
+  /** @param id */
+  public ASTMethod(int id) {
+    super(id);
+  }
+
+  /**
+   * @param p
+   * @param id
+   */
+  public ASTMethod(Parser p, int id) {
+    super(p, id);
+  }
+
+  /**
+   * @see
+   *     org.apache.velocity.runtime.parser.node.SimpleNode#jjtAccept(org.apache.velocity.runtime.parser.node.ParserVisitor,
+   *     java.lang.Object)
+   */
+  public Object jjtAccept(ParserVisitor visitor, Object data) {
+    return visitor.visit(this, data);
+  }
+
+  /**
+   * simple init - init our subtree and get what we can from the AST
+   *
+   * @param context
+   * @param data
+   * @return The init result
+   * @throws TemplateInitException
+   */
+  public Object init(InternalContextAdapter context, Object data) throws TemplateInitException {
+    super.init(context, data);
+
+    /*
+     * make an uberinfo - saves new's later on
      */
-    protected boolean strictRef = false;
 
-    /**
-     * @param id
+    uberInfo = new Info(getTemplateName(), getLine(), getColumn());
+    /*
+     *  this is about all we can do
      */
-    public ASTMethod(int id)
-    {
-        super(id);
+
+    methodName = getFirstTokenImage();
+    paramCount = jjtGetNumChildren() - 1;
+
+    RuntimeServices rsvc = VelocityUtil.getEngine().getRuntimeServices();
+    strictRef = rsvc.getBoolean(RuntimeConstants.RUNTIME_REFERENCES_STRICT, false);
+
+    return data;
+  }
+
+  /**
+   * invokes the method. Returns null if a problem, the actual return if the method returns
+   * something, or an empty string "" if the method returns void
+   *
+   * @param o
+   * @param context
+   * @return Result or null.
+   * @throws MethodInvocationException
+   */
+  public Object execute(Object o, InternalContextAdapter context) throws MethodInvocationException {
+    /*
+     *  new strategy (strategery!) for introspection. Since we want
+     *  to be thread- as well as context-safe, we *must* do it now,
+     *  at execution time.  There can be no in-node caching,
+     *  but if we are careful, we can do it in the context.
+     */
+    Object[] params = new Object[paramCount];
+
+    /*
+     * sadly, we do need recalc the values of the args, as this can
+     * change from visit to visit
+     */
+    final Class[] paramClasses =
+        paramCount > 0 ? new Class[paramCount] : ArrayUtils.EMPTY_CLASS_ARRAY;
+
+    for (int j = 0; j < paramCount; j++) {
+      params[j] = jjtGetChild(j + 1).value(context);
+      if (params[j] != null) {
+        paramClasses[j] = params[j].getClass();
+      }
     }
 
-    /**
-     * @param p
-     * @param id
-     */
-    public ASTMethod(Parser p, int id)
-    {
-        super(p, id);
+    VelMethod method =
+        ClassUtils.getMethod(methodName, params, paramClasses, o, context, this, strictRef);
+    if (method == null) return null;
+
+    try {
+      /*
+       *  get the returned object.  It may be null, and that is
+       *  valid for something declared with a void return type.
+       *  Since the caller is expecting something to be returned,
+       *  as long as things are peachy, we can return an empty
+       *  String so ASTReference() correctly figures out that
+       *  all is well.
+       */
+
+      Object obj = method.invoke(o, params);
+
+      if (obj == null) {
+        if (method.getReturnType() == Void.TYPE) {
+          return "";
+        }
+      }
+
+      return obj;
+    } catch (InvocationTargetException ite) {
+      return handleInvocationException(o, context, ite.getTargetException());
     }
 
-    /**
-     * @see org.apache.velocity.runtime.parser.node.SimpleNode#jjtAccept(org.apache.velocity.runtime.parser.node.ParserVisitor, java.lang.Object)
-     */
-    public Object jjtAccept(ParserVisitor visitor, Object data)
-    {
-        return visitor.visit(this, data);
+    /** Can also be thrown by method invocation * */
+    catch (IllegalArgumentException t) {
+      return handleInvocationException(o, context, t);
     }
 
-    /**
-     *  simple init - init our subtree and get what we can from
-     *  the AST
-     * @param context
-     * @param data
-     * @return The init result
-     * @throws TemplateInitException
+    /** pass through application level runtime exceptions */
+    catch (RuntimeException e) {
+      throw e;
+    } catch (Exception e) {
+      String msg =
+          "ASTMethod.execute() : exception invoking method '" + methodName + "' in " + o.getClass();
+      Logger.error(this, msg, e);
+      throw new VelocityException(msg, e);
+    }
+  }
+
+  private Object handleInvocationException(Object o, InternalContextAdapter context, Throwable t) {
+    /*
+     * We let StopCommands go up to the directive they are for/from
      */
-    public Object init(  InternalContextAdapter context, Object data)
-        throws TemplateInitException
-    {
-        super.init(  context, data );
-
-        /*
-         * make an uberinfo - saves new's later on
-         */
-
-        uberInfo = new Info(getTemplateName(),
-                getLine(),getColumn());
-        /*
-         *  this is about all we can do
-         */
-
-        methodName = getFirstTokenImage();
-        paramCount = jjtGetNumChildren() - 1;
-        
-        RuntimeServices rsvc=VelocityUtil.getEngine().getRuntimeServices();
-        strictRef = rsvc.getBoolean(RuntimeConstants.RUNTIME_REFERENCES_STRICT, false);
-        
-        return data;
+    if (t instanceof StopCommand) {
+      throw (StopCommand) t;
     }
 
-    /**
-     *  invokes the method.  Returns null if a problem, the
-     *  actual return if the method returns something, or
-     *  an empty string "" if the method returns void
-     * @param o
-     * @param context
-     * @return Result or null.
-     * @throws MethodInvocationException
+    /*
+     *  In the event that the invocation of the method
+     *  itself throws an exception, we want to catch that
+     *  wrap it, and throw.  We don't log here as we want to figure
+     *  out which reference threw the exception, so do that
+     *  above
      */
-    public Object execute(Object o, InternalContextAdapter context)
-        throws MethodInvocationException
-    {
-        /*
-         *  new strategy (strategery!) for introspection. Since we want
-         *  to be thread- as well as context-safe, we *must* do it now,
-         *  at execution time.  There can be no in-node caching,
-         *  but if we are careful, we can do it in the context.
-         */
-        Object [] params = new Object[paramCount];
+    else if (t instanceof Exception) {
+      try {
+        RuntimeServices rsvc = VelocityUtil.getEngine().getRuntimeServices();
+        return EventHandlerUtil.methodException(
+            rsvc, context, o.getClass(), methodName, (Exception) t);
+      }
 
-          /*
-           * sadly, we do need recalc the values of the args, as this can
-           * change from visit to visit
-           */
-        final Class[] paramClasses =       
-            paramCount > 0 ? new Class[paramCount] : ArrayUtils.EMPTY_CLASS_ARRAY;
-
-        for (int j = 0; j < paramCount; j++)
-        {
-            params[j] = jjtGetChild(j + 1).value(context);
-            if (params[j] != null)
-            {
-                paramClasses[j] = params[j].getClass();
-            }
-        }
-            
-        VelMethod method = ClassUtils.getMethod(methodName, params, paramClasses, 
-            o, context, this, strictRef);
-        if (method == null) return null;
-
-        try
-        {
-            /*
-             *  get the returned object.  It may be null, and that is
-             *  valid for something declared with a void return type.
-             *  Since the caller is expecting something to be returned,
-             *  as long as things are peachy, we can return an empty
-             *  String so ASTReference() correctly figures out that
-             *  all is well.
-             */
-
-            Object obj = method.invoke(o, params);
-
-            if (obj == null)
-            {
-                if( method.getReturnType() == Void.TYPE)
-                {
-                    return "";
-                }
-            }
-
-            return obj;
-        }
-        catch( InvocationTargetException ite )
-        {
-            return handleInvocationException(o, context, ite.getTargetException());
-        }
-        
-        /** Can also be thrown by method invocation **/
-        catch( IllegalArgumentException t )
-        {
-            return handleInvocationException(o, context, t);
-        }
-        
-        /**
-         * pass through application level runtime exceptions
-         */
-        catch( RuntimeException e )
-        {
-            throw e;
-        }
-        catch( Exception e )
-        {
-            String msg = "ASTMethod.execute() : exception invoking method '"
-                         + methodName + "' in " + o.getClass();
-            Logger.error(this,msg, e);
-            throw new VelocityException(msg, e);
-        }
-    }
-
-    private Object handleInvocationException(Object o, InternalContextAdapter context, Throwable t)
-    {
-        /*
-         * We let StopCommands go up to the directive they are for/from
-         */
-        if (t instanceof StopCommand)
-        {
-            throw (StopCommand)t;
-        }
-
-        /*
-         *  In the event that the invocation of the method
-         *  itself throws an exception, we want to catch that
-         *  wrap it, and throw.  We don't log here as we want to figure
-         *  out which reference threw the exception, so do that
-         *  above
-         */
-        else if (t instanceof Exception)
-        {
-            try
-            {
-                RuntimeServices rsvc=VelocityUtil.getEngine().getRuntimeServices();
-                return EventHandlerUtil.methodException( rsvc, context, o.getClass(), methodName, (Exception) t );
-            }
-
-            /**
-             * If the event handler throws an exception, then wrap it
-             * in a MethodInvocationException.  Don't pass through RuntimeExceptions like other
-             * similar catchall code blocks.
-             */
-            catch( Exception e )
-            {
-                throw new MethodInvocationException(
-                    "Invocation of method '"
-                    + methodName + "' in  " + o.getClass()
-                    + " threw exception "
-                    + e.toString(),
-                    e, methodName, getTemplateName(), this.getLine(), this.getColumn());
-            }
-        }
-
-        /*
-         *  let non-Exception Throwables go...
-         */
-        else
-        {
-            /*
-             * no event cartridge to override. Just throw
-             */
-
-            throw new MethodInvocationException(
+      /**
+       * If the event handler throws an exception, then wrap it in a MethodInvocationException.
+       * Don't pass through RuntimeExceptions like other similar catchall code blocks.
+       */
+      catch (Exception e) {
+        throw new MethodInvocationException(
             "Invocation of method '"
-            + methodName + "' in  " + o.getClass()
-            + " threw exception "
-            + t.toString(),
-            t, methodName, getTemplateName(), this.getLine(), this.getColumn());
-        }
+                + methodName
+                + "' in  "
+                + o.getClass()
+                + " threw exception "
+                + e.toString(),
+            e,
+            methodName,
+            getTemplateName(),
+            this.getLine(),
+            this.getColumn());
+      }
     }
 
-    /**
-     * Internal class used as key for method cache.  Combines
-     * ASTMethod fields with array of parameter classes.  Has
-     * public access (and complete constructor) for unit test 
-     * purposes.
-     * @since 1.5
+    /*
+     *  let non-Exception Throwables go...
      */
-    public static class MethodCacheKey
-    {
-        private final String methodName;  
-        private final Class[] params;
+    else {
+      /*
+       * no event cartridge to override. Just throw
+       */
 
-        public MethodCacheKey(String methodName, Class[] params)
-        {
-            /** 
-             * Should never be initialized with nulls, but to be safe we refuse 
-             * to accept them.
-             */
-            this.methodName = (methodName != null) ? methodName : StringUtils.EMPTY;
-            this.params = (params != null) ? params : ArrayUtils.EMPTY_CLASS_ARRAY;
-        }
+      throw new MethodInvocationException(
+          "Invocation of method '"
+              + methodName
+              + "' in  "
+              + o.getClass()
+              + " threw exception "
+              + t.toString(),
+          t,
+          methodName,
+          getTemplateName(),
+          this.getLine(),
+          this.getColumn());
+    }
+  }
 
-        /**
-         * @see java.lang.Object#equals(java.lang.Object)
-         */
-        public boolean equals(Object o)
-        {
-            /** 
-             * note we skip the null test for methodName and params
-             * due to the earlier test in the constructor
-             */            
-            if (o instanceof MethodCacheKey) 
-            {
-                final MethodCacheKey other = (MethodCacheKey) o;                
-                if (params.length == other.params.length && 
-                        methodName.equals(other.methodName)) 
-                {              
-                    for (int i = 0; i < params.length; ++i) 
-                    {
-                        if (params[i] == null)
-                        {
-                            if (params[i] != other.params[i])
-                            {
-                                return false;
-                            }
-                        }
-                        else if (!params[i].equals(other.params[i]))
-                        {
-                            return false;
-                        }
-                    }
-                    return true;
-                }
-            }
-            return false;
-        }
-        
+  /**
+   * Internal class used as key for method cache. Combines ASTMethod fields with array of parameter
+   * classes. Has public access (and complete constructor) for unit test purposes.
+   *
+   * @since 1.5
+   */
+  public static class MethodCacheKey {
+    private final String methodName;
+    private final Class[] params;
 
-        /**
-         * @see java.lang.Object#hashCode()
-         */
-        public int hashCode()
-        {
-            int result = 17;
-
-            /** 
-             * note we skip the null test for methodName and params
-             * due to the earlier test in the constructor
-             */            
-            for (int i = 0; i < params.length; ++i)
-            {
-                final Class param = params[i];
-                if (param != null)
-                {
-                    result = result * 37 + param.hashCode();
-                }
-            }
-            
-            result = result * 37 + methodName.hashCode();
-
-            return result;
-        } 
+    public MethodCacheKey(String methodName, Class[] params) {
+      /** Should never be initialized with nulls, but to be safe we refuse to accept them. */
+      this.methodName = (methodName != null) ? methodName : StringUtils.EMPTY;
+      this.params = (params != null) ? params : ArrayUtils.EMPTY_CLASS_ARRAY;
     }
 
-    /**
-     * @return Returns the methodName.
-     * @since 1.5
-     */
-    public String getMethodName()
-    {
-        return methodName;
+    /** @see java.lang.Object#equals(java.lang.Object) */
+    public boolean equals(Object o) {
+      /**
+       * note we skip the null test for methodName and params due to the earlier test in the
+       * constructor
+       */
+      if (o instanceof MethodCacheKey) {
+        final MethodCacheKey other = (MethodCacheKey) o;
+        if (params.length == other.params.length && methodName.equals(other.methodName)) {
+          for (int i = 0; i < params.length; ++i) {
+            if (params[i] == null) {
+              if (params[i] != other.params[i]) {
+                return false;
+              }
+            } else if (!params[i].equals(other.params[i])) {
+              return false;
+            }
+          }
+          return true;
+        }
+      }
+      return false;
     }
-    
-    
+
+    /** @see java.lang.Object#hashCode() */
+    public int hashCode() {
+      int result = 17;
+
+      /**
+       * note we skip the null test for methodName and params due to the earlier test in the
+       * constructor
+       */
+      for (int i = 0; i < params.length; ++i) {
+        final Class param = params[i];
+        if (param != null) {
+          result = result * 37 + param.hashCode();
+        }
+      }
+
+      result = result * 37 + methodName.hashCode();
+
+      return result;
+    }
+  }
+
+  /**
+   * @return Returns the methodName.
+   * @since 1.5
+   */
+  public String getMethodName() {
+    return methodName;
+  }
 }

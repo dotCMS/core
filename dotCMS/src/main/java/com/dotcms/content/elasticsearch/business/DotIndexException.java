@@ -2,30 +2,28 @@ package com.dotcms.content.elasticsearch.business;
 
 public class DotIndexException extends Exception {
 
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 1L;
-	private String message;
+  /** */
+  private static final long serialVersionUID = 1L;
 
-	public DotIndexException(String message) {
-		this.message = message;
-	}
+  private String message;
 
-	public String getMessage() {
+  public DotIndexException(String message) {
+    this.message = message;
+  }
 
-		return message;
-	}
+  public String getMessage() {
 
-	@Override
-	public String toString() {
+    return message;
+  }
 
-		return message + super.toString();
-	}
+  @Override
+  public String toString() {
 
-	public String getLocalizedMessage() {
+    return message + super.toString();
+  }
 
-		return message;
-	}
+  public String getLocalizedMessage() {
 
+    return message;
+  }
 }

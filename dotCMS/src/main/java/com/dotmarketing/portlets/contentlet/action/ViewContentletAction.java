@@ -33,133 +33,134 @@ import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 
 /**
- * Struts action that retrieves the required information to display the
- * "Content Search" portlet.
- * 
+ * Struts action that retrieves the required information to display the "Content Search" portlet.
+ *
  * @author root
  * @version 1.1
  * @since Mar 22, 2012
- *
  */
 public class ViewContentletAction extends DotPortletAction {
 
-	private LanguageAPI langAPI = APILocator.getLanguageAPI();
-	private StructureAPI structureAPI = APILocator.getStructureAPI();
+  private LanguageAPI langAPI = APILocator.getLanguageAPI();
+  private StructureAPI structureAPI = APILocator.getStructureAPI();
 
-	/**
-	 * 
-	 */
-	public ActionForward render(ActionMapping mapping, ActionForm form, PortletConfig config, RenderRequest req,
-			RenderResponse res) throws Exception {
+  /** */
+  public ActionForward render(
+      ActionMapping mapping,
+      ActionForm form,
+      PortletConfig config,
+      RenderRequest req,
+      RenderResponse res)
+      throws Exception {
 
-		Logger.debug(ViewContentletAction.class, "Running ViewContentletsAction!!!!");
+    Logger.debug(ViewContentletAction.class, "Running ViewContentletsAction!!!!");
 
-		try {
-			// gets the user
-			User user = _getUser(req);
-			_viewContentlets(req, user);
-			return mapping.findForward("portlet.ext.contentlet.view_contentlets");
+    try {
+      // gets the user
+      User user = _getUser(req);
+      _viewContentlets(req, user);
+      return mapping.findForward("portlet.ext.contentlet.view_contentlets");
 
-		} catch (Exception e) {
-			req.setAttribute(PageContext.EXCEPTION, e);
-			return mapping.findForward(Constants.COMMON_ERROR);
-		}
-	}
+    } catch (Exception e) {
+      req.setAttribute(PageContext.EXCEPTION, e);
+      return mapping.findForward(Constants.COMMON_ERROR);
+    }
+  }
 
-	/**
-	 * Retrieves a list of {@link Structure} objects based on specific filtering
-	 * parameters coming in the {@link RenderRequest} object. The resulting
-	 * collection will be added as a request attribute that will be processed by
-	 * the JSP associated to this action.
-	 * 
-	 * @param req
-	 *            - Portlet wrapper class for the HTTP request.
-	 * @param user
-	 *            - The {@link User} loading the portlet.
-	 * @throws Exception
-	 *             An error occurred when processing this request.
-	 */
-	@SuppressWarnings("unchecked")
-	protected void _viewContentlets(RenderRequest req, User user) throws Exception {
-		
-		//GIT-2816
-		RenderRequestImpl reqImpl = (RenderRequestImpl) req;
-		HttpServletRequest httpReq = reqImpl.getHttpServletRequest();
-		HttpSession ses = httpReq.getSession();
-		ContentletAPI conAPI = APILocator.getContentletAPI();
-		ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
+  /**
+   * Retrieves a list of {@link Structure} objects based on specific filtering parameters coming in
+   * the {@link RenderRequest} object. The resulting collection will be added as a request attribute
+   * that will be processed by the JSP associated to this action.
+   *
+   * @param req - Portlet wrapper class for the HTTP request.
+   * @param user - The {@link User} loading the portlet.
+   * @throws Exception An error occurred when processing this request.
+   */
+  @SuppressWarnings("unchecked")
+  protected void _viewContentlets(RenderRequest req, User user) throws Exception {
 
-		List<String> tempBinaryImageInodes = (List<String>) ses.getAttribute(Contentlet.TEMP_BINARY_IMAGE_INODES_LIST);		
-		if(UtilMethods.isSet(tempBinaryImageInodes) && tempBinaryImageInodes.size() > 0){
-			for(String inode : tempBinaryImageInodes){
-				conAPI.delete(conAPI.find(inode, APILocator.getUserAPI().getSystemUser(), false), APILocator.getUserAPI().getSystemUser(), false, true);
-			}
-			tempBinaryImageInodes.clear();
-		}
-		
-		if (req.getParameter("popup") != null)
-		{
-			if (req.getParameter("container_inode") != null)
-			{
-				Container cont = (Container) InodeFactory.getInode(req.getParameter("container_inode"), Container.class);
+    // GIT-2816
+    RenderRequestImpl reqImpl = (RenderRequestImpl) req;
+    HttpServletRequest httpReq = reqImpl.getHttpServletRequest();
+    HttpSession ses = httpReq.getSession();
+    ContentletAPI conAPI = APILocator.getContentletAPI();
+    ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
 
-				List<Structure> structures = APILocator.getContainerAPI().getStructuresInContainer(cont);
-				req.setAttribute(WebKeys.Structure.STRUCTURES, structures);
-			}
-			else if (req.getParameter("structure_id") != null)
-			{
-				Structure st = null;
+    List<String> tempBinaryImageInodes =
+        (List<String>) ses.getAttribute(Contentlet.TEMP_BINARY_IMAGE_INODES_LIST);
+    if (UtilMethods.isSet(tempBinaryImageInodes) && tempBinaryImageInodes.size() > 0) {
+      for (String inode : tempBinaryImageInodes) {
+        conAPI.delete(
+            conAPI.find(inode, APILocator.getUserAPI().getSystemUser(), false),
+            APILocator.getUserAPI().getSystemUser(),
+            false,
+            true);
+      }
+      tempBinaryImageInodes.clear();
+    }
 
-				//Search for the given ContentType inode
-				ContentType foundContentType = contentTypeAPI.find(req.getParameter("structure_id"));
-				if ( null != foundContentType ) {
-					//Transform the found content type to a Structure
-					st = new StructureTransformer(foundContentType).asStructure();
-				}
+    if (req.getParameter("popup") != null) {
+      if (req.getParameter("container_inode") != null) {
+        Container cont =
+            (Container) InodeFactory.getInode(req.getParameter("container_inode"), Container.class);
 
-				req.setAttribute(WebKeys.Structure.STRUCTURE, st);
-			}
-		}
-		else
-		{
-			if(req.getParameter("baseType") != null){
-				BaseContentType baseContentType = BaseContentType.getBaseContentType(Integer.parseInt(req.getParameter("baseType")));
-				List<ContentType> contentTypes = contentTypeAPI.findByType(baseContentType);
-				List<Structure> structures = new StructureTransformer(contentTypes).asStructureList();
-				req.setAttribute(WebKeys.Structure.STRUCTURES, structures);
-				req.setAttribute("DONT_SHOW_ALL", true);
-			} else if(req.getParameter("structure_id") != null){
+        List<Structure> structures = APILocator.getContainerAPI().getStructuresInContainer(cont);
+        req.setAttribute(WebKeys.Structure.STRUCTURES, structures);
+      } else if (req.getParameter("structure_id") != null) {
+        Structure st = null;
 
-				Structure st = null;
+        // Search for the given ContentType inode
+        ContentType foundContentType = contentTypeAPI.find(req.getParameter("structure_id"));
+        if (null != foundContentType) {
+          // Transform the found content type to a Structure
+          st = new StructureTransformer(foundContentType).asStructure();
+        }
 
-				//Search for the given ContentType inode
-				ContentType foundContentType = contentTypeAPI.find(req.getParameter("structure_id"));
-				if ( null != foundContentType ) {
-					//Transform the found content type to a Structure
-					st = new StructureTransformer(foundContentType).asStructure();
-				}
+        req.setAttribute(WebKeys.Structure.STRUCTURE, st);
+      }
+    } else {
+      if (req.getParameter("baseType") != null) {
+        BaseContentType baseContentType =
+            BaseContentType.getBaseContentType(Integer.parseInt(req.getParameter("baseType")));
+        List<ContentType> contentTypes = contentTypeAPI.findByType(baseContentType);
+        List<Structure> structures = new StructureTransformer(contentTypes).asStructureList();
+        req.setAttribute(WebKeys.Structure.STRUCTURES, structures);
+        req.setAttribute("DONT_SHOW_ALL", true);
+      } else if (req.getParameter("structure_id") != null) {
 
-				if(st.getStructureType()==Structure.STRUCTURE_TYPE_FORM){
-					List<Structure> structures =StructureFactory.getStructuresByUser(user,"structuretype="+st.getStructureType(), "upper(name)", -1, 0, "asc");
-					req.setAttribute(WebKeys.Structure.STRUCTURES, structures);
-					req.setAttribute("DONT_SHOW_ALL", true);
-				}else{
-					List<Structure> structures = this.structureAPI.find(user, false, true);
-					req.setAttribute(WebKeys.Structure.STRUCTURES, structures);
-				}
+        Structure st = null;
 
-			}else{
-				List<Structure> structures = this.structureAPI.find(user, false, true);
-				req.setAttribute(WebKeys.Structure.STRUCTURES, structures);
-			}
-		}
+        // Search for the given ContentType inode
+        ContentType foundContentType = contentTypeAPI.find(req.getParameter("structure_id"));
+        if (null != foundContentType) {
+          // Transform the found content type to a Structure
+          st = new StructureTransformer(foundContentType).asStructure();
+        }
 
-		if(req.getParameter("selected_lang") != null){
-			((RenderRequestImpl)req).getHttpServletRequest().getSession().setAttribute(WebKeys.LANGUAGE_SEARCHED, req.getParameter("selected_lang"));
-		}
-		List<Language> languages = langAPI.getLanguages();
-		req.setAttribute(WebKeys.LANGUAGES, languages);
+        if (st.getStructureType() == Structure.STRUCTURE_TYPE_FORM) {
+          List<Structure> structures =
+              StructureFactory.getStructuresByUser(
+                  user, "structuretype=" + st.getStructureType(), "upper(name)", -1, 0, "asc");
+          req.setAttribute(WebKeys.Structure.STRUCTURES, structures);
+          req.setAttribute("DONT_SHOW_ALL", true);
+        } else {
+          List<Structure> structures = this.structureAPI.find(user, false, true);
+          req.setAttribute(WebKeys.Structure.STRUCTURES, structures);
+        }
 
-	}
+      } else {
+        List<Structure> structures = this.structureAPI.find(user, false, true);
+        req.setAttribute(WebKeys.Structure.STRUCTURES, structures);
+      }
+    }
 
+    if (req.getParameter("selected_lang") != null) {
+      ((RenderRequestImpl) req)
+          .getHttpServletRequest()
+          .getSession()
+          .setAttribute(WebKeys.LANGUAGE_SEARCHED, req.getParameter("selected_lang"));
+    }
+    List<Language> languages = langAPI.getLanguages();
+    req.setAttribute(WebKeys.LANGUAGES, languages);
+  }
 }

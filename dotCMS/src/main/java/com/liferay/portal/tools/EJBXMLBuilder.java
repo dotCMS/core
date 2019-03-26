@@ -1,25 +1,21 @@
 /**
  * Copyright (c) 2000-2005 Liferay, LLC. All rights reserved.
  *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
+ * <p>Permission is hereby granted, free of charge, to any person obtaining a copy of this software
+ * and associated documentation files (the "Software"), to deal in the Software without restriction,
+ * including without limitation the rights to use, copy, modify, merge, publish, distribute,
+ * sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
  *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
+ * <p>The above copyright notice and this permission notice shall be included in all copies or
+ * substantial portions of the Software.
  *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
+ * <p>THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
+ * BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+ * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-
 package com.liferay.portal.tools;
 
 import com.dotmarketing.util.Logger;
@@ -36,533 +32,567 @@ import org.dom4j.io.SAXReader;
 /**
  * <a href="EJBXMLBuilder.java.html"><b><i>View Source</i></b></a>
  *
- * @author  Brian Wing Shun Chan
+ * @author Brian Wing Shun Chan
  * @version $Revision: 1.34 $
- *
  */
 public class EJBXMLBuilder {
 
-	public static void main(String[] args) {
-		if (args.length == 1) {
-			new EJBXMLBuilder(args[0]);
-		}
-		else {
-			throw new IllegalArgumentException();
-		}
-	}
+  public static void main(String[] args) {
+    if (args.length == 1) {
+      new EJBXMLBuilder(args[0]);
+    } else {
+      throw new IllegalArgumentException();
+    }
+  }
+
+  public EJBXMLBuilder(String jarFileName) {
+    _jarFileName = jarFileName;
+
+    try {
+      _buildBorlandXML();
+      _buildJOnASXML();
+      _buildJRunXML();
+      _buildPramatiXML();
+      _buildRexIPXML();
+      _buildSunXML();
+      _buildWebLogicXML();
+      // _buildWebSphereXML();
+      _updateEJBXML();
+    } catch (Exception e) {
+      Logger.error(this, e.getMessage(), e);
+    }
+  }
 
-	public EJBXMLBuilder(String jarFileName) {
-		_jarFileName = jarFileName;
+  private void _buildBorlandXML() throws Exception {
+    StringBuffer sb = new StringBuffer();
 
-		try {
-			_buildBorlandXML();
-			_buildJOnASXML();
-			_buildJRunXML();
-			_buildPramatiXML();
-			_buildRexIPXML();
-			_buildSunXML();
-			_buildWebLogicXML();
-			//_buildWebSphereXML();
-			_updateEJBXML();
-		}
-		catch (Exception e) {
-			Logger.error(this,e.getMessage(),e);
-		}
-	}
+    sb.append("<?xml version=\"1.0\"?>\n");
+    sb.append(
+        "<!DOCTYPE ejb-jar PUBLIC \"-//Borland Software Corporation//DTD Enterprise JavaBeans 2.0//EN\" \"http://www.borland.com/devsupport/appserver/dtds/ejb-jar_2_0-borland.dtd\">\n");
 
-	private void _buildBorlandXML() throws Exception {
-		StringBuffer sb = new StringBuffer();
+    sb.append("\n<ejb-jar>\n");
+    sb.append("\t<enterprise-beans>\n");
 
-		sb.append("<?xml version=\"1.0\"?>\n");
-		sb.append("<!DOCTYPE ejb-jar PUBLIC \"-//Borland Software Corporation//DTD Enterprise JavaBeans 2.0//EN\" \"http://www.borland.com/devsupport/appserver/dtds/ejb-jar_2_0-borland.dtd\">\n");
+    SAXReader reader = new SAXReader();
+    reader.setEntityResolver(new EntityResolver());
 
-		sb.append("\n<ejb-jar>\n");
-		sb.append("\t<enterprise-beans>\n");
+    Document doc = reader.read(new File("classes/META-INF/ejb-jar.xml"));
 
-		SAXReader reader = new SAXReader();
-		reader.setEntityResolver(new EntityResolver());
+    Iterator itr = doc.getRootElement().element("enterprise-beans").elements("session").iterator();
 
-		Document doc = reader.read(new File("classes/META-INF/ejb-jar.xml"));
+    while (itr.hasNext()) {
+      Element entity = (Element) itr.next();
 
-		Iterator itr = doc.getRootElement().element("enterprise-beans").elements("session").iterator();
+      sb.append("\t\t<session>\n");
+      sb.append("\t\t\t<ejb-name>").append(entity.elementText("ejb-name")).append("</ejb-name>\n");
 
-		while (itr.hasNext()) {
-			Element entity = (Element)itr.next();
+      if (entity.elementText("display-name").endsWith("LocalManagerEJB")) {
+        sb.append("\t\t\t<bean-local-home-name>ejb/liferay/")
+            .append(entity.elementText("display-name"))
+            .append("Home</bean-local-home-name>\n");
+      } else {
+        sb.append("\t\t\t<bean-home-name>")
+            .append(entity.elementText("ejb-name"))
+            .append("</bean-home-name>\n");
+      }
 
-			sb.append("\t\t<session>\n");
-			sb.append("\t\t\t<ejb-name>").append(entity.elementText("ejb-name")).append("</ejb-name>\n");
+      sb.append("\t\t</session>\n");
+    }
 
-			if (entity.elementText("display-name").endsWith("LocalManagerEJB")) {
-				sb.append("\t\t\t<bean-local-home-name>ejb/liferay/").append(entity.elementText("display-name")).append("Home</bean-local-home-name>\n");
-			}
-			else {
-				sb.append("\t\t\t<bean-home-name>").append(entity.elementText("ejb-name")).append("</bean-home-name>\n");
-			}
+    sb.append("\t</enterprise-beans>\n");
+    sb.append("\t<property>\n");
+    sb.append("\t\t<prop-name>ejb.default_transaction_attribute</prop-name>\n");
+    sb.append("\t\t<prop-type>String</prop-type>\n");
+    sb.append("\t\t<prop-value>Supports</prop-value>\n");
+    sb.append("\t</property>\n");
+    sb.append("</ejb-jar>");
 
-			sb.append("\t\t</session>\n");
-		}
+    File outputFile = new File("classes/META-INF/ejb-borland.xml");
 
-		sb.append("\t</enterprise-beans>\n");
-		sb.append("\t<property>\n");
-		sb.append("\t\t<prop-name>ejb.default_transaction_attribute</prop-name>\n");
-		sb.append("\t\t<prop-type>String</prop-type>\n");
-		sb.append("\t\t<prop-value>Supports</prop-value>\n");
-		sb.append("\t</property>\n");
-		sb.append("</ejb-jar>");
+    if (!outputFile.exists() || !FileUtil.read(outputFile).equals(sb.toString())) {
 
-		File outputFile = new File("classes/META-INF/ejb-borland.xml");
+      FileUtil.write(outputFile, sb.toString());
 
-		if (!outputFile.exists() ||
-			!FileUtil.read(outputFile).equals(sb.toString())) {
+      Logger.info(this, outputFile.toString());
+    }
+  }
 
-			FileUtil.write(outputFile, sb.toString());
+  private void _buildJOnASXML() throws Exception {
+    StringBuffer sb = new StringBuffer();
 
-			Logger.info(this,outputFile.toString());
-		}
-	}
+    sb.append("<?xml version=\"1.0\"?>\n");
+    sb.append(
+        "<!DOCTYPE jonas-ejb-jar PUBLIC \"-//ObjectWeb//DTD JOnAS 3.2//EN\" \"http://www.objectweb.org/jonas/dtds/jonas-ejb-jar_3_2.dtd\">\n");
 
-	private void _buildJOnASXML() throws Exception {
-		StringBuffer sb = new StringBuffer();
+    sb.append("\n<jonas-ejb-jar>\n");
 
-		sb.append("<?xml version=\"1.0\"?>\n");
-		sb.append("<!DOCTYPE jonas-ejb-jar PUBLIC \"-//ObjectWeb//DTD JOnAS 3.2//EN\" \"http://www.objectweb.org/jonas/dtds/jonas-ejb-jar_3_2.dtd\">\n");
+    SAXReader reader = new SAXReader();
+    reader.setEntityResolver(new EntityResolver());
 
-		sb.append("\n<jonas-ejb-jar>\n");
+    Document doc = reader.read(new File("classes/META-INF/ejb-jar.xml"));
 
-		SAXReader reader = new SAXReader();
-		reader.setEntityResolver(new EntityResolver());
+    Iterator itr = doc.getRootElement().element("enterprise-beans").elements("session").iterator();
 
-		Document doc = reader.read(new File("classes/META-INF/ejb-jar.xml"));
+    while (itr.hasNext()) {
+      Element entity = (Element) itr.next();
 
-		Iterator itr = doc.getRootElement().element("enterprise-beans").elements("session").iterator();
+      sb.append("\t<jonas-session>\n");
+      sb.append("\t\t<ejb-name>").append(entity.elementText("ejb-name")).append("</ejb-name>\n");
 
-		while (itr.hasNext()) {
-			Element entity = (Element)itr.next();
+      if (entity.elementText("display-name").endsWith("LocalManagerEJB")) {
+        sb.append("\t\t<jndi-name>ejb/liferay/")
+            .append(entity.elementText("display-name"))
+            .append("Home</jndi-name>\n");
+      } else {
+        sb.append("\t\t<jndi-name>")
+            .append(entity.elementText("ejb-name"))
+            .append("</jndi-name>\n");
+      }
 
-			sb.append("\t<jonas-session>\n");
-			sb.append("\t\t<ejb-name>").append(entity.elementText("ejb-name")).append("</ejb-name>\n");
+      sb.append("\t</jonas-session>\n");
+    }
 
-			if (entity.elementText("display-name").endsWith("LocalManagerEJB")) {
-				sb.append("\t\t<jndi-name>ejb/liferay/").append(entity.elementText("display-name")).append("Home</jndi-name>\n");
-			}
-			else {
-				sb.append("\t\t<jndi-name>").append(entity.elementText("ejb-name")).append("</jndi-name>\n");
-			}
+    sb.append("</jonas-ejb-jar>");
 
-			sb.append("\t</jonas-session>\n");
-		}
+    File outputFile = new File("classes/META-INF/jonas-ejb-jar.xml");
 
-		sb.append("</jonas-ejb-jar>");
+    if (!outputFile.exists() || !FileUtil.read(outputFile).equals(sb.toString())) {
 
-		File outputFile = new File("classes/META-INF/jonas-ejb-jar.xml");
+      FileUtil.write(outputFile, sb.toString());
 
-		if (!outputFile.exists() ||
-			!FileUtil.read(outputFile).equals(sb.toString())) {
+      Logger.info(this, outputFile.toString());
+    }
+  }
 
-			FileUtil.write(outputFile, sb.toString());
+  private void _buildJRunXML() throws Exception {
+    StringBuffer sb = new StringBuffer();
 
-			Logger.info(this, outputFile.toString());
-		}
-	}
+    sb.append("<?xml version=\"1.0\"?>\n");
+    sb.append(
+        "<!DOCTYPE jrun-ejb-jar PUBLIC \"-//Macromedia, Inc.//DTD jrun-ejb-jar 4.0//EN\" \"http://jrun.macromedia.com/dtds/jrun-ejb-jar.dtd\">\n");
 
-	private void _buildJRunXML() throws Exception {
-		StringBuffer sb = new StringBuffer();
+    sb.append("\n<jrun-ejb-jar>\n");
+    sb.append("\t<enterprise-beans>\n");
 
-		sb.append("<?xml version=\"1.0\"?>\n");
-		sb.append("<!DOCTYPE jrun-ejb-jar PUBLIC \"-//Macromedia, Inc.//DTD jrun-ejb-jar 4.0//EN\" \"http://jrun.macromedia.com/dtds/jrun-ejb-jar.dtd\">\n");
+    SAXReader reader = new SAXReader();
+    reader.setEntityResolver(new EntityResolver());
 
-		sb.append("\n<jrun-ejb-jar>\n");
-		sb.append("\t<enterprise-beans>\n");
+    Document doc = reader.read(new File("classes/META-INF/ejb-jar.xml"));
 
-		SAXReader reader = new SAXReader();
-		reader.setEntityResolver(new EntityResolver());
+    Iterator itr = doc.getRootElement().element("enterprise-beans").elements("session").iterator();
 
-		Document doc = reader.read(new File("classes/META-INF/ejb-jar.xml"));
+    while (itr.hasNext()) {
+      Element entity = (Element) itr.next();
 
-		Iterator itr = doc.getRootElement().element("enterprise-beans").elements("session").iterator();
+      sb.append("\t\t<session>\n");
+      sb.append("\t\t\t<ejb-name>").append(entity.elementText("ejb-name")).append("</ejb-name>\n");
 
-		while (itr.hasNext()) {
-			Element entity = (Element)itr.next();
+      if (entity.elementText("display-name").endsWith("LocalManagerEJB")) {
+        sb.append("\t\t\t<local-jndi-name>ejb/liferay/")
+            .append(entity.elementText("display-name"))
+            .append("Home</local-jndi-name>\n");
+      } else {
+        sb.append("\t\t\t<jndi-name>")
+            .append(entity.elementText("ejb-name"))
+            .append("</jndi-name>\n");
+      }
 
-			sb.append("\t\t<session>\n");
-			sb.append("\t\t\t<ejb-name>").append(entity.elementText("ejb-name")).append("</ejb-name>\n");
+      sb.append("\t\t\t<cluster-home>false</cluster-home>\n");
+      sb.append("\t\t\t<cluster-object>false</cluster-object>\n");
+      sb.append("\t\t\t<timeout>3000</timeout>\n");
+      sb.append("\t\t</session>\n");
+    }
 
-			if (entity.elementText("display-name").endsWith("LocalManagerEJB")) {
-				sb.append("\t\t\t<local-jndi-name>ejb/liferay/").append(entity.elementText("display-name")).append("Home</local-jndi-name>\n");
-			}
-			else {
-				sb.append("\t\t\t<jndi-name>").append(entity.elementText("ejb-name")).append("</jndi-name>\n");
-			}
+    sb.append("\t</enterprise-beans>\n");
+    sb.append("</jrun-ejb-jar>");
 
-			sb.append("\t\t\t<cluster-home>false</cluster-home>\n");
-			sb.append("\t\t\t<cluster-object>false</cluster-object>\n");
-			sb.append("\t\t\t<timeout>3000</timeout>\n");
-			sb.append("\t\t</session>\n");
-		}
+    File outputFile = new File("classes/META-INF/jrun-ejb-jar.xml");
 
-		sb.append("\t</enterprise-beans>\n");
-		sb.append("</jrun-ejb-jar>");
+    if (!outputFile.exists() || !FileUtil.read(outputFile).equals(sb.toString())) {
 
-		File outputFile = new File("classes/META-INF/jrun-ejb-jar.xml");
+      FileUtil.write(outputFile, sb.toString());
 
-		if (!outputFile.exists() ||
-			!FileUtil.read(outputFile).equals(sb.toString())) {
+      Logger.info(EJBXMLBuilder.class, outputFile.toString());
+    }
+  }
 
-			FileUtil.write(outputFile, sb.toString());
+  private void _buildPramatiXML() throws Exception {
+    Map tableNames = new HashMap();
 
-			Logger.info(EJBXMLBuilder.class, outputFile.toString());
-		}
-	}
+    StringBuffer sb = new StringBuffer();
 
-	private void _buildPramatiXML() throws Exception {
-		Map tableNames = new HashMap();
+    sb.append("<?xml version=\"1.0\"?>\n");
+    sb.append(
+        "<!DOCTYPE pramati-j2ee-server PUBLIC \"-//Pramati Technologies //DTD Pramati J2ee Server 3.5 SP5//EN\" \"http://www.pramati.com/dtd/pramati-j2ee-server_3_5.dtd\">\n");
 
-		StringBuffer sb = new StringBuffer();
+    sb.append("\n<pramati-j2ee-server>\n");
+    sb.append("\t<vhost-name>default</vhost-name>\n");
+    sb.append("\t<auto-start>TRUE</auto-start>\n");
+    sb.append("\t<realm-name />\n");
+    sb.append("\t<ejb-module>\n");
+    sb.append("\t\t<name>").append(_jarFileName).append("</name>\n");
 
-		sb.append("<?xml version=\"1.0\"?>\n");
-		sb.append("<!DOCTYPE pramati-j2ee-server PUBLIC \"-//Pramati Technologies //DTD Pramati J2ee Server 3.5 SP5//EN\" \"http://www.pramati.com/dtd/pramati-j2ee-server_3_5.dtd\">\n");
+    SAXReader reader = new SAXReader();
+    reader.setEntityResolver(new EntityResolver());
 
-		sb.append("\n<pramati-j2ee-server>\n");
-		sb.append("\t<vhost-name>default</vhost-name>\n");
-		sb.append("\t<auto-start>TRUE</auto-start>\n");
-		sb.append("\t<realm-name />\n");
-		sb.append("\t<ejb-module>\n");
-		sb.append("\t\t<name>").append(_jarFileName).append("</name>\n");
+    Document doc = reader.read(new File("classes/META-INF/ejb-jar.xml"));
 
-		SAXReader reader = new SAXReader();
-		reader.setEntityResolver(new EntityResolver());
+    Iterator itr = doc.getRootElement().element("enterprise-beans").elements("session").iterator();
 
-		Document doc = reader.read(new File("classes/META-INF/ejb-jar.xml"));
+    while (itr.hasNext()) {
+      Element entity = (Element) itr.next();
 
-		Iterator itr = doc.getRootElement().element("enterprise-beans").elements("session").iterator();
+      sb.append("\t\t<ejb>\n");
+      sb.append("\t\t\t<name>").append(entity.elementText("ejb-name")).append("</name>\n");
+      sb.append("\t\t\t<max-pool-size>40</max-pool-size>\n");
+      sb.append("\t\t\t<min-pool-size>20</min-pool-size>\n");
+      sb.append("\t\t\t<enable-freepool>false</enable-freepool>\n");
+      sb.append("\t\t\t<pool-waittimeout-millis>60000</pool-waittimeout-millis>\n");
 
-		while (itr.hasNext()) {
-			Element entity = (Element)itr.next();
+      sb.append("\t\t\t<low-activity-interval>20</low-activity-interval>\n");
+      sb.append("\t\t\t<is-secure>false</is-secure>\n");
+      sb.append("\t\t\t<is-clustered>true</is-clustered>\n");
 
-			sb.append("\t\t<ejb>\n");
-			sb.append("\t\t\t<name>").append(entity.elementText("ejb-name")).append("</name>\n");
-			sb.append("\t\t\t<max-pool-size>40</max-pool-size>\n");
-			sb.append("\t\t\t<min-pool-size>20</min-pool-size>\n");
-			sb.append("\t\t\t<enable-freepool>false</enable-freepool>\n");
-			sb.append("\t\t\t<pool-waittimeout-millis>60000</pool-waittimeout-millis>\n");
+      if (entity.elementText("display-name").endsWith("LocalManagerEJB")) {
+        sb.append("\t\t\t<jndi-name>ejb/liferay/")
+            .append(entity.elementText("display-name"))
+            .append("Home</jndi-name>\n");
+      } else {
+        sb.append("\t\t\t<jndi-name>")
+            .append(entity.elementText("ejb-name"))
+            .append("</jndi-name>\n");
+      }
 
-			sb.append("\t\t\t<low-activity-interval>20</low-activity-interval>\n");
-			sb.append("\t\t\t<is-secure>false</is-secure>\n");
-			sb.append("\t\t\t<is-clustered>true</is-clustered>\n");
+      sb.append("\t\t\t<local-jndi-name>")
+          .append(entity.elementText("ejb-name"))
+          .append("__PRAMATI_LOCAL")
+          .append("</local-jndi-name>\n");
 
-			if (entity.elementText("display-name").endsWith("LocalManagerEJB")) {
-				sb.append("\t\t\t<jndi-name>ejb/liferay/").append(entity.elementText("display-name")).append("Home</jndi-name>\n");
-			}
-			else {
-				sb.append("\t\t\t<jndi-name>").append(entity.elementText("ejb-name")).append("</jndi-name>\n");
-			}
+      sb.append(_buildPramatiXMLRefs(entity));
 
-			sb.append("\t\t\t<local-jndi-name>").append(entity.elementText("ejb-name")).append("__PRAMATI_LOCAL").append("</local-jndi-name>\n");
+      sb.append("\t\t</ejb>\n");
+    }
 
-			sb.append(_buildPramatiXMLRefs(entity));
+    sb.append("\t</ejb-module>\n");
+    sb.append("</pramati-j2ee-server>");
 
-			sb.append("\t\t</ejb>\n");
-		}
+    File outputFile = new File("classes/pramati-j2ee-server.xml");
 
-		sb.append("\t</ejb-module>\n");
-		sb.append("</pramati-j2ee-server>");
+    if (!outputFile.exists() || !FileUtil.read(outputFile).equals(sb.toString())) {
 
-		File outputFile = new File("classes/pramati-j2ee-server.xml");
+      FileUtil.write(outputFile, sb.toString());
 
-		if (!outputFile.exists() ||
-			!FileUtil.read(outputFile).equals(sb.toString())) {
+      Logger.info(EJBXMLBuilder.class, outputFile.toString());
+    }
+  }
 
-			FileUtil.write(outputFile, sb.toString());
+  private String _buildPramatiXMLRefs(Element entity) {
+    StringBuffer sb = new StringBuffer();
 
-			Logger.info(EJBXMLBuilder.class,outputFile.toString());
-		}
-	}
+    Iterator itr = entity.elements("ejb-local-ref").iterator();
 
-	private String _buildPramatiXMLRefs(Element entity) {
-		StringBuffer sb = new StringBuffer();
+    while (itr.hasNext()) {
+      Element ejbRef = (Element) itr.next();
 
-		Iterator itr = entity.elements("ejb-local-ref").iterator();
+      sb.append("\t\t\t<ejb-local-ref>\n");
+      sb.append("\t\t\t\t<ejb-ref-name>")
+          .append(ejbRef.elementText("ejb-ref-name"))
+          .append("</ejb-ref-name>\n");
+      sb.append("\t\t\t\t<ejb-link>")
+          .append(ejbRef.elementText("ejb-ref-name"))
+          .append("__PRAMATI_LOCAL")
+          .append("</ejb-link>\n");
+      sb.append("\t\t\t</ejb-local-ref>\n");
+    }
 
-		while (itr.hasNext()) {
-			Element ejbRef = (Element)itr.next();
+    return sb.toString();
+  }
 
-			sb.append("\t\t\t<ejb-local-ref>\n");
-			sb.append("\t\t\t\t<ejb-ref-name>").append(ejbRef.elementText("ejb-ref-name")).append("</ejb-ref-name>\n");
-			sb.append("\t\t\t\t<ejb-link>").append(ejbRef.elementText("ejb-ref-name")).append("__PRAMATI_LOCAL").append("</ejb-link>\n");
-			sb.append("\t\t\t</ejb-local-ref>\n");
-		}
+  private void _buildRexIPXML() throws Exception {
+    StringBuffer sb = new StringBuffer();
 
-		return sb.toString();
-	}
+    sb.append("<?xml version=\"1.0\"?>\n");
 
-	private void _buildRexIPXML() throws Exception {
-		StringBuffer sb = new StringBuffer();
+    sb.append("\n<rexip-ejb-jar>\n");
+    sb.append("\t<enterprise-beans>\n");
 
-		sb.append("<?xml version=\"1.0\"?>\n");
+    SAXReader reader = new SAXReader();
+    reader.setEntityResolver(new EntityResolver());
 
-		sb.append("\n<rexip-ejb-jar>\n");
-		sb.append("\t<enterprise-beans>\n");
+    Document doc = reader.read(new File("classes/META-INF/ejb-jar.xml"));
 
-		SAXReader reader = new SAXReader();
-		reader.setEntityResolver(new EntityResolver());
+    Iterator itr = doc.getRootElement().element("enterprise-beans").elements("session").iterator();
 
-		Document doc = reader.read(new File("classes/META-INF/ejb-jar.xml"));
+    while (itr.hasNext()) {
+      Element entity = (Element) itr.next();
 
-		Iterator itr = doc.getRootElement().element("enterprise-beans").elements("session").iterator();
+      sb.append("\t\t<session>\n");
+      sb.append("\t\t\t<ejb-name>").append(entity.elementText("ejb-name")).append("</ejb-name>\n");
 
-		while (itr.hasNext()) {
-			Element entity = (Element)itr.next();
+      if (entity.elementText("display-name").endsWith("LocalManagerEJB")) {
+        sb.append("\t\t\t<local-jndi-name>ejb/liferay/")
+            .append(entity.elementText("display-name"))
+            .append("Home</local-jndi-name>\n");
+      } else {
+        sb.append("\t\t\t<jndi-name>")
+            .append(entity.elementText("ejb-name"))
+            .append("</jndi-name>\n");
+      }
 
-			sb.append("\t\t<session>\n");
-			sb.append("\t\t\t<ejb-name>").append(entity.elementText("ejb-name")).append("</ejb-name>\n");
+      sb.append("\t\t\t<clustered>true</clustered>\n");
+      sb.append("\t\t\t<pool-size>20</pool-size>\n");
+      sb.append("\t\t\t<cache-size>20</cache-size>\n");
+      sb.append("\t\t</session>\n");
+    }
 
-			if (entity.elementText("display-name").endsWith("LocalManagerEJB")) {
-				sb.append("\t\t\t<local-jndi-name>ejb/liferay/").append(entity.elementText("display-name")).append("Home</local-jndi-name>\n");
-			}
-			else {
-				sb.append("\t\t\t<jndi-name>").append(entity.elementText("ejb-name")).append("</jndi-name>\n");
-			}
+    sb.append("\t</enterprise-beans>\n");
+    sb.append("</rexip-ejb-jar>");
 
-			sb.append("\t\t\t<clustered>true</clustered>\n");
-			sb.append("\t\t\t<pool-size>20</pool-size>\n");
-			sb.append("\t\t\t<cache-size>20</cache-size>\n");
-			sb.append("\t\t</session>\n");
-		}
+    File outputFile = new File("classes/META-INF/rexip-ejb-jar.xml");
 
-		sb.append("\t</enterprise-beans>\n");
-		sb.append("</rexip-ejb-jar>");
+    if (!outputFile.exists() || !FileUtil.read(outputFile).equals(sb.toString())) {
 
-		File outputFile = new File("classes/META-INF/rexip-ejb-jar.xml");
+      FileUtil.write(outputFile, sb.toString());
 
-		if (!outputFile.exists() ||
-			!FileUtil.read(outputFile).equals(sb.toString())) {
+      Logger.info(EJBXMLBuilder.class, outputFile.toString());
+    }
+  }
 
-			FileUtil.write(outputFile, sb.toString());
+  private void _buildSunXML() throws Exception {
+    StringBuffer sb = new StringBuffer();
 
-			Logger.info(EJBXMLBuilder.class,outputFile.toString());
-		}
-	}
+    sb.append("<?xml version=\"1.0\"?>\n");
+    sb.append(
+        "<!DOCTYPE sun-ejb-jar PUBLIC \"-//Sun Microsystems, Inc.//DTD Sun ONE Application Server 7.0 EJB 2.0//EN\" \"http://www.sun.com/software/sunone/appserver/dtds/sun-ejb-jar_2_0-0.dtd\">\n");
 
-	private void _buildSunXML() throws Exception {
-		StringBuffer sb = new StringBuffer();
+    sb.append("\n<sun-ejb-jar>\n");
+    sb.append("\t<enterprise-beans>\n");
 
-		sb.append("<?xml version=\"1.0\"?>\n");
-		sb.append("<!DOCTYPE sun-ejb-jar PUBLIC \"-//Sun Microsystems, Inc.//DTD Sun ONE Application Server 7.0 EJB 2.0//EN\" \"http://www.sun.com/software/sunone/appserver/dtds/sun-ejb-jar_2_0-0.dtd\">\n");
+    SAXReader reader = new SAXReader();
+    reader.setEntityResolver(new EntityResolver());
 
-		sb.append("\n<sun-ejb-jar>\n");
-		sb.append("\t<enterprise-beans>\n");
+    Document doc = reader.read(new File("classes/META-INF/ejb-jar.xml"));
 
-		SAXReader reader = new SAXReader();
-		reader.setEntityResolver(new EntityResolver());
+    Iterator itr = doc.getRootElement().element("enterprise-beans").elements("session").iterator();
 
-		Document doc = reader.read(new File("classes/META-INF/ejb-jar.xml"));
+    while (itr.hasNext()) {
+      Element entity = (Element) itr.next();
 
-		Iterator itr = doc.getRootElement().element("enterprise-beans").elements("session").iterator();
+      sb.append("\t\t<ejb>\n");
+      sb.append("\t\t\t<ejb-name>").append(entity.elementText("ejb-name")).append("</ejb-name>\n");
 
-		while (itr.hasNext()) {
-			Element entity = (Element)itr.next();
+      if (entity.elementText("display-name").endsWith("LocalManagerEJB")) {
+        sb.append("\t\t\t<jndi-name>ejb/liferay/")
+            .append(entity.elementText("display-name"))
+            .append("Home</jndi-name>\n");
+      } else {
+        sb.append("\t\t\t<jndi-name>")
+            .append(entity.elementText("ejb-name"))
+            .append("</jndi-name>\n");
+      }
 
-			sb.append("\t\t<ejb>\n");
-			sb.append("\t\t\t<ejb-name>").append(entity.elementText("ejb-name")).append("</ejb-name>\n");
+      sb.append("\t\t\t<bean-pool>\n");
+      sb.append("\t\t\t\t<steady-pool-size>0</steady-pool-size>\n");
+      sb.append("\t\t\t\t<resize-quantity>60</resize-quantity>\n");
+      sb.append("\t\t\t\t<max-pool-size>60</max-pool-size>\n");
+      sb.append("\t\t\t\t<pool-idle-timeout-in-seconds>900</pool-idle-timeout-in-seconds>\n");
+      sb.append("\t\t\t</bean-pool>\n");
+      sb.append("\t\t</ejb>\n");
+    }
 
-			if (entity.elementText("display-name").endsWith("LocalManagerEJB")) {
-				sb.append("\t\t\t<jndi-name>ejb/liferay/").append(entity.elementText("display-name")).append("Home</jndi-name>\n");
-			}
-			else {
-				sb.append("\t\t\t<jndi-name>").append(entity.elementText("ejb-name")).append("</jndi-name>\n");
-			}
+    sb.append("\t</enterprise-beans>\n");
+    sb.append("</sun-ejb-jar>");
 
-			sb.append("\t\t\t<bean-pool>\n");
-			sb.append("\t\t\t\t<steady-pool-size>0</steady-pool-size>\n");
-			sb.append("\t\t\t\t<resize-quantity>60</resize-quantity>\n");
-			sb.append("\t\t\t\t<max-pool-size>60</max-pool-size>\n");
-			sb.append("\t\t\t\t<pool-idle-timeout-in-seconds>900</pool-idle-timeout-in-seconds>\n");
-			sb.append("\t\t\t</bean-pool>\n");
-			sb.append("\t\t</ejb>\n");
-		}
+    File outputFile = new File("classes/META-INF/sun-ejb-jar.xml");
 
-		sb.append("\t</enterprise-beans>\n");
-		sb.append("</sun-ejb-jar>");
+    if (!outputFile.exists() || !FileUtil.read(outputFile).equals(sb.toString())) {
 
-		File outputFile = new File("classes/META-INF/sun-ejb-jar.xml");
+      FileUtil.write(outputFile, sb.toString());
 
-		if (!outputFile.exists() ||
-			!FileUtil.read(outputFile).equals(sb.toString())) {
+      Logger.info(EJBXMLBuilder.class, outputFile.toString());
+    }
+  }
 
-			FileUtil.write(outputFile, sb.toString());
+  private void _buildWebLogicXML() throws Exception {
+    StringBuffer sb = new StringBuffer();
 
-			Logger.info(EJBXMLBuilder.class,outputFile.toString());
-		}
-	}
+    sb.append("<?xml version=\"1.0\"?>\n");
+    sb.append(
+        "<!DOCTYPE weblogic-ejb-jar PUBLIC \"-//BEA Systems, Inc.//DTD WebLogic 7.0.0 EJB//EN\" \"http://www.bea.com/servers/wls700/dtd/weblogic-ejb-jar.dtd\">\n");
 
-	private void _buildWebLogicXML() throws Exception {
-		StringBuffer sb = new StringBuffer();
+    sb.append("\n<weblogic-ejb-jar>\n");
 
-		sb.append("<?xml version=\"1.0\"?>\n");
-		sb.append("<!DOCTYPE weblogic-ejb-jar PUBLIC \"-//BEA Systems, Inc.//DTD WebLogic 7.0.0 EJB//EN\" \"http://www.bea.com/servers/wls700/dtd/weblogic-ejb-jar.dtd\">\n");
+    SAXReader reader = new SAXReader();
+    reader.setEntityResolver(new EntityResolver());
 
-		sb.append("\n<weblogic-ejb-jar>\n");
+    Document doc = reader.read(new File("classes/META-INF/ejb-jar.xml"));
 
-		SAXReader reader = new SAXReader();
-		reader.setEntityResolver(new EntityResolver());
+    Iterator itr = doc.getRootElement().element("enterprise-beans").elements("session").iterator();
 
-		Document doc = reader.read(new File("classes/META-INF/ejb-jar.xml"));
+    while (itr.hasNext()) {
+      Element entity = (Element) itr.next();
 
-		Iterator itr = doc.getRootElement().element("enterprise-beans").elements("session").iterator();
+      sb.append("\t<weblogic-enterprise-bean>\n");
+      sb.append("\t\t<ejb-name>").append(entity.elementText("ejb-name")).append("</ejb-name>\n");
 
-		while (itr.hasNext()) {
-			Element entity = (Element)itr.next();
+      if (entity.elementText("display-name").endsWith("LocalManagerEJB")) {
+        sb.append("\t\t<local-jndi-name>ejb/liferay/")
+            .append(entity.elementText("display-name"))
+            .append("Home</local-jndi-name>\n");
+      } else {
+        sb.append("\t\t<jndi-name>")
+            .append(entity.elementText("ejb-name"))
+            .append("</jndi-name>\n");
+      }
 
-			sb.append("\t<weblogic-enterprise-bean>\n");
-			sb.append("\t\t<ejb-name>").append(entity.elementText("ejb-name")).append("</ejb-name>\n");
+      sb.append("\t</weblogic-enterprise-bean>\n");
+    }
 
-			if (entity.elementText("display-name").endsWith("LocalManagerEJB")) {
-				sb.append("\t\t<local-jndi-name>ejb/liferay/").append(entity.elementText("display-name")).append("Home</local-jndi-name>\n");
-			}
-			else {
-				sb.append("\t\t<jndi-name>").append(entity.elementText("ejb-name")).append("</jndi-name>\n");
-			}
+    sb.append("</weblogic-ejb-jar>");
 
-			sb.append("\t</weblogic-enterprise-bean>\n");
-		}
+    File outputFile = new File("classes/META-INF/weblogic-ejb-jar.xml");
 
-		sb.append("</weblogic-ejb-jar>");
+    if (!outputFile.exists() || !FileUtil.read(outputFile).equals(sb.toString())) {
 
-		File outputFile = new File("classes/META-INF/weblogic-ejb-jar.xml");
+      FileUtil.write(outputFile, sb.toString());
 
-		if (!outputFile.exists() ||
-			!FileUtil.read(outputFile).equals(sb.toString())) {
+      Logger.info(EJBXMLBuilder.class, outputFile.toString());
+    }
+  }
 
-			FileUtil.write(outputFile, sb.toString());
+  private void _buildWebSphereXML() throws Exception {
+    StringBuffer sb = new StringBuffer();
 
-			Logger.info(EJBXMLBuilder.class,outputFile.toString());
-		}
-	}
+    sb.append("<?xml version=\"1.0\"?>\n");
 
-	private void _buildWebSphereXML() throws Exception {
-		StringBuffer sb = new StringBuffer();
+    sb.append(
+        "\n<com.ibm.ejs.models.base.bindings.ejbbnd:EJBJarBinding xmlns:com.ibm.ejs.models.base.bindings.ejbbnd=\"ejbbnd.xmi\" xmlns:xmi=\"http://www.omg.org/XMI\" xmlns:com.ibm.ejs.models.base.bindings.commonbnd=\"commonbnd.xmi\" xmlns:com.ibm.etools.ejb=\"ejb.xmi\" xmlns:com.ibm.etools.j2ee.common=\"common.xmi\" xmi:version=\"2.0\" xmi:id=\"ejb-jar_ID_Bnd\" currentBackendId=\"CLOUDSCAPE_V50_1\">\n");
+    sb.append("\t<ejbJar href=\"META-INF/ejb-jar.xml#ejb-jar_ID\" />\n");
 
-		sb.append("<?xml version=\"1.0\"?>\n");
+    SAXReader reader = new SAXReader();
+    reader.setEntityResolver(new EntityResolver());
 
-		sb.append("\n<com.ibm.ejs.models.base.bindings.ejbbnd:EJBJarBinding xmlns:com.ibm.ejs.models.base.bindings.ejbbnd=\"ejbbnd.xmi\" xmlns:xmi=\"http://www.omg.org/XMI\" xmlns:com.ibm.ejs.models.base.bindings.commonbnd=\"commonbnd.xmi\" xmlns:com.ibm.etools.ejb=\"ejb.xmi\" xmlns:com.ibm.etools.j2ee.common=\"common.xmi\" xmi:version=\"2.0\" xmi:id=\"ejb-jar_ID_Bnd\" currentBackendId=\"CLOUDSCAPE_V50_1\">\n");
-		sb.append("\t<ejbJar href=\"META-INF/ejb-jar.xml#ejb-jar_ID\" />\n");
+    Document doc = reader.read(new File("classes/META-INF/ejb-jar.xml"));
 
-		SAXReader reader = new SAXReader();
-		reader.setEntityResolver(new EntityResolver());
+    int sessionCount = 0;
+    int ejbLocalRefCount = 0;
 
-		Document doc = reader.read(new File("classes/META-INF/ejb-jar.xml"));
+    Iterator itr1 = doc.getRootElement().element("enterprise-beans").elements("session").iterator();
 
-		int sessionCount = 0;
-		int ejbLocalRefCount = 0;
+    while (itr1.hasNext()) {
+      Element sessionEl = (Element) itr1.next();
 
-		Iterator itr1 = doc.getRootElement().element("enterprise-beans").elements("session").iterator();
+      sb.append("\t<ejbBindings xmi:id=\"Session_")
+          .append(++sessionCount)
+          .append("_Bnd\" jndiName=\"");
 
-		while (itr1.hasNext()) {
-			Element sessionEl = (Element)itr1.next();
+      if (sessionEl.elementText("display-name").endsWith("LocalManagerEJB")) {
+        sb.append("ejb/liferay/").append(sessionEl.elementText("display-name")).append("Home");
+      } else {
+        sb.append(sessionEl.elementText("ejb-name"));
+      }
 
-			sb.append("\t<ejbBindings xmi:id=\"Session_").append(++sessionCount).append("_Bnd\" jndiName=\"");
+      sb.append("\">\n");
 
-			if (sessionEl.elementText("display-name").endsWith("LocalManagerEJB")) {
-				sb.append("ejb/liferay/").append(sessionEl.elementText("display-name")).append("Home");
-			}
-			else {
-				sb.append(sessionEl.elementText("ejb-name"));
-			}
+      sb.append(
+              "\t\t<enterpriseBean xmi:type=\"com.ibm.etools.ejb:Session\" href=\"META-INF/ejb-jar.xml#Session_")
+          .append(sessionCount)
+          .append("\" />\n");
 
-			sb.append("\">\n");
+      Iterator itr2 = sessionEl.elements("ejb-local-ref").iterator();
 
-			sb.append("\t\t<enterpriseBean xmi:type=\"com.ibm.etools.ejb:Session\" href=\"META-INF/ejb-jar.xml#Session_").append(sessionCount).append("\" />\n");
+      while (itr2.hasNext()) {
+        Element ejbLocalRefEl = (Element) itr2.next();
 
-			Iterator itr2 = sessionEl.elements("ejb-local-ref").iterator();
+        sb.append("\t\t<ejbRefBindings xmi:id=\"EjbRefBinding_")
+            .append(++ejbLocalRefCount)
+            .append("\" jndiName=\"")
+            .append(ejbLocalRefEl.elementText("ejb-ref-name"))
+            .append("\">\n");
+        sb.append(
+                "\t\t\t<bindingEjbRef xmi:type=\"com.ibm.etools.j2ee.common:EJBLocalRef\" href=\"META-INF/ejb-jar.xml#EjbRef_")
+            .append(ejbLocalRefCount)
+            .append("\" />\n");
+        sb.append("\t\t</ejbRefBindings>\n");
+      }
 
-			while (itr2.hasNext()) {
-				Element ejbLocalRefEl = (Element)itr2.next();
+      sb.append("\t</ejbBindings>\n");
+    }
 
-				sb.append("\t\t<ejbRefBindings xmi:id=\"EjbRefBinding_").append(++ejbLocalRefCount).append("\" jndiName=\"").append(ejbLocalRefEl.elementText("ejb-ref-name")).append("\">\n");
-				sb.append("\t\t\t<bindingEjbRef xmi:type=\"com.ibm.etools.j2ee.common:EJBLocalRef\" href=\"META-INF/ejb-jar.xml#EjbRef_").append(ejbLocalRefCount).append("\" />\n");
-				sb.append("\t\t</ejbRefBindings>\n");
-			}
+    sb.append("</com.ibm.ejs.models.base.bindings.ejbbnd:EJBJarBinding>");
 
-			sb.append("\t</ejbBindings>\n");
-		}
+    File outputFile = new File("classes/META-INF/ibm-ejb-jar-bnd.xmi");
 
-		sb.append("</com.ibm.ejs.models.base.bindings.ejbbnd:EJBJarBinding>");
+    if (!outputFile.exists() || !FileUtil.read(outputFile).equals(sb.toString())) {
 
-		File outputFile = new File("classes/META-INF/ibm-ejb-jar-bnd.xmi");
+      FileUtil.write(outputFile, sb.toString());
 
-		if (!outputFile.exists() ||
-			!FileUtil.read(outputFile).equals(sb.toString())) {
+      Logger.info(EJBXMLBuilder.class, outputFile.toString());
+    }
+  }
 
-			FileUtil.write(outputFile, sb.toString());
+  private void _updateEJBXML() throws Exception {
+    File xmlFile = new File("classes/META-INF/ejb-jar.xml");
 
-			Logger.info(EJBXMLBuilder.class,outputFile.toString());
-		}
-	}
+    StringBuffer methodsSB = new StringBuffer();
 
-	private void _updateEJBXML() throws Exception {
-		File xmlFile = new File("classes/META-INF/ejb-jar.xml");
+    SAXReader reader = new SAXReader();
+    reader.setEntityResolver(new EntityResolver());
 
-		StringBuffer methodsSB = new StringBuffer();
+    Document doc = reader.read(xmlFile);
 
-		SAXReader reader = new SAXReader();
-		reader.setEntityResolver(new EntityResolver());
+    Iterator itr = doc.getRootElement().element("enterprise-beans").elements("entity").iterator();
 
-		Document doc = reader.read(xmlFile);
+    while (itr.hasNext()) {
+      Element entity = (Element) itr.next();
 
-		Iterator itr = doc.getRootElement().element("enterprise-beans").elements("entity").iterator();
+      methodsSB.append("\t\t\t<method>\n");
+      methodsSB.append("\t\t\t\t<ejb-name>" + entity.elementText("ejb-name") + "</ejb-name>\n");
+      methodsSB.append("\t\t\t\t<method-name>*</method-name>\n");
+      methodsSB.append("\t\t\t</method>\n");
+    }
 
-		while (itr.hasNext()) {
-			Element entity = (Element)itr.next();
+    itr = doc.getRootElement().element("enterprise-beans").elements("session").iterator();
 
-			methodsSB.append("\t\t\t<method>\n");
-			methodsSB.append("\t\t\t\t<ejb-name>" + entity.elementText("ejb-name") + "</ejb-name>\n");
-			methodsSB.append("\t\t\t\t<method-name>*</method-name>\n");
-			methodsSB.append("\t\t\t</method>\n");
-		}
+    while (itr.hasNext()) {
+      Element entity = (Element) itr.next();
 
-		itr = doc.getRootElement().element("enterprise-beans").elements("session").iterator();
+      methodsSB.append("\t\t\t<method>\n");
+      methodsSB.append("\t\t\t\t<ejb-name>" + entity.elementText("ejb-name") + "</ejb-name>\n");
+      methodsSB.append("\t\t\t\t<method-name>*</method-name>\n");
+      methodsSB.append("\t\t\t</method>\n");
+    }
 
-		while (itr.hasNext()) {
-			Element entity = (Element)itr.next();
+    StringBuffer sb = new StringBuffer();
 
-			methodsSB.append("\t\t\t<method>\n");
-			methodsSB.append("\t\t\t\t<ejb-name>" + entity.elementText("ejb-name") + "</ejb-name>\n");
-			methodsSB.append("\t\t\t\t<method-name>*</method-name>\n");
-			methodsSB.append("\t\t\t</method>\n");
-		}
+    sb.append("\t<assembly-descriptor>\n");
+    sb.append("\t\t<method-permission>\n");
+    sb.append("\t\t\t<unchecked />\n");
+    sb.append(methodsSB);
+    sb.append("\t\t</method-permission>\n");
+    sb.append("\t\t<container-transaction>\n");
+    sb.append(methodsSB);
+    sb.append("\t\t\t<trans-attribute>Required</trans-attribute>\n");
+    sb.append("\t\t</container-transaction>\n");
+    sb.append("\t</assembly-descriptor>\n");
 
-		StringBuffer sb = new StringBuffer();
+    String content = FileUtil.read(xmlFile);
 
-		sb.append("\t<assembly-descriptor>\n");
-		sb.append("\t\t<method-permission>\n");
-		sb.append("\t\t\t<unchecked />\n");
-		sb.append(methodsSB);
-		sb.append("\t\t</method-permission>\n");
-		sb.append("\t\t<container-transaction>\n");
-		sb.append(methodsSB);
-		sb.append("\t\t\t<trans-attribute>Required</trans-attribute>\n");
-		sb.append("\t\t</container-transaction>\n");
-		sb.append("\t</assembly-descriptor>\n");
+    int x = content.indexOf("<assembly-descriptor>") - 1;
+    int y = content.indexOf("</assembly-descriptor>", x) + 23;
 
-		String content = FileUtil.read(xmlFile);
+    if (x < 0) {
+      x = content.indexOf("</ejb-jar>");
+      y = x;
+    }
 
-		int x = content.indexOf("<assembly-descriptor>") - 1;
-		int y = content.indexOf("</assembly-descriptor>", x) + 23;
+    String newContent =
+        content.substring(0, x) + sb.toString() + content.substring(y, content.length());
 
-		if (x < 0) {
-			x = content.indexOf("</ejb-jar>");
-			y = x;
-		}
+    if (!content.equals(newContent)) {
+      FileUtil.write(xmlFile, newContent);
+    }
+  }
 
-		String newContent =
-			content.substring(0, x) + sb.toString() +
-			content.substring(y, content.length());
-
-		if (!content.equals(newContent)) {
-			FileUtil.write(xmlFile, newContent);
-		}
-	}
-
-	private String _jarFileName;
-
+  private String _jarFileName;
 }

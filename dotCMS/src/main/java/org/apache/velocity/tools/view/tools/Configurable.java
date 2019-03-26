@@ -25,17 +25,14 @@ import java.util.Map;
  * @version $Id: Configurable.java 321233 2005-10-14 22:25:34Z nbubna $
  * @since VelocityTools 1.2
  */
-public interface Configurable
-{
+public interface Configurable {
 
-    /**
-     * Configures this tool using the specified parameters. The
-     * map of parameters passed in is guaranteed not to be null.
-     * If there are no parameters specified for this tool in your
-     * toolbox definition, then this method will NOT be called at all.
-     *
-     * @param parameters the configuration data for this tool
-     */
-    public void configure(Map parameters);
-
+  /**
+   * Configures this tool using the specified parameters. The map of parameters passed in is
+   * guaranteed not to be null. If there are no parameters specified for this tool in your toolbox
+   * definition, then this method will NOT be called at all.
+   *
+   * @param parameters the configuration data for this tool
+   */
+  public void configure(Map parameters);
 }

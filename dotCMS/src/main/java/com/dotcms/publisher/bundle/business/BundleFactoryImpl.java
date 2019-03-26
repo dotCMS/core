@@ -1,10 +1,5 @@
 package com.dotcms.publisher.bundle.business;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
 import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.publisher.util.PublisherUtil;
@@ -12,217 +7,213 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.UtilMethods;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 public class BundleFactoryImpl extends BundleFactory {
 
-	@Override
-	public void saveBundle(Bundle bundle) throws DotDataException {
-		DotConnect dc = new DotConnect();
-		dc.setSQL(INSERT_BUNDLE);
-		if(!InodeUtils.isSet(bundle.getId())) {
-		    bundle.setId(UUID.randomUUID().toString());
-		}
-		dc.addParam(bundle.getId());
-		dc.addParam(UtilMethods.isSet(bundle.getName())?bundle.getName():bundle.getId());
-		dc.addParam(bundle.getPublishDate());
-		dc.addParam(bundle.getExpireDate());
-		dc.addParam(bundle.getOwner());
-		dc.addParam(bundle.isForcePush());
-		dc.loadResult();
-	}
+  @Override
+  public void saveBundle(Bundle bundle) throws DotDataException {
+    DotConnect dc = new DotConnect();
+    dc.setSQL(INSERT_BUNDLE);
+    if (!InodeUtils.isSet(bundle.getId())) {
+      bundle.setId(UUID.randomUUID().toString());
+    }
+    dc.addParam(bundle.getId());
+    dc.addParam(UtilMethods.isSet(bundle.getName()) ? bundle.getName() : bundle.getId());
+    dc.addParam(bundle.getPublishDate());
+    dc.addParam(bundle.getExpireDate());
+    dc.addParam(bundle.getOwner());
+    dc.addParam(bundle.isForcePush());
+    dc.loadResult();
+  }
 
-	@Override
-	public void saveBundleEnvironment(Bundle bundle, Environment e) throws DotDataException {
-		DotConnect dc = new DotConnect();
-		dc.setSQL(INSERT_BUNDLE_ENVIRONMENT);
-		dc.addParam(UUID.randomUUID().toString());
-		dc.addParam(bundle.getId());
-		dc.addParam(e.getId());
-		dc.loadResult();
-	}
+  @Override
+  public void saveBundleEnvironment(Bundle bundle, Environment e) throws DotDataException {
+    DotConnect dc = new DotConnect();
+    dc.setSQL(INSERT_BUNDLE_ENVIRONMENT);
+    dc.addParam(UUID.randomUUID().toString());
+    dc.addParam(bundle.getId());
+    dc.addParam(e.getId());
+    dc.loadResult();
+  }
 
-    @Override
-    public List<Bundle> findUnsendBundles ( String userId ) throws DotDataException {
-        return findUnsendBundles( userId, 100, 0 );
+  @Override
+  public List<Bundle> findUnsendBundles(String userId) throws DotDataException {
+    return findUnsendBundles(userId, 100, 0);
+  }
+
+  @Override
+  public List<Bundle> findUnsendBundles(String userId, int limit, int offset)
+      throws DotDataException {
+
+    List<Bundle> bundles = new ArrayList<Bundle>();
+
+    if (!UtilMethods.isSet(userId)) {
+      return bundles;
     }
 
-    @Override
-    public List<Bundle> findUnsendBundles ( String userId, int limit, int offset ) throws DotDataException {
+    DotConnect dc = new DotConnect();
+    dc.setSQL(SELECT_UNSEND_BUNDLES);
+    dc.addParam(userId);
+    dc.setMaxRows(limit);
+    dc.setStartRow(offset);
 
-        List<Bundle> bundles = new ArrayList<Bundle>();
+    List<Map<String, Object>> res = dc.loadObjectResults();
 
-        if ( !UtilMethods.isSet( userId ) ) {
-            return bundles;
-        }
-
-        DotConnect dc = new DotConnect();
-        dc.setSQL( SELECT_UNSEND_BUNDLES );
-        dc.addParam( userId );
-        dc.setMaxRows( limit );
-        dc.setStartRow( offset );
-
-        List<Map<String, Object>> res = dc.loadObjectResults();
-
-        for ( Map<String, Object> row : res ) {
-            Bundle bundle = PublisherUtil.getBundleByMap( row );
-            bundles.add( bundle );
-        }
-
-        return bundles;
+    for (Map<String, Object> row : res) {
+      Bundle bundle = PublisherUtil.getBundleByMap(row);
+      bundles.add(bundle);
     }
 
-    @Override
-    public List<Bundle> findUnsendBundlesByName ( String userId, String likeName, int limit, int offset ) throws DotDataException {
+    return bundles;
+  }
 
-        List<Bundle> bundles = new ArrayList<Bundle>();
+  @Override
+  public List<Bundle> findUnsendBundlesByName(String userId, String likeName, int limit, int offset)
+      throws DotDataException {
 
-        if ( !UtilMethods.isSet( userId ) ) {
-            return bundles;
-        }
+    List<Bundle> bundles = new ArrayList<Bundle>();
 
-        DotConnect dc = new DotConnect();
-        dc.setSQL( SELECT_UNSEND_BUNDLES_LIKE_NAME );
-        dc.addParam( userId );
-        dc.addParam( "%" + likeName + "%" );
-        dc.setMaxRows( limit );
-        dc.setStartRow( offset );
-
-        List<Map<String, Object>> res = dc.loadObjectResults();
-
-        for ( Map<String, Object> row : res ) {
-            Bundle bundle = PublisherUtil.getBundleByMap( row );
-            bundles.add( bundle );
-        }
-
-        return bundles;
+    if (!UtilMethods.isSet(userId)) {
+      return bundles;
     }
 
-    @Override
-    public Bundle getBundleByName ( String bundleName ) throws DotDataException {
+    DotConnect dc = new DotConnect();
+    dc.setSQL(SELECT_UNSEND_BUNDLES_LIKE_NAME);
+    dc.addParam(userId);
+    dc.addParam("%" + likeName + "%");
+    dc.setMaxRows(limit);
+    dc.setStartRow(offset);
 
-        if ( !UtilMethods.isSet( bundleName ) ) {
-            return null;
-        }
+    List<Map<String, Object>> res = dc.loadObjectResults();
 
-        DotConnect dc = new DotConnect();
-        dc.setSQL( SELECT_BUNDLE_BY_NAME );
-        dc.addParam( bundleName );
-
-        List<Map<String, Object>> res = dc.loadObjectResults();
-
-        if ( res != null && !res.isEmpty() ) {
-            return PublisherUtil.getBundleByMap( res.get( 0 ) );
-        }
-
-        return null;
+    for (Map<String, Object> row : res) {
+      Bundle bundle = PublisherUtil.getBundleByMap(row);
+      bundles.add(bundle);
     }
 
-	@Override
-	public Bundle getBundleById(String id) throws DotDataException {
-		if(!UtilMethods.isSet(id)) {
-			return null;
-		}
+    return bundles;
+  }
 
-		DotConnect dc = new DotConnect();
-		dc.setSQL(SELECT_BUNDLE_BY_ID);
-		dc.addParam(id);
+  @Override
+  public Bundle getBundleByName(String bundleName) throws DotDataException {
 
-		List<Map<String, Object>> res = dc.loadObjectResults();
+    if (!UtilMethods.isSet(bundleName)) {
+      return null;
+    }
 
-		if(res.size()>0)
-			return PublisherUtil.getBundleByMap(res.get(0));
-		else
-			return null;
-	}
+    DotConnect dc = new DotConnect();
+    dc.setSQL(SELECT_BUNDLE_BY_NAME);
+    dc.addParam(bundleName);
 
-	@Override
-	public void deleteBundle(String id) throws DotDataException {
-		if(!UtilMethods.isSet(id)) {
-			return;
-		}
+    List<Map<String, Object>> res = dc.loadObjectResults();
 
-		deleteBundleEnvironmentByBundle(id);
+    if (res != null && !res.isEmpty()) {
+      return PublisherUtil.getBundleByMap(res.get(0));
+    }
 
-		DotConnect dc = new DotConnect();
-		dc.setSQL(DELETE_BUNDLE);
-		dc.addParam(id);
+    return null;
+  }
 
-		dc.loadResult();
+  @Override
+  public Bundle getBundleById(String id) throws DotDataException {
+    if (!UtilMethods.isSet(id)) {
+      return null;
+    }
 
-	}
+    DotConnect dc = new DotConnect();
+    dc.setSQL(SELECT_BUNDLE_BY_ID);
+    dc.addParam(id);
 
-	@Override
-	public void updateBundle(Bundle bundle) throws DotDataException {
-		if(!UtilMethods.isSet(bundle) || !UtilMethods.isSet(bundle.getId())) {
-			return;
-		}
+    List<Map<String, Object>> res = dc.loadObjectResults();
 
-		DotConnect dc = new DotConnect();
-		dc.setSQL(UPDATE_BUNDLE);
-		dc.addParam(bundle.getName());
-		dc.addParam(bundle.getPublishDate());
-		dc.addParam(bundle.getExpireDate());
-		dc.addParam(bundle.isForcePush());
-		dc.addParam(bundle.getId());
+    if (res.size() > 0) return PublisherUtil.getBundleByMap(res.get(0));
+    else return null;
+  }
 
-		dc.loadResult();
+  @Override
+  public void deleteBundle(String id) throws DotDataException {
+    if (!UtilMethods.isSet(id)) {
+      return;
+    }
 
-	}
+    deleteBundleEnvironmentByBundle(id);
 
-	@Override
-    public void updateOwnerReferences ( String userId, String replacementUserId ) throws DotDataException {
-		DotConnect dc = new DotConnect();
-		dc.setSQL(UPDATE_BUNDLE_OWNER_REFERENCES);
-		dc.addParam(replacementUserId);
-		dc.addParam(userId);
+    DotConnect dc = new DotConnect();
+    dc.setSQL(DELETE_BUNDLE);
+    dc.addParam(id);
 
-		dc.loadResult();
-	}
-	
-	@Override
-	public void deleteAssetFromBundle(String assetId, String bundleId)
-			throws DotDataException {
-		if(!UtilMethods.isSet(assetId) || !UtilMethods.isSet(bundleId)) {
-			return;
-		}
+    dc.loadResult();
+  }
 
-		DotConnect dc = new DotConnect();
-		dc.setSQL(DELETE_ASSET_FROM_BUNDLE);
-		dc.addParam(assetId);
-		dc.addParam(bundleId);
+  @Override
+  public void updateBundle(Bundle bundle) throws DotDataException {
+    if (!UtilMethods.isSet(bundle) || !UtilMethods.isSet(bundle.getId())) {
+      return;
+    }
 
-		dc.loadResult();
+    DotConnect dc = new DotConnect();
+    dc.setSQL(UPDATE_BUNDLE);
+    dc.addParam(bundle.getName());
+    dc.addParam(bundle.getPublishDate());
+    dc.addParam(bundle.getExpireDate());
+    dc.addParam(bundle.isForcePush());
+    dc.addParam(bundle.getId());
 
-	}
+    dc.loadResult();
+  }
 
-	@Override
-	public void deleteBundleEnvironmentByEnvironment(String environmentId)
-			throws DotDataException {
-		if(!UtilMethods.isSet(environmentId)) {
-			return;
-		}
+  @Override
+  public void updateOwnerReferences(String userId, String replacementUserId)
+      throws DotDataException {
+    DotConnect dc = new DotConnect();
+    dc.setSQL(UPDATE_BUNDLE_OWNER_REFERENCES);
+    dc.addParam(replacementUserId);
+    dc.addParam(userId);
 
-		DotConnect dc = new DotConnect();
-		dc.setSQL(DELETE_BUNDLE_ENVIRONMENT_BY_ENV);
-		dc.addParam(environmentId);
+    dc.loadResult();
+  }
 
-		dc.loadResult();
+  @Override
+  public void deleteAssetFromBundle(String assetId, String bundleId) throws DotDataException {
+    if (!UtilMethods.isSet(assetId) || !UtilMethods.isSet(bundleId)) {
+      return;
+    }
 
-	}
+    DotConnect dc = new DotConnect();
+    dc.setSQL(DELETE_ASSET_FROM_BUNDLE);
+    dc.addParam(assetId);
+    dc.addParam(bundleId);
 
-	@Override
-	public void deleteBundleEnvironmentByBundle(String bundleId)
-			throws DotDataException {
-		if(!UtilMethods.isSet(bundleId)) {
-			return;
-		}
+    dc.loadResult();
+  }
 
-		DotConnect dc = new DotConnect();
-		dc.setSQL(DELETE_BUNDLE_ENVIRONMENT_BY_BUNDLE);
-		dc.addParam(bundleId);
+  @Override
+  public void deleteBundleEnvironmentByEnvironment(String environmentId) throws DotDataException {
+    if (!UtilMethods.isSet(environmentId)) {
+      return;
+    }
 
-		dc.loadResult();
+    DotConnect dc = new DotConnect();
+    dc.setSQL(DELETE_BUNDLE_ENVIRONMENT_BY_ENV);
+    dc.addParam(environmentId);
 
-	}
+    dc.loadResult();
+  }
 
+  @Override
+  public void deleteBundleEnvironmentByBundle(String bundleId) throws DotDataException {
+    if (!UtilMethods.isSet(bundleId)) {
+      return;
+    }
+
+    DotConnect dc = new DotConnect();
+    dc.setSQL(DELETE_BUNDLE_ENVIRONMENT_BY_BUNDLE);
+    dc.addParam(bundleId);
+
+    dc.loadResult();
+  }
 }

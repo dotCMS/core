@@ -2,7 +2,6 @@ package com.dotcms.system.event.local.type.pushpublish;
 
 import com.dotcms.publishing.PublisherConfig;
 import com.dotcms.system.event.local.type.publish.PublishEvent;
-
 import java.time.LocalDateTime;
 
 /**
@@ -13,19 +12,21 @@ import java.time.LocalDateTime;
  */
 public class AllPushPublishEndpointsSuccessEvent extends PublishEvent {
 
-    private PublisherConfig config = null;
+  private PublisherConfig config = null;
 
-    public AllPushPublishEndpointsSuccessEvent(PublisherConfig config) {
-        super(AllPushPublishEndpointsSuccessEvent.class.getCanonicalName(), config.getAssets(),
-                LocalDateTime.now());
-        setConfig(config);
-    }
+  public AllPushPublishEndpointsSuccessEvent(PublisherConfig config) {
+    super(
+        AllPushPublishEndpointsSuccessEvent.class.getCanonicalName(),
+        config.getAssets(),
+        LocalDateTime.now());
+    setConfig(config);
+  }
 
-    public PublisherConfig getConfig() {
-        return config;
-    }
+  public PublisherConfig getConfig() {
+    return config;
+  }
 
-    public void setConfig(PublisherConfig config) {
-        this.config = config;
-    }
+  public void setConfig(PublisherConfig config) {
+    this.config = config;
+  }
 }

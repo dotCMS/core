@@ -8,17 +8,17 @@ import com.dotmarketing.util.Logger;
 
 /**
  * Handles a HttpStatusCodeException using the status on the
+ *
  * @author jsanca
  */
 @Provider
 public class HttpStatusCodeExceptionMapper implements ExceptionMapper<HttpStatusCodeException> {
 
-    @Override
-    public Response toResponse(final HttpStatusCodeException exception) {
-        //Log into our logs first.
-        Logger.warn(this.getClass(), exception.getMessage(), exception);
+  @Override
+  public Response toResponse(final HttpStatusCodeException exception) {
+    // Log into our logs first.
+    Logger.warn(this.getClass(), exception.getMessage(), exception);
 
-        return exception.getResponse();
-
-    }
+    return exception.getResponse();
+  }
 }

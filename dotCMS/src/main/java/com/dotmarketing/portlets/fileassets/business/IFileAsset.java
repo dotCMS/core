@@ -14,90 +14,90 @@ import java.util.Map;
 
 public interface IFileAsset extends Permissionable {
 
-	public String getVersionId();
+  public String getVersionId();
 
-	public boolean isDeleted() throws DotStateException, DotDataException, DotSecurityException;
+  public boolean isDeleted() throws DotStateException, DotDataException, DotSecurityException;
 
-	public boolean isArchived() throws DotStateException, DotDataException, DotSecurityException;
+  public boolean isArchived() throws DotStateException, DotDataException, DotSecurityException;
 
-	public String getInode();
+  public String getInode();
 
-	public void setInode(String inode);
+  public void setInode(String inode);
 
-	public String getIdentifier();
+  public String getIdentifier();
 
-	public boolean isLive() throws DotStateException, DotDataException, DotSecurityException;
+  public boolean isLive() throws DotStateException, DotDataException, DotSecurityException;
 
-	public boolean isLocked() throws DotStateException, DotDataException, DotSecurityException;
+  public boolean isLocked() throws DotStateException, DotDataException, DotSecurityException;
 
-	public java.util.Date getModDate();
+  public java.util.Date getModDate();
 
-	public String getModUser();
+  public String getModUser();
 
-	public boolean isWorking() throws DotStateException, DotDataException, DotSecurityException;
+  public boolean isWorking() throws DotStateException, DotDataException, DotSecurityException;
 
-	public void setModDate(java.util.Date modDate);
+  public void setModDate(java.util.Date modDate);
 
-	public void setModUser(String modUser);
+  public void setModUser(String modUser);
 
-	public abstract String getURI(Folder folder);
+  public abstract String getURI(Folder folder);
 
-	public boolean isShowOnMenu();
+  public boolean isShowOnMenu();
 
-	public int getMenuOrder();
+  public int getMenuOrder();
 
-	public String getTitle();
+  public String getTitle();
 
-	public void setShowOnMenu(boolean showOnMenu);
+  public void setShowOnMenu(boolean showOnMenu);
 
-	public void setMenuOrder(int sortOrder);
+  public void setMenuOrder(int sortOrder);
 
-	public void setTitle(String title);
+  public void setTitle(String title);
 
-	public String getFriendlyName();
+  public String getFriendlyName();
 
-	public void setFriendlyName(String friendlyName);
+  public void setFriendlyName(String friendlyName);
 
-	public String getOwner();
+  public String getOwner();
 
-	public String getPath();
+  public String getPath();
 
-	public String getParent();
+  public String getParent();
 
-	public Permissionable getParentPermissionable() throws DotDataException;
+  public Permissionable getParentPermissionable() throws DotDataException;
 
-	public long getFileSize();
+  public long getFileSize();
 
-	public void setFileName(String name);
+  public void setFileName(String name);
 
-	public String getFileName();
+  public String getFileName();
 
-	public String getMimeType();
+  public String getMimeType();
 
-	public void setMimeType(String mimeType);
+  public void setMimeType(String mimeType);
 
-	public Map<String, Object> getMap() throws DotRuntimeException, DotDataException, DotSecurityException;
+  public Map<String, Object> getMap()
+      throws DotRuntimeException, DotDataException, DotSecurityException;
 
-	public String getPermissionId();
+  public String getPermissionId();
 
-	public Date getIDate();
+  public Date getIDate();
 
-	public String getVersionType();
+  public String getVersionType();
 
-	public InputStream getInputStream() throws IOException;
+  public InputStream getInputStream() throws IOException;
 
-	public File getFileAsset();
+  public File getFileAsset();
 
-	public String getType();
+  public String getType();
 
-	public String getURI() throws DotDataException;
+  public String getURI() throws DotDataException;
 
-	public String getExtension();
+  public String getExtension();
 
-	public int getHeight();
+  public int getHeight();
 
-	public int getWidth();
-	
-	public long getLanguageId();
+  public int getWidth();
 
+  public long getLanguageId();
 }

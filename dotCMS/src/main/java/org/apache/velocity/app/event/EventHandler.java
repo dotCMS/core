@@ -16,7 +16,7 @@ package org.apache.velocity.app.event;
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
- * under the License.    
+ * under the License.
  */
 
 /**
@@ -25,7 +25,4 @@ package org.apache.velocity.app.event;
  * @author <a href="mailto:geirm@optonline.net">Geir Magnusson Jr.</a>
  * @version $Id: EventHandler.java 463298 2006-10-12 16:10:32Z henning $
  */
-public interface  EventHandler
-{
-
-}
+public interface EventHandler {}

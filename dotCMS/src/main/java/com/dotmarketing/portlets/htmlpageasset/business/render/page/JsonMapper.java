@@ -8,7 +8,6 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.templates.model.Template;
 
-
 /**
  * Provides the appropriate JSON mapping configuration for the JSON representation of an HTML Page.
  *
@@ -18,19 +17,16 @@ import com.dotmarketing.portlets.templates.model.Template;
  */
 class JsonMapper {
 
-    static final ObjectMapper mapper = new ObjectMapper();
+  static final ObjectMapper mapper = new ObjectMapper();
 
-    static {
-        mapper.addMixInAnnotations(Permissionable.class, PermissionableMixIn.class);
-        mapper.addMixInAnnotations(Contentlet.class, ContentletMixIn.class);
-        mapper.addMixInAnnotations(HTMLPageAsset.class, ContentletMixIn.class);
-        mapper.addMixInAnnotations(Host.class, ContentletMixIn.class);
-        mapper.addMixInAnnotations(Template.class, WebAssetMixIn.class);
-        mapper.addMixInAnnotations(Container.class, WebAssetMixIn.class);
-    }
+  static {
+    mapper.addMixInAnnotations(Permissionable.class, PermissionableMixIn.class);
+    mapper.addMixInAnnotations(Contentlet.class, ContentletMixIn.class);
+    mapper.addMixInAnnotations(HTMLPageAsset.class, ContentletMixIn.class);
+    mapper.addMixInAnnotations(Host.class, ContentletMixIn.class);
+    mapper.addMixInAnnotations(Template.class, WebAssetMixIn.class);
+    mapper.addMixInAnnotations(Container.class, WebAssetMixIn.class);
+  }
 
-    private JsonMapper() {
-
-    }
-
+  private JsonMapper() {}
 }

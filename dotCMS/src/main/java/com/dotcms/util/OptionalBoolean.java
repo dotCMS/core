@@ -1,6 +1,5 @@
 package com.dotcms.util;
 
-
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
@@ -10,8 +9,7 @@ import java.util.function.Predicate;
 /**
  * Encapsulate an optional boolean. A simplest and bit diff of an {@link java.util.Optional}
  *
- * Example:
- * <code>
+ * <p>Example: <code>
  *     return OptionalBoolean.of(evalCondition(request, response))
  *           .ifTrue(()  -> doSomethingOnTrue(request, response))
  *           .orElse(() -> doSomethingOnFalse(request, response))
@@ -22,136 +20,131 @@ import java.util.function.Predicate;
  */
 public class OptionalBoolean {
 
-    private static final OptionalBoolean EMPTY = new OptionalBoolean(null);
-    private final Boolean value;
+  private static final OptionalBoolean EMPTY = new OptionalBoolean(null);
+  private final Boolean value;
 
-    private OptionalBoolean(final Boolean value) {
-        this.value = value;
+  private OptionalBoolean(final Boolean value) {
+    this.value = value;
+  }
+
+  /** @see {@link Optional#get()} */
+  public Boolean get() {
+    if (value == null) {
+      throw new NoSuchElementException("No value present");
+    }
+    return value;
+  }
+
+  /** @see {@link Optional#isPresent()} */
+  public boolean isPresent() {
+    return value != null;
+  }
+
+  /** @see {@link Optional#ifPresent(Consumer)} ()} */
+  public void ifPresent(Consumer<Boolean> consumer) {
+    if (value != null) {
+      consumer.accept(value);
+    }
+  }
+
+  /** @see {@link Optional#filter(Predicate)} ()} */
+  public OptionalBoolean filter(Predicate<Boolean> predicate) {
+    Objects.requireNonNull(predicate);
+    return (!isPresent()) ? this : predicate.test(value) ? this : EMPTY;
+  }
+
+  /**
+   * If true calls the supplier
+   *
+   * @param other
+   * @return OptionalBoolean to continue the chain
+   */
+  public OptionalBoolean ifTrue(FunctionUtils.Callback other) {
+
+    if (value != null && value) {
+      other.call();
     }
 
-    /**
-     * @see {@link Optional#get()}
-     */
-    public Boolean get() {
-        if (value == null) {
-            throw new NoSuchElementException("No value present");
-        }
-        return value;
+    return this;
+  }
+
+  /**
+   * If true calls the supplier
+   *
+   * @param consumer
+   * @param t
+   * @return OptionalBoolean to continue the chain
+   */
+  public <T> OptionalBoolean ifTrue(final Consumer<T> consumer, final Optional<T> t) {
+
+    if (value != null && value) {
+      consumer.accept(t.get());
     }
 
-    /**
-     * @see {@link Optional#isPresent()}
-     */
-    public boolean isPresent() {
-        return value != null;
+    return this;
+  }
+
+  /**
+   * If true calls the supplier
+   *
+   * @param consumer
+   * @param t
+   * @return OptionalBoolean to continue the chain
+   */
+  public <T> OptionalBoolean ifTrue(final Consumer<T> consumer, final T t) {
+
+    if (value != null && value) {
+      consumer.accept(t);
     }
 
-    /**
-     * @see {@link Optional#ifPresent(Consumer)} ()}
-     */
-    public void ifPresent(Consumer<Boolean> consumer) {
-        if (value != null) {
-            consumer.accept(value);
-        }
+    return this;
+  }
+
+  /**
+   * If false call the supplier
+   *
+   * @param other
+   * @return OptionalBoolean to continue the chain
+   */
+  public OptionalBoolean orElse(FunctionUtils.Callback other) {
+
+    if (value == null || !value) {
+      other.call();
     }
 
-    /**
-     * @see {@link Optional#filter(Predicate)} ()}
-     */
-    public OptionalBoolean filter(Predicate<Boolean> predicate) {
-        Objects.requireNonNull(predicate);
-        return  (!isPresent())?this:
-                predicate.test(value) ? this : EMPTY;
+    return this;
+  }
+
+  /**
+   * If true calls the supplier
+   *
+   * @param other
+   * @return Boolean returns the value
+   */
+  public Boolean ifTrueGet(FunctionUtils.Callback other) {
+
+    if (value != null && value) {
+      other.call();
     }
 
-    /**
-     * If true calls the supplier
-     * @param other
-     * @return OptionalBoolean to continue the chain
-     */
-    public OptionalBoolean ifTrue(FunctionUtils.Callback other) {
+    return value;
+  }
 
-        if  (value != null && value) {
-            other.call();
-        }
-
-        return this;
+  /**
+   * If false calls the supplier
+   *
+   * @param other
+   * @return Boolean returns the value
+   */
+  public Boolean orElseGet(FunctionUtils.Callback other) {
+    if (value == null || !value) {
+      other.call();
     }
 
-    /**
-     * If true calls the supplier
-     * @param consumer
-     * @param t
-     * @return OptionalBoolean to continue the chain
-     */
-    public <T> OptionalBoolean ifTrue(final Consumer<T> consumer, final Optional<T> t) {
+    return value;
+  }
 
-        if  (value != null && value) {
-            consumer.accept(t.get());
-        }
-
-        return this;
-    }
-
-    /**
-     * If true calls the supplier
-     * @param consumer
-     * @param t
-     * @return OptionalBoolean to continue the chain
-     */
-    public <T> OptionalBoolean ifTrue(final Consumer<T> consumer, final T t) {
-
-        if  (value != null && value) {
-            consumer.accept(t);
-        }
-
-        return this;
-    }
-
-    /**
-     * If false call the supplier
-     * @param other
-     * @return OptionalBoolean to continue the chain
-     */
-    public OptionalBoolean orElse(FunctionUtils.Callback other) {
-
-        if  (value == null || !value) {
-            other.call();
-        }
-
-        return this;
-    }
-
-    /**
-     * If true calls the supplier
-     * @param other
-     * @return Boolean returns the value
-     */
-    public Boolean ifTrueGet(FunctionUtils.Callback other) {
-
-        if  (value != null && value) {
-            other.call();
-        }
-
-        return value;
-    }
-
-
-    /**
-     * If false calls the supplier
-     * @param other
-     * @return Boolean returns the value
-     */
-    public Boolean orElseGet(FunctionUtils.Callback other) {
-        if  (value == null || !value) {
-            other.call();
-        }
-
-        return value;
-    }
-
-
-    public static  OptionalBoolean of(Boolean value) {
-        return new OptionalBoolean(value);
-    }
+  public static OptionalBoolean of(Boolean value) {
+    return new OptionalBoolean(value);
+  }
 } // E:O:F:OptionalBoolean.

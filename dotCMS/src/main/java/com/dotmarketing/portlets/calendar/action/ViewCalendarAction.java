@@ -15,49 +15,48 @@ import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 
 /**
- *
- * @author  David Torres
+ * @author David Torres
  * @version 1.0
- *
  */
 public class ViewCalendarAction extends DotPortletAction {
-	
 
-	public ActionForward render(
-			ActionMapping mapping, ActionForm form, PortletConfig config,
-			RenderRequest req, RenderResponse res)
-		throws Exception {
+  public ActionForward render(
+      ActionMapping mapping,
+      ActionForm form,
+      PortletConfig config,
+      RenderRequest req,
+      RenderResponse res)
+      throws Exception {
 
-		try {
-			//gets the user
-			User user = _getUser(req);
-			
-			String cmd = (req.getParameter(Constants.CMD)!=null)? req.getParameter(Constants.CMD) : Constants.EDIT;
+    try {
+      // gets the user
+      User user = _getUser(req);
 
-			if ((cmd != null) /** ... && cmd.equals(Constants.DELETE) */) {
-				/* ... */
-			}
+      String cmd =
+          (req.getParameter(Constants.CMD) != null)
+              ? req.getParameter(Constants.CMD)
+              : Constants.EDIT;
 
-			_viewCalendar(req, user);
+      if ((cmd != null)
+      /** ... && cmd.equals(Constants.DELETE) */
+      ) {
+        /* ... */
+      }
 
-			if (req.getWindowState().equals(WindowState.NORMAL)) {
-				return mapping.findForward("portlet.ext.calendar.view");
-			}
-			else {
-				return mapping.findForward("portlet.ext.calendar.view_calendar");
-			}
-		}
-		catch (Exception e) {
-			req.setAttribute(PageContext.EXCEPTION, e);
-			return mapping.findForward(Constants.COMMON_ERROR);
-		}
-	}
+      _viewCalendar(req, user);
 
-	@SuppressWarnings("unchecked")
-	private void _viewCalendar(RenderRequest req, User user) throws PortalException, SystemException {
+      if (req.getWindowState().equals(WindowState.NORMAL)) {
+        return mapping.findForward("portlet.ext.calendar.view");
+      } else {
+        return mapping.findForward("portlet.ext.calendar.view_calendar");
+      }
+    } catch (Exception e) {
+      req.setAttribute(PageContext.EXCEPTION, e);
+      return mapping.findForward(Constants.COMMON_ERROR);
+    }
+  }
 
-
-	}
-
-
+  @SuppressWarnings("unchecked")
+  private void _viewCalendar(RenderRequest req, User user)
+      throws PortalException, SystemException {}
 }

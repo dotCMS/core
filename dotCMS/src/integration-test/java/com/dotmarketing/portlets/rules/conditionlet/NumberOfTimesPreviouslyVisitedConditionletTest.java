@@ -1,202 +1,231 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
+import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.EQUAL;
+import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.GREATER_THAN;
+import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.GREATER_THAN_OR_EQUAL;
+import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.LESS_THAN;
+import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.LESS_THAN_OR_EQUAL;
+
 import com.dotcms.LicenseTestUtil;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
 import com.dotmarketing.util.CookieUtil;
+import java.util.HashMap;
+import java.util.Map;
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-import java.util.HashMap;
-import java.util.Map;
-
-import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.*;
-
-/**
- * Created by freddyrodriguez on 10/3/16.
- */
+/** Created by freddyrodriguez on 10/3/16. */
 public class NumberOfTimesPreviouslyVisitedConditionletTest {
 
-    private HttpServletRequest request;
-    private HttpServletResponse response;
-    private HttpSession httpSessionMock;
-    private NumberOfTimesPreviouslyVisitedConditionlet conditionlet = new NumberOfTimesPreviouslyVisitedConditionlet();
+  private HttpServletRequest request;
+  private HttpServletResponse response;
+  private HttpSession httpSessionMock;
+  private NumberOfTimesPreviouslyVisitedConditionlet conditionlet =
+      new NumberOfTimesPreviouslyVisitedConditionlet();
 
-    @BeforeClass
-    public static void prepare () throws Exception {
-        IntegrationTestInitService.getInstance().init();
-        LicenseTestUtil.getLicense();
-    }
+  @BeforeClass
+  public static void prepare() throws Exception {
+    IntegrationTestInitService.getInstance().init();
+    LicenseTestUtil.getLicense();
+  }
 
-    @Before
-    public void before () {
-        // Mock the request
-        request = Mockito.mock(HttpServletRequest.class);
-        Cookie[] cookies = new Cookie[1];
-        cookies[ 0 ] = CookieUtil.createSiteVisitsCookie();
-        cookies[ 0 ].setValue("3");
-        Mockito.when(request.getCookies()).thenReturn(cookies);
+  @Before
+  public void before() {
+    // Mock the request
+    request = Mockito.mock(HttpServletRequest.class);
+    Cookie[] cookies = new Cookie[1];
+    cookies[0] = CookieUtil.createSiteVisitsCookie();
+    cookies[0].setValue("3");
+    Mockito.when(request.getCookies()).thenReturn(cookies);
 
-        // Mock the response
-        response = Mockito.mock(HttpServletResponse.class);
+    // Mock the response
+    response = Mockito.mock(HttpServletResponse.class);
 
-        //Mock the session
-        httpSessionMock = Mockito.mock(HttpSession.class);
-        Mockito.when(request.getSession()).thenReturn(httpSessionMock);
+    // Mock the session
+    httpSessionMock = Mockito.mock(HttpSession.class);
+    Mockito.when(request.getSession()).thenReturn(httpSessionMock);
+  }
 
-    }
+  @Test
+  public void testEvaluateEquals() {
 
-    @Test
-    public void testEvaluateEquals() {
+    Map<String, ParameterModel> parameters = new HashMap<>();
+    parameters.put(
+        Conditionlet.COMPARISON_KEY,
+        new ParameterModel(Conditionlet.COMPARISON_KEY, EQUAL.getId()));
+    parameters.put(
+        UsersSiteVisitsConditionlet.SITE_VISITS_KEY,
+        new ParameterModel(UsersSiteVisitsConditionlet.SITE_VISITS_KEY, "2"));
 
-        Map<String, ParameterModel> parameters = new HashMap<>();
-        parameters.put(Conditionlet.COMPARISON_KEY, new ParameterModel(Conditionlet.COMPARISON_KEY, EQUAL.getId()));
-        parameters.put(UsersSiteVisitsConditionlet.SITE_VISITS_KEY,
-                new ParameterModel(UsersSiteVisitsConditionlet.SITE_VISITS_KEY, "2"));
+    NumberOfTimesPreviouslyVisitedConditionlet.Instance instance =
+        conditionlet.instanceFrom(parameters);
 
-        NumberOfTimesPreviouslyVisitedConditionlet.Instance instance = conditionlet.instanceFrom(parameters);
+    Assert.assertTrue(conditionlet.evaluate(request, response, instance));
 
-        Assert.assertTrue(conditionlet.evaluate(request, response, instance));
+    // ---------------------------------------------------------------------------------------------------------
 
-        //---------------------------------------------------------------------------------------------------------
+    parameters.put(
+        UsersSiteVisitsConditionlet.SITE_VISITS_KEY,
+        new ParameterModel(UsersSiteVisitsConditionlet.SITE_VISITS_KEY, "3"));
 
-        parameters.put(UsersSiteVisitsConditionlet.SITE_VISITS_KEY,
-                new ParameterModel(UsersSiteVisitsConditionlet.SITE_VISITS_KEY, "3"));
+    instance = conditionlet.instanceFrom(parameters);
 
-        instance = conditionlet.instanceFrom(parameters);
+    Assert.assertFalse(conditionlet.evaluate(request, response, instance));
+  }
 
-        Assert.assertFalse(conditionlet.evaluate(request, response, instance));
-    }
+  @Test
+  public void testEvaluateLessThan() {
 
-    @Test
-    public void testEvaluateLessThan() {
+    Map<String, ParameterModel> parameters = new HashMap<>();
+    parameters.put(
+        Conditionlet.COMPARISON_KEY,
+        new ParameterModel(Conditionlet.COMPARISON_KEY, LESS_THAN.getId()));
+    parameters.put(
+        UsersSiteVisitsConditionlet.SITE_VISITS_KEY,
+        new ParameterModel(UsersSiteVisitsConditionlet.SITE_VISITS_KEY, "3"));
 
-        Map<String, ParameterModel> parameters = new HashMap<>();
-        parameters.put(Conditionlet.COMPARISON_KEY, new ParameterModel(Conditionlet.COMPARISON_KEY, LESS_THAN.getId()));
-        parameters.put(UsersSiteVisitsConditionlet.SITE_VISITS_KEY,
-                new ParameterModel(UsersSiteVisitsConditionlet.SITE_VISITS_KEY, "3"));
+    NumberOfTimesPreviouslyVisitedConditionlet.Instance instance =
+        conditionlet.instanceFrom(parameters);
 
-        NumberOfTimesPreviouslyVisitedConditionlet.Instance instance = conditionlet.instanceFrom(parameters);
+    Assert.assertTrue(conditionlet.evaluate(request, response, instance));
 
-        Assert.assertTrue(conditionlet.evaluate(request, response, instance));
+    // ---------------------------------------------------------------------------------------------------------
 
-        //---------------------------------------------------------------------------------------------------------
+    parameters.put(
+        UsersSiteVisitsConditionlet.SITE_VISITS_KEY,
+        new ParameterModel(UsersSiteVisitsConditionlet.SITE_VISITS_KEY, "1"));
 
-        parameters.put(UsersSiteVisitsConditionlet.SITE_VISITS_KEY,
-                new ParameterModel(UsersSiteVisitsConditionlet.SITE_VISITS_KEY, "1"));
+    instance = conditionlet.instanceFrom(parameters);
 
-        instance = conditionlet.instanceFrom(parameters);
+    Assert.assertFalse(conditionlet.evaluate(request, response, instance));
 
-        Assert.assertFalse(conditionlet.evaluate(request, response, instance));
+    // ---------------------------------------------------------------------------------------------------------
 
-        //---------------------------------------------------------------------------------------------------------
+    parameters.put(
+        UsersSiteVisitsConditionlet.SITE_VISITS_KEY,
+        new ParameterModel(UsersSiteVisitsConditionlet.SITE_VISITS_KEY, "2"));
 
-        parameters.put(UsersSiteVisitsConditionlet.SITE_VISITS_KEY,
-                new ParameterModel(UsersSiteVisitsConditionlet.SITE_VISITS_KEY, "2"));
+    instance = conditionlet.instanceFrom(parameters);
 
-        instance = conditionlet.instanceFrom(parameters);
+    Assert.assertFalse(conditionlet.evaluate(request, response, instance));
+  }
 
-        Assert.assertFalse(conditionlet.evaluate(request, response, instance));
-    }
+  @Test
+  public void testEvaluateGreaterThan() {
 
-    @Test
-    public void testEvaluateGreaterThan() {
+    Map<String, ParameterModel> parameters = new HashMap<>();
+    parameters.put(
+        Conditionlet.COMPARISON_KEY,
+        new ParameterModel(Conditionlet.COMPARISON_KEY, GREATER_THAN.getId()));
+    parameters.put(
+        UsersSiteVisitsConditionlet.SITE_VISITS_KEY,
+        new ParameterModel(UsersSiteVisitsConditionlet.SITE_VISITS_KEY, "1"));
 
-        Map<String, ParameterModel> parameters = new HashMap<>();
-        parameters.put(Conditionlet.COMPARISON_KEY, new ParameterModel(Conditionlet.COMPARISON_KEY, GREATER_THAN.getId()));
-        parameters.put(UsersSiteVisitsConditionlet.SITE_VISITS_KEY,
-                new ParameterModel(UsersSiteVisitsConditionlet.SITE_VISITS_KEY, "1"));
+    NumberOfTimesPreviouslyVisitedConditionlet.Instance instance =
+        conditionlet.instanceFrom(parameters);
 
-        NumberOfTimesPreviouslyVisitedConditionlet.Instance instance = conditionlet.instanceFrom(parameters);
+    Assert.assertTrue(conditionlet.evaluate(request, response, instance));
 
-        Assert.assertTrue(conditionlet.evaluate(request, response, instance));
+    // ---------------------------------------------------------------------------------------------------------
 
-        //---------------------------------------------------------------------------------------------------------
+    parameters.put(
+        UsersSiteVisitsConditionlet.SITE_VISITS_KEY,
+        new ParameterModel(UsersSiteVisitsConditionlet.SITE_VISITS_KEY, "3"));
 
-        parameters.put(UsersSiteVisitsConditionlet.SITE_VISITS_KEY,
-                new ParameterModel(UsersSiteVisitsConditionlet.SITE_VISITS_KEY, "3"));
+    instance = conditionlet.instanceFrom(parameters);
 
-        instance = conditionlet.instanceFrom(parameters);
+    Assert.assertFalse(conditionlet.evaluate(request, response, instance));
 
-        Assert.assertFalse(conditionlet.evaluate(request, response, instance));
+    // ---------------------------------------------------------------------------------------------------------
 
-        //---------------------------------------------------------------------------------------------------------
+    parameters.put(
+        UsersSiteVisitsConditionlet.SITE_VISITS_KEY,
+        new ParameterModel(UsersSiteVisitsConditionlet.SITE_VISITS_KEY, "2"));
 
-        parameters.put(UsersSiteVisitsConditionlet.SITE_VISITS_KEY,
-                new ParameterModel(UsersSiteVisitsConditionlet.SITE_VISITS_KEY, "2"));
+    instance = conditionlet.instanceFrom(parameters);
 
-        instance = conditionlet.instanceFrom(parameters);
+    Assert.assertFalse(conditionlet.evaluate(request, response, instance));
+  }
 
-        Assert.assertFalse(conditionlet.evaluate(request, response, instance));
-    }
+  @Test
+  public void testEvaluateLessOrEqualThan() {
 
+    Map<String, ParameterModel> parameters = new HashMap<>();
+    parameters.put(
+        Conditionlet.COMPARISON_KEY,
+        new ParameterModel(Conditionlet.COMPARISON_KEY, LESS_THAN_OR_EQUAL.getId()));
+    parameters.put(
+        UsersSiteVisitsConditionlet.SITE_VISITS_KEY,
+        new ParameterModel(UsersSiteVisitsConditionlet.SITE_VISITS_KEY, "3"));
 
-    @Test
-    public void testEvaluateLessOrEqualThan() {
+    NumberOfTimesPreviouslyVisitedConditionlet.Instance instance =
+        conditionlet.instanceFrom(parameters);
 
-        Map<String, ParameterModel> parameters = new HashMap<>();
-        parameters.put(Conditionlet.COMPARISON_KEY, new ParameterModel(Conditionlet.COMPARISON_KEY, LESS_THAN_OR_EQUAL.getId()));
-        parameters.put(UsersSiteVisitsConditionlet.SITE_VISITS_KEY,
-                new ParameterModel(UsersSiteVisitsConditionlet.SITE_VISITS_KEY, "3"));
+    Assert.assertTrue(conditionlet.evaluate(request, response, instance));
 
-        NumberOfTimesPreviouslyVisitedConditionlet.Instance instance = conditionlet.instanceFrom(parameters);
+    // ---------------------------------------------------------------------------------------------------------
 
-        Assert.assertTrue(conditionlet.evaluate(request, response, instance));
+    parameters.put(
+        UsersSiteVisitsConditionlet.SITE_VISITS_KEY,
+        new ParameterModel(UsersSiteVisitsConditionlet.SITE_VISITS_KEY, "1"));
 
-        //---------------------------------------------------------------------------------------------------------
+    instance = conditionlet.instanceFrom(parameters);
 
-        parameters.put(UsersSiteVisitsConditionlet.SITE_VISITS_KEY,
-                new ParameterModel(UsersSiteVisitsConditionlet.SITE_VISITS_KEY, "1"));
+    Assert.assertFalse(conditionlet.evaluate(request, response, instance));
 
-        instance = conditionlet.instanceFrom(parameters);
+    // ---------------------------------------------------------------------------------------------------------
 
-        Assert.assertFalse(conditionlet.evaluate(request, response, instance));
+    parameters.put(
+        UsersSiteVisitsConditionlet.SITE_VISITS_KEY,
+        new ParameterModel(UsersSiteVisitsConditionlet.SITE_VISITS_KEY, "2"));
 
-        //---------------------------------------------------------------------------------------------------------
+    instance = conditionlet.instanceFrom(parameters);
 
-        parameters.put(UsersSiteVisitsConditionlet.SITE_VISITS_KEY,
-                new ParameterModel(UsersSiteVisitsConditionlet.SITE_VISITS_KEY, "2"));
+    Assert.assertTrue(conditionlet.evaluate(request, response, instance));
+  }
 
-        instance = conditionlet.instanceFrom(parameters);
+  @Test
+  public void testEvaluateGreaterOrEqualThan() {
 
-        Assert.assertTrue(conditionlet.evaluate(request, response, instance));
-    }
+    Map<String, ParameterModel> parameters = new HashMap<>();
+    parameters.put(
+        Conditionlet.COMPARISON_KEY,
+        new ParameterModel(Conditionlet.COMPARISON_KEY, GREATER_THAN_OR_EQUAL.getId()));
+    parameters.put(
+        UsersSiteVisitsConditionlet.SITE_VISITS_KEY,
+        new ParameterModel(UsersSiteVisitsConditionlet.SITE_VISITS_KEY, "1"));
 
-    @Test
-    public void testEvaluateGreaterOrEqualThan() {
+    NumberOfTimesPreviouslyVisitedConditionlet.Instance instance =
+        conditionlet.instanceFrom(parameters);
 
-        Map<String, ParameterModel> parameters = new HashMap<>();
-        parameters.put(Conditionlet.COMPARISON_KEY, new ParameterModel(Conditionlet.COMPARISON_KEY, GREATER_THAN_OR_EQUAL.getId()));
-        parameters.put(UsersSiteVisitsConditionlet.SITE_VISITS_KEY,
-                new ParameterModel(UsersSiteVisitsConditionlet.SITE_VISITS_KEY, "1"));
+    Assert.assertTrue(conditionlet.evaluate(request, response, instance));
 
-        NumberOfTimesPreviouslyVisitedConditionlet.Instance instance = conditionlet.instanceFrom(parameters);
+    // ---------------------------------------------------------------------------------------------------------
 
-        Assert.assertTrue(conditionlet.evaluate(request, response, instance));
+    parameters.put(
+        UsersSiteVisitsConditionlet.SITE_VISITS_KEY,
+        new ParameterModel(UsersSiteVisitsConditionlet.SITE_VISITS_KEY, "3"));
 
-        //---------------------------------------------------------------------------------------------------------
+    instance = conditionlet.instanceFrom(parameters);
 
-        parameters.put(UsersSiteVisitsConditionlet.SITE_VISITS_KEY,
-                new ParameterModel(UsersSiteVisitsConditionlet.SITE_VISITS_KEY, "3"));
+    Assert.assertFalse(conditionlet.evaluate(request, response, instance));
 
-        instance = conditionlet.instanceFrom(parameters);
+    // ---------------------------------------------------------------------------------------------------------
 
-        Assert.assertFalse(conditionlet.evaluate(request, response, instance));
+    parameters.put(
+        UsersSiteVisitsConditionlet.SITE_VISITS_KEY,
+        new ParameterModel(UsersSiteVisitsConditionlet.SITE_VISITS_KEY, "2"));
 
-        //---------------------------------------------------------------------------------------------------------
+    instance = conditionlet.instanceFrom(parameters);
 
-        parameters.put(UsersSiteVisitsConditionlet.SITE_VISITS_KEY,
-                new ParameterModel(UsersSiteVisitsConditionlet.SITE_VISITS_KEY, "2"));
-
-        instance = conditionlet.instanceFrom(parameters);
-
-        Assert.assertTrue(conditionlet.evaluate(request, response, instance));
-    }
+    Assert.assertTrue(conditionlet.evaluate(request, response, instance));
+  }
 }

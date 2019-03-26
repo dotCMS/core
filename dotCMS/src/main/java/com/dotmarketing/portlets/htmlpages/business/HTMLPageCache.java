@@ -6,16 +6,17 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 
-//This interface should have default package access
+// This interface should have default package access
 public abstract class HTMLPageCache implements Cachable {
 
-	abstract public IHTMLPage add(IHTMLPage htmlPage) throws DotStateException, DotDataException, DotSecurityException;
+  public abstract IHTMLPage add(IHTMLPage htmlPage)
+      throws DotStateException, DotDataException, DotSecurityException;
 
-	abstract public IHTMLPage get(String key);
+  public abstract IHTMLPage get(String key);
 
-	abstract public void clearCache();
+  public abstract void clearCache();
 
-	abstract public void remove(IHTMLPage page);
-	
-	abstract public void remove(String pageIdentifier);
+  public abstract void remove(IHTMLPage page);
+
+  public abstract void remove(String pageIdentifier);
 }

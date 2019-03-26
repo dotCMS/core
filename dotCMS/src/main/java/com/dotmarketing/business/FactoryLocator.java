@@ -62,280 +62,314 @@ import com.dotmarketing.tag.business.TagFactoryImpl;
 import com.dotmarketing.util.Logger;
 
 /**
- * FactoryLocator is a factory method to get single(ton) service objects.
- * This is a kind of implementation, and there may be others.
+ * FactoryLocator is a factory method to get single(ton) service objects. This is a kind of
+ * implementation, and there may be others.
+ *
  * @author Carlos Rivas (crivas)
  * @author Jason Tesser
  * @version 1.6
  * @since 1.6
  */
+public class FactoryLocator extends Locator<FactoryIndex> {
 
-public class FactoryLocator extends Locator<FactoryIndex>{
+  private static FactoryLocator instance;
 
-	private static FactoryLocator instance;
+  FactoryLocator() {
+    super();
+  }
 
-	FactoryLocator() {
-		super();
-	}
+  public static synchronized void init() {
+    if (instance != null) return;
+    instance = new FactoryLocator();
+  }
 
-	public synchronized static void init(){
-		if(instance != null)
-			return;
-		instance = new FactoryLocator();
-	}
+  public static PermissionFactory getPermissionFactory() {
+    return (PermissionFactory) getInstance(FactoryIndex.PERMISSION_FACTORY);
+  }
 
-	public static PermissionFactory getPermissionFactory() {
-		return (PermissionFactory)getInstance(FactoryIndex.PERMISSION_FACTORY);
-	}
+  public static EventFactory getEventFactory() {
+    return (EventFactory) getInstance(FactoryIndex.CALENDAR_EVENT_FACTORY);
+  }
 
-    public static EventFactory getEventFactory() {
-        return (EventFactory)getInstance(FactoryIndex.CALENDAR_EVENT_FACTORY);
+  public static CategoryFactory getCategoryFactory() {
+    return (CategoryFactory) getInstance(FactoryIndex.CATEGORY_FACTORY);
+  }
+
+  public static RelationshipFactory getRelationshipFactory() {
+    return (RelationshipFactory) getInstance(FactoryIndex.RELATIONSHIP_FACTORY);
+  }
+
+  public static ContentletFactory getContentletFactory() {
+    return (ContentletFactory) getInstance(FactoryIndex.CONTENTLET_FACTORY);
+  }
+
+  public static PluginFactory getPluginFactory() {
+    return (PluginFactory) getInstance(FactoryIndex.PLUGIN_FACTORY);
+  }
+
+  public static LanguageFactory getLanguageFactory() {
+    return (LanguageFactory) getInstance(FactoryIndex.LANGUAGE_FACTORY);
+  }
+
+  public static DistributedJournalFactory<String> getDistributedJournalFactory() {
+    return (DistributedJournalFactory<String>)
+        getInstance(FactoryIndex.DISTRIBUTED_JOURNAL_FACTORY);
+  }
+
+  public static UserFactory getUserFactory() {
+    return (UserFactory) getInstance(FactoryIndex.USER_FACTORY);
+  }
+
+  public static CalendarReminderFactory getCalendarReminderFactory() {
+    return (CalendarReminderFactory) getInstance(FactoryIndex.CALENDAR_REMINDER_FACTORY);
+  }
+
+  public static TemplateFactory getTemplateFactory() {
+    return (TemplateFactory) getInstance(FactoryIndex.TEMPLATE_FACTORY);
+  }
+
+  public static UserProxyFactory getUserProxyFactory() {
+    return (UserProxyFactory) getInstance(FactoryIndex.USER_PROXY_FACTORY);
+  }
+
+  public static RoleFactory getRoleFactory() {
+    return (RoleFactory) getInstance(FactoryIndex.ROLE_FACTORY);
+  }
+
+  public static HostVariableFactory getHostVariableFactory() {
+    return (HostVariableFactory) getInstance(FactoryIndex.HOST_VARIABLE_FACTORY);
+  }
+
+  public static LayoutFactory getLayoutFactory() {
+    return (LayoutFactory) getInstance(FactoryIndex.LAYOUT_FACTORY);
+  }
+
+  public static MenuLinkFactory getMenuLinkFactory() {
+    return (MenuLinkFactory) getInstance(FactoryIndex.MENULINK_FACTORY);
+  }
+
+  public static ContainerFactory getContainerFactory() {
+    return (ContainerFactory) getInstance(FactoryIndex.CONTAINER_FACTORY);
+  }
+
+  public static DashboardFactory getDashboardFactory() {
+    return (DashboardFactory) getInstance(FactoryIndex.DASHBOARD_FACTORY);
+  }
+
+  public static IdentifierFactory getIdentifierFactory() {
+    return (IdentifierFactory) getInstance(FactoryIndex.IDENTIFIER_FACTORY);
+  }
+
+  public static VersionableFactory getVersionableFactory() {
+    return (VersionableFactory) getInstance(FactoryIndex.VERSIONABLE_FACTORY);
+  }
+
+  public static FolderFactory getFolderFactory() {
+    return (FolderFactory) getInstance(FactoryIndex.FOLDER_FACTORY);
+  }
+
+  public static WorkFlowFactory getWorkFlowFactory() {
+    return (WorkFlowFactory) getInstance(FactoryIndex.WORKFLOWS_FACTORY);
+  }
+
+  public static IndiciesFactory getIndiciesFactory() {
+    return (IndiciesFactory) getInstance(FactoryIndex.INDICIES_FACTORY);
+  }
+
+  public static LinkCheckerFactory getLinkCheckerFactory() {
+    return (LinkCheckerFactory) getInstance(FactoryIndex.LINKCHECKER_FACTORY);
+  }
+
+  public static PublishingEndPointFactory getPublisherEndPointFactory() {
+    return (PublishingEndPointFactory) getInstance(FactoryIndex.PUBLISHER_END_POINT_FACTORY);
+  }
+
+  public static EnvironmentFactory getEnvironmentFactory() {
+    return (EnvironmentFactory) getInstance(FactoryIndex.ENVIRONMENT_FACTORY);
+  }
+
+  public static BundleFactory getBundleFactory() {
+    return (BundleFactory) getInstance(FactoryIndex.BUNDLE_FACTORY);
+  }
+
+  public static PushedAssetsFactory getPushedAssetsFactory() {
+    return (PushedAssetsFactory) getInstance(FactoryIndex.PUSHED_ASSETS_FACTORY);
+  }
+
+  public static ServerFactory getServerFactory() {
+    return (ServerFactory) getInstance(FactoryIndex.SERVER_FACTORY);
+  }
+
+  public static NotificationFactory getNotificationFactory() {
+    return (NotificationFactory) getInstance(FactoryIndex.NOTIFICATION_FACTORY);
+  }
+
+  public static ServerActionFactory getServerActionFactory() {
+    return (ServerActionFactory) getInstance(FactoryIndex.SERVER_ACTION_FACTORY);
+  }
+
+  public static RulesFactory getRulesFactory() {
+    return (RulesFactory) getInstance(FactoryIndex.RULES_FACTORY);
+  }
+
+  public static TagFactory getTagFactory() {
+    return (TagFactory) getInstance(FactoryIndex.TAG_FACTORY);
+  }
+
+  public static PersonaFactory getPersonaFactory() {
+    return (PersonaFactory) getInstance(FactoryIndex.PERSONA_FACTORY);
+  }
+
+  public static ContentTypeFactory getContentTypeFactory() {
+    return (ContentTypeFactory) new ContentTypeFactoryImpl();
+  }
+
+  public static FieldFactory getFieldFactory() {
+    return (FieldFactory) new FieldFactoryImpl();
+  }
+
+  private static Object getInstance(FactoryIndex index) {
+
+    if (instance == null) {
+      init();
+      if (instance == null) {
+        Logger.fatal(FactoryLocator.class, "CACHE IS NOT INITIALIZED : THIS SHOULD NEVER HAPPEN");
+        throw new DotRuntimeException("CACHE IS NOT INITIALIZED : THIS SHOULD NEVER HAPPEN");
+      }
     }
 
-    public static CategoryFactory getCategoryFactory() {
-        return (CategoryFactory)getInstance(FactoryIndex.CATEGORY_FACTORY);
-    }
-    
-    public static RelationshipFactory getRelationshipFactory() {
-      return (RelationshipFactory)getInstance(FactoryIndex.RELATIONSHIP_FACTORY);
-    }
-    public static ContentletFactory getContentletFactory(){
-    	return (ContentletFactory)getInstance(FactoryIndex.CONTENTLET_FACTORY);
-    }
+    Object serviceRef = instance.getServiceInstance(index);
 
+    Logger.debug(FactoryLocator.class, instance.audit(index));
 
-    public static PluginFactory getPluginFactory(){
-    	return (PluginFactory)getInstance(FactoryIndex.PLUGIN_FACTORY);
-    }
+    return serviceRef;
+  }
 
-    public static LanguageFactory getLanguageFactory(){
-    	return (LanguageFactory)getInstance(FactoryIndex.LANGUAGE_FACTORY);
-    }
+  @Override
+  protected Object createService(FactoryIndex enumObj) {
+    return enumObj.create();
+  }
 
-    public static DistributedJournalFactory<String> getDistributedJournalFactory(){
-    	return (DistributedJournalFactory<String>)getInstance(FactoryIndex.DISTRIBUTED_JOURNAL_FACTORY);
-    }
-
-    public static UserFactory getUserFactory(){
-    	return (UserFactory)getInstance(FactoryIndex.USER_FACTORY);
-    }
-
-    public static CalendarReminderFactory getCalendarReminderFactory(){
-    	return (CalendarReminderFactory) getInstance(FactoryIndex.CALENDAR_REMINDER_FACTORY);
-    }
-
-       public static TemplateFactory getTemplateFactory(){
-    	return (TemplateFactory) getInstance(FactoryIndex.TEMPLATE_FACTORY);
-    }
-
-
-    public static UserProxyFactory getUserProxyFactory(){
-    	return (UserProxyFactory) getInstance(FactoryIndex.USER_PROXY_FACTORY);
-    }
-
-
-    public static RoleFactory getRoleFactory(){
-    	return (RoleFactory) getInstance(FactoryIndex.ROLE_FACTORY);
-    }
-
-    public static HostVariableFactory getHostVariableFactory(){
-    	return (HostVariableFactory) getInstance(FactoryIndex.HOST_VARIABLE_FACTORY);
-    }
-
-    public static LayoutFactory getLayoutFactory(){
-    	return (LayoutFactory) getInstance(FactoryIndex.LAYOUT_FACTORY);
-    }
-
-    public static MenuLinkFactory getMenuLinkFactory(){
-    	return (MenuLinkFactory) getInstance(FactoryIndex.MENULINK_FACTORY);
-    }
-
-    public static ContainerFactory getContainerFactory(){
-    	return (ContainerFactory) getInstance(FactoryIndex.CONTAINER_FACTORY);
-    }
-
-    public static DashboardFactory getDashboardFactory(){
-    	return (DashboardFactory) getInstance(FactoryIndex.DASHBOARD_FACTORY);
-    }
-    public static IdentifierFactory getIdentifierFactory(){
-    	return (IdentifierFactory) getInstance(FactoryIndex.IDENTIFIER_FACTORY);
-    }
-    public static VersionableFactory getVersionableFactory(){
-    	return (VersionableFactory) getInstance(FactoryIndex.VERSIONABLE_FACTORY);
-    }
-    public static FolderFactory getFolderFactory(){
-    	return (FolderFactory) getInstance(FactoryIndex.FOLDER_FACTORY);
-    }
-    public static WorkFlowFactory getWorkFlowFactory(){
-    	return (WorkFlowFactory) getInstance(FactoryIndex.WORKFLOWS_FACTORY);
-    }
-    public static IndiciesFactory getIndiciesFactory(){
-        return (IndiciesFactory) getInstance(FactoryIndex.INDICIES_FACTORY);
-    }
-
-    public static LinkCheckerFactory getLinkCheckerFactory() {
-        return (LinkCheckerFactory) getInstance(FactoryIndex.LINKCHECKER_FACTORY);
-    }
-
-    public static PublishingEndPointFactory getPublisherEndPointFactory(){
-    	return (PublishingEndPointFactory) getInstance(FactoryIndex.PUBLISHER_END_POINT_FACTORY);
-
-    }
-
-    public static EnvironmentFactory getEnvironmentFactory(){
-    	return (EnvironmentFactory) getInstance(FactoryIndex.ENVIRONMENT_FACTORY);
-    }
-
-    public static BundleFactory getBundleFactory(){
-    	return (BundleFactory) getInstance(FactoryIndex.BUNDLE_FACTORY);
-    }
-
-    public static PushedAssetsFactory getPushedAssetsFactory(){
-    	return (PushedAssetsFactory) getInstance(FactoryIndex.PUSHED_ASSETS_FACTORY);
-    }
-
-    public static ServerFactory getServerFactory(){
-        return (ServerFactory) getInstance(FactoryIndex.SERVER_FACTORY);
-    }
-
-    public static NotificationFactory getNotificationFactory(){
-        return (NotificationFactory) getInstance(FactoryIndex.NOTIFICATION_FACTORY);
-    }
-    
-    public static ServerActionFactory getServerActionFactory(){
-        return (ServerActionFactory) getInstance(FactoryIndex.SERVER_ACTION_FACTORY);
-    }
-
-    public static RulesFactory getRulesFactory(){
-        return (RulesFactory) getInstance(FactoryIndex.RULES_FACTORY);
-    }
-
-    public static TagFactory getTagFactory(){
-        return (TagFactory) getInstance(FactoryIndex.TAG_FACTORY);
-    }
-    
-    public static PersonaFactory getPersonaFactory(){
-        return (PersonaFactory) getInstance(FactoryIndex.PERSONA_FACTORY);
-    }
-    public static ContentTypeFactory getContentTypeFactory(){
-        return (ContentTypeFactory)  new ContentTypeFactoryImpl();
-    }
-    public static FieldFactory getFieldFactory(){
-        return (FieldFactory)  new FieldFactoryImpl();
-    }
-
-    private static Object getInstance(FactoryIndex index) {
-
-		if(instance == null){
-			init();
-			if(instance == null){
-				Logger.fatal(FactoryLocator.class,"CACHE IS NOT INITIALIZED : THIS SHOULD NEVER HAPPEN");
-				throw new DotRuntimeException("CACHE IS NOT INITIALIZED : THIS SHOULD NEVER HAPPEN");
-			}
-		}
-
-		Object serviceRef = instance.getServiceInstance(index);
-
-		Logger.debug(FactoryLocator.class, instance.audit(index));
-
-		return serviceRef;
-
-	 }
-
-	@Override
-	protected Object createService(FactoryIndex enumObj) {
-		return enumObj.create();
-	}
-
-	@Override
-	protected Locator<FactoryIndex> getLocatorInstance() {
-		return instance;
-	}
-
+  @Override
+  protected Locator<FactoryIndex> getLocatorInstance() {
+    return instance;
+  }
 }
 
-enum FactoryIndex
-{
-	PERMISSION_FACTORY,
-	CALENDAR_EVENT_FACTORY,
-	CALENDAR_EVENT_RECURRENCE_FACTORY,
-	CATEGORY_FACTORY,
-	CONTENTLET_FACTORY,
-	DISTRIBUTED_JOURNAL_FACTORY,
-	PLUGIN_FACTORY,
-	LANGUAGE_FACTORY,
-	USER_FACTORY,
-	CHAIN_FACTORY,
-	CALENDAR_REMINDER_FACTORY,
-	USER_PROXY_FACTORY,
-	TEMPLATE_FACTORY,
-	ROLE_FACTORY,
-	LAYOUT_FACTORY,
-	HOST_VARIABLE_FACTORY,
-	HOST_FACTORY,
-	FILE_FACTORY,
-	HTMLPAGE_FACTORY,
-	MENULINK_FACTORY,
-	CONTAINER_FACTORY,
-	IDENTIFIER_FACTORY,
-	VERSIONABLE_FACTORY,
-	FOLDER_FACTORY,
-	DASHBOARD_FACTORY,
-	WORKFLOWS_FACTORY,
-	INDICIES_FACTORY,
-	LINKCHECKER_FACTORY,
-	PUBLISHER_END_POINT_FACTORY,
-	ENVIRONMENT_FACTORY,
-	BUNDLE_FACTORY,
-	PUSHED_ASSETS_FACTORY,
-	SERVER_FACTORY,
-	NOTIFICATION_FACTORY, 
-	SERVER_ACTION_FACTORY,
-	RULES_FACTORY,
-	TAG_FACTORY,
-	PERSONA_FACTORY,
-	CONTENTTYPE_FACTORY_2,
-	RELATIONSHIP_FACTORY,
-	FIELD_FACTORY_2;
+enum FactoryIndex {
+  PERMISSION_FACTORY,
+  CALENDAR_EVENT_FACTORY,
+  CALENDAR_EVENT_RECURRENCE_FACTORY,
+  CATEGORY_FACTORY,
+  CONTENTLET_FACTORY,
+  DISTRIBUTED_JOURNAL_FACTORY,
+  PLUGIN_FACTORY,
+  LANGUAGE_FACTORY,
+  USER_FACTORY,
+  CHAIN_FACTORY,
+  CALENDAR_REMINDER_FACTORY,
+  USER_PROXY_FACTORY,
+  TEMPLATE_FACTORY,
+  ROLE_FACTORY,
+  LAYOUT_FACTORY,
+  HOST_VARIABLE_FACTORY,
+  HOST_FACTORY,
+  FILE_FACTORY,
+  HTMLPAGE_FACTORY,
+  MENULINK_FACTORY,
+  CONTAINER_FACTORY,
+  IDENTIFIER_FACTORY,
+  VERSIONABLE_FACTORY,
+  FOLDER_FACTORY,
+  DASHBOARD_FACTORY,
+  WORKFLOWS_FACTORY,
+  INDICIES_FACTORY,
+  LINKCHECKER_FACTORY,
+  PUBLISHER_END_POINT_FACTORY,
+  ENVIRONMENT_FACTORY,
+  BUNDLE_FACTORY,
+  PUSHED_ASSETS_FACTORY,
+  SERVER_FACTORY,
+  NOTIFICATION_FACTORY,
+  SERVER_ACTION_FACTORY,
+  RULES_FACTORY,
+  TAG_FACTORY,
+  PERSONA_FACTORY,
+  CONTENTTYPE_FACTORY_2,
+  RELATIONSHIP_FACTORY,
+  FIELD_FACTORY_2;
 
-	Object create() {
-		switch(this) {
-			case PERMISSION_FACTORY: return new PermissionBitFactoryImpl(CacheLocator.getPermissionCache());
-            case CALENDAR_EVENT_FACTORY: return new EventFactoryImpl();
-            case CATEGORY_FACTORY: return new CategoryFactoryImpl();
-            case CONTENTLET_FACTORY: return new ESContentFactoryImpl();
-            case PLUGIN_FACTORY: return new PluginFactoryDBImpl();
-            case LANGUAGE_FACTORY: return new LanguageFactoryImpl();
-            case DISTRIBUTED_JOURNAL_FACTORY: return new ESDistributedJournalFactoryImpl<String>("0");
-            case USER_FACTORY : return new UserFactoryLiferayImpl();
-            case CALENDAR_REMINDER_FACTORY: return new CalendarReminderFactoryImpl();
-            case TEMPLATE_FACTORY: return new TemplateFactoryImpl();
-            case HOST_VARIABLE_FACTORY: return new HostVariableFactoryImpl();
-            case LAYOUT_FACTORY : return new LayoutFactoryImpl();
-            case USER_PROXY_FACTORY: return new UserProxyFactoryImpl() {};
-            case ROLE_FACTORY : return new RoleFactoryImpl();
-            case MENULINK_FACTORY : return new MenuLinkFactoryImpl();
-            case CONTAINER_FACTORY : return new ContainerFactoryImpl();
-            case DASHBOARD_FACTORY : return DashboardProxy.getDashboardFactory();
-            case IDENTIFIER_FACTORY : return new IdentifierFactoryImpl();
-            case VERSIONABLE_FACTORY : return new VersionableFactoryImpl();
-            case FOLDER_FACTORY : return new FolderFactoryImpl();
-            case WORKFLOWS_FACTORY :return new WorkflowFactoryImpl();
-            case INDICIES_FACTORY: return new IndiciesFactoryImpl();
-            case LINKCHECKER_FACTORY: return new LinkCheckerFactoryImpl();
-            case PUBLISHER_END_POINT_FACTORY: return new PublishingEndPointFactoryImpl();
-            case ENVIRONMENT_FACTORY: return new EnvironmentFactoryImpl();
-            case BUNDLE_FACTORY: return new BundleFactoryImpl();
-            case PUSHED_ASSETS_FACTORY: return new PushedAssetsFactoryImpl();
-            case SERVER_FACTORY: return new ServerFactoryImpl();
-            case NOTIFICATION_FACTORY: return new NotificationFactoryImpl();
-            case SERVER_ACTION_FACTORY: return new ServerActionFactoryImplProxy();
-            case RULES_FACTORY: return new RulesFactoryProxy();
-            case PERSONA_FACTORY: return new PersonaFactoryImpl();
-            case RELATIONSHIP_FACTORY: return new RelationshipFactoryImpl();
-            case TAG_FACTORY: return new TagFactoryImpl();
-		}
-		throw new AssertionError("Unknown Factory Index: " + this);
-	}
+  Object create() {
+    switch (this) {
+      case PERMISSION_FACTORY:
+        return new PermissionBitFactoryImpl(CacheLocator.getPermissionCache());
+      case CALENDAR_EVENT_FACTORY:
+        return new EventFactoryImpl();
+      case CATEGORY_FACTORY:
+        return new CategoryFactoryImpl();
+      case CONTENTLET_FACTORY:
+        return new ESContentFactoryImpl();
+      case PLUGIN_FACTORY:
+        return new PluginFactoryDBImpl();
+      case LANGUAGE_FACTORY:
+        return new LanguageFactoryImpl();
+      case DISTRIBUTED_JOURNAL_FACTORY:
+        return new ESDistributedJournalFactoryImpl<String>("0");
+      case USER_FACTORY:
+        return new UserFactoryLiferayImpl();
+      case CALENDAR_REMINDER_FACTORY:
+        return new CalendarReminderFactoryImpl();
+      case TEMPLATE_FACTORY:
+        return new TemplateFactoryImpl();
+      case HOST_VARIABLE_FACTORY:
+        return new HostVariableFactoryImpl();
+      case LAYOUT_FACTORY:
+        return new LayoutFactoryImpl();
+      case USER_PROXY_FACTORY:
+        return new UserProxyFactoryImpl() {};
+      case ROLE_FACTORY:
+        return new RoleFactoryImpl();
+      case MENULINK_FACTORY:
+        return new MenuLinkFactoryImpl();
+      case CONTAINER_FACTORY:
+        return new ContainerFactoryImpl();
+      case DASHBOARD_FACTORY:
+        return DashboardProxy.getDashboardFactory();
+      case IDENTIFIER_FACTORY:
+        return new IdentifierFactoryImpl();
+      case VERSIONABLE_FACTORY:
+        return new VersionableFactoryImpl();
+      case FOLDER_FACTORY:
+        return new FolderFactoryImpl();
+      case WORKFLOWS_FACTORY:
+        return new WorkflowFactoryImpl();
+      case INDICIES_FACTORY:
+        return new IndiciesFactoryImpl();
+      case LINKCHECKER_FACTORY:
+        return new LinkCheckerFactoryImpl();
+      case PUBLISHER_END_POINT_FACTORY:
+        return new PublishingEndPointFactoryImpl();
+      case ENVIRONMENT_FACTORY:
+        return new EnvironmentFactoryImpl();
+      case BUNDLE_FACTORY:
+        return new BundleFactoryImpl();
+      case PUSHED_ASSETS_FACTORY:
+        return new PushedAssetsFactoryImpl();
+      case SERVER_FACTORY:
+        return new ServerFactoryImpl();
+      case NOTIFICATION_FACTORY:
+        return new NotificationFactoryImpl();
+      case SERVER_ACTION_FACTORY:
+        return new ServerActionFactoryImplProxy();
+      case RULES_FACTORY:
+        return new RulesFactoryProxy();
+      case PERSONA_FACTORY:
+        return new PersonaFactoryImpl();
+      case RELATIONSHIP_FACTORY:
+        return new RelationshipFactoryImpl();
+      case TAG_FACTORY:
+        return new TagFactoryImpl();
+    }
+    throw new AssertionError("Unknown Factory Index: " + this);
+  }
 }
-

@@ -1,24 +1,24 @@
-//package com.dotmarketing.portlets.rules.conditionlet;
+// package com.dotmarketing.portlets.rules.conditionlet;
 //
-//import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
-//import com.dotcms.repackage.com.google.common.collect.Sets;
-//import com.dotmarketing.portlets.rules.RuleComponentInstance;
-//import com.dotmarketing.portlets.rules.ValidationResult;
-//import com.dotmarketing.portlets.rules.model.ParameterModel;
-//import com.dotmarketing.portlets.rules.parameter.comparison.Comparison;
-//import com.dotmarketing.util.UtilMethods;
-//import java.util.Collection;
-//import java.util.LinkedHashMap;
-//import java.util.LinkedHashSet;
-//import java.util.List;
-//import java.util.Map;
-//import java.util.Set;
-//import javax.servlet.http.HttpServletRequest;
-//import javax.servlet.http.HttpServletResponse;
+// import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
+// import com.dotcms.repackage.com.google.common.collect.Sets;
+// import com.dotmarketing.portlets.rules.RuleComponentInstance;
+// import com.dotmarketing.portlets.rules.ValidationResult;
+// import com.dotmarketing.portlets.rules.model.ParameterModel;
+// import com.dotmarketing.portlets.rules.parameter.comparison.Comparison;
+// import com.dotmarketing.util.UtilMethods;
+// import java.util.Collection;
+// import java.util.LinkedHashMap;
+// import java.util.LinkedHashSet;
+// import java.util.List;
+// import java.util.Map;
+// import java.util.Set;
+// import javax.servlet.http.HttpServletRequest;
+// import javax.servlet.http.HttpServletResponse;
 //
-//import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.IS;
+// import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.IS;
 //
-///**
+/// **
 // * This conditionlet will allow CMS users to check the city a user request comes
 // * from. The comparison of city names is case-insensitive, except for the
 // * regular expression comparison. This {@link Conditionlet} provides a drop-down
@@ -36,7 +36,7 @@
 // * @since 04-16-2015
 // *
 // */
-//public class UsersCityConditionlet extends Conditionlet<UsersCityConditionlet.Instance> {
+// public class UsersCityConditionlet extends Conditionlet<UsersCityConditionlet.Instance> {
 //
 //	private static final long serialVersionUID = 1L;
 //
@@ -51,7 +51,8 @@
 //
 //	public UsersCityConditionlet() {
 //        super("api.system.ruleengine.conditionlet.VisitorCity", ImmutableSet.of(IS,
-//                                                                                Comparison.IS_NOT), Sets.newHashSet());
+//
+// Comparison.IS_NOT), Sets.newHashSet());
 //    }
 //
 //
@@ -150,7 +151,8 @@
 //	}
 //
 //	@Override
-//    public boolean evaluate(HttpServletRequest request, HttpServletResponse response, Instance instance) {
+//    public boolean evaluate(HttpServletRequest request, HttpServletResponse response, Instance
+// instance) {
 //
 ////        GeoIp2CityDbUtil geoIp2Util = GeoIp2CityDbUtil.getInstance();
 ////		String city = null;
@@ -205,4 +207,4 @@
 //        }
 //    }
 //
-//}
+// }

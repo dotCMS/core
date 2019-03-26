@@ -2,194 +2,207 @@ package com.dotmarketing.beans;
 
 import com.dotcms.api.tree.Parentable;
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore;
-import com.dotmarketing.business.*;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.PermissionSummary;
+import com.dotmarketing.business.Permissionable;
+import com.dotmarketing.business.Treeable;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.liferay.portal.model.User;
-
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 /**
- *
- * This is just a wrapper class over a contentlet, it just offers nice methods to access host content specific fields like the host name but
- * it underneath is just a piece of content
+ * This is just a wrapper class over a contentlet, it just offers nice methods to access host
+ * content specific fields like the host name but it underneath is just a piece of content
  *
  * @author David H Torres
  */
-public class Host extends Contentlet implements Permissionable,Treeable,Parentable {
+public class Host extends Contentlet implements Permissionable, Treeable, Parentable {
 
-	/**
-     *
-     */
-	private static final long serialVersionUID = 1L;
+  /** */
+  private static final long serialVersionUID = 1L;
 
-	public Host() {
-		map.put(SYSTEM_HOST_KEY, false);
-		Structure st = CacheLocator.getContentTypeCache().getStructureByVelocityVarName("Host");
-		this.map.put(STRUCTURE_INODE_KEY, st.getInode());
-		setDefault(false);
-		setSystemHost(false);
-	}
+  public Host() {
+    map.put(SYSTEM_HOST_KEY, false);
+    Structure st = CacheLocator.getContentTypeCache().getStructureByVelocityVarName("Host");
+    this.map.put(STRUCTURE_INODE_KEY, st.getInode());
+    setDefault(false);
+    setSystemHost(false);
+  }
 
-	public Host(Contentlet c) {
-		super();
-		this.map = c.getMap();
-	}
+  public Host(Contentlet c) {
+    super();
+    this.map = c.getMap();
+  }
 
-	public static final String HOST_NAME_KEY = "hostName";
+  public static final String HOST_NAME_KEY = "hostName";
 
-	public static final String IS_DEFAULT_KEY = "isDefault";
+  public static final String IS_DEFAULT_KEY = "isDefault";
 
-	public static final String ALIASES_KEY = "aliases";
+  public static final String ALIASES_KEY = "aliases";
 
-	public static final String SYSTEM_HOST_KEY = "isSystemHost";
+  public static final String SYSTEM_HOST_KEY = "isSystemHost";
 
-	public static final String HOST_THUMB_KEY = "hostThumbnail";
+  public static final String HOST_THUMB_KEY = "hostThumbnail";
 
-	public static final String SYSTEM_HOST = "SYSTEM_HOST";
+  public static final String SYSTEM_HOST = "SYSTEM_HOST";
 
-	public static final String TAG_STORAGE = "tagStorage";
-	
-    public static final String HOST_VELOCITY_VAR_NAME = "Host";
-    
-    public static final String EMBEDDED_DASHBOARD = "embeddedDashboard";
-    
-	@Override
-	public String getInode() {
-		return super.getInode();
-	}
+  public static final String TAG_STORAGE = "tagStorage";
 
-	@Override
-	public String getName() {
-		return getTitle();
-	}
+  public static final String HOST_VELOCITY_VAR_NAME = "Host";
 
-	@Override
-	public boolean isParent() {
-		return true;
-	}
+  public static final String EMBEDDED_DASHBOARD = "embeddedDashboard";
 
-	@Override
-	public List<Treeable> getChildren(User user, boolean live, boolean working, boolean archived, boolean respectFrontEndPermissions) throws DotSecurityException, DotDataException {
-		return APILocator.getTreeableAPI().loadAssetsUnderHost(this,user,live,working, archived, respectFrontEndPermissions);
-	}
+  @Override
+  public String getInode() {
+    return super.getInode();
+  }
 
-	public String getVersionType() {
-		return new String("host");
-	}
+  @Override
+  public String getName() {
+    return getTitle();
+  }
 
-	public String getAliases() {
-		return (String) map.get(ALIASES_KEY);
-	}
+  @Override
+  public boolean isParent() {
+    return true;
+  }
 
-	public void setAliases(String aliases) {
-		map.put(ALIASES_KEY, aliases);
-	}
+  @Override
+  public List<Treeable> getChildren(
+      User user,
+      boolean live,
+      boolean working,
+      boolean archived,
+      boolean respectFrontEndPermissions)
+      throws DotSecurityException, DotDataException {
+    return APILocator.getTreeableAPI()
+        .loadAssetsUnderHost(this, user, live, working, archived, respectFrontEndPermissions);
+  }
 
-	public String getHostname() {
-		return (String) map.get(HOST_NAME_KEY);
-	}
+  public String getVersionType() {
+    return new String("host");
+  }
 
-	public void setHostname(String hostname) {
-		map.put(HOST_NAME_KEY, hostname);
-	}
+  public String getAliases() {
+    return (String) map.get(ALIASES_KEY);
+  }
 
-	public File getHostThumbnail() {
-		return (File) map.get(HOST_THUMB_KEY);
-	}
+  public void setAliases(String aliases) {
+    map.put(ALIASES_KEY, aliases);
+  }
 
-	public void setHostThumbnail(File thumbnailInode) {
-		map.put(HOST_THUMB_KEY, thumbnailInode);
-	}
+  public String getHostname() {
+    return (String) map.get(HOST_NAME_KEY);
+  }
 
-	public boolean isDefault() {
-		return (Boolean) map.get(IS_DEFAULT_KEY);
-	}
+  public void setHostname(String hostname) {
+    map.put(HOST_NAME_KEY, hostname);
+  }
 
-	public void setDefault(boolean isDefault) {
-		map.put(IS_DEFAULT_KEY, isDefault);
-	}
+  public File getHostThumbnail() {
+    return (File) map.get(HOST_THUMB_KEY);
+  }
 
-	public String getStructureInode() {
-		Structure st = CacheLocator.getContentTypeCache().getStructureByVelocityVarName("Host");
-		return (String) st.getInode();
-	}
+  public void setHostThumbnail(File thumbnailInode) {
+    map.put(HOST_THUMB_KEY, thumbnailInode);
+  }
 
+  public boolean isDefault() {
+    return (Boolean) map.get(IS_DEFAULT_KEY);
+  }
 
+  public void setDefault(boolean isDefault) {
+    map.put(IS_DEFAULT_KEY, isDefault);
+  }
 
-	public boolean isSystemHost() {
-		Object isSystemHost = map.get(SYSTEM_HOST_KEY);
-		if(isSystemHost!=null) {
-			if (isSystemHost instanceof Boolean) {
-				return (Boolean) isSystemHost;
-			}
-			return Integer.parseInt(isSystemHost.toString()) == 1 ? true
-					: false;
-		}
-		return false;
-	}
+  public String getStructureInode() {
+    Structure st = CacheLocator.getContentTypeCache().getStructureByVelocityVarName("Host");
+    return (String) st.getInode();
+  }
 
-	public void setSystemHost(boolean isSystemHost) {
-		map.put(SYSTEM_HOST_KEY, isSystemHost);
-	}
+  public boolean isSystemHost() {
+    Object isSystemHost = map.get(SYSTEM_HOST_KEY);
+    if (isSystemHost != null) {
+      if (isSystemHost instanceof Boolean) {
+        return (Boolean) isSystemHost;
+      }
+      return Integer.parseInt(isSystemHost.toString()) == 1 ? true : false;
+    }
+    return false;
+  }
 
-	public void setStructureInode(String structureInode) {
-		// No structure inode can be set different then the host structure inode
-		// set by the constructor
-	}
+  public void setSystemHost(boolean isSystemHost) {
+    map.put(SYSTEM_HOST_KEY, isSystemHost);
+  }
 
-	public Map<String, Object> getMap() {
-		Map<String, Object> hostMap = super.getMap();
-		// Legacy property referenced as 'hostname' while really is 'hostName'
-		hostMap.put("hostname", hostMap.get("hostName"));
-		hostMap.put("type", "host");
+  public void setStructureInode(String structureInode) {
+    // No structure inode can be set different then the host structure inode
+    // set by the constructor
+  }
 
-		return hostMap;
-	}
+  public Map<String, Object> getMap() {
+    Map<String, Object> hostMap = super.getMap();
+    // Legacy property referenced as 'hostname' while really is 'hostName'
+    hostMap.put("hostname", hostMap.get("hostName"));
+    hostMap.put("type", "host");
 
-	/**
-	 * @author David H Torres
-	 */
-	@Override
-	public List<PermissionSummary> acceptedPermissions() {
-		List<PermissionSummary> accepted = new ArrayList<PermissionSummary>();
-		accepted.add(new PermissionSummary("view", "view-permission-description", PermissionAPI.PERMISSION_READ));
-		accepted.add(new PermissionSummary("add-children", "add-children-permission-description", PermissionAPI.PERMISSION_WRITE));
-		accepted.add(new PermissionSummary("edit", "edit-permission-description", PermissionAPI.PERMISSION_WRITE));
-		accepted.add(new PermissionSummary("publish", "publish-permission-description", PermissionAPI.PERMISSION_PUBLISH));
-		accepted.add(new PermissionSummary("edit-permissions", "edit-permissions-permission-description", PermissionAPI.PERMISSION_EDIT_PERMISSIONS));
-		return accepted;
-	}
+    return hostMap;
+  }
 
-	@JsonIgnore
-	@Override
-	public Permissionable getParentPermissionable() throws DotDataException {
-		if (this.isSystemHost())
-			return null;
-		try {
-			return APILocator.getHostAPI().findSystemHost();
-		} catch (DotDataException e) {
-			throw new DotRuntimeException(e.getMessage(), e);
-		}
-	}
+  /** @author David H Torres */
+  @Override
+  public List<PermissionSummary> acceptedPermissions() {
+    List<PermissionSummary> accepted = new ArrayList<PermissionSummary>();
+    accepted.add(
+        new PermissionSummary(
+            "view", "view-permission-description", PermissionAPI.PERMISSION_READ));
+    accepted.add(
+        new PermissionSummary(
+            "add-children", "add-children-permission-description", PermissionAPI.PERMISSION_WRITE));
+    accepted.add(
+        new PermissionSummary(
+            "edit", "edit-permission-description", PermissionAPI.PERMISSION_WRITE));
+    accepted.add(
+        new PermissionSummary(
+            "publish", "publish-permission-description", PermissionAPI.PERMISSION_PUBLISH));
+    accepted.add(
+        new PermissionSummary(
+            "edit-permissions",
+            "edit-permissions-permission-description",
+            PermissionAPI.PERMISSION_EDIT_PERMISSIONS));
+    return accepted;
+  }
 
-	public String getTagStorage() {
-		return (String) map.get(TAG_STORAGE);
-	}
+  @JsonIgnore
+  @Override
+  public Permissionable getParentPermissionable() throws DotDataException {
+    if (this.isSystemHost()) return null;
+    try {
+      return APILocator.getHostAPI().findSystemHost();
+    } catch (DotDataException e) {
+      throw new DotRuntimeException(e.getMessage(), e);
+    }
+  }
 
-	public void setTagStorage(String tagStorageId) {
-		map.put(TAG_STORAGE, tagStorageId);
-	}
+  public String getTagStorage() {
+    return (String) map.get(TAG_STORAGE);
+  }
 
+  public void setTagStorage(String tagStorageId) {
+    map.put(TAG_STORAGE, tagStorageId);
+  }
 
-	@Override
-	public String toString() {
-		return this.getHostname();
-	}
+  @Override
+  public String toString() {
+    return this.getHostname();
+  }
 }

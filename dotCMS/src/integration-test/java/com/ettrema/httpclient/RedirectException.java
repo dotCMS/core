@@ -1,13 +1,10 @@
 package com.ettrema.httpclient;
 
-/**
- *
- * @author mcevoyb
- */
+/** @author mcevoyb */
 public class RedirectException extends HttpException {
-    private static final long serialVersionUID = 1L;
+  private static final long serialVersionUID = 1L;
 
-    public RedirectException( int result, String href ) {
-        super( result, href );
-    }
+  public RedirectException(int result, String href) {
+    super(result, href);
+  }
 }

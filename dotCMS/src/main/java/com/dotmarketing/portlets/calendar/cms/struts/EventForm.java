@@ -16,263 +16,264 @@ import org.apache.struts.validator.ValidatorForm;
 
 /**
  * Used to manage the data comming doem the submit event frontend page
+ *
  * @author David Torres
  * @version 1.6
  * @since 1.6
  */
-public class EventForm extends ValidatorForm
-{
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 1L;
-	
-    //Recurrence fields
-	private String recurrenceOccurs = "never";
+public class EventForm extends ValidatorForm {
+  /** */
+  private static final long serialVersionUID = 1L;
 
-	private int recurrenceIntervalDaily = 1;
+  // Recurrence fields
+  private String recurrenceOccurs = "never";
 
-	private int recurrenceIntervalWeekly = 1;
+  private int recurrenceIntervalDaily = 1;
 
-	private int recurrenceIntervalMonthly = 1;
-	
-	private int recurrenceIntervalYearly = 1;
+  private int recurrenceIntervalWeekly = 1;
 
-	private Date recurrenceStarts = new Date();
-	
-	private Date recurrenceEnds = new Date();
-	
-	private String[] daysOfWeekRecurrence = { String.valueOf(Calendar.MONDAY), String.valueOf(Calendar.TUESDAY), 
-			String.valueOf(Calendar.WEDNESDAY),	String.valueOf(Calendar.THURSDAY), String.valueOf(Calendar.FRIDAY), 
-			String.valueOf(Calendar.SATURDAY),  String.valueOf(Calendar.SUNDAY) };
+  private int recurrenceIntervalMonthly = 1;
 
-	private String dayOfMonthRecurrence = "";
+  private int recurrenceIntervalYearly = 1;
 
-	private boolean recurrenceChanged = false;
-	
-	private boolean noEndDate = false;
-	
-	private int recurrenceWeekOfMonth = 1;
-	
-	private int recurrenceDayOfWeek = 1;
-	
-	private int recurrenceMonthOfYear = 1;
-	
-	private String disconnectedFrom;
-	
-	private String originalStartDate;
-	
-	private String originalEndDate;
-	
-	private String specificDayOfMonthRecY = "";
-	
-	private String specificMonthOfYearRecY = "";
-	
-	public String getSpecificDayOfMonthRecY() {
-		return specificDayOfMonthRecY;
-	}
+  private Date recurrenceStarts = new Date();
 
-	public void setSpecificDayOfMonthRecY(String specificDayOfMonthRecY) {
-		this.specificDayOfMonthRecY = specificDayOfMonthRecY;
-	}
+  private Date recurrenceEnds = new Date();
 
-	public String getSpecificMonthOfYearRecY() {
-		return specificMonthOfYearRecY;
-	}
+  private String[] daysOfWeekRecurrence = {
+    String.valueOf(Calendar.MONDAY),
+    String.valueOf(Calendar.TUESDAY),
+    String.valueOf(Calendar.WEDNESDAY),
+    String.valueOf(Calendar.THURSDAY),
+    String.valueOf(Calendar.FRIDAY),
+    String.valueOf(Calendar.SATURDAY),
+    String.valueOf(Calendar.SUNDAY)
+  };
 
-	public void setSpecificMonthOfYearRecY(String specificMonthOfYearRecY) {
-		this.specificMonthOfYearRecY = specificMonthOfYearRecY;
-	}
+  private String dayOfMonthRecurrence = "";
 
-	public int getRecurrenceIntervalDaily() {
-		return recurrenceIntervalDaily;
-	}
+  private boolean recurrenceChanged = false;
 
-	public void setRecurrenceIntervalDaily(int interval) {
-		recurrenceIntervalDaily = interval;
-	}
+  private boolean noEndDate = false;
 
-	public int getRecurrenceIntervalWeekly() {
-		return recurrenceIntervalWeekly;
-	}
+  private int recurrenceWeekOfMonth = 1;
 
-	public void setRecurrenceIntervalWeekly(int interval) {
-		this.recurrenceIntervalWeekly = interval;
-	}
+  private int recurrenceDayOfWeek = 1;
 
-	public int getRecurrenceIntervalMonthly() {
-		return recurrenceIntervalMonthly;
-	}
+  private int recurrenceMonthOfYear = 1;
 
-	public void setRecurrenceIntervalMonthly(int interval) {
-		this.recurrenceIntervalMonthly = interval;
-	}
+  private String disconnectedFrom;
 
-	public String getRecurrenceOccurs() {
-		return recurrenceOccurs;
-	}
+  private String originalStartDate;
 
-	public void setRecurrenceOccurs(String recurrenceOccurs) {
-		this.recurrenceOccurs = recurrenceOccurs;
-	}
+  private String originalEndDate;
 
-	public Date getRecurrenceStartsDate() {
-		return recurrenceStarts;
-	}
+  private String specificDayOfMonthRecY = "";
 
-	public void setRecurrenceStartsDate(Date recurrenceStarts) {
-		this.recurrenceStarts = recurrenceStarts;
-	}
+  private String specificMonthOfYearRecY = "";
 
-	public String getRecurrenceStarts() {
-		return new SimpleDateFormat("MM/dd/yyyy").format(recurrenceStarts);
-	}
-	
-	public void setRecurrenceStarts(String recurrenceStarts) {
-		try {
-			this.recurrenceStarts = new SimpleDateFormat("MM/dd/yyyy").parse(recurrenceStarts);
-		} catch (ParseException e) {
-			Logger.error(this, "Error parsing recurrence end date", e);
-		}
-	}
+  public String getSpecificDayOfMonthRecY() {
+    return specificDayOfMonthRecY;
+  }
 
-	public Date getRecurrenceEndsDate() {
-		return recurrenceEnds;
-	}
+  public void setSpecificDayOfMonthRecY(String specificDayOfMonthRecY) {
+    this.specificDayOfMonthRecY = specificDayOfMonthRecY;
+  }
 
-	public void setRecurrenceEndsDate(Date recurrenceEnds) {
-		this.recurrenceEnds = recurrenceEnds;
-	}
+  public String getSpecificMonthOfYearRecY() {
+    return specificMonthOfYearRecY;
+  }
 
-	public String getRecurrenceEnds() {
-		return new SimpleDateFormat("MM/dd/yyyy").format(recurrenceEnds);
-	}
+  public void setSpecificMonthOfYearRecY(String specificMonthOfYearRecY) {
+    this.specificMonthOfYearRecY = specificMonthOfYearRecY;
+  }
 
-	public void setRecurrenceEnds(String recurrenceEnds) {
-		try {
-			this.recurrenceEnds = new SimpleDateFormat("MM/dd/yyyy").parse(recurrenceEnds);
-		} catch (ParseException e) {
-			Logger.error(this, "Error parsing recurrence end date", e);
-		}
-	}
+  public int getRecurrenceIntervalDaily() {
+    return recurrenceIntervalDaily;
+  }
 
-	public String[] getRecurrenceDaysOfWeek() {
-		return daysOfWeekRecurrence;
-	}
+  public void setRecurrenceIntervalDaily(int interval) {
+    recurrenceIntervalDaily = interval;
+  }
 
-	public void setRecurrenceDaysOfWeek(String[] daysOfWeek) {
-		this.daysOfWeekRecurrence = daysOfWeek;
-	}
+  public int getRecurrenceIntervalWeekly() {
+    return recurrenceIntervalWeekly;
+  }
 
-	public String getRecurrenceDayOfMonth() {
-		return dayOfMonthRecurrence;
-	}
+  public void setRecurrenceIntervalWeekly(int interval) {
+    this.recurrenceIntervalWeekly = interval;
+  }
 
-	public void setRecurrenceDayOfMonth(String dayOfMonth) {
-		this.dayOfMonthRecurrence = dayOfMonth;
-	}
+  public int getRecurrenceIntervalMonthly() {
+    return recurrenceIntervalMonthly;
+  }
 
-	public boolean isRecurrenceChanged() {
-		return recurrenceChanged;
-	}
+  public void setRecurrenceIntervalMonthly(int interval) {
+    this.recurrenceIntervalMonthly = interval;
+  }
 
-	public void setRecurrenceChanged(boolean recurrenceChanged) {
-		this.recurrenceChanged = recurrenceChanged;
-	}
+  public String getRecurrenceOccurs() {
+    return recurrenceOccurs;
+  }
 
+  public void setRecurrenceOccurs(String recurrenceOccurs) {
+    this.recurrenceOccurs = recurrenceOccurs;
+  }
 
-	@SuppressWarnings("deprecation")
-	public ActionErrors validate(ActionMapping arg0, HttpServletRequest request) 
-	{
-		ActionErrors errors = new ActionErrors(); 
-		String title = request.getParameter("title") ;
-		if(title == null || title.equals("")){
-			errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("message.contentlet.title.required"));
-		}
-		if (request instanceof UploadServletRequest)
-		{  
-			//Validate that the uploaded image corresponds to a valid image file type
-			UploadServletRequest uploadReq = (UploadServletRequest) request;
-			java.io.File image = uploadReq.getFile("image");
-			if(image != null && image.length() > 0) {
-				MimetypesFileTypeMap mimeType = new MimetypesFileTypeMap();
-				if(!mimeType.getContentType(image).equals("image/jpeg")
-						&& !mimeType.getContentType(image).equals("image/pjpeg")
-						&& !mimeType.getContentType(image).equals("image/gif")
-						&& !mimeType.getContentType(image).equals("image/png")
-						&& !mimeType.getContentType(image).equals("image/x-png")){
-					errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("message.contentlet.image.required"));
-				}					
-			}		
-		}			
+  public Date getRecurrenceStartsDate() {
+    return recurrenceStarts;
+  }
 
-		return errors;
-	}
+  public void setRecurrenceStartsDate(Date recurrenceStarts) {
+    this.recurrenceStarts = recurrenceStarts;
+  }
 
-	public int getRecurrenceIntervalYearly() {
-		return recurrenceIntervalYearly;
-	}
+  public String getRecurrenceStarts() {
+    return new SimpleDateFormat("MM/dd/yyyy").format(recurrenceStarts);
+  }
 
-	public void setRecurrenceIntervalYearly(int recurrenceIntervalYearly) {
-		this.recurrenceIntervalYearly = recurrenceIntervalYearly;
-	}
+  public void setRecurrenceStarts(String recurrenceStarts) {
+    try {
+      this.recurrenceStarts = new SimpleDateFormat("MM/dd/yyyy").parse(recurrenceStarts);
+    } catch (ParseException e) {
+      Logger.error(this, "Error parsing recurrence end date", e);
+    }
+  }
 
-	public boolean isNoEndDate() {
-		return noEndDate;
-	}
+  public Date getRecurrenceEndsDate() {
+    return recurrenceEnds;
+  }
 
-	public void setNoEndDate(boolean noEndDate) {
-		this.noEndDate = noEndDate;
-	}
+  public void setRecurrenceEndsDate(Date recurrenceEnds) {
+    this.recurrenceEnds = recurrenceEnds;
+  }
 
-	public int getRecurrenceWeekOfMonth() {
-		return recurrenceWeekOfMonth;
-	}
+  public String getRecurrenceEnds() {
+    return new SimpleDateFormat("MM/dd/yyyy").format(recurrenceEnds);
+  }
 
-	public void setRecurrenceWeekOfMonth(int recurrenceWeekOfMonth) {
-		this.recurrenceWeekOfMonth = recurrenceWeekOfMonth;
-	}
+  public void setRecurrenceEnds(String recurrenceEnds) {
+    try {
+      this.recurrenceEnds = new SimpleDateFormat("MM/dd/yyyy").parse(recurrenceEnds);
+    } catch (ParseException e) {
+      Logger.error(this, "Error parsing recurrence end date", e);
+    }
+  }
 
-	public int getRecurrenceDayOfWeek() {
-		return recurrenceDayOfWeek;
-	}
+  public String[] getRecurrenceDaysOfWeek() {
+    return daysOfWeekRecurrence;
+  }
 
-	public void setRecurrenceDayOfWeek(int recurrenceDayOfWeek) {
-		this.recurrenceDayOfWeek = recurrenceDayOfWeek;
-	}
+  public void setRecurrenceDaysOfWeek(String[] daysOfWeek) {
+    this.daysOfWeekRecurrence = daysOfWeek;
+  }
 
-	public int getRecurrenceMonthOfYear() {
-		return recurrenceMonthOfYear;
-	}
+  public String getRecurrenceDayOfMonth() {
+    return dayOfMonthRecurrence;
+  }
 
-	public void setRecurrenceMonthOfYear(int recurrenceMonthOfYear) {
-		this.recurrenceMonthOfYear = recurrenceMonthOfYear;
-	}
+  public void setRecurrenceDayOfMonth(String dayOfMonth) {
+    this.dayOfMonthRecurrence = dayOfMonth;
+  }
 
-	public String getDisconnectedFrom() {
-		return disconnectedFrom;
-	}
+  public boolean isRecurrenceChanged() {
+    return recurrenceChanged;
+  }
 
-	public void setDisconnectedFrom(String disconnectedFrom) {
-		this.disconnectedFrom = disconnectedFrom;
-	}
+  public void setRecurrenceChanged(boolean recurrenceChanged) {
+    this.recurrenceChanged = recurrenceChanged;
+  }
 
-	public String getOriginalStartDate() {
-		return originalStartDate;
-	}
+  @SuppressWarnings("deprecation")
+  public ActionErrors validate(ActionMapping arg0, HttpServletRequest request) {
+    ActionErrors errors = new ActionErrors();
+    String title = request.getParameter("title");
+    if (title == null || title.equals("")) {
+      errors.add(
+          ActionMessages.GLOBAL_MESSAGE, new ActionMessage("message.contentlet.title.required"));
+    }
+    if (request instanceof UploadServletRequest) {
+      // Validate that the uploaded image corresponds to a valid image file type
+      UploadServletRequest uploadReq = (UploadServletRequest) request;
+      java.io.File image = uploadReq.getFile("image");
+      if (image != null && image.length() > 0) {
+        MimetypesFileTypeMap mimeType = new MimetypesFileTypeMap();
+        if (!mimeType.getContentType(image).equals("image/jpeg")
+            && !mimeType.getContentType(image).equals("image/pjpeg")
+            && !mimeType.getContentType(image).equals("image/gif")
+            && !mimeType.getContentType(image).equals("image/png")
+            && !mimeType.getContentType(image).equals("image/x-png")) {
+          errors.add(
+              ActionMessages.GLOBAL_MESSAGE,
+              new ActionMessage("message.contentlet.image.required"));
+        }
+      }
+    }
 
-	public void setOriginalStartDate(String originalStartDate) {
-		this.originalStartDate = originalStartDate;
-	}
+    return errors;
+  }
 
-	public String getOriginalEndDate() {
-		return originalEndDate;
-	}
+  public int getRecurrenceIntervalYearly() {
+    return recurrenceIntervalYearly;
+  }
 
-	public void setOriginalEndDate(String originalEndDate) {
-		this.originalEndDate = originalEndDate;
-	}
+  public void setRecurrenceIntervalYearly(int recurrenceIntervalYearly) {
+    this.recurrenceIntervalYearly = recurrenceIntervalYearly;
+  }
 
+  public boolean isNoEndDate() {
+    return noEndDate;
+  }
 
-	
+  public void setNoEndDate(boolean noEndDate) {
+    this.noEndDate = noEndDate;
+  }
+
+  public int getRecurrenceWeekOfMonth() {
+    return recurrenceWeekOfMonth;
+  }
+
+  public void setRecurrenceWeekOfMonth(int recurrenceWeekOfMonth) {
+    this.recurrenceWeekOfMonth = recurrenceWeekOfMonth;
+  }
+
+  public int getRecurrenceDayOfWeek() {
+    return recurrenceDayOfWeek;
+  }
+
+  public void setRecurrenceDayOfWeek(int recurrenceDayOfWeek) {
+    this.recurrenceDayOfWeek = recurrenceDayOfWeek;
+  }
+
+  public int getRecurrenceMonthOfYear() {
+    return recurrenceMonthOfYear;
+  }
+
+  public void setRecurrenceMonthOfYear(int recurrenceMonthOfYear) {
+    this.recurrenceMonthOfYear = recurrenceMonthOfYear;
+  }
+
+  public String getDisconnectedFrom() {
+    return disconnectedFrom;
+  }
+
+  public void setDisconnectedFrom(String disconnectedFrom) {
+    this.disconnectedFrom = disconnectedFrom;
+  }
+
+  public String getOriginalStartDate() {
+    return originalStartDate;
+  }
+
+  public void setOriginalStartDate(String originalStartDate) {
+    this.originalStartDate = originalStartDate;
+  }
+
+  public String getOriginalEndDate() {
+    return originalEndDate;
+  }
+
+  public void setOriginalEndDate(String originalEndDate) {
+    this.originalEndDate = originalEndDate;
+  }
 }

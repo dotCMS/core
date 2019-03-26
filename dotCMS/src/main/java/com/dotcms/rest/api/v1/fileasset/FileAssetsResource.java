@@ -31,62 +31,68 @@ import javax.servlet.http.HttpServletRequest;
 @Path("/v1/content/fileassets")
 public class FileAssetsResource {
 
-    private final WebResource webResource;
-    private final ContentletAPI contentletAPI;
+  private final WebResource webResource;
+  private final ContentletAPI contentletAPI;
 
-    @VisibleForTesting
-    public FileAssetsResource(final ContentletAPI contentletAPI, final WebResource webResource) {
-        this.contentletAPI = contentletAPI;
-        this.webResource = webResource;
+  @VisibleForTesting
+  public FileAssetsResource(final ContentletAPI contentletAPI, final WebResource webResource) {
+    this.contentletAPI = contentletAPI;
+    this.webResource = webResource;
+  }
+
+  public FileAssetsResource() {
+    this(APILocator.getContentletAPI(), new WebResource());
+  }
+
+  /**
+   * Given an inode this will build get you a Resource Link The inode is expected to be File Asset
+   * other wise you'll get exception
+   *
+   * @param request http request
+   * @param inode file asset inode
+   * @return
+   * @throws DotDataException
+   * @throws DotStateException
+   * @throws DotSecurityException
+   */
+  @GET
+  @JSONP
+  @NoCache
+  @Path("/{inode}/resourcelink")
+  @Produces(MediaType.APPLICATION_JSON + ";charset=UTF-8")
+  public Response findResourceLink(
+      @Context final HttpServletRequest request, @PathParam("inode") final String inode)
+      throws DotStateException {
+    try {
+      if (!UtilMethods.isSet(inode)) {
+        throw new IllegalArgumentException("Missing required inode param");
+      }
+      final InitDataObject auth = webResource.init(true, request, true);
+      final User user = auth.getUser();
+      final Contentlet contentlet = contentletAPI.find(inode, user, false);
+      final ResourceLink link = new ResourceLinkBuilder().build(request, user, contentlet);
+      if (link.isDownloadRestricted()) {
+        throw new DotSecurityException("The Resource link to the contentlet is restricted.");
+      }
+      return Response.ok(
+              new ResponseEntityView(
+                  ImmutableMap.of(
+                      "resourceLink",
+                      ImmutableMap.of(
+                          "href",
+                          link.getResourceLinkAsString(),
+                          "text",
+                          link.getResourceLinkUriAsString(),
+                          "mimeType",
+                          link.getMimeType()))))
+          .build();
+
+    } catch (Exception ex) {
+      Logger.error(
+          this.getClass(),
+          "Exception on method findResourceLink with exception message: " + ex.getMessage(),
+          ex);
+      return ResponseUtil.mapExceptionResponse(ex);
     }
-
-    public FileAssetsResource() {
-        this(APILocator.getContentletAPI(), new WebResource());
-    }
-
-    /**
-     * Given an inode this will build get you a Resource Link
-     * The inode is expected to be File Asset other wise you'll get exception
-     * @param request http request
-     * @param inode file asset inode
-     * @return
-     * @throws DotDataException
-     * @throws DotStateException
-     * @throws DotSecurityException
-     */
-    @GET
-    @JSONP
-    @NoCache
-    @Path("/{inode}/resourcelink")
-    @Produces(MediaType.APPLICATION_JSON + ";charset=UTF-8")
-    public Response findResourceLink(@Context final HttpServletRequest request,
-            @PathParam("inode") final String inode) throws DotStateException {
-        try {
-            if (!UtilMethods.isSet(inode)) {
-                throw new IllegalArgumentException("Missing required inode param");
-            }
-            final InitDataObject auth = webResource.init(true, request, true);
-            final User user = auth.getUser();
-            final Contentlet contentlet = contentletAPI.find(inode, user, false);
-            final ResourceLink link = new ResourceLinkBuilder().build(request, user, contentlet);
-            if(link.isDownloadRestricted()){
-               throw new DotSecurityException("The Resource link to the contentlet is restricted.");
-            }
-            return Response.ok(new ResponseEntityView(ImmutableMap.of("resourceLink",
-                    ImmutableMap.of(
-                    "href", link.getResourceLinkAsString(),
-                    "text", link.getResourceLinkUriAsString(),
-                     "mimeType", link.getMimeType()
-                    )
-            ))).build();
-
-        } catch (Exception ex) {
-            Logger.error(this.getClass(),
-                    "Exception on method findResourceLink with exception message: " + ex
-                            .getMessage(), ex);
-            return ResponseUtil.mapExceptionResponse(ex);
-        }
-    }
-
-
+  }
 }

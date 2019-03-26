@@ -1,37 +1,34 @@
 package com.dotmarketing.portlets.dashboard.model;
 
 public class DashboardHostPageViews {
-	
-	private String hostId;
-	
-	private long totalPageViews;
-	
-	private int diff;
 
-	public String getHostId() {
-		return hostId;
-	}
+  private String hostId;
 
-	public void setHostId(String hostId) {
-		this.hostId = hostId;
-	}
+  private long totalPageViews;
 
-	public long getTotalPageViews() {
-		return totalPageViews;
-	}
+  private int diff;
 
-	public void setTotalPageViews(long totalPageViews) {
-		this.totalPageViews = totalPageViews;
-	}
+  public String getHostId() {
+    return hostId;
+  }
 
-	public int getDiff() {
-		return diff;
-	}
+  public void setHostId(String hostId) {
+    this.hostId = hostId;
+  }
 
-	public void setDiff(int diff) {
-		this.diff = diff;
-	}
-	
-	
+  public long getTotalPageViews() {
+    return totalPageViews;
+  }
 
+  public void setTotalPageViews(long totalPageViews) {
+    this.totalPageViews = totalPageViews;
+  }
+
+  public int getDiff() {
+    return diff;
+  }
+
+  public void setDiff(int diff) {
+    this.diff = diff;
+  }
 }

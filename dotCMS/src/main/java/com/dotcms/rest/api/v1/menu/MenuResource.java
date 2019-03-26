@@ -36,102 +36,107 @@ import javax.servlet.http.HttpSession;
 import org.apache.commons.lang.StringEscapeUtils;
 
 /**
- * Encapsulates the Menu Resource
- * Created by freddyrodriguez on 18/5/16.
+ * Encapsulates the Menu Resource Created by freddyrodriguez on 18/5/16.
+ *
  * @author freddyrodriguez
  * @author jsanca
  */
 @Path("/v1/menu")
 public class MenuResource implements Serializable {
 
-	private final LayoutAPI layoutAPI;
-	private final UserAPI userAPI;
-	private final WebResource webResource;
-	private final MenuHelper menuHelper;
+  private final LayoutAPI layoutAPI;
+  private final UserAPI userAPI;
+  private final WebResource webResource;
+  private final MenuHelper menuHelper;
 
-	public MenuResource() {
+  public MenuResource() {
 
-		this(APILocator.getLayoutAPI(), APILocator.getUserAPI(),
-				MenuHelper.INSTANCE, new WebResource(new ApiProvider()));
-	}
+    this(
+        APILocator.getLayoutAPI(),
+        APILocator.getUserAPI(),
+        MenuHelper.INSTANCE,
+        new WebResource(new ApiProvider()));
+  }
 
-	@VisibleForTesting
-	public MenuResource(final LayoutAPI layoutAPI,
-						final UserAPI userAPI,
-						final MenuHelper menuHelper,
-						final WebResource webResource) {
+  @VisibleForTesting
+  public MenuResource(
+      final LayoutAPI layoutAPI,
+      final UserAPI userAPI,
+      final MenuHelper menuHelper,
+      final WebResource webResource) {
 
-		this.layoutAPI   = layoutAPI;
-		this.userAPI     = userAPI;
-		this.menuHelper  = menuHelper;
-		this.webResource = webResource;
-	}
+    this.layoutAPI = layoutAPI;
+    this.userAPI = userAPI;
+    this.menuHelper = menuHelper;
+    this.webResource = webResource;
+  }
 
-	/**
-	 * Get the layout menus and sub-menus that the logged in a user have access
-	 *
-	 * @return a collection of menu portlet
-	 * @throws NoSuchUserException    If the user doesn't exist
-	 * @throws DotDataException       If there is a data inconsistency
-	 * @throws DotSecurityException
-	 * @throws LanguageException
-	 * @throws ClassNotFoundException If the portet class is not assignable to PortletController or BaseRestPortlet
-	 */
-	@GET
-	@JSONP
-	@NoCache
-	@AccessControlAllowOrigin
-	@InitRequestRequired
-	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-	public Response getMenus(@Context final HttpServletRequest httpServletRequest) throws LanguageException, ClassNotFoundException
-	{
+  /**
+   * Get the layout menus and sub-menus that the logged in a user have access
+   *
+   * @return a collection of menu portlet
+   * @throws NoSuchUserException If the user doesn't exist
+   * @throws DotDataException If there is a data inconsistency
+   * @throws DotSecurityException
+   * @throws LanguageException
+   * @throws ClassNotFoundException If the portet class is not assignable to PortletController or
+   *     BaseRestPortlet
+   */
+  @GET
+  @JSONP
+  @NoCache
+  @AccessControlAllowOrigin
+  @InitRequestRequired
+  @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+  public Response getMenus(@Context final HttpServletRequest httpServletRequest)
+      throws LanguageException, ClassNotFoundException {
 
-		this.webResource.init(true, httpServletRequest, true);
+    this.webResource.init(true, httpServletRequest, true);
 
-		Response res;
-		final Collection<Menu> menus = new ArrayList<Menu>();
-		final HttpSession session = httpServletRequest.getSession();
+    Response res;
+    final Collection<Menu> menus = new ArrayList<Menu>();
+    final HttpSession session = httpServletRequest.getSession();
 
-		try {
+    try {
 
-			final User user = this.userAPI
-					.loadUserById((String) session.getAttribute(WebKeys.USER_ID));
-			final List<Layout> layouts = this.layoutAPI.loadLayoutsForUser(user);
-			final MenuContext menuContext = new MenuContext(httpServletRequest, user);
+      final User user = this.userAPI.loadUserById((String) session.getAttribute(WebKeys.USER_ID));
+      final List<Layout> layouts = this.layoutAPI.loadLayoutsForUser(user);
+      final MenuContext menuContext = new MenuContext(httpServletRequest, user);
 
-			for (int layoutIndex = 0; layoutIndex < layouts.size(); layoutIndex++) {
+      for (int layoutIndex = 0; layoutIndex < layouts.size(); layoutIndex++) {
 
-				Layout layout = layouts.get(layoutIndex);
-				String tabName = LanguageUtil.get(user, layout.getName());
-				String tabIcon = StringEscapeUtils.escapeHtml(StringEscapeUtils
-						.escapeJavaScript(LanguageUtil.get(user, layout.getDescription())));
-				List<String> portletIds = layout.getPortletIds();
+        Layout layout = layouts.get(layoutIndex);
+        String tabName = LanguageUtil.get(user, layout.getName());
+        String tabIcon =
+            StringEscapeUtils.escapeHtml(
+                StringEscapeUtils.escapeJavaScript(
+                    LanguageUtil.get(user, layout.getDescription())));
+        List<String> portletIds = layout.getPortletIds();
 
-				if (null != portletIds && portletIds.size() > 0) {
+        if (null != portletIds && portletIds.size() > 0) {
 
-					menuContext.setLayout(layout);
-					menuContext.setPortletId(portletIds.get(0));
-					menuContext.setLayoutIndex(layoutIndex);
+          menuContext.setLayout(layout);
+          menuContext.setPortletId(portletIds.get(0));
+          menuContext.setLayoutIndex(layoutIndex);
 
-					final String url = this.menuHelper.getUrl(menuContext);
-					final Menu menu = new Menu(tabName, tabIcon, url, layout);
+          final String url = this.menuHelper.getUrl(menuContext);
+          final Menu menu = new Menu(tabName, tabIcon, url, layout);
 
-					final List<MenuItem> menuItems = this.menuHelper.getMenuItems(menuContext);
+          final List<MenuItem> menuItems = this.menuHelper.getMenuItems(menuContext);
 
-					menu.setMenuItems(menuItems);
-					menus.add(menu);
-				}
-			}
+          menu.setMenuItems(menuItems);
+          menus.add(menu);
+        }
+      }
 
-			res = Response.ok(new ResponseEntityView(menus)).build(); // 200
-		} catch (DotSecurityException e) {
-			throw new ForbiddenException(e);
-		} catch (DotDataException | NoSuchUserException e) {
+      res = Response.ok(new ResponseEntityView(menus)).build(); // 200
+    } catch (DotSecurityException e) {
+      throw new ForbiddenException(e);
+    } catch (DotDataException | NoSuchUserException e) {
 
-			res = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
-		}
+      res = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+    }
 
-		return res; //menus;
-	} // getMenus.
-
+    return res; // menus;
+  } // getMenus.
 } // E:O:F:MenuResource.

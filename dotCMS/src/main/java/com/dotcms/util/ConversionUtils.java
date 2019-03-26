@@ -2,7 +2,6 @@ package com.dotcms.util;
 
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.util.UtilMethods;
-
 import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
@@ -10,7 +9,7 @@ import java.util.function.Supplier;
 
 /**
  * Utility class for conversion operations.
- * 
+ *
  * @author jsanca
  * @version 3.7
  * @since Jun 8, 2016
@@ -18,275 +17,254 @@ import java.util.function.Supplier;
 @SuppressWarnings("serial")
 public class ConversionUtils implements Serializable {
 
-    public static ConversionUtils INSTANCE =
-            new ConversionUtils();
+  public static ConversionUtils INSTANCE = new ConversionUtils();
 
-    private ConversionUtils() {}
+  private ConversionUtils() {}
 
-	/**
-	 * Converts from the Original to Destiny bean using a converter.
-	 * 
-	 * @param origin
-	 *            - origin
-	 * @param converter
-	 *            - {@link Converter}
-	 * @param <O>
-	 * @param <D>
-	 * @return D
-	 */
-    public <O, D> D convert (final O origin,
-                             final Converter<O, D> converter) {
+  /**
+   * Converts from the Original to Destiny bean using a converter.
+   *
+   * @param origin - origin
+   * @param converter - {@link Converter}
+   * @param <O>
+   * @param <D>
+   * @return D
+   */
+  public <O, D> D convert(final O origin, final Converter<O, D> converter) {
 
-        D d = null;
+    D d = null;
 
-        if (null != origin && null != converter) {
+    if (null != origin && null != converter) {
 
-            d = converter.convert(origin);
+      d = converter.convert(origin);
+    }
+
+    return d;
+  } // convert
+
+  /**
+   * Converts from the array of Original objects to Destiny beans using a converter.
+   *
+   * @param originArray -
+   * @param converter -
+   * @return
+   */
+  public <O, D> List<D> convert(final O[] originArray, final Converter<O, D> converter) {
+
+    List<D> destinyList = null;
+
+    if (null != originArray && null != converter) {
+
+      destinyList = CollectionsUtils.getNewList();
+
+      for (O origin : originArray) {
+
+        destinyList.add(converter.convert(origin));
+      }
+    }
+
+    return destinyList;
+  } // convert
+
+  /**
+   * Converts from the list of Original objects to Destiny beans using a converter.
+   *
+   * @param originList -
+   * @param converter -
+   * @return
+   */
+  public <O, D> List<D> convert(final List<O> originList, final Converter<O, D> converter) {
+
+    List<D> destinyList = null;
+
+    if (null != originList && null != converter) {
+
+      destinyList = CollectionsUtils.getNewList();
+
+      for (O origin : originList) {
+
+        destinyList.add(converter.convert(origin));
+      }
+    }
+
+    return destinyList;
+  } // convert
+
+  /**
+   * @param sLong
+   * @return
+   */
+  public static long toLong(final String sLong) {
+
+    return toLong(sLong, 0L);
+  }
+
+  /**
+   * Converts the specified input value into an {@code long}. The input value can be a String or an
+   * instance of {@link Number}.
+   *
+   * @param input - The value to convert.
+   * @param defaultLong - The default value in case the input cannot be converted.
+   * @return long value
+   */
+  public static long toLong(final Object input, final Long defaultLong) {
+
+    long resultLong = defaultLong;
+
+    try {
+      if (UtilMethods.isSet(input)) {
+        if (input instanceof CharSequence) {
+          resultLong = Long.parseLong(input.toString());
+        } else if (input instanceof Number) {
+          resultLong = Number.class.cast(input).longValue();
         }
+      }
+    } catch (NumberFormatException e) {
 
-        return d;
-    } // convert
+      resultLong = defaultLong;
+    }
 
-	/**
-	 * Converts from the array of Original objects to Destiny beans using a
-	 * converter.
-	 * 
-	 * @param originArray - 
-	 * @param converter - 
-	 * @return
-	 */
-    public <O, D> List<D> convert (final O [] originArray,
-                                   final Converter<O, D> converter) {
+    return resultLong;
+  }
 
-        List<D> destinyList = null;
+  /**
+   * Converts the specified input value into an {@code long}. The input value can be a String or an
+   * instance of {@link Number}.
+   *
+   * @param input - The value to convert.
+   * @param defaultLong - Supplier with the default value in case the input cannot be converted.
+   * @return long value
+   */
+  public static long toLong(final Object input, final Supplier<Long> defaultLong) {
 
-        if (null != originArray && null != converter) {
+    long l = 0;
 
-            destinyList = CollectionsUtils.getNewList();
-
-            for (O origin : originArray) {
-
-                destinyList.add(converter.convert(origin));
-            }
+    try {
+      if (UtilMethods.isSet(input)) {
+        if (input instanceof CharSequence) {
+          l = Long.parseLong(input.toString());
+        } else if (input instanceof Number) {
+          l = Number.class.cast(input).longValue();
+        } else {
+          l = defaultLong.get();
         }
+      }
+    } catch (NumberFormatException e) {
 
-        return destinyList;
-    } // convert
+      l = defaultLong.get();
+    }
 
-    /**
-	 * Converts from the list of Original objects to Destiny beans using a
-	 * converter.
-	 * 
-	 * @param originList - 
-	 * @param converter - 
-	 * @return
-	 */
-	public <O, D> List<D> convert(final List<O> originList, final Converter<O, D> converter) {
+    return l;
+  }
 
-		List<D> destinyList = null;
+  /**
+   * Converts the specified map value into an {@code int}.
+   *
+   * @param key - The key to the map value.
+   * @param params - The Map that contains the value to convert.
+   * @param defaultInt - The default value in case the map doesn't have it, or if it cannot be
+   *     converted.
+   * @return The map value as {@code int}, or the default value.
+   */
+  public static int toInt(final String key, final Map<?, ?> params, final int defaultInt) {
+    int result = defaultInt;
+    if (params.containsKey(key)) {
+      result = toInt(params.get(key).toString(), defaultInt);
+    }
+    return result;
+  }
 
-		if (null != originList && null != converter) {
+  /**
+   * Converts the specified input value into an {@code int}. The input value can be a String or an
+   * instance of {@link Number}.
+   *
+   * @param input - The value to convert.
+   * @param defaultInt - The default value in case the input cannot be converted.
+   * @return The input as {@code int}, or the default value.
+   */
+  public static int toInt(final Object input, final int defaultInt) {
+    try {
+      if (input instanceof CharSequence) {
+        return Integer.parseInt(CharSequence.class.cast(input).toString());
+      } else if (input instanceof Number) {
+        return Number.class.cast(input).intValue();
+      } else {
+        return defaultInt;
+      }
+    } catch (NumberFormatException e) {
+      return defaultInt;
+    }
+  }
 
-			destinyList = CollectionsUtils.getNewList();
+  /**
+   * Converts the specified input value into an {@code int}. The input value can be a String or an
+   * instance of {@link Number}.
+   *
+   * @param input - The value to convert.
+   * @param defaultInt - Supplier with the default value in case the input cannot be converted.
+   * @return The input as {@code int}, or the default value.
+   */
+  public static int toInt(final Object input, final Supplier<Integer> defaultInt) {
+    try {
+      if (input instanceof CharSequence) {
+        return Integer.parseInt(CharSequence.class.cast(input).toString());
+      } else if (input instanceof Number) {
+        return Number.class.cast(input).intValue();
+      } else {
+        return defaultInt.get();
+      }
+    } catch (NumberFormatException e) {
+      return defaultInt.get();
+    }
+  }
 
-			for (O origin : originList) {
+  /**
+   * Converts the specified map value into a {@code boolean}.
+   *
+   * @param key - The key to the map value.
+   * @param params - The Map that contains the value to convert.
+   * @param defaultBool - The default value in case the map doesn't have it, or if it cannot be
+   *     converted.
+   * @return The map value as {@code boolean}, or the default value.
+   */
+  public static boolean toBoolean(
+      final String key, final Map<?, ?> params, final boolean defaultBool) {
+    boolean result = defaultBool;
+    if (params.containsKey(key)) {
+      result = toBoolean(params.get(key).toString(), defaultBool);
+    }
+    return result;
+  }
 
-				destinyList.add(converter.convert(origin));
-			}
-		}
+  /**
+   * Converts the specified input into a {@code boolean}.
+   *
+   * @param strBool - The String representation of the boolean.
+   * @param defaultBool - The default value in case the input cannot be converted.
+   * @return The input as {@code defaultBool}, or the default value.
+   */
+  public static boolean toBoolean(final String strBool, final boolean defaultBool) {
+    try {
+      return Boolean.getBoolean(strBool);
+    } catch (Exception e) {
+      return defaultBool;
+    }
+  }
 
-		return destinyList;
-	} // convert
+  /**
+   * Based on a value obtained from database, if it is a boolean will return a cast. Otherwise will
+   * use the {@link DbConnectionFactory} to determine the boolean value cross-db
+   *
+   * @param objectBoolean {@link Object}
+   * @return boolean
+   */
+  public static boolean toBooleanFromDb(final Object objectBoolean) {
 
-	/**
-	 * 
-	 * @param sLong
-	 * @return
-	 */
-	public static long toLong (final String sLong) {
-
-		return toLong(sLong, 0l);
-	}
-
-	/**
-	 * Converts the specified input value into an {@code long}. The input value
-	 * can be a String or an instance of {@link Number}.
-	 * @param input
-	 *         - The value to convert.
-	 * @param defaultLong
-	 *        - The default value in case the input cannot be converted.
-	 * @return long value
-	 */
-	public static long toLong (final Object input, final Long defaultLong) {
-
-		long resultLong = defaultLong;
-
-		try {
-			if (UtilMethods.isSet(input)) {
-				if (input instanceof CharSequence) {
-					resultLong = Long.parseLong(input.toString());
-				} else if (input instanceof Number) {
-					resultLong = Number.class.cast(input).longValue();
-				}
-			}
-		} catch (NumberFormatException e) {
-
-			resultLong = defaultLong;
-		}
-
-		return resultLong;
-	}
-
-	/**
-	 * Converts the specified input value into an {@code long}. The input value
-	 * can be a String or an instance of {@link Number}.
-	 * @param input
-	 *         - The value to convert.
-	 * @param defaultLong
-	 *        - Supplier with the default value in case the input cannot be converted.
-	 * @return long value
-	 */
-	public static long toLong (final Object input, final Supplier<Long> defaultLong) {
-
-		long l = 0;
-
-		try {
-			if (UtilMethods.isSet(input)) {
-				if (input instanceof CharSequence) {
-					l = Long.parseLong(input.toString());
-				} else if (input instanceof Number) {
-					l = Number.class.cast(input).longValue();
-				} else {
-					l = defaultLong.get();
-				}
-			}
-		} catch (NumberFormatException e) {
-
-			l = defaultLong.get();
-		}
-
-		return l;
-	}
-
-	/**
-	 * Converts the specified map value into an {@code int}.
-	 * 
-	 * @param key
-	 *            - The key to the map value.
-	 * @param params
-	 *            - The Map that contains the value to convert.
-	 * @param defaultInt
-	 *            - The default value in case the map doesn't have it, or if it
-	 *            cannot be converted.
-	 * @return The map value as {@code int}, or the default value.
-	 */
-	public static int toInt(final String key, final Map<?, ?> params, final int defaultInt) {
-		int result = defaultInt;
-		if (params.containsKey(key)) {
-			result = toInt(params.get(key).toString(), defaultInt);
-		}
-		return result;
-	}
-
-	/**
-	 * Converts the specified input value into an {@code int}. The input value
-	 * can be a String or an instance of {@link Number}.
-	 * 
-	 * @param input
-	 *            - The value to convert.
-	 * @param defaultInt
-	 *            - The default value in case the input cannot be converted.
-	 * @return The input as {@code int}, or the default value.
-	 */
-	public static int toInt(final Object input, final int defaultInt) {
-		try {
-			if (input instanceof CharSequence) {
-				return Integer.parseInt(CharSequence.class.cast(input).toString());
-			} else if (input instanceof Number) {
-				return Number.class.cast(input).intValue();
-			} else {
-				return defaultInt;
-			}
-		} catch (NumberFormatException e) {
-			return defaultInt;
-		}
-	}
-
-	/**
-	 * Converts the specified input value into an {@code int}. The input value
-	 * can be a String or an instance of {@link Number}.
-	 *
-	 * @param input
-	 *            - The value to convert.
-	 * @param defaultInt
-	 *            - Supplier with the default value in case the input cannot be converted.
-	 * @return The input as {@code int}, or the default value.
-	 */
-	public static int toInt(final Object input, final Supplier<Integer> defaultInt) {
-		try {
-			if (input instanceof CharSequence) {
-				return Integer.parseInt(CharSequence.class.cast(input).toString());
-			} else if (input instanceof Number) {
-				return Number.class.cast(input).intValue();
-			} else {
-				return defaultInt.get();
-			}
-		} catch (NumberFormatException e) {
-			return defaultInt.get();
-		}
-	}
-
-	/**
-	 * Converts the specified map value into a {@code boolean}.
-	 * 
-	 * @param key
-	 *            - The key to the map value.
-	 * @param params
-	 *            - The Map that contains the value to convert.
-	 * @param defaultBool
-	 *            - The default value in case the map doesn't have it, or if it
-	 *            cannot be converted.
-	 * @return The map value as {@code boolean}, or the default value.
-	 */
-	public static boolean toBoolean(final String key, final Map<?, ?> params, final boolean defaultBool) {
-		boolean result = defaultBool;
-		if (params.containsKey(key)) {
-			result = toBoolean(params.get(key).toString(), defaultBool);
-		}
-		return result;
-	}
-
-	/**
-	 * Converts the specified input into a {@code boolean}.
-	 * 
-	 * @param strBool
-	 *            - The String representation of the boolean.
-	 * @param defaultBool
-	 *            - The default value in case the input cannot be converted.
-	 * @return The input as {@code defaultBool}, or the default value.
-	 */
-	public static boolean toBoolean(final String strBool, final boolean defaultBool) {
-		try {
-			return Boolean.getBoolean(strBool);
-		} catch (Exception e) {
-			return defaultBool;
-		}
-	}
-
-	/**
-	 * Based on a value obtained from database, if it is a boolean will return a cast.
-	 * Otherwise will use the {@link DbConnectionFactory} to determine the boolean value cross-db
-	 * @param objectBoolean {@link Object}
-	 * @return boolean
-	 */
-	public static boolean toBooleanFromDb(final Object objectBoolean) {
-
-		if (null == objectBoolean) {
-			return false;
-		}
-		return (objectBoolean instanceof Boolean)?
-				Boolean.class.cast(objectBoolean):
-				DbConnectionFactory.isDBTrue(objectBoolean.toString());
-	}
-
+    if (null == objectBoolean) {
+      return false;
+    }
+    return (objectBoolean instanceof Boolean)
+        ? Boolean.class.cast(objectBoolean)
+        : DbConnectionFactory.isDBTrue(objectBoolean.toString());
+  }
 }

@@ -4,8 +4,6 @@
  */
 package com.dotmarketing.menubuilders;
 
-
-
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.beans.WebAsset;
@@ -17,50 +15,28 @@ import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 @Deprecated
 public class RefreshMenus {
 
+  public static boolean shouldRefreshMenus(Inode newFile) throws DotDataException {
 
-	public static boolean shouldRefreshMenus(Inode newFile) throws DotDataException{
-		
-		return false;
-	}
+    return false;
+  }
 
+  public static boolean shouldRefreshMenus(IFileAsset oldFile, IFileAsset newFile, boolean isNew) {
+    return false;
+  }
 
+  public static boolean shouldRefreshMenus(IHTMLPage oldFile, IHTMLPage newFile, boolean isNew) {
+    return false;
+  }
 
-	public static boolean shouldRefreshMenus(IFileAsset oldFile, IFileAsset newFile, boolean isNew){
-      return false;
-	}
+  public static void deleteMenusOnFileSystemOnly() {}
 
-	public static boolean shouldRefreshMenus(IHTMLPage oldFile, IHTMLPage newFile, boolean isNew){
-      return false;
-    }
+  public static void deleteMenus() {}
 
+  public static void deleteMenu(Host host) {}
 
+  public static void deleteMenu(Folder oldFolder, Folder newFolder) {}
 
+  public static void deleteMenu(WebAsset webAsset) {}
 
-	public static void deleteMenusOnFileSystemOnly(){
-
-	}
-
-	public static void deleteMenus() {
-
-	}
-
-	public static void deleteMenu(Host host)
-	{
-
-	}
-
-	public static void deleteMenu(Folder oldFolder,Folder newFolder)
-	{
-
-	}
-
-	public static void deleteMenu(WebAsset webAsset)
-	{
-
-	}
-
-	public static void deleteMenu(Folder folder)
-	{
-	
-	}
+  public static void deleteMenu(Folder folder) {}
 }

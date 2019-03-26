@@ -17,31 +17,28 @@ import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 
-/**
- *
- * @author  David Torres
- *
- */
+/** @author David Torres */
 public class ViewBrowserAction extends PortletAction {
 
-	public ActionForward render(
-			ActionMapping mapping, ActionForm form, PortletConfig config,
-			RenderRequest req, RenderResponse res)
-		throws Exception {
-	    
-		try {
-			HttpServletRequest hreq = ((RenderRequestImpl)req).getHttpServletRequest();
-			PreviewFactory.setVelocityURLS(hreq);
-			
-			List<Language> languages = APILocator.getLanguageAPI().getLanguages();
-			req.setAttribute(WebKeys.LANGUAGES, languages);
-			
-			return mapping.findForward("portlet.ext.browser.view_browser");
-		}
-		catch (Exception e) {
-			req.setAttribute(PageContext.EXCEPTION, e);
-			return mapping.findForward(Constants.COMMON_ERROR);
-		}
-	}
+  public ActionForward render(
+      ActionMapping mapping,
+      ActionForm form,
+      PortletConfig config,
+      RenderRequest req,
+      RenderResponse res)
+      throws Exception {
 
+    try {
+      HttpServletRequest hreq = ((RenderRequestImpl) req).getHttpServletRequest();
+      PreviewFactory.setVelocityURLS(hreq);
+
+      List<Language> languages = APILocator.getLanguageAPI().getLanguages();
+      req.setAttribute(WebKeys.LANGUAGES, languages);
+
+      return mapping.findForward("portlet.ext.browser.view_browser");
+    } catch (Exception e) {
+      req.setAttribute(PageContext.EXCEPTION, e);
+      return mapping.findForward(Constants.COMMON_ERROR);
+    }
+  }
 }

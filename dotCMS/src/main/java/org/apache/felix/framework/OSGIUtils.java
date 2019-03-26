@@ -8,61 +8,53 @@ import javax.servlet.ServletContext;
 import org.apache.felix.http.proxy.DispatcherTracker;
 import org.osgi.framework.BundleContext;
 
-/**
- * @author Jonathan Gamba 10/3/18
- */
+/** @author Jonathan Gamba 10/3/18 */
 public class OSGIUtils {
 
-    /**
-     * Initialize the OSGI felix framework in case it was not already started
-     */
-    public static void initializeOsgi(final ServletContext context) {
+  /** Initialize the OSGI felix framework in case it was not already started */
+  public static void initializeOsgi(final ServletContext context) {
 
-        //First verify if OSGI was already initialized
-        final Boolean osgiInitialized = OSGIUtil.getInstance().isInitialized();
-        if (!osgiInitialized) {
+    // First verify if OSGI was already initialized
+    final Boolean osgiInitialized = OSGIUtil.getInstance().isInitialized();
+    if (!osgiInitialized) {
 
-            if (Config.getBooleanProperty(WebKeys.OSGI_ENABLED, true)) {
-                OSGIUtil.getInstance().initializeFramework(context);
-            } else {
-                System.clearProperty(WebKeys.OSGI_ENABLED);
-            }
-        }
-
-        //Prepare the proxy servlet in case it was not properly initialized
-        initOsgiProxyTracker(context);
+      if (Config.getBooleanProperty(WebKeys.OSGI_ENABLED, true)) {
+        OSGIUtil.getInstance().initializeFramework(context);
+      } else {
+        System.clearProperty(WebKeys.OSGI_ENABLED);
+      }
     }
 
-    /**
-     * Sets the bundle context to the OSGIProxyServlet
-     */
-    private static void initOsgiProxyTracker(final ServletContext context) {
+    // Prepare the proxy servlet in case it was not properly initialized
+    initOsgiProxyTracker(context);
+  }
 
-        if (Config.getBooleanProperty(WebKeys.OSGI_ENABLED, true)) {
+  /** Sets the bundle context to the OSGIProxyServlet */
+  private static void initOsgiProxyTracker(final ServletContext context) {
 
-            if (OSGIProxyServlet.bundleContext == null) {
+    if (Config.getBooleanProperty(WebKeys.OSGI_ENABLED, true)) {
 
-                final Object bundleContext = context.getAttribute(BundleContext.class.getName());
-                if (bundleContext instanceof BundleContext) {
+      if (OSGIProxyServlet.bundleContext == null) {
 
-                    OSGIProxyServlet.bundleContext = (BundleContext) bundleContext;
+        final Object bundleContext = context.getAttribute(BundleContext.class.getName());
+        if (bundleContext instanceof BundleContext) {
 
-                    try {
-                        OSGIProxyServlet.tracker =
-                                new DispatcherTracker(OSGIProxyServlet.bundleContext, null,
-                                        OSGIProxyServlet.servletConfig);
-                    } catch (Exception e) {
-                        Logger.error(OSGIUtils.class, "Error loading HttpService.", e);
-                        return;
-                    }
+          OSGIProxyServlet.bundleContext = (BundleContext) bundleContext;
 
-                    OSGIProxyServlet.tracker.open();
-                }
-            }
-        } else {
-            System.clearProperty(WebKeys.OSGI_ENABLED);
+          try {
+            OSGIProxyServlet.tracker =
+                new DispatcherTracker(
+                    OSGIProxyServlet.bundleContext, null, OSGIProxyServlet.servletConfig);
+          } catch (Exception e) {
+            Logger.error(OSGIUtils.class, "Error loading HttpService.", e);
+            return;
+          }
+
+          OSGIProxyServlet.tracker.open();
         }
-
+      }
+    } else {
+      System.clearProperty(WebKeys.OSGI_ENABLED);
     }
-
+  }
 }

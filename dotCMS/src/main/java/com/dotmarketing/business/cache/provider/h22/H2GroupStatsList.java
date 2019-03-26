@@ -4,46 +4,38 @@ import java.io.Serializable;
 import java.io.StringWriter;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class H2GroupStatsList extends ConcurrentHashMap<String, H22GroupStats> implements Serializable{
+public class H2GroupStatsList extends ConcurrentHashMap<String, H22GroupStats>
+    implements Serializable {
 
-	
+  private static final long serialVersionUID = 1L;
 
-	private static final long serialVersionUID = 1L;
+  H22GroupStats group(String group) {
+    H22GroupStats stats = get(group);
+    return (stats == null) ? getOrDefaultWithPut(group) : stats;
+  }
 
-	H22GroupStats group(String group){
-		H22GroupStats stats = get(group);
-		return (stats == null) ? getOrDefaultWithPut(group) : stats;
-	}
-	
-	private H22GroupStats getOrDefaultWithPut(String group) {
-		H22GroupStats defaultValue = new H22GroupStats(group);
-		H22GroupStats stats = putIfAbsent(group, defaultValue);
-		return stats == null ? defaultValue : stats;
-	}
+  private H22GroupStats getOrDefaultWithPut(String group) {
+    H22GroupStats defaultValue = new H22GroupStats(group);
+    H22GroupStats stats = putIfAbsent(group, defaultValue);
+    return stats == null ? defaultValue : stats;
+  }
 
-	@Override
-	public String toString() {
-		StringWriter sw = new StringWriter();
-		
-		for(String group: keySet() ){
+  @Override
+  public String toString() {
+    StringWriter sw = new StringWriter();
 
-			H22GroupStats stats = get(group);
+    for (String group : keySet()) {
 
-			sw.append("[\n");
-			sw.append("\t'group':");
-			sw.append("'" + group + "',\n");
-			sw.append("\t'stats':");
-			sw.append(stats.toString());
-			sw.append("]");
-	
+      H22GroupStats stats = get(group);
 
+      sw.append("[\n");
+      sw.append("\t'group':");
+      sw.append("'" + group + "',\n");
+      sw.append("\t'stats':");
+      sw.append(stats.toString());
+      sw.append("]");
+    }
 
-		}
-
-		return super.toString();
-	}
-	
-	
-	
-	
+    return super.toString();
+  }
 }

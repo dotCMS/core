@@ -1,55 +1,51 @@
 package com.dotmarketing.util;
 
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
 
 import com.dotcms.UnitTestBase;
+import org.junit.Test;
 
-import static org.junit.Assert.*;
-
-/**
- * Unit test for {@link UtilMethods}
- */
+/** Unit test for {@link UtilMethods} */
 public class UtilMethodsTest extends UnitTestBase {
 
-	@Test
-    public void testValidateFileName_Valid() {
-		String fileName = "abc.html";
+  @Test
+  public void testValidateFileName_Valid() {
+    String fileName = "abc.html";
 
-		String result = UtilMethods.validateFileName(fileName);
+    String result = UtilMethods.validateFileName(fileName);
 
-        assertEquals(fileName, result);
-    }
+    assertEquals(fileName, result);
+  }
 
-	@Test(expected=IllegalArgumentException.class)
-    public void testValidateFileName_Exception() {
-		String fileName = "a,bc.html";
+  @Test(expected = IllegalArgumentException.class)
+  public void testValidateFileName_Exception() {
+    String fileName = "a,bc.html";
 
-		UtilMethods.validateFileName(fileName);
-    }
+    UtilMethods.validateFileName(fileName);
+  }
 
+  @Test
+  public void testGetValidFileName_Valid() {
+    String fileName = "abc.html";
 
-	@Test
-    public void testGetValidFileName_Valid() {
-		String fileName = "abc.html";
+    String result = UtilMethods.getValidFileName(fileName);
 
-		String result = UtilMethods.getValidFileName(fileName);
+    assertEquals(fileName, result);
+  }
 
-        assertEquals(fileName, result);
-    }
+  @Test
+  public void testGetValidFileName_Rewritten() {
+    String fileName = "a,bc.html";
 
-	@Test
-    public void testGetValidFileName_Rewritten() {
-		String fileName = "a,bc.html";
+    String result = UtilMethods.getValidFileName(fileName);
 
-		String result = UtilMethods.getValidFileName(fileName);
+    assertEquals("a0x2Cbc.html", result);
+  }
 
-        assertEquals("a0x2Cbc.html", result);
-    }
+  @Test(expected = IllegalArgumentException.class)
+  public void testGetValidFileName_Invalid() {
+    String fileName = null;
 
-	@Test(expected=IllegalArgumentException.class)
-    public void testGetValidFileName_Invalid() {
-		String fileName = null;
-
-		UtilMethods.getValidFileName(fileName);
-    }
+    UtilMethods.getValidFileName(fileName);
+  }
 }

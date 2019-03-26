@@ -2,29 +2,26 @@ package com.dotcms.api.system.event;
 
 import com.dotcms.contenttype.model.type.ContentType;
 
-/**
- * It is a wrapper to store the Content Type's action url when a event is push
- */
+/** It is a wrapper to store the Content Type's action url when a event is push */
 public class ContentTypePayloadDataWrapper implements DataWrapper<ContentType> {
-    private String actionUrl;
-    private ContentType type;
+  private String actionUrl;
+  private ContentType type;
 
-    public ContentTypePayloadDataWrapper(String actionUrl, ContentType type) {
-        this.actionUrl = actionUrl;
-        this.type = type;
-    }
+  public ContentTypePayloadDataWrapper(String actionUrl, ContentType type) {
+    this.actionUrl = actionUrl;
+    this.type = type;
+  }
 
-    public String getActionUrl() {
-        return actionUrl;
-    }
+  public String getActionUrl() {
+    return actionUrl;
+  }
 
+  public ContentType getContentType() {
+    return type;
+  }
 
-    public ContentType getContentType() {
-        return type;
-    }
-
-    @Override
-    public ContentType getData() {
-        return type;
-    }
+  @Override
+  public ContentType getData() {
+    return type;
+  }
 }

@@ -10,59 +10,61 @@ import java.util.function.Function;
 import org.apache.commons.lang.SerializationUtils;
 
 public class RuleActionTransform {
-    private final RulesAPI rulesAPI;
-    private RuleActionParameterTransform parameterTransform;
+  private final RulesAPI rulesAPI;
+  private RuleActionParameterTransform parameterTransform;
 
-    public RuleActionTransform() { this(new ApiProvider()); }
+  public RuleActionTransform() {
+    this(new ApiProvider());
+  }
 
-    public RuleActionTransform(ApiProvider apiProvider) {
-        this.rulesAPI = apiProvider.rulesAPI();
-        this.parameterTransform = new RuleActionParameterTransform(apiProvider);
+  public RuleActionTransform(ApiProvider apiProvider) {
+    this.rulesAPI = apiProvider.rulesAPI();
+    this.parameterTransform = new RuleActionParameterTransform(apiProvider);
+  }
+
+  public RuleAction restToApp(RestRuleAction rest) {
+    RuleAction app = new RuleAction();
+    return applyRestToApp(rest, app);
+  }
+
+  public RuleAction applyRestToApp(RestRuleAction rest, RuleAction rule) {
+    RuleAction app = (RuleAction) SerializationUtils.clone(rule);
+    if (rule.getParameters() != null) {
+      for (Map.Entry<String, ParameterModel> entry : rule.getParameters().entrySet()) {
+        app.addParameter(entry.getValue());
+      }
     }
+    // rest the parameters, adding the rest params
+    app.setParameters(new HashMap<>());
 
-    public RuleAction restToApp(RestRuleAction rest) {
-        RuleAction app = new RuleAction();
-        return applyRestToApp(rest, app);
-    }
+    app.setId(rest.id);
+    app.setRuleId(rest.owningRule);
+    app.setActionlet(rest.actionlet);
+    app.setPriority(rest.priority);
+    if (rest.parameters != null) app.setParameters(rest.parameters);
 
-    public RuleAction applyRestToApp(RestRuleAction rest, RuleAction rule) {
-    	RuleAction app = (RuleAction) SerializationUtils.clone(rule);
-    	if(rule.getParameters()!=null){
-	    	for(Map.Entry <String, ParameterModel> entry: rule.getParameters().entrySet()){
-	    		app.addParameter(entry.getValue());
-	    	}
-    	}
-    	// rest the parameters, adding the rest params
-    	app.setParameters(new HashMap<>());
+    return app;
+  }
 
-        app.setId(rest.id);
-        app.setRuleId(rest.owningRule);
-        app.setActionlet(rest.actionlet);
-        app.setPriority(rest.priority);
-        if(rest.parameters!=null)
-            app.setParameters(rest.parameters);
+  public RestRuleAction appToRest(RuleAction app) {
+    return toRest.apply(app);
+  }
 
-        return app;
-    }
+  public Function<RuleAction, RestRuleAction> appToRestFn() {
+    return toRest;
+  }
 
-    public RestRuleAction appToRest(RuleAction app) {
-        return toRest.apply(app);
-    }
-
-    public Function<RuleAction, RestRuleAction> appToRestFn() {
-        return toRest;
-    }
-
-    public final Function<RuleAction, RestRuleAction> toRest = (app) -> {
-
+  public final Function<RuleAction, RestRuleAction> toRest =
+      (app) -> {
         Map<String, ParameterModel> params = null;
 
-        if(app.getParameters()!=null) {
+        if (app.getParameters() != null) {
 
-            params = app.getParameters();
+          params = app.getParameters();
         }
 
-        RestRuleAction rest = new RestRuleAction.Builder()
+        RestRuleAction rest =
+            new RestRuleAction.Builder()
                 .id(app.getId())
                 .owningRule(app.getRuleId())
                 .actionlet(app.getActionlet())
@@ -70,10 +72,6 @@ public class RuleActionTransform {
                 .parameters(params)
                 .build();
 
-
         return rest;
-    };
-
-
+      };
 }
-

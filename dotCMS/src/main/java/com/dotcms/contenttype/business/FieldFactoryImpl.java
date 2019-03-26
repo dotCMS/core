@@ -56,12 +56,11 @@ public class FieldFactoryImpl implements FieldFactory {
   public Field byContentTypeFieldVar(ContentType type, String var) throws DotDataException {
     Field field = type.fieldMap().get(var);
 
-    if(field==null) {
+    if (field == null) {
       throw new NotFoundInDbException("Field variable with var:" + var + " not found");
     }
 
     return field;
-
   }
 
   @Override
@@ -70,7 +69,8 @@ public class FieldFactoryImpl implements FieldFactory {
   }
 
   @Override
-  public Optional<Field> byContentTypeIdFieldRelationTypeInDb(String id, String var) throws DotDataException {
+  public Optional<Field> byContentTypeIdFieldRelationTypeInDb(String id, String var)
+      throws DotDataException {
     return selectByContentTypeFieldRelationTypeInDb(id, var);
   }
 
@@ -91,7 +91,7 @@ public class FieldFactoryImpl implements FieldFactory {
 
   @Override
   public void delete(Field field) throws DotDataException {
-      deleteFieldInDb(field);
+    deleteFieldInDb(field);
   }
 
   @Override
@@ -107,76 +107,73 @@ public class FieldFactoryImpl implements FieldFactory {
     return selectFieldVarInDb(id);
   }
 
-
-
   @Override
   public FieldVariable save(FieldVariable fieldVar) throws DotDataException {
 
-      if(!UtilMethods.isSet(fieldVar.key())){
-        throw new DotDataException("FieldVariable.key cannot be empty");
-      }
-      
-      if(!UtilMethods.isSet(fieldVar.value())){
-        throw new DotDataException("FieldVariable.value cannot be empty");
-      }
+    if (!UtilMethods.isSet(fieldVar.key())) {
+      throw new DotDataException("FieldVariable.key cannot be empty");
+    }
 
-      FieldVariable fv =  upsertFieldVariable(fieldVar);
-      Field f = byId(fieldVar.fieldId());
-      APILocator.getContentTypeAPI(APILocator.systemUser()).updateModDate(f);
-      return fv;
+    if (!UtilMethods.isSet(fieldVar.value())) {
+      throw new DotDataException("FieldVariable.value cannot be empty");
+    }
+
+    FieldVariable fv = upsertFieldVariable(fieldVar);
+    Field f = byId(fieldVar.fieldId());
+    APILocator.getContentTypeAPI(APILocator.systemUser()).updateModDate(f);
+    return fv;
   }
 
   @Override
   public void delete(FieldVariable fieldVar) throws DotDataException {
-      deleteFieldVarInDb(fieldVar);
-      Field f = byId(fieldVar.fieldId());
-      APILocator.getContentTypeAPI(APILocator.systemUser()).updateModDate(f);
+    deleteFieldVarInDb(fieldVar);
+    Field f = byId(fieldVar.fieldId());
+    APILocator.getContentTypeAPI(APILocator.systemUser()).updateModDate(f);
   }
 
   @Override
   public Field save(final Field throwAwayField) throws DotDataException {
-      final Field field =  dbSaveUpdate(throwAwayField);
-      APILocator.getContentTypeAPI(APILocator.systemUser()).updateModDate(field);
-      new FieldLoader().invalidate(field);
-      return field;
-
+    final Field field = dbSaveUpdate(throwAwayField);
+    APILocator.getContentTypeAPI(APILocator.systemUser()).updateModDate(field);
+    new FieldLoader().invalidate(field);
+    return field;
   }
-
 
   private Field normalizeData(final Field throwAwayField) throws DotDataException {
     FieldBuilder builder = FieldBuilder.builder(throwAwayField);
     Field returnField = throwAwayField;
-    
-    if("constant".equals(returnField.dbColumn()) && !(returnField instanceof ConstantField)) {
+
+    if ("constant".equals(returnField.dbColumn()) && !(returnField instanceof ConstantField)) {
       builder = ImmutableConstantField.builder().from(returnField);
       builder.dbColumn(DataTypes.SYSTEM.value);
       returnField = builder.build();
     }
 
-    if(returnField.acceptedDataTypes().size()==1  && returnField.acceptedDataTypes().get(0) == DataTypes.SYSTEM) {
-      builder.dataType( DataTypes.SYSTEM);
+    if (returnField.acceptedDataTypes().size() == 1
+        && returnField.acceptedDataTypes().get(0) == DataTypes.SYSTEM) {
+      builder.dataType(DataTypes.SYSTEM);
       returnField = builder.build();
     }
     // make sure we are setting the db to system
-    if(returnField.dataType() == DataTypes.SYSTEM){
+    if (returnField.dataType() == DataTypes.SYSTEM) {
       builder.dbColumn(DataTypes.SYSTEM.value);
       returnField = builder.build();
     }
-    
-    
+
     // if this is a new column validate and assign a db column
-    try{
+    try {
       validateDbColumn(returnField);
-    }
-    catch(Throwable e){
+    } catch (Throwable e) {
       Logger.debug(this.getClass(), "Field db column being updated: " + e.getMessage());
       builder.dbColumn(nextAvailableColumn(returnField));
       returnField = builder.build();
     }
     // make sure we are properly indexed
-    if ((returnField.searchable() || returnField.listed()) || returnField.unique()
-        || returnField instanceof HostFolderField || returnField instanceof TagField) {
-      
+    if ((returnField.searchable() || returnField.listed())
+        || returnField.unique()
+        || returnField instanceof HostFolderField
+        || returnField instanceof TagField) {
+
       builder.indexed(true);
       returnField = builder.build();
     }
@@ -184,21 +181,16 @@ public class FieldFactoryImpl implements FieldFactory {
       builder.required(true);
       returnField = builder.build();
     }
-    
+
     return returnField;
   }
-  
-  
-  
+
   private Field dbSaveUpdate(final Field throwAwayField) throws DotDataException {
 
-
     FieldBuilder builder = FieldBuilder.builder(throwAwayField);
-    
-    
+
     Date modDate = DateUtils.round(new Date(), Calendar.SECOND);
     builder.modDate(modDate);
-    
 
     Field oldField = null;
     try {
@@ -217,26 +209,24 @@ public class FieldFactoryImpl implements FieldFactory {
 
       if (throwAwayField.sortOrder() < 0) {
         // move to the end of the line
-    	builder.sortOrder(
-    		fieldsAlreadyAdded.stream().map(f -> f.sortOrder()).max(Integer::compare).orElse(-1) + 1
-    	);
+        builder.sortOrder(
+            fieldsAlreadyAdded.stream().map(f -> f.sortOrder()).max(Integer::compare).orElse(-1)
+                + 1);
       }
 
       // normalize our velocityvar
-      String tryVar = (throwAwayField.variable() == null)
-          ? suggestVelocityVar(throwAwayField.name(), fieldsAlreadyAdded) : throwAwayField.variable();
+      String tryVar =
+          (throwAwayField.variable() == null)
+              ? suggestVelocityVar(throwAwayField.name(), fieldsAlreadyAdded)
+              : throwAwayField.variable();
       builder.variable(tryVar);
     }
     builder = FieldBuilder.builder(normalizeData(builder.build()));
 
     Field retField = builder.build();
 
-
     validateDbColumn(retField);
 
-
-
-    
     if (oldField == null) {
       insertInodeInDb(retField);
       insertFieldInDb(retField);
@@ -245,27 +235,25 @@ public class FieldFactoryImpl implements FieldFactory {
       updateFieldInDb(retField);
     }
 
-
-
     return retField;
   }
-  
+
   private void validateDbColumn(Field field) throws DotDataException {
-    
 
     if (field.contentTypeId() == null) {
       throw new DotDataValidationException(
           "Field Type:" + field.type() + " does not have a contenttype.inode set",
           "field.validation.contenttype.not.set");
     }
-    
+
     List<Field> fieldsAlreadyAdded = byContentTypeId(field.contentTypeId());
     for (Field f : fieldsAlreadyAdded) {
       if (f instanceof CategoryField) {
         if (f.values() != null) {
           if (f.values().equals(field.values())) {
             if (!f.id().equals(field.id())) {
-              throw new DotDataValidationException("This category field already exists on this content type",
+              throw new DotDataValidationException(
+                  "This category field already exists on this content type",
                   "message.category.existing.field");
             }
           }
@@ -276,27 +264,43 @@ public class FieldFactoryImpl implements FieldFactory {
           continue;
         }
         if (f.type().equals(field.type())) {
-          throw new DotDataValidationException("A content type cannot have two:" + field.type() + " fields",
+          throw new DotDataValidationException(
+              "A content type cannot have two:" + field.type() + " fields",
               "contenttype.validation.cannot.have.two.of.fieldtype");
         }
       }
     }
-    
-    
-    if (!field.acceptedDataTypes().contains(field.dataType())){
-      throw new DotDataValidationException("Field Type:" + field.type() + " does not accept datatype "
-                + field.dataType() + ":" + field.variable(), "field.validation.incorrect.datatype");
-    
+
+    if (!field.acceptedDataTypes().contains(field.dataType())) {
+      throw new DotDataValidationException(
+          "Field Type:"
+              + field.type()
+              + " does not accept datatype "
+              + field.dataType()
+              + ":"
+              + field.variable(),
+          "field.validation.incorrect.datatype");
     }
-    if(field.dbColumn()==null){
-      throw new DotDataValidationException("Unable to save field with a null dbColumn field.field_contentlet:" + field, "message.field.dbcolumn.incorrect");
+    if (field.dbColumn() == null) {
+      throw new DotDataValidationException(
+          "Unable to save field with a null dbColumn field.field_contentlet:" + field,
+          "message.field.dbcolumn.incorrect");
     }
-    
-    if( !field.dbColumn().matches("(system_field|(text|float|bool|date|text_area|integer)[0-9]+)")){
-      throw new DotDataValidationException("Unable to save field with DB Column " + field.dbColumn()+ " - must match (system_field|(text|float|bool|date|text_area|integer)[0-9]+) "  + field.name() + " " + field.variable(), "message.field.dbcolumn.incorrect");
+
+    if (!field
+        .dbColumn()
+        .matches("(system_field|(text|float|bool|date|text_area|integer)[0-9]+)")) {
+      throw new DotDataValidationException(
+          "Unable to save field with DB Column "
+              + field.dbColumn()
+              + " - must match (system_field|(text|float|bool|date|text_area|integer)[0-9]+) "
+              + field.name()
+              + " "
+              + field.variable(),
+          "message.field.dbcolumn.incorrect");
     }
   }
-  
+
   @Override
   public List<Field> selectByContentTypeInDb(String id) throws DotDataException {
     DotConnect dc = new DotConnect();
@@ -305,22 +309,20 @@ public class FieldFactoryImpl implements FieldFactory {
     List<Map<String, Object>> results;
     results = dc.loadObjectResults();
     return new DbFieldTransformer(results).asList();
-
   }
 
   private Field selectByContentTypeFieldVarInDb(String id, String var) throws DotDataException {
     DotConnect dc = new DotConnect();
     dc.setSQL(sql.findByContentTypeAndFieldVar).addParam(id).addParam(var);
 
-
     List<Map<String, Object>> results;
 
     results = dc.loadObjectResults();
     if (results.size() == 0) {
-      throw new NotFoundInDbException("Field with contentype:" + id + " and var:" + var + " not found");
+      throw new NotFoundInDbException(
+          "Field with contentype:" + id + " and var:" + var + " not found");
     }
     return new DbFieldTransformer(results.get(0)).from();
-
   }
 
   private List<Field> selectByContentTypeVarInDb(String var) throws DotDataException {
@@ -330,16 +332,17 @@ public class FieldFactoryImpl implements FieldFactory {
     List<Map<String, Object>> results;
     results = dc.loadObjectResults();
     return new DbFieldTransformer(results).asList();
-
   }
 
-  private Optional<Field> selectByContentTypeFieldRelationTypeInDb(String id, String fieldRelationType) throws DotDataException {
+  private Optional<Field> selectByContentTypeFieldRelationTypeInDb(
+      String id, String fieldRelationType) throws DotDataException {
     DotConnect dc = new DotConnect();
     dc.setSQL(sql.findByContentTypeAndRelationType).addParam(id).addParam(fieldRelationType);
 
     final List<Map<String, Object>> results = dc.loadObjectResults();
-    return results.isEmpty()?
-            Optional.empty():Optional.of(new DbFieldTransformer(results.get(0)).from());
+    return results.isEmpty()
+        ? Optional.empty()
+        : Optional.of(new DbFieldTransformer(results.get(0)).from());
   }
 
   private Field selectInDb(String id) throws DotDataException {
@@ -410,15 +413,13 @@ public class FieldFactoryImpl implements FieldFactory {
     String key = StringUtils.camelCaseLower(throwAway.key());
     String value = throwAway.value().trim();
 
-
     Builder builder =
-        ImmutableFieldVariable.builder().from(throwAway).modDate(DateUtils.round(new Date(), Calendar.SECOND));
-
+        ImmutableFieldVariable.builder()
+            .from(throwAway)
+            .modDate(DateUtils.round(new Date(), Calendar.SECOND));
 
     builder.key(key);
     builder.value(value);
-
-
 
     if (!UtilMethods.isSet(throwAway.id())) {
       builder.id(UUID.randomUUID().toString());
@@ -431,25 +432,30 @@ public class FieldFactoryImpl implements FieldFactory {
 
     FieldVariable var = builder.build();
 
-
-
     // delete first
     deleteFieldVarInDb(var);
 
-
-
-    new DotConnect().setSQL(sql.insertFieldVar).addParam(var.id()).addParam(var.fieldId()).addParam(var.name())
-        .addParam(var.key()).addParam(var.value()).addParam(var.userId()).addParam(var.modDate()).loadResult();
+    new DotConnect()
+        .setSQL(sql.insertFieldVar)
+        .addParam(var.id())
+        .addParam(var.fieldId())
+        .addParam(var.name())
+        .addParam(var.key())
+        .addParam(var.value())
+        .addParam(var.userId())
+        .addParam(var.modDate())
+        .loadResult();
     return var;
   }
 
   private void deleteFieldVarInDb(FieldVariable var) throws DotDataException {
 
-    new DotConnect().setSQL(sql.deleteFieldVar).addParam(var.id()).addParam(var.fieldId()).addParam(var.key())
+    new DotConnect()
+        .setSQL(sql.deleteFieldVar)
+        .addParam(var.id())
+        .addParam(var.fieldId())
+        .addParam(var.key())
         .loadResult();
-
-
-
   }
 
   private void deleteFieldVarsInDb(Field field) throws DotDataException {
@@ -483,7 +489,6 @@ public class FieldFactoryImpl implements FieldFactory {
     dc.addParam(field.modDate());
     dc.addParam(field.id());
     dc.loadResult();
-
   }
 
   private void insertFieldInDb(Field field) throws DotDataException {
@@ -511,14 +516,10 @@ public class FieldFactoryImpl implements FieldFactory {
     dc.addParam(field.modDate());
 
     dc.loadResult();
-
   }
-
 
   @Override
   public String nextAvailableColumn(Field field) throws DotDataException {
-
-
 
     DotConnect dc = new DotConnect();
 
@@ -537,7 +538,6 @@ public class FieldFactoryImpl implements FieldFactory {
       return field.dataType().toString();
     }
 
-
     String dataType = field.dataType().toString();
     dc.setSQL(this.sql.selectFieldOfDbType);
     dc.addParam(field.contentTypeId());
@@ -548,16 +548,15 @@ public class FieldFactoryImpl implements FieldFactory {
       columns.add((String) rows.get(i).get("field_contentlet"));
     }
 
-    for (int i = 0; i < Config.getIntProperty("db.number.of.contentlet.columns.per.datatype", 25); i++) {
+    for (int i = 0;
+        i < Config.getIntProperty("db.number.of.contentlet.columns.per.datatype", 25);
+        i++) {
       if (!columns.contains(dataType + (i + 1))) {
         return dataType + (i + 1);
-
       }
     }
 
     throw new OverFieldLimitException("No more columns for datatype:" + dataType);
-
-
   }
 
   @Override
@@ -568,45 +567,43 @@ public class FieldFactoryImpl implements FieldFactory {
     }
   }
 
-
   @Override
-public String suggestVelocityVar( String tryVar, List<Field> takenFields) throws DotDataException {
-
+  public String suggestVelocityVar(String tryVar, List<Field> takenFields) throws DotDataException {
 
     String var = StringUtils.camelCaseLower(tryVar);
     // if we don't get a var back, we are looking at UTF-8 or worse
     // lets just make a field up
     if (!UtilMethods.isSet(var)) {
-        tryVar= "field";
+      tryVar = "field";
     }
     for (Field f : takenFields) {
-        if (var.equalsIgnoreCase(f.variable())) {
-            var= null;
-            break;
-        }
+      if (var.equalsIgnoreCase(f.variable())) {
+        var = null;
+        break;
+      }
     }
 
     if (UtilMethods.isSet(var)) {
-        return var;
+      return var;
     }
 
     for (int i = 1; i < 100000; i++) {
-        var = StringUtils.camelCaseLower(tryVar) + i;
-        for (Field f : takenFields) {
-            if (var.equalsIgnoreCase(f.variable())) {
-                var = null;
-                break;
-            }
+      var = StringUtils.camelCaseLower(tryVar) + i;
+      for (Field f : takenFields) {
+        if (var.equalsIgnoreCase(f.variable())) {
+          var = null;
+          break;
         }
+      }
 
-        if (UtilMethods.isSet(var)) {
-            return var;
-        }
+      if (UtilMethods.isSet(var)) {
+        return var;
+      }
     }
-    throw new DotDataValidationException("Unable to suggest a variable name for " + tryVar,
-            "field.validation.variable.already.taken");
-
-}
+    throw new DotDataValidationException(
+        "Unable to suggest a variable name for " + tryVar,
+        "field.validation.variable.already.taken");
+  }
 
   public void moveSortOrderForward(String contentTypeId, int from, int to) throws DotDataException {
     DotConnect dc = new DotConnect();
@@ -617,7 +614,8 @@ public String suggestVelocityVar( String tryVar, List<Field> takenFields) throws
     dc.loadResult();
   }
 
-  public void moveSortOrderBackward(String contentTypeId, int from, int to) throws DotDataException {
+  public void moveSortOrderBackward(String contentTypeId, int from, int to)
+      throws DotDataException {
     DotConnect dc = new DotConnect();
     dc.setSQL(sql.moveSorOrderBackward);
     dc.addParam(contentTypeId);
@@ -627,7 +625,7 @@ public String suggestVelocityVar( String tryVar, List<Field> takenFields) throws
   }
 
   public void moveSortOrderForward(String contentTypeId, int from) throws DotDataException {
-     moveSortOrderForward(contentTypeId, from, Integer.MAX_VALUE);
+    moveSortOrderForward(contentTypeId, from, Integer.MAX_VALUE);
   }
 
   public void moveSortOrderBackward(String contentTypeId, int from) throws DotDataException {

@@ -39,11 +39,10 @@ import java.util.List;
 import org.apache.commons.lang.StringUtils;
 
 /**
- * UserAPIImpl is an API intended to be a helper class for class to get User
- * entities from liferay's repository. Classes within the dotCMS should use this
- * API for user management. The UserAPIImpl does not do cache management. It
- * delegates this responsabilities to underlying classes.
- * 
+ * UserAPIImpl is an API intended to be a helper class for class to get User entities from liferay's
+ * repository. Classes within the dotCMS should use this API for user management. The UserAPIImpl
+ * does not do cache management. It delegates this responsabilities to underlying classes.
+ *
  * @author David Torres
  * @author Carlos Rivas (crivas)
  * @author Jason Tesser
@@ -52,543 +51,611 @@ import org.apache.commons.lang.StringUtils;
  */
 public class UserAPIImpl implements UserAPI {
 
-	private final UserFactory userFactory;
-	private final PermissionAPI permissionAPI;
-	private final UserProxyAPI userProxyAPI;
-	private final NotificationAPI notfAPI;
-	private final BundleAPI bundleAPI;
-	static User systemUser, anonUser=null;
-	/**
-	 * Creates an instance of the class.
-	 */
-	public UserAPIImpl() {
-		userFactory = FactoryLocator.getUserFactory();
-		permissionAPI = APILocator.getPermissionAPI();
-		userProxyAPI = APILocator.getUserProxyAPI();
-		notfAPI = APILocator.getNotificationAPI();
-		bundleAPI = APILocator.getBundleAPI();
-	}
+  private final UserFactory userFactory;
+  private final PermissionAPI permissionAPI;
+  private final UserProxyAPI userProxyAPI;
+  private final NotificationAPI notfAPI;
+  private final BundleAPI bundleAPI;
+  static User systemUser, anonUser = null;
+  /** Creates an instance of the class. */
+  public UserAPIImpl() {
+    userFactory = FactoryLocator.getUserFactory();
+    permissionAPI = APILocator.getPermissionAPI();
+    userProxyAPI = APILocator.getUserProxyAPI();
+    notfAPI = APILocator.getNotificationAPI();
+    bundleAPI = APILocator.getBundleAPI();
+  }
 
-	@CloseDBIfOpened
-	@Override
-	public User loadUserById(final String userId, final User user, final boolean respectFrontEndRoles)
-			throws DotDataException, DotSecurityException,com.dotmarketing.business.NoSuchUserException {
+  @CloseDBIfOpened
+  @Override
+  public User loadUserById(final String userId, final User user, final boolean respectFrontEndRoles)
+      throws DotDataException, DotSecurityException, com.dotmarketing.business.NoSuchUserException {
 
-		if(!UtilMethods.isSet(userId)){
-			throw new DotDataException("You must specifiy an userId to search for");
-		}
-		final User u = userFactory.loadUserById(userId);
-		if(!UtilMethods.isSet(u)){
-			throw new com.dotmarketing.business.NoSuchUserException("No user found with passed in email");
-		}
-		if(user!=null && user.getUserId().equals(u.getUserId())) {
-		    return user;
-		}
-		if(permissionAPI.doesUserHavePermission(userProxyAPI.getUserProxy(u,APILocator.getUserAPI().getSystemUser(), false), PermissionAPI.PERMISSION_READ, user, respectFrontEndRoles)){
-			return u;
-		}else{
-			throw new DotSecurityException("The User being passed in doesn't have permission to requested User");
-		}
-	}
-
-	@CloseDBIfOpened
-	@Override
-	public User loadUserById(final String userId) throws DotDataException, DotSecurityException,com.dotmarketing.business.NoSuchUserException {
-		if(!UtilMethods.isSet(userId)){
-			throw new DotDataException("You must specifiy an userId to search for");
-		}
-		
-		final User user = userFactory.loadUserById(userId);
-		if(!UtilMethods.isSet(user)){
-			throw new com.dotmarketing.business.NoSuchUserException("No user found with passed in email");
-		}
-		return user;
-	}
-
-	@CloseDBIfOpened
-	@Override
-	public User loadByUserByEmail(final String email, final User user, 
-								  final boolean respectFrontEndRoles) throws DotDataException, DotSecurityException, com.dotmarketing.business.NoSuchUserException {
-		
-		if(!UtilMethods.isSet(email)){
-			throw new DotDataException("You must specifiy an email to search for");
-		}
-		
-		final User u = userFactory.loadByUserByEmail(email);
-		if(!UtilMethods.isSet(u)){
-			throw new com.dotmarketing.business.NoSuchUserException("No user found with passed in email");
-		}
-		if(permissionAPI.doesUserHavePermission(userProxyAPI.getUserProxy(u,APILocator.getUserAPI().getSystemUser(), false), PermissionAPI.PERMISSION_READ, user, respectFrontEndRoles)){
-			return u;
-		}else{
-			throw new DotSecurityException("The User being passed in doesn't have permission to requested User");
-		}
-	}
-
-	@CloseDBIfOpened
-	@Override
-	public String encryptUserId(final String userId) throws DotStateException{
-		try{
-			return UserManagerUtil.encryptUserId(userId);
-		}catch (Exception e) {
-			throw new DotStateException("Unable to encrypt userID : ", e);
-		}
-	}
-
-	@CloseDBIfOpened
-	@Override
-	public long getCountUsersByName(String filter) throws DotDataException {
-		return userFactory.getCountUsersByName(filter);
-	}
-
-	@CloseDBIfOpened
-	@Override
-	public List<User> getUsersByName(String filter, int start,int limit, User user, boolean respectFrontEndRoles) throws DotDataException {
-		return userFactory.getUsersByName(filter, start, limit);
-	}
-
-	@WrapInTransaction
-	@Override
-	public User createUser(String userId, String email) throws DotDataException, DuplicateUserException {
-		return userFactory.createUser(userId, email);
-	}
-
-	@CloseDBIfOpened
-	@Override
-	public User getDefaultUser() throws DotDataException {
-		try {
-			return userFactory.loadDefaultUser();
-		} catch (Exception e) {
-			throw new DotDataException("getting default user user failed", e);
-		}
-	}
-
-    @Override
-	public User getSystemUser() throws DotDataException {
-      if(this.systemUser==null){
-        this.systemUser=_getSystemUser();
-	   }
-	   return this.systemUser;
-	}
-
-	@WrapInTransaction
-	private User _getSystemUser() throws DotDataException {
-		User user = null;
-		RoleAPI roleAPI = com.dotmarketing.business.APILocator.getRoleAPI();
-		Role cmsAdminRole = roleAPI.loadCMSAdminRole();
-		try {
-			user = userFactory.loadUserById(SYSTEM_USER_ID);
-		} catch (NoSuchUserException e) {
-			user = createUser("system", "system@dotcmsfakeemail.org");
-			user.setUserId(SYSTEM_USER_ID);
-			user.setFirstName("system user");
-			user.setLastName("system user");
-			user.setCreateDate(new java.util.Date());
-			user.setCompanyId(PublicCompanyFactory.getDefaultCompanyId());
-			userFactory.saveUser(user);
-		}
-		if(!roleAPI.doesUserHaveRole(user, cmsAdminRole))
-			roleAPI.addRoleToUser(cmsAdminRole.getId(), user);
-
-		return user;
-	}
-	
-	
-    @Override
-    public User getAnonymousUser() throws DotDataException {
-      if(this.anonUser==null){
-        this.anonUser=_getAnonymousUser();
-       }
-       return this.anonUser;
+    if (!UtilMethods.isSet(userId)) {
+      throw new DotDataException("You must specifiy an userId to search for");
     }
-    
+    final User u = userFactory.loadUserById(userId);
+    if (!UtilMethods.isSet(u)) {
+      throw new com.dotmarketing.business.NoSuchUserException("No user found with passed in email");
+    }
+    if (user != null && user.getUserId().equals(u.getUserId())) {
+      return user;
+    }
+    if (permissionAPI.doesUserHavePermission(
+        userProxyAPI.getUserProxy(u, APILocator.getUserAPI().getSystemUser(), false),
+        PermissionAPI.PERMISSION_READ,
+        user,
+        respectFrontEndRoles)) {
+      return u;
+    } else {
+      throw new DotSecurityException(
+          "The User being passed in doesn't have permission to requested User");
+    }
+  }
 
-	@WrapInTransaction
-	private User _getAnonymousUser() throws DotDataException {
-		User user = null;
-		try {
-			user = userFactory.loadUserById("anonymous");
-		} catch (DotDataException e) {
-			user = createUser("anonymous", "anonymous@dotcmsfakeemail.org");
-			user.setUserId("anonymous");
-			user.setFirstName("anonymous user");
-			user.setCreateDate(new java.util.Date());
-			user.setCompanyId(PublicCompanyFactory.getDefaultCompanyId());
-			userFactory.saveUser(user);
-			com.dotmarketing.business.APILocator.getRoleAPI().addRoleToUser(com.dotmarketing.business.APILocator.getRoleAPI().loadRoleByKey(Config.getStringProperty("CMS_ANONYMOUS_ROLE")).getId(), user);
-		} catch (NoSuchUserException e) {
-			user = createUser("anonymous", "anonymous@dotcmsfakeemail.org");
-			user.setUserId("anonymous");
-			user.setFirstName("anonymous user");
-			user.setCreateDate(new java.util.Date());
-			user.setCompanyId(PublicCompanyFactory.getDefaultCompanyId());
-			userFactory.saveUser(user);
-			com.dotmarketing.business.APILocator.getRoleAPI().addRoleToUser(com.dotmarketing.business.APILocator.getRoleAPI().loadCMSAnonymousRole().getId(), user);
-		}
-		return user;
-	}
+  @CloseDBIfOpened
+  @Override
+  public User loadUserById(final String userId)
+      throws DotDataException, DotSecurityException, com.dotmarketing.business.NoSuchUserException {
+    if (!UtilMethods.isSet(userId)) {
+      throw new DotDataException("You must specifiy an userId to search for");
+    }
 
-	@CloseDBIfOpened
-	@Override
-	public boolean userExistsWithEmail(String email) throws DotDataException {
-		return userFactory.userExistsWithEmail(email);
-	}
+    final User user = userFactory.loadUserById(userId);
+    if (!UtilMethods.isSet(user)) {
+      throw new com.dotmarketing.business.NoSuchUserException("No user found with passed in email");
+    }
+    return user;
+  }
 
-	@CloseDBIfOpened
-	@Override
-	public List<User> findAllUsers(int begin, int end) throws DotDataException {
-		return userFactory.findAllUsers(begin, end);
-	}
+  @CloseDBIfOpened
+  @Override
+  public User loadByUserByEmail(
+      final String email, final User user, final boolean respectFrontEndRoles)
+      throws DotDataException, DotSecurityException, com.dotmarketing.business.NoSuchUserException {
 
-	@CloseDBIfOpened
-	@Override
-	public List<User> findAllUsers() throws DotDataException {
-		return userFactory.findAllUsers();
-	}
+    if (!UtilMethods.isSet(email)) {
+      throw new DotDataException("You must specifiy an email to search for");
+    }
 
-	@CloseDBIfOpened
-	@Override
-	public long getCountUsersByNameOrEmail(String filter) throws DotDataException {
-		return userFactory.getCountUsersByNameOrEmail(filter);
-	}
+    final User u = userFactory.loadByUserByEmail(email);
+    if (!UtilMethods.isSet(u)) {
+      throw new com.dotmarketing.business.NoSuchUserException("No user found with passed in email");
+    }
+    if (permissionAPI.doesUserHavePermission(
+        userProxyAPI.getUserProxy(u, APILocator.getUserAPI().getSystemUser(), false),
+        PermissionAPI.PERMISSION_READ,
+        user,
+        respectFrontEndRoles)) {
+      return u;
+    } else {
+      throw new DotSecurityException(
+          "The User being passed in doesn't have permission to requested User");
+    }
+  }
 
-	@CloseDBIfOpened
-	@Override
-	public List<User> getUsersByNameOrEmail(String filter, int page, int pageSize) throws DotDataException {
-		return userFactory.getUsersByNameOrEmail(filter, page, pageSize);
-	}
+  @CloseDBIfOpened
+  @Override
+  public String encryptUserId(final String userId) throws DotStateException {
+    try {
+      return UserManagerUtil.encryptUserId(userId);
+    } catch (Exception e) {
+      throw new DotStateException("Unable to encrypt userID : ", e);
+    }
+  }
 
-	@CloseDBIfOpened
-	@Override
-	public List<String> getUsersIdsByCreationDate ( Date filterDate, int page, int pageSize ) throws DotDataException {
-		return userFactory.getUsersIdsByCreationDate( filterDate, page, pageSize );
-	}
+  @CloseDBIfOpened
+  @Override
+  public long getCountUsersByName(String filter) throws DotDataException {
+    return userFactory.getCountUsersByName(filter);
+  }
 
-	@CloseDBIfOpened
-	@Override
-	public long getCountUsersByNameOrEmailOrUserID(String filter) throws DotDataException {
-		return userFactory.getCountUsersByNameOrEmailOrUserID(filter);
-	}
+  @CloseDBIfOpened
+  @Override
+  public List<User> getUsersByName(
+      String filter, int start, int limit, User user, boolean respectFrontEndRoles)
+      throws DotDataException {
+    return userFactory.getUsersByName(filter, start, limit);
+  }
 
-	@CloseDBIfOpened
-	@Override
-	public long getCountUsersByNameOrEmailOrUserID(String filter, boolean includeAnonymous) throws DotDataException {
-		return userFactory.getCountUsersByNameOrEmailOrUserID(filter, includeAnonymous);
-	}
+  @WrapInTransaction
+  @Override
+  public User createUser(String userId, String email)
+      throws DotDataException, DuplicateUserException {
+    return userFactory.createUser(userId, email);
+  }
 
-	@CloseDBIfOpened
-	@Override
-	public long getCountUsersByNameOrEmailOrUserID(String filter, boolean includeAnonymous, boolean includeDefault)
-			throws DotDataException {
-		return userFactory.getCountUsersByNameOrEmailOrUserID(filter, includeAnonymous, includeDefault);
-	}
+  @CloseDBIfOpened
+  @Override
+  public User getDefaultUser() throws DotDataException {
+    try {
+      return userFactory.loadDefaultUser();
+    } catch (Exception e) {
+      throw new DotDataException("getting default user user failed", e);
+    }
+  }
 
-	@CloseDBIfOpened
-	@Override
-	public List<User> getUsersByNameOrEmailOrUserID(String filter, int page, int pageSize) throws DotDataException {
-		return userFactory.getUsersByNameOrEmailOrUserID(filter, page, pageSize);
-	}
+  @Override
+  public User getSystemUser() throws DotDataException {
+    if (this.systemUser == null) {
+      this.systemUser = _getSystemUser();
+    }
+    return this.systemUser;
+  }
 
-	@CloseDBIfOpened
-	@Override
-	public List<User> getUsersByNameOrEmailOrUserID(String filter, int page, int pageSize, boolean includeAnonymous) throws DotDataException {
-		return userFactory.getUsersByNameOrEmailOrUserID(filter, page, pageSize, includeAnonymous);
-	}
+  @WrapInTransaction
+  private User _getSystemUser() throws DotDataException {
+    User user = null;
+    RoleAPI roleAPI = com.dotmarketing.business.APILocator.getRoleAPI();
+    Role cmsAdminRole = roleAPI.loadCMSAdminRole();
+    try {
+      user = userFactory.loadUserById(SYSTEM_USER_ID);
+    } catch (NoSuchUserException e) {
+      user = createUser("system", "system@dotcmsfakeemail.org");
+      user.setUserId(SYSTEM_USER_ID);
+      user.setFirstName("system user");
+      user.setLastName("system user");
+      user.setCreateDate(new java.util.Date());
+      user.setCompanyId(PublicCompanyFactory.getDefaultCompanyId());
+      userFactory.saveUser(user);
+    }
+    if (!roleAPI.doesUserHaveRole(user, cmsAdminRole))
+      roleAPI.addRoleToUser(cmsAdminRole.getId(), user);
 
-	@CloseDBIfOpened
-	@Override
-	public List<User> getUsersByNameOrEmailOrUserID(String filter, int page,
-			int pageSize, boolean includeAnonymous, boolean includeDefault) throws DotDataException {
-		return userFactory.getUsersByNameOrEmailOrUserID(filter, page, pageSize, includeAnonymous, includeDefault);
-	}
+    return user;
+  }
 
-	@WrapInTransaction
-	@Override
-	public void save(final User userToSave, final User user, final boolean respectFrontEndRoles) throws DotDataException, DotSecurityException,DuplicateUserException {
-		String userId = userToSave.getUserId();
-		if (userId == null) {
-			throw new DotDataException("Can't save a user without a userId");
-		}
-		if (!permissionAPI.doesUserHavePermission(userProxyAPI.getUserProxy(userToSave,
-				APILocator.getUserAPI().getSystemUser(), false),
-				PermissionAPI.PERMISSION_EDIT, user, respectFrontEndRoles)) {
-			throw new DotSecurityException(
-					"User doesn't have permission to save the user which is trying to be saved");
-		}
-		userFactory.saveUser(userToSave);
-		PasswordTrackerLocalManager passwordTracker = PasswordTrackerLocalManagerFactory
-				.getManager();
-		try {
-			if (passwordTracker.isPasswordRecyclingActive()
-					&& StringUtils.isNotBlank(userToSave.getPassword())) {
-				passwordTracker.trackPassword(userId, userToSave.getPassword());
-			}
-		} catch (PortalException | SystemException e) {
-			SecurityLogger.logInfo(UserAPIImpl.class, "Password for user ["
-					+ userId + "] could not be added for tracking.");
-		}
-		APILocator.getRoleAPI().getUserRole(userToSave);
-	}
+  @Override
+  public User getAnonymousUser() throws DotDataException {
+    if (this.anonUser == null) {
+      this.anonUser = _getAnonymousUser();
+    }
+    return this.anonUser;
+  }
 
-	@Override
-	public void save(User userToSave, User user, boolean validatePassword,
-			boolean respectFrontEndRoles) throws DotDataException,
-	DotSecurityException, DuplicateUserException {
-		String pwd = userToSave.getPassword();
-		if (validatePassword) {
-			PasswordTrackerLocalManager passwordTracker = PasswordTrackerLocalManagerFactory
-					.getManager();
-			try {
-				if (!passwordTracker.isValidPassword(userToSave.getUserId(),
-						pwd)) {
-					// Get the first validation error and display it
-					throw new DotDataException(passwordTracker
-							.getValidationErrors().get(0).toString(),"User-Info-Save-Password-Failed");
-				}
-			} catch (PortalException | SystemException e) {
-				throw new DotDataException(
-						"An error occurred during the save process.");
-			}
+  @WrapInTransaction
+  private User _getAnonymousUser() throws DotDataException {
+    User user = null;
+    try {
+      user = userFactory.loadUserById("anonymous");
+    } catch (DotDataException e) {
+      user = createUser("anonymous", "anonymous@dotcmsfakeemail.org");
+      user.setUserId("anonymous");
+      user.setFirstName("anonymous user");
+      user.setCreateDate(new java.util.Date());
+      user.setCompanyId(PublicCompanyFactory.getDefaultCompanyId());
+      userFactory.saveUser(user);
+      com.dotmarketing.business.APILocator.getRoleAPI()
+          .addRoleToUser(
+              com.dotmarketing.business.APILocator.getRoleAPI()
+                  .loadRoleByKey(Config.getStringProperty("CMS_ANONYMOUS_ROLE"))
+                  .getId(),
+              user);
+    } catch (NoSuchUserException e) {
+      user = createUser("anonymous", "anonymous@dotcmsfakeemail.org");
+      user.setUserId("anonymous");
+      user.setFirstName("anonymous user");
+      user.setCreateDate(new java.util.Date());
+      user.setCompanyId(PublicCompanyFactory.getDefaultCompanyId());
+      userFactory.saveUser(user);
+      com.dotmarketing.business.APILocator.getRoleAPI()
+          .addRoleToUser(
+              com.dotmarketing.business.APILocator.getRoleAPI().loadCMSAnonymousRole().getId(),
+              user);
+    }
+    return user;
+  }
 
-			// Use new password hash method
-			try {
-				userToSave.setPassword(PasswordFactoryProxy.generateHash(pwd));
-			} catch (PasswordException e) {
-				Logger.error(UserAPIImpl.class, "An error occurred generating the hashed password for userId: " + userToSave.getUserId(), e);
-				throw new DotDataException("An error occurred generating the hashed password.");
-			}
-		}
-		save(userToSave, user, respectFrontEndRoles);
-	}
+  @CloseDBIfOpened
+  @Override
+  public boolean userExistsWithEmail(String email) throws DotDataException {
+    return userFactory.userExistsWithEmail(email);
+  }
 
-	@Override
-	public void delete(User userToDelete, User user, boolean respectFrontEndRoles) throws DotDataException,	DotSecurityException {
-		if (userToDelete.getUserId() == null) {
-			throw new DotDataException("Can't delete a user without a userId");
-		}
-		if(!permissionAPI.doesUserHavePermission(userProxyAPI.getUserProxy(userToDelete,APILocator.getUserAPI().getSystemUser(), false), PermissionAPI.PERMISSION_EDIT, user, respectFrontEndRoles)){
-			throw new DotSecurityException("User doesn't have permission to userToDelete the user which is trying to be saved");
-		}
-		delete(userToDelete,user, user, respectFrontEndRoles);
-	}
+  @CloseDBIfOpened
+  @Override
+  public List<User> findAllUsers(int begin, int end) throws DotDataException {
+    return userFactory.findAllUsers(begin, end);
+  }
 
-	@WrapInTransaction
-	@Override
-	public void delete(User userToDelete, User replacementUser, User user, boolean respectFrontEndRoles) throws DotDataException,	DotSecurityException {
-		if (!UtilMethods.isSet(userToDelete) || userToDelete.getUserId() == null) {
-			throw new DotDataException("Can't delete a user without a userId");
-		}
-		if (!UtilMethods.isSet(replacementUser) || replacementUser.getUserId() == null) {
-			throw new DotDataException("Can't delete a user without a replacement userId");
-		}
-		if (userToDelete.getUserId() == replacementUser.getUserId()) {
-			throw new DotDataException("Can't delete a user without a replacement userId");
-		}
-		if (getAnonymousUser().getUserId() == userToDelete.getUserId()){
-			throw new DotDataException("Anonymous user can not be deleted.");
-		}
-		if(!permissionAPI.doesUserHavePermission(userProxyAPI.getUserProxy(userToDelete,APILocator.getUserAPI().getSystemUser(), false), PermissionAPI.PERMISSION_EDIT, user, respectFrontEndRoles)){
-			throw new DotSecurityException("User doesn't have permission to userToDelete the user which is trying to be saved");
-		}
+  @CloseDBIfOpened
+  @Override
+  public List<User> findAllUsers() throws DotDataException {
+    return userFactory.findAllUsers();
+  }
 
-		//replace the user reference in Inodes
-		logDelete(DeletionStage.BEGINNING, userToDelete, user, "Inodes");
+  @CloseDBIfOpened
+  @Override
+  public long getCountUsersByNameOrEmail(String filter) throws DotDataException {
+    return userFactory.getCountUsersByNameOrEmail(filter);
+  }
 
-		InodeFactory.updateUserReferences(userToDelete.getUserId(), replacementUser.getUserId());
+  @CloseDBIfOpened
+  @Override
+  public List<User> getUsersByNameOrEmail(String filter, int page, int pageSize)
+      throws DotDataException {
+    return userFactory.getUsersByNameOrEmail(filter, page, pageSize);
+  }
 
-		logDelete(DeletionStage.END, userToDelete, user, "Inodes");
+  @CloseDBIfOpened
+  @Override
+  public List<String> getUsersIdsByCreationDate(Date filterDate, int page, int pageSize)
+      throws DotDataException {
+    return userFactory.getUsersIdsByCreationDate(filterDate, page, pageSize);
+  }
 
-		//replace the user references in contentlets
-		logDelete(DeletionStage.BEGINNING, userToDelete, user, "Contentlets");
+  @CloseDBIfOpened
+  @Override
+  public long getCountUsersByNameOrEmailOrUserID(String filter) throws DotDataException {
+    return userFactory.getCountUsersByNameOrEmailOrUserID(filter);
+  }
 
-		ContentletAPI conAPI = APILocator.getContentletAPI();
-		conAPI.updateUserReferences(userToDelete,replacementUser.getUserId(), user);
+  @CloseDBIfOpened
+  @Override
+  public long getCountUsersByNameOrEmailOrUserID(String filter, boolean includeAnonymous)
+      throws DotDataException {
+    return userFactory.getCountUsersByNameOrEmailOrUserID(filter, includeAnonymous);
+  }
 
-		logDelete(DeletionStage.END, userToDelete, user, "Contentlets");
+  @CloseDBIfOpened
+  @Override
+  public long getCountUsersByNameOrEmailOrUserID(
+      String filter, boolean includeAnonymous, boolean includeDefault) throws DotDataException {
+    return userFactory.getCountUsersByNameOrEmailOrUserID(filter, includeAnonymous, includeDefault);
+  }
 
-		//replace the user references in menulink
-		logDelete(DeletionStage.BEGINNING, userToDelete, user, "Menulinks");
+  @CloseDBIfOpened
+  @Override
+  public List<User> getUsersByNameOrEmailOrUserID(String filter, int page, int pageSize)
+      throws DotDataException {
+    return userFactory.getUsersByNameOrEmailOrUserID(filter, page, pageSize);
+  }
 
-		MenuLinkAPI menuAPI = APILocator.getMenuLinkAPI();
-		menuAPI.updateUserReferences(userToDelete.getUserId(), replacementUser.getUserId());
+  @CloseDBIfOpened
+  @Override
+  public List<User> getUsersByNameOrEmailOrUserID(
+      String filter, int page, int pageSize, boolean includeAnonymous) throws DotDataException {
+    return userFactory.getUsersByNameOrEmailOrUserID(filter, page, pageSize, includeAnonymous);
+  }
 
-		logDelete(DeletionStage.END, userToDelete, user, "Menulinks");
+  @CloseDBIfOpened
+  @Override
+  public List<User> getUsersByNameOrEmailOrUserID(
+      String filter, int page, int pageSize, boolean includeAnonymous, boolean includeDefault)
+      throws DotDataException {
+    return userFactory.getUsersByNameOrEmailOrUserID(
+        filter, page, pageSize, includeAnonymous, includeDefault);
+  }
 
-	      //replace the user references in HostVariables
-        logDelete(DeletionStage.BEGINNING, userToDelete, user, "HostVariables");
-        APILocator.getHostVariableAPI().updateUserReferences(userToDelete.getUserId(), replacementUser.getUserId());
-        logDelete(DeletionStage.END, userToDelete, user, "HostVariables");
-		
-		
-		
-		
-		//replace user references in containers
-		logDelete(DeletionStage.BEGINNING, userToDelete, user, "Containers");
+  @WrapInTransaction
+  @Override
+  public void save(final User userToSave, final User user, final boolean respectFrontEndRoles)
+      throws DotDataException, DotSecurityException, DuplicateUserException {
+    String userId = userToSave.getUserId();
+    if (userId == null) {
+      throw new DotDataException("Can't save a user without a userId");
+    }
+    if (!permissionAPI.doesUserHavePermission(
+        userProxyAPI.getUserProxy(userToSave, APILocator.getUserAPI().getSystemUser(), false),
+        PermissionAPI.PERMISSION_EDIT,
+        user,
+        respectFrontEndRoles)) {
+      throw new DotSecurityException(
+          "User doesn't have permission to save the user which is trying to be saved");
+    }
+    userFactory.saveUser(userToSave);
+    PasswordTrackerLocalManager passwordTracker = PasswordTrackerLocalManagerFactory.getManager();
+    try {
+      if (passwordTracker.isPasswordRecyclingActive()
+          && StringUtils.isNotBlank(userToSave.getPassword())) {
+        passwordTracker.trackPassword(userId, userToSave.getPassword());
+      }
+    } catch (PortalException | SystemException e) {
+      SecurityLogger.logInfo(
+          UserAPIImpl.class, "Password for user [" + userId + "] could not be added for tracking.");
+    }
+    APILocator.getRoleAPI().getUserRole(userToSave);
+  }
 
-		ContainerAPI contAPI = APILocator.getContainerAPI();
-		contAPI.updateUserReferences(userToDelete.getUserId(), replacementUser.getUserId());
+  @Override
+  public void save(
+      User userToSave, User user, boolean validatePassword, boolean respectFrontEndRoles)
+      throws DotDataException, DotSecurityException, DuplicateUserException {
+    String pwd = userToSave.getPassword();
+    if (validatePassword) {
+      PasswordTrackerLocalManager passwordTracker = PasswordTrackerLocalManagerFactory.getManager();
+      try {
+        if (!passwordTracker.isValidPassword(userToSave.getUserId(), pwd)) {
+          // Get the first validation error and display it
+          throw new DotDataException(
+              passwordTracker.getValidationErrors().get(0).toString(),
+              "User-Info-Save-Password-Failed");
+        }
+      } catch (PortalException | SystemException e) {
+        throw new DotDataException("An error occurred during the save process.");
+      }
 
-		logDelete(DeletionStage.END, userToDelete, user, "Containers");
+      // Use new password hash method
+      try {
+        userToSave.setPassword(PasswordFactoryProxy.generateHash(pwd));
+      } catch (PasswordException e) {
+        Logger.error(
+            UserAPIImpl.class,
+            "An error occurred generating the hashed password for userId: "
+                + userToSave.getUserId(),
+            e);
+        throw new DotDataException("An error occurred generating the hashed password.");
+      }
+    }
+    save(userToSave, user, respectFrontEndRoles);
+  }
 
-		//replace user references in templates
-		logDelete(DeletionStage.BEGINNING, userToDelete, user, "Templates");
+  @Override
+  public void delete(User userToDelete, User user, boolean respectFrontEndRoles)
+      throws DotDataException, DotSecurityException {
+    if (userToDelete.getUserId() == null) {
+      throw new DotDataException("Can't delete a user without a userId");
+    }
+    if (!permissionAPI.doesUserHavePermission(
+        userProxyAPI.getUserProxy(userToDelete, APILocator.getUserAPI().getSystemUser(), false),
+        PermissionAPI.PERMISSION_EDIT,
+        user,
+        respectFrontEndRoles)) {
+      throw new DotSecurityException(
+          "User doesn't have permission to userToDelete the user which is trying to be saved");
+    }
+    delete(userToDelete, user, user, respectFrontEndRoles);
+  }
 
-		TemplateAPI temAPI = APILocator.getTemplateAPI();
-		temAPI.updateUserReferences(userToDelete.getUserId(), replacementUser.getUserId());
+  @WrapInTransaction
+  @Override
+  public void delete(
+      User userToDelete, User replacementUser, User user, boolean respectFrontEndRoles)
+      throws DotDataException, DotSecurityException {
+    if (!UtilMethods.isSet(userToDelete) || userToDelete.getUserId() == null) {
+      throw new DotDataException("Can't delete a user without a userId");
+    }
+    if (!UtilMethods.isSet(replacementUser) || replacementUser.getUserId() == null) {
+      throw new DotDataException("Can't delete a user without a replacement userId");
+    }
+    if (userToDelete.getUserId() == replacementUser.getUserId()) {
+      throw new DotDataException("Can't delete a user without a replacement userId");
+    }
+    if (getAnonymousUser().getUserId() == userToDelete.getUserId()) {
+      throw new DotDataException("Anonymous user can not be deleted.");
+    }
+    if (!permissionAPI.doesUserHavePermission(
+        userProxyAPI.getUserProxy(userToDelete, APILocator.getUserAPI().getSystemUser(), false),
+        PermissionAPI.PERMISSION_EDIT,
+        user,
+        respectFrontEndRoles)) {
+      throw new DotSecurityException(
+          "User doesn't have permission to userToDelete the user which is trying to be saved");
+    }
 
-		logDelete(DeletionStage.END, userToDelete, user, "Templates");
+    // replace the user reference in Inodes
+    logDelete(DeletionStage.BEGINNING, userToDelete, user, "Inodes");
 
-		RoleAPI roleAPI = APILocator.getRoleAPI();
-		Role userRole = roleAPI.loadRoleByKey(userToDelete.getUserId());
-		Role replacementUserRole = roleAPI.loadRoleByKey(replacementUser.getUserId());
+    InodeFactory.updateUserReferences(userToDelete.getUserId(), replacementUser.getUserId());
 
-		//replace the user reference in workflows
-		logDelete(DeletionStage.BEGINNING, userToDelete, user, "Workflows");
+    logDelete(DeletionStage.END, userToDelete, user, "Inodes");
 
-		WorkflowAPI wofAPI = APILocator.getWorkflowAPI();
-		wofAPI.updateUserReferences(userToDelete.getUserId(), userRole.getId(), replacementUser.getUserId(),replacementUserRole.getId());
+    // replace the user references in contentlets
+    logDelete(DeletionStage.BEGINNING, userToDelete, user, "Contentlets");
 
-		logDelete(DeletionStage.END, userToDelete, user, "Workflows");
+    ContentletAPI conAPI = APILocator.getContentletAPI();
+    conAPI.updateUserReferences(userToDelete, replacementUser.getUserId(), user);
 
-		//replace the user reference in publishing bundles
-		logDelete(DeletionStage.BEGINNING, userToDelete, user, "Publishing Bundles");
+    logDelete(DeletionStage.END, userToDelete, user, "Contentlets");
 
-		bundleAPI.updateOwnerReferences(userToDelete.getUserId(), replacementUser.getUserId());
+    // replace the user references in menulink
+    logDelete(DeletionStage.BEGINNING, userToDelete, user, "Menulinks");
 
-		logDelete(DeletionStage.END, userToDelete, user, "Publishing Bundles");
+    MenuLinkAPI menuAPI = APILocator.getMenuLinkAPI();
+    menuAPI.updateUserReferences(userToDelete.getUserId(), replacementUser.getUserId());
 
-		//removing user roles
-		permissionAPI.removePermissionsByRole(userRole.getId());
-		roleAPI.removeAllRolesFromUser(userToDelete);
+    logDelete(DeletionStage.END, userToDelete, user, "Menulinks");
 
-		/**
-		 * Need to edit user name role system value 
-		 * to allow delete the role
-		 * */
-		userRole.setSystem(false);
-		userRole=roleAPI.save(userRole);
-		roleAPI.delete(userRole);
+    // replace the user references in HostVariables
+    logDelete(DeletionStage.BEGINNING, userToDelete, user, "HostVariables");
+    APILocator.getHostVariableAPI()
+        .updateUserReferences(userToDelete.getUserId(), replacementUser.getUserId());
+    logDelete(DeletionStage.END, userToDelete, user, "HostVariables");
 
-		/*Delete role*/
-		userFactory.delete(userToDelete);
+    // replace user references in containers
+    logDelete(DeletionStage.BEGINNING, userToDelete, user, "Containers");
 
-	}
+    ContainerAPI contAPI = APILocator.getContainerAPI();
+    contAPI.updateUserReferences(userToDelete.getUserId(), replacementUser.getUserId());
 
-	/**
-	 * 
-	 * @author Daniel Silva
-	 * @version 3.7
-	 * @since Jul 25, 2016
-	 *
-	 */
-	private enum DeletionStage {
-		BEGINNING,
-		END
-	}
+    logDelete(DeletionStage.END, userToDelete, user, "Containers");
 
-	/**
-	 * 
-	 * @param stage
-	 * @param userToDelete
-	 * @param user
-	 * @param referenceType
-	 */
-	private void logDelete(DeletionStage stage, User userToDelete, User user, String referenceType) {
+    // replace user references in templates
+    logDelete(DeletionStage.BEGINNING, userToDelete, user, "Templates");
 
-		String userToDeleteStr = userToDelete.getUserId() + "/" + userToDelete.getFullName();
+    TemplateAPI temAPI = APILocator.getTemplateAPI();
+    temAPI.updateUserReferences(userToDelete.getUserId(), replacementUser.getUserId());
 
-		try {
-			String msg = stage==DeletionStage.BEGINNING
-				?
-				MessageFormat.format(LanguageUtil.get(user,
-				"com.dotmarketing.business.UserAPI.delete.beginning"), userToDeleteStr, referenceType)
-				:
-				MessageFormat.format(LanguageUtil.get(user,
-					"com.dotmarketing.business.UserAPI.delete.end"), userToDeleteStr, referenceType);
+    logDelete(DeletionStage.END, userToDelete, user, "Templates");
 
-			Logger.info(this, msg);
+    RoleAPI roleAPI = APILocator.getRoleAPI();
+    Role userRole = roleAPI.loadRoleByKey(userToDelete.getUserId());
+    Role replacementUserRole = roleAPI.loadRoleByKey(replacementUser.getUserId());
 
-		} catch (LanguageException e) {
-			Logger.error(this, "Error logging info of Delete user operation. User: " + userToDeleteStr);
-		}
-	}
+    // replace the user reference in workflows
+    logDelete(DeletionStage.BEGINNING, userToDelete, user, "Workflows");
 
-	@WrapInTransaction
-	@Override
-	public void saveAddress(User user, Address ad, User currentUser, boolean respectFrontEndRoles) throws DotDataException, DotRuntimeException, DotSecurityException {
-		if(!permissionAPI.doesUserHavePermission(userProxyAPI.getUserProxy(user,APILocator.getUserAPI().getSystemUser(), false), PermissionAPI.PERMISSION_EDIT, currentUser, respectFrontEndRoles)){
-			throw new DotSecurityException("User doesn't have permission to userToDelete the user which is trying to be saved");
-		}
-		userFactory.saveAddress(user, ad);
-	}
+    WorkflowAPI wofAPI = APILocator.getWorkflowAPI();
+    wofAPI.updateUserReferences(
+        userToDelete.getUserId(),
+        userRole.getId(),
+        replacementUser.getUserId(),
+        replacementUserRole.getId());
 
-	@CloseDBIfOpened
-	@Override
-	public Address loadAddressById(String addressId, User currentUser, boolean respectFrontEndRoles) throws DotDataException, DotSecurityException {
-		Address ad = userFactory.loadAddressById(addressId);
-		if(!permissionAPI.doesUserHavePermission(userProxyAPI.getUserProxy(ad.getUserId(),APILocator.getUserAPI().getSystemUser(), false), PermissionAPI.PERMISSION_READ, currentUser, respectFrontEndRoles)){
-			throw new DotSecurityException("User doesn't have permission to userToDelete the user which is trying to be saved");
-		}
-		return ad;
-	}
+    logDelete(DeletionStage.END, userToDelete, user, "Workflows");
 
-	@WrapInTransaction
-	@Override
-	public void deleteAddress(Address ad, User currentUser, boolean respectFrontEndRoles) throws DotDataException, DotRuntimeException, DotSecurityException {
-		if(!permissionAPI.doesUserHavePermission(userProxyAPI.getUserProxy(ad.getUserId(),APILocator.getUserAPI().getSystemUser(), false), PermissionAPI.PERMISSION_EDIT, currentUser, respectFrontEndRoles)){
-			throw new DotSecurityException("User doesn't have permission to userToDelete the user which is trying to be saved");
-		}
-		userFactory.deleteAddress(ad);
-	}
+    // replace the user reference in publishing bundles
+    logDelete(DeletionStage.BEGINNING, userToDelete, user, "Publishing Bundles");
 
-	@CloseDBIfOpened
-	@Override
-	public List<Address> loadUserAddresses(User user, User currentUser, boolean respectFrontEndRoles) throws DotDataException, DotRuntimeException, DotSecurityException {
-		if(!permissionAPI.doesUserHavePermission(userProxyAPI.getUserProxy(user,APILocator.getUserAPI().getSystemUser(), false), PermissionAPI.PERMISSION_READ, currentUser, respectFrontEndRoles)){
-			throw new DotSecurityException("User doesn't have permission to userToDelete the user which is trying to be saved");
-		}
-		return userFactory.loadUserAddresses(user);
-	}
+    bundleAPI.updateOwnerReferences(userToDelete.getUserId(), replacementUser.getUserId());
 
-	@Override
-	public boolean isCMSAdmin(User user) throws DotDataException {
-		RoleAPI roleAPI = APILocator.getRoleAPI();
-		return roleAPI.doesUserHaveRole(user, roleAPI.loadCMSAdminRole());
-	}
+    logDelete(DeletionStage.END, userToDelete, user, "Publishing Bundles");
 
-	@Override
-	public void updatePassword(User user, String newpass, User currentUser, boolean respectFrontEndRoles) throws DotDataException, DotInvalidPasswordException, DotSecurityException {
-		if(!PwdToolkitUtil.validate(newpass)) {
-			throw new DotInvalidPasswordException("Invalid password");
-		}
+    // removing user roles
+    permissionAPI.removePermissionsByRole(userRole.getId());
+    roleAPI.removeAllRolesFromUser(userToDelete);
 
-		// Use new password hash method
-		try {
-			user.setPassword(PasswordFactoryProxy.generateHash(newpass));
-		} catch (PasswordException e) {
-			Logger.error(UserAPIImpl.class, "An error occurred generating the hashed password for userId: " + user.getUserId(), e);
-			throw new DotDataException("An error occurred generating the hashed password.");
-		}
+    /** Need to edit user name role system value to allow delete the role */
+    userRole.setSystem(false);
+    userRole = roleAPI.save(userRole);
+    roleAPI.delete(userRole);
 
-		user.setIcqId("");
-		user.setPasswordReset(GetterUtil.getBoolean(
-				PropsUtil.get(PropsUtil.PASSWORDS_CHANGE_ON_FIRST_USE)));
-		save(user, currentUser, respectFrontEndRoles);
+    /*Delete role*/
+    userFactory.delete(userToDelete);
+  }
 
-	}
+  /**
+   * @author Daniel Silva
+   * @version 3.7
+   * @since Jul 25, 2016
+   */
+  private enum DeletionStage {
+    BEGINNING,
+    END
+  }
 
-	@WrapInTransaction
-	@Override
-	public void markToDelete(User userToDelete) throws DotDataException {
-		userToDelete.setDeleteInProgress(true);
-		userToDelete.setDeleteDate(Calendar.getInstance().getTime());
-		userFactory.saveUser(userToDelete);
-	}
+  /**
+   * @param stage
+   * @param userToDelete
+   * @param user
+   * @param referenceType
+   */
+  private void logDelete(DeletionStage stage, User userToDelete, User user, String referenceType) {
 
-	@CloseDBIfOpened
-	@Override
-	public List<User> getUnDeletedUsers() throws DotDataException {
-		return userFactory.getUnDeletedUsers();
-	}
+    String userToDeleteStr = userToDelete.getUserId() + "/" + userToDelete.getFullName();
 
+    try {
+      String msg =
+          stage == DeletionStage.BEGINNING
+              ? MessageFormat.format(
+                  LanguageUtil.get(user, "com.dotmarketing.business.UserAPI.delete.beginning"),
+                  userToDeleteStr,
+                  referenceType)
+              : MessageFormat.format(
+                  LanguageUtil.get(user, "com.dotmarketing.business.UserAPI.delete.end"),
+                  userToDeleteStr,
+                  referenceType);
+
+      Logger.info(this, msg);
+
+    } catch (LanguageException e) {
+      Logger.error(this, "Error logging info of Delete user operation. User: " + userToDeleteStr);
+    }
+  }
+
+  @WrapInTransaction
+  @Override
+  public void saveAddress(User user, Address ad, User currentUser, boolean respectFrontEndRoles)
+      throws DotDataException, DotRuntimeException, DotSecurityException {
+    if (!permissionAPI.doesUserHavePermission(
+        userProxyAPI.getUserProxy(user, APILocator.getUserAPI().getSystemUser(), false),
+        PermissionAPI.PERMISSION_EDIT,
+        currentUser,
+        respectFrontEndRoles)) {
+      throw new DotSecurityException(
+          "User doesn't have permission to userToDelete the user which is trying to be saved");
+    }
+    userFactory.saveAddress(user, ad);
+  }
+
+  @CloseDBIfOpened
+  @Override
+  public Address loadAddressById(String addressId, User currentUser, boolean respectFrontEndRoles)
+      throws DotDataException, DotSecurityException {
+    Address ad = userFactory.loadAddressById(addressId);
+    if (!permissionAPI.doesUserHavePermission(
+        userProxyAPI.getUserProxy(ad.getUserId(), APILocator.getUserAPI().getSystemUser(), false),
+        PermissionAPI.PERMISSION_READ,
+        currentUser,
+        respectFrontEndRoles)) {
+      throw new DotSecurityException(
+          "User doesn't have permission to userToDelete the user which is trying to be saved");
+    }
+    return ad;
+  }
+
+  @WrapInTransaction
+  @Override
+  public void deleteAddress(Address ad, User currentUser, boolean respectFrontEndRoles)
+      throws DotDataException, DotRuntimeException, DotSecurityException {
+    if (!permissionAPI.doesUserHavePermission(
+        userProxyAPI.getUserProxy(ad.getUserId(), APILocator.getUserAPI().getSystemUser(), false),
+        PermissionAPI.PERMISSION_EDIT,
+        currentUser,
+        respectFrontEndRoles)) {
+      throw new DotSecurityException(
+          "User doesn't have permission to userToDelete the user which is trying to be saved");
+    }
+    userFactory.deleteAddress(ad);
+  }
+
+  @CloseDBIfOpened
+  @Override
+  public List<Address> loadUserAddresses(User user, User currentUser, boolean respectFrontEndRoles)
+      throws DotDataException, DotRuntimeException, DotSecurityException {
+    if (!permissionAPI.doesUserHavePermission(
+        userProxyAPI.getUserProxy(user, APILocator.getUserAPI().getSystemUser(), false),
+        PermissionAPI.PERMISSION_READ,
+        currentUser,
+        respectFrontEndRoles)) {
+      throw new DotSecurityException(
+          "User doesn't have permission to userToDelete the user which is trying to be saved");
+    }
+    return userFactory.loadUserAddresses(user);
+  }
+
+  @Override
+  public boolean isCMSAdmin(User user) throws DotDataException {
+    RoleAPI roleAPI = APILocator.getRoleAPI();
+    return roleAPI.doesUserHaveRole(user, roleAPI.loadCMSAdminRole());
+  }
+
+  @Override
+  public void updatePassword(
+      User user, String newpass, User currentUser, boolean respectFrontEndRoles)
+      throws DotDataException, DotInvalidPasswordException, DotSecurityException {
+    if (!PwdToolkitUtil.validate(newpass)) {
+      throw new DotInvalidPasswordException("Invalid password");
+    }
+
+    // Use new password hash method
+    try {
+      user.setPassword(PasswordFactoryProxy.generateHash(newpass));
+    } catch (PasswordException e) {
+      Logger.error(
+          UserAPIImpl.class,
+          "An error occurred generating the hashed password for userId: " + user.getUserId(),
+          e);
+      throw new DotDataException("An error occurred generating the hashed password.");
+    }
+
+    user.setIcqId("");
+    user.setPasswordReset(
+        GetterUtil.getBoolean(PropsUtil.get(PropsUtil.PASSWORDS_CHANGE_ON_FIRST_USE)));
+    save(user, currentUser, respectFrontEndRoles);
+  }
+
+  @WrapInTransaction
+  @Override
+  public void markToDelete(User userToDelete) throws DotDataException {
+    userToDelete.setDeleteInProgress(true);
+    userToDelete.setDeleteDate(Calendar.getInstance().getTime());
+    userFactory.saveUser(userToDelete);
+  }
+
+  @CloseDBIfOpened
+  @Override
+  public List<User> getUnDeletedUsers() throws DotDataException {
+    return userFactory.getUnDeletedUsers();
+  }
 }

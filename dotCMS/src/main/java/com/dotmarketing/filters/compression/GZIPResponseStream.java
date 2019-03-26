@@ -1,14 +1,12 @@
 package com.dotmarketing.filters.compression;
 
+import com.dotmarketing.util.Logger;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.zip.GZIPOutputStream;
-
 import javax.servlet.ServletOutputStream;
 import javax.servlet.WriteListener;
 import javax.servlet.http.HttpServletResponse;
-
-import com.dotmarketing.util.Logger;
 
 public class GZIPResponseStream extends ServletOutputStream {
   protected ByteArrayOutputStream baos = null;
@@ -30,9 +28,7 @@ public class GZIPResponseStream extends ServletOutputStream {
     return false;
   }
 
-  public void setWriteListener(WriteListener writeListener) {
-
-  }
+  public void setWriteListener(WriteListener writeListener) {}
 
   public void close() throws IOException {
     if (closed) {
@@ -42,9 +38,7 @@ public class GZIPResponseStream extends ServletOutputStream {
 
     byte[] bytes = baos.toByteArray();
 
-
-    response.addHeader("Content-Length", 
-                       Integer.toString(bytes.length)); 
+    response.addHeader("Content-Length", Integer.toString(bytes.length));
     response.addHeader("Content-Encoding", "gzip");
     output.write(bytes);
     output.flush();
@@ -63,7 +57,7 @@ public class GZIPResponseStream extends ServletOutputStream {
     if (closed) {
       throw new IOException("Cannot write to a closed output stream");
     }
-    gzipstream.write((byte)b);
+    gzipstream.write((byte) b);
   }
 
   public void write(byte b[]) throws IOException {
@@ -81,10 +75,6 @@ public class GZIPResponseStream extends ServletOutputStream {
   public boolean closed() {
     return (this.closed);
   }
-  
-  public void reset() {
-  }
 
-
-
+  public void reset() {}
 }

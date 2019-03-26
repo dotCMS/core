@@ -1,25 +1,21 @@
 /**
  * Copyright (c) 2000-2005 Liferay, LLC. All rights reserved.
  *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
+ * <p>Permission is hereby granted, free of charge, to any person obtaining a copy of this software
+ * and associated documentation files (the "Software"), to deal in the Software without restriction,
+ * including without limitation the rights to use, copy, modify, merge, publish, distribute,
+ * sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
  *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
+ * <p>The above copyright notice and this permission notice shall be included in all copies or
+ * substantial portions of the Software.
  *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
+ * <p>THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
+ * BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+ * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-
 package com.liferay.portal.struts;
 
 import com.dotcms.repackage.javax.portlet.ActionRequest;
@@ -64,328 +60,296 @@ import org.apache.struts.config.ModuleConfig;
 /**
  * <a href="PortletRequestProcessor.java.html"><b><i>View Source</i></b></a>
  *
- * @author  Brian Wing Shun Chan
+ * @author Brian Wing Shun Chan
  * @version $Revision: 1.24 $
- *
  */
 public class PortletRequestProcessor extends StxxTilesRequestProcessor {
 
-	public PortletRequestProcessor(ActionServlet servlet, ModuleConfig config)
-		throws ServletException {
+  public PortletRequestProcessor(ActionServlet servlet, ModuleConfig config)
+      throws ServletException {
 
-		init(servlet, config);
-	}
+    init(servlet, config);
+  }
 
-	public void process(RenderRequest req, RenderResponse res)
-		throws IOException, ServletException {
+  public void process(RenderRequest req, RenderResponse res) throws IOException, ServletException {
 
-		RenderRequestImpl reqImpl = (RenderRequestImpl)req;
-		RenderResponseImpl resImpl = (RenderResponseImpl)res;
+    RenderRequestImpl reqImpl = (RenderRequestImpl) req;
+    RenderResponseImpl resImpl = (RenderResponseImpl) res;
 
-		HttpServletRequest httpReq = reqImpl.getHttpServletRequest();
-		HttpServletResponse httpRes = resImpl.getHttpServletResponse();
+    HttpServletRequest httpReq = reqImpl.getHttpServletRequest();
+    HttpServletResponse httpRes = resImpl.getHttpServletResponse();
 
-		process(httpReq, httpRes);
-	}
+    process(httpReq, httpRes);
+  }
 
-	public void process(ActionRequest req, ActionResponse res, String path)
-		throws IOException, ServletException {
+  public void process(ActionRequest req, ActionResponse res, String path)
+      throws IOException, ServletException {
 
-		ActionRequestImpl reqImpl = (ActionRequestImpl)req;
-		ActionResponseImpl resImpl = (ActionResponseImpl)res;
+    ActionRequestImpl reqImpl = (ActionRequestImpl) req;
+    ActionResponseImpl resImpl = (ActionResponseImpl) res;
 
-		HttpServletRequest httpReq = reqImpl.getHttpServletRequest();
-		HttpServletResponse httpRes = resImpl.getHttpServletResponse();
+    HttpServletRequest httpReq = reqImpl.getHttpServletRequest();
+    HttpServletResponse httpRes = resImpl.getHttpServletResponse();
 
-		ActionMapping mapping = processMapping(httpReq, httpRes, path);
-		if (mapping == null) {
-			return;
-		}
-
-		if (!processRoles(httpReq, httpRes, mapping)) {
-			return;
-		}
-
-		ActionForm form = processActionForm(httpReq, httpRes, mapping);
-		processPopulate(httpReq, httpRes, form, mapping);
-		if (!processValidateAction(httpReq, httpRes, form, mapping)) {
-			return;
-		}
-
-		PortletAction action =
-			(PortletAction)processActionCreate(httpReq, httpRes, mapping);
-		if (action == null) {
-			return;
-		}
-
-		PortletConfigImpl portletConfig =
-			(PortletConfigImpl)req.getAttribute(WebKeys.JAVAX_PORTLET_CONFIG);
-
-		try {
-			action.processAction(mapping, form, portletConfig, req, res);
-		}
-		catch (Exception e) {
-			String exceptionId =
-				WebKeys.PORTLET_STRUTS_EXCEPTION + StringPool.PERIOD +
-					portletConfig.getPortletId();
-
-			req.setAttribute(exceptionId, e);
-		}
-
-		String forward =
-			(String)req.getAttribute(WebKeys.PORTLET_STRUTS_FORWARD);
-
-		if (forward != null) {
-			String queryString = StringPool.BLANK;
-
-			int pos = forward.indexOf("?");
-			if (pos != -1) {
-				queryString = forward.substring(pos + 1, forward.length());
-				forward = forward.substring(0, pos);
-			}
-
-			ActionForward actionForward = mapping.findForward(forward);
-
-			if ((actionForward != null) && (actionForward.getRedirect())) {
-				if (forward.startsWith("/")) {
-					PortletURLImpl forwardURL =
-						(PortletURLImpl)resImpl.createRenderURL();
-
-					forwardURL.setParameter("struts_action", forward);
-
-					StrutsURLEncoder.setParameters(forwardURL, queryString);
-
-					forward = forwardURL.toString();
-				}
-				if( forward.contains("?")){
-					forward = forward + "&r=" + System.currentTimeMillis();
-				}
-				else{
-					forward = forward + "?r=" + System.currentTimeMillis();
-				}
-				res.sendRedirect(SecurityUtils.stripReferer(httpReq, forward));
-			}
-		}
-	}
-
-	protected ActionForward processActionPerform(
-			HttpServletRequest req, HttpServletResponse res, Action action,
-			ActionForm form, ActionMapping mapping)
-		throws IOException, ServletException {
-
-		PortletConfigImpl portletConfig =
-			(PortletConfigImpl)req.getAttribute(WebKeys.JAVAX_PORTLET_CONFIG);
-
-		String exceptionId =
-			WebKeys.PORTLET_STRUTS_EXCEPTION + StringPool.PERIOD +
-				portletConfig.getPortletId();
-
-		Exception e = (Exception)req.getAttribute(exceptionId);
-
-		if (e != null) {
-			return processException(req, res, e, form, mapping);
-		}
-		else {
-			return super.processActionPerform(req, res, action, form, mapping);
-		}
+    ActionMapping mapping = processMapping(httpReq, httpRes, path);
+    if (mapping == null) {
+      return;
     }
 
-	protected void processForwardConfig(
-			HttpServletRequest req, HttpServletResponse res,
-			ForwardConfig forward)
-		throws IOException, ServletException {
+    if (!processRoles(httpReq, httpRes, mapping)) {
+      return;
+    }
 
-		if (forward == null) {
-			_log.error("Forward does not exist");
-		}
+    ActionForm form = processActionForm(httpReq, httpRes, mapping);
+    processPopulate(httpReq, httpRes, form, mapping);
+    if (!processValidateAction(httpReq, httpRes, form, mapping)) {
+      return;
+    }
 
-		super.processForwardConfig(req, res, forward);
-	}
+    PortletAction action = (PortletAction) processActionCreate(httpReq, httpRes, mapping);
+    if (action == null) {
+      return;
+    }
 
-	public ActionMapping processMapping(
-			HttpServletRequest req, HttpServletResponse res, String path)
-		throws IOException {
+    PortletConfigImpl portletConfig =
+        (PortletConfigImpl) req.getAttribute(WebKeys.JAVAX_PORTLET_CONFIG);
 
-		if (path == null) {
-			return null;
-		}
+    try {
+      action.processAction(mapping, form, portletConfig, req, res);
+    } catch (Exception e) {
+      String exceptionId =
+          WebKeys.PORTLET_STRUTS_EXCEPTION + StringPool.PERIOD + portletConfig.getPortletId();
 
-		return super.processMapping(req, res, path);
-	}
+      req.setAttribute(exceptionId, e);
+    }
 
-	protected boolean processRoles(
-			HttpServletRequest req, HttpServletResponse res,
-			ActionMapping mapping)
-		throws IOException, ServletException {
+    String forward = (String) req.getAttribute(WebKeys.PORTLET_STRUTS_FORWARD);
 
-		User user = null;
+    if (forward != null) {
+      String queryString = StringPool.BLANK;
 
-		try {
-			user = PortalUtil.getUser(req);
-		}
-		catch (Exception e) {
-		}
+      int pos = forward.indexOf("?");
+      if (pos != -1) {
+        queryString = forward.substring(pos + 1, forward.length());
+        forward = forward.substring(0, pos);
+      }
 
-		String path = mapping.getPath();
+      ActionForward actionForward = mapping.findForward(forward);
 
-		if (user != null) {
-			try {
-				String strutsPath = path.substring(
-					1, path.lastIndexOf(StringPool.SLASH));
+      if ((actionForward != null) && (actionForward.getRedirect())) {
+        if (forward.startsWith("/")) {
+          PortletURLImpl forwardURL = (PortletURLImpl) resImpl.createRenderURL();
 
-				Portlet portlet = PortletManagerUtil.getPortletByStrutsPath(
-					user.getCompanyId(), strutsPath);
+          forwardURL.setParameter("struts_action", forward);
 
-				if (portlet != null && portlet.isActive()) {
-//					if (!RoleLocalManagerUtil.hasRoles(
-//							user.getUserId(), portlet.getRolesArray())) {
-//						
-//						
-//						throw new PrincipalException();
-//					}
-				}
-				else if (portlet != null && !portlet.isActive()) {
-					ForwardConfig forwardConfig =
-						mapping.findForward(_PATH_PORTAL_PORTLET_INACTIVE);
+          StrutsURLEncoder.setParameters(forwardURL, queryString);
 
-					processForwardConfig(req, res, forwardConfig);
+          forward = forwardURL.toString();
+        }
+        if (forward.contains("?")) {
+          forward = forward + "&r=" + System.currentTimeMillis();
+        } else {
+          forward = forward + "?r=" + System.currentTimeMillis();
+        }
+        res.sendRedirect(SecurityUtils.stripReferer(httpReq, forward));
+      }
+    }
+  }
 
-					return false;
-				}
-			}
-			catch (Exception e) {
-				ForwardConfig forwardConfig =
-					mapping.findForward(_PATH_PORTAL_PORTLET_ACCESS_DENIED);
+  protected ActionForward processActionPerform(
+      HttpServletRequest req,
+      HttpServletResponse res,
+      Action action,
+      ActionForm form,
+      ActionMapping mapping)
+      throws IOException, ServletException {
 
-				processForwardConfig(req, res, forwardConfig);
+    PortletConfigImpl portletConfig =
+        (PortletConfigImpl) req.getAttribute(WebKeys.JAVAX_PORTLET_CONFIG);
 
-				return false;
-			}
-		}
+    String exceptionId =
+        WebKeys.PORTLET_STRUTS_EXCEPTION + StringPool.PERIOD + portletConfig.getPortletId();
 
-		return true;
-	}
+    Exception e = (Exception) req.getAttribute(exceptionId);
 
-	protected boolean processValidateAction(
-			HttpServletRequest req, HttpServletResponse res, ActionForm form,
-			ActionMapping mapping)
-		throws IOException, ServletException {
+    if (e != null) {
+      return processException(req, res, e, form, mapping);
+    } else {
+      return super.processActionPerform(req, res, action, form, mapping);
+    }
+  }
 
-		if (form == null) {
-			return true;
-		}
+  protected void processForwardConfig(
+      HttpServletRequest req, HttpServletResponse res, ForwardConfig forward)
+      throws IOException, ServletException {
 
-		if (req.getAttribute(Globals.CANCEL_KEY) != null) {
-			return true;
-		}
+    if (forward == null) {
+      _log.error("Forward does not exist");
+    }
 
-		if (!mapping.getValidate()) {
-			return true;
-		}
+    super.processForwardConfig(req, res, forward);
+  }
 
-		ActionErrors errors = form.validate(mapping, req);
-		if ((errors == null) || errors.isEmpty()) {
-			return true;
-		}
+  public ActionMapping processMapping(HttpServletRequest req, HttpServletResponse res, String path)
+      throws IOException {
 
-		if (form.getMultipartRequestHandler() != null) {
-			form.getMultipartRequestHandler().rollback();
-		}
+    if (path == null) {
+      return null;
+    }
 
-		String input = mapping.getInput();
-		if (input == null) {
-			_log.error("Validation failed but no input form is available");
+    return super.processMapping(req, res, path);
+  }
 
-			return false;
-		}
+  protected boolean processRoles(
+      HttpServletRequest req, HttpServletResponse res, ActionMapping mapping)
+      throws IOException, ServletException {
 
-		req.setAttribute(Globals.ERROR_KEY, errors);
+    User user = null;
 
-		// Struts normally calls internalModuleRelativeForward which breaks
-		// if called inside processAction
+    try {
+      user = PortalUtil.getUser(req);
+    } catch (Exception e) {
+    }
 
-		req.setAttribute(WebKeys.PORTLET_STRUTS_FORWARD, input);
+    String path = mapping.getPath();
 
-		return false;
-	}
+    if (user != null) {
+      try {
+        String strutsPath = path.substring(1, path.lastIndexOf(StringPool.SLASH));
 
-	protected void doForward(
-			String uri, HttpServletRequest req, HttpServletResponse res)
-		throws IOException, ServletException {
+        Portlet portlet =
+            PortletManagerUtil.getPortletByStrutsPath(user.getCompanyId(), strutsPath);
 
-		doInclude(uri, req, res);
-	}
+        if (portlet != null && portlet.isActive()) {
+          //					if (!RoleLocalManagerUtil.hasRoles(
+          //							user.getUserId(), portlet.getRolesArray())) {
+          //
+          //
+          //						throw new PrincipalException();
+          //					}
+        } else if (portlet != null && !portlet.isActive()) {
+          ForwardConfig forwardConfig = mapping.findForward(_PATH_PORTAL_PORTLET_INACTIVE);
 
-	protected void doInclude(
-			String uri, HttpServletRequest req, HttpServletResponse res)
-		throws IOException, ServletException {
+          processForwardConfig(req, res, forwardConfig);
 
-		PortletConfigImpl portletConfig =
-			(PortletConfigImpl)req.getAttribute(WebKeys.JAVAX_PORTLET_CONFIG);
+          return false;
+        }
+      } catch (Exception e) {
+        ForwardConfig forwardConfig = mapping.findForward(_PATH_PORTAL_PORTLET_ACCESS_DENIED);
 
-		RenderRequest renderRequest =
-			(RenderRequest)req.getAttribute(WebKeys.JAVAX_PORTLET_REQUEST);
+        processForwardConfig(req, res, forwardConfig);
 
-		RenderResponse renderResponse =
-			(RenderResponse)req.getAttribute(WebKeys.JAVAX_PORTLET_RESPONSE);
+        return false;
+      }
+    }
 
-		PortletRequestDispatcherImpl prd = (PortletRequestDispatcherImpl)
-			portletConfig.getPortletContext().getRequestDispatcher(
-				Constants.TEXT_HTML_DIR + uri);
+    return true;
+  }
 
-		try {
-			if (prd == null) {
-				_log.error(uri + " is not a valid include");
-			}
-			else {
-				prd.include(renderRequest, renderResponse, true);
-			}
-		}
-		catch (PortletException pe) {
-			Throwable cause = pe.getCause();
+  protected boolean processValidateAction(
+      HttpServletRequest req, HttpServletResponse res, ActionForm form, ActionMapping mapping)
+      throws IOException, ServletException {
 
-			if (cause instanceof ServletException) {
-				throw (ServletException)cause;
-			}
-			else {
-				Logger.error(this,cause.getMessage(),cause);
-			}
-		}
-	}
+    if (form == null) {
+      return true;
+    }
 
-	protected HttpServletRequest processMultipart(HttpServletRequest req) {
-		return req;
-	}
+    if (req.getAttribute(Globals.CANCEL_KEY) != null) {
+      return true;
+    }
 
-	protected String processPath(
-			HttpServletRequest req, HttpServletResponse res)
-		throws IOException {
+    if (!mapping.getValidate()) {
+      return true;
+    }
 
-		String path = req.getParameter("struts_action");
+    ActionErrors errors = form.validate(mapping, req);
+    if ((errors == null) || errors.isEmpty()) {
+      return true;
+    }
 
-		if (Validator.isNull(path)) {
-			path = (String)req.getAttribute(WebKeys.PORTLET_STRUTS_ACTION);
-		}
+    if (form.getMultipartRequestHandler() != null) {
+      form.getMultipartRequestHandler().rollback();
+    }
 
-		if (path == null) {
-			PortletConfigImpl portletConfig =
-				(PortletConfigImpl)req.getAttribute(
-					WebKeys.JAVAX_PORTLET_CONFIG);
+    String input = mapping.getInput();
+    if (input == null) {
+      _log.error("Validation failed but no input form is available");
 
-			_log.error(
-				portletConfig.getPortletName() +
-					" does not have any paths specified");
-		}
+      return false;
+    }
 
-		return path;
-	}
+    req.setAttribute(Globals.ERROR_KEY, errors);
 
-	private static final Log _log =
-		LogFactory.getLog(PortletRequestProcessor.class);
+    // Struts normally calls internalModuleRelativeForward which breaks
+    // if called inside processAction
 
-	private static String _PATH_PORTAL_PORTLET_ACCESS_DENIED =
-		"/portal/portlet_access_denied";
-	private static String _PATH_PORTAL_PORTLET_INACTIVE =
-		"/portal/portlet_inactive";
+    req.setAttribute(WebKeys.PORTLET_STRUTS_FORWARD, input);
 
+    return false;
+  }
+
+  protected void doForward(String uri, HttpServletRequest req, HttpServletResponse res)
+      throws IOException, ServletException {
+
+    doInclude(uri, req, res);
+  }
+
+  protected void doInclude(String uri, HttpServletRequest req, HttpServletResponse res)
+      throws IOException, ServletException {
+
+    PortletConfigImpl portletConfig =
+        (PortletConfigImpl) req.getAttribute(WebKeys.JAVAX_PORTLET_CONFIG);
+
+    RenderRequest renderRequest = (RenderRequest) req.getAttribute(WebKeys.JAVAX_PORTLET_REQUEST);
+
+    RenderResponse renderResponse =
+        (RenderResponse) req.getAttribute(WebKeys.JAVAX_PORTLET_RESPONSE);
+
+    PortletRequestDispatcherImpl prd =
+        (PortletRequestDispatcherImpl)
+            portletConfig.getPortletContext().getRequestDispatcher(Constants.TEXT_HTML_DIR + uri);
+
+    try {
+      if (prd == null) {
+        _log.error(uri + " is not a valid include");
+      } else {
+        prd.include(renderRequest, renderResponse, true);
+      }
+    } catch (PortletException pe) {
+      Throwable cause = pe.getCause();
+
+      if (cause instanceof ServletException) {
+        throw (ServletException) cause;
+      } else {
+        Logger.error(this, cause.getMessage(), cause);
+      }
+    }
+  }
+
+  protected HttpServletRequest processMultipart(HttpServletRequest req) {
+    return req;
+  }
+
+  protected String processPath(HttpServletRequest req, HttpServletResponse res) throws IOException {
+
+    String path = req.getParameter("struts_action");
+
+    if (Validator.isNull(path)) {
+      path = (String) req.getAttribute(WebKeys.PORTLET_STRUTS_ACTION);
+    }
+
+    if (path == null) {
+      PortletConfigImpl portletConfig =
+          (PortletConfigImpl) req.getAttribute(WebKeys.JAVAX_PORTLET_CONFIG);
+
+      _log.error(portletConfig.getPortletName() + " does not have any paths specified");
+    }
+
+    return path;
+  }
+
+  private static final Log _log = LogFactory.getLog(PortletRequestProcessor.class);
+
+  private static String _PATH_PORTAL_PORTLET_ACCESS_DENIED = "/portal/portlet_access_denied";
+  private static String _PATH_PORTAL_PORTLET_INACTIVE = "/portal/portlet_inactive";
 }

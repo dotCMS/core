@@ -10,13 +10,12 @@ import java.util.List;
  */
 public interface RangeLoader {
 
-	/**
-	 * Fetch a set of ranges, usually over HTTP
-	 * 
-	 * @param rangeList
-	 * @return
-	 * @throws Exception 
-	 */
-	public byte[] get(List<Range> rangeList) throws Exception;
-	
+  /**
+   * Fetch a set of ranges, usually over HTTP
+   *
+   * @param rangeList
+   * @return
+   * @throws Exception
+   */
+  public byte[] get(List<Range> rangeList) throws Exception;
 }

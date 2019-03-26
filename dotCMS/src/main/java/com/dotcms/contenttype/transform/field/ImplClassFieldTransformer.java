@@ -1,13 +1,11 @@
 package com.dotcms.contenttype.transform.field;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotmarketing.business.DotStateException;
-
+import java.util.ArrayList;
+import java.util.List;
 
 public class ImplClassFieldTransformer implements FieldTransformer {
 
@@ -23,11 +21,9 @@ public class ImplClassFieldTransformer implements FieldTransformer {
 
   @Override
   public Field from() throws DotStateException {
-    if (this.genericFields.size() == 0)
-      throw new DotStateException("0 results");
+    if (this.genericFields.size() == 0) throw new DotStateException("0 results");
     Field field = impleClass(this.genericFields.get(0));
     return field;
-
   }
 
   private static Field impleClass(final Field genericField) {
@@ -49,6 +45,5 @@ public class ImplClassFieldTransformer implements FieldTransformer {
     }
 
     return ImmutableList.copyOf(list);
-
   }
 }

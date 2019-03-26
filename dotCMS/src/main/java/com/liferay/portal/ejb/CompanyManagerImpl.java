@@ -1,25 +1,21 @@
 /**
  * Copyright (c) 2000-2005 Liferay, LLC. All rights reserved.
  *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
+ * <p>Permission is hereby granted, free of charge, to any person obtaining a copy of this software
+ * and associated documentation files (the "Software"), to deal in the Software without restriction,
+ * including without limitation the rights to use, copy, modify, merge, publish, distribute,
+ * sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
  *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
+ * <p>The above copyright notice and this permission notice shall be included in all copies or
+ * substantial portions of the Software.
  *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
+ * <p>THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
+ * BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+ * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-
 package com.liferay.portal.ejb;
 
 import com.dotmarketing.common.db.DotConnect;
@@ -35,218 +31,229 @@ import com.liferay.portal.util.PropsUtil;
 import com.liferay.util.FileUtil;
 import com.liferay.util.GetterUtil;
 import com.liferay.util.ImageUtil;
-
-import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import javax.imageio.ImageIO;
 
 /**
- * 
- * @author  Brian Wing Shun Chan
+ * @author Brian Wing Shun Chan
  * @version $Revision: 1.3 $
- *
  */
-public class CompanyManagerImpl
-	extends PrincipalBean implements CompanyManager {
+public class CompanyManagerImpl extends PrincipalBean implements CompanyManager {
 
-	// Business methods
+  // Business methods
 
-	public Company getCompany() throws PortalException, SystemException {
-		Company company =
-			CompanyUtil.findByPrimaryKey(getUser().getCompanyId());
+  public Company getCompany() throws PortalException, SystemException {
+    Company company = CompanyUtil.findByPrimaryKey(getUser().getCompanyId());
 
-		return (Company)company.getProtected();
-	}
+    return (Company) company.getProtected();
+  }
 
-	public Company getCompany(String companyId)
-		throws PortalException, SystemException {
+  public Company getCompany(String companyId) throws PortalException, SystemException {
 
-		Company company = CompanyUtil.findByPrimaryKey(companyId);
+    Company company = CompanyUtil.findByPrimaryKey(companyId);
 
-		return (Company)company.getProtected();
-	}
+    return (Company) company.getProtected();
+  }
 
-	public List getUsers() throws PortalException, SystemException {
-		String companyId = getUser().getCompanyId();
+  public List getUsers() throws PortalException, SystemException {
+    String companyId = getUser().getCompanyId();
 
-		if (hasAdministrator(companyId)) {
-			return UserUtil.findByCompanyId(companyId);
-		}
-		else {
-			List users = new ArrayList();
+    if (hasAdministrator(companyId)) {
+      return UserUtil.findByCompanyId(companyId);
+    } else {
+      List users = new ArrayList();
 
-			Iterator itr = UserUtil.findByCompanyId(companyId).iterator();
+      Iterator itr = UserUtil.findByCompanyId(companyId).iterator();
 
-			while (itr.hasNext()) {
-				users.add((User)((User)itr.next()).getProtected());
-			}
+      while (itr.hasNext()) {
+        users.add((User) ((User) itr.next()).getProtected());
+      }
 
-			return users;
-		}
-	}
+      return users;
+    }
+  }
 
-	public Company updateCompany(
-			String portalURL, String homeURL, String mx, String name,
-			String shortName, String type, String size, String street,
-			String city, String state, String zip, String phone, String fax,
-			String emailAddress, String authType, boolean autoLogin,
-			boolean strangers)
-		throws PortalException, SystemException {
+  public Company updateCompany(
+      String portalURL,
+      String homeURL,
+      String mx,
+      String name,
+      String shortName,
+      String type,
+      String size,
+      String street,
+      String city,
+      String state,
+      String zip,
+      String phone,
+      String fax,
+      String emailAddress,
+      String authType,
+      boolean autoLogin,
+      boolean strangers)
+      throws PortalException, SystemException {
 
-		Company company =
-			CompanyUtil.findByPrimaryKey(getUser().getCompanyId());
+    Company company = CompanyUtil.findByPrimaryKey(getUser().getCompanyId());
 
-		if (!hasAdministrator(company.getCompanyId())) {
-			throw new PrincipalException();
-		}
+    if (!hasAdministrator(company.getCompanyId())) {
+      throw new PrincipalException();
+    }
 
-		company.setPortalURL(portalURL);
-		company.setHomeURL(homeURL);
+    company.setPortalURL(portalURL);
+    company.setHomeURL(homeURL);
 
-		if (GetterUtil.get(
-				PropsUtil.get(PropsUtil.MAIL_MX_UPDATE), true)) {
+    if (GetterUtil.get(PropsUtil.get(PropsUtil.MAIL_MX_UPDATE), true)) {
 
-			company.setMx(mx);
-		}
+      company.setMx(mx);
+    }
 
-		company.setName(name);
-		company.setShortName(shortName);
-		company.setType(type);
-		company.setSize(size);
-		company.setStreet(street);
-		company.setCity(city);
-		company.setState(state);
-		company.setZip(zip);
-		company.setPhone(phone);
-		company.setFax(fax);
-		company.setEmailAddress(emailAddress);
-		company.setAuthType(authType);
-		company.setAutoLogin(autoLogin);
-		company.setStrangers(strangers);
+    company.setName(name);
+    company.setShortName(shortName);
+    company.setType(type);
+    company.setSize(size);
+    company.setStreet(street);
+    company.setCity(city);
+    company.setState(state);
+    company.setZip(zip);
+    company.setPhone(phone);
+    company.setFax(fax);
+    company.setEmailAddress(emailAddress);
+    company.setAuthType(authType);
+    company.setAutoLogin(autoLogin);
+    company.setStrangers(strangers);
 
-		CompanyUtil.update(company);
+    CompanyUtil.update(company);
 
-		return company;
-	}
+    return company;
+  }
 
-	public Company updateCompany(Company company) throws SystemException {
-		return CompanyUtil.update(company);
-	}
-	
-	public void updateDefaultUser(
-			String languageId, String timeZoneId, String skinId,
-			boolean dottedSkins, boolean roundedSkins, String resolution)
-		throws PortalException, SystemException {
+  public Company updateCompany(Company company) throws SystemException {
+    return CompanyUtil.update(company);
+  }
 
-		Company company =
-			CompanyUtil.findByPrimaryKey(getUser().getCompanyId());
+  public void updateDefaultUser(
+      String languageId,
+      String timeZoneId,
+      String skinId,
+      boolean dottedSkins,
+      boolean roundedSkins,
+      String resolution)
+      throws PortalException, SystemException {
 
-		if (!hasAdministrator(company.getCompanyId())) {
-			throw new PrincipalException();
-		}
+    Company company = CompanyUtil.findByPrimaryKey(getUser().getCompanyId());
 
-		User defaultUser =
-			UserLocalManagerUtil.getDefaultUser(company.getCompanyId());
+    if (!hasAdministrator(company.getCompanyId())) {
+      throw new PrincipalException();
+    }
 
-		defaultUser.setLanguageId(languageId);
-		defaultUser.setTimeZoneId(timeZoneId);
-		defaultUser.setSkinId(skinId);
-		defaultUser.setDottedSkins(dottedSkins);
-		defaultUser.setRoundedSkins(roundedSkins);
-		defaultUser.setResolution(resolution);
+    User defaultUser = UserLocalManagerUtil.getDefaultUser(company.getCompanyId());
 
-		UserUtil.update(defaultUser);
-	}
+    defaultUser.setLanguageId(languageId);
+    defaultUser.setTimeZoneId(timeZoneId);
+    defaultUser.setSkinId(skinId);
+    defaultUser.setDottedSkins(dottedSkins);
+    defaultUser.setRoundedSkins(roundedSkins);
+    defaultUser.setResolution(resolution);
 
-	public void updateLogo(File file) throws PortalException, SystemException {
-		String companyId = getUser().getCompanyId();
+    UserUtil.update(defaultUser);
+  }
 
-		if (!hasAdministrator(companyId)) {
-			throw new PrincipalException();
-		}
+  public void updateLogo(File file) throws PortalException, SystemException {
+    String companyId = getUser().getCompanyId();
 
-		try {
-			ImageLocalUtil.put(companyId, FileUtil.getBytes(file));
+    if (!hasAdministrator(companyId)) {
+      throw new PrincipalException();
+    }
 
-			BufferedImage thumbnail = ImageUtil.scale(ImageIO.read(file), .6);
+    try {
+      ImageLocalUtil.put(companyId, FileUtil.getBytes(file));
 
-			// PNG
+      BufferedImage thumbnail = ImageUtil.scale(ImageIO.read(file), .6);
 
-			ByteArrayOutputStream baos = new ByteArrayOutputStream();
+      // PNG
 
-			ImageIO.write(thumbnail, "png", baos);
+      ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
-			ImageLocalUtil.put(companyId + ".png", baos.toByteArray());
+      ImageIO.write(thumbnail, "png", baos);
 
-			// WBMP
+      ImageLocalUtil.put(companyId + ".png", baos.toByteArray());
 
-			baos = new ByteArrayOutputStream();
+      // WBMP
 
-			ImageUtil.encodeWBMP(thumbnail, baos);
+      baos = new ByteArrayOutputStream();
 
-			ImageLocalUtil.put(companyId + ".wbmp", baos.toByteArray());
-		}
-		catch (Exception e) {
-			Logger.error(this,e.getMessage(),e);
-		}
-	}
-	
-	public void updateUser(
-			String languageId, String timeZoneId, String skinId,
-			boolean dottedSkins, boolean roundedSkins, String resolution, User user)
-		throws PortalException, SystemException {
+      ImageUtil.encodeWBMP(thumbnail, baos);
 
-		Company company =
-			CompanyUtil.findByPrimaryKey(getUser().getCompanyId());
+      ImageLocalUtil.put(companyId + ".wbmp", baos.toByteArray());
+    } catch (Exception e) {
+      Logger.error(this, e.getMessage(), e);
+    }
+  }
 
-		if (!hasAdministrator(company.getCompanyId())) {
-			throw new PrincipalException();
-		}
-		user.setLanguageId(languageId);
-		user.setTimeZoneId(timeZoneId);
-		user.setSkinId(skinId);
-		user.setDottedSkins(dottedSkins);
-		user.setRoundedSkins(roundedSkins);
-		user.setResolution(resolution);
+  public void updateUser(
+      String languageId,
+      String timeZoneId,
+      String skinId,
+      boolean dottedSkins,
+      boolean roundedSkins,
+      String resolution,
+      User user)
+      throws PortalException, SystemException {
 
-		UserUtil.update(user);
-	}
-	
-	
-	
-	public void updateUsers(String languageId, String timeZoneId, String skinId,
-			boolean dottedSkins, boolean roundedSkins, String resolution)
-		throws PortalException, SystemException,com.dotmarketing.exception.DotRuntimeException {
+    Company company = CompanyUtil.findByPrimaryKey(getUser().getCompanyId());
 
-		String ds  = DbConnectionFactory.getDBFalse();
-		String rs = DbConnectionFactory.getDBFalse();
-		
-		if(dottedSkins)
-			ds = DbConnectionFactory.getDBTrue();
-		if(roundedSkins)
-			rs = DbConnectionFactory.getDBTrue();
-		
-		Company company =
-			CompanyUtil.findByPrimaryKey(getUser().getCompanyId());
-	     try{
-			DotConnect dc = new DotConnect();
-			dc.setSQL("update user_ set languageid = ?, timezoneid = ?, skinid = ?, dottedskins = " + rs + ", roundedskins = " + ds + ", resolution = ? where companyid = ? " +
-				" and user_.delete_in_progress = " + DbConnectionFactory.getDBFalse());
-			dc.addParam(languageId);
-			dc.addParam(timeZoneId);
-			dc.addParam(skinId);
-			dc.addParam(resolution);
-			dc.addParam(company.getCompanyId());
-			dc.getResult();
-		}catch (Exception e) {
-			throw new DotRuntimeException(e.getMessage(),e);
-		}
-	
-	}
+    if (!hasAdministrator(company.getCompanyId())) {
+      throw new PrincipalException();
+    }
+    user.setLanguageId(languageId);
+    user.setTimeZoneId(timeZoneId);
+    user.setSkinId(skinId);
+    user.setDottedSkins(dottedSkins);
+    user.setRoundedSkins(roundedSkins);
+    user.setResolution(resolution);
 
-	
+    UserUtil.update(user);
+  }
+
+  public void updateUsers(
+      String languageId,
+      String timeZoneId,
+      String skinId,
+      boolean dottedSkins,
+      boolean roundedSkins,
+      String resolution)
+      throws PortalException, SystemException, com.dotmarketing.exception.DotRuntimeException {
+
+    String ds = DbConnectionFactory.getDBFalse();
+    String rs = DbConnectionFactory.getDBFalse();
+
+    if (dottedSkins) ds = DbConnectionFactory.getDBTrue();
+    if (roundedSkins) rs = DbConnectionFactory.getDBTrue();
+
+    Company company = CompanyUtil.findByPrimaryKey(getUser().getCompanyId());
+    try {
+      DotConnect dc = new DotConnect();
+      dc.setSQL(
+          "update user_ set languageid = ?, timezoneid = ?, skinid = ?, dottedskins = "
+              + rs
+              + ", roundedskins = "
+              + ds
+              + ", resolution = ? where companyid = ? "
+              + " and user_.delete_in_progress = "
+              + DbConnectionFactory.getDBFalse());
+      dc.addParam(languageId);
+      dc.addParam(timeZoneId);
+      dc.addParam(skinId);
+      dc.addParam(resolution);
+      dc.addParam(company.getCompanyId());
+      dc.getResult();
+    } catch (Exception e) {
+      throw new DotRuntimeException(e.getMessage(), e);
+    }
+  }
 }

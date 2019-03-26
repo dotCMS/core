@@ -15,7 +15,6 @@ import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.InitRequestRequired;
 import com.dotcms.rest.annotation.NoCache;
-
 import com.dotcms.rest.api.LanguageView;
 import com.dotcms.rest.api.v1.I18NForm;
 import com.dotcms.util.ConversionUtils;
@@ -28,112 +27,118 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.util.ReleaseInfo;
 import com.liferay.util.LocaleUtil;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
 import java.io.Serializable;
 import java.util.Locale;
 import java.util.Map;
-
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 
 /**
  * Encapsulates the necessary info to show the login page.
+ *
  * @author jsanca
  */
 @Path("/v1/loginform")
 public class LoginFormResource implements Serializable {
 
-    private final LanguageAPI languageAPI;
-    private final CompanyAPI  companyAPI;
-    private final WebResource webResource;
-    private final ConversionUtils conversionUtils;
-    private final I18NUtil i18NUtil;
+  private final LanguageAPI languageAPI;
+  private final CompanyAPI companyAPI;
+  private final WebResource webResource;
+  private final ConversionUtils conversionUtils;
+  private final I18NUtil i18NUtil;
 
-    @SuppressWarnings("unused")
-    public LoginFormResource() {
-        this(I18NUtil.INSTANCE,
-                APILocator.getLanguageAPI(),
-                ConversionUtils.INSTANCE,
-                APILocator.getCompanyAPI(),
-                new WebResource(new ApiProvider()));
+  @SuppressWarnings("unused")
+  public LoginFormResource() {
+    this(
+        I18NUtil.INSTANCE,
+        APILocator.getLanguageAPI(),
+        ConversionUtils.INSTANCE,
+        APILocator.getCompanyAPI(),
+        new WebResource(new ApiProvider()));
+  }
+
+  @VisibleForTesting
+  protected LoginFormResource(
+      final I18NUtil i18NUtil,
+      final LanguageAPI languageAPI,
+      final ConversionUtils conversionUtils,
+      final CompanyAPI companyAPI,
+      final WebResource webResource) {
+
+    this.i18NUtil = i18NUtil;
+    this.conversionUtils = conversionUtils;
+    this.languageAPI = languageAPI;
+    this.companyAPI = companyAPI;
+    this.webResource = webResource;
+  }
+
+  // todo: add the https annotation
+  @POST
+  @JSONP
+  @NoCache
+  @InitRequestRequired
+  @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+  public final Response loginForm(
+      @Context final HttpServletRequest request, final I18NForm i18nForm) {
+
+    Response res = null;
+
+    try {
+
+      final Company defaultCompany = this.companyAPI.getDefaultCompany();
+
+      final LoginFormResultView.Builder builder = new LoginFormResultView.Builder();
+
+      final HttpSession session = request.getSession();
+
+      // Trying to find out and process the locale to use
+      LocaleUtil.processCustomLocale(request, session);
+
+      final Map<String, String> messagesMap =
+          this.i18NUtil.getMessagesMap(
+              // if the user set's a switch, it overrides the session too.
+              i18nForm.getCountry(),
+              i18nForm.getLanguage(),
+              i18nForm.getMessagesKey(),
+              request,
+              true); // want to create a session to store the locale.
+
+      final Locale userLocale =
+          LocaleUtil.getLocale(request, i18nForm.getCountry(), i18nForm.getLanguage());
+
+      builder
+          .serverId(LicenseUtil.getDisplayServerId())
+          .levelName(LicenseUtil.getLevelName())
+          .version(ReleaseInfo.getVersion())
+          .buildDateString(ReleaseInfo.getBuildDateString())
+          .languages(
+              this.conversionUtils.convert(
+                  LanguageUtil.getAvailableLocales(),
+                  (final Locale locale) -> {
+                    return new LanguageView(
+                        locale.getLanguage(), locale.getCountry(), locale.getDisplayName(locale));
+                  }))
+          .backgroundColor(defaultCompany.getSize())
+          .backgroundPicture(defaultCompany.getHomeURL())
+          .logo(this.companyAPI.getLogoPath(defaultCompany))
+          .authorizationType(defaultCompany.getAuthType())
+          .currentLanguage(
+              new LanguageView(
+                  userLocale.getLanguage(),
+                  userLocale.getCountry(),
+                  userLocale.getDisplayName(userLocale)))
+          .companyEmail("@" + defaultCompany.getMx());
+
+      res = Response.ok(new ResponseEntityView(builder.build(), messagesMap)).build(); // 200
+
+    } catch (DotSecurityException e) {
+      throw new ForbiddenException(e);
+
+    } catch (Exception e) { // this is an unknown error, so we report as a 500.
+
+      res = Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(e).build();
     }
 
-    @VisibleForTesting
-    protected LoginFormResource(final I18NUtil i18NUtil, final LanguageAPI languageAPI,
-                                     final ConversionUtils conversionUtils,
-                                     final CompanyAPI  companyAPI,
-                                     final WebResource webResource) {
-
-        this.i18NUtil        = i18NUtil;
-        this.conversionUtils = conversionUtils;
-        this.languageAPI     = languageAPI;
-        this.companyAPI      = companyAPI;
-        this.webResource     = webResource;
-    }
-
-    // todo: add the https annotation
-    @POST
-    @JSONP
-    @NoCache
-    @InitRequestRequired
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final Response loginForm(@Context final HttpServletRequest request,
-                                         final I18NForm i18nForm) {
-
-        Response res = null;
-
-        try {
-
-            final Company defaultCompany =
-                    this.companyAPI.getDefaultCompany();
-
-            final LoginFormResultView.Builder builder =
-                    new LoginFormResultView.Builder();
-
-            final HttpSession session =
-                    request.getSession();
-
-            //Trying to find out and process the locale to use
-            LocaleUtil.processCustomLocale(request, session);
-
-            final Map<String, String> messagesMap =
-                    this.i18NUtil.getMessagesMap(
-                            // if the user set's a switch, it overrides the session too.
-                            i18nForm.getCountry(), i18nForm.getLanguage(),
-                            i18nForm.getMessagesKey(), request,
-                            true); // want to create a session to store the locale.
-
-            final Locale userLocale = LocaleUtil.getLocale(request,
-                    i18nForm.getCountry(), i18nForm.getLanguage());
-
-            builder.serverId(LicenseUtil.getDisplayServerId())
-                .levelName(LicenseUtil.getLevelName())
-                .version(ReleaseInfo.getVersion())
-                .buildDateString(ReleaseInfo.getBuildDateString())
-                .languages(this.conversionUtils.convert(LanguageUtil.getAvailableLocales(),
-                        (final Locale locale) -> {
-
-                            return new LanguageView(locale.getLanguage(), locale.getCountry(),
-                                    locale.getDisplayName(locale));
-                        }))
-                .backgroundColor(defaultCompany.getSize())
-                .backgroundPicture(defaultCompany.getHomeURL())
-                .logo(this.companyAPI.getLogoPath(defaultCompany))
-                .authorizationType(defaultCompany.getAuthType())
-                .currentLanguage(new LanguageView(userLocale.getLanguage(), userLocale.getCountry(),
-                            userLocale.getDisplayName(userLocale)))
-                .companyEmail("@" + defaultCompany.getMx());
-
-            res = Response.ok(new ResponseEntityView(builder.build(), messagesMap)).build(); // 200
-
-        } catch (DotSecurityException e) {
-            throw new ForbiddenException(e);
-
-        } catch (Exception e) { // this is an unknown error, so we report as a 500.
-
-            res = Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(e).build();
-        }
-
-        return res;
-    } // authentication
+    return res;
+  } // authentication
 } // E:O:F:LoginFormResource.

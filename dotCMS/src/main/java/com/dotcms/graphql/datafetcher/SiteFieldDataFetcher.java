@@ -6,32 +6,30 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
-
+import graphql.schema.DataFetcher;
+import graphql.schema.DataFetchingEnvironment;
 import java.util.HashMap;
 import java.util.Map;
 
-import graphql.schema.DataFetcher;
-import graphql.schema.DataFetchingEnvironment;
-
 public class SiteFieldDataFetcher implements DataFetcher<Map<String, Object>> {
-    @Override
-    public Map<String, Object> get(final DataFetchingEnvironment environment) throws Exception {
-        try {
-            final User user = ((DotGraphQLContext) environment.getContext()).getUser();
-            final Contentlet contentlet = environment.getSource();
-            final Map<String, Object> siteMap = new HashMap<>();
+  @Override
+  public Map<String, Object> get(final DataFetchingEnvironment environment) throws Exception {
+    try {
+      final User user = ((DotGraphQLContext) environment.getContext()).getUser();
+      final Contentlet contentlet = environment.getSource();
+      final Map<String, Object> siteMap = new HashMap<>();
 
-            final Host host = APILocator.getHostAPI().find(contentlet.getHost(), user, true);
+      final Host host = APILocator.getHostAPI().find(contentlet.getHost(), user, true);
 
-            siteMap.put("hostId", host.getIdentifier());
-            siteMap.put("hostName", host.getHostname());
-            siteMap.put("hostAliases", host.getAliases());
-            siteMap.put("hostTagStorage", host.getTagStorage());
+      siteMap.put("hostId", host.getIdentifier());
+      siteMap.put("hostName", host.getHostname());
+      siteMap.put("hostAliases", host.getAliases());
+      siteMap.put("hostTagStorage", host.getTagStorage());
 
-            return siteMap;
-        } catch (Exception e) {
-            Logger.error(this, e.getMessage(), e);
-            throw e;
-        }
+      return siteMap;
+    } catch (Exception e) {
+      Logger.error(this, e.getMessage(), e);
+      throw e;
     }
+  }
 }

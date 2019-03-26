@@ -1,34 +1,34 @@
-///*
+/// *
 // * CharsetEncodingFilter.java
 // *
 // * Created on 24 October 2007
 // */
-//package com.dotmarketing.filters;
+// package com.dotmarketing.filters;
 //
-//import com.dotmarketing.beans.Host;
-//import com.dotmarketing.business.APILocator;
-//import com.dotmarketing.business.CacheLocator;
-//import com.dotmarketing.business.web.WebAPILocator;
-//import com.dotmarketing.exception.DotDataException;
-//import com.dotmarketing.exception.DotSecurityException;
-//import com.dotmarketing.portlets.rules.actionlet.RuleActionlet;
-//import com.dotmarketing.portlets.rules.business.RulesAPI;
-//import com.dotmarketing.portlets.rules.business.RulesCache;
-//import com.dotmarketing.portlets.rules.model.Rule;
-//import com.dotmarketing.portlets.rules.model.RuleAction;
-//import com.dotmarketing.portlets.rules.model.RuleActionParameter;
-//import com.dotmarketing.util.Logger;
-//import com.dotmarketing.util.UtilMethods;
-//import com.liferay.portal.model.User;
+// import com.dotmarketing.beans.Host;
+// import com.dotmarketing.business.APILocator;
+// import com.dotmarketing.business.CacheLocator;
+// import com.dotmarketing.business.web.WebAPILocator;
+// import com.dotmarketing.exception.DotDataException;
+// import com.dotmarketing.exception.DotSecurityException;
+// import com.dotmarketing.portlets.rules.actionlet.RuleActionlet;
+// import com.dotmarketing.portlets.rules.business.RulesAPI;
+// import com.dotmarketing.portlets.rules.business.RulesCache;
+// import com.dotmarketing.portlets.rules.model.Rule;
+// import com.dotmarketing.portlets.rules.model.RuleAction;
+// import com.dotmarketing.portlets.rules.model.RuleActionParameter;
+// import com.dotmarketing.util.Logger;
+// import com.dotmarketing.util.UtilMethods;
+// import com.liferay.portal.model.User;
 //
-//import javax.servlet.*;
-//import javax.servlet.http.HttpServletRequest;
-//import javax.servlet.http.HttpServletResponse;
-//import java.io.IOException;
-//import java.util.*;
+// import javax.servlet.*;
+// import javax.servlet.http.HttpServletRequest;
+// import javax.servlet.http.HttpServletResponse;
+// import java.io.IOException;
+// import java.util.*;
 //
 //
-//public class RulesEngineFilter implements Filter {
+// public class RulesEngineFilter implements Filter {
 //
 //    private RulesAPI rulesAPI = APILocator.getRulesAPI();
 //    private RulesCache rulesCache = CacheLocator.getRulesCache();
@@ -80,11 +80,12 @@
 //        filterChain.doFilter(request, response);
 //	}
 //
-//    private void executeRules(Collection<Rule> rules, HttpServletRequest req, HttpServletResponse res) throws DotSecurityException, DotDataException {
+//    private void executeRules(Collection<Rule> rules, HttpServletRequest req, HttpServletResponse
+// res) throws DotSecurityException, DotDataException {
 //
 //    }
 //
 //	public void destroy() {
 //	}
 //
-//}
+// }

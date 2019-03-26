@@ -1,33 +1,23 @@
 /**
  * Copyright (c) 2000-2005 Liferay, LLC. All rights reserved.
  *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
+ * <p>Permission is hereby granted, free of charge, to any person obtaining a copy of this software
+ * and associated documentation files (the "Software"), to deal in the Software without restriction,
+ * including without limitation the rights to use, copy, modify, merge, publish, distribute,
+ * sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
  *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
+ * <p>The above copyright notice and this permission notice shall be included in all copies or
+ * substantial portions of the Software.
  *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
+ * <p>THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
+ * BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+ * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-
 package com.liferay.util.dao.hibernate;
 
-import com.dotmarketing.util.Logger;
-import com.liferay.util.GetterUtil;
-import com.liferay.util.dao.DataAccess;
-import com.liferay.util.dao.DriverInfo;
-import java.sql.Connection;
-import java.util.Enumeration;
 import com.dotcms.repackage.net.sf.hibernate.HibernateException;
 import com.dotcms.repackage.net.sf.hibernate.MappingException;
 import com.dotcms.repackage.net.sf.hibernate.cfg.Environment;
@@ -43,307 +33,297 @@ import com.dotcms.repackage.net.sf.hibernate.exception.SQLExceptionConverter;
 import com.dotcms.repackage.net.sf.hibernate.exception.ViolatedConstraintNameExtracter;
 import com.dotcms.repackage.net.sf.hibernate.sql.CaseFragment;
 import com.dotcms.repackage.net.sf.hibernate.sql.JoinFragment;
+import com.dotmarketing.util.Logger;
+import com.liferay.util.GetterUtil;
+import com.liferay.util.dao.DataAccess;
+import com.liferay.util.dao.DriverInfo;
+import java.sql.Connection;
+import java.util.Enumeration;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 /**
  * <a href="DynamicDialect.java.html"><b><i>View Source</i></b></a>
  *
- * @author  Brian Wing Shun Chan
+ * @author Brian Wing Shun Chan
  * @version $Revision: 1.12 $
- *
  */
 public class DynamicDialect extends Dialect {
 
-	public DynamicDialect() {
-
-		// Instantiate the proper dialect
-
-		String datasource = GetterUtil.getString(
-			Environment.getProperties().getProperty(Environment.DATASOURCE,
-			"jdbc/dotCMSPool"));
-
-		try {
-			Connection con = DataAccess.getConnection(datasource);
-
-			String url = con.getMetaData().getURL();
-
-			Class dialectClass = null;
-
-			if (url.startsWith(DriverInfo.DB2_URL)) {
-				dialectClass = DB2Dialect.class;
-			}
-			else if (url.startsWith(DriverInfo.HYPERSONIC_URL)) {
-				dialectClass = HSQLDialect.class;
-			}
-			else if (url.startsWith(DriverInfo.MYSQL_URL)) {
-				dialectClass = MySQLDialect.class;
-			}
-			else if (url.startsWith(DriverInfo.ORACLE_URL)) {
-				dialectClass = OracleDialect.class;
-			}
-			else if (url.startsWith(DriverInfo.POSTGRESQL_URL)) {
-				dialectClass = PostgreSQLDialect.class;
-			}
-			else if (url.startsWith(DriverInfo.SQLSERVER_URL)) {
-				dialectClass = SQLServerDialect.class;
-			}
-
-			if (dialectClass != null) {
-				_log.debug("Class implementation " + dialectClass.getName());
-			}
-			else {
-				_log.debug("Class implementation is null");
-			}
-
-			if (dialectClass != null) {
-				_dialect = (Dialect)dialectClass.newInstance();
-			}
-
-			DataAccess.cleanUp(con);
-		}
-		catch (Exception e) {
-			Logger.error(this,e.getMessage(),e);
-		}
-
-		if (_dialect == null) {
-			_dialect = new GenericDialect();
-		}
-
-		// Synchorize default properties
-
-		getDefaultProperties().clear();
-
-		Enumeration enu = _dialect.getDefaultProperties().propertyNames();
-
-		while (enu.hasMoreElements()) {
-        	String key = (String)enu.nextElement();
-        	String value = _dialect.getDefaultProperties().getProperty(key);
-
-			getDefaultProperties().setProperty(key, value);
-		}
-	}
-
-	public String appendIdentitySelectToInsert(String insertSQL) {
-		return _dialect.appendIdentitySelectToInsert(insertSQL);
-	}
-
-	public boolean bindLimitParametersFirst() {
-		return _dialect.bindLimitParametersFirst();
-	}
-
-	public boolean bindLimitParametersInReverseOrder() {
-		return _dialect.bindLimitParametersInReverseOrder();
-	}
-
-	public SQLExceptionConverter buildSQLExceptionConverter() {
-		return _dialect.buildSQLExceptionConverter();
-	}
+  public DynamicDialect() {
+
+    // Instantiate the proper dialect
+
+    String datasource =
+        GetterUtil.getString(
+            Environment.getProperties().getProperty(Environment.DATASOURCE, "jdbc/dotCMSPool"));
+
+    try {
+      Connection con = DataAccess.getConnection(datasource);
+
+      String url = con.getMetaData().getURL();
 
-	public char closeQuote() {
-		return _dialect.closeQuote();
-	}
+      Class dialectClass = null;
 
-	public CaseFragment createCaseFragment() {
-		return _dialect.createCaseFragment();
-	}
+      if (url.startsWith(DriverInfo.DB2_URL)) {
+        dialectClass = DB2Dialect.class;
+      } else if (url.startsWith(DriverInfo.HYPERSONIC_URL)) {
+        dialectClass = HSQLDialect.class;
+      } else if (url.startsWith(DriverInfo.MYSQL_URL)) {
+        dialectClass = MySQLDialect.class;
+      } else if (url.startsWith(DriverInfo.ORACLE_URL)) {
+        dialectClass = OracleDialect.class;
+      } else if (url.startsWith(DriverInfo.POSTGRESQL_URL)) {
+        dialectClass = PostgreSQLDialect.class;
+      } else if (url.startsWith(DriverInfo.SQLSERVER_URL)) {
+        dialectClass = SQLServerDialect.class;
+      }
 
-	public JoinFragment createOuterJoinFragment() {
-		return _dialect.createOuterJoinFragment();
-	}
+      if (dialectClass != null) {
+        _log.debug("Class implementation " + dialectClass.getName());
+      } else {
+        _log.debug("Class implementation is null");
+      }
 
-	public boolean dropConstraints() {
-		return _dialect.dropConstraints();
-	}
+      if (dialectClass != null) {
+        _dialect = (Dialect) dialectClass.newInstance();
+      }
 
-	public String getAddColumnString() {
-		return _dialect.getAddColumnString();
-	}
+      DataAccess.cleanUp(con);
+    } catch (Exception e) {
+      Logger.error(this, e.getMessage(), e);
+    }
 
-	public String getAddForeignKeyConstraintString(
-			String constraintName, String[] foreignKey, String referencedTable,
-			String[] primaryKey) {
-		return _dialect.getAddForeignKeyConstraintString(
-			constraintName, foreignKey, referencedTable, primaryKey);
-	}
+    if (_dialect == null) {
+      _dialect = new GenericDialect();
+    }
 
-	public String getAddPrimaryKeyConstraintString(String constraintName) {
-		return _dialect.getAddPrimaryKeyConstraintString(constraintName);
-	}
+    // Synchorize default properties
 
-	public String getCascadeConstraintsString() {
-		return _dialect.getCascadeConstraintsString();
-	}
+    getDefaultProperties().clear();
 
-	public String getCreateSequenceString(String sequenceName)
-		throws MappingException {
+    Enumeration enu = _dialect.getDefaultProperties().propertyNames();
 
-		return _dialect.getCreateSequenceString(sequenceName);
-	}
+    while (enu.hasMoreElements()) {
+      String key = (String) enu.nextElement();
+      String value = _dialect.getDefaultProperties().getProperty(key);
 
-	public String getDropForeignKeyString() {
-		return _dialect.getDropForeignKeyString();
-	}
+      getDefaultProperties().setProperty(key, value);
+    }
+  }
 
-	public String getDropSequenceString(String sequenceName)
-		throws MappingException {
+  public String appendIdentitySelectToInsert(String insertSQL) {
+    return _dialect.appendIdentitySelectToInsert(insertSQL);
+  }
 
-		return _dialect.getDropSequenceString(sequenceName);
-	}
+  public boolean bindLimitParametersFirst() {
+    return _dialect.bindLimitParametersFirst();
+  }
 
-	public String getIdentityColumnString() throws MappingException {
-		return _dialect.getIdentityColumnString();
-	}
+  public boolean bindLimitParametersInReverseOrder() {
+    return _dialect.bindLimitParametersInReverseOrder();
+  }
 
-	public String getIdentityInsertString() {
-		return _dialect.getIdentityInsertString();
-	}
+  public SQLExceptionConverter buildSQLExceptionConverter() {
+    return _dialect.buildSQLExceptionConverter();
+  }
 
-	public String getIdentitySelectString() throws MappingException {
-		return _dialect.getIdentitySelectString();
-	}
+  public char closeQuote() {
+    return _dialect.closeQuote();
+  }
 
-	public String getLimitString(String querySelect, boolean hasOffset) {
-		return _dialect.getLimitString(querySelect, hasOffset);
-	}
+  public CaseFragment createCaseFragment() {
+    return _dialect.createCaseFragment();
+  }
 
-	public String getLimitString(
-		String querySelect, boolean hasOffset, int limit) {
+  public JoinFragment createOuterJoinFragment() {
+    return _dialect.createOuterJoinFragment();
+  }
 
-		return _dialect.getLimitString(querySelect, hasOffset, limit);
-	}
+  public boolean dropConstraints() {
+    return _dialect.dropConstraints();
+  }
 
-	public String getLowercaseFunction() {
-		return _dialect.getLowercaseFunction();
-	}
+  public String getAddColumnString() {
+    return _dialect.getAddColumnString();
+  }
 
-	public String getNoColumnsInsertString() {
-		return _dialect.getNoColumnsInsertString();
-	}
+  public String getAddForeignKeyConstraintString(
+      String constraintName, String[] foreignKey, String referencedTable, String[] primaryKey) {
+    return _dialect.getAddForeignKeyConstraintString(
+        constraintName, foreignKey, referencedTable, primaryKey);
+  }
 
-	public String getNullColumnString() {
-		return _dialect.getNullColumnString();
-	}
+  public String getAddPrimaryKeyConstraintString(String constraintName) {
+    return _dialect.getAddPrimaryKeyConstraintString(constraintName);
+  }
 
-	public String getQuerySequencesString() {
-		return _dialect.getQuerySequencesString();
-	}
+  public String getCascadeConstraintsString() {
+    return _dialect.getCascadeConstraintsString();
+  }
 
-	public char getSchemaSeparator() {
-		return _dialect.getSchemaSeparator();
-	}
+  public String getCreateSequenceString(String sequenceName) throws MappingException {
 
-	public String getSequenceNextValString(String sequenceName)
-		throws MappingException {
+    return _dialect.getCreateSequenceString(sequenceName);
+  }
 
-		return _dialect.getSequenceNextValString(sequenceName);
-	}
+  public String getDropForeignKeyString() {
+    return _dialect.getDropForeignKeyString();
+  }
 
-	public String getTypeName(int code) throws HibernateException {
-		return _dialect.getTypeName(code);
-	}
+  public String getDropSequenceString(String sequenceName) throws MappingException {
 
-	public String getTypeName(int code, int length) throws HibernateException {
-		return _dialect.getTypeName(code, length);
-	}
+    return _dialect.getDropSequenceString(sequenceName);
+  }
 
-	public ViolatedConstraintNameExtracter
-		getViolatedConstraintNameExtracter() {
+  public String getIdentityColumnString() throws MappingException {
+    return _dialect.getIdentityColumnString();
+  }
 
-		return _dialect.getViolatedConstraintNameExtracter();
-	}
+  public String getIdentityInsertString() {
+    return _dialect.getIdentityInsertString();
+  }
 
-	public boolean hasAlterTable() {
-		return _dialect.hasAlterTable();
-	}
+  public String getIdentitySelectString() throws MappingException {
+    return _dialect.getIdentitySelectString();
+  }
 
-	public boolean hasDataTypeInIdentityColumn() {
-		return _dialect.hasDataTypeInIdentityColumn();
-	}
+  public String getLimitString(String querySelect, boolean hasOffset) {
+    return _dialect.getLimitString(querySelect, hasOffset);
+  }
 
-	public char openQuote() {
-		return _dialect.openQuote();
-	}
+  public String getLimitString(String querySelect, boolean hasOffset, int limit) {
 
-	public boolean qualifyIndexName() {
-		return _dialect.qualifyIndexName();
-	}
+    return _dialect.getLimitString(querySelect, hasOffset, limit);
+  }
 
-	/*public void registerColumnType(int code, int capacity, String name) {
-		_dialect.registerColumnType(code, capacity, name);
-	}
+  public String getLowercaseFunction() {
+    return _dialect.getLowercaseFunction();
+  }
 
-	public void registerColumnType(int code, String name) {
-		_dialect.registerColumnType(code, name);
-	}
+  public String getNoColumnsInsertString() {
+    return _dialect.getNoColumnsInsertString();
+  }
 
-	public void registerFunction(String name, SQLFunction function) {
-		_dialect.registerFunction(name, function);
-	}*/
+  public String getNullColumnString() {
+    return _dialect.getNullColumnString();
+  }
 
-	public boolean supportsCheck() {
-		return _dialect.supportsCheck();
-	}
+  public String getQuerySequencesString() {
+    return _dialect.getQuerySequencesString();
+  }
 
-	public boolean supportsForUpdate() {
-		return _dialect.supportsForUpdate();
-	}
+  public char getSchemaSeparator() {
+    return _dialect.getSchemaSeparator();
+  }
 
-	public boolean supportsForUpdateNowait() {
-		return _dialect.supportsForUpdateNowait();
-	}
+  public String getSequenceNextValString(String sequenceName) throws MappingException {
 
-	public boolean supportsForUpdateOf() {
-		return _dialect.supportsForUpdateOf();
-	}
+    return _dialect.getSequenceNextValString(sequenceName);
+  }
 
-	public boolean supportsIdentityColumns() {
-		return _dialect.supportsIdentityColumns();
-	}
+  public String getTypeName(int code) throws HibernateException {
+    return _dialect.getTypeName(code);
+  }
 
-	public boolean supportsIfExistsAfterTableName() {
-		return _dialect.supportsIfExistsAfterTableName();
-	}
+  public String getTypeName(int code, int length) throws HibernateException {
+    return _dialect.getTypeName(code, length);
+  }
 
-	public boolean supportsIfExistsBeforeTableName()  {
-		return _dialect.supportsIfExistsBeforeTableName();
-	}
+  public ViolatedConstraintNameExtracter getViolatedConstraintNameExtracter() {
 
-	public boolean supportsLimit() {
-		return _dialect.supportsLimit();
-	}
+    return _dialect.getViolatedConstraintNameExtracter();
+  }
 
-	public boolean supportsLimitOffset() {
-		return _dialect.supportsLimitOffset();
-	}
+  public boolean hasAlterTable() {
+    return _dialect.hasAlterTable();
+  }
 
-	public boolean supportsSequences() {
-		return _dialect.supportsSequences();
-	}
+  public boolean hasDataTypeInIdentityColumn() {
+    return _dialect.hasDataTypeInIdentityColumn();
+  }
 
-	public boolean supportsUnique() {
-		return _dialect.supportsUnique();
-	}
+  public char openQuote() {
+    return _dialect.openQuote();
+  }
 
-	public boolean supportsVariableLimit() {
-		return _dialect.supportsVariableLimit();
-	}
+  public boolean qualifyIndexName() {
+    return _dialect.qualifyIndexName();
+  }
 
-	public String toString() {
-		if (_dialect != null) {
-			return _dialect.toString();
-		}
-		else {
-			return null;
-		}
-	}
+  /*public void registerColumnType(int code, int capacity, String name) {
+  	_dialect.registerColumnType(code, capacity, name);
+  }
 
-	public boolean useMaxForLimit() {
-		return _dialect.useMaxForLimit();
-	}
+  public void registerColumnType(int code, String name) {
+  	_dialect.registerColumnType(code, name);
+  }
 
-	private static final Log _log = LogFactory.getLog(DynamicDialect.class);
+  public void registerFunction(String name, SQLFunction function) {
+  	_dialect.registerFunction(name, function);
+  }*/
 
-	private Dialect _dialect;
+  public boolean supportsCheck() {
+    return _dialect.supportsCheck();
+  }
 
+  public boolean supportsForUpdate() {
+    return _dialect.supportsForUpdate();
+  }
+
+  public boolean supportsForUpdateNowait() {
+    return _dialect.supportsForUpdateNowait();
+  }
+
+  public boolean supportsForUpdateOf() {
+    return _dialect.supportsForUpdateOf();
+  }
+
+  public boolean supportsIdentityColumns() {
+    return _dialect.supportsIdentityColumns();
+  }
+
+  public boolean supportsIfExistsAfterTableName() {
+    return _dialect.supportsIfExistsAfterTableName();
+  }
+
+  public boolean supportsIfExistsBeforeTableName() {
+    return _dialect.supportsIfExistsBeforeTableName();
+  }
+
+  public boolean supportsLimit() {
+    return _dialect.supportsLimit();
+  }
+
+  public boolean supportsLimitOffset() {
+    return _dialect.supportsLimitOffset();
+  }
+
+  public boolean supportsSequences() {
+    return _dialect.supportsSequences();
+  }
+
+  public boolean supportsUnique() {
+    return _dialect.supportsUnique();
+  }
+
+  public boolean supportsVariableLimit() {
+    return _dialect.supportsVariableLimit();
+  }
+
+  public String toString() {
+    if (_dialect != null) {
+      return _dialect.toString();
+    } else {
+      return null;
+    }
+  }
+
+  public boolean useMaxForLimit() {
+    return _dialect.useMaxForLimit();
+  }
+
+  private static final Log _log = LogFactory.getLog(DynamicDialect.class);
+
+  private Dialect _dialect;
 }

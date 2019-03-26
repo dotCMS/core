@@ -14,7 +14,9 @@ import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
-
+import java.text.MessageFormat;
+import java.util.Date;
+import java.util.UUID;
 import org.quartz.Job;
 import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
@@ -24,142 +26,146 @@ import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 import org.quartz.SimpleTrigger;
 
-import java.text.MessageFormat;
-import java.util.Date;
-import java.util.UUID;
-
-/**
- * Created by nollymar on 7/19/16.
- */
+/** Created by nollymar on 7/19/16. */
 public class DeleteUserJob implements Job {
 
-    private final UserAPI uAPI;
-    private final NotificationAPI notfAPI;
+  private final UserAPI uAPI;
+  private final NotificationAPI notfAPI;
 
-    public DeleteUserJob() {
-        uAPI = APILocator.getUserAPI();
-        notfAPI = APILocator.getNotificationAPI();
-    }
+  public DeleteUserJob() {
+    uAPI = APILocator.getUserAPI();
+    notfAPI = APILocator.getNotificationAPI();
+  }
 
-    public static void triggerDeleteUserJob(User userToDelete, User replacementUser, User user,
-                                            boolean respectFrontEndRoles) {
-        JobDataMap dataMap = new JobDataMap();
-        dataMap.put("userToDelete", userToDelete);
-        dataMap.put("replacementUser", replacementUser);
-        dataMap.put("user", user);
-        dataMap.put("respectFrontEndRoles", respectFrontEndRoles);
+  public static void triggerDeleteUserJob(
+      User userToDelete, User replacementUser, User user, boolean respectFrontEndRoles) {
+    JobDataMap dataMap = new JobDataMap();
+    dataMap.put("userToDelete", userToDelete);
+    dataMap.put("replacementUser", replacementUser);
+    dataMap.put("user", user);
+    dataMap.put("respectFrontEndRoles", respectFrontEndRoles);
 
-        String randomID = UUID.randomUUID().toString();
+    String randomID = UUID.randomUUID().toString();
 
-        JobDetail jd = new JobDetail("DeleteUserJob-" + randomID, "delete_user_jobs", DeleteUserJob.class);
-        jd.setJobDataMap(dataMap);
-        jd.setDurability(false);
-        jd.setVolatility(false);
-        jd.setRequestsRecovery(true);
+    JobDetail jd =
+        new JobDetail("DeleteUserJob-" + randomID, "delete_user_jobs", DeleteUserJob.class);
+    jd.setJobDataMap(dataMap);
+    jd.setDurability(false);
+    jd.setVolatility(false);
+    jd.setRequestsRecovery(true);
 
-        long startTime = System.currentTimeMillis();
-        SimpleTrigger trigger = new SimpleTrigger("deleteUserTrigger-" + randomID, "delete_user_triggers",
-            new Date(startTime));
+    long startTime = System.currentTimeMillis();
+    SimpleTrigger trigger =
+        new SimpleTrigger(
+            "deleteUserTrigger-" + randomID, "delete_user_triggers", new Date(startTime));
 
-        try {
-            Scheduler sched = QuartzUtils.getSequentialScheduler();
-            UserAPI userAPI = APILocator.getUserAPI();
-            NotificationAPI notAPI = APILocator.getNotificationAPI();
+    try {
+      Scheduler sched = QuartzUtils.getSequentialScheduler();
+      UserAPI userAPI = APILocator.getUserAPI();
+      NotificationAPI notAPI = APILocator.getNotificationAPI();
 
-            String deleteInProgress = MessageFormat.format(LanguageUtil.get(user,
-                "com.dotmarketing.business.UserAPI.delete.inProgress"),
-                userToDelete.getUserId() + "/" + userToDelete.getFullName());
+      String deleteInProgress =
+          MessageFormat.format(
+              LanguageUtil.get(user, "com.dotmarketing.business.UserAPI.delete.inProgress"),
+              userToDelete.getUserId() + "/" + userToDelete.getFullName());
 
-            synchronized (userToDelete.getUserId().intern()) {
-                User freshUser = userAPI.loadUserById(userToDelete.getUserId());
-                if(! freshUser.isDeleteInProgress()) {
-                    userAPI.markToDelete(userToDelete);
-                    sched.scheduleJob(jd, trigger);
-                } else {
-                    notAPI.info(deleteInProgress, user.getUserId());
-                }
-            }
-
-
-        } catch (SchedulerException e) {
-            Logger.error(DeleteUserJob.class, "Error scheduling DeleteUserJob", e);
-
-            //Rolling back of user status (deleteInProgress)
-            userToDelete.setDeleteDate(null);
-            userToDelete.setDeleteInProgress(false);
-            try {
-                APILocator.getUserAPI().save(userToDelete, user, false);
-            } catch (DotDataException | DotSecurityException e1) {
-                Logger.error(DeleteUserJob.class, "Error in rollback transaction", e);
-            }
-
-            throw new DotRuntimeException("Error scheduling DeleteUserJob", e);
-        } catch (Exception e) {
-            Logger.error(DeleteUserJob.class, "Error scheduling DeleteUserJob", e);
-            throw new DotRuntimeException("Error scheduling DeleteUserJob", e);
+      synchronized (userToDelete.getUserId().intern()) {
+        User freshUser = userAPI.loadUserById(userToDelete.getUserId());
+        if (!freshUser.isDeleteInProgress()) {
+          userAPI.markToDelete(userToDelete);
+          sched.scheduleJob(jd, trigger);
+        } else {
+          notAPI.info(deleteInProgress, user.getUserId());
         }
+      }
 
-        AdminLogger.log(DeleteUserJob.class, "triggerJobImmediately",
-            String.format("Deleting User '%s'", userToDelete.getFullName()));
+    } catch (SchedulerException e) {
+      Logger.error(DeleteUserJob.class, "Error scheduling DeleteUserJob", e);
 
+      // Rolling back of user status (deleteInProgress)
+      userToDelete.setDeleteDate(null);
+      userToDelete.setDeleteInProgress(false);
+      try {
+        APILocator.getUserAPI().save(userToDelete, user, false);
+      } catch (DotDataException | DotSecurityException e1) {
+        Logger.error(DeleteUserJob.class, "Error in rollback transaction", e);
+      }
+
+      throw new DotRuntimeException("Error scheduling DeleteUserJob", e);
+    } catch (Exception e) {
+      Logger.error(DeleteUserJob.class, "Error scheduling DeleteUserJob", e);
+      throw new DotRuntimeException("Error scheduling DeleteUserJob", e);
     }
 
-    @Override
-    public void execute(JobExecutionContext jobExecutionContext) throws JobExecutionException {
+    AdminLogger.log(
+        DeleteUserJob.class,
+        "triggerJobImmediately",
+        String.format("Deleting User '%s'", userToDelete.getFullName()));
+  }
 
-        JobDataMap map = jobExecutionContext.getJobDetail().getJobDataMap();
-        User userToDelete = (User) map.get("userToDelete");
-        User replacementUser = (User) map.get("replacementUser");
-        User user = (User) map.get("user");
-        Boolean respectFrontEndRoles = (Boolean) map.get("respectFrontEndRoles");
-        String errorMessage = null;
+  @Override
+  public void execute(JobExecutionContext jobExecutionContext) throws JobExecutionException {
 
-        try {
-            String startMessage = MessageFormat.format(LanguageUtil.get(user,
-                "com.dotmarketing.business.UserAPI.delete.start"),
-                userToDelete.getUserId() + "/" + userToDelete.getFullName(),
-                replacementUser.getUserId() + "/" + replacementUser.getFullName());
+    JobDataMap map = jobExecutionContext.getJobDetail().getJobDataMap();
+    User userToDelete = (User) map.get("userToDelete");
+    User replacementUser = (User) map.get("replacementUser");
+    User user = (User) map.get("user");
+    Boolean respectFrontEndRoles = (Boolean) map.get("respectFrontEndRoles");
+    String errorMessage = null;
 
-            String finishMessage = MessageFormat.format(LanguageUtil.get(user,
-                "com.dotmarketing.business.UserAPI.delete.success"),
-                userToDelete.getUserId() + "/" + userToDelete.getFullName());
+    try {
+      String startMessage =
+          MessageFormat.format(
+              LanguageUtil.get(user, "com.dotmarketing.business.UserAPI.delete.start"),
+              userToDelete.getUserId() + "/" + userToDelete.getFullName(),
+              replacementUser.getUserId() + "/" + replacementUser.getFullName());
 
-            errorMessage = MessageFormat.format(LanguageUtil.get(user,
-                "com.dotmarketing.business.UserAPI.delete.error"),
-                userToDelete.getUserId() + "/" + userToDelete.getFullName());
+      String finishMessage =
+          MessageFormat.format(
+              LanguageUtil.get(user, "com.dotmarketing.business.UserAPI.delete.success"),
+              userToDelete.getUserId() + "/" + userToDelete.getFullName());
 
-            notfAPI.info(startMessage, user.getUserId());
+      errorMessage =
+          MessageFormat.format(
+              LanguageUtil.get(user, "com.dotmarketing.business.UserAPI.delete.error"),
+              userToDelete.getUserId() + "/" + userToDelete.getFullName());
 
-            HibernateUtil.startTransaction();
+      notfAPI.info(startMessage, user.getUserId());
 
-            uAPI.delete(userToDelete, replacementUser, user, respectFrontEndRoles);
-            HibernateUtil.closeAndCommitTransaction();
+      HibernateUtil.startTransaction();
 
-            notfAPI.info(finishMessage, user.getUserId());
-        } catch (Exception e) {
-            try {
-                HibernateUtil.rollbackTransaction();
+      uAPI.delete(userToDelete, replacementUser, user, respectFrontEndRoles);
+      HibernateUtil.closeAndCommitTransaction();
 
-                //Rolling back of user status (deleteInProgress)
-                userToDelete.setDeleteDate(null);
-                userToDelete.setDeleteInProgress(false);
-                uAPI.save(userToDelete, user, false);
-            } catch (DotDataException | DotSecurityException e1) {
-                Logger.error(this, "Error in rollback transaction", e);
-            }
+      notfAPI.info(finishMessage, user.getUserId());
+    } catch (Exception e) {
+      try {
+        HibernateUtil.rollbackTransaction();
 
-            Logger.error(this, String.format("Unable to delete user '%s'.",
-                userToDelete.getUserId() + "/" + userToDelete.getFullName()), e);
+        // Rolling back of user status (deleteInProgress)
+        userToDelete.setDeleteDate(null);
+        userToDelete.setDeleteInProgress(false);
+        uAPI.save(userToDelete, user, false);
+      } catch (DotDataException | DotSecurityException e1) {
+        Logger.error(this, "Error in rollback transaction", e);
+      }
 
-            notfAPI.error(errorMessage, user.getUserId());
-        } finally {
-            try {
-                HibernateUtil.closeSession();
-            } catch (DotHibernateException e) {
-                Logger.warn(this, "exception while calling HibernateUtil.closeSession()", e);
-            } finally {
-                DbConnectionFactory.closeConnection();
-            }
-        }
+      Logger.error(
+          this,
+          String.format(
+              "Unable to delete user '%s'.",
+              userToDelete.getUserId() + "/" + userToDelete.getFullName()),
+          e);
+
+      notfAPI.error(errorMessage, user.getUserId());
+    } finally {
+      try {
+        HibernateUtil.closeSession();
+      } catch (DotHibernateException e) {
+        Logger.warn(this, "exception while calling HibernateUtil.closeSession()", e);
+      } finally {
+        DbConnectionFactory.closeConnection();
+      }
     }
+  }
 }

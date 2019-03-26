@@ -6,63 +6,61 @@ import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.util.Logger;
 
-/**
- * Created by jasontesser on 3/17/17.
- */
+/** Created by jasontesser on 3/17/17. */
 public class SystemCache implements Cachable {
 
-    protected static String PRIMARY_GROUP = "SYSTEM_GROUP";
-    private String[] groupNames = {PRIMARY_GROUP};
+  protected static String PRIMARY_GROUP = "SYSTEM_GROUP";
+  private String[] groupNames = {PRIMARY_GROUP};
 
-    public String[] getGroups() {
-        return groupNames;
-    }
-    public String getPrimaryGroup() {
-        return PRIMARY_GROUP;
-    }
+  public String[] getGroups() {
+    return groupNames;
+  }
 
-    private DotCacheAdministrator cache;
+  public String getPrimaryGroup() {
+    return PRIMARY_GROUP;
+  }
 
-    public SystemCache() {
-        cache = CacheLocator.getCacheAdministrator();
-    }
+  private DotCacheAdministrator cache;
 
-    @Override
-    public void clearCache() {
-        cache.flushGroup(PRIMARY_GROUP);
-    }
+  public SystemCache() {
+    cache = CacheLocator.getCacheAdministrator();
+  }
 
-    public Object get(String key) {
-        Object o = null;
-        try{
-            o = (Object) cache.get(key,PRIMARY_GROUP);
-        }catch (DotCacheException e) {
-            Logger.debug(this, "Cache Entry not found", e);
-        }
+  @Override
+  public void clearCache() {
+    cache.flushGroup(PRIMARY_GROUP);
+  }
 
-        return o;
+  public Object get(String key) {
+    Object o = null;
+    try {
+      o = (Object) cache.get(key, PRIMARY_GROUP);
+    } catch (DotCacheException e) {
+      Logger.debug(this, "Cache Entry not found", e);
     }
 
-    public Object put(String key, Object object) {
-        if(object == null){
-            return null;
-        }
-        // Add the key to the cache
-        cache.put(key, object,PRIMARY_GROUP);
+    return o;
+  }
 
-        return object;
+  public Object put(String key, Object object) {
+    if (object == null) {
+      return null;
     }
+    // Add the key to the cache
+    cache.put(key, object, PRIMARY_GROUP);
 
-    /* (non-Javadoc)
-     * @see org.apache.velocity.runtime.resource.ResourceCache#remove(java.lang.Object)
-     */
-    public void remove(String key) {
+    return object;
+  }
 
-        try{
-            cache.remove(key,getPrimaryGroup());
-        } catch ( Exception e ) {
-            Logger.debug(this, e.getMessage(), e);
-        }
+  /* (non-Javadoc)
+   * @see org.apache.velocity.runtime.resource.ResourceCache#remove(java.lang.Object)
+   */
+  public void remove(String key) {
+
+    try {
+      cache.remove(key, getPrimaryGroup());
+    } catch (Exception e) {
+      Logger.debug(this, e.getMessage(), e);
     }
-
+  }
 }

@@ -5,146 +5,141 @@ import java.util.Date;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 
 public class DashboardSummary implements Serializable {
-   
-	private static final long serialVersionUID = 1L;
-	
-	private long id;
-	
-	private DashboardSummaryPeriod summaryPeriod;
-	
-	private String hostId;
-	
-	private long visits;
-	
-	private long pageViews;
-	
-	private long uniqueVisits;
-	
-	private long newVisits;
-	
-	private Date avgTimeOnSite;
-	
-	private int bounceRate;
-	
-	private long directTraffic;
-	
-	private long referringSites;
 
-	private long searchEngines;
+  private static final long serialVersionUID = 1L;
 
-	public long getId() {
-		return id;
-	}
+  private long id;
 
-	public void setId(long id) {
-		this.id = id;
-	}
+  private DashboardSummaryPeriod summaryPeriod;
 
-	public DashboardSummaryPeriod getSummaryPeriod() {
-		return summaryPeriod;
-	}
+  private String hostId;
 
-	public void setSummaryPeriod(DashboardSummaryPeriod summaryPeriod) {
-		this.summaryPeriod = summaryPeriod;
-	}
-	
-	public String getHostId() {
-		return hostId;
-	}
+  private long visits;
 
-	public void setHostId(String hostId) {
-		this.hostId = hostId;
-	}
+  private long pageViews;
 
-	public long getVisits() {
-		return visits;
-	}
+  private long uniqueVisits;
 
-	public void setVisits(long visits) {
-		this.visits = visits;
-	}
+  private long newVisits;
 
-	public long getPageViews() {
-		return pageViews;
-	}
+  private Date avgTimeOnSite;
 
-	public void setPageViews(long pageViews) {
-		this.pageViews = pageViews;
-	}
+  private int bounceRate;
 
-	public long getUniqueVisits() {
-		return uniqueVisits;
-	}
+  private long directTraffic;
 
-	public void setUniqueVisits(long uniqueVisits) {
-		this.uniqueVisits = uniqueVisits;
-	}
+  private long referringSites;
 
-	public long getNewVisits() {
-		return newVisits;
-	}
+  private long searchEngines;
 
-	public void setNewVisits(long newVisits) {
-		this.newVisits = newVisits;
-	}
+  public long getId() {
+    return id;
+  }
 
-	public Date getAvgTimeOnSite() {
-		return avgTimeOnSite;
-	}
+  public void setId(long id) {
+    this.id = id;
+  }
 
-	public void setAvgTimeOnSite(Date avgTimeOnSite) {
-		this.avgTimeOnSite = avgTimeOnSite;
-	}
+  public DashboardSummaryPeriod getSummaryPeriod() {
+    return summaryPeriod;
+  }
 
-	public int getBounceRate() {
-		return bounceRate;
-	}
+  public void setSummaryPeriod(DashboardSummaryPeriod summaryPeriod) {
+    this.summaryPeriod = summaryPeriod;
+  }
 
-	public void setBounceRate(int bounceRate) {
-		this.bounceRate = bounceRate;
-	}
+  public String getHostId() {
+    return hostId;
+  }
 
-	public long getDirectTraffic() {
-		return directTraffic;
-	}
+  public void setHostId(String hostId) {
+    this.hostId = hostId;
+  }
 
-	public void setDirectTraffic(long directTraffic) {
-		this.directTraffic = directTraffic;
-	}
+  public long getVisits() {
+    return visits;
+  }
 
-	public long getReferringSites() {
-		return referringSites;
-	}
+  public void setVisits(long visits) {
+    this.visits = visits;
+  }
 
-	public void setReferringSites(long referringSites) {
-		this.referringSites = referringSites;
-	}
+  public long getPageViews() {
+    return pageViews;
+  }
 
-	public long getSearchEngines() {
-		return searchEngines;
-	}
+  public void setPageViews(long pageViews) {
+    this.pageViews = pageViews;
+  }
 
-	public void setSearchEngines(long searchEngines) {
-		this.searchEngines = searchEngines;
-	}
+  public long getUniqueVisits() {
+    return uniqueVisits;
+  }
 
-	public boolean equals(Object object){
-		boolean returnValue = false;
-		if((object instanceof DashboardSummary)){
-			DashboardSummary summary = (DashboardSummary) object;
-			if(this.id == summary.getId() && 
-					this.summaryPeriod.equals(summary.getSummaryPeriod())){
-				returnValue = true;
-			}
-		}
-		return returnValue;
-	}
-	
-	public int hashCode(){
-		return HashCodeBuilder.reflectionHashCode(this);
-	}
-	
-	
+  public void setUniqueVisits(long uniqueVisits) {
+    this.uniqueVisits = uniqueVisits;
+  }
 
-	
+  public long getNewVisits() {
+    return newVisits;
+  }
+
+  public void setNewVisits(long newVisits) {
+    this.newVisits = newVisits;
+  }
+
+  public Date getAvgTimeOnSite() {
+    return avgTimeOnSite;
+  }
+
+  public void setAvgTimeOnSite(Date avgTimeOnSite) {
+    this.avgTimeOnSite = avgTimeOnSite;
+  }
+
+  public int getBounceRate() {
+    return bounceRate;
+  }
+
+  public void setBounceRate(int bounceRate) {
+    this.bounceRate = bounceRate;
+  }
+
+  public long getDirectTraffic() {
+    return directTraffic;
+  }
+
+  public void setDirectTraffic(long directTraffic) {
+    this.directTraffic = directTraffic;
+  }
+
+  public long getReferringSites() {
+    return referringSites;
+  }
+
+  public void setReferringSites(long referringSites) {
+    this.referringSites = referringSites;
+  }
+
+  public long getSearchEngines() {
+    return searchEngines;
+  }
+
+  public void setSearchEngines(long searchEngines) {
+    this.searchEngines = searchEngines;
+  }
+
+  public boolean equals(Object object) {
+    boolean returnValue = false;
+    if ((object instanceof DashboardSummary)) {
+      DashboardSummary summary = (DashboardSummary) object;
+      if (this.id == summary.getId() && this.summaryPeriod.equals(summary.getSummaryPeriod())) {
+        returnValue = true;
+      }
+    }
+    return returnValue;
+  }
+
+  public int hashCode() {
+    return HashCodeBuilder.reflectionHashCode(this);
+  }
 }

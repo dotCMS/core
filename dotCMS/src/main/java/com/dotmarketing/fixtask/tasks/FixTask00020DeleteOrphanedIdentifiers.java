@@ -26,210 +26,279 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * This task removes records from identifier and tree when they do not have a mathing identifier in the
- * table matching its asset type.
- * It applies to contentlets, containers, file assets, html pages, links, and templates.
+ * This task removes records from identifier and tree when they do not have a mathing identifier in
+ * the table matching its asset type. It applies to contentlets, containers, file assets, html
+ * pages, links, and templates.
  *
- *   @author jasontesser
- *   @author jgambarios
- *   @author Jose Castro
- *   @author oarrietadotcms
- *
- *   @author gabbydotCMS
- *   @version 2.0
- *   @since June 18, 2016
+ * @author jasontesser
+ * @author jgambarios
+ * @author Jose Castro
+ * @author oarrietadotcms
+ * @author gabbydotCMS
+ * @version 2.0
+ * @since June 18, 2016
  */
-public class FixTask00020DeleteOrphanedIdentifiers implements FixTask{
+public class FixTask00020DeleteOrphanedIdentifiers implements FixTask {
 
-	private List <Map<String, String>>  modifiedData = new  ArrayList <Map<String,String>>();
-	private HashMap<String, Integer> badDataCount = new HashMap<String, Integer>();
-	private int total = 0;
-	private String assetNames[] = { "contentlet", "containers", "links", "template" };
+  private List<Map<String, String>> modifiedData = new ArrayList<Map<String, String>>();
+  private HashMap<String, Integer> badDataCount = new HashMap<String, Integer>();
+  private int total = 0;
+  private String assetNames[] = {"contentlet", "containers", "links", "template"};
 
+  /**
+   * This method executes the deletes from tree and identifier in case any inconsistencies are found
+   *
+   * @return Status of the excecution of the fixes
+   * @throws DotDataException
+   * @throws DotRuntimeException
+   */
+  public List<Map<String, Object>> executeFix() throws DotDataException, DotRuntimeException {
 
+    List<Map<String, Object>> returnValue = new ArrayList<Map<String, Object>>();
 
-	/**
-	 * This method executes the deletes from tree and identifier in case any inconsistencies are found
-	 *
-	 * @return Status of the excecution of the fixes
-	 * @throws DotDataException
-	 * @throws DotRuntimeException
-	 */
-	public List<Map<String, Object>> executeFix() throws DotDataException,
-		DotRuntimeException {
+    Logger.info(FixTask00020DeleteOrphanedIdentifiers.class, "Beginning DeleteOrphanedIdentifiers");
 
-		List<Map<String, Object>> returnValue = new ArrayList<Map<String, Object>>();
+    if (!FixAssetsProcessStatus.getRunning()) {
 
-		Logger.info(FixTask00020DeleteOrphanedIdentifiers.class,"Beginning DeleteOrphanedIdentifiers");
+      FixAssetsProcessStatus.startProgress();
+      FixAssetsProcessStatus.setDescription("Task 20: Deleting Orphan Identifiers");
+      FixAssetsProcessStatus.setTotal(total);
 
-		if (!FixAssetsProcessStatus.getRunning()) {
+      try {
+        HibernateUtil.startTransaction();
+        DotConnect dc = new DotConnect();
 
-			FixAssetsProcessStatus.startProgress();
-			FixAssetsProcessStatus.setDescription("Task 20: Deleting Orphan Identifiers");
-			FixAssetsProcessStatus.setTotal(total);
+        for (String asset : assetNames) {
 
-			try{
-				HibernateUtil.startTransaction();
-				DotConnect dc = new DotConnect();
+          Inode.Type assetType = Inode.Type.valueOf(asset.toUpperCase());
+          final String tableName = assetType.getTableName();
 
-				for (String asset : assetNames) {
+          if (badDataCount.get("tree_child_" + asset).intValue() > 0) {
+            // Delete orphan tree entries where identifier is child
+            final String deleteTreesToDelete_child =
+                "delete from tree where exists (select * from identifier i where tree.child=i.id and i.asset_type='"
+                    + asset
+                    + "' and not exists (select * from "
+                    + tableName
+                    + " where i.id=identifier))";
 
-					Inode.Type assetType = Inode.Type.valueOf(asset.toUpperCase());
-					final String tableName = assetType.getTableName();
+            Logger.debug(
+                MaintenanceUtil.class,
+                "Task 20: Deleting from tree(child) type "
+                    + asset
+                    + " : "
+                    + deleteTreesToDelete_child);
 
-					if (badDataCount.get("tree_child_"+asset).intValue() > 0) {
-						//Delete orphan tree entries where identifier is child
-						final String deleteTreesToDelete_child = "delete from tree where exists (select * from identifier i where tree.child=i.id and i.asset_type='" +
-							asset + "' and not exists (select * from " + tableName + " where i.id=identifier))";
+            dc.setSQL(deleteTreesToDelete_child);
 
-						Logger.debug(MaintenanceUtil.class,"Task 20: Deleting from tree(child) type " + asset + " : " + deleteTreesToDelete_child);
+            dc.loadResult();
+          }
 
-						dc.setSQL(deleteTreesToDelete_child);
+          if (badDataCount.get("tree_parent_" + asset).intValue() > 0) {
+            // Delete orphan tree entries where identifier is parent
+            final String deleteTreesToDelete_parent =
+                "delete from tree where exists (select * from identifier i where tree.parent=i.id and i.asset_type='"
+                    + asset
+                    + "' and not exists (select * from "
+                    + tableName
+                    + " where i.id=identifier))";
 
-						dc.loadResult();
-					}
+            Logger.debug(
+                MaintenanceUtil.class,
+                "Task 20: Deleting from tree(parent) type "
+                    + asset
+                    + " : "
+                    + deleteTreesToDelete_parent);
 
-					if (badDataCount.get("tree_parent_"+asset).intValue() > 0) {
-						//Delete orphan tree entries where identifier is parent
-						final String deleteTreesToDelete_parent = "delete from tree where exists (select * from identifier i where tree.parent=i.id and i.asset_type='" +
-							asset + "' and not exists (select * from " + tableName + " where i.id=identifier))";
+            dc.setSQL(deleteTreesToDelete_parent);
 
-						Logger.debug(MaintenanceUtil.class,"Task 20: Deleting from tree(parent) type " + asset + " : " + deleteTreesToDelete_parent);
+            dc.loadResult();
+          }
 
-						dc.setSQL(deleteTreesToDelete_parent);
+          if (badDataCount.get("identifier_" + asset).intValue() > 0) {
+            // Delete orphan entries from identifier
+            final String indentifiersToDelete =
+                "delete from identifier where (identifier.asset_type='"
+                    + asset
+                    + "' and not exists (select * from "
+                    + tableName
+                    + " where identifier.id=identifier))";
 
-						dc.loadResult();
-					}
+            Logger.debug(
+                MaintenanceUtil.class,
+                "Task 20: Deleting from identifier type " + asset + " : " + indentifiersToDelete);
 
-					if (badDataCount.get("identifier_"+asset).intValue() > 0) {
-						//Delete orphan entries from identifier
-						final String indentifiersToDelete = "delete from identifier where (identifier.asset_type='" +
-							asset + "' and not exists (select * from " + tableName + " where identifier.id=identifier))";
+            dc.setSQL(indentifiersToDelete);
 
-						Logger.debug(MaintenanceUtil.class,"Task 20: Deleting from identifier type " + asset + " : " + indentifiersToDelete);
+            dc.loadResult();
+          }
+        }
 
-						dc.setSQL(indentifiersToDelete);
+        FixAssetsProcessStatus.setErrorsFixed(total);
 
-						dc.loadResult();
-					}
-				}
+        FixAudit Audit = new FixAudit();
+        Audit.setTableName("identifier");
+        Audit.setDatetime(new Date());
+        Audit.setRecordsAltered(total);
+        Audit.setAction("task 20: Fixed DeleteOrphanedIdentifiers");
+        HibernateUtil.save(Audit);
+        HibernateUtil.closeAndCommitTransaction();
+        MaintenanceUtil.flushCache();
 
-				FixAssetsProcessStatus.setErrorsFixed(total);
+        returnValue.add(FixAssetsProcessStatus.getFixAssetsMap());
+        FixAssetsProcessStatus.stopProgress();
+        Logger.debug(
+            FixTask00020DeleteOrphanedIdentifiers.class, "Ending DeleteOrphanedIdentifiers");
+      } catch (Exception e) {
+        Logger.error(this, e.getMessage(), e);
+        HibernateUtil.rollbackTransaction();
+        FixAssetsProcessStatus.stopProgress();
+        FixAssetsProcessStatus.setActual(-1);
+      }
+    }
+    return returnValue;
+  }
 
-				FixAudit Audit = new FixAudit();
-				Audit.setTableName("identifier");
-				Audit.setDatetime(new Date());
-				Audit.setRecordsAltered(total);
-				Audit.setAction("task 20: Fixed DeleteOrphanedIdentifiers");
-				HibernateUtil.save(Audit);
-				HibernateUtil.closeAndCommitTransaction();
-				MaintenanceUtil.flushCache();
+  public List<Map<String, String>> getModifiedData() {
+    if (modifiedData.size() > 0) {
+      XStream _xstream = new XStream(new DomDriver());
+      Date date = new Date();
+      SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy_HH-mm-ss");
+      String lastmoddate = sdf.format(date);
+      File _writing = null;
 
-				returnValue.add(FixAssetsProcessStatus.getFixAssetsMap());
-				FixAssetsProcessStatus.stopProgress();
-				Logger.debug(FixTask00020DeleteOrphanedIdentifiers.class,"Ending DeleteOrphanedIdentifiers");
-			} catch (Exception e) {
-				Logger.error(this,e.getMessage(), e);
-				HibernateUtil.rollbackTransaction();
-				FixAssetsProcessStatus.stopProgress();
-				FixAssetsProcessStatus.setActual(-1);
-			}
-		}
-		return returnValue;
-	}
+      if (!new File(ConfigUtils.getBackupPath() + File.separator + "fixes").exists()) {
+        new File(ConfigUtils.getBackupPath() + File.separator + "fixes").mkdirs();
+      }
+      _writing =
+          new File(
+              ConfigUtils.getBackupPath()
+                  + File.separator
+                  + "fixes"
+                  + java.io.File.separator
+                  + lastmoddate
+                  + "_"
+                  + "FixTask00020DeleteOrphanedIdentifiers"
+                  + ".xml");
 
-	public List<Map<String, String>> getModifiedData() {
-		if (modifiedData.size() > 0) {
-			XStream _xstream = new XStream(new DomDriver());
-			Date date = new Date();
-			SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy_HH-mm-ss");
-			String lastmoddate = sdf.format(date);
-			File _writing = null;
+      BufferedOutputStream _bout = null;
+      try {
+        _bout = new BufferedOutputStream(Files.newOutputStream(_writing.toPath()));
+      } catch (IOException e) {
 
-			if (!new File(ConfigUtils.getBackupPath()+File.separator+"fixes").exists()) {
-				new File(ConfigUtils.getBackupPath()+File.separator+"fixes").mkdirs();
-			}
-			_writing = new File(ConfigUtils.getBackupPath()+File.separator+"fixes" + java.io.File.separator + lastmoddate + "_"
-				+ "FixTask00020DeleteOrphanedIdentifiers" + ".xml");
+      }
+      try {
+        _xstream.toXML(modifiedData, _bout);
+      } finally {
+        CloseUtils.closeQuietly(_bout);
+      }
+    }
+    return modifiedData;
+  }
 
-			BufferedOutputStream _bout = null;
-			try {
-				_bout = new BufferedOutputStream(Files.newOutputStream(_writing.toPath()));
-			} catch (IOException e) {
+  public boolean shouldRun() {
 
-			}
-			try {
-				_xstream.toXML(modifiedData, _bout);
-			} finally {
-				CloseUtils.closeQuietly(_bout);
-			}
-		}
-		return modifiedData;
-	}
+    total = 0;
+    badDataCount.clear();
 
-	public boolean shouldRun() {
+    DotConnect dc = new DotConnect();
+    List<Map<String, String>> result;
 
-		total=0;
-		badDataCount.clear();
+    Logger.debug(MaintenanceUtil.class, "Task 20: Checking for orphan entries");
 
-		DotConnect dc = new DotConnect();
-		List<Map<String, String>> result;
+    for (String asset : assetNames) {
 
-		Logger.debug(MaintenanceUtil.class,"Task 20: Checking for orphan entries");
+      Inode.Type assetType = Inode.Type.valueOf(asset.toUpperCase());
+      final String tableName = assetType.getTableName();
 
-		for (String asset : assetNames) {
+      // Check for orphan tree entries (child) needing to be deleted
+      final String treesToDeleteChild =
+          "select count(*) as count from tree t where exists (select * from identifier i where t.child=i.id and i.asset_type='"
+              + asset
+              + "' and not exists (select * from "
+              + tableName
+              + " where i.id=identifier))";
 
-			Inode.Type assetType = Inode.Type.valueOf(asset.toUpperCase());
-			final String tableName = assetType.getTableName();
+      // Check for orphan tree entries (parent) needing to be deleted
+      final String treesToDeleteParent =
+          "select count(*) as count from tree t where exists (select * from identifier i where t.parent=i.id and i.asset_type='"
+              + asset
+              + "' and not exists (select * from "
+              + tableName
+              + " where i.id=identifier))";
 
-			//Check for orphan tree entries (child) needing to be deleted
-			final String treesToDeleteChild = "select count(*) as count from tree t where exists (select * from identifier i where t.child=i.id and i.asset_type='" +
-				asset + "' and not exists (select * from " + tableName + " where i.id=identifier))";
+      // Check for orphan identifier entries needing to be deleted
+      final String indentifiersToDelete =
+          "select count(*) as count from identifier i where (i.asset_type='"
+              + asset
+              + "' and not exists (select * from "
+              + tableName
+              + " where i.id=identifier))";
 
-			//Check for orphan tree entries (parent) needing to be deleted
-			final String treesToDeleteParent = "select count(*) as count from tree t where exists (select * from identifier i where t.parent=i.id and i.asset_type='" +
-				asset + "' and not exists (select * from " + tableName + " where i.id=identifier))";
+      try {
 
-			//Check for orphan identifier entries needing to be deleted
-			final String indentifiersToDelete = "select count(*) as count from identifier i where (i.asset_type='" +
-				asset + "' and not exists (select * from " + tableName + " where i.id=identifier))";
+        dc.setSQL(treesToDeleteChild);
+        Logger.debug(
+            MaintenanceUtil.class,
+            "Task 20: Checking orphan tree entries (child) for "
+                + asset
+                + ": "
+                + treesToDeleteChild);
+        result = dc.loadResults();
+        Logger.debug(
+            MaintenanceUtil.class,
+            "Task 20: Checking orphan tree entries (child) for "
+                + asset
+                + ": "
+                + result.get(0).get("count")
+                + " entries");
+        badDataCount.put("tree_child_" + asset, Integer.valueOf(result.get(0).get("count")));
+        total += Integer.parseInt(result.get(0).get("count"));
 
+        dc.setSQL(treesToDeleteParent);
+        Logger.debug(
+            MaintenanceUtil.class,
+            "Task 20: Checking orphan tree entries (parent) for "
+                + asset
+                + ": "
+                + treesToDeleteParent);
+        result = dc.loadResults();
+        Logger.debug(
+            MaintenanceUtil.class,
+            "Task 20: Checking orphan tree entries (parent) for "
+                + asset
+                + ": "
+                + result.get(0).get("count")
+                + " entries");
+        badDataCount.put("tree_parent_" + asset, Integer.valueOf(result.get(0).get("count")));
+        total += Integer.parseInt(result.get(0).get("count"));
 
-			try {
+        dc.setSQL(indentifiersToDelete);
+        Logger.debug(
+            MaintenanceUtil.class,
+            "Task 20: Checking orphan identifier entries for "
+                + asset
+                + ": "
+                + indentifiersToDelete);
+        result = dc.loadResults();
+        Logger.debug(
+            MaintenanceUtil.class,
+            "Task 20: Checking orphan identifier entries for "
+                + asset
+                + ": "
+                + result.get(0).get("count")
+                + " entries");
+        badDataCount.put("identifier_" + asset, Integer.valueOf(result.get(0).get("count")));
+        total += Integer.parseInt(result.get(0).get("count"));
 
-				dc.setSQL(treesToDeleteChild);
-				Logger.debug(MaintenanceUtil.class,"Task 20: Checking orphan tree entries (child) for " + asset + ": " + treesToDeleteChild);
-				result = dc.loadResults();
-				Logger.debug(MaintenanceUtil.class,"Task 20: Checking orphan tree entries (child) for " + asset + ": " + result.get(0).get("count") + " entries");
-				badDataCount.put("tree_child_" + asset, Integer.valueOf(result.get(0).get("count")));
-				total += Integer.parseInt(result.get(0).get("count"));
+      } catch (DotDataException e) {
+        Logger.error(this, e.getMessage(), e);
+      }
+    }
 
-
-				dc.setSQL(treesToDeleteParent);
-				Logger.debug(MaintenanceUtil.class,"Task 20: Checking orphan tree entries (parent) for " + asset + ": " + treesToDeleteParent);
-				result = dc.loadResults();
-				Logger.debug(MaintenanceUtil.class,"Task 20: Checking orphan tree entries (parent) for " + asset + ": " + result.get(0).get("count") + " entries");
-				badDataCount.put("tree_parent_" + asset, Integer.valueOf(result.get(0).get("count")));
-				total += Integer.parseInt(result.get(0).get("count"));
-
-				dc.setSQL(indentifiersToDelete);
-				Logger.debug(MaintenanceUtil.class,"Task 20: Checking orphan identifier entries for " + asset + ": " + indentifiersToDelete);
-				result = dc.loadResults();
-				Logger.debug(MaintenanceUtil.class,"Task 20: Checking orphan identifier entries for " + asset + ": " + result.get(0).get("count") + " entries");
-				badDataCount.put("identifier_" + asset, Integer.valueOf(result.get(0).get("count")));
-				total += Integer.parseInt(result.get(0).get("count"));
-
-			} catch (DotDataException e) {
-				Logger.error(this,e.getMessage(), e);
-			}
-		}
-
-		if (total > 0) {
-			Logger.info(MaintenanceUtil.class,"Task 20: " + total + " orphan entries to delete" );
-			return true;
-		} else
-			return false;
-
-	}
-
+    if (total > 0) {
+      Logger.info(MaintenanceUtil.class, "Task 20: " + total + " orphan entries to delete");
+      return true;
+    } else return false;
+  }
 }

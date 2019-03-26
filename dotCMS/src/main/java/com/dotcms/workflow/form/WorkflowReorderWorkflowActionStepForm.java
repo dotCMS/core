@@ -8,42 +8,36 @@ import com.dotcms.rest.api.Validated;
 @JsonDeserialize(builder = WorkflowReorderWorkflowActionStepForm.Builder.class)
 public class WorkflowReorderWorkflowActionStepForm extends Validated {
 
+  @NotNull private final int order;
 
-    @NotNull
-    private final int           order;
+  public int getOrder() {
+    return order;
+  }
 
-    public int getOrder() {
-        return order;
+  public WorkflowReorderWorkflowActionStepForm(final Builder builder) {
+
+    this.order = builder.order;
+    this.checkValid();
+  }
+
+  @Override
+  public String toString() {
+    return "WorkflowReorderWorkflowActionStepForm{" + "order=" + order + '}';
+  }
+
+  public static final class Builder {
+
+    @JsonProperty(required = true)
+    private int order;
+
+    public Builder order(int order) {
+      this.order = order;
+      return this;
     }
 
+    public WorkflowReorderWorkflowActionStepForm build() {
 
-    public WorkflowReorderWorkflowActionStepForm(final Builder builder) {
-
-        this.order              = builder.order;
-        this.checkValid();
+      return new WorkflowReorderWorkflowActionStepForm(this);
     }
-
-    @Override
-    public String toString() {
-        return "WorkflowReorderWorkflowActionStepForm{" +
-                "order=" + order +
-                '}';
-    }
-
-    public static final class Builder {
-
-        @JsonProperty(required = true)
-        private int           order;
-
-        public Builder order(int order) {
-            this.order = order;
-            return this;
-        }
-
-
-        public WorkflowReorderWorkflowActionStepForm build() {
-
-            return new WorkflowReorderWorkflowActionStepForm(this);
-        }
-    }
+  }
 }

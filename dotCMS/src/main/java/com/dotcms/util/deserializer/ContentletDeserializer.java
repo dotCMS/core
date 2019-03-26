@@ -2,53 +2,65 @@ package com.dotcms.util.deserializer;
 
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.util.Logger;
-import com.google.gson.*;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-
+import com.dotmarketing.util.Logger;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonDeserializationContext;
+import com.google.gson.JsonDeserializer;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonPrimitive;
+import com.google.gson.JsonSerializationContext;
+import com.google.gson.JsonSerializer;
 import java.lang.reflect.Type;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class ContentletDeserializer implements JsonDeserializer, JsonSerializer<Contentlet> {
 
-    @Override
-    public Object deserialize(JsonElement jsonElement, Type type, JsonDeserializationContext context) throws JsonParseException {
-        JsonObject map = (JsonObject) jsonElement;
+  @Override
+  public Object deserialize(JsonElement jsonElement, Type type, JsonDeserializationContext context)
+      throws JsonParseException {
+    JsonObject map = (JsonObject) jsonElement;
 
-        List<String> disabledWYSIWYG = new ArrayList<>();
-        JsonArray disabledWYSIWYGJsonElement = (JsonArray) map.remove(Contentlet.DISABLED_WYSIWYG_KEY);
+    List<String> disabledWYSIWYG = new ArrayList<>();
+    JsonArray disabledWYSIWYGJsonElement = (JsonArray) map.remove(Contentlet.DISABLED_WYSIWYG_KEY);
 
-        if (disabledWYSIWYGJsonElement != null) {
-            for (JsonElement element : disabledWYSIWYGJsonElement) {
-                disabledWYSIWYG.add(context.deserialize(element, String.class));
-            }
-        }
-
-        Contentlet contentlet = new Contentlet();
-        contentlet.setLowIndexPriority(map.remove("lowIndexPriority").getAsBoolean());
-        contentlet.setDisabledWysiwyg(disabledWYSIWYG);
-
-        Set<Map.Entry<String, JsonElement>> contentletAttr = map.entrySet();
-        for (Map.Entry<String, JsonElement> attr : contentletAttr) {
-            if (attr.getValue() instanceof JsonPrimitive){
-                contentlet.setProperty(attr.getKey(), ((JsonPrimitive) attr.getValue()).getAsString());
-            }
-        }
-
-        return contentlet;
+    if (disabledWYSIWYGJsonElement != null) {
+      for (JsonElement element : disabledWYSIWYGJsonElement) {
+        disabledWYSIWYG.add(context.deserialize(element, String.class));
+      }
     }
 
-    @Override
-    public JsonElement serialize(Contentlet contentlet, Type type, JsonSerializationContext context) {
-        JsonObject jsonObject = (JsonObject) context.serialize( contentlet.getMap() );
-        jsonObject.add("lowIndexPriority", new JsonPrimitive( contentlet.isLowIndexPriority()));
+    Contentlet contentlet = new Contentlet();
+    contentlet.setLowIndexPriority(map.remove("lowIndexPriority").getAsBoolean());
+    contentlet.setDisabledWysiwyg(disabledWYSIWYG);
 
-        try {
-            jsonObject.add(Contentlet.ARCHIVED_KEY, new JsonPrimitive( contentlet.isArchived() ));
-        } catch (DotDataException | DotSecurityException e) {
-            Logger.error(this.getClass(), "Exception on serialize exception message: " + e.getMessage(), e);
-        }
-
-        return jsonObject;
+    Set<Map.Entry<String, JsonElement>> contentletAttr = map.entrySet();
+    for (Map.Entry<String, JsonElement> attr : contentletAttr) {
+      if (attr.getValue() instanceof JsonPrimitive) {
+        contentlet.setProperty(attr.getKey(), ((JsonPrimitive) attr.getValue()).getAsString());
+      }
     }
+
+    return contentlet;
+  }
+
+  @Override
+  public JsonElement serialize(Contentlet contentlet, Type type, JsonSerializationContext context) {
+    JsonObject jsonObject = (JsonObject) context.serialize(contentlet.getMap());
+    jsonObject.add("lowIndexPriority", new JsonPrimitive(contentlet.isLowIndexPriority()));
+
+    try {
+      jsonObject.add(Contentlet.ARCHIVED_KEY, new JsonPrimitive(contentlet.isArchived()));
+    } catch (DotDataException | DotSecurityException e) {
+      Logger.error(
+          this.getClass(), "Exception on serialize exception message: " + e.getMessage(), e);
+    }
+
+    return jsonObject;
+  }
 }

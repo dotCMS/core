@@ -8,176 +8,151 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-
+import com.liferay.portal.model.User;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
-
 import javax.servlet.http.HttpServletRequest;
-
 import org.apache.velocity.tools.view.context.ViewContext;
 
-import com.liferay.portal.model.User;
+public final class NavResultHydrated extends NavResult {
 
-public final class NavResultHydrated extends NavResult{
+  /** */
+  private static final long serialVersionUID = 1L;
 
-    /**
-     * 
-     */
-    private static final long serialVersionUID = 1L;
-    final NavResult navResult;
-    final transient ViewContext context;
+  final NavResult navResult;
+  final transient ViewContext context;
 
-    public NavResultHydrated(final NavResult navResult, final ViewContext context) {
-        super(navResult);
-        this.navResult = navResult;
-        this.context = context;
+  public NavResultHydrated(final NavResult navResult, final ViewContext context) {
+    super(navResult);
+    this.navResult = navResult;
+    this.context = context;
+  }
 
-    }
+  public boolean isActive() {
+    if (context != null && UtilMethods.isSet(navResult.getHref())) {
+      HttpServletRequest req = (HttpServletRequest) context.getRequest();
+      if (req != null) {
+        // We exclude the page name from the Request URI so we can check if page's parent
+        // object is the real active object
+        String reqURI = req.getRequestURI();
+        String parentPath = reqURI.substring(0, reqURI.lastIndexOf("/"));
+        if (!parentPath.endsWith("/"))
+          // Adding a slash at the end of the path, so it avoids false positives
+          // when two or more paths from the same level starts with the same name
+          parentPath = parentPath + "/";
+        // If the current item is a folder, we check if it's part of current URI
 
-
-
-    public boolean isActive() {
-        if (context != null && UtilMethods.isSet(navResult.getHref())) {
-            HttpServletRequest req = (HttpServletRequest) context.getRequest();
-            if (req != null) {
-                // We exclude the page name from the Request URI so we can check if page's parent
-                // object is the real active object
-                String reqURI = req.getRequestURI();
-                String parentPath = reqURI.substring(0, reqURI.lastIndexOf("/"));
-                if (!parentPath.endsWith("/"))
-                    // Adding a slash at the end of the path, so it avoids false positives
-                    // when two or more paths from the same level starts with the same name
-                    parentPath = parentPath + "/";
-                // If the current item is a folder, we check if it's part of current URI
-
-                // System.err.println(href + " : " + reqURI);
-                if (isFolder() && !navResult.getHref()
-                    .endsWith("/")) {
-                    String tempHref = navResult.getHref() + "/";
-                    return parentPath.startsWith(tempHref);
-                } else {
-                    // If it's a page, we check instead if it's the current URI
-                    return !isCodeLink() && navResult.getHref()
-                        .equalsIgnoreCase(reqURI);
-                }
-            }
-        }
-        return false;
-    }
-    @Override
-    public String getCodeLink() {
-        if (navResult.getCodeLink() != null && (navResult.getCodeLink()
-            .contains("$")
-                || navResult.getCodeLink()
-                    .contains("#"))) {
-            return UtilMethods.evaluateVelocity(navResult.getCodeLink(), context.getVelocityContext());
+        // System.err.println(href + " : " + reqURI);
+        if (isFolder() && !navResult.getHref().endsWith("/")) {
+          String tempHref = navResult.getHref() + "/";
+          return parentPath.startsWith(tempHref);
         } else {
-            return navResult.getCodeLink();
+          // If it's a page, we check instead if it's the current URI
+          return !isCodeLink() && navResult.getHref().equalsIgnoreCase(reqURI);
         }
+      }
     }
-    @Override
-    public String getTitle() throws Exception {
-        return navResult.getTitle();
+    return false;
+  }
+
+  @Override
+  public String getCodeLink() {
+    if (navResult.getCodeLink() != null
+        && (navResult.getCodeLink().contains("$") || navResult.getCodeLink().contains("#"))) {
+      return UtilMethods.evaluateVelocity(navResult.getCodeLink(), context.getVelocityContext());
+    } else {
+      return navResult.getCodeLink();
     }
+  }
 
-    @Override
-    public String getHostId() {
-        return navResult.getHostId();
-    }
+  @Override
+  public String getTitle() throws Exception {
+    return navResult.getTitle();
+  }
 
+  @Override
+  public String getHostId() {
+    return navResult.getHostId();
+  }
 
-    public String getHref() {
-        return navResult.getHref();
-    }
+  public String getHref() {
+    return navResult.getHref();
+  }
 
-    @Override
-    public boolean isShowOnMenu() {
-        return navResult.isShowOnMenu();
-    }
+  @Override
+  public boolean isShowOnMenu() {
+    return navResult.isShowOnMenu();
+  }
 
-    @Override
-    public boolean isCodeLink() {
-        return navResult.isCodeLink();
-    }
+  @Override
+  public boolean isCodeLink() {
+    return navResult.isCodeLink();
+  }
 
-    @Override
-    public int getOrder() {
-        return navResult.getOrder();
-    }
+  @Override
+  public int getOrder() {
+    return navResult.getOrder();
+  }
 
+  @Override
+  public boolean isFolder() {
+    return navResult.isFolder();
+  }
 
-    @Override
-    public boolean isFolder() {
-        return navResult.isFolder();
-    }
+  @Override
+  public List<? extends NavResult> getChildren() throws Exception {
 
-    @Override
-    public List<? extends NavResult> getChildren() throws Exception {
+    List<NavResultHydrated> list =
+        navResult
+            .getChildren()
+            .stream()
+            .map(result -> new NavResultHydrated(result, this.context))
+            .collect(Collectors.toList());
 
+    if (Config.getBooleanProperty("ENABLE_NAV_PERMISSION_CHECK", false)) {
+      // now filtering permissions
+      List<NavResult> allow = new ArrayList<NavResult>(list.size());
 
-        List<NavResultHydrated> list = navResult.getChildren().stream().map(result -> new NavResultHydrated(result, this.context)).collect(Collectors.toList());
-        
-        
-        
-        if (Config.getBooleanProperty("ENABLE_NAV_PERMISSION_CHECK", false)) {
-            // now filtering permissions
-            List<NavResult> allow = new ArrayList<NavResult>(list.size());
-
-            HttpServletRequest req = (HttpServletRequest) context.getRequest();
-            User currentUser = WebAPILocator.getUserWebAPI()
-                .getLoggedInUser(req);
-            if (currentUser == null)
-                currentUser = APILocator.getUserAPI()
-                    .getAnonymousUser();
-            for (NavResult nv : list) {
-                try {
-                    if (APILocator.getPermissionAPI()
-                        .doesUserHavePermission(nv, PermissionAPI.PERMISSION_READ, currentUser)) {
-                        allow.add(nv);
-                    }
-                } catch (Exception ex) {
-                    Logger.error(this, ex.getMessage(), ex);
-                }
-            }
-            return allow;
+      HttpServletRequest req = (HttpServletRequest) context.getRequest();
+      User currentUser = WebAPILocator.getUserWebAPI().getLoggedInUser(req);
+      if (currentUser == null) currentUser = APILocator.getUserAPI().getAnonymousUser();
+      for (NavResult nv : list) {
+        try {
+          if (APILocator.getPermissionAPI()
+              .doesUserHavePermission(nv, PermissionAPI.PERMISSION_READ, currentUser)) {
+            allow.add(nv);
+          }
+        } catch (Exception ex) {
+          Logger.error(this, ex.getMessage(), ex);
         }
-        return list;
+      }
+      return allow;
     }
+    return list;
+  }
 
+  public String getParentPath() throws DotDataException, DotSecurityException {
+    return navResult.getParentPath();
+  }
 
-    public String getParentPath() throws DotDataException, DotSecurityException {
-        return navResult.getParentPath();
-    }
+  public NavResult getParent() throws DotDataException, DotSecurityException {
+    return navResult.getParent();
+  }
 
+  public List<String> getChildrenFolderIds() {
+    return navResult.getChildrenFolderIds();
+  }
 
+  public String getType() {
+    return navResult.getType();
+  }
 
-    public NavResult getParent() throws DotDataException, DotSecurityException {
-        return navResult.getParent();
-    }
+  public String getTarget() {
+    return navResult.getTarget();
+  }
 
-
-
-    public List<String> getChildrenFolderIds() {
-        return navResult.getChildrenFolderIds();
-    }
-
-
-    public String getType() {
-        return navResult.getType();
-    }
-
-
-
-    public String getTarget() {
-        return navResult.getTarget();
-    }
-
-
-    public String getOwner() {
-        return navResult.getOwner();
-    }
-
-
-
+  public String getOwner() {
+    return navResult.getOwner();
+  }
 }

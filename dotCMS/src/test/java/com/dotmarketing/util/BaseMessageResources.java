@@ -15,21 +15,18 @@ import org.apache.struts.util.PropertyMessageResourcesFactory;
  */
 public class BaseMessageResources {
 
-    protected void initMessages() {
+  protected void initMessages() {
 
-        final PropertyMessageResourcesFactory multiMessageResourcesFactory =
-                new PropertyMessageResourcesFactory();
+    final PropertyMessageResourcesFactory multiMessageResourcesFactory =
+        new PropertyMessageResourcesFactory();
 
-        final MessageResourcesFactory factory =
-                MessageResourcesFactory.createFactory();
+    final MessageResourcesFactory factory = MessageResourcesFactory.createFactory();
 
-        final MessageResources messageResources =
-                new PropertyMessageResources(factory,
-                        "messages.Language");
+    final MessageResources messageResources =
+        new PropertyMessageResources(factory, "messages.Language");
 
-        messageResources.setReturnNull(true);
+    messageResources.setReturnNull(true);
 
-        WebAppPool.put(User.DEFAULT, Globals.MESSAGES_KEY, messageResources);
-    }
-
+    WebAppPool.put(User.DEFAULT, Globals.MESSAGES_KEY, messageResources);
+  }
 } // BaseMessageResources.

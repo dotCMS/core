@@ -1,25 +1,21 @@
 /**
  * Copyright (c) 2000-2005 Liferay, LLC. All rights reserved.
  *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
+ * <p>Permission is hereby granted, free of charge, to any person obtaining a copy of this software
+ * and associated documentation files (the "Software"), to deal in the Software without restriction,
+ * including without limitation the rights to use, copy, modify, merge, publish, distribute,
+ * sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
  *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
+ * <p>The above copyright notice and this permission notice shall be included in all copies or
+ * substantial portions of the Software.
  *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
+ * <p>THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
+ * BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+ * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-
 package com.liferay.portlet.admin.action;
 
 import com.dotcms.repackage.javax.portlet.ActionRequest;
@@ -50,157 +46,136 @@ import org.apache.struts.action.ActionMapping;
 /**
  * <a href="EditPortletAction.java.html"><b><i>View Source</i></b></a>
  *
- * @author  Brian Wing Shun Chan
+ * @author Brian Wing Shun Chan
  * @version $Revision: 1.3 $
- *
  */
 public class EditPortletAction extends PortletAction {
 
-	public void processAction(
-			ActionMapping mapping, ActionForm form, PortletConfig config,
-			ActionRequest req, ActionResponse res)
-		throws Exception {
+  public void processAction(
+      ActionMapping mapping,
+      ActionForm form,
+      PortletConfig config,
+      ActionRequest req,
+      ActionResponse res)
+      throws Exception {
 
-		String cmd = req.getParameter(Constants.CMD);
+    String cmd = req.getParameter(Constants.CMD);
 
-		try {
-			_editPortlet(req);
-		}
-		catch (Exception e) {
-			if (e != null &&
-				e instanceof NoSuchPortletException) {
+    try {
+      _editPortlet(req);
+    } catch (Exception e) {
+      if (e != null && e instanceof NoSuchPortletException) {
 
-				SessionErrors.add(req, e.getClass().getName());
+        SessionErrors.add(req, e.getClass().getName());
 
-				setForward(req, "portlet.admin.error");
-			}
-			else {
-				req.setAttribute(PageContext.EXCEPTION, e);
+        setForward(req, "portlet.admin.error");
+      } else {
+        req.setAttribute(PageContext.EXCEPTION, e);
 
-				setForward(req, Constants.COMMON_ERROR);
-			}
+        setForward(req, Constants.COMMON_ERROR);
+      }
 
-			return;
-		}
+      return;
+    }
 
-		if (cmd != null && cmd.equals(Constants.UPDATE)) {
-			try {
-				_updatePortlet(req, res);
-			}
-			catch (Exception e) {
-				if (e != null &&
-					e instanceof PortletActiveException ||
-					e instanceof PortletDefaultPreferencesException) {
+    if (cmd != null && cmd.equals(Constants.UPDATE)) {
+      try {
+        _updatePortlet(req, res);
+      } catch (Exception e) {
+        if (e != null && e instanceof PortletActiveException
+            || e instanceof PortletDefaultPreferencesException) {
 
-					SessionErrors.add(req, e.getClass().getName());
+          SessionErrors.add(req, e.getClass().getName());
 
-					setForward(req, "portlet.admin.edit_portlet");
-				}
-				else if (e != null &&
-					e instanceof NoSuchPortletException ||
-					e instanceof PrincipalException) {
+          setForward(req, "portlet.admin.edit_portlet");
+        } else if (e != null && e instanceof NoSuchPortletException
+            || e instanceof PrincipalException) {
 
-					SessionErrors.add(req, e.getClass().getName());
+          SessionErrors.add(req, e.getClass().getName());
 
-					setForward(req, "portlet.admin.error");
-				}
-				else {
-					req.setAttribute(PageContext.EXCEPTION, e);
+          setForward(req, "portlet.admin.error");
+        } else {
+          req.setAttribute(PageContext.EXCEPTION, e);
 
-					setForward(req, Constants.COMMON_ERROR);
-				}
-			}
-		}
-		else if ((cmd != null) && (cmd.equals(Constants.SEARCH))) {
-			try {
-				_updatePortletIndex(req);
+          setForward(req, Constants.COMMON_ERROR);
+        }
+      }
+    } else if ((cmd != null) && (cmd.equals(Constants.SEARCH))) {
+      try {
+        _updatePortletIndex(req);
 
-				setForward(req, "portlet.admin.edit_portlet");
-			}
-			catch (Exception e) {
-				req.setAttribute(PageContext.EXCEPTION, e);
+        setForward(req, "portlet.admin.edit_portlet");
+      } catch (Exception e) {
+        req.setAttribute(PageContext.EXCEPTION, e);
 
-				setForward(req, Constants.COMMON_ERROR);
-			}
-		}
-		else {
-			setForward(req, "portlet.admin.edit_portlet");
-		}
-	}
+        setForward(req, Constants.COMMON_ERROR);
+      }
+    } else {
+      setForward(req, "portlet.admin.edit_portlet");
+    }
+  }
 
-	private void _editPortlet(ActionRequest req) throws Exception {
-		String portletId = ParamUtil.getString(req, "portlet_id");
+  private void _editPortlet(ActionRequest req) throws Exception {
+    String portletId = ParamUtil.getString(req, "portlet_id");
 
-		String groupId = ParamUtil.getString(req, "group_id");
+    String groupId = ParamUtil.getString(req, "group_id");
 
-		Portlet portlet = PortletManagerUtil.getPortletById(
-			PortalUtil.getCompanyId(req), groupId, portletId);
+    Portlet portlet =
+        PortletManagerUtil.getPortletById(PortalUtil.getCompanyId(req), groupId, portletId);
 
-		if (portlet == null) {
-			throw new NoSuchPortletException();
-		}
+    if (portlet == null) {
+      throw new NoSuchPortletException();
+    }
 
-		req.setAttribute(WebKeys.PORTLET, portlet);
-	}
+    req.setAttribute(WebKeys.PORTLET, portlet);
+  }
 
-	private void _updatePortlet(ActionRequest req, ActionResponse res)
-		throws Exception {
+  private void _updatePortlet(ActionRequest req, ActionResponse res) throws Exception {
 
-        // Getting the http request
-        ActionRequestImpl reqImpl = (ActionRequestImpl) req;
-        HttpServletRequest httpReq = reqImpl.getHttpServletRequest();
+    // Getting the http request
+    ActionRequestImpl reqImpl = (ActionRequestImpl) req;
+    HttpServletRequest httpReq = reqImpl.getHttpServletRequest();
 
-		String portletId = ParamUtil.getString(req, "portlet_id");
+    String portletId = ParamUtil.getString(req, "portlet_id");
 
-		String groupId = ParamUtil.getString(req, "group_id");
-		String defaultPreferences = ParamUtil.getString(
-			req, "portlet_default_prefs");
-		boolean narrow = ParamUtil.getBoolean(req, "portlet_narrow");
-		String roles = ParamUtil.getString(req, "portlet_roles");
-		boolean active = ParamUtil.getBoolean(req, "portlet_active");
+    String groupId = ParamUtil.getString(req, "group_id");
+    String defaultPreferences = ParamUtil.getString(req, "portlet_default_prefs");
+    boolean narrow = ParamUtil.getBoolean(req, "portlet_narrow");
+    String roles = ParamUtil.getString(req, "portlet_roles");
+    boolean active = ParamUtil.getBoolean(req, "portlet_active");
 
-		Portlet portlet = PortletManagerUtil.getPortletById(
-			PortalUtil.getCompanyId(req), portletId);
+    Portlet portlet = PortletManagerUtil.getPortletById(PortalUtil.getCompanyId(req), portletId);
 
-		PreferencesValidator prefsValidator =
-			PortalUtil.getPreferencesValidator(portlet);
+    PreferencesValidator prefsValidator = PortalUtil.getPreferencesValidator(portlet);
 
-		if (prefsValidator != null) {
-			try {
-				prefsValidator.validate(
-					PortletPreferencesSerializer.fromDefaultXML(
-						defaultPreferences));
-			}
-			catch (Exception e) {
-				throw new PortletDefaultPreferencesException();
-			}
-		}
+    if (prefsValidator != null) {
+      try {
+        prefsValidator.validate(PortletPreferencesSerializer.fromDefaultXML(defaultPreferences));
+      } catch (Exception e) {
+        throw new PortletDefaultPreferencesException();
+      }
+    }
 
-		PortletManagerUtil.updatePortlet(
-			portletId, groupId, defaultPreferences, narrow, roles, active);
+    PortletManagerUtil.updatePortlet(portletId, groupId, defaultPreferences, narrow, roles, active);
 
-		// Session messages
+    // Session messages
 
-		SessionMessages.add(req, "portlet_updated");
+    SessionMessages.add(req, "portlet_updated");
 
-		// Send redirect
+    // Send redirect
 
-		res.sendRedirect(SecurityUtils.stripReferer(httpReq, ParamUtil.getString(req, "redirect")));
-	}
+    res.sendRedirect(SecurityUtils.stripReferer(httpReq, ParamUtil.getString(req, "redirect")));
+  }
 
-	private void _updatePortletIndex(ActionRequest req) throws Exception {
-		String portletId = ParamUtil.getString(req, "portlet_id");
+  private void _updatePortletIndex(ActionRequest req) throws Exception {
+    String portletId = ParamUtil.getString(req, "portlet_id");
 
-		String companyId = PortalUtil.getCompanyId(req);
+    String companyId = PortalUtil.getCompanyId(req);
 
-		Portlet portlet =
-			PortletManagerUtil.getPortletById(companyId, portletId);
+    Portlet portlet = PortletManagerUtil.getPortletById(companyId, portletId);
 
+    // Session messages
 
-
-		// Session messages
-
-		SessionMessages.add(req, "portlet_index_updated");
-	}
-
+    SessionMessages.add(req, "portlet_index_updated");
+  }
 }

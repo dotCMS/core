@@ -12,86 +12,84 @@ import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
 import javax.servlet.http.HttpServletRequest;
 
-/**
- * @author Jonathan Gamba 11/29/17
- */
+/** @author Jonathan Gamba 11/29/17 */
 public class DwrUtil {
 
-    private DwrUtil() {
-        throw new IllegalStateException("Utility class");
+  private DwrUtil() {
+    throw new IllegalStateException("Utility class");
+  }
+
+  /**
+   * Validates if the logged in user has the required permissions to access the users portlet
+   *
+   * @param loggedInUser User to validate
+   */
+  public static void validateUsersPortletPermissions(final User loggedInUser)
+      throws DotSecurityException, DotDataException {
+
+    validatePortletPermissions("users", loggedInUser);
+  }
+
+  /**
+   * Validates if the logged in user has the required permissions to access the roles portlet
+   *
+   * @param loggedInUser User to validate
+   */
+  public static void validateRolesPortletPermissions(final User loggedInUser)
+      throws DotSecurityException, DotDataException {
+
+    validatePortletPermissions("roles", loggedInUser);
+  }
+
+  /**
+   * Validates if the logged in user has the required permissions to access the given portlet
+   *
+   * @param portletId Portlet to validate
+   * @param loggedInUser User to validate
+   */
+  public static void validatePortletPermissions(final String portletId, final User loggedInUser)
+      throws DotSecurityException, DotDataException {
+
+    if (null == loggedInUser) {
+      throw new DotSecurityException(
+          String.format("A logged in User is required to access to the [%s] Portlet", portletId));
     }
+    if (!APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(portletId, loggedInUser)) {
 
-    /**
-     * Validates if the logged in user has the required permissions to access the users portlet
-     *
-     * @param loggedInUser User to validate
-     */
-    public static void validateUsersPortletPermissions(final User loggedInUser)
-            throws DotSecurityException, DotDataException {
+      final String errorMessage =
+          String.format(
+              "User [%s] does not have access to the [%s] Portlet",
+              loggedInUser.getEmailAddress(), portletId);
 
-        validatePortletPermissions("users", loggedInUser);
+      SecurityLogger.logInfo(DwrUtil.class, errorMessage);
+      throw new DotSecurityException(errorMessage);
     }
+  }
 
-    /**
-     * Validates if the logged in user has the required permissions to access the roles portlet
-     *
-     * @param loggedInUser User to validate
-     */
-    public static void validateRolesPortletPermissions(final User loggedInUser)
-            throws DotSecurityException, DotDataException {
+  /**
+   * Returns the logged in user.
+   *
+   * <p><strong>Note:</strong> This method should be use on DWR classes ONLY
+   */
+  public static User getLoggedInUser()
+      throws PortalException, SystemException, DotSecurityException {
 
-        validatePortletPermissions("roles", loggedInUser);
+    final WebContext ctx = WebContextFactory.get();
+    final HttpServletRequest request = ctx.getHttpServletRequest();
+
+    final User loggedInUser = WebAPILocator.getUserWebAPI().getLoggedInUser(request);
+    final String remoteIp = request.getRemoteHost();
+
+    String userId = "[not logged in]";
+    if (loggedInUser != null && loggedInUser.getUserId() != null) {
+      userId = loggedInUser.getUserId();
     }
-
-    /**
-     * Validates if the logged in user has the required permissions to access the given portlet
-     *
-     * @param portletId Portlet to validate
-     * @param loggedInUser User to validate
-     */
-    public static void validatePortletPermissions(final String portletId, final User loggedInUser)
-            throws DotSecurityException, DotDataException {
-
-        if (null == loggedInUser) {
-            throw new DotSecurityException(
-                    String.format("A logged in User is required to access to the [%s] Portlet",
-                            portletId));
-        }
-        if (!APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(portletId, loggedInUser)) {
-
-            final String errorMessage = String.format(
-                    "User [%s] does not have access to the [%s] Portlet",
-                    loggedInUser.getEmailAddress(), portletId);
-
-            SecurityLogger.logInfo(DwrUtil.class, errorMessage);
-            throw new DotSecurityException(errorMessage);
-        }
+    if (loggedInUser == null) {
+      SecurityLogger.logInfo(
+          DwrUtil.class,
+          "unauthorized attempt to call getUserById by user " + userId + " from " + remoteIp);
+      throw new DotSecurityException("not authorized");
     }
-
-    /**
-     * Returns the logged in user.
-     * <p><strong>Note:</strong> This method should be use on DWR classes ONLY</p>
-     */
-    public static User getLoggedInUser()
-            throws PortalException, SystemException, DotSecurityException {
-
-        final WebContext ctx = WebContextFactory.get();
-        final HttpServletRequest request = ctx.getHttpServletRequest();
-
-        final User loggedInUser = WebAPILocator.getUserWebAPI().getLoggedInUser(request);
-        final String remoteIp = request.getRemoteHost();
-
-        String userId = "[not logged in]";
-        if (loggedInUser != null && loggedInUser.getUserId() != null) {
-            userId = loggedInUser.getUserId();
-        }
-        if (loggedInUser == null) {
-            SecurityLogger.logInfo(DwrUtil.class,
-                    "unauthorized attempt to call getUserById by user " + userId + " from "
-                            + remoteIp);
-            throw new DotSecurityException("not authorized");
-        }
-        return loggedInUser;
-    }
-
+    return loggedInUser;
+  }
 }

@@ -27,233 +27,240 @@ import java.util.List;
 import java.util.Map;
 
 public class MenuLinkFactoryImpl implements MenuLinkFactory {
-	static MenuLinkCache menuLinkCache = CacheLocator.getMenuLinkCache();
+  static MenuLinkCache menuLinkCache = CacheLocator.getMenuLinkCache();
 
-	
-	@Override
-	public Link load(String inode) throws DotHibernateException{
-		
-		HibernateUtil dh = new HibernateUtil(Link.class);
+  @Override
+  public Link load(String inode) throws DotHibernateException {
 
-		return (Link) dh.load(inode);
-		
-		
-	}
-	
-	public void save(Link menuLink) throws DotDataException, DotStateException, DotSecurityException {
-	    save(menuLink, APILocator.getFolderAPI().findSystemFolder());
-	}
-	
-	public void save(Link menuLink, Folder destination) throws DotDataException, DotStateException, DotSecurityException {
-		
-		
-		if(UtilMethods.isSet(menuLink.getInode())) {
-			Link oldLink = null;
-			try{
-				oldLink = (Link) HibernateUtil.load(Link.class, menuLink.getInode());
-			}catch(DotHibernateException dhe){
-				Logger.debug(this.getClass(), dhe.getMessage());
-			}
-			
-			if(oldLink!=null && InodeUtils.isSet(oldLink.getIdentifier())) {
-				oldLink.copy(menuLink);
-				HibernateUtil.saveOrUpdate(oldLink);
-				HibernateUtil.flush();
-				menuLink = oldLink;
-			} else {
-				String existingId=menuLink.getIdentifier();
-				menuLink.setIdentifier(null);
-				HibernateUtil.saveWithPrimaryKey(menuLink, menuLink.getInode());
+    HibernateUtil dh = new HibernateUtil(Link.class);
 
-				Identifier id=APILocator.getIdentifierAPI().find(existingId);
-				if(id==null || !InodeUtils.isSet(id.getId())) {
-					APILocator.getIdentifierAPI().createNew(menuLink, destination, existingId);
-				}else {
-					menuLink.setIdentifier(existingId);
-				}
-				HibernateUtil.saveOrUpdate(menuLink);
-				HibernateUtil.flush();
-			}
-			APILocator.getIdentifierAPI().updateIdentifierURI(menuLink, destination);
+    return (Link) dh.load(inode);
+  }
 
-	        
-		} else {
-		    HibernateUtil.save(menuLink);
-			APILocator.getIdentifierAPI().createNew(menuLink, destination);
-			HibernateUtil.save(menuLink);
-			APILocator.getVersionableAPI().setWorking(menuLink);
-		}
-		CacheLocator.getNavToolCache().removeNav(menuLink.getHostId(),destination.getInode());
-		RefreshMenus.deleteMenu(destination);
-	}
+  public void save(Link menuLink) throws DotDataException, DotStateException, DotSecurityException {
+    save(menuLink, APILocator.getFolderAPI().findSystemFolder());
+  }
 
-	public List<Link> findLinks(User user, boolean includeArchived,
-			Map<String, Object> params, String hostId, String inode, String identifier, String parent,
-			int offset, int limit, String orderBy) throws DotSecurityException,
-			DotDataException {
+  public void save(Link menuLink, Folder destination)
+      throws DotDataException, DotStateException, DotSecurityException {
 
-		PaginatedArrayList<Link> assets = new PaginatedArrayList<Link>();
-		List<Permissionable> toReturn = new ArrayList<Permissionable>();
-		int internalLimit = 500;
-		int internalOffset = 0;
-		boolean done = false;
+    if (UtilMethods.isSet(menuLink.getInode())) {
+      Link oldLink = null;
+      try {
+        oldLink = (Link) HibernateUtil.load(Link.class, menuLink.getInode());
+      } catch (DotHibernateException dhe) {
+        Logger.debug(this.getClass(), dhe.getMessage());
+      }
 
-		StringBuffer conditionBuffer = new StringBuffer();
-		final String condition = !includeArchived?" asset.inode=versioninfo.working_inode and versioninfo.deleted = " +DbConnectionFactory.getDBFalse():"  asset.inode=versioninfo.working_inode ";
-		conditionBuffer.append(condition);
+      if (oldLink != null && InodeUtils.isSet(oldLink.getIdentifier())) {
+        oldLink.copy(menuLink);
+        HibernateUtil.saveOrUpdate(oldLink);
+        HibernateUtil.flush();
+        menuLink = oldLink;
+      } else {
+        String existingId = menuLink.getIdentifier();
+        menuLink.setIdentifier(null);
+        HibernateUtil.saveWithPrimaryKey(menuLink, menuLink.getInode());
 
-		List<Object> paramValues =null;
-		if(params!=null && params.size()>0){
-			conditionBuffer.append(" and (");
-			paramValues = new ArrayList<>();
-			int counter = 0;
-			for (Map.Entry<String, Object> entry : params.entrySet()) {
-				if(counter==0){
-					if(entry.getValue() instanceof String){
-						if(entry.getKey().equalsIgnoreCase("inode")){
-							conditionBuffer.append(" asset.");
-							conditionBuffer.append(entry.getKey());
-							conditionBuffer.append(" = '");
-							conditionBuffer.append(entry.getValue());
-							conditionBuffer.append('\'');
-						}else{
-							conditionBuffer.append(" lower(asset.");
-							conditionBuffer.append(entry.getKey());
-							conditionBuffer.append(") like ? ");
-							paramValues.add("%"+ ((String)entry.getValue()).toLowerCase()+"%");
-						}
-					}else{
-						conditionBuffer.append(" asset.");
-						conditionBuffer.append(entry.getKey());
-						conditionBuffer.append(" = ");
-						conditionBuffer.append(entry.getValue());
-					}
-				}else{
-					if(entry.getValue() instanceof String){
-						if(entry.getKey().equalsIgnoreCase("inode")){
-							conditionBuffer.append(" OR asset.");
-							conditionBuffer.append(entry.getKey());
-							conditionBuffer.append(" = '");
-							conditionBuffer.append(entry.getValue());
-							conditionBuffer.append("'");
-						}else{
-							conditionBuffer.append(" OR lower(asset.");
-							conditionBuffer.append(entry.getKey());
-							conditionBuffer.append(") like ? ");
-							paramValues.add("%"+ ((String)entry.getValue()).toLowerCase()+"%");
-						}
-					}else{
-						conditionBuffer.append(" OR asset.");
-						conditionBuffer.append(entry.getKey());
-						conditionBuffer.append(" = ");
-						conditionBuffer.append(entry.getValue());
-					}
-				}
+        Identifier id = APILocator.getIdentifierAPI().find(existingId);
+        if (id == null || !InodeUtils.isSet(id.getId())) {
+          APILocator.getIdentifierAPI().createNew(menuLink, destination, existingId);
+        } else {
+          menuLink.setIdentifier(existingId);
+        }
+        HibernateUtil.saveOrUpdate(menuLink);
+        HibernateUtil.flush();
+      }
+      APILocator.getIdentifierAPI().updateIdentifierURI(menuLink, destination);
 
-				counter+=1;
-			}
-			conditionBuffer.append(" ) ");
-		}
+    } else {
+      HibernateUtil.save(menuLink);
+      APILocator.getIdentifierAPI().createNew(menuLink, destination);
+      HibernateUtil.save(menuLink);
+      APILocator.getVersionableAPI().setWorking(menuLink);
+    }
+    CacheLocator.getNavToolCache().removeNav(menuLink.getHostId(), destination.getInode());
+    RefreshMenus.deleteMenu(destination);
+  }
 
-		StringBuffer query = new StringBuffer();
-		query.append("select asset.*, inode.* from links asset, inode, identifier,link_version_info versioninfo");
-		if(UtilMethods.isSet(parent)){
-			query.append(" ,tree where asset.inode=inode.inode ")
-					.append("and asset.identifier = identifier.id and tree.parent = '")
-					.append(parent).append("' and tree.child=asset.inode");
+  public List<Link> findLinks(
+      User user,
+      boolean includeArchived,
+      Map<String, Object> params,
+      String hostId,
+      String inode,
+      String identifier,
+      String parent,
+      int offset,
+      int limit,
+      String orderBy)
+      throws DotSecurityException, DotDataException {
 
-		}else{
-			query.append(" where asset.inode=inode.inode and asset.identifier = identifier.id");
-		}
-		query.append(" and versioninfo.identifier=identifier.id ");
-		if(UtilMethods.isSet(hostId)){
-			query.append(" and identifier.host_inode = '");
-			query.append(hostId);
-			query.append('\'');
-		}
-		if(UtilMethods.isSet(inode)){
-			query.append(" and asset.inode = '");
-			query.append(inode);
-			query.append("'");
-		}
-		if(UtilMethods.isSet(identifier)){
-			query.append(" and asset.identifier = '");
-			query.append(identifier);
-			query.append("'");
-		}
-		if(!UtilMethods.isSet(orderBy)){
-			orderBy = "mod_date desc";
-		}
+    PaginatedArrayList<Link> assets = new PaginatedArrayList<Link>();
+    List<Permissionable> toReturn = new ArrayList<Permissionable>();
+    int internalLimit = 500;
+    int internalOffset = 0;
+    boolean done = false;
 
-		List<Link> resultList;
-		final DotConnect dc = new DotConnect();
-		int countLimit = 100;
-		int size = 0;
-		try {
-			query.append(" and ");
-			query.append(conditionBuffer.toString());
-			query.append(" order by asset.");
-			query.append(orderBy);
-			dc.setSQL(query.toString());
+    StringBuffer conditionBuffer = new StringBuffer();
+    final String condition =
+        !includeArchived
+            ? " asset.inode=versioninfo.working_inode and versioninfo.deleted = "
+                + DbConnectionFactory.getDBFalse()
+            : "  asset.inode=versioninfo.working_inode ";
+    conditionBuffer.append(condition);
 
-			if(paramValues!=null && paramValues.size()>0){
-				for (Object value : paramValues) {
-					dc.addParam((String)value);
-				}
-			}
+    List<Object> paramValues = null;
+    if (params != null && params.size() > 0) {
+      conditionBuffer.append(" and (");
+      paramValues = new ArrayList<>();
+      int counter = 0;
+      for (Map.Entry<String, Object> entry : params.entrySet()) {
+        if (counter == 0) {
+          if (entry.getValue() instanceof String) {
+            if (entry.getKey().equalsIgnoreCase("inode")) {
+              conditionBuffer.append(" asset.");
+              conditionBuffer.append(entry.getKey());
+              conditionBuffer.append(" = '");
+              conditionBuffer.append(entry.getValue());
+              conditionBuffer.append('\'');
+            } else {
+              conditionBuffer.append(" lower(asset.");
+              conditionBuffer.append(entry.getKey());
+              conditionBuffer.append(") like ? ");
+              paramValues.add("%" + ((String) entry.getValue()).toLowerCase() + "%");
+            }
+          } else {
+            conditionBuffer.append(" asset.");
+            conditionBuffer.append(entry.getKey());
+            conditionBuffer.append(" = ");
+            conditionBuffer.append(entry.getValue());
+          }
+        } else {
+          if (entry.getValue() instanceof String) {
+            if (entry.getKey().equalsIgnoreCase("inode")) {
+              conditionBuffer.append(" OR asset.");
+              conditionBuffer.append(entry.getKey());
+              conditionBuffer.append(" = '");
+              conditionBuffer.append(entry.getValue());
+              conditionBuffer.append("'");
+            } else {
+              conditionBuffer.append(" OR lower(asset.");
+              conditionBuffer.append(entry.getKey());
+              conditionBuffer.append(") like ? ");
+              paramValues.add("%" + ((String) entry.getValue()).toLowerCase() + "%");
+            }
+          } else {
+            conditionBuffer.append(" OR asset.");
+            conditionBuffer.append(entry.getKey());
+            conditionBuffer.append(" = ");
+            conditionBuffer.append(entry.getValue());
+          }
+        }
 
-			while(!done) {
-				dc.setStartRow(internalOffset);
-				dc.setMaxRows(internalLimit);
+        counter += 1;
+      }
+      conditionBuffer.append(" ) ");
+    }
 
-				resultList = TransformerLocator.createLinkTransformer(dc.loadObjectResults()).asList();
+    StringBuffer query = new StringBuffer();
+    query.append(
+        "select asset.*, inode.* from links asset, inode, identifier,link_version_info versioninfo");
+    if (UtilMethods.isSet(parent)) {
+      query
+          .append(" ,tree where asset.inode=inode.inode ")
+          .append("and asset.identifier = identifier.id and tree.parent = '")
+          .append(parent)
+          .append("' and tree.child=asset.inode");
 
-				PermissionAPI permAPI = APILocator.getPermissionAPI();
-				toReturn.addAll(permAPI.filterCollection(resultList, PermissionAPI.PERMISSION_READ, false, user));
-				if(countLimit > 0 && toReturn.size() >= countLimit + offset)
-					done = true;
-				else if(resultList.size() < internalLimit)
-					done = true;
+    } else {
+      query.append(" where asset.inode=inode.inode and asset.identifier = identifier.id");
+    }
+    query.append(" and versioninfo.identifier=identifier.id ");
+    if (UtilMethods.isSet(hostId)) {
+      query.append(" and identifier.host_inode = '");
+      query.append(hostId);
+      query.append('\'');
+    }
+    if (UtilMethods.isSet(inode)) {
+      query.append(" and asset.inode = '");
+      query.append(inode);
+      query.append("'");
+    }
+    if (UtilMethods.isSet(identifier)) {
+      query.append(" and asset.identifier = '");
+      query.append(identifier);
+      query.append("'");
+    }
+    if (!UtilMethods.isSet(orderBy)) {
+      orderBy = "mod_date desc";
+    }
 
-				internalOffset += internalLimit;
-			}
+    List<Link> resultList;
+    final DotConnect dc = new DotConnect();
+    int countLimit = 100;
+    int size = 0;
+    try {
+      query.append(" and ");
+      query.append(conditionBuffer.toString());
+      query.append(" order by asset.");
+      query.append(orderBy);
+      dc.setSQL(query.toString());
 
-			if(offset > toReturn.size()) {
-				size = 0;
-			} else if(countLimit > 0) {
-				int toIndex = offset + countLimit > toReturn.size()?toReturn.size():offset + countLimit;
-				size = toReturn.subList(offset, toIndex).size();
-			} else if (offset > 0) {
-				size = toReturn.subList(offset, toReturn.size()).size();
-			}
-			assets.setTotalResults(size);
+      if (paramValues != null && paramValues.size() > 0) {
+        for (Object value : paramValues) {
+          dc.addParam((String) value);
+        }
+      }
 
-			if(limit!=-1) {
-				int from = offset<toReturn.size()?offset:0;
-				int pageLimit = 0;
-				for(int i=from;i<toReturn.size();i++){
-					if(pageLimit<limit){
-						assets.add((Link) toReturn.get(i));
-						pageLimit+=1;
-					}else{
-						break;
-					}
+      while (!done) {
+        dc.setStartRow(internalOffset);
+        dc.setMaxRows(internalLimit);
 
-				}
-			}
-			else {
-				for(int i=0;i<toReturn.size();i++){
-					assets.add((Link) toReturn.get(i));
-				}
-			}
+        resultList = TransformerLocator.createLinkTransformer(dc.loadObjectResults()).asList();
 
-		} catch (Exception e) {
+        PermissionAPI permAPI = APILocator.getPermissionAPI();
+        toReturn.addAll(
+            permAPI.filterCollection(resultList, PermissionAPI.PERMISSION_READ, false, user));
+        if (countLimit > 0 && toReturn.size() >= countLimit + offset) done = true;
+        else if (resultList.size() < internalLimit) done = true;
 
-			Logger.error(MenuLinkFactoryImpl.class, "findLinks failed:" + e, e);
-			throw new DotRuntimeException(e.toString());
-		}
+        internalOffset += internalLimit;
+      }
 
-		return assets;
+      if (offset > toReturn.size()) {
+        size = 0;
+      } else if (countLimit > 0) {
+        int toIndex = offset + countLimit > toReturn.size() ? toReturn.size() : offset + countLimit;
+        size = toReturn.subList(offset, toIndex).size();
+      } else if (offset > 0) {
+        size = toReturn.subList(offset, toReturn.size()).size();
+      }
+      assets.setTotalResults(size);
 
-	}
+      if (limit != -1) {
+        int from = offset < toReturn.size() ? offset : 0;
+        int pageLimit = 0;
+        for (int i = from; i < toReturn.size(); i++) {
+          if (pageLimit < limit) {
+            assets.add((Link) toReturn.get(i));
+            pageLimit += 1;
+          } else {
+            break;
+          }
+        }
+      } else {
+        for (int i = 0; i < toReturn.size(); i++) {
+          assets.add((Link) toReturn.get(i));
+        }
+      }
+
+    } catch (Exception e) {
+
+      Logger.error(MenuLinkFactoryImpl.class, "findLinks failed:" + e, e);
+      throw new DotRuntimeException(e.toString());
+    }
+
+    return assets;
+  }
 }

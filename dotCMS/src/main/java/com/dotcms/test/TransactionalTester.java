@@ -9,9 +9,9 @@ import com.dotmarketing.exception.DotSecurityException;
 @VisibleForTesting
 public class TransactionalTester {
 
-    @VisibleForTesting
-    @WrapInTransaction
-    public void test (final VoidDelegate voidDelegate) throws DotDataException, DotSecurityException {
-        voidDelegate.execute();
-    }
+  @VisibleForTesting
+  @WrapInTransaction
+  public void test(final VoidDelegate voidDelegate) throws DotDataException, DotSecurityException {
+    voidDelegate.execute();
+  }
 }

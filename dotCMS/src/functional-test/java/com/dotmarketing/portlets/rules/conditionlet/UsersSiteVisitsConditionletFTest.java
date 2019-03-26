@@ -1,202 +1,232 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
+import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.EQUAL;
+import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.GREATER_THAN;
+import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.GREATER_THAN_OR_EQUAL;
+import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.LESS_THAN;
+import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.LESS_THAN_OR_EQUAL;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+
 import com.dotcms.LicenseTestUtil;
 import com.dotmarketing.portlets.rules.model.Condition;
 import com.dotmarketing.portlets.rules.model.Rule;
-
+import java.io.IOException;
+import java.net.URLConnection;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.io.IOException;
-import java.net.URLConnection;
+/** Created by freddyrodriguez on 10/3/16. */
+public class UsersSiteVisitsConditionletFTest extends ConditionletFTest {
 
-import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.*;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+  private UsersSiteVisitsTestUtil usersSiteVisitsTestUtil;
 
-/**
- * Created by freddyrodriguez on 10/3/16.
- */
-public class UsersSiteVisitsConditionletFTest extends ConditionletFTest{
+  @BeforeClass
+  public static void prepare() throws Exception {
+    LicenseTestUtil.getLicense();
+  }
 
-    private UsersSiteVisitsTestUtil usersSiteVisitsTestUtil;
+  @Before
+  public void innerInit() {
+    usersSiteVisitsTestUtil = new UsersSiteVisitsTestUtil(request);
+  }
 
-    @BeforeClass
-    public static void prepare () throws Exception {
-        LicenseTestUtil.getLicense();
-    }
+  @Before
+  public void cleanCookies() {
+    usersSiteVisitsTestUtil.clean();
+  }
 
-    @Before
-    public void innerInit () {
-        usersSiteVisitsTestUtil = new UsersSiteVisitsTestUtil(request);
-    }
+  protected Condition getCondition(String id, String value) {
+    // Creating the Conditionlet for the Browser language
+    Condition condition = conditionDataGen.next();
+    condition.setConditionletId(UsersSiteVisitsConditionlet.class.getSimpleName());
+    condition.addValue(Conditionlet.COMPARISON_KEY, id);
+    condition.addValue(UsersSiteVisitsConditionlet.SITE_VISITS_KEY, value);
+    return condition;
+  }
 
-    @Before
-    public void cleanCookies(){
-        usersSiteVisitsTestUtil.clean();
-    }
+  private void testEqualsComparison(Rule.FireOn fireOn) throws IOException {
 
-    protected Condition getCondition(String id, String value) {
-        //Creating the Conditionlet for the Browser language
-        Condition condition = conditionDataGen.next();
-        condition.setConditionletId(UsersSiteVisitsConditionlet.class.getSimpleName());
-        condition.addValue(Conditionlet.COMPARISON_KEY, id);
-        condition.addValue(UsersSiteVisitsConditionlet.SITE_VISITS_KEY, value);
-        return condition;
-    }
+    Condition condition = getCondition(EQUAL.getId(), "2");
+    String[] keyAndValu = createRule(condition, fireOn);
+    String randomKey = keyAndValu[0];
+    String value = keyAndValu[1];
 
-    private void testEqualsComparison (Rule.FireOn fireOn) throws IOException {
+    URLConnection conn = usersSiteVisitsTestUtil.makeRequest("about-us/index");
+    assertNull(
+        "Specified response header should be NOT present in the Response.",
+        conn.getHeaderField(randomKey));
 
-        Condition condition = getCondition(EQUAL.getId(), "2");
-        String[] keyAndValu = createRule(condition, fireOn);
-        String randomKey = keyAndValu[0];
-        String value = keyAndValu[1];
+    conn = usersSiteVisitsTestUtil.makeRequest("about-us/index");
+    assertNull(
+        "Specified response header should be NOT present in the Response.",
+        conn.getHeaderField(randomKey));
 
+    conn = usersSiteVisitsTestUtil.makeNewSessionRequest("about-us/index");
+    assertEquals(
+        "Specified response header should be present in the Response.",
+        value,
+        conn.getHeaderField(randomKey));
+  }
 
-        URLConnection conn = usersSiteVisitsTestUtil.makeRequest("about-us/index");
-        assertNull("Specified response header should be NOT present in the Response.", conn.getHeaderField(randomKey));
+  public void testLessThanComparison(Rule.FireOn fireOn) throws IOException {
 
-        conn = usersSiteVisitsTestUtil.makeRequest("about-us/index");
-        assertNull("Specified response header should be NOT present in the Response.", conn.getHeaderField(randomKey));
+    Condition condition = getCondition(LESS_THAN.getId(), "2");
+    String[] keyAndValu = createRule(condition, fireOn);
+    String randomKey = keyAndValu[0];
+    String value = keyAndValu[1];
 
-        conn = usersSiteVisitsTestUtil.makeNewSessionRequest("about-us/index");
-        assertEquals("Specified response header should be present in the Response.", value, conn.getHeaderField(randomKey));
+    URLConnection conn = usersSiteVisitsTestUtil.makeRequest("about-us/index");
+    assertEquals(
+        "Specified response header should be present in the Response.",
+        value,
+        conn.getHeaderField(randomKey));
 
-    }
+    conn = usersSiteVisitsTestUtil.makeRequest("about-us/index");
+    assertEquals(
+        "Specified response header should be present in the Response.",
+        value,
+        conn.getHeaderField(randomKey));
 
-    public void testLessThanComparison (Rule.FireOn fireOn) throws IOException {
+    conn = usersSiteVisitsTestUtil.makeNewSessionRequest("about-us/index");
+    assertNull(
+        "Specified response header should be present in the Response.",
+        conn.getHeaderField(randomKey));
+  }
 
-        Condition condition = getCondition(LESS_THAN.getId(), "2");
-        String[] keyAndValu = createRule(condition, fireOn);
-        String randomKey = keyAndValu[0];
-        String value = keyAndValu[1];
+  public void testGreaterThanComparison(Rule.FireOn fireOn) throws IOException {
 
+    Condition condition = getCondition(GREATER_THAN.getId(), "2");
+    String[] keyAndValu = createRule(condition, fireOn);
+    String randomKey = keyAndValu[0];
+    String value = keyAndValu[1];
 
-        URLConnection conn = usersSiteVisitsTestUtil.makeRequest("about-us/index");
-        assertEquals("Specified response header should be present in the Response.", value, conn.getHeaderField(randomKey));
+    URLConnection conn = usersSiteVisitsTestUtil.makeRequest("about-us/index");
+    assertNull(
+        "Specified response header should be NOT present in the Response.",
+        conn.getHeaderField(randomKey));
 
-        conn = usersSiteVisitsTestUtil.makeRequest("about-us/index");
-        assertEquals("Specified response header should be present in the Response.", value, conn.getHeaderField(randomKey));
+    conn = usersSiteVisitsTestUtil.makeNewSessionRequest("about-us/index");
+    assertNull(
+        "Specified response header should be NOT present in the Response.",
+        conn.getHeaderField(randomKey));
 
-        conn = usersSiteVisitsTestUtil.makeNewSessionRequest("about-us/index");
-        assertNull("Specified response header should be present in the Response.", conn.getHeaderField(randomKey));
+    conn = usersSiteVisitsTestUtil.makeRequest("about-us/index");
+    assertNull(
+        "Specified response header should be NOT present in the Response.",
+        conn.getHeaderField(randomKey));
 
-    }
+    conn = usersSiteVisitsTestUtil.makeNewSessionRequest("about-us/index");
+    assertEquals(
+        "Specified response header should be NOT present in the Response.",
+        value,
+        conn.getHeaderField(randomKey));
+  }
 
-    public void testGreaterThanComparison (Rule.FireOn fireOn) throws IOException {
+  public void testLessThanOrEqualsComparison(Rule.FireOn fireOn) throws IOException {
 
-        Condition condition = getCondition(GREATER_THAN.getId(), "2");
-        String[] keyAndValu = createRule(condition, fireOn);
-        String randomKey = keyAndValu[0];
-        String value = keyAndValu[1];
+    Condition condition = getCondition(LESS_THAN_OR_EQUAL.getId(), "2");
+    String[] keyAndValu = createRule(condition, fireOn);
+    String randomKey = keyAndValu[0];
+    String value = keyAndValu[1];
 
+    URLConnection conn = usersSiteVisitsTestUtil.makeRequest("about-us/index");
+    assertEquals(
+        "Specified response header should be present in the Response.",
+        value,
+        conn.getHeaderField(randomKey));
 
-        URLConnection conn = usersSiteVisitsTestUtil.makeRequest("about-us/index");
-        assertNull("Specified response header should be NOT present in the Response.", conn.getHeaderField(randomKey));
+    conn = usersSiteVisitsTestUtil.makeNewSessionRequest("about-us/index");
+    assertEquals(
+        "Specified response header should be present in the Response.",
+        value,
+        conn.getHeaderField(randomKey));
 
-        conn = usersSiteVisitsTestUtil.makeNewSessionRequest("about-us/index");
-        assertNull("Specified response header should be NOT present in the Response.", conn.getHeaderField(randomKey));
+    conn = usersSiteVisitsTestUtil.makeRequest("about-us/index");
+    assertEquals(
+        "Specified response header should be present in the Response.",
+        value,
+        conn.getHeaderField(randomKey));
 
-        conn = usersSiteVisitsTestUtil.makeRequest("about-us/index");
-        assertNull("Specified response header should be NOT present in the Response.", conn.getHeaderField(randomKey));
+    conn = usersSiteVisitsTestUtil.makeNewSessionRequest("about-us/index");
+    assertNull(
+        "Specified response header should be present in the Response.",
+        conn.getHeaderField(randomKey));
+  }
 
-        conn = usersSiteVisitsTestUtil.makeNewSessionRequest("about-us/index");
-        assertEquals("Specified response header should be NOT present in the Response.", value, conn.getHeaderField(randomKey));
+  public void testGreaterThanOrEqualsComparison(Rule.FireOn fireOn) throws IOException {
 
-    }
+    Condition condition = getCondition(GREATER_THAN_OR_EQUAL.getId(), "2");
+    String[] keyAndValu = createRule(condition, fireOn);
+    String randomKey = keyAndValu[0];
+    String value = keyAndValu[1];
 
-    public void testLessThanOrEqualsComparison (Rule.FireOn fireOn) throws IOException {
+    URLConnection conn = usersSiteVisitsTestUtil.makeRequest("about-us/index");
+    assertNull(
+        "Specified response header should be NOT present in the Response.",
+        conn.getHeaderField(randomKey));
 
-        Condition condition = getCondition(LESS_THAN_OR_EQUAL.getId(), "2");
-        String[] keyAndValu = createRule(condition, fireOn);
-        String randomKey = keyAndValu[0];
-        String value = keyAndValu[1];
+    conn = usersSiteVisitsTestUtil.makeRequest("about-us/index");
+    assertNull(
+        "Specified response header should be NOT present in the Response.",
+        conn.getHeaderField(randomKey));
 
+    conn = usersSiteVisitsTestUtil.makeNewSessionRequest("about-us/index");
+    assertEquals(value, conn.getHeaderField(randomKey));
 
-        URLConnection conn = usersSiteVisitsTestUtil.makeRequest("about-us/index");
-        assertEquals("Specified response header should be present in the Response.", value, conn.getHeaderField(randomKey));
+    conn = usersSiteVisitsTestUtil.makeNewSessionRequest("about-us/index");
+    assertEquals(value, conn.getHeaderField(randomKey));
+  }
 
-        conn = usersSiteVisitsTestUtil.makeNewSessionRequest("about-us/index");
-        assertEquals("Specified response header should be present in the Response.", value, conn.getHeaderField(randomKey));
+  @Test
+  public void testEqualsComparisonEveryRequestRule() throws IOException {
 
-        conn = usersSiteVisitsTestUtil.makeRequest("about-us/index");
-        assertEquals("Specified response header should be present in the Response.", value, conn.getHeaderField(randomKey));
+    testEqualsComparison(Rule.FireOn.EVERY_REQUEST);
+  }
 
-        conn = usersSiteVisitsTestUtil.makeNewSessionRequest("about-us/index");
-        assertNull("Specified response header should be present in the Response.", conn.getHeaderField(randomKey));
-    }
+  @Test
+  public void testEqualsComparisonEveryPageRule() throws IOException {
+    testEqualsComparison(Rule.FireOn.EVERY_PAGE);
+  }
 
-    public void testGreaterThanOrEqualsComparison (Rule.FireOn fireOn) throws IOException {
+  @Test
+  public void testLessThanComparisonEveryRequestRule() throws IOException {
+    testLessThanComparison(Rule.FireOn.EVERY_REQUEST);
+  }
 
-        Condition condition = getCondition(GREATER_THAN_OR_EQUAL.getId(), "2");
-        String[] keyAndValu = createRule(condition, fireOn);
-        String randomKey = keyAndValu[0];
-        String value = keyAndValu[1];
+  @Test
+  public void testLessThanComparisonEveryPageRule() throws IOException {
+    testLessThanComparison(Rule.FireOn.EVERY_PAGE);
+  }
 
-        URLConnection conn = usersSiteVisitsTestUtil.makeRequest("about-us/index");
-        assertNull("Specified response header should be NOT present in the Response.", conn.getHeaderField(randomKey));
+  @Test
+  public void testGreaterThanComparisonEveryRequestRule() throws IOException {
+    testGreaterThanComparison(Rule.FireOn.EVERY_REQUEST);
+  }
 
-        conn = usersSiteVisitsTestUtil.makeRequest("about-us/index");
-        assertNull("Specified response header should be NOT present in the Response.", conn.getHeaderField(randomKey));
+  @Test
+  public void testGreaterThanComparisonEveryPageRule() throws IOException {
+    testGreaterThanComparison(Rule.FireOn.EVERY_PAGE);
+  }
 
-        conn = usersSiteVisitsTestUtil.makeNewSessionRequest("about-us/index");
-        assertEquals(value, conn.getHeaderField(randomKey));
+  @Test
+  public void testLessThanOrEqualsComparisonEveryRequestRule() throws IOException {
+    testLessThanOrEqualsComparison(Rule.FireOn.EVERY_REQUEST);
+  }
 
-        conn = usersSiteVisitsTestUtil.makeNewSessionRequest("about-us/index");
-        assertEquals(value, conn.getHeaderField(randomKey));
-    }
+  @Test
+  public void testLessThanOrEqualsComparisoEveryPageRule() throws IOException {
+    testLessThanOrEqualsComparison(Rule.FireOn.EVERY_PAGE);
+  }
 
-    @Test
-    public void testEqualsComparisonEveryRequestRule () throws IOException {
+  @Test
+  public void testGreaterThanEquasComparisonEveryRequestRule() throws IOException {
+    testGreaterThanOrEqualsComparison(Rule.FireOn.EVERY_REQUEST);
+  }
 
-        testEqualsComparison( Rule.FireOn.EVERY_REQUEST );
-    }
-
-    @Test
-    public void testEqualsComparisonEveryPageRule () throws IOException {
-        testEqualsComparison( Rule.FireOn.EVERY_PAGE );
-    }
-
-    @Test
-    public void testLessThanComparisonEveryRequestRule () throws IOException {
-        testLessThanComparison( Rule.FireOn.EVERY_REQUEST );
-    }
-
-    @Test
-    public void testLessThanComparisonEveryPageRule () throws IOException {
-        testLessThanComparison( Rule.FireOn.EVERY_PAGE );
-    }
-
-    @Test
-    public void testGreaterThanComparisonEveryRequestRule () throws IOException {
-        testGreaterThanComparison( Rule.FireOn.EVERY_REQUEST );
-    }
-
-    @Test
-    public void testGreaterThanComparisonEveryPageRule () throws IOException {
-        testGreaterThanComparison( Rule.FireOn.EVERY_PAGE );
-    }
-
-    @Test
-    public void testLessThanOrEqualsComparisonEveryRequestRule () throws IOException {
-        testLessThanOrEqualsComparison( Rule.FireOn.EVERY_REQUEST );
-    }
-
-    @Test
-    public void testLessThanOrEqualsComparisoEveryPageRule () throws IOException {
-        testLessThanOrEqualsComparison( Rule.FireOn.EVERY_PAGE );
-    }
-
-    @Test
-    public void testGreaterThanEquasComparisonEveryRequestRule () throws IOException {
-        testGreaterThanOrEqualsComparison( Rule.FireOn.EVERY_REQUEST );
-    }
-
-    @Test
-    public void testGreaterThanEqualsComparisonEveryPageRule () throws IOException {
-        testGreaterThanOrEqualsComparison( Rule.FireOn.EVERY_PAGE );
-    }
-
-
+  @Test
+  public void testGreaterThanEqualsComparisonEveryPageRule() throws IOException {
+    testGreaterThanOrEqualsComparison(Rule.FireOn.EVERY_PAGE);
+  }
 }

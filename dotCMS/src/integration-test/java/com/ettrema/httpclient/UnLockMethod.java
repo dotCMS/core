@@ -2,28 +2,23 @@ package com.ettrema.httpclient;
 
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpMethodBase;
 
-/**
- *
- * @author mcevoyb
- */
+/** @author mcevoyb */
 public class UnLockMethod extends HttpMethodBase {
 
-	private final String lockToken;
-	
-    public UnLockMethod( String uri, String lockToken ) {
-        super( uri );
-		this.lockToken = lockToken;
-		addRequestHeader("Lock-Token", lockToken);
-    }
+  private final String lockToken;
 
-    @Override
-    public String getName() {
-        return "UNLOCK";
-    }
+  public UnLockMethod(String uri, String lockToken) {
+    super(uri);
+    this.lockToken = lockToken;
+    addRequestHeader("Lock-Token", lockToken);
+  }
 
-	public String getLockToken() {
-		return lockToken;
-	}
-	
-	
+  @Override
+  public String getName() {
+    return "UNLOCK";
+  }
+
+  public String getLockToken() {
+    return lockToken;
+  }
 }

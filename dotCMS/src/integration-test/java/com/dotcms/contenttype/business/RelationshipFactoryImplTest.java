@@ -8,7 +8,6 @@ import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.test.ContentTypeBaseTest;
-
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -24,177 +23,202 @@ import com.dotmarketing.portlets.structure.model.Relationship;
 import java.util.List;
 import org.junit.Test;
 
-public class RelationshipFactoryImplTest extends ContentTypeBaseTest{
+public class RelationshipFactoryImplTest extends ContentTypeBaseTest {
 
-    private final RelationshipFactory relationshipFactory = FactoryLocator.getRelationshipFactory();
-    private ContentType parentContentType = null;
-    private ContentType childContentType = null;
-    private final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
+  private final RelationshipFactory relationshipFactory = FactoryLocator.getRelationshipFactory();
+  private ContentType parentContentType = null;
+  private ContentType childContentType = null;
+  private final ContentTypeAPI contentTypeAPI =
+      APILocator.getContentTypeAPI(APILocator.systemUser());
 
-    @Test
-    public void testByTypeValue_RelationshipsShouldBeSameRegardlessCase_SameRelationship() {
-        List<Relationship> relationshipList = relationshipFactory.dbAll();
-        for (Relationship relationship : relationshipList) {
-            Relationship relationshipWithUpperCase = relationshipFactory.byTypeValue(relationship.getRelationTypeValue().toUpperCase());
-            assertEquals(relationship,relationshipWithUpperCase);
-
-        }
+  @Test
+  public void testByTypeValue_RelationshipsShouldBeSameRegardlessCase_SameRelationship() {
+    List<Relationship> relationshipList = relationshipFactory.dbAll();
+    for (Relationship relationship : relationshipList) {
+      Relationship relationshipWithUpperCase =
+          relationshipFactory.byTypeValue(relationship.getRelationTypeValue().toUpperCase());
+      assertEquals(relationship, relationshipWithUpperCase);
     }
+  }
 
-    @Test
-    public void testByTypeValueCachesRelationship()
-            throws DotCacheException, DotDataException, DotSecurityException {
+  @Test
+  public void testByTypeValueCachesRelationship()
+      throws DotCacheException, DotDataException, DotSecurityException {
 
-        final Relationship relationship = saveRelationship();
-        try {
-            final RelationshipCache cache = CacheLocator.getRelationshipCache();
-            assertNull(cache.getRelationshipByName(relationship.getRelationTypeValue()));
-            relationshipFactory.byTypeValue(relationship.getRelationTypeValue());
-            assertEquals(relationship,
-                    cache.getRelationshipByName(relationship.getRelationTypeValue()));
-        } finally {
-            contentTypeAPI.delete(parentContentType);
-            contentTypeAPI.delete(childContentType);
-        }
+    final Relationship relationship = saveRelationship();
+    try {
+      final RelationshipCache cache = CacheLocator.getRelationshipCache();
+      assertNull(cache.getRelationshipByName(relationship.getRelationTypeValue()));
+      relationshipFactory.byTypeValue(relationship.getRelationTypeValue());
+      assertEquals(relationship, cache.getRelationshipByName(relationship.getRelationTypeValue()));
+    } finally {
+      contentTypeAPI.delete(parentContentType);
+      contentTypeAPI.delete(childContentType);
     }
+  }
 
-    @Test
-    public void testdbAll() throws DotDataException, DotSecurityException {
-        try {
-            List<Relationship> relationshipList = relationshipFactory.dbAll();
-            final int amountOriginalRelationships = relationshipList.size();
-            assertTrue(amountOriginalRelationships > 0);
+  @Test
+  public void testdbAll() throws DotDataException, DotSecurityException {
+    try {
+      List<Relationship> relationshipList = relationshipFactory.dbAll();
+      final int amountOriginalRelationships = relationshipList.size();
+      assertTrue(amountOriginalRelationships > 0);
 
-            saveRelationship();
-            relationshipList = relationshipFactory.dbAll();
-            assertTrue(relationshipList.size() > amountOriginalRelationships);
+      saveRelationship();
+      relationshipList = relationshipFactory.dbAll();
+      assertTrue(relationshipList.size() > amountOriginalRelationships);
 
-            deleteRelationshipByInode(relationshipList.get(0).getInode());
-            relationshipList = relationshipFactory.dbAll();
-            assertEquals(amountOriginalRelationships,relationshipList.size());
-        }finally {
-            contentTypeAPI.delete(parentContentType);
-            contentTypeAPI.delete(childContentType);
-        }
-
-
+      deleteRelationshipByInode(relationshipList.get(0).getInode());
+      relationshipList = relationshipFactory.dbAll();
+      assertEquals(amountOriginalRelationships, relationshipList.size());
+    } finally {
+      contentTypeAPI.delete(parentContentType);
+      contentTypeAPI.delete(childContentType);
     }
+  }
 
-    @Test
-    public void testDeleteByContentType() throws DotDataException, DotSecurityException {
-        try {
-            saveRelationship();
-            List<Relationship> relationshipList = relationshipFactory.byContentType(parentContentType.inode());
-            assertEquals(1, relationshipList.size());
+  @Test
+  public void testDeleteByContentType() throws DotDataException, DotSecurityException {
+    try {
+      saveRelationship();
+      List<Relationship> relationshipList =
+          relationshipFactory.byContentType(parentContentType.inode());
+      assertEquals(1, relationshipList.size());
 
-            relationshipFactory.deleteByContentType(parentContentType);
-            relationshipList = relationshipFactory.byContentType(childContentType.inode());
-            assertEquals(0,relationshipList.size());
-        }finally {
-            contentTypeAPI.delete(parentContentType);
-            contentTypeAPI.delete(childContentType);
-        }
+      relationshipFactory.deleteByContentType(parentContentType);
+      relationshipList = relationshipFactory.byContentType(childContentType.inode());
+      assertEquals(0, relationshipList.size());
+    } finally {
+      contentTypeAPI.delete(parentContentType);
+      contentTypeAPI.delete(childContentType);
     }
+  }
 
-    @Test
-    public void testByContentType() throws DotDataException, DotSecurityException {
-        try {
-            saveRelationship();
-            List<Relationship> relationshipList = relationshipFactory.byContentType(parentContentType.inode());
-            assertEquals(1, relationshipList.size());
+  @Test
+  public void testByContentType() throws DotDataException, DotSecurityException {
+    try {
+      saveRelationship();
+      List<Relationship> relationshipList =
+          relationshipFactory.byContentType(parentContentType.inode());
+      assertEquals(1, relationshipList.size());
 
-            deleteRelationshipByInode(relationshipList.get(0).getInode());
-            relationshipList = relationshipFactory.byContentType(childContentType.inode());
-            assertEquals(0,relationshipList.size());
-        }finally {
-            contentTypeAPI.delete(parentContentType);
-            contentTypeAPI.delete(childContentType);
-        }
+      deleteRelationshipByInode(relationshipList.get(0).getInode());
+      relationshipList = relationshipFactory.byContentType(childContentType.inode());
+      assertEquals(0, relationshipList.size());
+    } finally {
+      contentTypeAPI.delete(parentContentType);
+      contentTypeAPI.delete(childContentType);
     }
+  }
 
-    @Test
-    public void test_dbRelatedContentByChild() throws DotDataException, DotSecurityException {
-        try {
-            final Relationship relationship = saveRelationship();
-            final Contentlet parentContentlet = new ContentletDataGen(parentContentType.id()).nextPersisted();
-            final Contentlet childContentlet = new ContentletDataGen(childContentType.id()).nextPersisted();
-            relationshipFactory.addRelationship(parentContentlet.getIdentifier(),childContentlet.getIdentifier(),relationship.getRelationTypeValue());
+  @Test
+  public void test_dbRelatedContentByChild() throws DotDataException, DotSecurityException {
+    try {
+      final Relationship relationship = saveRelationship();
+      final Contentlet parentContentlet =
+          new ContentletDataGen(parentContentType.id()).nextPersisted();
+      final Contentlet childContentlet =
+          new ContentletDataGen(childContentType.id()).nextPersisted();
+      relationshipFactory.addRelationship(
+          parentContentlet.getIdentifier(),
+          childContentlet.getIdentifier(),
+          relationship.getRelationTypeValue());
 
-            final Contentlet contentlet = relationshipFactory.dbRelatedContentByChild(childContentlet.getIdentifier(),relationship.getRelationTypeValue(),false,"inode").get(0);
+      final Contentlet contentlet =
+          relationshipFactory
+              .dbRelatedContentByChild(
+                  childContentlet.getIdentifier(),
+                  relationship.getRelationTypeValue(),
+                  false,
+                  "inode")
+              .get(0);
 
-            assertEquals(parentContentlet.getIdentifier(),contentlet.getIdentifier());
-            assertEquals(parentContentlet.getInode(),contentlet.getInode());
-            assertEquals(parentContentlet.getHost(),contentlet.getHost());
-            assertEquals(parentContentlet.getTitle(),contentlet.getTitle());
+      assertEquals(parentContentlet.getIdentifier(), contentlet.getIdentifier());
+      assertEquals(parentContentlet.getInode(), contentlet.getInode());
+      assertEquals(parentContentlet.getHost(), contentlet.getHost());
+      assertEquals(parentContentlet.getTitle(), contentlet.getTitle());
 
-            deleteRelationshipByInode(relationship.getInode());
+      deleteRelationshipByInode(relationship.getInode());
 
-
-        }finally {
-            contentTypeAPI.delete(parentContentType);
-            contentTypeAPI.delete(childContentType);
-        }
+    } finally {
+      contentTypeAPI.delete(parentContentType);
+      contentTypeAPI.delete(childContentType);
     }
+  }
 
-    @Test
-    public void test_dbRelatedContentByParent() throws DotDataException, DotSecurityException {
-        try {
-            final Relationship relationship = saveRelationship();
-            final Contentlet parentContentlet = new ContentletDataGen(parentContentType.id()).nextPersisted();
-            final Contentlet childContentlet = new ContentletDataGen(childContentType.id()).nextPersisted();
-            relationshipFactory.addRelationship(parentContentlet.getIdentifier(),childContentlet.getIdentifier(),relationship.getRelationTypeValue());
+  @Test
+  public void test_dbRelatedContentByParent() throws DotDataException, DotSecurityException {
+    try {
+      final Relationship relationship = saveRelationship();
+      final Contentlet parentContentlet =
+          new ContentletDataGen(parentContentType.id()).nextPersisted();
+      final Contentlet childContentlet =
+          new ContentletDataGen(childContentType.id()).nextPersisted();
+      relationshipFactory.addRelationship(
+          parentContentlet.getIdentifier(),
+          childContentlet.getIdentifier(),
+          relationship.getRelationTypeValue());
 
-            final Contentlet contentlet = relationshipFactory.dbRelatedContentByParent(parentContentlet.getIdentifier(),relationship.getRelationTypeValue(),false,"inode").get(0);
+      final Contentlet contentlet =
+          relationshipFactory
+              .dbRelatedContentByParent(
+                  parentContentlet.getIdentifier(),
+                  relationship.getRelationTypeValue(),
+                  false,
+                  "inode")
+              .get(0);
 
-            assertEquals(childContentlet.getIdentifier(),contentlet.getIdentifier());
-            assertEquals(childContentlet.getInode(),contentlet.getInode());
-            assertEquals(childContentlet.getHost(),contentlet.getHost());
-            assertEquals(childContentlet.getTitle(),contentlet.getTitle());
+      assertEquals(childContentlet.getIdentifier(), contentlet.getIdentifier());
+      assertEquals(childContentlet.getInode(), contentlet.getInode());
+      assertEquals(childContentlet.getHost(), contentlet.getHost());
+      assertEquals(childContentlet.getTitle(), contentlet.getTitle());
 
-            deleteRelationshipByInode(relationship.getInode());
+      deleteRelationshipByInode(relationship.getInode());
 
-
-        }finally {
-            contentTypeAPI.delete(parentContentType);
-            contentTypeAPI.delete(childContentType);
-        }
+    } finally {
+      contentTypeAPI.delete(parentContentType);
+      contentTypeAPI.delete(childContentType);
     }
+  }
 
-    private Relationship saveRelationship() throws DotSecurityException, DotDataException {
+  private Relationship saveRelationship() throws DotSecurityException, DotDataException {
 
-        parentContentType = ContentTypeBuilder
-                .builder(BaseContentType.CONTENT.immutableClass())
-                .folder(Folder.SYSTEM_FOLDER)
-                .host(Host.SYSTEM_HOST).name("ParentContentType" + System.currentTimeMillis())
-                .owner(APILocator.systemUser().toString())
-                .variable("PCTVariable" + System.currentTimeMillis()).build();
-        parentContentType = contentTypeAPI.save(parentContentType);
+    parentContentType =
+        ContentTypeBuilder.builder(BaseContentType.CONTENT.immutableClass())
+            .folder(Folder.SYSTEM_FOLDER)
+            .host(Host.SYSTEM_HOST)
+            .name("ParentContentType" + System.currentTimeMillis())
+            .owner(APILocator.systemUser().toString())
+            .variable("PCTVariable" + System.currentTimeMillis())
+            .build();
+    parentContentType = contentTypeAPI.save(parentContentType);
 
-        childContentType = ContentTypeBuilder
-                .builder(BaseContentType.CONTENT.immutableClass())
-                .folder(Folder.SYSTEM_FOLDER)
-                .host(Host.SYSTEM_HOST).name("ChildContentType" + System.currentTimeMillis())
-                .owner(APILocator.systemUser().toString())
-                .variable("CCTVariable" + System.currentTimeMillis()).build();
-        childContentType = contentTypeAPI.save(childContentType);
+    childContentType =
+        ContentTypeBuilder.builder(BaseContentType.CONTENT.immutableClass())
+            .folder(Folder.SYSTEM_FOLDER)
+            .host(Host.SYSTEM_HOST)
+            .name("ChildContentType" + System.currentTimeMillis())
+            .owner(APILocator.systemUser().toString())
+            .variable("CCTVariable" + System.currentTimeMillis())
+            .build();
+    childContentType = contentTypeAPI.save(childContentType);
 
+    final Relationship relationship = new Relationship();
+    relationship.setParentStructureInode(parentContentType.id());
+    relationship.setChildStructureInode(childContentType.id());
+    relationship.setParentRelationName(parentContentType.name());
+    relationship.setChildRelationName(childContentType.name());
+    relationship.setCardinality(0);
+    relationship.setParentRequired(false);
+    relationship.setChildRequired(false);
+    relationship.setRelationTypeValue(parentContentType.name() + "-" + childContentType.name());
 
-        final Relationship relationship = new Relationship();
-        relationship.setParentStructureInode(parentContentType.id());
-        relationship.setChildStructureInode(childContentType.id());
-        relationship.setParentRelationName(parentContentType.name());
-        relationship.setChildRelationName(childContentType.name());
-        relationship.setCardinality(0);
-        relationship.setParentRequired(false);
-        relationship.setChildRequired(false);
-        relationship.setRelationTypeValue(parentContentType.name() + "-" + childContentType.name());
+    relationshipFactory.save(relationship);
 
-        relationshipFactory.save(relationship);
+    return relationship;
+  }
 
-        return relationship;
-    }
-
-    private void deleteRelationshipByInode(String relationshipInode) throws DotDataException {
-        relationshipFactory.delete(relationshipInode);
-    }
+  private void deleteRelationshipByInode(String relationshipInode) throws DotDataException {
+    relationshipFactory.delete(relationshipInode);
+  }
 }

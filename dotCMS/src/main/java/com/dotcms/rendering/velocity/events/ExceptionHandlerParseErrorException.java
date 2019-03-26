@@ -12,71 +12,77 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.auth.PrincipalThreadLocal;
 import com.liferay.util.Html;
+import java.util.Arrays;
 import org.apache.commons.lang.WordUtils;
 import org.apache.velocity.exception.ParseErrorException;
 
-import java.util.Arrays;
-
 /**
  * Handle for the ParseErrorException
+ *
  * @author jsanca
  */
 public class ExceptionHandlerParseErrorException implements ExceptionHandler<ParseErrorException> {
 
-    private static final String NEW_LINE = Html.br() + Html.space(2);
+  private static final String NEW_LINE = Html.br() + Html.space(2);
 
-    @Override
-    public void handle(final ParseErrorException e) {
+  @Override
+  public void handle(final ParseErrorException e) {
 
-        if (isPreviewOrEditMode(e)) {
-            try {
+    if (isPreviewOrEditMode(e)) {
+      try {
 
-                final String userId = PrincipalThreadLocal.getName();
-                if (UtilMethods.isSet(userId)) {
-                    final SystemMessageBuilder systemMessageBuilder = new SystemMessageBuilder();
-                    final StringBuilder message = new StringBuilder();
-                    final String errorMessage = WordUtils.wrap
-                            (e.getMessage(), 15, Html.br(), false);
+        final String userId = PrincipalThreadLocal.getName();
+        if (UtilMethods.isSet(userId)) {
+          final SystemMessageBuilder systemMessageBuilder = new SystemMessageBuilder();
+          final StringBuilder message = new StringBuilder();
+          final String errorMessage = WordUtils.wrap(e.getMessage(), 15, Html.br(), false);
 
-                    message.append(Html.h3("Parsing Error"))
+          message
+              .append(Html.h3("Parsing Error"))
+              .append(Html.b("Template"))
+              .append(NEW_LINE)
+              .append(e.getTemplateName())
+              .append(Html.br())
+              .append(Html.b("Invalid Syntax"))
+              .append(NEW_LINE)
+              .append(e.getInvalidSyntax())
+              .append(Html.br())
+              .append(Html.b("Column Number"))
+              .append(NEW_LINE)
+              .append(e.getColumnNumber())
+              .append(Html.br())
+              .append(Html.b("Line Number"))
+              .append(NEW_LINE)
+              .append(e.getLineNumber())
+              .append(Html.br())
+              .append(Html.pre(errorMessage));
 
-                            .append(Html.b("Template")).append(NEW_LINE)
-                            .append(e.getTemplateName()).append(Html.br())
+          systemMessageBuilder
+              .setMessage(message.toString())
+              .setLife(DateUtil.FIVE_SECOND_MILLIS)
+              .setType(MessageType.SIMPLE_MESSAGE)
+              .setSeverity(MessageSeverity.ERROR);
 
-                            .append(Html.b("Invalid Syntax")).append(NEW_LINE)
-                            .append(e.getInvalidSyntax()).append(Html.br())
-
-                            .append(Html.b("Column Number")).append(NEW_LINE)
-                            .append(e.getColumnNumber()).append(Html.br())
-
-                            .append(Html.b("Line Number")).append(NEW_LINE)
-                            .append(e.getLineNumber()).append(Html.br())
-
-                            .append(Html.pre(errorMessage));
-
-                    systemMessageBuilder.setMessage(message.toString())
-                            .setLife(DateUtil.FIVE_SECOND_MILLIS)
-                            .setType(MessageType.SIMPLE_MESSAGE)
-                            .setSeverity(MessageSeverity.ERROR);
-
-                    SystemMessageEventUtil.getInstance().
-                            pushMessage(e.getTemplateName(), systemMessageBuilder.create(), Arrays.asList(userId));
-
-                }
-            } catch (Exception ex) {
-                Logger.error(VelocityModeHandler.class, "Parsing error on: " + e.getTemplateName() + ", msg: " + ex.getMessage(), ex);
-            }
-
-            throw new PreviewEditParseErrorException(e);
+          SystemMessageEventUtil.getInstance()
+              .pushMessage(
+                  e.getTemplateName(), systemMessageBuilder.create(), Arrays.asList(userId));
         }
+      } catch (Exception ex) {
+        Logger.error(
+            VelocityModeHandler.class,
+            "Parsing error on: " + e.getTemplateName() + ", msg: " + ex.getMessage(),
+            ex);
+      }
 
-        throw e;
+      throw new PreviewEditParseErrorException(e);
     }
 
-    boolean isPreviewOrEditMode(final Exception e) {
+    throw e;
+  }
 
-        return ExceptionUtil.isPreviewOrEditMode(e, HttpServletRequestThreadLocal.INSTANCE.getRequest());
-    }
+  boolean isPreviewOrEditMode(final Exception e) {
 
-
+    return ExceptionUtil.isPreviewOrEditMode(
+        e, HttpServletRequestThreadLocal.INSTANCE.getRequest());
+  }
 }

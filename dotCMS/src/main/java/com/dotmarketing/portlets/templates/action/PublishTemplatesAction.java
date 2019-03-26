@@ -22,68 +22,72 @@ import org.apache.struts.action.ActionMapping;
 /**
  * <a href="ViewQuestionsAction.java.html"><b><i>View Source</i></b></a>
  *
- * @author  Maria Ahues
+ * @author Maria Ahues
  * @version $Revision: 1.3 $
- *
  */
 public class PublishTemplatesAction extends DotPortletAction {
 
-	public void processAction(
-			 ActionMapping mapping, ActionForm form, PortletConfig config,
-			 ActionRequest req, ActionResponse res)
-		 throws Exception {
+  public void processAction(
+      ActionMapping mapping,
+      ActionForm form,
+      PortletConfig config,
+      ActionRequest req,
+      ActionResponse res)
+      throws Exception {
 
-        Logger.debug(this, "Running PublishTemplatesAction!!!!");
+    Logger.debug(this, "Running PublishTemplatesAction!!!!");
 
-		String referer = req.getParameter("referer");
-		if ((referer!=null) && (referer.length()!=0)) {
-			referer = URLDecoder.decode(referer,"UTF-8");
-		}
-		
-		try {
-			//get the user
-			User user = com.liferay.portal.util.PortalUtil.getUser(req);
+    String referer = req.getParameter("referer");
+    if ((referer != null) && (referer.length() != 0)) {
+      referer = URLDecoder.decode(referer, "UTF-8");
+    }
 
-			_publishTemplates(req, user);
-			
-			if ((referer!=null) && (referer.length()!=0)) {
-				_sendToReferral(req, res, referer);
-			}
-			
-			setForward(req, "portlet.ext.templates.publish_templates");
+    try {
+      // get the user
+      User user = com.liferay.portal.util.PortalUtil.getUser(req);
 
-		}
-		catch (Exception e) {
-			_handleException(e, req);
-		}
-	}
+      _publishTemplates(req, user);
 
-	@SuppressWarnings("unchecked")
-	private void _publishTemplates(ActionRequest req, User user) throws Exception {
-		
-		String[] publishInode = req.getParameterValues("publishInode");
+      if ((referer != null) && (referer.length() != 0)) {
+        _sendToReferral(req, res, referer);
+      }
 
-		if (publishInode == null) return;
-		
-		ActionRequestImpl reqImpl = (ActionRequestImpl)req;
+      setForward(req, "portlet.ext.templates.publish_templates");
 
-		for (int i=0;i<publishInode.length;i++) {
+    } catch (Exception e) {
+      _handleException(e, req);
+    }
+  }
 
-			Template template = (Template) InodeFactory.getInode(publishInode[i],Template.class);
-			
-			if (InodeUtils.isSet(template.getInode())) {
-	        	
-				//calls the asset factory edit
-				try{
-					PublishFactory.publishAsset(template,reqImpl.getHttpServletRequest());
-					ActivityLogger.logInfo(this.getClass(), "Publish Template action", "User " + user.getPrimaryKey() + " publishing template" + template.getTitle(), HostUtil.hostNameUtil(req, _getUser(req)));
-					SessionMessages.add(req, "message", "message.template_list.published");
-				}catch(WebAssetException wax){
-					Logger.error(this, wax.getMessage(),wax);
-					SessionMessages.add(req, "error", "message.webasset.published.failed");
-				}
-			}
-		}		
-	}
+  @SuppressWarnings("unchecked")
+  private void _publishTemplates(ActionRequest req, User user) throws Exception {
 
+    String[] publishInode = req.getParameterValues("publishInode");
+
+    if (publishInode == null) return;
+
+    ActionRequestImpl reqImpl = (ActionRequestImpl) req;
+
+    for (int i = 0; i < publishInode.length; i++) {
+
+      Template template = (Template) InodeFactory.getInode(publishInode[i], Template.class);
+
+      if (InodeUtils.isSet(template.getInode())) {
+
+        // calls the asset factory edit
+        try {
+          PublishFactory.publishAsset(template, reqImpl.getHttpServletRequest());
+          ActivityLogger.logInfo(
+              this.getClass(),
+              "Publish Template action",
+              "User " + user.getPrimaryKey() + " publishing template" + template.getTitle(),
+              HostUtil.hostNameUtil(req, _getUser(req)));
+          SessionMessages.add(req, "message", "message.template_list.published");
+        } catch (WebAssetException wax) {
+          Logger.error(this, wax.getMessage(), wax);
+          SessionMessages.add(req, "error", "message.webasset.published.failed");
+        }
+      }
+    }
+  }
 }

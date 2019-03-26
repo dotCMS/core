@@ -4,6 +4,7 @@ import com.dotcms.repackage.com.missiondata.fileupload.MonitoredDiskFileItemFact
 import com.dotcms.repackage.org.apache.commons.fileupload.FileItem;
 import com.dotcms.repackage.org.apache.commons.fileupload.FileItemFactory;
 import com.dotcms.repackage.org.apache.commons.fileupload.servlet.ServletFileUpload;
+import com.dotcms.repackage.org.apache.commons.io.FilenameUtils;
 import com.dotcms.util.CloseUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
@@ -25,188 +26,194 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-import com.dotcms.repackage.org.apache.commons.io.FilenameUtils;
 
 public class AjaxFileUploadServlet extends HttpServlet {
 
-	/**
-	 *
-	 */
-	private static final long serialVersionUID = 1L;
+  /** */
+  private static final long serialVersionUID = 1L;
 
-	boolean isEmptyFile ;
-	protected void doGet(HttpServletRequest request,
-			HttpServletResponse response) throws ServletException, IOException {
-		doPost(request, response);
-	}
+  boolean isEmptyFile;
 
-	protected void doPost(HttpServletRequest request,
-			HttpServletResponse response) throws ServletException, IOException {
-		HttpSession session = request.getSession();
+  protected void doGet(HttpServletRequest request, HttpServletResponse response)
+      throws ServletException, IOException {
+    doPost(request, response);
+  }
 
-		if("get".equals(request.getParameter("cmd"))) {
-			doFileRetrieve(session, request, response);
-		} else {
-			doFileUpload(session, request, response);
-		}
-	}
+  protected void doPost(HttpServletRequest request, HttpServletResponse response)
+      throws ServletException, IOException {
+    HttpSession session = request.getSession();
 
-	private void doFileRetrieve(HttpSession session, HttpServletRequest request,
-			HttpServletResponse response) throws IOException {
+    if ("get".equals(request.getParameter("cmd"))) {
+      doFileRetrieve(session, request, response);
+    } else {
+      doFileUpload(session, request, response);
+    }
+  }
 
-        ServletOutputStream outStream = null;
-	    try {
+  private void doFileRetrieve(
+      HttpSession session, HttpServletRequest request, HttpServletResponse response)
+      throws IOException {
 
-			String userId = null;
-			// if we want front end access, this validation would need to be altered
-			if(UtilMethods.isSet(session.getAttribute("USER_ID"))) {
-				userId = (String) session.getAttribute("USER_ID");
-				User user = UserLocalManagerUtil.getUserById(userId);
+    ServletOutputStream outStream = null;
+    try {
 
-				if(!UtilMethods.isSet(user) || !UtilMethods.isSet(user.getUserId())) {
-					throw new Exception("Could not download File. Invalid User");
-				}
+      String userId = null;
+      // if we want front end access, this validation would need to be altered
+      if (UtilMethods.isSet(session.getAttribute("USER_ID"))) {
+        userId = (String) session.getAttribute("USER_ID");
+        User user = UserLocalManagerUtil.getUserById(userId);
 
-			} else {
-				throw new Exception("Could not download File. Invalid User");
-			}
-
-			String fieldName = request.getParameter("fieldName");
-			String fileName = request.getParameter("fileName");
-
-			File tempUserFolder = new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary() + File.separator + userId + File.separator + fieldName);
-
-			File file = new File(tempUserFolder.getAbsolutePath() + File.separator + fileName);
-
-			if(!isValidPath(file.getCanonicalPath())) {
-				throw new Exception("Invalid fileName or Path");
-			}
-
-			if(file.exists()) {
-				final InputStream is = Files.newInputStream(file.toPath());
-				byte[] buffer = new byte[1000];
-				int count = 0;
-				String mimeType = this.getServletContext().getMimeType(file.getName());
-				response.setContentType(mimeType);
-				outStream = response.getOutputStream();
-				while((count = is.read(buffer)) > 0) {
-					outStream.write(buffer, 0, count);
-				}
-				outStream.flush();
-			}
-
-		} catch (Exception e) {
-			sendCompleteResponse(response, e.getMessage());
-			e.printStackTrace();
-		} finally {
-            CloseUtils.closeQuietly(outStream);
+        if (!UtilMethods.isSet(user) || !UtilMethods.isSet(user.getUserId())) {
+          throw new Exception("Could not download File. Invalid User");
         }
 
-	}
+      } else {
+        throw new Exception("Could not download File. Invalid User");
+      }
 
-	private void doFileUpload(HttpSession session, HttpServletRequest request,
-			HttpServletResponse response) throws IOException {
-		String fieldName =null;
-		AjaxFileUploadListener listener = null;
-		try {
+      String fieldName = request.getParameter("fieldName");
+      String fileName = request.getParameter("fileName");
 
-			String fileName = "";
+      File tempUserFolder =
+          new File(
+              APILocator.getFileAssetAPI().getRealAssetPathTmpBinary()
+                  + File.separator
+                  + userId
+                  + File.separator
+                  + fieldName);
 
-			listener = new AjaxFileUploadListener(request.getContentLength());
-			FileItemFactory factory = new MonitoredDiskFileItemFactory(listener);
-			fieldName = request.getParameter("fieldName");
-			Enumeration params = request.getParameterNames();
-			session.setAttribute("FILE_UPLOAD_STATS_" + fieldName, listener.getFileUploadStats());
-			ServletFileUpload upload = new ServletFileUpload(factory);
+      File file = new File(tempUserFolder.getAbsolutePath() + File.separator + fileName);
 
-			List items = upload.parseRequest(request);
-			boolean hasError = false;
-			isEmptyFile = false;
+      if (!isValidPath(file.getCanonicalPath())) {
+        throw new Exception("Invalid fileName or Path");
+      }
 
-			String userId = null;
-			// if we want front end access, this validation would need to be altered
-			if(UtilMethods.isSet(session.getAttribute("USER_ID"))) {
-				userId = (String) session.getAttribute("USER_ID");
-				User user = UserLocalManagerUtil.getUserById(userId);
+      if (file.exists()) {
+        final InputStream is = Files.newInputStream(file.toPath());
+        byte[] buffer = new byte[1000];
+        int count = 0;
+        String mimeType = this.getServletContext().getMimeType(file.getName());
+        response.setContentType(mimeType);
+        outStream = response.getOutputStream();
+        while ((count = is.read(buffer)) > 0) {
+          outStream.write(buffer, 0, count);
+        }
+        outStream.flush();
+      }
 
-				if(!UtilMethods.isSet(user) || !UtilMethods.isSet(user.getUserId())) {
-					throw new Exception("Could not upload File. Invalid User");
-				}
+    } catch (Exception e) {
+      sendCompleteResponse(response, e.getMessage());
+      e.printStackTrace();
+    } finally {
+      CloseUtils.closeQuietly(outStream);
+    }
+  }
 
-			} else {
-				throw new Exception("Could not upload File. Invalid User");
-			}
+  private void doFileUpload(
+      HttpSession session, HttpServletRequest request, HttpServletResponse response)
+      throws IOException {
+    String fieldName = null;
+    AjaxFileUploadListener listener = null;
+    try {
 
+      String fileName = "";
 
-			for (Iterator i = items.iterator(); i.hasNext();) {
-				FileItem fileItem = (FileItem) i.next();
+      listener = new AjaxFileUploadListener(request.getContentLength());
+      FileItemFactory factory = new MonitoredDiskFileItemFactory(listener);
+      fieldName = request.getParameter("fieldName");
+      Enumeration params = request.getParameterNames();
+      session.setAttribute("FILE_UPLOAD_STATS_" + fieldName, listener.getFileUploadStats());
+      ServletFileUpload upload = new ServletFileUpload(factory);
 
-				if (!fileItem.isFormField()) {
+      List items = upload.parseRequest(request);
+      boolean hasError = false;
+      isEmptyFile = false;
 
+      String userId = null;
+      // if we want front end access, this validation would need to be altered
+      if (UtilMethods.isSet(session.getAttribute("USER_ID"))) {
+        userId = (String) session.getAttribute("USER_ID");
+        User user = UserLocalManagerUtil.getUserById(userId);
 
-					// *************************************************
-					// This is where you would process the uploaded file
-					// *************************************************
+        if (!UtilMethods.isSet(user) || !UtilMethods.isSet(user.getUserId())) {
+          throw new Exception("Could not upload File. Invalid User");
+        }
 
-					if(fileItem.getSize() == 0)
-						isEmptyFile = true;
+      } else {
+        throw new Exception("Could not upload File. Invalid User");
+      }
 
-					fileName = fileItem.getName();
+      for (Iterator i = items.iterator(); i.hasNext(); ) {
+        FileItem fileItem = (FileItem) i.next();
 
-					fileName = FilenameUtils.separatorsToSystem(fileName);
+        if (!fileItem.isFormField()) {
 
-					if (fileName.contains(File.separator)) {
-						fileName = fileName.substring(fileName.lastIndexOf(File.separator) + 1);
-					}
-					fileName = ContentletUtil.sanitizeFileName(fileName);
-					fieldName = ContentletUtil.sanitizeFileName(fieldName);
-					File tempUserFolder = new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary() + File.separator + userId +
-							File.separator + fieldName);
+          // *************************************************
+          // This is where you would process the uploaded file
+          // *************************************************
 
-					if(!isValidPath(tempUserFolder.getCanonicalPath())) {
-						throw new IOException("Invalid fileName or Path");
-					}
+          if (fileItem.getSize() == 0) isEmptyFile = true;
 
-					if (!tempUserFolder.exists())
-						tempUserFolder.mkdirs();
-					File dest=new File(tempUserFolder.getAbsolutePath() + File.separator + fileName);
-					if(dest.exists())
-						dest.delete();
-					fileItem.write(dest);
-					fileItem.delete();
-				}
-			}
+          fileName = fileItem.getName();
 
-			if(isEmptyFile)
-				fileName = "";
+          fileName = FilenameUtils.separatorsToSystem(fileName);
 
-			if (!hasError) {
-				sendCompleteResponse(response, null);
-			} else {
-				sendCompleteResponse(response, "Could not process uploaded file. Please see log for details.");
-			}
-		} catch (Exception e) {
-			listener.error("error");
-			session.setAttribute("FILE_UPLOAD_STATS_" + fieldName, listener.getFileUploadStats());
-			sendCompleteResponse(response, e.getMessage());
-			e.printStackTrace();
-		}
-	}
+          if (fileName.contains(File.separator)) {
+            fileName = fileName.substring(fileName.lastIndexOf(File.separator) + 1);
+          }
+          fileName = ContentletUtil.sanitizeFileName(fileName);
+          fieldName = ContentletUtil.sanitizeFileName(fieldName);
+          File tempUserFolder =
+              new File(
+                  APILocator.getFileAssetAPI().getRealAssetPathTmpBinary()
+                      + File.separator
+                      + userId
+                      + File.separator
+                      + fieldName);
 
-	private void sendCompleteResponse(HttpServletResponse response, String errorMessage) throws IOException {
-		if (errorMessage == null) {
-			response.getOutputStream().print("");
-		} else {
-			response.getOutputStream().print(errorMessage);
-		}
-	}
+          if (!isValidPath(tempUserFolder.getCanonicalPath())) {
+            throw new IOException("Invalid fileName or Path");
+          }
 
-	private static boolean isValidPath(String path) throws IOException {
-		Path child = Paths.get(path).toAbsolutePath();
-		String tempBinaryPath = new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary()).getCanonicalPath();
-		Path parent = Paths.get(tempBinaryPath).toAbsolutePath();
+          if (!tempUserFolder.exists()) tempUserFolder.mkdirs();
+          File dest = new File(tempUserFolder.getAbsolutePath() + File.separator + fileName);
+          if (dest.exists()) dest.delete();
+          fileItem.write(dest);
+          fileItem.delete();
+        }
+      }
 
-		return child.startsWith(parent);
-	}
+      if (isEmptyFile) fileName = "";
 
+      if (!hasError) {
+        sendCompleteResponse(response, null);
+      } else {
+        sendCompleteResponse(
+            response, "Could not process uploaded file. Please see log for details.");
+      }
+    } catch (Exception e) {
+      listener.error("error");
+      session.setAttribute("FILE_UPLOAD_STATS_" + fieldName, listener.getFileUploadStats());
+      sendCompleteResponse(response, e.getMessage());
+      e.printStackTrace();
+    }
+  }
+
+  private void sendCompleteResponse(HttpServletResponse response, String errorMessage)
+      throws IOException {
+    if (errorMessage == null) {
+      response.getOutputStream().print("");
+    } else {
+      response.getOutputStream().print(errorMessage);
+    }
+  }
+
+  private static boolean isValidPath(String path) throws IOException {
+    Path child = Paths.get(path).toAbsolutePath();
+    String tempBinaryPath =
+        new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary()).getCanonicalPath();
+    Path parent = Paths.get(tempBinaryPath).toAbsolutePath();
+
+    return child.startsWith(parent);
+  }
 }

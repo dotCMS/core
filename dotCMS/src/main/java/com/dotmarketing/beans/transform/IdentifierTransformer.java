@@ -8,40 +8,37 @@ import java.util.List;
 import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * DBTransformer that converts DB objects into Identifier instances
- */
+/** DBTransformer that converts DB objects into Identifier instances */
 public class IdentifierTransformer implements DBTransformer {
-    final List<Identifier> list;
+  final List<Identifier> list;
 
-
-    public IdentifierTransformer(List<Map<String, Object>> initList){
-        List<Identifier> newList = new ArrayList<>();
-        if (initList != null){
-            for(Map<String, Object> map : initList){
-                newList.add(transform(map));
-            }
-        }
-
-        this.list = newList;
+  public IdentifierTransformer(List<Map<String, Object>> initList) {
+    List<Identifier> newList = new ArrayList<>();
+    if (initList != null) {
+      for (Map<String, Object> map : initList) {
+        newList.add(transform(map));
+      }
     }
 
-    @Override
-    public List<Identifier> asList() {
+    this.list = newList;
+  }
 
-        return this.list;
-    }
+  @Override
+  public List<Identifier> asList() {
 
-    @NotNull
-    private static Identifier transform(Map<String, Object> map)  {
-        final Identifier i = new Identifier();
-        i.setAssetName((String) map.get("asset_name"));
-        i.setAssetType((String) map.get("asset_type"));
-        i.setHostId((String) map.get("host_inode"));
-        i.setId((String) map.get("id"));
-        i.setParentPath((String) map.get("parent_path"));
-        i.setSysPublishDate((Date) map.get("syspublish_date"));
-        i.setSysExpireDate((Date) map.get("sysexpire_date"));
-        return i;
-    }
+    return this.list;
+  }
+
+  @NotNull
+  private static Identifier transform(Map<String, Object> map) {
+    final Identifier i = new Identifier();
+    i.setAssetName((String) map.get("asset_name"));
+    i.setAssetType((String) map.get("asset_type"));
+    i.setHostId((String) map.get("host_inode"));
+    i.setId((String) map.get("id"));
+    i.setParentPath((String) map.get("parent_path"));
+    i.setSysPublishDate((Date) map.get("syspublish_date"));
+    i.setSysExpireDate((Date) map.get("sysexpire_date"));
+    return i;
+  }
 }

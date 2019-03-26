@@ -4,196 +4,182 @@ import static com.dotcms.util.CollectionsUtils.entry;
 import static com.dotcms.util.CollectionsUtils.map;
 import static com.dotcms.util.CollectionsUtils.mapEntries;
 import static com.dotcms.util.HttpRequestDataUtil.getHostname;
-import static com.dotmarketing.util.WebKeys.*;
-
-import com.dotmarketing.business.web.WebAPILocator;
-import com.dotmarketing.util.Constants;
-import com.dotmarketing.util.Logger;
-
-import java.io.Serializable;
-import java.util.Locale;
-import java.util.Map;
-
-import javax.servlet.http.HttpServletRequest;
+import static com.dotmarketing.util.WebKeys.DOTCMS_DISABLE_WEBSOCKET_PROTOCOL;
+import static com.dotmarketing.util.WebKeys.DOTCMS_WEBSOCKET_BASEURL;
+import static com.dotmarketing.util.WebKeys.DOTCMS_WEBSOCKET_ENDPOINTS;
+import static com.dotmarketing.util.WebKeys.DOTCMS_WEBSOCKET_PROTOCOL;
+import static com.dotmarketing.util.WebKeys.DOTCMS_WEBSOCKET_TIME_TO_WAIT_TO_RECONNECT;
+import static com.dotmarketing.util.WebKeys.WEBSOCKET_SYSTEMEVENTS_ENDPOINT;
 
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.rest.api.v1.system.websocket.SystemEventsWebSocketEndPoint;
-
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.Config;
-
-import com.liferay.portal.PortalException;
-import com.liferay.portal.SystemException;
+import com.dotmarketing.util.Constants;
+import com.dotmarketing.util.Logger;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.util.ReleaseInfo;
 import com.liferay.util.LocaleUtil;
+import java.io.Serializable;
+import java.util.Locale;
+import java.util.Map;
+import javax.servlet.http.HttpServletRequest;
 
 /**
- * A utility class that provides the required dotCMS configuration properties to
- * the {@link ConfigurationResource} end-point. The idea behind this approach is
- * to provide other system modules - such as the UI - with access to specific
- * system properties as they are needed.
- * 
+ * A utility class that provides the required dotCMS configuration properties to the {@link
+ * ConfigurationResource} end-point. The idea behind this approach is to provide other system
+ * modules - such as the UI - with access to specific system properties as they are needed.
+ *
  * @author Jose Castro
  * @version 3.7
  * @since Jul 26, 2016
- *
  */
 @SuppressWarnings("serial")
 public class ConfigurationHelper implements Serializable {
 
-	public static final String EDIT_CONTENT_STRUCTURES_PER_COLUMN = "EDIT_CONTENT_STRUCTURES_PER_COLUMN";
-	public static final String I18N_MESSAGES_MAP = "i18nMessagesMap";
-	public static final String WEB_SOCKET_SECURE_PROTOCOL = "wss";
-	public static final String WEB_SOCKET_PROTOCOL = "ws";
-	public static final String LICENSE = "license";
-	public static final String IS_COMMUNITY = "isCommunity";
-	public static final String DISPLAY_SERVER_ID = "displayServerId";
-	public static final String LEVEL_NAME = "levelName";
-	public static final String LICENSE_LEVEL = "level";
-	public static final String RELEASE_INFO = "releaseInfo";
-	public static final String VERSION = "version";
-	public static final String BUILD_DATE = "buildDate";
-	public static final String EMAIL_REGEX = "emailRegex";
-	public static final String BACKGROUND_COLOR = "background";
-	public static final String PRIMARY_COLOR = "primary";
-	public static final String SECONDARY_COLOR = "secondary";
-	public static final String COLORS = "colors";
-	public static final String LANGUAGES = "languages";
-	public static ConfigurationHelper INSTANCE = new ConfigurationHelper();
+  public static final String EDIT_CONTENT_STRUCTURES_PER_COLUMN =
+      "EDIT_CONTENT_STRUCTURES_PER_COLUMN";
+  public static final String I18N_MESSAGES_MAP = "i18nMessagesMap";
+  public static final String WEB_SOCKET_SECURE_PROTOCOL = "wss";
+  public static final String WEB_SOCKET_PROTOCOL = "ws";
+  public static final String LICENSE = "license";
+  public static final String IS_COMMUNITY = "isCommunity";
+  public static final String DISPLAY_SERVER_ID = "displayServerId";
+  public static final String LEVEL_NAME = "levelName";
+  public static final String LICENSE_LEVEL = "level";
+  public static final String RELEASE_INFO = "releaseInfo";
+  public static final String VERSION = "version";
+  public static final String BUILD_DATE = "buildDate";
+  public static final String EMAIL_REGEX = "emailRegex";
+  public static final String BACKGROUND_COLOR = "background";
+  public static final String PRIMARY_COLOR = "primary";
+  public static final String SECONDARY_COLOR = "secondary";
+  public static final String COLORS = "colors";
+  public static final String LANGUAGES = "languages";
+  public static ConfigurationHelper INSTANCE = new ConfigurationHelper();
 
-	/**
-	 * Private class constructor for Singleton instantiation.
-	 */
-	private ConfigurationHelper() {
+  /** Private class constructor for Singleton instantiation. */
+  private ConfigurationHelper() {}
 
-	}
+  /**
+   * Reads the required configuration properties from the dotCMS configuration files and also from
+   * the {@link HttpServletRequest} object. New properties can be added as they are needed.
+   *
+   * @param request - The {@link HttpServletRequest} object.
+   * @param locale - The {@link Locale} for i18n.
+   * @return A {@link Map} with all the required system properties.
+   */
+  public Map<String, Object> getConfigProperties(
+      final HttpServletRequest request, final Locale locale) throws LanguageException {
 
-	/**
-	 * Reads the required configuration properties from the dotCMS configuration
-	 * files and also from the {@link HttpServletRequest} object. New properties
-	 * can be added as they are needed.
-	 * 
-	 * @param request
-	 *            - The {@link HttpServletRequest} object.
-	 * @param locale
-	 * 			  - The {@link Locale} for i18n.
-	 * @return A {@link Map} with all the required system properties.
-	 */
-	public Map<String, Object> getConfigProperties(final HttpServletRequest request, final Locale locale) throws LanguageException {
+    String backgroundColor = "NA";
+    String primaryColor = "NA";
+    String secondaryColor = "NA";
 
-	    String backgroundColor = "NA";
-		String primaryColor = "NA";
-		String secondaryColor = "NA";
+    try {
+      backgroundColor = APILocator.getCompanyAPI().getDefaultCompany().getSize();
+      primaryColor = APILocator.getCompanyAPI().getDefaultCompany().getType();
+      secondaryColor = APILocator.getCompanyAPI().getDefaultCompany().getStreet();
+    } catch (Exception e) {
+      Logger.warn(this.getClass(), "unable to get color:" + e.getMessage());
+    }
 
+    final Map<String, Object> map =
+        map(
+            DOTCMS_WEBSOCKET_PROTOCOL,
+            Config.getAsString(DOTCMS_WEBSOCKET_PROTOCOL, () -> getWebSocketProtocol(request)),
+            DOTCMS_WEBSOCKET_BASEURL,
+            Config.getAsString(DOTCMS_WEBSOCKET_BASEURL, () -> getHostname(request)),
+            DOTCMS_WEBSOCKET_ENDPOINTS,
+            map(
+                WEBSOCKET_SYSTEMEVENTS_ENDPOINT,
+                Config.getStringProperty(
+                    WEBSOCKET_SYSTEMEVENTS_ENDPOINT,
+                    SystemEventsWebSocketEndPoint.API_WS_V1_SYSTEM_EVENTS)),
+            EDIT_CONTENT_STRUCTURES_PER_COLUMN,
+            Config.getIntProperty(EDIT_CONTENT_STRUCTURES_PER_COLUMN, 15),
+            DOTCMS_WEBSOCKET_TIME_TO_WAIT_TO_RECONNECT,
+            Config.getIntProperty(DOTCMS_WEBSOCKET_TIME_TO_WAIT_TO_RECONNECT, 15000),
+            DOTCMS_DISABLE_WEBSOCKET_PROTOCOL,
+            Boolean.valueOf(Config.getBooleanProperty(DOTCMS_DISABLE_WEBSOCKET_PROTOCOL, false)),
+            I18N_MESSAGES_MAP,
+            mapEntries(
+                message("notifications_title", locale), // Notifications
+                message("notifications_dismiss", locale), // Dismiss
+                message("notifications_dismissall", locale), // Dismiss all
+                this.getRelativeTimeEntry(locale)),
+            LICENSE,
+            map(
+                IS_COMMUNITY, LicenseManager.getInstance().isCommunity(),
+                DISPLAY_SERVER_ID, LicenseUtil.getDisplayServerId(),
+                LEVEL_NAME, LicenseUtil.getLevelName(),
+                LICENSE_LEVEL, LicenseUtil.getLevel()),
+            RELEASE_INFO,
+            map(
+                VERSION, ReleaseInfo.getVersion(),
+                BUILD_DATE, ReleaseInfo.getBuildDateString()),
+            EMAIL_REGEX,
+            Constants.REG_EX_EMAIL,
+            COLORS,
+            map(
+                BACKGROUND_COLOR, backgroundColor,
+                PRIMARY_COLOR, primaryColor,
+                SECONDARY_COLOR, secondaryColor));
 
-	    try {
-			backgroundColor = APILocator.getCompanyAPI().getDefaultCompany().getSize();
-			primaryColor = APILocator.getCompanyAPI().getDefaultCompany().getType();
-			secondaryColor = APILocator.getCompanyAPI().getDefaultCompany().getStreet();
-		}catch(Exception e){
-			Logger.warn(this.getClass(), "unable to get color:" +e.getMessage());
-		}
+    map.put(LANGUAGES, APILocator.getLanguageAPI().getLanguages());
+    return map;
+  }
 
-		final Map<String, Object> map = map(
-				DOTCMS_WEBSOCKET_PROTOCOL,
-				Config.getAsString(DOTCMS_WEBSOCKET_PROTOCOL, () -> getWebSocketProtocol(request)),
-				DOTCMS_WEBSOCKET_BASEURL,
-				Config.getAsString(DOTCMS_WEBSOCKET_BASEURL, () -> getHostname(request)),
-				DOTCMS_WEBSOCKET_ENDPOINTS,
-				map(WEBSOCKET_SYSTEMEVENTS_ENDPOINT,
-						Config.getStringProperty(WEBSOCKET_SYSTEMEVENTS_ENDPOINT, SystemEventsWebSocketEndPoint.API_WS_V1_SYSTEM_EVENTS)),
-				EDIT_CONTENT_STRUCTURES_PER_COLUMN,
-				Config.getIntProperty(EDIT_CONTENT_STRUCTURES_PER_COLUMN, 15),
-				DOTCMS_WEBSOCKET_TIME_TO_WAIT_TO_RECONNECT,
-				Config.getIntProperty(DOTCMS_WEBSOCKET_TIME_TO_WAIT_TO_RECONNECT, 15000),
-				DOTCMS_DISABLE_WEBSOCKET_PROTOCOL,
-				Boolean.valueOf(Config.getBooleanProperty(DOTCMS_DISABLE_WEBSOCKET_PROTOCOL, false)),
-				I18N_MESSAGES_MAP,
-				mapEntries(
-						message("notifications_title", locale), // Notifications
-						message("notifications_dismiss", locale), // Dismiss
-						message("notifications_dismissall", locale), // Dismiss all
-						this.getRelativeTimeEntry(locale)
-				),
-				LICENSE,
-				map(
-						IS_COMMUNITY, LicenseManager.getInstance().isCommunity(),
-						DISPLAY_SERVER_ID, LicenseUtil.getDisplayServerId(),
-						LEVEL_NAME, LicenseUtil.getLevelName(),
-						LICENSE_LEVEL, LicenseUtil.getLevel()
+  private String getWebSocketProtocol(final HttpServletRequest request) {
 
-				),
-				RELEASE_INFO,
-				map(
-						VERSION, ReleaseInfo.getVersion(),
-						BUILD_DATE, ReleaseInfo.getBuildDateString()
-				),
-				EMAIL_REGEX, Constants.REG_EX_EMAIL,
-				COLORS,
-				map(
-						BACKGROUND_COLOR, backgroundColor,
-						PRIMARY_COLOR, primaryColor,
-						SECONDARY_COLOR, secondaryColor
-				)
-		);
+    return request.isSecure() ? WEB_SOCKET_SECURE_PROTOCOL : WEB_SOCKET_PROTOCOL;
+  }
 
-	    map.put(LANGUAGES, APILocator.getLanguageAPI().getLanguages());
-	    return map;
-	}
+  /**
+   * Reads the required configuration properties from the dotCMS configuration files and also from
+   * the {@link HttpServletRequest} object. New properties can be added as they are needed.
+   *
+   * @param request - The {@link HttpServletRequest} object.
+   * @return A {@link Map} with all the required system properties.
+   */
+  public Map<String, Object> getConfigProperties(final HttpServletRequest request)
+      throws LanguageException {
+    final Locale locale = LocaleUtil.getLocale(request);
+    return getConfigProperties(request, locale);
+  }
 
-	private String getWebSocketProtocol (final HttpServletRequest request) {
+  private Map.Entry<String, Object> getRelativeTimeEntry(final Locale locale)
+      throws LanguageException {
 
-		return request.isSecure()? WEB_SOCKET_SECURE_PROTOCOL : WEB_SOCKET_PROTOCOL;
-	}
+    return entry(
+        "relativeTime",
+        mapEntries(
+            message("future", "relativetime.future", locale),
+            message("past", "relativetime.past", locale),
+            message("s", "relativetime.s", locale),
+            message("m", "relativetime.m", locale),
+            message("mm", "relativetime.mm", locale),
+            message("h", "relativetime.h", locale),
+            message("hh", "relativetime.hh", locale),
+            message("d", "relativetime.d", locale),
+            message("dd", "relativetime.dd", locale),
+            message("M", "relativetime.M", locale),
+            message("MM", "relativetime.MM", locale),
+            message("y", "relativetime.y", locale),
+            message("yy", "relativetime.yy", locale)));
+  }
 
-	/**
-	 * Reads the required configuration properties from the dotCMS configuration
-	 * files and also from the {@link HttpServletRequest} object. New properties
-	 * can be added as they are needed.
-	 *
-	 * @param request
-	 *            - The {@link HttpServletRequest} object.
-	 * @return A {@link Map} with all the required system properties.
-	 */
-	public Map<String, Object> getConfigProperties(final HttpServletRequest request) throws LanguageException {
-		final Locale locale = LocaleUtil.getLocale(request);
-		return getConfigProperties(request, locale);
-	}
+  private static Map.Entry<String, Object> message(
+      final String key, final String message, final Locale locale) throws LanguageException {
 
-	private Map.Entry<String, Object> getRelativeTimeEntry(final Locale locale) throws LanguageException {
+    return entry(key, LanguageUtil.get(locale, message));
+  }
 
-		return entry("relativeTime",
-				mapEntries(
-						message("future", "relativetime.future", locale),
-						message("past", "relativetime.past", locale),
-						message("s", "relativetime.s", locale),
-						message("m", "relativetime.m", locale),
-						message("mm", "relativetime.mm", locale),
-						message("h", "relativetime.h", locale),
-						message("hh", "relativetime.hh", locale),
-						message("d", "relativetime.d", locale),
-						message("dd", "relativetime.dd", locale),
-						message("M", "relativetime.M", locale),
-						message("MM", "relativetime.MM", locale),
-						message("y", "relativetime.y", locale),
-						message("yy", "relativetime.yy", locale)
-				));
+  private static Map.Entry<String, Object> message(final String message, final Locale locale)
+      throws LanguageException {
 
-	}
-
-	private static Map.Entry<String, Object> message (final String key, final String message, final Locale locale) throws LanguageException {
-
-		return entry(key, LanguageUtil.get(locale, message));
-	}
-
-	private static Map.Entry<String, Object> message (final String message, final Locale locale) throws LanguageException {
-
-		return message(message, message, locale);
-	}
-
-
-
+    return message(message, message, locale);
+  }
 }

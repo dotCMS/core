@@ -23,121 +23,131 @@ import org.apache.struts.action.ActionMapping;
 
 /**
  * Get the existing forms structures
- * @author Oswaldo
  *
+ * @author Oswaldo
  */
 public class ViewFormHandlerAction extends DotPortletAction {
 
+  public ActionForward render(
+      ActionMapping mapping,
+      ActionForm form,
+      PortletConfig config,
+      RenderRequest req,
+      RenderResponse res)
+      throws Exception {
 
-	public ActionForward render(ActionMapping mapping, ActionForm form,
-			PortletConfig config, RenderRequest req, RenderResponse res)
-	throws Exception {
+    String orderBy = req.getParameter("orderBy");
+    User user = _getUser(req);
+    orderBy = (UtilMethods.isSet(orderBy) ? orderBy : "mod_date desc");
+    _loadStructures(
+        req,
+        user,
+        WebKeys.STRUCTURES_VIEW_COUNT,
+        WebKeys.Structure.STRUCTURES,
+        WebKeys.STRUCTURE_QUERY);
+    if (req.getWindowState().equals(WindowState.NORMAL)) {
+      return mapping.findForward("portlet.ext.formhandler.view");
+    } else {
+      return mapping.findForward("portlet.ext.formhandler.view_form");
+    }
+  }
 
-		String orderBy = req.getParameter("orderBy");
-		User user = _getUser(req);
-		orderBy = (UtilMethods.isSet(orderBy) ? orderBy : "mod_date desc");
-		_loadStructures(req, user, WebKeys.STRUCTURES_VIEW_COUNT, WebKeys.Structure.STRUCTURES, WebKeys.STRUCTURE_QUERY);
-		if (req.getWindowState().equals(WindowState.NORMAL)) {
-			return mapping.findForward("portlet.ext.formhandler.view");
-		} else {			
-			return mapping.findForward("portlet.ext.formhandler.view_form");
+  protected void _loadStructures(
+      RenderRequest req, User user, String countWebKey, String viewWebKey, String queryWebKey)
+      throws Exception {
 
-		}
-	}
+    com.liferay.portlet.RenderRequestImpl reqImpl = (com.liferay.portlet.RenderRequestImpl) req;
+    HttpServletRequest httpReq = reqImpl.getHttpServletRequest();
+    // gets the session object for the messages
+    HttpSession session = httpReq.getSession();
 
+    Integer structureType =
+        (Integer) session.getAttribute(com.dotmarketing.util.WebKeys.Structure.STRUCTURE_EDIT_TYPE);
+    if (req.getParameter("structureType") != null)
+      structureType = Integer.parseInt(req.getParameter("structureType"));
+    if (structureType != null)
+      session.setAttribute(
+          com.dotmarketing.util.WebKeys.Structure.STRUCTURE_EDIT_TYPE, structureType);
+    String query = req.getParameter("query");
+    if (UtilMethods.isSet(query)) {
+      Pattern p = Pattern.compile("^[a-zA-Z0-9]*");
+      Matcher m = p.matcher(query);
+      if (m.find()) {
+        query = m.group();
+      } else {
+        query = null;
+      }
+    }
+    boolean resetQuery = req.getParameter("resetQuery") != null;
 
-	protected void _loadStructures(RenderRequest req, User user, String countWebKey, String viewWebKey,
-			String queryWebKey) throws Exception {
+    List<Structure> structures = new java.util.ArrayList<Structure>();
 
-		com.liferay.portlet.RenderRequestImpl reqImpl = (com.liferay.portlet.RenderRequestImpl) req;
-		HttpServletRequest httpReq = reqImpl.getHttpServletRequest();
-		// gets the session object for the messages
-		HttpSession session = httpReq.getSession();
+    try {
+      String orderby = req.getParameter("orderBy");
+      if (!UtilMethods.isSet(orderby)) {
+        orderby = "mod_date";
+      } else {
+        orderby = SQLUtil.sanitizeSortBy(orderby);
+      }
+      String direction = req.getParameter("direction");
+      if (!UtilMethods.isSet(direction) || "desc".equalsIgnoreCase(direction)) {
+        direction = "desc";
+      } else {
+        direction = "asc";
+      }
 
-		Integer structureType = (Integer) session.getAttribute(com.dotmarketing.util.WebKeys.Structure.STRUCTURE_EDIT_TYPE);
-		if (req.getParameter("structureType") != null)
-			structureType = Integer.parseInt(req.getParameter("structureType"));
-		if (structureType != null)
-			session.setAttribute(com.dotmarketing.util.WebKeys.Structure.STRUCTURE_EDIT_TYPE, structureType);
-		String query = req.getParameter("query");
-		if(UtilMethods.isSet(query)){
-    		Pattern p = Pattern.compile("^[a-zA-Z0-9]*");
-    		Matcher m = p.matcher(query);
-    		if(m.find()){
-    		    query=m.group();
-    		}else{
-    		    query=null;
-    		}
-		}
-		boolean resetQuery = req.getParameter("resetQuery")!=null;
-		
-		List<Structure> structures = new java.util.ArrayList<Structure>();
+      int pageNumber = 1;
 
-		try {
-			String orderby = req.getParameter("orderBy");
-			if (!UtilMethods.isSet(orderby)) {
-				orderby = "mod_date";
-			}
-			else{
-			    orderby=SQLUtil.sanitizeSortBy(orderby);
-			}
-			String direction = req.getParameter("direction");
-			if (!UtilMethods.isSet(direction) || "desc".equalsIgnoreCase(direction)) {
-				direction = "desc";
-			}else{
-			    direction = "asc";
-			}
+      if (UtilMethods.isSet(req.getParameter("pageNumber"))) {
+        pageNumber = Integer.parseInt(req.getParameter("pageNumber"));
+      }
 
-			int pageNumber = 1;
+      int limit = com.dotmarketing.util.Config.getIntProperty("PER_PAGE");
 
-			if (UtilMethods.isSet(req.getParameter("pageNumber"))) {
-				pageNumber = Integer.parseInt(req.getParameter("pageNumber"));
-			}
+      int offset = (pageNumber - 1) * limit;
 
-			int limit = com.dotmarketing.util.Config.getIntProperty("PER_PAGE");
+      if ((query == null) && (!resetQuery)) {
+        query = (String) session.getAttribute(queryWebKey);
+      }
+      session.setAttribute(queryWebKey, query);
 
-			int offset = (pageNumber - 1) * limit;
+      int count = 0;
+      String queryCondition = "";
 
-			if ((query == null) && (!resetQuery)) {
-				query = (String) session.getAttribute(queryWebKey);
-			}
-			session.setAttribute(queryWebKey, query);
+      if (((query != null) && (query.length() != 0)) || (structureType != null)) {
 
-			int count = 0;
-			String queryCondition ="";
+        if (query == null) query = "";
+        query = query.trim();
+        if (UtilMethods.isSet(query)) {
+          queryCondition +=
+              "(lower(name) "
+                  + "like '%"
+                  + query.toLowerCase().replace("\'", "\\\'")
+                  + "%' or inode.inode='"
+                  + query
+                  + "')";
+        }
 
-			if (((query != null) && (query.length() != 0)) || (structureType != null)) {
+      } else {
+        Logger.debug(this, "Getting all Forms Structures");
+      }
 
-				if (query == null)
-					query = "";
-				query = query.trim();
-				if (UtilMethods.isSet(query)) {
-					queryCondition += "(lower(name) " + "like '%" + query.toLowerCase().replace("\'","\\\'") + "%' or inode.inode='"+query+"')";
-				}							
+      if (UtilMethods.isSet(queryCondition)) {
+        queryCondition += " and structuretype=" + Structure.STRUCTURE_TYPE_FORM;
+      } else {
+        queryCondition += " structuretype=" + Structure.STRUCTURE_TYPE_FORM;
+      }
+      structures =
+          APILocator.getStructureAPI()
+              .find(user, false, false, queryCondition, orderby, limit, offset, direction);
 
-
-			} else {
-				Logger.debug(this, "Getting all Forms Structures");
-			}
-
-			if(UtilMethods.isSet(queryCondition)) {
-				queryCondition += " and structuretype="+Structure.STRUCTURE_TYPE_FORM; 
-			}else{
-				queryCondition += " structuretype="+Structure.STRUCTURE_TYPE_FORM;	
-			}
-            structures = APILocator.getStructureAPI().find(user, false, false, queryCondition, orderby, limit, offset, direction);
-
-			count = APILocator.getContentTypeAPI(user).count(queryCondition);
-			req.setAttribute(countWebKey, new Integer(count));
-			req.setAttribute(viewWebKey, structures);
-		} catch (Exception e) {
-			req.setAttribute(viewWebKey, structures);
-			Logger.error(this, "Exception e =" + e.getMessage(), e);
-			throw new Exception(e.getMessage(),e);
-		}
-
-	}
-
-
-
+      count = APILocator.getContentTypeAPI(user).count(queryCondition);
+      req.setAttribute(countWebKey, new Integer(count));
+      req.setAttribute(viewWebKey, structures);
+    } catch (Exception e) {
+      req.setAttribute(viewWebKey, structures);
+      Logger.error(this, "Exception e =" + e.getMessage(), e);
+      throw new Exception(e.getMessage(), e);
+    }
+  }
 }

@@ -22,12 +22,11 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
 import com.liferay.util.StringPool;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
+import java.io.Serializable;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.Serializable;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 /**
  * Implements the logout endpoint, 200 if logout is successfully, 500 otherwise
@@ -37,66 +36,71 @@ import java.io.Serializable;
 @Path("/v1/logout")
 public class LogoutResource implements Serializable {
 
-    private final LoginServiceAPI loginService;
-    private final WebResource webResource;
+  private final LoginServiceAPI loginService;
+  private final WebResource webResource;
 
-    private final Log log = LogFactory.getLog(LogoutResource.class);
+  private final Log log = LogFactory.getLog(LogoutResource.class);
 
-    @SuppressWarnings("unused")
-    public LogoutResource() {
-        this(APILocator.getLoginServiceAPI(),
-                new WebResource(new ApiProvider()));
+  @SuppressWarnings("unused")
+  public LogoutResource() {
+    this(APILocator.getLoginServiceAPI(), new WebResource(new ApiProvider()));
+  }
+
+  @VisibleForTesting
+  protected LogoutResource(final LoginServiceAPI loginService, final WebResource webResource) {
+
+    this.loginService = loginService;
+    this.webResource = webResource;
+  }
+
+  // todo: add the https annotation
+  @GET
+  @JSONP
+  @NoCache
+  @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+  public final Response logout(
+      @Context final HttpServletRequest request, @Context final HttpServletResponse response) {
+
+    Response res = null;
+    String url = null;
+
+    try {
+
+      this.log.debug("Doing the logout");
+      User user = PortalUtil.getUser(request);
+
+      this.loginService.doActionLogout(request, response);
+
+      if (null != user) {
+        SecurityLogger.logInfo(
+            this.getClass(),
+            "User "
+                + user.getFullName()
+                + " ("
+                + user.getUserId()
+                + ") has logged out from IP: "
+                + request.getRemoteAddr());
+      }
+
+      url = Config.getStringProperty("logout.url", StringPool.BLANK);
+
+      res =
+          UtilMethods.isSet(url)
+              ? Response.ok(new ResponseEntityView("Logout successfully"))
+                  .header("url", Config.getStringProperty("logout.url", StringPool.BLANK))
+                  .build()
+              : // 200
+              Response.ok(new ResponseEntityView("Logout successfully")).build();
+
+    } catch (DotSecurityException e) {
+      throw new ForbiddenException(e);
+
+    } catch (Exception e) {
+
+      this.log.error("Error doing the logout", e);
+      res = Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(e).build();
     }
 
-    @VisibleForTesting
-    protected LogoutResource(final LoginServiceAPI loginService,
-                             final WebResource webResource) {
-
-        this.loginService = loginService;
-        this.webResource = webResource;
-    }
-
-
-    // todo: add the https annotation
-    @GET
-    @JSONP
-    @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final Response logout(@Context final HttpServletRequest request,
-                                 @Context final HttpServletResponse response) {
-
-        Response res = null;
-        String   url = null;
-
-        try {
-
-            this.log.debug("Doing the logout");
-            User user = PortalUtil.getUser(request);
-            
-            this.loginService.doActionLogout(request, response);
-            
-            if(null != user){
-            	SecurityLogger.logInfo(this.getClass(), "User " + user.getFullName() + " (" + user.getUserId() + ") has logged out from IP: " + request.getRemoteAddr());
-            }
-
-            url = Config.getStringProperty("logout.url", StringPool.BLANK);
-
-            res = UtilMethods.isSet(url)?
-                    Response.ok(new ResponseEntityView("Logout successfully"))
-                    .header("url", Config.getStringProperty("logout.url", StringPool.BLANK))
-                    .build(): // 200
-                    Response.ok(new ResponseEntityView("Logout successfully"))
-                    .build();
-
-        } catch (DotSecurityException e) {
-            throw new ForbiddenException(e);
-
-        } catch (Exception e) {
-
-            this.log.error("Error doing the logout", e);
-            res = Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(e).build();
-        }
-
-        return res;
-    } // logout.
+    return res;
+  } // logout.
 } // E:O:F:LogoutResource.

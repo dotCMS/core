@@ -1,10 +1,9 @@
 package com.dotmarketing.db;
 
-import java.util.Properties;
-
 import com.dotcms.repackage.net.sf.hibernate.cache.Cache;
 import com.dotcms.repackage.net.sf.hibernate.cache.CacheException;
 import com.dotcms.repackage.net.sf.hibernate.cache.CacheProvider;
+import java.util.Properties;
 
 public class NoCacheProvider implements CacheProvider {
 
@@ -19,15 +18,8 @@ public class NoCacheProvider implements CacheProvider {
   }
 
   @Override
-  public void start(Properties arg0) throws CacheException {
-
-
-  }
+  public void start(Properties arg0) throws CacheException {}
 
   @Override
-  public void stop() {
-
-
-  }
-
+  public void stop() {}
 }

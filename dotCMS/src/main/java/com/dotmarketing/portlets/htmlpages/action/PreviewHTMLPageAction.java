@@ -28,111 +28,130 @@ import org.apache.struts.action.ActionMapping;
 
 /**
  * <a href="ViewQuestionsAction.java.html"><b><i>View Source</i></b></a>
- * 
+ *
  * @author Maria Ahues
  * @version $Revision: 1.5 $
- * 
  */
 public class PreviewHTMLPageAction extends DotPortletAction {
 
-	public void processAction(ActionMapping mapping, ActionForm form, PortletConfig config, ActionRequest req, ActionResponse res) throws Exception {
+  public void processAction(
+      ActionMapping mapping,
+      ActionForm form,
+      PortletConfig config,
+      ActionRequest req,
+      ActionResponse res)
+      throws Exception {
 
-		Logger.debug(this, "Running PreviewHTMLPagesAction!!!!");
+    Logger.debug(this, "Running PreviewHTMLPagesAction!!!!");
 
-		try {
+    try {
 
-			// get the user
-			User user = com.liferay.portal.util.PortalUtil.getUser(req);
-			
-			IHTMLPage webAsset = null;
-			String inode=req.getParameter("inode");
-            Identifier ident;
-            try {
-                ident = APILocator.getIdentifierAPI().findFromInode(inode);
-            } catch (DotStateException e) {
-                Logger.info(PreviewHTMLPageAction.class
-                        , "Unable to find Identifier by Inode. Inode must have changed probably by conflicts fixing.");
-                throw new ActionException(LanguageUtil.get(user,"message.htmlpage.inode.not.found"));
+      // get the user
+      User user = com.liferay.portal.util.PortalUtil.getUser(req);
 
-            }
-            boolean contentLocked = false;
-            boolean iCanLock = false;
-            if("contentlet".equals(ident.getAssetType())) {
-               
-                Contentlet contentlet = APILocator.getHTMLPageAssetAPI().fromContentlet(APILocator.getContentletAPI().find(inode, user, false));
-                
-                try{
-                	iCanLock = APILocator.getContentletAPI().canLock(contentlet, user);
-                }
-                catch(DotLockException e){
-                	iCanLock=false;
-                }
-                	
-                webAsset =(IHTMLPage) contentlet;
-                
-            }
-            
-            
-            if(!APILocator.getPermissionAPI().doesUserHavePermission(webAsset, PermissionAPI.PERMISSION_READ, user)) {
-                throw new ActionException(WebKeys.USER_PERMISSIONS_EXCEPTION);
-            }
-            
-	        req.setAttribute(WebKeys.HTMLPAGE_EDIT, webAsset);	        
-	        req.setAttribute(WebKeys.VERSIONS_INODE_EDIT, webAsset);
-	        
-			// wraps request to get session object
-			ActionRequestImpl reqImpl = (ActionRequestImpl) req;
-			HttpServletRequest hreq = reqImpl.getHttpServletRequest();
+      IHTMLPage webAsset = null;
+      String inode = req.getParameter("inode");
+      Identifier ident;
+      try {
+        ident = APILocator.getIdentifierAPI().findFromInode(inode);
+      } catch (DotStateException e) {
+        Logger.info(
+            PreviewHTMLPageAction.class,
+            "Unable to find Identifier by Inode. Inode must have changed probably by conflicts fixing.");
+        throw new ActionException(LanguageUtil.get(user, "message.htmlpage.inode.not.found"));
+      }
+      boolean contentLocked = false;
+      boolean iCanLock = false;
+      if ("contentlet".equals(ident.getAssetType())) {
 
-			// gets the session object for the messages
-			PageMode.setPageMode(hreq, contentLocked, iCanLock);
-			
-			
-			IHTMLPage htmlPage = _previewHTMLPages(req, user);
+        Contentlet contentlet =
+            APILocator.getHTMLPageAssetAPI()
+                .fromContentlet(APILocator.getContentletAPI().find(inode, user, false));
 
-			ActivityLogger.logInfo(this.getClass(), "Preview HTMLpage action", "User " + user.getPrimaryKey() + " preview page " + htmlPage.getURI(), HostUtil.hostNameUtil(req, _getUser(req)));
+        try {
+          iCanLock = APILocator.getContentletAPI().canLock(contentlet, user);
+        } catch (DotLockException e) {
+          iCanLock = false;
+        }
 
-			String previewPage = (String) req.getAttribute(WebKeys.HTMLPAGE_PREVIEW_PAGE);
+        webAsset = (IHTMLPage) contentlet;
+      }
 
-			if ((previewPage != null) && (previewPage.length() != 0)) {
-				_sendToReferral(req, res, previewPage);
-			}
+      if (!APILocator.getPermissionAPI()
+          .doesUserHavePermission(webAsset, PermissionAPI.PERMISSION_READ, user)) {
+        throw new ActionException(WebKeys.USER_PERMISSIONS_EXCEPTION);
+      }
 
-			PreviewFactory.setVelocityURLS(hreq);
+      req.setAttribute(WebKeys.HTMLPAGE_EDIT, webAsset);
+      req.setAttribute(WebKeys.VERSIONS_INODE_EDIT, webAsset);
 
-			setForward(req, "portlet.ext.htmlpages.view_htmlpages");
+      // wraps request to get session object
+      ActionRequestImpl reqImpl = (ActionRequestImpl) req;
+      HttpServletRequest hreq = reqImpl.getHttpServletRequest();
 
-		} catch (Exception e) {
-			_handleException(e, req);
-		}
-	}
+      // gets the session object for the messages
+      PageMode.setPageMode(hreq, contentLocked, iCanLock);
 
-	private IHTMLPage _previewHTMLPages(ActionRequest req, User user) throws Exception {
+      IHTMLPage htmlPage = _previewHTMLPages(req, user);
 
-		// gets html page being previewed
-		IHTMLPage htmlPage = (IHTMLPage) req.getAttribute(WebKeys.HTMLPAGE_EDIT);
+      ActivityLogger.logInfo(
+          this.getClass(),
+          "Preview HTMLpage action",
+          "User " + user.getPrimaryKey() + " preview page " + htmlPage.getURI(),
+          HostUtil.hostNameUtil(req, _getUser(req)));
 
-		Long language = null;
-		if (htmlPage instanceof Contentlet) {
-			language = ((Contentlet) htmlPage).getLanguageId();
-		}
+      String previewPage = (String) req.getAttribute(WebKeys.HTMLPAGE_PREVIEW_PAGE);
 
-		Identifier identifier = APILocator.getIdentifierAPI().find(htmlPage);
+      if ((previewPage != null) && (previewPage.length() != 0)) {
+        _sendToReferral(req, res, previewPage);
+      }
 
-		String livePage = (UtilMethods.isSet(req.getParameter("livePage")) && req.getParameter("livePage").equals("1")) ? "&livePage=1" : "";
+      PreviewFactory.setVelocityURLS(hreq);
 
-		String identiferEncoded = identifier.getURI();
-		identiferEncoded = UtilMethods.encodeURIComponent(identiferEncoded);
+      setForward(req, "portlet.ext.htmlpages.view_htmlpages");
 
-		if (UtilMethods.isSet(language)) {
-			req.setAttribute(WebKeys.HTMLPAGE_PREVIEW_PAGE,
-					identiferEncoded + "?" + com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE + "=" + language + "&host_id=" + identifier.getHostId() + livePage);
-		} else {
-			req.setAttribute(WebKeys.HTMLPAGE_PREVIEW_PAGE, identiferEncoded + "?host_id=" + identifier.getHostId() + livePage);
-		}
-		return htmlPage;
-	}
+    } catch (Exception e) {
+      _handleException(e, req);
+    }
+  }
 
-	
+  private IHTMLPage _previewHTMLPages(ActionRequest req, User user) throws Exception {
 
+    // gets html page being previewed
+    IHTMLPage htmlPage = (IHTMLPage) req.getAttribute(WebKeys.HTMLPAGE_EDIT);
+
+    Long language = null;
+    if (htmlPage instanceof Contentlet) {
+      language = ((Contentlet) htmlPage).getLanguageId();
+    }
+
+    Identifier identifier = APILocator.getIdentifierAPI().find(htmlPage);
+
+    String livePage =
+        (UtilMethods.isSet(req.getParameter("livePage"))
+                && req.getParameter("livePage").equals("1"))
+            ? "&livePage=1"
+            : "";
+
+    String identiferEncoded = identifier.getURI();
+    identiferEncoded = UtilMethods.encodeURIComponent(identiferEncoded);
+
+    if (UtilMethods.isSet(language)) {
+      req.setAttribute(
+          WebKeys.HTMLPAGE_PREVIEW_PAGE,
+          identiferEncoded
+              + "?"
+              + com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE
+              + "="
+              + language
+              + "&host_id="
+              + identifier.getHostId()
+              + livePage);
+    } else {
+      req.setAttribute(
+          WebKeys.HTMLPAGE_PREVIEW_PAGE,
+          identiferEncoded + "?host_id=" + identifier.getHostId() + livePage);
+    }
+    return htmlPage;
+  }
 }

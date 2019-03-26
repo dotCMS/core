@@ -16,20 +16,19 @@ package org.apache.velocity.runtime.directive;
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
- * under the License.    
+ * under the License.
  */
 
 /**
- *  Base class for all directives used in Velocity.
+ * Base class for all directives used in Velocity.
  *
- *  @author <a href="mailto:geirm@optonline.net">Geir Magnusson Jr.</a>
- *  @version $Id: DirectiveConstants.java 463298 2006-10-12 16:10:32Z henning $
+ * @author <a href="mailto:geirm@optonline.net">Geir Magnusson Jr.</a>
+ * @version $Id: DirectiveConstants.java 463298 2006-10-12 16:10:32Z henning $
  */
-public interface DirectiveConstants
-{
-    /** Block directive indicator */
-    public static final int BLOCK = 1;
+public interface DirectiveConstants {
+  /** Block directive indicator */
+  public static final int BLOCK = 1;
 
-    /** Line directive indicator */
-    public static final int LINE = 2;
+  /** Line directive indicator */
+  public static final int LINE = 2;
 }

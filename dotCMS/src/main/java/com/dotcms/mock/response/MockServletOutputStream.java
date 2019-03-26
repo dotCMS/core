@@ -10,9 +10,8 @@ import javax.servlet.WriteListener;
 
 /**
  * A mock Outputstream that will write the output of a servlet to a outputstream
- * 
- * @author will
  *
+ * @author will
  */
 class MockServletOutputStream extends ServletOutputStream {
 
@@ -22,7 +21,6 @@ class MockServletOutputStream extends ServletOutputStream {
     } catch (IOException e) {
       throw new DotStateException(e.getMessage(), e);
     }
-
   }
 
   OutputStream os = null;
@@ -31,14 +29,12 @@ class MockServletOutputStream extends ServletOutputStream {
   public void close() throws IOException {
     super.close();
     os.close();
-
   }
 
   @Override
   public void flush() throws IOException {
     super.flush();
     os.flush();
-
   }
 
   @Override
@@ -57,8 +53,5 @@ class MockServletOutputStream extends ServletOutputStream {
   }
 
   @Override
-  public void setWriteListener(WriteListener writeListener) {
-
-  }
+  public void setWriteListener(WriteListener writeListener) {}
 }
-

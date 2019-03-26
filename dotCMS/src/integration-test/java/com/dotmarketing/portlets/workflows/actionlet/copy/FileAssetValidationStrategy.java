@@ -9,26 +9,29 @@ import java.util.Map;
 
 public class FileAssetValidationStrategy extends AbstractContentletValidationStrategy {
 
-    AssertionStrategy metadataAssertion = (final Contentlet original, final Contentlet copy) -> {
+  AssertionStrategy metadataAssertion =
+      (final Contentlet original, final Contentlet copy) -> {
         final String originalValue = (String) original.getMap().get("metaData");
         final String copyValue = (String) copy.getMap().get("metaData");
         assertEquals("metadata", originalValue, copyValue);
-    };
+      };
 
-    AssertionStrategy fileAssetAssertion = (final Contentlet original, final Contentlet copy) -> {
+  AssertionStrategy fileAssetAssertion =
+      (final Contentlet original, final Contentlet copy) -> {
         final File originalValue = (File) original.get("fileAsset");
         final File copyValue = (File) copy.get("fileAsset");
         assertPaths(originalValue.getName(), copyValue.getName());
-    };
+      };
 
-    private final ImmutableMap<String, AssertionStrategy> assertionStrategyMap = ImmutableMap.<String, AssertionStrategy>builder()
-            .put("folder", folderAssertion)
-            .put("metaData", metadataAssertion)
-            .put("fileAsset", fileAssetAssertion)
-            .build();
+  private final ImmutableMap<String, AssertionStrategy> assertionStrategyMap =
+      ImmutableMap.<String, AssertionStrategy>builder()
+          .put("folder", folderAssertion)
+          .put("metaData", metadataAssertion)
+          .put("fileAsset", fileAssetAssertion)
+          .build();
 
-    @Override
-    public Map<String, AssertionStrategy> getBaseTypeAssertionsToApply() {
-        return assertionStrategyMap;
-    }
+  @Override
+  public Map<String, AssertionStrategy> getBaseTypeAssertionsToApply() {
+    return assertionStrategyMap;
+  }
 }

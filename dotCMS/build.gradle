@@ -15,7 +15,9 @@ buildscript {
 plugins {
     id "com.moowork.node" version "1.2.0"
     id "com.palantir.docker" version "0.17.2"  // reference:  https://github.com/palantir/gradle-docker
+    id "com.github.sherter.google-java-format" version "0.8"
 }
+
 
 project.ext {
     aspectjVersion = '1.8.10'
@@ -72,6 +74,14 @@ eclipse {
         name = 'dotcms_5'
     }
 }
+
+apply plugin: 'checkstyle'
+
+checkstyle {
+    toolVersion '8.18'
+    configFile file("config/checkstyle/checkstyle.xml")
+}
+
 
 // In this section you declare where to find the dependencies of your project.
 repositories {
@@ -258,7 +268,8 @@ processResources {
 
 // By default the war task compiles everything under src/main/java into WEB-INF/classes/
 // but, instead, we want to compile everything on a .jar file and put it under WEB-INF/lib.
-war.dependsOn 'deployPlugins','initNpm'
+war.dependsOn 'deployPlugins','initNpm', 'checkstyleMain', 'checkstyleTest', 'checkstyleIntegrationTest',
+        'checkstyleFunctionalTest'
 
 war {
 

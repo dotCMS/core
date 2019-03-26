@@ -16,41 +16,40 @@ package org.apache.velocity.util.introspection;
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
- * under the License.    
+ * under the License.
  */
 
 /**
- *  Interface used for setting values that appear to be properties in
- *  Velocity.  Ex.
+ * Interface used for setting values that appear to be properties in Velocity. Ex.
  *
- *      #set($foo.bar = "hello")
+ * <p>#set($foo.bar = "hello")
  *
  * @author <a href="mailto:geirm@optonline.net">Geir Magnusson Jr.</a>
  * @version $Id: VelPropertySet.java 463298 2006-10-12 16:10:32Z henning $
  */
-public interface VelPropertySet
-{
-    /**
-     *  method used to set the value in the object
-     *
-     *  @param o Object on which the method will be called with the arg
-     *  @param arg value to be set
-     *  @return the value returned from the set operation (impl specific)
-     * @throws Exception
-     */
-    public Object invoke(Object o, Object arg) throws Exception;
+public interface VelPropertySet {
+  /**
+   * method used to set the value in the object
+   *
+   * @param o Object on which the method will be called with the arg
+   * @param arg value to be set
+   * @return the value returned from the set operation (impl specific)
+   * @throws Exception
+   */
+  public Object invoke(Object o, Object arg) throws Exception;
 
-    /**
-     *  specifies if this VelPropertySet is cacheable and able to be
-     *  reused for this class of object it was returned for
-     *
-     *  @return true if can be reused for this class, false if not
-     */
-    public boolean isCacheable();
+  /**
+   * specifies if this VelPropertySet is cacheable and able to be reused for this class of object it
+   * was returned for
+   *
+   * @return true if can be reused for this class, false if not
+   */
+  public boolean isCacheable();
 
-    /**
-     *  returns the method name used to set this 'property'
-     * @return The method name used to set this 'property'
-     */
-    public String getMethodName();
+  /**
+   * returns the method name used to set this 'property'
+   *
+   * @return The method name used to set this 'property'
+   */
+  public String getMethodName();
 }

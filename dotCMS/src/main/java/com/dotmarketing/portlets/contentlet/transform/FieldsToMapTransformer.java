@@ -4,6 +4,5 @@ import java.util.Map;
 
 public interface FieldsToMapTransformer {
 
-    Map<String, Object> asMap();
-
+  Map<String, Object> asMap();
 }

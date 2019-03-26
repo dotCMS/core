@@ -1,7 +1,7 @@
 package com.dotmarketing.filters.compression;
 
+import com.dotmarketing.util.Logger;
 import java.io.IOException;
-
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
 import javax.servlet.FilterConfig;
@@ -11,11 +11,10 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import com.dotmarketing.util.Logger;
-
 public class GZIPFilter implements Filter {
 
-  public void doFilter(ServletRequest req, ServletResponse res,FilterChain chain) throws IOException, ServletException {
+  public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain)
+      throws IOException, ServletException {
     if (req instanceof HttpServletRequest) {
       HttpServletRequest request = (HttpServletRequest) req;
       HttpServletResponse response = (HttpServletResponse) res;
@@ -31,9 +30,7 @@ public class GZIPFilter implements Filter {
     }
   }
 
-  public void init(FilterConfig filterConfig) {
-  }
+  public void init(FilterConfig filterConfig) {}
 
-  public void destroy() {
-  }
+  public void destroy() {}
 }

@@ -1,25 +1,21 @@
 /**
  * Copyright (c) 2000-2005 Liferay, LLC. All rights reserved.
  *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
+ * <p>Permission is hereby granted, free of charge, to any person obtaining a copy of this software
+ * and associated documentation files (the "Software"), to deal in the Software without restriction,
+ * including without limitation the rights to use, copy, modify, merge, publish, distribute,
+ * sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
  *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
+ * <p>The above copyright notice and this permission notice shall be included in all copies or
+ * substantial portions of the Software.
  *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
+ * <p>THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
+ * BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+ * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-
 package com.liferay.portal.struts;
 
 import com.dotcms.repackage.com.google.common.collect.ImmutableMap;
@@ -49,192 +45,189 @@ import org.apache.struts.util.MessageResourcesFactory;
 /**
  * <a href="MultiMessageResources.java.html"><b><i>View Source </i></b></a>
  *
- * @author  Brian Wing Shun Chan
+ * @author Brian Wing Shun Chan
  * @version $Revision: 1.6 $
- *
  */
 public class MultiMessageResources extends PropertyMessageResources {
 
-	public MultiMessageResources(MessageResourcesFactory factory,
-								 String config) {
+  public MultiMessageResources(MessageResourcesFactory factory, String config) {
 
-		super(factory, config);
-	}
+    super(factory, config);
+  }
 
-	public MultiMessageResources(MessageResourcesFactory factory,
-								 String config, boolean returnNull) {
+  public MultiMessageResources(MessageResourcesFactory factory, String config, boolean returnNull) {
 
-		super(factory, config, returnNull);
-	}
+    super(factory, config, returnNull);
+  }
 
-	public Map getMessages() {
-		synchronized (messages) {
-			return ImmutableMap.copyOf(messages);
-		}
-	}
+  public Map getMessages() {
+    synchronized (messages) {
+      return ImmutableMap.copyOf(messages);
+    }
+  }
 
-	public void setServletContext(ServletContext servletContext) {
-		_servletContext = servletContext;
-	}
+  public void setServletContext(ServletContext servletContext) {
+    _servletContext = servletContext;
+  }
 
-    protected void loadLocale ( String localeKey ) {
+  protected void loadLocale(String localeKey) {
 
-        synchronized ( locales ) {
-            if ( locales.get( localeKey ) != null ) {
-                return;
-            }
+    synchronized (locales) {
+      if (locales.get(localeKey) != null) {
+        return;
+      }
 
-            locales.put( localeKey, localeKey );
-        }
-
-        String[] names = StringUtil.split( config.replace( '.', '/' ) );
-
-        for ( int i = 0; i < names.length; i++ ) {
-            String name = names[i];
-            if ( localeKey.length() > 0 ) {
-                name += "_" + localeKey;
-            }
-            name += ".properties";
-
-            _loadProps( name, localeKey );
-        }
+      locales.put(localeKey, localeKey);
     }
 
-	private void _loadProps(
-		String name, String localeKey) {
+    String[] names = StringUtil.split(config.replace('.', '/'));
 
-		if(name.contains("cms_language")) {
-			LanguageAPI langAPI = APILocator.getLanguageAPI();
-			List<LanguageKey> keys;
-			if(localeKey.split("_").length > 1) {
-				keys = langAPI.getLanguageKeys(localeKey.split("_")[0], localeKey.split("_")[1]);
-			} else {
-				keys = langAPI.getLanguageKeys(localeKey.split("_")[0]);
+    for (int i = 0; i < names.length; i++) {
+      String name = names[i];
+      if (localeKey.length() > 0) {
+        name += "_" + localeKey;
+      }
+      name += ".properties";
 
-			}
+      _loadProps(name, localeKey);
+    }
+  }
 
-			if (keys.size() < 1) {
-				return;
-			}
+  private void _loadProps(String name, String localeKey) {
 
-			synchronized (messages) {
-				Iterator<LanguageKey> names = keys.iterator();
+    if (name.contains("cms_language")) {
+      LanguageAPI langAPI = APILocator.getLanguageAPI();
+      List<LanguageKey> keys;
+      if (localeKey.split("_").length > 1) {
+        keys = langAPI.getLanguageKeys(localeKey.split("_")[0], localeKey.split("_")[1]);
+      } else {
+        keys = langAPI.getLanguageKeys(localeKey.split("_")[0]);
+      }
 
-				while (names.hasNext()) {
-					LanguageKey langkey = (LanguageKey)names.next();
-					String key = langkey.getKey();
-					messages.put(messageKey(localeKey, key),
-							langkey.getValue());
-				}
-			}
+      if (keys.size() < 1) {
+        return;
+      }
 
-		} else {
-		Properties props = new Properties();
+      synchronized (messages) {
+        Iterator<LanguageKey> names = keys.iterator();
 
-		try {
-			URL url = null;
+        while (names.hasNext()) {
+          LanguageKey langkey = (LanguageKey) names.next();
+          String key = langkey.getKey();
+          messages.put(messageKey(localeKey, key), langkey.getValue());
+        }
+      }
 
-				url = _servletContext.getResource("/WEB-INF/" + name);
+    } else {
+      Properties props = new Properties();
 
-			if (url != null) {
-				InputStream is = url.openStream();
+      try {
+        URL url = null;
 
-				BufferedReader buffy = new BufferedReader( new InputStreamReader(is));
-				String line = null;
+        url = _servletContext.getResource("/WEB-INF/" + name);
 
+        if (url != null) {
+          InputStream is = url.openStream();
 
-					while ((line = buffy.readLine()) != null) {
-					if(UtilMethods.isSet(line)
-							&& line.indexOf("=") > -1
-							&& ! line.startsWith("#")){
-						String[] arr = line.split("=", 2);
-						if(arr.length > 1){
-							String key = arr[0].trim();
-							String val = arr[1].trim();
-							if(val.indexOf("\\u") >-1){
+          BufferedReader buffy = new BufferedReader(new InputStreamReader(is));
+          String line = null;
 
-								if(val.indexOf("\\u") >-1){
+          while ((line = buffy.readLine()) != null) {
+            if (UtilMethods.isSet(line) && line.indexOf("=") > -1 && !line.startsWith("#")) {
+              String[] arr = line.split("=", 2);
+              if (arr.length > 1) {
+                String key = arr[0].trim();
+                String val = arr[1].trim();
+                if (val.indexOf("\\u") > -1) {
 
-									StringBuffer buffer = new StringBuffer( val.length() );
-									boolean precedingBackslash = false;
-									for (int i = 0; i < val.length(); i++) {
-							            char c = val.charAt(i);
-							            if (precedingBackslash) {
-							            	switch (c) {
-							            	case 'f': c = '\f'; break;
-							            	case 'n': c = '\n'; break;
-							            	case 'r': c = '\r'; break;
-							            	case 't': c = '\t'; break;
-							            	case 'u':
-							            		String hex = val.substring( i + 1, i + 5 );
-							            		c = (char) Integer.parseInt(hex, 16 );
-							            		i += 4;
-							            	}
-							            	precedingBackslash = false;
-							            } else {
-							            	precedingBackslash = (c == '\\');
-							            }
-							            if (!precedingBackslash) {
-							                buffer.append(c);
-							            }
-							        }
-									val= buffer.toString();}
+                  if (val.indexOf("\\u") > -1) {
 
+                    StringBuffer buffer = new StringBuffer(val.length());
+                    boolean precedingBackslash = false;
+                    for (int i = 0; i < val.length(); i++) {
+                      char c = val.charAt(i);
+                      if (precedingBackslash) {
+                        switch (c) {
+                          case 'f':
+                            c = '\f';
+                            break;
+                          case 'n':
+                            c = '\n';
+                            break;
+                          case 'r':
+                            c = '\r';
+                            break;
+                          case 't':
+                            c = '\t';
+                            break;
+                          case 'u':
+                            String hex = val.substring(i + 1, i + 5);
+                            c = (char) Integer.parseInt(hex, 16);
+                            i += 4;
+                        }
+                        precedingBackslash = false;
+                      } else {
+                        precedingBackslash = (c == '\\');
+                      }
+                      if (!precedingBackslash) {
+                        buffer.append(c);
+                      }
+                    }
+                    val = buffer.toString();
+                  }
+                }
+                if (props.containsKey(key)) {
+                  Logger.warn(
+                      this.getClass(),
+                      String.format(
+                          "Duplicate resource property definition (key=was ==> is now): %s=%s ==> %s",
+                          key, props.get(key), val));
+                }
+                props.put(key, val);
+              }
+            }
+          }
+          buffy.close();
+          is.close();
+        }
+      } catch (Exception e) {
+        Logger.error(this, e.getMessage(), e);
+      }
 
-							}
-                            if(props.containsKey(key)){
-                                Logger.warn(this.getClass(),
-                                            String.format("Duplicate resource property definition (key=was ==> is now): %s=%s ==> %s",key, props.get(key), val));
-                            }
-							props.put(key, val);
-						}
+      if (props.size() < 1) {
+        return;
+      }
 
-					}
+      synchronized (messages) {
+        Enumeration names = props.keys();
 
-			    }
-				buffy.close();
-				is.close();
-			}
-		}
-		catch (Exception e) {
-			Logger.error(this,e.getMessage(),e);
-		}
+        while (names.hasMoreElements()) {
+          String key = (String) names.nextElement();
 
-		if (props.size() < 1) {
-			return;
-		}
+          messages.put(messageKey(localeKey, key), props.getProperty(key));
+        }
+      }
+    }
+  }
 
-		synchronized (messages) {
-			Enumeration names = props.keys();
+  public synchronized void reload() {
+    reloadLocally();
 
-			while (names.hasMoreElements()) {
-				String key = (String)names.nextElement();
+    ChainableCacheAdministratorImpl dotCache =
+        ((ChainableCacheAdministratorImpl)
+            CacheLocator.getCacheAdministrator().getImplementationObject());
+    if (dotCache.isClusteringEnabled()) {
+      dotCache.send("MultiMessageResources.reload");
+    }
+  }
 
-				messages.put(messageKey(localeKey, key),
-							 props.getProperty(key));
-			}
-		}
-	}
-	}
+  public void reloadLocally() {
+    locales.clear();
+    messages.clear();
+    formats.clear();
+  }
 
-	public synchronized void reload() {
-		reloadLocally();
+  private static final Log _log = LogFactory.getLog(MultiMessageResources.class);
 
-		ChainableCacheAdministratorImpl dotCache = ((ChainableCacheAdministratorImpl)CacheLocator.getCacheAdministrator().getImplementationObject());
-		if(dotCache.isClusteringEnabled()) {
-			dotCache.send("MultiMessageResources.reload");
-		}
-	}
-
-	public void reloadLocally() {
-		locales.clear();
-		messages.clear();
-		formats.clear();
-	}
-
-	private static final Log _log =
-		LogFactory.getLog(MultiMessageResources.class);
-
-	private transient ServletContext _servletContext;
-
+  private transient ServletContext _servletContext;
 }

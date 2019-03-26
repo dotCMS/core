@@ -10,116 +10,89 @@ import java.io.Serializable;
 
 /**
  * @author rocco
- *
- * To change the template for this generated type comment go to
- * Window&gt;Preferences&gt;Java&gt;Code Generation&gt;Code and Comments
+ *     <p>To change the template for this generated type comment go to
+ *     Window&gt;Preferences&gt;Java&gt;Code Generation&gt;Code and Comments
  */
 public class Action implements Serializable, Comparable {
-	
-	private static final long serialVersionUID = 1L;
 
-	private long id;
-	
-	private String title;
-	
-	private long antiStatusId;
-	
-	private long postStatusId;
+  private static final long serialVersionUID = 1L;
 
-	private int permission;
-	
-	private boolean emailAllWithPermissions;
-	
+  private long id;
 
-	/**
-	 * @return
-	 */
-	public long getId() {
-		return id;
-	}
+  private String title;
 
-	/**
-	 * @param l
-	 */
-	public void setId(long l) {
-		id = l;
-	}
+  private long antiStatusId;
 
-	/**
-	 * @return
-	 */
-	public String getTitle() {
-		return title;
-	}
+  private long postStatusId;
 
-	/**
-	 * @param string
-	 */
-	public void setTitle(String string) {
-		title = string;
-	}
+  private int permission;
 
-	public int compareTo(Object compObject){
-		if(!(compObject instanceof Action))return -1;
-		
-		Action action = (Action) compObject;
-		return (action.getTitle().compareTo(this.getTitle()));
-	}
+  private boolean emailAllWithPermissions;
 
-	/**
-	 * @return
-	 */
-	public long getAntiStatusId() {
-		return antiStatusId;
-	}
+  /** @return */
+  public long getId() {
+    return id;
+  }
 
-	/**
-	 * @return
-	 */
-	public long getPostStatusId() {
-		return postStatusId;
-	}
+  /** @param l */
+  public void setId(long l) {
+    id = l;
+  }
 
-	/**
-	 * @param l
-	 */
-	public void setAntiStatusId(long statusId) {
-		antiStatusId = statusId;
-	}
+  /** @return */
+  public String getTitle() {
+    return title;
+  }
 
-	/**
-	 * @param l
-	 */
-	public void setPostStatusId(long statusId) {
-		postStatusId = statusId;
-	}
+  /** @param string */
+  public void setTitle(String string) {
+    title = string;
+  }
 
-	/**
-	 * @return
-	 */
-	public int getPermission() {
-		return permission;
-	}
+  public int compareTo(Object compObject) {
+    if (!(compObject instanceof Action)) return -1;
 
-	/**
-	 * @param i
-	 */
-	public void setPermission(int i) {
-		permission = i;
-	}
+    Action action = (Action) compObject;
+    return (action.getTitle().compareTo(this.getTitle()));
+  }
 
-	/**
-	 * @return
-	 */
-	public boolean isEmailAllWithPermissions() {
-		return emailAllWithPermissions;
-	}
+  /** @return */
+  public long getAntiStatusId() {
+    return antiStatusId;
+  }
 
-	/**
-	 * @param b
-	 */
-	public void setEmailAllWithPermissions(boolean b) {
-		emailAllWithPermissions = b;
-	}
+  /** @return */
+  public long getPostStatusId() {
+    return postStatusId;
+  }
 
+  /** @param l */
+  public void setAntiStatusId(long statusId) {
+    antiStatusId = statusId;
+  }
+
+  /** @param l */
+  public void setPostStatusId(long statusId) {
+    postStatusId = statusId;
+  }
+
+  /** @return */
+  public int getPermission() {
+    return permission;
+  }
+
+  /** @param i */
+  public void setPermission(int i) {
+    permission = i;
+  }
+
+  /** @return */
+  public boolean isEmailAllWithPermissions() {
+    return emailAllWithPermissions;
+  }
+
+  /** @param b */
+  public void setEmailAllWithPermissions(boolean b) {
+    emailAllWithPermissions = b;
+  }
 }

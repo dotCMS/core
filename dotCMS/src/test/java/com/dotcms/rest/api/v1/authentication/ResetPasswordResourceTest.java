@@ -33,91 +33,92 @@ import org.powermock.modules.junit4.PowerMockRunner;
 @RunWith(PowerMockRunner.class)
 public class ResetPasswordResourceTest extends UnitTestBase {
 
-    HttpServletRequest request;
-    ResponseUtil responseUtil;
-    ResetPasswordForm  resetPasswordForm;
+  HttpServletRequest request;
+  ResponseUtil responseUtil;
+  ResetPasswordForm resetPasswordForm;
 
-    @Before
-    public void initTest(){
-        request = RestUtilTest.getMockHttpRequest();
-        RestUtilTest.initMockContext();
-        responseUtil = ResponseUtil.INSTANCE;
-        resetPasswordForm = this.getForm();
+  @Before
+  public void initTest() {
+    request = RestUtilTest.getMockHttpRequest();
+    RestUtilTest.initMockContext();
+    responseUtil = ResponseUtil.INSTANCE;
+    resetPasswordForm = this.getForm();
+  }
 
+  @Test
+  public void testEmptyParameter() {
+    try {
+      new ResetPasswordForm.Builder().build();
+      fail("Should throw a ValidationException");
+    } catch (Exception e) {
+      // quiet
     }
+  }
 
-    @Test
-    public void testEmptyParameter() {
-        try {
-            new ResetPasswordForm.Builder().build();
-            fail ("Should throw a ValidationException");
-        } catch (Exception e) {
-            // quiet
-        }
+  @Test
+  public void testWrongParameter() {
+    try {
+      new ResetPasswordForm.Builder().password("").build();
+
+      fail("Should throw a ValidationException");
+    } catch (Exception e) {
+      // quiet
     }
+  }
 
+  @Test
+  public void testDotInvalidPasswordException()
+      throws DotSecurityException, NoSuchUserException, DotInvalidTokenException {
 
-    @Test
-    public void testWrongParameter() {
-        try {
-            new ResetPasswordForm.Builder().password("").build();
+    UserManager userManager = getUserManagerThrowingException(new DotInvalidPasswordException(""));
+    final JsonWebTokenService jsonWebTokenService = mock(JsonWebTokenService.class);
+    final ResponseUtil mResponseUtil = mock(ResponseUtil.class);
 
-            fail ("Should throw a ValidationException");
-        } catch (Exception e) {
-            // quiet
-        }
-    }
+    final UserToken jwtBean =
+        new UserToken(UUID.randomUUID().toString(), "dotcms.org.1", new Date(), 100000);
+    when(jsonWebTokenService.parseToken(eq("token1"))).thenReturn(jwtBean);
 
-    @Test
-    public void testDotInvalidPasswordException() throws DotSecurityException, NoSuchUserException, DotInvalidTokenException {
+    final Locale locale = LocaleUtil.getLocale(request);
+    PowerMockito.mockStatic(ResponseUtil.class);
+    PowerMockito.when(ResponseUtil.getFormattedMessage(null, "reset-password-invalid-password"))
+        .thenReturn("");
+    when(mResponseUtil.getErrorResponse(
+            request, Response.Status.BAD_REQUEST, locale, null, "reset-password-invalid-password"))
+        .thenCallRealMethod();
 
-        UserManager userManager = getUserManagerThrowingException( new DotInvalidPasswordException("") );
-        final JsonWebTokenService jsonWebTokenService = mock(JsonWebTokenService.class);
-        final ResponseUtil mResponseUtil = mock(ResponseUtil.class);
+    ResetPasswordResource resetPasswordResource =
+        new ResetPasswordResource(userManager, mResponseUtil, jsonWebTokenService);
+    Response response = resetPasswordResource.resetPassword(request, resetPasswordForm);
+    RestUtilTest.verifyErrorResponse(
+        response, Response.Status.BAD_REQUEST.getStatusCode(), "reset-password-invalid-password");
+  }
 
-        final UserToken jwtBean = new UserToken(UUID.randomUUID().toString(), "dotcms.org.1",
-                new Date(), 100000);
-        when(jsonWebTokenService.parseToken(eq("token1"))).thenReturn(jwtBean);
+  @Test
+  public void testOk() {
+    UserManager userManager = mock(UserManager.class);
+    final JsonWebTokenService jsonWebTokenService = mock(JsonWebTokenService.class);
+    ResetPasswordResource resetPasswordResource =
+        new ResetPasswordResource(userManager, responseUtil, jsonWebTokenService);
+    final UserToken jwtBean =
+        new UserToken(UUID.randomUUID().toString(), "dotcms.org.1", new Date(), 100000);
+    when(jsonWebTokenService.parseToken(eq("token1"))).thenReturn(jwtBean);
+    Response response = resetPasswordResource.resetPassword(request, resetPasswordForm);
+    RestUtilTest.verifySuccessResponse(response);
+  }
 
-        final Locale locale = LocaleUtil.getLocale(request);
-        PowerMockito.mockStatic(ResponseUtil.class);
-        PowerMockito.when(ResponseUtil.getFormattedMessage(null, "reset-password-invalid-password"))
-                .thenReturn("");
-        when(mResponseUtil.getErrorResponse(request, Response.Status.BAD_REQUEST, locale, null,
-                "reset-password-invalid-password")).thenCallRealMethod();
+  private UserManager getUserManagerThrowingException(Exception e)
+      throws NoSuchUserException, DotSecurityException, DotInvalidTokenException {
+    UserManager userManager = mock(UserManager.class);
+    doThrow(e)
+        .when(userManager)
+        .resetPassword("dotcms.org.1", "token2", resetPasswordForm.getPassword());
+    return userManager;
+  }
 
-        ResetPasswordResource resetPasswordResource = new ResetPasswordResource(userManager, mResponseUtil, jsonWebTokenService);
-        Response response = resetPasswordResource.resetPassword(request, resetPasswordForm);
-        RestUtilTest.verifyErrorResponse(response,  Response.Status.BAD_REQUEST.getStatusCode(), "reset-password-invalid-password");
-    }
+  private ResetPasswordForm getForm() {
+    final String password = "admin";
+    final String token = "token1+++token2";
 
-    @Test
-    public void testOk() {
-        UserManager userManager = mock( UserManager.class );
-        final JsonWebTokenService jsonWebTokenService = mock(JsonWebTokenService.class);
-        ResetPasswordResource resetPasswordResource = new ResetPasswordResource(userManager, responseUtil, jsonWebTokenService);
-        final UserToken jwtBean = new UserToken(UUID.randomUUID().toString(), "dotcms.org.1",
-                new Date(), 100000);
-        when(jsonWebTokenService.parseToken(eq("token1"))).thenReturn(jwtBean);
-        Response response = resetPasswordResource.resetPassword(request, resetPasswordForm);
-        RestUtilTest.verifySuccessResponse(response);
-    }
-
-    private UserManager getUserManagerThrowingException(Exception e)
-            throws NoSuchUserException, DotSecurityException, DotInvalidTokenException {
-        UserManager userManager = mock( UserManager.class );
-        doThrow( e ).when( userManager ).resetPassword("dotcms.org.1",
-                "token2", resetPasswordForm.getPassword());
-        return userManager;
-    }
-
-    private ResetPasswordForm getForm(){
-        final String password = "admin";
-        final String token = "token1+++token2";
-
-        return new ResetPasswordForm.Builder()
-                .password(password)
-                .token(token)
-                .build();
-    }
+    return new ResetPasswordForm.Builder().password(password).token(token).build();
+  }
 }

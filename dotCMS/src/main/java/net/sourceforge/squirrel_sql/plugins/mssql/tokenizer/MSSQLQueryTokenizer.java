@@ -3,7 +3,7 @@ package net.sourceforge.squirrel_sql.plugins.mssql.tokenizer;
 /*
  * Copyright (C) 2007 Rob Manning
  * manningr@users.sourceforge.net
- * 
+ *
  * Based on initial work from Johan Compagner.
  *
  * This library is free software; you can redistribute it and/or
@@ -25,36 +25,35 @@ import net.sourceforge.squirrel_sql.fw.sql.IQueryTokenizer;
 import net.sourceforge.squirrel_sql.fw.sql.ITokenizerFactory;
 import net.sourceforge.squirrel_sql.fw.sql.QueryTokenizer;
 
-public class MSSQLQueryTokenizer extends QueryTokenizer implements
-		IQueryTokenizer {
-	/** Logger for this class. */
-	// @SuppressWarnings("unused")
-	// private final static ILogger s_log =
-	// LoggerController.createLogger(MSSQLQueryTokenizer.class);
-	/** the preference bean */
-	private IQueryTokenizerPreferenceBean _prefs = null;
+public class MSSQLQueryTokenizer extends QueryTokenizer implements IQueryTokenizer {
+  /** Logger for this class. */
+  // @SuppressWarnings("unused")
+  // private final static ILogger s_log =
+  // LoggerController.createLogger(MSSQLQueryTokenizer.class);
+  /** the preference bean */
+  private IQueryTokenizerPreferenceBean _prefs = null;
 
-	public MSSQLQueryTokenizer(IQueryTokenizerPreferenceBean prefs) {
-		super(prefs);
-		_prefs = prefs;
-	}
+  public MSSQLQueryTokenizer(IQueryTokenizerPreferenceBean prefs) {
+    super(prefs);
+    _prefs = prefs;
+  }
 
-	public void setScriptToTokenize(String script) {
-		super.setScriptToTokenize(script);
+  public void setScriptToTokenize(String script) {
+    super.setScriptToTokenize(script);
 
-		_queryIterator = _queries.iterator();
-	}
+    _queryIterator = _queries.iterator();
+  }
 
-	/**
-	 * Sets the ITokenizerFactory which is used to create additional instances
-	 * of the IQueryTokenizer - this is used for handling file includes
-	 * recursively.
-	 */
-	protected void setFactory() {
-		_tokenizerFactory = new ITokenizerFactory() {
-			public IQueryTokenizer getTokenizer() {
-				return new MSSQLQueryTokenizer(_prefs);
-			}
-		};
-	}
+  /**
+   * Sets the ITokenizerFactory which is used to create additional instances of the IQueryTokenizer
+   * - this is used for handling file includes recursively.
+   */
+  protected void setFactory() {
+    _tokenizerFactory =
+        new ITokenizerFactory() {
+          public IQueryTokenizer getTokenizer() {
+            return new MSSQLQueryTokenizer(_prefs);
+          }
+        };
+  }
 }

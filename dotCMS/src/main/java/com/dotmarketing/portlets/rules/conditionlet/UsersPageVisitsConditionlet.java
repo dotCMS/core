@@ -1,40 +1,40 @@
-//package com.dotmarketing.portlets.rules.conditionlet;
+// package com.dotmarketing.portlets.rules.conditionlet;
 //
-//import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
-//import com.dotcms.repackage.com.google.common.collect.Sets;
-//import com.dotmarketing.portlets.rules.RuleComponentInstance;
-//import com.dotmarketing.portlets.rules.ValidationResult;
-//import com.dotmarketing.portlets.rules.model.ParameterModel;
-//import com.dotmarketing.portlets.rules.parameter.comparison.Comparison;
-//import java.io.UnsupportedEncodingException;
-//import java.util.Collection;
-//import java.util.HashMap;
-//import java.util.LinkedHashMap;
-//import java.util.LinkedHashSet;
-//import java.util.List;
-//import java.util.Map;
-//import java.util.Set;
-//import java.util.regex.Pattern;
+// import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
+// import com.dotcms.repackage.com.google.common.collect.Sets;
+// import com.dotmarketing.portlets.rules.RuleComponentInstance;
+// import com.dotmarketing.portlets.rules.ValidationResult;
+// import com.dotmarketing.portlets.rules.model.ParameterModel;
+// import com.dotmarketing.portlets.rules.parameter.comparison.Comparison;
+// import java.io.UnsupportedEncodingException;
+// import java.util.Collection;
+// import java.util.HashMap;
+// import java.util.LinkedHashMap;
+// import java.util.LinkedHashSet;
+// import java.util.List;
+// import java.util.Map;
+// import java.util.Set;
+// import java.util.regex.Pattern;
 //
-//import javax.servlet.http.HttpServletRequest;
-//import javax.servlet.http.HttpServletResponse;
+// import javax.servlet.http.HttpServletRequest;
+// import javax.servlet.http.HttpServletResponse;
 //
-//import com.dotcms.util.HttpRequestDataUtil;
-//import com.dotmarketing.beans.Host;
-//import com.dotmarketing.business.web.WebAPILocator;
-//import com.dotmarketing.exception.DotDataException;
-//import com.dotmarketing.exception.DotSecurityException;
-//import com.dotmarketing.util.Logger;
-//import com.dotmarketing.util.UtilMethods;
-//import com.dotmarketing.util.WebKeys;
-//import com.liferay.portal.PortalException;
-//import com.liferay.portal.SystemException;
+// import com.dotcms.util.HttpRequestDataUtil;
+// import com.dotmarketing.beans.Host;
+// import com.dotmarketing.business.web.WebAPILocator;
+// import com.dotmarketing.exception.DotDataException;
+// import com.dotmarketing.exception.DotSecurityException;
+// import com.dotmarketing.util.Logger;
+// import com.dotmarketing.util.UtilMethods;
+// import com.dotmarketing.util.WebKeys;
+// import com.liferay.portal.PortalException;
+// import com.liferay.portal.SystemException;
 //
-//import static com.dotcms.repackage.com.google.common.base.Preconditions.checkNotNull;
-//import static com.dotcms.repackage.com.google.common.base.Preconditions.checkState;
-//import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.IS;
+// import static com.dotcms.repackage.com.google.common.base.Preconditions.checkNotNull;
+// import static com.dotcms.repackage.com.google.common.base.Preconditions.checkState;
+// import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.IS;
 //
-///**
+/// **
 // * This conditionlet will allow dotCMS users to check the number of pages that a
 // * user has visited during its current session. The information on the visited
 // * pages will be available until the user's session ends. This
@@ -48,7 +48,8 @@
 // * @since 05-11-2015
 // *
 // */
-//public class UsersPageVisitsConditionlet extends Conditionlet<UsersPageVisitsConditionlet.Instance> {
+// public class UsersPageVisitsConditionlet extends
+// Conditionlet<UsersPageVisitsConditionlet.Instance> {
 //
 //	private static final long serialVersionUID = 1L;
 //
@@ -63,7 +64,8 @@
 //                                                             Comparison.STARTS_WITH,
 //                                                             Comparison.ENDS_WITH,
 //                                                             Comparison.CONTAINS,
-//                                                             Comparison.REGEX), Sets.newHashSet());
+//                                                             Comparison.REGEX),
+// Sets.newHashSet());
 //	}
 //
 //
@@ -101,7 +103,8 @@
 //    }
 //
 //    @Override
-//    public boolean evaluate(HttpServletRequest request, HttpServletResponse response, Instance instance) {
+//    public boolean evaluate(HttpServletRequest request, HttpServletResponse response, Instance
+// instance) {
 ////        Set<ConditionletInputValue> inputValues = new LinkedHashSet<ConditionletInputValue>();
 ////        String inputValue = values.get(0).getValue();
 ////        inputValues.add(new ConditionletInputValue(INPUT_ID, inputValue));
@@ -207,4 +210,4 @@
 //        }
 //    }
 //
-//}
+// }

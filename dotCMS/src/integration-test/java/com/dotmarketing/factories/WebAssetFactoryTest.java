@@ -14,27 +14,30 @@ import org.junit.Test;
 
 public class WebAssetFactoryTest extends IntegrationTestBase {
 
-    private static User systemUser;
-    private static UserAPI userAPI;
+  private static User systemUser;
+  private static UserAPI userAPI;
 
-    @BeforeClass
-    public static void prepare() throws Exception {
-        //Setting web app environment
-        IntegrationTestInitService.getInstance().init();
+  @BeforeClass
+  public static void prepare() throws Exception {
+    // Setting web app environment
+    IntegrationTestInitService.getInstance().init();
 
-        userAPI = APILocator.getUserAPI();
-        systemUser = userAPI.getSystemUser();
-    }
+    userAPI = APILocator.getUserAPI();
+    systemUser = userAPI.getSystemUser();
+  }
 
-    @Test
-    public void testGetAssetsWorkingWithPermission() {
-        final List<WebAsset> webAssetList = WebAssetFactory
-                .getAssetsWorkingWithPermission(Template.class, 10, 0, "title", null, systemUser);
+  @Test
+  public void testGetAssetsWorkingWithPermission() {
+    final List<WebAsset> webAssetList =
+        WebAssetFactory.getAssetsWorkingWithPermission(
+            Template.class, 10, 0, "title", null, systemUser);
 
-        Assert.assertNotNull(webAssetList);
-        Assert.assertTrue(!webAssetList.isEmpty());
-        Assert.assertTrue(webAssetList.get(0).getInode()!=null && !webAssetList.get(0).getInode().isEmpty());
-        Assert.assertTrue(webAssetList.get(0).getIdentifier()!=null && !webAssetList.get(0).getIdentifier().isEmpty());
-    }
-
+    Assert.assertNotNull(webAssetList);
+    Assert.assertTrue(!webAssetList.isEmpty());
+    Assert.assertTrue(
+        webAssetList.get(0).getInode() != null && !webAssetList.get(0).getInode().isEmpty());
+    Assert.assertTrue(
+        webAssetList.get(0).getIdentifier() != null
+            && !webAssetList.get(0).getIdentifier().isEmpty());
+  }
 }

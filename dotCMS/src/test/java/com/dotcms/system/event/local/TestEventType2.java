@@ -2,13 +2,13 @@ package com.dotcms.system.event.local;
 
 public class TestEventType2 {
 
-    private String msg;
+  private String msg;
 
-    public TestEventType2(String msg) {
-        this.msg = msg;
-    }
+  public TestEventType2(String msg) {
+    this.msg = msg;
+  }
 
-    public String getMsg() {
-        return msg;
-    }
+  public String getMsg() {
+    return msg;
+  }
 }

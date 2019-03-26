@@ -11,618 +11,579 @@ import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.RelatedPermissionableGroup;
 import com.dotmarketing.business.Versionable;
 import com.dotmarketing.common.db.DotConnect;
-import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.TreeFactory;
 import com.dotmarketing.portlets.categories.business.Categorizable;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.util.InodeUtils;
-import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
-
 
 /**
- * 
  * @author rocco
  * @author David H Torres (2009)
  */
-public class Inode implements Serializable, Comparable, Permissionable,Versionable,
-		Categorizable, UUIDable {
+public class Inode
+    implements Serializable, Comparable, Permissionable, Versionable, Categorizable, UUIDable {
 
-	private static final long serialVersionUID = -152856052702254985L;
+  private static final long serialVersionUID = -152856052702254985L;
 
-    public enum Type {
-        CONTENTLET("contentlet", "contentlet_version_info"),
-        TEMPLATE("template", "template_version_info"),
-        CONTAINERS("dot_containers", "container_version_info"),
-        USER_PROXY("user_proxy", null),
-        FOLDER("folder", null),
-        STRUCTURE("structure", null),
-        RELATIONSHIP("relationship", null),
-        LINKS("links", "link_version_info"),
-        CATEGORY("category", null),
-        FIELD("field", null);
+  public enum Type {
+    CONTENTLET("contentlet", "contentlet_version_info"),
+    TEMPLATE("template", "template_version_info"),
+    CONTAINERS("dot_containers", "container_version_info"),
+    USER_PROXY("user_proxy", null),
+    FOLDER("folder", null),
+    STRUCTURE("structure", null),
+    RELATIONSHIP("relationship", null),
+    LINKS("links", "link_version_info"),
+    CATEGORY("category", null),
+    FIELD("field", null);
 
-        private String tableName;
+    private String tableName;
 
-        private String versionTableName;
+    private String versionTableName;
 
-        Type(String tableName, String versionTableName) {
-            this.tableName = tableName;
-            this.versionTableName = versionTableName;
-        }
-
-        public String getValue() {
-            return name().toLowerCase();
-        }
-
-        public String getTableName() {
-            return this.tableName;
-        }
-
-        public String getVersionTableName() {
-            return this.versionTableName;
-        }
+    Type(String tableName, String versionTableName) {
+      this.tableName = tableName;
+      this.versionTableName = versionTableName;
     }
 
-	private java.util.Date iDate;
+    public String getValue() {
+      return name().toLowerCase();
+    }
 
-	private String type = "";
+    public String getTableName() {
+      return this.tableName;
+    }
 
-	protected String owner = "";
+    public String getVersionTableName() {
+      return this.versionTableName;
+    }
+  }
 
-	protected String inode;
-	
-	protected String identifier;
+  private java.util.Date iDate;
 
-	public Inode() {
-		iDate = new java.util.Date();
-		type = "inode";
-	}
-	public Date getModDate() {
-		return Calendar.getInstance().getTime();
-	}
+  private String type = "";
 
-	public String getModUser() {
-		return "";
-	}
-	
-	public String getCategoryId() {
-		return getInode();
-	}
+  protected String owner = "";
 
-	/**
-	 * Sets the iDate.
-	 * 
-	 * @param iDate
-	 *            The iDate to set
-	 */
-	public void setIDate(java.util.Date iDate) {
-		this.iDate = iDate;
-	}
+  protected String inode;
 
-	// sets the idate from the db
-	public void setIDate(String x) {
-		java.text.SimpleDateFormat formatter = new java.text.SimpleDateFormat(
-				"yyyy-MM-dd H:mm:ss");
-		java.text.ParsePosition pos = new java.text.ParsePosition(0);
-		iDate = formatter.parse(x, pos);
+  protected String identifier;
 
-		if (iDate == null) {
-			iDate = new java.util.Date();
-		}
-	}
+  public Inode() {
+    iDate = new java.util.Date();
+    type = "inode";
+  }
 
-	/**
-	 * Returns the iDate.
-	 * 
-	 * @return java.util.Date
-	 */
-	public java.util.Date getIDate() {
-		return iDate;
-	}
+  public Date getModDate() {
+    return Calendar.getInstance().getTime();
+  }
 
-	/**
-	 * Sets the inode.
-	 * 
-	 * @param inode
-	 *            The inode to set
-	 */
-	public void setInode(String inode) {
-		if(!UtilMethods.isSet(inode))
-			this.inode = null;
-		this.inode = inode;
-		
-		
+  public String getModUser() {
+    return "";
+  }
 
-	}
+  public String getCategoryId() {
+    return getInode();
+  }
 
-	/*
-	 * public void setInode(long inode) { this.inode = inode + ""; }
-	 */
+  /**
+   * Sets the iDate.
+   *
+   * @param iDate The iDate to set
+   */
+  public void setIDate(java.util.Date iDate) {
+    this.iDate = iDate;
+  }
 
-	public String getInode() {
-		if(UtilMethods.isSet(inode)){
-			return inode;
-		} else
-			return "";
-	}
-	
-	/**
-	 * @return Returns the identifier.
-	 */
-	public String getIdentifier() {
-	    return identifier;
-	}
-	
-	/**
-	 * @param identifier
-	 *            The identifier to set.
-	 */
-	
-	public void setIdentifier(String identifier) {
-		this.identifier = identifier;
-	}
+  // sets the idate from the db
+  public void setIDate(String x) {
+    java.text.SimpleDateFormat formatter = new java.text.SimpleDateFormat("yyyy-MM-dd H:mm:ss");
+    java.text.ParsePosition pos = new java.text.ParsePosition(0);
+    iDate = formatter.parse(x, pos);
 
-	/**
-	 * Sets the owner.
-	 * 
-	 * @param owner
-	 *            The owner to set
-	 */
-	public void setOwner(String owner) {
-		this.owner = owner;
-	}
+    if (iDate == null) {
+      iDate = new java.util.Date();
+    }
+  }
 
-	/**
-	 * Returns the owner.
-	 * 
-	 * @return int
-	 */
-	public String getOwner() {
-		return owner;
-	}
+  /**
+   * Returns the iDate.
+   *
+   * @return java.util.Date
+   */
+  public java.util.Date getIDate() {
+    return iDate;
+  }
 
-	/**
-	 * Sets the type.
-	 * 
-	 * @param type
-	 *            The type to set
-	 */
-	public void setType(String type) {
-		this.type = type;
-	}
+  /**
+   * Sets the inode.
+   *
+   * @param inode The inode to set
+   */
+  public void setInode(String inode) {
+    if (!UtilMethods.isSet(inode)) this.inode = null;
+    this.inode = inode;
+  }
 
-	/**
-	 * Returns the type.
-	 * 
-	 * @return String
-	 */
-	public String getType() {
-		return type;
-	}
+  /*
+   * public void setInode(long inode) { this.inode = inode + ""; }
+   */
 
-	// Tree relationship methods
-	// All these methods have been deprecated because apis should be used
-	// instead,
-	// the best example is the categoryapi that maintains caches of the
-	// relationship and also
-	// ensure permissions when associating categories, that's why the usage of
-	// these methods
-	// for categories is totally forbidden.
+  public String getInode() {
+    if (UtilMethods.isSet(inode)) {
+      return inode;
+    } else return "";
+  }
 
-	/**
-	 * @deprecated Association between inodes should be called through their
-	 *             respective API, calling the API ensures the consistency of
-	 *             the relationship and caches
-	 */
-	public void addChild(Inode i) {
-		if (this instanceof Category || i instanceof Category) {
-			throw new DotRuntimeException(
-					"Usage of this method directly is forbidden please go through the APIs directly");
-		}
-		Tree tree = TreeFactory.getTree(this, i, "child");
-		if (!InodeUtils.isSet(tree.getParent()) || !InodeUtils.isSet(tree.getChild())) {
-			tree.setParent(this.inode);
-			tree.setChild(i.getInode());
-			tree.setRelationType("child");
-			TreeFactory.saveTree(tree);
-		}
-	}
-	
-	public void addChild(Identifier i) {
-		Tree tree = TreeFactory.getTree(this.inode, i.getInode(), "child");
-		if (!InodeUtils.isSet(tree.getParent()) || !InodeUtils.isSet(tree.getChild())) {
-			tree.setParent(this.inode);
-			tree.setChild(i.getInode());
-			tree.setRelationType("child");
-			TreeFactory.saveTree(tree);
-		}
-	}
+  /** @return Returns the identifier. */
+  public String getIdentifier() {
+    return identifier;
+  }
 
-	/**
-	 * @deprecated Association between inodes should be called through their
-	 *             respective API, calling the API ensures the consistency of
-	 *             the relationship and caches
-	 */
-	public void addChild(Inode i, String relationType) {
-		if (this instanceof Category || i instanceof Category) {
-			throw new DotRuntimeException(
-					"Usage of this method directly is forbidden please go through the APIs directly");
-		}
-		Tree tree = TreeFactory.getTree(this, i, relationType);
-		if (!InodeUtils.isSet(tree.getParent()) || !InodeUtils.isSet(tree.getChild())){
-			tree.setParent(this.inode);
-			tree.setChild(i.getInode());
-			tree.setRelationType(relationType);
-			TreeFactory.saveTree(tree);
-		} else {
-			tree.setRelationType(relationType);
-			TreeFactory.saveTree(tree);
-		}
-	}
-	
-	public void addChild(Identifier i, String relationType) {
-		Tree tree = TreeFactory.getTree(this.inode, i.getInode(), relationType);
-		if (!InodeUtils.isSet(tree.getParent()) || !InodeUtils.isSet(tree.getChild())){
-			tree.setParent(this.inode);
-			tree.setChild(i.getInode());
-			tree.setRelationType(relationType);
-			TreeFactory.saveTree(tree);
-		} else {
-			tree.setRelationType(relationType);
-			TreeFactory.saveTree(tree);
-		}
-	}
+  /** @param identifier The identifier to set. */
+  public void setIdentifier(String identifier) {
+    this.identifier = identifier;
+  }
 
-	/**
-	 * @deprecated Association between inodes should be called through their
-	 *             respective API, calling the API ensures the consistency of
-	 *             the relationship and caches
-	 */
-	public void addChild(Inode i, String relationType, int sortOrder) {
-		if (this instanceof Category || i instanceof Category) {
-			throw new DotRuntimeException(
-					"Usage of this method directly is forbidden please go through the APIs directly");
-		}
-		Tree tree = TreeFactory.getTree(this, i, relationType);
-		if (!InodeUtils.isSet(tree.getParent()) || !InodeUtils.isSet(tree.getChild())) {
-			tree.setParent(this.inode);
-			tree.setChild(i.getInode());
-			tree.setRelationType(relationType);
-			tree.setTreeOrder(sortOrder);
-			TreeFactory.saveTree(tree);
-		} else {
-			tree.setRelationType(relationType);
-			tree.setTreeOrder(sortOrder);
-			TreeFactory.saveTree(tree);
-		}
-	}
+  /**
+   * Sets the owner.
+   *
+   * @param owner The owner to set
+   */
+  public void setOwner(String owner) {
+    this.owner = owner;
+  }
 
-	/**
-	 * @deprecated Association between inodes should be called through their
-	 *             respective API, calling the API ensures the consistency of
-	 *             the relationship and caches
-	 */
-	public void addParent(Inode i) {
-		if (this instanceof Category || i instanceof Category) {
-			throw new DotRuntimeException(
-					"Usage of this method directly is forbidden please go through the APIs directly");
-		}
-		Tree tree = TreeFactory.getTree(i, this, "child");
-		if (!InodeUtils.isSet(tree.getParent()) || !InodeUtils.isSet(tree.getChild())) {
-			tree.setChild(this.inode);
-			tree.setParent(i.getInode());
-			tree.setRelationType("child");
-			TreeFactory.saveTree(tree);
-		}
-	}
-	
-	public void addParent(Identifier i) {
-		Tree tree = TreeFactory.getTree(i.getInode(), this.inode, "child");
-		if (!InodeUtils.isSet(tree.getParent()) || !InodeUtils.isSet(tree.getChild())) {
-			tree.setChild(this.inode);
-			tree.setParent(i.getInode());
-			tree.setRelationType("child");
-			TreeFactory.saveTree(tree);
-		}
-	}
+  /**
+   * Returns the owner.
+   *
+   * @return int
+   */
+  public String getOwner() {
+    return owner;
+  }
 
-	/**
-	 * @deprecated Association between inodes should be called through their
-	 *             respective API, calling the API ensures the consistency of
-	 *             the relationship and caches
-	 */
-	public void addParent(Inode i, String relationType) {
-		if (this instanceof Category || i instanceof Category) {
-			throw new DotRuntimeException(
-					"Usage of this method directly is forbidden please go through the APIs directly");
-		}
-		Tree tree = TreeFactory.getTree(i, this, relationType);
-		if (!InodeUtils.isSet(tree.getParent()) ||!InodeUtils.isSet(tree.getChild())) {
-			tree.setChild(this.inode);
-			tree.setParent(i.getInode());
-			tree.setRelationType(relationType);
-			TreeFactory.saveTree(tree);
-		} else {
-			tree.setRelationType(relationType);
-			TreeFactory.saveTree(tree);
-		}
-	}
+  /**
+   * Sets the type.
+   *
+   * @param type The type to set
+   */
+  public void setType(String type) {
+    this.type = type;
+  }
 
-	/**
-	 * Remove the ASSOCIATION between a child and the inode
-	 * 
-	 * @param child
-	 *            child to be dissociated
-	 * @return
-	 * @deprecated Association between inodes should be called through their
-	 *             respective API, calling the API ensures the consistency of
-	 *             the relationship and caches
-	 */
-	public boolean deleteChild(Inode child) {
-		if (this instanceof Category || child instanceof Category) {
-			throw new DotRuntimeException(
-					"Usage of this method directly is forbidden please go through the APIs directly");
-		}
-		Tree tree = TreeFactory.getTree(this, child, "child");
-		if (!InodeUtils.isSet(tree.getParent()) || !InodeUtils.isSet(tree.getChild())) {
-			return false;
-		}
-		TreeFactory.deleteTree(tree);
-		return true;
-	}
-	
-	public boolean deleteChild(Identifier child) {
-		Tree tree = TreeFactory.getTree(this.inode, child.getInode(), "child");
-		if (!InodeUtils.isSet(tree.getParent()) || !InodeUtils.isSet(tree.getChild())) {
-			return false;
-		}
-		TreeFactory.deleteTree(tree);
-		return true;
-	}
+  /**
+   * Returns the type.
+   *
+   * @return String
+   */
+  public String getType() {
+    return type;
+  }
 
-	/**
-	 * Remove the ASSOCIATION between a child and the inode
-	 * 
-	 * @param child
-	 *            child to be dissociated
-	 * @return
-	 * @deprecated Association between inodes should be called through their
-	 *             respective API, calling the API ensures the consistency of
-	 *             the relationship and caches
-	 */
-	public boolean deleteChild(Inode child, String relationType) {
-		if (this instanceof Category || child instanceof Category) {
-			throw new DotRuntimeException(
-					"Usage of this method directly is forbidden please go through the APIs directly");
-		}
-		Tree tree = TreeFactory.getTree(this, child, relationType);
-		if (!InodeUtils.isSet(tree.getParent())|| !InodeUtils.isSet(tree.getChild())) {
-			return false;
-		}
-		TreeFactory.deleteTree(tree);
-		return true;
-	}
-	
-	public boolean deleteChild(Identifier child, String relationType) {
-		Tree tree = TreeFactory.getTree(this.inode, child.getInode(), relationType);
-		if (!InodeUtils.isSet(tree.getParent())|| !InodeUtils.isSet(tree.getChild())) {
-			return false;
-		}
-		TreeFactory.deleteTree(tree);
-		return true;
-	}
+  // Tree relationship methods
+  // All these methods have been deprecated because apis should be used
+  // instead,
+  // the best example is the categoryapi that maintains caches of the
+  // relationship and also
+  // ensure permissions when associating categories, that's why the usage of
+  // these methods
+  // for categories is totally forbidden.
 
-	/**
-	 * Remove the ASSOCIATION between a parent and the inode
-	 * 
-	 * @param parent
-	 *            parent to be dissociated
-	 * @deprecated Association between inodes should be called through their
-	 *             respective API, calling the API ensures the consistency of
-	 *             the relationship and caches
-	 * @return
-	 */
-	public boolean deleteParent(Inode parent) {
-		if (this instanceof Category || parent instanceof Category) {
-			throw new DotRuntimeException(
-					"Usage of this method directly is forbidden please go through the APIs directly");
-		}
-		Tree tree = TreeFactory.getTree(parent, this);
-		if (!InodeUtils.isSet(tree.getParent()) || !InodeUtils.isSet(tree.getChild())) {
-			return false;
-		}
-		TreeFactory.deleteTree(tree);
-		return true;
-	}
+  /**
+   * @deprecated Association between inodes should be called through their respective API, calling
+   *     the API ensures the consistency of the relationship and caches
+   */
+  public void addChild(Inode i) {
+    if (this instanceof Category || i instanceof Category) {
+      throw new DotRuntimeException(
+          "Usage of this method directly is forbidden please go through the APIs directly");
+    }
+    Tree tree = TreeFactory.getTree(this, i, "child");
+    if (!InodeUtils.isSet(tree.getParent()) || !InodeUtils.isSet(tree.getChild())) {
+      tree.setParent(this.inode);
+      tree.setChild(i.getInode());
+      tree.setRelationType("child");
+      TreeFactory.saveTree(tree);
+    }
+  }
 
-	/**
-	 * @deprecated Association between inodes should be called through their
-	 *             respective API, calling the API ensures the consistency of
-	 *             the relationship and caches
-	 */
-	public boolean deleteParent(Inode parent, String relationType) {
-		if (this instanceof Category || parent instanceof Category) {
-			throw new DotRuntimeException(
-					"Usage of this method directly is forbidden please go through the APIs directly");
-		}
-		Tree tree = TreeFactory.getTree(parent, this, relationType);
-		if (!InodeUtils.isSet(tree.getParent()) || !InodeUtils.isSet(tree.getChild())) {
-			return false;
-		}
-		TreeFactory.deleteTree(tree);
-		return true;
-	}
+  public void addChild(Identifier i) {
+    Tree tree = TreeFactory.getTree(this.inode, i.getInode(), "child");
+    if (!InodeUtils.isSet(tree.getParent()) || !InodeUtils.isSet(tree.getChild())) {
+      tree.setParent(this.inode);
+      tree.setChild(i.getInode());
+      tree.setRelationType("child");
+      TreeFactory.saveTree(tree);
+    }
+  }
 
-	/**
-	 * Wipe out the old parents and associate a new parents set to the inode
-	 * 
-	 * @param newChildren
-	 *            New children set
-	 * @deprecated Association between inodes should be called through their
-	 *             respective API, calling the API ensures the consistency of
-	 *             the relationship and caches
-	 */
-	public void setParents(List newParents) {
+  /**
+   * @deprecated Association between inodes should be called through their respective API, calling
+   *     the API ensures the consistency of the relationship and caches
+   */
+  public void addChild(Inode i, String relationType) {
+    if (this instanceof Category || i instanceof Category) {
+      throw new DotRuntimeException(
+          "Usage of this method directly is forbidden please go through the APIs directly");
+    }
+    Tree tree = TreeFactory.getTree(this, i, relationType);
+    if (!InodeUtils.isSet(tree.getParent()) || !InodeUtils.isSet(tree.getChild())) {
+      tree.setParent(this.inode);
+      tree.setChild(i.getInode());
+      tree.setRelationType(relationType);
+      TreeFactory.saveTree(tree);
+    } else {
+      tree.setRelationType(relationType);
+      TreeFactory.saveTree(tree);
+    }
+  }
 
-		// Checking for forbidden usage
-		boolean invalidParent = false;
-		for (Object parent : newParents) {
-			if (parent instanceof Category)
-				invalidParent = true;
-		}
-		if (this instanceof Category || invalidParent) {
-			throw new DotRuntimeException(
-					"Usage of this method directly is forbidden please go through the APIs directly");
-		}
+  public void addChild(Identifier i, String relationType) {
+    Tree tree = TreeFactory.getTree(this.inode, i.getInode(), relationType);
+    if (!InodeUtils.isSet(tree.getParent()) || !InodeUtils.isSet(tree.getChild())) {
+      tree.setParent(this.inode);
+      tree.setChild(i.getInode());
+      tree.setRelationType(relationType);
+      TreeFactory.saveTree(tree);
+    } else {
+      tree.setRelationType(relationType);
+      TreeFactory.saveTree(tree);
+    }
+  }
 
-		TreeFactory.deleteTreesByChild(this);
-		Iterator it = newParents.iterator();
-		while (it.hasNext()) {
-			Inode parent = (Inode) it.next();
-			addParent(parent);
-		}
-	}
+  /**
+   * @deprecated Association between inodes should be called through their respective API, calling
+   *     the API ensures the consistency of the relationship and caches
+   */
+  public void addChild(Inode i, String relationType, int sortOrder) {
+    if (this instanceof Category || i instanceof Category) {
+      throw new DotRuntimeException(
+          "Usage of this method directly is forbidden please go through the APIs directly");
+    }
+    Tree tree = TreeFactory.getTree(this, i, relationType);
+    if (!InodeUtils.isSet(tree.getParent()) || !InodeUtils.isSet(tree.getChild())) {
+      tree.setParent(this.inode);
+      tree.setChild(i.getInode());
+      tree.setRelationType(relationType);
+      tree.setTreeOrder(sortOrder);
+      TreeFactory.saveTree(tree);
+    } else {
+      tree.setRelationType(relationType);
+      tree.setTreeOrder(sortOrder);
+      TreeFactory.saveTree(tree);
+    }
+  }
 
-	/**
-	 * 
-	 * @return If the inode has children return true, false otherwise
-	 */
-	public boolean hasChildren() {
+  /**
+   * @deprecated Association between inodes should be called through their respective API, calling
+   *     the API ensures the consistency of the relationship and caches
+   */
+  public void addParent(Inode i) {
+    if (this instanceof Category || i instanceof Category) {
+      throw new DotRuntimeException(
+          "Usage of this method directly is forbidden please go through the APIs directly");
+    }
+    Tree tree = TreeFactory.getTree(i, this, "child");
+    if (!InodeUtils.isSet(tree.getParent()) || !InodeUtils.isSet(tree.getChild())) {
+      tree.setChild(this.inode);
+      tree.setParent(i.getInode());
+      tree.setRelationType("child");
+      TreeFactory.saveTree(tree);
+    }
+  }
 
-		DotConnect dc = new DotConnect();
-		String query = "select count(*) as c from tree where tree.parent = '"
-				+ this.inode + "'";
-		dc.setSQL(query);
+  public void addParent(Identifier i) {
+    Tree tree = TreeFactory.getTree(i.getInode(), this.inode, "child");
+    if (!InodeUtils.isSet(tree.getParent()) || !InodeUtils.isSet(tree.getChild())) {
+      tree.setChild(this.inode);
+      tree.setParent(i.getInode());
+      tree.setRelationType("child");
+      TreeFactory.saveTree(tree);
+    }
+  }
 
-		return dc.getInt("c") > 0;
-	}
+  /**
+   * @deprecated Association between inodes should be called through their respective API, calling
+   *     the API ensures the consistency of the relationship and caches
+   */
+  public void addParent(Inode i, String relationType) {
+    if (this instanceof Category || i instanceof Category) {
+      throw new DotRuntimeException(
+          "Usage of this method directly is forbidden please go through the APIs directly");
+    }
+    Tree tree = TreeFactory.getTree(i, this, relationType);
+    if (!InodeUtils.isSet(tree.getParent()) || !InodeUtils.isSet(tree.getChild())) {
+      tree.setChild(this.inode);
+      tree.setParent(i.getInode());
+      tree.setRelationType(relationType);
+      TreeFactory.saveTree(tree);
+    } else {
+      tree.setRelationType(relationType);
+      TreeFactory.saveTree(tree);
+    }
+  }
 
-	/**
-	 * 
-	 * @return If the inode has children return true, false otherwise
-	 */
-	public boolean hasParents() {
+  /**
+   * Remove the ASSOCIATION between a child and the inode
+   *
+   * @param child child to be dissociated
+   * @return
+   * @deprecated Association between inodes should be called through their respective API, calling
+   *     the API ensures the consistency of the relationship and caches
+   */
+  public boolean deleteChild(Inode child) {
+    if (this instanceof Category || child instanceof Category) {
+      throw new DotRuntimeException(
+          "Usage of this method directly is forbidden please go through the APIs directly");
+    }
+    Tree tree = TreeFactory.getTree(this, child, "child");
+    if (!InodeUtils.isSet(tree.getParent()) || !InodeUtils.isSet(tree.getChild())) {
+      return false;
+    }
+    TreeFactory.deleteTree(tree);
+    return true;
+  }
 
-	    return TreeFactory.getTreesByChild(this.inode).size()>0;
-	}
+  public boolean deleteChild(Identifier child) {
+    Tree tree = TreeFactory.getTree(this.inode, child.getInode(), "child");
+    if (!InodeUtils.isSet(tree.getParent()) || !InodeUtils.isSet(tree.getChild())) {
+      return false;
+    }
+    TreeFactory.deleteTree(tree);
+    return true;
+  }
 
-	public boolean equals(Object other) {
-		if (!(other instanceof Inode)) {
-			return false;
-		}
+  /**
+   * Remove the ASSOCIATION between a child and the inode
+   *
+   * @param child child to be dissociated
+   * @return
+   * @deprecated Association between inodes should be called through their respective API, calling
+   *     the API ensures the consistency of the relationship and caches
+   */
+  public boolean deleteChild(Inode child, String relationType) {
+    if (this instanceof Category || child instanceof Category) {
+      throw new DotRuntimeException(
+          "Usage of this method directly is forbidden please go through the APIs directly");
+    }
+    Tree tree = TreeFactory.getTree(this, child, relationType);
+    if (!InodeUtils.isSet(tree.getParent()) || !InodeUtils.isSet(tree.getChild())) {
+      return false;
+    }
+    TreeFactory.deleteTree(tree);
+    return true;
+  }
 
-		Inode castOther = (Inode) other;
+  public boolean deleteChild(Identifier child, String relationType) {
+    Tree tree = TreeFactory.getTree(this.inode, child.getInode(), relationType);
+    if (!InodeUtils.isSet(tree.getParent()) || !InodeUtils.isSet(tree.getChild())) {
+      return false;
+    }
+    TreeFactory.deleteTree(tree);
+    return true;
+  }
 
-		return (this.getInode().equalsIgnoreCase(castOther.getInode()));
-	}
+  /**
+   * Remove the ASSOCIATION between a parent and the inode
+   *
+   * @param parent parent to be dissociated
+   * @deprecated Association between inodes should be called through their respective API, calling
+   *     the API ensures the consistency of the relationship and caches
+   * @return
+   */
+  public boolean deleteParent(Inode parent) {
+    if (this instanceof Category || parent instanceof Category) {
+      throw new DotRuntimeException(
+          "Usage of this method directly is forbidden please go through the APIs directly");
+    }
+    Tree tree = TreeFactory.getTree(parent, this);
+    if (!InodeUtils.isSet(tree.getParent()) || !InodeUtils.isSet(tree.getChild())) {
+      return false;
+    }
+    TreeFactory.deleteTree(tree);
+    return true;
+  }
 
-	@Override
-	public int hashCode() {
-		// Uses the inode value as hash value, but some empty objects are created
-		// for reflection purposes so a valid hash is needed, thus date is used on
-		// that case
-		if(inode == null){
-			return iDate.hashCode();
-		}
-		return inode.hashCode();
-	}
+  /**
+   * @deprecated Association between inodes should be called through their respective API, calling
+   *     the API ensures the consistency of the relationship and caches
+   */
+  public boolean deleteParent(Inode parent, String relationType) {
+    if (this instanceof Category || parent instanceof Category) {
+      throw new DotRuntimeException(
+          "Usage of this method directly is forbidden please go through the APIs directly");
+    }
+    Tree tree = TreeFactory.getTree(parent, this, relationType);
+    if (!InodeUtils.isSet(tree.getParent()) || !InodeUtils.isSet(tree.getChild())) {
+      return false;
+    }
+    TreeFactory.deleteTree(tree);
+    return true;
+  }
 
-	public java.util.Date getiDate() {
-		return iDate;
-	}
+  /**
+   * Wipe out the old parents and associate a new parents set to the inode
+   *
+   * @param newChildren New children set
+   * @deprecated Association between inodes should be called through their respective API, calling
+   *     the API ensures the consistency of the relationship and caches
+   */
+  public void setParents(List newParents) {
 
-	public void setiDate(java.util.Date iDate) {
-		this.iDate = iDate;
-	}
+    // Checking for forbidden usage
+    boolean invalidParent = false;
+    for (Object parent : newParents) {
+      if (parent instanceof Category) invalidParent = true;
+    }
+    if (this instanceof Category || invalidParent) {
+      throw new DotRuntimeException(
+          "Usage of this method directly is forbidden please go through the APIs directly");
+    }
 
-	public boolean isNew() {
-		return (!InodeUtils.isSet(this.inode));
-	}
+    TreeFactory.deleteTreesByChild(this);
+    Iterator it = newParents.iterator();
+    while (it.hasNext()) {
+      Inode parent = (Inode) it.next();
+      addParent(parent);
+    }
+  }
 
-	/**
-	 * Returns a hashmap with all the inode fields
-	 * 
-	 * @return the map
-	 */
-	public Map<String, Object> getMap()  throws DotStateException, DotDataException, DotSecurityException {
-		HashMap<String, Object> map = new HashMap<String, Object>();
-		map.put("inode", inode);
-		map.put("type", type);
-		map.put("identifier", this.identifier);
-		map.put("iDate", iDate);
-		return map;
-	}
+  /** @return If the inode has children return true, false otherwise */
+  public boolean hasChildren() {
 
-	public int compareTo(Object compObject) {
-		if (!(compObject instanceof Inode))
-			return -1;
+    DotConnect dc = new DotConnect();
+    String query = "select count(*) as c from tree where tree.parent = '" + this.inode + "'";
+    dc.setSQL(query);
 
-		Inode inode = (Inode) compObject;
-		return (inode.getiDate().compareTo(this.getiDate()));
-	}
+    return dc.getInt("c") > 0;
+  }
 
-	public String getPermissionId() {
-		return getInode();
-	}
+  /** @return If the inode has children return true, false otherwise */
+  public boolean hasParents() {
 
-	public List<PermissionSummary> acceptedPermissions() {
-		return null;
-	}
+    return TreeFactory.getTreesByChild(this.inode).size() > 0;
+  }
 
-	public List<RelatedPermissionableGroup> permissionDependencies(
-			int requiredPermission) {
-		return null;
-	}
+  public boolean equals(Object other) {
+    if (!(other instanceof Inode)) {
+      return false;
+    }
 
-	public Permissionable getParentPermissionable() throws DotDataException {
-		return null;
-	}
+    Inode castOther = (Inode) other;
 
-	public String getPermissionType() {
-		return this.getClass().getCanonicalName();
-	}
+    return (this.getInode().equalsIgnoreCase(castOther.getInode()));
+  }
 
-	public boolean isParentPermissionable() {
-		return false;
-	}
-	public String getTitle() {
-		return "";
-	}
-	public String getVersionId() {
-		return getIdentifier();
-	}
-	public String getVersionType() {
-		return getType();
-	}
-	public boolean isArchived() throws DotStateException, DotDataException, DotSecurityException {
-		return false;
-	}
-	public boolean isLive() throws DotStateException, DotDataException, DotSecurityException {
-		return false;
-	}
-	public boolean isLocked() throws DotStateException, DotDataException, DotSecurityException {
-		return false;
-	}
-	public boolean isWorking() throws DotStateException, DotDataException, DotSecurityException {
-		return false;
-	}
-	public void setVersionId(String versionId) {
-		setIdentifier(versionId);
-	}
+  @Override
+  public int hashCode() {
+    // Uses the inode value as hash value, but some empty objects are created
+    // for reflection purposes so a valid hash is needed, thus date is used on
+    // that case
+    if (inode == null) {
+      return iDate.hashCode();
+    }
+    return inode.hashCode();
+  }
 
+  public java.util.Date getiDate() {
+    return iDate;
+  }
+
+  public void setiDate(java.util.Date iDate) {
+    this.iDate = iDate;
+  }
+
+  public boolean isNew() {
+    return (!InodeUtils.isSet(this.inode));
+  }
+
+  /**
+   * Returns a hashmap with all the inode fields
+   *
+   * @return the map
+   */
+  public Map<String, Object> getMap()
+      throws DotStateException, DotDataException, DotSecurityException {
+    HashMap<String, Object> map = new HashMap<String, Object>();
+    map.put("inode", inode);
+    map.put("type", type);
+    map.put("identifier", this.identifier);
+    map.put("iDate", iDate);
+    return map;
+  }
+
+  public int compareTo(Object compObject) {
+    if (!(compObject instanceof Inode)) return -1;
+
+    Inode inode = (Inode) compObject;
+    return (inode.getiDate().compareTo(this.getiDate()));
+  }
+
+  public String getPermissionId() {
+    return getInode();
+  }
+
+  public List<PermissionSummary> acceptedPermissions() {
+    return null;
+  }
+
+  public List<RelatedPermissionableGroup> permissionDependencies(int requiredPermission) {
+    return null;
+  }
+
+  public Permissionable getParentPermissionable() throws DotDataException {
+    return null;
+  }
+
+  public String getPermissionType() {
+    return this.getClass().getCanonicalName();
+  }
+
+  public boolean isParentPermissionable() {
+    return false;
+  }
+
+  public String getTitle() {
+    return "";
+  }
+
+  public String getVersionId() {
+    return getIdentifier();
+  }
+
+  public String getVersionType() {
+    return getType();
+  }
+
+  public boolean isArchived() throws DotStateException, DotDataException, DotSecurityException {
+    return false;
+  }
+
+  public boolean isLive() throws DotStateException, DotDataException, DotSecurityException {
+    return false;
+  }
+
+  public boolean isLocked() throws DotStateException, DotDataException, DotSecurityException {
+    return false;
+  }
+
+  public boolean isWorking() throws DotStateException, DotDataException, DotSecurityException {
+    return false;
+  }
+
+  public void setVersionId(String versionId) {
+    setIdentifier(versionId);
+  }
 }
