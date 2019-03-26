@@ -37,6 +37,7 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -1070,8 +1071,9 @@ public class WorkflowResource {
             throw new DoesNotExistException("contentlet-was-not-found");
         }
 
+        final PageMode pageMode = PageMode.get(request);
         final ContentletDependencies.Builder formBuilder = new ContentletDependencies.Builder();
-        formBuilder.respectAnonymousPermissions(PageMode.get(request).respectAnonPerms).
+        formBuilder.respectAnonymousPermissions(pageMode.respectAnonPerms).
                 workflowActionId(actionId).modUser(user)
                 .indexPolicy(IndexPolicyProvider.getInstance().forSingleContent());
 
@@ -1085,10 +1087,17 @@ public class WorkflowResource {
 
             final  Map<Relationship, List<Contentlet>> relationshipListMap =
                     (Map<Relationship, List<Contentlet>>) contentlet.getMap().get(Contentlet.RELATIONSHIP_KEY);
-            formBuilder.relationships(MapToContentletPopulator.INSTANCE.getContentletRelationshipsFromMap(contentlet, relationshipListMap));
+            formBuilder.relationships(MapToContentletPopulator.
+                    INSTANCE.getContentletRelationshipsFromMap(contentlet, relationshipListMap));
         }
 
-        // todo: missing categories too
+        final List<Category> categories = MapToContentletPopulator.
+                INSTANCE.getCategories(contentlet, user, pageMode.respectAnonPerms);
+
+        if (UtilMethods.isSet(categories)) {
+
+            formBuilder.categories(categories);
+        }
 
         return Response.ok(
                 new ResponseEntityView(

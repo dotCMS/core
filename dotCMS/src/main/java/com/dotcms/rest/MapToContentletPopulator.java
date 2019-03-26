@@ -9,9 +9,12 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
@@ -276,6 +279,54 @@ public class MapToContentletPopulator  {
             }
         }
     } // processSeveralHostsOrFolders.
+
+    @CloseDBIfOpened
+    public List<Category> getCategories (final Contentlet contentlet, final User user,
+                                         final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+
+        final List<Category> categories = new ArrayList<>();
+        final List<Field> fields = new LegacyFieldTransformer(
+                APILocator.getContentTypeAPI(APILocator.systemUser()).
+                        find(contentlet.getContentType().inode()).fields()).asOldFieldList();
+
+        for (final Field field : fields) {
+            if (field.getFieldType().equals(FieldType.CATEGORY.toString())) {
+
+                final String catValue = contentlet.getStringProperty(field.getVelocityVarName());
+                if (UtilMethods.isSet(catValue)) {
+                    for (final String categoryValue : catValue.split("\\s*,\\s*")) {
+                        // take it as catId
+                        Category category = APILocator.getCategoryAPI()
+                                .find(categoryValue, user, respectFrontendRoles);
+                        if (category != null && InodeUtils.isSet(category.getCategoryId())) {
+                            categories.add(category);
+                        } else {
+                            // try it as catKey
+                            category = APILocator.getCategoryAPI()
+                                    .findByKey(categoryValue, user, respectFrontendRoles);
+                            if (category != null && InodeUtils.isSet(category.getCategoryId())) {
+                                categories.add(category);
+                            } else {
+                                // try it as variable
+                                // FIXME: https://github.com/dotCMS/dotCMS/issues/2847
+                                final HibernateUtil hu = new HibernateUtil(Category.class);
+                                hu.setQuery("from " + Category.class.getCanonicalName()
+                                        + " WHERE category_velocity_var_name=?");
+                                hu.setParam(categoryValue);
+                                category = (Category) hu.load();
+                                if (category != null && InodeUtils.isSet(category.getCategoryId())) {
+                                    categories.add(category);
+                                }
+                            }
+                        }
+
+                    }
+                }
+            }
+        }
+
+        return categories;
+    }
 
     public ContentletRelationships getContentletRelationshipsFromMap(final Contentlet contentlet,
                                                                       final Map<Relationship, List<Contentlet>> contentRelationships) {

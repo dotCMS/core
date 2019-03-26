@@ -41,7 +41,6 @@ import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Field;
-import com.dotmarketing.portlets.structure.model.Field.FieldType;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.util.*;
@@ -1286,64 +1285,24 @@ public class ContentResource {
         try {
 
             // preparing categories
-            List<Category> cats = new ArrayList<>();
-            List<Field> fields = new LegacyFieldTransformer(
-                    APILocator.getContentTypeAPI(APILocator.systemUser()).
-                            find(contentlet.getContentType().inode()).fields()).asOldFieldList();
-            for (Field field : fields) {
-                if (field.getFieldType().equals(FieldType.CATEGORY.toString())) {
-                    String catValue = contentlet.getStringProperty(field.getVelocityVarName());
-                    if (UtilMethods.isSet(catValue)) {
-                        for (String cat : catValue.split("\\s*,\\s*")) {
-                            // take it as catId
-                            Category category = APILocator.getCategoryAPI()
-                                    .find(cat, init.getUser(), ALLOW_FRONT_END_SAVING);
-                            if (category != null && InodeUtils.isSet(category.getCategoryId())) {
-                                cats.add(category);
-                            } else {
-                                // try it as catKey
-                                category = APILocator.getCategoryAPI()
-                                        .findByKey(cat, init.getUser(), ALLOW_FRONT_END_SAVING);
-                                if (category != null && InodeUtils
-                                        .isSet(category.getCategoryId())) {
-                                    cats.add(category);
-                                } else {
-                                    // try it as variable
-                                    // FIXME: https://github.com/dotCMS/dotCMS/issues/2847
-                                    HibernateUtil hu = new HibernateUtil(Category.class);
-                                    hu.setQuery("from " + Category.class.getCanonicalName()
-                                            + " WHERE category_velocity_var_name=?");
-                                    hu.setParam(cat);
-                                    category = (Category) hu.load();
-                                    if (category != null && InodeUtils
-                                            .isSet(category.getCategoryId())) {
-                                        cats.add(category);
-                                    }
-                                }
-                            }
-
-                        }
-                    }
-                }
-            }
-
+            List<Category> categories = MapToContentletPopulator.INSTANCE.getCategories
+                    (contentlet, init.getUser(), ALLOW_FRONT_END_SAVING);
             // running a workflow action?
             final ContentWorkflowResult contentWorkflowResult = processWorkflowAction(contentlet, init, live);
-
-            live = contentWorkflowResult.publish;
-            Map<Relationship, List<Contentlet>> relationships = (Map<Relationship, List<Contentlet>>) contentlet
+            final Map<Relationship, List<Contentlet>> relationships = (Map<Relationship, List<Contentlet>>) contentlet
                     .get(RELATIONSHIP_KEY);
+            live = contentWorkflowResult.publish;
 
             HibernateUtil.startTransaction();
 
-            cats = UtilMethods.isSet(cats)?cats:null;
+            categories = UtilMethods.isSet(categories)?categories:null;
 
             // if one of the actions does not have save, so call the checkin
             if (!contentWorkflowResult.save) {
 
                 contentlet.setIndexPolicy(IndexPolicyProvider.getInstance().forSingleContent());
                 contentlet = APILocator.getContentletAPI()
-                        .checkin(contentlet, relationships, cats, init.getUser(), ALLOW_FRONT_END_SAVING);
+                        .checkin(contentlet, relationships, categories, init.getUser(), ALLOW_FRONT_END_SAVING);
                 if (live) {
                     APILocator.getContentletAPI()
                             .publish(contentlet, init.getUser(), ALLOW_FRONT_END_SAVING);
@@ -1353,7 +1312,7 @@ public class ContentResource {
                 contentlet = APILocator.getWorkflowAPI().fireContentWorkflow(contentlet,
                         new ContentletDependencies.Builder()
                         .respectAnonymousPermissions(ALLOW_FRONT_END_SAVING)
-                        .modUser(init.getUser()).categories(cats)
+                        .modUser(init.getUser()).categories(categories)
                         .relationships(MapToContentletPopulator.INSTANCE.getContentletRelationshipsFromMap(contentlet, relationships))
                         .indexPolicy(IndexPolicyProvider.getInstance().forSingleContent())
                         .build());
