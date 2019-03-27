@@ -283,22 +283,6 @@ public class ReindexThread {
         return getInstance().STATE == ThreadState.RUNNING;
     }
 
-    /**
-     * Stops the full re-indexation process. This means clearing up the content queue and the reindex
-     * journal.
-     * 
-     * @throws DotDataException
-     */
-    @WrapInTransaction
-    public void stopFullReindexation() throws DotDataException {
-        try {
-            pause();
-            queueApi.deleteReindexAndFailedRecords();
-            indexAPI.fullReindexAbort();
-        } finally {
-            unpause();
-        }
-    }
 
     /**
      * Generates a new notification displayed at the top left side of the back-end page in dotCMS. This

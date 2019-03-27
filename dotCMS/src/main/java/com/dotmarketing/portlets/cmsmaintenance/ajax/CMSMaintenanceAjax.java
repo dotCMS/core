@@ -129,7 +129,7 @@ public class CMSMaintenanceAjax {
 
     public Map stopReindexation() throws DotDataException {
     	validateUser();
-    	ReindexThread.getInstance().stopFullReindexation();
+    	APILocator.getContentletIndexAPI().stopFullReindexation();
         return ESReindexationProcessStatus.getProcessIndexationMap();
     }
 

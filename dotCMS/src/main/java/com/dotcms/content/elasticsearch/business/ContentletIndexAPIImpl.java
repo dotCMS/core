@@ -434,6 +434,24 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         addContentToIndex(contentToIndex);
 
     }
+    
+    /**
+     * Stops the full re-indexation process. This means clearing up the content queue and the reindex
+     * journal.
+     * 
+     * @throws DotDataException
+     */
+    @Override
+    @WrapInTransaction
+    public void stopFullReindexation() throws DotDataException {
+        try {
+            ReindexThread.pause();
+            queueApi.deleteReindexAndFailedRecords();
+            fullReindexAbort();
+        } finally {
+            ReindexThread.unpause();
+        }
+    }
 
     @Override
     public void addContentToIndex(final List<Contentlet> contentToIndex) {

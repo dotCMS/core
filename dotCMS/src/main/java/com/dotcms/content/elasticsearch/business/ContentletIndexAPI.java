@@ -137,4 +137,6 @@ public interface ContentletIndexAPI {
 
     void reindexSwitchover(boolean forceSwitch) throws DotDataException;
 
+    void stopFullReindexation() throws DotDataException;
+
 }
