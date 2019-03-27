@@ -100,9 +100,6 @@ public class ResetPermissionsJob implements StatefulJob {
 		final SimpleTrigger trigger = new SimpleTrigger("permissionsResetTrigger-"+randomID, "dotcms_triggers",  new Date(startTime));
 		
 		try {
-		    // First, make sure the Reindex Thread is up and running
-
-            ReindexThread.unpause();
 
 			final Scheduler sched = QuartzUtils.getSequentialScheduler();
 			sched.scheduleJob(jd, trigger);

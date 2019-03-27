@@ -81,7 +81,7 @@ public class ReindexThread {
     private final RoleAPI roleAPI;
     private final UserAPI userAPI;
 
-    private static ReindexThread instance = new ReindexThread();
+    private static ReindexThread instance ;
 
     private final int SLEEP = Config.getIntProperty("REINDEX_THREAD_SLEEP", 250);
     private final int SLEEP_ON_ERROR = Config.getIntProperty("REINDEX_THREAD_SLEEP_ON_ERROR", 500);
@@ -107,6 +107,7 @@ public class ReindexThread {
         this.userAPI = userAPI;
         this.roleAPI = roleAPI;
         this.indexAPI = indexAPI;
+        this.instance=this;
     }
 
     /**

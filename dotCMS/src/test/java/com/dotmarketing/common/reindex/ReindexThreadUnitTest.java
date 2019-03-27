@@ -6,6 +6,7 @@ import com.dotcms.api.system.event.PayloadVerifier;
 import com.dotcms.api.system.event.PayloadVerifierFactory;
 import com.dotcms.api.system.event.Visibility;
 import com.dotcms.api.system.event.verifier.RoleVerifier;
+import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.notifications.bean.NotificationType;
 import com.dotcms.notifications.business.NotificationAPI;
@@ -46,6 +47,7 @@ public class ReindexThreadUnitTest extends UnitTestBase {
         final UserAPI userAPI = mock(UserAPI.class);
         final ServletContext context = mock(ServletContext.class);
         final ReindexQueueAPI jAPI = mock(ReindexQueueAPI.class);
+        final ContentletIndexAPI indexApi = mock(ContentletIndexAPI.class);
         final Locale locale = new Locale.Builder().setLanguage("en").setRegion("US").build();
 
         String cmsAdminRoleId = UUID.randomUUID().toString();
@@ -59,7 +61,7 @@ public class ReindexThreadUnitTest extends UnitTestBase {
         PayloadVerifier roleVerifier = new RoleVerifier(roleAPI);
         payloadVerifierFactory.register(Visibility.ROLE, roleVerifier);
 
-        final ReindexThread reindexThread = new ReindexThread(jAPI, notificationAPI, userAPI, roleAPI, null);
+        final ReindexThread reindexThread = new ReindexThread(jAPI, notificationAPI, userAPI, roleAPI, indexApi);
         final String identToIndex = "index1";
         final String msg = "Could not re-index record with the Identifier '"
                 + identToIndex
