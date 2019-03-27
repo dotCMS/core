@@ -34,6 +34,7 @@ import com.dotcms.workflow.helper.WorkflowHelper;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -59,6 +60,7 @@ import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 import io.vavr.Tuple2;
 
@@ -138,14 +140,14 @@ public class WorkflowResource {
 
     @VisibleForTesting
     WorkflowResource(final WorkflowHelper workflowHelper,
-                               final ContentHelper    contentHelper,
-                               final WorkflowAPI      workflowAPI,
-                               final ContentletAPI    contentletAPI,
-                               final ResponseUtil     responseUtil,
-                               final PermissionAPI    permissionAPI,
-                               final WorkflowImportExportUtil workflowImportExportUtil,
-                               final MultiPartUtils   multiPartUtils,
-                               final WebResource webResource) {
+                     final ContentHelper    contentHelper,
+                     final WorkflowAPI      workflowAPI,
+                     final ContentletAPI    contentletAPI,
+                     final ResponseUtil     responseUtil,
+                     final PermissionAPI    permissionAPI,
+                     final WorkflowImportExportUtil workflowImportExportUtil,
+                     final MultiPartUtils   multiPartUtils,
+                     final WebResource webResource) {
 
         this.workflowHelper           = workflowHelper;
         this.contentHelper            = contentHelper;
@@ -234,7 +236,7 @@ public class WorkflowResource {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response findActionletsByAction(@Context final HttpServletRequest request,
-                                      @PathParam("actionId") final String  actionId) {
+                                                 @PathParam("actionId") final String  actionId) {
 
         final InitDataObject initDataObject = this.webResource.init
                 (null, true, request, true, null);
@@ -397,8 +399,8 @@ public class WorkflowResource {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final void fireBulkActions(@Context final HttpServletRequest request,
-            @Suspended final AsyncResponse asyncResponse,
-            final FireBulkActionsForm fireBulkActionsForm) {
+                                      @Suspended final AsyncResponse asyncResponse,
+                                      final FireBulkActionsForm fireBulkActionsForm) {
 
         final InitDataObject initDataObject = this.webResource.init(null, true, request, true, null);
         Logger.debug(this, ()-> "Fire bulk actions: " + fireBulkActionsForm);
@@ -587,7 +589,7 @@ public class WorkflowResource {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response saveAction(@Context final HttpServletRequest request,
-                               final WorkflowActionForm workflowActionForm) {
+                                     final WorkflowActionForm workflowActionForm) {
 
         final InitDataObject initDataObject = this.webResource.init
                 (null, true, request, true, null);
@@ -685,8 +687,8 @@ public class WorkflowResource {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response saveActionletToAction(@Context final HttpServletRequest request,
-                                              @PathParam("actionId")   final String actionId,
-                                              final WorkflowActionletActionForm workflowActionletActionForm) {
+                                                @PathParam("actionId")   final String actionId,
+                                                final WorkflowActionletActionForm workflowActionletActionForm) {
 
         final InitDataObject initDataObject = this.webResource.init
                 (null, true, request, true, null);
@@ -696,9 +698,9 @@ public class WorkflowResource {
             Logger.debug(this, "Saving a workflow actionlet " + workflowActionletActionForm.getActionletClass()
                     + " in to a action : " + actionId);
             this.workflowHelper.saveActionletToAction(new WorkflowActionletActionBean.Builder().actionId(actionId)
-                    .actionletClass(workflowActionletActionForm.getActionletClass())
-                    .order(workflowActionletActionForm.getOrder())
-                    .parameters(workflowActionletActionForm.getParameters()).build()
+                            .actionletClass(workflowActionletActionForm.getActionletClass())
+                            .order(workflowActionletActionForm.getOrder())
+                            .parameters(workflowActionletActionForm.getParameters()).build()
                     , initDataObject.getUser());
             return Response.ok(new ResponseEntityView(OK)).build(); // 200
         } catch (final Exception e) {
@@ -722,8 +724,8 @@ public class WorkflowResource {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final void deleteStep(@Context final HttpServletRequest request,
-                                     @Suspended final AsyncResponse asyncResponse,
-                                     @PathParam("stepId") final String stepId) {
+                                 @Suspended final AsyncResponse asyncResponse,
+                                 @PathParam("stepId") final String stepId) {
 
         final InitDataObject initDataObject = this.webResource.init
                 (null, true, request, true, null);
@@ -814,7 +816,7 @@ public class WorkflowResource {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response deleteActionlet(@Context final HttpServletRequest request,
-                                       @PathParam("actionletId") final String actionletId) {
+                                          @PathParam("actionletId") final String actionletId) {
 
         final InitDataObject initDataObject = this.webResource.init
                 (null, true, request, true, null);
@@ -857,8 +859,8 @@ public class WorkflowResource {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response reorderStep(@Context final HttpServletRequest request,
-                                        @PathParam("stepId")   final String stepId, 
-                                        @PathParam("order")    final int order) {
+                                      @PathParam("stepId")   final String stepId,
+                                      @PathParam("order")    final int order) {
         final InitDataObject initDataObject = this.webResource.init
                 (null, true, request, true, null);
 
@@ -962,13 +964,13 @@ public class WorkflowResource {
     }
 
     /**
-     * Fires a workflow action by name
+     * Fires a workflow action by name and multi part, if the contentlet exists could use inode or identifier and optional language.
      * @param request    {@link HttpServletRequest}
      * @param inode      {@link String} (Optional) to fire an action over the existing inode.
      * @param identifier {@link String} (Optional) to fire an action over the existing identifier (in combination of language).
      * @param language   {@link Long}   (Optional) to fire an action over the existing language (in combination of identifier).
-     * @param multipart {@link FormDataMultiPart} Multipart form
-     * (if an inode is set, this param is not ignored).
+     * @param multipart {@link FormDataMultiPart} Multipart form (if an inode is set, this param is not ignored).
+     *
      * @return Response
      */
     @PUT
@@ -977,11 +979,11 @@ public class WorkflowResource {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Consumes(MediaType.MULTIPART_FORM_DATA)
-    public final Response fireActionMultipart(@Context final HttpServletRequest request,
-                                     @QueryParam("inode")            final String inode,
-                                     @QueryParam("identifier")       final String identifier,
-                                     @QueryParam("language")         final long   language,
-                                     final FormDataMultiPart multipart) {
+    public final Response fireActionByNameMultipart(@Context final HttpServletRequest request,
+                                              @QueryParam("inode")            final String inode,
+                                              @QueryParam("identifier")       final String identifier,
+                                              @DefaultValue("-1") @QueryParam("language")         final long   language,
+                                              final FormDataMultiPart multipart) {
 
         final InitDataObject initDataObject = this.webResource.init
                 (null, true, request, true, null);
@@ -989,15 +991,21 @@ public class WorkflowResource {
 
         try {
 
+            Logger.debug(this, ()-> "On Fire Action: inode = " + inode +
+                    ", identifier = " + identifier + ", language = " + language);
+
             final PageMode mode = PageMode.get(request);
             final FireActionByNameForm fireActionForm = this.processForm (multipart);
             //if inode is set we use it to look up a contentlet
             final Contentlet contentlet = this.getContentlet
-                    (inode, identifier, language, fireActionForm, initDataObject, mode);
+                    (inode, identifier, language,
+                            ()->WebAPILocator.getLanguageWebAPI().getLanguage(request).getId(),
+                            fireActionForm, initDataObject, mode);
 
             actionId = this.workflowHelper.getActionIdByName
                     (fireActionForm.getActionName(), contentlet, initDataObject.getUser());
 
+            Logger.debug(this, "fire ActionByName Multipart with the actionid: " + actionId);
             return fireAction(request, fireActionForm, initDataObject.getUser(), contentlet, actionId);
         } catch (Exception e) {
 
@@ -1009,13 +1017,12 @@ public class WorkflowResource {
         }
     }
     /**
-     * Fires a workflow action by name
+     * Fires a workflow action by name, if the contentlet exists could use inode or identifier and optional language.
      * @param request    {@link HttpServletRequest}
      * @param inode      {@link String} (Optional) to fire an action over the existing inode.
      * @param identifier {@link String} (Optional) to fire an action over the existing identifier (in combination of language).
      * @param language   {@link Long}   (Optional) to fire an action over the existing language (in combination of identifier).
-     * @param fireActionForm {@link FireActionByNameForm} Fire Action by Name Form
-     * (if an inode is set, this param is not ignored).
+     * @param fireActionForm {@link FireActionByNameForm} Fire Action by Name Form (if an inode is set, this param is not ignored).
      * @return Response
      */
     @PUT
@@ -1023,10 +1030,10 @@ public class WorkflowResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final Response fireAction(@Context final HttpServletRequest request,
-                                     @QueryParam("inode")            final String inode,
-                                     @QueryParam("identifier")       final String identifier,
-                                     @QueryParam("language")         final long   language,
+    public final Response fireActionByName(@Context final HttpServletRequest request,
+                                     @QueryParam("inode")                        final String inode,
+                                     @QueryParam("identifier")                   final String identifier,
+                                     @DefaultValue("-1") @QueryParam("language") final long   language,
                                      final FireActionByNameForm fireActionForm) {
 
         final InitDataObject initDataObject = this.webResource.init
@@ -1035,13 +1042,21 @@ public class WorkflowResource {
 
         try {
 
+            Logger.debug(this, ()-> "On Fire Action: action name = '" + (null != fireActionForm? fireActionForm.getActionName(): StringPool.BLANK)
+                    + "', inode = " + inode +
+                    ", identifier = " + identifier + ", language = " + language);
+
             final PageMode mode = PageMode.get(request);
             //if inode is set we use it to look up a contentlet
             final Contentlet contentlet = this.getContentlet
-                    (inode, identifier, language, fireActionForm, initDataObject, mode);
+                    (inode, identifier, language,
+                            ()->WebAPILocator.getLanguageWebAPI().getLanguage(request).getId(),
+                            fireActionForm, initDataObject, mode);
 
             actionId = this.workflowHelper.getActionIdByName
                     (fireActionForm.getActionName(), contentlet, initDataObject.getUser());
+
+            Logger.debug(this, "fire ActionByName with the actionid: " + actionId);
 
             DotPreconditions.notNull(actionId, Sneaky.sneaked(()-> LanguageUtil.get(initDataObject.getUser().getLocale(),
                     "Unable-to-execute-workflows-InvalidActionName", fireActionForm.getActionName())),
@@ -1068,6 +1083,7 @@ public class WorkflowResource {
 
         if(null == contentlet || contentlet.getMap().isEmpty()) {
 
+            Logger.debug(this, ()-> "On Fire Action: content is null or empty");
             throw new DoesNotExistException("contentlet-was-not-found");
         }
 
@@ -1108,7 +1124,7 @@ public class WorkflowResource {
 
 
     /**
-     * Fires a workflow action
+     * Fires a workflow action by action id, if the contentlet exists could use inode or identifier and optional language.
      * @param request    {@link HttpServletRequest}
      * @param inode      {@link String} (Optional) to fire an action over the existing inode.
      * @param identifier {@link String} (Optional) to fire an action over the existing identifier (in combination of language).
@@ -1124,21 +1140,26 @@ public class WorkflowResource {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response fireAction(@Context final HttpServletRequest request,
-                               @PathParam ("actionId")         final String actionId,
-                               @QueryParam("inode")            final String inode,
-                               @QueryParam("identifier")       final String identifier,
-                               @DefaultValue("-1") @QueryParam("language")         final long   language,
-                               final FireActionForm fireActionForm) {
+                                     @PathParam ("actionId")         final String actionId,
+                                     @QueryParam("inode")            final String inode,
+                                     @QueryParam("identifier")       final String identifier,
+                                     @DefaultValue("-1") @QueryParam("language") final long   language,
+                                     final FireActionForm fireActionForm) {
 
         final InitDataObject initDataObject = this.webResource.init
                 (null, true, request, true, null);
 
         try {
 
+            Logger.debug(this, ()-> "On Fire Action: action Id " + actionId + ", inode = " + inode +
+                    ", identifier = " + identifier + ", language = " + language);
+
             final PageMode mode = PageMode.get(request);
             //if inode is set we use it to look up a contentlet
             final Contentlet contentlet = this.getContentlet
-                    (inode, identifier, language, fireActionForm, initDataObject, mode);
+                    (inode, identifier, language,
+                            ()->WebAPILocator.getLanguageWebAPI().getLanguage(request).getId(),
+                            fireActionForm, initDataObject, mode);
 
             return fireAction(request, fireActionForm, initDataObject.getUser(), contentlet, actionId);
         } catch (Exception e) {
@@ -1169,22 +1190,27 @@ public class WorkflowResource {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     public final Response fireActionMultipart(@Context               final HttpServletRequest request,
-                                     @PathParam ("actionId")         final String actionId,
-                                     @QueryParam("inode")            final String inode,
-                                     @QueryParam("identifier")       final String identifier,
-                                     @QueryParam("language")         final long   language,
-                                     final FormDataMultiPart multipart) {
+                                              @PathParam ("actionId")         final String actionId,
+                                              @QueryParam("inode")            final String inode,
+                                              @QueryParam("identifier")       final String identifier,
+                                              @DefaultValue("-1") @QueryParam("language") final long   language,
+                                              final FormDataMultiPart multipart) {
 
         final InitDataObject initDataObject = this.webResource.init
                 (null, true, request, true, null);
 
         try {
 
+            Logger.debug(this, ()-> "On Fire Action Multipart: action Id " + actionId + ", inode = " + inode +
+                    ", identifier = " + identifier + ", language = " + language);
+
             final PageMode mode = PageMode.get(request);
             final FireActionForm fireActionForm = this.processForm (multipart);
             //if inode is set we use it to look up a contentlet
             final Contentlet contentlet = this.getContentlet
-                    (inode, identifier, language, fireActionForm, initDataObject, mode);
+                    (inode, identifier, language,
+                            ()->WebAPILocator.getLanguageWebAPI().getLanguage(request).getId(),
+                            fireActionForm, initDataObject, mode);
 
             return fireAction(request, fireActionForm, initDataObject.getUser(), contentlet, actionId);
         } catch (Exception e) {
@@ -1201,7 +1227,7 @@ public class WorkflowResource {
 
         return mapContent.containsKey(BINARY_FIELDS)?
                 ConversionUtils.INSTANCE.convert((JSONArray)mapContent.get(BINARY_FIELDS),
-                            new JsonArrayToLinkedSetConverter<>(Object::toString)):
+                        new JsonArrayToLinkedSetConverter<>(Object::toString)):
                 JsonArrayToLinkedSetConverter.EMPTY_LINKED_SET;
     }
 
@@ -1358,6 +1384,7 @@ public class WorkflowResource {
     private Contentlet getContentlet(final String inode,
                                      final String identifier,
                                      final long language,
+                                     final Supplier<Long> sessionLanguage,
                                      final FireActionForm fireActionForm,
                                      final InitDataObject initDataObject,
                                      final PageMode mode) throws DotDataException, DotSecurityException {
@@ -1377,26 +1404,28 @@ public class WorkflowResource {
         } else if (UtilMethods.isSet(identifier)) {
 
             Logger.debug(this, ()-> "Fire Action, looking for content by identifier: " + identifier
-                                            + " and language id: " + language);
+                    + " and language id: " + language);
 
-            final Optional<Contentlet> currentContentlet =  language < 0?
-                    Optional.ofNullable(this.contentletAPI.findContentletByIdentifierAnyLanguage(identifier)):
+            final Optional<Contentlet> currentContentlet =  language <= 0?
+                    this.workflowHelper.getContentletByIdentifier(identifier, mode, initDataObject.getUser(), sessionLanguage):
                     this.contentletAPI.findContentletByIdentifierOrFallback
                             (identifier, mode.showLive, language, initDataObject.getUser(), mode.respectAnonPerms);
-
-            this.contentletAPI.findContentletByIdentifierAnyLanguage(identifier);
 
             DotPreconditions.isTrue(currentContentlet.isPresent(), ()-> "contentlet-was-not-found", DoesNotExistException.class);
 
             contentlet = createContentlet(fireActionForm, initDataObject, currentContentlet.get());
         } else {
+
             //otherwise the information must be grabbed from the request body.
+            Logger.debug(this, ()-> "Fire Action, creating a new contentlet");
             DotPreconditions.notNull(fireActionForm, ()-> "When no inode is sent the info on the Request body becomes mandatory.");
             contentlet = this.populateContentlet(fireActionForm, initDataObject.getUser());
         }
 
         return contentlet;
     }
+
+
 
     private Contentlet createContentlet(final FireActionForm fireActionForm,
                                         final InitDataObject initDataObject,
@@ -1548,9 +1577,9 @@ public class WorkflowResource {
             exportObject.setActionClassParams(workflowSchemeImportForm.getWorkflowImportObject().getActionClassParams());
 
             this.workflowHelper.importScheme (
-                            exportObject,
-                            workflowSchemeImportForm.getPermissions(),
-                            initDataObject.getUser());
+                    exportObject,
+                    workflowSchemeImportForm.getPermissions(),
+                    initDataObject.getUser());
             response     = Response.ok(new ResponseEntityView("OK")).build(); // 200
         } catch (Exception e){
 
@@ -1575,7 +1604,7 @@ public class WorkflowResource {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response exportScheme(@Context final HttpServletRequest request,
-                                              @PathParam("schemeId") final String schemeId) {
+                                       @PathParam("schemeId") final String schemeId) {
 
         final InitDataObject initDataObject = this.webResource.init
                 (null, true, request, true, null);
@@ -1619,9 +1648,9 @@ public class WorkflowResource {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response copyScheme(@Context final HttpServletRequest request,
-                               @PathParam("schemeId") final String schemeId,
-                               @QueryParam("name") final String name,
-                               final WorkflowCopyForm workflowCopyForm) {
+                                     @PathParam("schemeId") final String schemeId,
+                                     @QueryParam("name") final String name,
+                                     final WorkflowCopyForm workflowCopyForm) {
 
         final InitDataObject initDataObject = this.webResource.init
                 (null, true, request, true, null);
@@ -1642,7 +1671,7 @@ public class WorkflowResource {
                     this.workflowAPI.deepCopyWorkflowScheme(
                             this.workflowAPI.findScheme(schemeId),
                             initDataObject.getUser(), workflowName))
-                    ).build(); // 200
+            ).build(); // 200
         } catch (Exception e){
             Logger.error(this.getClass(),
                     "Exception on exportScheme, Error exporting the schemes", e);
@@ -1664,7 +1693,7 @@ public class WorkflowResource {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response findAvailableDefaultActionsByContentType(@Context final HttpServletRequest request,
-            @PathParam("contentTypeId")      final String contentTypeId) {
+                                                                   @PathParam("contentTypeId")      final String contentTypeId) {
         final InitDataObject initDataObject = this.webResource.init
                 (null, true, request, true, null);
         try {
@@ -1763,7 +1792,7 @@ public class WorkflowResource {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response saveScheme(@Context final HttpServletRequest request,
-                               final WorkflowSchemeForm workflowSchemeForm) {
+                                     final WorkflowSchemeForm workflowSchemeForm) {
         final InitDataObject initDataObject = this.webResource.init(null, true, request, true, null);
         try {
             DotPreconditions.notNull(workflowSchemeForm,"Expected Request body was empty.");
@@ -1790,8 +1819,8 @@ public class WorkflowResource {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response updateScheme(@Context final HttpServletRequest request,
-                                 @PathParam("schemeId") final String schemeId,
-                                 final WorkflowSchemeForm workflowSchemeForm) {
+                                       @PathParam("schemeId") final String schemeId,
+                                       final WorkflowSchemeForm workflowSchemeForm) {
         final InitDataObject initDataObject = this.webResource.init(null, true, request, true, null);
         Logger.debug(this, "Updating scheme with id: " + schemeId);
         try {
@@ -1816,8 +1845,8 @@ public class WorkflowResource {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final void deleteScheme(@Context final HttpServletRequest request,
-                                       @Suspended final AsyncResponse asyncResponse,
-                                       @PathParam("schemeId") final String schemeId) {
+                                   @Suspended final AsyncResponse asyncResponse,
+                                   @PathParam("schemeId") final String schemeId) {
 
         final InitDataObject initDataObject = this.webResource.init(null, true, request, true, null);
         Logger.debug(this, ()-> "Deleting scheme with id: " + schemeId);

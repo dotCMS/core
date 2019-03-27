@@ -133,7 +133,7 @@ public enum PageMode {
     
     public static PageMode get(final String modeStr) {
         for(final PageMode mode : values()) {
-                if(mode.name().equals(modeStr)) {
+                if(mode.name().equalsIgnoreCase(modeStr)) {
                     return mode;
                 }
         }
