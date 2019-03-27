@@ -59,35 +59,6 @@ export namespace Components {
     'required'?: boolean;
     'value'?: string;
   }
-
-  interface MyComponent {
-    /**
-    * The first name
-    */
-    'first': string;
-    /**
-    * The last name
-    */
-    'last': string;
-    /**
-    * The middle name
-    */
-    'middle': string;
-  }
-  interface MyComponentAttributes extends StencilHTMLAttributes {
-    /**
-    * The first name
-    */
-    'first'?: string;
-    /**
-    * The last name
-    */
-    'last'?: string;
-    /**
-    * The middle name
-    */
-    'middle'?: string;
-  }
 }
 
 declare global {
@@ -95,14 +66,12 @@ declare global {
     'DotCheckbox': Components.DotCheckbox;
     'DotDropdown': Components.DotDropdown;
     'DotTextfield': Components.DotTextfield;
-    'MyComponent': Components.MyComponent;
   }
 
   interface StencilIntrinsicElements {
     'dot-checkbox': Components.DotCheckboxAttributes;
     'dot-dropdown': Components.DotDropdownAttributes;
     'dot-textfield': Components.DotTextfieldAttributes;
-    'my-component': Components.MyComponentAttributes;
   }
 
 
@@ -124,24 +93,16 @@ declare global {
     new (): HTMLDotTextfieldElement;
   };
 
-  interface HTMLMyComponentElement extends Components.MyComponent, HTMLStencilElement {}
-  var HTMLMyComponentElement: {
-    prototype: HTMLMyComponentElement;
-    new (): HTMLMyComponentElement;
-  };
-
   interface HTMLElementTagNameMap {
     'dot-checkbox': HTMLDotCheckboxElement
     'dot-dropdown': HTMLDotDropdownElement
     'dot-textfield': HTMLDotTextfieldElement
-    'my-component': HTMLMyComponentElement
   }
 
   interface ElementTagNameMap {
     'dot-checkbox': HTMLDotCheckboxElement;
     'dot-dropdown': HTMLDotDropdownElement;
     'dot-textfield': HTMLDotTextfieldElement;
-    'my-component': HTMLMyComponentElement;
   }
 
 
