@@ -40,6 +40,9 @@ public class IntegrationTestInitService {
     		FactoryLocator.init();
     		APILocator.init();
 
+            //Running the always run startup tasks
+            StartupTasksUtil.getInstance().init();
+
     		//For these tests fire the reindex immediately
             Config.setProperty("ASYNC_REINDEX_COMMIT_LISTENERS", false);
             Config.setProperty("ASYNC_COMMIT_LISTENERS", false);

@@ -92,11 +92,11 @@ public class DotCMSInitDb {
 
 	private static void loadStarterSite(PrintWriter pw) throws IOException{
 		
-		String starter = Config.getStringProperty("STARTER_DATA_LOAD");
 		File starterZip = null;
-		
-		if(UtilMethods.isSet(starter)){
-            starterZip = new File(FileUtil.getRealPath(starter));
+
+		String starter = Config.getStringProperty("STARTER_DATA_LOAD");
+		if (UtilMethods.isSet(starter)) {
+			starterZip = new File(starter);
 		}
 		
 		if(starterZip==null || (starterZip!=null && !starterZip.exists())){
