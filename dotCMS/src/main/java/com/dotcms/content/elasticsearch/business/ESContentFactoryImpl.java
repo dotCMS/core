@@ -1697,7 +1697,6 @@ public class ESContentFactoryImpl extends ContentletFactory {
         }
 
         contentletCache.remove(content.getInode());
-        contentletCache.add(content.getInode(), content);
         HibernateUtil.evict(content);
 
         return content;

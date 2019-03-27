@@ -187,7 +187,7 @@ public  class WebResource {
     public User getCurrentUser(HttpServletRequest request, Map<String, String> paramsMap, boolean rejectWhenNoUser) {
 
         User user = null;
-        HttpSession session = request.getSession(false);
+        HttpSession session = request.getSession();
 
         if (session!=null && this.isLoggedAsUser(session)){
             user = Try.of(()->PortalUtil.getUser(request)).getOrNull();

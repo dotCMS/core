@@ -13,10 +13,13 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import com.rainerhahnekamp.sneakythrow.Sneaky;
 
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+
+import org.apache.commons.beanutils.BeanUtils;
 
 public class VersionableAPIImpl implements VersionableAPI {
 
@@ -367,9 +370,9 @@ public class VersionableAPIImpl implements VersionableAPI {
                     "Can't unpublish content that is scheduled to expire on a future date. Identifier: " + identifier.getId() );
             }
         }
-
-        contentletVersionInfo.setLiveInode( null );
-        versionableFactory.saveContentletVersionInfo( contentletVersionInfo, true );
+        final ContentletVersionInfo newInfo = Sneaky.sneak(()-> (ContentletVersionInfo) BeanUtils.cloneBean(contentletVersionInfo)) ;
+        newInfo.setLiveInode( null );
+        versionableFactory.saveContentletVersionInfo( newInfo, true );
     }
 
     @WrapInTransaction
@@ -385,10 +388,16 @@ public class VersionableAPIImpl implements VersionableAPI {
             final Contentlet contentlet      = (Contentlet)versionable;
             final ContentletVersionInfo info = versionableFactory
                     .getContentletVersionInfo(contentlet.getIdentifier(),contentlet.getLanguageId());
+            
+            
+            
+            
             if(!UtilMethods.isSet(info.getIdentifier()))
                 throw new DotStateException("No version info. Call setWorking first");
-            info.setDeleted(deleted);
-            versionableFactory.saveContentletVersionInfo(info, true);
+            
+            final ContentletVersionInfo newInfo = Sneaky.sneak(()-> (ContentletVersionInfo) BeanUtils.cloneBean(info)) ;
+            newInfo.setDeleted(deleted);
+            versionableFactory.saveContentletVersionInfo(newInfo, true);
         }
         else {
             final VersionInfo info = versionableFactory.getVersionInfo(versionable.getVersionId());
@@ -432,9 +441,9 @@ public class VersionableAPIImpl implements VersionableAPI {
                     throw new PublishStateException( "The content cannot be published because the expire date has already passed." );
                 }
             }
-
-            info.setLiveInode( versionable.getInode() );
-            versionableFactory.saveContentletVersionInfo( info, true );
+            final ContentletVersionInfo newInfo = Sneaky.sneak(()-> (ContentletVersionInfo) BeanUtils.cloneBean(info)) ;
+            newInfo.setLiveInode(versionable.getInode());
+            versionableFactory.saveContentletVersionInfo( newInfo, true );
         } else {
 
             final VersionInfo info = versionableFactory.getVersionInfo( versionable.getVersionId() );
@@ -464,14 +473,15 @@ public class VersionableAPIImpl implements VersionableAPI {
 
             if(!UtilMethods.isSet(info.getIdentifier()))
                 throw new DotStateException("No version info. Call setWorking first");
+            final ContentletVersionInfo newInfo = Sneaky.sneak(()-> (ContentletVersionInfo) BeanUtils.cloneBean(info)) ;
 
             if(locked) {
-                info.setLocked(user.getUserId());
+                newInfo.setLocked(user.getUserId());
             } else {
-                info.unLock();
+                newInfo.unLock();
             }
 
-            versionableFactory.saveContentletVersionInfo(info, false);
+            versionableFactory.saveContentletVersionInfo(newInfo, false);
         } else {
 
             final VersionInfo info = versionableFactory.getVersionInfo(versionable.getVersionId());
@@ -507,8 +517,11 @@ public class VersionableAPIImpl implements VersionableAPI {
                 info = versionableFactory.createContentletVersionInfo(identifier, contentlet.getLanguageId(), versionable.getInode());
             }
             else {
-                info.setWorkingInode(versionable.getInode());
-                versionableFactory.saveContentletVersionInfo(info, true);
+                final ContentletVersionInfo oldInfo = info;
+                final ContentletVersionInfo newInfo = Sneaky.sneak(()-> (ContentletVersionInfo) BeanUtils.cloneBean(oldInfo)) ;
+
+                newInfo.setWorkingInode(versionable.getInode());
+                versionableFactory.saveContentletVersionInfo(newInfo, true);
             }
             
             CacheLocator.getIdentifierCache().removeContentletVersionInfoToCache(info.getIdentifier(),contentlet.getLanguageId());

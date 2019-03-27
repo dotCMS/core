@@ -3,6 +3,12 @@
  */
 package com.dotmarketing.business;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.cluster.ClusterUtils;
 import com.dotcms.cluster.bean.Server;
@@ -10,24 +16,14 @@ import com.dotcms.cluster.bean.ServerPort;
 import com.dotcms.cluster.business.ServerAPI;
 import com.dotcms.enterprise.cache.provider.CacheProviderAPI;
 import com.dotcms.enterprise.cluster.ClusterFactory;
-import com.dotcms.repackage.com.google.common.cache.RemovalListener;
-import com.dotcms.repackage.com.google.common.cache.RemovalNotification;
 import com.dotmarketing.business.cache.provider.CacheProviderStats;
 import com.dotmarketing.business.cache.transport.CacheTransport;
 import com.dotmarketing.business.cache.transport.CacheTransportException;
-import com.dotmarketing.db.DbConnectionFactory;
-import com.dotmarketing.db.FlushCacheRunnable;
-import com.dotmarketing.db.HibernateUtil;
-import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
-
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.util.*;
 
 /**
  * Cache administrator that uses the CacheProviders infrastructure (Cache chains)
@@ -326,51 +322,38 @@ public class ChainableCacheAdministratorImpl implements DotCacheAdministrator {
 		cacheProviderAPI.put(group, key, content);
 	}
 
-	/*
-	 * (non-Javadoc)
-	 *
-	 * @see
-	 * com.dotmarketing.business.DotCacheAdministrator#remove(java.lang.String)
-	 */
-	public void remove(final String key, final String group) {
+    /*
+     * (non-Javadoc)
+     *
+     * @see com.dotmarketing.business.DotCacheAdministrator#remove(java.lang.String)
+     */
+    public void remove(final String key, final String group) {
 
-		if(key == null || group == null){
-			return;
-		}
+        if (key == null || group == null) {
+            return;
+        }
 
-		FlushCacheRunnable cacheRemoveRunnable=new FlushCacheRunnable() {
-	         public void run() {
+        String k = key.toLowerCase();
+        String g = group.toLowerCase();
+        removeLocalOnly(k, g, false);
 
-				String k = key.toLowerCase();
-				String g = group.toLowerCase();
-				removeLocalOnly(k, g, false);
+        if (useTransportChannel) {
+            if (!cacheProviderAPI.isGroupDistributed(group)) {
+                if (getTransport() != null) {
+                    try {
+                        getTransport().send(k + ":" + g);
+                    } catch (Exception e) {
+                        Logger.warnAndDebug(ChainableCacheAdministratorImpl.class,
+                                "Unable to send invalidation to cluster : " + e.getMessage(), e);
+                    }
+                } else {
+                    Logger.warn(ChainableCacheAdministratorImpl.class,
+                            "No Cache transport implementation is defined - clustered dotcms will not work properly without a valid cache transport");
+                }
+            }
+        }
 
-				if ( useTransportChannel ) {
-					if (! cacheProviderAPI.isGroupDistributed( group )) {
-						if ( getTransport() != null) {
-							try {
-								getTransport().send(k + ":" + g);
-							} catch ( Exception e ) {
-								Logger.error(ChainableCacheAdministratorImpl.class, "Unable to send invalidation to cluster : " + e.getMessage(), e);
-							}
-						} else {
-							throw new CacheTransportException("No Cache transport implementation is defined");
-						}							
-					}
-				}
-	         }
-		};
-
-		try {
-			if(DbConnectionFactory.inTransaction()){
-				HibernateUtil.addCommitListener(cacheRemoveRunnable);
-			}
-		} catch (Exception e) {
-			Logger.error(ChainableCacheAdministratorImpl.class,e.getMessage(),e);
-		}
-
-		cacheRemoveRunnable.run();
-	}
+    }
 
 	public void removeLocalOnly ( final String key, final String group, boolean ignoreDistributed ) {
 

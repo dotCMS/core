@@ -174,7 +174,10 @@ public class TranslationActionlet extends WorkFlowActionlet {
                 sourceContentlet.setTags();
                 copyBinariesAndTags(user, sourceContentlet, translatedContent);
                 List<Category> cats = catAPI.getParents(sourceContentlet, user, true);
-                ContentletRelationships rels = contentAPI.getAllRelationships(sourceContentlet);
+                ContentletRelationships rels =
+                        processor.getContentletDependencies() != null ? processor
+                                .getContentletDependencies().getRelationships()
+                                : contentAPI.getAllRelationships(sourceContentlet);
                 List<Permission> perms = permAPI.getPermissions(sourceContentlet, false, true);
 
                 translatedContent = contentAPI.checkin(translatedContent, rels, cats, perms, user, false);

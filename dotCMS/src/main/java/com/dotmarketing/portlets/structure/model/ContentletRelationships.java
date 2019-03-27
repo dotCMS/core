@@ -117,10 +117,10 @@ public class ContentletRelationships
 			//Self-related case
 			//Evaluates if the field is used to list children or parents
 			//In case children are listed, parent records will be discarded and vice versa
-			if (relationship.getChildRelationName() != null && relationship.getChildRelationName()
-					.equals(fieldVar) && records.isHasParent()
-					|| relationship.getParentRelationName() != null && relationship.getParentRelationName()
-					.equals(fieldVar) && !records.isHasParent()) {
+			if ((relationship.getChildRelationName() != null && relationship.getChildRelationName()
+					.equals(fieldVar) && records.isHasParent())
+					|| (relationship.getParentRelationName() != null && relationship.getParentRelationName()
+					.equals(fieldVar) && !records.isHasParent())) {
 				return true;
 			}
 		}
