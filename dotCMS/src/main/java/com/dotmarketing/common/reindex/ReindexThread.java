@@ -107,7 +107,7 @@ public class ReindexThread {
         this.userAPI = userAPI;
         this.roleAPI = roleAPI;
         this.indexAPI = indexAPI;
-        this.instance=this;
+
     }
 
     /**
@@ -245,7 +245,7 @@ public class ReindexThread {
     }
 
     private void state(ThreadState state) {
-        this.STATE = state;
+        getInstance().STATE = state;
     }
     /**
      * Tells the thread to stop processing. Doesn't shut down the thread.
@@ -265,19 +265,22 @@ public class ReindexThread {
      * null.
      */
     public static ReindexThread getInstance() {
+        if(instance==null) {
+            instance=new ReindexThread();
+        }
         return instance;
     }
 
     public static void pause() {
-        instance.state(ThreadState.PAUSED);
+        getInstance().state(ThreadState.PAUSED);
     }
 
     public static void unpause() {
-        instance.state(ThreadState.RUNNING);
+        getInstance().state(ThreadState.RUNNING);
     }
 
     public static boolean isWorking() {
-        return instance.STATE == ThreadState.RUNNING;
+        return getInstance().STATE == ThreadState.RUNNING;
     }
 
     /**

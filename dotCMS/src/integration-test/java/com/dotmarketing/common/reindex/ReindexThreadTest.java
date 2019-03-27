@@ -84,7 +84,7 @@ public class ReindexThreadTest {
         // respect CMS Anonymous permissions
 
         // stop the reindex thread
-        ReindexThread.getInstance().pause();
+        ReindexThread.pause();
 
         int num = 2;
         List<Contentlet> origCons = new ArrayList<>();
@@ -167,7 +167,7 @@ public class ReindexThreadTest {
 
     @Test
     public void test_reindex_queue_puts_to_the_index() throws DotDataException, DotSecurityException {
-
+        ReindexThread.stopThread();
         new DotConnect().setSQL("delete from dist_reindex_journal").loadResult();
         ReindexThread.startThread();
 
