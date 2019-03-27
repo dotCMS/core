@@ -11,16 +11,16 @@
         <script>
             window.onload = function() {
                 let inputTxt = document.querySelector('dot-textfield');
-                inputTxt.addEventListener('onCallback', function(event) {
-                    console.log('--inputTxt onCallback', event.detail);
+                inputTxt.addEventListener('onChange', function(event) {
+                    console.log('--inputTxt onChange', event.detail);
                 });
                 let dropdownElem = document.querySelector('dot-dropdown');
-                dropdownElem.addEventListener('onCallback', function(event) {
-                    console.log('--dropdownElem onCallback', event.detail);
+                dropdownElem.addEventListener('onChange', function(event) {
+                    console.log('--dropdownElem onChange', event.detail);
                 });
                 let checkboxElem = document.querySelector('dot-checkbox');
-                checkboxElem.addEventListener('onCallback', function(event) {
-                    console.log('--checkboxElem onCallback', event.detail);
+                checkboxElem.addEventListener('onChange', function(event) {
+                    console.log('--checkboxElem onChange', event.detail);
                 });
             };
         </script>
@@ -43,8 +43,8 @@
         <dot-dropdown
             label='Dropdown label:'
             hint='this is a hint'
-            options='a\r\nb\r\nc\r\nd\r\n'
-            value='b'
+            options='a|1 b|2 c|3 d|4'
+            value='2'
         ></dot-dropdown>
 
         <hr />
@@ -52,8 +52,8 @@
         <dot-checkbox
             label='Checkbox label:'
             hint='this is a hint'
-            options='a1\r\nb1\r\nc1\r\nd1\r\n'
-            value='b1'
+            options='a1|1 b1|2 c1|3 d1|4'
+            value='3'
         ></dot-checkbox>
 
     </body>

@@ -1,5 +1,5 @@
 import { Component, Prop, State, Event, EventEmitter } from '@stencil/core';
-import { generateId } from '../../utils/utils';
+import { generateId, getItemsFromString, DotOption } from '../../utils/utils';
 import Fragment from 'stencil-fragment';
 
 @Component({
@@ -11,43 +11,41 @@ export class DotCheckboxComponent {
     @Prop() hint: string;
     @Prop() options: string;
     @Prop() value: string;
-    @Event() onCallback: EventEmitter;
+    @Event() onChange: EventEmitter;
 
-    @State() _options: any;
+    @State() _options: DotOption[];
     @State() _value: string;
     _label: string;
     _values = {};
 
     componentWillLoad() {
-        this._options = this.options
-            .replace(/(\\r\\n|\\n|\\r)/gi, '|')
-            .split('|')
-            .filter((item) => item.length > 0);
+        this._options = getItemsFromString(this.options);
         this._label = `dotCheckbox_${generateId()}`;
     }
 
     setValue(event): void {
         const checkBoxVal = event.target.value.toString();
+        // Format values to be emmitted, this might change when implemented on the form
         this._values = { ...this._values, [checkBoxVal]: !this._values[checkBoxVal] };
-        this.onCallback.emit({ value: this._values });
+        this.onChange.emit({ value: this._values });
     }
 
     render() {
         return (
             <Fragment>
                 <label htmlFor={this._label}>{this.label}</label>
-                {this._options.map((item: string) => {
-                    this._values = { ...this._values, [item]: this.value === item ? true : false };
+                {this._options.map((item: DotOption) => {
+                    this._values = { ...this._values, [item.value]: this.value === item.value ? true : false };
                     return (
                         <div class='dot-checkbox__container'>
                             <input
                                 type='checkbox'
-                                name={item}
-                                checked={this.value === item ? true : null}
+                                name={item.value}
+                                checked={this.value === item.value ? true : null}
                                 onInput={(event: Event) => this.setValue(event)}
-                                value={item}
+                                value={item.value}
                             />
-                            <label htmlFor={item}>{item}</label>
+                            <label htmlFor={item.value}>{item.label}</label>
                         </div>
                     );
                 })}

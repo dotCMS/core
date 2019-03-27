@@ -1,5 +1,5 @@
 import { Component, Prop, State, Event, EventEmitter } from '@stencil/core';
-import { generateId } from '../../utils/utils';
+import { generateId, getItemsFromString, DotOption } from '../../utils/utils';
 import Fragment from 'stencil-fragment';
 
 @Component({
@@ -11,23 +11,20 @@ export class DotDropdownComponent {
     @Prop() hint: string;
     @Prop() options: string;
     @Prop() value: string;
-    @Event() onCallback: EventEmitter;
+    @Event() onChange: EventEmitter;
 
-    @State() _options: string[];
+    @State() _options: DotOption[];
     @State() _value: string;
     _label: string;
 
     componentWillLoad() {
-        this._options = this.options
-            .replace(/(\\r\\n|\\n|\\r)/gi, '|')
-            .split('|')
-            .filter((item) => item.length > 0);
+        this._options = getItemsFromString(this.options);
         this._label = `dotDropdown_${generateId()}`;
     }
 
     setValue(event): void {
         this._value = event.target[event.target.selectedIndex].label;
-        this.onCallback.emit({ value: this._value });
+        this.onChange.emit({ value: this._value });
     }
 
     render() {
@@ -35,13 +32,13 @@ export class DotDropdownComponent {
             <Fragment>
                 <label htmlFor={this._label}>{this.label}</label>
                 <select name={this._label} onChange={(event: Event) => this.setValue(event)}>
-                    {this._options.map((item: string, index: number) => {
+                    {this._options.map((item: DotOption) => {
                         return (
                             <option
-                                selected={this.value === item ? true : null}
-                                value={index}
+                                selected={this.value === item.value ? true : null}
+                                value={item.value}
                             >
-                                {item}
+                                {item.label}
                             </option>
                         );
                     })}

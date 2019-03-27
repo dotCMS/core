@@ -14,7 +14,7 @@ export class DotTextfieldComponent {
     @Prop() hint: string;
     @Prop() placeholder: string;
     @Prop() required: boolean;
-    @Event() onCallback: EventEmitter;
+    @Event() onChange: EventEmitter;
 
     @State() _value: string;
     @State() _error = false;
@@ -24,17 +24,20 @@ export class DotTextfieldComponent {
     validate(value: string): boolean {
         if (this.required && value.length === 0) {
             return true;
-        } else if (this.regexcheck) {
+        }
+
+        if (this.regexcheck) {
             const regex = new RegExp(this.regexcheck, 'ig');
             return !regex.test(value);
         }
+
         return false;
     }
 
     setValue(event): void {
         this._value = event.target.value.toString();
         this._error = this.validate(this._value);
-        this.onCallback.emit({ error: this._error, value: this._value });
+        this.onChange.emit({ error: this._error, value: this._value });
     }
 
     componentWillLoad() {
